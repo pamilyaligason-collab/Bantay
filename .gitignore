@@ -4,7 +4,7 @@ dev-dist/
 .env*
 !.env.example
 *.zip
-import/
+/import/
 test-results/
 playwright-report/
 coverage/
