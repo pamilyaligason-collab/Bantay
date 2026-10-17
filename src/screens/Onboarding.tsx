@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { db } from '../db'
 import { DAMPAS } from '../features/location/geo'
 import { resolveLocation, saveHome } from '../features/location/useLocation'
-import { enableAlerts, isIosNeedsInstall } from '../features/notify/alerts'
+import { enableAlerts, ensureSubscribed, isIosNeedsInstall, markAsked } from '../features/notify/alerts'
 
 type Step = 'ios' | 'alerts' | 'where' | 'home'
 
@@ -23,14 +23,17 @@ function Card({ title, lead, children }: { title: string; lead: string; children
   )
 }
 
+const flagged = () => { try { return localStorage.getItem('bantay.onboarded') === '1' } catch { return false } }
+
 export function Onboarding({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState<Step>(() => (isIosNeedsInstall(navigator.userAgent, standalone()) ? 'ios' : 'alerts'))
+  const [step, setStep] = useState<Step>(() => (isIosNeedsInstall(navigator.userAgent, standalone(), navigator.maxTouchPoints) ? 'ios' : 'alerts'))
   const [denied, setDenied] = useState(false)
   const [busy, setBusy] = useState(false)
   const [home, setHome] = useState({ name: DAMPAS.name, lat: String(DAMPAS.lat), lon: String(DAMPAS.lon) })
 
   const finish = async () => {
     await db.kv.put({ key: 'onboarded', value: true })
+    try { localStorage.setItem('bantay.onboarded', '1') } catch { /* private mode */ }
     onDone()
   }
 
@@ -38,10 +41,11 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     return (
       <Card title="Add Bantay to your Home Screen" lead="iPhone only allows alerts for apps on the Home Screen.">
         <ol className="grp" style={{ margin: 0, padding: '8px 16px 8px 36px' }}>
-          <li style={{ padding: '8px 0' }}>In Safari, tap the Share button.</li>
-          <li style={{ padding: '8px 0' }}>Tap Add to Home Screen, then Add.</li>
+          <li style={{ padding: '8px 0' }}>Tap the Share button, then Add to Home Screen.</li>
+          <li style={{ padding: '8px 0' }}>Tap Add.</li>
           <li style={{ padding: '8px 0' }}>Open Bantay from your Home Screen to keep going.</li>
         </ol>
+        <button className="btn2" onClick={async () => { await markAsked(); setDenied(true); setStep('where') }}>Continue without alerts</button>
       </Card>
     )
   }
@@ -132,7 +136,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<'loading' | 'show' | 'done'>('loading')
   useEffect(() => {
-    db.kv.get('onboarded').then((r) => setState(r?.value || (location.hash !== '' && location.hash !== '#welcome') ? 'done' : 'show'))
+    ensureSubscribed()
+    db.kv.get('onboarded').then((r) => setState(r?.value || flagged() || (location.hash !== '' && location.hash !== '#welcome') ? 'done' : 'show'))
   }, [])
   if (state === 'loading') return null
   return state === 'show' ? <Onboarding onDone={() => setState('done')} /> : <>{children}</>

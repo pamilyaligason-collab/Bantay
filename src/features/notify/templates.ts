@@ -20,7 +20,8 @@ export const HEALTH_IDS = ids.filter((i) => TEMPLATES[i].cls === 'health')
 export const SAFETY_IDS = ids.filter((i) => TEMPLATES[i].cls === 'safety')
 
 export interface Built {
-  id: TemplateId
+  id: TemplateId | 'fallback'
+  tag: string
   cls: Cls
   title: string
   body: string
@@ -32,8 +33,8 @@ export function buildNotification(payload: unknown): Built | null {
   const t = (payload as { t?: unknown }).t
   if (Object.keys(payload).length !== 1 || typeof t !== 'string' || !Object.hasOwn(TEMPLATES, t)) return null
   const tpl: Tpl = TEMPLATES[t as TemplateId]
-  return { id: t as TemplateId, cls: tpl.cls, title: tpl.title, body: tpl.body, data: { tab: tpl.tab } }
+  return { id: t as TemplateId, tag: t, cls: tpl.cls, title: tpl.title, body: tpl.body, data: { tab: tpl.tab } }
 }
 
 /** Shown when a push arrives that is not a known template. Neutral, uncapped, no data. */
-export const FALLBACK: Built = { id: 'storm_warning', cls: 'safety', title: 'Bantay', body: 'Open Bantay to see what is new.', data: { tab: 'today' } }
+export const FALLBACK: Built = { id: 'fallback', tag: 'bantay', cls: 'safety', title: 'Bantay', body: 'Open Bantay to see what is new.', data: { tab: 'today' } }

@@ -2,8 +2,8 @@
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { db } from './db'
-import { handlePush, type NudgeState } from './features/notify/push'
+import { subscribeAndSave, vapidKey } from './features/notify/alerts'
+import { claimNudge, handlePush } from './features/notify/push'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -13,14 +13,13 @@ cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))
 
-// L5: push and notification click. All logic lives in features/notify (tested); this is wiring only.
+// L5: push, click and resubscribe. All logic lives in features/notify (tested); this is wiring only.
 self.addEventListener('push', (e) => {
   const raw = (() => { try { return e.data?.json() } catch { return undefined } })()
   e.waitUntil(
     handlePush(raw, {
-      getNudge: async () => (await db.kv.get('nudge'))?.value as NudgeState | undefined,
-      setNudge: async (v) => { await db.kv.put({ key: 'nudge', value: v }) },
-      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.id, icon: 'icon.svg' })
+      claimNudge,
+      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.tag, icon: 'icon.svg' })
     })
   )
 })
@@ -28,14 +27,23 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close()
   const tab = (e.notification.data as { tab?: string } | null)?.tab
-  const url = new URL(tab ? `./#${tab}` : './', self.registration.scope).href
+  const scope = self.registration.scope
+  const url = new URL(tab ? `./#${tab}` : './', scope).href
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (cs) => {
-      const c = cs[0]
-      if (c) {
+      const c = cs.find((w) => w.url.startsWith(scope))
+      try {
+        if (!c) throw 0
         await c.focus()
-        await c.navigate(url).catch(() => undefined)
-      } else await self.clients.openWindow(url)
+        await c.navigate(url)
+      } catch {
+        await self.clients.openWindow(url)
+      }
     })
   )
+})
+
+self.addEventListener('pushsubscriptionchange', (e) => {
+  const key = vapidKey()
+  if (key) (e as ExtendableEvent).waitUntil(subscribeAndSave(self.registration, key))
 })

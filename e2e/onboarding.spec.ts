@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { skipOnboarding } from './helpers'
 
 const kv = (page: Page, key: string) =>
   page.evaluate(
@@ -54,6 +55,20 @@ test.describe('iPhone in Safari', () => {
     await expect(page.locator('h1')).toHaveText('Add Bantay to your Home Screen')
     await expect(page.getByRole('button', { name: 'Turn on alerts' })).toHaveCount(0)
   })
+  test('Continue without alerts does not lock the app', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Continue without alerts' }).click()
+    await expect(page.getByText('Alerts are off on this phone')).toBeVisible()
+    await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
+    await page.getByRole('button', { name: 'Save and start' }).click()
+    await expect(page.locator('h1')).toHaveText('Today')
+  })
+})
+
+test('skipOnboarding helper goes straight to the app at /', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/')
+  await expect(page.locator('h1')).toHaveText('Today')
 })
 
 test('a deep link skips onboarding', async ({ page }) => {

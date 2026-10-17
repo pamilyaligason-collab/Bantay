@@ -1,33 +1,41 @@
 import { useEffect, useState } from 'react'
-import { enableAlerts, kvGet, kvSet, reAskDue } from './alerts'
+import { db } from '../../db'
+import { ASK_KEY, enableAlerts, ensureSubscribed, kvGet, markAsked, reAskDue, vapidKey } from './alerts'
 
-/** Gentle re-ask when alerts are off. Appears at most once every 3 days. Drop it at the top of Today. */
+type Mode = 'off' | 'unsubscribed'
+
+/** Gentle re-ask: alerts off, or granted but not set up yet. At most once every 3 days (shared key with onboarding). */
 export default function AlertsBanner() {
-  const [show, setShow] = useState(false)
+  const [mode, setMode] = useState<Mode | null>(null)
   const [blocked, setBlocked] = useState(false)
   useEffect(() => {
-    if (typeof Notification === 'undefined' || Notification.permission === 'granted') return
-    kvGet<number>('alerts.bannerShown').then((last) => {
-      if (!reAskDue(last, Date.now())) return
-      kvSet('alerts.bannerShown', Date.now())
-      setShow(true)
-    })
+    if (typeof Notification === 'undefined') return
+    ;(async () => {
+      const granted = Notification.permission === 'granted'
+      const need: Mode | null = !granted ? 'off' : vapidKey() && !(await db.kv.get('push.sub')) ? 'unsubscribed' : null
+      if (!need || !reAskDue(await kvGet<number>(ASK_KEY), Date.now())) return
+      await markAsked()
+      setMode(need)
+    })()
   }, [])
-  if (!show) return null
+  if (!mode) return null
+  const off = mode === 'off'
   return (
-    <div className="grp" role="region" aria-label="Alerts are off" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <strong>Alerts are off on this phone</strong>
-      <span className="sub">You won’t hear about storms or missed medicines until you open Bantay.</span>
-      {blocked && <span className="sub">Your phone is blocking alerts for Bantay. Turn them on in your phone settings.</span>}
+    <div className="grp" role="region" aria-label={off ? 'Alerts are off' : 'Alerts are not set up'} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <strong>{off ? 'Alerts are off on this phone' : 'Alerts are not set up yet'}</strong>
+      <span className="sub">
+        {off ? 'You won’t hear about storms or missed medicines until you open Bantay.' : 'Tap to try again so storm and medicine alerts reach this phone.'}
+      </span>
+      {blocked && <span className="sub">{off ? 'Your phone is blocking alerts for Bantay. Turn them on in your phone settings.' : 'That did not work. Check your connection and try again.'}</span>}
       <button
         className="btn"
         onClick={async () => {
-          const r = await enableAlerts()
-          if (r === 'granted') setShow(false)
+          const ok = off ? (await enableAlerts()) === 'granted' : await ensureSubscribed()
+          if (ok) setMode(null)
           else setBlocked(true)
         }}
       >
-        Turn on alerts
+        {off ? 'Turn on alerts' : 'Try again'}
       </button>
     </div>
   )
