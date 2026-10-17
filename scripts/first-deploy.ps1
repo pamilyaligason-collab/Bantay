@@ -22,8 +22,8 @@ npm test; Check 1
 npx tsc --noEmit; Check 1
 
 Step 2 'Close self sign-up BEFORE anything is public (Supabase dashboard)'
-Write-Host 'Supabase > Authentication > Providers > Email: turn OFF "Enable sign ups" (keep "Confirm email" on).'
-Write-Host 'Leave "Allow unverified email sign-ins" OFF. Do not enable Google yet.'
+Write-Host 'Supabase > Authentication > Sign In / Providers: keep "Allow new users to sign up" ON (Google needs it; the hook in step 6 is the gate).'
+Write-Host 'Email provider: keep it ENABLED (PIN sign-in uses it) with "Confirm email" on; leave "Allow unverified email sign-ins" OFF. Do not enable Google yet.'
 Pause-For 'Email sign-ups are off.'
 
 Step 3 'Push main to GitHub (fast-forward on top of "Create test")'
