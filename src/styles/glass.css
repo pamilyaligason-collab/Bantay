@@ -1,0 +1,53 @@
+/* Frosted glass over the animated sky. Contrast of these token pairs is enforced in src/features/look/contrast.test.ts. */
+:root {
+  --glow: 1; --glass: rgba(255,255,255,0.80); --glass-edge: rgba(255,255,255,0.55); --glass-ink2: #5C5C60; --ink2-sky: #48484C; --act: #005CC2;
+  --sky-storm-a: #B4BAD0; --sky-storm-b: #CDD2E3; --sky-rain-a: #BCCFE0; --sky-rain-b: #D5E2EE;
+  --sky-clear-a: #BFDCF4; --sky-clear-b: #E1EEFA; --sky-heat-a: #F0CDAA; --sky-heat-b: #F7E2CC;
+}
+:root[data-theme="dark"] {
+  --glow: 0.2; --glass: rgba(28,28,30,0.78); --glass-edge: rgba(255,255,255,0.12); --glass-ink2: #A8A8AF; --ink2-sky: #E4E4EA; --danger: #FF6961; --act: #66B3FF;
+  --sky-storm-a: #14172A; --sky-storm-b: #222844; --sky-rain-a: #172635; --sky-rain-b: #26394C;
+  --sky-clear-a: #12263D; --sky-clear-b: #1E4468; --sky-heat-a: #3A1E0E; --sky-heat-b: #5A3217;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --glow: 0.2; --glass: rgba(28,28,30,0.78); --glass-edge: rgba(255,255,255,0.12); --glass-ink2: #A8A8AF; --ink2-sky: #E4E4EA; --danger: #FF6961; --act: #66B3FF;
+    --sky-storm-a: #14172A; --sky-storm-b: #222844; --sky-rain-a: #172635; --sky-rain-b: #26394C;
+    --sky-clear-a: #12263D; --sky-clear-b: #1E4468; --sky-heat-a: #3A1E0E; --sky-heat-b: #5A3217;
+  }
+}
+
+.glass, .grp {
+  background: var(--glass); border: 0.5px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+}
+.glass .sub, .grp .sub, .grp .chev { color: var(--glass-ink2); }
+.hdr span, .sec, .sub { color: var(--ink2-sky); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass, .grp { background: var(--cell); } }
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .grp { background: var(--cell); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Sky: calm, cheap, CSS only. Only transform animates (compositor); no per-frame repaint. */
+.sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(170deg, var(--a), var(--b)); }
+.sky[data-state="storm"] { --a: var(--sky-storm-a); --b: var(--sky-storm-b); }
+.sky[data-state="rain"] { --a: var(--sky-rain-a); --b: var(--sky-rain-b); }
+.sky[data-state="clear"] { --a: var(--sky-clear-a); --b: var(--sky-clear-b); }
+.sky[data-state="heat"] { --a: var(--sky-heat-a); --b: var(--sky-heat-b); }
+.sky::before, .sky::after { content: ""; position: absolute; inset: -20%; }
+.sky::before { background: radial-gradient(40% 30% at 30% 25%, rgb(255 255 255 / calc(0.35 * var(--glow))), transparent 70%), radial-gradient(35% 25% at 75% 60%, rgb(255 255 255 / calc(0.22 * var(--glow))), transparent 70%); animation: sky-drift 40s ease-in-out infinite alternate; }
+.sky[data-state="heat"]::before { background: radial-gradient(45% 35% at 70% 15%, rgb(255 200 120 / calc(0.5 * var(--glow))), transparent 70%); animation-duration: 30s; }
+/* Rain: a pattern one tile (160px) taller than the sky slides down by exactly one tile, so the loop is seamless. */
+.sky[data-state="rain"]::after, .sky[data-state="storm"]::after {
+  inset: -160px 0 0 0; will-change: transform;
+  background: repeating-linear-gradient(104deg, transparent 0 22px, rgb(255 255 255 / 0.14) 22px 23px);
+  background-size: 80px 160px; animation: sky-rain 1.1s linear infinite;
+}
+.sky[data-state="storm"]::after { animation-duration: 0.8s; }
+.sky[data-paused="true"]::before, .sky[data-paused="true"]::after { animation-play-state: paused; }
+@keyframes sky-drift { to { transform: translate3d(6%, 4%, 0) scale(1.08); } }
+@keyframes sky-rain { to { transform: translate3d(0, 160px, 0); } }
+@media (prefers-reduced-motion: reduce) { .sky::before, .sky::after { animation: none; } }
+
+.ptr { position: absolute; top: 0; left: 0; right: 0; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--ink2-sky); pointer-events: none; transform: translate3d(0, -36px, 0); opacity: 0; }
+.ptr[data-on="true"] { transition: transform 200ms ease, opacity 200ms ease; }
