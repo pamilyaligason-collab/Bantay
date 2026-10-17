@@ -24,7 +24,7 @@
         "path": "bantay-assistant",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://REPLACE-WITH-APP-ORIGIN"
+          "allowedOrigins": "https://bantay.pages.dev"
         }
       }
     },
