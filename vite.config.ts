@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
+
 export default defineConfig({
+  // SYNC_HARNESS=1 also builds sync-harness.html, the page the sync e2e spec drives. Off by default: not shipped.
+  build: process.env.SYNC_HARNESS ? { rollupOptions: { input: { main: 'index.html', harness: 'sync-harness.html' } } } : {},
   plugins: [
     react(),
     VitePWA({

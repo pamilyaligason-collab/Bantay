@@ -30,11 +30,13 @@ export const enqueue = (table: string, op: string, payload: unknown) =>
 
 /** Send queued rows oldest first. A row is deleted only after sendFn resolves.
  *  On reject: tries += 1 and draining stops, so write order is kept and an offline phone makes one call.
+ *  `only` (optional) skips rows it rejects: they stay queued, are not sent and not counted.
  *  Returns how many rows were sent.
  *  ponytail: one poison row blocks the queue; callers can read `tries` and drop it. */
-export async function drain(sendFn: (row: OutboxRow) => Promise<unknown>): Promise<number> {
+export async function drain(sendFn: (row: OutboxRow) => Promise<unknown>, only?: (row: OutboxRow) => boolean): Promise<number> {
   let sent = 0
   for (const row of await db.outbox.orderBy('id').toArray()) {
+    if (only && !only(row)) continue // rows the caller will not send stay queued, untouched
     try {
       await sendFn(row)
     } catch {
