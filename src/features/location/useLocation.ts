@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
-import { DAMPAS, type Loc } from './geo'
+import { DAMPAS, type LatLon, type Loc } from './geo'
 
 export interface Home {
   name: string
   lat: number
   lon: number
 }
-export const getHome = async (): Promise<Home> => ((await db.kv.get('loc.home'))?.value as Home | undefined) ?? DAMPAS
+export const getHome = async (): Promise<Home> => ((await db.kv.get('loc.home').catch(() => undefined))?.value as Home | undefined) ?? DAMPAS
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
 const gps = () =>
@@ -29,6 +29,12 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
   } finally {
     if (ask) await db.kv.put({ key: 'loc.asked', value: true })
   }
+}
+
+/** The phone's position when GPS is already granted, else null (callers then use the home zones). Never prompts. */
+export function useGpsLoc(): LatLon | null {
+  const l = useLocation()
+  return l.source === 'gps' ? l : null
 }
 
 /** Never prompts by itself. Onboarding calls ask() after the why screen. */

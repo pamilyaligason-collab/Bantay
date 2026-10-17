@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { HOME_ZONES } from '../location/geo'
+import { useGpsLoc } from '../location/useLocation'
 import { HOME, type LatLon } from './alerts'
 import Lazy from './Lazy'
 import './safety.css'
@@ -15,7 +17,7 @@ export const LAYERS = [
 ] as const
 
 export const ventuskyUrl = (c: LatLon, layer: string, zoom = 7) =>
-  `https://embed.ventusky.com/?p=${r2(c.lat)};${r2(c.lon)};${zoom}&l=${layer}&w=soft&pin=${r2(HOME.lat)};${r2(HOME.lon)};dot;Home`
+  `https://embed.ventusky.com/?p=${r2(c.lat)};${r2(c.lon)};${zoom}&l=${layer}&w=soft&pin=${r2(c.lat)};${r2(c.lon)};dot;Here`
 
 const windyUrl = (c: LatLon) =>
   `https://embed.windy.com/embed2.html?lat=${r2(c.lat)}&lon=${r2(c.lon)}&detailLat=${r2(c.lat)}&detailLon=${r2(c.lon)}&zoom=7&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=true&calendar=now&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`
@@ -32,14 +34,24 @@ const LINKS = [
   ['JMA typhoon map', 'Japan Meteorological Agency typhoon tracks. Opens in a new tab.', 'https://www.jma.go.jp/bosai/map.html']
 ]
 
-export default function MapsPanel({ loc = null }: { loc?: LatLon | null }) {
+export default function MapsPanel({ loc }: { loc?: LatLon | null }) {
+  const gps = useGpsLoc()
+  const here = loc === undefined ? gps : loc
   const [layer, setLayer] = useState<string>(LAYERS[0][1])
-  const c = loc ?? HOME
+  const [place, setPlace] = useState<string | null>(null) // null = phone location when known, else the first zone
+  const active = place ?? (here ? 'here' : HOME_ZONES[0].id)
+  const c = HOME_ZONES.find((z) => z.id === active) ?? here ?? HOME
+  const places: [string, string][] = [...(here ? [['here', 'Near me'] as [string, string]] : []), ...HOME_ZONES.map((z): [string, string] => [z.id, z.name.split(',')[0]])]
   return (
     <div className="sf">
       <div role="group" aria-label="Map layer" className="sf-chips">
         {LAYERS.map(([label, id]) => (
           <button key={id} className="pill" aria-pressed={layer === id} onClick={() => setLayer(id)} style={{ background: layer === id ? 'var(--btn)' : 'var(--fill)', color: layer === id ? 'var(--btn-fg)' : 'var(--ink)' }}>{label}</button>
+        ))}
+      </div>
+      <div role="group" aria-label="Map place" className="sf-chips">
+        {places.map(([id, label]) => (
+          <button key={id} className="pill" aria-pressed={active === id} onClick={() => setPlace(id)} style={{ background: active === id ? 'var(--btn)' : 'var(--fill)', color: active === id ? 'var(--btn-fg)' : 'var(--ink)' }}>{label}</button>
         ))}
       </div>
       <Lazy summary="Ventusky weather map"><Frame title="Ventusky weather map centred on your area" src={ventuskyUrl(c, layer)} /></Lazy>

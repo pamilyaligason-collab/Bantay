@@ -1,3 +1,5 @@
+import { HOME_ZONES } from '../location/geo'
+
 export interface LatLon { lat: number; lon: number }
 export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air'
 
@@ -25,8 +27,8 @@ export interface Alert {
 
 export const ALERTS_KEY = 'safety.alerts' // Dexie kv key: the sync layer replaces this list, SafetyBrief reads it
 
-// Dampas pin (D-11).
-export const HOME: LatLon = { lat: 9.645705, lon: 123.877951 }
+// First home zone (Dampas, D-11): the default map centre when there is no phone location. Conel is the second zone (D-27).
+export const HOME: LatLon = HOME_ZONES[0]
 
 export const NOT_A_SIREN =
   'Bantay is not an earthquake or tsunami siren. If you feel strong shaking near the coast, move to high ground now. Do not wait for a message.'
@@ -42,11 +44,11 @@ export function distanceKm(a: LatLon, b: LatLon): number {
   return 12742 * Math.asin(Math.sqrt(h))
 }
 
-/** Priority tier first, then nearest to `loc` (home when null), then newest. Area-wide alerts (no point) count as distance 0 inside their tier.
+/** Priority tier first, then nearest to `loc` (the nearer of the two home zones when null), then newest. Area-wide alerts (no point) count as distance 0 inside their tier.
  *  Does not mutate the input. */
 export function rankAlerts(alerts: Alert[], loc: LatLon | null): Alert[] {
-  const ref = loc ?? HOME
-  const d = (a: Alert) => (a.lat == null || a.lon == null ? 0 : distanceKm(ref, { lat: a.lat, lon: a.lon }))
+  const refs: LatLon[] = loc ? [loc] : [...HOME_ZONES]
+  const d = (a: Alert) => (a.lat == null || a.lon == null ? 0 : Math.min(...refs.map((r) => distanceKm(r, { lat: a.lat!, lon: a.lon! }))))
   return [...alerts].sort((a, b) => TIER[a.kind] - TIER[b.kind] || d(a) - d(b) || b.issuedAt.localeCompare(a.issuedAt))
 }
 
