@@ -67,7 +67,7 @@ end $$;
 revoke execute on function public.ensure_self_person() from public, anon;
 grant execute on function public.ensure_self_person() to authenticated;
 
--- Before User Created hook. Accepts: an email present in invites (Google), or a synthetic member made by the service role.
+-- Before User Created hook. Accepts: an invited email signing up with the Google provider, or a synthetic member made by the service role.
 -- Anyone else is refused. app_metadata cannot be set by a self-signup, so created_by_admin cannot be forged by a client.
 create function public.hook_before_user_created(event jsonb) returns jsonb
   language plpgsql security definer set search_path = '' as $$
@@ -78,7 +78,9 @@ begin
      and coalesce(event -> 'user' -> 'app_metadata' ->> 'created_by_admin', '') = 'true' then
     return '{}'::jsonb;
   end if;
-  if em <> '' and exists (select 1 from public.invites where email = em) then
+  -- Invited emails only count for a Google identity: an Email-provider sign-up must not claim an invited address.
+  if em <> '' and coalesce(event -> 'user' -> 'app_metadata' ->> 'provider', '') = 'google'
+     and exists (select 1 from public.invites where email = em) then
     return '{}'::jsonb;
   end if;
   return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', 'Sign up is by invitation only.'));
@@ -95,6 +97,7 @@ create function public.pin_try(k uuid, lim int, win interval) returns int
   language plpgsql security definer set search_path = '' as $$
 declare f int;
 begin
+  delete from public.pin_attempts where locked_until < now() - interval '1 day'; -- housekeeping: stale rows of one-off guesses
   insert into public.pin_attempts as p (user_id, fails, locked_until) values (k, 1, now() + win)
   on conflict (user_id) do update set
     fails = case when p.locked_until is null or p.locked_until <= now() then 1 else p.fails + 1 end,
@@ -107,3 +110,12 @@ end $$;
 
 revoke execute on function public.pin_try(uuid, int, interval) from public, anon, authenticated;
 grant execute on function public.pin_try(uuid, int, interval) to service_role;
+
+-- Ends every session of a user (PIN reset, disable). Service role only. Access tokens already issued live until they expire,
+-- so keep the JWT expiry short (docs/AUTH.md).
+create function public.revoke_sessions(uid uuid) returns void
+  language sql security definer set search_path = '' as
+  $$ delete from auth.sessions where user_id = uid $$;
+
+revoke execute on function public.revoke_sessions(uuid) from public, anon, authenticated;
+grant execute on function public.revoke_sessions(uuid) to service_role;

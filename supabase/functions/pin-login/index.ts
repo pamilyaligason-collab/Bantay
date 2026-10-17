@@ -48,7 +48,9 @@ Deno.serve(async (req) => {
   try {
     const raw = await req.text()
     const body = raw.length <= 1024 ? JSON.parse(raw) : null
-    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown'
+    // The first x-forwarded-for hop is client-supplied; the last one is added by the platform proxy.
+    const xff = (req.headers.get('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+    const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip') ?? xff[xff.length - 1] ?? 'unknown'
     const r = await attemptLogin(body, ip, port)
     return json(r.body, r.status, cors)
   } catch {

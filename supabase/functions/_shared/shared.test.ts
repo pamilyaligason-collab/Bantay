@@ -55,6 +55,7 @@ function mockPort(over: Partial<Port> = {}): Port & { calls: string[] } {
     getAuthEmail: rec<string | null>('getAuthEmail', 'm-abc@members.bantay.invalid'),
     setPassword: rec('setPassword', true),
     setBanned: rec('setBanned', true),
+    revokeSessions: rec('revokeSessions', true),
     insertRole: rec<'ok' | 'handle_taken' | 'error'>('insertRole', 'ok'),
     updateRole: rec<'ok' | 'handle_taken' | 'not_found'>('updateRole', 'ok'),
     insertPerson: rec<string | null>('insertPerson', 'person-1'),
@@ -97,6 +98,20 @@ describe('admin-members dispatcher', () => {
     const p = mockPort()
     expect(await runAction({ action: 'set_pin', userId: ID, pin: '908172' }, p, ADMIN)).toEqual({ ok: true })
     expect(p.setPassword).toHaveBeenCalledWith(ID, await derivePassword('pep', ID, '908172'))
+    expect(p.revokeSessions).toHaveBeenCalledWith(ID)
+  })
+  it('set_pin reports failure when sessions cannot be revoked', async () => {
+    expect(await runAction({ action: 'set_pin', userId: ID, pin: '908172' }, mockPort({ revokeSessions: vi.fn(async () => false) }), ADMIN)).toEqual({ ok: false, error: 'bad_input' })
+  })
+  it('create refuses the admin role (admins use Google)', async () => {
+    const p = mockPort()
+    expect(await runAction({ ...create, role: 'admin' }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
+    expect(p.calls).toEqual([])
+  })
+  it('set_role admin is refused for PIN members but allowed for Google members', async () => {
+    expect(await runAction({ action: 'set_role', userId: ID, role: 'admin' }, mockPort(), ADMIN)).toEqual({ ok: false, error: 'bad_input' })
+    expect(await runAction({ action: 'set_role', userId: ID, role: 'admin' }, mockPort({ getAuthEmail: vi.fn(async () => 'a@gmail.com') }), ADMIN)).toEqual({ ok: true })
+    expect(await runAction({ action: 'set_role', userId: ID, role: 'member' }, mockPort(), ADMIN)).toEqual({ ok: true })
   })
   it('set_pin refuses Google members and unknown users', async () => {
     expect(await runAction({ action: 'set_pin', userId: ID, pin: '908172' }, mockPort({ getAuthEmail: vi.fn(async () => 'a@gmail.com') }), ADMIN)).toEqual({ ok: false, error: 'bad_input' })
@@ -108,14 +123,18 @@ describe('admin-members dispatcher', () => {
   })
   it('set_role works, but not on yourself', async () => {
     const p = mockPort()
-    expect(await runAction({ action: 'set_role', userId: ID, role: 'admin' }, p, ADMIN)).toEqual({ ok: true })
-    expect(p.updateRole).toHaveBeenCalledWith(ID, { role: 'admin' })
+    expect(await runAction({ action: 'set_role', userId: ID, role: 'member' }, p, ADMIN)).toEqual({ ok: true })
+    expect(p.updateRole).toHaveBeenCalledWith(ID, { role: 'member' })
     expect(await runAction({ action: 'set_role', userId: ADMIN, role: 'member' }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
   })
   it('disable flips the role flag and the auth ban, but not on yourself', async () => {
     const p = mockPort()
     expect(await runAction({ action: 'disable', userId: ID, disabled: true }, p, ADMIN)).toEqual({ ok: true })
     expect(p.setBanned).toHaveBeenCalledWith(ID, true)
+    expect(p.revokeSessions).toHaveBeenCalledWith(ID)
+    const q = mockPort()
+    await runAction({ action: 'disable', userId: ID, disabled: false }, q, ADMIN)
+    expect(q.revokeSessions).not.toHaveBeenCalled()
     expect(await runAction({ action: 'disable', userId: ADMIN, disabled: true }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
   })
   it('invite and uninvite lowercase the email', async () => {

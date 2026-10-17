@@ -60,6 +60,10 @@ function adapt(admin: Admin, pepper: string): Port {
       const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: banned ? '876000h' : 'none' })
       return !error
     },
+    async revokeSessions(userId) {
+      const { error } = await admin.rpc('revoke_sessions', { uid: userId })
+      return !error
+    },
     async insertRole(userId, role, handle) {
       const { error } = await admin.from('app_roles').insert({ user_id: userId, role, handle })
       return !error ? 'ok' : error.code === '23505' ? 'handle_taken' : 'error'

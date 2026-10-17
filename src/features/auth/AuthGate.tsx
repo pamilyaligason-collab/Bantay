@@ -8,7 +8,8 @@ const mark = (uid: string) => { try { localStorage.setItem(doneKey(uid), '1') } 
 
 /**
  * Signed out: SignIn. Signed in: make sure the member has their own people row (ensure_self_person), then the app.
- * Dev bypass: when VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY are unset (dev, unit tests, e2e) there is no auth and children render.
+ * Dev bypass: when VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY are unset, children render only outside production
+ * (dev, unit tests, or the e2e build made with BANTAY_ALLOW_NO_AUTH=1). A production build without them shows an alert.
  * Offline with a stored session still opens the app: the RPC is retried on the next online start.
  */
 export function AuthGate({ children }: { children: ReactNode }) {
@@ -36,7 +37,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => { alive = false; data.subscription.unsubscribe() }
   }, [])
 
-  if (!supabase) return <>{children}</>
+  if (!supabase) {
+    // Dev/test bypass only. A production build without env must never open the app unlocked.
+    if (import.meta.env.PROD && !__ALLOW_NO_AUTH__) return <p role="alert">Sign-in is not configured.</p>
+    return <>{children}</>
+  }
   if (state === 'loading') return null
   return state === 'out' ? <SignIn /> : <>{children}</>
 }

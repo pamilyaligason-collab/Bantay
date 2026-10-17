@@ -18,6 +18,7 @@ export default defineConfig({
   webServer: [
     {
       command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+      env: { BANTAY_ALLOW_NO_AUTH: '1' }, // the e2e build has no Supabase env on purpose (see vite.config.ts)
       url: `http://localhost:${PORT}`,
       reuseExistingServer: false,
       timeout: 180_000

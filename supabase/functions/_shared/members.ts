@@ -13,6 +13,7 @@ export interface Port {
   getAuthEmail(userId: string): Promise<string | null>
   setPassword(userId: string, password: string): Promise<boolean>
   setBanned(userId: string, banned: boolean): Promise<boolean>
+  revokeSessions(userId: string): Promise<boolean> // public.revoke_sessions: ends every session of the user
   insertRole(userId: string, role: Role, handle: string): Promise<'ok' | 'handle_taken' | 'error'>
   updateRole(userId: string, patch: { role?: Role; handle?: string; disabled?: boolean }): Promise<'ok' | 'handle_taken' | 'not_found'>
   insertPerson(userId: string, displayName: string, createdBy: string): Promise<string | null> // returns person id
@@ -37,7 +38,7 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
     case 'create': {
       const name = typeof b.displayName === 'string' ? b.displayName.trim() : ''
       const handle = normalizeHandle(b.handle)
-      if (!name || name.length > 80 || !handle || !validatePin(b.pin) || !isRole(b.role)) return bad
+      if (!name || name.length > 80 || !handle || !validatePin(b.pin) || !isRole(b.role) || b.role === 'admin') return bad // admins sign in with Google only, never with a PIN
       // The user id is not known until Supabase makes it, so create with a throwaway password, then set the derived one.
       const userId = await port.createAuthUser(syntheticEmail(), randomSecret(), name)
       if (!userId) return bad
@@ -54,7 +55,8 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
       const email = await port.getAuthEmail(b.userId)
       if (!email) return { ok: false, error: 'not_found' }
       if (!email.endsWith('@' + SYNTHETIC_DOMAIN)) return bad // Google members have no PIN
-      return (await port.setPassword(b.userId, await derivePassword(port.pepper, b.userId, b.pin))) ? { ok: true } : bad
+      if (!(await port.setPassword(b.userId, await derivePassword(port.pepper, b.userId, b.pin)))) return bad
+      return (await port.revokeSessions(b.userId)) ? { ok: true } : bad // the old PIN's sessions must not outlive the reset
     }
     case 'set_handle': {
       const handle = normalizeHandle(b.handle)
@@ -63,13 +65,19 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
     }
     case 'set_role': {
       if (!isId(b.userId) || !isRole(b.role) || b.userId === callerId) return bad
+      if (b.role === 'admin') {
+        const email = await port.getAuthEmail(b.userId)
+        if (!email) return { ok: false, error: 'not_found' }
+        if (email.endsWith('@' + SYNTHETIC_DOMAIN)) return bad // PIN members cannot be admins
+      }
       return fromUpdate(await port.updateRole(b.userId, { role: b.role }))
     }
     case 'disable': {
       if (!isId(b.userId) || typeof b.disabled !== 'boolean' || b.userId === callerId) return bad
       const r = await port.updateRole(b.userId, { disabled: b.disabled })
       if (r !== 'ok') return fromUpdate(r)
-      return (await port.setBanned(b.userId, b.disabled)) ? { ok: true } : bad // also blocks Google sign-in and token refresh
+      if (!(await port.setBanned(b.userId, b.disabled))) return bad // also blocks Google sign-in and token refresh
+      return !b.disabled || (await port.revokeSessions(b.userId)) ? { ok: true } : bad
     }
     case 'invite': {
       const email = normalizeEmail(b.email)

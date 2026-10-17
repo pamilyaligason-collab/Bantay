@@ -9,10 +9,12 @@ do $$ begin
 end $$;
 create schema auth;
 create table auth.users (id uuid primary key, email text, raw_app_meta_data jsonb, raw_user_meta_data jsonb);
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to authenticated, anon, supabase_auth_admin, service_role;
 grant execute on function auth.uid() to authenticated, anon;
 grant usage on schema public to authenticated, anon, service_role;
+grant select, delete on auth.sessions to service_role;
 alter default privileges in schema public grant all on tables to service_role;
 
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
@@ -70,6 +72,8 @@ select pg_temp.ok(pg_temp.fails($$select public.ensure_self_person()$$), 'anon c
 
 -- Before User Created hook
 reset role; set role supabase_auth_admin;
+select pg_temp.ok(not pg_temp.accepted('invited@example.com', '{"provider":"email"}'), 'hook rejects invited email on the Email provider');
+select pg_temp.ok(not pg_temp.accepted('invited@example.com', '{}'), 'hook rejects invited email with no provider');
 select pg_temp.ok(not pg_temp.accepted('rando@example.com', '{"provider":"google"}'), 'hook rejects uninvited Google email');
 select pg_temp.ok(pg_temp.accepted('invited@example.com', '{"provider":"google"}'), 'hook accepts invited Google email');
 select pg_temp.ok(pg_temp.accepted('Invited@Example.com', '{"provider":"google"}'), 'hook invite match ignores case');
@@ -78,6 +82,20 @@ select pg_temp.ok(not pg_temp.accepted('m-5b6e2c1e-0000-4000-8000-000000000001@m
 select pg_temp.ok(not pg_temp.accepted('m-x@evil.example.com', '{"created_by_admin":true}'), 'hook rejects admin mark on a real domain');
 select pg_temp.ok(not pg_temp.accepted('', '{"created_by_admin":true}'), 'hook rejects empty email');
 reset role;
+
+-- revoke_sessions: service role only, removes only that user's sessions
+insert into auth.sessions (user_id) values ('00000000-0000-0000-0000-0000000000b1'), ('00000000-0000-0000-0000-0000000000b1'), ('00000000-0000-0000-0000-0000000000a1');
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.ok(pg_temp.fails($$select public.revoke_sessions('00000000-0000-0000-0000-0000000000b1')$$), 'authenticated (even admin) cannot call revoke_sessions');
+reset role; set role anon;
+select pg_temp.ok(pg_temp.fails($$select public.revoke_sessions('00000000-0000-0000-0000-0000000000b1')$$), 'anon cannot call revoke_sessions');
+reset role; set role supabase_auth_admin;
+select pg_temp.ok(pg_temp.fails($$select public.revoke_sessions('00000000-0000-0000-0000-0000000000b1')$$), 'auth admin cannot call revoke_sessions');
+reset role; set role service_role;
+select public.revoke_sessions('00000000-0000-0000-0000-0000000000b1');
+reset role;
+select pg_temp.ok((select count(*) from auth.sessions where user_id = '00000000-0000-0000-0000-0000000000b1') = 0, 'service_role revoke_sessions removes that user sessions');
+select pg_temp.ok((select count(*) from auth.sessions) = 1, 'revoke_sessions leaves other users sessions');
 
 -- pin_try: 5 attempts allowed, the 6th is over the limit, a lapsed window restarts
 create temp table t_k as select '99999999-0000-0000-0000-000000000001'::uuid as k;
@@ -91,6 +109,9 @@ select pg_temp.ok((select locked_until > now() + interval '14 minutes' from publ
 update public.pin_attempts set locked_until = now() - interval '1 second';
 select pg_temp.ok((select public.pin_try(k, 5, '15 minutes') from t_k) = 1, 'pin_try window restarts after the lock lapses');
 reset role;
+insert into public.pin_attempts values ('99999999-0000-0000-0000-0000000000f1', 3, now() - interval '2 days');
+set role service_role; select public.pin_try('99999999-0000-0000-0000-0000000000f2', 5, '15 minutes'); reset role;
+select pg_temp.ok((select count(*) from public.pin_attempts where user_id = '99999999-0000-0000-0000-0000000000f1') = 0, 'pin_try purges rows stale for over a day');
 
 -- ensure_self_person: idempotent, names from profile, never downgrades an admin
 create temp table t_p (pid uuid);
