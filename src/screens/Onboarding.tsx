@@ -66,6 +66,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           Turn on alerts
         </button>
         <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Change this any time in your phone settings.</p>
+        <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Your admin can see which screens you use, never your health values.</p>
       </Card>
     )
   }

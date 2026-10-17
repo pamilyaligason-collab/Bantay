@@ -1,0 +1,19 @@
+.ad { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ad > * { min-width: 0; }
+.ad-card { padding: 4px 0; }
+.ad-pad { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; }
+.ad-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px; min-width: 0; }
+.ad-row + .ad-row { border-top: 0.5px solid var(--sep); }
+.ad-grow { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+.ad-lbl { display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--ink2); }
+.ad-in { min-height: 44px; font: inherit; font-size: 17px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
+.ad-b { min-height: 44px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--fill); color: var(--act); font-size: 15px; font-weight: 600; }
+.ad-b.go { background: var(--btn); color: var(--btn-fg); }
+.ad-b.bad { color: var(--warn); }
+.ad-err { color: var(--warn); font-weight: 600; margin: 0; font-size: 15px; }
+.ad-note { background: var(--cell); border-radius: 14px; padding: 12px 14px; font-size: 15px; margin: 0; }
+.ad-tag { background: var(--fill); font-size: 13px; padding: 2px 8px; border-radius: 8px; color: var(--ink); }
+.ad-confirm { position: sticky; bottom: 12px; z-index: 5; background: var(--cell); color: var(--ink); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ad-confirm p { margin: 0; font-weight: 600; }
+.ad-btns { display: flex; gap: 8px; }
+.ad-btns > button { flex: 1; }
