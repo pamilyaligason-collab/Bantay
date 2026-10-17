@@ -84,3 +84,21 @@ working until it expires, so a short expiry is what closes that window.
   attacker may still tell a known handle from an unknown one. The lockout and the generic text limit what that is worth.
 - The client IP for the per-IP limit comes from cf-connecting-ip, then x-real-ip, then the LAST x-forwarded-for hop.
 - Never log PINs, derived passwords or tokens. The functions log nothing from request bodies.
+
+## 7. Quick login on a family phone (D-24, lane Q1)
+
+Run `supabase/migrations/0006_family_profiles.sql` after 0005 (adds `family_profiles()`; rehearsed in `supabase/tests/chain_rehearsal.sql`).
+
+How it behaves:
+- The public sign-in page never lists names. After any sign-in the app asks `family_profiles()` (signed-in, non-disabled members only; names, handle for PIN members, kind; no emails) and keeps the list in this phone's localStorage (`bantay.family`). Only a phone that has signed in before shows the picker.
+- Picker: tap a face, then the 6-digit PIN pad (PIN members) or Continue with Google. "Not in the list?" opens the typed name + PIN and Google options.
+- Sessions on this project never expire, so after the first sign-in the phone stays signed in; the picker matters after Switch person or a sign-out.
+- Family > This phone: Turn on fingerprint or face sign-in, Not you? Switch person (signs out, keeps the picker), Forget this phone (clears the picker list and passkey flags, signs out). Only a local flag `bantay.passkey.<personId>` is stored, never key material.
+- Google errors that come back in the URL (`?error=` or `#error=`) are shown on the sign-in screen and removed from the address bar. "Signups not allowed" or a hook refusal reads "This Google account is not invited yet. Ask your family admin."
+
+### Passkeys (beta) dashboard step, Lloyd does this once
+1. Supabase, Authentication, Passkeys (beta): enable it.
+2. Relying party ID: `bantay.pages.dev`. Allowed origin: `https://bantay.pages.dev`.
+3. Nothing to change in the app: supabase-js 2.118 has passkeys on by default (the old `experimental.passkey` flag is ignored, so it is not set).
+Until step 1 is done the "Turn on fingerprint or face sign-in" button reports "Not available on this phone yet" and nothing breaks. Passkeys work only on the real origin (HTTPS, matching RP ID), not on localhost or a preview URL.
+Known limit: the passkey sign-in is the browser's own picker, so it signs in whoever owns the passkey the person chooses, which may differ from the face tapped. Removing a passkey on the server is not exposed in the app yet; "Forget this phone" only forgets it locally.

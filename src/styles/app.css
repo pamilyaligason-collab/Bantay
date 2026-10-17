@@ -52,3 +52,20 @@ body { background: var(--bg); }
 .si-err { margin: 0; padding: 14px 16px; font-size: 15px; color: var(--ink); }
 .si-hint { margin: 0; padding: 0 4px; font-size: 13px; color: var(--ink2); }
 .admin-link { margin-left: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; color: var(--act); font-weight: 600; text-decoration: none; }
+
+/* Quick login picker (D-24) */
+.faces { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+.face { min-height: 120px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 8px; color: var(--ink); min-width: 0; }
+.avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--btn); color: var(--btn-fg); display: grid; place-items: center; font-size: 20px; font-weight: 700; flex: none; }
+.avatar.big { width: 72px; height: 72px; font-size: 26px; }
+.fname { font-size: 16px; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+.pickcard { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 16px; }
+.pickcard > .btn, .pickcard > .btn2 { max-width: 320px; }
+.pname { margin: 0; font-size: 22px; overflow-wrap: anywhere; text-align: center; }
+.pinpad { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 300px; }
+.dots { display: flex; gap: 12px; min-height: 20px; }
+.dots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink2); box-sizing: border-box; }
+.dots span.on { background: var(--ink); border-color: var(--ink); }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.key { min-height: 56px; border: 0; border-radius: 14px; background: var(--fill); color: var(--ink); font-size: 24px; font-weight: 600; }
+.key:disabled { opacity: 0.5; }
