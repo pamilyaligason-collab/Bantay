@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay prototype v5</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#F2F2F7}
+.bt{--bg:#F2F2F7;--cell:#FFFFFF;--ink:#000000;--ink2:#6C6C70;--sep:#C6C6C8;--fill:rgba(118,118,128,0.12);--act:#0066D6;--btn:#0066D6;--btn-fg:#FFFFFF;--ok:#1E7A35;--warn:#B25000;--warn-bg:#FFF4E5;--danger:#D70015;--c1:#2B6CC4;--c2:#C2610F;--band:rgba(43,108,196,0.12);--bar:rgba(249,249,249,0.78);--bar-edge:rgba(0,0,0,0.08);--shadow:0 1px 2px rgba(0,0,0,0.06);--red:#D70015;--orange:#C93400;--indigo:#5856D6;--teal:#0071A4;--purple:#8E44B8;color-scheme:light}
+.bt.dark{--bg:#000000;--cell:#1C1C1E;--ink:#FFFFFF;--ink2:#98989F;--sep:#38383A;--fill:rgba(118,118,128,0.24);--act:#4BA1FF;--btn:#0B6BD1;--btn-fg:#FFFFFF;--ok:#30D158;--warn:#FF9F0A;--warn-bg:#2E2414;--danger:#D70015;--c1:#5B95E0;--c2:#C9772A;--band:rgba(91,149,224,0.16);--bar:rgba(30,30,32,0.78);--bar-edge:rgba(255,255,255,0.10);--shadow:none;--red:#FF6961;--orange:#FF9F0A;--indigo:#9A98FF;--teal:#5AC8F5;--purple:#DA8FFF;color-scheme:dark}
+@media (prefers-color-scheme: dark){.bt.system{--bg:#000000;--cell:#1C1C1E;--ink:#FFFFFF;--ink2:#98989F;--sep:#38383A;--fill:rgba(118,118,128,0.24);--act:#4BA1FF;--btn:#0B6BD1;--btn-fg:#FFFFFF;--ok:#30D158;--warn:#FF9F0A;--warn-bg:#2E2414;--danger:#D70015;--c1:#5B95E0;--c2:#C9772A;--band:rgba(91,149,224,0.16);--bar:rgba(30,30,32,0.78);--bar-edge:rgba(255,255,255,0.10);--shadow:none;--red:#FF6961;--orange:#FF9F0A;--indigo:#9A98FF;--teal:#5AC8F5;--purple:#DA8FFF;color-scheme:dark}}
+.bt{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.bt button{cursor:pointer;font:inherit;transition:background-color 150ms ease,transform 100ms ease,opacity 150ms ease}
+.bt button:active{transform:scale(0.98);opacity:0.85}
+.bt button:focus-visible,.bt a:focus-visible,.bt input:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){.bt button{transition:none}.bt button:active{transform:none}}
+.grp{background:var(--cell);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.row{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 16px;width:100%;box-sizing:border-box;background:transparent;border:0;color:var(--ink);text-align:left;text-decoration:none;font-size:17px}
+.grp .row+.row::before{content:"";position:absolute;top:0;left:16px;right:0;height:0.5px;background:var(--sep)}
+.grp.ic .row+.row::before{left:58px}
+.tile{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none;color:#FFFFFF}
+.grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.sub{font-size:15px;color:var(--ink2)}
+.sec{font-size:13px;color:var(--ink2);margin:0 16px 6px}
+.hd{font-size:22px;font-weight:700;margin:4px 4px 8px;letter-spacing:-0.01em}
+.btn{min-height:52px;border:0;border-radius:14px;background:var(--btn);color:var(--btn-fg);font-size:17px;font-weight:600;width:100%;padding:0 16px}
+.btn2{min-height:52px;border:0;border-radius:14px;background:var(--fill);color:var(--act);font-size:17px;font-weight:600;width:100%;padding:0 16px}
+.pill{min-height:36px;border:0;border-radius:18px;padding:0 14px;font-size:15px;font-weight:600}
+.chev{color:var(--ink2);flex:none}
+.sw{position:relative;width:51px;height:31px;border-radius:16px;border:0;padding:0;flex:none}
+.sw span{position:absolute;top:2px;width:27px;height:27px;border-radius:14px;background:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,0.2);transition:left 200ms ease}
+.glass{background:var(--bar);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border:0.5px solid var(--bar-edge)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:var(--cell)}}
+</style>
+</helmet>
+<div class="bt {{themeClass}}" style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-size: 17px; line-height: 1.4; overflow: hidden; position: relative">
+
+<div style="padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px">
+<sc-if value="{{showBack}}" hint-placeholder-val="{{ false }}">
+<button onClick="{{back}}" style="min-height: 44px; border: 0; background: transparent; color: var(--act); font-size: 17px; display: flex; align-items: center; gap: 2px; padding: 0"><svg width="13" height="21" viewBox="0 0 13 21" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 2L3 10.5 11 19"></path></svg>{{backLabel}}</button>
+</sc-if>
+<span style="flex: 1"></span>
+<sc-if value="{{showToday}}" hint-placeholder-val="{{ true }}">
+<button onClick="{{goSettings}}" aria-label="Settings" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: var(--fill); color: var(--act); display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+</sc-if>
+<span style="font-size: 12px; font-weight: 600; color: var(--ink2); background: var(--fill); border-radius: 8px; padding: 3px 8px">Demo</span>
+</div>
+
+<div style="flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px">
+
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 0 4px">
+<h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.15">{{title}}</h1>
+<sc-if value="{{hasSubtitle}}" hint-placeholder-val="{{ false }}"><span style="font-size: 15px; color: var(--ink2)">{{subtitle}}</span></sc-if>
+</div>
+
+<sc-if value="{{offline}}" hint-placeholder-val="{{ false }}">
+<div role="status" class="grp" style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; margin-top: -8px"><span class="tile" style="background: #8E8E93">○</span><span class="sub" style="color: var(--ink)">Offline. Showing what was saved at 7:40 AM.</span></div>
+</sc-if>
+
+<sc-if value="{{showPersons}}" hint-placeholder-val="{{ false }}">
+<div role="group" aria-label="Whose health" style="display: flex; gap: 8px; margin-top: -8px">
+<sc-for list="{{persons}}" as="pp" hint-placeholder-count="2"><button class="pill" onClick="{{pp.pick}}" aria-pressed="{{pp.pressed}}" style="background: {{pp.bg}}; color: {{pp.fg}}">{{pp.label}}</button></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showSeg}}" hint-placeholder-val="{{ false }}">
+<div role="tablist" aria-label="Sections" style="display: grid; grid-template-columns: repeat({{segN}}, minmax(0, 1fr)); gap: 2px; background: var(--fill); border-radius: 10px; padding: 2px; margin-top: -8px">
+<sc-for list="{{seg}}" as="sg" hint-placeholder-count="3"><button role="tab" onClick="{{sg.pick}}" aria-selected="{{sg.sel}}" style="min-height: 36px; border: 0; border-radius: 8px; background: {{sg.bg}}; box-shadow: {{sg.shadow}}; color: var(--ink); font-size: 15px; font-weight: {{sg.weight}}">{{sg.label}}</button></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showWelcome}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<p style="margin: 0; font-size: 20px; line-height: 1.35; padding: 0 4px">Your family’s health, weather and safety, in one place.</p>
+<div class="grp ic">
+<sc-for list="{{welcomeSteps}}" as="w" hint-placeholder-count="3">
+<div class="row" style="align-items: flex-start; padding: 14px 16px"><span class="tile" style="background: {{w.dot}}; border-radius: 15px; font-weight: 700; font-size: 15px">{{w.mark}}</span><span class="grow"><strong style="font-weight: 600">{{w.title}}</strong><span class="sub">{{w.text}}</span></span></div>
+</sc-for>
+</div>
+<button class="btn" onClick="{{welcomeNext}}">{{welcomeButton}}</button>
+<p class="sub" style="margin: 0; text-align: center">Alerts start on for everyone. Change them any time in Settings.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{noConnBlock}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div class="grp" style="padding: 20px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+<strong style="font-size: 20px">No connection</strong>
+<span class="sub">Bantay couldn’t load your family’s data. Nothing is lost; it just isn’t shown yet.</span>
+<button class="btn" onClick="{{retry}}">Try again</button>
+</div>
+<p class="sec" style="margin-bottom: -10px">These work without a connection</p>
+<div class="grp">
+<button class="row" onClick="{{openMedId}}"><span class="grow">My medical ID</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row" onClick="{{goSafety}}"><span class="grow">Hotlines and safety cards</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showToday}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 22px">
+
+<sc-if value="{{hasUrgent}}" hint-placeholder-val="{{ true }}">
+<div role="alert" style="border-radius: 20px; padding: 16px; background: {{urgent.bg}}; color: #FFFFFF; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; gap: 8px; align-items: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"></path></svg><span style="font-size: 15px; font-weight: 600">{{urgent.kicker}}</span><span style="flex: 1"></span><span style="font-size: 14px; opacity: 0.9">{{urgentCount}}</span></div>
+<strong style="font-size: 21px; line-height: 1.25">{{urgent.title}}</strong>
+<span style="font-size: 16px; line-height: 1.35">{{urgent.text}}</span>
+<div style="display: flex; gap: 8px; margin-top: 4px"><button onClick="{{urgent.act}}" style="flex: 1; min-height: 48px; border: 0; border-radius: 12px; background: #FFFFFF; color: {{urgent.bg}}; font-size: 17px; font-weight: 600">{{urgent.actLabel}}</button><button onClick="{{urgent.done}}" style="min-height: 48px; border: 0; border-radius: 12px; background: rgba(255,255,255,0.22); color: #FFFFFF; font-size: 17px; font-weight: 600; padding: 0 18px">Done</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{alertsOff}}" hint-placeholder-val="{{ false }}">
+<div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 10px"><strong>Alerts are off on this phone</strong><span class="sub">You won’t hear about storms or missed medicines until you open Bantay.</span><button class="btn" onClick="{{turnOn}}">Turn on alerts</button></div>
+</sc-if>
+
+<button onClick="{{openWeather}}" aria-label="Weather details" style="text-align: left; border: 0; border-radius: 20px; padding: 14px 16px; background: {{sky.grad}}; color: #FFFFFF; display: flex; align-items: center; gap: 14px">
+<svg width="40" height="40" viewBox="0 0 64 64" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sky.icon}}"></path></svg>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0"><span style="font-size: 15px; font-weight: 600">General Santos</span><span style="font-size: 15px">{{sky.cond}}. {{sky.hl}}</span><span style="font-size: 15px">{{rainNote}}</span></span>
+<span style="font-size: 46px; font-weight: 300; line-height: 1">{{sky.temp}}</span>
+</button>
+
+<section style="display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="hd">Your day</h2><button onClick="{{goHealth}}" style="border: 0; background: transparent; color: var(--act); font-size: 17px; min-height: 44px">My health</button></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+
+<button onClick="{{openBp}}" class="grp" style="text-align: left; border: 0; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); min-height: 132px">
+<span style="color: var(--red); font-weight: 600; font-size: 15px">♥ Blood pressure</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.1">{{bpLatest}}</span>
+<span class="sub" style="font-size: 14px">mmHg, {{bpWhenLower}}</span>
+<svg width="100%" height="28" viewBox="0 0 320 150" preserveAspectRatio="none" aria-hidden="true"><polyline points="{{bpTop}}" fill="none" stroke="var(--c1)" stroke-width="8" stroke-linejoin="round"></polyline><polyline points="{{bpBot}}" fill="none" stroke="var(--c2)" stroke-width="8" stroke-linejoin="round"></polyline></svg>
+</button>
+
+<button onClick="{{openMedsInv}}" class="grp" style="text-align: left; border: 0; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); min-height: 132px">
+<span style="color: var(--ok); font-weight: 600; font-size: 15px">Medicines</span>
+<span style="display: flex; align-items: center; gap: 10px"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="17" fill="none" stroke="var(--fill)" stroke-width="7"></circle><circle cx="22" cy="22" r="17" fill="none" stroke="#34C759" stroke-width="7" stroke-linecap="round" stroke-dasharray="{{medDash}}" transform="rotate(-90 22 22)"></circle></svg><span style="font-size: 26px; font-weight: 700">{{medsToday}}</span></span>
+<span class="sub" style="font-size: 14px">{{medNext}}</span>
+</button>
+
+<button onClick="{{openHabits}}" class="grp" style="text-align: left; border: 0; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); min-height: 132px">
+<span style="color: var(--orange); font-weight: 600; font-size: 15px">Moving</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.1">95 min</span>
+<span class="sub" style="font-size: 14px">of 150 this week</span>
+<span style="height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; margin-top: 6px"><span style="display: block; width: 63%; height: 100%; background: #FF9500"></span></span>
+</button>
+
+<div class="grp" style="padding: 14px; display: flex; flex-direction: column; gap: 4px; min-height: 132px; box-sizing: border-box">
+<span style="color: var(--act); font-weight: 600; font-size: 15px">Check-in</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.1">{{streak}} days</span>
+<span class="sub" style="font-size: 14px">in a row</span>
+<sc-if value="{{notOk}}" hint-placeholder-val="{{ true }}"><button onClick="{{sayOk}}" class="pill" style="background: var(--btn); color: var(--btn-fg); margin-top: 4px">I’m OK</button></sc-if>
+<sc-if value="{{isOk}}" hint-placeholder-val="{{ false }}"><span style="font-weight: 600; color: var(--ok); margin-top: 8px">✓ Checked in</span></sc-if>
+</div>
+
+<button onClick="{{openHabits}}" class="grp" style="text-align: left; border: 0; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); min-height: 132px">
+<span style="color: var(--indigo); font-weight: 600; font-size: 15px">Sleep</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.1">7 h 10 m</span>
+<span class="sub" style="font-size: 14px">last night</span>
+<span class="sub" style="font-size: 12px; margin-top: 4px">From your phone’s health app</span>
+</button>
+
+<div class="grp" style="padding: 14px; display: flex; flex-direction: column; gap: 4px; min-height: 132px; box-sizing: border-box">
+<span style="color: var(--teal); font-weight: 600; font-size: 15px">Water</span>
+<span style="font-size: 26px; font-weight: 700; line-height: 1.1">{{water}} of 8</span>
+<span aria-hidden="true" style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; margin: 4px 0"><sc-for list="{{waterDots}}" as="wd" hint-placeholder-count="8"><span style="height: 10px; border-radius: 3px; background: {{wd.fill}}"></span></sc-for></span>
+<button onClick="{{addWater}}" class="pill" style="background: var(--fill); color: var(--act)">+ 1 glass</button>
+</div>
+
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Coming up</h2>
+<div class="grp ic">
+<sc-for list="{{shortcuts}}" as="sc" hint-placeholder-count="4">
+<button class="row" onClick="{{sc.open}}"><span class="tile" style="background: {{sc.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sc.icon}}"></path></svg></span><span class="grow"><span style="font-weight: 600">{{sc.title}}</span><span class="sub" style="font-size: 15px">{{sc.sub}}</span></span><sc-if value="{{sc.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #FF3B30; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 6px">{{sc.badge}}</span></sc-if><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+</sc-for>
+</div>
+</section>
+
+</div>
+</sc-if>
+
+<sc-if value="{{showWeather}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="border-radius: 24px; padding: 22px 18px; background: {{sky.grad}}; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center">
+<span style="font-size: 22px; font-weight: 500">{{wxPlace}}</span>
+<span style="font-size: 88px; font-weight: 200; line-height: 1">{{sky.temp}}</span>
+<span style="font-size: 19px; font-weight: 500">{{sky.cond}}</span>
+<span style="font-size: 17px">{{sky.hl}}, feels like {{sky.feels}}</span>
+<sc-if value="{{hasWarnings}}" hint-placeholder-val="{{ true }}"><div style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; width: 100%"><sc-for list="{{warnings}}" as="x" hint-placeholder-count="2"><button onClick="{{x.open}}" style="border: 0; border-radius: 12px; background: rgba(0,0,0,0.25); color: #FFFFFF; padding: 10px 12px; display: flex; justify-content: space-between; gap: 8px; text-align: left; font-size: 15px"><span><strong>{{x.headline}}</strong><br>{{x.kicker}}</span><span style="text-decoration: underline; white-space: nowrap">Details</span></button></sc-for></div></sc-if>
+</div>
+<div role="group" aria-label="Location" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; background: var(--fill); border-radius: 10px; padding: 2px">
+<sc-for list="{{wxModes}}" as="wm" hint-placeholder-count="2"><button onClick="{{wm.pick}}" aria-pressed="{{wm.pressed}}" style="min-height: 36px; border: 0; border-radius: 8px; background: {{wm.bg}}; box-shadow: {{wm.shadow}}; color: var(--ink); font-size: 15px; font-weight: {{wm.weight}}">{{wm.label}}</button></sc-for>
+</div>
+<div class="grp" style="padding: 12px 0 10px">
+<span class="sec" style="display: block">Next 24 hours. Rain likely from 3 PM.</span>
+<div style="display: flex; gap: 2px; overflow-x: auto; padding: 4px 10px; scrollbar-width: none">
+<sc-for list="{{hours24}}" as="h" hint-placeholder-count="12"><div style="flex: none; width: 50px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 15px"><span class="sub" style="font-size: 14px">{{h.t}}</span><svg width="24" height="24" viewBox="0 0 64 64" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{h.icon}}"></path></svg><span style="font-size: 12px; color: var(--c1); font-weight: 600; min-height: 14px">{{h.rain}}</span><span style="font-weight: 600">{{h.temp}}</span></div></sc-for>
+</div>
+</div>
+<div class="grp" style="padding: 8px 0">
+<span class="sec" style="display: block; margin-top: 4px">7-day forecast</span>
+<sc-for list="{{days7}}" as="d" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 0.5px solid var(--sep)"><span style="width: 52px; font-weight: 600">{{d.d}}</span><span style="width: 52px; display: flex; flex-direction: column; align-items: center"><svg width="24" height="24" viewBox="0 0 64 64" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.icon}}"></path></svg><span style="font-size: 12px; color: var(--c1); font-weight: 600">{{d.rain}}</span></span><span class="sub" style="width: 32px; text-align: right">{{d.lo}}</span><span style="flex: 1; height: 5px; border-radius: 3px; background: var(--fill); position: relative"><span style="position: absolute; top: 0; bottom: 0; left: {{d.l}}; width: {{d.w}}; border-radius: 3px; background: linear-gradient(90deg, #5AC8FA, #FF9500)"></span></span><span style="width: 32px; font-weight: 600">{{d.hi}}</span></div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{wxStats}}" as="st" hint-placeholder-count="8"><div class="grp" style="padding: 14px; display: flex; flex-direction: column; gap: 4px; min-height: 96px"><span class="sub" style="font-size: 13px">{{st.k}}</span><span style="font-size: 26px; font-weight: 600">{{st.v}}</span><span class="sub" style="font-size: 14px">{{st.s}}</span></div></sc-for>
+</div>
+<div class="grp">
+<div role="group" aria-label="Map layer" style="display: flex; gap: 6px; padding: 10px">
+<sc-for list="{{layers}}" as="ly" hint-placeholder-count="4"><button onClick="{{ly.pick}}" aria-pressed="{{ly.pressed}}" class="pill" style="flex: 1; padding: 0 6px; background: {{ly.bg}}; color: {{ly.fg}}">{{ly.label}}</button></sc-for>
+</div>
+<button onClick="{{showMap}}" style="width: 100%; height: 200px; border: 0; background: linear-gradient(160deg, #1B2B47, #2F6FB0); color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 16px; font-weight: 600"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"></path></svg>{{mapLabel}}<span style="font-size: 13px; font-weight: 400; opacity: 0.85">Live Windy map loads here in the app</span></button>
+</div>
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Hazard maps</h2>
+<div class="grp ic">
+<sc-for list="{{hazardLinks}}" as="l" hint-placeholder-count="5"><a class="row" href="{{l.url}}" target="_blank" rel="noopener noreferrer"><span class="tile" style="background: {{l.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l.icon}}"></path></svg></span><span class="grow"><span style="font-weight: 600">{{l.name}}</span><span class="sub">{{l.use}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></a></sc-for>
+</div>
+</section>
+<p class="sub" style="margin: 0; font-size: 13px; text-align: center">Forecast: Open-Meteo. Map: Windy. Warnings: PAGASA and PHIVOLCS. Only a rounded location is sent to weather services.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showAlert}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: -8px"><span style="background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 15px; padding: 4px 10px; border-radius: 8px">! {{al.level}}</span><span style="background: var(--fill); font-size: 15px; padding: 4px 10px; border-radius: 8px">{{al.source}}</span></div>
+<div class="grp">
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub">What</span><span>{{al.what}}</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub">Where</span><span>General Santos City</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub">When</span><span>{{al.when}}</span></div>
+</div>
+<div style="background: var(--btn); color: var(--btn-fg); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 15px; font-weight: 600">Do this now</span><span style="font-size: 24px; font-weight: 700; line-height: 1.25">{{al.next}}</span></div>
+<button class="btn2" onClick="{{openCards}}">Open safety cards</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showOverview}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+
+<div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 14px">
+<span style="width: 60px; height: 60px; border-radius: 30px; background: {{prof.av}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 600; flex: none">{{prof.init}}</span>
+<span class="grow"><strong style="font-size: 22px">{{prof.name}}</strong><span class="sub">{{prof.line}}</span></span>
+<button class="pill" style="background: var(--fill); color: var(--act)">Edit</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{prof.facts}}" as="pf" hint-placeholder-count="3"><div style="background: var(--bg); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span class="sub" style="font-size: 13px">{{pf.k}}</span><span style="font-size: 15px; font-weight: 600; color: {{pf.color}}">{{pf.v}}</span></div></sc-for>
+</div>
+</div>
+
+<section style="display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="hd">Your brief</h2><span class="sub" style="font-size: 14px; margin-right: 4px">{{briefLeft}}</span></div>
+<div class="grp">
+<sc-for list="{{brief}}" as="br" hint-placeholder-count="5">
+<div class="row" style="align-items: center; padding: 12px 16px"><span style="width: 10px; height: 10px; border-radius: 5px; background: {{br.dot}}; flex: none"></span><span class="grow"><span style="font-weight: 600; color: {{br.ink}}">{{br.text}}</span><span class="sub" style="font-size: 14px">{{br.sub}}</span></span><button onClick="{{br.fn}}" class="pill" style="background: {{br.bg}}; color: {{br.fg}}; white-space: nowrap">{{br.act}}</button></div>
+</sc-for>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Latest vs normal</h2>
+<sc-if value="{{hasNormals}}" hint-placeholder-val="{{ true }}">
+<div class="grp">
+<sc-for list="{{normals}}" as="nm" hint-placeholder-count="5">
+<div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span>{{nm.name}}</span><span><strong style="font-size: 19px">{{nm.value}}</strong> <span class="sub" style="font-size: 13px">{{nm.unit}}</span></span></div>
+<div role="img" aria-label="{{nm.aria}}" style="position: relative; height: 8px; border-radius: 4px; background: var(--fill)"><div style="position: absolute; top: 0; bottom: 0; left: {{nm.bandL}}; width: {{nm.bandW}}; border-radius: 4px; background: rgba(52,199,89,0.5)"></div><div style="position: absolute; top: -4px; left: {{nm.mark}}; width: 4px; height: 16px; margin-left: -2px; border-radius: 2px; background: var(--ink)"></div></div>
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px"><span class="sub" style="font-size: 13px">{{nm.source}}</span><span style="font-weight: 600; color: {{nm.color}}">{{nm.status}}</span></div>
+</div>
+</sc-for>
+</div>
+<p class="sub" style="margin: 8px 4px 0; font-size: 13px">Green is the normal range. Lab ranges come from the lab’s own paper. General guides are not your doctor’s target; ask your doctor for yours.</p>
+</sc-if>
+<sc-if value="{{noNormals}}" hint-placeholder-val="{{ false }}"><div class="grp" style="padding: 16px"><span class="sub">No readings or lab results yet. Scan a blood pressure reading or add a lab result to see it here.</span></div></sc-if>
+</section>
+
+<sc-if value="{{bpSaved}}" hint-placeholder-val="{{ false }}"><p role="status" style="margin: -4px 4px 0; font-weight: 600; color: var(--ok)">✓ Saved {{bpSavedText}}.</p></sc-if>
+<div style="display: flex; gap: 10px">
+<sc-if value="{{readerUp}}" hint-placeholder-val="{{ true }}"><button class="btn" onClick="{{startScan}}" style="flex: 3">Scan monitor</button></sc-if>
+<button class="btn2" onClick="{{startType}}" style="flex: 2">Type a reading</button>
+</div>
+<sc-if value="{{readerDown}}" hint-placeholder-val="{{ false }}"><p class="sub" style="margin: -4px 4px 0">Scanning is resting right now. Typing works the same.</p></sc-if>
+
+<div class="grp ic">
+<button class="row" onClick="{{openBp}}"><span class="tile" style="background: #FF2D55"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-7 4 14 3-7h6"></path></svg></span><span class="grow"><span>Blood pressure history</span><span class="sub" style="font-size: 14px">Last 14 days</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row" onClick="{{openMedsInv}}"><span class="tile" style="background: #34C759"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 20.5a5 5 0 0 1-7-7l10-10a5 5 0 0 1 7 7zM8.5 8.5l7 7"></path></svg></span><span class="grow"><span>Medicines and supplements</span><span class="sub" style="font-size: 14px">{{refillNote}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row" onClick="{{openCalendar}}"><span class="tile" style="background: #5856D6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M9 3v5M15 3v5"></path></svg></span><span class="grow"><span>Appointments</span><span class="sub" style="font-size: 14px">{{nextAppt}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row" onClick="{{openMedId}}"><span class="tile" style="background: #FF3B30"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></span><span class="grow"><span>Medical ID</span><span class="sub" style="font-size: 14px">Works with no signal</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+</div>
+
+</div>
+</sc-if>
+
+<sc-if value="{{showBp}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span><span style="font-size: 34px; font-weight: 700">{{bpLatest}}</span> <span class="sub">mmHg</span></span><button onClick="{{toggleTable}}" style="border: 0; background: transparent; color: var(--act); font-size: 15px; min-height: 44px">{{tableLabel}}</button></div>
+<div style="display: flex; gap: 14px; font-size: 14px; color: var(--ink2)"><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; background: var(--c1); border-radius: 2px"></span>Top number</span><span style="display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; background: var(--c2); border-radius: 2px"></span>Bottom number</span></div>
+<sc-if value="{{chartView}}" hint-placeholder-val="{{ true }}">
+<svg width="100%" viewBox="0 0 320 150" role="img" aria-label="{{bpAria}}">
+<line x1="0" y1="20" x2="290" y2="20" stroke="var(--sep)" stroke-width="0.5"></line><line x1="0" y1="70" x2="290" y2="70" stroke="var(--sep)" stroke-width="0.5"></line><line x1="0" y1="120" x2="290" y2="120" stroke="var(--sep)" stroke-width="0.5"></line>
+<text x="318" y="24" text-anchor="end" font-size="11" fill="var(--ink2)">140</text><text x="318" y="74" text-anchor="end" font-size="11" fill="var(--ink2)">110</text><text x="318" y="124" text-anchor="end" font-size="11" fill="var(--ink2)">80</text>
+<polyline points="{{bpTop}}" fill="none" stroke="var(--c1)" stroke-width="2" stroke-linejoin="round"></polyline><polyline points="{{bpBot}}" fill="none" stroke="var(--c2)" stroke-width="2" stroke-linejoin="round"></polyline>
+<circle cx="{{bpEndX}}" cy="{{bpTopEndY}}" r="4" fill="var(--c1)" stroke="var(--cell)" stroke-width="2"></circle><circle cx="{{bpEndX}}" cy="{{bpBotEndY}}" r="4" fill="var(--c2)" stroke="var(--cell)" stroke-width="2"></circle>
+<text x="2" y="146" font-size="11" fill="var(--ink2)">2 weeks ago</text><text x="270" y="146" text-anchor="end" font-size="11" fill="var(--ink2)">Today</text>
+</svg>
+</sc-if>
+<sc-if value="{{tableView}}" hint-placeholder-val="{{ false }}">
+<table style="width: 100%; border-collapse: collapse; font-size: 16px"><thead><tr><th style="text-align: left; padding: 6px 0; color: var(--ink2); font-weight: 400">Day</th><th style="text-align: right; padding: 6px 0; color: var(--ink2); font-weight: 400">Top</th><th style="text-align: right; padding: 6px 0; color: var(--ink2); font-weight: 400">Bottom</th></tr></thead><tbody><sc-for list="{{bpRows}}" as="b" hint-placeholder-count="7"><tr><td style="padding: 8px 0; border-top: 0.5px solid var(--sep)">{{b.day}}</td><td style="text-align: right; padding: 8px 0; border-top: 0.5px solid var(--sep)">{{b.top}}</td><td style="text-align: right; padding: 8px 0; border-top: 0.5px solid var(--sep)">{{b.bot}}</td></tr></sc-for></tbody></table>
+</sc-if>
+</div>
+<p class="sub" style="margin: 0 4px">No range set yet, so Bantay won’t judge readings. Ask your doctor for one and add it here.</p>
+<div style="display: flex; gap: 10px"><sc-if value="{{readerUp}}" hint-placeholder-val="{{ true }}"><button class="btn" onClick="{{startScan}}" style="flex: 3">Scan monitor</button></sc-if><button class="btn2" onClick="{{startType}}" style="flex: 2">Type it in</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{showHabits}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp" style="padding: 14px 8px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{rings}}" as="g" hint-placeholder-count="3"><div role="img" aria-label="{{g.aria}}" style="display: flex; flex-direction: column; align-items: center; gap: 4px"><svg width="88" height="88" viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="var(--fill)" stroke-width="10"></circle><circle cx="44" cy="44" r="36" fill="none" stroke="{{g.color}}" stroke-width="10" stroke-linecap="round" stroke-dasharray="{{g.dash}}" transform="rotate(-90 44 44)"></circle><text x="44" y="50" text-anchor="middle" font-size="17" font-weight="700" fill="var(--ink)">{{g.pct}}</text></svg><strong style="font-size: 15px">{{g.label}}</strong><span class="sub" style="font-size: 13px; text-align: center">{{g.detail}}</span></div></sc-for>
+</div>
+</div>
+<p style="margin: 0 4px; font-size: 16px">✓ 12 check-ins in a row. 2 rest days left this week, so one missed day won’t break it.</p>
+<div class="grp">
+<sc-for list="{{habits}}" as="h" hint-placeholder-count="3">
+<div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="grow"><span class="sub" style="font-size: 14px">{{h.anchor}}</span><span style="font-weight: 600">{{h.label}}</span></span><button onClick="{{h.toggle}}" aria-pressed="{{h.pressed}}" class="pill" style="background: {{h.bg}}; color: {{h.fg}}; min-height: 40px">{{h.button}}</button></div>
+<div style="display: flex; align-items: center; gap: 10px"><div aria-hidden="true" style="flex: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px"><sc-for list="{{h.week}}" as="k" hint-placeholder-count="7"><div style="height: 8px; border-radius: 4px; background: {{k.fill}}"></div></sc-for></div><span class="sub" style="font-size: 14px; white-space: nowrap">{{h.streak}}</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showScanAim}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="background: #000000; border-radius: 24px; height: 360px; display: flex; align-items: center; justify-content: center">
+<div style="width: 250px; height: 170px; border: 3px solid #FFFFFF; border-radius: 18px; display: flex; align-items: center; justify-content: center"><span style="color: #FFFFFF; font-size: 16px; text-align: center; padding: 0 16px">Fit the monitor’s screen inside the frame</span></div>
+</div>
+<div class="grp"><div class="row"><span class="grow sub" style="color: var(--ink)">Tilt a little to stop glare. No flash.</span></div><div class="row"><span class="grow sub" style="color: var(--ink)">Only the screen is read. The photo is deleted after saving.</span></div></div>
+<button onClick="{{takePhoto}}" aria-label="Take photo" style="align-self: center; width: 76px; height: 76px; border-radius: 38px; border: 4px solid var(--btn); background: var(--cell); padding: 4px"><span style="display: block; width: 100%; height: 100%; border-radius: 30px; background: var(--btn)"></span></button>
+</div>
+</sc-if>
+
+<sc-if value="{{showScanReview}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{fromScan}}" hint-placeholder-val="{{ true }}">
+<div class="grp" style="display: flex; gap: 12px; align-items: center; padding: 12px">
+<svg width="120" height="90" viewBox="0 0 128 96" role="img" aria-label="Your photo of the monitor screen"><rect x="1" y="1" width="126" height="94" rx="10" fill="#C7D1BE" stroke="#8A9483"></rect><text x="12" y="34" font-family="monospace" font-size="26" font-weight="700" fill="#22261F">128</text><text x="12" y="66" font-family="monospace" font-size="26" font-weight="700" fill="#22261F">84</text><text x="12" y="88" font-family="monospace" font-size="16" fill="#22261F" opacity="0.55">7?</text><text x="84" y="30" font-size="10" fill="#22261F">SYS</text><text x="84" y="62" font-size="10" fill="#22261F">DIA</text><text x="84" y="86" font-size="10" fill="#22261F">PUL</text></svg>
+<span class="sub" style="color: var(--ink)">Read from your photo. Check each number against the monitor, then save.</span>
+</div>
+</sc-if>
+<div class="grp">
+<sc-for list="{{bpFields}}" as="fd" hint-placeholder-count="3">
+<div class="row" style="background: {{fd.bg}}"><span class="grow"><span style="font-weight: 600">{{fd.label}}</span><span style="font-size: 14px; color: {{fd.noteColor}}">{{fd.note}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px"><button onClick="{{fd.down}}" aria-label="{{fd.downAria}}" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: var(--fill); color: var(--ink); font-size: 22px">−</button><span style="min-width: 50px; text-align: center; font-size: 28px; font-weight: 700">{{fd.value}}</span><button onClick="{{fd.up}}" aria-label="{{fd.upAria}}" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: var(--fill); color: var(--ink); font-size: 22px">+</button></span></div>
+</sc-for>
+</div>
+<sc-if value="{{bpCheckBad}}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0 4px; color: var(--warn); font-weight: 600">! {{bpCheckText}}</p></sc-if>
+<button class="btn" onClick="{{saveReading}}">Save reading</button>
+<sc-if value="{{fromScan}}" hint-placeholder-val="{{ true }}"><button onClick="{{startScan}}" style="border: 0; background: transparent; color: var(--act); font-size: 17px; min-height: 44px">Retake photo</button></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecTimeline}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; gap: 10px"><button class="btn" onClick="{{addRecord}}" style="flex: 3">Add records</button><button class="btn2" onClick="{{openWiki}}" style="flex: 2">Look it up</button></div>
+<sc-if value="{{hasInbox}}" hint-placeholder-val="{{ false }}">
+<button onClick="{{addRecord}}" class="grp" style="border: 0; padding: 14px 16px; display: flex; align-items: center; gap: 12px; color: var(--ink); text-align: left"><span class="tile" style="background: #007AFF; font-weight: 700">{{inboxN}}</span><span class="grow"><span style="font-weight: 600">{{inboxTitle}}</span><span class="sub" style="font-size: 14px">Already sorted by person and type. Check them, then they’re filed.</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+</sc-if>
+<sc-if value="{{recEmpty}}" hint-placeholder-val="{{ false }}"><div class="grp" style="padding: 20px; display: flex; flex-direction: column; gap: 6px"><strong>No records for {{personName}} yet</strong><span class="sub">Add a lab result, check-up note or prescription. A photo is enough.</span></div></sc-if>
+<sc-if value="{{recHas}}" hint-placeholder-val="{{ true }}">
+<div class="grp">
+<sc-for list="{{recList}}" as="rc" hint-placeholder-count="4">
+<button class="row" onClick="{{rc.open}}" style="align-items: flex-start; padding: 14px 16px"><span style="min-width: 44px; display: flex; flex-direction: column; align-items: center"><span style="font-size: 13px; color: var(--red); font-weight: 600">{{rc.mon}}</span><span style="font-size: 24px; font-weight: 600; line-height: 1.1">{{rc.day}}</span><span class="sub" style="font-size: 12px">{{rc.yr}}</span></span><span class="grow" style="gap: 3px"><span class="sub" style="font-size: 14px">{{rc.type}}</span><span style="font-weight: 600">{{rc.title}}</span><span style="font-size: 15px; line-height: 1.35">{{rc.summary}}</span><sc-if value="{{rc.flag}}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-start; background: var(--warn-bg); color: var(--warn); font-size: 13px; font-weight: 600; border-radius: 6px; padding: 2px 7px">! Outside the lab’s range</span></sc-if></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="margin-top: 6px"><path d="M1 1l6 6-6 6"></path></svg></button>
+</sc-for>
+</div>
+</sc-if>
+<p class="sub" style="margin: 0 4px; font-size: 13px">{{fileLine}} Kept in the family’s private Google Drive. Nothing is shared by link.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecCal}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp" style="padding: 12px">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px 8px"><strong style="font-size: 19px">October 2026</strong><span class="sub" style="font-size: 14px">Today is the 17th</span></div>
+<div aria-hidden="true" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); text-align: center; font-size: 12px; color: var(--ink2); font-weight: 600; padding-bottom: 4px"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px">
+<sc-for list="{{calCells}}" as="cc" hint-placeholder-count="35"><button onClick="{{cc.pick}}" aria-label="{{cc.aria}}" aria-pressed="{{cc.pressed}}" style="min-height: 44px; border: 0; border-radius: 22px; background: {{cc.bg}}; color: {{cc.fg}}; font-size: 16px; font-weight: {{cc.weight}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; visibility: {{cc.vis}}">{{cc.n}}<span style="width: 5px; height: 5px; border-radius: 3px; background: {{cc.dot}}"></span></button></sc-for>
+</div>
+</div>
+<p class="sec" style="margin-bottom: -8px">{{calDayTitle}}</p>
+<sc-if value="{{calHas}}" hint-placeholder-val="{{ true }}">
+<div class="grp ic">
+<sc-for list="{{calDay}}" as="ev" hint-placeholder-count="2"><div class="row"><span class="tile" style="background: {{ev.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ev.icon}}"></path></svg></span><span class="grow"><span style="font-weight: 600">{{ev.title}}</span><span class="sub" style="font-size: 14px">{{ev.sub}}</span></span><sc-if value="{{ev.canRemind}}" hint-placeholder-val="{{ true }}"><button onClick="{{ev.toggle}}" role="switch" aria-checked="{{ev.on}}" aria-label="{{ev.aria}}" class="sw" style="background: {{ev.track}}"><span style="left: {{ev.knob}}"></span></button></sc-if></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{calNone}}" hint-placeholder-val="{{ false }}"><div class="grp" style="padding: 16px"><span class="sub">Nothing on this day.</span></div></sc-if>
+<button class="btn2">Add an appointment or reminder</button>
+<p class="sub" style="margin: 0 4px; font-size: 14px">Later: Dec 12, check-up with Dr. Lim. Reminders arrive the day before and 2 hours before.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecMeds}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp ic">
+<sc-for list="{{inv}}" as="iv" hint-placeholder-count="4">
+<div class="row" style="align-items: flex-start; padding: 14px 16px"><span class="tile" style="background: {{iv.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{iv.icon}}"></path></svg></span>
+<span class="grow" style="gap: 4px"><span style="font-weight: 600">{{iv.name}}</span><span class="sub" style="font-size: 14px">{{iv.kind}}. {{iv.when}}</span>
+<span style="height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; margin-top: 2px"><span style="display: block; width: {{iv.pct}}; height: 100%; background: {{iv.bar}}"></span></span>
+<span style="font-size: 14px; color: {{iv.stockColor}}; font-weight: 600">{{iv.stock}}</span><span class="sub" style="font-size: 13px">{{iv.expiry}}</span></span>
+<button onClick="{{iv.refill}}" class="pill" style="background: var(--fill); color: var(--act); white-space: nowrap">{{iv.refillText}}</button></div>
+</sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 14px">Counts down each time a dose is marked taken. Reminds you a week before it runs out and a month before it expires.</p>
+<button class="btn2">Add a medicine or supplement</button>
+</div>
+</sc-if>
+
+<sc-if value="{{showWiki}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{wikiList}}" hint-placeholder-val="{{ true }}">
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="grow"><strong style="font-size: 18px">Offline library</strong><span class="sub" style="font-size: 14px">{{libStatus}}</span></span><span class="tile" style="background: {{libColor}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M12 7v6M9 10l3 3 3-3"></path></svg></span></div>
+<sc-for list="{{packs}}" as="pk" hint-placeholder-count="4"><div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 0.5px solid var(--sep)"><span class="grow"><span style="font-weight: 600">{{pk.name}}</span><span class="sub" style="font-size: 14px">{{pk.sub}}</span></span><button onClick="{{pk.toggle}}" aria-pressed="{{pk.pressed}}" class="pill" style="background: {{pk.bg}}; color: {{pk.fg}}; white-space: nowrap">{{pk.btn}}</button></div></sc-for>
+<span class="sub" style="font-size: 13px">From Kiwix. Downloads only on Wi-Fi. Articles you read are saved to this phone, so they open instantly next time.</span>
+</div>
+<sc-if value="{{hasRead}}" hint-placeholder-val="{{ false }}"><p class="sec" style="margin-bottom: -8px">Saved after reading</p><div class="grp"><sc-for list="{{readList}}" as="rl" hint-placeholder-count="2"><button class="row" onClick="{{rl.open}}"><span class="grow">{{rl.title}}</span><span style="font-size: 13px; color: var(--ok); font-weight: 600">✓ On this phone</span></button></sc-for></div></sc-if>
+<div class="grp"><label class="row" style="gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"></path></svg><input value="{{wq}}" onChange="{{setWq}}" placeholder="Search a test or condition" aria-label="Search the health library" style="flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px"></label></div>
+<div class="grp">
+<sc-for list="{{wikiTopics}}" as="wt" hint-placeholder-count="6"><button class="row" onClick="{{wt.open}}"><span class="grow"><span style="font-weight: 600">{{wt.title}}</span><span class="sub" style="font-size: 14px">{{wt.kind}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button></sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 13px">Plain summaries written for Bantay. Full pages come from MedlinePlus, the free health library of the US National Library of Medicine.</p>
+</sc-if>
+<sc-if value="{{wikiOne}}" hint-placeholder-val="{{ false }}">
+<div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 8px"><span class="sub" style="font-size: 14px">{{wk.kind}}</span><strong style="font-size: 22px">{{wk.title}}</strong><span style="line-height: 1.5">{{wk.body}}</span></div>
+<div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 6px"><strong>Ask your doctor</strong><span style="line-height: 1.5">{{wk.ask}}</span></div>
+<sc-if value="{{wikiNoFull}}" hint-placeholder-val="{{ true }}"><button class="btn" onClick="{{openFull}}">Read the full article</button></sc-if>
+<sc-if value="{{wikiFull}}" hint-placeholder-val="{{ false }}"><div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 10px"><div style="display: flex; justify-content: space-between; gap: 8px"><strong>{{wk.title}}, WikiMed</strong><span style="font-size: 13px; color: var(--ok); font-weight: 600">{{fullSource}}</span></div><div aria-hidden="true" style="display: flex; flex-direction: column; gap: 8px"><span style="height: 10px; border-radius: 5px; background: var(--fill)"></span><span style="height: 10px; border-radius: 5px; background: var(--fill); width: 92%"></span><span style="height: 10px; border-radius: 5px; background: var(--fill); width: 85%"></span><span style="height: 10px; border-radius: 5px; background: var(--fill); width: 60%"></span></div><span class="sub" style="font-size: 14px">The full article text loads here from the offline library, or from the family server if it isn’t downloaded.</span><span class="sub" style="font-size: 12px">From Wikipedia’s medical articles via Kiwix. Wikipedia contributors. CC BY-SA 4.0.</span></div></sc-if>
+<a class="btn2" href="{{wk.url}}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Read more on MedlinePlus</a>
+<p class="sub" style="margin: 0 4px; font-size: 13px">This explains the test. It doesn’t judge your result.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecTrends}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{recEmpty}}" hint-placeholder-val="{{ false }}"><p class="sub" style="margin: 0 4px">Trends appear after two confirmed lab results with the same test.</p></sc-if>
+<sc-if value="{{recHas}}" hint-placeholder-val="{{ true }}">
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<span class="sub" style="font-size: 15px">LDL cholesterol, mg/dL</span><span style="font-size: 34px; font-weight: 700; line-height: 1.1">162</span><span style="font-size: 15px">Down from 175 over 10 months. Lab range: under 130.</span>
+<svg width="100%" viewBox="0 0 320 160" role="img" aria-label="LDL cholesterol: 175 in December 2025, 171 in March 2026, 162 in October 2026. The lab range is under 130.">
+<rect x="0" y="{{ldlBandY}}" width="290" height="{{ldlBandH}}" fill="var(--band)"></rect><text x="6" y="{{ldlBandLabelY}}" font-size="11" fill="var(--ink2)">Lab range</text>
+<line x1="0" y1="20" x2="290" y2="20" stroke="var(--sep)" stroke-width="0.5"></line><line x1="0" y1="120" x2="290" y2="120" stroke="var(--sep)" stroke-width="0.5"></line>
+<text x="318" y="24" text-anchor="end" font-size="11" fill="var(--ink2)">200</text><text x="318" y="124" text-anchor="end" font-size="11" fill="var(--ink2)">100</text>
+<polyline points="{{ldlPts}}" fill="none" stroke="var(--c1)" stroke-width="2"></polyline>
+<sc-for list="{{ldlDots}}" as="ld" hint-placeholder-count="3"><circle cx="{{ld.x}}" cy="{{ld.y}}" r="5" fill="var(--c1)" stroke="var(--cell)" stroke-width="2"><title>{{ld.tip}}</title></circle></sc-for>
+<text x="10" y="150" font-size="11" fill="var(--ink2)">Dec 2025</text><text x="145" y="150" text-anchor="middle" font-size="11" fill="var(--ink2)">Mar 2026</text><text x="290" y="150" text-anchor="end" font-size="11" fill="var(--ink2)">Oct 2026</text>
+</svg>
+</div>
+<div class="grp"><sc-for list="{{otherTests}}" as="ot" hint-placeholder-count="3"><div class="row"><span class="grow">{{ot.name}}</span><span style="display: flex; flex-direction: column; align-items: flex-end"><strong>{{ot.value}}</strong><span style="font-size: 13px; color: {{ot.color}}">{{ot.note}}</span></span></div></sc-for></div>
+<p class="sub" style="margin: 0 4px; font-size: 14px">Only confirmed values are charted. Discuss changes with your doctor.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecDetail}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px; margin-top: -10px; padding: 0 4px"><span class="sub">{{rd.type}}, {{rd.date}}</span><span class="sub">{{rd.place}}</span></div>
+<svg width="100%" viewBox="0 0 320 150" role="img" aria-label="The uploaded page" style="background: var(--cell); border-radius: 16px"><rect x="20" y="16" width="120" height="10" rx="3" fill="var(--fill)"></rect><rect x="20" y="34" width="200" height="6" rx="3" fill="var(--fill)"></rect><rect x="20" y="58" width="280" height="14" rx="3" fill="{{rd.hl1}}"></rect><rect x="20" y="78" width="280" height="14" rx="3" fill="{{rd.hl2}}"></rect><rect x="20" y="98" width="280" height="14" rx="3" fill="var(--fill)"></rect><rect x="20" y="118" width="280" height="14" rx="3" fill="var(--fill)"></rect></svg>
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px"><strong>Summary</strong><span style="line-height: 1.45">{{rd.summary}}</span><span class="sub" style="font-size: 14px">This restates the paper. Discuss it with your doctor.</span></div>
+<sc-if value="{{rd.hasValues}}" hint-placeholder-val="{{ true }}">
+<p class="sec" style="margin-bottom: -8px">Values on this page</p>
+<div class="grp">
+<sc-for list="{{rd.values}}" as="v" hint-placeholder-count="4">
+<div class="row" style="flex-direction: column; align-items: stretch; gap: 6px"><div style="display: flex; justify-content: space-between; gap: 8px"><span>{{v.name}}</span><strong>{{v.value}}</strong></div><div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; color: {{v.rangeColor}}">{{v.rangeText}}</span><button onClick="{{v.learn}}" style="border: 0; background: transparent; color: var(--act); font-size: 14px; padding: 0; text-align: left; min-height: 32px">What is this test?</button></span><sc-if value="{{v.pending}}" hint-placeholder-val="{{ false }}"><button onClick="{{v.confirm}}" class="pill" style="background: var(--fill); color: var(--act)">Matches the paper</button></sc-if><sc-if value="{{v.confirmed}}" hint-placeholder-val="{{ true }}"><span style="font-size: 14px; font-weight: 600; color: var(--ok)">✓ Confirmed</span></sc-if></div></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{rd.isNew}}" hint-placeholder-val="{{ false }}"><button class="btn" onClick="{{saveRecord}}">Save record</button><p class="sub" style="margin: 0 4px; font-size: 14px">Values you haven’t confirmed are kept but left out of trends.</p></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showRecAdd}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="background: var(--cell); border: 2px dashed var(--sep); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--act)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path></svg>
+<strong style="font-size: 19px">Add photos or PDFs</strong>
+<span class="sub">Several pages or papers at once is fine. Bantay works out whose it is, what it is and the date.</span>
+<div style="display: flex; gap: 8px; width: 100%"><button class="btn" onClick="{{uploadDemo}}" style="flex: 1">Take photos</button><button class="btn2" onClick="{{uploadDemo}}" style="flex: 1">Choose files</button></div>
+</div>
+<p class="sec" style="margin-bottom: -8px">Other ways in</p>
+<div class="grp ic">
+<div class="row"><span class="tile" style="background: #007AFF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v6h14v-6"></path></svg></span><span class="grow"><span>Share to Bantay</span><span class="sub" style="font-size: 14px">From Gallery, Messenger or email: tap Share, then Bantay</span></span></div>
+<div class="row"><span class="tile" style="background: #34C759"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7zM14 3v5h5"></path></svg></span><span class="grow"><span>Lab results sent online</span><span class="sub" style="font-size: 14px">Save the PDF, then share it here</span></span></div>
+<div class="row"><span class="tile" style="background: #FF9500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM4 10h16M10 4v16"></path></svg></span><span class="grow"><span>A pile of old papers</span><span class="sub" style="font-size: 14px">Take them one after another; Bantay keeps the camera open</span></span></div>
+</div>
+<sc-if value="{{hasQueue}}" hint-placeholder-val="{{ false }}">
+<p class="sec" style="margin-bottom: -8px">Sorting what you added</p>
+<div class="grp ic">
+<sc-for list="{{queue}}" as="q" hint-placeholder-count="4"><div class="row"><span class="tile" style="background: {{q.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{q.icon}}"></path></svg></span><span class="grow"><span style="font-weight: 600">{{q.title}}</span><span class="sub" style="font-size: 14px">{{q.sub}}</span></span><sc-if value="{{q.canReview}}" hint-placeholder-val="{{ false }}"><button onClick="{{q.review}}" class="pill" style="background: var(--btn); color: var(--btn-fg)">Check</button></sc-if><sc-if value="{{q.noReview}}" hint-placeholder-val="{{ true }}"><span class="sub" style="font-size: 14px">{{q.state}}</span></sc-if></div></sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 13px">Pages of the same paper are joined. Receipts and non-medical papers go to Other.</p>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showFamHome}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<span class="sub" style="font-size: 15px">Family goal: walk 1,000 km together this year</span>
+<span><span style="font-size: 34px; font-weight: 700">412</span> <span class="sub">km so far</span></span>
+<div role="img" aria-label="412 of 1,000 kilometres, 41 percent" style="height: 10px; background: var(--fill); border-radius: 5px; overflow: hidden"><div style="width: 41%; height: 100%; background: #34C759; border-radius: 5px"></div></div>
+<span class="sub" style="font-size: 14px">Everyone’s walks add to one total. No ranking.</span>
+</div>
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Challenges</h2>
+<div class="grp">
+<sc-for list="{{challenges}}" as="ch" hint-placeholder-count="3">
+<div class="row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="grow"><span style="font-weight: 600">{{ch.name}}</span><span class="sub" style="font-size: 14px">{{ch.meta}}</span></span><button onClick="{{ch.toggle}}" aria-pressed="{{ch.pressed}}" class="pill" style="background: {{ch.bg}}; color: {{ch.fg}}">{{ch.btn}}</button></div>
+<div style="height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden"><div style="width: {{ch.pct}}; height: 100%; background: {{ch.color}}"></div></div>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Today</h2>
+<div class="grp">
+<sc-for list="{{family}}" as="m" hint-placeholder-count="5">
+<div class="row"><span style="width: 40px; height: 40px; border-radius: 20px; background: {{m.av}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; flex: none">{{m.init}}</span><span class="grow"><span style="font-weight: 600">{{m.name}}</span><span class="sub" style="font-size: 14px">{{m.note}}</span><span style="font-size: 15px; font-weight: 600; color: {{m.color}}">{{m.status}}</span></span><sc-if value="{{m.canCheer}}" hint-placeholder-val="{{ true }}"><button onClick="{{m.cheer}}" aria-label="{{m.cheerAria}}" class="pill" style="background: var(--fill); color: {{m.cheerColor}}">{{m.cheerText}}</button></sc-if></div>
+</sc-for>
+</div>
+</section>
+<sc-if value="{{notRoll}}" hint-placeholder-val="{{ true }}"><button class="btn2" onClick="{{startRoll}}">Start a roll call</button></sc-if>
+<sc-if value="{{roll}}" hint-placeholder-val="{{ false }}"><p role="status" class="grp" style="margin: 0; padding: 14px 16px">Roll call sent to the Family chat. Each person taps “I’m safe” or “I need help”.</p></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showFamMsgs}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp">
+<sc-for list="{{threads}}" as="th" hint-placeholder-count="3">
+<button class="row" onClick="{{th.open}}"><span style="width: 44px; height: 44px; border-radius: 22px; background: {{th.av}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 600; flex: none">{{th.init}}</span><span class="grow"><span style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">{{th.name}}</span><span class="sub" style="font-size: 14px">{{th.time}}</span></span><span class="sub" style="font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{th.last}}</span></span><sc-if value="{{th.hasUnread}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #007AFF; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 6px">{{th.unread}}</span></sc-if></button>
+</sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 13px">Messages stay inside Bantay. SOS and roll calls post to the Family chat. No health numbers are ever shown in notifications.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showThread}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{msgs}}" as="mg" hint-placeholder-count="4"><div style="display: flex; justify-content: {{mg.justify}}"><div style="max-width: 78%; padding: 9px 14px; border-radius: 18px; background: {{mg.bg}}; color: {{mg.fg}}; font-size: 16px; line-height: 1.35"><sc-if value="{{mg.showWho}}" hint-placeholder-val="{{ false }}"><div style="font-size: 13px; font-weight: 600; opacity: 0.8">{{mg.who}}</div></sc-if>{{mg.text}}</div></div></sc-for>
+<div role="group" aria-label="Quick replies" style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px"><sc-for list="{{quick}}" as="qr" hint-placeholder-count="4"><button onClick="{{qr.send}}" class="pill" style="background: var(--fill); color: var(--act)">{{qr.label}}</button></sc-for></div>
+<div class="grp" style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; margin-top: 6px"><input value="{{draft}}" onChange="{{setDraft}}" placeholder="Message" aria-label="Message" style="flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px"><button onClick="{{sendDraft}}" aria-label="Send" style="width: 40px; height: 40px; border: 0; border-radius: 20px; background: var(--btn); color: var(--btn-fg); display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{showFamLearn}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<section class="grp" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between"><span style="color: var(--purple); font-weight: 600; font-size: 15px">Daily quiz</span><span class="sub" style="font-size: 14px">{{quizStep}}</span></div>
+<sc-if value="{{quizOn}}" hint-placeholder-val="{{ true }}">
+<strong style="font-size: 19px; line-height: 1.3">{{qz.q}}</strong>
+<div style="display: flex; flex-direction: column; gap: 8px"><sc-for list="{{qz.opts}}" as="op" hint-placeholder-count="3"><button onClick="{{op.pick}}" style="min-height: 48px; border: 2px solid {{op.edge}}; border-radius: 12px; background: {{op.bg}}; color: var(--ink); font-size: 17px; text-align: left; padding: 0 14px">{{op.label}}</button></sc-for></div>
+<sc-if value="{{qz.answered}}" hint-placeholder-val="{{ false }}"><span style="font-size: 15px; line-height: 1.4"><strong style="color: {{qz.fbColor}}">{{qz.fb}}</strong> {{qz.why}}</span><button class="btn" onClick="{{qz.next}}">{{qz.nextLabel}}</button></sc-if>
+</sc-if>
+<sc-if value="{{quizDone}}" hint-placeholder-val="{{ false }}"><strong style="font-size: 20px">{{quizScore}}</strong><span class="sub">A new quiz comes tomorrow. Your family’s scores add to the weekly total.</span></sc-if>
+</section>
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 class="hd" style="margin-bottom: 0">Tips</h2>
+<div role="group" aria-label="Topics" style="display: flex; gap: 8px; flex-wrap: wrap"><sc-for list="{{topics}}" as="t" hint-placeholder-count="6"><button onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" class="pill" style="background: {{t.bg}}; color: {{t.fg}}">{{t.label}}</button></sc-for></div>
+<div class="grp"><sc-for list="{{tips}}" as="f" hint-placeholder-count="4"><div class="row" style="flex-direction: column; align-items: stretch; gap: 4px; padding: 14px 16px"><span class="sub" style="font-size: 14px">{{f.topic}}</span><span style="font-weight: 600; line-height: 1.35">{{f.text}}</span><div style="display: flex; justify-content: space-between; align-items: center"><span class="sub" style="font-size: 14px">{{f.source}}</span><button onClick="{{f.save}}" aria-pressed="{{f.pressed}}" style="border: 0; background: transparent; color: var(--act); font-size: 15px; min-height: 40px">{{f.saveText}}</button></div></div></sc-for></div>
+</section>
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">Move with a video</h2>
+<div class="grp ic"><sc-for list="{{videos}}" as="vd" hint-placeholder-count="4"><a class="row" href="{{vd.url}}" target="_blank" rel="noopener noreferrer"><span class="tile" style="background: #D70015"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></span><span class="grow"><span style="font-weight: 600">{{vd.title}}</span><span class="sub" style="font-size: 14px">{{vd.sub}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></a></sc-for></div>
+</section>
+<section style="display: flex; flex-direction: column">
+<h2 class="hd">From official sources</h2>
+<div class="grp"><sc-for list="{{news}}" as="n" hint-placeholder-count="2"><div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">{{n.source}}</span><span>{{n.text}}</span></div></sc-for></div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{showSafety}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<button onClick="{{openSos}}" style="min-height: 64px; border: 0; border-radius: 18px; background: var(--danger); color: #FFFFFF; font-size: 19px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"></path></svg>SOS to family</button>
+<div class="grp ic">
+<div class="row"><span class="tile" style="background: #34C759"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h15v8H3zM21 11v2"></path></svg></span><span class="grow"><span style="font-weight: 600">This phone is ready</span><span class="sub" style="font-size: 14px">Battery 62%. Cards saved offline.</span></span></div>
+<div class="row"><span class="tile" style="background: #FF9500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18H7zM11 18h2"></path></svg></span><span class="grow"><span style="font-weight: 600">Check your load</span><span class="sub" style="font-size: 14px">Keep at least ₱50 on Smart and Globe.</span></span></div>
+</div>
+<div class="grp ic">
+<sc-for list="{{safetyRows}}" as="sr" hint-placeholder-count="7"><button class="row" onClick="{{sr.open}}"><span class="tile" style="background: {{sr.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sr.icon}}"></path></svg></span><span class="grow"><span>{{sr.label}}</span><span class="sub" style="font-size: 14px">{{sr.note}}</span></span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button></sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 14px">If Bantay is quiet, follow your printed card. Everything here works with no signal.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showSos}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{sosNot}}" hint-placeholder-val="{{ true }}">
+<div class="grp" style="padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font-size: 20px">Send SOS to your family?</strong><span class="sub" style="color: var(--ink)">Everyone in Bantay gets an urgent alert with your location. It also shows a button to call 911.</span></div>
+<button onClick="{{sendSos}}" style="min-height: 56px; border: 0; border-radius: 14px; background: var(--danger); color: #FFFFFF; font-size: 18px; font-weight: 700">Send SOS</button>
+<button class="btn2" onClick="{{goSafety}}">Cancel</button>
+</sc-if>
+<sc-if value="{{sosSent}}" hint-placeholder-val="{{ false }}">
+<div role="status" class="grp" style="padding: 18px; display: flex; flex-direction: column; gap: 8px"><strong style="font-size: 20px; color: var(--danger)">SOS sent at 9:14 AM</strong><span>Posted in the Family chat. Carmen and Ben have seen it. Your location updates every minute until you stop.</span></div>
+<a href="tel:911" style="min-height: 56px; border-radius: 14px; background: var(--danger); color: #FFFFFF; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none">Call 911</a>
+<button class="btn2" onClick="{{stopSos}}">I’m safe now, stop SOS</button>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showSituation}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div role="group" aria-label="Filter" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: -8px"><sc-for list="{{sitFilters}}" as="sf" hint-placeholder-count="6"><button onClick="{{sf.pick}}" aria-pressed="{{sf.pressed}}" class="pill" style="background: {{sf.bg}}; color: {{sf.fg}}">{{sf.label}}</button></sc-for></div>
+<div class="grp ic">
+<sc-for list="{{situation}}" as="it" hint-placeholder-count="5"><div class="row" style="align-items: flex-start; padding: 12px 16px"><span class="tile" style="background: {{it.color}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{it.icon}}"></path></svg></span><span class="grow" style="gap: 2px"><span style="font-weight: 600">{{it.title}}</span><span style="font-size: 15px; line-height: 1.35">{{it.text}}</span><span class="sub" style="font-size: 13px">{{it.meta}}</span></span></div></sc-for>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 13px">Sample items. In the app this pulls public posts from PHIVOLCS, USGS, PAGASA, SOCOTECO II, GSCWD, the city disaster office and GDACS every 15 minutes. Official warnings always win over other sources.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showNearby}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<sc-for list="{{nearby}}" as="nb" hint-placeholder-count="3">
+<section style="display: flex; flex-direction: column"><p class="sec">{{nb.name}}</p><div class="grp"><sc-for list="{{nb.items}}" as="pl" hint-placeholder-count="3"><a class="row" href="{{pl.url}}" target="_blank" rel="noopener noreferrer"><span class="grow"><span>{{pl.name}}</span><span class="sub" style="font-size: 14px">{{pl.note}}</span></span><span style="color: var(--act); font-size: 15px">Directions</span></a></sc-for></div></section>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showHotlines}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-for list="{{hotlines}}" as="grp" hint-placeholder-count="4"><section style="display: flex; flex-direction: column"><p class="sec">{{grp.name}}</p><div class="grp"><sc-for list="{{grp.items}}" as="c" hint-placeholder-count="3"><a class="row" href="{{c.tel}}"><span class="grow">{{c.name}}</span><span style="color: var(--act); font-weight: 600; white-space: nowrap">{{c.num}}</span></a></sc-for></div></section></sc-for>
+<p class="sub" style="margin: 0 4px; font-size: 13px">From official government lists, checked October 2026. Bantay reminds you to re-check every 6 months.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showContacts}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<button class="btn" onClick="{{goAdd}}">Add a contact</button>
+<sc-for list="{{myGroups}}" as="grp" hint-placeholder-count="3"><section style="display: flex; flex-direction: column"><p class="sec">{{grp.name}}</p><div class="grp"><sc-for list="{{grp.items}}" as="c" hint-placeholder-count="2"><a class="row" href="{{c.tel}}"><span class="grow">{{c.name}}</span><span style="color: var(--act); font-weight: 600; white-space: nowrap">{{c.num}}</span></a></sc-for></div></section></sc-for>
+<section style="display: flex; flex-direction: column"><p class="sec">Important info</p><div class="grp"><div class="row"><span class="grow">PhilHealth number</span><span class="sub">Saved, hidden</span></div><div class="row"><span class="grow">Family doctor</span><span class="sub">Dr. Lim</span></div><div class="row"><span class="grow">Where the family meets</span><span style="color: var(--warn)">Not set yet</span></div></div></section>
+</div>
+</sc-if>
+
+<sc-if value="{{showGobag}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px"><span><span style="font-size: 28px; font-weight: 700">{{bagCount}}</span> <span class="sub">ready</span></span><div style="height: 8px; background: var(--fill); border-radius: 4px; overflow: hidden"><div style="width: {{bagPct}}; height: 100%; background: #34C759"></div></div></div>
+<div class="grp"><sc-for list="{{bag}}" as="bi" hint-placeholder-count="7"><button class="row" onClick="{{bi.toggle}}" aria-pressed="{{bi.pressed}}"><span style="width: 26px; height: 26px; border-radius: 13px; border: 2px solid {{bi.edge}}; background: {{bi.bg}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex: none">{{bi.mark}}</span><span class="grow"><span>{{bi.label}}</span><span style="font-size: 14px; color: {{bi.noteColor}}">{{bi.note}}</span></span></button></sc-for></div>
+<p class="sub" style="margin: 0 4px; font-size: 14px">Bantay reminds you a month before anything in the bag expires.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showCards}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{protocols}}" as="p" hint-placeholder-count="4"><div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><div style="display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap"><strong>{{p.name}}</strong><span style="font-size: 13px; color: var(--ok)">✓ Saved offline</span></div><span style="font-size: 16px; line-height: 1.4">{{p.line}}</span></div></sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showAdd}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp">
+<label class="row" style="gap: 10px"><span style="width: 70px">Name</span><input value="{{cName}}" onChange="{{setName}}" placeholder="St. Elizabeth Hospital ER" style="flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px"></label>
+<label class="row" style="gap: 10px"><span style="width: 70px">Phone</span><input value="{{cNum}}" onChange="{{setNum}}" inputmode="tel" placeholder="0917 000 0000" style="flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px"></label>
+</div>
+<p class="sub" style="margin: 0 4px">Goes under <strong style="color: var(--ink)">{{cGroup}}</strong>, picked from the name. You can move it later.</p>
+<button class="btn" onClick="{{saveContact}}">Save contact</button>
+<sc-if value="{{cError}}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0 4px; color: var(--warn); font-weight: 600">Add a name and a number first.</p></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{showMedId}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<span style="font-size: 15px; color: var(--ok); font-weight: 600; margin-top: -10px; padding: 0 4px">✓ Saved offline. Also on your printed card.</span>
+<div class="grp">
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">Name</span><span style="font-size: 22px; font-weight: 700">Ana Reyes</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">Blood type</span><span style="color: var(--warn)">Not set yet</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">Allergies</span><span style="color: var(--warn)">Not set yet</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">Medicines</span><span>Morning tablet, evening tablet</span></div>
+<div class="row" style="flex-direction: column; align-items: flex-start; gap: 2px"><span class="sub" style="font-size: 14px">Emergency contact</span><span>Carmen, leads in an emergency</span></div>
+</div>
+<p class="sub" style="margin: 0 4px; font-size: 14px">Tip: add Bantay’s medical ID to your lock screen so responders can see it.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{showSettings}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 18px">
+<div class="grp">
+<sc-for list="{{switches}}" as="w" hint-placeholder-count="3"><div class="row"><span class="grow"><span>{{w.label}}</span><span class="sub" style="font-size: 14px">{{w.note}}</span></span><button onClick="{{w.toggle}}" role="switch" aria-checked="{{w.on}}" aria-label="{{w.label}}" class="sw" style="background: {{w.track}}"><span style="left: {{w.knob}}"></span></button></div></sc-for>
+</div>
+<p class="sub" style="margin: -12px 4px 0; font-size: 13px">Safety alerts always come through, even in quiet hours. Gentle nudges are capped at 2 a day.</p>
+<section style="display: flex; flex-direction: column"><p class="sec">Look</p>
+<div role="group" aria-label="Look" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: var(--fill); border-radius: 10px; padding: 2px"><sc-for list="{{themes}}" as="t" hint-placeholder-count="3"><button onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" style="min-height: 36px; border: 0; border-radius: 8px; background: {{t.bg}}; box-shadow: {{t.shadow}}; color: var(--ink); font-size: 15px; font-weight: {{t.weight}}">{{t.label}}</button></sc-for></div>
+</section>
+<section style="display: flex; flex-direction: column"><p class="sec">Family can see my</p>
+<div class="grp"><sc-for list="{{privacy}}" as="f" hint-placeholder-count="4"><div class="row"><span class="grow">{{f.label}}</span><button onClick="{{f.toggle}}" role="switch" aria-checked="{{f.on}}" aria-label="{{f.aria}}" class="sw" style="background: {{f.track}}"><span style="left: {{f.knob}}"></span></button></div></sc-for></div>
+</section>
+<div class="grp">
+<button class="row" onClick="{{goSetup}}"><span class="grow">Setup checklist</span><span class="sub">{{setupCount}}</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row" onClick="{{goWelcome}}"><span class="grow">Install on another phone</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+<button class="row"><span class="grow">Print my cards</span><svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 1l6 6-6 6"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showSetup}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div class="grp" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 22px; font-weight: 700">{{setupCount}}</span><div role="img" aria-label="{{setupCount}}" style="height: 8px; background: var(--fill); border-radius: 4px; overflow: hidden"><div style="width: {{setupPct}}; height: 100%; background: var(--btn)"></div></div><span class="sub" style="font-size: 14px">Bantay starts empty. Each step makes the safety cards complete.</span></div>
+<div class="grp"><sc-for list="{{setup}}" as="x" hint-placeholder-count="9"><button class="row" onClick="{{x.toggle}}"><span class="grow">{{x.label}}</span><span style="font-weight: 600; color: {{x.color}}; white-space: nowrap">{{x.state}}</span></button></sc-for></div>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{showTabs}}" hint-placeholder-val="{{ true }}">
+<nav aria-label="Main" class="glass" style="position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12)">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><button onClick="{{t.go}}" aria-current="{{t.cur}}" style="min-height: 54px; border: 0; border-radius: 24px; background: {{t.pill}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: {{t.color}}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.icon}}"></path></svg>{{t.label}}</button></sc-for>
+</nav>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["system","light","dark"],"default":"system"},"startAt":{"editor":"enum","options":["welcome","today","weather","health","records","family","safety"],"default":"today"},"sky":{"editor":"enum","options":["storm","rain","clear","heat"],"default":"storm"},"offline":{"editor":"boolean","default":false},"noConnection":{"editor":"boolean","default":false},"alertsOff":{"editor":"boolean","default":false},"missedDose":{"editor":"boolean","default":false},"readerDown":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const s = this.state || {};
+const p = this.props;
+const set = (o) => () => this.setState(o);
+const screen = s.screen || p.startAt || 'today';
+const go = (x) => () => this.setState({ screen: x });
+const ok = 'var(--ok)', wait = 'var(--warn)', quiet = 'var(--ink2)';
+const noConnection = (p.noConnection ?? false) && !s.retried;
+const offlineScreens = ['safety', 'medid', 'welcome', 'hotlines', 'contacts', 'cards', 'gobag', 'sos', 'nearby'];
+const noConnBlock = noConnection && !offlineScreens.includes(screen);
+const vis = (x) => !noConnBlock && screen === x;
+const ICON = {
+  sun: 'M32 22a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM32 8v6M32 50v6M8 32h6M50 32h6M15 15l4 4M45 45l4 4M15 49l4-4M45 19l4-4',
+  cloud: 'M18 46h28a10 10 0 0 0 0-20 14 14 0 0 0-27 4 9 9 0 0 0-1 16z',
+  psun: 'M24 14v4M12 26h4M15 17l3 3M30 26a8 8 0 0 0-14 2M20 48h24a9 9 0 0 0 0-18 12 12 0 0 0-23 3 8 8 0 0 0-1 15z',
+  rain: 'M18 38h28a10 10 0 0 0 0-20 14 14 0 0 0-27 4 9 9 0 0 0-1 16zM24 46l-3 8M34 46l-3 8M44 46l-3 8',
+  storm: 'M18 40h28a10 10 0 0 0 0-20 14 14 0 0 0-27 4 9 9 0 0 0-1 16zM34 44l-6 10h8l-6 8',
+  moon: 'M42 40a16 16 0 0 1-18-22 16 16 0 1 0 18 22z'
+};
+const IC = {
+  pill: 'M10.5 20.5a5 5 0 0 1-7-7l10-10a5 5 0 0 1 7 7zM8.5 8.5l7 7',
+  leaf: 'M5 19c0-8 6-14 15-14 0 9-6 15-14 15zM5 19l7-7',
+  cal: 'M4 6h16v14H4zM4 10h16M9 3v5M15 3v5',
+  flask: 'M9 3h6M10 3v6l-5 10a1 1 0 0 0 1 2h12a1 1 0 0 0 1-2l-5-10V3',
+  steth: 'M6 3v6a5 5 0 0 0 10 0V3M11 14v3a4 4 0 0 0 8 0v-2M19 13a2 2 0 1 0 0-4',
+  refill: 'M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4',
+  doc: 'M7 3h7l5 5v13H7zM14 3v5h5',
+  check: 'M5 12l5 5L20 7',
+  dots: 'M6 12h.5M12 12h.5M18 12h.5',
+  chat: 'M4 5h16v11H9l-5 4z',
+  bolt: 'M13 2L4 14h7l-1 8 9-12h-7z',
+  pin: 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  phone: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z',
+  people: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6',
+  bag: 'M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2',
+  card: 'M7 3h10v18H7zM10 7h4M10 11h4',
+  plus: 'M12 5v14M5 12h14',
+  wave: 'M2 12h4l3-7 4 14 3-7h6',
+  shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z'
+};
+
+// welcome
+const wstep = s.wstep || 0;
+const wItems = [['Install Bantay', 'Android installs in one tap. iPhone takes 3 quick steps in Safari.'], ['Alerts are on', 'Your phone asks once. Storm and medicine alerts then just work.'], ['Add yourself', 'Your name, then your medicines. The rest can wait.']];
+const welcomeSteps = wItems.map((w, i) => ({ title: w[0], text: w[1], mark: i < wstep ? '✓' : String(i + 1), dot: i < wstep ? '#34C759' : i === wstep ? '#007AFF' : '#8E8E93' }));
+
+// weather
+const SK = {
+  storm: { grad: 'linear-gradient(170deg, #2B2F45 0%, #46506E 100%)', temp: '27°', cond: 'Thunderstorms', hl: 'H:30° L:24°', feels: '31°', icon: ICON.storm, rain: [40, 60, 75, 90, 85, 70, 55, 40, 30, 25, 20, 20], codes: ['rain', 'rain', 'storm', 'storm', 'storm', 'rain', 'rain', 'cloud', 'moon', 'moon', 'cloud', 'cloud'] },
+  rain: { grad: 'linear-gradient(170deg, #34506A 0%, #5B7A96 100%)', temp: '28°', cond: 'Rain', hl: 'H:30° L:25°', feels: '32°', icon: ICON.rain, rain: [55, 70, 80, 75, 60, 40, 30, 20, 20, 15, 10, 10], codes: ['rain', 'rain', 'rain', 'rain', 'rain', 'cloud', 'cloud', 'cloud', 'moon', 'moon', 'moon', 'cloud'] },
+  clear: { grad: 'linear-gradient(170deg, #2F6FA8 0%, #5AA0DC 100%)', temp: '31°', cond: 'Mostly sunny', hl: 'H:33° L:25°', feels: '36°', icon: ICON.sun, rain: [5, 5, 10, 15, 10, 5, 5, 5, 0, 0, 0, 5], codes: ['sun', 'sun', 'psun', 'psun', 'psun', 'sun', 'psun', 'moon', 'moon', 'moon', 'moon', 'moon'] },
+  heat: { grad: 'linear-gradient(170deg, #9A4A1F 0%, #D07A3A 100%)', temp: '34°', cond: 'Hot and sunny', hl: 'H:35° L:26°', feels: '41°', icon: ICON.sun, rain: [5, 10, 10, 15, 20, 10, 5, 5, 0, 0, 0, 5], codes: ['sun', 'sun', 'sun', 'sun', 'psun', 'psun', 'psun', 'moon', 'moon', 'moon', 'moon', 'moon'] }
+};
+const skyKey = p.sky || 'storm';
+const sky = SK[skyKey];
+const baseT = parseInt(sky.temp, 10);
+const hourLabels = ['Now', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM', '6 PM', '7 PM', '8 PM', '9 PM', '10 PM', '11 PM'];
+const hours24 = hourLabels.map((t, i) => ({ t, icon: ICON[sky.codes[i]], temp: (baseT + [0, 1, 1, 0, -1, -1, -2, -2, -3, -3, -3, -4][i]) + '°', rain: sky.rain[i] >= 20 ? sky.rain[i] + '%' : '' }));
+const peakI = sky.rain.slice(0, 6).indexOf(Math.max.apply(null, sky.rain.slice(0, 6)));
+const rainNote = sky.rain[peakI] >= 50 ? 'Rain likely around ' + hourLabels[peakI] : 'Rain unlikely today';
+const dayNames = ['Today', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const lows = [24, 24, 25, 24, 25, 25, 24], highs = [30, 29, 31, 32, 31, 30, 31];
+const dry = skyKey === 'clear' || skyKey === 'heat';
+const dCodes = dry ? ['sun', 'psun', 'sun', 'psun', 'rain', 'psun', 'sun'] : ['storm', 'rain', 'rain', 'psun', 'psun', 'rain', 'psun'];
+const dRain = dry ? [10, 20, 10, 20, 60, 30, 10] : [90, 70, 60, 30, 20, 50, 30];
+const days7 = dayNames.map((d, i) => ({ d, icon: ICON[dCodes[i]], rain: dRain[i] >= 20 ? dRain[i] + '%' : '', lo: lows[i] + '°', hi: highs[i] + '°', l: ((lows[i] - 23) / 10 * 100) + '%', w: ((highs[i] - lows[i]) / 10 * 100) + '%' }));
+const wet = skyKey === 'storm' || skyKey === 'rain';
+const wxStats = [
+  { k: 'Wind', v: skyKey === 'storm' ? '35 km/h' : '12 km/h', s: skyKey === 'storm' ? 'Gusts to 55' : 'Light breeze' },
+  { k: 'Rain, next 6 hours', v: Math.max.apply(null, sky.rain.slice(0, 6)) + '%', s: 'chance' },
+  { k: 'Feels like', v: sky.feels, s: 'Humidity makes it warmer' },
+  { k: 'Humidity', v: skyKey === 'clear' ? '68%' : '84%', s: 'Dew point 24°' },
+  { k: 'UV index', v: wet ? '3' : '10', s: wet ? 'Moderate' : 'Very high, use shade' },
+  { k: 'Air quality', v: 'Fair', s: 'Fine for most people' },
+  { k: 'Sunrise', v: '5:39 AM', s: 'Sunset 5:42 PM' },
+  { k: 'Sea', v: skyKey === 'storm' ? 'Rough' : 'Moderate', s: skyKey === 'storm' ? 'Small boats stay in port' : 'Waves under 1.5 m' }
+];
+const wxMode = s.wxMode || 'home';
+const seg2 = (on) => ({ bg: on ? 'var(--cell)' : 'transparent', shadow: on ? '0 1px 3px rgba(0,0,0,0.15)' : 'none', weight: on ? '600' : '400', pressed: on ? 'true' : 'false' });
+const wxModes = [['home', 'Home'], ['me', 'My location']].map(([k, label]) => Object.assign({ label, pick: () => this.setState({ wxMode: k }) }, seg2(wxMode === k)));
+const layer = s.layer || 'rain';
+const chip = (on) => ({ pressed: on ? 'true' : 'false', bg: on ? 'var(--btn)' : 'var(--fill)', fg: on ? 'var(--btn-fg)' : 'var(--ink)' });
+const layers = [['rain', 'Rain'], ['wind', 'Wind'], ['temp', 'Temp'], ['clouds', 'Clouds']].map(([k, label]) => Object.assign({ label, pick: () => this.setState({ layer: k }) }, chip(layer === k)));
+const hazardLinks = [
+  { name: 'Project NOAH', use: 'Flood, landslide and storm surge maps', url: 'https://noah.up.edu.ph/', color: '#007AFF', icon: 'M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3zM9 4v13M15 7v13' },
+  { name: 'HazardHunterPH', use: 'Hazards at your exact address', url: 'https://hazardhunter.georisk.gov.ph/', color: '#FF9500', icon: IC.pin },
+  { name: 'PAGASA', use: 'Official forecasts and typhoon bulletins', url: 'https://www.panahon.gov.ph/', color: '#5AC8FA', icon: 'M7 17h11a4 4 0 0 0 0-8 6 6 0 0 0-11 2 3 3 0 0 0 0 6z' },
+  { name: 'PHIVOLCS', use: 'Earthquakes and tsunami bulletins', url: 'https://www.phivolcs.dost.gov.ph/', color: '#AF52DE', icon: IC.wave },
+  { name: 'Windy', use: 'Typhoon tracks and live rain', url: 'https://www.windy.com/', color: '#34C759', icon: 'M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h8' }
+];
+const W = {
+  typhoon: { kicker: 'PAGASA, Signal No. 2', headline: 'Typhoon winds within 24 hours', level: 'Signal No. 2', source: 'PAGASA warning', title: 'Typhoon Signal No. 2', what: 'Strong winds, 62 to 88 km/h.', when: 'Within 24 hours', next: 'Charge every phone and bring loose things inside.' },
+  thunder: { kicker: 'PAGASA thunderstorm advisory', headline: 'Thunderstorm in the next 2 hours', level: 'Thunderstorm advisory', source: 'PAGASA advisory', title: 'Thunderstorm', what: 'Heavy rain, lightning and strong gusts.', when: 'Next 2 hours', next: 'Stay indoors until it passes.' },
+  rainfall: { kicker: 'PAGASA yellow rainfall warning', headline: 'Heavy rain until 6 PM', level: 'Yellow rainfall warning', source: 'PAGASA warning', title: 'Heavy rain', what: 'Heavy rain, 7.5 to 15 mm an hour. Low streets may flood.', when: 'Until 6 PM', next: 'Keep watch on low streets near the house.' },
+  heat: { kicker: 'PAGASA heat index, extreme caution', headline: 'Feels like 41° this afternoon', level: 'Extreme caution', source: 'PAGASA heat index', title: 'Heat', what: 'Feels like 33 to 41°C. Heat cramps and exhaustion are possible.', when: '12 PM to 4 PM', next: 'Drink water often and rest in the shade.' }
+};
+const warnKeys = { storm: ['typhoon', 'thunder'], rain: ['rainfall'], clear: [], heat: ['heat'] }[skyKey];
+const warnings = warnKeys.map((k) => ({ kicker: W[k].kicker, headline: W[k].headline, open: () => this.setState({ screen: 'alert', alert: k }) }));
+const al = W[s.alert || warnKeys[0] || 'typhoon'];
+
+// urgent action card
+const udone = s.udone || {};
+const missedDose = p.missedDose ?? false;
+const urgentAll = [];
+if (missedDose) urgentAll.push({ id: 'dose', kicker: 'Needs you now', title: 'Lola Pilar’s 8:00 AM medicine isn’t marked yet', text: 'She was reminded at 8:00 and 8:30. You look after her.', actLabel: 'Message the family', act: () => this.setState({ screen: 'thread', thread: 'family' }) });
+warnKeys.forEach((k) => urgentAll.push({ id: k, kicker: W[k].kicker, title: W[k].headline, text: 'Do this now: ' + W[k].next, actLabel: 'What to do', act: () => this.setState({ screen: 'alert', alert: k }) }));
+const urgentLeft = urgentAll.filter((u) => !udone[u.id]);
+const u0 = urgentLeft[0];
+const urgent = u0 ? Object.assign({}, u0, { bg: '#B25000', done: () => this.setState({ udone: Object.assign({}, udone, { [u0.id]: true }) }) }) : { bg: '#B25000', kicker: '', title: '', text: '', actLabel: '', act: null, done: null };
+
+// situation feed
+const SIT = [
+  { k: 'Quakes', title: 'Earthquake, magnitude 4.1', text: '38 km south, in Sarangani Bay. No tsunami threat.', meta: 'PHIVOLCS, 12 min ago', color: '#AF52DE', icon: IC.wave },
+  { k: 'Power', title: 'Brownout tomorrow, 1 to 4 PM', text: 'Line maintenance in parts of the city’s north side.', meta: 'SOCOTECO II, 2 hours ago', color: '#FF9500', icon: IC.bolt },
+  { k: 'Water', title: 'Water interruption tonight', text: '10 PM to 4 AM, pipe repair. Store water before 9 PM.', meta: 'GSCWD, 3 hours ago', color: '#5AC8FA', icon: 'M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z' },
+  { k: 'City', title: 'City disaster office on alert', text: 'Rescue teams on standby for flooding in low areas.', meta: 'CDRRMO GenSan, 4 hours ago', color: '#FF3B30', icon: IC.shield },
+  { k: 'Weather', title: 'Storm tracked 600 km east', text: 'Moving west. PAGASA bulletins lead; this is for context.', meta: 'GDACS, 5 hours ago', color: '#007AFF', icon: 'M7 17h11a4 4 0 0 0 0-8 6 6 0 0 0-11 2 3 3 0 0 0 0 6z' }
+];
+const sitF = s.sitF || 'All';
+const sitFilters = ['All', 'Quakes', 'Power', 'Water', 'City', 'Weather'].map((f) => Object.assign({ label: f, pick: () => this.setState({ sitF: f }) }, chip(sitF === f)));
+const situation = SIT.filter((x) => sitF === 'All' || x.k === sitF);
+const maps = (q) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q + ', General Santos City');
+const nearby = [
+  { name: 'Hospitals with an ER', items: [['Dr. Jorge P. Royeca City Hospital', 'Government hospital'], ['St. Elizabeth Hospital', 'Private'], ['General Santos Doctors Hospital', 'Private'], ['Mindanao Medical Center', 'Private']].map((h) => ({ name: h[0], note: h[1], url: maps(h[0]) })) },
+  { name: 'Evacuation centres', items: [{ name: 'Not set yet', note: 'Ask your barangay hall, then add it in Setup', url: maps('evacuation center') }] },
+  { name: 'Pharmacies open now', items: [{ name: 'Search nearby pharmacies', note: 'Opens your map app', url: maps('pharmacy') }] }
+];
+
+// doses and medicines
+const doses = s.doses || { am: 'taken', pm: 'open' };
+const takenNow = Object.values(doses).filter((v) => v === 'taken').length;
+const refilled = s.refilled || {};
+const person = s.person || 'ana';
+const INV = {
+  ana: [
+    { id: 'am', name: 'Morning tablet', kind: 'Medicine', when: 'Every day, 8:00 AM, after breakfast', left: 8, full: 30, exp: 'Expires Mar 2027', med: true },
+    { id: 'pm', name: 'Evening tablet', kind: 'Medicine', when: 'Every day, 8:00 PM, with dinner', left: 21, full: 30, exp: 'Expires Jun 2027', med: true },
+    { id: 'vd', name: 'Vitamin D', kind: 'Supplement', when: 'Every morning, with food', left: 40, full: 60, exp: 'Expires Nov 2026, use first', med: false, expSoon: true },
+    { id: 'fo', name: 'Fish oil', kind: 'Supplement', when: 'Every evening, with dinner', left: 9, full: 60, exp: 'Expires Aug 2027', med: false }
+  ],
+  lola: [
+    { id: 'l1', name: 'Lola’s morning tablet', kind: 'Medicine', when: 'Every day, 8:00 AM, after breakfast', left: 25, full: 30, exp: 'Expires Feb 2027', med: true },
+    { id: 'l2', name: 'Calcium', kind: 'Supplement', when: 'Every noon, with lunch', left: 50, full: 60, exp: 'Expires Jan 2028', med: false }
+  ]
+};
+const inv = INV[person].map((m) => {
+  const n = refilled[m.id] ? m.full : m.left - (m.id === 'am' && doses.am === 'taken' ? 0 : 0);
+  const low = n <= 10;
+  return { name: m.name, kind: m.kind, when: m.when, color: m.med ? '#34C759' : '#30B0C7', icon: m.med ? IC.pill : IC.leaf, pct: Math.round(n / m.full * 100) + '%', bar: low ? '#FF9500' : '#34C759', stock: n + ' left, about ' + n + ' days' + (low ? '. Refill soon.' : ''), stockColor: low ? 'var(--warn)' : 'var(--ink2)', expiry: m.exp, refillText: refilled[m.id] ? '✓ Refilled' : 'Refilled', refill: () => this.setState({ refilled: Object.assign({}, refilled, { [m.id]: true }) }) };
+});
+const lowCount = INV[person].filter((m) => !refilled[m.id] && m.left <= 10).length;
+const refillNote = lowCount ? lowCount + ' running low' : 'Stock is fine';
+
+// people and segments
+const persons = [['ana', 'Ana (you)'], ['lola', 'Lola Pilar']].map(([k, label]) => Object.assign({ label, pick: () => this.setState({ person: k, recOpen: null, calSel: 17 }) }, chip(person === k)));
+const personName = person === 'ana' ? 'Ana' : 'Lola Pilar';
+const SEG = {
+  health: [['overview', 'Overview'], ['habits', 'Habits']],
+  records: [['timeline', 'Timeline'], ['calendar', 'Calendar'], ['meds', 'Medicines'], ['trends', 'Trends']],
+  family: [['home', 'Home'], ['messages', 'Messages'], ['learn', 'Learn and play']]
+};
+const segOf = { health: s.hseg || 'overview', records: s.rseg || 'timeline', family: s.fseg || 'home' };
+const segKey = { health: 'hseg', records: 'rseg', family: 'fseg' }[screen];
+const seg = (SEG[screen] || []).map(([k, label]) => Object.assign({ label, sel: segOf[screen] === k ? 'true' : 'false', pick: () => this.setState({ [segKey]: k }) }, seg2(segOf[screen] === k)));
+
+// blood pressure
+const top = [128, 132, 126, 135, 130, 129, 138, 133, 127, 131, 129, 125, 128, 124];
+const bot = [82, 85, 80, 88, 84, 83, 90, 86, 81, 84, 83, 80, 82, 79];
+const x = (i) => (i * 270 / 13 + 4).toFixed(1);
+const y = (v) => (120 - (v - 80) * 100 / 60).toFixed(1);
+const pts = (a) => a.map((v, i) => x(i) + ',' + y(v)).join(' ');
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Today'];
+const bpRows = top.slice(7).map((t, i) => ({ day: days[i], top: t, bot: bot[i + 7] }));
+const rv = s.rv || { sys: 128, dia: 84, pul: 72 };
+const scan = !!s.fromScan;
+const bump = (k, n) => () => this.setState({ rv: Object.assign({}, rv, { [k]: rv[k] + n }), pulTouched: k === 'pul' ? true : s.pulTouched });
+const bpFields = [['sys', 'Top number'], ['dia', 'Bottom number'], ['pul', 'Pulse']].map(([k, label]) => {
+  const unsure = scan && k === 'pul' && !s.pulTouched;
+  return { label, value: rv[k], up: bump(k, 1), down: bump(k, -1), upAria: label + ' up', downAria: label + ' down', note: unsure ? '! Hard to read. Check this one.' : scan ? 'Read from photo' : 'Typed', noteColor: unsure ? 'var(--warn)' : 'var(--ink2)', bg: unsure ? 'var(--warn-bg)' : 'transparent' };
+});
+let bpCheckText = '';
+if (rv.sys <= rv.dia) bpCheckText = 'The top number should be higher than the bottom one.';
+else if (rv.sys < 70 || rv.sys > 250 || rv.dia < 40 || rv.dia > 150) bpCheckText = 'That number looks unusual. Check it against the monitor.';
+else if (Math.abs(rv.sys - 124) > 40) bpCheckText = 'Big change from your last reading. Check it, then save if right.';
+const bpSaved = !!s.bpSaved;
+const bpLatest = bpSaved ? s.savedText : '124/79';
+
+// today tiles
+const C = 2 * Math.PI * 17;
+const medDash = (takenNow / 2 * C).toFixed(1) + ' ' + C.toFixed(1);
+const water = s.water ?? 5;
+const waterDots = Array.from({ length: 8 }, (_, i) => ({ fill: i < water ? '#30B0C7' : 'var(--fill)' }));
+const streak = s.ok ? 13 : 12;
+const doneToday = takenNow + (s.ok ? 1 : 0) + (water >= 8 ? 1 : 0) + 1;
+
+// health profile and brief
+const PROF = {
+  ana: { name: 'Ana Reyes', init: 'A', av: '#007AFF', line: 'Age 58. Lives at home.', facts: [['Blood type', 'Not set', true], ['Allergies', 'Not set', true], ['Doctor', 'Dr. Lim', false]] },
+  lola: { name: 'Lola Pilar', init: 'P', av: '#AF52DE', line: 'Age 84. Cared for by Ana.', facts: [['Blood type', 'Not set', true], ['Allergies', 'Not set', true], ['Doctor', 'Not set', true]] }
+};
+const pr = PROF[person];
+const prof = { name: pr.name, init: pr.init, av: pr.av, line: pr.line, facts: pr.facts.map(([k, v, miss]) => ({ k, v, color: miss ? 'var(--warn)' : 'var(--ink)' })) };
+const bd = s.brief || {};
+const mark = (id) => () => this.setState({ brief: Object.assign({}, bd, { [id]: true }) });
+const BRIEF = {
+  ana: [
+    { id: 'ev', text: 'Evening tablet at 8:00 PM', sub: 'Morning dose is done', act: 'Remind me', fn: mark('ev'), tone: 'go' },
+    { id: 'bp', text: 'No blood pressure reading for 2 days', sub: 'A quick scan takes 20 seconds', act: 'Scan', fn: go('scanaim'), tone: 'warn', nav: true },
+    { id: 'rf', text: 'Morning tablet: 8 left', sub: 'Runs out Oct 25. Refill by Oct 20.', act: 'Remind me', fn: mark('rf'), tone: 'warn' },
+    { id: 'ap', text: 'Check-up with Dr. Lim on Dec 12', sub: 'Bring your Oct 3 lipid result', act: 'Calendar', fn: () => this.setState({ screen: 'records', rseg: 'calendar' }), tone: 'go', nav: true },
+    { id: 'up', text: 'Got new lab results?', sub: 'Snap them and Bantay files them for you', act: 'Add', fn: go('recadd'), tone: 'go', nav: true }
+  ],
+  lola: [
+    { id: 'lm', text: 'Morning tablet taken at 8:10 AM', sub: 'Marked by Ana', act: 'History', fn: () => this.setState({ screen: 'records', rseg: 'meds' }), tone: 'ok', nav: true },
+    { id: 'la', text: 'Check-up on Oct 24 at 10:00 AM', sub: 'In one week', act: 'Remind me', fn: mark('la'), tone: 'go' },
+    { id: 'lr', text: 'No records yet', sub: 'Add her latest prescription and lab results', act: 'Add', fn: go('recadd'), tone: 'warn', nav: true },
+    { id: 'lb', text: 'Blood type and allergies not set', sub: 'Responders need these on her medical ID', act: 'Add', fn: mark('lb'), tone: 'warn' }
+  ]
+};
+const brief = BRIEF[person].map((b) => {
+  const done = !b.nav && bd[b.id];
+  return { text: b.text, sub: done ? 'Done. Bantay will remind you.' : b.sub, act: done ? '✓ Set' : b.act, fn: b.fn, dot: done || b.tone === 'ok' ? '#34C759' : b.tone === 'warn' ? '#FF9500' : '#007AFF', ink: 'var(--ink)', bg: done ? 'transparent' : 'var(--fill)', fg: done ? 'var(--ok)' : 'var(--act)' };
+});
+const briefLeft = BRIEF[person].filter((b) => b.nav || !bd[b.id]).length + ' to look at';
+const band = (name, value, unit, lo, hi, min, max, v, source, statusFn) => {
+  const clamp = (n) => Math.max(0, Math.min(100, n));
+  const st = statusFn(v, lo, hi);
+  return { name, value, unit, source, bandL: clamp((lo - min) / (max - min) * 100) + '%', bandW: clamp((hi - lo) / (max - min) * 100) + '%', mark: clamp((v - min) / (max - min) * 100) + '%', status: st[0], color: st[1], aria: name + ' ' + value + ' ' + unit + '. ' + source + ' ' + lo + ' to ' + hi + '. ' + st[0] + '.' };
+};
+const rule = (v, lo, hi) => v > hi ? ['! Above the range', 'var(--warn)'] : v < lo ? ['! Below the range', 'var(--warn)'] : ['✓ Inside the range', 'var(--ok)'];
+const normals = person === 'ana' ? [
+  band('Blood pressure, top', String(bpSaved ? (s.rvSaved || rv).sys : 124), 'mmHg', 90, 120, 80, 170, bpSaved ? (s.rvSaved || rv).sys : 124, 'General guide (AHA): 90 to 120', rule),
+  band('Blood pressure, bottom', String(bpSaved ? (s.rvSaved || rv).dia : 79), 'mmHg', 60, 80, 50, 110, bpSaved ? (s.rvSaved || rv).dia : 79, 'General guide (AHA): 60 to 80', rule),
+  band('Pulse', '70', 'per min', 60, 100, 40, 130, 70, 'General guide: 60 to 100', rule),
+  band('LDL cholesterol', '162', 'mg/dL', 50, 130, 40, 200, 162, 'Lab’s range: under 130, Oct 3', rule),
+  band('Fasting blood sugar', '104', 'mg/dL', 70, 99, 50, 140, 104, 'Lab’s range: 70 to 99, Oct 17', rule)
+] : [];
+
+// habits
+const C2 = 2 * Math.PI * 36;
+const ring = (label, v, max, detail, color) => { const f = Math.min(v / max, 1); return { label, detail, color, pct: Math.round(f * 100) + '%', dash: (f * C2).toFixed(1) + ' ' + C2.toFixed(1), aria: label + ': ' + detail }; };
+const rings = [ring('Medicines', 11 + takenNow, 14, (11 + takenNow) + ' of 14 doses', '#34C759'), ring('Moving', 95, 150, '95 of 150 min', '#FF9500'), ring('Check-ins', s.ok ? 6 : 5, 7, (s.ok ? 6 : 5) + ' of 7 days', '#007AFF')];
+const hd = s.habits || {};
+const habits = [
+  { id: 'walk', label: '10-minute walk', anchor: 'After lunch', streak: '5 of 7', week: [1, 1, 0, 1, 1, 1, 0] },
+  { id: 'water', label: '1 glass of water', anchor: 'After waking up', streak: '6 of 7', week: [1, 1, 1, 1, 0, 1, 1] },
+  { id: 'stretch', label: '2-minute stretch', anchor: 'Before bed', streak: 'New', week: [0, 0, 0, 0, 1, 1, 0] }
+].map((h) => { const done = !!hd[h.id]; return { label: h.label, anchor: h.anchor, streak: h.streak, week: h.week.map((v, i) => ({ fill: (i === 6 ? done : v) ? '#34C759' : 'var(--fill)' })), button: done ? '✓ Done' : 'Done', pressed: done ? 'true' : 'false', bg: done ? 'var(--btn)' : 'var(--fill)', fg: done ? 'var(--btn-fg)' : 'var(--act)', toggle: () => this.setState({ habits: Object.assign({}, hd, { [h.id]: !done }) }) }; });
+
+// records
+const RECS = {
+  ana: [
+    { id: 'r1', mon: 'OCT', day: '3', yr: '2026', type: 'Lab result', title: 'Lipid profile', place: 'City lab', summary: 'LDL 162 mg/dL, above the lab’s range of under 130. Total cholesterol 228, also above its range. HDL and triglycerides inside their ranges.', flag: true, values: [['Total cholesterol', '228 mg/dL', 'Lab range: under 200', true, 'chol'], ['LDL', '162 mg/dL', 'Lab range: under 130', true, 'ldl'], ['HDL', '48 mg/dL', 'Lab range: over 40', false, 'chol'], ['Triglycerides', '140 mg/dL', 'Lab range: under 150', false, 'chol']] },
+    { id: 'r2', mon: 'SEP', day: '12', yr: '2026', type: 'Check-up', title: 'Check-up with Dr. Lim', place: 'Clinic visit', summary: 'Clinic BP 132/86. Lipid test requested. Next visit in 3 months.', flag: false, values: [] },
+    { id: 'r3', mon: 'JUN', day: '20', yr: '2026', type: 'Prescription', title: 'Prescription', place: 'Dr. Lim', summary: 'Morning tablet once a day. Evening tablet once a day.', flag: false, values: [] },
+    { id: 'r4', mon: 'MAR', day: '8', yr: '2026', type: 'Lab result', title: 'Lipid profile', place: 'City lab', summary: 'LDL 171 mg/dL, above the lab’s range of under 130.', flag: true, values: [['LDL', '171 mg/dL', 'Lab range: under 130', true, 'ldl']] }
+  ],
+  lola: []
+};
+const extraRecs = s.newRecs || [];
+const recsAll = extraRecs.filter((r) => r.who === person).concat(RECS[person]);
+const recList = recsAll.map((r) => ({ mon: r.mon, day: r.day, yr: r.yr, type: r.type, title: r.title, summary: r.summary, flag: r.flag, open: () => this.setState({ screen: 'recdetail', recOpen: r.id }) }));
+const conf = s.conf || {};
+const NEWREC = { id: 'new', mon: 'OCT', day: '17', yr: '2026', type: 'Lab result', title: 'Blood sugar test', place: 'City lab. Read from your photo just now', summary: 'Fasting blood sugar 104 mg/dL, above the lab’s range of 70 to 99. HbA1c 5.8%, above the lab’s range of under 5.7.', flag: true, values: [['Fasting blood sugar', '104 mg/dL', 'Lab range: 70 to 99', true, 'fbs'], ['HbA1c', '5.8 %', 'Lab range: under 5.7', true, 'a1c']], isNew: true };
+const recOpen = s.recOpen === 'new' ? NEWREC : recsAll.find((r) => r.id === s.recOpen) || RECS.ana[0];
+const rd = {
+  type: recOpen.type, date: recOpen.mon.charAt(0) + recOpen.mon.slice(1).toLowerCase() + ' ' + recOpen.day + ', ' + recOpen.yr, title: recOpen.title, place: recOpen.place, summary: recOpen.summary,
+  isNew: !!recOpen.isNew, hasValues: recOpen.values.length > 0,
+  hl1: recOpen.values.length ? 'rgba(0,122,255,0.18)' : 'var(--fill)', hl2: recOpen.values.length > 1 ? 'rgba(0,122,255,0.18)' : 'var(--fill)',
+  values: recOpen.values.map((v, i) => { const key = recOpen.id + i; const c = !recOpen.isNew || conf[key]; return { name: v[0], value: v[1], rangeText: v[3] ? '! Outside: ' + v[2].replace('Lab range: ', 'lab range ') : v[2], rangeColor: v[3] ? 'var(--warn)' : 'var(--ink2)', pending: !c, confirmed: !!c, confirm: () => this.setState({ conf: Object.assign({}, conf, { [key]: true }) }), learn: () => this.setState({ screen: 'wiki', wiki: v[4], wikiBack: 'recdetail', wikiFullOn: false }) }; })
+};
+const ldl = [175, 171, 162], lx = [10, 145, 280];
+const ly = (v) => (120 - (v - 100)).toFixed(1);
+const queued = !!s.queued, filed = s.filed || {};
+const QUEUE = [
+  { id: 'q1', title: 'Lab result, Oct 15', sub: 'Ana. City lab. 2 pages joined.', state: 'Ready', color: '#007AFF', icon: IC.flask, review: true },
+  { id: 'q2', title: 'Prescription, Oct 16', sub: 'Lola Pilar. Dr. Santos.', state: 'Ready', color: '#34C759', icon: IC.pill, review: true },
+  { id: 'q3', title: 'Pharmacy receipt', sub: 'Not a medical record. Moved to Other.', state: 'Sorted', color: '#8E8E93', icon: IC.doc, review: false },
+  { id: 'q4', title: 'Photo 4 of 4', sub: 'Reading the page…', state: 'Reading', color: '#FF9500', icon: IC.dots, review: false }
+];
+const queue = QUEUE.map((q) => ({ title: q.title, sub: filed[q.id] ? 'Filed.' : q.sub, color: filed[q.id] ? '#34C759' : q.color, icon: filed[q.id] ? IC.check : q.icon, canReview: q.review && !filed[q.id], noReview: !q.review || !!filed[q.id], state: filed[q.id] ? 'Filed' : q.state, review: () => this.setState({ screen: 'recdetail', recOpen: 'new', reviewing: q.id }) }));
+const inboxN = queued ? QUEUE.filter((q) => q.review && !filed[q.id]).length : 0;
+
+// calendar (October 2026 starts on a Thursday)
+const rem = s.rem || {};
+const EVENTS = [
+  { d: 3, title: 'Lipid profile done', sub: 'Ana. City lab. Result filed.', color: '#007AFF', icon: IC.flask, past: true, who: 'ana' },
+  { d: 17, title: 'Evening tablet', sub: 'Ana. 8:00 PM, with dinner', color: '#34C759', icon: IC.pill, who: 'ana' },
+  { d: 17, title: 'Vitamin D', sub: 'Ana. Taken this morning', color: '#30B0C7', icon: IC.leaf, past: true, who: 'ana' },
+  { d: 20, title: 'Refill morning tablet', sub: 'Ana. 8 left, runs out Oct 25', color: '#FF9500', icon: IC.refill, who: 'ana' },
+  { d: 24, title: 'Check-up', sub: 'Lola Pilar. 10:00 AM', color: '#5856D6', icon: IC.steth, who: 'lola' },
+  { d: 28, title: 'Fasting blood test', sub: 'Ana. 7:00 AM. No food after 10 PM the night before', color: '#007AFF', icon: IC.flask, who: 'ana' }
+];
+const calSel = s.calSel || 17;
+const mine = EVENTS.filter((e) => person === 'ana' || e.who === person);
+const calCells = Array.from({ length: 35 }, (_, i) => {
+  const n = i - 3;
+  const valid = n >= 1 && n <= 31;
+  const ev = mine.filter((e) => e.d === n);
+  const sel = n === calSel, today = n === 17;
+  return { n: valid ? String(n) : '', vis: valid ? 'visible' : 'hidden', dot: ev.length ? ev[0].color : 'transparent', bg: sel ? 'var(--btn)' : 'transparent', fg: sel ? 'var(--btn-fg)' : today ? 'var(--danger)' : 'var(--ink)', weight: sel || today ? '700' : '400', pressed: sel ? 'true' : 'false', aria: 'October ' + n + (ev.length ? ', ' + ev.length + ' item' + (ev.length > 1 ? 's' : '') : ''), pick: () => valid && this.setState({ calSel: n }) };
+});
+const dayEvents = mine.filter((e) => e.d === calSel);
+const calDay = dayEvents.map((e, i) => { const k = e.d + '-' + i; const on = rem[k] !== undefined ? rem[k] : !e.past; return Object.assign({ title: e.title, sub: e.sub, color: e.color, icon: e.icon, canRemind: !e.past, aria: 'Remind me: ' + e.title, toggle: () => this.setState({ rem: Object.assign({}, rem, { [k]: !on }) }) }, { track: on ? '#34C759' : 'var(--fill)', knob: on ? '22px' : '2px', on: on ? 'true' : 'false' }); });
+const nextAppt = person === 'ana' ? 'Fasting blood test Oct 28. Dr. Lim Dec 12.' : 'Check-up Oct 24, 10:00 AM';
+
+// wiki
+const WIKI = {
+  ldl: { title: 'LDL cholesterol', kind: 'Lab test', body: 'LDL is the cholesterol often called “bad” cholesterol. Too much of it can build up in blood vessels over time. Doctors read it together with HDL, triglycerides and your other risks, not on its own.', ask: 'What LDL number should I aim for, and when should I test again?', url: 'https://medlineplus.gov/lab-tests/cholesterol-levels/' },
+  chol: { title: 'Cholesterol panel', kind: 'Lab test', body: 'A lipid panel measures total cholesterol, LDL, HDL and triglycerides from one blood sample. You may be asked not to eat for 9 to 12 hours before it.', ask: 'Do I need to fast before my next panel?', url: 'https://medlineplus.gov/lab-tests/cholesterol-levels/' },
+  fbs: { title: 'Fasting blood sugar', kind: 'Lab test', body: 'This measures the sugar (glucose) in your blood after not eating for at least 8 hours. It is one of the tests doctors use to check how the body handles sugar.', ask: 'Does this result need a repeat test or other tests?', url: 'https://medlineplus.gov/lab-tests/blood-glucose-test/' },
+  a1c: { title: 'HbA1c', kind: 'Lab test', body: 'HbA1c shows your average blood sugar over about the last 3 months. You don’t need to fast for it.', ask: 'How often should I check my HbA1c?', url: 'https://medlineplus.gov/lab-tests/hemoglobin-a1c-hba1c-test/' },
+  bp: { title: 'Blood pressure', kind: 'Reading', body: 'The top number is the pressure when your heart beats; the bottom number is the pressure between beats. Readings change during the day, so a pattern over many days says more than one reading.', ask: 'What range should my readings stay in?', url: 'https://medlineplus.gov/highbloodpressure.html' }
+};
+const wq = (s.wq || '').toLowerCase();
+const wikiTopics = Object.keys(WIKI).filter((k) => !wq || (WIKI[k].title + ' ' + WIKI[k].body).toLowerCase().includes(wq)).map((k) => ({ title: WIKI[k].title, kind: WIKI[k].kind, open: () => this.setState({ wiki: k, wikiFullOn: false }) }));
+const wk = WIKI[s.wiki] || WIKI.ldl;
+
+// offline library (Kiwix)
+const packs0 = s.packs || { mini: 'saved', nhs: 'none', wikem: 'none', nopic: 'none' };
+const PACKS = [['mini', 'Medical encyclopedia, basic', '166 MB. First part of 30,000+ medical articles'], ['nopic', 'Medical encyclopedia, full text', '1 GB. Whole articles, no pictures'], ['nhs', 'Medicines guide', '15 MB. What each medicine is for, side effects'], ['wikem', 'Emergency guide', '331 MB. First aid and emergencies']];
+const packs = PACKS.map(([k, name, sub]) => { const st = packs0[k]; const next = st === 'none' ? 'loading' : st === 'loading' ? 'saved' : 'none'; return { name, sub, btn: st === 'saved' ? '✓ Saved' : st === 'loading' ? 'Downloading 40%' : 'Download', pressed: st === 'saved' ? 'true' : 'false', bg: st === 'none' ? 'var(--btn)' : 'var(--fill)', fg: st === 'none' ? 'var(--btn-fg)' : st === 'saved' ? 'var(--ok)' : 'var(--act)', toggle: () => this.setState({ packs: Object.assign({}, packs0, { [k]: next }) }) }; });
+const savedPacks = PACKS.filter(([k]) => packs0[k] === 'saved');
+const libStatus = savedPacks.length ? savedPacks.length + ' saved on this phone. Works with no signal.' : 'Nothing saved yet. Online articles still work.';
+const readW = s.readW || {};
+const readList = Object.keys(readW).filter((k) => WIKI[k]).map((k) => ({ title: WIKI[k].title, open: () => this.setState({ wiki: k, wikiFullOn: true }) }));
+
+// family
+const cheers = s.cheers || {};
+const family = [
+  { id: 'ana', name: 'Ana (you)', init: 'A', av: '#007AFF', note: 'Lives at home', status: s.ok ? '✓ OK today' : 'Not checked in yet', color: s.ok ? ok : wait, self: true },
+  { id: 'ben', name: 'Ben', init: 'B', av: '#34C759', note: 'Walked 4 km today', status: '✓ OK today', color: ok },
+  { id: 'carmen', name: 'Carmen', init: 'C', av: '#FF9500', note: 'Leads in an emergency', status: '✓ OK today', color: ok },
+  { id: 'lola', name: 'Lola Pilar', init: 'P', av: '#AF52DE', note: 'Cared for by Ana, details private', status: '✓ Morning dose taken', color: ok },
+  { id: 'dan', name: 'Dan', init: 'D', av: '#8E8E93', note: 'Away at sea, last seen Tuesday', status: 'Not expected daily', color: quiet }
+].map((m) => ({ name: m.name, init: m.init, av: m.av, note: m.note, status: m.status, color: m.color, canCheer: !m.self, cheerText: cheers[m.id] ? '♥ Sent' : '♥', cheerColor: cheers[m.id] ? '#FF2D55' : 'var(--act)', cheerAria: 'Send a heart to ' + m.name, cheer: () => this.setState({ cheers: Object.assign({}, cheers, { [m.id]: true }) }) }));
+const joined = s.joined || { steps: true };
+const challenges = [
+  { id: 'steps', name: '7,000 steps a day, 5 days', meta: '3 joined. Ends Sunday.', pct: 60, color: '#FF9500' },
+  { id: 'water', name: '8 glasses of water for a week', meta: '2 joined. Day 4 of 7.', pct: 57, color: '#30B0C7' },
+  { id: 'veg', name: 'Vegetables at every lunch', meta: 'New. Starts Monday.', pct: 0, color: '#34C759' }
+].map((c) => ({ name: c.name, meta: c.meta, pct: c.pct + '%', color: c.color, btn: joined[c.id] ? '✓ Joined' : 'Join', pressed: joined[c.id] ? 'true' : 'false', bg: joined[c.id] ? 'var(--btn)' : 'var(--fill)', fg: joined[c.id] ? 'var(--btn-fg)' : 'var(--act)', toggle: () => this.setState({ joined: Object.assign({}, joined, { [c.id]: !joined[c.id] }) }) }));
+
+// messages
+const THREADS = {
+  family: { name: 'Family', init: 'F', av: '#5856D6', time: '9:02 AM', unread: 2, msgs: [['Carmen', 'Typhoon Signal 2 tonight. Please charge your phones.'], ['Ben', 'Done. Power bank charged too.'], ['me', 'I’ll bring in the plants after lunch.'], ['Carmen', 'Thanks. Lola’s medicines are in the go-bag.']] },
+  carmen: { name: 'Carmen', init: 'C', av: '#FF9500', time: '8:40 AM', unread: 1, msgs: [['Carmen', 'Can you check Lola’s 8 PM dose today? I’ll be late.']] },
+  ben: { name: 'Ben', init: 'B', av: '#34C759', time: 'Yesterday', unread: 0, msgs: [['Ben', 'Walked 4 km! I joined the step challenge.'], ['me', 'Nice. I’m in too.']] }
+};
+const extra = s.extraMsgs || {};
+const readT = s.readT || {};
+const sosMsg = s.sos ? [['me', 'SOS: I need help. My location is shared in Bantay.']] : [];
+const allMsgs = (k) => THREADS[k].msgs.concat(k === 'family' ? sosMsg : []).concat(extra[k] || []);
+const threads = Object.keys(THREADS).map((k) => { const t = THREADS[k]; const m = allMsgs(k); const last = m[m.length - 1]; return { name: t.name, init: t.init, av: t.av, time: (extra[k] || []).length ? 'Now' : t.time, last: (last[0] === 'me' ? 'You: ' : (k === 'family' ? last[0] + ': ' : '')) + last[1], unread: String(t.unread), hasUnread: !readT[k] && t.unread > 0, open: () => this.setState({ screen: 'thread', thread: k, readT: Object.assign({}, readT, { [k]: true }) }) }; });
+const tk = s.thread || 'family';
+const msgs = allMsgs(tk).map((m) => { const me = m[0] === 'me'; return { text: m[1], who: m[0], showWho: !me && tk === 'family', justify: me ? 'flex-end' : 'flex-start', bg: me ? '#007AFF' : 'var(--cell)', fg: me ? '#FFFFFF' : 'var(--ink)' }; });
+const sendMsg = (txt) => () => { if (!txt.trim()) return; this.setState({ extraMsgs: Object.assign({}, extra, { [tk]: (extra[tk] || []).concat([['me', txt.trim()]]) }), draft: '' }); };
+const unreadTotal = Object.keys(THREADS).filter((k) => !readT[k]).reduce((a, k) => a + THREADS[k].unread, 0);
+
+// learn and play
+const topic = s.topic || 'All';
+const topics = ['All', 'Health', 'Food', 'Move', 'Mind', 'Safety'].map((t) => Object.assign({ label: t, pick: () => this.setState({ topic: t }) }, chip(topic === t)));
+const savedTips = s.saved || {};
+const allTips = [
+  { id: 0, topic: 'Health', text: 'On hot days, drink water before you feel thirsty.', source: 'DOH heat advisory' },
+  { id: 1, topic: 'Move', text: 'Adults need at least 150 minutes of moderate activity a week. Ten minutes at a time counts.', source: 'WHO' },
+  { id: 2, topic: 'Health', text: 'Dengue mosquitoes breed in clean standing water. Empty and scrub containers once a week.', source: 'DOH 4S campaign' },
+  { id: 3, topic: 'Food', text: 'Fill half your plate with vegetables and fruit, a quarter with rice, a quarter with fish, meat or beans.', source: 'FNRI Pinggang Pinoy' },
+  { id: 4, topic: 'Mind', text: 'Feeling overwhelmed? The NCMH crisis line is 1553, any time.', source: 'NCMH' },
+  { id: 5, topic: 'Safety', text: 'Keep a go-bag with water, medicines, a flashlight and copies of IDs near the door.', source: 'NDRRMC' }
+];
+const tips = allTips.filter((t) => topic === 'All' || t.topic === topic).map((t) => ({ topic: t.topic, text: t.text, source: 'Source: ' + t.source, saveText: savedTips[t.id] ? '✓ Saved' : 'Save', pressed: savedTips[t.id] ? 'true' : 'false', save: () => this.setState({ saved: Object.assign({}, savedTips, { [t.id]: !savedTips[t.id] }) }) }));
+const yt = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+const videos = [
+  { title: '10-minute walk at home', sub: 'Low impact, any age', url: yt('10 minute walk at home workout low impact') },
+  { title: 'Chair exercises', sub: 'Safe for seniors, seated', url: yt('chair exercises for seniors 15 minutes') },
+  { title: 'Morning stretch', sub: '5 minutes, beginners', url: yt('5 minute morning stretch beginners') },
+  { title: 'Zumba for families', sub: 'Fun, 20 minutes', url: yt('family zumba dance workout 20 minutes') }
+].map((v) => Object.assign(v, { sub: v.sub + '. YouTube search' }));
+const QUIZ = [
+  { q: 'How many minutes of moderate activity a week do adults need?', opts: ['60 minutes', '150 minutes', '300 minutes'], a: 1, why: 'WHO says at least 150 minutes a week, and 10 minutes at a time counts.' },
+  { q: 'Where do dengue mosquitoes breed?', opts: ['Dirty canals', 'Clean standing water', 'Running rivers'], a: 1, why: 'They lay eggs in clean, still water: flower vases, old tyres, water drums.' },
+  { q: 'In Pinggang Pinoy, how much of the plate is vegetables and fruit?', opts: ['A quarter', 'Half', 'Three quarters'], a: 1, why: 'Half the plate, with a quarter rice and a quarter fish, meat or beans.' }
+];
+const qi = s.qi || 0, qpick = s.qpick, qscore = s.qscore || 0;
+const quizOn = qi < QUIZ.length, Q = QUIZ[Math.min(qi, QUIZ.length - 1)];
+const answered = qpick !== undefined && qpick !== null;
+const qz = {
+  q: Q.q, answered,
+  opts: Q.opts.map((o, i) => { const right = answered && i === Q.a, wrong = answered && i === qpick && i !== Q.a; return { label: (right ? '✓ ' : wrong ? '✕ ' : '') + o, edge: right ? '#34C759' : wrong ? '#FF3B30' : 'var(--sep)', bg: right ? 'rgba(52,199,89,0.12)' : 'transparent', pick: () => !answered && this.setState({ qpick: i, qscore: qscore + (i === Q.a ? 1 : 0) }) }; }),
+  fb: answered && qpick === Q.a ? 'Right.' : 'Not quite.', fbColor: answered && qpick === Q.a ? 'var(--ok)' : 'var(--warn)', why: Q.why,
+  nextLabel: qi === QUIZ.length - 1 ? 'See my score' : 'Next question', next: () => this.setState({ qi: qi + 1, qpick: null })
+};
+
+// safety
+const tel = (n) => 'tel:' + n.replace(/[^0-9+]/g, '');
+const hl = (name, items) => ({ name, items: items.map((i) => ({ name: i[0], num: i[1], tel: tel(i[1]) })) });
+const hotlines = [
+  hl('Emergency', [['National emergency', '911'], ['GenSan rescue (CDRRMO)', '0943 461 4548'], ['Philippine Red Cross', '143']]),
+  hl('Fire, police and sea', [['Fire, BFP GenSan', '(083) 552 1160'], ['GenSan City Police', '(083) 552 5573'], ['Coast Guard GenSan', '0966 200 4986']]),
+  hl('Health', [['DOH health line', '1555'], ['Mental health crisis (NCMH)', '1553'], ['Poison control (UP-PGH)', '(02) 8524 1078'], ['Royeca City Hospital', '(083) 552 2811']]),
+  hl('Power and water', [['SOCOTECO II, 24 hours', '0917 794 8314'], ['GSCWD water', '(083) 552 3824']])
+];
+const groupOf = (n) => /hospital|clinic|doctor|dr\.|medical|pharmacy|\ber\b/i.test(n) ? 'Doctors and hospitals' : /police|fire|rescue|barangay/i.test(n) ? 'Safety' : /water|power|electric|internet|gas|socoteco|gscwd/i.test(n) ? 'Utilities' : /school|teacher|office|work/i.test(n) ? 'School and work' : 'Family and friends';
+const contacts = s.contacts || [{ name: 'Dr. Lim, family doctor', num: '0900 000 0001' }, { name: 'Tita Rosa', num: '0900 000 0002' }, { name: 'Barangay hall', num: '0900 000 0003' }, { name: 'Water refill shop', num: '0900 000 0004' }];
+const myGroups = ['Family and friends', 'Doctors and hospitals', 'Safety', 'Utilities', 'School and work'].map((g) => ({ name: g, items: contacts.filter((c) => groupOf(c.name) === g).sort((a, b) => a.name.localeCompare(b.name)).map((c) => ({ name: c.name, num: c.num, tel: tel(c.num) })) })).filter((g) => g.items.length);
+const cName = s.cName || '', cNum = s.cNum || '';
+const bagDone = s.bag || { water: true, meds: true, light: true, ids: false, power: false, aid: false, cash: true };
+const BAG = [['water', 'Water for 3 days', 'Checked Oct 1'], ['meds', 'Medicines for 1 week', 'Expires Jan 2027'], ['light', 'Flashlight and batteries', 'Batteries expire 2028'], ['ids', 'Copies of IDs in a plastic bag', 'Not packed yet'], ['power', 'Charged power bank', 'Not packed yet'], ['aid', 'First-aid kit', 'Not packed yet'], ['cash', 'Small bills and coins', '₱500 packed']];
+const bag = BAG.map(([k, label, note]) => { const d = !!bagDone[k]; return { label, note, noteColor: d ? 'var(--ink2)' : 'var(--warn)', mark: d ? '✓' : '', bg: d ? '#34C759' : 'transparent', edge: d ? '#34C759' : 'var(--sep)', pressed: d ? 'true' : 'false', toggle: () => this.setState({ bag: Object.assign({}, bagDone, { [k]: !d }) }) }; });
+const bagN = BAG.filter(([k]) => bagDone[k]).length;
+const openMessages = () => this.setState({ screen: 'family', fseg: 'messages' });
+const safetyRows = [
+  { label: 'Message the family', note: unreadTotal ? unreadTotal + ' unread' : 'Family chat', color: '#5856D6', icon: IC.chat, open: openMessages },
+  { label: 'Around GenSan', note: '5 updates today', color: '#FF3B30', icon: IC.wave, open: () => this.setState({ screen: 'situation', sitBack: 'safety' }) },
+  { label: 'Nearby help', note: 'Hospitals, evacuation, pharmacies', color: '#007AFF', icon: IC.pin, open: go('nearby') },
+  { label: 'Hotlines', note: '911, rescue, fire, health', color: '#34C759', icon: IC.phone, open: go('hotlines') },
+  { label: 'My contacts', note: 'Sorted into groups', color: '#8E8E93', icon: IC.people, open: go('contacts') },
+  { label: 'Go-bag', note: bagN + ' of ' + BAG.length + ' ready', color: '#FF9500', icon: IC.bag, open: go('gobag') },
+  { label: 'Safety cards', note: 'Typhoon, flood, tsunami, aftershocks', color: '#5856D6', icon: IC.card, open: go('cards') },
+  { label: 'Medical ID', note: 'Works with no signal', color: '#FF3B30', icon: IC.plus, open: () => this.setState({ screen: 'medid', medBack: 'safety' }) }
+];
+
+// today shortcuts
+const shortcuts = [
+  { title: person === 'ana' ? 'Fasting blood test, Oct 28' : 'Lola Pilar’s check-up, Oct 24', sub: 'Calendar. Lola Pilar’s check-up Oct 24', color: '#5856D6', icon: IC.cal, open: () => this.setState({ screen: 'records', rseg: 'calendar' }), badge: '' },
+  { title: 'Family chat', sub: 'Carmen: Lola’s medicines are in the go-bag.', color: '#007AFF', icon: IC.chat, open: openMessages, badge: unreadTotal ? String(unreadTotal) : '' },
+  { title: 'Around GenSan', sub: SIT[0].title + '. ' + SIT[1].title, color: '#FF3B30', icon: IC.wave, open: () => this.setState({ screen: 'situation', sitBack: 'today' }), badge: '' },
+  { title: 'Go-bag ' + bagN + ' of ' + BAG.length + ' ready', sub: 'Pack IDs, power bank and first-aid kit', color: '#FF9500', icon: IC.bag, open: go('gobag'), badge: '' },
+  { title: inboxN ? inboxN + ' records to check' : 'Records', sub: inboxN ? 'Sorted and ready to file' : 'Latest: lipid profile, Oct 3', color: '#34C759', icon: IC.doc, open: () => this.setState({ screen: 'records', rseg: 'timeline' }), badge: inboxN ? String(inboxN) : '' }
+].map((x) => Object.assign(x, { hasBadge: !!x.badge }));
+
+// settings
+const theme = s.theme || p.theme || 'system';
+const themes = ['system', 'light', 'dark'].map((t) => Object.assign({ label: t === 'system' ? 'Automatic' : t === 'light' ? 'Light' : 'Dark', pick: () => this.setState({ theme: t }) }, seg2(theme === t)));
+const alertsOn = s.alertsOn !== undefined ? s.alertsOn : !(p.alertsOff ?? false);
+const quietOn = s.quiet !== undefined ? s.quiet : true;
+const nudgeOn = s.nudge !== undefined ? s.nudge : true;
+const sw = (on) => ({ track: on ? '#34C759' : 'var(--fill)', knob: on ? '22px' : '2px', on: on ? 'true' : 'false' });
+const switches = [
+  Object.assign({ label: 'Alerts', note: alertsOn ? 'Storms, medicines, messages and SOS' : 'Off on this phone', toggle: set({ alertsOn: !alertsOn }) }, sw(alertsOn)),
+  Object.assign({ label: 'Quiet hours', note: '10 PM to 6 AM', toggle: set({ quiet: !quietOn }) }, sw(quietOn)),
+  Object.assign({ label: 'Gentle nudges', note: 'Habits and tips, up to 2 a day', toggle: set({ nudge: !nudgeOn }) }, sw(nudgeOn))
+];
+const pv = s.pv || { meds: true, readings: true, records: false, notes: false };
+const privacy = [['meds', 'Medicines'], ['readings', 'Readings'], ['records', 'Records'], ['notes', 'Notes']].map(([k, label]) => Object.assign({ label, aria: 'Family can see my ' + label.toLowerCase(), toggle: () => this.setState({ pv: Object.assign({}, pv, { [k]: !pv[k] }) }) }, sw(!!pv[k])));
+const setupDone = s.setup || { name: true, meds: true, lead: true, cared: true };
+const setupItems = [['name', 'Your name'], ['meds', 'Your medicines'], ['lead', 'Who leads in an emergency'], ['cared', 'Who is cared for, and by whom'], ['contacts', 'Family phone numbers'], ['blood', 'Blood type and allergies'], ['rally', 'Where the family meets'], ['valves', 'Breaker, water and gas valve spots'], ['print', 'Print and laminate the cards']];
+const setup = setupItems.map(([k, label]) => ({ label, state: setupDone[k] ? '✓ Done' : 'Not set', color: setupDone[k] ? ok : wait, toggle: () => this.setState({ setup: Object.assign({}, setupDone, { [k]: !setupDone[k] }) }) }));
+const doneCount = setupItems.filter(([k]) => setupDone[k]).length;
+
+// navigation
+const titles = { welcome: 'Welcome', today: 'Today', weather: 'Weather', alert: al.title, health: 'Health', bp: 'Blood pressure', records: 'Records', family: 'Family', thread: THREADS[tk].name, safety: 'Safety', sos: 'SOS', situation: 'Around GenSan', nearby: 'Nearby help', hotlines: 'Hotlines', contacts: 'My contacts', gobag: 'Go-bag', cards: 'Safety cards', medid: 'Medical ID', settings: 'Settings', setup: 'Setup', add: 'New contact', scanaim: 'Scan monitor', scanreview: scan ? 'Check the numbers' : 'New reading', recdetail: rd.title, recadd: 'Add records', wiki: s.wiki ? wk.title : 'Health library' };
+const backTo = { weather: 'today', alert: 'today', bp: 'health', medid: s.medBack || 'health', settings: 'today', setup: 'settings', add: 'contacts', scanaim: 'health', scanreview: 'health', recdetail: s.reviewing ? 'recadd' : 'records', recadd: 'records', wiki: s.wikiBack || 'records', thread: 'family', sos: 'safety', situation: s.sitBack || 'safety', nearby: 'safety', hotlines: 'safety', contacts: 'safety', gobag: 'safety', cards: 'safety' };
+const tabOf = { weather: 'today', alert: 'today', bp: 'health', medid: s.medBack === 'safety' ? 'safety' : 'health', settings: 'today', setup: 'today', add: 'safety', scanaim: 'health', scanreview: 'health', recdetail: 'records', recadd: 'records', wiki: 'records', thread: 'family', sos: 'safety', situation: s.sitBack === 'today' ? 'today' : 'safety', nearby: 'safety', hotlines: 'safety', contacts: 'safety', gobag: 'safety', cards: 'safety', welcome: 'today' };
+const tab = tabOf[screen] || screen;
+const icons = {
+  today: 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  health: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
+  records: 'M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M9 13h6M9 17h6',
+  family: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a2.5 2.5 0 1 0 0-5M16 15c3 0 5 2 5 5',
+  safety: IC.shield
+};
+const tabs = ['today', 'health', 'records', 'family', 'safety'].map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), icon: icons[t], go: go(t), color: tab === t ? 'var(--act)' : 'var(--ink)', pill: tab === t ? 'var(--fill)' : 'transparent', cur: tab === t ? 'page' : 'false' }));
+const readerDown = p.readerDown ?? false;
+const back = backTo[screen];
+const backFn = screen === 'wiki' && s.wiki && s.wikiBack !== 'recdetail' ? set({ wiki: null, wikiFullOn: false }) : screen === 'recdetail' && s.reviewing ? set({ screen: 'recadd', reviewing: null }) : go(back || 'today');
+const backLabel = screen === 'wiki' && s.wiki && s.wikiBack !== 'recdetail' ? 'Library' : back ? titles[back] : '';
+
+return {
+  themeClass: theme, offline: p.offline ?? false, tabs, showTabs: screen !== 'welcome',
+  title: noConnBlock ? 'Bantay' : titles[screen], hasSubtitle: (screen === 'today' || screen === 'health') && !noConnBlock, subtitle: screen === 'today' ? 'Saturday, October 17. ' + doneToday + ' of 6 done today.' : 'Your health, in one place',
+  showBack: !noConnBlock && !!back, back: backFn, backLabel,
+  showPersons: !noConnBlock && (screen === 'health' || screen === 'records'), persons, personName,
+  showSeg: !noConnBlock && !!SEG[screen], seg, segN: String((SEG[screen] || []).length || 3),
+  showWelcome: screen === 'welcome', welcomeSteps, welcomeButton: ['Install Bantay', 'Allow alerts', 'Start'][Math.min(wstep, 2)],
+  welcomeNext: () => wstep >= 2 ? this.setState({ screen: 'today', wstep: 0 }) : this.setState({ wstep: wstep + 1 }),
+  noConnBlock, retry: set({ retried: true }),
+  showToday: vis('today'), showWeather: vis('weather'), showAlert: vis('alert'),
+  showOverview: vis('health') && segOf.health === 'overview', showHabits: vis('health') && segOf.health === 'habits', showBp: vis('bp'),
+  showRecTimeline: vis('records') && segOf.records === 'timeline', showRecCal: vis('records') && segOf.records === 'calendar', showRecMeds: vis('records') && segOf.records === 'meds', showRecTrends: vis('records') && segOf.records === 'trends',
+  showRecDetail: vis('recdetail'), showRecAdd: vis('recadd'), showWiki: vis('wiki'),
+  showFamHome: vis('family') && segOf.family === 'home', showFamMsgs: vis('family') && segOf.family === 'messages', showFamLearn: vis('family') && segOf.family === 'learn', showThread: vis('thread'),
+  showSafety: screen === 'safety', showSos: screen === 'sos', showSituation: vis('situation'), showNearby: screen === 'nearby',
+  showHotlines: screen === 'hotlines', showContacts: screen === 'contacts', showGobag: screen === 'gobag', showCards: screen === 'cards',
+  showMedId: screen === 'medid', showSettings: vis('settings'), showSetup: vis('setup'), showAdd: screen === 'add',
+  showScanAim: vis('scanaim'), showScanReview: vis('scanreview'),
+  openMedId: () => this.setState({ screen: 'medid', medBack: screen === 'safety' || noConnBlock ? 'safety' : 'health' }),
+  goSettings: go('settings'), goSetup: go('setup'), goWelcome: go('welcome'), goSafety: go('safety'), goAdd: go('add'), goHealth: () => this.setState({ screen: 'health', hseg: 'overview' }),
+  openWeather: go('weather'), openCards: go('cards'),
+  openBp: go('bp'), openHabits: () => this.setState({ screen: 'health', hseg: 'habits' }),
+  openMedsInv: () => this.setState({ screen: 'records', rseg: 'meds' }), openCalendar: () => this.setState({ screen: 'records', rseg: 'calendar' }),
+  openWiki: () => this.setState({ screen: 'wiki', wiki: null, wikiBack: 'records' }),
+  openSos: go('sos'), sosNot: !s.sos, sosSent: !!s.sos, sendSos: set({ sos: true }), stopSos: set({ sos: false, screen: 'safety' }),
+  alertsOff: !alertsOn, turnOn: set({ alertsOn: true }),
+  hasUrgent: !!u0, urgent, urgentCount: urgentLeft.length > 1 ? '1 of ' + urgentLeft.length : '',
+  sky, rainNote, hours24, days7, wxStats, wxModes, layers, hazardLinks,
+  wxPlace: wxMode === 'home' ? 'General Santos' : 'My location', mapLabel: 'Show ' + layer + ' map', showMap: set({ mapShown: true }),
+  warnings, hasWarnings: warnings.length > 0, al,
+  situation, sitFilters, nearby,
+  isOk: !!s.ok, notOk: !s.ok, sayOk: set({ ok: true }), streak,
+  medDash, medsToday: takenNow + ' of 2', medNext: doses.pm === 'taken' ? 'All done today' : 'Evening tablet at 8 PM',
+  water, waterDots, addWater: () => this.setState({ water: Math.min(8, water + 1) }),
+  shortcuts, refillNote, inv, nextAppt,
+  prof, brief, briefLeft, normals, hasNormals: normals.length > 0, noNormals: normals.length === 0,
+  bpLatest, bpWhenLower: bpSaved ? 'just now' : 'this morning',
+  bpTop: pts(top), bpBot: pts(bot), bpEndX: x(13), bpTopEndY: y(124), bpBotEndY: y(79),
+  bpAria: 'Blood pressure over 14 days. Top number between 124 and 138, latest 124. Bottom number between 79 and 90, latest 79.',
+  bpRows, chartView: !s.table, tableView: !!s.table, tableLabel: s.table ? 'Show chart' : 'Show as list', toggleTable: set({ table: !s.table }),
+  readerUp: !readerDown, readerDown,
+  startScan: go('scanaim'),
+  startType: () => this.setState({ screen: 'scanreview', fromScan: false, rv: { sys: 124, dia: 79, pul: 70 }, pulTouched: true }),
+  takePhoto: () => this.setState({ screen: 'scanreview', fromScan: true, rv: { sys: 128, dia: 84, pul: 72 }, pulTouched: false }),
+  fromScan: scan, bpFields, bpCheckBad: !!bpCheckText, bpCheckText,
+  saveReading: () => this.setState({ screen: 'health', hseg: 'overview', bpSaved: true, rvSaved: rv, savedText: rv.sys + '/' + rv.dia, bpSavedText: rv.sys + '/' + rv.dia + ', pulse ' + rv.pul }),
+  bpSaved, bpSavedText: s.bpSavedText || '',
+  rings, habits,
+  recList, recEmpty: recsAll.length === 0, recHas: recsAll.length > 0, rd,
+  fileLine: person === 'ana' ? '2 lab results, 1 check-up, 1 prescription.' : 'No files yet.',
+  hasInbox: inboxN > 0, inboxN: String(inboxN), inboxTitle: inboxN + ' new record' + (inboxN === 1 ? '' : 's') + ' to check',
+  addRecord: go('recadd'),
+  uploadDemo: set({ queued: true }), hasQueue: queued, queue,
+  saveRecord: () => { const qid = s.reviewing || 'q1'; this.setState({ screen: s.reviewing ? 'recadd' : 'records', reviewing: null, filed: Object.assign({}, filed, { [qid]: true }), newRecs: extraRecs.concat([Object.assign({}, NEWREC, { id: 'n' + extraRecs.length, who: qid === 'q2' ? 'lola' : 'ana', isNew: false, place: 'City lab' })]) }); },
+  calCells, calDay, calHas: calDay.length > 0, calNone: calDay.length === 0, calDayTitle: 'October ' + calSel + (calSel === 17 ? ', today' : ''),
+  wikiList: !s.wiki, wikiOne: !!s.wiki, packs, libStatus, libColor: savedPacks.length ? '#34C759' : '#8E8E93', readList, hasRead: readList.length > 0, wikiFull: !!s.wikiFullOn, wikiNoFull: !s.wikiFullOn, openFull: () => this.setState({ wikiFullOn: true, readW: Object.assign({}, readW, { [s.wiki]: true }) }), fullSource: packs0.mini === 'saved' || packs0.nopic === 'saved' ? '✓ Offline' : 'Online, now saved', wikiTopics, wk, wq: s.wq || '', setWq: (e) => this.setState({ wq: e.target.value }),
+  ldlPts: ldl.map((v, i) => lx[i] + ',' + ly(v)).join(' '), ldlDots: ldl.map((v, i) => ({ x: lx[i], y: ly(v), tip: ['Dec 2025', 'Mar 2026', 'Oct 2026'][i] + ': ' + v + ' mg/dL' })),
+  ldlBandY: ly(130), ldlBandH: (120 - ly(130)).toFixed(1), ldlBandLabelY: (Number(ly(130)) + 14).toFixed(1),
+  otherTests: [{ name: 'Total cholesterol', value: '228 mg/dL', note: 'Above lab range', color: 'var(--warn)' }, { name: 'HDL', value: '48 mg/dL', note: 'Inside lab range', color: 'var(--ink2)' }, { name: 'Triglycerides', value: '140 mg/dL', note: 'Inside lab range', color: 'var(--ink2)' }],
+  family, challenges, roll: !!s.roll, notRoll: !s.roll, startRoll: set({ roll: true }),
+  threads, msgs, draft: s.draft || '', setDraft: (e) => this.setState({ draft: e.target.value }), sendDraft: sendMsg(s.draft || ''),
+  quick: ['I’m OK', 'On my way', 'I’m home', 'Call me'].map((l) => ({ label: l, send: sendMsg(l) })),
+  topics, tips, videos,
+  news: [{ source: 'DOH, sample', text: 'Health advisories from DOH appear here with their date and a link.' }, { source: 'PAGASA, sample', text: 'Weather outlooks and season updates from PAGASA appear here.' }],
+  quizOn, quizDone: !quizOn, qz, quizStep: quizOn ? 'Question ' + (qi + 1) + ' of ' + QUIZ.length : 'Done for today', quizScore: 'You got ' + qscore + ' of ' + QUIZ.length + '.',
+  safetyRows, hotlines, myGroups, bag, bagCount: bagN + ' of ' + BAG.length, bagPct: Math.round(bagN / BAG.length * 100) + '%',
+  cName, cNum, cGroup: cName ? groupOf(cName) : 'a group',
+  setName: (e) => this.setState({ cName: e.target.value, cError: false }), setNum: (e) => this.setState({ cNum: e.target.value, cError: false }), cError: !!s.cError,
+  saveContact: () => (!cName.trim() || !cNum.trim()) ? this.setState({ cError: true }) : this.setState({ contacts: contacts.concat([{ name: cName.trim(), num: cNum.trim() }]), cName: '', cNum: '', screen: 'contacts' }),
+  protocols: [
+    { name: 'Typhoon', line: 'Signal 1 or 2: charge phones, bring things in. Signal 3 and up: get ready to leave.' },
+    { name: 'Flood', line: 'Yellow: watch. Orange: get ready to leave. Red: follow your plan.' },
+    { name: 'Tsunami', line: 'Strong shaking near the coast is the warning. Move to high ground now. Don’t wait for a message.' },
+    { name: 'Aftershocks', line: 'Drop, cover, hold on. Stay out of damaged buildings.' }
+  ],
+  switches, themes, privacy, setup, setupCount: doneCount + ' of ' + setupItems.length + ' done', setupPct: Math.round(doneCount / setupItems.length * 100) + '%'
+};
+}
+}
+</script>
+</body>
+</html>
