@@ -2,6 +2,7 @@
 
 Two ways in: Google (invited emails only) and handle + 6-digit PIN (made by an admin). No values are stored in this repo.
 Everything below is done by Lloyd in the Supabase and Google consoles. About 25 minutes.
+Official safety alerts ingestion (cron + Edge Function) is applied separately: see `docs/ALERTS.md`.
 
 ## 1. Apply the SQL
 

@@ -23,8 +23,9 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
   for (const s of SOURCES) {
     try {
       const text = await fetchText(s.url)
-      const rows = s.parse(s.json ? JSON.parse(text) : text, now)
-      if (rows === null) throw new Error('unexpected payload')
+      const parsed = s.parse(s.json ? JSON.parse(text) : text, now)
+      if (parsed === null) throw new Error('unexpected payload')
+      const rows = [...new Map(parsed.map((r) => [r.id, r])).values()] // one row per id (last wins): a duplicate id would make Postgres reject the whole batch
       const old = await port.existing(s.source)
       const stamp = new Date(now).toISOString()
       await port.upsert(rows.map((r) => {

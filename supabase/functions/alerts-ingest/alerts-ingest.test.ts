@@ -118,6 +118,17 @@ describe('runIngest', () => {
     expect(log.upserts.every((r) => r.stale === false && r.fetched_at === '2026-10-17T12:26:40.000Z')).toBe(true)
     expect(log.stale).toEqual([['USGS', false], ['GDACS', false], ['Open-Meteo', false]])
   })
+  it('duplicate ids from one feed yield one upserted row (last wins)', async () => {
+    const { port, log } = fakePort()
+    const row = { id: 'x', bulletin: 'a' } as never
+    const dup = { ...SOURCES[0], parse: () => [row, { id: 'x', bulletin: 'b' } as never] }
+    const orig = SOURCES[0].parse
+    SOURCES[0].parse = dup.parse
+    try { await runIngest(port, fetchFor([]), NOW) } finally { SOURCES[0].parse = orig }
+    const x = log.upserts.filter((r) => r.id === 'x')
+    expect(x).toHaveLength(1)
+    expect(x[0].bulletin).toBe('b')
+  })
   it('a failing source is marked stale, writes nothing, and does not stop the others', async () => {
     const { port, log } = fakePort()
     const res = await runIngest(port, fetchFor(['USGS']), NOW)

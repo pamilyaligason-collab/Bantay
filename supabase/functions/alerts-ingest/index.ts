@@ -44,5 +44,7 @@ Deno.serve(async (req) => {
     if (!res.ok) throw new Error(`HTTP${res.status}`)
     return res.text()
   }
-  return reply(200, { ok: true, sources: await runIngest(port, fetchText, Date.now()) })
+  const sources = await runIngest(port, fetchText, Date.now())
+  const ok = Object.values(sources).some((r) => r.ok) // every source failed: 502 so pg_net/cron health shows it
+  return reply(ok ? 200 : 502, { ok, sources })
 })
