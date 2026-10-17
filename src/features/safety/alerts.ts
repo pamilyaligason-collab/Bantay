@@ -1,5 +1,5 @@
 export interface LatLon { lat: number; lon: number }
-export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs'
+export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air'
 
 export interface Alert {
   id: string
@@ -19,7 +19,11 @@ export interface Alert {
   previousBulletin?: string | null
   checklist?: string[]
   timeline?: { at: string; text: string }[]
+  stale?: boolean // the ingest could not reach this alert's source on its last run; the text is the last known
+  checkedAt?: string | null // ISO, when the server last fetched it
 }
+
+export const ALERTS_KEY = 'safety.alerts' // Dexie kv key: the sync layer replaces this list, SafetyBrief reads it
 
 // Dampas pin (D-11).
 export const HOME: LatLon = { lat: 9.645705, lon: 123.877951 }
@@ -27,8 +31,9 @@ export const HOME: LatLon = { lat: 9.645705, lon: 123.877951 }
 export const NOT_A_SIREN =
   'Bantay is not an earthquake or tsunami siren. If you feel strong shaking near the coast, move to high ground now. Do not wait for a message.'
 
-// Lower tier shows first: PAGASA warnings, then PHIVOLCS, utilities, city/province, GDACS context.
-const TIER: Record<AlertKind, number> = { tcws: 0, rainfall: 0, thunderstorm: 0, heat: 0, quake: 1, tsunami: 1, utility: 2, local: 3, gdacs: 4 }
+// Lower tier shows first: PAGASA warnings, then PHIVOLCS (quake, tsunami, volcano), utilities and air quality, city/province, GDACS context.
+// air is tier 2, not 0: it is a model estimate (Open-Meteo), not an official warning, so it must never outrank PAGASA or PHIVOLCS.
+const TIER: Record<AlertKind, number> = { tcws: 0, rainfall: 0, thunderstorm: 0, heat: 0, quake: 1, tsunami: 1, volcano: 1, utility: 2, air: 2, local: 3, gdacs: 4 }
 export const tierOf = (k: AlertKind) => TIER[k]
 
 export function distanceKm(a: LatLon, b: LatLon): number {

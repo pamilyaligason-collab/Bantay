@@ -2,6 +2,7 @@ import type { Table } from 'dexie'
 import { db, drain, type OutboxRow } from '../../db'
 import { track } from '../admin/events'
 import { getAccessToken, onAuthChange } from '../auth/session'
+import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
@@ -178,6 +179,7 @@ async function pull(token: string) {
   }
   await pullPeople(url!, key!, token)
   await pullSafety(url!, key!, token)
+  await pullAlerts(url!, key!, token)
 }
 
 async function getJson(u: string, key: string, token: string): Promise<Record<string, unknown>[]> {
@@ -207,6 +209,37 @@ async function pullSafety(url: string, key: string, token: string) {
     else cur[r.key as string] = r.data
   }
   await db.kv.put({ key: OVERRIDES_KEY, value: cur })
+}
+
+// Official alerts (D-25): the server list is the whole truth, so it REPLACES the kv list (an empty list clears old alerts).
+// A failed fetch leaves the kv list as it was. Alerts are optional: a missing table or a server error must not put the
+// health sync into backoff, so only a lost network or a rejected session is rethrown.
+const str = (v: unknown) => (typeof v === 'string' ? v : '')
+const iso = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null)
+const pt = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+export function toAlert(r: Record<string, unknown>): Alert | null {
+  const issuedAt = iso(r.issued_at)
+  if (typeof r.id !== 'string' || typeof r.kind !== 'string' || !r.title || !issuedAt) return null
+  return {
+    id: r.id, kind: r.kind as Alert['kind'], level: typeof r.level === 'string' ? r.level : null, title: str(r.title), what: str(r.what),
+    where: str(r.where_text), when: str(r.when_text), doNow: str(r.do_now), source: str(r.source), sourceUrl: typeof r.source_url === 'string' ? r.source_url : null,
+    issuedAt, lat: pt(r.lat), lon: pt(r.lon), bulletin: str(r.bulletin), previousBulletin: typeof r.previous_bulletin === 'string' ? r.previous_bulletin : null,
+    checklist: Array.isArray(r.checklist) ? (r.checklist as string[]) : undefined, timeline: Array.isArray(r.timeline) ? (r.timeline as Alert['timeline']) : undefined,
+    stale: r.stale === true, checkedAt: iso(r.fetched_at)
+  }
+}
+
+async function pullAlerts(url: string, key: string, token: string) {
+  const now = encodeURIComponent(new Date().toISOString())
+  let rows: Record<string, unknown>[]
+  try {
+    rows = await getJson(`${url}/rest/v1/safety_alerts?select=*&or=(expires_at.is.null,expires_at.gt.${now})`, key, token)
+  } catch (e) {
+    if (e instanceof SyncError && (e.kind === 'net' || e.kind === 'auth')) throw e
+    return
+  }
+  if (!Array.isArray(rows)) return
+  await db.kv.put({ key: ALERTS_KEY, value: rows.map(toAlert).filter((a): a is Alert => a !== null) })
 }
 
 // ---- run
