@@ -43,6 +43,7 @@ export async function cacheFamily(): Promise<void> {
 
 export const hasPasskeyFlag = (personId: string) => { try { return localStorage.getItem(flagKey(personId)) === '1' } catch { return false } }
 export const setPasskeyFlag = (personId: string) => { try { localStorage.setItem(flagKey(personId), '1') } catch { /* private mode */ } }
+export const clearPasskeyFlag = (personId: string) => { try { localStorage.removeItem(flagKey(personId)) } catch { /* private mode */ } }
 
 /** "Forget this phone": the picker list and every passkey flag. */
 export function forgetPhone(): void {
@@ -61,6 +62,13 @@ const UNAVAILABLE = 'Not available on this phone yet'
 /** Set while a passkey sign-in is verifying who signed in. AuthGate waits on it so nothing runs as the wrong person. */
 export let passkeyCheck: Promise<void> | null = null
 
+let abortCeremony: AbortController | null = null
+/** "Use PIN instead", Back, or asking again while a prompt is open: abort the ceremony. It rejects, the finally below clears
+ *  passkeyCheck, and AuthGate never skips an identity check that is still unresolved.
+ *  ponytail: if the verify POST is already in flight when we abort, AuthGate waits one round trip; on a mismatch the phone
+ *  is signed out locally, which is safe and costs one PIN re-entry. */
+export function abandonPasskeyWait(): void { abortCeremony?.abort() }
+
 /** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success).
  *  The browser picks the passkey, so after the ceremony we check it belongs to the tapped person. On a mismatch or any
  *  error the session is dropped with scope 'local' on purpose: this phone signs out, the person's other devices stay signed in. */
@@ -70,19 +78,29 @@ export async function signInWithPasskey(expectedPersonId: string): Promise<strin
   // Register the pending check BEFORE the ceremony: SIGNED_IN can land during or right after it, and AuthGate must find this.
   let release!: () => void
   const mine = passkeyCheck = new Promise<void>((r) => { release = r })
+  abortCeremony?.abort()
+  const ac = abortCeremony = new AbortController()
   const fail = 'Fingerprint or face did not work. Use your PIN instead.'
   try {
-    const { error } = await sb.auth.signInWithPasskey()
-    if (error) return fail
+    const { error } = await sb.auth.signInWithPasskey({ options: { signal: ac.signal } })
+    if (error) {
+      // A server-side rejection means this passkey no longer works here: stop fingerprint-first for this person.
+      // A cancel or abort keeps the flag. A passkey deleted on the phone shows as NotAllowedError, so its flag stays until
+      // Forget this phone (best effort).
+      if (!ac.signal.aborted && !/^(NotAllowedError|AbortError)$/.test(error.name ?? '')) clearPasskeyFlag(expectedPersonId)
+      return fail
+    }
     try {
       const m = await getMember()
       if (m?.personId !== expectedPersonId) { await sb.auth.signOut({ scope: 'local' }); return 'That fingerprint belongs to someone else. Tap your own name.' }
+      setPasskeyFlag(expectedPersonId) // a working fingerprint on this phone: keep it as the first way in
       return null
     } catch {
       await sb.auth.signOut({ scope: 'local' }).catch(() => {})
       return fail
     }
   } catch { return fail } finally {
+    if (abortCeremony === ac) abortCeremony = null
     if (passkeyCheck === mine) passkeyCheck = null // every exit clears it; a newer attempt's check is left alone
     release()
   }

@@ -21,12 +21,12 @@ vi.mock('./client', () => ({
 vi.mock('./session', () => ({ getMember: h.member }))
 vi.mock('./family', async () => {
   const actual = await vi.importActual<typeof import('./family')>('./family')
-  return { get passkeyCheck() { return h.real ? actual.passkeyCheck : h.check }, cacheFamily: h.cache, signInWithPasskey: actual.signInWithPasskey }
+  return { get passkeyCheck() { return h.real ? actual.passkeyCheck : h.check }, cacheFamily: h.cache, signInWithPasskey: actual.signInWithPasskey, abandonPasskeyWait: actual.abandonPasskeyWait }
 })
 vi.mock('../../screens/SignIn', () => ({ default: () => <p>signin</p> }))
 
 import { AuthGate } from './AuthGate'
-import { signInWithPasskey } from './family'
+import { abandonPasskeyWait, signInWithPasskey } from './family'
 
 describe('AuthGate with a passkey check pending', () => {
   afterEach(() => { cleanup(); h.cache.mockClear(); h.rpc.mockClear(); h.check = null; h.real = false; h.pk.mockReset(); h.member.mockReset(); localStorage.clear() })
@@ -81,6 +81,26 @@ describe('AuthGate with a passkey check pending', () => {
     it('wrong person: signed out locally, app never opens', async () => {
       expect(await run('p2')).toContain('someone else')
       expect(h.out).toHaveBeenCalledWith({ scope: 'local' })
+      await waitFor(() => expect(screen.getByText('signin')).toBeTruthy())
+      expect(screen.queryByText('app')).toBeNull()
+      expect(h.rpc).not.toHaveBeenCalled()
+    })
+    it('abandon aborts the ceremony but the gate keeps waiting; a late wrong person never opens the app', async () => {
+      h.real = true
+      vi.stubGlobal('PublicKeyCredential', class {})
+      Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+      h.session = { user: { id: 'u1' } }
+      let finish!: () => void
+      h.pk.mockImplementation(() => new Promise((r) => { finish = () => r({ error: null }) })) // the browser ignores the abort and still succeeds
+      h.member.mockResolvedValue({ personId: 'p2' })
+      render(<AuthGate><p>app</p></AuthGate>)
+      const p = signInWithPasskey('p1')
+      abandonPasskeyWait()
+      h.cb!('SIGNED_IN', h.session)
+      await new Promise((r) => setTimeout(r, 10))
+      expect(screen.queryByText('app')).toBeNull() // still held: the wait was not dropped from outside
+      finish()
+      expect(await p).toContain('someone else')
       await waitFor(() => expect(screen.getByText('signin')).toBeTruthy())
       expect(screen.queryByText('app')).toBeNull()
       expect(h.rpc).not.toHaveBeenCalled()
