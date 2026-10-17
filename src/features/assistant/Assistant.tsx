@@ -88,13 +88,15 @@ function CardView({ card, people, go }: { card: Card; people: People[]; go: (t: 
   )
 }
 
+export const ASK_EVENT = 'bantay:ask'
+
 export default function Assistant() {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Item[]>([])
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [people, setPeople] = useState<People[]>([])
-  const btn = useRef<HTMLButtonElement>(null)
+  const opener = useRef<HTMLElement | null>(null)
   const dlg = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
@@ -107,9 +109,15 @@ export default function Assistant() {
     window.addEventListener('popstate', pop)
     hdb.people.toArray().then(setPeople, () => setPeople([]))
     input.current?.focus()
-    const b = btn.current
+    const b = opener.current
     return () => { window.removeEventListener('popstate', pop); b?.focus() }
   }, [open])
+  // The centre tab in the nav bar fires this; the sheet itself lives here.
+  useEffect(() => {
+    const on = () => { opener.current = document.activeElement as HTMLElement | null; setOpen(true) }
+    window.addEventListener(ASK_EVENT, on)
+    return () => window.removeEventListener(ASK_EVENT, on)
+  }, [])
   useEffect(() => { list.current?.scrollTo?.({ top: list.current.scrollHeight }) }, [items])
 
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
@@ -139,9 +147,6 @@ export default function Assistant() {
 
   return (
     <>
-      <button ref={btn} className="glass as-fab" aria-label="Ask Bantay" aria-haspopup="dialog" onClick={() => setOpen(true)}>
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /></svg>
-      </button>
       {open && (
         <div className="as-back" onClick={close}>
           <div ref={dlg} className="glass as-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>

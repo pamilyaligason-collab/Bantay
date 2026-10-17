@@ -72,3 +72,11 @@ body { background: var(--bg); }
 .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
 .key { min-height: 56px; border: 0; border-radius: 14px; background: var(--fill); color: var(--ink); font-size: 24px; font-weight: 600; }
 .key:disabled { opacity: 0.5; }
+
+.tabs { overflow: visible; }
+.tabs .tab-ask { position: relative; color: var(--ink); }
+.tab-ask-dot { width: 56px; height: 56px; margin-top: -30px; border-radius: 28px; display: flex; align-items: center; justify-content: center; background: var(--act); color: #fff; box-shadow: 0 6px 16px rgba(0,102,214,0.4); }
+.tabs .tab-ask:focus-visible .tab-ask-dot { outline: 3px solid var(--ink); outline-offset: 2px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 8px 0; border-radius: 14px; background: var(--fill); }
+.seg button { min-height: 44px; border: 0; border-radius: 10px; font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
+.seg button[aria-pressed="true"] { background: var(--act); color: #fff; }

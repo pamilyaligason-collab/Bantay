@@ -28,7 +28,15 @@ for (const tab of ['health', 'records']) {
     await page.reload()
     await expect(page.locator('h1')).toBeVisible()
     if (tab === 'health') await expect(page.locator('a[target="_blank"]').first()).toContainText('(opens in new tab)')
-    else await expect(page.locator('.uplot canvas').first()).toBeVisible()
+    else if (tab === 'records') await expect(page.locator('.uplot canvas').first()).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
   })
 }
+
+test("family (People and Records views): no axe violations", async ({ page }) => {
+  for (const hash of ["family", "records"]) {
+    await page.goto(`/#${hash}`)
+    await expect(page.locator("h1")).toHaveText("Family")
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([])
+  }
+})

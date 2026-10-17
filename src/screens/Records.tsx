@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { GUIDE } from '../features/health/ranges'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
 
-export default function Records() {
+export default function Records({ embedded = false }: { embedded?: boolean }) {
   const { ready, readings, consults } = useHealthData()
   const [test, setTest] = useState('')
   const tests = [...new Set(readings.map((r) => r.test))].sort()
@@ -39,9 +39,7 @@ export default function Records() {
 
   return (
     <>
-      <div className="hdr">
-        <h1>Records</h1>
-      </div>
+      {!embedded && <div className="hdr"><h1>Records</h1></div>}
       {ready && dates.length === 0 ? (
         <div className="grp">
           <div className="row">
