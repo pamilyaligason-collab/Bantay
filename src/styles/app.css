@@ -1,5 +1,6 @@
 /* Component styles ported from the prototype <style> block. Class names are unchanged. */
 html, body, #root { margin: 0; height: 100%; }
+html, body { overscroll-behavior-y: none; }
 body { background: var(--bg); }
 
 .bt {
@@ -18,7 +19,7 @@ body { background: var(--bg); }
 .topbar, .scroll { position: relative; }
 .topbar { padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
-.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; touch-action: pan-y pinch-zoom; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
 .scroll > * { min-width: 0; }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
 .hdr h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.15; overflow-wrap: anywhere; }

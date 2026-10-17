@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PullIndicator, Sky, springIn, usePullToRefresh, useSwipe } from './features/look'
+import { PullIndicator, requestRefresh, Sky, springIn, usePullToRefresh, useSwipe } from './features/look'
 import Family from './screens/Family'
 import Health from './screens/Health'
 import Records from './screens/Records'
@@ -26,15 +26,26 @@ export default function App() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
 
-  const go = (i: number) => { const t = TABS[i]; if (t) location.hash = t.id }
   const idx = TABS.findIndex((t) => t.id === tab.id)
+  const swiped = useRef(false)
+  // Swipes replace the history entry so Back does not step through every tab.
+  const go = (i: number) => { const t = TABS[i]; if (t) { swiped.current = true; location.replace('#' + t.id) } }
   const swipe = useSwipe<HTMLElement>({ onLeft: () => go(idx + 1), onRight: () => go(idx - 1) })
-  const ptr = usePullToRefresh<HTMLElement>(() => window.dispatchEvent(new Event('bantay:refresh')), tab.id === 'today' || tab.id === 'safety')
+  const ptr = usePullToRefresh<HTMLElement>(requestRefresh, tab.id === 'today' || tab.id === 'safety')
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
+  useEffect(() => { document.title = `${tab.label} - Family Bantay` }, [tab])
   useEffect(() => {
-    if (prev.current !== idx && scroll.current) springIn(scroll.current, idx > prev.current ? 1 : -1)
+    const el = scroll.current
+    if (!el || prev.current === idx) return
+    el.scrollTop = 0
+    springIn(el, idx > prev.current ? 1 : -1)
     prev.current = idx
+    if (swiped.current) {
+      swiped.current = false
+      const h1 = el.querySelector('h1')
+      if (h1) { h1.tabIndex = -1; h1.focus({ preventScroll: true }) }
+    }
   }, [idx])
 
   return (
@@ -42,7 +53,7 @@ export default function App() {
       <Sky state="clear" />
       <div className="topbar" />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
-        <PullIndicator pull={ptr.pull} refreshing={ptr.refreshing} />
+        <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
         <tab.Screen />
       </main>
       <nav aria-label="Main" className="glass tabs">

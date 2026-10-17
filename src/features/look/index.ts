@@ -1,4 +1,5 @@
 export { Sky, type SkyState } from './Sky'
 export { celebrate, type CelebrationKind } from './celebrate'
 export { useSwipe, useBackSwipe, usePullToRefresh, PullIndicator } from './gestures'
+export { requestRefresh, type RefreshDetail } from './refresh'
 export { springIn } from './motion'
