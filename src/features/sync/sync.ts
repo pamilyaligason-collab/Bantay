@@ -1,5 +1,6 @@
 import type { Table } from 'dexie'
 import { db, drain, type OutboxRow } from '../../db'
+import { track } from '../admin/events'
 import { getAccessToken, onAuthChange } from '../auth/session'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { ldb } from '../log/store'
@@ -106,6 +107,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     return
   }
   const code = await errCode(res)
+  if (res.status === 403 && row.table === 'push_subscriptions') return void (await db.outbox.delete(row.id!)) // not allowed to subscribe (e.g. disabled): drop silently, no dead letter
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
@@ -226,6 +228,7 @@ async function run(force: boolean) {
     setState({ offline: false })
   } catch (e) {
     const err = e instanceof SyncError ? e : new SyncError('net')
+    if (err.kind !== 'net') void track('error', 'sync_failed') // offline is normal, not a failure
     if (err.kind === 'auth') { pausedToken = token; setState({ paused: true }) }
     else if (err.kind === 'net' || err.kind === 'transient') {
       const fails = (bo?.fails ?? 0) + 1

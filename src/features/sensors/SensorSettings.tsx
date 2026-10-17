@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { track } from '../admin/events'
 import { useKv } from '../safety/store'
 import { capgoBridge, isNative } from './bridge'
 import { disableType, enableType, type EnableResult, type HealthBridge, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
@@ -33,11 +34,12 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
     try {
       if (on) {
         await disableType(type)
+        void track('action', 'sensors_off')
         setNote((n) => ({ ...n, [type]: 'Turned off. To remove access completely, use Health Connect or Settings.' }))
       } else {
         const b = bridge ?? capgoBridge()
         const r = await enableType(type, b)
-        if (r === 'on') void syncAll(b)
+        if (r === 'on') { void track('action', 'sensors_on'); void syncAll(b) }
         else setNote((n) => ({ ...n, [type]: MSG[r] }))
       }
     } finally {

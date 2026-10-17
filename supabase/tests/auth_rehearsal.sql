@@ -32,7 +32,9 @@ create function pg_temp.fails(q text) returns boolean language plpgsql as $$ beg
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
 create function pg_temp.accepted(em text, meta jsonb) returns boolean language sql as
   $$ select (public.hook_before_user_created(jsonb_build_object('user', jsonb_build_object('email', em, 'app_metadata', meta))) -> 'error') is null $$;
-grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text), pg_temp.accepted(text, jsonb) to authenticated, anon, supabase_auth_admin, service_role;
+create function pg_temp.accepted_user(u jsonb) returns boolean language sql as
+  $$ select (public.hook_before_user_created(jsonb_build_object('user', u)) -> 'error') is null $$;
+grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text), pg_temp.accepted(text, jsonb), pg_temp.accepted_user(jsonb) to authenticated, anon, supabase_auth_admin, service_role;
 
 -- seed as superuser: roles + invites
 insert into public.app_roles (user_id, role, handle) values
@@ -74,6 +76,11 @@ select pg_temp.ok(pg_temp.fails($$select public.ensure_self_person()$$), 'anon c
 reset role; set role supabase_auth_admin;
 select pg_temp.ok(not pg_temp.accepted('invited@example.com', '{"provider":"email"}'), 'hook rejects invited email on the Email provider');
 select pg_temp.ok(not pg_temp.accepted('invited@example.com', '{}'), 'hook rejects invited email with no provider');
+select pg_temp.ok(pg_temp.accepted('invited@example.com', '{"providers":["google"]}'), 'hook accepts invited email with providers array containing google');
+select pg_temp.ok(not pg_temp.accepted('invited@example.com', '{"providers":["email"]}'), 'hook rejects invited email with providers array of email only');
+select pg_temp.ok(pg_temp.accepted_user('{"email":"invited@example.com","app_metadata":{},"identities":[{"provider":"google"}]}'), 'hook accepts invited email with google identity');
+select pg_temp.ok(not pg_temp.accepted_user('{"email":"invited@example.com","app_metadata":{},"identities":[{"provider":"email"}]}'), 'hook rejects invited email with email identity');
+select pg_temp.ok(not pg_temp.accepted_user('{"email":"rando@example.com","app_metadata":{},"identities":[{"provider":"google"}]}'), 'hook rejects uninvited email with google identity');
 select pg_temp.ok(not pg_temp.accepted('rando@example.com', '{"provider":"google"}'), 'hook rejects uninvited Google email');
 select pg_temp.ok(pg_temp.accepted('invited@example.com', '{"provider":"google"}'), 'hook accepts invited Google email');
 select pg_temp.ok(pg_temp.accepted('Invited@Example.com', '{"provider":"google"}'), 'hook invite match ignores case');

@@ -46,7 +46,7 @@
         "tableId": "news_items",
         "dataToSend": "autoMapInputData"
       },
-      "notes": "Target table news_items(id text primary key, title text, url text, source text, kind text, published_at timestamptz). Use an upsert on id when the SQL lane lands; create fails on duplicates. Table and RLS (public read, service-role write) are not applied by this lane."
+      "notes": "Target table news_items(id text primary key, title text, url text, source text, kind text, published_at timestamptz). Table and RLS are in supabase/migrations/0005_news_assistant.sql (public read, service-role write). The n8n Supabase node has no upsert operation, so an existing id makes create fail with a duplicate; swap this node for an HTTP Request POST to /rest/v1/news_items?on_conflict=id with header Prefer: resolution=merge-duplicates when activating."
     }
   ],
   "connections": {

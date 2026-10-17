@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocation } from '../location/useLocation'
+import { track } from '../admin/events'
 import { logActivity, logMedTaken, logReading } from '../log/store'
 import { hdb } from '../records/store'
 import { ask } from './client'
@@ -132,6 +133,7 @@ export default function Assistant() {
     setBusy(true)
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
+    if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
     setItems([...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? 'Here is what I found.' : 'I am not sure. Please ask your doctor.'), cards: r.cards }])
   }
 

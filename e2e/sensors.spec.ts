@@ -9,30 +9,17 @@ test.describe('movement on Today (web, no step counter)', () => {
     await expect(page.getByRole('heading', { name: 'Did you walk today?' })).toBeVisible()
   })
 
-  test('one tap logs one manual walk and the summary updates', async ({ page }) => {
-    await expect(page.getByText('Nothing logged yet today')).toBeVisible()
+  // The e2e build has no Supabase env, so nobody is signed in (D-21). Logging while signed in is covered by the QuickWalk unit tests.
+  test('signed out: a tap logs nothing and says to sign in', async ({ page }) => {
     await page.getByRole('button', { name: '20 min' }).click()
-    await expect(page.getByRole('status').filter({ hasText: 'about 20 minutes' })).toBeVisible()
-    await expect(page.getByText('20 min moving')).toBeVisible()
-    const rows = await page.evaluate(
-      () =>
-        new Promise<{ minutes: number; source: string }[]>((res, rej) => {
-          const open = indexedDB.open('bantay-log')
-          open.onerror = () => rej(open.error)
-          open.onsuccess = () => {
-            const all = open.result.transaction('activity').objectStore('activity').getAll()
-            all.onsuccess = () => res(all.result)
-          }
-        })
-    )
-    expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ minutes: 20, source: 'manual' })
+    await expect(page.getByRole('status').filter({ hasText: 'Sign in to log a walk.' })).toBeVisible()
+    await expect(page.getByText('Nothing logged yet today')).toBeVisible()
   })
 
-  test('custom minutes', async ({ page }) => {
+  test('signed out: custom minutes log nothing either', async ({ page }) => {
     await page.getByLabel('Other number of minutes').fill('35')
     await page.getByRole('button', { name: 'Log', exact: true }).click()
-    await expect(page.getByText('35 min moving')).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: 'Sign in to log a walk.' })).toBeVisible()
   })
 
   test('Today has no serious accessibility violations with the movement cards', async ({ page }) => {

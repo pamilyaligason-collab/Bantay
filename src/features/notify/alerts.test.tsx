@@ -2,8 +2,11 @@ import 'fake-indexeddb/auto'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { track } from '../admin/events'
 import AlertsBanner from './AlertsBanner'
 import { enableAlerts, ensureSubscribed, isIosNeedsInstall, reAskDue, urlB64ToBytes } from './alerts'
+
+vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 describe('isIosNeedsInstall', () => {
   const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1'
@@ -53,6 +56,7 @@ describe('enableAlerts', () => {
     expect(await enableAlerts('AQID')).toBe('granted')
     expect((await db.kv.get('push.sub'))?.value).toMatchObject({ endpoint: 'https://push.example/abc' })
     expect(await db.outbox.toArray()).toMatchObject([{ table: 'push_subscriptions', op: 'upsert' }])
+    expect(track).toHaveBeenCalledWith('action', 'alerts_on')
   })
   it('granted without a key does not subscribe or queue', async () => {
     stub('granted')
@@ -64,6 +68,7 @@ describe('enableAlerts', () => {
     expect(await enableAlerts('AQID')).toBe('denied')
     expect(await db.outbox.count()).toBe(0)
     expect(typeof (await db.kv.get('alerts.lastAsk'))?.value).toBe('number')
+    expect(track).toHaveBeenCalledWith('action', 'alerts_off')
   })
   it('unsupported when Notification is missing', async () => {
     vi.stubGlobal('Notification', undefined)

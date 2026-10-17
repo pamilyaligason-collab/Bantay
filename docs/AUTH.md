@@ -7,7 +7,7 @@ Everything below is done by Lloyd in the Supabase and Google consoles. About 25 
 
 Run `supabase/migrations/0002_auth.sql` after `0001_health.sql` (SQL editor or `supabase db push`).
 It adds `app_roles`, `invites`, `pin_attempts`, `is_admin()`, `ensure_self_person()`, `pin_try()` (service role only) and
-`hook_before_user_created()`. Rehearsal of 0001 + 0002 on a throwaway Postgres: `powershell scripts/rehearse-auth.ps1` (51 checks).
+`hook_before_user_created()`. Rehearsal of 0001 + 0002 on a throwaway Postgres: `powershell scripts/rehearse-auth.ps1` (54 checks).
 
 ## 2. Google OAuth client
 
@@ -38,6 +38,9 @@ Supabase, Edge Functions, Secrets (or `supabase secrets set NAME=...`):
 | Name | What |
 | --- | --- |
 | `PIN_PEPPER` | A long random string, at least 32 characters. Generate it yourself, keep it in your password manager. If it is lost every PIN member needs a PIN reset. Never commit it. |
+| `VAPID_PUBLIC_KEY` | Web push public key (also the build value `VITE_VAPID_PUBLIC_KEY`). |
+| `VAPID_PRIVATE_KEY` | Web push private key. Never in the app, never committed. |
+| `VAPID_SUBJECT` | `mailto:` address push services can contact. |
 | `ALLOWED_ORIGIN` | The app origin only, for example `https://your-app-host` (no trailing slash). CORS allows nothing else. |
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are provided to functions by Supabase. The service role key is never in the app.
@@ -47,6 +50,7 @@ Supabase, Edge Functions, Secrets (or `supabase secrets set NAME=...`):
 ```
 supabase functions deploy pin-login --no-verify-jwt
 supabase functions deploy admin-members --no-verify-jwt
+supabase functions deploy broadcast
 ```
 
 `--no-verify-jwt` is intended: pin-login is called while signed out, and admin-members verifies the caller itself

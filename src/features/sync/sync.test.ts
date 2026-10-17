@@ -154,6 +154,16 @@ describe('push', () => {
     for (const spy of [log, err, warn]) expect(JSON.stringify(spy.mock.calls)).not.toMatch(/9\.9|secret/)
   })
 
+  it('a 403 on push_subscriptions is dropped silently, not dead-lettered', async () => {
+    mockFetch(() => json({ code: '42501' }, 403))
+    await enqueue('push_subscriptions', 'upsert', { endpoint: 'https://push.test/x', keys: { p256dh: 'a', auth: 'b' } })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+    expect((await syncCounts()).dead).toBe(0)
+  })
+
   it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {
     mockFetch(() => json({ code: 'X' }, 418))
     await enqueue('readings', 'insert', reading)

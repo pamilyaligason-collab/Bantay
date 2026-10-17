@@ -13,6 +13,7 @@ export interface Port {
   getAuthEmail(userId: string): Promise<string | null>
   setPassword(userId: string, password: string): Promise<boolean>
   setBanned(userId: string, banned: boolean): Promise<boolean>
+  deletePushSubscriptions(userId: string): Promise<boolean> // a disabled member gets no broadcasts
   revokeSessions(userId: string): Promise<boolean> // public.revoke_sessions: ends every session of the user
   insertRole(userId: string, role: Role, handle: string): Promise<'ok' | 'handle_taken' | 'error'>
   updateRole(userId: string, patch: { role?: Role; handle?: string; disabled?: boolean }): Promise<'ok' | 'handle_taken' | 'not_found'>
@@ -77,7 +78,9 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
       const r = await port.updateRole(b.userId, { disabled: b.disabled })
       if (r !== 'ok') return fromUpdate(r)
       if (!(await port.setBanned(b.userId, b.disabled))) return bad // also blocks Google sign-in and token refresh
-      return !b.disabled || (await port.revokeSessions(b.userId)) ? { ok: true } : bad
+      if (!b.disabled) return { ok: true }
+      if (!(await port.deletePushSubscriptions(b.userId))) return bad
+      return (await port.revokeSessions(b.userId)) ? { ok: true } : bad
     }
     case 'invite': {
       const email = normalizeEmail(b.email)

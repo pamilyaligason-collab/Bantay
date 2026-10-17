@@ -73,13 +73,19 @@ create function public.hook_before_user_created(event jsonb) returns jsonb
   language plpgsql security definer set search_path = '' as $$
 declare
   em text := lower(coalesce(event -> 'user' ->> 'email', ''));
+  meta jsonb := coalesce(event -> 'user' -> 'app_metadata', '{}'::jsonb);
+  google boolean;
 begin
   if em like 'm-%@members.bantay.invalid'
      and coalesce(event -> 'user' -> 'app_metadata' ->> 'created_by_admin', '') = 'true' then
     return '{}'::jsonb;
   end if;
   -- Invited emails only count for a Google identity: an Email-provider sign-up must not claim an invited address.
-  if em <> '' and coalesce(event -> 'user' -> 'app_metadata' ->> 'provider', '') = 'google'
+  -- Provider shape varies: app_metadata.provider, app_metadata.providers[], or identities[0].provider. Google only, in any of them.
+  google := coalesce(meta ->> 'provider', '') = 'google'
+    or (jsonb_typeof(meta -> 'providers') = 'array' and (meta -> 'providers') ? 'google')
+    or coalesce(event -> 'user' -> 'identities' -> 0 ->> 'provider', '') = 'google';
+  if em <> '' and google
      and exists (select 1 from public.invites where email = em) then
     return '{}'::jsonb;
   end if;
