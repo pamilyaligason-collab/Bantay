@@ -40,3 +40,10 @@ test.describe('movement on Today (web, no step counter)', () => {
     expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([])
   })
 })
+
+test('Family shows the phone health explainer on the web', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#family')
+  await expect(page.getByRole('heading', { name: 'Phone health data' })).toBeVisible()
+  await expect(page.getByText(/need the Bantay app/)).toBeVisible()
+})

@@ -57,9 +57,26 @@ Pop-Location
 
 Install: copy the APK to the phone and open it (allow "install unknown apps" for that file manager once), or `adb install -r android\app\build\outputs\apk\debug\app-debug.apk` with USB debugging on.
 
-On the phone: Android 14 and newer have Health Connect built in. Android 13 and older need "Health Connect by Android" from the Play Store. Open Bantay, go to the sensor settings, turn on Steps. The phone asks once for that type only.
+On the phone: Android 14 and newer have Health Connect built in. Android 13 and older need "Health Connect by Android" from the Play Store. Open Bantay, open the Family tab, find "Phone health data", turn on Steps. The phone asks once for that type only.
 
 Debug APKs are signed with Android's debug key. That is fine for sideloading to family. For Play Store you need your own upload keystore, created and kept outside the repo (never commit it), plus Google's health apps declaration.
+
+## After the first Gradle build: check the merged manifest
+
+The plugin adds many permissions through manifest merging. Prove the final APK asks for only our four reads:
+
+```powershell
+node scripts/check-manifest.mjs android/app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml
+```
+
+It exits 1 if any `health.WRITE_` exists or the read set is not exactly steps, sleep, heart rate and blood pressure. (The exact folder name can differ by Android Gradle plugin version; search under `android/app/build/intermediates/merged_manifests`.) A unit test also checks the source manifest against the plugin manifest.
+
+Backups are off (`allowBackup="false"`) so health data in the WebView database never goes to Google Drive backup.
+
+## Known ceilings
+
+- Steps are stored one row per Health Connect record and deduped on (person, source, kind, startedAt). Two records starting at the same instant (two apps writing the same walk) collapse to the first one seen. Health Connect already merges by priority for aggregates, but we read raw records.
+- Each sync re-reads from 48 hours before the cursor, because Health Connect data can arrive late from a watch. Dedupe makes that safe. Upgrade path: Health Connect changes tokens (not exposed by the plugin).
 
 ## Risks and unknowns
 

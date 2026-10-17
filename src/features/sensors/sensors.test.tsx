@@ -8,6 +8,9 @@ import { disableType, enableType, getState, type HealthBridge, normalise, type R
 import QuickWalk from './QuickWalk'
 import SensorSettings from './SensorSettings'
 import { summarise } from './MovementCard'
+import { check, KEEP } from '../../../scripts/check-manifest.mjs'
+import pluginManifest from '../../../node_modules/@capgo/capacitor-health/android/src/main/AndroidManifest.xml?raw'
+import appManifest from '../../../android/app/src/main/AndroidManifest.xml?raw'
 
 const S = (over: Partial<RawSample> = {}): RawSample => ({ startDate: '2026-10-01T06:00:00.000Z', endDate: '2026-10-01T06:10:00.000Z', value: 500, ...over })
 
@@ -227,8 +230,64 @@ describe('summarise', () => {
       { ...base, kind: 'walk', minutes: 20, startedAt: '2026-10-02T01:00:00.000Z' },
       { ...base, kind: 'walk', minutes: 99, startedAt: '2026-10-01T01:00:00.000Z' },
       { ...base, kind: 'steps', minutes: 5, steps: 1000, startedAt: '2026-10-02T02:00:00.000Z' },
-      { ...base, kind: 'sleep', minutes: 400, startedAt: '2026-10-01T15:00:00.000Z' }
+      { ...base, kind: 'sleep', minutes: 400, startedAt: '2026-10-01T15:00:00.000Z' },
+      { ...base, kind: 'sleep', minutes: 20, startedAt: '2026-10-01T20:00:00.000Z' },
+      { ...base, kind: 'sleep', minutes: 999, startedAt: '2026-09-29T20:00:00.000Z' }
     ]
-    expect(summarise(rows, '2026-10-01T16:00:00.000Z')).toEqual({ walk: 25, steps: 1000, sleep: 400 })
+    expect(summarise(rows, '2026-10-01T16:00:00.000Z', Date.parse('2026-10-02T03:00:00.000Z'))).toEqual({ walk: 25, steps: 1000, sleep: 420 })
+  })
+})
+
+describe('late data, seeding, toggle-off', () => {
+  it('reads from 48 h before the cursor and picks up a late earlier sample', async () => {
+    const seen: string[] = []
+    let data: RawSample[] = [S({ startDate: '2026-10-05T06:00:00.000Z', endDate: '2026-10-05T06:10:00.000Z' })]
+    const b = fake({ read: async (_t, since) => { seen.push(since); return data } })
+    await enableType('steps', b)
+    await syncAll(b, 'p')
+    data = [S({ startDate: '2026-10-05T01:00:00.000Z', endDate: '2026-10-05T01:10:00.000Z', value: 70 }), ...data]
+    const r = await syncAll(b, 'p')
+    expect(r.added).toBe(1)
+    expect(await ldb.activity.count()).toBe(2)
+    expect(seen[1]).toBe('2026-10-03T06:10:00.000Z')
+  })
+  it('heart rate thinning holds across syncs', async () => {
+    const at = (m: number) => S({ startDate: new Date(Date.UTC(2026, 9, 1, 6, m)).toISOString(), endDate: new Date(Date.UTC(2026, 9, 1, 6, m + 1)).toISOString(), value: 70 })
+    let data = [at(0)]
+    const b = fake({ read: async () => data })
+    await enableType('heartRate', b)
+    await syncAll(b, 'p')
+    data = [at(0), at(20), at(25)] // 25 is inside the 15 min after 20; 20 is fine
+    await syncAll(b, 'p')
+    data = [at(0), at(20), at(25), at(30)] // 30 is within 15 min of stored 20
+    await syncAll(b, 'p')
+    expect((await hdb.readings.toArray()).map((r) => r.takenAt.slice(11, 16)).sort()).toEqual(['06:00', '06:20'])
+  })
+  it('a type switched off during a sync does not get its cursor back', async () => {
+    const b = fake({ read: async () => { await disableType('steps'); return [S()] } })
+    await enableType('steps', b)
+    await syncAll(b, 'p')
+    const st = await getState()
+    expect(st.enabled).toEqual([])
+    expect(st.cursor.steps).toBeUndefined()
+  })
+})
+
+describe('android manifest', () => {
+  const perms = (x: string) => [...x.matchAll(/android\.permission\.health\.([A-Z_0-9]+)"([^>]*)>/g)].map((m) => ({ name: m[1]!, removed: /tools:node="remove"/.test(m[2]!) }))
+  it('every health permission the plugin declares is kept (our 4) or removed', () => {
+    const ours = perms(appManifest)
+    for (const p of perms(pluginManifest)) {
+      const ok = KEEP.includes(p.name) || ours.some((o) => o.name === p.name && o.removed)
+      expect(ok, p.name).toBe(true)
+    }
+    expect(ours.filter((o) => !o.removed).map((o) => o.name).sort()).toEqual(KEEP)
+  })
+  it('backups are off', () => expect(appManifest).toContain('android:allowBackup="false"'))
+  it('check() flags a leaked write or extra permission and passes the clean set', () => {
+    const x = (n: string) => `<uses-permission android:name="android.permission.health.${n}" />`
+    expect(check(KEEP.map(x).join(''))).toEqual([])
+    expect(check(KEEP.map(x).join('') + x('WRITE_STEPS')).length).toBeGreaterThan(0)
+    expect(check(KEEP.map(x).join('') + x('READ_VO2_MAX')).length).toBeGreaterThan(0)
   })
 })

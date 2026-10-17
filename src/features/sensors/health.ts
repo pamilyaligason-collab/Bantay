@@ -49,7 +49,8 @@ export interface Normalised {
   readings: Reading[]
 }
 
-export function normalise(type: SensorType, samples: RawSample[], personId: string, source: ActivitySource): Normalised {
+/** `lastHrMs`: time of the newest stored heart_rate, so thinning holds across syncs. */
+export function normalise(type: SensorType, samples: RawSample[], personId: string, source: ActivitySource, lastHrMs?: number): Normalised {
   const out: Normalised = { activities: [], readings: [] }
   const seenBucket = new Set<number>()
   for (const s of samples) {
@@ -66,7 +67,9 @@ export function normalise(type: SensorType, samples: RawSample[], personId: stri
       if (asleep > 0) out.activities.push({ personId, kind: 'sleep', minutes: Math.round(asleep), steps: null, startedAt, source })
     } else if (type === 'heartRate') {
       const bucket = Math.floor(Date.parse(s.startDate) / THIN_MS)
-      if (s.value > 0 && !seenBucket.has(bucket)) {
+      const t = Date.parse(s.startDate)
+      const nearStored = lastHrMs != null && t !== lastHrMs && Math.abs(t - lastHrMs) < THIN_MS
+      if (s.value > 0 && !nearStored && !seenBucket.has(bucket)) {
         seenBucket.add(bucket)
         out.readings.push({ personId, takenAt: startedAt, test: 'heart_rate', value: Math.round(s.value), unit: 'bpm' })
       }
@@ -85,6 +88,7 @@ interface State {
 }
 export const STATE_KEY = 'sensors.state'
 const BACKFILL_MS = 7 * 86_400_000
+const OVERLAP_MS = 48 * 3_600_000 // Health Connect data can arrive late from a watch
 export const getState = async (): Promise<State> => ({ enabled: [], cursor: {}, ...((await db.kv.get(STATE_KEY))?.value as Partial<State> | undefined) })
 const putState = (s: State) => db.kv.put({ key: STATE_KEY, value: s })
 
@@ -148,14 +152,18 @@ async function run(bridge: HealthBridge, personIdArg?: string): Promise<SyncResu
         result.byType[type] = 'revoked'
         continue
       }
-      const since = st.cursor[type] ?? new Date(Date.now() - BACKFILL_MS).toISOString()
+      // Re-read 48 h before the cursor; dedupe makes that safe.
+      // ponytail: upgrade to Health Connect changes tokens (getChanges) if the overlap read gets heavy; the plugin does not expose them yet.
+      const since = st.cursor[type] ? new Date(Date.parse(st.cursor[type]!) - OVERLAP_MS).toISOString() : new Date(Date.now() - BACKFILL_MS).toISOString()
       const samples = await bridge.read(type, since)
-      const { activities, readings } = normalise(type, samples, personId, source)
+      const lastHr = type === 'heartRate' ? (await hdb.readings.where('test').equals('heart_rate').filter((x) => x.personId === personId).toArray()).map((x) => Date.parse(x.takenAt)).sort((a, b) => b - a)[0] : undefined
+      const { activities, readings } = normalise(type, samples, personId, source, lastHr)
       for (const a of activities) if (!(await hasActivity(a))) { await logActivity(a); result.added++ }
       for (const r of readings) if (!(await hasReading(r))) { await logReading(r); result.added++ }
       const end = samples.map((s) => Date.parse(s.endDate)).filter(Number.isFinite)
       if (end.length) {
         const cur = await getState()
+        if (!cur.enabled.includes(type)) { result.byType[type] = 'ok'; continue } // switched off mid-sync: do not resurrect its cursor
         await putState({ ...cur, cursor: { ...cur.cursor, [type]: new Date(Math.max(...end)).toISOString() } })
       }
       result.byType[type] = 'ok'

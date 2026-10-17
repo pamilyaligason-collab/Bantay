@@ -9,11 +9,12 @@ import { syncOnResume } from './health'
 const dayStart = () => new Date(`${dayKey(new Date())}T00:00:00+08:00`).toISOString()
 const SLEEP_WINDOW_MS = 36 * 3_600_000
 
-export const summarise = (rows: Activity[], dayStartIso: string) => {
+export const summarise = (rows: Activity[], dayStartIso: string, now = Date.now()) => {
   const today = rows.filter((a) => a.startedAt >= dayStartIso)
   const walk = today.filter((a) => a.kind !== 'sleep').reduce((n, a) => n + (a.minutes ?? 0), 0)
   const steps = today.reduce((n, a) => n + (a.kind === 'steps' ? (a.steps ?? 0) : 0), 0)
-  const sleep = rows.filter((a) => a.kind === 'sleep').sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0]?.minutes ?? null
+  const cut = new Date(now - SLEEP_WINDOW_MS).toISOString()
+  const sleep = rows.filter((a) => a.kind === 'sleep' && a.startedAt >= cut).reduce((n, a) => n + (a.minutes ?? 0), 0) || null
   return { walk, steps, sleep }
 }
 const hm = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`)
