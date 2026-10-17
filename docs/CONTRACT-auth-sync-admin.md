@@ -49,3 +49,14 @@ Uses `@supabase/supabase-js` with VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_
   (active 7/30 days, last seen, top screens, alerts on/off, sensors on, assistant messages vs cap, outbox backlog per device),
   safety data editing (hotlines, places -> safety_overrides), safety broadcast (push template only, via n8n webhook, B-7),
   import status per person (counts only), system health (news feed last fetch, assistant 5xx count).
+
+## Shared client
+`src/features/auth/client.ts` exports `supabase` (or null when env is unset). All lanes import it; nobody creates a second client.
+
+## admin-members Edge Function API (A1 implements, A3 calls via `supabase.functions.invoke('admin-members', { body })`)
+Caller must be admin (checked server side with the caller's JWT and `is_admin()`). Bodies:
+- `{ action: 'create', displayName, handle, pin, role }` -> `{ ok, userId, personId }`
+- `{ action: 'set_pin', userId, pin }`, `{ action: 'set_handle', userId, handle }`, `{ action: 'set_role', userId, role }`
+- `{ action: 'disable', userId, disabled }`, `{ action: 'invite', email }`, `{ action: 'uninvite', email }`
+- `{ action: 'list' }` -> `{ ok, members: [{ userId, personId, displayName, handle, role, disabled, lastSignInAt, provider }] }`
+Errors: `{ ok: false, error: 'not_admin' | 'bad_input' | 'handle_taken' | 'not_found' }`. PIN must be exactly 6 digits, not all the same digit, not 123456.
