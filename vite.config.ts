@@ -29,6 +29,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     css: true, // so `tokens.css?raw` returns the real file in chart.test.ts
-    include: ['src/**/*.test.{ts,tsx}']
+    include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/**/*.test.ts']
   }
 })

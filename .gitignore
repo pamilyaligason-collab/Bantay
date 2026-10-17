@@ -10,3 +10,4 @@ playwright-report/
 coverage/
 .claude/worktrees/
 BANTAY_CLAUDE_CODE_PROMPT_*.md
+dist-auth/

@@ -44,3 +44,10 @@ body { background: var(--bg); }
 .tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 .tabs button { min-height: 54px; min-width: 0; border: 0; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--ink); background: transparent; }
 .tabs button[aria-current="page"] { color: var(--act); background: var(--fill); }
+
+/* Sign-in screen */
+.signin .row .si-l { width: 56px; flex: none; color: var(--ink2); font-size: 15px; }
+.signin input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; letter-spacing: 0.02em; }
+.signin input::placeholder { color: var(--ink2); }
+.si-err { margin: 0; padding: 14px 16px; font-size: 15px; color: var(--ink); }
+.si-hint { margin: 0; padding: 0 4px; font-size: 13px; color: var(--ink2); }
