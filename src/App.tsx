@@ -6,6 +6,8 @@ import Records from './screens/Records'
 import Safety from './screens/Safety'
 import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
+import { startSync } from './features/sync/sync'
+import { SyncStatus } from './features/sync/SyncStatus'
 
 // Tab icons and order copied from the prototype tab bar.
 const SHIELD = 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z'
@@ -35,6 +37,7 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, tab.id === 'today' || tab.id === 'safety')
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
+  useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => { document.title = `${tab.label} - Family Bantay` }, [tab])
   useEffect(() => {
     const el = scroll.current
@@ -52,7 +55,7 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      <div className="topbar" />
+      <div className="topbar"><SyncStatus /></div>
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
         <tab.Screen />

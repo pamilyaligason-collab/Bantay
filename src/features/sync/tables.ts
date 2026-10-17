@@ -1,0 +1,81 @@
+// The one place that knows which outbox tables reach Supabase and how camelCase client fields become snake_case columns.
+// Anything not listed here is never sent (it stays in the outbox and is counted in the sync status).
+
+export interface TableSpec {
+  /** camelCase payload fields that become columns (anything else is dropped, so a stray field cannot cause a 400). */
+  fields: string[]
+  /** PostgREST on_conflict target and how a duplicate is handled. */
+  onConflict: string
+  resolution: 'ignore-duplicates' | 'merge-duplicates'
+  /** Pull this table down into the local Dexie store (own and linked rows). */
+  pull?: boolean
+  /** Do not send client_id (the row is keyed another way). */
+  noClientId?: boolean
+}
+
+export const TABLES: Record<string, TableSpec> = {
+  readings: {
+    fields: ['personId', 'takenAt', 'test', 'value', 'unit', 'labLow', 'labHigh', 'sourceFileId', 'driveUrl', 'confidence', 'confirmedBy', 'confirmedAt'],
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
+  },
+  consults: {
+    fields: ['personId', 'takenAt', 'doctor', 'reason', 'medicines', 'nextVisit', 'sourceFileId', 'driveUrl', 'confirmedBy', 'confirmedAt'],
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
+  },
+  meds_taken: { fields: ['personId', 'name', 'takenAt'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true },
+  activity: {
+    fields: ['personId', 'kind', 'minutes', 'steps', 'startedAt', 'source'],
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
+  },
+  // A device's push subscription is keyed by its endpoint; resubscribing updates the keys.
+  push_subscriptions: { fields: ['endpoint', 'p256dh', 'auth', 'expirationTime'], onConflict: 'endpoint', resolution: 'merge-duplicates', noClientId: true },
+  usage_events: { fields: ['kind', 'name', 'appVersion'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
+  // An admin edit of a hotline or place replaces the earlier edit of the same one.
+  safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
+}
+
+export const isSyncable = (table: string) => Object.hasOwn(TABLES, table)
+export const PULL_TABLES = Object.keys(TABLES).filter((t) => TABLES[t].pull)
+
+export const toSnake = (s: string) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
+export const toCamel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+
+type Obj = Record<string, unknown>
+
+/** Outbox payload -> the JSON body for Supabase. Unknown stays null (never 0); undefined fields are left out. */
+export function toRow(table: string, payload: unknown, clientId?: string): Obj {
+  const spec = TABLES[table]
+  const p = { ...(payload as Obj) }
+  if (table === 'push_subscriptions') {
+    // PushSubscription.toJSON(): { endpoint, expirationTime, keys: { p256dh, auth } }
+    const keys = (p.keys ?? {}) as Obj
+    p.p256dh = keys.p256dh
+    p.auth = keys.auth
+    if (typeof p.expirationTime === 'number') p.expirationTime = new Date(p.expirationTime).toISOString()
+  }
+  const out: Obj = {}
+  for (const f of spec.fields) if (p[f] !== undefined) out[toSnake(f)] = p[f]
+  if (!spec.noClientId && clientId) out.client_id = clientId
+  return out
+}
+
+/** Server row -> local store row. Nulls are dropped except where "unknown" is a real value in the local type. */
+const KEEP_NULL = new Set(['labLow', 'labHigh', 'minutes', 'steps'])
+export function fromRow(table: string, row: Obj): Obj {
+  const out: Obj = { clientId: row.client_id }
+  for (const f of TABLES[table].fields) {
+    const v = row[toSnake(f)]
+    if (v === undefined || (v === null && !KEEP_NULL.has(f))) continue
+    out[f] = v
+  }
+  return out
+}
+
+const ms = (iso: unknown) => Date.parse(String(iso))
+/** Identity of a row apart from client_id, so a row pushed before it was stamped is not added twice on pull. */
+export const naturalKey: Record<string, (r: Obj) => string> = {
+  readings: (r) => `${r.personId}|${r.test}|${ms(r.takenAt)}`,
+  consults: (r) => `${r.personId}|${ms(r.takenAt)}`,
+  meds_taken: (r) => `${r.personId}|${r.name}|${ms(r.takenAt)}`,
+  activity: (r) => `${r.personId}|${r.kind}|${ms(r.startedAt)}`
+}

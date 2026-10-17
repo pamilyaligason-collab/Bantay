@@ -15,6 +15,8 @@ export default defineConfig(({ command, mode }) => {
   }
   return {
   define: { __ALLOW_NO_AUTH__: JSON.stringify(allowNoAuth) },
+  // SYNC_HARNESS=1 also builds sync-harness.html, the page the sync e2e spec drives. Off by default: not shipped.
+  build: process.env.SYNC_HARNESS ? { rollupOptions: { input: { main: 'index.html', harness: 'sync-harness.html' } } } : {},
   plugins: [
     react(),
     VitePWA({

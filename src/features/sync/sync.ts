@@ -1,0 +1,280 @@
+import type { Table } from 'dexie'
+import { db, drain, type OutboxRow } from '../../db'
+import { getAccessToken, onAuthChange } from '../auth/session'
+import { OVERRIDES_KEY } from '../safety/entries'
+import { ldb } from '../log/store'
+import { hdb } from '../records/store'
+import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
+
+// Outbox -> Supabase REST, then the member's own rows back down. Health values only ever travel in POST bodies,
+// are never logged, and an error is reduced to a short code before it is stored or shown.
+
+export const MAX_TRIES = 5
+export const PAGE = 1000
+export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
+const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
+export const SYNC_EVERY_MS = 5 * 60_000
+/** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
+export const backoffMinutes = (fails: number) => (fails <= 0 ? 0 : Math.min(2 ** (fails - 1), 30))
+
+export interface DeadLetter { table: string; op: string; clientId: string | null; code: string; at: number; payload: unknown }
+export interface SyncConfig { url?: string; key?: string; getToken?: () => Promise<string | null> }
+export interface SyncState { ready: boolean; signedIn: boolean; offline: boolean; paused: boolean }
+
+const BACKOFF_KEY = 'sync.backoff'
+export const DEAD_KEY = 'sync.dead'
+const cursorKey = (t: string) => `sync.cursor.${t}`
+
+class SyncError extends Error {
+  constructor(public kind: 'net' | 'transient' | 'auth' | 'perm', public code = '') { super(kind) }
+}
+
+// ---- status store (module level, read by <SyncStatus/> through useSyncExternalStore)
+let state: SyncState = { ready: false, signedIn: false, offline: typeof navigator !== 'undefined' && navigator.onLine === false, paused: false }
+const listeners = new Set<() => void>()
+const setState = (p: Partial<SyncState>) => {
+  state = { ...state, ...p }
+  listeners.forEach((l) => l())
+}
+export const getSyncState = () => state
+export const subscribeSync = (l: () => void) => (listeners.add(l), () => void listeners.delete(l))
+
+export async function syncCounts() {
+  const rows = await db.outbox.toArray()
+  const waiting = rows.filter((r) => isSyncable(r.table)).length
+  const dead = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined)?.length ?? 0
+  return { waiting, unknown: rows.length - waiting, dead }
+}
+
+// ---- config
+let cfg: Required<Pick<SyncConfig, 'getToken'>> & SyncConfig = { getToken: getAccessToken }
+const env = () => ({
+  url: (cfg.url ?? (import.meta.env.VITE_SUPABASE_URL as string | undefined))?.replace(/\/$/, ''),
+  key: cfg.key ?? (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)
+})
+
+let pausedToken: string | null = null
+
+// ---- push
+const errCode = async (res: Response) => {
+  try {
+    const c = ((await res.json()) as { code?: unknown }).code
+    if (typeof c === 'string' && /^[A-Za-z0-9_]{1,16}$/.test(c)) return c // the code only: messages can quote row values
+  } catch { /* no body */ }
+  return `HTTP${res.status}`
+}
+
+async function deadLetter(row: OutboxRow, code: string) {
+  const list = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined) ?? []
+  const clientId = (row.payload as { client_id?: string } | null)?.client_id ?? null
+  list.push({ table: row.table, op: row.op, clientId, code, at: Date.now(), payload: row.payload }) // kept locally so nothing is lost
+  await db.kv.put({ key: DEAD_KEY, value: list })
+  await db.outbox.delete(row.id!)
+}
+
+const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity } as Record<string, Table<{ id?: number }, number>>)[t]
+
+async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
+  const { url, key } = env()
+  // client_id is minted once and saved on the row, so every retry of this row carries the same one.
+  let payload = row.payload as Record<string, unknown>
+  if (!payload.client_id) {
+    payload = { ...payload, client_id: crypto.randomUUID() }
+    await db.outbox.update(row.id!, { payload })
+  }
+  const spec = TABLES[row.table]
+  let res: Response
+  try {
+    res = await fetch(`${url}/rest/v1/${row.table}?on_conflict=${spec.onConflict}`, {
+      method: 'POST',
+      headers: {
+        apikey: key!,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Prefer: `resolution=${spec.resolution},return=minimal`
+      },
+      body: JSON.stringify(toRow(row.table, payload, payload.client_id as string))
+    })
+  } catch {
+    failed.row = row
+    throw new SyncError('net')
+  }
+  if (res.ok) {
+    const lt = localTable(row.table)
+    if (lt && typeof payload.id === 'number') await lt.update(payload.id, { clientId: payload.client_id } as never) // so pull recognises it
+    return
+  }
+  const code = await errCode(res)
+  if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
+  if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
+  // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
+  if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code)
+  throw new SyncError('perm', code)
+}
+
+async function push(token: string): Promise<SyncError | null> {
+  let last: SyncError | null = null
+  for (let pass = 0; pass < MAX_TRIES; pass++) {
+    const failed: { row?: OutboxRow } = {}
+    last = null
+    await drain(async (row) => {
+      try { await sendRow(row, token, failed) } catch (e) { last = e as SyncError; throw e }
+    }, (r) => isSyncable(r.table))
+    const err = last as SyncError | null
+    // Network, 401 and 5xx are not the row's fault: give back the try that drain counted.
+    if (err && err.kind !== 'perm' && failed.row) await db.outbox.update(failed.row.id!, { tries: failed.row.tries })
+    if (!err || err.kind !== 'perm') return err
+  }
+  return last // a permanent error that is still pending after MAX_TRIES passes cannot happen (it is dead-lettered); defensive
+}
+
+// ---- pull
+type Local = Record<string, unknown> & { id?: number; clientId?: string }
+
+async function merge(table: string, rows: Record<string, unknown>[], seen: { ids: Set<string>; keys: Map<string, Local> }, lt: Table<Local, number>) {
+  const fresh: Local[] = []
+  for (const r of rows) {
+    const cid = r.client_id as string
+    if (seen.ids.has(cid)) continue
+    const local = fromRow(table, r) as Local
+    const twin = seen.keys.get(naturalKey[table](local))
+    if (twin && !twin.clientId) {
+      twin.clientId = cid // a row from this device that was sent before it got stamped
+      await lt.update(twin.id!, { clientId: cid })
+    } else {
+      fresh.push(local) // new, or the twin is a different row that happens to look alike
+      if (!twin) seen.keys.set(naturalKey[table](local), local)
+    }
+    seen.ids.add(cid)
+  }
+  if (fresh.length) await lt.bulkAdd(fresh)
+}
+
+async function pull(token: string) {
+  const { url, key } = env()
+  for (const table of PULL_TABLES) {
+    const lt = localTable(table) as unknown as Table<Local, number>
+    const all = await lt.toArray()
+    const seen = {
+      ids: new Set(all.map((r) => r.clientId).filter((c): c is string => !!c)),
+      keys: new Map(all.map((r) => [naturalKey[table](r), r] as const))
+    }
+    let cursor = (await db.kv.get(cursorKey(table)))?.value as string | undefined
+    let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
+    for (let page = 0; page < 20; page++) {
+      const rows = await getJson(`${url}/rest/v1/${table}?select=*&order=created_at.asc&limit=${PAGE}` + (from ? `&created_at=gte.${encodeURIComponent(from)}` : ''), key!, token)
+      await merge(table, rows, seen, lt)
+      const last = rows.length ? (rows[rows.length - 1].created_at as string) : undefined
+      if (last && (!cursor || Date.parse(last) > Date.parse(cursor))) {
+        cursor = last
+        await db.kv.put({ key: cursorKey(table), value: cursor })
+      }
+      if (rows.length < PAGE || !last || last === from) break // ponytail: PAGE rows sharing one created_at would stall; unrealistic at family scale
+      from = last
+    }
+  }
+  await pullPeople(url!, key!, token)
+  await pullSafety(url!, key!, token)
+}
+
+async function getJson(u: string, key: string, token: string): Promise<Record<string, unknown>[]> {
+  let res: Response
+  try { res = await fetch(u, { headers: { apikey: key, Authorization: `Bearer ${token}` } }) } catch { throw new SyncError('net') }
+  if (!res.ok) {
+    const code = await errCode(res)
+    throw new SyncError(res.status === 401 ? 'auth' : res.status === 408 || res.status === 429 || res.status >= 500 ? 'transient' : 'perm', code)
+  }
+  return (await res.json()) as Record<string, unknown>[]
+}
+
+// People: RLS limits this to the member and linked persons, so local Person.id == server people.id.
+// Anything that creates a local person must use getMember().personId.
+async function pullPeople(url: string, key: string, token: string) {
+  const rows = await getJson(`${url}/rest/v1/people?select=id,display_name`, key, token)
+  if (rows.length) await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
+}
+
+// Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.
+async function pullSafety(url: string, key: string, token: string) {
+  const rows = await getJson(`${url}/rest/v1/safety_overrides?select=kind,key,data,removed`, key, token)
+  if (!rows.length) return
+  const cur = { ...(((await db.kv.get(OVERRIDES_KEY))?.value as Record<string, unknown> | undefined) ?? {}) }
+  for (const r of rows) {
+    if (r.removed || r.data == null) delete cur[r.key as string]
+    else cur[r.key as string] = r.data
+  }
+  await db.kv.put({ key: OVERRIDES_KEY, value: cur })
+}
+
+// ---- run
+let inflight: Promise<void> | null = null
+
+async function run(force: boolean) {
+  const { url, key } = env()
+  const token = url && key ? await cfg.getToken() : null
+  if (!token) return setState({ ready: true, signedIn: false })
+  if (state.paused && token === pausedToken) return // 401 pauses sync until a new session
+  setState({ ready: true, signedIn: true, paused: false })
+  const bo = (await db.kv.get(BACKOFF_KEY))?.value as { fails: number; nextAt: number } | undefined
+  if (!force && bo && Date.now() < bo.nextAt) return
+  try {
+    const err = await push(token)
+    if (err) throw err
+    await pull(token)
+    await db.kv.delete(BACKOFF_KEY)
+    setState({ offline: false })
+  } catch (e) {
+    const err = e instanceof SyncError ? e : new SyncError('net')
+    if (err.kind === 'auth') { pausedToken = token; setState({ paused: true }) }
+    else if (err.kind === 'net' || err.kind === 'transient') {
+      const fails = (bo?.fails ?? 0) + 1
+      await db.kv.put({ key: BACKOFF_KEY, value: { fails, nextAt: Date.now() + backoffMinutes(fails) * 60_000 } })
+      if (err.kind === 'net') setState({ offline: true })
+    }
+  }
+}
+
+/** Run one sync now. Single flight: a call during a run joins it. `force` ignores the backoff wait (used when the network returns). */
+export const syncNow = (force = false): Promise<void> => (inflight ??= run(force).finally(() => (inflight = null)))
+
+/** Test helper: forget in-memory state. */
+export function resetSyncForTests() {
+  inflight = null
+  pausedToken = null
+  state = { ready: false, signedIn: false, offline: false, paused: false }
+}
+
+let stop: (() => void) | null = null
+
+/** Start background sync: on start, when the network returns, when the app is shown, every 5 minutes while visible,
+ *  and shortly after a row is queued. Returns a stop function. Does nothing until there is a session token. */
+export function startSync(config: SyncConfig = {}): () => void {
+  stop?.()
+  cfg = { getToken: getAccessToken, ...config }
+  const visible = () => typeof document === 'undefined' || document.visibilityState === 'visible'
+  const go = () => void syncNow()
+  let nudge: ReturnType<typeof setTimeout> | undefined
+  const onQueued = () => { clearTimeout(nudge); nudge = setTimeout(go, 3000) }
+  const queuedHook = () => { onQueued() }
+  const online = () => { setState({ offline: false }); void syncNow(true) }
+  const offline = () => setState({ offline: true })
+  const shown = () => { if (visible()) go() }
+  window.addEventListener('online', online)
+  window.addEventListener('offline', offline)
+  document.addEventListener('visibilitychange', shown)
+  const timer = setInterval(() => { if (visible()) go() }, SYNC_EVERY_MS)
+  const offAuth = onAuthChange(() => { pausedToken = null; setState({ paused: false }); void syncNow(true) })
+  db.outbox.hook('creating', queuedHook)
+  go()
+  return (stop = () => {
+    window.removeEventListener('online', online)
+    window.removeEventListener('offline', offline)
+    document.removeEventListener('visibilitychange', shown)
+    clearInterval(timer)
+    clearTimeout(nudge)
+    offAuth()
+    db.outbox.hook('creating').unsubscribe(queuedHook)
+    stop = null
+  })
+}
