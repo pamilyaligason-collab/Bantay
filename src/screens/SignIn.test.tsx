@@ -37,8 +37,9 @@ describe('SignIn: fingerprint first (D-27)', () => {
     expect(h.pk).toHaveBeenCalledTimes(1)
     expect(h.pk).toHaveBeenCalledWith('p-lola')
     expect(pad()).toBeNull()
+    const n = h.abandon.mock.calls.length
     tap(/Use PIN instead/)
-    expect(h.abandon).toHaveBeenCalledTimes(1)
+    expect(h.abandon.mock.calls.length).toBe(n + 1)
     expect(pad()).not.toBeNull()
     expect(h.pk).toHaveBeenCalledTimes(1)
   })

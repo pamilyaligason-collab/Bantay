@@ -179,8 +179,15 @@ test.describe('quick login (D-24)', () => {
   test('fingerprint prompt: Use PIN instead is one tap away', async ({ page }) => {
     await mock(page, fresh())
     await trust(page, ['p-lola'])
-    // Hold the passkey request so the prompt stays open.
-    await page.route(`${API}/auth/v1/passkeys/**`, () => new Promise(() => {}))
+    // Options come back fine; the browser prompt then stays open until aborted (like a real fingerprint sheet).
+    await page.route(`${API}/auth/v1/passkeys/authentication/options`, (route) =>
+      route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ challenge_id: 'c1', options: { challenge: 'AAAA', timeout: 60000, rpId: 'localhost', userVerification: 'preferred' } }) }))
+    await page.addInitScript(() => {
+      ;(window as unknown as { __abortedPrompt: boolean }).__abortedPrompt = false
+      navigator.credentials.get = (o?: CredentialRequestOptions) => new Promise((_, rej) => {
+        o?.signal?.addEventListener('abort', () => { (window as unknown as { __abortedPrompt: boolean }).__abortedPrompt = true; rej(new DOMException('aborted', 'AbortError')) })
+      })
+    })
     await skipOnboarding(page)
     await page.goto('/')
     await page.getByRole('button', { name: /Lola Rosa/ }).click()
@@ -189,6 +196,9 @@ test.describe('quick login (D-24)', () => {
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
+    expect(await page.evaluate(() => (window as unknown as { __abortedPrompt: boolean }).__abortedPrompt)).toBe(true) // the prompt was aborted, not left open
+    await page.waitForTimeout(500)
+    await expect(page.locator('h1')).toHaveText('Today') // and the PIN session survived
   })
 
   test('passkey hidden when the browser cannot do it', async ({ page }) => {

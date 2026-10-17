@@ -62,10 +62,12 @@ const UNAVAILABLE = 'Not available on this phone yet'
 /** Set while a passkey sign-in is verifying who signed in. AuthGate waits on it so nothing runs as the wrong person. */
 export let passkeyCheck: Promise<void> | null = null
 
-let releaseCheck: (() => void) | null = null
-/** "Use PIN instead" while the fingerprint prompt is still open: stop AuthGate waiting on it, so a PIN sign-in is not held up.
- *  If the ceremony finishes later it is still identity-checked (and signed out locally on a mismatch). */
-export function abandonPasskeyWait(): void { passkeyCheck = null; releaseCheck?.() }
+let abortCeremony: AbortController | null = null
+/** "Use PIN instead", Back, or asking again while a prompt is open: abort the ceremony. It rejects, the finally below clears
+ *  passkeyCheck, and AuthGate never skips an identity check that is still unresolved.
+ *  ponytail: if the verify POST is already in flight when we abort, AuthGate waits one round trip; on a mismatch the phone
+ *  is signed out locally, which is safe and costs one PIN re-entry. */
+export function abandonPasskeyWait(): void { abortCeremony?.abort() }
 
 /** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success).
  *  The browser picks the passkey, so after the ceremony we check it belongs to the tapped person. On a mismatch or any
@@ -76,13 +78,16 @@ export async function signInWithPasskey(expectedPersonId: string): Promise<strin
   // Register the pending check BEFORE the ceremony: SIGNED_IN can land during or right after it, and AuthGate must find this.
   let release!: () => void
   const mine = passkeyCheck = new Promise<void>((r) => { release = r })
-  releaseCheck = release
+  abortCeremony?.abort()
+  const ac = abortCeremony = new AbortController()
   const fail = 'Fingerprint or face did not work. Use your PIN instead.'
   try {
-    const { error } = await sb.auth.signInWithPasskey()
+    const { error } = await sb.auth.signInWithPasskey({ options: { signal: ac.signal } })
     if (error) {
-      // The server says this phone's passkey is gone: stop trying fingerprint first for this person.
-      if (/no (matching )?(passkey|credential)|credential.*not found|unknown credential/i.test(`${(error as { code?: string }).code ?? ''} ${error.message ?? ''}`)) clearPasskeyFlag(expectedPersonId)
+      // A server-side rejection means this passkey no longer works here: stop fingerprint-first for this person.
+      // A cancel or abort keeps the flag. A passkey deleted on the phone shows as NotAllowedError, so its flag stays until
+      // Forget this phone (best effort).
+      if (!ac.signal.aborted && !/^(NotAllowedError|AbortError)$/.test(error.name ?? '')) clearPasskeyFlag(expectedPersonId)
       return fail
     }
     try {
@@ -95,6 +100,7 @@ export async function signInWithPasskey(expectedPersonId: string): Promise<strin
       return fail
     }
   } catch { return fail } finally {
+    if (abortCeremony === ac) abortCeremony = null
     if (passkeyCheck === mine) passkeyCheck = null // every exit clears it; a newer attempt's check is left alone
     release()
   }

@@ -68,21 +68,23 @@ function PickCard({ pick, busy, run, setError, onBack }: {
 }) {
   const fp = passkeySupported() && hasPasskeyFlag(pick.personId)
   const [phase, setPhase] = useState<'prompting' | 'pin'>(fp ? 'prompting' : 'pin')
-  const started = useRef(false)
+  const seq = useRef(0)
   const head = useRef<HTMLHeadingElement>(null)
   const alive = useRef(true)
   const ask = () => {
+    abandonPasskeyWait()
     setError('')
     setPhase('prompting')
+    const mine = ++seq.current
     void signInWithPasskey(pick.personId).then((e) => {
-      if (!alive.current) return
+      if (!alive.current || mine !== seq.current) return // unmounted, or a newer prompt replaced this one
       if (e) { setError(e); setPhase('pin') }
     })
   }
   useEffect(() => {
     alive.current = true
-    if (fp && !started.current) { started.current = true; ask() }
-    return () => { alive.current = false }
+    if (fp) ask()
+    return () => { alive.current = false; abandonPasskeyWait() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (phase === 'pin') head.current?.focus() }, [phase])
   const pin = pick.provider === 'pin' && pick.handle ? pick.handle : null

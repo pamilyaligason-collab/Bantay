@@ -6,7 +6,7 @@ vi.mock('./client', () => ({ supabase: { rpc: m.rpc, auth: { signInWithPasskey: 
 vi.mock('./session', () => ({ getMember: m.member }))
 
 import * as fam from './family'
-import { signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
+import { abandonPasskeyWait, signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
 
 describe('family cache', () => {
   beforeEach(() => { localStorage.clear(); rpc.mockReset() })
@@ -167,13 +167,46 @@ describe('fingerprint flag follows what happens on this phone', () => {
     await signInWithPasskey('p1')
     expect(hasPasskeyFlag('p1')).toBe(false)
   })
-  it('no credential clears the flag; a plain cancel keeps it', async () => {
+  it('a server rejection clears the flag; a cancel keeps it', async () => {
     setPasskeyFlag('p1')
     m.pk.mockResolvedValue({ error: { name: 'NotAllowedError', message: 'cancelled' } })
     await signInWithPasskey('p1')
     expect(hasPasskeyFlag('p1')).toBe(true)
-    m.pk.mockResolvedValue({ error: { code: 'passkey_not_found', message: 'No passkey found' } })
+    m.pk.mockResolvedValue({ error: { name: 'AuthApiError', message: 'verification failed' } })
     await signInWithPasskey('p1')
     expect(hasPasskeyFlag('p1')).toBe(false)
+  })
+})
+
+describe('abandonPasskeyWait', () => {
+  beforeEach(() => {
+    m.pk.mockReset(); m.out.mockReset(); m.member.mockReset()
+    vi.stubGlobal('PublicKeyCredential', class {})
+    Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+  })
+  it('aborts the ceremony; the identity wait stays until the ceremony settles', async () => {
+    let signal!: AbortSignal
+    m.pk.mockImplementation((a: { options: { signal: AbortSignal } }) => new Promise((_, rej) => {
+      signal = a.options.signal
+      signal.addEventListener('abort', () => rej(Object.assign(new Error('aborted'), { name: 'AbortError' })))
+    }))
+    setPasskeyFlag('p1')
+    const p = signInWithPasskey('p1')
+    expect(signal.aborted).toBe(false)
+    abandonPasskeyWait()
+    expect(signal.aborted).toBe(true)
+    expect(fam.passkeyCheck).toBeInstanceOf(Promise) // not dropped from outside
+    expect(await p).toContain('Use your PIN instead')
+    expect(fam.passkeyCheck).toBeNull()
+    expect(hasPasskeyFlag('p1')).toBe(true) // an abort is not a server rejection
+  })
+  it('a second attempt aborts the first', async () => {
+    const sigs: AbortSignal[] = []
+    m.pk.mockImplementation((a: { options: { signal: AbortSignal } }) => new Promise((r) => { sigs.push(a.options.signal); if (sigs.length === 2) r({ error: null }) }))
+    m.member.mockResolvedValue({ personId: 'p1' })
+    void signInWithPasskey('p1')
+    await signInWithPasskey('p1')
+    expect(sigs[0]!.aborted).toBe(true)
+    expect(sigs[1]!.aborted).toBe(false)
   })
 })
