@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { db } from '../db'
 import { DAMPAS } from '../features/location/geo'
 import { resolveLocation, saveHome } from '../features/location/useLocation'
+import PhoneWarnings from '../features/safety/PhoneWarnings'
+import '../features/safety/safety.css'
 import { enableAlerts, ensureSubscribed, isIosNeedsInstall, markAsked } from '../features/notify/alerts'
 
-type Step = 'ios' | 'alerts' | 'where' | 'home'
+type Step = 'ios' | 'alerts' | 'phone' | 'where' | 'home'
 
 const standalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
 
@@ -60,13 +62,22 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             setBusy(true)
             setDenied((await enableAlerts()) !== 'granted')
             setBusy(false)
-            setStep('where')
+            setStep('phone')
           }}
         >
           Turn on alerts
         </button>
         <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Change this any time in your phone settings.</p>
         <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Your admin can see which screens you use, never your health values.</p>
+      </Card>
+    )
+  }
+
+  if (step === 'phone') {
+    return (
+      <Card title="Check your phone's warnings" lead="Your phone, not Bantay, can warn you before an earthquake.">
+        <PhoneWarnings />
+        <button className="btn" onClick={() => setStep('where')}>Continue</button>
       </Card>
     )
   }
