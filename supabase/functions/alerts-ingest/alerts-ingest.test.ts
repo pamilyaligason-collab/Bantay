@@ -43,8 +43,8 @@ describe('parseUsgs', () => {
 
 describe('zones (D-27)', () => {
   it('the app copy and the function copy are equal', () => expect([...ZONES]).toEqual([...HOME_ZONES]))
-  it('Conel is in General Santos, about 395 km from Dampas', () => {
-    expect(Math.abs(distanceKm(ZONES[0], ZONES[1]) - 395)).toBeLessThan(15)
+  it('Conel is in General Santos, about 409 km from Dampas', () => {
+    expect(Math.abs(distanceKm(ZONES[0], ZONES[1]) - 409)).toBeLessThan(5)
   })
   const quake = (id: string, mag: number, lat: number, lon: number) => ({ id, properties: { type: 'earthquake', mag, time: NOW - 3_600_000, place: 'x', title: 'x' }, geometry: { coordinates: [lon, lat, 10] } })
   const ids = (...q: ReturnType<typeof quake>[]) => parseUsgs({ features: q }, NOW)!.map((r) => r.id)

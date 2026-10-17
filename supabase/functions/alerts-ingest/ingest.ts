@@ -3,7 +3,7 @@ import { type AlertRow, parseAir, parseGdacs, parseUsgs, ZONES } from './parse.t
 
 // Sources verified WORKS in research (2026-10-17). PHIVOLCS quake and volcano pages, PAGASA bulletins (PDF in an iframe) and BOHECO I are
 // HTML or PDF scrape only: skipped on purpose (see docs/ALERTS.md).
-// One source can have several urls (air quality: one call per zone, D-27). Payloads reach parse in url order; any failed fetch fails the source.
+// One source can have several urls (air quality: one call per zone, D-27). Payloads reach parse in url order; any failed fetch fails the source. All-or-nothing staleness (one zone failing marks both stale) is conservative by design.
 export const SOURCES: { source: string; urls: string[]; json: boolean; parse: (p: unknown[], now: number) => AlertRow[] | null }[] = [
   { source: 'USGS', urls: ['https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson'], json: true, parse: ([p], now) => parseUsgs(p, now) },
   { source: 'GDACS', urls: ['https://www.gdacs.org/xml/rss.xml'], json: false, parse: ([p], now) => parseGdacs(p, now) },
