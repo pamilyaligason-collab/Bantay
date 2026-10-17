@@ -1,0 +1,14 @@
+{
+  "source": "HazardHunterPH, Dampas pin 9.645705, 123.877951, read 2026-10-17",
+  "url": "https://hazardhunter.georisk.gov.ph/",
+  "rows": [
+    { "label": "Ground shaking", "value": "Prone, Intensity VIII" },
+    { "label": "Severe wind", "value": "88 to 117 kph (20-year), 117 to 220 kph (500-year)" },
+    { "label": "Ashfall", "value": "Prone" },
+    { "label": "Rain-induced landslide", "value": "Low" },
+    { "label": "Storm surge", "value": "Safe" },
+    { "label": "Liquefaction, tsunami, ground rupture", "value": "Safe" },
+    { "label": "Nearest active fault", "value": "About 12.4 km (Maribojoc)" },
+    { "label": "Flood", "value": null }
+  ]
+}

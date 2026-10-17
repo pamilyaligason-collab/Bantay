@@ -1,0 +1,68 @@
+{
+  "name": "Bantay news feed (DO NOT ACTIVATE until reviewed)",
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "nodes": [
+    {
+      "id": "n1", "name": "Every 15 minutes", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 300],
+      "parameters": { "rule": { "interval": [{ "field": "minutes", "minutesInterval": 15 }] } }
+    },
+    {
+      "id": "n2", "name": "PHIVOLCS news", "type": "n8n-nodes-base.rssFeedRead", "typeVersion": 1.1, "position": [260, 0], "onError": "continueRegularOutput",
+      "parameters": { "url": "https://www.phivolcs.dost.gov.ph/feed/" }
+    },
+    {
+      "id": "n3", "name": "Province of Bohol news", "type": "n8n-nodes-base.rssFeedRead", "typeVersion": 1.1, "position": [260, 150], "onError": "continueRegularOutput",
+      "parameters": { "url": "https://bohol.gov.ph/feed/" }
+    },
+    {
+      "id": "n4", "name": "PIA news (unverified from a script, blocked by Cloudflare in our test)", "type": "n8n-nodes-base.rssFeedRead", "typeVersion": 1.1, "position": [260, 300], "onError": "continueRegularOutput",
+      "parameters": { "url": "https://pia.gov.ph/feed/" }
+    },
+    {
+      "id": "n5", "name": "DOH news (unverified, blocked by Cloudflare in our test)", "type": "n8n-nodes-base.rssFeedRead", "typeVersion": 1.1, "position": [260, 450], "onError": "continueRegularOutput",
+      "parameters": { "url": "https://doh.gov.ph/feed/" }
+    },
+    {
+      "id": "n6", "name": "YouTube channel feeds (PAGASA, Tagbilaran DRRM): channel ids UNKNOWN, fill in", "type": "n8n-nodes-base.rssFeedRead", "typeVersion": 1.1, "position": [260, 600], "disabled": true, "onError": "continueRegularOutput",
+      "parameters": { "url": "https://www.youtube.com/feeds/videos.xml?channel_id=REPLACE_WITH_CHANNEL_ID" }
+    },
+    {
+      "id": "n7", "name": "Merge feeds", "type": "n8n-nodes-base.merge", "typeVersion": 3, "position": [560, 300],
+      "parameters": { "numberInputs": 5 }
+    },
+    {
+      "id": "n8", "name": "Sort, dedupe, top 20", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [820, 300],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const seen = new Set();\nconst rows = [];\nfor (const it of $input.all()) {\n  const j = it.json;\n  const url = j.link || j.url;\n  if (!url || !/^https?:\\/\\//i.test(url) || seen.has(url)) continue;\n  seen.add(url);\n  const t = Date.parse(j.isoDate || j.pubDate || '');\n  const host = new URL(url).hostname.replace(/^www\\./, '');\n  rows.push({ json: {\n    id: url,\n    title: String(j.title || '').slice(0, 300),\n    url,\n    source: host,\n    kind: /youtube\\.com|youtu\\.be/.test(host) ? 'video' : 'article',\n    published_at: new Date(Number.isNaN(t) ? Date.now() : t).toISOString()\n  } });\n}\nrows.sort((a, b) => b.json.published_at.localeCompare(a.json.published_at));\nreturn rows.slice(0, 20);"
+      }
+    },
+    {
+      "id": "n9", "name": "Write news_items", "type": "n8n-nodes-base.supabase", "typeVersion": 1, "position": [1080, 300],
+      "credentials": { "supabaseApi": { "id": "SET_ME", "name": "Bantay Supabase (service role, set in n8n only)" } },
+      "parameters": {
+        "operation": "create",
+        "tableId": "news_items",
+        "dataToSend": "autoMapInputData"
+      },
+      "notes": "Target table news_items(id text primary key, title text, url text, source text, kind text, published_at timestamptz). Use an upsert on id when the SQL lane lands; create fails on duplicates. Table and RLS (public read, service-role write) are not applied by this lane."
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": { "main": [[
+      { "node": "PHIVOLCS news", "type": "main", "index": 0 },
+      { "node": "Province of Bohol news", "type": "main", "index": 0 },
+      { "node": "PIA news (unverified from a script, blocked by Cloudflare in our test)", "type": "main", "index": 0 },
+      { "node": "DOH news (unverified, blocked by Cloudflare in our test)", "type": "main", "index": 0 },
+      { "node": "YouTube channel feeds (PAGASA, Tagbilaran DRRM): channel ids UNKNOWN, fill in", "type": "main", "index": 0 }
+    ]] },
+    "PHIVOLCS news": { "main": [[{ "node": "Merge feeds", "type": "main", "index": 0 }]] },
+    "Province of Bohol news": { "main": [[{ "node": "Merge feeds", "type": "main", "index": 1 }]] },
+    "PIA news (unverified from a script, blocked by Cloudflare in our test)": { "main": [[{ "node": "Merge feeds", "type": "main", "index": 2 }]] },
+    "DOH news (unverified, blocked by Cloudflare in our test)": { "main": [[{ "node": "Merge feeds", "type": "main", "index": 3 }]] },
+    "YouTube channel feeds (PAGASA, Tagbilaran DRRM): channel ids UNKNOWN, fill in": { "main": [[{ "node": "Merge feeds", "type": "main", "index": 4 }]] },
+    "Merge feeds": { "main": [[{ "node": "Sort, dedupe, top 20", "type": "main", "index": 0 }]] },
+    "Sort, dedupe, top 20": { "main": [[{ "node": "Write news_items", "type": "main", "index": 0 }]] }
+  }
+}
