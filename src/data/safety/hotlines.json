@@ -1,0 +1,13 @@
+[
+  { "id": "hl-911", "group": "Emergency", "name": "National emergency", "phone": "911", "status": "CONFIRMED", "source": "National emergency number, listed by DILG", "sourceUrl": "https://calabarzon.dilg.gov.ph/", "date": "2026-10-17" },
+  { "id": "hl-143", "group": "Emergency", "name": "Philippine Red Cross", "phone": "143", "status": "LISTED", "source": "Philippine Red Cross national line (prototype v5 list, re-check every 6 months)", "sourceUrl": "https://redcross.org.ph/", "date": "2026-10-17" },
+  { "id": "hl-tag911", "group": "Emergency", "name": "Tagbilaran City 911 / rescue (CDRRMO)", "phone": null, "status": "UNKNOWN", "source": "City says a 911 unit exists; no number published where we could read it", "sourceUrl": "https://mb.com.ph/2026/03/17/mayor-tagbilaran-remains-safe-peaceful", "date": "2026-10-17" },
+  { "id": "hl-pdrrmo", "group": "Emergency", "name": "Bohol PDRRMO", "phone": null, "status": "UNKNOWN", "source": "Not located", "sourceUrl": null, "date": "2026-10-17" },
+  { "id": "hl-prc-bohol", "group": "Emergency", "name": "Red Cross Bohol chapter", "phone": null, "status": "UNKNOWN", "source": "Only a third-party listing found, so not stored", "sourceUrl": null, "date": "2026-10-17" },
+  { "id": "hl-bfp", "group": "Fire, police and sea", "name": "BFP Tagbilaran", "phone": null, "status": "UNKNOWN", "source": "Only 2015 numbers found, not trusted", "sourceUrl": null, "date": "2026-10-17" },
+  { "id": "hl-pnp", "group": "Fire, police and sea", "name": "PNP Tagbilaran", "phone": null, "status": "UNKNOWN", "source": "Not located", "sourceUrl": null, "date": "2026-10-17" },
+  { "id": "hl-doh", "group": "Health", "name": "DOH health line", "phone": "1555", "status": "LISTED", "source": "DOH national line (prototype v5 list, re-check every 6 months)", "sourceUrl": "https://doh.gov.ph/", "date": "2026-10-17" },
+  { "id": "hl-ncmh", "group": "Health", "name": "Mental health crisis (NCMH)", "phone": "1553", "status": "LISTED", "source": "NCMH national line (prototype v5 list, re-check every 6 months)", "sourceUrl": "https://ncmh.gov.ph/", "date": "2026-10-17" },
+  { "id": "hl-power", "group": "Power and water", "name": "Bohol Light Company (power)", "phone": null, "status": "UNKNOWN", "source": "Named as the Tagbilaran distributor in a 2022 NGCP advisory; no number found", "sourceUrl": "https://newsinfo.inquirer.net/1646053/", "date": "2026-10-17" },
+  { "id": "hl-water", "group": "Power and water", "name": "Water provider", "phone": null, "status": "UNKNOWN", "source": "Possibly Bohol Water Utilities Inc. (2017 report only). Ask the barangay.", "sourceUrl": "https://newsinfo.inquirer.net/912341/", "date": "2026-10-17" }
+]

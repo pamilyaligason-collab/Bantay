@@ -1,0 +1,29 @@
+.sf { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sf > * { min-width: 0; }
+.sf-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.sf-chip { background: var(--fill); font-size: 15px; padding: 4px 10px; border-radius: 8px; }
+.sf-chip.warn { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
+.sf-lbl { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.sf-now { background: var(--btn); color: var(--btn-fg); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.sf-now b { font-size: 15px; }
+.sf-now span { font-size: 24px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.sf-note { background: var(--warn-bg); color: var(--ink); border-radius: 14px; padding: 12px 14px; font-size: 15px; margin: 0; }
+.sf details { background: var(--cell); border-radius: 16px; box-shadow: var(--shadow); padding: 0 16px; }
+.sf details > summary { min-height: 48px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--act); }
+.sf details > div, .sf details > ul, .sf details > ol, .sf details > pre, .sf details > p, .sf details > svg, .sf details > iframe { margin-bottom: 14px; }
+.sf details details { box-shadow: none; background: var(--fill); }
+.sf ul, .sf ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.sf pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 15px; margin-top: 0; }
+.sf h3 { font-size: 15px; margin: 10px 0 6px; color: var(--ink2); }
+.sf-frame { width: 100%; height: 360px; border: 0; border-radius: 12px; background: var(--fill); display: block; }
+.sf a { color: var(--act); }
+.sf-act { color: var(--act); background: transparent; border: 0; padding: 0; min-height: 44px; text-align: right; font-size: 15px; font-weight: 600; max-width: 45%; }
+.sf-go { min-height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 22px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 600; }
+.sf-edit { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.sf-edit label { display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--ink2); }
+.sf-edit input { min-height: 44px; font: inherit; font-size: 17px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); min-width: 0; }
+.sf-edit .err { color: var(--warn); font-weight: 600; margin: 0; }
+.sf-src { font-size: 13px; color: var(--ink2); padding: 0 16px 10px; margin: 0; overflow-wrap: anywhere; }
+.sf-poster { width: 100%; max-width: 320px; height: auto; }
+.sf-empty { color: var(--ink2); font-size: 15px; margin: 0 4px; }
+.sf-news a { display: flex; flex-direction: column; gap: 1px; text-decoration: none; color: var(--ink); }
