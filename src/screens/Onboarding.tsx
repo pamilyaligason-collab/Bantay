@@ -2,9 +2,11 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { db } from '../db'
 import { DAMPAS } from '../features/location/geo'
 import { resolveLocation, saveHome } from '../features/location/useLocation'
+import PhoneWarnings from '../features/safety/PhoneWarnings'
+import '../features/safety/safety.css'
 import { enableAlerts, ensureSubscribed, isIosNeedsInstall, markAsked } from '../features/notify/alerts'
 
-type Step = 'ios' | 'alerts' | 'where' | 'home'
+type Step = 'ios' | 'alerts' | 'phone' | 'where' | 'home'
 
 const standalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
 
@@ -45,7 +47,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <li style={{ padding: '8px 0' }}>Tap Add.</li>
           <li style={{ padding: '8px 0' }}>Open Bantay from your Home Screen to keep going.</li>
         </ol>
-        <button className="btn2" onClick={async () => { await markAsked(); setDenied(true); setStep('where') }}>Continue without alerts</button>
+        <button className="btn2" onClick={async () => { await markAsked(); setDenied(true); setStep('phone') }}>Continue without alerts</button>
       </Card>
     )
   }
@@ -60,13 +62,22 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             setBusy(true)
             setDenied((await enableAlerts()) !== 'granted')
             setBusy(false)
-            setStep('where')
+            setStep('phone')
           }}
         >
           Turn on alerts
         </button>
         <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Change this any time in your phone settings.</p>
         <p className="sub" style={{ margin: 0, textAlign: 'center' }}>Your admin can see which screens you use, never your health values.</p>
+      </Card>
+    )
+  }
+
+  if (step === 'phone') {
+    return (
+      <Card title="Check your phone's warnings" lead="Your phone, not Bantay, may give a few seconds' warning before shaking.">
+        <PhoneWarnings level={2} />
+        <button className="btn" onClick={() => setStep('where')}>Continue</button>
       </Card>
     )
   }

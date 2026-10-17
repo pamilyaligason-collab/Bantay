@@ -27,3 +27,9 @@
 .sf-poster { width: 100%; max-width: 320px; height: auto; }
 .sf-empty { color: var(--ink2); font-size: 15px; margin: 0 4px; }
 .sf-news a { display: flex; flex-direction: column; gap: 1px; text-decoration: none; color: var(--ink); }
+.pw { background: var(--cell); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; }
+.pw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pw-item { display: flex; flex-direction: column; gap: 6px; }
+.pw-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.pw-btns .btn2 { flex: 1 1 140px; min-height: 44px; }
+.pw-btns .btn2[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
