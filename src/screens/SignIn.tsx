@@ -96,7 +96,7 @@ function PickCard({ pick, busy, run, setError, onBack }: {
         <>
           <p className="si-hint" role="status">Use your fingerprint or face now.</p>
           {pin
-            ? <button className="btn2" autoFocus onClick={() => { abandonPasskeyWait(); setPhase('pin') }}>Use PIN instead</button>
+            ? <button className="btn2" autoFocus onClick={() => { ++seq.current; abandonPasskeyWait(); setPhase('pin') }}>Use PIN instead</button>
             : <button className="btn2" autoFocus disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google instead</button>}
         </>
       ) : (

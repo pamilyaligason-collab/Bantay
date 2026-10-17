@@ -44,6 +44,18 @@ describe('SignIn: fingerprint first (D-27)', () => {
     expect(h.pk).toHaveBeenCalledTimes(1)
   })
 
+  it('Use PIN instead: the aborted prompt failing afterwards shows no alert', async () => {
+    let fail!: (e: string) => void
+    h.pk.mockReturnValue(new Promise<string>((r) => { fail = r }))
+    render(<SignIn />)
+    tap(/Lola Rosa/)
+    tap(/Use PIN instead/)
+    fail('Fingerprint or face did not work. Use your PIN instead.')
+    await new Promise((r) => setTimeout(r, 30))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(pad()).not.toBeNull()
+  })
+
   for (const [name, msg] of [
     ['cancel or error', 'Fingerprint or face did not work. Use your PIN instead.'],
     ['identity mismatch', 'That fingerprint belongs to someone else. Tap your own name.']
