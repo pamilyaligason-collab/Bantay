@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './client'
-import { enablePasskey, forgetPhone, hasPasskeyFlag, loadFamily, passkeySupported } from './family'
+import { clearLastPerson, enablePasskey, forgetPhone, hasPasskeyFlag, loadFamily, passkeySupported } from './family'
 import { getMember, signOut } from './session'
 
 /** Family > This phone: fingerprint or face sign-in, switch person, forget this phone. Renders nothing when auth is not configured. */
@@ -38,7 +38,7 @@ export function PhoneSettings() {
         <button className="row" disabled={busy || on || !ready} onClick={turnOn}>
           {on ? 'Fingerprint or face sign-in is on' : 'Turn on fingerprint or face sign-in'}
         </button>
-        <button className="row" onClick={() => signOut()}>Not you? Switch person</button>
+        <button className="row" onClick={() => { clearLastPerson(); void signOut() }}>Not you? Switch person</button>
         <button className="row" onClick={forget}>Forget this phone</button>
       </div>
       {!ready && <p className="sec">Not available on this phone yet.</p>}

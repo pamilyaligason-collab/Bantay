@@ -45,11 +45,22 @@ export const hasPasskeyFlag = (personId: string) => { try { return localStorage.
 export const setPasskeyFlag = (personId: string) => { try { localStorage.setItem(flagKey(personId), '1') } catch { /* private mode */ } }
 export const clearPasskeyFlag = (personId: string) => { try { localStorage.removeItem(flagKey(personId)) } catch { /* private mode */ } }
 
-/** "Forget this phone": the picker list and every passkey flag. */
+const LAST = 'bantay.lastPerson' // personId of the last person who signed in on this phone. Not a secret; names stay in bantay.family.
+export const getLastPerson = (): string | null => { try { return localStorage.getItem(LAST) } catch { return null } }
+export const clearLastPerson = () => { try { localStorage.removeItem(LAST) } catch { /* private mode */ } }
+/** After a successful sign-in (PIN, passkey or Google all land here via AuthGate): remember who, if they are in the cached family. */
+export async function rememberSignedIn(): Promise<void> {
+  try {
+    const m = await getMember()
+    if (m?.personId && loadFamily().some((f) => f.personId === m.personId)) localStorage.setItem(LAST, m.personId)
+  } catch { /* offline or private mode */ }
+}
+
+/** "Forget this phone": the picker list, the remembered person and every passkey flag. */
 export function forgetPhone(): void {
   generation++
   try {
-    const drop: string[] = [KEY]
+    const drop: string[] = [KEY, LAST]
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith('bantay.passkey.')) drop.push(k) }
     drop.forEach((k) => localStorage.removeItem(k))
   } catch { /* private mode */ }

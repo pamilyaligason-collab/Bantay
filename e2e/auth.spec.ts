@@ -26,6 +26,7 @@ const trust = (page: Page, flagged: string[] = []) =>
 const logouts: string[] = []
 let passkeyCalls = 0
 const fresh = () => ({ pins: [] as string[], rpc: 0, oauth: [] as string[] })
+const who = async (page: Page, name: string) => { await page.getByLabel('Who are you?').selectOption({ label: name }); await page.getByRole('button', { name: 'Continue', exact: true }).click() }
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
 async function mock(page: Page, seen: { pins: string[]; rpc: number; oauth: string[] }) {
@@ -120,10 +121,11 @@ test.describe('quick login (D-24)', () => {
     await trust(page)
     await skipOnboarding(page)
     await page.goto('/')
-    await expect(page.getByRole('button', { name: /Lola Rosa/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: /Ate Maria/ })).toBeVisible()
+    await expect(page.getByLabel('Who are you?')).toBeVisible()
+    await expect(page.getByRole('option', { name: 'Lola Rosa' })).toBeAttached()
+    await expect(page.getByRole('option', { name: 'Ate Maria' })).toBeAttached()
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await who(page, 'Lola Rosa')
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await keys(page, '000001')
     await expect(page.getByRole('alert')).toHaveText('Handle or PIN is not right')
@@ -137,7 +139,7 @@ test.describe('quick login (D-24)', () => {
     await mock(page, seen)
     await trust(page)
     await page.goto('/')
-    await page.getByRole('button', { name: /Ate Maria/ }).click()
+    await who(page, 'Ate Maria')
     await page.getByRole('button', { name: 'Continue with Google' }).click()
     await expect.poll(() => seen.oauth.length).toBe(1)
   })
@@ -162,11 +164,11 @@ test.describe('quick login (D-24)', () => {
     await trust(page, ['p-lola'])
     await skipOnboarding(page)
     await page.goto('/')
-    await page.getByRole('button', { name: /Ate Maria/ }).click() // not flagged: no prompt
+    await who(page, 'Ate Maria') // not flagged: no prompt
     await expect(page.getByRole('button', { name: /fingerprint or face/i })).toHaveCount(0)
     expect(passkeyCalls).toBe(0)
     await page.getByRole('button', { name: 'Back' }).click()
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await who(page, 'Lola Rosa')
     await expect(page.getByRole('alert')).toContainText('Use your PIN instead')
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
     const after = passkeyCalls
@@ -190,7 +192,7 @@ test.describe('quick login (D-24)', () => {
     })
     await skipOnboarding(page)
     await page.goto('/')
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await who(page, 'Lola Rosa')
     await expect(page.getByRole('button', { name: '5', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Use PIN instead' }).click()
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
@@ -206,7 +208,7 @@ test.describe('quick login (D-24)', () => {
     await trust(page, ['p-lola'])
     await page.addInitScript(() => { Object.defineProperty(window, 'PublicKeyCredential', { value: undefined, configurable: true }) })
     await page.goto('/')
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await who(page, 'Lola Rosa')
     await expect(page.getByRole('button', { name: 'Use fingerprint or face' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
   })
@@ -216,22 +218,59 @@ test.describe('quick login (D-24)', () => {
     await trust(page)
     await skipOnboarding(page)
     await page.goto('/')
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await who(page, 'Lola Rosa')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     await page.goto('/#family')
     await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
     await expect.poll(() => logouts.at(-1)).toBe('local')
-    await expect(page.getByRole('button', { name: /Lola Rosa/ })).toBeVisible()
-    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await expect(page.getByLabel('Who are you?')).toBeVisible() // Switch person lands on the dropdown, not the returning screen
+    await who(page, 'Lola Rosa')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Family')
     await page.goto('/#family')
     await page.getByRole('button', { name: 'Forget this phone' }).click()
     await expect(page.getByText('First time on this phone?')).toBeVisible()
     expect(await page.evaluate(() => localStorage.getItem('bantay.family'))).toBeNull()
+    expect(await page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBeNull()
   })
+
+  test('remembered person: a PIN sign-in remembers them; the next visit shows only the mascot and their name', async ({ page }) => {
+    await mock(page, fresh())
+    await trust(page)
+    await skipOnboarding(page)
+    await page.goto('/')
+    await who(page, 'Lola Rosa')
+    await keys(page, '480193')
+    await expect(page.locator('h1')).toHaveText('Today')
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBe('p-lola')
+    await page.goto('/#family')
+    await page.getByRole('button', { name: 'Not you? Switch person' }).click()
+    await expect(page.getByLabel('Who are you?')).toBeVisible()
+    expect(await page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBeNull()
+  })
+
+  for (const size of [{ width: 375, height: 812 }, { width: 1280, height: 800 }]) {
+    test(`returning screen at ${size.width}px: mascot, one name, no sideways scroll, axe clean`, async ({ page }) => {
+      await page.setViewportSize(size)
+      await mock(page, fresh())
+      await trust(page)
+      await page.addInitScript(() => localStorage.setItem('bantay.lastPerson', 'p-lola'))
+      await page.goto('/')
+      await expect(page.getByAltText('Jack Jack, the Bantay dog')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Lola Rosa' })).toBeVisible()
+      await expect(page.locator('body')).not.toContainText('Ate Maria')
+      await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
+      const wide = await page.evaluate(() => { const r = document.scrollingElement as Element; return r.scrollWidth > r.clientWidth || Array.from(document.querySelectorAll('*')).some((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollWidth > el.clientWidth) })
+      expect(wide).toBe(false)
+      expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+      await page.getByRole('button', { name: 'Not you? Switch person' }).click()
+      await expect(page.getByLabel('Who are you?')).toBeVisible()
+      const box = await page.getByRole('button', { name: 'Continue', exact: true }).boundingBox()
+      expect(box!.height).toBeGreaterThanOrEqual(44)
+    })
+  }
 
   for (const size of [{ width: 375, height: 812 }, { width: 1280, height: 800 }]) {
     test(`picker and PIN pad at ${size.width}px: no sideways scroll`, async ({ page }) => {
@@ -241,7 +280,7 @@ test.describe('quick login (D-24)', () => {
       await page.goto('/')
       const wide = () => page.evaluate(() => { const r = document.scrollingElement as Element; return r.scrollWidth > r.clientWidth || Array.from(document.querySelectorAll('*')).some((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollWidth > el.clientWidth) })
       expect(await wide()).toBe(false)
-      await page.getByRole('button', { name: /Lola Rosa/ }).click()
+      await who(page, 'Lola Rosa')
       expect(await wide()).toBe(false)
     })
 
@@ -251,7 +290,7 @@ test.describe('quick login (D-24)', () => {
       await trust(page, ['p-lola'])
       await page.route(`${API}/auth/v1/passkeys/**`, () => new Promise(() => {}))
       await page.goto('/')
-      await page.getByRole('button', { name: /Lola Rosa/ }).click()
+      await who(page, 'Lola Rosa')
       await expect(page.getByRole('button', { name: 'Use PIN instead' })).toBeVisible()
       const wide = await page.evaluate(() => { const r = document.scrollingElement as Element; return r.scrollWidth > r.clientWidth })
       expect(wide).toBe(false)

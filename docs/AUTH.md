@@ -92,7 +92,7 @@ Run `supabase/migrations/0006_family_profiles.sql` after 0005 (adds `family_prof
 
 How it behaves:
 - The public sign-in page never lists names. After any sign-in the app asks `family_profiles()` (signed-in, non-disabled members only; names, handle for PIN members, kind; no emails) and keeps the list in this phone's localStorage (`bantay.family`). Only a phone that has signed in before shows the picker.
-- Picker: tap a face, then the 6-digit PIN pad (PIN members) or Continue with Google. "Not in the list?" opens the typed name + PIN and Google options.
+- Trusted phone: a "Who are you?" dropdown plus Continue, then the PIN pad. After a successful sign-in the phone remembers who (`bantay.lastPerson`, cleared by Switch person and Forget this phone); the next visit shows only the mascot and that person's name, with "Not you? Switch person". The mascot is `src/assets/mascot.svg`: drop Jack Jack's art over that one file. Old picker: tap a face, then the 6-digit PIN pad (PIN members) or Continue with Google. "Not in the list?" opens the typed name + PIN and Google options.
 - Sessions on this project never expire, so after the first sign-in the phone stays signed in; the picker matters after Switch person or a sign-out.
 - Family > This phone: Turn on fingerprint or face sign-in, Not you? Switch person (signs out, keeps the picker), Forget this phone (clears the picker list and passkey flags, signs out). Only a local flag `bantay.passkey.<personId>` is stored, never key material.
 - Google errors that come back in the URL (`?error=` or `#error=`) are shown on the sign-in screen and removed from the address bar. "Signups not allowed" or a hook refusal reads "This Google account is not invited yet. Ask your family admin."
