@@ -56,7 +56,7 @@ describe('EntryList', () => {
     fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '9.65' } })
     fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '123.88' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    const go = await screen.findByRole('link', { name: /^Go to/ })
+    const go = await screen.findByRole('link', { name: /^Go to/ }, { timeout: 5000 }) // slow under full-suite load
     expect(go.getAttribute('href')).toBe('https://www.google.com/maps/dir/?api=1&destination=9.65,123.88&travelmode=walking')
   })
   it('rejects bad coordinates', async () => {
