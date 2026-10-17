@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
-const PORT = 4317
+const PORT = Number(process.env.PW_PORT ?? 4317) // lanes set PW_PORT so parallel runs do not collide
 
 export default defineConfig({
   testDir: 'e2e',
