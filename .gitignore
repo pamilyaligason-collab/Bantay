@@ -3,6 +3,7 @@ dist/
 dev-dist/
 .env*
 !.env.example
+!.env.production
 *.zip
 /import/
 test-results/
