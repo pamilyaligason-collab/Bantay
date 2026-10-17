@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Family Bantay</string>
+    <string name="title_activity_main">Family Bantay</string>
+    <string name="package_name">ph.bantay.family</string>
+    <string name="custom_url_scheme">ph.bantay.family</string>
+</resources>
