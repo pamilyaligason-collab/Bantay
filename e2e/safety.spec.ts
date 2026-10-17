@@ -59,3 +59,35 @@ test('an alert in Dexie shows on Safety and Today with depth on expand', async (
   await page.goto('/#today')
   await expect(page.getByText('Drop, cover and hold on.')).toBeVisible()
 })
+
+test.describe('Near me on the maps switcher', () => {
+  test.describe('location allowed', () => {
+    test.use({ permissions: ['geolocation'], geolocation: { latitude: 6.11, longitude: 125.17 } })
+    test('Near me is offered and centres the map on the phone', async ({ page }) => {
+      await page.goto('/#safety')
+      const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
+      await expect(near).toBeVisible()
+      await near.click()
+      await expect(near).toHaveAttribute('aria-pressed', 'true')
+      await page.getByText('Ventusky weather map').click()
+      await expect(page.locator('iframe[title^="Ventusky"]')).toHaveAttribute('src', /p=6\.11;125\.17;7/)
+    })
+  })
+
+  test.describe('location denied', () => {
+    test('Near me is offered, explains, and keeps the previous place', async ({ page }) => {
+      await page.addInitScript(() => {
+        // headless Chrome shows no prompt; fail the ask the way a refusal does
+        navigator.geolocation.getCurrentPosition = (_ok, no) => no?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 })
+      })
+      await page.goto('/#safety')
+      const group = page.getByRole('group', { name: 'Map place' })
+      const near = group.getByRole('button', { name: 'Near me' })
+      await expect(near).toBeVisible()
+      await near.click()
+      await expect(page.getByText('Location is off for Bantay. Turn it on in your phone settings to see alerts near you.')).toBeVisible()
+      await expect(near).toHaveAttribute('aria-pressed', 'false')
+      await expect(group.getByRole('button', { pressed: true })).toHaveCount(1)
+    })
+  })
+})
