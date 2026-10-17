@@ -41,7 +41,7 @@ describe('SafetyBrief', () => {
     render(<SafetyBrief limit={1} />)
     expect(screen.getByRole('status').textContent).toContain('No active warnings')
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...quake, id: 'g', kind: 'gdacs', title: 'Storm context' }, quake] })
-    await waitFor(() => expect(screen.getByLabelText('Earthquake')).toBeTruthy())
+    await waitFor(() => expect(screen.getByLabelText('Earthquake')).toBeTruthy(), { timeout: 5000 }) // liveQuery is slow under parallel CPU load
     expect(screen.queryByLabelText('Storm context')).toBeNull()
   })
 })

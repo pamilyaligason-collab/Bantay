@@ -23,7 +23,9 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
       {(a.kind === 'quake' || a.kind === 'tsunami') && <p className="sf-note">{NOT_A_SIREN}</p>}
       <details>
         <summary>More detail</summary>
-        <Lazy summary="Extent map"><Frame title={`Map around ${a.title}`} src={ventuskyUrl(centre, 'rain-3h')} /></Lazy>
+        {a.kind !== 'quake' && a.kind !== 'tsunami' && (
+          <Lazy summary="Weather map"><Frame title={`Weather map around ${a.title}`} src={ventuskyUrl(centre, a.kind === 'tcws' ? 'wind-10m' : 'rain-3h')} /></Lazy>
+        )}
         {a.timeline?.length ? (
           <div>
             <h3>Timeline</h3>
