@@ -1,12 +1,19 @@
 // alerts-ingest core (D-25): fetch each source, parse, upsert. A failed source keeps its previous rows and marks them stale; nothing is deleted.
-import { type AlertRow, parseAir, parseGdacs, parseUsgs } from './parse.ts'
+import { type AlertRow, parseAir, parseGdacs, parseUsgs, ZONES } from './parse.ts'
 
 // Sources verified WORKS in research (2026-10-17). PHIVOLCS quake and volcano pages, PAGASA bulletins (PDF in an iframe) and BOHECO I are
 // HTML or PDF scrape only: skipped on purpose (see docs/ALERTS.md).
-export const SOURCES: { source: string; url: string; json: boolean; parse: (p: unknown, now: number) => AlertRow[] | null }[] = [
-  { source: 'USGS', url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson', json: true, parse: parseUsgs },
-  { source: 'GDACS', url: 'https://www.gdacs.org/xml/rss.xml', json: false, parse: parseGdacs },
-  { source: 'Open-Meteo', url: 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=9.645705&longitude=123.877951&current=pm2_5,us_aqi', json: true, parse: parseAir }
+// One source can have several urls (air quality: one call per zone, D-27). Payloads reach parse in url order; any failed fetch fails the source.
+export const SOURCES: { source: string; urls: string[]; json: boolean; parse: (p: unknown[], now: number) => AlertRow[] | null }[] = [
+  { source: 'USGS', urls: ['https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson'], json: true, parse: ([p], now) => parseUsgs(p, now) },
+  { source: 'GDACS', urls: ['https://www.gdacs.org/xml/rss.xml'], json: false, parse: ([p], now) => parseGdacs(p, now) },
+  { source: 'Open-Meteo', urls: ZONES.map((z) => `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${z.lat}&longitude=${z.lon}&current=pm2_5,us_aqi`),
+    json: true,
+    parse: (ps, now) => {
+      const per = ps.map((p, i) => parseAir(p, now, ZONES[i]))
+      return per.some((r) => r === null) ? null : per.flatMap((r) => r!)
+    }
+  }
 ]
 
 export type Existing = Map<string, { bulletin: string; previous_bulletin: string | null }>
@@ -22,8 +29,8 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
   const result: Result = {}
   for (const s of SOURCES) {
     try {
-      const text = await fetchText(s.url)
-      const parsed = s.parse(s.json ? JSON.parse(text) : text, now)
+      const texts = await Promise.all(s.urls.map(fetchText))
+      const parsed = s.parse(texts.map((t) => (s.json ? JSON.parse(t) : t)), now)
       if (parsed === null) throw new Error('unexpected payload')
       const rows = [...new Map(parsed.map((r) => [r.id, r])).values()] // one row per id (last wins): a duplicate id would make Postgres reject the whole batch
       const old = await port.existing(s.source)

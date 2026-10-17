@@ -124,7 +124,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     </label>
   )
   return (
-    <Card title="Your home barangay" lead="We start with Dampas, Tagbilaran. Change it if you live elsewhere.">
+    <Card title="Your home barangay" lead="Used when your phone's location is off. Dampas, Tagbilaran and Conel, General Santos are always watched.">
       <div className="grp">
         {field('name', 'Barangay')}
         {field('lat', 'Latitude')}

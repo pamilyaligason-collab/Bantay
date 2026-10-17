@@ -9,7 +9,7 @@ const ALERT = {
 test('safety screen: no alerts, hotlines, unknown places, maps load only on request', async ({ page }) => {
   await page.goto('/#safety')
   await expect(page.locator('h1')).toHaveText('Safety')
-  await expect(page.getByText('No active warnings for Dampas')).toBeVisible()
+  await expect(page.getByText('No active warnings for your area')).toBeVisible()
   await expect(page.getByRole('link', { name: '911' }).first()).toBeVisible()
   await expect(page.getByText('160', { exact: true })).toHaveCount(0)
   // unconfirmed values are shown plainly and there is no Go button for them
@@ -19,7 +19,7 @@ test('safety screen: no alerts, hotlines, unknown places, maps load only on requ
   await expect(page.locator('iframe')).toHaveCount(0)
   await page.getByText('Ventusky weather map').click()
   const frame = page.locator('iframe[title^="Ventusky"]')
-  await expect(frame).toHaveAttribute('src', /^https:\/\/embed\.ventusky\.com\/\?p=9\.65;123\.88;7&l=rain-3h&w=soft&pin=9\.65;123\.88;dot;Home$/)
+  await expect(frame).toHaveAttribute('src', /^https:\/\/embed\.ventusky\.com\/\?p=9\.65;123\.88;7&l=rain-3h&w=soft&pin=9\.65;123\.88;dot;Here$/)
   await expect(frame).toHaveAttribute('loading', 'lazy')
   // earthquake card says what Bantay is not
   await page.locator('summary', { hasText: /^Earthquake$/ }).click()

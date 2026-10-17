@@ -29,6 +29,12 @@ describe('rankAlerts', () => {
     // from Davao-ish, the far one is nearer
     expect(rankAlerts([near, far], { lat: 7.05, lon: 125.05 }).map((x) => x.id)).toEqual(['far', 'near'])
   })
+  it('with no location, a Conel-side alert is as near as a Dampas-side one (nearest of the two zones)', () => {
+    const conel = a('conel', 'quake', { lat: 6.25, lon: 125.19 }) // about 5 km from Conel
+    const dampas = a('dampas', 'quake', { lat: 9.70, lon: 123.90 }) // about 6 km from Dampas
+    const mid = a('mid', 'quake', { lat: 8.0, lon: 124.5 }) // 150+ km from both
+    expect(rankAlerts([mid, dampas, conel], null).map((x) => x.id)).toEqual(['conel', 'dampas', 'mid'])
+  })
   it('ties go to the newest, and input is not mutated', () => {
     const old = a('old', 'heat', { issuedAt: '2026-10-16T00:00:00Z' })
     const nu = a('new', 'heat')

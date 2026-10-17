@@ -22,10 +22,17 @@ export interface AlertRow {
   expires_at: string | null
 }
 
-export const HOME = { lat: 9.645705, lon: 123.877951 } // Dampas pin (D-11)
+// D-27: two home zones are always watched. Twin of HOME_ZONES in src/features/location/geo.ts (a vitest keeps them equal).
+export const ZONES = [
+  { id: 'dampas', name: 'Dampas, Tagbilaran City', lat: 9.645705, lon: 123.877951 },
+  // Conel: OpenStreetMap Nominatim, q="Conel, General Santos City, Philippines" (2026-10-18), node 5333506060, place=village:
+  // lat 6.2015121, lon 125.1878084. This is the barangay centre point from OSM, not a street address.
+  { id: 'conel', name: 'Conel, General Santos City', lat: 6.2015121, lon: 125.1878084 }
+] as const
+export type Zone = (typeof ZONES)[number]
 const H = 3_600_000
 
-// Quake relevance (shown if any rule matches): M3.5+ within 100 km of home (can be felt), M4.5+ within 300 km (central Visayas),
+// Quake relevance (shown if any rule matches, measured to the nearest zone): M3.5+ within 100 km of a zone (can be felt), M4.5+ within 300 km (central Visayas),
 // M6.5+ within 1000 km (large regional event). Anything with an unknown magnitude or position is skipped, never guessed.
 export const QUAKE_RULES = [{ minMag: 3.5, maxKm: 100 }, { minMag: 4.5, maxKm: 300 }, { minMag: 6.5, maxKm: 1000 }]
 export const GDACS_MAX_KM = 500
@@ -37,6 +44,16 @@ export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lo
   const r = Math.PI / 180
   const h = Math.sin(((b.lat - a.lat) * r) / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(((b.lon - a.lon) * r) / 2) ** 2
   return 12742 * Math.asin(Math.sqrt(h))
+}
+
+/** The nearest zone to p and the distance to it. */
+export function nearest(p: { lat: number; lon: number }): { zone: Zone; km: number } {
+  let best = { zone: ZONES[0] as Zone, km: distanceKm(ZONES[0], p) }
+  for (const z of ZONES) {
+    const km = distanceKm(z, p)
+    if (km < best.km) best = { zone: z, km }
+  }
+  return best
 }
 
 /** "2026-10-17 15:05 PH time" for an epoch-ms instant. */
@@ -58,7 +75,7 @@ export function parseUsgs(payload: unknown, now: number): AlertRow[] | null {
     const lon = num(c?.[0])
     const lat = num(c?.[1])
     if (typeof f?.id !== 'string' || p?.type !== 'earthquake' || mag === null || time === null || lat === null || lon === null) continue
-    const km = distanceKm(HOME, { lat, lon })
+    const { zone, km } = nearest({ lat, lon })
     if (!QUAKE_RULES.some((r) => mag >= r.minMag && km <= r.maxKm)) continue
     const expires = time + 24 * H
     if (expires <= now) continue
@@ -70,7 +87,7 @@ export function parseUsgs(payload: unknown, now: number): AlertRow[] | null {
       kind: 'quake',
       level: `Magnitude ${mag.toFixed(1)}`,
       title: typeof p.title === 'string' && p.title ? p.title : `Magnitude ${mag.toFixed(1)} earthquake`,
-      what: `Magnitude ${mag.toFixed(1)} earthquake, about ${Math.round(km)} km from Dampas.`,
+      what: `Magnitude ${mag.toFixed(1)} earthquake, about ${Math.round(km)} km from ${zone.name}.`,
       where_text: place,
       when_text: phTime(time),
       do_now: QUAKE_DO_NOW,
@@ -105,8 +122,8 @@ const GDACS_DO_NOW: Record<string, string> = {
 const GDACS_KIND: Record<string, AlertRow['kind']> = { TC: 'gdacs', FL: 'gdacs', VO: 'volcano', TS: 'tsunami' }
 const GDACS_TTL_H: Record<string, number> = { TC: 48, FL: 48, VO: 72, TS: 12 }
 
-/** GDACS global feed, filtered to the Philippines (country text) or within GDACS_MAX_KM of home. Earthquakes are skipped here (USGS covers them);
- *  drought and wildfire are skipped (no action for a family in Tagbilaran). Only events GDACS still marks current. */
+/** GDACS global feed, filtered to the Philippines (country text) or within GDACS_MAX_KM of any zone. Earthquakes are skipped here (USGS covers them);
+ *  drought and wildfire are skipped (no action for a family in our zones). Only events GDACS still marks current. */
 export function parseGdacs(xml: unknown, now: number): AlertRow[] | null {
   if (typeof xml !== 'string' || !xml.includes('<rss')) return null
   const out: AlertRow[] = []
@@ -120,7 +137,7 @@ export function parseGdacs(xml: unknown, now: number): AlertRow[] | null {
     const lonText = tag(b, 'geo:long')
     const lat = latText === null ? null : num(Number(latText))
     const lon = lonText === null ? null : num(Number(lonText))
-    const near = lat !== null && lon !== null && distanceKm(HOME, { lat, lon }) <= GDACS_MAX_KM
+    const near = lat !== null && lon !== null && nearest({ lat, lon }).km <= GDACS_MAX_KM
     if (!/Philippines/i.test(country) && !near) continue
     const from = Date.parse(tag(b, 'gdacs:fromdate') ?? '')
     const modified = Date.parse(tag(b, 'gdacs:datemodified') ?? '')
@@ -161,8 +178,8 @@ const AQI_BANDS: [number, string, string][] = [
   [AIR_MIN_AQI, 'Unhealthy for sensitive groups', 'Children, older adults and people with lung or heart conditions should limit time outdoors.']
 ]
 
-/** One row, always. Below the threshold the row is written already expired so a previous high reading stops showing. */
-export function parseAir(payload: unknown, now: number): AlertRow[] | null {
+/** One row per zone, always. Below the threshold the row is written already expired so a previous high reading stops showing. */
+export function parseAir(payload: unknown, now: number, zone: Zone = ZONES[0]): AlertRow[] | null {
   const cur = (payload as { current?: { time?: unknown; us_aqi?: unknown; pm2_5?: unknown } } | null)?.current
   const aqi = num(cur?.us_aqi)
   const t = typeof cur?.time === 'string' ? Date.parse(cur.time + 'Z') : NaN // Open-Meteo times are GMT
@@ -170,12 +187,12 @@ export function parseAir(payload: unknown, now: number): AlertRow[] | null {
   const pm = num(cur?.pm2_5)
   const band = AQI_BANDS.find((b) => aqi >= b[0])
   return [{
-    id: 'air-tagbilaran',
+    id: `air-${zone.id}`,
     kind: 'air',
     level: `US AQI ${Math.round(aqi)}`,
     title: band ? `Air quality: ${band[1]}` : 'Air quality: no warning',
     what: `US AQI ${Math.round(aqi)}${pm === null ? '' : `, fine dust (PM2.5) ${pm.toFixed(0)} micrograms per cubic metre`}. This is a model estimate, not an official warning.`,
-    where_text: 'Tagbilaran area (model grid cell, about 11 km wide)',
+    where_text: `${zone.name} area (model grid cell, about 11 km wide)`,
     when_text: phTime(t),
     do_now: band ? band[2] : 'Nothing to do.',
     source: 'Open-Meteo',

@@ -7,16 +7,17 @@ import NewsTop5 from '../features/safety/NewsTop5'
 import PhoneWarnings from '../features/safety/PhoneWarnings'
 import Practice, { Hazards } from '../features/safety/Practice'
 import SafetyBrief from '../features/safety/SafetyBrief'
-import type { LatLon } from '../features/safety/alerts'
+import { useGpsLoc } from '../features/location/useLocation'
 import '../features/safety/safety.css'
 
-/** `loc` is the current position when known (L5 provides it). */
-export default function Safety({ loc = null }: { loc?: LatLon | null }) {
+/** D-27: follows the phone's position when granted; otherwise the two home zones (Dampas and Conel). */
+export default function Safety() {
+  const loc = useGpsLoc()
   return (
     <>
       <div className="hdr">
         <h1>Safety</h1>
-        <span>Dampas, Tagbilaran City</span>
+        <span>{loc ? 'Near you' : 'Dampas and Conel'}</span>
       </div>
       <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', boxSizing: 'border-box', minHeight: 64, fontSize: 19 }}>Call 911</a>
       <section aria-labelledby="s-phone"><h2 id="s-phone" className="hd">Your phone's own warnings</h2><PhoneWarnings /></section>
