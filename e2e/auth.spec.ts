@@ -24,6 +24,7 @@ const trust = (page: Page, flagged: string[] = []) =>
     ;(flags as string[]).forEach((id) => localStorage.setItem(`bantay.passkey.${id}`, '1'))
   }, [FAMILY, flagged] as const)
 const logouts: string[] = []
+let passkeyCalls = 0
 const fresh = () => ({ pins: [] as string[], rpc: 0, oauth: [] as string[] })
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
@@ -40,7 +41,7 @@ async function mock(page: Page, seen: { pins: string[]; rpc: number; oauth: stri
       return reply(200, { ok: true, session: { access_token: jwt(), refresh_token: 'refresh-test', expires_in: 3600, token_type: 'bearer' } })
     }
     if (url.pathname === '/rest/v1/rpc/family_profiles') return reply(200, FAMILY_ROWS)
-    if (url.pathname.startsWith('/auth/v1/passkeys')) return reply(400, { error_code: 'passkey_disabled', msg: 'off' })
+    if (url.pathname.startsWith('/auth/v1/passkeys')) { passkeyCalls++; return reply(400, { error_code: 'passkey_disabled', msg: 'off' }) }
     if (url.pathname === '/rest/v1/people') return reply(200, { id: 'p-lola', display_name: 'Lola Rosa' })
     if (url.pathname === '/auth/v1/logout') { logouts.push(url.searchParams.get('scope') ?? ''); return route.fulfill({ status: 204, headers: cors }) }
     if (url.pathname === '/auth/v1/user') return reply(200, user)
@@ -155,17 +156,37 @@ test.describe('quick login (D-24)', () => {
     expect(new URL(page.url()).hash).toBe('')
   })
 
-  test('passkey is offered only when flagged and supported; failure falls back to the PIN pad', async ({ page }) => {
+  test('fingerprint first: flagged person starts the prompt at once; failure shows the PIN pad and does not loop', async ({ page }) => {
+    passkeyCalls = 0
     await mock(page, fresh())
     await trust(page, ['p-lola'])
     await skipOnboarding(page)
     await page.goto('/')
-    await page.getByRole('button', { name: /Ate Maria/ }).click() // not flagged
-    await expect(page.getByRole('button', { name: 'Use fingerprint or face' })).toHaveCount(0)
+    await page.getByRole('button', { name: /Ate Maria/ }).click() // not flagged: no prompt
+    await expect(page.getByRole('button', { name: /fingerprint or face/i })).toHaveCount(0)
+    expect(passkeyCalls).toBe(0)
     await page.getByRole('button', { name: 'Back' }).click()
     await page.getByRole('button', { name: /Lola Rosa/ }).click()
-    await page.getByRole('button', { name: 'Use fingerprint or face' }).click()
     await expect(page.getByRole('alert')).toContainText('Use your PIN instead')
+    await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
+    const after = passkeyCalls
+    await page.waitForTimeout(500)
+    expect(passkeyCalls).toBe(after) // no automatic second prompt
+    await keys(page, '480193')
+    await expect(page.locator('h1')).toHaveText('Today')
+  })
+
+  test('fingerprint prompt: Use PIN instead is one tap away', async ({ page }) => {
+    await mock(page, fresh())
+    await trust(page, ['p-lola'])
+    // Hold the passkey request so the prompt stays open.
+    await page.route(`${API}/auth/v1/passkeys/**`, () => new Promise(() => {}))
+    await skipOnboarding(page)
+    await page.goto('/')
+    await page.getByRole('button', { name: /Lola Rosa/ }).click()
+    await expect(page.getByRole('button', { name: '5', exact: true })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Use PIN instead' }).click()
+    await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
   })
@@ -212,6 +233,18 @@ test.describe('quick login (D-24)', () => {
       expect(await wide()).toBe(false)
       await page.getByRole('button', { name: /Lola Rosa/ }).click()
       expect(await wide()).toBe(false)
+    })
+
+    test(`fingerprint prompt screen at ${size.width}px: no sideways scroll`, async ({ page }) => {
+      await page.setViewportSize(size)
+      await mock(page, fresh())
+      await trust(page, ['p-lola'])
+      await page.route(`${API}/auth/v1/passkeys/**`, () => new Promise(() => {}))
+      await page.goto('/')
+      await page.getByRole('button', { name: /Lola Rosa/ }).click()
+      await expect(page.getByRole('button', { name: 'Use PIN instead' })).toBeVisible()
+      const wide = await page.evaluate(() => { const r = document.scrollingElement as Element; return r.scrollWidth > r.clientWidth })
+      expect(wide).toBe(false)
     })
   }
 })

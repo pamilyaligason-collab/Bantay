@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sky } from '../features/look'
 import { signInWithGoogle, signInWithPin } from '../features/auth/pinLogin'
-import { hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, type FamilyMember } from '../features/auth/family'
+import { hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
 
 /** Six-digit PIN pad (56px keys). Calls onDone with the PIN; the pad clears itself so a miss starts fresh. */
@@ -60,6 +60,55 @@ function OtherWays({ run, busy }: { run: (f: () => Promise<string | null>) => vo
   )
 }
 
+/** The tapped person. Fingerprint first when it is on for this phone; the PIN pad shows on cancel, error, mismatch, or
+ *  "Use PIN instead". The prompt starts once per mount (the card is keyed by person), so a miss never loops. */
+function PickCard({ pick, busy, run, setError, onBack }: {
+  pick: FamilyMember; busy: boolean; run: (f: () => Promise<string | null>) => void
+  setError: (e: string) => void; onBack: () => void
+}) {
+  const fp = passkeySupported() && hasPasskeyFlag(pick.personId)
+  const [phase, setPhase] = useState<'prompting' | 'pin'>(fp ? 'prompting' : 'pin')
+  const started = useRef(false)
+  const head = useRef<HTMLHeadingElement>(null)
+  const alive = useRef(true)
+  const ask = () => {
+    setError('')
+    setPhase('prompting')
+    void signInWithPasskey(pick.personId).then((e) => {
+      if (!alive.current) return
+      if (e) { setError(e); setPhase('pin') }
+    })
+  }
+  useEffect(() => {
+    alive.current = true
+    if (fp && !started.current) { started.current = true; ask() }
+    return () => { alive.current = false }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (phase === 'pin') head.current?.focus() }, [phase])
+  const pin = pick.provider === 'pin' && pick.handle ? pick.handle : null
+  return (
+    <div className="grp pickcard">
+      <span className="avatar big" aria-hidden="true">{pick.initials}</span>
+      <h2 className="pname" ref={head} tabIndex={-1}>{pick.displayName}</h2>
+      {phase === 'prompting' ? (
+        <>
+          <p className="si-hint" role="status">Use your fingerprint or face now.</p>
+          {pin
+            ? <button className="btn2" autoFocus onClick={() => { abandonPasskeyWait(); setPhase('pin') }}>Use PIN instead</button>
+            : <button className="btn2" autoFocus disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google instead</button>}
+        </>
+      ) : (
+        <>
+          {fp && <button className="btn" onClick={ask}>Use fingerprint or face</button>}
+          {pin ? <PinPad busy={busy} onDone={(p) => run(() => signInWithPin(pin, p))} />
+            : <button className={fp ? 'btn2' : 'btn'} disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>}
+        </>
+      )}
+      <button className="btn2" onClick={onBack}>Back</button>
+    </div>
+  )
+}
+
 /** Shown by AuthGate when nobody is signed in. On success supabase-js fires an auth change and AuthGate takes over.
  *  The family picker appears only on a phone that signed in before (cache in localStorage); a fresh phone never lists names. */
 export default function SignIn() {
@@ -76,7 +125,6 @@ export default function SignIn() {
     if (e) setError(e)
     setBusy(false)
   }
-  const canPasskey = (m: FamilyMember) => passkeySupported() && hasPasskeyFlag(m.personId)
   const picker = family.length > 0 && !other
 
   return (
@@ -105,20 +153,7 @@ export default function SignIn() {
         )}
 
         {picker && pick && (
-          <div className="grp pickcard">
-            <span className="avatar big" aria-hidden="true">{pick.initials}</span>
-            <h2 className="pname">{pick.displayName}</h2>
-            {canPasskey(pick) && <button className="btn" disabled={busy} onClick={() => run(() => signInWithPasskey(pick.personId))}>Use fingerprint or face</button>}
-            {pick.provider === 'pin' && pick.handle ? (
-              <>
-                {canPasskey(pick) && <p className="si-hint">Or enter your PIN</p>}
-                <PinPad busy={busy} onDone={(pin) => run(() => signInWithPin(pick.handle!, pin))} />
-              </>
-            ) : (
-              <button className={canPasskey(pick) ? 'btn2' : 'btn'} disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>
-            )}
-            <button className="btn2" onClick={() => { setError(''); setPick(null) }}>Back</button>
-          </div>
+          <PickCard key={pick.personId} pick={pick} busy={busy} run={run} setError={setError} onBack={() => { setError(''); setPick(null) }} />
         )}
 
         {!picker && (

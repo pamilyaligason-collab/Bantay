@@ -43,6 +43,7 @@ export async function cacheFamily(): Promise<void> {
 
 export const hasPasskeyFlag = (personId: string) => { try { return localStorage.getItem(flagKey(personId)) === '1' } catch { return false } }
 export const setPasskeyFlag = (personId: string) => { try { localStorage.setItem(flagKey(personId), '1') } catch { /* private mode */ } }
+export const clearPasskeyFlag = (personId: string) => { try { localStorage.removeItem(flagKey(personId)) } catch { /* private mode */ } }
 
 /** "Forget this phone": the picker list and every passkey flag. */
 export function forgetPhone(): void {
@@ -61,6 +62,11 @@ const UNAVAILABLE = 'Not available on this phone yet'
 /** Set while a passkey sign-in is verifying who signed in. AuthGate waits on it so nothing runs as the wrong person. */
 export let passkeyCheck: Promise<void> | null = null
 
+let releaseCheck: (() => void) | null = null
+/** "Use PIN instead" while the fingerprint prompt is still open: stop AuthGate waiting on it, so a PIN sign-in is not held up.
+ *  If the ceremony finishes later it is still identity-checked (and signed out locally on a mismatch). */
+export function abandonPasskeyWait(): void { passkeyCheck = null; releaseCheck?.() }
+
 /** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success).
  *  The browser picks the passkey, so after the ceremony we check it belongs to the tapped person. On a mismatch or any
  *  error the session is dropped with scope 'local' on purpose: this phone signs out, the person's other devices stay signed in. */
@@ -70,13 +76,19 @@ export async function signInWithPasskey(expectedPersonId: string): Promise<strin
   // Register the pending check BEFORE the ceremony: SIGNED_IN can land during or right after it, and AuthGate must find this.
   let release!: () => void
   const mine = passkeyCheck = new Promise<void>((r) => { release = r })
+  releaseCheck = release
   const fail = 'Fingerprint or face did not work. Use your PIN instead.'
   try {
     const { error } = await sb.auth.signInWithPasskey()
-    if (error) return fail
+    if (error) {
+      // The server says this phone's passkey is gone: stop trying fingerprint first for this person.
+      if (/no (matching )?(passkey|credential)|credential.*not found|unknown credential/i.test(`${(error as { code?: string }).code ?? ''} ${error.message ?? ''}`)) clearPasskeyFlag(expectedPersonId)
+      return fail
+    }
     try {
       const m = await getMember()
       if (m?.personId !== expectedPersonId) { await sb.auth.signOut({ scope: 'local' }); return 'That fingerprint belongs to someone else. Tap your own name.' }
+      setPasskeyFlag(expectedPersonId) // a working fingerprint on this phone: keep it as the first way in
       return null
     } catch {
       await sb.auth.signOut({ scope: 'local' }).catch(() => {})

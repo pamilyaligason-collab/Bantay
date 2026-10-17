@@ -150,3 +150,30 @@ describe('signInWithPasskey errors', () => {
     expect(loadFamily()[0]!.handle).toHaveLength(20)
   })
 })
+
+describe('fingerprint flag follows what happens on this phone', () => {
+  beforeEach(() => {
+    localStorage.clear(); m.pk.mockReset(); m.out.mockReset(); m.member.mockReset()
+    vi.stubGlobal('PublicKeyCredential', class {})
+    Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+  })
+  it('a good fingerprint sign-in records the flag', async () => {
+    m.pk.mockResolvedValue({ error: null }); m.member.mockResolvedValue({ personId: 'p1' })
+    await signInWithPasskey('p1')
+    expect(hasPasskeyFlag('p1')).toBe(true)
+  })
+  it('a mismatch does not record it', async () => {
+    m.pk.mockResolvedValue({ error: null }); m.member.mockResolvedValue({ personId: 'p2' }); m.out.mockResolvedValue({})
+    await signInWithPasskey('p1')
+    expect(hasPasskeyFlag('p1')).toBe(false)
+  })
+  it('no credential clears the flag; a plain cancel keeps it', async () => {
+    setPasskeyFlag('p1')
+    m.pk.mockResolvedValue({ error: { name: 'NotAllowedError', message: 'cancelled' } })
+    await signInWithPasskey('p1')
+    expect(hasPasskeyFlag('p1')).toBe(true)
+    m.pk.mockResolvedValue({ error: { code: 'passkey_not_found', message: 'No passkey found' } })
+    await signInWithPasskey('p1')
+    expect(hasPasskeyFlag('p1')).toBe(false)
+  })
+})
