@@ -17,15 +17,19 @@ export default function QuickWalk({ native = isNative() }: { native?: boolean })
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<number | null>(null)
   const [failed, setFailed] = useState(false)
+  const [signedOut, setSignedOut] = useState(false)
   if (native && st.enabled.includes('steps')) return null
 
   const log = async (minutes: number) => {
     if (busy || !Number.isFinite(minutes) || minutes < 1 || minutes > 600) return
     setBusy(true)
     setFailed(false)
+    setSignedOut(false)
     try {
+      const personId = await currentPersonId()
+      if (!personId) return setSignedOut(true)
       const startedAt = new Date(Date.now() - minutes * 60_000).toISOString()
-      await logActivity({ personId: await currentPersonId(), kind: 'walk', minutes: Math.round(minutes), steps: null, startedAt, source: 'manual' })
+      await logActivity({ personId, kind: 'walk', minutes: Math.round(minutes), steps: null, startedAt, source: 'manual' })
       setDone(Math.round(minutes))
       setCustom('')
     } catch {
@@ -56,7 +60,7 @@ export default function QuickWalk({ native = isNative() }: { native?: boolean })
           <button type="submit" className="pill" disabled={busy || !(n >= 1)} style={{ background: 'var(--btn)', color: 'var(--btn-fg)', minHeight: 44 }}>Log</button>
         </form>
         <span className="sub" role="status" aria-live="polite">
-          {failed ? 'That did not save. Try again.' : done != null ? `Saved: you walked about ${done} minutes.` : ''}
+          {signedOut ? 'Sign in to log a walk.' : failed ? 'That did not save. Try again.' : done != null ? `Saved: you walked about ${done} minutes.` : ''}
         </span>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { db, enqueue } from '../../db'
+import { track } from '../admin/events'
 
 export const REASK_MS = 3 * 86_400_000
 /** One key for "when did we last bother the user about alerts": onboarding denial, iOS skip and the banner all use it. */
@@ -49,6 +50,7 @@ export async function enableAlerts(key = vapidKey()): Promise<'granted' | 'denie
   if (typeof Notification === 'undefined') return 'unsupported'
   const perm = await Notification.requestPermission()
   await markAsked()
+  void track('action', perm === 'granted' ? 'alerts_on' : 'alerts_off')
   if (perm !== 'granted') return 'denied'
   if (key && 'serviceWorker' in navigator) await subscribeAndSave(await navigator.serviceWorker.ready, key)
   return 'granted'

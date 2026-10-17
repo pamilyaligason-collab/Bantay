@@ -1,6 +1,7 @@
 import { db } from '../../db'
 import type { Reading } from '../health/ranges'
 import { type Activity, type ActivitySource, ldb, logActivity, logReading } from '../log/store'
+import { getMember } from '../auth/session'
 import { hdb } from '../records/store'
 
 /** Health Connect (Android) and HealthKit (iOS) behind one small interface, so Vitest can swap in a fake.
@@ -92,10 +93,9 @@ const OVERLAP_MS = 48 * 3_600_000 // Health Connect data can arrive late from a 
 export const getState = async (): Promise<State> => ({ enabled: [], cursor: {}, ...((await db.kv.get(STATE_KEY))?.value as Partial<State> | undefined) })
 const putState = (s: State) => db.kv.put({ key: STATE_KEY, value: s })
 
-/** Whose data this phone logs: kv 'me' if set, else the first person, else 'me'. */
-export async function currentPersonId(): Promise<string> {
-  const me = (await db.kv.get('me'))?.value
-  return typeof me === 'string' && me ? me : ((await hdb.people.toCollection().first())?.id ?? 'me')
+/** Whose data this phone logs: the signed-in member's own person (D-21). null = signed out, so nothing is logged. */
+export async function currentPersonId(): Promise<string | null> {
+  return (await getMember())?.personId ?? null
 }
 
 export type EnableResult = 'on' | 'denied' | 'unavailable'
@@ -145,6 +145,7 @@ async function run(bridge: HealthBridge, personIdArg?: string): Promise<SyncResu
   const st = await getState()
   if (!source || !st.enabled.length) return result
   const personId = personIdArg ?? (await currentPersonId())
+  if (!personId) return result // signed out: log nothing
   for (const type of st.enabled) {
     try {
       if (!(await bridge.granted(type))) {

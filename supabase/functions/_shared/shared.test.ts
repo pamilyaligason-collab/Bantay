@@ -55,6 +55,7 @@ function mockPort(over: Partial<Port> = {}): Port & { calls: string[] } {
     getAuthEmail: rec<string | null>('getAuthEmail', 'm-abc@members.bantay.invalid'),
     setPassword: rec('setPassword', true),
     setBanned: rec('setBanned', true),
+    deletePushSubscriptions: rec('deletePushSubscriptions', true),
     revokeSessions: rec('revokeSessions', true),
     insertRole: rec<'ok' | 'handle_taken' | 'error'>('insertRole', 'ok'),
     updateRole: rec<'ok' | 'handle_taken' | 'not_found'>('updateRole', 'ok'),
@@ -131,10 +132,12 @@ describe('admin-members dispatcher', () => {
     const p = mockPort()
     expect(await runAction({ action: 'disable', userId: ID, disabled: true }, p, ADMIN)).toEqual({ ok: true })
     expect(p.setBanned).toHaveBeenCalledWith(ID, true)
+    expect(p.deletePushSubscriptions).toHaveBeenCalledWith(ID)
     expect(p.revokeSessions).toHaveBeenCalledWith(ID)
     const q = mockPort()
     await runAction({ action: 'disable', userId: ID, disabled: false }, q, ADMIN)
     expect(q.revokeSessions).not.toHaveBeenCalled()
+    expect(q.deletePushSubscriptions).not.toHaveBeenCalled()
     expect(await runAction({ action: 'disable', userId: ADMIN, disabled: true }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
   })
   it('invite and uninvite lowercase the email', async () => {

@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { track } from '../admin/events'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { disableType, enableType, getState, type HealthBridge, normalise, type RawSample, type SensorType, syncAll } from './health'
@@ -11,6 +12,11 @@ import { summarise } from './MovementCard'
 import { check, KEEP } from '../../../scripts/check-manifest.mjs'
 import pluginManifest from '../../../node_modules/@capgo/capacitor-health/android/src/main/AndroidManifest.xml?raw'
 import appManifest from '../../../android/app/src/main/AndroidManifest.xml?raw'
+
+const me = vi.hoisted(() => ({ personId: 'me-p' as string | null }))
+vi.mock('../auth/session', () => ({ getMember: async () => (me.personId ? { userId: 'u', personId: me.personId, role: 'member', handle: null } : null), getAccessToken: async () => null }))
+
+vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 const S = (over: Partial<RawSample> = {}): RawSample => ({ startDate: '2026-10-01T06:00:00.000Z', endDate: '2026-10-01T06:10:00.000Z', value: 500, ...over })
 
@@ -27,6 +33,7 @@ function fake(over: Partial<HealthBridge> & { data?: Partial<Record<SensorType, 
 }
 
 beforeEach(async () => {
+  me.personId = 'me-p'
   await Promise.all([db.kv.clear(), db.outbox.clear(), ldb.activity.clear(), hdb.readings.clear(), hdb.people.clear()])
 })
 afterEach(cleanup)
@@ -136,12 +143,19 @@ describe('sync', () => {
     expect(r.byType).toEqual({ steps: 'error', bloodPressure: 'ok' })
     expect(await hdb.readings.count()).toBe(2)
   })
-  it('uses the first person when none is given', async () => {
-    await hdb.people.put({ id: 'lola', name: 'Lola' })
+  it('logs for the signed-in member when no person is given', async () => {
+    await hdb.people.put({ id: 'lola', name: 'Lola' }) // a local first person must not be picked
     const b = fake({ data: { steps: [S()] } })
     await enableType('steps', b)
     await syncAll(b)
-    expect((await ldb.activity.toArray())[0]?.personId).toBe('lola')
+    expect((await ldb.activity.toArray())[0]?.personId).toBe('me-p')
+  })
+  it('signed out: sync logs nothing', async () => {
+    me.personId = null
+    const b = fake({ data: { steps: [S()] } })
+    await enableType('steps', b)
+    expect((await syncAll(b)).added).toBe(0)
+    expect(await ldb.activity.count()).toBe(0)
   })
 })
 
@@ -170,6 +184,13 @@ describe('QuickWalk', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ kind: 'walk', minutes: 20, steps: null, source: 'manual' })
     expect(await db.outbox.count()).toBe(1)
+  })
+  it('signed out: refuses to log and says why', async () => {
+    me.personId = null
+    render(<QuickWalk native={false} />)
+    fireEvent.click(screen.getByRole('button', { name: '20 min' }))
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Sign in to log a walk.'))
+    expect(await ldb.activity.count()).toBe(0)
   })
   it('a rapid double tap still logs once', async () => {
     render(<QuickWalk native={false} />)
@@ -214,6 +235,9 @@ describe('SensorSettings', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'Heart rate' }))
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Heart rate' }).getAttribute('aria-checked')).toBe('true'))
     expect(b.request.mock.calls).toEqual([['heartRate']])
+    expect(track).toHaveBeenCalledWith('action', 'sensors_on')
+    fireEvent.click(screen.getByRole('switch', { name: 'Heart rate' }))
+    await waitFor(() => expect(track).toHaveBeenCalledWith('action', 'sensors_off'))
   })
   it('denied: switch stays off and says why', async () => {
     render(<SensorSettings native bridge={fake({ request: vi.fn(async () => false) })} />)

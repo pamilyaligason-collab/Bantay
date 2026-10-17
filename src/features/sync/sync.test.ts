@@ -6,6 +6,9 @@ import { hdb } from '../records/store'
 import { backoffMinutes, DEAD_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
+import { track } from '../admin/events'
+
+vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 const URL = 'https://x.supabase.test'
 const cfg = (token: string | null = 'tok1') => ({ url: URL, key: 'pk', getToken: async () => token })
@@ -154,6 +157,16 @@ describe('push', () => {
     for (const spy of [log, err, warn]) expect(JSON.stringify(spy.mock.calls)).not.toMatch(/9\.9|secret/)
   })
 
+  it('a 403 on push_subscriptions is dropped silently, not dead-lettered', async () => {
+    mockFetch(() => json({ code: '42501' }, 403))
+    await enqueue('push_subscriptions', 'upsert', { endpoint: 'https://push.test/x', keys: { p256dh: 'a', auth: 'b' } })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+    expect((await syncCounts()).dead).toBe(0)
+  })
+
   it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {
     mockFetch(() => json({ code: 'X' }, 418))
     await enqueue('readings', 'insert', reading)
@@ -248,6 +261,19 @@ describe('pull', () => {
     startSync(cfg())()
     await syncNow()
     expect(await hdb.readings.count()).toBe(3)
+  })
+
+  it('a permanent pull error backs off and tracks sync_failed once per streak', async () => {
+    vi.mocked(track).mockClear()
+    mockFetch((c) => (c.url.includes('/people?') ? json({ code: 'PGRST' }, 404) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 1 })
+    const n = calls.length
+    await syncNow()
+    expect(calls.length).toBe(n) // inside the backoff window: no loop
+    await syncNow(true)
+    expect(vi.mocked(track).mock.calls.filter((a) => a[1] === 'sync_failed')).toHaveLength(1)
   })
 
   it('pulls people into the local store with the server id', async () => {

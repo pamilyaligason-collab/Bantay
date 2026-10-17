@@ -5,7 +5,7 @@ Floating button (bottom right, above the tab bar) opens a sheet. The app posts t
 ## App
 
 - Env: `VITE_ASSISTANT_URL` (n8n production webhook URL, set at build), optional `VITE_ASSISTANT_DAILY_CAP` (default 30), optional `VITE_KIWIX_URL`.
-- Sends `Authorization: Bearer <Supabase access token>` when a `sb-*-auth-token` session is in localStorage.
+- Sends `Authorization: Bearer <Supabase access token>` from `getAccessToken()` (`src/features/auth/session.ts`) when signed in.
 - Client cap: 30 per Asia/Manila day, kept in Dexie kv `assistant.cap`. A reached cap never calls the server.
 - Tools: `log_reading`, `log_med_taken`, `log_activity` (draft cards, Confirm / Edit / Discard, only Confirm calls `src/features/log/store.ts`), `open_screen`, `explain_term` (source link built in the app), `whats_the_weather` (Open-Meteo in the browser, no key).
 - Nothing is logged to the console. No health values appear in any notification.
@@ -22,30 +22,9 @@ Webhook -> verify JWT (`GET {SUPABASE_URL}/auth/v1/user`, 401 if invalid) -> dai
 - Execution data: success, error and manual saving are all off, so prompts never sit in n8n. The workflow does not log bodies.
 - OpenRouter: in the OpenRouter UI set a hard monthly spend limit on this key (Lloyd), and turn on the account-wide ZDR-only setting.
 
-### Supabase (run once, reviewed by Lloyd)
+### Supabase
 
-```sql
-create table public.assistant_usage (
-  user_id uuid not null references auth.users on delete cascade,
-  day date not null,
-  count int not null default 0,
-  primary key (user_id, day)
-);
-alter table public.assistant_usage enable row level security;  -- no policies: only the function below touches it
-
-create or replace function public.assistant_take(p_limit int)
-returns table (allowed boolean, used int)
-language plpgsql security definer set search_path = public as $$
-declare d date := (now() at time zone 'Asia/Manila')::date; n int;
-begin
-  if auth.uid() is null then return query select false, 0; return; end if;
-  insert into assistant_usage (user_id, day, count) values (auth.uid(), d, 0) on conflict do nothing;
-  update assistant_usage set count = count + 1 where user_id = auth.uid() and day = d and count < p_limit returning count into n;
-  if n is null then return query select false, p_limit; else return query select true, n; end if;
-end $$;
-revoke all on function public.assistant_take(int) from public, anon;
-grant execute on function public.assistant_take(int) to authenticated;
-```
+The `assistant_usage` table and `assistant_take(int)` function live in `supabase/migrations/0005_news_assistant.sql` (security definer, pinned search_path, Asia/Manila day, execute only for `authenticated`). Applied by Lloyd after review, not by this repo.
 
 ## Safety rules (system prompt)
 

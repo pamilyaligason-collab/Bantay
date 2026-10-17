@@ -14,6 +14,8 @@ Three lanes build against these fixed names. Change them only through the orches
 - Biometrics later (D-18): WebAuthn passkey to unlock on a device after a first sign-in. Not built now.
 - First admin: Lloyd signs in with Google once, then runs one SQL line (in his deploy block) to make his user admin.
 
+Migrations apply in order 0001 health, 0002 auth, 0003 sync, 0004 admin, 0005 news and assistant cap.
+
 ## Shared SQL (migration `0002_auth.sql`, lane A1)
 - `public.app_roles(user_id uuid pk references auth.users on delete cascade, role text not null check (role in ('admin','member')),
    handle text unique, disabled boolean not null default false, created_at timestamptz default now())`
@@ -54,7 +56,7 @@ Uses `@supabase/supabase-js` with VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_
 - `<AdminScreen/>` exported from `src/features/admin/`, shown at `#admin` only when `getMember().role === 'admin'` (orchestrator wires the route).
 - Admin features, first cut: members (add, handle, PIN reset, role, disable, Google invite, carer links with can_write), usage insights
   (active 7/30 days, last seen, top screens, alerts on/off, sensors on, assistant messages vs cap, outbox backlog per device),
-  safety data editing (hotlines, places -> safety_overrides), safety broadcast (push template only, via n8n webhook, B-7),
+  safety data editing (hotlines, places -> safety_overrides), safety broadcast (push template only, via the `broadcast` Edge Function, D-20, not n8n; B-7),
   import status per person (counts only), system health (news feed last fetch, assistant 5xx count).
 
 ## Shared client
