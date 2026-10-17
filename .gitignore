@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dev-dist/
+.env*
+!.env.example
+*.zip
+test-results/
+playwright-report/
+coverage/

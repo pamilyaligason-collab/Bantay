@@ -1,0 +1,45 @@
+/* Component styles ported from the prototype <style> block. Class names are unchanged. */
+html, body, #root { margin: 0; height: 100%; }
+body { background: var(--bg); }
+
+.bt {
+  height: 100dvh; max-width: 520px; margin: 0 auto; box-sizing: border-box;
+  display: flex; flex-direction: column; position: relative; overflow: hidden; min-width: 0;
+  background: var(--bg); color: var(--ink); font-size: 17px; line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+}
+.bt button { cursor: pointer; font: inherit; transition: background-color 150ms ease, transform 100ms ease, opacity 150ms ease; }
+.bt button:active { transform: scale(0.98); opacity: 0.85; }
+.bt button:focus-visible, .bt a:focus-visible, .bt input:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .bt button { transition: none; } .bt button:active { transform: none; } }
+
+.topbar { padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; }
+/* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
+.scroll > * { min-width: 0; }
+.hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
+.hdr h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.15; overflow-wrap: anywhere; }
+.hdr span { font-size: 15px; color: var(--ink2); }
+
+.grp { background: var(--cell); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
+.row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 16px; width: 100%; box-sizing: border-box; background: transparent; border: 0; color: var(--ink); text-align: left; text-decoration: none; font-size: 17px; min-width: 0; }
+.grp .row + .row::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 0.5px; background: var(--sep); }
+.grp.ic .row + .row::before { left: 58px; }
+.tile { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: none; color: #FFFFFF; }
+.grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sub { font-size: 15px; color: var(--ink2); }
+.sec { font-size: 13px; color: var(--ink2); margin: 0 16px 6px; }
+.hd { font-size: 22px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -0.01em; }
+.btn { min-height: 52px; border: 0; border-radius: 14px; background: var(--btn); color: var(--btn-fg); font-size: 17px; font-weight: 600; width: 100%; padding: 0 16px; }
+.btn2 { min-height: 52px; border: 0; border-radius: 14px; background: var(--fill); color: var(--act); font-size: 17px; font-weight: 600; width: 100%; padding: 0 16px; }
+.pill { min-height: 36px; border: 0; border-radius: 18px; padding: 0 14px; font-size: 15px; font-weight: 600; }
+.chev { color: var(--ink2); flex: none; }
+.sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
+.sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left 200ms ease; }
+.glass { background: var(--bar); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); border: 0.5px solid var(--bar-edge); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass { background: var(--cell); } }
+
+.tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.tabs button { min-height: 54px; min-width: 0; border: 0; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--ink); background: transparent; }
+.tabs button[aria-current="page"] { color: var(--act); background: var(--fill); }
