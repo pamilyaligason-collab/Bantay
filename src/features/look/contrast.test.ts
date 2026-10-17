@@ -83,6 +83,9 @@ for (const [name, get] of themes) {
     it('active tab (--act on --fill on glass) is >= 4.5', () => {
       expect(check([['--act', 'fill'], ['--ink', 'fill']], onGlass)).toEqual([])
     })
+    it('white on --danger-bg (Call 911 button) is >= 4.5', () => {
+      expect(ratio([255, 255, 255], parse(v['--danger-bg'])[0])).toBeGreaterThanOrEqual(4.5)
+    })
     it('secondary text outside glass is mapped to --ink2-sky', () => {
       expect(glass).toMatch(/\.sub\s*\{[^}]*var\(--ink2-sky\)/)
     })

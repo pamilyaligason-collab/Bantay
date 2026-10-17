@@ -17,7 +17,7 @@ export default function Safety({ loc = null }: { loc?: LatLon | null }) {
         <h1>Safety</h1>
         <span>Dampas, Tagbilaran City</span>
       </div>
-      <a href="tel:911" className="btn" style={{ background: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', boxSizing: 'border-box', minHeight: 64, fontSize: 19 }}>Call 911</a>
+      <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', boxSizing: 'border-box', minHeight: 64, fontSize: 19 }}>Call 911</a>
       <section aria-labelledby="s-warn"><h2 id="s-warn" className="hd">Warnings</h2><SafetyBrief loc={loc} /></section>
       <section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo /></section>
       <section aria-labelledby="s-hot"><h2 id="s-hot" className="hd">Hotlines</h2><EntryList seed={hotlines as Entry[]} geo={false} /></section>

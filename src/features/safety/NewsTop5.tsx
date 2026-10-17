@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { loadNews, type NewsItem } from './news'
+import type { RefreshDetail } from '../look/refresh'
 import './safety.css'
 
 /** Top 5 from the news_items table. Empty state when Supabase is not configured. */
@@ -7,8 +8,12 @@ export default function NewsTop5() {
   const [items, setItems] = useState<NewsItem[] | null | undefined>(undefined)
   useEffect(() => {
     let live = true
-    loadNews().then((r) => live && setItems(r))
-    return () => { live = false }
+    const load = () => loadNews().then((r) => { if (live) setItems(r) })
+    load()
+    // pull-to-refresh contract (src/features/look/refresh.ts)
+    const onRefresh = (e: Event) => (e as CustomEvent<RefreshDetail>).detail.waitUntil(load())
+    window.addEventListener('bantay:refresh', onRefresh)
+    return () => { live = false; window.removeEventListener('bantay:refresh', onRefresh) }
   }, [])
   if (items === undefined) return null
   if (!items?.length)
