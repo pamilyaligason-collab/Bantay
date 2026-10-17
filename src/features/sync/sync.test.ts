@@ -4,6 +4,7 @@ import { db, drain, enqueue } from '../../db'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { backoffMinutes, DEAD_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
+import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 
 const URL = 'https://x.supabase.test'
@@ -135,7 +136,7 @@ describe('push', () => {
     expect(await db.outbox.count()).toBe(0)
   })
 
-  it('a 400 is retried and moves to the dead-letter list after 5 tries, code only in logs', async () => {
+  it('a deterministic 400 goes to the dead-letter list on the first failure, code only in logs', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
     const err = vi.spyOn(console, 'error').mockImplementation(() => {})
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -143,7 +144,7 @@ describe('push', () => {
     await enqueue('readings', 'insert', { ...reading, value: 9.9 })
     startSync(cfg())()
     await syncNow()
-    expect(posts()).toHaveLength(5)
+    expect(posts()).toHaveLength(1)
     const dead = (await db.kv.get(DEAD_KEY))?.value as DeadLetter[]
     expect(dead).toHaveLength(1)
     expect(dead[0]).toMatchObject({ table: 'readings', code: 'PGRST204' })
@@ -151,6 +152,15 @@ describe('push', () => {
     expect(await db.outbox.count()).toBe(0)
     expect((await syncCounts()).dead).toBe(1)
     for (const spy of [log, err, warn]) expect(JSON.stringify(spy.mock.calls)).not.toMatch(/9\.9|secret/)
+  })
+
+  it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {
+    mockFetch(() => json({ code: 'X' }, 418))
+    await enqueue('readings', 'insert', reading)
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(5)
+    expect((await syncCounts()).dead).toBe(1)
   })
 
   it('one poison row does not stop the rows behind it', async () => {
@@ -213,6 +223,53 @@ describe('pull', () => {
     expect((await db.kv.get('sync.cursor.readings'))?.value).toBe('2026-10-03T00:00:00.2+00:00')
     const gets = calls.filter((c) => c.url.includes('/readings?'))
     expect(gets[0].url).not.toContain('created_at=gte')
-    expect(gets[1].url).toContain('created_at=gte.2026-10-03T00%3A00%3A00.2%2B00%3A00')
+    expect(gets[1].url).toContain('created_at=gte.2026-10-02T23%3A00%3A00.200Z') // one hour before the cursor
+  })
+
+  it('a late row older than the stored cursor still arrives on the second pull', async () => {
+    let extra = false
+    mockFetch((c) => {
+      if (!(c.url.includes('/readings?') && c.method === 'GET')) return json([])
+      const late = { client_id: 'c0', person_id: 'p1', taken_at: '2026-09-01T00:00:00+00:00', test: 'ldl', value: 2.9, created_at: '2026-10-02T23:30:00+00:00' }
+      return json(extra ? [late, ...server] : server)
+    })
+    startSync(cfg())()
+    await syncNow()
+    expect(await hdb.readings.count()).toBe(2)
+    extra = true
+    await syncNow(true)
+    expect(await hdb.readings.count()).toBe(3)
+    expect((await db.kv.get('sync.cursor.readings'))?.value).toBe('2026-10-03T00:00:00.2+00:00') // cursor never goes back
+  })
+
+  it('a look-alike row with a different client_id is added, not skipped', async () => {
+    mockFetch(handler)
+    await hdb.readings.add({ ...reading, personId: 'p1', takenAt: '2026-10-01', test: 'ldl', value: 3.2, clientId: 'other' } as never)
+    startSync(cfg())()
+    await syncNow()
+    expect(await hdb.readings.count()).toBe(3)
+  })
+
+  it('pulls people into the local store with the server id', async () => {
+    mockFetch((c) => (c.url.includes('/people?') ? json([{ id: 'u-1', display_name: 'Test Person' }]) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    expect(await hdb.people.get('u-1')).toEqual({ id: 'u-1', name: 'Test Person' })
+    expect(calls.find((c) => c.url.includes('/people?'))!.url).toContain('select=id,display_name')
+  })
+
+  it('merges admin safety edits into the kv overrides and drops removed ones', async () => {
+    await db.kv.put({ key: OVERRIDES_KEY, value: { keep: { phone: '111' }, gone: { phone: '222' } } })
+    mockFetch((c) =>
+      c.url.includes('/safety_overrides?')
+        ? json([
+            { kind: 'hotline', key: 'h1', data: { phone: '911', status: 'CONFIRMED' }, removed: false },
+            { kind: 'place', key: 'gone', data: null, removed: true }
+          ])
+        : json([])
+    )
+    startSync(cfg())()
+    await syncNow()
+    expect((await db.kv.get(OVERRIDES_KEY))?.value).toEqual({ keep: { phone: '111' }, h1: { phone: '911', status: 'CONFIRMED' } })
   })
 })

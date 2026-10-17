@@ -1,6 +1,7 @@
 import type { Table } from 'dexie'
 import { db, drain, type OutboxRow } from '../../db'
 import { getAccessToken, onAuthChange } from '../auth/session'
+import { OVERRIDES_KEY } from '../safety/entries'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
@@ -10,6 +11,8 @@ import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './t
 
 export const MAX_TRIES = 5
 export const PAGE = 1000
+export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
+const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 export const SYNC_EVERY_MS = 5 * 60_000
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
 export const backoffMinutes = (fails: number) => (fails <= 0 ? 0 : Math.min(2 ** (fails - 1), 30))
@@ -105,7 +108,8 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   const code = await errCode(res)
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
-  if (row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code) // will never succeed: park it, keep going
+  // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
+  if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code)
   throw new SyncError('perm', code)
 }
 
@@ -138,9 +142,9 @@ async function merge(table: string, rows: Record<string, unknown>[], seen: { ids
     if (twin && !twin.clientId) {
       twin.clientId = cid // a row from this device that was sent before it got stamped
       await lt.update(twin.id!, { clientId: cid })
-    } else if (!twin) {
-      fresh.push(local)
-      seen.keys.set(naturalKey[table](local), local)
+    } else {
+      fresh.push(local) // new, or the twin is a different row that happens to look alike
+      if (!twin) seen.keys.set(naturalKey[table](local), local)
     }
     seen.ids.add(cid)
   }
@@ -157,27 +161,50 @@ async function pull(token: string) {
       keys: new Map(all.map((r) => [naturalKey[table](r), r] as const))
     }
     let cursor = (await db.kv.get(cursorKey(table)))?.value as string | undefined
+    let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
     for (let page = 0; page < 20; page++) {
-      let res: Response
-      try {
-        res = await fetch(
-          `${url}/rest/v1/${table}?select=*&order=created_at.asc&limit=${PAGE}` + (cursor ? `&created_at=gte.${encodeURIComponent(cursor)}` : ''),
-          { headers: { apikey: key!, Authorization: `Bearer ${token}` } }
-        )
-      } catch { throw new SyncError('net') }
-      if (!res.ok) {
-        const code = await errCode(res)
-        throw new SyncError(res.status === 401 ? 'auth' : res.status === 408 || res.status === 429 || res.status >= 500 ? 'transient' : 'perm', code)
-      }
-      const rows = (await res.json()) as Record<string, unknown>[]
+      const rows = await getJson(`${url}/rest/v1/${table}?select=*&order=created_at.asc&limit=${PAGE}` + (from ? `&created_at=gte.${encodeURIComponent(from)}` : ''), key!, token)
       await merge(table, rows, seen, lt)
-      const next = rows.length ? (rows[rows.length - 1].created_at as string) : cursor
-      const advanced = next !== cursor
-      if (next) await db.kv.put({ key: cursorKey(table), value: next })
-      cursor = next
-      if (rows.length < PAGE || !advanced) break // ponytail: PAGE rows sharing one created_at would stall; unrealistic at family scale
+      const last = rows.length ? (rows[rows.length - 1].created_at as string) : undefined
+      if (last && (!cursor || Date.parse(last) > Date.parse(cursor))) {
+        cursor = last
+        await db.kv.put({ key: cursorKey(table), value: cursor })
+      }
+      if (rows.length < PAGE || !last || last === from) break // ponytail: PAGE rows sharing one created_at would stall; unrealistic at family scale
+      from = last
     }
   }
+  await pullPeople(url!, key!, token)
+  await pullSafety(url!, key!, token)
+}
+
+async function getJson(u: string, key: string, token: string): Promise<Record<string, unknown>[]> {
+  let res: Response
+  try { res = await fetch(u, { headers: { apikey: key, Authorization: `Bearer ${token}` } }) } catch { throw new SyncError('net') }
+  if (!res.ok) {
+    const code = await errCode(res)
+    throw new SyncError(res.status === 401 ? 'auth' : res.status === 408 || res.status === 429 || res.status >= 500 ? 'transient' : 'perm', code)
+  }
+  return (await res.json()) as Record<string, unknown>[]
+}
+
+// People: RLS limits this to the member and linked persons, so local Person.id == server people.id.
+// Anything that creates a local person must use getMember().personId.
+async function pullPeople(url: string, key: string, token: string) {
+  const rows = await getJson(`${url}/rest/v1/people?select=id,display_name`, key, token)
+  if (rows.length) await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
+}
+
+// Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.
+async function pullSafety(url: string, key: string, token: string) {
+  const rows = await getJson(`${url}/rest/v1/safety_overrides?select=kind,key,data,removed`, key, token)
+  if (!rows.length) return
+  const cur = { ...(((await db.kv.get(OVERRIDES_KEY))?.value as Record<string, unknown> | undefined) ?? {}) }
+  for (const r of rows) {
+    if (r.removed || r.data == null) delete cur[r.key as string]
+    else cur[r.key as string] = r.data
+  }
+  await db.kv.put({ key: OVERRIDES_KEY, value: cur })
 }
 
 // ---- run

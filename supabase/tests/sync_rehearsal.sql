@@ -1,5 +1,5 @@
 -- RLS rehearsal for 0003_sync.sql on a THROWAWAY Postgres (never the live project).
--- Needs /mig1.sql (0001_health.sql) and /mig3.sql (0003_sync.sql). public.is_admin() belongs to 0002_auth.sql (lane A1):
+-- Run: psql -X -v ON_ERROR_STOP=1 -d <scratch db> -f supabase/tests/sync_rehearsal.sql (migrations are included by relative path). public.is_admin() belongs to 0002_auth.sql (lane A1):
 -- here it is stubbed to read public.stub_admins.
 \set ON_ERROR_STOP on
 do $$ begin if not exists (select 1 from pg_roles where rolname='anon') then create role anon nologin; end if;
@@ -9,14 +9,14 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 grant usage on schema auth to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;
 grant usage on schema public to authenticated, anon;
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c'),('00000000-0000-0000-0000-00000000000d'),('00000000-0000-0000-0000-0000000000ad');
-\i /mig1.sql
+\ir ../migrations/0001_health.sql
 -- STUB for lane A1's 0002_auth.sql
 create table public.stub_admins (user_id uuid primary key);
 insert into public.stub_admins values ('00000000-0000-0000-0000-0000000000ad');
 create function public.is_admin() returns boolean language sql stable security definer set search_path = '' as
   $$ select exists (select 1 from public.stub_admins where user_id = auth.uid()) $$;
 grant execute on function public.is_admin() to authenticated;
-\i /mig3.sql
+\ir ../migrations/0003_sync.sql
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
 grant execute on function pg_temp.fails(text), pg_temp.ok(boolean,text) to authenticated, anon;
@@ -61,6 +61,8 @@ update public.push_subscriptions set p256dh = 'hijack'; delete from public.push_
 reset role; select pg_temp.ok((select p256dh from public.push_subscriptions where endpoint='https://push.test/a') = 'k', 'stranger cannot update or delete another push subscription');
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
 select pg_temp.ok(pg_temp.fails($$insert into public.push_subscriptions (endpoint) values ('https://push.test/a')$$), 'endpoint is unique across users');
+select pg_temp.ok(pg_temp.fails($$insert into public.push_subscriptions (endpoint, p256dh) values ('https://push.test/a', 'hijack') on conflict (endpoint) do update set p256dh = excluded.p256dh$$), 'stranger merge-upsert on (endpoint) fails');
+select pg_temp.ok(pg_temp.fails($$insert into public.push_subscriptions (endpoint, p256dh) values ('https://push.test/a', 'hijack') on conflict (endpoint) do update set p256dh = excluded.p256dh, user_id = auth.uid()$$), 'stranger cannot take over an endpoint by changing user_id');
 
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000d';
 insert into public.people (id, display_name) values ('10000000-0000-0000-0000-0000000000d1','Test Lola');
@@ -75,10 +77,14 @@ set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-000
 select pg_temp.ok((select count(*) from public.safety_overrides) = 1, 'any signed-in user reads safety_overrides');
 update public.safety_overrides set removed = true; delete from public.safety_overrides;
 reset role; select pg_temp.ok((select count(*) from public.safety_overrides where not removed) = 1, 'non-admin cannot update or delete safety_overrides');
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
+select pg_temp.ok(pg_temp.fails($$insert into public.safety_overrides (kind, key, data) values ('hotline','test-1','{"hijack":1}') on conflict (kind,key) do update set data = excluded.data$$), 'non-admin merge-upsert on (kind,key) fails');
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000ad';
 select pg_temp.ok(not pg_temp.fails($$insert into public.safety_overrides (kind, key, data) values ('place','test-2','{}')$$), 'admin writes safety_overrides');
 select pg_temp.ok(pg_temp.fails($$insert into public.safety_overrides (kind, key) values ('place','test-2')$$), '(kind,key) is unique');
 update public.safety_overrides set removed = true where key = 'test-1';
 select pg_temp.ok((select removed from public.safety_overrides where key = 'test-1'), 'admin updates safety_overrides');
+select pg_temp.ok(not pg_temp.fails($$insert into public.safety_overrides (kind, key, data) values ('hotline','test-1','{"n":"y"}') on conflict (kind,key) do update set data = excluded.data, removed = false$$), 'admin merge-upsert on (kind,key) succeeds');
+select pg_temp.ok((select data->>'n' from public.safety_overrides where key = 'test-1') = 'y', 'merge-upsert replaced the data');
 reset role;
 \echo REHEARSAL DONE
