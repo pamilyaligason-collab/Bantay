@@ -9,6 +9,7 @@ const AUTH_ENV = { VITE_SUPABASE_URL: 'https://bantay-test.supabase.test', VITE_
 
 export default defineConfig({
   testDir: 'e2e',
+  workers: 2, // ponytail: more workers time out on this PC (heavy bundle); raise on a bigger runner
   reporter: 'list',
   // PW_CHANNEL=chrome runs against an installed Chrome when the bundled chromium is not downloaded.
   projects: [

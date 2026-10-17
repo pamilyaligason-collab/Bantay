@@ -1,4 +1,5 @@
 import { SensorSettings } from '../features/sensors'
+import { SignOutButton } from '../features/auth/SignOutButton'
 
 export default function Family() {
   return (
@@ -7,6 +8,7 @@ export default function Family() {
         <h1>Family</h1>
       </div>
       <SensorSettings />
+      <SignOutButton />
     </>
   )
 }

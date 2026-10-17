@@ -51,3 +51,4 @@ body { background: var(--bg); }
 .signin input::placeholder { color: var(--ink2); }
 .si-err { margin: 0; padding: 14px 16px; font-size: 15px; color: var(--ink); }
 .si-hint { margin: 0; padding: 0 4px; font-size: 13px; color: var(--ink2); }
+.admin-link { margin-left: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; color: var(--act); font-weight: 600; text-decoration: none; }

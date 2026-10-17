@@ -8,6 +8,8 @@ import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
 import { SyncStatus } from './features/sync/SyncStatus'
+import { AdminScreen, useTrackScreen } from './features/admin'
+import { getMember, onAuthChange } from './features/auth/session'
 
 // Tab icons and order copied from the prototype tab bar.
 const SHIELD = 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z'
@@ -23,8 +25,15 @@ const fromHash = () => TABS.find((t) => t.id === location.hash.slice(1)) ?? TABS
 
 export default function App() {
   const [tab, setTab] = useState(fromHash)
+  const [hash, setHash] = useState(location.hash)
+  const [isAdmin, setIsAdmin] = useState(false)
   useEffect(() => {
-    const on = () => setTab(fromHash())
+    const check = () => void getMember().then((m) => setIsAdmin(m?.role === 'admin'))
+    check()
+    return onAuthChange(check)
+  }, [])
+  useEffect(() => {
+    const on = () => { setTab(fromHash()); setHash(location.hash) }
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
@@ -37,6 +46,8 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, tab.id === 'today' || tab.id === 'safety')
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
+  const adminRoute = hash === '#admin' && isAdmin // server RLS/RPCs still enforce is_admin()
+  useTrackScreen(adminRoute ? 'admin' : tab.id)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => { document.title = `${tab.label} - Family Bantay` }, [tab])
   useEffect(() => {
@@ -55,10 +66,10 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      <div className="topbar"><SyncStatus /></div>
+      <div className="topbar"><SyncStatus />{isAdmin && <a className="admin-link" href="#admin">Admin</a>}</div>
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        <tab.Screen />
+        {adminRoute ? <AdminScreen /> : <tab.Screen />}
       </main>
       <nav aria-label="Main" className="glass tabs">
         {TABS.map((t) => (
