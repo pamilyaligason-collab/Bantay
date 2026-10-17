@@ -59,3 +59,51 @@ test('an alert in Dexie shows on Safety and Today with depth on expand', async (
   await page.goto('/#today')
   await expect(page.getByText('Drop, cover and hold on.')).toBeVisible()
 })
+
+test.describe('Near me on the maps switcher', () => {
+  test.describe('location allowed on tap', () => {
+    test('Near me asks on tap, then centres the map and header on the phone', async ({ page }) => {
+      await page.addInitScript(() => {
+        // permission starts as "prompt": the only way to a position is the tap
+        const w = window as unknown as { __gpsCalls: number }
+        w.__gpsCalls = 0
+        navigator.permissions.query = () => Promise.resolve({ state: 'prompt' } as PermissionStatus)
+        navigator.geolocation.getCurrentPosition = (ok) => {
+          w.__gpsCalls++
+          ok({ coords: { latitude: 6.11, longitude: 125.17 } } as GeolocationPosition)
+        }
+      })
+      await page.goto('/#safety')
+      const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
+      await expect(near).toHaveAttribute('aria-pressed', 'false')
+      await expect(page.locator('.hdr span')).toHaveText('Dampas and Conel')
+      expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0)
+      await near.click()
+      await expect(near).toHaveAttribute('aria-pressed', 'true')
+      await expect(page.locator('.hdr span')).toHaveText('Near you')
+      await page.getByText('Ventusky weather map').click()
+      await expect(page.locator('iframe[title^="Ventusky"]')).toHaveAttribute('src', /p=6\.11;125\.17;7/)
+    })
+  })
+
+  test.describe('location denied', () => {
+    test('Near me is offered, explains, and keeps the previous place', async ({ page }) => {
+      await page.addInitScript(() => {
+        // headless Chrome shows no prompt; fail the ask the way a refusal does
+        const w = window as unknown as { __gpsCalls: number }
+        w.__gpsCalls = 0
+        navigator.permissions.query = () => Promise.resolve({ state: 'prompt' } as PermissionStatus)
+        navigator.geolocation.getCurrentPosition = (_ok, no) => (w.__gpsCalls++, no?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }))
+      })
+      await page.goto('/#safety')
+      const group = page.getByRole('group', { name: 'Map place' })
+      const near = group.getByRole('button', { name: 'Near me' })
+      await expect(near).toBeVisible()
+      expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0)
+      await near.click()
+      await expect(page.getByText('Location is off for Bantay. Turn it on in your phone settings to see alerts near you.')).toBeVisible()
+      await expect(near).toHaveAttribute('aria-pressed', 'false')
+      await expect(group.getByRole('button', { pressed: true })).toHaveCount(1)
+    })
+  })
+})

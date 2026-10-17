@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HOME_ZONES } from '../location/geo'
-import { useGpsLoc } from '../location/useLocation'
+import type { Loc } from '../location/geo'
+import { useLocation } from '../location/useLocation'
 import { HOME, type LatLon } from './alerts'
 import Lazy from './Lazy'
 import './safety.css'
@@ -34,14 +35,35 @@ const LINKS = [
   ['JMA typhoon map', 'Japan Meteorological Agency typhoon tracks. Opens in a new tab.', 'https://www.jma.go.jp/bosai/map.html']
 ]
 
-export default function MapsPanel({ loc }: { loc?: LatLon | null }) {
-  const gps = useGpsLoc()
-  const here = loc === undefined ? gps : loc
+export const LOCATION_SLOW = 'We could not find your location right now. Try again in a moment.'
+export const LOCATION_OFF ='Location is off for Bantay. Turn it on in your phone settings to see alerts near you.'
+
+/** `loc`/`ask` let the Safety screen share one location with its header and warnings; left out, the panel uses its own.
+ *  "Near me" is always offered and asks for location only when tapped. */
+export default function MapsPanel({ loc, ask }: { loc?: LatLon | null; ask?: () => Promise<Loc> }) {
+  const own = useLocation()
+  const here = loc === undefined ? (own.source === 'gps' ? own : null) : loc
+  const doAsk = ask ?? own.ask
+  const [finding, setFinding] = useState(false)
+  const [off, setOff] = useState('')
   const [layer, setLayer] = useState<string>(LAYERS[0][1])
   const [place, setPlace] = useState<string | null>(null) // null = phone location when known, else the first zone
   const active = place ?? (here ? 'here' : HOME_ZONES[0].id)
   const c = HOME_ZONES.find((z) => z.id === active) ?? here ?? HOME
-  const places: [string, string][] = [...(here ? [['here', 'Near me'] as [string, string]] : []), ...HOME_ZONES.map((z): [string, string] => [z.id, z.name.split(',')[0]])]
+  const pickHere = async () => {
+    setOff('')
+    if (here) return setPlace('here')
+    setFinding(true)
+    const l = await doAsk().catch(() => null)
+    if (l?.source === 'gps') setPlace('here')
+    else {
+      // permission still granted means GPS just timed out, not that location is off
+      const st = await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt')
+      setOff(st === 'granted' ? LOCATION_SLOW : LOCATION_OFF)
+    }
+    setFinding(false)
+  }
+  const places: [string, string][] = [['here', 'Near me'], ...HOME_ZONES.map((z): [string, string] => [z.id, z.name.split(',')[0]])]
   return (
     <div className="sf">
       <div role="group" aria-label="Map layer" className="sf-chips">
@@ -51,9 +73,10 @@ export default function MapsPanel({ loc }: { loc?: LatLon | null }) {
       </div>
       <div role="group" aria-label="Map place" className="sf-chips">
         {places.map(([id, label]) => (
-          <button key={id} className="pill" aria-pressed={active === id} onClick={() => setPlace(id)} style={{ background: active === id ? 'var(--btn)' : 'var(--fill)', color: active === id ? 'var(--btn-fg)' : 'var(--ink)' }}>{label}</button>
+          <button key={id} className="pill" aria-pressed={active === id} aria-disabled={finding || undefined} onClick={() => finding || (id === 'here' ? pickHere() : (setOff(''), setPlace(id)))} style={{ background: active === id ? 'var(--btn)' : 'var(--fill)', color: active === id ? 'var(--btn-fg)' : 'var(--ink)' }}>{label}</button>
         ))}
       </div>
+      <p className="sf-empty" role="status">{finding ? 'Finding you…' : off}</p>
       <Lazy summary="Ventusky weather map"><Frame title="Ventusky weather map centred on your area" src={ventuskyUrl(c, layer)} /></Lazy>
       <Lazy summary="Windy rain and wind"><Frame title="Windy rain and wind map" src={windyUrl(c)} /></Lazy>
       <Lazy summary="HazardHunterPH hazards at an address"><Frame title="HazardHunterPH hazard maps" src="https://hazardhunter.georisk.gov.ph/" /></Lazy>
