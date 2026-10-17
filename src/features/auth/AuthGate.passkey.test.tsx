@@ -51,6 +51,12 @@ describe('AuthGate with a passkey check pending', () => {
   })
 
   describe('auth state change lands before the passkey ceremony resolves', () => {
+    const credsDesc = Object.getOwnPropertyDescriptor(navigator, 'credentials')
+    afterEach(() => {
+      vi.unstubAllGlobals()
+      if (credsDesc) Object.defineProperty(navigator, 'credentials', credsDesc)
+      else delete (navigator as { credentials?: unknown }).credentials
+    })
     const run = async (who: string) => {
       h.real = true
       vi.stubGlobal('PublicKeyCredential', class {})
