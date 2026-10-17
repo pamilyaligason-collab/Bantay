@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Loc } from '../location/geo'
-import MapsPanel, { LOCATION_OFF } from './MapsPanel'
+import MapsPanel, { LOCATION_OFF, LOCATION_SLOW } from './MapsPanel'
 
 const home: Loc = { lat: 9.65, lon: 123.88, source: 'home' }
 const gps: Loc = { lat: 6.11, lon: 125.17, source: 'gps' }
@@ -42,6 +42,16 @@ describe('MapsPanel Near me', () => {
     await screen.findByText(LOCATION_OFF)
     expect(near().getAttribute('aria-pressed')).toBe('false')
     expect(first.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('says it could not find you (not "off") when permission is granted but GPS failed', async () => {
+    ask.mockResolvedValue(home)
+    vi.stubGlobal('navigator', { ...navigator, permissions: { query: () => Promise.resolve({ state: 'granted' }) } })
+    render(<MapsPanel />)
+    fireEvent.click(near())
+    await screen.findByText(LOCATION_SLOW)
+    expect(screen.queryByText(LOCATION_OFF)).toBeNull()
+    vi.unstubAllGlobals()
   })
 
   it('does not ask when GPS is already granted', () => {
