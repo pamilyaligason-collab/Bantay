@@ -1,4 +1,5 @@
 import { supabase } from './client'
+import { getMember } from './session'
 
 /** One face on the trusted-device picker. Names only: no emails, no auth ids. */
 export interface FamilyMember { personId: string; displayName: string; handle: string | null; provider: 'pin' | 'google'; initials: string }
@@ -14,16 +15,24 @@ export const initialsOf = (name: string) => {
 export function loadFamily(): FamilyMember[] {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '[]')
-    return Array.isArray(v) ? v.filter((m) => m && typeof m.personId === 'string' && typeof m.displayName === 'string') : []
+    if (!Array.isArray(v)) return []
+    // Rebuild every entry from known fields only; the cache is plain localStorage and cannot be trusted.
+    return v.flatMap((m): FamilyMember[] =>
+      m && typeof m.personId === 'string' && typeof m.displayName === 'string' && m.displayName.trim()
+        ? [{ personId: m.personId, displayName: m.displayName.slice(0, 60), handle: typeof m.handle === 'string' ? m.handle : null,
+             provider: m.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(m.displayName) }]
+        : [])
   } catch { return [] }
 }
 
 /** After any sign-in: remember the family on this phone (trusted device). Fails quietly; the picker just stays off. */
+let generation = 0 // bumped by forgetPhone so a cacheFamily() already in flight cannot write the list back
 export async function cacheFamily(): Promise<void> {
   if (!supabase) return
+  const gen = generation
   try {
     const { data, error } = await supabase.rpc('family_profiles')
-    if (error || !Array.isArray(data) || !data.length) return
+    if (gen !== generation || error || !Array.isArray(data) || !data.length) return
     const list: FamilyMember[] = data.map((r: { person_id: string; display_name: string; handle: string | null; provider: string }) => ({
       personId: r.person_id, displayName: r.display_name, handle: r.handle ?? null,
       provider: r.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(r.display_name)
@@ -37,6 +46,7 @@ export const setPasskeyFlag = (personId: string) => { try { localStorage.setItem
 
 /** "Forget this phone": the picker list and every passkey flag. */
 export function forgetPhone(): void {
+  generation++
   try {
     const drop: string[] = [KEY]
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith('bantay.passkey.')) drop.push(k) }
@@ -49,11 +59,18 @@ export const passkeySupported = () => typeof window !== 'undefined' && !!window.
 const UNAVAILABLE = 'Not available on this phone yet'
 
 /** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success). */
-export async function signInWithPasskey(): Promise<string | null> {
+export async function signInWithPasskey(expectedPersonId: string): Promise<string | null> {
   if (!supabase || !passkeySupported()) return UNAVAILABLE
   try {
     const { error } = await supabase.auth.signInWithPasskey()
-    return error ? 'Fingerprint or face did not work. Use your PIN instead.' : null
+    if (error) return 'Fingerprint or face did not work. Use your PIN instead.'
+    // The browser picks the passkey, so check it is the person who was tapped.
+    const m = await getMember()
+    if (m?.personId !== expectedPersonId) {
+      await supabase.auth.signOut({ scope: 'local' })
+      return 'That fingerprint belongs to someone else. Tap your own name.'
+    }
+    return null
   } catch { return 'Fingerprint or face did not work. Use your PIN instead.' }
 }
 

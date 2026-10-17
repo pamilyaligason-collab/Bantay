@@ -23,6 +23,7 @@ const trust = (page: Page, flagged: string[] = []) =>
     localStorage.setItem('bantay.family', JSON.stringify(fam))
     ;(flags as string[]).forEach((id) => localStorage.setItem(`bantay.passkey.${id}`, '1'))
   }, [FAMILY, flagged] as const)
+const logouts: string[] = []
 const fresh = () => ({ pins: [] as string[], rpc: 0, oauth: [] as string[] })
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
@@ -40,6 +41,8 @@ async function mock(page: Page, seen: { pins: string[]; rpc: number; oauth: stri
     }
     if (url.pathname === '/rest/v1/rpc/family_profiles') return reply(200, FAMILY_ROWS)
     if (url.pathname.startsWith('/auth/v1/passkeys')) return reply(400, { error_code: 'passkey_disabled', msg: 'off' })
+    if (url.pathname === '/rest/v1/people') return reply(200, { id: 'p-lola', display_name: 'Lola Rosa' })
+    if (url.pathname === '/auth/v1/logout') { logouts.push(url.searchParams.get('scope') ?? ''); return route.fulfill({ status: 204, headers: cors }) }
     if (url.pathname === '/auth/v1/user') return reply(200, user)
     if (url.pathname === '/rest/v1/rpc/ensure_self_person') { seen.rpc++; return reply(200, '44444444-4444-4444-8444-444444444444') }
     if (url.pathname === '/auth/v1/authorize') { seen.oauth.push(req.url()); return route.fulfill({ status: 200, contentType: 'text/html', body: 'google' }) }
@@ -148,7 +151,7 @@ test.describe('quick login (D-24)', () => {
   test('OAuth error in the hash is shown and the URL is cleaned', async ({ page }) => {
     await mock(page, fresh())
     await page.goto('/#error=server_error&error_description=Something+went+wrong')
-    await expect(page.getByRole('alert')).toHaveText('Something went wrong')
+    await expect(page.getByRole('alert')).toHaveText('Sign-in did not work. Try again.')
     expect(new URL(page.url()).hash).toBe('')
   })
 
@@ -186,7 +189,9 @@ test.describe('quick login (D-24)', () => {
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     await page.goto('/#family')
+    await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
+    await expect.poll(() => logouts.at(-1)).toBe('local')
     await expect(page.getByRole('button', { name: /Lola Rosa/ })).toBeVisible()
     await page.getByRole('button', { name: /Lola Rosa/ }).click()
     await keys(page, '480193')

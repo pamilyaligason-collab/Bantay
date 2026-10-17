@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const rpc = vi.hoisted(() => vi.fn())
-vi.mock('./client', () => ({ supabase: { rpc } }))
+const m = vi.hoisted(() => ({ rpc: vi.fn(), pk: vi.fn(), out: vi.fn(), member: vi.fn() }))
+const rpc = m.rpc
+vi.mock('./client', () => ({ supabase: { rpc: m.rpc, auth: { signInWithPasskey: m.pk, signOut: m.out } } }))
+vi.mock('./session', () => ({ getMember: m.member }))
 
-import { cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
+import { signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
 
 describe('family cache', () => {
   beforeEach(() => { localStorage.clear(); rpc.mockReset() })
@@ -59,8 +61,59 @@ describe('urlSignInError', () => {
     expect(await load('/?error=access_denied&error_code=signup_disabled&error_description=Signups+not+allowed+for+this+instance')).toBe('This Google account is not invited yet. Ask your family admin.')
     expect(location.search).toBe('')
   })
+  it('never echoes URL text; unknown hook text is not an invite error', async () => {
+    expect(await load('/?error=server_error&error_description=Click+evil.example+now')).toBe('Sign-in did not work. Try again.')
+    expect(await load('/?error=server_error&error_description=webhook+misc')).toBe('Sign-in did not work. Try again.')
+    expect(await load('/?error=access_denied&error_description=User+cancelled')).toBe('Google sign-in was cancelled. Try again.')
+    expect(await load('/?error=server_error&error_description=Error+processing+hook')).toBe('This Google account is not invited yet. Ask your family admin.')
+  })
   it('hash errors are read and cleaned too', async () => {
-    expect(await load('/#error=server_error&error_description=Something+broke')).toBe('Something broke')
+    expect(await load('/#error=server_error&error_description=Something+broke')).toBe('Sign-in did not work. Try again.')
     expect(location.hash).toBe('')
+  })
+})
+
+describe('hardening', () => {
+  beforeEach(() => { localStorage.clear(); rpc.mockReset() })
+  it('loadFamily rebuilds entries from known fields only', () => {
+    localStorage.setItem('bantay.family', JSON.stringify([
+      { personId: 'p1', displayName: 'Lola Rosa', handle: 5, provider: 'admin', initials: '<img>', evil: 'x' },
+      { personId: 'p2', displayName: '   ' }, { personId: 7, displayName: 'No' }, null
+    ]))
+    expect(loadFamily()).toEqual([{ personId: 'p1', displayName: 'Lola Rosa', handle: null, provider: 'google', initials: 'LR' }])
+  })
+  it('forgetPhone stops a cacheFamily already in flight from writing the list back', async () => {
+    let done!: (v: unknown) => void
+    rpc.mockReturnValue(new Promise((r) => { done = r }))
+    const pending = cacheFamily()
+    forgetPhone()
+    done({ data: [{ person_id: 'p1', display_name: 'Lola', handle: null, provider: 'google' }], error: null })
+    await pending
+    expect(loadFamily()).toEqual([])
+    rpc.mockResolvedValue({ data: [{ person_id: 'p1', display_name: 'Lola', handle: null, provider: 'google' }], error: null })
+    await cacheFamily() // a later sign-in caches again
+    expect(loadFamily()).toHaveLength(1)
+  })
+})
+
+describe('signInWithPasskey', () => {
+  beforeEach(() => {
+    m.pk.mockReset(); m.out.mockReset(); m.member.mockReset()
+    vi.stubGlobal('PublicKeyCredential', class {})
+    Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+  })
+  it('right person: signed in, no sign-out', async () => {
+    m.pk.mockResolvedValue({ error: null }); m.member.mockResolvedValue({ personId: 'p1' })
+    expect(await signInWithPasskey('p1')).toBeNull()
+    expect(m.out).not.toHaveBeenCalled()
+  })
+  it('someone else is signed out locally with a clear message', async () => {
+    m.pk.mockResolvedValue({ error: null }); m.member.mockResolvedValue({ personId: 'p2' })
+    expect(await signInWithPasskey('p1')).toBe('That fingerprint belongs to someone else. Tap your own name.')
+    expect(m.out).toHaveBeenCalledWith({ scope: 'local' })
+  })
+  it('a failed ceremony falls back to the PIN message', async () => {
+    m.pk.mockResolvedValue({ error: { message: 'x' } })
+    expect(await signInWithPasskey('p1')).toContain('Use your PIN instead')
   })
 })

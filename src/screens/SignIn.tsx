@@ -108,7 +108,7 @@ export default function SignIn() {
           <div className="grp pickcard">
             <span className="avatar big" aria-hidden="true">{pick.initials}</span>
             <h2 className="pname">{pick.displayName}</h2>
-            {canPasskey(pick) && <button className="btn" disabled={busy} onClick={() => run(signInWithPasskey)}>Use fingerprint or face</button>}
+            {canPasskey(pick) && <button className="btn" disabled={busy} onClick={() => run(() => signInWithPasskey(pick.personId))}>Use fingerprint or face</button>}
             {pick.provider === 'pin' && pick.handle ? (
               <>
                 {canPasskey(pick) && <p className="si-hint">Or enter your PIN</p>}
