@@ -33,6 +33,7 @@ export function onAuthChange(cb: () => void): () => void {
   return () => data.subscription.unsubscribe()
 }
 
+/** Signs out this device only; other devices stay signed in. */
 export async function signOut(): Promise<void> {
-  await supabase?.auth.signOut()
+  await supabase?.auth.signOut({ scope: 'local' })
 }

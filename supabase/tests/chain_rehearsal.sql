@@ -18,13 +18,16 @@ grant usage on schema public to authenticated, anon, service_role;
 grant select, delete on auth.sessions to service_role;
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
  ('00000000-0000-0000-0000-0000000000a1', 'admin@example.com',  '{"provider":"google"}', '{}'),
- ('00000000-0000-0000-0000-0000000000b1', 'member@example.com', '{"provider":"google"}', '{}');
+ ('00000000-0000-0000-0000-0000000000b1', 'member@example.com', '{"provider":"google"}', '{}'),
+ ('00000000-0000-0000-0000-0000000000c1', 'm-c1@members.bantay.invalid', '{"created_by_admin":true}', '{}'),
+ ('00000000-0000-0000-0000-0000000000d1', 'm-d1@members.bantay.invalid', '{"created_by_admin":true}', '{}');
 
 \ir ../migrations/0001_health.sql
 \ir ../migrations/0002_auth.sql
 \ir ../migrations/0003_sync.sql
 \ir ../migrations/0004_admin.sql
 \ir ../migrations/0005_news_assistant.sql
+\ir ../migrations/0006_family_profiles.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
@@ -32,8 +35,12 @@ grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text) to auth
 
 insert into public.news_items (id, title, url, source, kind, published_at) values ('https://example.org/a', 'T', 'https://example.org/a', 'example.org', 'article', now());
 insert into public.app_roles (user_id, role) values ('00000000-0000-0000-0000-0000000000a1', 'admin'), ('00000000-0000-0000-0000-0000000000b1', 'member');
+insert into public.app_roles (user_id, role, handle, disabled) values ('00000000-0000-0000-0000-0000000000c1', 'member', 'lola', false), ('00000000-0000-0000-0000-0000000000d1', 'member', 'kuya', true);
 insert into public.people (id, auth_user_id, display_name, created_by) values
- ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'Test B', '00000000-0000-0000-0000-0000000000b1');
+ ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b1', 'Test B', '00000000-0000-0000-0000-0000000000b1'),
+ ('10000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c1', 'Lola', '00000000-0000-0000-0000-0000000000a1'),
+ ('10000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d1', 'Kuya Off', '00000000-0000-0000-0000-0000000000a1'),
+ ('10000000-0000-0000-0000-0000000000e1', null, 'No login', '00000000-0000-0000-0000-0000000000a1');
 
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b1';
@@ -50,6 +57,15 @@ select pg_temp.ok((select allowed and used = 2 from public.assistant_take(2)), '
 select pg_temp.ok((select not allowed and used = 2 from public.assistant_take(2)), 'member assistant_take refused past the cap');
 select pg_temp.ok(pg_temp.fails($$select * from public.assistant_usage$$), 'member cannot read assistant_usage directly');
 
+select pg_temp.ok((select count(*) from public.family_profiles()) = 2, 'member family_profiles: only non-disabled members with a login (admin has no people row here, so Test B + Lola)');
+select pg_temp.ok((select provider = 'pin' and handle = 'lola' from public.family_profiles() where display_name = 'Lola'), 'family_profiles: PIN member shows handle and kind pin');
+select pg_temp.ok((select provider = 'google' and handle is null from public.family_profiles() where display_name = 'Test B'), 'family_profiles: Google member has kind google, no handle');
+select pg_temp.ok(not exists (select 1 from public.family_profiles() where display_name in ('Kuya Off', 'No login')), 'family_profiles: disabled and no-login people excluded');
+select pg_temp.ok(not exists (select 1 from information_schema.parameters where specific_schema = 'public' and specific_name like 'family_profiles%' and parameter_mode = 'OUT' and parameter_name ~* 'mail|user_id'), 'family_profiles: no email or auth user id column');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000d1';
+select pg_temp.ok((select count(*) from public.family_profiles()) = 0, 'family_profiles: a disabled caller gets nothing');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b1';
+
 set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
 select pg_temp.ok(public.is_admin(), 'admin is admin (real is_admin)');
 select pg_temp.ok(not pg_temp.fails($$select * from public.admin_usage_summary(7)$$), 'admin calls admin_usage_summary');
@@ -61,5 +77,6 @@ set role anon;
 reset request.jwt.claim.sub;
 select pg_temp.ok((select count(*) from public.news_items) = 1, 'anon reads news_items');
 select pg_temp.ok(pg_temp.fails($$select * from public.assistant_take(5)$$), 'anon cannot call assistant_take');
+select pg_temp.ok(pg_temp.fails($$select * from public.family_profiles()$$), 'anon cannot call family_profiles');
 reset role;
 \echo REHEARSAL DONE

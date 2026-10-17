@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import SignIn from '../../screens/SignIn'
 import { supabase } from './client'
+import { cacheFamily, passkeyCheck } from './family'
 
 const doneKey = (uid: string) => `bantay.person.${uid}`
 const seen = (uid: string) => { try { return localStorage.getItem(doneKey(uid)) === '1' } catch { return false } }
@@ -21,12 +22,19 @@ export function AuthGate({ children }: { children: ReactNode }) {
     let alive = true
     const settle = async (uid: string | undefined) => {
       if (!uid) { if (alive) setState('out'); return }
+      if (passkeyCheck) {
+        // Passkey sign-in is still checking it is the tapped person. Wait; if the session is gone, stay signed out.
+        await passkeyCheck.catch(() => {})
+        const { data } = await sb.auth.getSession()
+        if (data.session?.user.id !== uid) { if (alive) setState('out'); return }
+      }
       if (!seen(uid)) {
         try {
           const { error } = await sb.rpc('ensure_self_person')
           if (!error) mark(uid)
         } catch { /* offline: try again next start */ }
       }
+      void cacheFamily() // trusted device: remember the family picker list (quiet on failure)
       if (alive) setState('in')
     }
     const { data } = sb.auth.onAuthStateChange((event, session) => {

@@ -1,3 +1,4 @@
+import './urlError' // must run before the client: reads and cleans OAuth errors from the URL first
 import { createClient } from '@supabase/supabase-js'
 
 // One Supabase client for the app (contract D-16..D-19). null when env is not set (tests, unconfigured builds).
