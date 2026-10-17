@@ -1,9 +1,9 @@
-import { type Alert, type LatLon, rankAlerts } from './alerts'
+import { ALERTS_KEY, type Alert, type LatLon, rankAlerts } from './alerts'
 import AlertCard from './AlertCard'
 import { useKv } from './store'
 import './safety.css'
 
-export const ALERTS_KEY = 'safety.alerts'
+export { ALERTS_KEY }
 const NONE: Alert[] = []
 
 /** Ranked official warnings. The sync layer writes the list to Dexie kv 'safety.alerts'.

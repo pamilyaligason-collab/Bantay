@@ -36,6 +36,29 @@ describe('AlertCard', () => {
   })
 })
 
+describe('AlertCard stale and new kinds (D-25)', () => {
+  it('a fresh alert shows no stale note', () => {
+    render(<AlertCard alert={quake} />)
+    expect(screen.queryByText(/source unreachable/)).toBeNull()
+  })
+  it('a stale alert says when it was last checked', () => {
+    render(<AlertCard alert={{ ...quake, stale: true, checkedAt: '2026-10-17T12:00:00Z' }} />)
+    const note = screen.getByRole('status').textContent!
+    expect(note).toMatch(/^Last checked .*2026.*; source unreachable\.$/)
+    expect(note).toContain('8:00') // 12:00 UTC is 8:00 pm in Manila
+  })
+  it('a stale alert with no check time says so plainly, never a made-up time', () => {
+    render(<AlertCard alert={{ ...quake, stale: true, checkedAt: null }} />)
+    expect(screen.getByRole('status').textContent).toBe('Source unreachable. This is the last information we have.')
+  })
+  it.each(['volcano', 'air'] as const)('%s renders with no siren line and no weather map', (kind) => {
+    render(<AlertCard alert={{ ...quake, kind, previousBulletin: null }} />)
+    expect(screen.getByText('Drop, cover and hold on.')).toBeTruthy()
+    expect(screen.queryByText(NOT_A_SIREN)).toBeNull()
+    expect(screen.queryByText('Weather map')).toBeNull()
+  })
+})
+
 describe('SafetyBrief', () => {
   it('empty state, then the top ranked alert from Dexie, limited', async () => {
     render(<SafetyBrief limit={1} />)

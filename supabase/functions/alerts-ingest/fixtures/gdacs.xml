@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:gdacs="http://www.gdacs.org" xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:georss="http://www.georss.org/georss" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>GDACS RSS information</title>
+    <item>
+      <title>Orange tropical cyclone BAGYO-26 &amp; track near Samar</title>
+      <description>From 15/10/2026 to 17/10/2026, a Typhoon (maximum wind speed of 150 km/h) BAGYO-26 was active in NWPacific. The cyclone affects these countries: Philippines.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=TC&amp;eventid=1001400</link>
+      <pubDate>Sat, 17 Oct 2026 04:00:00 GMT</pubDate>
+      <gdacs:datemodified>Sat, 17 Oct 2026 06:00:00 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Thu, 15 Oct 2026 00:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>11.5</geo:lat>
+        <geo:long>126.0</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>TC</gdacs:eventtype>
+      <gdacs:alertlevel>Orange</gdacs:alertlevel>
+      <gdacs:eventname>BAGYO-26</gdacs:eventname>
+      <gdacs:eventid>1001400</gdacs:eventid>
+      <gdacs:country>Philippines</gdacs:country>
+    </item>
+    <item>
+      <title>Green earthquake (Magnitude 5.7M, Depth:10km) in Pakistan 17/10/2026 05:06 UTC, 2 thousand (in MMI&gt;=VII).</title>
+      <description>On 10/17/2026 5:06:57 AM, an earthquake occurred in Pakistan.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=EQ&amp;eventid=1572122</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 07:12:51 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Sat, 17 Oct 2026 05:06:57 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>28.0179</geo:lat>
+        <geo:long>66.1708</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>EQ</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventname />
+      <gdacs:eventid>1572122</gdacs:eventid>
+      <gdacs:country>Pakistan</gdacs:country>
+    </item>
+    <item>
+      <title>Drought is on going in Brunei, Indonesia, Cambodia, Malaysia, Papua New Guinea, Philippines, Thailand, Vietnam</title>
+      <description>The  Drought notification level is Green.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=DR&amp;eventid=1018545</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 05:57:09 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Sat, 21 Mar 2026 00:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>11.725</geo:lat>
+        <geo:long>104.832</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>DR</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventname>South-East Asia-2026</gdacs:eventname>
+      <gdacs:eventid>1018545</gdacs:eventid>
+      <gdacs:country>Brunei, Indonesia, Cambodia, Malaysia, Papua New Guinea, Philippines, Thailand, Vietnam</gdacs:country>
+    </item>
+    <item>
+      <title>Green notification for tropical cyclone WATI-26.</title>
+      <description>A Tropical Storm WATI-26 was active in SEPacific.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=TC&amp;eventid=1001339</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 06:00:00 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Fri, 16 Oct 2026 00:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>-17.0</geo:lat>
+        <geo:long>-150.0</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>TC</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventname>WATI-26</gdacs:eventname>
+      <gdacs:eventid>1001339</gdacs:eventid>
+      <gdacs:country>Cook Islands, French Polynesia</gdacs:country>
+    </item>
+    <item>
+      <title>Orange volcano alert near Bulusan</title>
+      <description>Volcanic activity reported at Bulusan.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=VO&amp;eventid=2000100</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 03:00:00 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Fri, 16 Oct 2026 22:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>12.77</geo:lat>
+        <geo:long>124.05</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>VO</gdacs:eventtype>
+      <gdacs:alertlevel>Orange</gdacs:alertlevel>
+      <gdacs:eventname>Bulusan</gdacs:eventname>
+      <gdacs:eventid>2000100</gdacs:eventid>
+      <gdacs:country>Philippines</gdacs:country>
+    </item>
+    <item>
+      <title>Green flood in Philippines (ended)</title>
+      <description>Flood event, no longer current.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=FL&amp;eventid=3000200</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 02:00:00 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>false</gdacs:iscurrent>
+      <gdacs:fromdate>Wed, 14 Oct 2026 00:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>10.3</geo:lat>
+        <geo:long>123.9</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>FL</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventname />
+      <gdacs:eventid>3000200</gdacs:eventid>
+      <gdacs:country>Philippines</gdacs:country>
+    </item>
+    <item>
+      <title>Green flood near Cebu (no country text)</title>
+      <description>Flood event near Cebu.</description>
+      <link>https://www.gdacs.org/report.aspx?eventtype=FL&amp;eventid=3000300</link>
+      <gdacs:datemodified>Sat, 17 Oct 2026 05:00:00 GMT</gdacs:datemodified>
+      <gdacs:iscurrent>true</gdacs:iscurrent>
+      <gdacs:fromdate>Fri, 16 Oct 2026 00:00:00 GMT</gdacs:fromdate>
+      <geo:Point>
+        <geo:lat>10.3</geo:lat>
+        <geo:long>123.9</geo:long>
+      </geo:Point>
+      <gdacs:eventtype>FL</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventname />
+      <gdacs:eventid>3000300</gdacs:eventid>
+      <gdacs:country />
+    </item>
+  </channel>
+</rss>

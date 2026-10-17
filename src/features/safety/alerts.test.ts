@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Alert, diffBulletin, distanceKm, HOME, rankAlerts } from './alerts'
+import { type Alert, diffBulletin, distanceKm, hazardOf, HOME, rankAlerts, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -10,6 +10,17 @@ describe('rankAlerts', () => {
   it('orders by priority tier', () => {
     const out = rankAlerts([a('g', 'gdacs'), a('l', 'local'), a('u', 'utility'), a('q', 'quake'), a('h', 'heat'), a('t', 'tcws')], null)
     expect(out.map((x) => x.id)).toEqual(['h', 't', 'q', 'u', 'l', 'g'])
+  })
+  it('volcano ranks with PHIVOLCS (tier 1), air quality below it with utilities (tier 2, never above an official warning)', () => {
+    const out = rankAlerts([a('air', 'air'), a('v', 'volcano'), a('u', 'utility', { issuedAt: '2026-10-16T00:00:00Z' }), a('q', 'quake', { lat: 9.7, lon: 123.9 }), a('t', 'tcws')], null)
+    expect(out.map((x) => x.id)).toEqual(['t', 'v', 'q', 'air', 'u'])
+    expect(tierOf('volcano')).toBe(tierOf('quake'))
+    expect(tierOf('air')).toBeGreaterThan(tierOf('tcws'))
+  })
+  it('volcano and air have no practice card', () => {
+    expect(hazardOf('volcano')).toBeNull()
+    expect(hazardOf('air')).toBeNull()
+    expect(hazardOf('quake')).toBe('earthquake')
   })
   it('within a tier, nearest to the given location first', () => {
     const near = a('near', 'quake', { lat: 9.7, lon: 123.9 })

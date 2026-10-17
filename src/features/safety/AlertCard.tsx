@@ -4,6 +4,15 @@ import { Frame, ventuskyUrl } from './MapsPanel'
 import { CARDS, Poster } from './Practice'
 import './safety.css'
 
+const NO_MAP = new Set<Alert['kind']>(['quake', 'tsunami', 'volcano', 'air'])
+
+/** Plain words for an alert whose source could not be reached. Unknown time is said as unknown. */
+export function staleText(checkedAt: string | null | undefined): string {
+  const t = checkedAt ? new Date(checkedAt) : null
+  if (!t || Number.isNaN(t.getTime())) return 'Source unreachable. This is the last information we have.'
+  return `Last checked ${t.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' })}; source unreachable.`
+}
+
 export default function AlertCard({ alert: a }: { alert: Alert }) {
   const diff = diffBulletin(a.previousBulletin, a.bulletin)
   const card = CARDS.find((c) => c.id === hazardOf(a.kind))
@@ -14,6 +23,7 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
         {a.level && <span className="sf-chip warn">! {a.level}</span>}
         <span className="sf-chip">{a.source}</span>
       </div>
+      {a.stale && <p className="sf-note" role="status">{staleText(a.checkedAt)}</p>}
       <div className="grp">
         <div className="row sf-lbl"><span className="sub">What</span><span>{a.what}</span></div>
         <div className="row sf-lbl"><span className="sub">Where</span><span>{a.where}</span></div>
@@ -23,7 +33,7 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
       {(a.kind === 'quake' || a.kind === 'tsunami') && <p className="sf-note">{NOT_A_SIREN}</p>}
       <details>
         <summary>More detail</summary>
-        {a.kind !== 'quake' && a.kind !== 'tsunami' && (
+        {!NO_MAP.has(a.kind) && (
           <Lazy summary="Weather map"><Frame title={`Weather map around ${a.title}`} src={ventuskyUrl(centre, a.kind === 'tcws' ? 'wind-10m' : 'rain-3h')} /></Lazy>
         )}
         {a.timeline?.length ? (

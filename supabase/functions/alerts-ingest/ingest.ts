@@ -1,0 +1,45 @@
+// alerts-ingest core (D-25): fetch each source, parse, upsert. A failed source keeps its previous rows and marks them stale; nothing is deleted.
+import { type AlertRow, parseAir, parseGdacs, parseUsgs } from './parse.ts'
+
+// Sources verified WORKS in research (2026-10-17). PHIVOLCS quake and volcano pages, PAGASA bulletins (PDF in an iframe) and BOHECO I are
+// HTML or PDF scrape only: skipped on purpose (see docs/ALERTS.md).
+export const SOURCES: { source: string; url: string; json: boolean; parse: (p: unknown, now: number) => AlertRow[] | null }[] = [
+  { source: 'USGS', url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson', json: true, parse: parseUsgs },
+  { source: 'GDACS', url: 'https://www.gdacs.org/xml/rss.xml', json: false, parse: parseGdacs },
+  { source: 'Open-Meteo', url: 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=9.645705&longitude=123.877951&current=pm2_5,us_aqi', json: true, parse: parseAir }
+]
+
+export type Existing = Map<string, { bulletin: string; previous_bulletin: string | null }>
+export type UpsertRow = AlertRow & { previous_bulletin: string | null; fetched_at: string; stale: false }
+export interface Port {
+  existing(source: string): Promise<Existing>
+  upsert(rows: UpsertRow[]): Promise<void>
+  setStale(source: string, stale: boolean): Promise<void>
+}
+export type Result = Record<string, { ok: boolean; rows: number }>
+
+export async function runIngest(port: Port, fetchText: (url: string) => Promise<string>, now: number): Promise<Result> {
+  const result: Result = {}
+  for (const s of SOURCES) {
+    try {
+      const text = await fetchText(s.url)
+      const parsed = s.parse(s.json ? JSON.parse(text) : text, now)
+      if (parsed === null) throw new Error('unexpected payload')
+      const rows = [...new Map(parsed.map((r) => [r.id, r])).values()] // one row per id (last wins): a duplicate id would make Postgres reject the whole batch
+      const old = await port.existing(s.source)
+      const stamp = new Date(now).toISOString()
+      await port.upsert(rows.map((r) => {
+        const o = old.get(r.id)
+        const previous_bulletin = o && o.bulletin !== r.bulletin ? o.bulletin : o?.previous_bulletin ?? null
+        return { ...r, previous_bulletin, fetched_at: stamp, stale: false as const }
+      }))
+      await port.setStale(s.source, false)
+      result[s.source] = { ok: true, rows: rows.length }
+    } catch {
+      // Degraded comms is the design centre (B-4): keep what we had, say it is old. A failing stale-flag write is swallowed: the next run retries.
+      await port.setStale(s.source, true).catch(() => undefined)
+      result[s.source] = { ok: false, rows: 0 }
+    }
+  }
+  return result
+}
