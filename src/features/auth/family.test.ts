@@ -5,6 +5,7 @@ const rpc = m.rpc
 vi.mock('./client', () => ({ supabase: { rpc: m.rpc, auth: { signInWithPasskey: m.pk, signOut: m.out } } }))
 vi.mock('./session', () => ({ getMember: m.member }))
 
+import * as fam from './family'
 import { signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
 
 describe('family cache', () => {
@@ -115,6 +116,20 @@ describe('signInWithPasskey', () => {
   it('a failed ceremony falls back to the PIN message', async () => {
     m.pk.mockResolvedValue({ error: { message: 'x' } })
     expect(await signInWithPasskey('p1')).toContain('Use your PIN instead')
+    expect(fam.passkeyCheck).toBeNull()
+  })
+  it('the pending check exists during the ceremony and is cleared on every exit', async () => {
+    let done!: (v: unknown) => void
+    m.pk.mockImplementation(() => new Promise((r) => { done = r }))
+    m.member.mockResolvedValue({ personId: 'p2' }); m.out.mockResolvedValue({})
+    const p = signInWithPasskey('p1')
+    expect(fam.passkeyCheck).toBeInstanceOf(Promise)
+    done({ error: null })
+    await p
+    expect(fam.passkeyCheck).toBeNull()
+    m.pk.mockRejectedValue(new Error('cancelled'))
+    await signInWithPasskey('p1')
+    expect(fam.passkeyCheck).toBeNull()
   })
 })
 

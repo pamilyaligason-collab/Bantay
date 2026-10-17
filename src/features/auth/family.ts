@@ -67,22 +67,25 @@ export let passkeyCheck: Promise<void> | null = null
 export async function signInWithPasskey(expectedPersonId: string): Promise<string | null> {
   if (!supabase || !passkeySupported()) return UNAVAILABLE
   const sb = supabase
+  // Register the pending check BEFORE the ceremony: SIGNED_IN can land during or right after it, and AuthGate must find this.
+  let release!: () => void
+  const mine = passkeyCheck = new Promise<void>((r) => { release = r })
+  const fail = 'Fingerprint or face did not work. Use your PIN instead.'
   try {
     const { error } = await sb.auth.signInWithPasskey()
-    if (error) return 'Fingerprint or face did not work. Use your PIN instead.'
-    let msg: string | null = null
-    passkeyCheck = (async () => {
-      try {
-        const m = await getMember()
-        if (m?.personId !== expectedPersonId) { msg = 'That fingerprint belongs to someone else. Tap your own name.'; await sb.auth.signOut({ scope: 'local' }) }
-      } catch {
-        msg = 'Fingerprint or face did not work. Use your PIN instead.'
-        await sb.auth.signOut({ scope: 'local' }).catch(() => {})
-      }
-    })()
-    try { await passkeyCheck } finally { passkeyCheck = null }
-    return msg
-  } catch { return 'Fingerprint or face did not work. Use your PIN instead.' }
+    if (error) return fail
+    try {
+      const m = await getMember()
+      if (m?.personId !== expectedPersonId) { await sb.auth.signOut({ scope: 'local' }); return 'That fingerprint belongs to someone else. Tap your own name.' }
+      return null
+    } catch {
+      await sb.auth.signOut({ scope: 'local' }).catch(() => {})
+      return fail
+    }
+  } catch { return fail } finally {
+    if (passkeyCheck === mine) passkeyCheck = null // every exit clears it; a newer attempt's check is left alone
+    release()
+  }
 }
 
 /** Register a passkey for the signed-in member on this phone, then remember that locally. */
