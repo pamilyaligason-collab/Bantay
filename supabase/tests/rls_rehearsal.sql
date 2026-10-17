@@ -1,5 +1,5 @@
 -- RLS rehearsal for 0001_health.sql on a THROWAWAY Postgres (never the live project). Stubs Supabase roles and auth.uid().
--- Run: copy the migration to /mig.sql, createdb bantay_rehearsal, psql -X -d bantay_rehearsal -f supabase/tests/rls_rehearsal.sql
+-- Run from supabase/tests: createdb bantay_rehearsal; psql -X -d bantay_rehearsal -f rls_rehearsal.sql
 -- Verified 2026-10-17 on Postgres 18 (WSL Ubuntu): 21/21 PASS.
 \set ON_ERROR_STOP on
 -- Supabase-like stubs
@@ -9,7 +9,7 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 grant usage on schema auth to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;
 grant usage on schema public to authenticated, anon;
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c'),('00000000-0000-0000-0000-00000000000d');
-\i /mig.sql
+ir ../migrations/0001_health.sql
 -- helper: expect an error
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
