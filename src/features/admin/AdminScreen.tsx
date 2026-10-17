@@ -19,6 +19,7 @@ const why = (e: string) =>
   : e === 'handle_taken' ? 'That handle is taken.'
   : e === 'bad_input' ? 'Check what you typed and try again.'
   : e === 'not_found' ? 'That member was not found.'
+  : e === 'forbidden' ? 'This link cannot be removed.'
   : 'Something went wrong. Try again.'
 
 type Ask = (text: string, run: () => Promise<void>, abort?: () => void) => void
@@ -347,7 +348,7 @@ export default function AdminScreen() {
       <Imports />
       <System />
       {pending && (
-        <div className="ad-confirm" role="alertdialog" aria-modal="true" aria-label="Confirm" aria-describedby="ad-confirm-text" onKeyDown={(e) => { if (e.key === 'Escape' && !busy) close(true) }}>
+        <div className="ad-confirm" role="alertdialog" aria-label="Confirm" aria-describedby="ad-confirm-text" onKeyDown={(e) => { if (e.key === 'Escape' && !busy) close(true) }}>
           <p id="ad-confirm-text">{pending.text}</p>
           <div className="ad-btns">
             <button className="ad-b" ref={cancelBtn} onClick={() => close(true)} disabled={busy}>Cancel</button>

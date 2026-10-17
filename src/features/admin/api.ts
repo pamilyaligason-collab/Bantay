@@ -40,15 +40,16 @@ export async function listCarers(): Promise<Res<Carer[]>> {
 export async function linkCarer(carerId: string, personId: string, canWrite: boolean): Promise<Res<null>> {
   if (!supabase) return NO
   try {
-    const { error } = await supabase.from('carers').upsert({ carer_id: carerId, person_id: personId, can_write: canWrite })
+    const { error } = await supabase.from('carers').upsert({ carer_id: carerId, person_id: personId, can_write: canWrite }, { onConflict: 'carer_id,person_id', ignoreDuplicates: true }) // never rewrites an existing link
     return error ? fail(error) : { ok: true, data: null }
   } catch (e) { return fail(e) }
 }
 export async function unlinkCarer(carerId: string, personId: string): Promise<Res<null>> {
   if (!supabase) return NO
   try {
-    const { error } = await supabase.from('carers').delete().eq('carer_id', carerId).eq('person_id', personId)
-    return error ? fail(error) : { ok: true, data: null }
+    const { data, error } = await supabase.from('carers').delete().eq('carer_id', carerId).eq('person_id', personId).select()
+    if (error) return fail(error)
+    return data && data.length > 0 ? { ok: true, data: null } : { ok: false, error: 'forbidden' } // RLS hides a row it will not delete
   } catch (e) { return fail(e) }
 }
 

@@ -11,14 +11,14 @@ create function auth.uid() returns uuid language sql stable as $$ select nullif(
 grant usage on schema auth to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;
 grant usage on schema public to authenticated, anon;
 insert into auth.users values ('00000000-0000-0000-0000-00000000000a'),('00000000-0000-0000-0000-00000000000b'),('00000000-0000-0000-0000-00000000000c');
-\i /mnt/d/Claude/Bantay-A3/supabase/migrations/0001_health.sql
+\ir ../migrations/0001_health.sql
 -- STUB of lane A1's is_admin (0002_auth.sql): A is admin, B and C are members.
 create table public.app_roles (user_id uuid primary key, role text not null, disabled boolean not null default false);
 insert into public.app_roles values ('00000000-0000-0000-0000-00000000000a','admin'),('00000000-0000-0000-0000-00000000000b','member'),('00000000-0000-0000-0000-00000000000c','member');
 create function public.is_admin() returns boolean language sql stable security definer set search_path = '' as
   $$ select exists (select 1 from public.app_roles where user_id = auth.uid() and role = 'admin' and not disabled) $$;
 grant execute on function public.is_admin() to authenticated;
-\i /mnt/d/Claude/Bantay-A3/supabase/migrations/0004_admin.sql
+\ir ../migrations/0004_admin.sql
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
 grant execute on function pg_temp.fails(text), pg_temp.ok(boolean,text) to authenticated, anon;
@@ -48,6 +48,9 @@ select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (client_id, ki
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (at, kind, name) values ('2000-01-01','screen','today')$$), 'client cannot set at (column grant)');
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (id, kind, name) values (999,'screen','today')$$), 'client cannot set id (column grant)');
 insert into public.people (id, display_name) values ('10000000-0000-0000-0000-0000000000c1','Test kid of C');
+select pg_temp.ok((select count(*) from public.usage_events) = 5, 'C reads only their own 5 events');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select pg_temp.ok((select count(*) from public.usage_events) = 1, 'cross-user isolation: B still sees exactly 1 (their own)');
 -- anon
 reset role; set role anon;
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('screen','health')$$), 'anon cannot insert');
@@ -68,6 +71,8 @@ select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-00
 select pg_temp.ok(pg_temp.fails($$update public.carers set can_write = true where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1'$$), 'admin cannot raise a link to can_write');
 delete from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000c1';
 select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000c1') = 1, 'admin cannot delete the creator link of a no-login person');
+select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000c','10000000-0000-0000-0000-0000000000c1', false) on conflict (carer_id, person_id) do update set can_write = excluded.can_write$$), 'admin upsert cannot downgrade the creator writer link');
+select pg_temp.ok((select can_write from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000c1'), 'creator link still can_write after the upsert attempt');
 delete from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1';
 select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1') = 0, 'admin removes an ordinary read-only link');
 select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000a','10000000-0000-0000-0000-0000000000b1', false)$$), 'admin cannot link self as carer');

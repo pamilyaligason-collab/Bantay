@@ -127,13 +127,13 @@ describe('broadcast (B-7)', () => {
 })
 
 describe('confirm dialog and PIN field', () => {
-  it('focuses Cancel, is modal, Escape closes and focus returns to the trigger', async () => {
+  it('focuses Cancel, is not marked modal, Escape closes and focus returns to the trigger', async () => {
     render(<AdminScreen />)
     const btn = await screen.findByRole('button', { name: 'Disable Lola' })
     btn.focus()
     fireEvent.click(btn)
     const dlg = await screen.findByRole('alertdialog')
-    expect(dlg.getAttribute('aria-modal')).toBe('true')
+    expect(dlg.getAttribute('aria-modal')).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(within(dlg).getByRole('button', { name: 'Cancel' })))
     fireEvent.keyDown(dlg, { key: 'Escape' })
     expect(screen.queryByRole('alertdialog')).toBeNull()
@@ -157,5 +157,16 @@ describe('confirm dialog and PIN field', () => {
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
     expect(await screen.findByText('That handle is taken.')).toBeTruthy()
     expect((q.getByLabelText('PIN (6 digits)') as HTMLInputElement).value).toBe('')
+  })
+})
+
+describe('unlinkCarer', () => {
+  const del = (data: unknown[]) => ({ delete: () => ({ eq: () => ({ eq: () => ({ select: async () => ({ data, error: null }) }) }) }) })
+  it('reports forbidden when no row was deleted, ok when one was', async () => {
+    const { unlinkCarer } = await import('./api')
+    h.from.mockImplementation(() => del([]))
+    expect(await unlinkCarer('c', 'p')).toEqual({ ok: false, error: 'forbidden' })
+    h.from.mockImplementation(() => del([{}]))
+    expect(await unlinkCarer('c', 'p')).toEqual({ ok: true, data: null })
   })
 })

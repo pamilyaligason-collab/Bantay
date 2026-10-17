@@ -45,7 +45,8 @@ create policy carers_admin_read on public.carers for select to authenticated usi
 create policy carers_admin_insert on public.carers for insert to authenticated
   with check (public.is_admin() and carer_id <> auth.uid() and not can_write);
 create policy carers_admin_update on public.carers for update to authenticated
-  using (public.is_admin() and carer_id <> auth.uid()) with check (public.is_admin() and carer_id <> auth.uid() and not can_write);
+  using (public.is_admin() and carer_id <> auth.uid() and not public.is_person_creator(person_id, carer_id))
+  with check (public.is_admin() and carer_id <> auth.uid() and not can_write);
 create policy carers_admin_delete on public.carers for delete to authenticated
   using (public.is_admin() and carer_id <> auth.uid() and not public.is_person_creator(person_id, carer_id));
 
