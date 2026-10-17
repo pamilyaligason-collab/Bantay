@@ -14,9 +14,11 @@ body { background: var(--bg); }
 .bt button:focus-visible, .bt a:focus-visible, .bt input:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .bt button { transition: none; } .bt button:active { transform: none; } }
 
+.topbar, .scroll, .tabs { z-index: 1; }
+.topbar, .scroll { position: relative; }
 .topbar { padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
-.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: contain; touch-action: pan-y pinch-zoom; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
 .scroll > * { min-width: 0; }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
 .hdr h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.15; overflow-wrap: anywhere; }
@@ -37,8 +39,6 @@ body { background: var(--bg); }
 .chev { color: var(--ink2); flex: none; }
 .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
 .sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left 200ms ease; }
-.glass { background: var(--bar); -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%); border: 0.5px solid var(--bar-edge); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass { background: var(--cell); } }
 
 .tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 .tabs button { min-height: 54px; min-width: 0; border: 0; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--ink); background: transparent; }

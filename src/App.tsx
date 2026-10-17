@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { PullIndicator, Sky, springIn, usePullToRefresh, useSwipe } from './features/look'
 import Family from './screens/Family'
 import Health from './screens/Health'
 import Records from './screens/Records'
@@ -25,10 +26,23 @@ export default function App() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
 
+  const go = (i: number) => { const t = TABS[i]; if (t) location.hash = t.id }
+  const idx = TABS.findIndex((t) => t.id === tab.id)
+  const swipe = useSwipe<HTMLElement>({ onLeft: () => go(idx + 1), onRight: () => go(idx - 1) })
+  const ptr = usePullToRefresh<HTMLElement>(() => window.dispatchEvent(new Event('bantay:refresh')), tab.id === 'today' || tab.id === 'safety')
+  const scroll = useRef<HTMLElement | null>(null)
+  const prev = useRef(idx)
+  useEffect(() => {
+    if (prev.current !== idx && scroll.current) springIn(scroll.current, idx > prev.current ? 1 : -1)
+    prev.current = idx
+  }, [idx])
+
   return (
     <div className="bt">
+      <Sky state="clear" />
       <div className="topbar" />
-      <main className="scroll">
+      <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
+        <PullIndicator pull={ptr.pull} refreshing={ptr.refreshing} />
         <tab.Screen />
       </main>
       <nav aria-label="Main" className="glass tabs">
