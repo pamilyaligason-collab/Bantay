@@ -107,7 +107,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     return
   }
   const code = await errCode(res)
-  if (res.status === 403 && row.table === 'push_subscriptions') return void (await db.outbox.delete(row.id!)) // not allowed to subscribe (e.g. disabled): drop silently, no dead letter
+  if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
@@ -228,9 +228,11 @@ async function run(force: boolean) {
     setState({ offline: false })
   } catch (e) {
     const err = e instanceof SyncError ? e : new SyncError('net')
-    if (err.kind !== 'net') void track('error', 'sync_failed') // offline is normal, not a failure
+    // Track once per failure streak (bo unset), never for offline; perm errors back off too, so a tracked
+    // usage_events row cannot re-trigger a failing run every 3 s.
+    if (err.kind !== 'net' && !bo) void track('error', 'sync_failed')
     if (err.kind === 'auth') { pausedToken = token; setState({ paused: true }) }
-    else if (err.kind === 'net' || err.kind === 'transient') {
+    else {
       const fails = (bo?.fails ?? 0) + 1
       await db.kv.put({ key: BACKOFF_KEY, value: { fails, nextAt: Date.now() + backoffMinutes(fails) * 60_000 } })
       if (err.kind === 'net') setState({ offline: true })
