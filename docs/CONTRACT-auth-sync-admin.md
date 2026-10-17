@@ -43,6 +43,13 @@ Uses `@supabase/supabase-js` with VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_
 - `usage_events(id bigint identity, user_id uuid default auth.uid(), at timestamptz default now(), kind text, name text, app_version text)`
   insert own only; select admin only. **No health values ever**: `kind` in ('screen','action','error'), `name` from a fixed allowlist
   in `src/features/admin/events.ts` (`track(kind, name)` validates and enqueues `usage_events`).
+- Fix round 1 (orchestrator decisions): `usage_events` also has `client_id uuid not null default gen_random_uuid()` (unique; sync upserts `on_conflict=client_id`);
+  clients may insert only user_id, kind, name, app_version, client_id (`at` is server time). A member can read back their own rows (needed for ON CONFLICT DO NOTHING); an admin reads all.
+  The database check on `name` is looser than the client allowlist: it only requires `^[a-z_]{1,40}$`. The strict allowlist lives in `events.ts`; a rogue client can store any letters-and-underscores name but never a digit or a value.
+  `track()` queues nothing when signed out or when Supabase is not configured.
+- Safety overrides outbox row: `enqueue('safety_overrides','upsert',{ kind: 'place'|'hotline', key, data, removed:false })`.
+- Broadcast: Supabase Edge Function `broadcast` (`supabase.functions.invoke('broadcast',{body:{t}})`), admin only, sends web push `{"t":id}`. Secrets: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, ALLOWED_ORIGIN.
+- Carer links (interim): admin may create read-only links only (`can_write = false`), never for themselves, and cannot delete the creator's link of a no-login person.
 - Members are told on onboarding: "Your admin can see which screens you use, never your health values."
 - `<AdminScreen/>` exported from `src/features/admin/`, shown at `#admin` only when `getMember().role === 'admin'` (orchestrator wires the route).
 - Admin features, first cut: members (add, handle, PIN reset, role, disable, Google invite, carer links with can_write), usage insights

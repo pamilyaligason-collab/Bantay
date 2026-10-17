@@ -11,7 +11,6 @@ const h = vi.hoisted(() => {
 })
 let connected = true
 vi.mock('../auth/client', () => ({ get supabase() { return connected ? h.sb : null } }))
-vi.mock('../auth/session', () => ({ getAccessToken: async () => 'tok' }))
 
 import AdminScreen from './AdminScreen'
 import { sendBroadcast } from './broadcast'
@@ -98,34 +97,65 @@ describe('AdminScreen', () => {
     fireEvent.click(q.getByRole('button', { name: 'Save' }))
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
     await waitFor(async () => expect((await db.outbox.toArray()).map((r) => r.table)).toEqual(['safety_overrides']))
+    const row = (await db.outbox.toArray())[0]!.payload as { kind: string; key: string; data: object; removed: boolean }
+    expect(row).toMatchObject({ kind: 'place', removed: false, data: { lat: 9.65, lon: 123.88 } })
+    expect(Object.keys(row).sort()).toEqual(['data', 'key', 'kind', 'removed'])
     expect(Object.values((await db.kv.get('safety.overrides'))!.value as object)[0]).toMatchObject({ lat: 9.65, lon: 123.88 })
   })
 })
 
 describe('broadcast (B-7)', () => {
-  it('POSTs exactly {t} with the admin bearer, and refuses anything else', async () => {
-    vi.stubEnv('VITE_BROADCAST_URL', 'https://n8n.test/webhook/bantay-broadcast')
-    const f = vi.fn(async () => new Response('{}', { status: 200 }))
-    expect(await sendBroadcast('storm_warning', f as unknown as typeof fetch)).toEqual({ ok: true })
-    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
-    expect(url).toBe('https://n8n.test/webhook/bantay-broadcast')
-    expect(init.body).toBe('{"t":"storm_warning"}')
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
-    for (const bad of ['dose_due', 'free text', '']) expect((await sendBroadcast(bad, f as unknown as typeof fetch)).ok).toBe(false)
-    expect(f).toHaveBeenCalledTimes(1)
-    vi.unstubAllEnvs()
+  it('invokes the broadcast function with exactly {t}, and refuses anything else', async () => {
+    h.invoke.mockResolvedValue({ data: { ok: true }, error: null })
+    expect(await sendBroadcast('storm_warning')).toEqual({ ok: true })
+    expect(h.invoke).toHaveBeenCalledWith('broadcast', { body: { t: 'storm_warning' } })
+    for (const bad of ['dose_due', 'free text', '']) expect((await sendBroadcast(bad)).ok).toBe(false)
+    expect(h.invoke).toHaveBeenCalledTimes(1)
+  })
+  it('maps 403 to an admin-only message', async () => {
+    h.invoke.mockResolvedValue({ data: null, error: { context: { status: 403 } } })
+    expect(await sendBroadcast('flood_watch')).toEqual({ ok: false, error: 'Only an admin can send this.' })
   })
   it('the screen sends only {t} after confirmation', async () => {
-    vi.stubEnv('VITE_BROADCAST_URL', 'https://n8n.test/b')
-    const f = vi.fn(async () => new Response('{}', { status: 200 }))
-    vi.stubGlobal('fetch', f)
     render(<AdminScreen />)
     fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'flood_watch' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send broadcast' }))
-    expect(f).not.toHaveBeenCalled()
+    expect(h.invoke.mock.calls.some((c) => c[0] === 'broadcast')).toBe(false)
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
-    await waitFor(() => expect(f).toHaveBeenCalledTimes(1))
-    expect((f.mock.calls[0] as unknown as [string, RequestInit])[1].body).toBe('{"t":"flood_watch"}')
-    vi.unstubAllGlobals(); vi.unstubAllEnvs()
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('broadcast', { body: { t: 'flood_watch' } }))
+  })
+})
+
+describe('confirm dialog and PIN field', () => {
+  it('focuses Cancel, is modal, Escape closes and focus returns to the trigger', async () => {
+    render(<AdminScreen />)
+    const btn = await screen.findByRole('button', { name: 'Disable Lola' })
+    btn.focus()
+    fireEvent.click(btn)
+    const dlg = await screen.findByRole('alertdialog')
+    expect(dlg.getAttribute('aria-modal')).toBe('true')
+    await waitFor(() => expect(document.activeElement).toBe(within(dlg).getByRole('button', { name: 'Cancel' })))
+    fireEvent.keyDown(dlg, { key: 'Escape' })
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(btn))
+    expect(actions()).not.toContain('disable')
+  })
+  it('clears the PIN field on cancel and on failure', async () => {
+    render(<AdminScreen />)
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }))
+    const fill = () => {
+      fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
+      fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
+      fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
+      fireEvent.click(q.getByRole('button', { name: 'Add member' }))
+    }
+    fill()
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }))
+    expect((q.getByLabelText('PIN (6 digits)') as HTMLInputElement).value).toBe('')
+    h.invoke.mockImplementation(async (_n: string, o: { body: { action: string } }) => (o.body.action === 'create' ? { data: { ok: false, error: 'handle_taken' }, error: null } : { data: { ok: true, members }, error: null }))
+    fill()
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
+    expect(await screen.findByText('That handle is taken.')).toBeTruthy()
+    expect((q.getByLabelText('PIN (6 digits)') as HTMLInputElement).value).toBe('')
   })
 })

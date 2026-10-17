@@ -33,7 +33,7 @@ select pg_temp.ok(not pg_temp.fails($$insert into public.usage_events (kind, nam
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (user_id, kind, name) values ('00000000-0000-0000-0000-00000000000c','screen','health')$$), 'member cannot insert as another user');
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('screen','bp_150')$$), 'db rejects a digit-bearing name');
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('reading','health')$$), 'db rejects an unknown kind');
-select pg_temp.ok((select count(*) from public.usage_events) = 0, 'member cannot read events (not even own)');
+select pg_temp.ok((select count(*) from public.usage_events) = 1, 'member reads only their own events, not others');
 select pg_temp.ok(pg_temp.fails($$update public.usage_events set name = 'x'$$), 'member cannot update events');
 select pg_temp.ok(pg_temp.fails($$delete from public.usage_events$$), 'member cannot delete events');
 select pg_temp.ok(pg_temp.fails($$select * from public.admin_usage_summary(30)$$), 'member cannot call admin_usage_summary');
@@ -42,14 +42,20 @@ select pg_temp.ok(pg_temp.fails($$select * from public.admin_import_counts()$$),
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
 select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000c','10000000-0000-0000-0000-0000000000b1', true)$$), 'member (not admin) cannot link carers');
 insert into public.usage_events (kind, name) values ('screen','health'), ('screen','health'), ('screen','safety'), ('action','alerts_on');
+insert into public.usage_events (client_id, kind, name) values ('20000000-0000-0000-0000-000000000001','screen','today');
+insert into public.usage_events (client_id, kind, name) values ('20000000-0000-0000-0000-000000000001','screen','today') on conflict (client_id) do nothing;
+select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (client_id, kind, name) values ('20000000-0000-0000-0000-000000000001','screen','today')$$), 'duplicate client_id is rejected without on conflict');
+select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (at, kind, name) values ('2000-01-01','screen','today')$$), 'client cannot set at (column grant)');
+select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (id, kind, name) values (999,'screen','today')$$), 'client cannot set id (column grant)');
+insert into public.people (id, display_name) values ('10000000-0000-0000-0000-0000000000c1','Test kid of C');
 -- anon
 reset role; set role anon;
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('screen','health')$$), 'anon cannot insert');
 select pg_temp.ok(pg_temp.fails($$select * from public.admin_usage_summary(30)$$), 'anon cannot call admin RPCs');
 -- admin A
 reset role; set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
-select pg_temp.ok((select count(*) from public.usage_events) = 5, 'admin reads all events');
-select pg_temp.ok((select events from public.admin_usage_summary(30) where user_id = '00000000-0000-0000-0000-00000000000c') = 4, 'admin_usage_summary counts events per user');
+select pg_temp.ok((select count(*) from public.usage_events) = 6, 'admin reads all events, duplicate client_id counted once');
+select pg_temp.ok((select events from public.admin_usage_summary(30) where user_id = '00000000-0000-0000-0000-00000000000c') = 5, 'admin_usage_summary counts events per user');
 select pg_temp.ok((select top_screens->0->>'name' from public.admin_usage_summary(30) where user_id = '00000000-0000-0000-0000-00000000000c') = 'health', 'top screen is the most used');
 select pg_temp.ok((select alerts_on and active_7 and active_30 from public.admin_usage_summary(30) where user_id = '00000000-0000-0000-0000-00000000000c'), 'alerts on and active flags');
 select pg_temp.ok((select readings = 2 and consults = 1 from public.admin_import_counts() where person_id = '10000000-0000-0000-0000-0000000000b1'), 'admin_import_counts returns counts');
@@ -57,7 +63,13 @@ select pg_temp.ok(not exists (select 1 from pg_proc p join pg_namespace n on n.o
    where n.nspname = 'public' and p.proname in ('admin_usage_summary','admin_import_counts')
      and (pg_get_function_result(p.oid) ~* '\mvalue\M|unit|lab_|systolic|diastolic')), 'RPC output types have no value column');
 select pg_temp.ok(not (coalesce((select string_agg(to_jsonb(u)::text, ' ') from public.admin_usage_summary(30) u), '') || coalesce((select string_agg(to_jsonb(i)::text, ' ') from public.admin_import_counts() i), '') ~ '123456'), 'RPC output carries no reading value');
-select pg_temp.ok(not pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000c','10000000-0000-0000-0000-0000000000b1', true)$$), 'admin links a carer with can_write');
+select pg_temp.ok(not pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000c','10000000-0000-0000-0000-0000000000b1', false)$$), 'admin links a read-only carer');
+select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000b','10000000-0000-0000-0000-0000000000c1', true)$$), 'admin cannot create a can_write link');
+select pg_temp.ok(pg_temp.fails($$update public.carers set can_write = true where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1'$$), 'admin cannot raise a link to can_write');
+delete from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000c1';
+select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000c1') = 1, 'admin cannot delete the creator link of a no-login person');
+delete from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1';
+select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000-0000-0000-0000-00000000000c' and person_id = '10000000-0000-0000-0000-0000000000b1') = 0, 'admin removes an ordinary read-only link');
 select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000a','10000000-0000-0000-0000-0000000000b1', false)$$), 'admin cannot link self as carer');
 select pg_temp.ok((select count(*) from public.readings) = 0, 'admin role alone does not read readings');
 reset role;

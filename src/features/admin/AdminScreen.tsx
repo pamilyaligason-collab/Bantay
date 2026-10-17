@@ -21,7 +21,7 @@ const why = (e: string) =>
   : e === 'not_found' ? 'That member was not found.'
   : 'Something went wrong. Try again.'
 
-type Ask = (text: string, run: () => Promise<void>) => void
+type Ask = (text: string, run: () => Promise<void>, abort?: () => void) => void
 type Loaded<T> = { state: 'loading' } | { state: 'err'; error: string } | { state: 'ok'; data: T }
 
 /** Load once, with a reload. Never throws. */
@@ -66,7 +66,7 @@ function AddMember({ ask, done }: { ask: Ask; done: () => void }) {
       if (!r.ok) throw new Error(why(r.error))
       setF({ displayName: '', handle: '', pin: '', role: 'member' })
       done()
-    })
+    }, () => setF((x) => ({ ...x, pin: '' })))
   }
   return (
     <form className="ad-pad" onSubmit={submit} aria-label="Add a member">
@@ -141,24 +141,23 @@ function Invite({ ask }: { ask: Ask }) {
 
 function CarerLinks({ members, ask }: { members: Member[]; ask: Ask }) {
   const [links, reload] = useLoad<Carer[]>(listCarers)
-  const [f, setF] = useState({ carer: '', person: '', write: false })
+  const [f, setF] = useState({ carer: '', person: '' })
   const people = members.filter((m) => m.personId)
   const name = (id: string, byPerson: boolean) => members.find((m) => (byPerson ? m.personId : m.userId) === id)?.displayName ?? 'Someone'
   return (
     <div>
       <div className="ad-pad">
         <strong>Carer links</strong>
-        <span className="sub">A carer can see another person's health records. Read only unless you allow writing.</span>
+        <span className="sub">A carer can see another person's health records, read only.</span>
         <Field label="Carer"><select className="ad-in" value={f.carer} onChange={(e) => setF({ ...f, carer: e.target.value })}><option value="">Choose</option>{members.map((m) => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}</select></Field>
-        <Field label="Looks after"><select className="ad-in" value={f.person} onChange={(e) => setF({ ...f, person: e.target.value })}><option value="">Choose</option>{people.map((m) => <option key={m.personId!} value={m.personId!}>{m.displayName}</option>)}</select></Field>
-        <label className="ad-lbl" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}><input type="checkbox" checked={f.write} onChange={(e) => setF({ ...f, write: e.target.checked })} /> Can add and edit records</label>
-        <button className="ad-b go" disabled={!f.carer || !f.person} onClick={() => ask(`Link ${name(f.carer, false)} to ${name(f.person, true)}${f.write ? ' with edit rights' : ' as read only'}?`, async () => {
-          const r = await linkCarer(f.carer, f.person, f.write); if (!r.ok) throw new Error(why(r.error)); await reload()
-        })}>Link carer</button>
+        <Field label="Can view records of"><select className="ad-in" value={f.person} onChange={(e) => setF({ ...f, person: e.target.value })}><option value="">Choose</option>{people.map((m) => <option key={m.personId!} value={m.personId!}>{m.displayName}</option>)}</select></Field>
+        <button className="ad-b go" disabled={!f.carer || !f.person} onClick={() => ask(`Let ${name(f.carer, false)} view the records of ${name(f.person, true)}?`, async () => {
+          const r = await linkCarer(f.carer, f.person, false); if (!r.ok) throw new Error(why(r.error)); await reload()
+        })}>Allow viewing</button>
       </div>
       {links.state === 'ok' && links.data.map((l) => (
         <div className="ad-row" key={l.carer_id + l.person_id}>
-          <span className="ad-grow">{name(l.carer_id, false)} looks after {name(l.person_id, true)} <span className="ad-tag">{l.can_write ? 'can edit' : 'read only'}</span></span>
+          <span className="ad-grow">{name(l.carer_id, false)} can view {name(l.person_id, true)} <span className="ad-tag">{l.can_write ? 'can edit' : 'view only'}</span></span>
           <button className="ad-b bad" aria-label={`Remove link ${name(l.carer_id, false)} to ${name(l.person_id, true)}`} onClick={() => ask(`Remove ${name(l.carer_id, false)} as carer of ${name(l.person_id, true)}?`, async () => {
             const r = await unlinkCarer(l.carer_id, l.person_id); if (!r.ok) throw new Error(why(r.error)); await reload()
           })}>Remove</button>
@@ -237,7 +236,7 @@ function SafetyData({ ask, say }: { ask: Ask; say: (s: string) => void }) {
         ask(`Change ${cur.e.name} for every family phone?`, async () => {
           const o = ((await db.kv.get(OVERRIDES_KEY))?.value as Overrides | undefined) ?? {}
           await putKv(OVERRIDES_KEY, { ...o, [id]: { ...o[id], ...r.patch } }) // applies on this phone at once
-          await enqueue('safety_overrides', 'upsert', { id, ...r.patch }) // reaches the others when sync runs
+          await enqueue('safety_overrides', 'upsert', { kind: cur.geo ? 'place' : 'hotline', key: id, data: r.patch, removed: false }) // reaches the others when sync runs
           setF({ lat: '', lon: '', phone: '' })
           say(`Saved ${cur.e.name}. It reaches other phones when they sync.`)
         })
@@ -314,19 +313,26 @@ export default function AdminScreen() {
     const r = await adminMembers<{ members: Member[] }>({ action: 'list' })
     return r.ok ? { ok: true, data: r.data.members ?? [] } : r
   })
-  const [pending, setPending] = useState<{ text: string; run: () => Promise<void> } | null>(null)
+  const [pending, setPending] = useState<{ text: string; run: () => Promise<void>; abort?: () => void } | null>(null)
   const [note, setNote] = useState<{ text: string; bad: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
-  const confirmBtn = useRef<HTMLButtonElement>(null)
-  useEffect(() => { if (pending) confirmBtn.current?.focus() }, [pending])
-  const ask: Ask = (text, run) => { setNote(null); setPending({ text, run }) }
+  const cancelBtn = useRef<HTMLButtonElement>(null)
+  const trigger = useRef<HTMLElement | null>(null)
+  useEffect(() => { if (pending) cancelBtn.current?.focus() }, [pending])
+  const ask: Ask = (text, run, abort) => { setNote(null); trigger.current = document.activeElement as HTMLElement | null; setPending({ text, run, abort }) }
+  const close = (aborted: boolean) => {
+    if (aborted) pending?.abort?.()
+    setPending(null)
+    const t = trigger.current
+    if (t?.isConnected) setTimeout(() => t.focus(), 0)
+  }
   const say = (text: string) => setNote({ text, bad: false })
   const go = async () => {
     if (!pending) return
     setBusy(true)
-    try { await pending.run(); setNote((n) => n ?? { text: 'Done.', bad: false }) } catch (e) { setNote({ text: (e as Error).message || 'Something went wrong. Try again.', bad: true }) }
+    try { await pending.run(); setNote((n) => n ?? { text: 'Done.', bad: false }) } catch (e) { setNote({ text: (e as Error).message || 'Something went wrong. Try again.', bad: true }); pending.abort?.() }
     setBusy(false)
-    setPending(null)
+    close(false)
   }
   return (
     <div className="ad">
@@ -341,11 +347,11 @@ export default function AdminScreen() {
       <Imports />
       <System />
       {pending && (
-        <div className="ad-confirm" role="alertdialog" aria-label="Confirm" aria-describedby="ad-confirm-text">
+        <div className="ad-confirm" role="alertdialog" aria-modal="true" aria-label="Confirm" aria-describedby="ad-confirm-text" onKeyDown={(e) => { if (e.key === 'Escape' && !busy) close(true) }}>
           <p id="ad-confirm-text">{pending.text}</p>
           <div className="ad-btns">
-            <button className="ad-b" onClick={() => setPending(null)} disabled={busy}>Cancel</button>
-            <button className="ad-b go" ref={confirmBtn} onClick={go} disabled={busy}>Confirm</button>
+            <button className="ad-b" ref={cancelBtn} onClick={() => close(true)} disabled={busy}>Cancel</button>
+            <button className="ad-b go" onClick={go} disabled={busy}>Confirm</button>
           </div>
         </div>
       )}

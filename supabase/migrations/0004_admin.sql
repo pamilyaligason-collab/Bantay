@@ -9,30 +9,45 @@ create table public.usage_events (
   at timestamptz not null default now(), -- arrival time; an offline phone's queued events are stamped when they sync (ponytail: client time later if needed)
   kind text not null check (kind in ('screen', 'action', 'error')),
   name text not null check (name ~ '^[a-z_]{1,40}$'),
-  app_version text check (app_version ~ '^[0-9a-z.+-]{1,20}$')
+  app_version text check (app_version ~ '^[0-9a-z.+-]{1,20}$'),
+  client_id uuid not null default gen_random_uuid() -- lane A2 upserts on_conflict=client_id, so a retried batch never double counts
 );
+create unique index usage_events_client_id on public.usage_events (client_id);
 create index usage_events_user_at on public.usage_events (user_id, at desc);
 create index usage_events_at on public.usage_events (at desc);
 
 alter table public.usage_events enable row level security;
 revoke all on public.usage_events from anon, authenticated;
-grant select, insert on public.usage_events to authenticated;
+-- column-level insert: id and at (server time) can never be set by a client
+grant select on public.usage_events to authenticated;
+grant insert (user_id, kind, name, app_version, client_id) on public.usage_events to authenticated;
 
--- Everyone signed in writes their own rows. Only an admin reads them. Nobody updates or deletes.
+-- Everyone signed in writes their own rows. Only an admin reads everyone's; a member reads their own. Nobody updates or deletes.
 create policy usage_events_insert on public.usage_events for insert to authenticated
   with check (user_id = auth.uid());
 create policy usage_events_read on public.usage_events for select to authenticated
   using (public.is_admin());
+-- A member can read back only their own rows. Postgres needs this for INSERT ... ON CONFLICT (client_id) DO NOTHING
+-- (the sync retry path); it exposes nothing new, since the member made these events.
+create policy usage_events_read_own on public.usage_events for select to authenticated
+  using (user_id = auth.uid());
 
--- Admin links carers (D-17: carer links with can_write). An admin may link anyone except themselves, so the admin
--- role alone never grants reading a family member's health data.
+-- Admin links carers (interim, owner decision open). An admin can only create READ-ONLY links (can_write = false),
+-- never with themselves as carer, and cannot remove the link of a no-login person's creator (people.created_by),
+-- so the admin role alone never grants health data and a no-login person is never orphaned.
+create function public.is_person_creator(pid uuid, uid uuid) returns boolean
+  language sql stable security definer set search_path = '' as
+  $$ select exists (select 1 from public.people where id = pid and created_by = uid) $$;
+revoke execute on function public.is_person_creator(uuid, uuid) from public, anon;
+grant execute on function public.is_person_creator(uuid, uuid) to authenticated;
+
 create policy carers_admin_read on public.carers for select to authenticated using (public.is_admin());
 create policy carers_admin_insert on public.carers for insert to authenticated
-  with check (public.is_admin() and carer_id <> auth.uid());
+  with check (public.is_admin() and carer_id <> auth.uid() and not can_write);
 create policy carers_admin_update on public.carers for update to authenticated
-  using (public.is_admin() and carer_id <> auth.uid()) with check (public.is_admin() and carer_id <> auth.uid());
+  using (public.is_admin() and carer_id <> auth.uid()) with check (public.is_admin() and carer_id <> auth.uid() and not can_write);
 create policy carers_admin_delete on public.carers for delete to authenticated
-  using (public.is_admin() and carer_id <> auth.uid());
+  using (public.is_admin() and carer_id <> auth.uid() and not public.is_person_creator(person_id, carer_id));
 
 -- Per member: last seen, event count in the window, top 3 screens, active in 7 / 30 days, alerts and sensors on.
 -- Output has no health columns by construction.

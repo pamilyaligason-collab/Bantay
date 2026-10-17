@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { enqueue } from '../../db'
+import { supabase } from '../auth/client'
+import { getAccessToken } from '../auth/session'
 
 // Usage insights (contract D-16..D-19). PRIVACY: only these fixed names are ever recorded. No health values, no free text.
 // Anything not on the list is dropped, so a reading like "bp_150" or a name with a digit cannot get through.
@@ -20,6 +22,7 @@ export async function track(kind: string, name: string): Promise<boolean> {
   const names: readonly string[] | undefined = Object.hasOwn(EVENT_NAMES, kind) ? EVENT_NAMES[kind as EventKind] : undefined
   if (!names?.includes(name)) return false
   try {
+    if (!supabase || !(await getAccessToken())) return false // nobody to sync for: signed out or not configured
     await enqueue('usage_events', 'insert', { kind, name, appVersion: version() })
     return true
   } catch {

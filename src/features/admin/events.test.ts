@@ -1,11 +1,22 @@
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { EVENT_NAMES, track } from './events'
 import { pinError } from './pin'
 
+const st = vi.hoisted(() => ({ client: true, token: 'tok' as string | null }))
+vi.mock('../auth/client', () => ({ get supabase() { return st.client ? {} : null } }))
+vi.mock('../auth/session', () => ({ getAccessToken: async () => st.token }))
+
 describe('track allowlist (B-7)', () => {
-  beforeEach(() => db.outbox.clear())
+  beforeEach(async () => { st.client = true; st.token = 'tok'; await db.outbox.clear() })
+  it('queues nothing when not configured or signed out', async () => {
+    st.client = false
+    expect(await track('screen', 'health')).toBe(false)
+    st.client = true; st.token = null
+    expect(await track('screen', 'health')).toBe(false)
+    expect(await db.outbox.count()).toBe(0)
+  })
   it('queues an allowed event with only kind, name and appVersion', async () => {
     expect(await track('screen', 'health')).toBe(true)
     const rows = await db.outbox.toArray()
