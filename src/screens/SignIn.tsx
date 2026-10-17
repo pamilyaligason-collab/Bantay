@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sky } from '../features/look'
 import { signInWithGoogle, signInWithPin } from '../features/auth/pinLogin'
-import { hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
+import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
+import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
 
 /** Six-digit PIN pad (56px keys). Calls onDone with the PIN; the pad clears itself so a miss starts fresh. */
@@ -62,8 +63,8 @@ function OtherWays({ run, busy }: { run: (f: () => Promise<string | null>) => vo
 
 /** The tapped person. Fingerprint first when it is on for this phone; the PIN pad shows on cancel, error, mismatch, or
  *  "Use PIN instead". The prompt starts once per mount (the card is keyed by person), so a miss never loops. */
-function PickCard({ pick, busy, run, setError, onBack }: {
-  pick: FamilyMember; busy: boolean; run: (f: () => Promise<string | null>) => void
+function PickCard({ pick, busy, run, setError, onBack, returning }: {
+  pick: FamilyMember; returning: boolean; busy: boolean; run: (f: () => Promise<string | null>) => void
   setError: (e: string) => void; onBack: () => void
 }) {
   const fp = passkeySupported() && hasPasskeyFlag(pick.personId)
@@ -83,14 +84,16 @@ function PickCard({ pick, busy, run, setError, onBack }: {
   }
   useEffect(() => {
     alive.current = true
-    if (fp) ask()
+    if (fp) ask() // older iOS Safari may reject a passkey prompt without a user gesture; the catch path then shows the PIN pad
     return () => { alive.current = false; abandonPasskeyWait() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (phase === 'pin') head.current?.focus() }, [phase])
   const pin = pick.provider === 'pin' && pick.handle ? pick.handle : null
   return (
     <div className="grp pickcard">
-      <span className="avatar big" aria-hidden="true">{pick.initials}</span>
+      {returning
+        ? <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
+        : <span className="avatar big" aria-hidden="true">{pick.initials}</span>}
       <h2 className="pname" ref={head} tabIndex={-1}>{pick.displayName}</h2>
       {phase === 'prompting' ? (
         <>
@@ -106,7 +109,7 @@ function PickCard({ pick, busy, run, setError, onBack }: {
             : <button className={fp ? 'btn2' : 'btn'} disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>}
         </>
       )}
-      <button className="btn2" onClick={onBack}>Back</button>
+      <button className="btn2" onClick={onBack}>{returning ? 'Not you? Switch person' : 'Back'}</button>
     </div>
   )
 }
@@ -115,7 +118,10 @@ function PickCard({ pick, busy, run, setError, onBack }: {
  *  The family picker appears only on a phone that signed in before (cache in localStorage); a fresh phone never lists names. */
 export default function SignIn() {
   const [family] = useState(loadFamily)
-  const [pick, setPick] = useState<FamilyMember | null>(null)
+  // A returning visit shows only the last person (mascot: the app has no profile photo field) and goes straight to PickCard.
+  const [pick, setPick] = useState<FamilyMember | null>(() => { const id = getLastPerson(); return family.find((m) => m.personId === id) ?? null })
+  const [returning, setReturning] = useState(pick !== null)
+  const [choice, setChoice] = useState('')
   const [other, setOther] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(urlSignInError ?? '')
@@ -141,21 +147,22 @@ export default function SignIn() {
 
         {picker && !pick && (
           <>
-            <p className="si-hint">Who is this?</p>
-            <div className="faces">
-              {family.map((m) => (
-                <button key={m.personId} className="face glass" onClick={() => { setError(''); setPick(m) }}>
-                  <span className="avatar" aria-hidden="true">{m.initials}</span>
-                  <span className="fname">{m.displayName}</span>
-                </button>
-              ))}
-            </div>
+            <form className="grp signin" onSubmit={(e) => { e.preventDefault(); const m = family.find((f) => f.personId === choice); if (m) { setError(''); setPick(m) } }}>
+              <label className="row" htmlFor="si-who">
+                <span className="si-l">Who are you?</span>
+                <select id="si-who" value={choice} onChange={(e) => setChoice(e.target.value)}>
+                  <option value="">Choose your name</option>
+                  {family.map((m) => <option key={m.personId} value={m.personId}>{m.displayName}</option>)}
+                </select>
+              </label>
+              <div className="row"><button className="btn" type="submit" disabled={!choice}>Continue</button></div>
+            </form>
             <button className="btn2" onClick={() => { setError(''); setOther(true) }}>Not in the list?</button>
           </>
         )}
 
         {picker && pick && (
-          <PickCard key={pick.personId} pick={pick} busy={busy} run={run} setError={setError} onBack={() => { setError(''); setPick(null) }} />
+          <PickCard key={pick.personId} returning={returning} pick={pick} busy={busy} run={run} setError={setError} onBack={() => { setError(''); setPick(null); setReturning(false); setChoice('') }} />
         )}
 
         {!picker && (

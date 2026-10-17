@@ -15,6 +15,7 @@ const FAMILY = [
 ]
 const pad = () => screen.queryByRole('button', { name: '5' })
 const tap = (n: RegExp) => fireEvent.click(screen.getByRole('button', { name: n }))
+const choose = (name: string) => { fireEvent.change(screen.getByLabelText('Who are you?'), { target: { value: FAMILY.find((f) => f.displayName === name)!.personId } }); tap(/Continue/) }
 
 describe('SignIn: fingerprint first (D-27)', () => {
   const credsDesc = Object.getOwnPropertyDescriptor(navigator, 'credentials')
@@ -33,7 +34,7 @@ describe('SignIn: fingerprint first (D-27)', () => {
   it('person with fingerprint on: prompt starts at once, PIN pad is hidden but one tap away', async () => {
     h.pk.mockReturnValue(new Promise(() => {}))
     render(<SignIn />)
-    tap(/Lola Rosa/)
+    choose('Lola Rosa')
     expect(h.pk).toHaveBeenCalledTimes(1)
     expect(h.pk).toHaveBeenCalledWith('p-lola')
     expect(pad()).toBeNull()
@@ -48,7 +49,7 @@ describe('SignIn: fingerprint first (D-27)', () => {
     let fail!: (e: string) => void
     h.pk.mockReturnValue(new Promise<string>((r) => { fail = r }))
     render(<SignIn />)
-    tap(/Lola Rosa/)
+    choose('Lola Rosa')
     tap(/Use PIN instead/)
     fail('Fingerprint or face did not work. Use your PIN instead.')
     await new Promise((r) => setTimeout(r, 30))
@@ -63,7 +64,7 @@ describe('SignIn: fingerprint first (D-27)', () => {
     it(`${name}: PIN pad shows with the message, no automatic second prompt`, async () => {
       h.pk.mockResolvedValue(msg)
       render(<SignIn />)
-      tap(/Lola Rosa/)
+      choose('Lola Rosa')
       await waitFor(() => expect(pad()).not.toBeNull())
       expect(screen.getByRole('alert').textContent).toBe(msg)
       await new Promise((r) => setTimeout(r, 30))
@@ -77,16 +78,16 @@ describe('SignIn: fingerprint first (D-27)', () => {
   it('picking again after a failure starts the prompt again (once)', async () => {
     h.pk.mockResolvedValue('nope')
     render(<SignIn />)
-    tap(/Lola Rosa/)
+    choose('Lola Rosa')
     await waitFor(() => expect(pad()).not.toBeNull())
     tap(/Back/)
-    tap(/Lola Rosa/)
+    choose('Lola Rosa')
     expect(h.pk).toHaveBeenCalledTimes(2)
   })
 
   it('person without fingerprint on this phone gets the PIN pad and no prompt', () => {
     render(<SignIn />)
-    tap(/Kuya Ben/)
+    choose('Kuya Ben')
     expect(h.pk).not.toHaveBeenCalled()
     expect(pad()).not.toBeNull()
     expect(screen.queryByRole('button', { name: /fingerprint/i })).toBeNull()
@@ -95,8 +96,67 @@ describe('SignIn: fingerprint first (D-27)', () => {
   it('browser without passkeys: PIN pad even if a flag is stored', () => {
     vi.stubGlobal('PublicKeyCredential', undefined)
     render(<SignIn />)
-    tap(/Lola Rosa/)
+    choose('Lola Rosa')
     expect(h.pk).not.toHaveBeenCalled()
     expect(pad()).not.toBeNull()
+  })
+})
+
+describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
+  beforeEach(() => { localStorage.clear(); h.pk.mockReset(); localStorage.setItem('bantay.family', JSON.stringify(FAMILY)) })
+  afterEach(() => cleanup())
+
+  it('trusted phone, nobody remembered: labelled dropdown lists the family, Continue is off until a name is chosen', () => {
+    render(<SignIn />)
+    const sel = screen.getByLabelText('Who are you?') as HTMLSelectElement
+    expect(Array.from(sel.options).map((o) => o.text)).toEqual(['Choose your name', 'Lola Rosa', 'Kuya Ben'])
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(true)
+    choose('Kuya Ben')
+    expect(screen.getByRole('heading', { name: 'Kuya Ben' })).toBeTruthy()
+    expect(pad()).not.toBeNull()
+    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // mascot is for the returning screen only
+  })
+
+  it('remembered person: only that person, mascot, PIN pad at once, no dropdown, no other names', () => {
+    localStorage.setItem('bantay.lastPerson', 'p-kuya')
+    render(<SignIn />)
+    expect(screen.getByAltText('Jack Jack, the Bantay dog')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Kuya Ben' })).toBeTruthy()
+    expect(pad()).not.toBeNull()
+    expect(screen.queryByLabelText('Who are you?')).toBeNull()
+    expect(document.body.textContent).not.toContain('Lola')
+  })
+
+  it('remembered person with fingerprint on: the prompt starts by itself', () => {
+    localStorage.setItem('bantay.lastPerson', 'p-lola')
+    localStorage.setItem('bantay.passkey.p-lola', '1')
+    vi.stubGlobal('PublicKeyCredential', class {})
+    Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+    h.pk.mockReturnValue(new Promise(() => {}))
+    render(<SignIn />)
+    expect(h.pk).toHaveBeenCalledWith('p-lola')
+    vi.unstubAllGlobals()
+    delete (navigator as { credentials?: unknown }).credentials
+  })
+
+  it('Not you? Switch person shows the dropdown', () => {
+    localStorage.setItem('bantay.lastPerson', 'p-kuya')
+    render(<SignIn />)
+    tap(/Not you\? Switch person/)
+    expect(screen.getByLabelText('Who are you?')).toBeTruthy()
+    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull()
+  })
+
+  it('a remembered person who left the family list falls back to the dropdown', () => {
+    localStorage.setItem('bantay.lastPerson', 'p-gone')
+    render(<SignIn />)
+    expect(screen.getByLabelText('Who are you?')).toBeTruthy()
+  })
+
+  it('untrusted phone: no names, no dropdown', () => {
+    localStorage.clear()
+    render(<SignIn />)
+    expect(screen.queryByLabelText('Who are you?')).toBeNull()
+    expect(document.body.textContent).not.toContain('Lola')
   })
 })

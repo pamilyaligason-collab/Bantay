@@ -6,7 +6,7 @@ vi.mock('./client', () => ({ supabase: { rpc: m.rpc, auth: { signInWithPasskey: 
 vi.mock('./session', () => ({ getMember: m.member }))
 
 import * as fam from './family'
-import { abandonPasskeyWait, signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
+import { clearLastPerson, rememberSignedIn, abandonPasskeyWait, signInWithPasskey, cacheFamily, forgetPhone, hasPasskeyFlag, initialsOf, loadFamily, setPasskeyFlag } from './family'
 
 describe('family cache', () => {
   beforeEach(() => { localStorage.clear(); rpc.mockReset() })
@@ -41,8 +41,10 @@ describe('family cache', () => {
     setPasskeyFlag('p1')
     localStorage.setItem('bantay.onboarded', '1')
     expect(hasPasskeyFlag('p1')).toBe(true)
+    localStorage.setItem('bantay.lastPerson', 'p1')
     forgetPhone()
     expect(localStorage.getItem('bantay.family')).toBeNull()
+    expect(localStorage.getItem('bantay.lastPerson')).toBeNull()
     expect(hasPasskeyFlag('p1')).toBe(false)
     expect(localStorage.getItem('bantay.onboarded')).toBe('1')
   })
@@ -208,5 +210,35 @@ describe('abandonPasskeyWait', () => {
     await signInWithPasskey('p1')
     expect(sigs[0]!.aborted).toBe(true)
     expect(sigs[1]!.aborted).toBe(false)
+  })
+})
+
+describe('rememberSignedIn', () => {
+  const cache = () => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'p1', displayName: 'Lola', handle: 'l', provider: 'pin' }]))
+  beforeEach(() => { localStorage.clear(); m.member.mockReset() })
+  it('writes a person who is in the cache', async () => {
+    cache(); m.member.mockResolvedValue({ personId: 'p1' })
+    await rememberSignedIn()
+    expect(localStorage.getItem('bantay.lastPerson')).toBe('p1')
+  })
+  it('skips a person not in the cache', async () => {
+    cache(); m.member.mockResolvedValue({ personId: 'p9' })
+    await rememberSignedIn()
+    expect(localStorage.getItem('bantay.lastPerson')).toBeNull()
+  })
+  it('skips a null personId', async () => {
+    cache(); m.member.mockResolvedValue({ personId: null })
+    await rememberSignedIn()
+    expect(localStorage.getItem('bantay.lastPerson')).toBeNull()
+  })
+  it('Switch person while getMember is pending: nothing is written back', async () => {
+    cache()
+    let done!: (v: unknown) => void
+    m.member.mockReturnValue(new Promise((r) => { done = r }))
+    const p = rememberSignedIn()
+    clearLastPerson()
+    done({ personId: 'p1' })
+    await p
+    expect(localStorage.getItem('bantay.lastPerson')).toBeNull()
   })
 })

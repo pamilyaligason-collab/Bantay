@@ -21,7 +21,7 @@ vi.mock('./client', () => ({
 vi.mock('./session', () => ({ getMember: h.member }))
 vi.mock('./family', async () => {
   const actual = await vi.importActual<typeof import('./family')>('./family')
-  return { get passkeyCheck() { return h.real ? actual.passkeyCheck : h.check }, cacheFamily: h.cache, signInWithPasskey: actual.signInWithPasskey, abandonPasskeyWait: actual.abandonPasskeyWait }
+  return { get passkeyCheck() { return h.real ? actual.passkeyCheck : h.check }, cacheFamily: h.cache, rememberSignedIn: vi.fn(), signInWithPasskey: actual.signInWithPasskey, abandonPasskeyWait: actual.abandonPasskeyWait }
 })
 vi.mock('../../screens/SignIn', () => ({ default: () => <p>signin</p> }))
 
