@@ -10,8 +10,9 @@ if (!fileId || !person || !type) throw new Error('Usage: extract.mjs <fileId> <p
 if (!process.env.DRIVE_ACCESS_TOKEN) throw new Error('DRIVE_ACCESS_TOKEN is not set')
 
 const auth = { Authorization: `Bearer ${process.env.DRIVE_ACCESS_TOKEN}` }
-const meta = await (await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=name,mimeType`, { headers: auth })).json()
-const buf = Buffer.from(await (await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: auth })).arrayBuffer())
+const ok = (r) => { if (!r.ok) throw new Error(`Drive failed: ${r.status}`); return r }
+const meta = await ok(await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=name,mimeType`, { headers: auth })).json()
+const buf = Buffer.from(await ok(await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, { headers: auth })).arrayBuffer())
 
 const body = buildRequest({
   model: process.env.OPENROUTER_MODEL,

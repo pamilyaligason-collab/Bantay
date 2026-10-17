@@ -71,7 +71,8 @@ export async function sendToOpenRouter(fetchImpl, body, key, log = console.error
     log(`OpenRouter failed: ${r.status}`)
     throw new Error(`OpenRouter failed: ${r.status}`)
   }
-  return JSON.parse((await r.json()).choices[0].message.content)
+  const c = (await r.json()).choices[0].message.content
+  try { return JSON.parse(c) } catch { throw new Error('OpenRouter returned non-JSON') } // never echo model output (health values)
 }
 
 export function assertAllowed(argv, env) {

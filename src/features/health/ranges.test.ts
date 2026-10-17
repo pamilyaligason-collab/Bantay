@@ -11,7 +11,7 @@ describe('latestVsNormal', () => {
     expect(r.headline).toBe('within')
     expect(r.guide?.label).toBe(GUIDE_LABEL)
     expect(r.guide?.position).toBe('above')
-    expect(r.guide?.source).toMatch(/AHA/)
+    expect(r.guide?.source).toMatch(/MedlinePlus/)
   })
   it('a family threshold overrides lab and guide', () => {
     const r = latestVsNormal({ ...base, labLow: 0, labHigh: 130 }, { low: null, high: 100 })

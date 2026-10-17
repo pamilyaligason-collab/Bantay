@@ -39,6 +39,6 @@ test('timeline, trend chart and latest vs normal from seeded data', async ({ pag
   const ldl = page.locator('[data-test="ldl"]')
   await expect(ldl).toContainText('Lab range: 0 to 130')
   await expect(ldl).toContainText("General guide, not your doctor's target: Under 100")
-  await expect(ldl).toContainText('AHA')
+  await expect(ldl).toContainText('MedlinePlus')
   await expect(ldl).toContainText('95')
 })

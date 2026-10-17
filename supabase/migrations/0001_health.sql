@@ -6,7 +6,7 @@ create table public.people (
   id uuid primary key default gen_random_uuid(),
   auth_user_id uuid unique references auth.users (id) on delete set null,
   display_name text not null,
-  created_by uuid not null default auth.uid() references auth.users (id),
+  created_by uuid not null default auth.uid() references auth.users (id), -- restrict: a creator account cannot be deleted while their no-login persons exist
   created_at timestamptz not null default now()
 );
 
@@ -29,7 +29,7 @@ create table public.readings (
   source_file_id text,
   drive_url text,
   confidence numeric check (confidence between 0 and 1),
-  confirmed_by uuid references auth.users (id),
+  confirmed_by uuid references auth.users (id) on delete set null,
   confirmed_at timestamptz
 );
 create index readings_person_test_time on public.readings (person_id, test, taken_at desc);
@@ -44,7 +44,7 @@ create table public.consults (
   next_visit date,
   source_file_id text,
   drive_url text,
-  confirmed_by uuid references auth.users (id),
+  confirmed_by uuid references auth.users (id) on delete set null,
   confirmed_at timestamptz
 );
 create index consults_person_time on public.consults (person_id, taken_at desc);
@@ -85,6 +85,9 @@ alter table public.consults enable row level security;
 -- No anon access at all.
 revoke all on public.people, public.carers, public.readings, public.consults from anon;
 grant select, insert, update, delete on public.people, public.carers, public.readings, public.consults to authenticated;
+-- identity columns (auth_user_id, created_by) are never updatable by users: column-level grant
+revoke update on public.people from authenticated;
+grant update (display_name) on public.people to authenticated;
 
 create policy people_read on public.people for select to authenticated
   using (auth_user_id = auth.uid() or created_by = auth.uid() or public.is_carer_of(id));
@@ -115,7 +118,7 @@ create policy readings_update on public.readings for update to authenticated
   using (public.is_self(person_id) or public.is_writer_of(person_id))
   with check ((public.is_self(person_id) or public.is_writer_of(person_id)) and (confirmed_by is null or confirmed_by = auth.uid()));
 create policy readings_delete on public.readings for delete to authenticated
-  using (public.is_self(person_id));
+  using (public.is_self(person_id) or public.is_writer_of(person_id));
 
 create policy consults_read on public.consults for select to authenticated
   using (public.is_self(person_id) or public.is_carer_of(person_id));
@@ -125,7 +128,7 @@ create policy consults_update on public.consults for update to authenticated
   using (public.is_self(person_id) or public.is_writer_of(person_id))
   with check ((public.is_self(person_id) or public.is_writer_of(person_id)) and (confirmed_by is null or confirmed_by = auth.uid()));
 create policy consults_delete on public.consults for delete to authenticated
-  using (public.is_self(person_id));
+  using (public.is_self(person_id) or public.is_writer_of(person_id));
 
 -- pgTAP-style checks (run on a scratch database, not here). A has a login (person PA); B is a read-only carer of PA;
 -- C is a stranger; D creates a no-login person PD and becomes its writer.
