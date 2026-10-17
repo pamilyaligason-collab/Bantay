@@ -5,6 +5,7 @@ import Health from './screens/Health'
 import Records from './screens/Records'
 import Safety from './screens/Safety'
 import Today from './screens/Today'
+import Assistant from './features/assistant/Assistant'
 
 // Tab icons and order copied from the prototype tab bar.
 const SHIELD = 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z'
@@ -66,6 +67,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      <Assistant />
     </div>
   )
 }

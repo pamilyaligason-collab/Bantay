@@ -1,0 +1,24 @@
+.as-fab { position: absolute; right: 16px; bottom: calc(100px + env(safe-area-inset-bottom)); z-index: 5; width: 56px; height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; color: var(--act); padding: 0; }
+.as-back { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; }
+.as-sheet { width: 100%; max-width: 640px; height: min(86dvh, 720px); border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; min-width: 0; color: var(--ink); }
+.as-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.as-head h2 { margin: 0; font-size: 22px; }
+.as-x { width: auto; min-height: 44px; }
+.as-note { margin: 0; font-size: 13px; }
+.as-list { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; min-height: 0; overscroll-behavior: contain; }
+.as-msg { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.as-msg p { margin: 0; padding: 10px 14px; border-radius: 16px; max-width: 88%; overflow-wrap: anywhere; line-height: 1.4; }
+.as-msg.user { align-items: flex-end; }
+.as-msg.user p { background: var(--btn); color: var(--btn-fg); }
+.as-msg.assistant p { background: var(--fill); color: var(--ink); }
+.as-card { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; background: var(--cell); color: var(--ink); border: 0.5px solid var(--sep); max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.as-card a { color: var(--act); }
+.as-fields { display: flex; flex-direction: column; gap: 6px; }
+.as-fields label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
+.as-fields input, .as-fields select { min-height: 44px; min-width: 0; flex: 1; max-width: 60%; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 8px; padding: 0 8px; background: var(--cell); color: var(--ink); }
+.as-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.as-actions .btn, .as-actions .btn2 { flex: 1; min-width: 80px; }
+.as-err { color: var(--danger); font-size: 14px; }
+.as-form { display: flex; gap: 8px; }
+.as-form input { flex: 1; min-width: 0; min-height: 52px; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 14px; padding: 0 14px; background: var(--cell); color: var(--ink); }
+.as-form .btn { width: auto; }
