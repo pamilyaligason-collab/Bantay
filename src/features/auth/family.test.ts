@@ -117,3 +117,21 @@ describe('signInWithPasskey', () => {
     expect(await signInWithPasskey('p1')).toContain('Use your PIN instead')
   })
 })
+
+describe('signInWithPasskey errors', () => {
+  beforeEach(() => {
+    m.pk.mockReset(); m.out.mockReset(); m.member.mockReset()
+    vi.stubGlobal('PublicKeyCredential', class {})
+    Object.defineProperty(navigator, 'credentials', { value: {}, configurable: true })
+  })
+  it('getMember throwing signs out locally and shows the PIN message', async () => {
+    m.pk.mockResolvedValue({ error: null }); m.member.mockRejectedValue(new Error('offline'))
+    m.out.mockResolvedValue({})
+    expect(await signInWithPasskey('p1')).toContain('Use your PIN instead')
+    expect(m.out).toHaveBeenCalledWith({ scope: 'local' })
+  })
+  it('loadFamily slices long handles to 20 characters', () => {
+    localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'p', displayName: 'A', handle: 'x'.repeat(50), provider: 'pin' }]))
+    expect(loadFamily()[0]!.handle).toHaveLength(20)
+  })
+})

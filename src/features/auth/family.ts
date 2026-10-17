@@ -19,7 +19,7 @@ export function loadFamily(): FamilyMember[] {
     // Rebuild every entry from known fields only; the cache is plain localStorage and cannot be trusted.
     return v.flatMap((m): FamilyMember[] =>
       m && typeof m.personId === 'string' && typeof m.displayName === 'string' && m.displayName.trim()
-        ? [{ personId: m.personId, displayName: m.displayName.slice(0, 60), handle: typeof m.handle === 'string' ? m.handle : null,
+        ? [{ personId: m.personId, displayName: m.displayName.slice(0, 60), handle: typeof m.handle === 'string' ? m.handle.slice(0, 20) : null,
              provider: m.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(m.displayName) }]
         : [])
   } catch { return [] }
@@ -58,19 +58,30 @@ export const passkeySupported = () => typeof window !== 'undefined' && !!window.
 
 const UNAVAILABLE = 'Not available on this phone yet'
 
-/** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success). */
+/** Set while a passkey sign-in is verifying who signed in. AuthGate waits on it so nothing runs as the wrong person. */
+export let passkeyCheck: Promise<void> | null = null
+
+/** Fingerprint or face sign-in. Returns an error string or null (AuthGate takes over on success).
+ *  The browser picks the passkey, so after the ceremony we check it belongs to the tapped person. On a mismatch or any
+ *  error the session is dropped with scope 'local' on purpose: this phone signs out, the person's other devices stay signed in. */
 export async function signInWithPasskey(expectedPersonId: string): Promise<string | null> {
   if (!supabase || !passkeySupported()) return UNAVAILABLE
+  const sb = supabase
   try {
-    const { error } = await supabase.auth.signInWithPasskey()
+    const { error } = await sb.auth.signInWithPasskey()
     if (error) return 'Fingerprint or face did not work. Use your PIN instead.'
-    // The browser picks the passkey, so check it is the person who was tapped.
-    const m = await getMember()
-    if (m?.personId !== expectedPersonId) {
-      await supabase.auth.signOut({ scope: 'local' })
-      return 'That fingerprint belongs to someone else. Tap your own name.'
-    }
-    return null
+    let msg: string | null = null
+    passkeyCheck = (async () => {
+      try {
+        const m = await getMember()
+        if (m?.personId !== expectedPersonId) { msg = 'That fingerprint belongs to someone else. Tap your own name.'; await sb.auth.signOut({ scope: 'local' }) }
+      } catch {
+        msg = 'Fingerprint or face did not work. Use your PIN instead.'
+        await sb.auth.signOut({ scope: 'local' }).catch(() => {})
+      }
+    })()
+    try { await passkeyCheck } finally { passkeyCheck = null }
+    return msg
   } catch { return 'Fingerprint or face did not work. Use your PIN instead.' }
 }
 
