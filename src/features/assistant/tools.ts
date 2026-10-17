@@ -54,20 +54,21 @@ export function parseReply(r: unknown): { text: string; cards: Card[] } {
 export function sourceLink(source: Source, term: string, kiwix = (import.meta.env.VITE_KIWIX_URL as string | undefined) ?? '') {
   const q = encodeURIComponent(term)
   if (source === 'kiwix' && kiwix) return { url: `${kiwix.replace(/\/$/, '')}/search?pattern=${q}`, label: 'Offline library (Kiwix)' }
-  if (source === 'wikipedia') return { url: `https://en.wikipedia.org/wiki/Special:Search?search=${q}`, label: 'Wikipedia, CC BY-SA 4.0' }
+  if (source === 'wikipedia') return { url: `https://en.wikipedia.org/wiki/Special:Search?search=${q}`, label: 'Read more on Wikipedia (CC BY-SA 4.0)' }
   return { url: `https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&query=${q}`, label: 'MedlinePlus, medlineplus.gov' }
 }
 
 export interface People { id: string; name: string }
+/** No match means undefined: the card asks the user to pick, nobody is guessed. */
 export const personFor = (name: string, people: People[]) =>
-  people.find((p) => p.id === name) ?? people.find((p) => p.name.toLowerCase() === name.trim().toLowerCase()) ?? people[0]
+  people.find((p) => p.id === name) ?? people.find((p) => p.name.toLowerCase() === name.trim().toLowerCase())
 
 const num = (s: string) => (s.trim() !== '' && Number.isFinite(Number(s)) ? Number(s) : null)
 const when = (s: string, now: Date) => (s && !Number.isNaN(Date.parse(s)) ? new Date(s).toISOString() : now.toISOString())
 
 /** Returns an error string when the draft is not complete enough to save. */
 export function validateDraft(tool: DraftTool, f: Record<string, string>, people: People[]): string | null {
-  if (!personFor(f.person ?? '', people)) return 'Add a family member first.'
+  if (!personFor(f.person ?? '', people)) return people.length ? 'Pick who this is for.' : 'Add a family member first.'
   if (tool === 'log_reading' && (!f.test?.trim() || num(f.value ?? '') === null)) return 'Needs a test name and a number.'
   if (tool === 'log_med_taken' && !f.name?.trim()) return 'Needs a medicine name.'
   if (tool === 'log_activity' && (!f.kind?.trim() || (num(f.minutes ?? '') === null && num(f.steps ?? '') === null))) return 'Needs an activity and minutes or steps.'

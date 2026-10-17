@@ -15,8 +15,9 @@ Floating button (bottom right, above the tab bar) opens a sheet. The app posts t
 Webhook -> verify JWT (`GET {SUPABASE_URL}/auth/v1/user`, 401 if invalid) -> daily cap via RPC (429 if over) -> OpenRouter -> normalize -> respond.
 
 - Credential (HTTP Header Auth, name exactly `Bantay OpenRouter ZDR`): header `Authorization`, value `Bearer <OpenRouter key>`. Created in n8n only.
-- n8n env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (public key), and `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` so expressions can read them.
+- Credential (HTTP Header Auth, name exactly `Bantay Supabase publishable`): header `apikey`, value the Supabase publishable key. Used by the JWT check and the cap RPC. The Supabase URL (`https://wuakimpssycbtnmoexuc.supabase.co`) is written in the two HTTP nodes. No n8n env vars are read.
 - Replace `https://REPLACE-WITH-APP-ORIGIN` in the Webhook node (Allowed Origins) with the app origin.
+- A daily slot is used even if the model call fails. If the cap RPC gives no answer (misconfigured), the webhook returns 503 `{error:'unavailable'}` and the app shows the generic failure message.
 - Models: `google/gemini-3.5-flash-lite`, fallback `anthropic/claude-haiku-5.5` (checked on OpenRouter 2026-10-17). Provider `{zdr:true, data_collection:'deny'}`. No `:free` model ever.
 - Execution data: success, error and manual saving are all off, so prompts never sit in n8n. The workflow does not log bodies.
 - OpenRouter: in the OpenRouter UI set a hard monthly spend limit on this key (Lloyd), and turn on the account-wide ZDR-only setting.

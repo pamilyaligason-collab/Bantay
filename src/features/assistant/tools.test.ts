@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, confirmDraft, parseReply, sourceLink, validateDraft } from './tools'
+import { buildRequest, confirmDraft, parseReply, personFor, sourceLink, validateDraft } from './tools'
 
 const people = [{ id: 'p1', name: 'Lola' }, { id: 'p2', name: 'Ben' }]
 const api = () => ({ logReading: vi.fn(), logMedTaken: vi.fn(), logActivity: vi.fn() })
@@ -52,6 +52,16 @@ describe('confirmDraft', () => {
   })
 })
 
+describe('personFor', () => {
+  it('returns undefined when nobody matches and blocks the save', async () => {
+    const a = api()
+    expect(personFor('Somebody Else', people)).toBeUndefined()
+    expect(validateDraft('log_med_taken', { person: 'Somebody Else', name: 'm' }, people)).toBe('Pick who this is for.')
+    await expect(confirmDraft('log_med_taken', { person: '', name: 'm' }, people, a)).rejects.toThrow()
+    expect(a.logMedTaken).not.toHaveBeenCalled()
+  })
+})
+
 describe('buildRequest', () => {
   it('sends at most the last 10 messages and only role + content', () => {
     const msgs = Array.from({ length: 25 }, (_, i) => ({ role: 'user' as const, content: `m${i}`, extra: 'x' }))
@@ -66,7 +76,7 @@ describe('buildRequest', () => {
 describe('sourceLink', () => {
   it('builds links itself', () => {
     expect(sourceLink('medlineplus', 'HbA1c').url).toMatch(/^https:\/\/vsearch\.nlm\.nih\.gov\/.*HbA1c/)
-    expect(sourceLink('wikipedia', 'a b').label).toContain('CC BY-SA 4.0')
+    expect(sourceLink('wikipedia', 'a b').label).toBe('Read more on Wikipedia (CC BY-SA 4.0)')
     expect(sourceLink('kiwix', 'x', 'http://kiwix.local/').url).toBe('http://kiwix.local/search?pattern=x')
     expect(sourceLink('kiwix', 'x', '').url).toContain('medlineplus')
   })

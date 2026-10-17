@@ -15,7 +15,7 @@
 .as-card a { color: var(--act); }
 .as-fields { display: flex; flex-direction: column; gap: 6px; }
 .as-fields label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
-.as-fields input, .as-fields select { min-height: 40px; min-width: 0; flex: 1; max-width: 60%; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 8px; padding: 0 8px; background: var(--cell); color: var(--ink); }
+.as-fields input, .as-fields select { min-height: 44px; min-width: 0; flex: 1; max-width: 60%; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 8px; padding: 0 8px; background: var(--cell); color: var(--ink); }
 .as-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .as-actions .btn, .as-actions .btn2 { flex: 1; min-width: 80px; }
 .as-err { color: var(--danger); font-size: 14px; }

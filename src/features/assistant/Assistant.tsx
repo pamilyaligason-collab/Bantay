@@ -48,9 +48,9 @@ function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; p
       <span className="sub">Draft only. Nothing is saved until you confirm.</span>
       <div className="as-fields">
         <label>{LABEL.person}
-          {edit ? (
-            <select value={who?.id ?? ''} onChange={(e) => setF({ ...f, person: e.target.value })}>{people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
-          ) : <b>{who?.name ?? 'Add a family member first'}</b>}
+          {edit || (!who && people.length > 0) ? (
+            <select value={who?.id ?? ''} onChange={(e) => setF({ ...f, person: e.target.value })}>{!who && <option value="">Pick who</option>}{people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          ) : <b>{who?.name ?? (people.length ? 'Pick who' : 'Add a family member first')}</b>}
         </label>
         {shown.map((k) => (
           <label key={k}>{LABEL[k]}
@@ -60,7 +60,7 @@ function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; p
       </div>
       {err && <span role="alert" className="as-err">{err}</span>}
       <div className="as-actions">
-        <button className="btn" disabled={state === 'saving'} onClick={confirm}>Confirm</button>
+        <button className="btn" disabled={state === 'saving' || !who} onClick={confirm}>Confirm</button>
         <button className="btn2" onClick={() => setEdit(!edit)}>{edit ? 'Done' : 'Edit'}</button>
         <button className="btn2" onClick={() => setState('discarded')}>Discard</button>
       </div>

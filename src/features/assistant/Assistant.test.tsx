@@ -52,6 +52,17 @@ describe('Assistant', () => {
     expect(m.logMedTaken).not.toHaveBeenCalled()
     expect(m.logActivity).not.toHaveBeenCalled()
   })
+  it('unknown person: Pick who, Confirm disabled until chosen', async () => {
+    m.ask.mockResolvedValue({ text: 'x', cards: [{ ...draft.cards[0], fields: { ...draft.cards[0]!.fields, person: 'Nobody' } }] })
+    await askOnce()
+    const b = screen.getByRole('button', { name: 'Confirm' }) as HTMLButtonElement
+    expect(b.disabled).toBe(true)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'p1' } })
+    expect(b.disabled).toBe(false)
+    fireEvent.click(b)
+    await screen.findByText(/Saved for Lola/)
+    expect(m.logReading).toHaveBeenCalledTimes(1)
+  })
   it('shows the friendly limit message and does not call the server', async () => {
     await db.kv.put({ key: 'assistant.cap', value: { day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date()), count: 30 } })
     render(<Assistant />)
