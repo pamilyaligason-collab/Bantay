@@ -47,7 +47,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
           <li style={{ padding: '8px 0' }}>Tap Add.</li>
           <li style={{ padding: '8px 0' }}>Open Bantay from your Home Screen to keep going.</li>
         </ol>
-        <button className="btn2" onClick={async () => { await markAsked(); setDenied(true); setStep('where') }}>Continue without alerts</button>
+        <button className="btn2" onClick={async () => { await markAsked(); setDenied(true); setStep('phone') }}>Continue without alerts</button>
       </Card>
     )
   }
@@ -75,8 +75,8 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
 
   if (step === 'phone') {
     return (
-      <Card title="Check your phone's warnings" lead="Your phone, not Bantay, can warn you before an earthquake.">
-        <PhoneWarnings />
+      <Card title="Check your phone's warnings" lead="Your phone, not Bantay, may give a few seconds' warning before shaking.">
+        <PhoneWarnings level={2} />
         <button className="btn" onClick={() => setStep('where')}>Continue</button>
       </Card>
     )

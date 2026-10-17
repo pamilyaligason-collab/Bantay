@@ -61,6 +61,8 @@ test.describe('iPhone in Safari', () => {
   test('Continue without alerts does not lock the app', async ({ page }) => {
     await page.goto('/')
     await page.getByRole('button', { name: 'Continue without alerts' }).click()
+    await expect(page.getByText('Phone warnings check')).toBeVisible()
+    await page.getByRole('button', { name: 'Continue' }).click()
     await expect(page.getByText('Alerts are off on this phone')).toBeVisible()
     await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
     await page.getByRole('button', { name: 'Save and start' }).click()

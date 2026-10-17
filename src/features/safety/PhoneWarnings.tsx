@@ -43,7 +43,8 @@ export function statusOf(rec: Rec | null, p: Platform, now: number, key: string 
   return open === 0 ? { chip: 'All on', stale: false, why: null } : { chip: `${open} to check`, stale: false, why: null }
 }
 
-export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now() }: { ua?: string; now?: number }) {
+export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now(), level = 3 }: { ua?: string; now?: number; level?: 2 | 3 }) {
+  const H = `h${level}` as 'h2' | 'h3'
   const rec = useKv<Rec | null>(PW_KEY, null)
   const p = detectPlatform(ua)
   const st = statusOf(rec, p, now, osKey(ua))
@@ -56,7 +57,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
   return (
     <div className="sf pw">
       <div className="pw-head">
-        <h3 style={{ margin: 0, fontSize: 17, color: 'var(--ink)' }}>Phone warnings check</h3>
+        <H style={{ margin: 0, fontSize: 17, color: 'var(--ink)' }}>Phone warnings check</H>
         <span className={`sf-chip${st.chip === 'All on' ? '' : ' warn'}`}>{st.chip}</span>
       </div>
       <p className="sf-note">{NOT_A_SIREN} Any warning that comes seconds before shaking comes from your phone, not from Bantay. Turn these on so your phone can do that job.</p>
