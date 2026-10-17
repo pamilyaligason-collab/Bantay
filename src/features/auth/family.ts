@@ -47,12 +47,13 @@ export const clearPasskeyFlag = (personId: string) => { try { localStorage.remov
 
 const LAST = 'bantay.lastPerson' // personId of the last person who signed in on this phone. Not a secret; names stay in bantay.family.
 export const getLastPerson = (): string | null => { try { return localStorage.getItem(LAST) } catch { return null } }
-export const clearLastPerson = () => { try { localStorage.removeItem(LAST) } catch { /* private mode */ } }
+export const clearLastPerson = () => { generation++; try { localStorage.removeItem(LAST) } catch { /* private mode */ } }
 /** After a successful sign-in (PIN, passkey or Google all land here via AuthGate): remember who, if they are in the cached family. */
 export async function rememberSignedIn(): Promise<void> {
+  const gen = generation // clearLastPerson / forgetPhone bump it, so a write already in flight is dropped
   try {
     const m = await getMember()
-    if (m?.personId && loadFamily().some((f) => f.personId === m.personId)) localStorage.setItem(LAST, m.personId)
+    if (gen === generation && m?.personId && loadFamily().some((f) => f.personId === m.personId)) localStorage.setItem(LAST, m.personId)
   } catch { /* offline or private mode */ }
 }
 

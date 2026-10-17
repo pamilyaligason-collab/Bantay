@@ -84,7 +84,7 @@ function PickCard({ pick, busy, run, setError, onBack, returning }: {
   }
   useEffect(() => {
     alive.current = true
-    if (fp) ask()
+    if (fp) ask() // older iOS Safari may reject a passkey prompt without a user gesture; the catch path then shows the PIN pad
     return () => { alive.current = false; abandonPasskeyWait() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (phase === 'pin') head.current?.focus() }, [phase])
