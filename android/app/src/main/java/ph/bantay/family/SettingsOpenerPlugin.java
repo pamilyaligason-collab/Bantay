@@ -2,7 +2,7 @@ package ph.bantay.family;
 
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.ActivityNotFoundException;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -68,18 +68,17 @@ public class SettingsOpenerPlugin extends Plugin {
       call.reject("unknown target");
       return;
     }
-    PackageManager pm = getContext().getPackageManager();
+    // No resolveActivity gate: package visibility (Android 11+) would hide other packages' activities.
+    // startActivity is not filtered; a missing or unexported activity throws and we try the next one.
     for (Cand c : cands) {
       try {
-        if (c.intent.resolveActivity(pm) == null) continue;
-        c.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getContext().startActivity(c.intent);
+        getActivity().startActivity(c.intent);
         JSObject r = new JSObject();
         r.put("opened", c.label);
         call.resolve(r);
         return;
-      } catch (Exception e) {
-        // not exported, no permission, or not found: try the next one
+      } catch (ActivityNotFoundException | SecurityException e) {
+        // not installed, or not exported (SecurityException): try the next one
       }
     }
     call.reject("no settings screen could be opened");
