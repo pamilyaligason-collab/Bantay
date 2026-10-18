@@ -47,6 +47,11 @@
     <queries>
         <package android:name="com.google.android.cellbroadcastreceiver" />
         <package android:name="com.android.cellbroadcastreceiver" />
+        <!-- Best-effort OEM cell-broadcast apps (Samsung, Xiaomi, Huawei); package names unverified, harmless if absent. -->
+        <package android:name="com.samsung.android.cellbroadcastreceiver" />
+        <package android:name="com.sec.android.app.cellbroadcastreceiver" />
+        <package android:name="com.xiaomi.cellbroadcastreceiver" />
+        <package android:name="com.huawei.cellbroadcastreceiver" />
         <intent><action android:name="android.settings.SAFETY_CENTER" /></intent>
         <intent><action android:name="com.google.android.gms.location.settings.GOOGLE_LOCATION_SETTINGS" /></intent>
     </queries>
@@ -54,11 +59,17 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Reminders: notifications (Android 13+) and SCHEDULE_EXACT_ALARM, the user-grantable "Alarms and reminders"
-         setting (API 31+, default-denied on 34+). No maxSdkVersion: capping it hides the toggle. USE_EXACT_ALARM and
-         REQUEST_IGNORE_BATTERY_OPTIMIZATIONS are deliberately not declared: the wizard opens the settings screens instead. -->
+    <!-- Reminders: notifications (Android 13+). Exact alarms: USE_EXACT_ALARM is auto-granted on API 33+ (fine for this
+         sideloaded family app, which is not Play-distributed); SCHEDULE_EXACT_ALARM is only the user-grantable
+         "Alarms and reminders" toggle on API 31-32, so it is capped there. canScheduleExactAlarms() is true on both paths.
+         REQUEST_IGNORE_BATTERY_OPTIMIZATIONS enables the one-tap "let Bantay run in the background" system prompt. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Location: WebView navigator.geolocation needs these; Capacitor's BridgeWebChromeClient asks at runtime. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- AppUpdater installs signed Bantay updates downloaded from GitHub Releases. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
