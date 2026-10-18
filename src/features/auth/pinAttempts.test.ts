@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { afterFailure, pinState } from './pinAttempts'
+import 'fake-indexeddb/auto'
+import { afterFailure, loadFails, pinState, saveFails } from './pinAttempts'
 const T0 = Date.parse('2026-10-18T06:00:00Z')
 describe('pin attempts kept on the phone', () => {
   it('counts down tries', () => {
@@ -13,6 +14,13 @@ describe('pin attempts kept on the phone', () => {
     for (let i = 0; i < 5; i++) s = afterFailure(s, T0 + i * 1000)
     expect(pinState(s!, T0 + 5000)).toEqual({ kind: 'locked', until: T0 + 4000 + 15 * 60_000 })
     expect(pinState(s!, T0 + 4000 + 15 * 60_000 + 1)).toEqual({ kind: 'tries', left: 5 })
+  })
+  it('a damaged stored row counts as no failures', async () => {
+    const { db } = await import('../../db')
+    await db.kv.put({ key: 'pin.fail.odd', value: { lastAt: 5 } })
+    expect(await loadFails('odd')).toBeUndefined()
+    await saveFails('odd', { n: 2, lastAt: 7 })
+    expect(await loadFails('odd')).toEqual({ n: 2, lastAt: 7 })
   })
   it('a failure after the window lapsed starts a fresh count', () => {
     const old = afterFailure(afterFailure(undefined, T0), T0 + 1)

@@ -32,9 +32,30 @@ export async function requestPinReset(handle: string): Promise<'sent' | 'no_sign
   if (!supabase) return 'no_signal'
   try {
     const { error } = await supabase.rpc('request_pin_reset', { h: handle.trim().toLowerCase() })
-    return error && !error.code ? 'no_signal' : 'sent' // postgrest-js reports a network failure as an error with no code
+    // postgrest-js reports a network failure as an error with no code. PGRST202 = the function is not on the server yet: never say "sent" then.
+    return error && (!error.code || error.code === 'PGRST202') ? 'no_signal' : 'sent'
   } catch {
     return 'no_signal'
+  }
+}
+
+export interface NameEntry { first_name: string; initial: string; handle: string }
+export type NamesResult = { kind: 'ok'; names: NameEntry[] } | { kind: 'offline' } | { kind: 'error' }
+
+/** Fresh phone (D-41): first names of active PIN members from the family-names Edge Function. A network failure is 'offline'; anything else is 'error'. */
+export async function fetchFamilyNames(): Promise<NamesResult> {
+  if (!supabaseUrl || !supabasePublishableKey) return { kind: 'error' }
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/family-names`, { headers: { apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}` } })
+    const body = res.ok ? await res.json().catch(() => null) : null
+    if (!Array.isArray(body)) return { kind: 'error' }
+    const names = body.flatMap((r): NameEntry[] =>
+      r && typeof r.first_name === 'string' && r.first_name.trim() && typeof r.handle === 'string' && /^[a-z][a-z0-9_]{2,19}$/.test(r.handle)
+        ? [{ first_name: r.first_name.slice(0, 30), initial: typeof r.initial === 'string' ? r.initial.slice(0, 1) : '', handle: r.handle }]
+        : [])
+    return { kind: 'ok', names }
+  } catch {
+    return { kind: 'offline' }
   }
 }
 

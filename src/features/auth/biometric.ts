@@ -3,7 +3,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core'
 /** Native BiometricPrompt (android/.../BiometricPlugin.java). The Supabase session stays in WebView storage; the fingerprint only gates showing the app (D-32). */
 interface BiometricNative {
   status(): Promise<{ available: boolean; enrolled: boolean }>
-  prompt(o: { title: string }): Promise<{ ok: true }> // rejects with 'cancelled' or 'failed'
+  prompt(o: { title: string }): Promise<{ ok: true }> // rejects with 'use_pin' (negative button, Android 10 and older), 'cancelled' or 'failed'
   openEnroll(): Promise<void> // Settings.ACTION_BIOMETRIC_ENROLL
 }
 const Biometric = registerPlugin<BiometricNative>('Biometric')

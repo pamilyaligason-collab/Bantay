@@ -2,11 +2,14 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null), reset: vi.fn(async () => 'sent' as const) }))
+const h = vi.hoisted(() => ({
+  abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null), reset: vi.fn(async () => 'sent' as const),
+  names: vi.fn(async () => ({ kind: 'error' }) as { kind: string; names?: { first_name: string; initial: string; handle: string }[] })
+}))
 vi.mock('../features/auth/client', () => ({ supabase: {} }))
 vi.mock('../features/look', () => ({ Sky: () => null }))
 vi.mock('../features/auth/pinLogin', () => ({
-  signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin, requestPinReset: h.reset,
+  signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin, requestPinReset: h.reset, fetchFamilyNames: h.names,
   SIGN_IN_ERROR: 'Handle or PIN is not right', NO_SIGNAL: 'No signal. Try again when you have data.'
 }))
 vi.mock('../features/auth/family', async () => ({ ...(await vi.importActual<typeof import('../features/auth/family')>('../features/auth/family')), signInWithPasskey: h.pk, abandonPasskeyWait: h.abandon }))
@@ -159,11 +162,56 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     expect(screen.getByLabelText('Who are you?')).toBeTruthy()
   })
 
-  it('untrusted phone: no names, no dropdown', () => {
+  it('untrusted phone, names function failing: no names, no dropdown, handle and PIN form on offer', async () => {
     localStorage.clear()
+    h.names.mockResolvedValue({ kind: 'error' })
     render(<SignIn />)
+    expect(await screen.findByText(/First time on this phone/)).toBeTruthy()
     expect(screen.queryByLabelText('Who are you?')).toBeNull()
     expect(document.body.textContent).not.toContain('Lola')
+  })
+})
+
+describe('SignIn: fresh phone name list (D-41)', () => {
+  const NAMES = [{ first_name: 'Kuya', initial: 'B', handle: 'ben' }, { first_name: 'Lola', initial: 'R', handle: 'lola' }]
+  beforeEach(async () => { localStorage.clear(); await db.kv.clear(); h.pin.mockReset(); h.names.mockReset() })
+  afterEach(() => cleanup())
+
+  it('lists first names from the server and signs in with the chosen handle; nothing is cached', async () => {
+    h.names.mockResolvedValue({ kind: 'ok', names: NAMES })
+    h.pin.mockResolvedValue('Handle or PIN is not right')
+    render(<SignIn />)
+    const sel = (await screen.findByLabelText('Who are you?')) as HTMLSelectElement
+    expect([...sel.options].map((o) => o.text)).toEqual(['Choose your name', 'Kuya B.', 'Lola R.'])
+    fireEvent.change(sel, { target: { value: 'name:lola' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    for (const d of '111222') fireEvent.click(screen.getByRole('button', { name: d }))
+    await waitFor(() => expect(h.pin).toHaveBeenCalledWith('lola', '111222'))
+    expect(localStorage.getItem('bantay.family')).toBeNull()
+  })
+
+  it('offline: says No signal, offers Try again, and the handle and PIN form still works', async () => {
+    h.names.mockResolvedValue({ kind: 'offline' })
+    render(<SignIn />)
+    expect(await screen.findByText('No signal. Try again when you have data.')).toBeTruthy()
+    expect(screen.queryByLabelText('Who are you?')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in with your name and PIN' }))
+    expect(screen.getByLabelText('Name')).toBeTruthy()
+  })
+
+  it('Try again after offline shows the list once the names arrive', async () => {
+    h.names.mockResolvedValue({ kind: 'offline' })
+    render(<SignIn />)
+    await screen.findByText('No signal. Try again when you have data.')
+    h.names.mockResolvedValue({ kind: 'ok', names: NAMES })
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByLabelText('Who are you?')).toBeTruthy()
+  })
+
+  it('a phone with a cached family never asks the server for names', () => {
+    localStorage.setItem('bantay.family', JSON.stringify(FAMILY))
+    render(<SignIn />)
+    expect(h.names).not.toHaveBeenCalled()
   })
 })
 
@@ -216,11 +264,29 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     await waitFor(async () => expect(await db.kv.get('pin.fail.ben')).toBeUndefined())
   })
 
-  it('Forgot PIN opens Ask an admin, names the admins and sends the request for that handle', async () => {
+  it('An admin unlocked me clears the phone-side lock and shows the PIN pad', async () => {
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() } })
+    render(<SignIn />)
+    fireEvent.click(await screen.findByRole('button', { name: 'An admin unlocked me' }))
+    await waitFor(() => expect(pad()).not.toBeNull())
+    expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
+  })
+
+  it('the lock clears by itself when the lock time passes', async () => {
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() - 15 * 60_000 + 300 } })
+    render(<SignIn />)
+    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+    await waitFor(() => expect(pad()).not.toBeNull(), { timeout: 3000 })
+    expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
+  })
+
+  it('Forgot PIN opens Ask an admin, names the admins (no Call buttons) and sends the request for that handle', async () => {
     render(<SignIn />)
     tap(/Forgot PIN\? Ask an admin/)
     expect(await screen.findByRole('heading', { name: 'Ask an admin' })).toBeTruthy()
     expect(screen.getByLabelText('Admins').textContent).toContain('Ate Maria')
+    expect(screen.getByText('Ask Ate or an admin in person or by message. Or send a request:')).toBeTruthy()
+    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['tel:911']) // only the emergency link, no Call buttons
     tap(/Send a request/)
     await waitFor(() => expect(h.reset).toHaveBeenCalledWith('ben'))
     expect((await screen.findByText(/Request sent/))).toBeTruthy()

@@ -15,14 +15,12 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
  * Fingerprint gate for the app (D-32). The Supabase session stays in WebView storage; this only decides whether the app is shown.
- * BIOMETRIC_STRONG | DEVICE_CREDENTIAL: a fingerprint, or the phone's own screen lock as backup. Nothing is stored here.
+ * A fingerprint, or the phone's own screen lock as backup on API 30+. Nothing is stored here.
  */
 @CapacitorPlugin(name = "Biometric")
 public class BiometricPlugin extends Plugin {
-  // BIOMETRIC_STRONG | DEVICE_CREDENTIAL is unsupported on API 28-29, so those phones use the fingerprint alone.
-  private static final int AUTH = Build.VERSION.SDK_INT >= 30
-      ? BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.DEVICE_CREDENTIAL
-      : BiometricManager.Authenticators.BIOMETRIC_STRONG;
+  // API 30+: fingerprint or screen lock. Before 30: fingerprint alone plus a "Use PIN" button (see BiometricAuth).
+  private static final int AUTH = BiometricAuth.authenticators(Build.VERSION.SDK_INT);
 
   /** {available, enrolled}: available = the phone can do it at all; enrolled = a fingerprint or screen lock is set up. */
   @PluginMethod
@@ -35,16 +33,16 @@ public class BiometricPlugin extends Plugin {
     call.resolve(o);
   }
 
-  /** Resolves {ok:true}; rejects with "cancelled" (back, tap outside, negative) or "failed" (lockout, error). */
+  /** Resolves {ok:true}; rejects with "use_pin" (negative button, API < 30), "cancelled" (back, tap outside) or "failed" (lockout, error). */
   @PluginMethod
   public void prompt(PluginCall call) {
     final String title = call.getString("title", "Open Bantay");
     final FragmentActivity activity = getActivity();
     activity.runOnUiThread(() -> {
-      BiometricPrompt.PromptInfo info = new BiometricPrompt.PromptInfo.Builder()
-          .setTitle(title)
-          .setAllowedAuthenticators(AUTH)
-          .build();
+      BiometricPrompt.PromptInfo.Builder b = new BiometricPrompt.PromptInfo.Builder().setTitle(title).setAllowedAuthenticators(AUTH);
+      String negative = BiometricAuth.negativeText(Build.VERSION.SDK_INT);
+      if (negative != null) b.setNegativeButtonText(negative);
+      BiometricPrompt.PromptInfo info = b.build();
       BiometricPrompt bp = new BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), new BiometricPrompt.AuthenticationCallback() {
         @Override
         public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
@@ -55,8 +53,7 @@ public class BiometricPlugin extends Plugin {
 
         @Override
         public void onAuthenticationError(int code, CharSequence msg) {
-          boolean cancelled = code == BiometricPrompt.ERROR_USER_CANCELED || code == BiometricPrompt.ERROR_NEGATIVE_BUTTON || code == BiometricPrompt.ERROR_CANCELED;
-          call.reject(cancelled ? "cancelled" : "failed");
+          call.reject(BiometricAuth.rejection(code));
         }
       });
       bp.authenticate(info);

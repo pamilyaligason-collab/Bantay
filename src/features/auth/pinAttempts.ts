@@ -15,7 +15,10 @@ export function pinState(f: Fails | undefined, now: number): { kind: 'tries'; le
 
 const key = (handle: string) => `pin.fail.${handle}`
 export const loadFails = async (handle: string): Promise<Fails | undefined> => {
-  try { return (await db.kv.get(key(handle)))?.value as Fails | undefined } catch { return undefined }
+  try {
+    const v = (await db.kv.get(key(handle)))?.value as Partial<Fails> | undefined
+    return v && Number.isFinite(v.n) && Number.isFinite(v.lastAt) ? (v as Fails) : undefined // a damaged row counts as no failures
+  } catch { return undefined }
 }
 export const saveFails = async (handle: string, f: Fails | undefined) => {
   try { if (f) await db.kv.put({ key: key(handle), value: f }); else await db.kv.delete(key(handle)) } catch { /* private mode: the server lock still holds */ }

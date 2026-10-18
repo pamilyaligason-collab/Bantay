@@ -25,11 +25,13 @@ const trust = (page: Page, flagged: string[] = []) =>
   }, [FAMILY, flagged] as const)
 const logouts: string[] = []
 let passkeyCalls = 0
-const fresh = () => ({ pins: [] as string[], rpc: 0, oauth: [] as string[] })
+type Seen = { pins: string[]; rpc: number; oauth: string[]; names?: 'ok' | 'abort'; asked?: number }
+const fresh = (): Seen => ({ pins: [], rpc: 0, oauth: [], asked: 0 })
+const NAME_ROWS = [{ first_name: 'Kuya', initial: 'B', handle: 'ben' }, { first_name: 'Lola', initial: 'R', handle: 'lola' }]
 const who = async (page: Page, name: string) => { await page.getByLabel('Who are you?').selectOption({ label: name }); await page.getByRole('button', { name: 'Continue', exact: true }).click() }
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
-async function mock(page: Page, seen: { pins: string[]; rpc: number; oauth: string[] }) {
+async function mock(page: Page, seen: Seen) {
   await page.route(`${API}/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
@@ -40,6 +42,11 @@ async function mock(page: Page, seen: { pins: string[]; rpc: number; oauth: stri
       seen.pins.push(pin)
       if (pin !== '480193') return reply(401, { ok: false, error: 'bad_credentials', message: 'Handle or PIN is not right' })
       return reply(200, { ok: true, session: { access_token: jwt(), refresh_token: 'refresh-test', expires_in: 3600, token_type: 'bearer' } })
+    }
+    if (url.pathname === '/functions/v1/family-names') {
+      seen.asked = (seen.asked ?? 0) + 1
+      if (seen.names === 'abort') return route.abort('internetdisconnected')
+      return seen.names === 'ok' ? reply(200, NAME_ROWS) : reply(404, {})
     }
     if (url.pathname === '/rest/v1/rpc/family_profiles') return reply(200, FAMILY_ROWS)
     if (url.pathname.startsWith('/auth/v1/passkeys')) { passkeyCalls++; return reply(400, { error_code: 'passkey_disabled', msg: 'off' }) }
@@ -149,6 +156,52 @@ test.describe('quick login (D-24)', () => {
     await page.getByRole('button', { name: 'Ask an admin' }).click()
     await expect(page.getByRole('heading', { name: 'Ask an admin' })).toBeVisible()
     await expect(page.getByLabel('Admins')).toContainText('Ate Maria')
+  })
+
+  test('fresh phone: first names come from the server (D-41); a right PIN signs in; nothing is cached before sign-in', async ({ page }) => {
+    const seen = { ...fresh(), names: 'ok' as const }
+    await mock(page, seen)
+    await skipOnboarding(page)
+    await page.goto('/')
+    await expect(page.getByRole('option', { name: 'Lola R.' })).toBeAttached()
+    await expect(page.getByRole('option', { name: 'Kuya B.' })).toBeAttached()
+    expect(await page.evaluate(() => localStorage.getItem('bantay.family'))).toBeNull()
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    await who(page, 'Lola R.')
+    await keys(page, '000001')
+    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
+    await keys(page, '480193')
+    await expect(page.locator('h1')).toHaveText('Today')
+    expect(seen.pins).toEqual(['000001', '480193'])
+  })
+
+  test('fresh phone, no signal: No signal line and the handle and PIN form still work', async ({ page }) => {
+    const seen = { ...fresh(), names: 'abort' as const }
+    await mock(page, seen)
+    await skipOnboarding(page)
+    await page.goto('/')
+    await expect(page.getByText('No signal. Try again when you have data.')).toBeVisible()
+    await expect(page.getByLabel('Who are you?')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Sign in with your name and PIN' }).click()
+    await page.getByLabel('Name').fill('lola')
+    await page.getByLabel('PIN').fill('480193')
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+    await expect(page.locator('h1')).toHaveText('Today')
+  })
+
+  test('locked screen: An admin unlocked me returns to the PIN pad', async ({ page }) => {
+    const seen = fresh()
+    await mock(page, seen)
+    await trust(page)
+    await skipOnboarding(page)
+    await page.goto('/')
+    await who(page, 'Lola Rosa')
+    for (let i = 0; i < 5; i++) { await keys(page, '000001'); await expect.poll(() => seen.pins.length).toBe(i + 1) }
+    await expect(page.getByRole('heading', { name: 'PIN locked' })).toBeVisible()
+    await page.getByRole('button', { name: 'An admin unlocked me' }).click()
+    await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
+    await keys(page, '480193')
+    await expect(page.locator('h1')).toHaveText('Today')
   })
 
   test('trusted phone: Google member goes to Google', async ({ page }) => {
