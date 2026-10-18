@@ -1,7 +1,7 @@
 import { registerPlugin, WebPlugin } from '@capacitor/core'
 import type { PluginListenerHandle } from '@capacitor/core'
 
-/** Contract with android/.../AppUpdaterPlugin.java. download() rejects with message 'checksum' | 'space' | 'network'. */
+/** Contract with android/.../AppUpdaterPlugin.java. download() rejects with err.code (native: message == code) one of 'network' | 'checksum' | 'space' | 'busy' | 'bad_args'; a size mismatch is 'checksum'. */
 export interface AppUpdaterPlugin {
   /** canInstall = packageManager.canRequestPackageInstalls() */
   info(): Promise<{ versionCode: number; versionName: string; canInstall: boolean }>
@@ -13,6 +13,11 @@ export interface AppUpdaterPlugin {
     event: 'progress',
     cb: (p: { done: number; total: number }) => void,
   ): Promise<PluginListenerHandle>
+  /** Final status after install() resolved 'pending_user'. */
+  addListener(
+    event: 'installResult',
+    cb: (r: { status: 'success' | 'failure'; message?: string }) => void,
+  ): Promise<PluginListenerHandle>
 }
 
 /** Browser and PWA: versionCode 0 means "no native shell", so no APK is ever offered. */
@@ -22,7 +27,7 @@ class AppUpdaterWeb extends WebPlugin implements Omit<AppUpdaterPlugin, 'addList
   }
   async openInstallPermission(): Promise<void> {}
   async download(): Promise<{ path: string }> {
-    throw new Error('network')
+    throw Object.assign(new Error('network'), { code: 'network' })
   }
   async install(): Promise<{ status: 'failure'; message: string }> {
     return { status: 'failure', message: 'Not available in the browser.' }

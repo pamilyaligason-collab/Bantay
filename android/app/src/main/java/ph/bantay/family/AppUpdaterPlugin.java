@@ -39,7 +39,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * for Bantay; info().canInstall reports it and openInstallPermission() opens that screen.
  *
  * Contract (src/features/update/plugin.ts): info, openInstallPermission, download, install.
- * download rejects with the code 'checksum' | 'space' | 'network'.
+ * download rejects with message == code, one of 'network' | 'checksum' | 'space' | 'busy' | 'bad_args'.
+ * A downloaded size that differs from latest.json (short or long) rejects 'checksum'.
+ * After install resolves 'pending_user', the final status arrives as an 'installResult' event.
  */
 @CapacitorPlugin(name = "AppUpdater")
 public class AppUpdaterPlugin extends Plugin {
@@ -122,12 +124,12 @@ public class AppUpdaterPlugin extends Plugin {
     final String sha = call.getString("sha256");
     final Long sizeBoxed = call.getLong("size");
     if (!allowedUrl(url) || sha == null || !sha.matches("(?i)[0-9a-f]{64}") || sizeBoxed == null || sizeBoxed <= 0) {
-      call.reject("bad arguments", "network");
+      call.reject("bad_args", "bad_args");
       return;
     }
     final long size = sizeBoxed;
     if (!busy.compareAndSet(false, true)) {
-      call.reject("download already running", "network");
+      call.reject("busy", "busy");
       return;
     }
     new Thread(() -> {
@@ -268,7 +270,9 @@ public class AppUpdaterPlugin extends Plugin {
         int status = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
         PluginCall call = installCall;
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-          Intent confirm = i.getParcelableExtra(Intent.EXTRA_INTENT);
+          Intent confirm = Build.VERSION.SDK_INT >= 33
+            ? i.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class)
+            : legacyIntentExtra(i);
           if (confirm != null) {
             confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(confirm);
@@ -279,14 +283,25 @@ public class AppUpdaterPlugin extends Plugin {
         }
         String msg = i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
         cleanupInstall();
+        String st = status == PackageInstaller.STATUS_SUCCESS ? "success" : "failure";
         if (call != null) {
-          result(call, status == PackageInstaller.STATUS_SUCCESS ? "success" : "failure", msg);
+          result(call, st, msg);
+        } else {
+          JSObject r = new JSObject();
+          r.put("status", st);
+          if (msg != null) r.put("message", msg);
+          notifyListeners("installResult", r);
         }
       }
     };
     IntentFilter f = new IntentFilter(ACTION);
     if (Build.VERSION.SDK_INT >= 33) c.registerReceiver(receiver, f, Context.RECEIVER_NOT_EXPORTED);
     else c.registerReceiver(receiver, f);
+  }
+
+  @SuppressWarnings("deprecation")
+  private static Intent legacyIntentExtra(Intent i) {
+    return i.getParcelableExtra(Intent.EXTRA_INTENT);
   }
 
   private void unregisterReceiver() {
