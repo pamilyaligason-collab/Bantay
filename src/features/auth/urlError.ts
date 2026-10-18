@@ -3,6 +3,12 @@
 // The text from the URL is never shown: it is only matched against known cases and mapped to fixed strings.
 const NOT_INVITED = 'This Google account is not invited yet. Ask your family admin.'
 
+export function mapOAuthError(text: string): string {
+  if (/signups? not allowed|signup_disabled|saving new user|before.user.created|processing hook|hook_(payload|timeout|failed)/i.test(text)) return NOT_INVITED
+  if (/access_denied/i.test(text)) return 'Google sign-in was cancelled. Try again.'
+  return 'Sign-in did not work. Try again.'
+}
+
 function read(): string | null {
   try {
     const q = new URLSearchParams(location.search)
@@ -14,9 +20,7 @@ function read(): string | null {
     const hashHadError = h.get('error') !== null
     const qs = q.toString()
     history.replaceState(null, '', location.pathname + (qs ? `?${qs}` : '') + (hashHadError ? '' : location.hash))
-    if (/signups? not allowed|signup_disabled|saving new user|before.user.created|processing hook|hook_(payload|timeout|failed)/i.test(text)) return NOT_INVITED
-    if (/access_denied/i.test(text)) return 'Google sign-in was cancelled. Try again.'
-    return 'Sign-in did not work. Try again.'
+    return mapOAuthError(text)
   } catch {
     return null
   }
