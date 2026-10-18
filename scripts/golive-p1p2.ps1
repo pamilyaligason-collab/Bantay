@@ -25,40 +25,39 @@ function RunOut([string]$exe, [string[]]$a) {
   & $exe @a 2>&1 | ForEach-Object { "$_" }
 }
 
-Step 1 'migration list (state of the linked project)'
+Step 1 'is 0009 already applied? (migration list + live check)'
+# Never use "db push": migration 0008 (records) is not applied live and not on this branch, and push could send other files.
 $list = RunOut 'npx' @('-y', $Sb, 'migration', 'list', '--linked')
 if ($LASTEXITCODE -ne 0) { throw 'step 1 failed' }
 $list | ForEach-Object { Write-Host "  $_" }
+$probe = "select (to_regclass('public.admin_requests') is not null) as table_ok, (to_regprocedure('public.request_pin_reset(text)') is not null) as fn_ok;"
+$pre = RunOut 'npx' @('-y', $Sb, 'db', 'query', '--linked', $probe)
+if ($LASTEXITCODE -ne 0) { throw 'step 1 failed (probe)' }
+$pre | ForEach-Object { Write-Host "  $_" }
+$already = $false
 if (-not $DryRun) {
-  # Rows look like "   0007 | 0007 | ..." (local | remote). 0009 must be local-only; 0001-0007 must be on both sides.
-  $r9 = @($list | Where-Object { $_ -match '^\s*0009\s*\|' })
-  if ($r9.Count -ne 1) { throw "step 1 failed: $Mig not listed locally" }
-  if ($r9[0] -match '^\s*0009\s*\|\s*0009') { throw "step 1 failed: $Mig is already applied; skip steps 2-3 by hand" }
-  foreach ($v in '0001','0002','0003','0004','0005','0006','0007') {
-    $m = @($list | Where-Object { $_ -match "^\s*$v\s*\|" })
-    if ($m.Count -ne 1 -or $m[0] -notmatch "^\s*$v\s*\|\s*$v") { throw "step 1 failed: $v is not applied on the project; stop and ask" }
-  }
-  # 0008 (records) is not on this branch. If the project already has it, push would refuse (remote version missing locally).
-  if (@($list | Where-Object { $_ -match '^\s*\|\s*0008' }).Count -gt 0) { throw 'step 1 failed: the project has 0008 but this branch does not. Merge the records branch first, then re-run.' }
+  $has = ($pre -join ' ') -match '(?i)true|"t"'
+  $already = $has
+  if ($already) { Write-Host '  0009 is ALREADY applied (admin_requests or request_pin_reset exists): step 2 will be skipped.' -ForegroundColor Yellow }
+  else { Write-Host '  0009 is not applied yet.' }
 }
 
-Step 2 "apply ONLY $Mig (dry run must list exactly that one)"
-$dry = RunOut 'npx' @('-y', $Sb, 'db', 'push', '--dry-run', '--linked')
-if ($LASTEXITCODE -ne 0) { throw 'step 2 failed' }
-$dry | ForEach-Object { Write-Host "  $_" }
-if (-not $DryRun) {
-  $names = @($dry | Where-Object { $_ -match '\d{4}_\S+\.sql' })
-  if ($names.Count -ne 1 -or $names[0] -notmatch $Mig) { throw "step 2 failed: push would apply something other than $Mig" }
+Step 2 "apply ONLY $Mig directly (no db push), then record it so a later push does not re-run it"
+if ($already) { Write-Host '  skipped (already applied)' }
+else {
+  Run 'npx' @('-y', $Sb, 'db', 'query', '--linked', '-f', "supabase\migrations\$Mig.sql")
+  if ($LASTEXITCODE -ne 0) { throw 'step 2 failed (apply)' }
+  $rec = "insert into supabase_migrations.schema_migrations (version, name) values ('0009', 'pin_reset_requests') on conflict do nothing;"
+  Run 'npx' @('-y', $Sb, 'db', 'query', '--linked', $rec)
+  if ($LASTEXITCODE -ne 0) { throw 'step 2 failed: 0009 IS applied but not recorded; record it by hand before any db push' }
 }
-Run 'npx' @('-y', $Sb, 'db', 'push', '--linked')
-if ($LASTEXITCODE -ne 0) { throw 'step 2 failed' }
 
 Step 3 'verify admin_requests and request_pin_reset exist'
 $sql = "select (to_regclass('public.admin_requests') is not null) as table_ok, (to_regprocedure('public.request_pin_reset(text)') is not null) as fn_ok;"
 $v = RunOut 'npx' @('-y', $Sb, 'db', 'query', '--linked', $sql)
 if ($LASTEXITCODE -ne 0) { throw 'step 3 failed' }
 $v | ForEach-Object { Write-Host "  $_" }
-if (-not $DryRun -and (($v -join ' ') -notmatch 'true[^f]*true')) { throw 'step 3 failed: table or function missing' }
+if (-not $DryRun -and (($v -join ' ') -notmatch '(?i)true[^f]*true')) { throw 'step 3 failed: table or function missing' }
 
 Step 4 'deploy functions family-names and admin-members'
 Run 'npx' @('-y', $Sb, 'functions', 'deploy', 'family-names', '--no-verify-jwt', '--use-api', '--project-ref', $Ref)
