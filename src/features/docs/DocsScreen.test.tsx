@@ -60,7 +60,7 @@ function fake(o: { uid?: string | null; tables?: Record<string, Row[]>; files?: 
 const jpg = (n = 'a') => new File([n], 'x.jpg', { type: 'image/jpeg' })
 const SELF = { id: 'p-self', name: 'Me', self: true }
 const card = (o: Partial<CardRow> & { path: string }): CardRow => ({
-  personId: 'p-self', kind: 'id_card', cardType: 'philsys', side: 'front', blob: jpg(), owner: '', updated: Date.UTC(2026, 8, 3), docId: 'd1', title: null, mime: 'image/jpeg', pending: false, ...o
+  personId: 'p-self', kind: 'id_card', cardType: 'philsys', side: 'front', blob: jpg(), owner: '', updated: Date.now(), docId: 'd1', title: null, mime: 'image/jpeg', pending: false, ...o
 })
 const setOnline = (v: boolean) => Object.defineProperty(navigator, 'onLine', { value: v, configurable: true })
 
@@ -377,3 +377,30 @@ describe('HEIC with no type', () => {
     await expect(addCard({ file: new File(['plain text here'], 'x', { type: '' }), personId: 'p-self', kind: 'id_card', cardType: 'other', title: null, side: 'front' })).rejects.toThrow()
   })
 })
+
+describe('whole card fails together', () => {
+  it('front given up with the back still queued: both fail, Retry queues the document row first', async () => {
+    const f = fake()
+    f.fail.badPerson = 'p-bad/'
+    const { docId } = await addCard({ file: jpg('f'), personId: 'p-bad', kind: 'id_card', cardType: 'philsys', title: null, side: 'front' })
+    await addCard({ file: jpg('b'), personId: 'p-bad', kind: 'id_card', cardType: 'philsys', title: null, side: 'back', docId })
+    for (let i = 0; i < MAX_TRIES; i++) await flushQueue(f.client)
+    expect(await ddb.queue.count()).toBe(0)
+    expect((await ddb.cards.toArray()).map((c) => [c.side, c.failed])).toEqual(expect.arrayContaining([['front', true], ['back', true]]))
+    await retryCard(docId)
+    const q = await ddb.queue.orderBy('seq').toArray()
+    expect(q.map((r) => [r.side, r.docNew])).toEqual([['front', true], ['back', false]])
+    f.fail.badPerson = ''
+    expect(await flushQueue(f.client)).toBe(2)
+    expect(f.server.documents).toHaveLength(1)
+  })
+  it("clearDocsCache keeps failed cards, and drops another owner's unsent ones after 30 days", async () => {
+    const old = Date.now() - 31 * 86_400_000
+    await ddb.cards.bulkPut([card({ path: 'f', owner: 'u1', failed: true, pending: false }), card({ path: 'o', owner: 'u1', pending: true, updated: old }), card({ path: 'n', owner: 'u1', pending: true })])
+    await ddb.queue.add({ owner: 'u1', clientId: crypto.randomUUID(), docId: 'x', docNew: true, path: 'o', personId: 'p', kind: 'id_card', cardType: 'other', title: null, side: 'front', name: 'a', mime: 'image/jpeg', size: 1, sha256: 'a'.repeat(64), tries: 0 })
+    await clearDocsCache('u2')
+    expect((await ddb.cards.toArray()).map((c) => c.path).sort()).toEqual(['f', 'n'])
+    expect(await ddb.queue.count()).toBe(0)
+  })
+})
+

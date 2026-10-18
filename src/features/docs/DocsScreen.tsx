@@ -129,7 +129,7 @@ function UploadSheet(p: { owner: string; people: PersonRow[]; forId: string; kin
         ) : (
           <>
             <h2 id="dc-st">{p.addTo ? 'Add the back' : 'Now the back of the card'}</h2>
-            {!p.addTo && <p className="sub dc-note" role="status">{online() ? 'Front saved.' : WAITING + '.'}</p>}
+            {!p.addTo && <p className="sub dc-note" role="status">{online() ? 'Front saved on this phone.' : WAITING + '.'}</p>}
             {actions}
             {err && <p className="dc-err" role="alert">{err}</p>}
             <button className="btn2" onClick={p.onClose}>{p.addTo ? 'Cancel' : 'Done, front only'}</button>

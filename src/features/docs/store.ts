@@ -27,6 +27,7 @@ export interface CardRow {
 export interface QueueRow {
   seq?: number
   owner: string
+  createdAt?: number
   clientId: string
   docId: string
   docNew: boolean
@@ -54,8 +55,7 @@ class DocsDB extends Dexie {
   meta!: Table<{ key: string; value: string }, string>
   constructor() {
     super('bantay-docs')
-    this.version(1).stores({ cards: 'path, personId, kind, docId', queue: '++seq, &clientId', people: 'id' })
-    this.version(2).stores({ driveOnly: 'docId, personId', meta: 'key' })
+    this.version(1).stores({ cards: 'path, personId, kind, docId', queue: '++seq, &clientId', people: 'id', driveOnly: 'docId, personId', meta: 'key' })
   }
 }
 export const ddb = new DocsDB()

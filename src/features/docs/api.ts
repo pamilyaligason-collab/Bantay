@@ -30,7 +30,7 @@ export async function addCard(o: { file: Blob; owner?: string; personId: string;
   const base = { docId, personId: o.personId, kind: o.kind, cardType: o.cardType, title, side: o.side, mime: file.type }
   await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
     await ddb.cards.put({ ...base, path, blob: file, updated: Date.now(), pending: true, owner })
-    await ddb.queue.add({ ...base, owner, clientId: crypto.randomUUID(), docNew: !o.docId, path, name: `card-${o.side}.${ext}`, size: file.size, sha256, tries: 0 })
+    await ddb.queue.add({ ...base, owner, createdAt: Date.now(), clientId: crypto.randomUUID(), docNew: !o.docId, path, name: `card-${o.side}.${ext}`, size: file.size, sha256, tries: 0 })
   })
   return { docId }
 }
@@ -66,18 +66,26 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
   if (running) { again = true; return running }
   return (running = (async () => {
     let sent = 0
+    const dead = new Set<number>()
     do {
       again = false
       for (const q of await ddb.queue.orderBy('seq').toArray()) {
-        if (q.owner !== owner) continue // another user's picture: kept, never sent from here
+        if (q.owner !== owner || dead.has(q.seq!)) continue // another user's picture: kept, never sent from here
         const card = await ddb.cards.get(q.path)
         if (card) {
           try { await sendOne(client, q, card.blob) } catch (e) {
             if ((e as Error).message === 'net') return sent
             const tries = q.tries + 1
             if (tries < MAX_TRIES) { await ddb.queue.update(q.seq!, { tries }); return sent }
-            await ddb.cards.update(q.path, { pending: false, failed: true, retry: { ...q, tries: 0, seq: undefined } })
-            await ddb.queue.delete(q.seq!)
+            // Give up on the whole card: its other queued pictures cannot land without the document, so they fail with it.
+            await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
+              for (const r of await ddb.queue.where('clientId').notEqual('').toArray()) {
+                if (r.docId !== q.docId || r.owner !== q.owner) continue
+                await ddb.cards.update(r.path, { pending: false, failed: true, retry: { ...r, tries: 0, seq: undefined } })
+                await ddb.queue.delete(r.seq!)
+                dead.add(r.seq!)
+              }
+            })
             continue
           }
           await ddb.cards.update(q.path, { pending: false })
@@ -92,10 +100,10 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
 
 /** Put a given-up card back in the queue from the picture kept on this phone. */
 export async function retryCard(docId: string): Promise<void> {
-  for (const c of await ddb.cards.where('docId').equals(docId).toArray()) {
-    if (!c.failed || !c.retry) continue
+  const failed = (await ddb.cards.where('docId').equals(docId).toArray()).filter((c) => c.failed && c.retry)
+  for (const c of failed.sort((a, b) => Number(b.retry!.docNew) - Number(a.retry!.docNew) || Number(b.side === 'front') - Number(a.side === 'front'))) { // the row that creates the document goes first
     await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
-      await ddb.queue.add(c.retry!)
+      await ddb.queue.add({ ...c.retry!, createdAt: Date.now() })
       await ddb.cards.update(c.path, { failed: false, pending: true, retry: undefined })
     })
   }
@@ -103,9 +111,14 @@ export async function retryCard(docId: string): Promise<void> {
 
 const OWNER = 'owner'
 /** Sign-out hook (also run for you on mount/flush): forget every picture that is not still waiting to upload, and who is cached. */
-export async function clearDocsCache(): Promise<void> {
-  await ddb.transaction('rw', ddb.cards, ddb.people, ddb.driveOnly, ddb.meta, async () => {
-    for (const c of await ddb.cards.toArray()) if (!c.pending) await ddb.cards.delete(c.path)
+export async function clearDocsCache(currentOwner = ''): Promise<void> {
+  // ponytail: another user's unsent pictures are kept 30 days, then dropped; a phone nobody signs back into keeps them that long.
+  const old = Date.now() - 30 * 86_400_000
+  await ddb.transaction('rw', ddb.cards, ddb.queue, ddb.people, ddb.driveOnly, ddb.meta, async () => {
+    for (const c of await ddb.cards.toArray()) {
+      if (!c.pending && !c.failed) await ddb.cards.delete(c.path)
+      else if (c.owner !== currentOwner && c.updated < old) { await ddb.cards.delete(c.path); await ddb.queue.where('clientId').notEqual('').filter((r) => r.path === c.path).delete() }
+    }
     await ddb.people.clear()
     await ddb.driveOnly.clear()
     await ddb.meta.clear()
@@ -123,7 +136,7 @@ export async function ensureOwner(client: SupabaseClient | null): Promise<string
     if (error) return had ?? ''
     uid = data.session?.user.id ?? ''
   } catch { return had ?? '' }
-  if (had !== uid) { await clearDocsCache(); await ddb.meta.put({ key: OWNER, value: uid }) }
+  if (had !== uid) { await clearDocsCache(uid); await ddb.meta.put({ key: OWNER, value: uid }) }
   return uid
 }
 
