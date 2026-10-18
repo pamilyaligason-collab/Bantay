@@ -1,12 +1,16 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as opener from './settingsOpener'
+
+const plugin = vi.hoisted(() => ({ open: vi.fn() }))
+vi.mock('@capacitor/core', async (orig) => ({ ...(await orig<object>()), registerPlugin: () => plugin }))
 import { db } from '../../db'
 import { NOT_A_SIREN } from './alerts'
 import PhoneWarnings, { detectPlatform, osKey, PW_KEY, statusOf, type Rec } from './PhoneWarnings'
 
 beforeEach(async () => { await db.kv.clear() })
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 const AND = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'
 const IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1'
@@ -77,5 +81,37 @@ describe('PhoneWarnings', () => {
     expect(row.items['android-wea'].state).toBe('on')
     expect(row.os).toBe('android 14')
     expect(Number.isFinite(Date.parse(row.checkedAt))).toBe(true)
+  })
+})
+
+describe('Open Settings (native Android)', () => {
+  it('web: no buttons', async () => {
+    vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(false)
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    await screen.findByText('Android Earthquake Alerts')
+    expect(screen.queryByText('Open Settings')).toBeNull()
+  })
+  it('native: opens and shows what to look for', async () => {
+    vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(true)
+    const open = plugin.open.mockResolvedValue({ opened: 'safety-center' })
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    fireEvent.click((await screen.findAllByText('Open Settings'))[0])
+    await screen.findByText(/Look for Earthquake alerts and turn it on/)
+    expect(open).toHaveBeenCalledWith({ target: 'earthquake' })
+  })
+  it('native: wea falling back to generic Settings says to search', async () => {
+    vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(true)
+    plugin.open.mockResolvedValue({ opened: 'settings' })
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    fireEvent.click((await screen.findAllByText('Open Settings'))[1])
+    await screen.findByText(/Search for the item below/)
+    expect(plugin.open).toHaveBeenCalledWith({ target: 'wea' })
+  })
+  it('native: failure falls back to the written steps', async () => {
+    vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(true)
+    plugin.open.mockRejectedValue(new Error('x'))
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    fireEvent.click((await screen.findAllByText('Open Settings'))[1])
+    await screen.findByText(/could not open Settings.*steps above/)
   })
 })
