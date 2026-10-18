@@ -13,8 +13,8 @@ export default defineConfig({
   reporter: 'list',
   // PW_CHANNEL=chrome runs against an installed Chrome when the bundled chromium is not downloaded.
   projects: [
-    { name: 'chromium', testIgnore: /auth\.spec/, use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL, baseURL: `http://localhost:${PORT}` } },
-    { name: 'auth', testMatch: /auth\.spec/, use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL, baseURL: `http://localhost:${AUTH_PORT}`, serviceWorkers: 'block' } }
+    { name: 'chromium', testIgnore: /(auth|records-db)\.spec/, use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL, baseURL: `http://localhost:${PORT}` } },
+    { name: 'auth', testMatch: /(auth|records-db)\.spec/, use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL, baseURL: `http://localhost:${AUTH_PORT}`, serviceWorkers: 'block' } }
   ],
   webServer: [
     {
