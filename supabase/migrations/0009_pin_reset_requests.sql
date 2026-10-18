@@ -21,14 +21,16 @@ create policy admin_requests_read on public.admin_requests for select to authent
 create policy admin_requests_handle on public.admin_requests for update to authenticated
   using (public.is_admin() and user_id is not null) with check (public.is_admin() and user_id is not null);
 
--- Callable by anon (the sign-in screen). 5 requests per hour per client address (x-forwarded-for from PostgREST), counted
+-- Callable by anon (the sign-in screen). 5 requests per hour per client address (last x-forwarded-for hop from PostgREST), counted
 -- through pin_try with a key that is a hash of the address. Same silent reply every time.
 -- ponytail: md5 of the address, not peppered; an attacker who knows an address can only exhaust that address's own budget.
 create function public.request_pin_reset(h text) returns void
   language plpgsql security definer set search_path = '' as $$
 declare
   hh text := lower(btrim(coalesce(h, '')));
-  ip text := coalesce(split_part(coalesce(current_setting('request.headers', true), '{}')::json ->> 'x-forwarded-for', ',', 1), 'none');
+  -- last hop: the first is client-supplied, the last is added by the platform proxy (same choice as pin-login)
+  xff text[] := string_to_array(coalesce(current_setting('request.headers', true), '{}')::json ->> 'x-forwarded-for', ',');
+  ip text := coalesce(nullif(btrim(xff[cardinality(xff)]), ''), 'none');
   uid uuid;
 begin
   if hh !~ '^[a-z][a-z0-9_]{2,19}$' then return; end if;

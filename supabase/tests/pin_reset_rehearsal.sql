@@ -63,6 +63,8 @@ set role anon; set request.headers = '{"x-forwarded-for":"198.51.100.7"}';
 select public.request_pin_reset('ghost'); select public.request_pin_reset('ghost'); select public.request_pin_reset('ghost');
 select public.request_pin_reset('ghost'); select public.request_pin_reset('ghost');
 select pg_temp.ok(not pg_temp.fails($$select public.request_pin_reset('kuya')$$), 'sixth call from one address is silent');
+set request.headers = '{"x-forwarded-for":"1.2.3.4, 198.51.100.7"}'; -- a spoofed first hop does not buy a fresh budget
+select pg_temp.ok(not pg_temp.fails($$select public.request_pin_reset('kuya')$$), 'spoofed first hop is silent');
 reset role;
 select pg_temp.ok((select count(*) from public.admin_requests where handle = 'kuya') = 0, 'the over-limit call stored nothing');
 \echo REHEARSAL DONE
