@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
   protected void onCreate(Bundle savedInstanceState) {
     // Capacitor 8: local plugins must be registered before super.onCreate.
     registerPlugin(SettingsOpenerPlugin.class);
+    registerPlugin(BiometricPlugin.class);
     super.onCreate(savedInstanceState);
   }
 }

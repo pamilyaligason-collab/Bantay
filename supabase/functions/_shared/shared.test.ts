@@ -57,6 +57,7 @@ function mockPort(over: Partial<Port> = {}): Port & { calls: string[] } {
     setBanned: rec('setBanned', true),
     deletePushSubscriptions: rec('deletePushSubscriptions', true),
     revokeSessions: rec('revokeSessions', true),
+    clearPinLock: rec('clearPinLock', true),
     insertRole: rec<'ok' | 'handle_taken' | 'error'>('insertRole', 'ok'),
     updateRole: rec<'ok' | 'handle_taken' | 'not_found'>('updateRole', 'ok'),
     insertPerson: rec<string | null>('insertPerson', 'person-1'),
@@ -117,6 +118,13 @@ describe('admin-members dispatcher', () => {
   it('set_pin refuses Google members and unknown users', async () => {
     expect(await runAction({ action: 'set_pin', userId: ID, pin: '908172' }, mockPort({ getAuthEmail: vi.fn(async () => 'a@gmail.com') }), ADMIN)).toEqual({ ok: false, error: 'bad_input' })
     expect(await runAction({ action: 'set_pin', userId: ID, pin: '908172' }, mockPort({ getAuthEmail: vi.fn(async () => null) }), ADMIN)).toEqual({ ok: false, error: 'not_found' })
+  })
+  it('unlock clears the PIN lock for that user', async () => {
+    const p = mockPort()
+    expect(await runAction({ action: 'unlock', userId: ID }, p, ADMIN)).toEqual({ ok: true })
+    expect(p.clearPinLock).toHaveBeenCalledWith(ID)
+    expect(await runAction({ action: 'unlock', userId: 'nope' }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
+    expect(await runAction({ action: 'unlock', userId: ID }, mockPort({ clearPinLock: vi.fn(async () => false) }), ADMIN)).toEqual({ ok: false, error: 'bad_input' })
   })
   it('set_handle maps taken and missing', async () => {
     expect(await runAction({ action: 'set_handle', userId: ID, handle: 'Nana' }, mockPort({ updateRole: vi.fn(async () => 'handle_taken' as const) }), ADMIN)).toEqual({ ok: false, error: 'handle_taken' })

@@ -37,6 +37,36 @@ beforeEach(async () => {
 })
 afterEach(cleanup)
 
+describe('AdminScreen: PIN requests', () => {
+  const req = [{ id: 7, handle: 'lola', user_id: 'u2', created_at: '2026-10-17T02:00:00Z' }]
+  const update = vi.fn()
+  beforeEach(() => {
+    update.mockReset().mockReturnValue({ eq: () => ({ select: async () => ({ data: [{ id: 7 }], error: null }) }) })
+    h.from.mockImplementation((t: string) => t === 'admin_requests'
+      ? { select: () => ({ eq: () => ({ is: () => ({ order: async () => ({ data: req, error: null }) }) }) }), update }
+      : t === 'news_items' ? chain([]) : { select: async () => ({ data: [], error: null }) })
+  })
+  it('lists an open request with the first name, and Mark done closes it', async () => {
+    render(<AdminScreen />)
+    const btn = await screen.findByRole('button', { name: "Mark Lola's request done" })
+    expect(within(btn.closest('.ad-row') as HTMLElement).getByText('Lola')).toBeTruthy()
+    fireEvent.click(btn)
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(update).toHaveBeenCalledWith({ handled_at: expect.any(String) }))
+  })
+  it('Reset PIN sets the PIN through admin-members, then closes the request', async () => {
+    render(<AdminScreen />)
+    const row = (await screen.findByRole('button', { name: "Mark Lola's request done" })).closest('.ad-row') as HTMLElement
+    fireEvent.click(within(row).getByRole('button', { name: 'Reset PIN for Lola' }))
+    const form = await screen.findByRole('form', { name: 'New PIN for Lola' })
+    fireEvent.change(within(form).getByLabelText('New PIN (6 digits)'), { target: { value: '482915' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Set PIN' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(update).toHaveBeenCalled())
+    expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: { action: 'set_pin', userId: 'u2', pin: '482915' } })
+  })
+})
+
 describe('AdminScreen', () => {
   it('renders every section with mocked data', async () => {
     render(<AdminScreen />)

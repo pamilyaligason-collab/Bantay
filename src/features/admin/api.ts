@@ -5,6 +5,7 @@ export interface Member { userId: string; personId: string | null; displayName: 
 export interface UsageRow { user_id: string; last_seen: string; events: number; top_screens: { name: string; count: number }[]; active_7: boolean; active_30: boolean; alerts_on: boolean; sensors_on: boolean }
 export interface ImportRow { person_id: string; display_name: string; readings: number; consults: number }
 export interface Carer { carer_id: string; person_id: string; can_write: boolean }
+export interface PinRequest { id: number; handle: string; user_id: string; created_at: string }
 export type Res<T> = { ok: true; data: T } | { ok: false; error: string }
 
 export const connected = () => supabase !== null
@@ -50,6 +51,24 @@ export async function unlinkCarer(carerId: string, personId: string): Promise<Re
     const { data, error } = await supabase.from('carers').delete().eq('carer_id', carerId).eq('person_id', personId).select()
     if (error) return fail(error)
     return data && data.length > 0 ? { ok: true, data: null } : { ok: false, error: 'forbidden' } // RLS hides a row it will not delete
+  } catch (e) { return fail(e) }
+}
+
+/** Open "Forgot PIN" requests that matched a member (migration 0009: admin select). Oldest first. */
+export async function listPinRequests(): Promise<Res<PinRequest[]>> {
+  if (!supabase) return NO
+  try {
+    const { data, error } = await supabase.from('admin_requests').select('id,handle,user_id,created_at').eq('kind', 'pin_reset').is('handled_at', null).order('created_at')
+    return error ? fail(error) : { ok: true, data: (data ?? []) as PinRequest[] }
+  } catch (e) { return fail(e) }
+}
+/** Mark a request handled (admin update policy on handled_at only). */
+export async function markRequestDone(id: number): Promise<Res<null>> {
+  if (!supabase) return NO
+  try {
+    const { data, error } = await supabase.from('admin_requests').update({ handled_at: new Date().toISOString() }).eq('id', id).select('id')
+    if (error) return fail(error)
+    return data && data.length > 0 ? { ok: true, data: null } : { ok: false, error: 'not_found' }
   } catch (e) { return fail(e) }
 }
 

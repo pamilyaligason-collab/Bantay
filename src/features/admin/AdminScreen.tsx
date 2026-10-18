@@ -6,7 +6,7 @@ import places from '../../data/safety/places.json'
 import { SAFETY_IDS, type TemplateId } from '../notify/templates'
 import { type Entry, OVERRIDES_KEY, type Overrides, parseEdit } from '../safety/entries'
 import { putKv } from '../safety/store'
-import { adminMembers, connected, type Carer, type ImportRow, linkCarer, listCarers, type Member, newsLastAt, rpc, type Res, unlinkCarer, type UsageRow } from './api'
+import { adminMembers, connected, type Carer, type ImportRow, linkCarer, listCarers, listPinRequests, markRequestDone, type Member, newsLastAt, type PinRequest, rpc, type Res, unlinkCarer, type UsageRow } from './api'
 import { BROADCAST_IDS, sendBroadcast, templateLabel } from './broadcast'
 import { handleError, pinError } from './pin'
 import './admin.css'
@@ -97,6 +97,7 @@ function MemberRow({ m, ask, done }: { m: Member; ask: Ask; done: () => void }) 
         <div className="sub">{m.handle ? `@${m.handle}` : m.provider ?? 'Google'} · last sign-in {when(m.lastSignInAt)}</div>
       </div>
       <button className="ad-b" onClick={() => setPin(pin === null ? '' : null)} aria-label={`Reset PIN for ${m.displayName}`}>Reset PIN</button>
+      {m.handle && <button className="ad-b" onClick={() => act(`Unlock ${m.displayName} so they can try their PIN again?`, { action: 'unlock' })} aria-label={`Unlock ${m.displayName}`}>Unlock</button>}
       <button className="ad-b" onClick={() => act(`Make ${m.displayName} ${m.role === 'admin' ? 'a member' : 'an admin'}?`, { action: 'set_role', role: m.role === 'admin' ? 'member' : 'admin' })} aria-label={`Change role of ${m.displayName}`}>
         {m.role === 'admin' ? 'Make member' : 'Make admin'}
       </button>
@@ -118,6 +119,54 @@ function MemberRow({ m, ask, done }: { m: Member; ask: Ask; done: () => void }) 
         </form>
       )}
     </div>
+  )
+}
+
+// ---------- PIN requests ("Forgot PIN? Send a request" on the sign-in screen) ----------
+function RequestRow({ r, who, ask, done }: { r: PinRequest; who: string; ask: Ask; done: () => void }) {
+  const [pin, setPin] = useState<string | null>(null)
+  const [err, setErr] = useState('')
+  const first = who.trim().split(/\s+/)[0] || r.handle
+  return (
+    <div className="ad-row">
+      <div className="ad-grow">
+        <strong>{first}</strong> <span className="ad-tag">pin reset</span>
+        <div className="sub">asked {when(r.created_at)}</div>
+      </div>
+      <button className="ad-b" onClick={() => setPin(pin === null ? '' : null)} aria-label={`Reset PIN for ${first}`}>Reset PIN</button>
+      <button className="ad-b" aria-label={`Mark ${first}'s request done`}
+        onClick={() => ask(`Mark ${first}'s request done without changing the PIN?`, async () => { const x = await markRequestDone(r.id); if (!x.ok) throw new Error(why(x.error)); done() })}>Mark done</button>
+      {pin !== null && (
+        <form className="ad-grow" style={{ flexBasis: '100%' }} aria-label={`New PIN for ${first}`} onSubmit={(e) => {
+          e.preventDefault()
+          const bad = pinError(pin)
+          if (bad) return setErr(bad)
+          setErr('')
+          const next = pin
+          setPin(null)
+          ask(`Set a new PIN for ${first} and close the request?`, async () => {
+            const x = await adminMembers({ action: 'set_pin', userId: r.user_id, pin: next })
+            if (!x.ok) throw new Error(why(x.error))
+            await markRequestDone(r.id) // the PIN is changed either way; a failed close just leaves the row for "Mark done"
+            done()
+          })
+        }}>
+          <Field label="New PIN (6 digits)"><input className="ad-in" type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="new-password" /></Field>
+          {err && <p className="ad-err" role="alert">{err}</p>}
+          <button className="ad-b go" type="submit" style={{ marginTop: 8 }}>Set PIN</button>
+        </form>
+      )}
+    </div>
+  )
+}
+
+function PinRequests({ members, ask }: { members: Member[]; ask: Ask }) {
+  const [s, reload] = useLoad<PinRequest[]>(listPinRequests)
+  if (s.state !== 'ok' || s.data.length === 0) return null // nothing waiting (or not readable yet): the section stays out of the way
+  return (
+    <Section id="ad-requests" title="PIN requests">
+      {s.data.map((r) => <RequestRow key={r.id} r={r} who={members.find((m) => m.userId === r.user_id)?.displayName ?? ''} ask={ask} done={reload} />)}
+    </Section>
   )
 }
 
@@ -341,6 +390,7 @@ export default function AdminScreen() {
       {!connected() && <p className="ad-note" role="status">{NOT_CONNECTED}</p>}
       <p className="sub" style={{ margin: '0 4px' }}>You see which screens people use and when. You never see health values.</p>
       {note && <p className={note.bad ? 'ad-err' : 'ad-note'} role={note.bad ? 'alert' : 'status'}>{note.text}</p>}
+      <PinRequests members={members.state === 'ok' ? members.data : []} ask={ask} />
       <Members s={members} reload={reload} ask={ask} />
       <Usage members={members.state === 'ok' ? members.data : []} />
       <SafetyData ask={ask} say={say} />
