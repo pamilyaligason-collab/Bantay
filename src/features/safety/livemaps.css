@@ -1,0 +1,4 @@
+.lm-box { min-height: 360px; border-radius: 12px; background: var(--fill); }
+.lm-off { display: flex; align-items: center; justify-content: center; min-height: 360px; margin: 0; }
+.lm-credit { margin: -4px 4px 0; font-size: 13px; }
+.lm-sub { margin: 8px 4px 0; }

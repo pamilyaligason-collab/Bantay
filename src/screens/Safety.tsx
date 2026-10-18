@@ -2,6 +2,7 @@ import hotlines from '../data/safety/hotlines.json'
 import places from '../data/safety/places.json'
 import EntryList from '../features/safety/EntryList'
 import type { Entry } from '../features/safety/entries'
+import LiveMaps from '../features/safety/LiveMaps'
 import MapsPanel from '../features/safety/MapsPanel'
 import NewsTop5 from '../features/safety/NewsTop5'
 import PhoneWarnings from '../features/safety/PhoneWarnings'
@@ -33,6 +34,7 @@ export default function Safety() {
       </div>
       {place && (<>
       <section aria-labelledby="s-warn"><h2 id="s-warn" className="hd">Warnings</h2><SafetyBrief loc={alertRef(place)} /></section>
+      <section aria-labelledby="s-wx"><h2 id="s-wx" className="hd">Live weather</h2><LiveMaps loc={place.weather} /></section>
       <section aria-labelledby="s-hot"><h2 id="s-hot" className="hd">Quick dial</h2><EntryList seed={hotlines as Entry[]} geo={false} zone={place.zone} /></section>
       <section aria-labelledby="s-map"><h2 id="s-map" className="hd">Live maps</h2><MapsPanel loc={phone} ask={l.ask} zone={place.zone} /></section>
       <section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo zone={place.zone} /></section>
