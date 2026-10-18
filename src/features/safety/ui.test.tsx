@@ -71,7 +71,7 @@ describe('SafetyBrief', () => {
 
 describe('EntryList', () => {
   it('shows the unconfirmed prompt for a null place, and a Go link after the family adds a pin', async () => {
-    render(<EntryList seed={places as Entry[]} geo />)
+    render(<EntryList seed={places as Entry[]} geo zone="dampas" />)
     const prompts = screen.getAllByRole('button', { name: 'Not confirmed yet, tap to add' })
     expect(prompts.length).toBe(places.length)
     expect(screen.queryByRole('link', { name: /^Go to/ })).toBeNull()
@@ -83,7 +83,7 @@ describe('EntryList', () => {
     expect(go.getAttribute('href')).toBe('https://www.google.com/maps/dir/?api=1&destination=9.65,123.88&travelmode=walking')
   })
   it('rejects bad coordinates', async () => {
-    render(<EntryList seed={places as Entry[]} geo />)
+    render(<EntryList seed={places as Entry[]} geo zone="dampas" />)
     fireEvent.click(screen.getAllByRole('button', { name: 'Not confirmed yet, tap to add' })[0])
     fireEvent.change(screen.getByLabelText('Latitude'), { target: { value: '200' } })
     fireEvent.change(screen.getByLabelText('Longitude'), { target: { value: '1' } })

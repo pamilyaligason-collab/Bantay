@@ -1,6 +1,6 @@
+import { liveQuery } from 'dexie'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
-import { useKv } from '../safety/store'
 import { HOME_ZONES, type LatLon, type Loc } from './geo'
 import { resolvePlace, type ZoneId } from './place'
 
@@ -78,8 +78,14 @@ export const usePlace = () => usePlaceFrom(useLocation())
 
 /** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
 export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
-  const lastZone = useKv<ZoneId>(ZONE_KEY, FIRST_ZONE)
+  // undefined until Dexie has answered, so a saved Conel pick never shows Dampas first
+  const [saved, setSaved] = useState<ZoneId | null | undefined>(undefined)
+  useEffect(() => {
+    const sub = liveQuery(() => db.kv.get(ZONE_KEY)).subscribe({ next: (r) => setSaved((r?.value as ZoneId | undefined) ?? null), error: () => setSaved(null) })
+    return () => sub.unsubscribe()
+  }, [])
+  const lastZone = saved ?? FIRST_ZONE
   const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
-  if (l.source === 'pending') return null
+  if (l.source === 'pending' || saved === undefined) return null
   return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask }
 }

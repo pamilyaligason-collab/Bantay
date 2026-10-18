@@ -108,19 +108,28 @@ test.describe('Near me on the maps switcher', () => {
   })
 })
 
-test('Safety order (D-62): 911 and Medical ID, IDs and Insurance, advisory card, Quick dial, Live maps', async ({ page }) => {
+test('Safety order (D-62): 911, IDs and Insurance, advisory card, Quick dial, Live maps', async ({ page }) => {
   await page.goto('/#safety')
   const y = async (loc: ReturnType<typeof page.locator>) => (await loc.first().boundingBox())!.y
   const call = await y(page.getByRole('link', { name: 'Call 911' }))
-  const med = await y(page.getByRole('link', { name: 'Medical ID' }))
   const ids = await y(page.getByRole('link', { name: 'My IDs' }))
   const warn = await y(page.getByRole('heading', { name: 'Warnings', exact: true }))
   const dial = await y(page.getByRole('heading', { name: 'Quick dial' }))
   const maps = await y(page.getByRole('heading', { name: 'Live maps' }))
-  expect(Math.abs(call - med)).toBeLessThan(4)
+  await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveCount(0)
   expect(ids).toBeGreaterThan(call)
   expect(warn).toBeGreaterThan(ids)
   expect(dial).toBeGreaterThan(warn)
   expect(maps).toBeGreaterThan(dial)
-  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#docs')
+  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#records')
+})
+
+test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dampas hazards', async ({ page }) => {
+  await page.goto('/#safety')
+  await expect(page.getByText('BFP Tagbilaran').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Place:/ }).click()
+  await page.getByRole('group', { name: 'Zone' }).getByRole('button', { name: 'Conel' }).click()
+  await expect(page.getByText('BFP Tagbilaran')).toHaveCount(0)
+  await expect(page.getByText('No hazard readings for this zone yet')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toBeVisible()
 })

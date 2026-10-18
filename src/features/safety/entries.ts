@@ -2,6 +2,7 @@
 // so everything works with no signal. Unconfirmed values stay null with status 'UNKNOWN' (B-5): nothing is guessed.
 export interface Entry {
   id: string
+  zone?: string // home zone this entry is for; left out = every zone
   group: string
   name: string
   note?: string
@@ -17,6 +18,8 @@ export type Overrides = Record<string, Partial<Entry>>
 
 export const OVERRIDES_KEY = 'safety.overrides'
 export const NOT_CONFIRMED = 'Not confirmed yet, tap to add'
+
+export const forZone = (seed: Entry[], zone: string): Entry[] => seed.filter((e) => !e.zone || e.zone === zone)
 
 export const withOverrides = (seed: Entry[], o: Overrides): Entry[] => seed.map((e) => ({ ...e, ...o[e.id] }))
 
