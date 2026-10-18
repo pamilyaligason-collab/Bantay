@@ -213,7 +213,7 @@ test.describe('quick login (D-24)', () => {
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
   })
 
-  test('Family > This phone: switch person keeps the picker; forget this phone clears it', async ({ page }) => {
+  test('Me > This phone: switch person keeps the picker; forget this phone clears it', async ({ page }) => {
     await mock(page, fresh())
     await trust(page)
     await skipOnboarding(page)
@@ -221,15 +221,14 @@ test.describe('quick login (D-24)', () => {
     await who(page, 'Lola Rosa')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
-    await page.goto('/#family')
+    await page.goto('/#me')
     await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
     await expect.poll(() => logouts.at(-1)).toBe('local')
     await expect(page.getByLabel('Who are you?')).toBeVisible() // Switch person lands on the dropdown, not the returning screen
     await who(page, 'Lola Rosa')
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Family')
-    await page.goto('/#family')
+    await expect(page.locator('h1')).toHaveText('Me')
     await page.getByRole('button', { name: 'Forget this phone' }).click()
     await expect(page.getByText('First time on this phone?')).toBeVisible()
     expect(await page.evaluate(() => localStorage.getItem('bantay.family'))).toBeNull()
@@ -245,7 +244,7 @@ test.describe('quick login (D-24)', () => {
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     await expect.poll(() => page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBe('p-lola')
-    await page.goto('/#family')
+    await page.goto('/#me')
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
     await expect(page.getByLabel('Who are you?')).toBeVisible()
     expect(await page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBeNull()

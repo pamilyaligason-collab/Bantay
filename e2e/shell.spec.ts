@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { skipOnboarding } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
   await page.goto('/#records')
@@ -33,4 +34,36 @@ test('installable: manifest fields and service worker', async ({ page }) => {
     return reg.scope
   })
   expect(scope).toContain('localhost')
+})
+
+test('tab bar has five slots with Ask raised in the middle', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  const nav = page.getByRole('navigation', { name: 'Main' })
+  await expect(nav.getByRole('button')).toHaveCount(5)
+  const ask = nav.getByRole('button', { name: 'Ask Bantay' })
+  const box = await ask.boundingBox()
+  const today = await nav.getByRole('button', { name: 'Today' }).boundingBox()
+  expect(box!.y).toBeLessThan(today!.y) // raised
+})
+
+test('avatar opens Me and bell opens notifications', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  await page.getByRole('link', { name: /Me and settings/ }).click()
+  await expect(page).toHaveURL(/#me$/)
+  await expect(page.locator('h1')).toHaveText('Me')
+  await page.goto('/#today')
+  await page.getByRole('link', { name: /Notifications/ }).click()
+  await expect(page).toHaveURL(/#notif$/)
+  await expect(page.getByText('No notifications yet')).toBeVisible()
+})
+
+test('Me: sharing is off, no tab is active, Family no longer shows phone settings', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#me')
+  await expect(page.getByRole('switch', { name: 'Share readings' })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('navigation', { name: 'Main' }).locator('[aria-current="page"]')).toHaveCount(0)
+  await page.goto('/#family')
+  await expect(page.getByText('This phone')).toHaveCount(0)
 })

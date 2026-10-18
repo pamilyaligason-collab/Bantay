@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 test('sky renders behind content and cards are frosted', async ({ page }) => {
   await page.goto('/#today')
   await expect(page.locator('.sky')).toHaveAttribute('data-state', 'clear')
-  await expect(page.locator('.tabs')).toHaveCSS('backdrop-filter', /blur\(20px\)/)
+  await expect(page.locator('.tabbar')).toBeVisible() // v2 tab bar is a solid card, no longer frosted (D-29)
 })
 
 test('reduced motion stops the sky animation', async ({ page }) => {

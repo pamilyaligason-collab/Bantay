@@ -6,7 +6,7 @@ import { getAccessToken } from '../auth/session'
 // Usage insights (contract D-16..D-19). PRIVACY: only these fixed names are ever recorded. No health values, no free text.
 // Anything not on the list is dropped, so a reading like "bp_150" or a name with a digit cannot get through.
 export const EVENT_NAMES = {
-  screen: ['today', 'health', 'records', 'family', 'safety', 'admin'],
+  screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif'],
   action: ['alerts_on', 'alerts_off', 'sensors_on', 'sensors_off', 'import_started', 'import_done', 'reading_added', 'dose_logged', 'sos_sent'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const

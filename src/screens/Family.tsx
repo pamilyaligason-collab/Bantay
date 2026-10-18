@@ -1,5 +1,4 @@
 import { SensorSettings } from '../features/sensors'
-import { PhoneSettings } from '../features/auth/PhoneSettings'
 import Records from './Records'
 
 // People | Records switch. The hash (#family / #records) is the source of truth so deep links and Back work.
@@ -15,12 +14,7 @@ export default function Family() {
         <button aria-pressed={!records} onClick={() => pick('family')}>People</button>
         <button aria-pressed={records} onClick={() => pick('records')}>Records</button>
       </div>
-      {records ? <Records /> : (
-        <>
-          <SensorSettings />
-          <PhoneSettings />
-        </>
-      )}
+      {records ? <Records /> : <SensorSettings />}
     </>
   )
 }

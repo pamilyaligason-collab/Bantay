@@ -1,0 +1,91 @@
+/* Shell + Me styles (Lane B). Everything is scoped under .sh or uses the sh- prefix so it cannot collide with the old global
+   classes (.row .tile .pill .seg .sub) that Lane A replaces. Values are mockup v6. */
+
+/* TEMPORARY fallback: the v2 palette (Task 1 / Lane A lands the same values in tokens.css; identical, so the merge is harmless).
+   Delete this block once tokens.css carries --ground, --card, --green ... */
+:root {
+  --ground: #F6F1E7; --card: #FFFCF6; --card2: #EFE8DA; --green: #1F3D2B; --green2: #2E5A3F; --soft: #DCE5D8;
+  --amber: #E8A93A; --amber-ink: #7A4E05; --muted: #5E625B; --line: #E4DCCB; --on-green: #F6F1E7; --red-soft: #F7DEDA;
+  --sh-shadow: 0 1px 2px rgba(31,61,43,.06), 0 8px 24px rgba(31,61,43,.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
+    --amber: #F0B54C; --amber-ink: #F0B54C; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7; --red-soft: #3A1F1C;
+    --sh-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
+  --amber: #F0B54C; --amber-ink: #F0B54C; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7; --red-soft: #3A1F1C;
+  --sh-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+}
+
+.sh-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* top bar */
+.sh-top { padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
+.sh-me-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
+.sh-me-btn img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
+.sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sh-top-date { font-size: 13px; color: var(--muted); }
+.sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-top .sync-status { font-size: 12px !important; color: var(--muted) !important; }
+.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--sh-shadow); position: relative; text-decoration: none; flex: none; }
+.sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+
+/* tab bar */
+.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 72px; border-radius: 28px; background: var(--card); box-shadow: 0 8px 30px rgba(20,30,20,.18); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
+.sh-tabs button { background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--muted); min-height: 56px; min-width: 0; }
+.sh-tabs button[aria-current="page"] { color: var(--ink); background: none; }
+.sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
+:root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
+.sh-tabs .sh-ask { margin-top: -30px; color: var(--muted); }
+.sh-tabs .sh-bub { width: 62px; height: 62px; border-radius: 50%; background: var(--green); color: var(--on-green); display: grid; place-items: center; box-shadow: 0 0 0 5px var(--ground), 0 0 0 7px var(--amber); }
+.sh-tabs .sh-bub .sh-ic { color: var(--on-green); }
+.sh-tabs .sh-ask:focus-visible .sh-bub { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+/* Me screen + shared small parts */
+.sh { color: var(--ink); }
+.sh-me { display: flex; flex-direction: column; gap: 16px; font-size: 15px; line-height: 1.45; min-width: 0; }
+.sh-me > * { flex-shrink: 0; min-width: 0; }
+.sh-row { display: flex; align-items: center; gap: 12px; }
+.sh-h2 { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: -.01em; }
+.sh-card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--sh-shadow); }
+.sh-sech { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -6px; }
+.sh-sub { font-size: 13px; color: var(--muted); }
+.sh-blk { display: block; }
+.sh-note { margin: -8px 4px 0; }
+.sh-grow { flex: 1; min-width: 0; }
+.sh-list { display: grid; }
+.sh-list > * { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-width: 0; }
+.sh-list > *:first-child { border-top: 0; padding-top: 2px; }
+.sh-list > *:last-child { padding-bottom: 2px; }
+.sh-navrow { background: none; border: 0; width: 100%; text-align: left; min-height: 48px; color: var(--ink); text-decoration: none; font: inherit; }
+.sh-navrow .sh-ic:last-child { color: var(--muted); }
+.sh-soon { opacity: .75; }
+.sh-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; color: #1F3D2B; background: #CFE0CF; overflow: hidden; }
+.sh-av img { width: 100%; height: 100%; object-fit: cover; }
+.sh-av-lg { width: 56px; height: 56px; font-size: 20px; }
+.sh-switch { width: 50px; height: 30px; border-radius: 15px; background: var(--line); border: 0; position: relative; flex: none; padding: 0; }
+.sh-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.sh-switch[aria-checked="true"] { background: var(--green2); }
+.sh-switch[aria-checked="true"]::after { transform: translateX(20px); }
+.sh-chk { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--green2); background: none; flex: none; padding: 0; display: grid; place-items: center; }
+.sh-chk[aria-checked="true"] { background: var(--green2); }
+.sh-chk[aria-checked="true"]::after { content: ""; width: 10px; height: 6px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+.sh-chk[aria-disabled="true"] { opacity: .35; }
+.sh-pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; font-weight: 600; font: inherit; font-weight: 600; }
+.sh-pill.sh-primary { background: var(--green); color: var(--on-green); }
+.sh-pill.sh-ghost { background: var(--card2); color: var(--ink); }
+.sh-pill.sh-block { width: 100%; min-height: 52px; font-size: 16px; }
+.sh-pill.sh-small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.sh-pill:disabled { opacity: .55; }
+.sh-seg { display: grid; grid-auto-flow: column; gap: 2px; background: var(--card2); border-radius: 999px; padding: 3px; }
+.sh-seg button { border: 0; background: none; border-radius: 999px; min-height: 36px; padding: 0 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); }
+.sh-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--sh-shadow); }
+.sh-sheet-wrap { position: absolute; inset: 0; background: rgba(10,15,10,.4); z-index: 15; display: flex; align-items: flex-end; }
+.sh-sheet { background: var(--card); width: 100%; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; max-height: 80%; overflow-y: auto; }
+.sh-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
+.sh a:focus-visible, .sh button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }

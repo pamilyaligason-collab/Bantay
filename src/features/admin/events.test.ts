@@ -24,6 +24,10 @@ describe('track allowlist (B-7)', () => {
     expect(rows[0]).toMatchObject({ table: 'usage_events', op: 'insert' })
     expect(Object.keys(rows[0]!.payload as object).sort()).toEqual(['appVersion', 'kind', 'name'])
   })
+  it('allows the Me and notifications screens', async () => {
+    expect(await track('screen', 'me')).toBe(true)
+    expect(await track('screen', 'notif')).toBe(true)
+  })
   it('drops unknown kinds, unknown names and digit-bearing names', async () => {
     for (const [k, n] of [['reading', 'health'], ['screen', 'bp_150'], ['screen', 'health2'], ['action', '120/80'], ['screen', ''], ['__proto__', 'x'], ['constructor', 'today'], ['action', 'Health']]) {
       expect(await track(k!, n!), `${k}/${n}`).toBe(false)
