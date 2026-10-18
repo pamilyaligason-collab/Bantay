@@ -33,11 +33,11 @@ test.describe('android phone', () => {
   }
 })
 
-test('onboarding has the phone step after alerts, and it can be passed', async ({ page }) => {
-  await page.addInitScript(() => { Notification.requestPermission = async () => 'denied' })
+test('the setup wizard has the phone warnings step, and it can be passed', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Turn on alerts' }).click()
-  await expect(page.locator('h1')).toHaveText("Check your phone's warnings")
+  await page.getByRole('button', { name: /: Your phone's warnings$/ }).click()
+  await expect(page.locator('h1')).toHaveText("Your phone's warnings")
+  await expect(page.getByText('Phone warnings check')).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.locator('h1')).toHaveText('Where are you?')
+  await expect(page.locator('h1')).toHaveText('SOS text contacts')
 })

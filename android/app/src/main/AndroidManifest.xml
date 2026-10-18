@@ -47,6 +47,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Reminders: notifications (Android 13+) and SCHEDULE_EXACT_ALARM, the user-grantable "Alarms and reminders"
+         setting (API 31+, default-denied on 34+). No maxSdkVersion: capping it hides the toggle. USE_EXACT_ALARM and
+         REQUEST_IGNORE_BATTERY_OPTIMIZATIONS are deliberately not declared: the wizard opens the settings screens instead. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!-- Health Connect: read only, and only the four types the app offers (steps, sleep, heart rate, blood pressure).
          The plugin manifest declares many more, including every WRITE_*. Strip them so the Health Connect consent
