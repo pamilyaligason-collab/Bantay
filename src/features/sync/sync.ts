@@ -149,7 +149,7 @@ async function merge(table: string, rows: Record<string, unknown>[], seen: { ids
         seen.byCid.delete(cid); seen.ids.delete(cid)
         continue
       }
-      if (mine) { if (mine.id != null) await lt.update(mine.id, local); else Object.assign(mine, local); continue }
+      if (mine) { if (mine.id != null) await lt.put({ ...local, id: mine.id }); else Object.assign(mine, local); continue } // put, not update: a field nulled on the server must clear here
     }
     if (seen.ids.has(cid)) continue
     const twin = seen.keys.get(naturalKey[table](local))
@@ -177,11 +177,20 @@ async function pull(token: string) {
       keys: new Map(all.map((r) => [naturalKey[table](r), r] as const)),
       byCid: new Map(all.filter((r) => r.clientId).map((r) => [r.clientId!, r] as const))
     }
-    const col = TABLES[table].cursor ?? 'created_at'
+    let col: string = TABLES[table].cursor ?? 'created_at'
     let cursor = (await db.kv.get(cursorKey(table)))?.value as string | undefined
     let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
     for (let page = 0; page < 20; page++) {
-      const rows = await getJson(`${url}/rest/v1/${table}?select=*&order=${col}.asc&limit=${PAGE}` + (from ? `&${col}=gte.${encodeURIComponent(from)}` : ''), key!, token)
+      const page_ = (c: string) => getJson(`${url}/rest/v1/${table}?select=*&order=${c}.asc&limit=${PAGE}` + (from ? `&${c}=gte.${encodeURIComponent(from)}` : ''), key!, token)
+      let rows: Record<string, unknown>[]
+      try {
+        rows = await page_(col)
+      } catch (e) {
+        // 42703 = the column does not exist yet (migration 0008 not applied): this table falls back to created_at, the rest carry on
+        if (col === 'created_at' || !(e instanceof SyncError) || e.code !== '42703') throw e
+        col = 'created_at'
+        rows = await page_(col)
+      }
       await merge(table, rows, seen, lt)
       const last = rows.length ? (rows[rows.length - 1][col] as string) : undefined
       if (last && (!cursor || Date.parse(last) > Date.parse(cursor))) {

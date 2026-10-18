@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { getMember } from '../auth/session'
 import { latestVsNormal } from '../health/ranges'
-import { driveUrl, type DocBundle } from './api'
-import { KIND, labRange } from './ConfirmSheet'
+import type { DocBundle } from './api'
+import { KIND, labRange, OriginalLink } from './ConfirmSheet'
 import './records.css'
 
 /** A confirmed document: results against the lab's own range, prescription lines, imaging impression, original file. */
@@ -75,10 +75,7 @@ export function RecordDetail({ bundle, who, onBack }: { bundle: DocBundle; who: 
           ))}
         </div>
       )}
-      {bundle.files.map((f) => {
-        const u = driveUrl(f.drive_file_id)
-        return u && <a key={f.id} className="rx-open" href={u} target="_blank" rel="noreferrer">Open original ({f.name})</a>
-      })}
+      {bundle.files.map((f) => <OriginalLink key={f.id} file={f} />)}
       <p className="sub" style={{ margin: 0 }}>Ranges are for information only and are not medical advice.</p>
     </section>
   )

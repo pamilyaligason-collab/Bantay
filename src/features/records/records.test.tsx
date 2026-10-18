@@ -5,6 +5,8 @@ import { db } from '../../db'
 
 type Call = { table: string; ops: unknown[][] }
 const h = vi.hoisted(() => {
+  const signed = vi.fn(async (_p: string, _s: number) => ({ data: { signedUrl: 'https://signed.test/x' }, error: null as unknown }))
+  const buckets: string[] = []
   const calls: { table: string; ops: unknown[][] }[] = []
   const state = { handler: (_c: { table: string; ops: unknown[][] }): unknown => ({ data: [], error: null }) }
   const from = (table: string) => {
@@ -15,14 +17,14 @@ const h = vi.hoisted(() => {
     })
     return b
   }
-  return { calls, state, sb: { from } }
+  return { calls, state, signed, buckets, sb: { from, storage: { from: (b: string) => { buckets.push(b); return { createSignedUrl: signed } } } } }
 })
 let connected = true
 vi.mock('../auth/client', () => ({ get supabase() { return connected ? h.sb : null } }))
 
 import Records from '../../screens/Records'
-import { canonicalFor, confirmRows, EDITABLE, listQueue, rejectRows, updateRow } from './api'
-import { ConfirmFlow } from './ConfirmSheet'
+import { canonicalFor, confirmRows, EDITABLE, listQueue, rejectRows, settleDocument, updateRow } from './api'
+import { ConfirmFlow, OriginalLink } from './ConfirmSheet'
 import { hdb } from './store'
 
 const ok = (data: unknown) => ({ data, error: null })
@@ -105,6 +107,8 @@ describe('api', () => {
     expect(canonicalFor(catalog[0], null, 'mg/dL')).toBeNull()
     expect(canonicalFor(catalog[0], 5, 'mmol/L')).toBeCloseTo(193.35)
     expect(canonicalFor(catalog[0], 5, 'furlongs')).toBeNull()
+    expect(canonicalFor(catalog[0], 5, ' MMOL/L ')).toBeCloseTo(193.35) // case and spaces do not matter
+    expect(canonicalFor({ ...catalog[0], conversions: { 'MMOL/L ': 38.67 } }, 5, 'mmol/l')).toBeCloseTo(193.35)
   })
 
   it('an unclear prescription line is excluded from a batch confirm on the server too', async () => {
@@ -113,6 +117,27 @@ describe('api', () => {
     h.calls.length = 0
     await confirmRows('prescription_items', ['i2'])
     expect(has(h.calls[0], 'eq', 'unclear', false)).toBe(false)
+  })
+
+  it('the badge counts a draft document that has no rows, so it matches the list', async () => {
+    tables.documents = [doc, { ...doc, id: 'd2', kind: 'insurance', doc_date: '2026-09-02' }]
+    expect(await listQueue()).toEqual({ ok: true, data: { total: 4, byPerson: { p1: 4 } } })
+  })
+
+  it('settle closes the children first and the document last', async () => {
+    tables.lab_results = [{ id: 'l1', status: 'confirmed' }]
+    tables.prescription_items = [{ id: 'i1', status: 'confirmed' }]
+    tables.vaccinations = []
+    tables.imaging_reports = []
+    h.calls.length = 0
+    expect(await settleDocument('d1')).toEqual({ ok: true, data: 'confirmed' })
+    expect(updates().map((c) => c.table)).toEqual(['prescriptions', 'documents'])
+    tables.lab_results = [{ id: 'l1', status: 'draft' }]
+    expect(await settleDocument('d1')).toEqual({ ok: true, data: 'open' })
+    tables.lab_results = []
+    tables.prescription_items = []
+    tables.prescriptions = []
+    expect(await settleDocument('d1')).toEqual({ ok: true, data: 'open' }) // a document with no rows is not auto-rejected
   })
 
   it('errors are typed results with a code, never the server message', async () => {
@@ -206,6 +231,45 @@ describe('ConfirmFlow', () => {
     const body = updates().at(-1)!.ops.find((o) => o[0] === 'update')![1] as Record<string, unknown>
     expect(body.unit_raw).toBe('mmol/L')
     expect(body.value_canonical).toBeCloseTo(193.35)
+  })
+
+  it('a draft document with no rows offers Confirm document and Reject document, then leaves the list', async () => {
+    tables.documents = [doc, { ...doc, id: 'd2', kind: 'insurance_card', doc_date: '2026-09-02' }]
+    render(<ConfirmFlow people={[{ id: 'p1', name: 'Test Person' }]} onClose={() => {}} onChanged={() => {}} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Insurance card, 2026-09-02/ }))
+    expect(await screen.findByRole('button', { name: 'Reject document' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm document' }))
+    await screen.findByRole('heading', { name: 'To check' })
+    expect(screen.getByRole('status').textContent).toBe('Document confirmed')
+    const u = updates().find((c) => c.table === 'documents')!
+    expect(u.ops.find((o) => o[0] === 'update')![1]).toEqual({ status: 'confirmed' })
+    expect(u.ops.find((o) => o[0] === 'in')![2]).toEqual(['d2'])
+    expect(screen.queryByRole('button', { name: /Insurance card, 2026-09-02/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Lab results, 2026-09-01/ })).toBeTruthy()
+  })
+
+  it('only rows the server actually changed leave the list', async () => {
+    await mount()
+    h.state.handler = (c) => {
+      if (c.ops.some((o) => o[0] === 'update')) return ok(c.table === 'lab_results' ? [{ id: 'l1' }] : (c.ops.find((o) => o[0] === 'in')?.[2] as string[]).map((id) => ({ id })))
+      return ok(tables[c.table] ?? [])
+    }
+    fireEvent.click(screen.getByRole('button', { name: /Confirm all checked/ }))
+    await waitFor(() => expect(document.querySelector('[data-row="l1"]')).toBeNull())
+    expect(document.querySelector('[data-row="l3"]')).not.toBeNull() // l3 was asked for but not changed
+    expect(screen.getByRole('status').textContent).toContain('Could not save the rest')
+  })
+
+  it('a private-bucket file opens a 60 s signed link from the records bucket and nothing is stored', async () => {
+    const win = { close: vi.fn(), opener: 1, location: { href: '' } }
+    vi.stubGlobal('open', vi.fn(() => win))
+    render(<OriginalLink file={{ id: 'f9', name: 'card.jpg', mime: 'image/jpeg', drive_file_id: null, storage_path: 'p1/u.jpg', side: 'front' }} />)
+    fireEvent.click(screen.getByRole('button', { name: /Open original \(front\)/ }))
+    await waitFor(() => expect(h.signed).toHaveBeenCalledWith('p1/u.jpg', 60))
+    expect(h.buckets).toContain('records')
+    await waitFor(() => expect(win.location.href).toBe('https://signed.test/x'))
+    expect(JSON.stringify(await db.kv.toArray())).not.toContain('signed.test')
+    vi.unstubAllGlobals()
   })
 
   it('Escape goes back, then closes; status is one polite live region', async () => {

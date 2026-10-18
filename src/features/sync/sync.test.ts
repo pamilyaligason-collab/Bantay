@@ -281,6 +281,37 @@ describe('pull', () => {
     expect((await hdb.readings.toArray()).map((r) => [r.value, clientIdOf(r)])).toEqual([[96, 'cx']])
   })
 
+  it('a field nulled on the server is cleared locally on the next pull', async () => {
+    const base = { client_id: 'cn', person_id: 'p1', taken_at: '2026-10-01T00:00:00+00:00', test: 'ldl', value: 120, unit: 'mg/dL', lab_low: 0, lab_high: 130, confidence: 0.9, deleted_at: null }
+    let rows: Record<string, unknown>[] = [{ ...base, updated_at: '2026-10-02T00:00:00+00:00' }]
+    mockFetch((c) => (c.url.includes('/readings?') && c.method === 'GET' ? json(rows) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    expect((await hdb.readings.toArray())[0].confidence).toBe(0.9)
+    rows = [{ ...base, confidence: null, lab_high: null, updated_at: '2026-10-03T00:00:00+00:00' }]
+    await syncNow(true)
+    const [r] = await hdb.readings.toArray()
+    expect(await hdb.readings.count()).toBe(1)
+    expect(r.confidence).toBeUndefined()
+    expect(r.labHigh).toBeNull() // unknown range stays null, never 0
+  })
+
+  it('column missing (0008 not applied): readings fall back to created_at, the other tables still pull', async () => {
+    mockFetch((c) => {
+      if (c.method !== 'GET') return json([])
+      if (c.url.includes('/readings?') && c.url.includes('order=updated_at')) return json({ code: '42703', message: 'column readings.updated_at does not exist' }, 400)
+      if (c.url.includes('/readings?')) return json(server.map((r) => ({ ...r, created_at: r.updated_at })))
+      return json([])
+    })
+    startSync(cfg())()
+    await syncNow()
+    expect(await hdb.readings.count()).toBe(2)
+    const urls = calls.filter((c) => c.method === 'GET').map((c) => c.url)
+    expect(urls.some((u) => u.includes('/readings?') && u.includes('order=created_at'))).toBe(true)
+    expect(urls.some((u) => u.includes('/consults?'))).toBe(true)
+    expect(urls.some((u) => u.includes('/activity?'))).toBe(true)
+  })
+
   it('a permanent pull error backs off and tracks sync_failed once per streak', async () => {
     vi.mocked(track).mockClear()
     mockFetch((c) => (c.url.includes('/people?') ? json({ code: 'PGRST' }, 404) : json([])))

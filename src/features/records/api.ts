@@ -23,7 +23,7 @@ export const EDITABLE: Record<Table, readonly string[]> = {
   prescriptions: ['rx_date', 'prescriber', 'follow_up_on']
 }
 
-export interface SourceFile { id: string; name: string; mime: string; drive_file_id: string }
+export interface SourceFile { id: string; name: string; mime: string; drive_file_id: string | null; storage_path?: string | null; side?: string | null }
 export interface Doc extends Row { person_id: string; kind: string; doc_date: string | null; facility: string | null; title: string | null; status: string; confirmed_by: string | null; confirmed_at: string | null }
 export interface Lab extends Row { name_raw: string; value_num: number | null; value_text: string | null; unit_raw: string | null; test_code: string | null; flag: string | null; ref_low: number | null; ref_high: number | null; ref_text: string | null; collected_at: string | null; confidence: number | null; value_canonical: number | null }
 export interface RxItem extends Row { prescription_id: string; line_no: number; drug_raw: string | null; strength: string | null; dose: string | null; frequency: string | null; duration: string | null; unclear: boolean; confidence: number | null }
@@ -53,15 +53,19 @@ const none = <T,>(): Res<T[]> => ({ ok: true, data: [] })
 
 export const driveUrl = (id: string) => (/^[\w-]+$/.test(id) ? `https://drive.google.com/file/d/${id}/view` : null)
 
-/** N for "To check (N)": draft rows waiting; a draft document with no rows yet counts as one. */
+/** N for "To check (N)": draft rows waiting, plus draft documents that have no rows (insurance, certificate, cards...). Matches the list. */
 export async function listQueue(): Promise<Res<Queue>> {
   const r = await run<{ person_id: string; kind: string; drafts: number }[]>((s) => s.from('records_queue').select('*'))
   if (!r.ok) return r
-  const items = r.data.filter((x) => x.kind !== 'documents')
-  const rows = items.length ? items : r.data
   const byPerson: Record<string, number> = {}
-  for (const x of rows) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts)
-  return { ok: true, data: { total: rows.reduce((n, x) => n + Number(x.drafts), 0), byPerson } }
+  for (const x of r.data.filter((x) => x.kind !== 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts)
+  const d = await bundles('draft')
+  if (d.ok) {
+    for (const b of d.data) if (b.labs.length + b.items.length + b.vaccinations.length + b.imaging.length === 0) byPerson[b.doc.person_id] = (byPerson[b.doc.person_id] ?? 0) + 1
+  } else {
+    for (const x of r.data.filter((x) => x.kind === 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts) // list unavailable: the view's own count
+  }
+  return { ok: true, data: { total: Object.values(byPerson).reduce((n, v) => n + v, 0), byPerson } }
 }
 
 const group = <T,>(rows: T[], key: keyof T) => {
@@ -98,7 +102,7 @@ async function bundles(status: 'draft' | 'confirmed', personId?: string): Promis
     const m = await run<Doc[]>((s) => s.from('documents').select('*').in('id', missing))
     if (m.ok) for (const d of m.data) known.set(d.id, d)
   }
-  const files = ids.size ? await run<(SourceFile & { document_id: string })[]>((s) => s.from('source_files').select('id,name,mime,drive_file_id,document_id').in('document_id', [...ids])) : none<SourceFile & { document_id: string }>()
+  const files = ids.size ? await run<(SourceFile & { document_id: string })[]>((s) => s.from('source_files').select('id,name,mime,drive_file_id,storage_path,side,document_id').in('document_id', [...ids])) : none<SourceFile & { document_id: string }>()
   const g = {
     labs: group(labs.data.filter((r) => r.document_id), 'document_id'),
     vacc: group(vacc.data.filter((r) => r.document_id), 'document_id'),
@@ -123,28 +127,15 @@ async function bundles(status: 'draft' | 'confirmed', personId?: string): Promis
 export const listDrafts = (personId?: string) => bundles('draft', personId)
 export const listConfirmedDocuments = (personId: string) => bundles('confirmed', personId)
 
-/** One document with every non-rejected child and its original files (detail screen). */
-export async function getDocument(id: string): Promise<Res<DocBundle>> {
-  const d = await run<Doc | null>((s) => s.from('documents').select('*').eq('id', id).maybeSingle())
-  if (!d.ok) return d
-  if (!d.data) return { ok: false, error: 'not_found' }
-  const [labs, vacc, img, rx, files] = await Promise.all([
-    run<Lab[]>((s) => s.from('lab_results').select('*').eq('document_id', id)),
-    run<Vaccination[]>((s) => s.from('vaccinations').select('*').eq('document_id', id)),
-    run<Imaging[]>((s) => s.from('imaging_reports').select('*').eq('document_id', id)),
-    run<{ id: string }[]>((s) => s.from('prescriptions').select('id').eq('document_id', id)),
-    run<SourceFile[]>((s) => s.from('source_files').select('id,name,mime,drive_file_id').eq('document_id', id))
-  ])
-  if (!labs.ok) return labs
-  if (!vacc.ok) return vacc
-  if (!img.ok) return img
-  if (!rx.ok) return rx
-  if (!files.ok) return files
-  const rxIds = rx.data.map((p) => p.id)
-  const items = rxIds.length ? await run<RxItem[]>((s) => s.from('prescription_items').select('*').in('prescription_id', rxIds)) : none<RxItem>()
-  if (!items.ok) return items
-  const keep = <T,>(rows: T[]) => rows.filter((r) => (r as { status?: unknown }).status !== 'rejected')
-  return { ok: true, data: { doc: d.data, labs: keep(labs.data), items: keep(items.data).sort((a, b) => a.line_no - b.line_no), vaccinations: keep(vacc.data), imaging: keep(img.data), files: files.data } }
+/** Short-lived (60 s) signed link to a file in the private 'records' bucket. Never stored or logged. */
+export async function signedUrl(path: string): Promise<Res<string>> {
+  if (!supabase) return NO
+  try {
+    const { data, error } = await supabase.storage.from('records').createSignedUrl(path, 60)
+    return error || !data?.signedUrl ? fail(error) : { ok: true, data: data.signedUrl }
+  } catch (e) {
+    return fail(e)
+  }
 }
 
 export const listTestCatalog = () => run<CatalogTest[]>((s) => s.from('test_catalog').select('code,name,unit,conversions').order('name'))
@@ -174,16 +165,16 @@ async function withMirror<T>(ids: string[], change: () => Promise<Res<T>>): Prom
   return res
 }
 
-async function setStatus(table: Table, ids: string[], status: 'confirmed' | 'rejected'): Promise<Res<{ changed: number }>> {
+async function setStatus(table: Table, ids: string[], status: 'confirmed' | 'rejected'): Promise<Res<{ changed: number; ids: string[] }>> {
   if (!Object.hasOwn(EDITABLE, table) || ids.length === 0) return { ok: false, error: 'invalid' }
-  const go = async (): Promise<Res<{ changed: number }>> => {
+  const go = async (): Promise<Res<{ changed: number; ids: string[] }>> => {
     const r = await run<{ id: string }[]>((s) => {
       const q = s.from(table).update({ status }).in('id', ids)
       // an unclear prescription line is confirmed on its own, never swept in with others
       return (table === 'prescription_items' && status === 'confirmed' && ids.length > 1 ? q.eq('unclear', false) : q).select('id')
     })
     if (!r.ok) return r
-    return r.data.length ? { ok: true, data: { changed: r.data.length } } : { ok: false, error: 'forbidden' } // RLS hides rows it will not change
+    return r.data.length ? { ok: true, data: { changed: r.data.length, ids: r.data.map((x) => x.id) } } : { ok: false, error: 'forbidden' } // RLS hides rows it will not change
   }
   return table === 'lab_results' ? withMirror(ids, go) : go()
 }
@@ -214,7 +205,8 @@ export function canonicalFor(cat: CatalogTest | undefined, value: number | null,
   if (!cat || value == null) return null
   const u = (unit ?? '').trim()
   if (u.toLowerCase() === cat.unit.toLowerCase()) return value
-  const f = cat.conversions?.[u]
+  const key = Object.keys(cat.conversions ?? {}).find((k) => k.trim().toLowerCase() === u.toLowerCase())
+  const f = key === undefined ? undefined : cat.conversions[key]
   return typeof f === 'number' ? Number((value * f).toPrecision(8)) : null
 }
 
@@ -234,11 +226,15 @@ export async function settleDocument(docId: string): Promise<Res<'confirmed' | '
   const it = rx.length ? await run<Row[]>((s) => s.from('prescription_items').select('id,status').in('prescription_id', rx)) : none<Row>()
   if (!it.ok) return it
   const rows = [...l.data, ...v.data, ...i.data, ...it.data]
+  if (rows.length === 0) return { ok: true, data: 'open' } // a document with no rows is confirmed or rejected by hand
   if (rows.some((r) => r.status === 'draft')) return { ok: true, data: 'open' }
   const status = rows.some((r) => r.status === 'confirmed') ? 'confirmed' : 'rejected'
+  if (rx.length) {
+    const c = await setStatus('prescriptions', rx, status) // children first, the document last: a failure leaves it draft so it is retried
+    if (!c.ok) return c
+  }
   const r = await setStatus('documents', [docId], status)
   if (!r.ok) return r
-  if (rx.length) await setStatus('prescriptions', rx, status)
   return { ok: true, data: status }
 }
 

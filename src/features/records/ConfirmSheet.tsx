@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { position } from '../health/ranges'
 import {
-  canonicalFor, confirmRows, driveUrl, listDrafts, listTestCatalog, rejectRows, ROW_TABLES, settleDocument, updateRow,
-  type CatalogTest, type DocBundle, type Lab, type RowTable, type RxItem
+  canonicalFor, confirmRows, driveUrl, listDrafts, listTestCatalog, rejectRows, ROW_TABLES, settleDocument, signedUrl, updateRow,
+  type CatalogTest, type DocBundle, type Lab, type RowTable, type RxItem, type SourceFile
 } from './api'
 import type { Person } from './store'
 import { usePeople } from './useRecordsServer'
@@ -11,7 +11,7 @@ import './records.css'
 
 // D-36 / D-47: nothing counts until a person confirms it. The sheet lists draft documents, then draft rows to confirm, fix or reject.
 export const LOW_CONFIDENCE = 0.8
-export const KIND: Record<string, string> = { lab: 'Lab results', prescription: 'Prescription', lab_request: 'Lab request', imaging: 'Imaging report', vaccination: 'Vaccination', insurance: 'Insurance', certificate: 'Certificate', other: 'Document' }
+export const KIND: Record<string, string> = { lab: 'Lab results', prescription: 'Prescription', lab_request: 'Lab request', imaging: 'Imaging report', vaccination: 'Vaccination', insurance: 'Insurance', certificate: 'Certificate', id_card: 'ID card', insurance_card: 'Insurance card', other: 'Document' }
 export const firstName = (n?: string) => (n ?? '').trim().split(/\s+/)[0] || 'Person'
 export const isLow = (c: number | null | undefined) => c != null && c < LOW_CONFIDENCE
 export function outOfRange(l: Lab) {
@@ -63,6 +63,28 @@ const title = (i: Item): string => String(i.table === 'lab_results' ? i.row.name
 const unclear = (i: Item) => i.table === 'prescription_items' && !!i.row.unclear
 const lowOrOut = (i: Item) => isLow(i.row.confidence) || (i.table === 'lab_results' && outOfRange(i.row))
 const defaultChecked = (i: Item) => !unclear(i) && !isLow(i.row.confidence) && !(i.table === 'lab_results' && i.row.value_num == null && i.row.value_text == null)
+
+/** Drive file: plain link. Private-bucket file: a 60 s signed link made on click, opened and forgotten. */
+export function OriginalLink({ file }: { file: SourceFile }) {
+  const [err, setErr] = useState(false)
+  const d = file.drive_file_id ? driveUrl(file.drive_file_id) : null
+  if (d) return <a className="rx-open" href={d} target="_blank" rel="noreferrer">Open original ({file.name})</a>
+  if (!file.storage_path) return null
+  const go = async () => {
+    setErr(false)
+    const w = window.open('about:blank', '_blank') // opened now so the click is not treated as a popup
+    const r = await signedUrl(file.storage_path!)
+    if (!r.ok || !w) { w?.close(); setErr(true); return }
+    w.opener = null
+    w.location.href = r.data
+  }
+  return (
+    <>
+      <button className="rx-btn" style={{ justifyContent: 'flex-start' }} onClick={() => void go()}>Open original{file.side ? ` (${file.side})` : ''} ({file.name})</button>
+      {err && <span className="sub" role="alert">Could not open the file. Check your connection and try again.</span>}
+    </>
+  )
+}
 
 function Line({ item, catalog, busy, checked, onCheck, onConfirm, onReject, onFix }: {
   item: Item; catalog: CatalogTest[]; busy: boolean; checked: boolean; onCheck(v: boolean): void; onConfirm(): void; onReject(): void
@@ -169,6 +191,26 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
   }, [openId, onClose])
 
   const open = bundles?.find((b) => b.doc.id === openId)
+  useEffect(() => {
+    // a document opened with no rows left may only need closing (an earlier settle failed): let the server decide
+    const b = bundles?.find((x) => x.doc.id === openId)
+    if (!b || itemsOf(b).length > 0) return
+    void settleDocument(b.doc.id).then((s) => {
+      if (s.ok && s.data !== 'open') { setBundles((bs) => bs && bs.filter((x) => x.doc.id !== b.doc.id)); setOpenId(null); onChanged() }
+    })
+  }, [openId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function actDoc(kind: 'confirm' | 'reject') {
+    if (!open) return
+    setBusy(true)
+    const r = kind === 'confirm' ? await confirmRows('documents', [open.doc.id]) : await rejectRows('documents', [open.doc.id])
+    setBusy(false)
+    if (!r.ok) return setMsg('Could not save. Check your connection and try again.')
+    setBundles((bs) => bs && bs.filter((b) => b.doc.id !== open.doc.id))
+    setOpenId(null)
+    setMsg(kind === 'confirm' ? 'Document confirmed' : 'Document rejected')
+    onChanged()
+  }
   const who = (pid: string) => firstName(people.find((p) => p.id === pid)?.name)
   const items = open ? itemsOf(open) : []
   const isOn = (i: Item) => checked[i.row.id] ?? defaultChecked(i)
@@ -189,7 +231,7 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
       const ids = picked.filter((i) => i.table === t).map((i) => i.row.id)
       if (!ids.length) continue
       const r = kind === 'confirm' ? await confirmRows(t, ids) : await rejectRows(t, ids)
-      if (r.ok) { done += r.data.changed; patchBundle(open.doc.id, without(ids)) } else failed = true
+      if (r.ok) { done += r.data.changed; patchBundle(open.doc.id, without(r.data.ids)); if (r.data.ids.length < ids.length) failed = true } else failed = true
     }
     const word = kind === 'confirm' ? 'confirmed' : 'rejected'
     setMsg(failed ? `${done ? `${done} ${word}. ` : ''}Could not save the rest. Check your connection and try again.` : `${done} ${word}`)
@@ -217,6 +259,8 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
 
   const label = (b: DocBundle) => `${KIND[b.doc.kind] ?? 'Document'}${b.doc.doc_date ? `, ${b.doc.doc_date}` : ''}`
   return createPortal(
+    <>
+    <div className="sheet-dim" aria-hidden="true" />
     <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="cs-h">
       <div className="sheet-top">
         {open && <button className="rx-btn" onClick={() => setOpenId(null)}>Back</button>}
@@ -247,11 +291,14 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
 
       {open && (
         <>
-          {open.files.map((f) => {
-            const u = driveUrl(f.drive_file_id)
-            return u && <a key={f.id} className="rx-open" href={u} target="_blank" rel="noreferrer">Open original ({f.name})</a>
-          })}
-          {items.length === 0 ? <div className="grp"><div className="row"><span className="grow sub">No rows left in this document.</span></div></div> : (
+          {open.files.map((f) => <OriginalLink key={f.id} file={f} />)}
+          {items.length === 0 ? (
+            <>
+              <div className="grp"><div className="row"><span className="grow sub">This document has no values to check. Look at the original, then confirm or reject it.</span></div></div>
+              <button className="btn" disabled={busy} onClick={() => void actDoc('confirm')}>Confirm document</button>
+              <button className="btn2" disabled={busy} onClick={() => void actDoc('reject')}>Reject document</button>
+            </>
+          ) : (
             <div className="grp">
               {items.map((i) => (
                 <Line key={i.row.id} item={i} catalog={catalog} busy={busy} checked={isOn(i)} onCheck={(v) => setChecked({ ...checked, [i.row.id]: v })}
@@ -267,7 +314,8 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
           )}
         </>
       )}
-    </div>,
+    </div>
+    </>,
     document.body
   )
 }

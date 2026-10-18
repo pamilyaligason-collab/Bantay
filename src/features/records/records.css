@@ -1,11 +1,12 @@
 /* Confirm sheet and record detail. Uses the app tokens and the grp/row/sub/hd classes; only the overlay and small controls are new. */
 .sheet {
   position: fixed; inset: 0; z-index: 60; max-width: 520px; margin: 0 auto; box-sizing: border-box;
-  overflow-y: auto; overflow-x: hidden; padding: 14px 16px 48px; background: var(--bg); color: var(--ink);
-  font-size: 17px; line-height: 1.4; font-variant-numeric: tabular-nums;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  overflow-y: auto; overflow-x: hidden; padding: 14px 16px 48px; color: var(--ink);
+  background: linear-gradient(170deg, var(--sky-clear-a), var(--sky-clear-b)); /* the same sky the other screens sit on; cards are .grp glass */
+  font-size: 17px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   display: flex; flex-direction: column; gap: 14px;
 }
+.sheet-dim { position: fixed; inset: 0; z-index: 59; background: rgba(0,0,0,0.45); }
 .sheet button { cursor: pointer; font: inherit; }
 .sheet button:focus-visible, .sheet a:focus-visible, .sheet input:focus-visible, .sheet select:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .sheet h2 { margin: 0; font-size: 28px; line-height: 1.15; font-weight: 700; overflow-wrap: anywhere; }
