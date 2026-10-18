@@ -15,14 +15,17 @@ if (-not (Test-Path import\people-map.json)) { throw 'step 1 failed: import\peop
 if (-not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
 if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
 
-Step 2 'Drive token (OAuth Playground, scope drive.readonly). Paste it; it is not shown or saved.'
-$sec = Read-Host 'Drive access token' -AsSecureString
-$env:DRIVE_ACCESS_TOKEN = ([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))).Trim()
-if ($env:DRIVE_ACCESS_TOKEN.Length -lt 40 -or -not $env:DRIVE_ACCESS_TOKEN.StartsWith('ya29.')) {
-  Remove-Item Env:DRIVE_ACCESS_TOKEN -ErrorAction SilentlyContinue
-  throw "step 2 failed: that does not look like an access token (got $($sec.Length) characters; it should start with ya29. and be about 200 long). Paste with a right-click, then Enter."
+Step 2 'Drive token (OAuth Playground, scope drive.readonly). Copy it in the browser, then press Enter here. It is read from the clipboard, never shown or saved, and the clipboard is wiped.'
+function Clear-Clip { Set-Clipboard -Value ' '; try { [Windows.ApplicationModel.DataTransfer.Clipboard, Windows.ApplicationModel.DataTransfer, ContentType = WindowsRuntime]::ClearHistory() | Out-Null } catch {} }
+Read-Host 'Copied the Access token? Press Enter' | Out-Null
+$tok = "$(Get-Clipboard -Raw)".Trim()
+Clear-Clip
+if ($tok.Length -lt 40 -or -not $tok.StartsWith('ya29.')) {
+  $tok = $null
+  throw "step 2 failed: the clipboard does not hold an access token (it should start with ya29.). In the Playground click inside the Access token box, Ctrl+A, Ctrl+C, then run this again."
 }
-Write-Host "  token received ($($sec.Length) characters)"
+Write-Host "  token received ($($tok.Length) characters); clipboard wiped"
+$env:DRIVE_ACCESS_TOKEN = $tok; $tok = $null; $sec = $null
 $env:DRIVE_ROOT_ID = (Get-Content 'importdrive-root.txt' -Raw).Trim()   # Bantay Medical folder id, kept in git-ignored import/drive-root.txt
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'
