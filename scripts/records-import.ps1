@@ -28,7 +28,9 @@ if (Test-Path $LocalRoot) {
   if ($tok.Length -lt 40 -or -not $tok.StartsWith('ya29.')) { $tok = $null; throw "step 2 failed: the clipboard does not hold an access token (it should start with ya29.)." }
   Write-Host "  token received ($($tok.Length) characters); clipboard wiped"
   $env:DRIVE_ACCESS_TOKEN = $tok; $tok = $null
-  $env:DRIVE_ROOT_ID = (Get-Content 'importdrive-root.txt' -Raw).Trim()   # Bantay Medical folder id, kept in git-ignored import/drive-root.txt
+  # Bantay Medical folder id lives in git-ignored import/drive-root.txt (the repo is public).
+  if (-not (Test-Path 'import/drive-root.txt')) { throw "step 2 failed: put the Bantay Medical Drive folder id in import/drive-root.txt (one line)." }
+  $env:DRIVE_ROOT_ID = (Get-Content 'import/drive-root.txt' -Raw).Trim()
 }
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'

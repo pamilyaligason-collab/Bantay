@@ -7,7 +7,7 @@ Everything real lives under the git-ignored `import/` folder. Scripts print coun
 | Name | What |
 |---|---|
 | `DRIVE_ACCESS_TOKEN` | OAuth Playground token, scope `https://www.googleapis.com/auth/drive.readonly` (expires in about an hour) |
-| `DRIVE_ROOT_ID` | Drive id of the medical folder. Its sub-folders are the person folders |
+| `DRIVE_ROOT_ID` | Drive id of the medical folder (records-import.ps1 reads it from git-ignored `import/drive-root.txt`; never commit it). Its sub-folders are the person folders |
 | `OPENROUTER_API_KEY` | paid account |
 | `OPENROUTER_MODEL` | paid vision model (`:free` is refused) |
 | `OPENROUTER_FALLBACK_MODEL` | paid fallback |
