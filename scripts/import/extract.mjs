@@ -14,14 +14,18 @@ export const hasRealText = (t) => (String(t ?? '').match(/[\p{L}\p{N}]/gu)?.leng
 /** Local text layer via pdf.js (legacy build, Node). Returns '' when unreadable. */
 export async function extractPdfText(buf) {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), useSystemFonts: true, verbosity: 0 }).promise
-  const pages = []
-  for (let i = 1; i <= doc.numPages; i++) {
-    const c = await (await doc.getPage(i)).getTextContent()
-    pages.push(c.items.map((x) => x.str ?? '').join(' '))
+  const task = pdfjs.getDocument({ data: new Uint8Array(buf), useSystemFonts: true, verbosity: 0 })
+  try {
+    const doc = await task.promise
+    const pages = []
+    for (let i = 1; i <= doc.numPages; i++) {
+      const c = await (await doc.getPage(i)).getTextContent()
+      pages.push(c.items.map((x) => x.str ?? '').join(' '))
+    }
+    return pages.join('\n\n')
+  } finally {
+    await task.destroy() // pdfjs 6: destroy lives on the loading task
   }
-  await doc.destroy()
-  return pages.join('\n\n')
 }
 
 /** Retry 429 / 5xx with exponential backoff. Other errors are thrown at once. */
@@ -62,14 +66,18 @@ export const pending = (manifest, hasDraft, hasFile) =>
   manifest.files.filter((e) => !e.skipped && !e.duplicate_of && !e.download_failed && !hasDraft(e.drive_file_id) && hasFile(e.drive_file_id))
 
 /** One file -> draft object, or {failed:true,...} for types we cannot read. Throws on API failure. */
-export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {} }) {
+export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, stats = { text_layer_errors: 0 } }) {
   const mime = e.stored_mime ?? e.mime
   const isPdf = mime === 'application/pdf'
   if (!isPdf && !mime.startsWith('image/')) return { failed: true, reason: 'unsupported_mime' }
   let text
   if (isPdf) {
-    const t = await extractPdfText(buf).catch(() => '')
-    if (hasRealText(t)) text = t
+    try {
+      const t = await extractPdfText(buf)
+      if (hasRealText(t)) text = t
+    } catch {
+      stats.text_layer_errors++ // count only; the file still goes as vision
+    }
   }
   const body = buildRequest({
     model: env.OPENROUTER_MODEL,
@@ -92,9 +100,10 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   mkdirSync('import/drafts', { recursive: true })
   const todo = pending(manifest, (id) => existsSync(`import/drafts/${id}.json`), (id) => existsSync(`import/files/${id}`)).slice(0, limit)
   const n = { todo: todo.length, done_text: 0, done_vision: 0, unsupported: 0, failed: 0 }
+  const stats = { text_layer_errors: 0 }
   for (const e of todo) {
     try {
-      const d = await extractOne(e, readFileSync(`import/files/${e.drive_file_id}`), { env })
+      const d = await extractOne(e, readFileSync(`import/files/${e.drive_file_id}`), { env, stats })
       writeFileSync(`import/drafts/${e.drive_file_id}.json`, JSON.stringify(d, null, 2))
       if (d.failed) n.unsupported++
       else n[d.via === 'text' ? 'done_text' : 'done_vision']++
@@ -104,7 +113,7 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     }
     await sleep(delay)
   }
-  console.log(JSON.stringify(n))
+  console.log(JSON.stringify({ ...n, ...stats }))
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(String(e.message).slice(0, 120)); process.exit(1) })
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(`extract failed: ${e?.name ?? 'Error'}`); process.exit(1) })

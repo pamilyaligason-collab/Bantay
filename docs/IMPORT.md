@@ -27,6 +27,12 @@ Requests always carry `provider: {zdr: true, data_collection: 'deny'}`.
    (`--file`/`-f` is the SQL file flag; `--linked` targets the linked project; `--local` and `--db-url` also exist.) The file is one `begin; ... commit;`, so a failure changes nothing.
 6. Open the confirm queue in the app and confirm or reject each row.
 
+## Changing the people map later (`remap_needed`)
+
+`load.mjs` remembers the person it wrote per file in `import/load-state.json`. If a later map would give a file a different person, the loader keeps the old person on `source_files`, writes no document or health rows for that file, and counts it as `remap_needed` in `load-summary.json` (0008 refuses a document whose person differs from its source file). An admin fixes `source_files.person_id` first (and removes the old draft rows), then delete that file's entry in `load-state.json` and re-run step 4. A duplicate that sits in another person's folder than its keeper is loaded unassigned for the same reason. Corrupt draft files are only counted (`corrupt_drafts`); the parser message is never printed.
+
+Zone-less timestamps in drafts are read as Manila time (+08:00). The extract run summary also reports `text_layer_errors` (PDFs whose text layer could not be read and went as vision).
+
 ## Not done by the loader
 
 - `encounters` and `insurance_policies` are not created (no source for them in the extraction).

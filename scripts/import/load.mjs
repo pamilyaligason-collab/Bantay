@@ -24,16 +24,21 @@ export function lit(v) {
   if (typeof v === 'boolean') return v ? 'true' : 'false'
   return `'${String(v).replaceAll('\0', '').replaceAll("'", "''")}'`
 }
-const json = (v) => (v == null ? 'null' : `${lit(JSON.stringify(v))}::jsonb`)
+const json = (v) => (v == null ? 'null' : `${lit(JSON.stringify(v).replaceAll('\\u0000', ''))}::jsonb`)
 
 const str = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim())
 const date = (v) => {
   const s = str(v)
   return s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().startsWith(s) ? s : null
 }
+/** Timestamps without a zone are Manila time (+08:00), never the database session zone. */
 const ts = (v) => {
-  const s = str(v)
-  return s && /^\d{4}-\d{2}-\d{2}([T ][\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(s) && !Number.isNaN(Date.parse(s)) ? s : null
+  let s = str(v)
+  if (!s || !/^\d{4}-\d{2}-\d{2}([T ][\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(s)) return null
+  if (s.length === 10) s += 'T00:00:00'
+  s = s.replace(' ', 'T')
+  if (!/(Z|[+-]\d{2}:?\d{2})$/.test(s)) s += '+08:00'
+  return Number.isNaN(Date.parse(s)) ? null : s
 }
 const int = (v) => (Number.isInteger(Number(v)) && Number(v) > 0 ? Number(v) : null)
 const conf = (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : null)
@@ -58,7 +63,7 @@ const insert = (table, row, conflict = 'on conflict (id) do nothing') => {
  * @param {{manifest:{files:object[]}, drafts:Record<string,object>, peopleMap:Record<string,string>, catalog?:object[]}} o
  * @returns {{sql:string, summary:object}}
  */
-export function buildLoadSql({ manifest, drafts, peopleMap, catalog = loadCatalog() }) {
+export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, catalog = loadCatalog() }) {
   const idx = buildPeopleIndex(peopleMap)
   const files = [...manifest.files].sort((a, b) => a.drive_file_id.localeCompare(b.drive_file_id))
   const folders = [...new Set(files.map((f) => f.person_folder))].sort()
@@ -66,22 +71,46 @@ export function buildLoadSql({ manifest, drafts, peopleMap, catalog = loadCatalo
   const docs = []
   const sources = []
   const rows = []
-  const summary = { files: files.length, by_status: {}, by_person_index: {}, by_kind: {}, by_person_kind: {}, unassigned_files: 0, rows: {} }
+  const summary = { files: files.length, by_status: {}, by_person_index: {}, by_kind: {}, by_person_kind: {}, unassigned_files: 0, remap_needed: 0, rows: {} }
   const bump = (o, k, n = 1) => { o[k] = (o[k] ?? 0) + n }
+  const byId = new Map(files.map((f) => [f.drive_file_id, f]))
+  const usable = (f) => drafts[f.drive_file_id] && !drafts[f.drive_file_id].failed && !f.skipped && !f.duplicate_of
+  const mapped = (f) => {
+    const d = drafts[f.drive_file_id]
+    return resolvePerson(idx, { folder: f.person_folder, printed: usable(f) ? d.patient_name_as_printed : null })
+  }
+  // The person written on source_files. A file already loaded under another person keeps that person (remap_needed);
+  // a duplicate never differs from its keeper (0008 person_mismatch).
+  const remap = (f) => {
+    const p = mapped(f), prev = prevPersons[f.drive_file_id]
+    return prev && p && prev !== p
+  }
+  const personOf = (f) => {
+    const p = remap(f) ? prevPersons[f.drive_file_id] : mapped(f)
+    const keeper = f.duplicate_of && byId.get(f.duplicate_of)
+    if (keeper && p) {
+      const kp = remap(keeper) ? prevPersons[keeper.drive_file_id] : mapped(keeper)
+      if (kp && kp !== p) return null
+    }
+    return p
+  }
+  const persons = {}
 
   for (const f of files) {
     const sfId = uuid5(`sf:${f.drive_file_id}`)
     const d = drafts[f.drive_file_id]
     const reason = f.skipped ? f.skipped : f.duplicate_of ? 'duplicate' : null
     const status = reason ? 'skipped' : d?.failed ? 'failed' : d ? 'queued' : 'new'
-    const personId = d && !d.failed && !reason ? resolvePerson(idx, { folder: f.person_folder, printed: d.patient_name_as_printed }) : resolvePerson(idx, { folder: f.person_folder })
+    const personId = personOf(f)
+    if (personId) persons[f.drive_file_id] = personId
     let documentId = null
     bump(summary.by_status, status)
     bump(summary.by_person_index, pIndex(f))
     if (d && !d.failed && !reason) {
       bump(summary.by_kind, d.doc_kind ?? 'other')
       bump((summary.by_person_kind[pIndex(f)] ??= {}), d.doc_kind ?? 'other')
-      if (!personId) summary.unassigned_files++
+      if (remap(f)) summary.remap_needed++
+      else if (!personId) summary.unassigned_files++
       else {
         documentId = uuid5(`doc:${f.drive_file_id}`)
         const base = { person_id: lit(personId), status: "'draft'", confidence: lit(conf(d.confidence)) }
@@ -110,7 +139,7 @@ export function buildLoadSql({ manifest, drafts, peopleMap, catalog = loadCatalo
             id: lit(uuid5(`lab:${f.drive_file_id}:${i}`)), person_id: base.person_id, document_id: lit(documentId), panel_id: lit(panelId),
             test_code: lit(t.test_code), name_raw: lit(t.name_raw), value_num: lit(t.value_num), value_text: lit(t.value_text),
             unit_raw: lit(str(t.unit_raw)), value_canonical: lit(t.value_canonical), flag: lit(t.flag), ref_low: lit(t.ref_low),
-            ref_high: lit(t.ref_high), ref_text: lit(str(t.ref_text)), collected_at: lit(ts(d.collected_at) ?? date(d.doc_date)),
+            ref_high: lit(t.ref_high), ref_text: lit(str(t.ref_text)), collected_at: lit(ts(d.collected_at)), // null: the 0008 trigger falls back to the document date (Manila)
             status: base.status, confidence: base.confidence
           })
         })
@@ -168,20 +197,34 @@ export function buildLoadSql({ manifest, drafts, peopleMap, catalog = loadCatalo
   // documents first (source_files.document_id), keepers before duplicates (duplicate_of FK).
   sources.sort((a, b) => a.dup - b.dup)
   const sql = ['begin;', ...docs, ...rows, ...sources.map((s) => s.sql), 'commit;'].join('\n') + '\n'
-  return { sql, summary }
+  return { sql, summary, persons }
+}
+
+/** Reads every <id>.json. A corrupt file is counted, never reported: the parser message quotes the input. */
+export function readDrafts(dir) {
+  const drafts = {}
+  let corrupt = 0
+  if (existsSync(dir)) {
+    for (const n of readdirSync(dir).filter((x) => x.endsWith('.json'))) {
+      try { drafts[n.slice(0, -5)] = JSON.parse(readFileSync(`${dir}/${n}`, 'utf8')) } catch { corrupt++ }
+    }
+  }
+  return { drafts, corrupt }
 }
 
 function main() {
   const manifest = JSON.parse(readFileSync('import/manifest.json', 'utf8'))
-  const drafts = {}
-  if (existsSync('import/drafts')) for (const n of readdirSync('import/drafts').filter((x) => x.endsWith('.json'))) drafts[n.slice(0, -5)] = JSON.parse(readFileSync(`import/drafts/${n}`, 'utf8'))
+  const { drafts, corrupt } = readDrafts('import/drafts')
   const peopleMap = existsSync('import/people-map.json') ? JSON.parse(readFileSync('import/people-map.json', 'utf8')) : {}
-  const { sql, summary } = buildLoadSql({ manifest, drafts, peopleMap })
+  const prevPersons = existsSync('import/load-state.json') ? JSON.parse(readFileSync('import/load-state.json', 'utf8')) : {}
+  const { sql, summary, persons } = buildLoadSql({ manifest, drafts, peopleMap, prevPersons })
+  summary.corrupt_drafts = corrupt
   writeFileSync('import/load.sql', sql)
+  writeFileSync('import/load-state.json', JSON.stringify({ ...prevPersons, ...persons }))
   writeFileSync('import/load-summary.json', JSON.stringify(summary, null, 2))
   console.log(JSON.stringify(summary))
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  try { main() } catch (e) { console.error(String(e.message).slice(0, 120)); process.exit(1) }
+  try { main() } catch (e) { console.error(`load failed: ${e?.name ?? 'Error'}`); process.exit(1) }
 }

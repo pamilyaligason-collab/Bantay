@@ -17,6 +17,4 @@ export function buildRequest(o: { model: string; fallbackModel: string; mime: st
   response_format: unknown
   messages: { content: { type: string }[] }[]
 }
-export function esc(s: unknown): string
-export function reviewHtml(person: string, items: Record<string, unknown>[]): string
 export function sendToOpenRouter(fetchImpl: (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ ok: boolean; status: number; json(): Promise<any> }>, body: unknown, key: string, log?: (m: string) => void): Promise<any>

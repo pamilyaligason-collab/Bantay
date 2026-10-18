@@ -8,3 +8,4 @@ export function toEntry(row: Record<string, any>): Entry
 export function needsDownload(entry: Entry, prev: Entry | undefined, fileExists: boolean): boolean
 export function markDuplicates(entries: Entry[]): Entry[]
 export function sha256(buf: Uint8Array): string
+export function carryOver(entry: Entry, prev: Entry): Entry

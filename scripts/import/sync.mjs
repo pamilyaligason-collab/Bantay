@@ -39,6 +39,13 @@ export function needsDownload(entry, prev, fileExists) {
   return !(prev && prev.modified === entry.modified && prev.sha256 && fileExists)
 }
 
+/** An unchanged file keeps what the last run learned (hash, and the PDF type of an exported Google Doc). */
+export function carryOver(entry, prev) {
+  entry.sha256 = prev.sha256
+  if (prev.stored_mime) entry.stored_mime = prev.stored_mime
+  return entry
+}
+
 /** Identical sha256: the oldest (modified, then id) is kept; the rest point at it. */
 export function markDuplicates(entries) {
   const groups = new Map()
@@ -80,7 +87,7 @@ async function download(entry, token) {
   const base = `https://www.googleapis.com/drive/v3/files/${entry.drive_file_id}`
   const url = entry.mime === GOOGLE_DOC ? `${base}/export?mimeType=application%2Fpdf` : `${base}?alt=media`
   const r = await fetch(url, { headers: auth })
-  if (!r.ok) throw new Error(`Drive download failed: ${r.status}`)
+  if (!r.ok) throw Object.assign(new Error('Drive download failed'), { status: r.status })
   return Buffer.from(await r.arrayBuffer())
 }
 
@@ -99,7 +106,7 @@ async function main(env = process.env) {
     const dest = `import/files/${e.drive_file_id}`
     if (e.skipped) continue
     if (!needsDownload(e, prev, existsSync(dest))) {
-      e.sha256 = prev.sha256
+      carryOver(e, prev)
       n.unchanged++
       continue
     }
@@ -115,7 +122,7 @@ async function main(env = process.env) {
       e.skipped = null
       e.download_failed = true
       n.failed++
-      console.error(String(err.message).slice(0, 60)) // status only
+      console.error(`download failed${err?.status ? ` (${err.status})` : ''}`) // never the message
     }
   }
   markDuplicates(entries)
@@ -124,4 +131,4 @@ async function main(env = process.env) {
   console.log(JSON.stringify({ files: entries.length, ...n, skipped_folder_or_file_rules: folderSkips, skipped_files: by((e) => e.skipped), duplicates: by((e) => e.duplicate_of) }))
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(String(e.message).slice(0, 120)); process.exit(1) })
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(`sync failed: ${e?.name ?? 'Error'}`); process.exit(1) })

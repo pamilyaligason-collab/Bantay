@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assertAllowed, buildRequest, classifyType, csvRow, dateFrom, esc, isSkipped, sendToOpenRouter, reviewHtml, walk } from '../../../scripts/import/lib.mjs'
+import { assertAllowed, buildRequest, classifyType, csvRow, dateFrom, isSkipped, sendToOpenRouter, walk } from '../../../scripts/import/lib.mjs'
 
 describe('request builder', () => {
   const o = { model: 'vendor/paid-model', fallbackModel: 'vendor/other-paid', mime: 'image/jpeg', base64: 'AAAA' }
@@ -70,15 +70,5 @@ describe('inventory helpers', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ person: 'Test Person', date: '2024-01-02', type: 'laboratory', file_id: 'f1' })
     expect(csvRow(rows[0])).toContain('"Test Person/2024.01.02 Laboratory/a, b.jpg"')
-  })
-})
-
-describe('review table', () => {
-  it('escapes markup and lists rows', () => {
-    const html = reviewHtml('Test Person', [{ source_file_id: 'f', date: '2024-01-01', tests: [{ name: '<b>Test A</b>', value: 1, unit: 'u', lab_range_low: 0, lab_range_high: 2 }] }])
-    expect(html).not.toContain('<b>Test A</b></td>')
-    expect(html).toContain('&lt;b&gt;Test A')
-    expect(html).toContain('Export confirmed.json')
-    expect(esc('"&')).toBe('&quot;&amp;')
   })
 })

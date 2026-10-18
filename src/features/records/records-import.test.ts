@@ -3,13 +3,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import migration from '../../../supabase/migrations/0008_records.sql?raw'
 import catalogJson from '../../../scripts/import/test-catalog.json'
-import { hasRealText, normalizeDraft, pending, withRetry } from '../../../scripts/import/extract.mjs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { extractPdfText, hasRealText, normalizeDraft, pending, withRetry } from '../../../scripts/import/extract.mjs'
 import { buildRequest, isSkipped, walk } from '../../../scripts/import/lib.mjs'
-import { buildLoadSql, lit, uuid5 } from '../../../scripts/import/load.mjs'
+import { buildLoadSql, lit, readDrafts, uuid5 } from '../../../scripts/import/load.mjs'
 import {
   buildPeopleIndex, matchTest, normalizeFlag, normalizeTest, normalizeUnit, parseCatalogSql, parseNumber, resolvePerson, toCanonical
 } from '../../../scripts/import/normalize.mjs'
-import { markDuplicates, needsDownload, skipReason, toEntry } from '../../../scripts/import/sync.mjs'
+import { carryOver, markDuplicates, needsDownload, skipReason, toEntry } from '../../../scripts/import/sync.mjs'
 
 const PID = '11111111-1111-4111-8111-111111111111'
 const PID2 = '22222222-2222-4222-8222-222222222222'
@@ -264,5 +266,75 @@ describe('load.sql', () => {
     const s = JSON.stringify(run().summary)
     expect(s).not.toMatch(/Test Person|Stranger|f1|f2/)
     expect(Object.keys(run().summary.by_person_index).sort()).toEqual(['p1', 'p2'])
+  })
+})
+
+/** Smallest valid one-page PDF with a text layer, offsets computed. Synthetic text only. */
+function tinyPdf(text: string) {
+  const stream = `BT /F1 12 Tf 20 100 Td (${text}) Tj ET`
+  const objs = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+  ]
+  let out = '%PDF-1.4\n'
+  const offs: number[] = []
+  objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n` })
+  const xref = out.length
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  return new TextEncoder().encode(out)
+}
+
+describe('fix round', () => {
+  it('extractPdfText reads a synthetic text layer (pdfjs 6, task.destroy)', async () => {
+    const t = await extractPdfText(tinyPdf('Synthetic sample line'))
+    expect(t).toContain('Synthetic sample line')
+  })
+  it('a corrupt draft is counted and its content never reaches the log', () => {
+    const dir = mkdtempSync(`${tmpdir()}/drafts-`)
+    try {
+      writeFileSync(`${dir}/bad.json`, '{"patient": "MARKER_ZZ_9" oops')
+      writeFileSync(`${dir}/ok.json`, '{"doc_kind":"lab"}')
+      const spy = [vi.spyOn(console, 'log'), vi.spyOn(console, 'error'), vi.spyOn(console, 'warn')]
+      const r = readDrafts(dir)
+      expect(r.corrupt).toBe(1)
+      expect(Object.keys(r.drafts)).toEqual(['ok'])
+      expect(JSON.stringify(spy.map((s) => s.mock.calls))).not.toContain('MARKER_ZZ_9')
+      spy.forEach((s) => s.mockRestore())
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  it('unchanged files keep stored_mime and sha256', () => {
+    const out = carryOver({ drive_file_id: 'a' } as never, { sha256: 'h', stored_mime: 'application/pdf' } as never) as unknown as { sha256: string; stored_mime: string }
+    expect(out).toMatchObject({ sha256: 'h', stored_mime: 'application/pdf' })
+  })
+  const mk = (id: string, folder: string, extra = {}) => ({ drive_file_id: id, name: `${id}.pdf`, mime: 'application/pdf', size: 1, modified: null, person_folder: folder, skipped: null, duplicate_of: null, ...extra })
+  it('zone-less timestamps are Manila time; NUL is stripped from json', () => {
+    const d = { doc_kind: 'prescription', doc_date: '2024-01-01', collected_at: '2024-01-01 08:00', released_at: '2024-01-02', rx: { date: '2024-01-01', lines: [{ drug: 'X', bbox: { note: 'a\u0000b' } }] } }
+    const { sql } = buildLoadSql({ manifest: { files: [mk('g1', 'Test Person')] }, drafts: { g1: d }, peopleMap: { 'test person': PID } })
+    expect(sql).toContain("'2024-01-01T08:00+08:00'")
+    expect(sql).toContain("'2024-01-02T00:00:00+08:00'")
+    expect(sql).not.toContain('u0000')
+    expect(sql).toContain('ab')
+  })
+  it('remap_needed: a changed map never pairs an existing person with another person document', () => {
+    const drafts = { g1: { doc_kind: 'lab', tests: [{ name: 'Creatinine', value: '1' }] } }
+    const { sql, summary, persons } = buildLoadSql({ manifest: { files: [mk('g1', 'Test Person')] }, drafts, peopleMap: { 'test person': PID }, prevPersons: { g1: PID2 } })
+    expect(summary.remap_needed).toBe(1)
+    expect(sql).not.toContain('insert into public.documents')
+    expect(sql).not.toContain('insert into public.lab_results')
+    expect(persons.g1).toBe(PID2)
+    expect(sql).toContain(`'${PID2}'`)
+    expect(sql).not.toContain(`'${PID}'`)
+  })
+  it('a duplicate in another person folder is left unassigned (person_mismatch)', () => {
+    const files = [mk('k1', 'Test Person'), mk('k2', 'Other Person', { duplicate_of: 'k1' })]
+    const { sql } = buildLoadSql({ manifest: { files }, drafts: { k1: { doc_kind: 'other' } }, peopleMap: { 'test person': PID, 'other person': PID2 } })
+    const dup = sql.split('\n').find((l) => l.includes("'k2'"))!
+    expect(dup).toMatch(/values \('[^']+', null, 'k2'/)
   })
 })

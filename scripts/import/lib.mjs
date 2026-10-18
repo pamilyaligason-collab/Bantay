@@ -111,32 +111,3 @@ export function buildRequest({ model, fallbackModel, mime, base64, filename = 'd
     messages: [{ role: 'user', content: [{ type: 'text', text: PROMPT }, part] }]
   }
 }
-
-export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
-
-/** One review table for one person. items: [{source_file_id, date, tests:[...], consult}] */
-export function reviewHtml(person, items) {
-  const rows = []
-  for (const it of items) {
-    for (const t of it.tests ?? []) rows.push({ kind: 'test', file: it.source_file_id, date: it.date ?? '', ...t })
-    if (it.consult) rows.push({ kind: 'consult', file: it.source_file_id, date: it.date ?? '', ...it.consult })
-  }
-  const tr = rows
-    .map(
-      (r, i) =>
-        `<tr data-i="${i}"><td>${esc(r.date)}</td><td>${esc(r.kind === 'test' ? r.name : 'Consult: ' + (r.doctor ?? ''))}</td>` +
-        `<td>${esc(r.kind === 'test' ? `${r.value ?? ''} ${r.unit ?? ''}` : r.reason)}</td>` +
-        `<td>${esc(r.kind === 'test' ? (r.lab_range_text ?? [r.lab_range_low, r.lab_range_high].join(' to ')) : (r.medicines ?? []).join(', '))}</td>` +
-        `<td><button data-s="confirm">Confirm</button> <button data-s="reject">Reject</button></td></tr>`
-    )
-    .join('')
-  return `<!doctype html><meta charset="utf-8"><title>Review ${esc(person)}</title>
-<style>body{font:15px system-ui;margin:16px}td,th{border-bottom:1px solid #ccc;padding:6px;text-align:left}tr.confirm{background:#e6f4ea}tr.reject{background:#fde8e8}</style>
-<h1>${esc(person)}</h1><p>Local only. Confirm each row against the original, then export.</p>
-<table><thead><tr><th>Date</th><th>Item</th><th>Value</th><th>Lab range / medicines</th><th>Decision</th></tr></thead><tbody>${tr}</tbody></table>
-<p><button id="x">Export confirmed.json</button></p>
-<script>const rows=${JSON.stringify(rows).replaceAll('<', '\\u003c')};const st={};
-document.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>{const tr=b.closest('tr');st[tr.dataset.i]=b.dataset.s;tr.className=b.dataset.s});
-document.getElementById('x').onclick=()=>{const out=rows.filter((_,i)=>st[i]==='confirm');
-const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,2)],{type:'application/json'}));a.download='confirmed.json';a.click()}</script>`
-}
