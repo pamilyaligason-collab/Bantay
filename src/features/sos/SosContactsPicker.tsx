@@ -36,7 +36,7 @@ export default function SosContactsPicker({ excludePersonId }: { excludePersonId
             </select>
             <input type="text" aria-label={`Contact ${i + 1} name`} placeholder="Name" maxLength={60} value={s.name}
               onChange={(e) => edit(i, { name: e.target.value, phone: s.phone })} />
-            <input type="tel" inputMode="tel" aria-label={`Contact ${i + 1} phone number`} placeholder="0917 123 4567 or +63 917 123 4567" value={s.phone}
+            <input type="tel" inputMode="tel" aria-label={`Contact ${i + 1} phone number`} placeholder="0917 123 4567" value={s.phone}
               aria-invalid={bad || undefined} onChange={(e) => edit(i, { ...s, phone: e.target.value })} />
             {bad && <span className="sos-err" role="alert">Use 10 to 13 digits, like 0917 123 4567.</span>}
           </fieldset>
