@@ -17,3 +17,4 @@ supabase/.temp/
 # Release signing (never commit)
 android/keystore.properties
 *.jks
+release-out/
