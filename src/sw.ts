@@ -11,7 +11,7 @@ self.skipWaiting()
 clientsClaim()
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/get(\/|$)/] })) // /get is a static page, not the app
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))
 
 // L5: push, click and resubscribe. All logic lives in features/notify (tested); this is wiring only.
 self.addEventListener('push', (e) => {

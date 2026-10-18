@@ -35,8 +35,8 @@ test('shows version, size and checksum when latest.json is readable', async ({ b
   const ctx = await browser.newContext({ userAgent: ANDROID, viewport: { width: 360, height: 800 } })
   const page = await ctx.newPage()
   const sha = 'a'.repeat(64)
-  await page.route('**/releases/latest/download/latest.json', (r) =>
-    r.fulfill({ json: { versionCode: 2000001, versionName: '2.0.1', url: 'x', sha256: sha, size: 9437184, minShell: 2000000, notes: 'n' }, headers: { 'access-control-allow-origin': '*' } })
+  await page.route('**/latest.json', (r) =>
+    r.fulfill({ json: { versionCode: 2000001, versionName: '2.0.1', url: 'x', sha256: sha, size: 9437184, minShell: 2000000, notes: 'n' } })
   )
   await page.goto('/get/')
   await expect(page.getByText(`Version 2.0.1 · 9.0 MB · SHA-256 ${sha}`)).toBeVisible()
@@ -45,10 +45,19 @@ test('shows version, size and checksum when latest.json is readable', async ({ b
   await ctx.close()
 })
 
+test('iPadOS (Mac user agent with touch) gets the iPhone steps', async ({ browser }) => {
+  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15', hasTouch: true, viewport: { width: 390, height: 844 } })
+  const page = await ctx.newPage()
+  await page.addInitScript(() => Object.defineProperty(navigator, 'maxTouchPoints', { get: () => 5 }))
+  await page.goto('/get/')
+  await expect(page.getByRole('heading', { name: 'Bantay on iPhone stays a web app' })).toBeVisible()
+  await ctx.close()
+})
+
 test('latest.json unreachable: the download still works, no facts line', async ({ browser }) => {
   const ctx = await browser.newContext({ userAgent: ANDROID })
   const page = await ctx.newPage()
-  await page.route('**/releases/latest/download/latest.json', (r) => r.abort())
+  await page.route('**/latest.json', (r) => r.abort())
   await page.goto('/get/')
   await expect(page.getByRole('link', { name: /Download Bantay/ })).toBeVisible()
   await expect(page.getByText(/SHA-256/)).toBeHidden()

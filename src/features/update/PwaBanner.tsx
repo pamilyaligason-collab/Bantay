@@ -13,9 +13,10 @@ export const shouldShowPwaBanner = (o: { standalone: boolean; ua: string; native
   o.standalone && !o.native && /Android/.test(o.ua) && !/iPhone|iPad/.test(o.ua) &&
   !(typeof o.laterAt === 'number' && (o.now ?? Date.now()) - o.laterAt < DAY)
 
-/** waiting = outbox rows not yet sent; null = unknown. Unknown is never "all saved". */
-export function bannerSteps(waiting: number | null) {
+/** waiting = outbox rows not yet sent; dead = rows that failed for good; null = unknown. Unknown is never "all saved". */
+export function bannerSteps(waiting: number | null, dead = 0) {
   if (waiting === null) return { saved: 'Checking what is saved...', removeEnabled: false }
+  if (dead > 0) return { saved: `${dead} ${dead === 1 ? 'entry' : 'entries'} could not be sent. Open the old app's sync screen or ask an admin`, removeEnabled: false }
   if (waiting === 0) return { saved: 'All saved to the family account', removeEnabled: true }
   return { saved: `${waiting} ${waiting === 1 ? 'entry' : 'entries'} still waiting, connect to send`, removeEnabled: false }
 }
@@ -27,11 +28,13 @@ const pill = { minHeight: 44, padding: '0 18px', borderRadius: 999, border: 0, f
 export function PwaBanner() {
   const [laterAt, setLaterAt] = useState<number | null>(null)
   const [waiting, setWaiting] = useState<number | null>(null)
+  const [dead, setDead] = useState(0)
   useEffect(() => {
     const sub = liveQuery(async () => ({ later: (await db.kv.get(LATER_KEY))?.value, c: await syncCounts() })).subscribe({
       next: ({ later, c }) => {
         setLaterAt(typeof later === 'number' ? later : null)
-        setWaiting(c.waiting + c.unknown) // rows we will not send still are not on the server
+        setWaiting(c.waiting + c.dead) // dead rows never reached the server; 'unknown' rows are not counted
+        setDead(c.dead)
       },
       error: () => {}
     })
@@ -44,7 +47,7 @@ export function PwaBanner() {
     laterAt
   })
   if (!show) return null
-  const s = bannerSteps(waiting)
+  const s = bannerSteps(waiting, dead)
   return (
     <section aria-label="Bantay is now an app" style={{ display: 'grid', gap: 12 }}>
       <div style={{ ...card, background: 'var(--green, #1F3D2B)', color: 'var(--on-green, #F6F1E7)' }}>

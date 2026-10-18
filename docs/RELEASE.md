@@ -1,6 +1,6 @@
 # Releasing the Android app
 
-APKs and `latest.json` live on GitHub Releases of `pamilyaligason-collab/Bantay` (Cloudflare Pages has a 25 MiB per-file limit, so APKs never go on Pages). The `/get` page (`public/get/index.html`) and the in-app updater read `releases/latest/download/latest.json`.
+APKs and `latest.json` live on GitHub Releases of `pamilyaligason-collab/Bantay` (Cloudflare Pages has a 25 MiB per-file limit, so APKs never go on Pages). The in-app updater reads `releases/latest/download/latest.json`. The `/get` page (`public/get/index.html`) reads the same-origin copy `/latest.json` (`public/latest.json`), which the release script writes and commits as `release: latest.json <version>`; push that commit so Pages serves it.
 
 ## One-time: signing key
 
@@ -25,6 +25,6 @@ Lloyd's step, never done by an agent. The key and its passwords never enter the 
 
 ## Known limits
 
-- `/get` shows version, size and SHA-256 by fetching `latest.json` from github.com. Whether the browser may read that cross-origin is UNVERIFIED; if it cannot, the facts line stays hidden and the Download button still works.
+- `/get` shows version, size and SHA-256 from `/latest.json` (same origin, so no CORS problem; GitHub release assets send no CORS headers). If it cannot be read the facts line stays hidden and the Download button still works.
 - Old installed web app: the banner (`PwaBanner`) tells Android users to switch. On the first APK sign-in the server should drop that member's Android web-push subscriptions (delete rows where member = me, user agent like `%Android%`, endpoint not FCM). That is a P3 follow-up when FCM lands.
 - `getInstalledRelatedApps` for a sideloaded APK is UNVERIFIED, so the web manifest has no `related_applications`.

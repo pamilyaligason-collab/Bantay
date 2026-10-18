@@ -28,3 +28,11 @@ describe('bannerSteps', () => {
   it('unknown count never enables step 3', () => expect(bannerSteps(null).removeEnabled).toBe(false))
   it('singular', () => expect(bannerSteps(1).saved).toBe('1 entry still waiting, connect to send'))
 })
+
+describe('bannerSteps dead letters', () => {
+  it('dead > 0 holds step 3 even when nothing waits', () => {
+    const s = bannerSteps(2, 2)
+    expect(s.saved).toBe("2 entries could not be sent. Open the old app's sync screen or ask an admin")
+    expect(s.removeEnabled).toBe(false)
+  })
+})

@@ -49,7 +49,7 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
     <div class="center">
       <div class="eyebrow">bantay.pages.dev/get</div>
       <h1>Get the Bantay app</h1>
-      <p class="muted">For our family's Android phones. Takes about a minute.</p>
+      <p class="muted">For our family's Android phones. About 2 minutes.</p>
     </div>
 
     <div id="inapp" class="card quiet" hidden>
@@ -62,7 +62,7 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
       <li><span class="n" aria-hidden="true">1</span><div><b>Download</b><span class="sub">Chrome may warn about the file. Tap Download anyway, then Open.</span></div></li>
       <li><span class="n" aria-hidden="true">2</span><div><b>Allow Chrome to install apps</b><span class="sub">Android asks once: tap Settings, turn on "Allow from this source", then go Back.</span></div></li>
       <li><span class="n" aria-hidden="true">3</span><div><b>Install</b><span class="sub">If Play Protect asks to scan the app, let it scan, then tap Install.</span></div></li>
-      <li><span class="n" aria-hidden="true">4</span><div><b>Open Bantay</b><span class="sub">Jack Jack meets you there. About 2 minutes in all.</span></div></li>
+      <li><span class="n" aria-hidden="true">4</span><div><b>Open Bantay</b><span class="sub">Jack Jack meets you there.</span></div></li>
     </ol>
 
     <div class="card quiet">
@@ -81,8 +81,8 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
   <div id="ios" style="display:grid;gap:16px" hidden>
     <div class="center">
       <div class="eyebrow">bantay.pages.dev/get</div>
-      <h1>Add Bantay to your iPhone</h1>
-      <p class="muted">Nothing to download. Takes about a minute.</p>
+      <h1>Bantay on iPhone stays a web app</h1>
+      <p class="muted">Nothing to download. About 2 minutes.</p>
     </div>
     <ol class="card steps" aria-label="iPhone steps">
       <li><span class="n" aria-hidden="true">1</span><div><b>Open this link in Safari</b><span class="sub">Opened it from Messenger? Tap the Safari icon or Open in browser first.</span></div></li>
@@ -100,7 +100,8 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
   var ua = navigator.userAgent
   var android = document.getElementById('android'), ios = document.getElementById('ios')
   function show(which) { android.hidden = which !== 'android'; ios.hidden = which !== 'ios' }
-  show(/iPhone|iPad|iPod/.test(ua) ? 'ios' : 'android')
+  // iPadOS Safari sends a Mac user agent, so it is told apart by touch points
+  show(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : 'android')
   Array.prototype.forEach.call(document.querySelectorAll('[data-show]'), function (b) {
     b.addEventListener('click', function () { show(b.getAttribute('data-show')); window.scrollTo(0, 0) })
   })
@@ -112,7 +113,8 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
     else b.textContent = 'Long-press the address to copy'
   })
   // Version, size and checksum from latest.json. If it cannot be read the button still works, the line stays hidden.
-  fetch('https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/latest.json', { cache: 'no-store' })
+  // Same-origin copy (release script commits public/latest.json); GitHub release assets send no CORS headers.
+  fetch('/latest.json', { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null })
     .then(function (l) {
       if (!l || typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
