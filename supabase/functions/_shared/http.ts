@@ -4,7 +4,7 @@ export function corsHeaders(allowed: string | undefined, origin: string | null):
   if (allowed && origin === allowed) {
     h['Access-Control-Allow-Origin'] = allowed
     h['Access-Control-Allow-Headers'] = 'authorization, apikey, content-type, x-client-info'
-    h['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
     h['Access-Control-Max-Age'] = '600'
   }
   return h
