@@ -15,18 +15,21 @@ if (-not (Test-Path import\people-map.json)) { throw 'step 1 failed: import\peop
 if (-not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
 if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
 
-Step 2 'Drive token (OAuth Playground, scope drive.readonly). Copy it in the browser, then press Enter here. It is read from the clipboard, never shown or saved, and the clipboard is wiped.'
-function Clear-Clip { Set-Clipboard -Value ' '; try { [Windows.ApplicationModel.DataTransfer.Clipboard, Windows.ApplicationModel.DataTransfer, ContentType = WindowsRuntime]::ClearHistory() | Out-Null } catch {} }
-Read-Host 'Copied the Access token? Press Enter' | Out-Null
-$tok = "$(Get-Clipboard -Raw)".Trim()
-Clear-Clip
-if ($tok.Length -lt 40 -or -not $tok.StartsWith('ya29.')) {
-  $tok = $null
-  throw "step 2 failed: the clipboard does not hold an access token (it should start with ya29.). In the Playground click inside the Access token box, Ctrl+A, Ctrl+C, then run this again."
+$LocalRoot = 'G:\My Drive\Bantay Medical'   # Google Drive for desktop copy of the private Bantay Medical folder
+if (Test-Path $LocalRoot) {
+  Step 2 'Using the Google Drive for desktop folder (no token needed)'
+  $env:LOCAL_ROOT = $LocalRoot
+} else {
+  Step 2 'Drive token (OAuth Playground, scope drive.readonly). Copy it in the browser, then press Enter here. It is read from the clipboard, never shown or saved, and the clipboard is wiped.'
+  function Clear-Clip { Set-Clipboard -Value ' '; try { [Windows.ApplicationModel.DataTransfer.Clipboard, Windows.ApplicationModel.DataTransfer, ContentType = WindowsRuntime]::ClearHistory() | Out-Null } catch {} }
+  Read-Host 'Copied the Access token? Press Enter' | Out-Null
+  $tok = "$(Get-Clipboard -Raw)".Trim()
+  Clear-Clip
+  if ($tok.Length -lt 40 -or -not $tok.StartsWith('ya29.')) { $tok = $null; throw "step 2 failed: the clipboard does not hold an access token (it should start with ya29.)." }
+  Write-Host "  token received ($($tok.Length) characters); clipboard wiped"
+  $env:DRIVE_ACCESS_TOKEN = $tok; $tok = $null
+  $env:DRIVE_ROOT_ID = (Get-Content 'importdrive-root.txt' -Raw).Trim()   # Bantay Medical folder id, kept in git-ignored import/drive-root.txt
 }
-Write-Host "  token received ($($tok.Length) characters); clipboard wiped"
-$env:DRIVE_ACCESS_TOKEN = $tok; $tok = $null; $sec = $null
-$env:DRIVE_ROOT_ID = (Get-Content 'importdrive-root.txt' -Raw).Trim()   # Bantay Medical folder id, kept in git-ignored import/drive-root.txt
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'
 try {
@@ -36,7 +39,7 @@ try {
   Step 4 'Extract drafts (PDF text first, else vision; OpenRouter zdr, no data collection)'
   node scripts/import/extract.mjs --i-am-lloyd; Check 4
 } finally {
-  Remove-Item Env:DRIVE_ACCESS_TOKEN -ErrorAction SilentlyContinue; $sec = $null
+  Remove-Item Env:DRIVE_ACCESS_TOKEN, Env:LOCAL_ROOT -ErrorAction SilentlyContinue
 }
 
 Step 5 'Build load.sql (drafts only, idempotent)'

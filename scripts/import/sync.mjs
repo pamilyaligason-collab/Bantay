@@ -1,7 +1,10 @@
 // Drive -> import/manifest.json + import/files/<drive_file_id>. Read-only Drive scope; prints counts only.
 // Usage: node scripts/import/sync.mjs   (env: DRIVE_ACCESS_TOKEN, DRIVE_ROOT_ID)
+//    or: LOCAL_ROOT='G:/My Drive/Bantay Medical' node scripts/import/sync.mjs  (Google Drive for desktop copy; Drive ids come
+//        from import/copy-jobs.json + copy-log.jsonl, the log of the approved copy job; no token needed)
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { extname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { classifyType, dateFrom, walk } from './lib.mjs'
 
@@ -82,6 +85,27 @@ export function driveLister(token, fetchImpl = fetch) {
   }
 }
 
+const EXT_MIME = { '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.heic': 'image/heic', '.webp': 'image/webp',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+
+/** Lister over a local Drive-for-desktop folder. A file's id is its Drive id from the copy log, or null (then skipped). */
+export function localLister(idByRel, root) {
+  const rel = (p) => p.slice(root.length + 1).split(/[\\/]/).join('/')
+  return async (dir) => readdirSync(dir, { withFileTypes: true }).map((d) => {
+    const full = join(dir, d.name)
+    if (d.isDirectory()) return { id: full, name: d.name, mime: 'application/vnd.google-apps.folder' }
+    const st = statSync(full)
+    return { id: idByRel.get(rel(full)) ?? `local-unmatched:${rel(full)}`, name: d.name, mime: EXT_MIME[extname(d.name).toLowerCase()] ?? 'application/octet-stream',
+      size: st.size, modified: st.mtime.toISOString(), md5: null, _full: full }
+  })
+}
+
+/** person/year/title -> new Drive id, from the approved copy job and its log. */
+export function idsFromCopyLog(jobs, log) {
+  const newBySrc = new Map(log.filter((l) => l.status === 'copied').map((l) => [l.src, l.new_id]))
+  return new Map(jobs.filter((j) => newBySrc.has(j.src)).map((j) => [[...j.folder, j.title].join('/'), newBySrc.get(j.src)]))
+}
+
 async function download(entry, token) {
   const auth = { Authorization: `Bearer ${token}` }
   const base = `https://www.googleapis.com/drive/v3/files/${entry.drive_file_id}`
@@ -92,18 +116,28 @@ async function download(entry, token) {
 }
 
 async function main(env = process.env) {
-  if (!env.DRIVE_ACCESS_TOKEN || !env.DRIVE_ROOT_ID) throw Object.assign(new Error('DRIVE_ACCESS_TOKEN and DRIVE_ROOT_ID must be set'), { code: 'missing_env' })
+  const local = env.LOCAL_ROOT
+  if (!local && (!env.DRIVE_ACCESS_TOKEN || !env.DRIVE_ROOT_ID)) throw Object.assign(new Error('DRIVE_ACCESS_TOKEN and DRIVE_ROOT_ID must be set'), { code: 'missing_env' })
+  const pathById = new Map()
+  let lister = local ? null : driveLister(env.DRIVE_ACCESS_TOKEN)
+  if (local) {
+    const jobs = JSON.parse(readFileSync('import/copy-jobs.json', 'utf8'))
+    const log = readFileSync('import/copy-log.jsonl', 'utf8').split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l))
+    const base = localLister(idsFromCopyLog(jobs, log), local)
+    lister = async (dir) => { const items = await base(dir); for (const i of items) if (i._full) pathById.set(i.id, i._full); return items }
+  }
   mkdirSync('import/files', { recursive: true })
   const prevByid = new Map()
   if (existsSync('import/manifest.json')) for (const e of JSON.parse(readFileSync('import/manifest.json', 'utf8')).files) prevByid.set(e.drive_file_id, e)
 
   let folderSkips = 0
-  const rows = await walk(driveLister(env.DRIVE_ACCESS_TOKEN), env.DRIVE_ROOT_ID, [], () => folderSkips++)
+  const rows = await walk(lister, local ?? env.DRIVE_ROOT_ID, [], () => folderSkips++)
   const entries = rows.map(toEntry)
   const n = { downloaded: 0, unchanged: 0, failed: 0 }
   for (const e of entries) {
     const prev = prevByid.get(e.drive_file_id)
     const dest = `import/files/${e.drive_file_id}`
+    if (!e.skipped && e.drive_file_id.startsWith('local-unmatched:')) e.skipped = 'no_drive_id'
     if (e.skipped) continue
     if (!needsDownload(e, prev, existsSync(dest))) {
       carryOver(e, prev)
@@ -111,7 +145,7 @@ async function main(env = process.env) {
       continue
     }
     try {
-      const buf = await download(e, env.DRIVE_ACCESS_TOKEN)
+      const buf = local ? readFileSync(pathById.get(e.drive_file_id)) : await download(e, env.DRIVE_ACCESS_TOKEN)
       if (buf.length === 0) { e.skipped = 'zero_byte'; continue }
       writeFileSync(dest, buf)
       e.sha256 = sha256(buf)

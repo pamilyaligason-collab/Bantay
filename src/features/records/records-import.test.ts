@@ -338,3 +338,14 @@ describe('fix round', () => {
     expect(dup).toMatch(/values \('[^']+', null, 'k2'/)
   })
 })
+
+describe('local Drive-for-desktop sync', () => {
+  it('maps person/year/title to the copied Drive id and leaves the rest unmatched', async () => {
+    const { idsFromCopyLog } = await import('../../../scripts/import/sync.mjs')
+    const jobs = [{ src: 's1', folder: ['Test Person', '2024'], title: '2024-01-02 Lab.pdf' }, { src: 's2', folder: ['Test Person', 'Undated'], title: 'x.jpg' }]
+    const log = [{ src: 's1', new_id: 'n1', status: 'copied' }, { src: 's2', new_id: 'n2', status: 'error' }]
+    const m = idsFromCopyLog(jobs, log)
+    expect(m.get('Test Person/2024/2024-01-02 Lab.pdf')).toBe('n1')
+    expect(m.has('Test Person/Undated/x.jpg')).toBe(false)
+  })
+})
