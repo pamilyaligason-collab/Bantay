@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import './features/auth/nativeOAuth'
 import { AuthGate } from './features/auth/AuthGate'
 import { OnboardingGate } from './screens/Onboarding'
 import './styles/tokens.css'

@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { supabase } from './client'
 import { getMember } from './session'
 
@@ -67,7 +68,8 @@ export function forgetPhone(): void {
   } catch { /* private mode */ }
 }
 
-export const passkeySupported = () => typeof window !== 'undefined' && !!window.PublicKeyCredential && !!navigator.credentials
+// Android WebView does not enable WebAuthn by default: the APK falls back to PIN.
+export const passkeySupported = () => !Capacitor.isNativePlatform() && typeof window !== 'undefined' && !!window.PublicKeyCredential && !!navigator.credentials
 
 const UNAVAILABLE = 'Not available on this phone yet'
 

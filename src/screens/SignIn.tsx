@@ -4,6 +4,7 @@ import { signInWithGoogle, signInWithPin } from '../features/auth/pinLogin'
 import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
 import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
+import { onNativeSignInError } from '../features/auth/nativeOAuth'
 
 /** Six-digit PIN pad (56px keys). Calls onDone with the PIN; the pad clears itself so a miss starts fresh. */
 function PinPad({ busy, onDone }: { busy: boolean; onDone: (pin: string) => void }) {
@@ -125,6 +126,7 @@ export default function SignIn() {
   const [other, setOther] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(urlSignInError ?? '')
+  useEffect(() => onNativeSignInError(setError), [])
 
   const run = async (f: () => Promise<string | null>) => {
     setBusy(true)
