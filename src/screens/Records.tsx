@@ -54,6 +54,14 @@ export default function Records() {
 
   return (
     <>
+      {queue.error && (
+        <div className="grp">
+          <div className="row">
+            <span className="grow">Could not load records to check. Try again.</span>
+            <button type="button" className="btn2" onClick={queue.refresh}>Try again</button>
+          </div>
+        </div>
+      )}
       {queue.count > 0 && (
         <div className="grp">
           <button className="row" onClick={() => setSheet(true)}>

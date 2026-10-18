@@ -21,7 +21,7 @@ export const getHome = async (): Promise<Home> => {
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
 const gps = () =>
-  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, { maximumAge: 600_000, timeout: 10_000 }))
+  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }))
 
 /** ask=true shows the browser prompt (once, from onboarding). ask=false only uses GPS if already granted.
  *  Any failure or denial falls back to the saved home barangay (default Dampas). */

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { track } from '../admin/events'
 import { useKv } from '../safety/store'
 import { capgoBridge, isNative } from './bridge'
-import { disableType, enableType, type EnableResult, type HealthBridge, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
+import { disableType, enableTypes, type EnableResult, type HealthBridge, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
 
 const NO_STATE = { enabled: [] as SensorType[] }
 const MSG: Record<Exclude<EnableResult, 'on'>, string> = {
-  denied: 'Not turned on. You said no, or your phone is blocking it. You can allow it in Health Connect or Settings.',
+  denied: 'Not turned on. You said no, or your phone is blocking it. Open Health Connect, tap App permissions, tap Bantay, and allow it.',
   unavailable: 'Health Connect is not on this phone yet. Install “Health Connect by Android” from the Play Store, then try again.'
 }
 
@@ -15,7 +15,8 @@ const MSG: Record<Exclude<EnableResult, 'on'>, string> = {
 export default function SensorSettings({ bridge, native = isNative() }: { bridge?: HealthBridge; native?: boolean }) {
   const st = useKv(STATE_KEY, NO_STATE)
   const [note, setNote] = useState<Partial<Record<SensorType, string>>>({})
-  const [busy, setBusy] = useState<SensorType | null>(null)
+  const [busy, setBusy] = useState<SensorType | 'all' | null>(null)
+  const [fix, setFix] = useState<{ kind: 'settings' | 'install'; text: string; error?: string } | null>(null)
 
   if (!native)
     return (
@@ -26,6 +27,26 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
         </div>
       </section>
     )
+
+  const explain = (r: EnableResult, error?: string) => {
+    if (r === 'on') return setFix(null)
+    setFix({ kind: r === 'unavailable' ? 'install' : 'settings', text: MSG[r], error })
+  }
+  const turnOnAll = async () => {
+    if (busy) return
+    setBusy('all')
+    setFix(null)
+    try {
+      const b = bridge ?? capgoBridge()
+      const r = await enableTypes(SENSORS.map((x) => x.type), b)
+      if (r.result === 'on') { void track('action', 'sensors_on'); void syncAll(b) }
+      if (r.result === 'on' && r.granted.length < SENSORS.length) setFix({ kind: 'settings', text: 'Some were not allowed. You can allow the rest in Health Connect.' })
+      else explain(r.result, r.error)
+    } finally {
+      setBusy(null)
+    }
+  }
+  const openFix = () => void (bridge ?? capgoBridge()).openSettings?.(fix!.kind).catch(() => {})
 
   const toggle = async (type: SensorType, on: boolean) => {
     if (busy) return
@@ -38,9 +59,9 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
         setNote((n) => ({ ...n, [type]: 'Turned off. To remove access completely, use Health Connect or Settings.' }))
       } else {
         const b = bridge ?? capgoBridge()
-        const r = await enableType(type, b)
-        if (r === 'on') { void track('action', 'sensors_on'); void syncAll(b) }
-        else setNote((n) => ({ ...n, [type]: MSG[r] }))
+        const r = await enableTypes([type], b)
+        if (r.result === 'on') { void track('action', 'sensors_on'); void syncAll(b) }
+        else { setNote((n) => ({ ...n, [type]: MSG[r.result as Exclude<EnableResult, 'on'>] })); explain(r.result, r.error) }
       }
     } finally {
       setBusy(null)
@@ -51,6 +72,24 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
     <section aria-labelledby="ss-h">
       <h2 id="ss-h" className="hd">Phone health data</h2>
       <p className="sec">Off until you turn a switch on. Bantay only reads. It never changes your phone’s health data, and never puts these numbers in a notification.</p>
+      <div className="grp">
+        <div className="row">
+          <span className="grow">
+            <span>Turn on all four</span>
+            <span className="sub" style={{ fontSize: 14 }}>Your phone asks once.</span>
+          </span>
+          <button type="button" className="btn2" disabled={busy !== null} onClick={() => void turnOnAll()}>Turn on all</button>
+        </div>
+        {fix && (
+          <div className="row">
+            <span className="grow">
+              <span className="sub" aria-live="polite" style={{ fontSize: 14 }}>{fix.text}</span>
+              {fix.error && <span className="sub" style={{ fontSize: 12 }}>{fix.error}</span>}
+            </span>
+            <button type="button" className="btn2" onClick={openFix}>{fix.kind === 'install' ? 'Get Health Connect' : 'Open Health Connect'}</button>
+          </div>
+        )}
+      </div>
       <div className="grp">
         {SENSORS.map(({ type, label, why }) => {
           const on = st.enabled.includes(type)

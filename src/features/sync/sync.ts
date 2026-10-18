@@ -43,9 +43,11 @@ export const subscribeSync = (l: () => void) => (listeners.add(l), () => void li
 
 export async function syncCounts() {
   const rows = await db.outbox.toArray()
-  const waiting = rows.filter((r) => isSyncable(r.table)).length
+  // usage_events (screen tracking) still sync, but a new row on every tab switch must not make the header count climb
+  const waiting = rows.filter((r) => isSyncable(r.table) && r.table !== 'usage_events').length
+  const hidden = rows.filter((r) => r.table === 'usage_events').length
   const dead = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined)?.length ?? 0
-  return { waiting, unknown: rows.length - waiting, dead }
+  return { waiting, unknown: rows.length - waiting - hidden, dead }
 }
 
 // ---- config

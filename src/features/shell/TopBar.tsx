@@ -12,12 +12,14 @@ const dateLine = (d: Date) => new Intl.DateTimeFormat('en-PH', { weekday: 'long'
 /** Avatar (opens Me), greeting + date, bell (opens the inbox). The place name joins the date line when Task 9's usePlace() lands. */
 export function TopBar({ unread = 0 }: { unread?: number }) {
   const [name, setName] = useState('')
+  const [admin, setAdmin] = useState(false)
   const [photo] = useKv<string | null>('profile.photo', null)
   useEffect(() => {
     let live = true
     void getMember().then((m) => {
       const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''
       if (live && n) setName(n)
+      if (live) setAdmin(m?.role === 'admin')
     })
     return () => { live = false }
   }, [])
@@ -31,6 +33,11 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
         <span className="sh-top-greet">{greeting(now)}{first && `, ${first}`}</span>
         <SyncStatus />
       </div>
+      {admin && (
+        <a className="sh-iconbtn" href="#admin" aria-label="Admin">
+          <Icon name="shield" />
+        </a>
+      )}
       <a className="sh-iconbtn" href="#notif" aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}>
         <Icon name="bell" />
         {unread > 0 && <span className="sh-badge" />}

@@ -32,6 +32,12 @@ export interface HealthBridge {
   isAvailable(): Promise<boolean>
   /** Asks the OS for read access to this one type. Resolves true only if it was granted. */
   request(type: SensorType): Promise<boolean>
+  /** All of these in ONE permission sheet. Resolves with the types that were granted. */
+  requestAll?(types: SensorType[]): Promise<SensorType[]>
+  /** Opens Health Connect (kind 'settings') or its Play Store page (kind 'install'). */
+  openSettings?(kind: 'settings' | 'install'): Promise<void>
+  /** Why the phone said Health Connect is not usable, when it said. */
+  reason?(): string
   /** Quiet check, no prompt. False if the user has since turned it off in the OS. */
   granted(type: SensorType): Promise<boolean>
   read(type: SensorType, sinceIso: string): Promise<RawSample[]>
@@ -99,13 +105,38 @@ export async function currentPersonId(): Promise<string | null> {
 }
 
 export type EnableResult = 'on' | 'denied' | 'unavailable'
-/** Turn one type on. The OS permission prompt appears only here, for only this type. */
-export async function enableType(type: SensorType, bridge: HealthBridge): Promise<EnableResult> {
-  if (!sourceFor(bridge.platform) || !(await bridge.isAvailable().catch(() => false))) return 'unavailable'
-  if (!(await bridge.request(type).catch(() => false))) return 'denied'
+export interface EnableOutcome {
+  result: EnableResult
+  granted: SensorType[]
+  /** The phone's own error text, when there was one. Shown small and logged; never a health value. */
+  error?: string
+}
+const errText = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : '').slice(0, 160)
+/** Turn types on. The OS permission prompt appears only here. More than one type goes in ONE sheet when the bridge can. */
+export async function enableTypes(types: SensorType[], bridge: HealthBridge): Promise<EnableOutcome> {
+  if (!sourceFor(bridge.platform)) return { result: 'unavailable', granted: [] }
+  let error: string | undefined
+  const avail = await bridge.isAvailable().catch((e) => { error = errText(e); return false })
+  if (!avail) {
+    error ||= bridge.reason?.()
+    if (error) console.warn('health unavailable', error)
+    return { result: 'unavailable', granted: [], error }
+  }
+  const granted: SensorType[] = []
+  try {
+    if (types.length > 1 && bridge.requestAll) granted.push(...(await bridge.requestAll(types)))
+    else for (const t of types) if (await bridge.request(t)) granted.push(t)
+  } catch (e) {
+    error = errText(e)
+    console.warn('health permission failed', error)
+  }
+  if (!granted.length) return { result: 'denied', granted, error }
   const st = await getState()
-  if (!st.enabled.includes(type)) await putState({ ...st, enabled: [...st.enabled, type] })
-  return 'on'
+  await putState({ ...st, enabled: [...new Set([...st.enabled, ...granted])] })
+  return { result: 'on', granted }
+}
+export async function enableType(type: SensorType, bridge: HealthBridge): Promise<EnableResult> {
+  return (await enableTypes([type], bridge)).result
 }
 /** Stops reading. Access itself is revoked in Health Connect or Settings; the screen says so. */
 export async function disableType(type: SensorType) {

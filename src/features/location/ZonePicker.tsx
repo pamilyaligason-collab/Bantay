@@ -16,8 +16,11 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   const current = async () => {
     setMsg('')
     const l = await place.ask().catch(() => null)
-    if (l?.source !== 'gps') setMsg('We could not find your location. Check that location is on for Bantay.')
-    else setOpen(false)
+    if (l?.source === 'gps') return setOpen(false)
+    const st = await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt')
+    setMsg(st === 'denied'
+      ? 'Location is blocked for Bantay. Open your phone Settings, then Apps, Bantay, Permissions, Location, and choose Allow.'
+      : 'We could not find your location. Turn on Location on your phone, go near a window, and try again.')
   }
   const pills: [string, string, boolean, () => void][] = [
     ['current', 'Current', place.source === 'gps', current],

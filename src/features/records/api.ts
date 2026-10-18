@@ -6,7 +6,7 @@ import { hdb } from './store'
 
 // Online, RLS-limited calls on the records tables (migration 0008). Never throws; never logs values (B-7).
 // The client only ever sets `status`: confirmed_by / confirmed_at are stamped by a trigger from auth.uid().
-export type Res<T> = { ok: true; data: T } | { ok: false; error: string }
+export type Res<T> = { ok: true; data: T } | { ok: false; error: string; code?: string }
 type Row = Record<string, unknown> & { id: string }
 
 export type RowTable = 'lab_results' | 'prescription_items' | 'vaccinations' | 'imaging_reports'
@@ -37,7 +37,7 @@ const NO: Res<never> = { ok: false, error: 'not_connected' }
 const fail = (e: unknown): Res<never> => {
   const c = (e as { code?: string } | null)?.code // codes only: messages can carry row values
   const error = c === '42501' || c === 'PGRST301' ? 'forbidden' : c && /^(22|23)/.test(c) ? 'invalid' : typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'failed'
-  return { ok: false, error }
+  return { ok: false, error, code: c }
 }
 type Sb = NonNullable<typeof supabase>
 async function run<T>(f: (s: Sb) => PromiseLike<{ data: unknown; error: unknown }>): Promise<Res<T>> {
@@ -56,7 +56,7 @@ export const driveUrl = (id: string) => (/^[\w-]+$/.test(id) ? `https://drive.go
 /** N for "To check (N)": draft rows waiting, plus draft documents that have no rows (insurance, certificate, cards...). Matches the list. */
 export async function listQueue(): Promise<Res<Queue>> {
   const r = await run<{ person_id: string; kind: string; drafts: number }[]>((s) => s.from('records_queue').select('*'))
-  if (!r.ok) return r
+  if (!r.ok) return queueFromTables(r)
   const byPerson: Record<string, number> = {}
   for (const x of r.data.filter((x) => x.kind !== 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts)
   const d = await bundles('draft')
@@ -65,6 +65,17 @@ export async function listQueue(): Promise<Res<Queue>> {
   } else {
     for (const x of r.data.filter((x) => x.kind === 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts) // list unavailable: the view's own count
   }
+  return { ok: true, data: { total: Object.values(byPerson).reduce((n, v) => n + v, 0), byPerson } }
+}
+
+/** The records_queue view failed (not deployed, no grant, schema cache): count draft rows straight from the tables so the admin still sees "To check". */
+async function queueFromTables(viewError: Res<never>): Promise<Res<Queue>> {
+  const res = await Promise.all(ROW_TABLES.map((t) => run<{ person_id: string }[]>((s) => s.from(t).select('person_id').eq('status', 'draft').limit(5000))))
+  if (res.some((x) => !x.ok)) return viewError // the tables fail too: report the view's error
+  const byPerson: Record<string, number> = {}
+  for (const x of res) if (x.ok) for (const row of x.data) byPerson[row.person_id] = (byPerson[row.person_id] ?? 0) + 1
+  const d = await bundles('draft')
+  if (d.ok) for (const b of d.data) if (b.labs.length + b.items.length + b.vaccinations.length + b.imaging.length === 0) byPerson[b.doc.person_id] = (byPerson[b.doc.person_id] ?? 0) + 1
   return { ok: true, data: { total: Object.values(byPerson).reduce((n, v) => n + v, 0), byPerson } }
 }
 

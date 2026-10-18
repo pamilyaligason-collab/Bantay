@@ -33,7 +33,7 @@ const updates = () => h.calls.filter((c) => c.ops.some((o) => o[0] === 'update')
 
 const doc = { id: 'd1', person_id: 'p1', kind: 'lab', doc_date: '2026-09-01', facility: 'Test Clinic', title: null, status: 'draft', confirmed_by: null, confirmed_at: null }
 const lab = (id: string, o: Record<string, unknown> = {}) => ({ id, document_id: 'd1', person_id: 'p1', name_raw: `Test ${id}`, value_num: 5, value_text: null, unit_raw: 'mg/dL', test_code: 'ldl', flag: 'N', ref_low: 0, ref_high: 10, ref_text: null, collected_at: null, confidence: 0.95, value_canonical: 5, status: 'draft', ...o })
-const rxLine = (id: string, line_no: number, o: Record<string, unknown> = {}) => ({ id, prescription_id: 'rx1', line_no, drug_raw: `Drug ${id}`, strength: '10 mg', dose: '1 tab', frequency: 'daily', duration: null, unclear: false, confidence: 0.9, status: 'draft', ...o })
+const rxLine = (id: string, line_no: number, o: Record<string, unknown> = {}) => ({ id, person_id: 'p1', prescription_id: 'rx1', line_no, drug_raw: `Drug ${id}`, strength: '10 mg', dose: '1 tab', frequency: 'daily', duration: null, unclear: false, confidence: 0.9, status: 'draft', ...o })
 const catalog = [{ code: 'ldl', name: 'LDL cholesterol', unit: 'mg/dL', conversions: { 'mmol/L': 38.67 } }]
 let tables: Record<string, unknown>
 
@@ -142,7 +142,7 @@ describe('api', () => {
 
   it('errors are typed results with a code, never the server message', async () => {
     h.state.handler = () => ({ data: null, error: { code: '42501', message: 'value 99 for Test Person' } })
-    expect(await confirmRows('lab_results', ['l1'])).toEqual({ ok: false, error: 'forbidden' })
+    expect(await confirmRows('lab_results', ['l1'])).toEqual({ ok: false, error: 'forbidden', code: '42501' })
     connected = false
     expect(await confirmRows('lab_results', ['l1'])).toEqual({ ok: false, error: 'not_connected' })
   })
@@ -157,6 +157,25 @@ describe('Records queue entry', () => {
     render(<Records />)
     await screen.findByText('No records yet')
     expect(screen.queryByText(/To check/)).toBeNull()
+  })
+})
+
+describe('Records queue errors', () => {
+  it('a failing queue shows an error row with retry instead of hiding it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    h.state.handler = () => ({ data: null, error: { code: '42501', message: 'x' } })
+    render(<Records />)
+    expect(await screen.findByText('Could not load records to check. Try again.')).toBeTruthy()
+    expect(warn).toHaveBeenCalledWith('records queue failed', '42501')
+    serve()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('button', { name: /To check \(3\)/ })).toBeTruthy()
+    warn.mockRestore()
+  })
+
+  it('when only the records_queue view fails, draft rows are counted from the tables', async () => {
+    h.state.handler = (c) => (c.table === 'records_queue' ? { data: null, error: { code: '42P01', message: 'x' } } : ok(tables[c.table] ?? []))
+    expect(await listQueue()).toEqual({ ok: true, data: { total: 6, byPerson: { p1: 6 } } })
   })
 })
 

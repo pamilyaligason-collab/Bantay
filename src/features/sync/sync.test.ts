@@ -187,6 +187,13 @@ describe('push', () => {
     expect(posts().filter((c) => c.url.includes('/meds_taken'))).toHaveLength(1)
   })
 
+  it('usage_events still queue but do not count as waiting', async () => {
+    await enqueue('usage_events', 'insert', { kind: 'screen', name: 'today' })
+    await enqueue('readings', 'insert', reading)
+    expect(await syncCounts()).toEqual({ waiting: 1, unknown: 0, dead: 0 })
+    expect(await db.outbox.count()).toBe(2)
+  })
+
   it('rows outside the allowlist stay queued, are counted and never sent', async () => {
     mockFetch(() => new Response(null, { status: 201 }))
     await enqueue('people', 'insert', { name: 'x' })
