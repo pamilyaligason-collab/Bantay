@@ -39,9 +39,6 @@ export default function Records() {
 
   return (
     <>
-      <div className="hdr">
-        <h1>Records</h1>
-      </div>
       {ready && dates.length === 0 ? (
         <div className="grp">
           <div className="row">

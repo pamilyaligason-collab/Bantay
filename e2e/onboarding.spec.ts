@@ -78,7 +78,7 @@ test('skipOnboarding helper goes straight to the app at /', async ({ page }) => 
 
 test('a deep link skips onboarding', async ({ page }) => {
   await page.goto('/#records')
-  await expect(page.locator('h1')).toHaveText('Records')
+  await expect(page.locator('h1')).toHaveText('Family')
 })
 
 test.describe('375px', () => {
@@ -88,5 +88,18 @@ test.describe('375px', () => {
     await expect(page.locator('h1')).toBeVisible()
     const root = await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)
     expect(root).toBe(true)
+  })
+})
+
+test.describe("alerts-off card on Today", () => {
+  test.use({ viewport: { width: 375, height: 812 } })
+  test("is not clipped at 375px", async ({ page }) => {
+    await skipOnboarding(page)
+    await page.goto("/")
+    const card = page.getByRole("region", { name: "Alerts are off" })
+    await expect(card).toBeVisible()
+    await page.waitForTimeout(1500)
+    expect(await card.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true)
+    await expect(card.getByRole("button", { name: "Turn on alerts" })).toBeInViewport()
   })
 })
