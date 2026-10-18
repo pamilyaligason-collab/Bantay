@@ -65,6 +65,9 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
     const prev = rec && !st.stale ? rec.items : {}
     return putKv(PW_KEY, { items: { ...prev, [id]: { state, at } }, checkedAt: at, os: osKey(ua) } satisfies Rec)
   }
+  // D-61: only warnings that still need fixing; nothing at all when every one is on.
+  const todo = itemsFor(p).filter((it) => (st.stale ? undefined : rec?.items?.[it.id]?.state) !== 'on')
+  if (todo.length === 0) return null
   return (
     <div className="sf pw">
       <div className="pw-head">
@@ -74,7 +77,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
       <p className="sf-note">{NOT_A_SIREN} Any warning that comes seconds before shaking comes from your phone, not from Bantay. Turn these on so your phone can do that job.</p>
       {st.stale && <p className="sf-note">{st.why === 'os' ? 'Your phone software changed. Check these again.' : 'It has been over 90 days. Check these again.'}</p>}
       {p === 'other' && <p className="sf-empty">We could not tell what phone this is. Steps for both are below.</p>}
-      {itemsFor(p).map((it) => {
+      {todo.map((it) => {
         const cur = st.stale ? undefined : rec?.items?.[it.id]?.state
         return (
           <div key={it.id} className="pw-item">

@@ -1,13 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
-import { DAMPAS, type LatLon, type Loc } from './geo'
+import { useKv } from '../safety/store'
+import { HOME_ZONES, type LatLon, type Loc } from './geo'
+import { resolvePlace, type ZoneId } from './place'
 
 export interface Home {
   name: string
   lat: number
   lon: number
 }
-export const getHome = async (): Promise<Home> => ((await db.kv.get('loc.home').catch(() => undefined))?.value as Home | undefined) ?? DAMPAS
+export const ZONE_KEY = 'loc.zone'
+const FIRST_ZONE: ZoneId = HOME_ZONES[0].id
+const zoneHome = (id: string): Home => HOME_ZONES.find((z) => z.id === id) ?? HOME_ZONES[0]
+/** D-33: a saved custom home, else the last chosen zone, else the first zone. */
+export const getHome = async (): Promise<Home> => {
+  const saved = (await db.kv.get('loc.home').catch(() => undefined))?.value as Home | undefined
+  if (saved) return saved
+  return zoneHome(((await db.kv.get(ZONE_KEY).catch(() => undefined))?.value as string | undefined) ?? FIRST_ZONE)
+}
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
 const gps = () =>
@@ -37,9 +47,13 @@ export function useGpsLoc(): LatLon | null {
   return l.source === 'gps' ? l : null
 }
 
+/** Nothing is known until resolveLocation finishes: unknown is null, never a made-up Dampas position. */
+export type LocState = Loc | { source: 'pending'; lat: null; lon: null }
+const PENDING: LocState = { source: 'pending', lat: null, lon: null }
+
 /** Never prompts by itself. Onboarding calls ask() after the why screen. */
 export function useLocation() {
-  const [loc, setLoc] = useState<Loc>({ lat: DAMPAS.lat, lon: DAMPAS.lon, source: 'home' })
+  const [loc, setLoc] = useState<LocState>(PENDING)
   useEffect(() => {
     let live = true
     resolveLocation(false).then((l) => live && setLoc(l))
@@ -54,7 +68,18 @@ export function useLocation() {
   }, [])
   const setHome = useCallback(async (h: Home) => {
     await saveHome(h)
-    setLoc((l) => (l.source === 'home' ? { lat: h.lat, lon: h.lon, source: 'home' } : l))
+    setLoc((l) => (l.source === 'home' ? { lat: h.lat, lon: h.lon, source: 'home' as const } : l))
   }, [])
   return { ...loc, ask, setHome }
+}
+
+/** D-33 place: null until the first resolve. `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
+export const usePlace = () => usePlaceFrom(useLocation())
+
+/** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
+export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
+  const lastZone = useKv<ZoneId>(ZONE_KEY, FIRST_ZONE)
+  const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
+  if (l.source === 'pending') return null
+  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask }
 }

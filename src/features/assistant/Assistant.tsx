@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { useLocation } from '../location/useLocation'
+import { usePlace } from '../location/useLocation'
 import { track } from '../admin/events'
 import { logActivity, logMedTaken, logReading } from '../log/store'
 import { hdb } from '../records/store'
@@ -70,9 +70,12 @@ function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; p
 }
 
 function Weather() {
-  const loc = useLocation()
+  const w = usePlace()?.weather
   const [s, setS] = useState('Checking the weather...')
-  useEffect(() => { weatherSummary(loc).then(setS, () => setS('I could not load the weather. Check the Today screen.')) }, [loc])
+  useEffect(() => {
+    if (!w) return
+    weatherSummary(w).then(setS, () => setS('I could not load the weather. Check the Today screen.'))
+  }, [w?.lat, w?.lon]) // eslint-disable-line react-hooks/exhaustive-deps
   return <div className="as-card" role="status"><strong>Weather near you</strong><span>{s}</span><span className="sub">Source: Open-Meteo.com. For warnings, follow PAGASA.</span></div>
 }
 

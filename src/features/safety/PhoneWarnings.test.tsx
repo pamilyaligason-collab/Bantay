@@ -68,19 +68,30 @@ describe('PhoneWarnings', () => {
     expect(screen.getByText('Government Alerts')).toBeTruthy()
     expect(screen.queryByText('Android Earthquake Alerts')).toBeNull()
   })
-  it('self-report is stored in kv and moves the chip', async () => {
+  it('self-report is stored in kv; a finished warning leaves the list (D-61)', async () => {
     render(<PhoneWarnings ua={AND} />)
-    const done = screen.getAllByRole('button', { name: 'Done on this phone' })
-    fireEvent.click(done[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Done on this phone' })[0])
     await waitFor(() => expect(screen.getByText('1 to check')).toBeTruthy())
-    fireEvent.click(screen.getAllByRole('button', { name: 'Not sure' })[1])
-    fireEvent.click(screen.getAllByRole('button', { name: 'Done on this phone' })[1])
-    await waitFor(() => expect(screen.getByText('All on')).toBeTruthy())
+    expect(screen.queryByText('Android Earthquake Alerts')).toBeNull()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Not sure' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Done on this phone' })[0])
+    await waitFor(() => expect(screen.queryByText('Phone warnings check')).toBeNull())
     const row = (await db.kv.get(PW_KEY))!.value as Rec
     expect(row.items['android-eq'].state).toBe('on')
     expect(row.items['android-wea'].state).toBe('on')
     expect(row.os).toBe('android 14')
     expect(Number.isFinite(Date.parse(row.checkedAt))).toBe(true)
+  })
+  it('renders nothing when every warning is on (D-61)', async () => {
+    await db.kv.put({ key: PW_KEY, value: rec() })
+    const { container } = render(<PhoneWarnings ua={AND} now={NOW} />)
+    await waitFor(() => expect(container.innerHTML).toBe(''))
+  })
+  it('lists only the warnings that need fixing', async () => {
+    await db.kv.put({ key: PW_KEY, value: rec({ items: { 'android-eq': { state: 'unsure', at: day(1) }, 'android-wea': { state: 'on', at: day(1) } } }) })
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    await waitFor(() => expect(screen.queryByText('Wireless emergency alerts')).toBeNull())
+    expect(screen.getByText('Android Earthquake Alerts')).toBeTruthy()
   })
 })
 

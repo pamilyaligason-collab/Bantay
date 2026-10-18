@@ -27,7 +27,7 @@ export interface Alert {
 
 export const ALERTS_KEY = 'safety.alerts' // Dexie kv key: the sync layer replaces this list, SafetyBrief reads it
 
-// First home zone (Dampas, D-11): the default map centre when there is no phone location. Conel is the second zone (D-27).
+// First home zone (Dampas, D-11): the map centre when there is no position and no zone chosen yet (D-33). Conel is the second zone (D-27).
 export const HOME: LatLon = HOME_ZONES[0]
 
 export const NOT_A_SIREN =
