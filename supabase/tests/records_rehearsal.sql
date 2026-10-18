@@ -98,6 +98,10 @@ select pg_temp.ok(pg_temp.fails($$insert into storage.objects (bucket_id, name) 
 insert into public.documents (id, person_id, kind, card_type, status) values ('30000000-0000-0000-0000-0000000000c1', '10000000-0000-0000-0000-0000000000b1', 'id_card', 'senior', 'confirmed');
 select pg_temp.ok(not pg_temp.fails($$insert into public.source_files (person_id, storage_path, name, mime, side, document_id) values ('10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/card-front.jpg', 'card', 'image/jpeg', 'front', '30000000-0000-0000-0000-0000000000c1')$$), 'card picture row without a Drive id yet');
 select pg_temp.ok(pg_temp.fails($$insert into public.source_files (person_id, name, mime) values ('10000000-0000-0000-0000-0000000000b1', 'x', 'image/jpeg')$$), 'a file needs a Drive id or a storage path');
+select pg_temp.ok(not pg_temp.fails($$insert into public.source_files (client_id, person_id, storage_path, name, mime, side, document_id) values ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/card-back.jpg', 'card', 'image/jpeg', 'back', '30000000-0000-0000-0000-0000000000c1') on conflict (client_id) do nothing$$), 'phone upload upserts on client_id');
+select pg_temp.ok(not pg_temp.fails($$insert into public.source_files (client_id, person_id, storage_path, name, mime, side, document_id) values ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/card-back.jpg', 'card', 'image/jpeg', 'back', '30000000-0000-0000-0000-0000000000c1') on conflict (client_id) do nothing$$), 'retried upload is a no-op');
+insert into public.documents (person_id, kind, card_type) values ('10000000-0000-0000-0000-0000000000b1', 'id_card', 'other');
+select pg_temp.ok(not exists (select 1 from public.records_queue where kind = 'documents' and drafts > 1), 'draft cards stay out of the records queue');
 
 -- C: read-only carer of PB
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
@@ -124,8 +128,8 @@ select pg_temp.ok(not pg_temp.fails($$insert into public.medications (person_id,
 
 -- A: admin manages imports for everyone
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
-select pg_temp.ok((select count(*) from public.source_files) = 3, 'admin sees assigned, unassigned and phone-upload files');
-select pg_temp.ok((select count(*) from public.documents where kind = 'id_card') = 1 and (select count(*) from storage.objects) = 1, 'admin sees ID cards and pictures');
+select pg_temp.ok((select count(*) from public.source_files) = 4, 'admin sees assigned, unassigned and phone-upload files');
+select pg_temp.ok((select count(*) from public.documents where kind = 'id_card') = 2 and (select count(*) from storage.objects) = 1, 'admin sees ID cards and pictures');
 select pg_temp.ok((select count(*) from public.lab_results) = 4 and (select count(*) from public.prescription_items) = 1, 'admin sees drafts of members');
 select pg_temp.ok(not pg_temp.fails($$insert into public.person_aliases values ('test b', '10000000-0000-0000-0000-0000000000b1')$$), 'admin writes aliases');
 update public.prescription_items set status = 'confirmed', generic_name = 'g';

@@ -542,6 +542,7 @@ do $$ declare t text; begin
   end loop;
 end $$;
 
+create unique index source_files_client_id on public.source_files (client_id); -- phone uploads upsert on client_id (retry-safe)
 create index source_files_person on public.source_files (person_id);
 create index source_files_document on public.source_files (document_id);
 create index lab_results_document on public.lab_results (document_id);
@@ -580,7 +581,8 @@ create policy readings_admin_read on public.readings for select to authenticated
 create view public.records_queue with (security_invoker = true) as
   select person_id, 'lab_results'::text as kind, count(*) as drafts from public.lab_results where status = 'draft' group by person_id
   union all select person_id, 'prescription_items', count(*) from public.prescription_items where status = 'draft' group by person_id
-  union all select person_id, 'documents', count(*) from public.documents where status = 'draft' group by person_id
+  -- ID and insurance cards are confirmed on the IDs screen (D-63), not in the records queue
+  union all select person_id, 'documents', count(*) from public.documents where status = 'draft' and kind not in ('id_card', 'insurance_card') group by person_id
   union all select person_id, 'imaging_reports', count(*) from public.imaging_reports where status = 'draft' group by person_id
   union all select person_id, 'vaccinations', count(*) from public.vaccinations where status = 'draft' group by person_id;
 revoke all on public.records_queue from anon;
