@@ -17,7 +17,12 @@ if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
 
 Step 2 'Drive token (OAuth Playground, scope drive.readonly). Paste it; it is not shown or saved.'
 $sec = Read-Host 'Drive access token' -AsSecureString
-$env:DRIVE_ACCESS_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))
+$env:DRIVE_ACCESS_TOKEN = ([Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))).Trim()
+if ($env:DRIVE_ACCESS_TOKEN.Length -lt 40 -or -not $env:DRIVE_ACCESS_TOKEN.StartsWith('ya29.')) {
+  Remove-Item Env:DRIVE_ACCESS_TOKEN -ErrorAction SilentlyContinue
+  throw "step 2 failed: that does not look like an access token (got $($sec.Length) characters; it should start with ya29. and be about 200 long). Paste with a right-click, then Enter."
+}
+Write-Host "  token received ($($sec.Length) characters)"
 $env:DRIVE_ROOT_ID = (Get-Content 'importdrive-root.txt' -Raw).Trim()   # Bantay Medical folder id, kept in git-ignored import/drive-root.txt
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'

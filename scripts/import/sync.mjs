@@ -73,7 +73,7 @@ export function driveLister(token, fetchImpl = fetch) {
       const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`)
       const fields = encodeURIComponent('nextPageToken,files(id,name,mimeType,size,modifiedTime,md5Checksum)')
       const r = await fetchImpl(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true${pageToken ? `&pageToken=${pageToken}` : ''}`, { headers: auth })
-      if (!r.ok) throw new Error(`Drive list failed: ${r.status}`)
+      if (!r.ok) throw Object.assign(new Error('Drive list failed'), { status: r.status })
       const j = await r.json()
       for (const f of j.files ?? []) out.push({ id: f.id, name: f.name, mime: f.mimeType, size: f.size ?? null, modified: f.modifiedTime ?? null, md5: f.md5Checksum ?? null })
       pageToken = j.nextPageToken ?? ''
@@ -92,7 +92,7 @@ async function download(entry, token) {
 }
 
 async function main(env = process.env) {
-  if (!env.DRIVE_ACCESS_TOKEN || !env.DRIVE_ROOT_ID) throw new Error('DRIVE_ACCESS_TOKEN and DRIVE_ROOT_ID must be set')
+  if (!env.DRIVE_ACCESS_TOKEN || !env.DRIVE_ROOT_ID) throw Object.assign(new Error('DRIVE_ACCESS_TOKEN and DRIVE_ROOT_ID must be set'), { code: 'missing_env' })
   mkdirSync('import/files', { recursive: true })
   const prevByid = new Map()
   if (existsSync('import/manifest.json')) for (const e of JSON.parse(readFileSync('import/manifest.json', 'utf8')).files) prevByid.set(e.drive_file_id, e)
@@ -131,4 +131,8 @@ async function main(env = process.env) {
   console.log(JSON.stringify({ files: entries.length, ...n, skipped_folder_or_file_rules: folderSkips, skipped_files: by((e) => e.skipped), duplicates: by((e) => e.duplicate_of) }))
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(`sync failed: ${e?.name ?? 'Error'}`); process.exit(1) })
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => {
+  // name, HTTP status and our own codes only: never the message (it could hold a file name)
+  console.error(`sync failed: ${e?.name ?? 'Error'}${e?.status ? ` (HTTP ${e.status})` : ''}${e?.code ? ` (${e.code})` : ''}`)
+  process.exit(1)
+})
