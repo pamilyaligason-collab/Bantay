@@ -1,5 +1,5 @@
 # Family Bantay - apply migration 0008 (records database, D-53, D-63). Lloyd runs this once. Windows PowerShell 5.1.
-# Run from the repo folder on main after the records branch is merged:
+# Run from a clean checkout that holds the reviewed 0008 (records branch or main):
 #   powershell -ExecutionPolicy Bypass -File scripts\records-apply.ps1
 # Stops at the first failure. Prints table counts only, never values.
 $ErrorActionPreference = 'Stop'
@@ -10,12 +10,10 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 function Step($n, $t) { Write-Host "`n== Step $n. $t" -ForegroundColor Cyan }
 function Check($n) { if ($LASTEXITCODE -ne 0) { throw "step $n failed (exit $LASTEXITCODE)" } }
 
-Step 1 'Checks: on main, clean, same as GitHub, 0008 present'
-git fetch -q origin; Check 1
-if ((git rev-parse --abbrev-ref HEAD) -ne 'main') { throw 'step 1 failed: not on main' }
+Step 1 'Checks: clean checkout with the reviewed 0008 (main, or the records branch before it merges)'
 if (git status --porcelain) { throw 'step 1 failed: working tree not clean' }
-if ((git rev-parse HEAD) -ne (git rev-parse origin/main)) { throw 'step 1 failed: run git pull first' }
 if (-not (Test-Path supabase\migrations\0008_records.sql)) { throw 'step 1 failed: 0008 missing' }
+if (Get-ChildItem supabase\migrations\0009_*.sql -ErrorAction SilentlyContinue) { throw 'step 1 failed: run this before 0009 exists here (apply 0008 alone)' }
 
 Step 2 'Supabase CLI: link the project (asks for the database password if not linked)'
 npx -y $Sb link --project-ref $Ref; Check 2
