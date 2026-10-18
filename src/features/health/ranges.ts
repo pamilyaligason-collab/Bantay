@@ -6,6 +6,7 @@ export interface Range {
 }
 export interface Reading {
   id?: number
+  clientId?: string // server readings.client_id once pulled or mirrored
   personId: string
   takenAt: string // ISO date
   test: string // key in guide-ranges.json where one exists

@@ -9,6 +9,8 @@ export interface TableSpec {
   resolution: 'ignore-duplicates' | 'merge-duplicates'
   /** Pull this table down into the local Dexie store (own and linked rows). */
   pull?: boolean
+  /** Server rows change after insert (edit, tombstone): pull by this column and upsert by client_id; deleted_at removes the row. Default: created_at, insert-only. */
+  cursor?: 'updated_at'
   /** Do not send client_id (the row is keyed another way). */
   noClientId?: boolean
 }
@@ -16,7 +18,7 @@ export interface TableSpec {
 export const TABLES: Record<string, TableSpec> = {
   readings: {
     fields: ['personId', 'takenAt', 'test', 'value', 'unit', 'labLow', 'labHigh', 'sourceFileId', 'driveUrl', 'confidence', 'confirmedBy', 'confirmedAt'],
-    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at'
   },
   consults: {
     fields: ['personId', 'takenAt', 'doctor', 'reason', 'medicines', 'nextVisit', 'sourceFileId', 'driveUrl', 'confirmedBy', 'confirmedAt'],

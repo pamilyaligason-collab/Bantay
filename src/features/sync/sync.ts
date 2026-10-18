@@ -135,18 +135,31 @@ async function push(token: string): Promise<SyncError | null> {
 // ---- pull
 type Local = Record<string, unknown> & { id?: number; clientId?: string }
 
-async function merge(table: string, rows: Record<string, unknown>[], seen: { ids: Set<string>; keys: Map<string, Local> }, lt: Table<Local, number>) {
+async function merge(table: string, rows: Record<string, unknown>[], seen: { ids: Set<string>; keys: Map<string, Local>; byCid: Map<string, Local> }, lt: Table<Local, number>) {
   const fresh: Local[] = []
   for (const r of rows) {
     const cid = r.client_id as string
-    if (seen.ids.has(cid)) continue
     const local = fromRow(table, r) as Local
+    if (TABLES[table].cursor) {
+      // mutable server rows: upsert by client_id, and a tombstone removes the local copy (no duplicate on re-confirm)
+      const mine = seen.byCid.get(cid)
+      if (r.deleted_at) {
+        if (mine?.id != null) await lt.delete(mine.id)
+        else if (mine) fresh.splice(fresh.indexOf(mine), 1) // added earlier in this same pull
+        seen.byCid.delete(cid); seen.ids.delete(cid)
+        continue
+      }
+      if (mine) { if (mine.id != null) await lt.put({ ...local, id: mine.id }); else Object.assign(mine, local); continue } // put, not update: a field nulled on the server must clear here
+    }
+    if (seen.ids.has(cid)) continue
     const twin = seen.keys.get(naturalKey[table](local))
     if (twin && !twin.clientId) {
       twin.clientId = cid // a row from this device that was sent before it got stamped
       await lt.update(twin.id!, { clientId: cid })
+      seen.byCid.set(cid, twin)
     } else {
       fresh.push(local) // new, or the twin is a different row that happens to look alike
+      seen.byCid.set(cid, local)
       if (!twin) seen.keys.set(naturalKey[table](local), local)
     }
     seen.ids.add(cid)
@@ -161,14 +174,25 @@ async function pull(token: string) {
     const all = await lt.toArray()
     const seen = {
       ids: new Set(all.map((r) => r.clientId).filter((c): c is string => !!c)),
-      keys: new Map(all.map((r) => [naturalKey[table](r), r] as const))
+      keys: new Map(all.map((r) => [naturalKey[table](r), r] as const)),
+      byCid: new Map(all.filter((r) => r.clientId).map((r) => [r.clientId!, r] as const))
     }
+    let col: string = TABLES[table].cursor ?? 'created_at'
     let cursor = (await db.kv.get(cursorKey(table)))?.value as string | undefined
     let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
     for (let page = 0; page < 20; page++) {
-      const rows = await getJson(`${url}/rest/v1/${table}?select=*&order=created_at.asc&limit=${PAGE}` + (from ? `&created_at=gte.${encodeURIComponent(from)}` : ''), key!, token)
+      const page_ = (c: string) => getJson(`${url}/rest/v1/${table}?select=*&order=${c}.asc&limit=${PAGE}` + (from ? `&${c}=gte.${encodeURIComponent(from)}` : ''), key!, token)
+      let rows: Record<string, unknown>[]
+      try {
+        rows = await page_(col)
+      } catch (e) {
+        // 42703 = the column does not exist yet (migration 0008 not applied): this table falls back to created_at, the rest carry on
+        if (col === 'created_at' || !(e instanceof SyncError) || e.code !== '42703') throw e
+        col = 'created_at'
+        rows = await page_(col)
+      }
       await merge(table, rows, seen, lt)
-      const last = rows.length ? (rows[rows.length - 1].created_at as string) : undefined
+      const last = rows.length ? (rows[rows.length - 1][col] as string) : undefined
       if (last && (!cursor || Date.parse(last) > Date.parse(cursor))) {
         cursor = last
         await db.kv.put({ key: cursorKey(table), value: cursor })
