@@ -211,7 +211,6 @@ export default function SignIn() {
   // A returning visit shows only the last person (mascot: the app has no profile photo field) and goes straight to PickCard.
   const [pick, setPick] = useState<FamilyMember | null>(() => { const id = getLastPerson(); return family.find((m) => m.personId === id) ?? null })
   const [returning, setReturning] = useState(pick !== null)
-  const [choice, setChoice] = useState('')
   const [other, setOther] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(urlSignInError ?? '')
@@ -267,18 +266,27 @@ export default function SignIn() {
     void run(async () => { const e = await signInWithGoogle(); if (e) setGwait(false); return e })
   }
   const picker = roster.length > 0 && !other
+  const welcome = picker && !pick && !gwait && ask === null && !locked
   const admins = family.filter((m) => m.provider === 'google')
-  const back = () => { setError(''); setPick(null); setReturning(false); setChoice(''); setLocked(null); setAsk(null) }
+  const back = () => { setError(''); setPick(null); setReturning(false); setLocked(null); setAsk(null) }
 
   return (
     <div className="bt">
       <Sky state="clear" />
       <div className="topbar" />
       <main className="scroll">
-        <div className="hdr">
-          <h1>Sign in</h1>
-          <span>Family Bantay keeps your family’s health private.</span>
-        </div>
+        {welcome ? (
+          <div className="wl-hello">
+            <img className="wl-jj" src={MASCOT_SRC} alt={MASCOT_ALT} width={150} height={150} />
+            <h1>Hi! I'm Jack Jack.</h1>
+            <p>I watch over the family's health and safety. Who are you?</p>
+          </div>
+        ) : (
+          <div className="hdr">
+            <h1>Sign in</h1>
+            <span>Family Bantay keeps your family’s health private.</span>
+          </div>
+        )}
 
         {gwait ? <GoogleWait onBack={() => setGwait(false)} onAgain={google} />
           : ask !== null ? <AskAdmin admins={admins} handle={ask} onBack={() => setAsk(null)} />
@@ -287,16 +295,17 @@ export default function SignIn() {
           <>
             {picker && !pick && (
               <>
-                <form className="grp signin" onSubmit={(e) => { e.preventDefault(); const m = roster.find((f) => f.personId === choice); if (m) { setError(''); setPick(m) } }}>
-                  <label className="row" htmlFor="si-who">
-                    <span className="si-l">Who are you?</span>
-                    <select id="si-who" value={choice} onChange={(e) => setChoice(e.target.value)}>
-                      <option value="">Choose your name</option>
-                      {roster.map((m) => <option key={m.personId} value={m.personId}>{m.displayName}</option>)}
-                    </select>
-                  </label>
-                  <div className="row"><button className="btn" type="submit" disabled={!choice}>Continue</button></div>
-                </form>
+                <ul className="grp wl-list" aria-label="Who are you?">
+                  {roster.map((m) => (
+                    <li key={m.personId}>
+                      <button type="button" className="wl-row" onClick={() => { setError(''); setPick(m) }}>
+                        <span className="avatar" aria-hidden="true">{m.initials}</span>
+                        <b>{m.displayName}</b>
+                        <svg className="wl-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
                 <button className="si-link" onClick={() => setAsk('')}>Not on the list? Ask an admin to add you</button>
                 <button className="btn2" onClick={() => { setError(''); setOther(true) }}>Sign in with a handle and PIN</button>
                 <button className="btn2" disabled={busy} onClick={google}>Admin? Continue with Google</button>

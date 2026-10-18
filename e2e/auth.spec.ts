@@ -28,7 +28,7 @@ let passkeyCalls = 0
 type Seen = { pins: string[]; rpc: number; oauth: string[]; names?: 'ok' | 'abort'; asked?: number }
 const fresh = (): Seen => ({ pins: [], rpc: 0, oauth: [], asked: 0 })
 const NAME_ROWS = [{ first_name: 'Kuya', initial: 'B', handle: 'ben' }, { first_name: 'Lola', initial: 'R', handle: 'lola' }]
-const who = async (page: Page, name: string) => { await page.getByLabel('Who are you?').selectOption({ label: name }); await page.getByRole('button', { name: 'Continue', exact: true }).click() }
+const who = async (page: Page, name: string) => { await page.getByLabel('Who are you?').getByRole('button').filter({ hasText: name }).click() }
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
 async function mock(page: Page, seen: Seen) {
@@ -129,8 +129,8 @@ test.describe('quick login (D-24)', () => {
     await skipOnboarding(page)
     await page.goto('/')
     await expect(page.getByLabel('Who are you?')).toBeVisible()
-    await expect(page.getByRole('option', { name: 'Lola Rosa' })).toBeAttached()
-    await expect(page.getByRole('option', { name: 'Ate Maria' })).toBeAttached()
+    await expect(page.getByLabel('Who are you?').getByRole('button').filter({ hasText: 'Lola Rosa' })).toBeVisible()
+    await expect(page.getByLabel('Who are you?').getByRole('button').filter({ hasText: 'Ate Maria' })).toBeVisible()
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await who(page, 'Lola Rosa')
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
@@ -163,8 +163,8 @@ test.describe('quick login (D-24)', () => {
     await mock(page, seen)
     await skipOnboarding(page)
     await page.goto('/')
-    await expect(page.getByRole('option', { name: 'Lola R.' })).toBeAttached()
-    await expect(page.getByRole('option', { name: 'Kuya B.' })).toBeAttached()
+    await expect(page.getByLabel('Who are you?').getByRole('button').filter({ hasText: 'Lola R.' })).toBeVisible()
+    await expect(page.getByLabel('Who are you?').getByRole('button').filter({ hasText: 'Kuya B.' })).toBeVisible()
     expect(await page.evaluate(() => localStorage.getItem('bantay.family'))).toBeNull()
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await who(page, 'Lola R.')
@@ -295,7 +295,7 @@ test.describe('quick login (D-24)', () => {
     await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
     await expect.poll(() => logouts.at(-1)).toBe('local')
-    await expect(page.getByLabel('Who are you?')).toBeVisible() // Switch person lands on the dropdown, not the returning screen
+    await expect(page.getByLabel('Who are you?')).toBeVisible() // Switch person lands on the welcome list, not the returning screen
     await who(page, 'Lola Rosa')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Me')
@@ -336,8 +336,8 @@ test.describe('quick login (D-24)', () => {
       expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
       await page.getByRole('button', { name: 'Not you? Switch person' }).click()
       await expect(page.getByLabel('Who are you?')).toBeVisible()
-      const box = await page.getByRole('button', { name: 'Continue', exact: true }).boundingBox()
-      expect(box!.height).toBeGreaterThanOrEqual(44)
+      const box = await page.getByLabel('Who are you?').getByRole('button').first().boundingBox()
+      expect(box!.height).toBeGreaterThanOrEqual(48)
     })
   }
 

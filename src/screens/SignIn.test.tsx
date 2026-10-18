@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
@@ -24,7 +24,7 @@ const FAMILY = [
 ]
 const pad = () => screen.queryByRole('button', { name: '5' })
 const tap = (n: RegExp) => fireEvent.click(screen.getByRole('button', { name: n }))
-const choose = (name: string) => { fireEvent.change(screen.getByLabelText('Who are you?'), { target: { value: FAMILY.find((f) => f.displayName === name)!.personId } }); fireEvent.click(screen.getByRole('button', { name: 'Continue' })) }
+const choose = (name: string) => { fireEvent.click(within(screen.getByLabelText('Who are you?')).getByRole('button', { name })) }
 
 describe('SignIn: fingerprint first (D-27)', () => {
   const credsDesc = Object.getOwnPropertyDescriptor(navigator, 'credentials')
@@ -115,15 +115,18 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
   beforeEach(() => { localStorage.clear(); h.pk.mockReset(); localStorage.setItem('bantay.family', JSON.stringify(FAMILY)) })
   afterEach(() => cleanup())
 
-  it('trusted phone, nobody remembered: labelled dropdown lists the family, Continue is off until a name is chosen', () => {
+  it('trusted phone, nobody remembered: Jack Jack greets, a tappable list shows the family, tapping a name opens the PIN pad', () => {
     render(<SignIn />)
-    const sel = screen.getByLabelText('Who are you?') as HTMLSelectElement
-    expect(Array.from(sel.options).map((o) => o.text)).toEqual(['Choose your name', 'Lola Rosa', 'Kuya Ben'])
-    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeTruthy()
+    expect(screen.getByAltText('Jack Jack, the Bantay dog')).toBeTruthy()
+    expect(screen.getByText(/I watch over the family's health and safety\. Who are you\?/)).toBeTruthy()
+    const list = screen.getByLabelText('Who are you?')
+    expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben'])
+    expect(screen.queryByRole('combobox')).toBeNull()
     choose('Kuya Ben')
     expect(screen.getByRole('heading', { name: 'Kuya Ben' })).toBeTruthy()
     expect(pad()).not.toBeNull()
-    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // mascot is for the returning screen only
+    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // the picked person's card has no mascot unless returning
   })
 
   it('remembered person: only that person, mascot, PIN pad at once, no dropdown, no other names', () => {
@@ -148,21 +151,22 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     delete (navigator as { credentials?: unknown }).credentials
   })
 
-  it('Not you? Switch person shows the dropdown', () => {
+  it('Not you? Switch person shows the welcome list', () => {
     localStorage.setItem('bantay.lastPerson', 'p-kuya')
     render(<SignIn />)
     tap(/Not you\? Switch person/)
     expect(screen.getByLabelText('Who are you?')).toBeTruthy()
-    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull()
+    expect(screen.getAllByAltText('Jack Jack, the Bantay dog')).toHaveLength(1) // the welcome Jack, not the returning avatar
+    expect(screen.queryByRole('heading', { name: 'Kuya Ben' })).toBeNull()
   })
 
-  it('a remembered person who left the family list falls back to the dropdown', () => {
+  it('a remembered person who left the family list falls back to the welcome list', () => {
     localStorage.setItem('bantay.lastPerson', 'p-gone')
     render(<SignIn />)
     expect(screen.getByLabelText('Who are you?')).toBeTruthy()
   })
 
-  it('untrusted phone, names function failing: no names, no dropdown, handle and PIN form on offer', async () => {
+  it('untrusted phone, names function failing: no names, no list, handle and PIN form on offer', async () => {
     localStorage.clear()
     h.names.mockResolvedValue({ kind: 'error' })
     render(<SignIn />)
@@ -181,10 +185,9 @@ describe('SignIn: fresh phone name list (D-41)', () => {
     h.names.mockResolvedValue({ kind: 'ok', names: NAMES })
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
-    const sel = (await screen.findByLabelText('Who are you?')) as HTMLSelectElement
-    expect([...sel.options].map((o) => o.text)).toEqual(['Choose your name', 'Kuya B.', 'Lola R.'])
-    fireEvent.change(sel, { target: { value: 'name:lola' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    const list = await screen.findByLabelText('Who are you?')
+    expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['KBKuya B.', 'LRLola R.'])
+    fireEvent.click(within(list).getByRole('button', { name: 'Lola R.' }))
     for (const d of '111222') fireEvent.click(screen.getByRole('button', { name: d }))
     await waitFor(() => expect(h.pin).toHaveBeenCalledWith('lola', '111222'))
     expect(localStorage.getItem('bantay.family')).toBeNull()
