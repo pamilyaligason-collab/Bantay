@@ -121,7 +121,8 @@ test('Safety order (D-62): 911, IDs and Insurance, advisory card, Quick dial, Li
   expect(warn).toBeGreaterThan(ids)
   expect(dial).toBeGreaterThan(warn)
   expect(maps).toBeGreaterThan(dial)
-  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#records')
+  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#docs')
+  await expect(page.getByRole('link', { name: 'Insurance' })).toHaveAttribute('href', '#docs/insurance')
 })
 
 test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dampas hazards', async ({ page }) => {
