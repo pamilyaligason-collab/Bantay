@@ -36,3 +36,7 @@
 .dc-vseg button[aria-pressed="true"] { background: #004A99; color: #FFFFFF; }
 .dc-vbody { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
 .dc-vbody img, .dc-vbody object { width: 100%; height: 100%; object-fit: contain; }
+
+.dc-drive { align-items: flex-start; }
+.dc-decide { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.dc-vfail { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 12px; background: #FFF4E5; color: #6B3300; font-size: 15px; }

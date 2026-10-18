@@ -19,10 +19,14 @@ export interface CardRow {
   title: string | null
   mime: string
   pending: boolean // saved on this phone, not uploaded yet
+  owner: string // auth user id this picture belongs to ('' when auth is not configured); never shown to anyone else
+  failed?: boolean // gave up after MAX_TRIES; Retry re-queues from `retry`
+  retry?: QueueRow
 }
 /** One picture waiting to go up. clientId is source_files.client_id; docId is also documents.client_id. */
 export interface QueueRow {
   seq?: number
+  owner: string
   clientId: string
   docId: string
   docNew: boolean
@@ -39,14 +43,19 @@ export interface QueueRow {
   tries: number
 }
 export interface PersonRow { id: string; name: string; self: boolean }
+/** A card that exists only in the family Drive (imported, D-63): no picture on this phone. Metadata only. */
+export interface DriveCard { docId: string; personId: string; kind: Kind; cardType: CardType; title: string | null; status: 'draft' | 'confirmed' }
 
 class DocsDB extends Dexie {
   cards!: Table<CardRow, string>
   queue!: Table<QueueRow, number>
   people!: Table<PersonRow, string>
+  driveOnly!: Table<DriveCard, string>
+  meta!: Table<{ key: string; value: string }, string>
   constructor() {
     super('bantay-docs')
     this.version(1).stores({ cards: 'path, personId, kind, docId', queue: '++seq, &clientId', people: 'id' })
+    this.version(2).stores({ driveOnly: 'docId, personId', meta: 'key' })
   }
 }
 export const ddb = new DocsDB()
@@ -72,6 +81,7 @@ export interface DocRow {
   front?: CardRow
   back?: CardRow
   pending: boolean
+  failed: boolean
   updated: number
 }
 
@@ -80,9 +90,10 @@ export function buildDocs(cards: CardRow[], kind: Kind, personId: string): DocRo
   const by = new Map<string, DocRow>()
   for (const c of cards) {
     if (c.kind !== kind || c.personId !== personId) continue
-    const d = by.get(c.docId) ?? { docId: c.docId, personId, kind, cardType: c.cardType, title: c.title, pending: false, updated: 0 }
+    const d = by.get(c.docId) ?? { docId: c.docId, personId, kind, cardType: c.cardType, title: c.title, pending: false, failed: false, updated: 0 }
     d[c.side] = c
     d.pending ||= c.pending
+    d.failed ||= !!c.failed
     d.updated = Math.max(d.updated, c.updated)
     by.set(c.docId, d)
   }

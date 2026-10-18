@@ -112,6 +112,7 @@ async function bundles(status: 'draft' | 'confirmed', personId?: string): Promis
   }
   // ponytail: rows with no document are not shown; the admin tools own those.
   const out = [...known.values()]
+    .filter((d) => d.kind !== 'id_card' && d.kind !== 'insurance_card') // cards are handled on the IDs screen (D-63)
     .map((doc) => ({
       doc,
       labs: g.labs.get(doc.id) ?? [],

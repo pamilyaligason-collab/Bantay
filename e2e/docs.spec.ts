@@ -1,5 +1,17 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+
+// PostgREST answers 42P10 when on_conflict names columns with no unique index. Read 0008 so the mock refuses the same way.
+const MIGRATION = readFileSync('supabase/migrations/0008_records.sql', 'utf8')
+function hasUnique(table: string, col: string) {
+  if (col === 'id') return true
+  const block = new RegExp(String.raw`create table public\.${table} \(([\s\S]*?)\n\);`).exec(MIGRATION)?.[1] ?? ''
+  if (new RegExp(String.raw`^\s*${col}\s+[^,\n]*\bunique\b`, 'm').test(block)) return true
+  if (new RegExp(String.raw`create unique index \w+ on public\.${table} \(${col}\)`).test(MIGRATION)) return true
+  const loop = [...MIGRATION.matchAll(/foreach t in array array\[([^\]]*)\] loop([\s\S]*?)end loop/g)]
+  return loop.some((m) => m[1]!.includes(`'${table}'`) && m[2]!.includes(`create unique index %I on public.%I (${col})`))
+}
 
 // IDs and insurance screen on the docs test page (docs-harness.html, built in the e2e build). PostgREST and Storage are mocked
 // with page.route and keep rows in memory. Synthetic data only: "Test Person" and a drawn card.
@@ -29,11 +41,19 @@ async function mock(page: Page): Promise<Srv> {
     if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id') ? [{ id: 'p-self', display_name: 'Test Person' }] : [])
     if (p.startsWith('/rest/v1/carers')) return json(route, [])
     if (p.startsWith('/rest/v1/documents')) {
-      if (req.method() === 'POST') { s.docs.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
+      if (req.method() === 'POST') {
+        const oc = url.searchParams.get('on_conflict')
+        if (oc && !hasUnique('documents', oc)) return json(route, { code: '42P10', message: 'there is no unique or exclusion constraint matching the ON CONFLICT specification' }, 400)
+        s.docs.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors })
+      }
       return json(route, s.docs.map((d) => ({ id: d.id, person_id: d.person_id, kind: d.kind, card_type: d.card_type, title: d.title ?? null })))
     }
     if (p.startsWith('/rest/v1/source_files')) {
-      if (req.method() === 'POST') { s.files.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
+      if (req.method() === 'POST') {
+        const oc = url.searchParams.get('on_conflict')
+        if (oc && !hasUnique('source_files', oc)) return json(route, { code: '42P10', message: 'there is no unique or exclusion constraint matching the ON CONFLICT specification' }, 400)
+        s.files.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors })
+      }
       return json(route, s.files)
     }
     if (p.startsWith('/storage/v1/object/records/')) {
@@ -54,7 +74,7 @@ test('open #docs, upload front then back, view full screen, then use it with the
   const s = await mock(page)
   await page.goto('/docs-harness.html#docs')
   await expect(page.getByRole('heading', { level: 1, name: 'IDs and insurance' })).toBeVisible()
-  await expect(page.getByText('Only you and the admins see these · saved for offline')).toBeVisible()
+  await expect(page.getByText('Seen only by you, the admins and whoever keeps your records · saved for offline')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Upload PhilSys National ID' })).toBeVisible()
   expect(await serious(page)).toEqual([])
 
@@ -122,6 +142,14 @@ test('dark mode: list, upload sheet and viewer', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'PhilHealth' })).toBeVisible()
   await page.screenshot({ path: 'test-results/docs-viewer-dark.png' })
   expect(await serious(page)).toEqual([])
+})
+
+test('the mock refuses an on_conflict target with no unique index (guards 0008)', () => {
+  expect(hasUnique('source_files', 'client_id')).toBe(true)
+  expect(hasUnique('documents', 'client_id')).toBe(true)
+  expect(hasUnique('source_files', 'drive_file_id')).toBe(true)
+  expect(hasUnique('source_files', 'sha256')).toBe(false)
+  expect(hasUnique('documents', 'person_id')).toBe(false)
 })
 
 test('no horizontal scroll at 390 wide', async ({ page }) => {

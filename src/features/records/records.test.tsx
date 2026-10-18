@@ -234,9 +234,10 @@ describe('ConfirmFlow', () => {
   })
 
   it('a draft document with no rows offers Confirm document and Reject document, then leaves the list', async () => {
-    tables.documents = [doc, { ...doc, id: 'd2', kind: 'insurance_card', doc_date: '2026-09-02' }]
+    tables.documents = [doc, { ...doc, id: 'd2', kind: 'certificate', doc_date: '2026-09-02' }, { ...doc, id: 'd3', kind: 'id_card', doc_date: '2026-09-03' }]
     render(<ConfirmFlow people={[{ id: 'p1', name: 'Test Person' }]} onClose={() => {}} onChanged={() => {}} />)
-    fireEvent.click(await screen.findByRole('button', { name: /Insurance card, 2026-09-02/ }))
+    expect(screen.queryByRole('button', { name: /ID card, 2026-09-03/ })).toBeNull() // cards are confirmed on the IDs screen
+    fireEvent.click(await screen.findByRole('button', { name: /Certificate, 2026-09-02/ }))
     expect(await screen.findByRole('button', { name: 'Reject document' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Confirm document' }))
     await screen.findByRole('heading', { name: 'To check' })
@@ -244,7 +245,7 @@ describe('ConfirmFlow', () => {
     const u = updates().find((c) => c.table === 'documents')!
     expect(u.ops.find((o) => o[0] === 'update')![1]).toEqual({ status: 'confirmed' })
     expect(u.ops.find((o) => o[0] === 'in')![2]).toEqual(['d2'])
-    expect(screen.queryByRole('button', { name: /Insurance card, 2026-09-02/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Certificate, 2026-09-02/ })).toBeNull()
     expect(screen.getByRole('button', { name: /Lab results, 2026-09-01/ })).toBeTruthy()
   })
 
