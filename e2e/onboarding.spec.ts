@@ -66,6 +66,24 @@ test.describe('setup wizard', () => {
     await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
   })
 
+  test('about me: pick suggestions, add your own, None is exclusive', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Step 2: About me' }).click()
+    await page.getByRole('button', { name: 'O+' }).click()
+    await page.getByRole('button', { name: 'Penicillin' }).click()
+    await page.getByRole('button', { name: 'Peanuts' }).click()
+    await page.getByLabel('Allergies: other').fill('Mango')
+    await page.getByLabel('Allergies: other').press('Enter')
+    await page.getByRole('button', { name: 'None', exact: true }).first().click()
+    await page.getByRole('button', { name: 'Penicillin' }).click()
+    await page.getByRole('button', { name: 'Diabetes' }).click()
+    await page.getByRole('button', { name: 'Asthma' }).click()
+    await expect.poll(() => kv(page, 'profile.about')).toEqual({ bloodType: 'O+', allergies: 'Penicillin', conditions: 'Diabetes, Asthma' })
+    await page.getByRole('button', { name: 'Step 3: Your medicines' }).click()
+    await page.getByRole('button', { name: 'Losartan' }).click()
+    await expect.poll(() => kv(page, 'profile.medicines')).toEqual(['Losartan'])
+  })
+
   test('notifications step: rows are off and the test reminder waits for permission', async ({ page }) => {
     await page.goto('/')
     await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
