@@ -4,15 +4,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { PwaBanner } from './PwaBanner'
 
+const LATEST = { versionCode: 2000001, versionName: '2.0.1', url: 'https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.0.1/bantay.apk' }
 const step3 = () => screen.getByText(/^3\./)
 
 beforeEach(async () => {
   await db.outbox.clear()
   await db.kv.clear()
   vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Linux; Android 15) Chrome/141')
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => LATEST }))
   window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as unknown as typeof window.matchMedia
 })
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('PwaBanner render', () => {
   it('nothing waiting: all saved, step 3 enabled', async () => {
@@ -38,5 +40,29 @@ describe('PwaBanner render', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Later' }))
     await waitFor(async () => expect(typeof (await db.kv.get('update.pwaLaterAt'))?.value).toBe('number'))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Later' })).toBeNull())
+  })
+  it.each([
+    ['404', { ok: false, json: async () => LATEST }],
+    ['missing versionCode', { ok: true, json: async () => ({ url: 'x' }) }],
+    ['non-integer versionCode', { ok: true, json: async () => ({ versionCode: '2', url: 'x' }) }],
+    ['missing url', { ok: true, json: async () => ({ versionCode: 2 }) }],
+    ['not json (SPA fallback)', { ok: true, json: async () => { throw new SyntaxError('x') } }]
+  ])('renders nothing when /latest.json is bad: %s', async (_n, res) => {
+    const f = vi.fn().mockResolvedValue(res)
+    vi.stubGlobal('fetch', f)
+    render(<PwaBanner />)
+    await waitFor(() => expect(f).toHaveBeenCalledWith('/latest.json', expect.anything()))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByRole('region', { name: 'Bantay is now an app' })).toBeNull()
+  })
+  it('renders nothing when the fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
+    render(<PwaBanner />)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByRole('region', { name: 'Bantay is now an app' })).toBeNull()
+  })
+  it('shows the banner after a valid /latest.json', async () => {
+    render(<PwaBanner />)
+    expect(await screen.findByRole('region', { name: 'Bantay is now an app' })).toBeTruthy()
   })
 })

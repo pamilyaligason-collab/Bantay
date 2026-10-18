@@ -13,6 +13,18 @@ export const shouldShowPwaBanner = (o: { standalone: boolean; ua: string; native
   o.standalone && !o.native && /Android/.test(o.ua) && !/iPhone|iPad/.test(o.ua) &&
   !(typeof o.laterAt === 'number' && (o.now ?? Date.now()) - o.laterAt < DAY)
 
+/** A usable release manifest: versionCode int, url string. */
+export const validLatest = (l: unknown): boolean =>
+  !!l && typeof l === 'object' && Number.isInteger((l as { versionCode?: unknown }).versionCode) && typeof (l as { url?: unknown }).url === 'string'
+
+/** The app is only offered once the same-origin /latest.json is readable and valid. Any failure means false. */
+export async function appIsReady(): Promise<boolean> {
+  try {
+    const r = await fetch('/latest.json', { cache: 'no-store' })
+    return r.ok && validLatest(await r.json())
+  } catch { return false }
+}
+
 /** waiting = outbox rows not yet sent; dead = rows that failed for good; null = unknown. Unknown is never "all saved". */
 export function bannerSteps(waiting: number | null, dead = 0) {
   if (waiting === null) return { saved: 'Checking what is saved...', removeEnabled: false }
@@ -29,6 +41,8 @@ export function PwaBanner() {
   const [laterAt, setLaterAt] = useState<number | null>(null)
   const [waiting, setWaiting] = useState<number | null>(null)
   const [dead, setDead] = useState(0)
+  const [ready, setReady] = useState(false)
+  useEffect(() => { let live = true; void appIsReady().then((ok) => { if (live) setReady(ok) }); return () => { live = false } }, [])
   useEffect(() => {
     const sub = liveQuery(async () => ({ later: (await db.kv.get(LATER_KEY))?.value, c: await syncCounts() })).subscribe({
       next: ({ later, c }) => {
@@ -46,7 +60,7 @@ export function PwaBanner() {
     native: Capacitor.isNativePlatform(),
     laterAt
   })
-  if (!show) return null
+  if (!show || !ready) return null
   const s = bannerSteps(waiting, dead)
   return (
     <section aria-label="Bantay is now an app" style={{ display: 'grid', gap: 12 }}>

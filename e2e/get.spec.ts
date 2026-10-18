@@ -2,11 +2,13 @@ import { expect, test } from '@playwright/test'
 
 const ANDROID = 'Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/141 Mobile Safari/537.36'
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1'
+const LATEST = { versionCode: 2000001, versionName: '2.0.1', url: 'x' }
 const MESSENGER = 'Mozilla/5.0 (Linux; Android 15) Chrome/141 Mobile [FBAN/Messenger;FBAV/480.0]'
 
 test('Android visitor sees 4 steps and the APK link', async ({ browser }) => {
   const ctx = await browser.newContext({ userAgent: ANDROID, viewport: { width: 390, height: 844 } })
   const page = await ctx.newPage()
+  await page.route('**/latest.json', (r) => r.fulfill({ json: LATEST }))
   await page.goto('/get/')
   await expect(page.getByRole('listitem')).toHaveCount(4)
   await expect(page.getByRole('link', { name: /Download Bantay/ })).toHaveAttribute('href', /releases\/latest\/download\/bantay\.apk$/)
@@ -54,12 +56,13 @@ test('iPadOS (Mac user agent with touch) gets the iPhone steps', async ({ browse
   await ctx.close()
 })
 
-test('latest.json unreachable: the download still works, no facts line', async ({ browser }) => {
+test('latest.json missing: no Download button, a not-ready note instead', async ({ browser }) => {
   const ctx = await browser.newContext({ userAgent: ANDROID })
   const page = await ctx.newPage()
-  await page.route('**/latest.json', (r) => r.abort())
+  await page.route('**/latest.json', (r) => r.fulfill({ status: 404, body: 'nope' }))
   await page.goto('/get/')
-  await expect(page.getByRole('link', { name: /Download Bantay/ })).toBeVisible()
+  await expect(page.getByText('The app download is not ready yet. Check back soon.')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Download Bantay/ })).toBeHidden()
   await expect(page.getByText(/SHA-256/)).toBeHidden()
   await ctx.close()
 })

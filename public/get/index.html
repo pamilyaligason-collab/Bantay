@@ -72,7 +72,8 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
         <div class="sub">If you have the old Bantay icon (web version), long-press it and choose Uninstall once the app works.</div></div>
     </div>
 
-    <a id="dl" class="pill" href="https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/bantay.apk">Download Bantay <span id="ver" style="margin-left:.35em"></span></a>
+    <a id="dl" class="pill" hidden href="https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/bantay.apk">Download Bantay <span id="ver" style="margin-left:.35em"></span></a>
+    <p id="notready" class="card quiet" role="status" hidden>The app download is not ready yet. Check back soon.</p>
     <p id="facts" class="meta" hidden></p>
     <button type="button" class="link" data-show="ios">On an iPhone? See the iPhone steps</button>
   </div>
@@ -112,18 +113,21 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
     if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, function () { b.textContent = 'Long-press the address to copy' })
     else b.textContent = 'Long-press the address to copy'
   })
-  // Version, size and checksum from latest.json. If it cannot be read the button still works, the line stays hidden.
-  // Same-origin copy (release script commits public/latest.json); GitHub release assets send no CORS headers.
+  // The Download button shows only when /latest.json is readable and valid (versionCode int, url string); otherwise a not-ready note.
+  // Version, size and checksum come from the same file. Same-origin copy (release script commits public/latest.json); GitHub release assets send no CORS headers.
+  function notReady() { document.getElementById('notready').hidden = false }
   fetch('/latest.json', { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null })
     .then(function (l) {
-      if (!l || typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
+      if (!l || typeof l.versionCode !== 'number' || l.versionCode % 1 !== 0 || typeof l.url !== 'string') return notReady()
+      document.getElementById('dl').hidden = false
+      if (typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
       document.getElementById('ver').textContent = l.versionName
       var f = document.getElementById('facts')
       f.textContent = 'Version ' + l.versionName + ' · ' + (l.size / 1048576).toFixed(1) + ' MB · SHA-256 ' + l.sha256.toLowerCase()
       f.hidden = false
     })
-    .catch(function () {})
+    .catch(notReady)
 })()
 </script>
 </body>
