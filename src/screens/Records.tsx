@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { GUIDE } from '../features/health/ranges'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
+import { useConfirmedDocs, usePeople, useQueue } from '../features/records/useRecordsServer'
+import { ConfirmFlow, firstName, KIND } from '../features/records/ConfirmSheet'
+import { RecordDetail } from '../features/records/RecordDetail'
 
 export default function Records() {
-  const { ready, readings, consults } = useHealthData()
+  const { ready, people: stored, personId, readings, consults, reload } = useHealthData()
+  const people = usePeople(stored)
+  const queue = useQueue()
+  const [ver, setVer] = useState(0)
+  const docs = useConfirmedDocs(personId, ver)
+  const [sheet, setSheet] = useState(false)
+  const [detailId, setDetailId] = useState<string | null>(null)
   const [test, setTest] = useState('')
   const tests = [...new Set(readings.map((r) => r.test))].sort()
   const picked = test && tests.includes(test) ? test : (tests[0] ?? '')
@@ -31,14 +40,32 @@ export default function Records() {
     }
   }, [picked, signature]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const days = new Map<string, { tests: typeof readings; consults: typeof consults }>()
-  const day = (d: string) => days.get(d) ?? { tests: [], consults: [] }
-  for (const r of readings) days.set(r.takenAt.slice(0, 10), { ...day(r.takenAt.slice(0, 10)), tests: [...day(r.takenAt.slice(0, 10)).tests, r] })
+  const docFiles = new Set(docs.flatMap((d) => d.files.map((f) => f.drive_file_id)))
+  const shown = readings.filter((r) => !(r.sourceFileId && docFiles.has(r.sourceFileId))) // those appear under their document
+  const days = new Map<string, { tests: typeof readings; consults: typeof consults; docs: typeof docs }>()
+  const day = (d: string) => days.get(d) ?? { tests: [], consults: [], docs: [] }
+  for (const r of shown) days.set(r.takenAt.slice(0, 10), { ...day(r.takenAt.slice(0, 10)), tests: [...day(r.takenAt.slice(0, 10)).tests, r] })
   for (const c of consults) days.set(c.takenAt.slice(0, 10), { ...day(c.takenAt.slice(0, 10)), consults: [...day(c.takenAt.slice(0, 10)).consults, c] })
+  for (const d of docs) { const k = d.doc.doc_date ?? d.doc.confirmed_at?.slice(0, 10) ?? 'Undated'; days.set(k, { ...day(k), docs: [...day(k).docs, d] }) }
   const dates = [...days.keys()].sort().reverse()
+  const detail = docs.find((d) => d.doc.id === detailId)
+  if (detail) return <RecordDetail bundle={detail} who={firstName(people.find((p) => p.id === detail.doc.person_id)?.name)} onBack={() => setDetailId(null)} />
+  const changed = () => { reload(); queue.refresh(); setVer((v) => v + 1) }
 
   return (
     <>
+      {queue.count > 0 && (
+        <div className="grp">
+          <button className="row" onClick={() => setSheet(true)}>
+            <span className="grow">
+              To check ({queue.count})
+              <span className="sub">Imported results waiting for you to confirm.</span>
+            </span>
+            <span className="chev" aria-hidden="true">&rsaquo;</span>
+          </button>
+        </div>
+      )}
+      {sheet && <ConfirmFlow people={people} onClose={() => setSheet(false)} onChanged={changed} />}
       {ready && dates.length === 0 ? (
         <div className="grp">
           <div className="row">
@@ -79,6 +106,11 @@ export default function Records() {
                         Doctor visit{c.doctor ? `: ${c.doctor}` : ''}
                         {c.reason && <span className="sub">{c.reason}</span>}
                       </span>
+                    ))}
+                    {day(d).docs.map((x) => (
+                      <button key={x.doc.id} className="rx-btn" style={{ textAlign: 'left', justifyContent: 'flex-start' }} onClick={() => setDetailId(x.doc.id)}>
+                        {KIND[x.doc.kind] ?? 'Document'}{x.doc.facility ? `, ${x.doc.facility}` : ''}
+                      </button>
                     ))}
                     {day(d).tests.map((r) => (
                       <span key={`r${r.id}`}>
