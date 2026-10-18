@@ -50,7 +50,7 @@ export default function App() {
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
   const adminRoute = hash === '#admin' && isAdmin // server RLS/RPCs still enforce is_admin()
-  useTrackScreen(adminRoute ? 'admin' : tab.id)
+  useTrackScreen(adminRoute ? 'admin' : hash === '#records' ? 'records' : tab.id)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => { document.title = `${tab.label} - Family Bantay` }, [tab])
   useEffect(() => {

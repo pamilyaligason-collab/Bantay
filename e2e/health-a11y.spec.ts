@@ -33,10 +33,13 @@ for (const tab of ['health', 'records']) {
   })
 }
 
-test("family (People and Records views): no axe violations", async ({ page }) => {
+test("family (People and Records views): no axe violations, light and dark", async ({ page }) => {
+  for (const colorScheme of ["light", "dark"] as const) {
+  await page.emulateMedia({ colorScheme })
   for (const hash of ["family", "records"]) {
     await page.goto(`/#${hash}`)
     await expect(page.locator("h1")).toHaveText("Family")
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([])
+  }
   }
 })

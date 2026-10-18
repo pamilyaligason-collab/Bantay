@@ -114,7 +114,7 @@ export default function Assistant() {
   }, [open])
   // The centre tab in the nav bar fires this; the sheet itself lives here.
   useEffect(() => {
-    const on = () => { opener.current = document.activeElement as HTMLElement | null; setOpen(true) }
+    const on = () => { const a = document.activeElement as HTMLElement | null; opener.current = a === document.body ? document.querySelector<HTMLElement>('.tab-ask') : a; setOpen(true) }
     window.addEventListener(ASK_EVENT, on)
     return () => window.removeEventListener(ASK_EVENT, on)
   }, [])

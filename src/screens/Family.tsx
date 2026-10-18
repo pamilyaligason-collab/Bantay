@@ -15,7 +15,7 @@ export default function Family() {
         <button aria-pressed={!records} onClick={() => pick('family')}>People</button>
         <button aria-pressed={records} onClick={() => pick('records')}>Records</button>
       </div>
-      {records ? <Records embedded /> : (
+      {records ? <Records /> : (
         <>
           <SensorSettings />
           <PhoneSettings />

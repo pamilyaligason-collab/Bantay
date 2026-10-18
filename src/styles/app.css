@@ -20,7 +20,7 @@ body { background: var(--bg); }
 .topbar { padding: 14px 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
 .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
-.scroll > * { min-width: 0; }
+.scroll > * { min-width: 0; flex-shrink: 0; }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
 .hdr h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.15; overflow-wrap: anywhere; }
 .hdr span { font-size: 15px; color: var(--ink2); }
@@ -75,8 +75,8 @@ body { background: var(--bg); }
 
 .tabs { overflow: visible; }
 .tabs .tab-ask { position: relative; color: var(--ink); }
-.tab-ask-dot { width: 56px; height: 56px; margin-top: -30px; border-radius: 28px; display: flex; align-items: center; justify-content: center; background: var(--act); color: #fff; box-shadow: 0 6px 16px rgba(0,102,214,0.4); }
+.tab-ask-dot { width: 56px; height: 56px; margin-top: -30px; border-radius: 28px; display: flex; align-items: center; justify-content: center; background: var(--btn); color: var(--btn-fg); box-shadow: 0 6px 16px rgba(0,102,214,0.4); }
 .tabs .tab-ask:focus-visible .tab-ask-dot { outline: 3px solid var(--ink); outline-offset: 2px; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 8px 0; border-radius: 14px; background: var(--fill); }
 .seg button { min-height: 44px; border: 0; border-radius: 10px; font-size: 16px; font-weight: 600; color: var(--ink); background: transparent; }
-.seg button[aria-pressed="true"] { background: var(--act); color: #fff; }
+.seg button[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
