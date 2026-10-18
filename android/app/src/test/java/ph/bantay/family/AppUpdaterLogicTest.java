@@ -18,6 +18,10 @@ public class AppUpdaterLogicTest {
     assertTrue(AppUpdaterPlugin.allowedUrl("https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.0.1/bantay-2.0.1.apk"));
     assertTrue(AppUpdaterPlugin.allowedUrl("https://objects.githubusercontent.com/x"));
     assertTrue(AppUpdaterPlugin.allowedUrl("https://release-assets.githubusercontent.com/x"));
+    assertFalse(AppUpdaterPlugin.allowedUrl("https://github.com/x.apk"));
+    assertFalse(AppUpdaterPlugin.allowedUrl("https://github.com/other/repo/releases/download/v1/x.apk"));
+    assertFalse(AppUpdaterPlugin.allowedUrl("https://github.com/pamilyaligason-collab/Bantay/archive/main.zip"));
+    assertFalse(AppUpdaterPlugin.allowedUrl("https://github.com/pamilyaligason-collab/Bantay/releases/download/../../../evil/x.apk"));
     assertFalse(AppUpdaterPlugin.allowedUrl("http://github.com/x.apk"));
     assertFalse(AppUpdaterPlugin.allowedUrl("https://evil.example/bantay.apk"));
     assertFalse(AppUpdaterPlugin.allowedUrl("https://github.com.evil.example/x.apk"));

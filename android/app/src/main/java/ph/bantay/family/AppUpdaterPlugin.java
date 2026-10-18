@@ -10,6 +10,7 @@ import android.content.pm.PackageInstaller;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.pm.PackageInfoCompat;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -68,7 +69,9 @@ public class AppUpdaterPlugin extends Plugin {
     return sb.toString();
   }
 
-  /** https, no credentials, default port, and a GitHub release host. */
+  private static final String RELEASE_PATH = "/pamilyaligason-collab/Bantay/releases/download/";
+
+  /** https, no credentials, default port, a GitHub release host; github.com only for this repo's release downloads. */
   static boolean allowedUrl(String url) {
     if (url == null) return false;
     try {
@@ -77,7 +80,9 @@ public class AppUpdaterPlugin extends Plugin {
         && u.getUserInfo() == null
         && (u.getPort() == -1 || u.getPort() == 443)
         && u.getHost() != null
-        && HOSTS.contains(u.getHost().toLowerCase(Locale.ROOT));
+        && HOSTS.contains(u.getHost().toLowerCase(Locale.ROOT))
+        && (!"github.com".equals(u.getHost().toLowerCase(Locale.ROOT))
+          || (u.getPath() != null && u.getPath().startsWith(RELEASE_PATH) && !u.getPath().contains("..")));
     } catch (Exception e) {
       return false;
     }
@@ -295,8 +300,7 @@ public class AppUpdaterPlugin extends Plugin {
       }
     };
     IntentFilter f = new IntentFilter(ACTION);
-    if (Build.VERSION.SDK_INT >= 33) c.registerReceiver(receiver, f, Context.RECEIVER_NOT_EXPORTED);
-    else c.registerReceiver(receiver, f);
+    ContextCompat.registerReceiver(c, receiver, f, ContextCompat.RECEIVER_NOT_EXPORTED);
   }
 
   @SuppressWarnings("deprecation")
