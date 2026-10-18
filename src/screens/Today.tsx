@@ -5,6 +5,7 @@ import SafetyBrief from '../features/safety/SafetyBrief'
 import MovementCard from '../features/sensors/MovementCard'
 import QuickWalk from '../features/sensors/QuickWalk'
 import { PwaBanner } from '../features/update/PwaBanner'
+import { UpdateCard } from '../features/update/UpdateCard'
 
 const date = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })
 
@@ -21,6 +22,8 @@ export default function Today() {
       <SafetyBrief limit={1} />
       <MovementCard />
       <QuickWalk />
+      {/* D-50: the update card never sits above a warning, so it goes below SafetyBrief (active warnings) and the quick actions. */}
+      <UpdateCard />
       <section aria-labelledby="t-news"><h2 id="t-news" className="hd">News</h2><NewsTop5 /></section>
     </>
   )

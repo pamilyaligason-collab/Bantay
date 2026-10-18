@@ -15,6 +15,9 @@ import { TabBar } from './features/shell/TabBar'
 import { useSavedTheme } from './features/shell/theme'
 import { TopBar } from './features/shell/TopBar'
 import { useKv } from './features/shell/useKv'
+import { RequiresUpdate } from './features/update/RequiresUpdate'
+import { UpdatedToast } from './features/update/UpdatedToast'
+import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
@@ -41,6 +44,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [unread] = useKv<number>('notif.unread', 0)
   useSavedTheme()
+  useUpdateCheckOnOpen()
   useEffect(() => {
     const check = () => void getMember().then((m) => setIsAdmin(m?.role === 'admin'))
     check()
@@ -92,6 +96,8 @@ export default function App() {
       </main>
       <TabBar active={isTabView ? tab : null} />
       <Assistant />
+      <RequiresUpdate />
+      <UpdatedToast />
     </div>
   )
 }

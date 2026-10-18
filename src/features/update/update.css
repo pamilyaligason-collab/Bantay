@@ -1,0 +1,19 @@
+/* Update sheet, card, full-screen gate. Tokens and .sh-* classes come from tokens.css / shell.css. */
+.up-c { text-align: center; }
+.up-m0 { margin: 0; }
+.up-jj { align-self: center; }
+.up-between { justify-content: space-between; }
+.up-soft { box-shadow: none; background: var(--card2); display: grid; gap: 8px; }
+.up-card { background: var(--card); }
+.up-err { color: var(--red); }
+.up-num { font-variant-numeric: tabular-nums; }
+.up-bar { height: 10px; border-radius: 5px; background: var(--card2); overflow: hidden; }
+.up-bar > i { display: block; height: 100%; background: var(--green2); border-radius: 5px; transition: width .2s; }
+.up-tile { align-self: center; width: 56px; height: 56px; border-radius: 50%; background: var(--green2); color: var(--on-green); display: grid; place-items: center; }
+.up-cardrow { display: flex; align-items: center; gap: 12px; background: var(--soft); box-shadow: none; border-radius: 24px; padding: 14px 16px; margin: 0 0 12px; }
+.up-cardrow .sh-ic { flex: none; }
+.up-gate { position: absolute; inset: 0; z-index: 30; background: var(--ground); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 24px 40px; text-align: center; }
+.up-gate p { margin: 0; max-width: 32ch; }
+.up-card { white-space: nowrap; flex: none; }
+.up-wrap { z-index: 40; } /* above .up-gate (30) so the sheet opens in front of the full-screen update gate */
+.up-911 { min-height: 44px; display: inline-flex; align-items: center; color: var(--link, var(--ink)); text-decoration: underline; }

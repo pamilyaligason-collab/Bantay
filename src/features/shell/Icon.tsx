@@ -12,7 +12,8 @@ const PATHS = {
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19 12l2-1.2-1.5-2.6-2.3.6a7 7 0 0 0-1.6-.9L15 5.5h-3l-.6 2.4a7 7 0 0 0-1.6.9l-2.3-.6L5.9 10.8 8 12l-2 1.2 1.5 2.6 2.3-.6c.5.4 1 .7 1.6.9l.6 2.4h3l.6-2.4c.6-.2 1.1-.5 1.6-.9l2.3.6L21 13.2z',
   cross: 'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
-  check: 'M5 12.5l4.5 4.5L19 7.5'
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  dl: 'M12 4v12M7 11l5 5 5-5M5 20h14'
 } as const
 export type IconName = keyof typeof PATHS
 

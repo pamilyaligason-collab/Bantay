@@ -8,6 +8,7 @@ import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { useKv } from '../features/shell/useKv'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
 import { normalizeContacts } from '../features/sos/contacts'
+import { UpdateRow } from '../features/update/UpdateRow'
 import '../features/shell/shell.css'
 
 // Me and settings (mockup data-id="me"). Sharing defaults to OFF for everything (D-34); stored on this phone as kv share.<key>, synced in P5.
@@ -83,8 +84,6 @@ export default function Me() {
     setBusy(false)
   }
   const names = normalizeContacts(sosRaw, loadFamily()).map((c) => c.name).filter(Boolean).join(' and ')
-  const version = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
-  const built = String(import.meta.env.VITE_BUILD_DATE ?? '')
 
   return (
     <div className="sh sh-me">
@@ -130,10 +129,7 @@ export default function Me() {
       </div>
 
       <div className="sh-card sh-list">
-        <div>
-          <div className="sh-grow"><b>App {version}{built && ` · Screens ${built}`}</b><div className="sh-sub">Update checks arrive in the next release</div></div>
-          <button type="button" className="sh-pill sh-ghost sh-small" disabled>Check for updates</button>
-        </div>
+        <UpdateRow />
         {member?.role === 'admin' && (
           <a className="sh-navrow" href="#admin">
             <Icon name="gear" />
