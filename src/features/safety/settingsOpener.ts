@@ -1,7 +1,11 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
 export type OpenTarget = 'earthquake' | 'wea'
-type Plugin = { open(o: { target: OpenTarget }): Promise<{ opened: string }> }
+type Plugin = {
+  open(o: { target: OpenTarget }): Promise<{ opened: string }>
+  batteryStatus(): Promise<{ ignoring: boolean }>
+  openBattery(): Promise<void>
+}
 
 /** Native plugin: android/app/src/main/java/ph/bantay/family/SettingsOpenerPlugin.java */
 export const SettingsOpener = registerPlugin<Plugin>('SettingsOpener')
@@ -26,4 +30,15 @@ export async function openSettings(t: OpenTarget): Promise<{ ok: boolean; line: 
   } catch {
     return { ok: false, line: 'We could not open Settings on this phone. Follow the steps above.' }
   }
+}
+
+/** True when Android lets Bantay run in the background. Web and failures report true so the step is not shown. */
+export async function batteryStatus(): Promise<{ ignoring: boolean }> {
+  if (!isNativeAndroid()) return { ignoring: true }
+  try { return { ignoring: (await SettingsOpener.batteryStatus()).ignoring === true } } catch { return { ignoring: true } }
+}
+
+/** Opens the battery optimisation list (no special permission). Never rejects; false means it did not open. */
+export async function openBattery(): Promise<boolean> {
+  try { await SettingsOpener.openBattery(); return true } catch { return false }
 }

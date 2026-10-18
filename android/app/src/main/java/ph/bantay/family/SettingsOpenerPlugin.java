@@ -3,6 +3,7 @@ package ph.bantay.family;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ActivityNotFoundException;
+import android.os.PowerManager;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -82,5 +83,25 @@ public class SettingsOpenerPlugin extends Plugin {
       }
     }
     call.reject("no settings screen could be opened");
+  }
+
+  /** True when Android will not pause Bantay in the background (battery optimisation off for it). */
+  @PluginMethod
+  public void batteryStatus(PluginCall call) {
+    PowerManager pm = (PowerManager) getContext().getSystemService(android.content.Context.POWER_SERVICE);
+    JSObject r = new JSObject();
+    r.put("ignoring", pm != null && pm.isIgnoringBatteryOptimizations(getContext().getPackageName()));
+    call.resolve(r);
+  }
+
+  /** Opens the battery optimisation list screen. The special REQUEST_IGNORE permission is deliberately not used. */
+  @PluginMethod
+  public void openBattery(PluginCall call) {
+    try {
+      getActivity().startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+      call.resolve();
+    } catch (ActivityNotFoundException | SecurityException e) {
+      call.reject("battery settings could not be opened");
+    }
   }
 }

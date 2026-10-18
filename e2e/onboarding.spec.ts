@@ -15,58 +15,116 @@ const kv = (page: Page, key: string) =>
     key
   )
 
-test.describe('permissions granted', () => {
-  test.use({ permissions: ['notifications', 'geolocation'], geolocation: { latitude: 10.3157, longitude: 123.8854 } })
-  test('alerts then GPS location, then the app', async ({ page }) => {
+const kvSet = (page: Page, key: string, value: unknown) =>
+  page.evaluate(
+    ([k, v]) =>
+      new Promise<void>((res, rej) => {
+        const r = indexedDB.open('bantay')
+        r.onerror = () => rej(r.error)
+        r.onsuccess = () => {
+          const t = r.result.transaction('kv', 'readwrite')
+          t.objectStore('kv').put({ key: k, value: v })
+          t.oncomplete = () => res()
+        }
+      }),
+    [key, value] as const
+  )
+
+const STEPS = ['Your photo', 'About me', 'Your medicines', 'Reminders and alerts', 'Where you are', "Your phone's warnings", 'SOS text contacts', 'Sharing']
+
+test.describe('setup wizard', () => {
+  test.use({ permissions: ['geolocation'], geolocation: { latitude: 10.3157, longitude: 123.8854 } })
+  test('walks every step with Skip and Finish, then the app', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText('Turn on alerts')
-    await page.getByRole('button', { name: 'Turn on alerts' }).click()
-    await expect(page.locator('h1')).toHaveText("Check your phone's warnings")
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.locator('h1')).toHaveText('Where are you?')
-    await expect(page.getByText('Alerts are off on this phone')).toHaveCount(0)
-    await page.getByRole('button', { name: 'Use my location' }).click()
+    for (const [i, title] of STEPS.entries()) {
+      await expect(page.locator('h1')).toHaveText(title)
+      await expect(page.getByText(`Step ${i + 1} of ${STEPS.length}`)).toBeVisible()
+      if (i < STEPS.length - 1) await page.getByRole('button', { name: 'Skip' }).click()
+    }
+    await page.getByRole('button', { name: 'Finish' }).click()
     await expect(page.locator('h1')).toHaveText('Today')
     expect(await kv(page, 'onboarded')).toBe(true)
     await page.reload()
     await expect(page.locator('h1')).toHaveText('Today')
   })
+
+  test('Back and the step dots move between steps', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: 'Back' })).toBeDisabled()
+    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await expect(page.locator('h1')).toHaveText('Reminders and alerts')
+    await page.getByRole('button', { name: 'Back' }).click()
+    await expect(page.locator('h1')).toHaveText('Your medicines')
+  })
+
+  test('a step whose flag is already set is skipped', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('h1')).toHaveText('Your photo')
+    await kvSet(page, 'profile.photo', 'data:image/jpeg;base64,AA==')
+    await page.reload()
+    await expect(page.locator('h1')).toHaveText('About me')
+    await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
+  })
+
+  test('notifications step: rows are off and the test reminder waits for permission', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await expect(page.getByText('Not on yet')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Send a test reminder' })).toBeDisabled()
+    await expect(page.getByText('reminders come from the family server')).toBeVisible()
+  })
+
+  test('location step has no prefilled barangay, and saves the one typed', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Step 5: Where you are' }).click()
+    await expect(page.getByText('Updates when you open Bantay')).toBeVisible()
+    await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
+    await expect(page.getByLabel('Latitude')).toHaveValue('')
+    await expect(page.getByLabel('Longitude')).toHaveValue('')
+    await page.getByLabel('Barangay').fill('Test Barangay')
+    await page.getByLabel('Latitude').fill('10.5')
+    await page.getByLabel('Longitude').fill('123.5')
+    await page.getByRole('button', { name: 'Save my barangay' }).click()
+    expect(await kv(page, 'loc.home')).toMatchObject({ name: 'Test Barangay', lat: 10.5, lon: 123.5 })
+  })
 })
 
-test.describe('permissions denied', () => {
-  test('gentle banner, then saved home barangay defaults to Dampas', async ({ page }) => {
-    await page.addInitScript(() => {
-      Notification.requestPermission = async () => 'denied'
-    })
+test.describe('notifications already allowed', () => {
+  test.use({ permissions: ['notifications'] })
+  test('the notifications step is skipped', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('button', { name: 'Turn on alerts' }).click()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.getByText('Alerts are off on this phone')).toBeVisible()
-    await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
-    await expect(page.getByLabel('Latitude')).toHaveValue('9.645705')
-    await expect(page.getByLabel('Longitude')).toHaveValue('123.877951')
-    await page.getByRole('button', { name: 'Save and start' }).click()
-    await expect(page.locator('h1')).toHaveText('Today')
-    expect(await kv(page, 'loc.home')).toMatchObject({ lat: 9.645705, lon: 123.877951 })
+    await expect(page.getByRole('button', { name: /Reminders and alerts/ })).toHaveCount(0)
+    await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
+  })
+})
+
+test.describe('Today checklist', () => {
+  test('lists the same count as the wizard and each item opens its own step', async ({ page }) => {
+    await skipOnboarding(page)
+    await page.goto('/')
+    const card = page.getByRole('region', { name: /left to set up/ })
+    await expect(card).toContainText(`${STEPS.length} things left to set up`)
+    await card.getByRole('button', { name: "Your phone's warnings" }).click()
+    await expect(page.locator('.wz-ov h1')).toHaveText("Your phone's warnings")
+    await expect(page.getByText(`Step 6 of ${STEPS.length}`)).toBeVisible()
+  })
+  test('a finished step leaves the list', async ({ page }) => {
+    await skipOnboarding(page)
+    await page.goto('/')
+    await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
+    await kvSet(page, 'share.reviewed', true)
+    await page.reload()
+    await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left to set up`)
   })
 })
 
 test.describe('iPhone in Safari', () => {
   test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1' })
-  test('shows Add to Home Screen before alerts', async ({ page }) => {
+  test('notifications step shows Add to Home Screen, and no Health Connect step', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText('Add Bantay to your Home Screen')
-    await expect(page.getByRole('button', { name: 'Turn on alerts' })).toHaveCount(0)
-  })
-  test('Continue without alerts does not lock the app', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Continue without alerts' }).click()
-    await expect(page.getByText('Phone warnings check')).toBeVisible()
-    await page.getByRole('button', { name: 'Continue' }).click()
-    await expect(page.getByText('Alerts are off on this phone')).toBeVisible()
-    await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
-    await page.getByRole('button', { name: 'Save and start' }).click()
-    await expect(page.locator('h1')).toHaveText('Today')
+    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await expect(page.getByText('Add Bantay to your Home Screen first')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Phone health data/ })).toHaveCount(0)
   })
 })
 

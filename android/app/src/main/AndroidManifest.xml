@@ -47,6 +47,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Reminders (plan P1 task 8): notifications (Android 13+) and the user-grantable exact-alarm permission,
+         capped at API 32 as the plan specifies. USE_EXACT_ALARM and REQUEST_IGNORE_BATTERY_OPTIMIZATIONS are
+         deliberately not declared: the wizard opens the battery list screen instead. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
 
     <!-- Health Connect: read only, and only the four types the app offers (steps, sleep, heart rate, blood pressure).
          The plugin manifest declares many more, including every WRITE_*. Strip them so the Health Connect consent
