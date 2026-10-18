@@ -1,26 +1,6 @@
 /* Shell + Me styles (Lane B). Everything is scoped under .sh or uses the sh- prefix so it cannot collide with the old global
    classes (.row .tile .pill .seg .sub) that Lane A replaces. Values are mockup v6. */
 
-/* TEMPORARY fallback: the v2 palette (Task 1 / Lane A lands the same values in tokens.css; identical, so the merge is harmless).
-   Delete this block once tokens.css carries --ground, --card, --green ... */
-:root {
-  --ground: #F6F1E7; --card: #FFFCF6; --card2: #EFE8DA; --green: #1F3D2B; --green2: #2E5A3F; --soft: #DCE5D8;
-  --amber: #E8A93A; --amber-ink: #7A4E05; --muted: #5E625B; --line: #E4DCCB; --on-green: #F6F1E7; --red-soft: #F7DEDA;
-  --sh-shadow: 0 1px 2px rgba(31,61,43,.06), 0 8px 24px rgba(31,61,43,.08);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
-    --amber: #F0B54C; --amber-ink: #F0B54C; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7; --red-soft: #3A1F1C;
-    --sh-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-  }
-}
-:root[data-theme="dark"] {
-  --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
-  --amber: #F0B54C; --amber-ink: #F0B54C; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7; --red-soft: #3A1F1C;
-  --sh-shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-}
-
 .sh-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* top bar */
@@ -31,7 +11,7 @@
 .sh-top-date { font-size: 13px; color: var(--muted); }
 .sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sh-top .sync-status { font-size: 12px !important; color: var(--muted) !important; }
-.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--sh-shadow); position: relative; text-decoration: none; flex: none; }
+.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; }
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
 /* tab bar */
@@ -52,7 +32,7 @@
 .sh-me > * { flex-shrink: 0; min-width: 0; }
 .sh-row { display: flex; align-items: center; gap: 12px; }
 .sh-h2 { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: -.01em; }
-.sh-card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--sh-shadow); }
+.sh-card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--shadow); }
 .sh-sech { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -6px; }
 .sh-sub { font-size: 13px; color: var(--muted); }
 .sh-blk { display: block; }
@@ -84,7 +64,7 @@
 .sh-pill:disabled { opacity: .55; }
 .sh-seg { display: grid; grid-auto-flow: column; gap: 2px; background: var(--card2); border-radius: 999px; padding: 3px; }
 .sh-seg button { border: 0; background: none; border-radius: 999px; min-height: 36px; padding: 0 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); }
-.sh-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--sh-shadow); }
+.sh-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 .sh-sheet-wrap { position: absolute; inset: 0; background: rgba(10,15,10,.4); z-index: 15; display: flex; align-items: flex-end; }
 .sh-sheet { background: var(--card); width: 100%; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; max-height: 80%; overflow-y: auto; }
 .sh-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
