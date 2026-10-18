@@ -7,7 +7,7 @@ import { Icon } from '../features/shell/Icon'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { useKv } from '../features/shell/useKv'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
-import { normalizeContacts } from '../features/sos/contacts'
+import { normalizeContacts, type SosContact } from '../features/sos/contacts'
 import { UpdateRow } from '../features/update/UpdateRow'
 import '../features/shell/shell.css'
 
@@ -35,13 +35,13 @@ function ShareRow({ k, label, sub }: { k: string; label: string; sub: string }) 
   )
 }
 
-function SosSheet({ onClose, selfId }: { onClose: () => void; selfId: string | null }) {
+function SosSheet({ onClose, selfId, onSaved }: { onClose: () => void; selfId: string | null; onSaved: (c: SosContact[]) => void }) {
   return createPortal(
     <div className="sh sh-sheet-wrap" onClick={onClose}>
       <div className="sh-sheet" role="dialog" aria-modal="true" aria-label="Who gets your SOS text" onClick={(e) => e.stopPropagation()}>
         <span className="sh-grab" />
         <h2 className="sh-h2">Who gets your SOS text</h2>
-        <SosContactsPicker excludePersonId={selfId} />
+        <SosContactsPicker excludePersonId={selfId} onSaved={onSaved} />
         <button type="button" className="sh-pill sh-primary sh-block" onClick={onClose}>Done</button>
       </div>
     </div>,
@@ -56,7 +56,7 @@ export default function Me() {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [sosOpen, setSosOpen] = useState(false)
-  const [sosRaw] = useKv<unknown>('sos.contacts', [])
+  const [sosRaw, setSosRaw] = useKv<unknown>('sos.contacts', [])
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
@@ -161,7 +161,7 @@ export default function Me() {
       {who && supabase && <p className="sh-sub sh-note">Signed in as {who}</p>}
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}
 
-      {sosOpen && <SosSheet onClose={() => setSosOpen(false)} selfId={member?.personId ?? null} />}
+      {sosOpen && <SosSheet onSaved={setSosRaw} onClose={() => setSosOpen(false)} selfId={member?.personId ?? null} />}
     </div>
   )
 }

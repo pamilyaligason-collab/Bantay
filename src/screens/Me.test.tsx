@@ -38,6 +38,15 @@ describe('Me', () => {
     await waitFor(async () => expect((await db.kv.get('sos.contacts'))?.value).toEqual([
       { name: 'Mama', phone: '09171234567', personId: 'p0' }, { name: 'Tita', phone: '123' }]))
   })
+  it('SOS row subtitle updates right after the picker closes', async () => {
+    render(<Me />)
+    const row = await screen.findByRole('button', { name: /Who gets your SOS text/ })
+    expect(row.textContent).toContain('Nobody picked yet')
+    await userEvent.click(row)
+    await userEvent.selectOptions(await screen.findByLabelText('Contact 1 family member'), 'Mama')
+    await userEvent.click(screen.getByRole('button', { name: 'Done' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Who gets your SOS text/ }).textContent).toContain('Mama'))
+  })
   it('theme picker sets data-theme and system clears it', async () => {
     render(<Me />)
     await userEvent.click(await screen.findByRole('button', { name: 'Dark' }))

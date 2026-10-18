@@ -7,7 +7,7 @@ import { MAX_SOS, normalizeContacts, validPhone, type SosContact } from './conta
 const blank = (): SosContact => ({ name: '', phone: '' })
 
 /** The one SOS contacts editor, used by Me and the setup wizard. Reads/writes kv `sos.contacts`, migrating old shapes. */
-export default function SosContactsPicker({ excludePersonId }: { excludePersonId?: string | null }) {
+export default function SosContactsPicker({ excludePersonId, onSaved }: { excludePersonId?: string | null; onSaved?: (c: SosContact[]) => void }) {
   const family = useMemo(() => loadFamily().filter((f) => f.personId !== excludePersonId), [excludePersonId])
   const [raw, setRaw, loaded] = useKv<unknown>('sos.contacts', [])
   const [slots, setSlots] = useState<SosContact[]>(() => Array.from({ length: MAX_SOS }, blank))
@@ -19,7 +19,9 @@ export default function SosContactsPicker({ excludePersonId }: { excludePersonId
   const edit = (i: number, c: SosContact) => {
     const n = slots.map((s, k) => (k === i ? c : s))
     setSlots(n)
-    setRaw(n.filter((s) => s.name.trim() || s.phone.trim()))
+    const kept = n.filter((s) => s.name.trim() || s.phone.trim())
+    setRaw(kept)
+    onSaved?.(kept)
   }
   return (
     <div className="sos-picker">
