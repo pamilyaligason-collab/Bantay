@@ -1,7 +1,9 @@
 import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
 import { loadFamily } from '../auth/family'
+import { enableAlerts } from '../notify/alerts'
 import { sosDone } from '../sos/contacts'
 import { batteryStatus, isNativeAndroid } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
@@ -44,8 +46,28 @@ export interface NotifyState { display: boolean; exact: boolean; battery: boolea
 /** Reads the three notification switches. Web has no alarm or battery switch, so those count as on. */
 /** The plugin reports the exact-alarm switch itself (older Android always reports granted). */
 export const exactOk = (status: string): boolean => status === 'granted'
-/** The notifications step is satisfied when all three switches are on. */
-export const notifyDone = (n: NotifyState) => n.display && n.exact && n.battery
+/** The notifications step is satisfied when notifications and exact alarms are on. The battery switch is an extra row, never a blocker. */
+export const notifyDone = (n: NotifyState) => n.display && n.exact
+
+/** Re-runs `fn` when the app comes back to the front (web tab or Android app), e.g. after a Settings switch. Returns the cleanup. */
+export function onResume(fn: () => void): () => void {
+  const on = () => { if (document.visibilityState === 'visible') fn() }
+  document.addEventListener('visibilitychange', on)
+  let handle: Promise<{ remove(): Promise<void> }> | undefined
+  if (Capacitor.isNativePlatform()) {
+    try { handle = App.addListener('appStateChange', (s) => { if (s.isActive) fn() }) } catch { /* no app plugin */ }
+  }
+  return () => { document.removeEventListener('visibilitychange', on); void handle?.then((h) => h.remove()).catch(() => undefined) }
+}
+
+/** The one "Turn on" tap: notification permission, then the exact-alarm switch if it is still off. Never rejects. */
+export async function turnOnReminders(): Promise<void> {
+  try {
+    if (!isNativeAndroid()) { await enableAlerts(); return }
+    const p = await LocalNotifications.requestPermissions()
+    if (p.display === 'granted' && !exactOk((await LocalNotifications.checkExactNotificationSetting()).exact_alarm)) await LocalNotifications.changeExactNotificationSetting()
+  } catch { /* the step shows what is still off */ }
+}
 
 export async function notifyState(): Promise<NotifyState> {
   try {
@@ -72,7 +94,7 @@ export async function probe(): Promise<Probe> {
   return {
     photo: !!(await get<string>('profile.photo')),
     about: !!about && ABOUT_FIELDS.every((f) => !!about[f]),
-    medicines: (await get<boolean>('setup.medicines')) === true || (await hasMedicines()),
+    medicines: (await get<boolean>('setup.medicines')) === true || ((await get<string[]>('profile.medicines'))?.length ?? 0) > 0 || (await hasMedicines()),
     notifications: notifyDone(n),
     location: (await get<boolean>('loc.asked')) === true || !!(await get('loc.home')),
     health: (await getState()).enabled.length > 0,

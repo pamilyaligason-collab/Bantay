@@ -1,29 +1,23 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
-import { enableAlerts, isIosNeedsInstall } from '../notify/alerts'
+import { isIosNeedsInstall } from '../notify/alerts'
 import { resolveLocation, saveHome } from '../location/useLocation'
 import { hdb } from '../records/store'
-import PhoneWarnings from '../safety/PhoneWarnings'
 import { isNativeAndroid, openBattery } from '../safety/settingsOpener'
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
 import SosContactsPicker from '../sos/SosContactsPicker'
-import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyState, probe, put, remaining, scheduleTest, type About, type NotifyState, type StepId } from './steps'
+import ChipField from './ChipField'
+import WarningsStep from './WarningsStep'
+import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, MEDICINES, splitItems } from './lists'
+import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyDone, notifyState, onResume, probe, put, remaining, scheduleTest, turnOnReminders, type About, type NotifyState, type StepId } from './steps'
 import '../safety/safety.css'
 import './setup.css'
 
 const standalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
 const kvGet = async <T,>(k: string): Promise<T | undefined> => (await db.kv.get(k).catch(() => undefined))?.value as T | undefined
 
-/** Re-runs `fn` when the app comes back to the front, e.g. after the member flipped a switch in Android Settings. */
-function useOnResume(fn: () => void) {
-  useEffect(() => {
-    const on = () => { if (document.visibilityState === 'visible') fn() }
-    document.addEventListener('visibilitychange', on)
-    return () => document.removeEventListener('visibilitychange', on)
-  }, [fn])
-}
+const useOnResume = (fn: () => void) => useEffect(() => onResume(fn), [fn])
 
 function Row({ label, on, children }: { label: string; on: boolean; children?: ReactNode }) {
   return (
@@ -65,21 +59,22 @@ function Photo() {
 }
 
 const ABOUT_LABEL: Record<(typeof ABOUT_FIELDS)[number], string> = { bloodType: 'Blood type', allergies: 'Allergies', conditions: 'Health conditions' }
+const ABOUT_OPTIONS: Record<(typeof ABOUT_FIELDS)[number], string[]> = { bloodType: BLOOD_TYPES, allergies: ALLERGIES, conditions: CONDITIONS }
+const NOT_SURE = { bloodType: "Don't know", allergies: 'Not sure', conditions: 'Not sure' } as const
+const EXCLUSIVE = { bloodType: [], allergies: ['None'], conditions: ['None'] } as const
 
 function About() {
   const [v, setV] = useState<About>({})
   useEffect(() => { void kvGet<About>('profile.about').then((a) => a && setV(a)) }, [])
-  const set = (k: keyof About, val: string) => { const n = { ...v, [k]: val }; setV(n); void put('profile.about', n) }
+  const set = (k: keyof About, items: string[]) => {
+    const n = { ...v, [k]: items.includes(NOT_SURE[k]) ? UNKNOWN : items.join(JOIN) }
+    setV(n); void put('profile.about', n)
+  }
   return (
     <div className="grp wz-body">
       {ABOUT_FIELDS.map((k) => (
-        <div key={k} className="wz-field">
-          <label>
-            <span className="sub">{ABOUT_LABEL[k]}</span>
-            <input value={v[k] === UNKNOWN ? '' : v[k] ?? ''} placeholder={v[k] === UNKNOWN ? 'Not sure' : ''} onChange={(e) => set(k, e.target.value.trim() === '' ? '' : e.target.value)} />
-          </label>
-          <button type="button" className="btn2 wz-sm" aria-pressed={v[k] === UNKNOWN} onClick={() => set(k, UNKNOWN)}>Not sure</button>
-        </div>
+        <ChipField key={k} label={ABOUT_LABEL[k]} multi={k !== 'bloodType'} options={[...ABOUT_OPTIONS[k], NOT_SURE[k]]} exclusive={[...EXCLUSIVE[k], NOT_SURE[k]]}
+          value={v[k] === UNKNOWN ? [NOT_SURE[k]] : splitItems(v[k])} onChange={(items) => set(k, items)} />
       ))}
     </div>
   )
@@ -95,8 +90,15 @@ function Medicines() {
       setLine(rows[0] ? `From your prescription of ${new Date(rows[0].takenAt).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}: ${rows[0].medicines!.join(', ')}.` : null)
     })()
   }, [])
-  if (line === undefined) return null
-  return <p className="sf-note" style={{ background: 'var(--cell)' }}>{line ?? 'No medicines yet. Ask an admin to add them.'}</p>
+  const [mine, setMine] = useState<string[]>([])
+  useEffect(() => { void kvGet<string[]>('profile.medicines').then((m) => Array.isArray(m) && setMine(m)) }, [])
+  const set = (m: string[]) => { setMine(m); void put('profile.medicines', m) }
+  return (
+    <div className="wz-body">
+      {line && <p className="sf-note" style={{ background: 'var(--cell)' }}>{line}</p>}
+      <div className="grp"><ChipField label="Medicines you take every day" multi options={MEDICINES} value={mine} onChange={set} /></div>
+    </div>
+  )
 }
 
 function Notifications() {
@@ -107,11 +109,7 @@ function Notifications() {
   useEffect(refresh, [refresh])
   useOnResume(refresh)
   const ios = isIosNeedsInstall(navigator.userAgent, standalone(), navigator.maxTouchPoints)
-  const allow = async () => {
-    if (native) await LocalNotifications.requestPermissions().catch(() => undefined)
-    else await enableAlerts()
-    refresh()
-  }
+  const turnOn = async () => { await turnOnReminders(); refresh() }
   const test = async () => {
     setMsg('')
     try { await scheduleTest(); setMsg('A test reminder will show in a few seconds.') } catch { setMsg('The test reminder could not be set. Check the switches above.') }
@@ -120,10 +118,12 @@ function Notifications() {
     <div className="wz-body">
       {ios && <p className="sf-note">Add Bantay to your Home Screen first: tap Share, then Add to Home Screen, then open Bantay from there.</p>}
       <div className="grp">
-        <Row label="Allow notifications" on={n.display}><button type="button" className="btn2 wz-sm" onClick={allow}>Allow</button></Row>
-        {native && <Row label="Allow alarms and reminders" on={n.exact}><button type="button" className="btn2 wz-sm" onClick={() => void LocalNotifications.changeExactNotificationSetting().then(refresh, refresh)}>Open Settings</button></Row>}
+        <Row label="Allow notifications" on={n.display} />
+        {native && <Row label="Allow alarms and reminders" on={n.exact} />}
         {native && <Row label="Don't let Android pause Bantay" on={n.battery}><button type="button" className="btn2 wz-sm" onClick={() => void openBattery()}>Open Settings</button></Row>}
       </div>
+      {!notifyDone(n) && <button type="button" className="btn" onClick={turnOn}>Turn on</button>}
+      {notifyDone(n) && <p className="sf-note" role="status" style={{ background: 'var(--cell)' }}>Reminders and alerts are on.</p>}
       <button type="button" className="btn2" onClick={test} disabled={!n.display}>Send a test reminder</button>
       {msg && <p className="sub" role="status" style={{ margin: 0 }}>{msg}</p>}
       {!native && <p className="sub" style={{ margin: 0 }}>iPhone: reminders come from the family server, keep notifications on.</p>}
@@ -166,7 +166,7 @@ const BODY: Record<StepId, () => ReactNode> = {
   notifications: () => <Notifications />,
   location: () => <Location />,
   health: () => <SensorSettings />,
-  warnings: () => <PhoneWarnings level={2} />,
+  warnings: () => <WarningsStep />,
   sos: () => <Sos />,
   sharing: () => (
     <div className="wz-body">
@@ -198,7 +198,7 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
   const next = () => (last ? onDone() : setI(i + 1))
   const cont = async () => {
     if (step === 'medicines') await put('setup.medicines', true)
-    if (step === 'warnings') await put('setup.warnings', true)
+    if (step === 'warnings' && !isNativeAndroid()) await put('setup.warnings', true) // Android asks the one question instead
     if (step === 'sharing') await put('setup.sharing', true)
     next()
   }

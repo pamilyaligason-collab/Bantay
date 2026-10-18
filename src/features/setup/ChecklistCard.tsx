@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Wizard from './Wizard'
-import { TITLES, currentPlatform, probe, remaining, type StepId } from './steps'
+import { TITLES, currentPlatform, onResume, probe, remaining, type StepId } from './steps'
 import './setup.css'
 
 /** Today card: what is left from setup. Same list as the wizard (steps.remaining), each item opens its own step. */
@@ -11,9 +11,7 @@ export default function ChecklistCard() {
   const refresh = useCallback(() => { void probe().then((p) => setLeft(remaining(p, currentPlatform()))).catch(() => undefined) }, [])
   useEffect(() => {
     refresh()
-    const on = () => { if (document.visibilityState === 'visible') refresh() }
-    document.addEventListener('visibilitychange', on)
-    return () => document.removeEventListener('visibilitychange', on)
+    return onResume(refresh)
   }, [refresh])
   const close = useCallback(() => { setOpen(null); refresh() }, [refresh])
   const ov = useRef<HTMLDivElement>(null)

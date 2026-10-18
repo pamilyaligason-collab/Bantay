@@ -3,3 +3,8 @@
 .sos-slot legend { font-weight: 600; padding: 0 6px; color: var(--ink); }
 .sos-slot select, .sos-slot input { font: inherit; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; background: var(--card2, var(--card)); color: var(--ink); width: 100%; box-sizing: border-box; min-width: 0; }
 .sos-err { color: var(--danger, var(--ink)); font-size: 13px; }
+.sos-quick { display: flex; flex-direction: column; gap: 6px; }
+.sos-quick-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.sos-chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2, var(--card)); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
+.sos-chip:disabled { opacity: 0.4; }
+.sos-pick { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--act); font: inherit; font-weight: 600; }
