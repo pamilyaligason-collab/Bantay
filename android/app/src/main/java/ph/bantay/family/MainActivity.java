@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(SettingsOpenerPlugin.class);
     registerPlugin(BiometricPlugin.class);
     registerPlugin(AppUpdaterPlugin.class);
+    registerPlugin(ContactPickerPlugin.class);
     super.onCreate(savedInstanceState);
   }
 }

@@ -3,7 +3,11 @@ package ph.bantay.family;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ActivityNotFoundException;
+import android.app.AlarmManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.PowerManager;
+import androidx.core.app.NotificationManagerCompat;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -54,6 +58,11 @@ public class SettingsOpenerPlugin extends Plugin {
     } else if ("wea".equals(target)) {
       c.add(component("cellbroadcast-google", "com.google.android.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
       c.add(component("cellbroadcast-aosp", "com.android.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
+      // OEM candidates: best-effort guesses, unverified on hardware. Missing or unexported ones are skipped by open().
+      c.add(component("cellbroadcast-samsung", "com.samsung.android.cellbroadcastreceiver", "com.samsung.android.cellbroadcastreceiver.CellBroadcastSettings"));
+      c.add(component("cellbroadcast-samsung-sec", "com.sec.android.app.cellbroadcastreceiver", "com.sec.android.app.cellbroadcastreceiver.CellBroadcastSettings"));
+      c.add(component("cellbroadcast-xiaomi", "com.xiaomi.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
+      c.add(component("cellbroadcast-huawei", "com.huawei.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
       c.add(action("safety-center", "android.settings.SAFETY_CENTER"));
     } else {
       return null;
@@ -94,7 +103,36 @@ public class SettingsOpenerPlugin extends Plugin {
     call.resolve(r);
   }
 
-  /** Opens the battery optimisation list screen. The special REQUEST_IGNORE permission is deliberately not used. */
+  /** One-tap system prompt "Let Bantay run in the background?". Falls back to the list screen if it cannot open. */
+  @PluginMethod
+  public void requestBatteryExemption(PluginCall call) {
+    try {
+      getActivity().startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+        Uri.parse("package:" + getContext().getPackageName())));
+      call.resolve();
+    } catch (ActivityNotFoundException | SecurityException e) {
+      openBattery(call);
+    }
+  }
+
+  /** Everything the setup wizard can auto-verify, so finished steps can be hidden. */
+  @PluginMethod
+  public void status(PluginCall call) {
+    android.content.Context ctx = getContext();
+    JSObject r = new JSObject();
+    r.put("notificationsEnabled", NotificationManagerCompat.from(ctx).areNotificationsEnabled());
+    boolean exact = true; // before API 31 exact alarms are always allowed
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      AlarmManager am = (AlarmManager) ctx.getSystemService(android.content.Context.ALARM_SERVICE);
+      exact = am != null && am.canScheduleExactAlarms();
+    }
+    r.put("canScheduleExactAlarms", exact);
+    PowerManager pm = (PowerManager) ctx.getSystemService(android.content.Context.POWER_SERVICE);
+    r.put("ignoringBatteryOptimizations", pm != null && pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
+    call.resolve(r);
+  }
+
+  /** Opens the battery optimisation list screen (fallback for requestBatteryExemption). */
   @PluginMethod
   public void openBattery(PluginCall call) {
     try {
