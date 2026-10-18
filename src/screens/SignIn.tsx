@@ -300,7 +300,7 @@ export default function SignIn() {
                     <li key={m.personId}>
                       <button type="button" className="wl-row" onClick={() => { setError(''); setPick(m) }}>
                         <span className="avatar" aria-hidden="true">{m.initials}</span>
-                        <b>{m.displayName}</b>
+                        <span className="wl-name"><b>{m.displayName}</b>{m.provider === 'google' && <span className="si-hint">Admin</span>}</span>
                         <svg className="wl-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                       </button>
                     </li>

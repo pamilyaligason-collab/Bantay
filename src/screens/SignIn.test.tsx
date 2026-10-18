@@ -129,6 +129,13 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // the picked person's card has no mascot unless returning
   })
 
+  it('an admin in the cached family shows an Admin sub-line in the welcome list', () => {
+    localStorage.setItem('bantay.family', JSON.stringify([...FAMILY, { personId: 'p-ate', displayName: 'Ate Maria', handle: null, provider: 'google' }]))
+    render(<SignIn />)
+    const rows = within(screen.getByLabelText('Who are you?')).getAllByRole('button')
+    expect(rows.map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben', 'AMAte MariaAdmin'])
+  })
+
   it('remembered person: only that person, mascot, PIN pad at once, no dropdown, no other names', () => {
     localStorage.setItem('bantay.lastPerson', 'p-kuya')
     render(<SignIn />)
