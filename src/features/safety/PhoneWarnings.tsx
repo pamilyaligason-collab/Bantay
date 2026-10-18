@@ -1,5 +1,7 @@
 import { putKv, useKv } from './store'
+import { useState } from 'react'
 import { NOT_A_SIREN } from './alerts'
+import { isNativeAndroid, OPEN_TARGET, openSettings } from './settingsOpener'
 
 export const PW_KEY = 'safety.phoneWarnings'
 export const RECHECK_DAYS = 90
@@ -48,6 +50,12 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
   const rec = useKv<Rec | null>(PW_KEY, null)
   const p = detectPlatform(ua)
   const st = statusOf(rec, p, now, osKey(ua))
+  const native = isNativeAndroid()
+  const [lines, setLines] = useState<Record<string, string>>({})
+  const open = async (id: string) => {
+    const t = OPEN_TARGET[id]
+    if (t) { const r = await openSettings(t); setLines((l) => ({ ...l, [id]: r.line })) }
+  }
   const set = (id: string, state: 'on' | 'unsure') => {
     const at = new Date().toISOString()
     // A stale record restarts: old answers no longer count.
@@ -69,6 +77,8 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
           <div key={it.id} className="pw-item">
             <strong>{it.title}</strong>
             <span className="sub">{it.steps}</span>
+            {native && OPEN_TARGET[it.id] && <button type="button" className="btn2" onClick={() => open(it.id)}>Open Settings</button>}
+            {lines[it.id] && <span className="sub" role="status">{lines[it.id]}</span>}
             <div className="pw-btns">
               <button type="button" className="btn2" aria-pressed={cur === 'on'} onClick={() => set(it.id, 'on')}>Done on this phone</button>
               <button type="button" className="btn2" aria-pressed={cur === 'unsure'} onClick={() => set(it.id, 'unsure')}>Not sure</button>
