@@ -1,0 +1,38 @@
+/* IDs and insurance (D-63). Tokens only; the dialogs sit outside .bt so they set their own font. */
+.dc-head { display: flex; align-items: center; gap: 12px; }
+.dc-head .hdr { flex: 1; }
+.dc-head h1 { font-size: 26px; }
+.dc-back { width: auto; min-width: 64px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
+.dc-note { margin: 0 4px; font-size: 13px; }
+.dc-err { margin: 0; color: var(--danger); font-size: 15px; }
+.dc-thumb { width: 44px; height: 32px; border-radius: 6px; background: var(--fill); color: var(--ink); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.dc-thumb.miss { background: transparent; border: 1.5px dashed var(--ink2); color: var(--ink2); font-size: 18px; }
+.dc-btn { min-height: 44px; min-width: 44px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 15px; font-weight: 600; background: var(--fill); color: var(--act); cursor: pointer; font-family: inherit; }
+.dc-btn.dc-primary { background: var(--btn); color: var(--btn-fg); }
+.dc-btn:focus-visible, .dc-chip:focus-visible, .dc-vseg button:focus-visible, .dc-sheet button:focus-visible, .dc-sheet select:focus-visible, .dc-sheet input:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.dc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.dc-chip { min-height: 44px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 16px; font-weight: 600; background: var(--fill); color: var(--ink); cursor: pointer; font-family: inherit; }
+.dc-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+.dc-actions { background: var(--fill); box-shadow: none; }
+.dc-actions .row { cursor: pointer; font-family: inherit; }
+.dc-actions .row:disabled { opacity: 0.5; }
+
+.dc-scrim { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; }
+.dc-sheet { width: 100%; max-width: 520px; max-height: 92dvh; overflow-y: auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; background: var(--cell); color: var(--ink); font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+.dc-sheet h2 { margin: 0; font-size: 22px; }
+.dc-sheet .sub { color: var(--ink2); }
+.dc-sheet .btn2 { cursor: pointer; font-family: inherit; }
+.dc-sheet .row { color: var(--ink); }
+.dc-field { display: flex; flex-direction: column; gap: 4px; font-size: 15px; color: var(--ink2); }
+.dc-field select, .dc-field input { min-height: 48px; box-sizing: border-box; border: 0.5px solid var(--sep); border-radius: 12px; padding: 0 12px; font: inherit; font-size: 17px; background: var(--bg); color: var(--ink); min-width: 0; }
+
+/* Full-screen viewer: bright on purpose so a card is easy to read and scan, in light and dark. */
+.dc-viewer { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; color: #000000; display: flex; flex-direction: column; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); box-sizing: border-box; font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+.dc-vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dc-vbar h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.dc-viewer .dc-btn { background: #E5E5EA; color: #004A99; }
+.dc-vseg { margin: 0; background: #E5E5EA; }
+.dc-vseg button { color: #000000; background: transparent; border: 0; min-height: 44px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+.dc-vseg button[aria-pressed="true"] { background: #004A99; color: #FFFFFF; }
+.dc-vbody { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.dc-vbody img, .dc-vbody object { width: 100%; height: 100%; object-fit: contain; }

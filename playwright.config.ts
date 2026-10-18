@@ -19,7 +19,7 @@ export default defineConfig({
   webServer: [
     {
       command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
-      env: { BANTAY_ALLOW_NO_AUTH: '1' }, // the e2e build has no Supabase env on purpose (see vite.config.ts)
+      env: { BANTAY_ALLOW_NO_AUTH: '1', DOCS_HARNESS: '1' }, // the e2e build has no Supabase env on purpose (see vite.config.ts); DOCS_HARNESS adds the docs test page
       url: `http://localhost:${PORT}`,
       reuseExistingServer: false,
       timeout: 180_000
