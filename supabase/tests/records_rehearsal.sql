@@ -63,7 +63,7 @@ select pg_temp.ok((select drafts from public.records_queue where kind = 'lab_res
 update public.lab_results set status = 'confirmed', confirmed_by = '00000000-0000-0000-0000-00000000000c' where id = '40000000-0000-0000-0000-000000000001';
 select pg_temp.ok((select confirmed_by from public.lab_results) = '00000000-0000-0000-0000-00000000000b', 'confirmed_by is the caller, not what was sent');
 select pg_temp.ok((select count(*) from public.readings where lab_result_id = '40000000-0000-0000-0000-000000000001' and test = 'fasting_glucose' and value = 100 and lab_low = 70 and source_file_id = 'drv1') = 1, 'confirm creates one reading with lab range and file');
-select pg_temp.ok((select taken_at::date from public.readings) = '2024-03-01', 'reading dated from the document when no collected_at');
+select pg_temp.ok((select (taken_at at time zone 'Asia/Manila')::date from public.readings) = '2024-03-01', 'reading dated from the document (Manila day) when no collected_at');
 create temp table rid as select id, client_id from public.readings;
 update public.lab_results set value_num = 101 where id = '40000000-0000-0000-0000-000000000001';
 select pg_temp.ok((select count(*) from public.readings r join rid using (id, client_id) where r.value = 101) = 1, 'edit of a confirmed result updates the same reading');
@@ -75,6 +75,9 @@ select pg_temp.ok((select lab_low is null and value = 0.995 and unit = 'mg/dL' f
 -- unmapped or text result: confirmed but no trend
 insert into public.lab_results (person_id, name_raw, value_text, status) values ('10000000-0000-0000-0000-0000000000b1', 'Urine protein', 'negative', 'confirmed');
 select pg_temp.ok((select count(*) from public.readings) = 2, 'unmapped text result does not trend');
+insert into public.lab_results (person_id, test_code, name_raw, value_num, unit_raw, status) values ('10000000-0000-0000-0000-0000000000b1', 'uric_acid', 'Uric acid', 300, 'mmol/x', 'confirmed');
+select pg_temp.ok((select count(*) from public.readings) = 2, 'mapped value in an unconverted unit does not trend');
+select pg_temp.ok(pg_temp.fails($$update public.lab_results set person_id = '10000000-0000-0000-0000-0000000000a1' where id = '40000000-0000-0000-0000-000000000002'$$), 'a row cannot move to another person');
 select pg_temp.ok(pg_temp.fails($$select * from public.person_aliases where false$$) = false and (select count(*) from public.person_aliases) = 0, 'member sees no aliases');
 select pg_temp.ok(pg_temp.fails($$insert into public.person_aliases values ('test b', '10000000-0000-0000-0000-0000000000b1')$$), 'member cannot write aliases');
 select pg_temp.ok(pg_temp.fails($$insert into public.test_catalog (code, name, unit) values ('zz', 'z', 'z')$$), 'member cannot edit catalog');
@@ -83,7 +86,7 @@ insert into public.prescription_items (person_id, prescription_id, line_no, drug
 
 -- C: read-only carer of PB
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
-select pg_temp.ok((select count(*) from public.lab_results) = 3, 'read-only carer sees confirmed results');
+select pg_temp.ok((select count(*) from public.lab_results) = 4, 'read-only carer sees confirmed results');
 select pg_temp.ok((select count(*) from public.prescription_items) = 0, 'read-only carer does not see drafts');
 select pg_temp.ok((select count(*) from public.documents) = 0, 'read-only carer does not see draft documents');
 select pg_temp.ok((select count(*) from public.readings) = 2, 'read-only carer sees the trend');
@@ -104,14 +107,26 @@ select pg_temp.ok(not pg_temp.fails($$insert into public.medications (person_id,
 -- A: admin manages imports for everyone
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 select pg_temp.ok((select count(*) from public.source_files) = 2, 'admin sees assigned and unassigned files');
-select pg_temp.ok((select count(*) from public.lab_results) = 3 and (select count(*) from public.prescription_items) = 1, 'admin sees drafts of members');
+select pg_temp.ok((select count(*) from public.lab_results) = 4 and (select count(*) from public.prescription_items) = 1, 'admin sees drafts of members');
 select pg_temp.ok(not pg_temp.fails($$insert into public.person_aliases values ('test b', '10000000-0000-0000-0000-0000000000b1')$$), 'admin writes aliases');
 update public.prescription_items set status = 'confirmed', generic_name = 'g';
 select pg_temp.ok((select confirmed_by from public.prescription_items) = '00000000-0000-0000-0000-00000000000a', 'admin confirm is stamped as admin');
 select pg_temp.ok((select count(*) from public.readings) = 2, 'admin reads readings (D-34)');
 select pg_temp.ok(pg_temp.fails($$insert into public.readings (person_id, taken_at, test, value) values ('10000000-0000-0000-0000-0000000000b1', now(), 't', 1)$$), 'admin still cannot write readings directly');
 update public.lab_results set status = 'rejected' where id = '40000000-0000-0000-0000-000000000001';
-select pg_temp.ok((select count(*) from public.readings where lab_result_id = '40000000-0000-0000-0000-000000000001') = 0, 'rejecting removes the reading');
+select pg_temp.ok((select deleted_at is not null and updated_at > confirmed_at from public.readings where lab_result_id = '40000000-0000-0000-0000-000000000001'), 'rejecting tombstones the reading for phones');
 select pg_temp.ok((select confirmed_by is null and confirmed_at is null from public.lab_results where id = '40000000-0000-0000-0000-000000000001'), 'rejected row loses its confirm stamp');
+update public.lab_results set status = 'confirmed' where id = '40000000-0000-0000-0000-000000000001';
+select pg_temp.ok((select deleted_at is null from public.readings where lab_result_id = '40000000-0000-0000-0000-000000000001'), 're-confirm revives the same reading');
 reset role;
+delete from auth.users where id = '00000000-0000-0000-0000-00000000000c';
+select pg_temp.ok(not exists (select 1 from auth.users where id = '00000000-0000-0000-0000-00000000000c'), 'an auth user can still be deleted');
+-- E: a second writer of PD who confirms a row, then leaves (0001 keeps creators of people undeletable on purpose)
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000e');
+insert into public.carers values ('00000000-0000-0000-0000-00000000000e', '10000000-0000-0000-0000-0000000000d1', true);
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000e';
+insert into public.allergies (person_id, substance, status) values ('10000000-0000-0000-0000-0000000000d1', 'none', 'confirmed');
+reset role; set request.jwt.claim.sub = ''; -- the dashboard/admin API deletes users with no user JWT
+delete from auth.users where id = '00000000-0000-0000-0000-00000000000e';
+select pg_temp.ok((select created_by is null and confirmed_by is null and status = 'confirmed' from public.allergies), 'a user who created and confirmed rows can still be deleted');
 \echo RECORDS REHEARSAL DONE

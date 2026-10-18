@@ -361,15 +361,21 @@ create table public.person_aliases (
 
 -- Confirmed lab results feed the existing trend table. One reading per lab result.
 alter table public.readings add column lab_result_id uuid unique references public.lab_results (id) on delete cascade;
+-- Phones pull by updated_at and drop rows with deleted_at, so a fixed or rejected result reaches every device.
+alter table public.readings add column updated_at timestamptz not null default now(), add column deleted_at timestamptz;
+create index readings_updated_at on public.readings (updated_at);
 
 -- ---------- triggers ----------
 -- Stamp confirm fields from the caller, freeze created_by/person ownership stamps, keep updated_at.
 create function public.records_stamp() returns trigger
   language plpgsql set search_path = '' as
   $$ begin
+       -- FK actions (a deleted auth user -> set null) and maintenance run without a user: let them through.
+       if tg_op = 'UPDATE' and auth.uid() is null then new.updated_at := now(); return new; end if;
        if tg_op = 'INSERT' then
          if auth.uid() is not null then new.created_by := auth.uid(); end if;
        else
+         if new.person_id is distinct from old.person_id then raise exception 'person_frozen' using errcode = '23514'; end if;
          new.created_by := old.created_by;
          new.created_at := old.created_at;
          new.client_id := old.client_id;
@@ -377,7 +383,7 @@ create function public.records_stamp() returns trigger
        new.updated_at := now();
        if new.status = 'confirmed' then
          if auth.uid() is null then raise exception 'confirm_needs_user' using errcode = '42501'; end if;
-         new.confirmed_by := auth.uid(); new.confirmed_at := now(); -- any write to a confirmed row re-stamps it
+         new.confirmed_by := auth.uid(); new.confirmed_at := now(); -- any write to a confirmed row re-stamps it: the last editor vouches for the value
        else
          new.confirmed_by := null; new.confirmed_at := null;
        end if;
@@ -388,9 +394,12 @@ create function public.records_stamp() returns trigger
 create function public.source_files_stamp() returns trigger
   language plpgsql set search_path = '' as
   $$ begin
+       if tg_op = 'UPDATE' and auth.uid() is null then new.updated_at := now(); return new; end if;
        if tg_op = 'INSERT' then
          if auth.uid() is not null then new.created_by := auth.uid(); end if;
        else
+         -- a file may be assigned once (null -> person), never moved between people by a user
+         if old.person_id is not null and new.person_id is distinct from old.person_id then raise exception 'person_frozen' using errcode = '23514'; end if;
          new.created_by := old.created_by; new.created_at := old.created_at; new.client_id := old.client_id;
        end if;
        new.updated_at := now();
@@ -427,6 +436,11 @@ create function public.records_same_person() returns trigger
        elsif tg_table_name = 'documents' then
          if new.encounter_id is not null then select person_id into parent from public.encounters where id = new.encounter_id;
            if parent is distinct from new.person_id then raise exception 'person_mismatch' using errcode = '23514'; end if; end if;
+       elsif tg_table_name = 'source_files' then
+         if new.document_id is not null then select person_id into parent from public.documents where id = new.document_id;
+           if new.person_id is distinct from parent then raise exception 'person_mismatch' using errcode = '23514'; end if; end if;
+         if new.duplicate_of is not null then select person_id into parent from public.source_files where id = new.duplicate_of;
+           if parent is not null and new.person_id is not null and parent is distinct from new.person_id then raise exception 'person_mismatch' using errcode = '23514'; end if; end if;
        elsif tg_table_name = 'insurance_policies' then
          if new.source_file_id is not null then select person_id into parent from public.source_files where id = new.source_file_id;
            if parent is not null and parent is distinct from new.person_id then raise exception 'person_mismatch' using errcode = '23514'; end if; end if;
@@ -437,7 +451,7 @@ create function public.records_same_person() returns trigger
        return new;
      end $$;
 do $$ declare t text; begin
-  foreach t in array array['documents','lab_panels','lab_results','prescriptions','prescription_items','medications',
+  foreach t in array array['source_files','documents','lab_panels','lab_results','prescriptions','prescription_items','medications',
                            'vaccinations','imaging_reports','appointments','insurance_policies'] loop
     execute format('create trigger %I before insert or update on public.%I for each row execute function public.records_same_person()', t || '_same_person', t);
   end loop;
@@ -447,30 +461,31 @@ end $$;
 create function public.lab_result_to_reading() returns trigger
   language plpgsql security definer set search_path = '' as
   $$ declare v numeric; u text; begin
-       if not (new.status = 'confirmed' and new.test_code is not null and coalesce(new.value_canonical, new.value_num) is not null) then
-         delete from public.readings where lab_result_id = new.id;
+       select unit into u from public.test_catalog where code = new.test_code;
+       -- trends only in the canonical unit: a value that could not be converted stays out (no 88 umol/L beside 0.99 mg/dL)
+       if not (new.status = 'confirmed' and new.test_code is not null
+               and (new.value_canonical is not null or (new.value_num is not null and new.unit_raw is not distinct from u))) then
+         update public.readings set deleted_at = now(), updated_at = now() where lab_result_id = new.id and deleted_at is null;
          return null;
        end if;
-       if new.status = 'confirmed' and new.test_code is not null and coalesce(new.value_canonical, new.value_num) is not null then
-         select unit into u from public.test_catalog where code = new.test_code;
          v := coalesce(new.value_canonical, new.value_num);
          insert into public.readings (person_id, taken_at, test, value, unit, lab_low, lab_high, source_file_id,
                                       confidence, confirmed_by, confirmed_at, lab_result_id)
          values (new.person_id,
-                 coalesce(new.collected_at, (select coalesce(d.collected_at, d.doc_date::timestamptz) from public.documents d where d.id = new.document_id), new.created_at),
+                 coalesce(new.collected_at, (select coalesce(d.collected_at, (d.doc_date + time '08:00') at time zone 'Asia/Manila') from public.documents d where d.id = new.document_id), new.created_at),
                  new.test_code, v,
-                 case when new.value_canonical is not null then u else new.unit_raw end,
-                 -- the lab range is in unit_raw; only carry it when the value is in the same unit
-                 case when new.value_canonical is null or new.unit_raw is not distinct from u then new.ref_low end,
-                 case when new.value_canonical is null or new.unit_raw is not distinct from u then new.ref_high end,
+                 u,
+                 -- the lab range is in unit_raw; only carry it when that is the canonical unit
+                 case when new.unit_raw is not distinct from u then new.ref_low end,
+                 case when new.unit_raw is not distinct from u then new.ref_high end,
                  (select sf.drive_file_id from public.source_files sf where sf.document_id = new.document_id order by sf.name limit 1),
                  new.confidence, new.confirmed_by, new.confirmed_at, new.id)
          -- update in place so the reading keeps its id and client_id (the phone matches on them)
          on conflict (lab_result_id) do update set
            person_id = excluded.person_id, taken_at = excluded.taken_at, test = excluded.test, value = excluded.value,
            unit = excluded.unit, lab_low = excluded.lab_low, lab_high = excluded.lab_high, source_file_id = excluded.source_file_id,
-           confidence = excluded.confidence, confirmed_by = excluded.confirmed_by, confirmed_at = excluded.confirmed_at;
-       end if;
+           confidence = excluded.confidence, confirmed_by = excluded.confirmed_by, confirmed_at = excluded.confirmed_at,
+           deleted_at = null, updated_at = now();
        return null;
      end $$;
 create trigger lab_results_to_reading after insert or update on public.lab_results
@@ -516,6 +531,15 @@ do $$ declare t text; begin
     execute format('create policy %I on public.%I for delete to authenticated using (public.records_editor(person_id))', t || '_delete', t);
   end loop;
 end $$;
+
+create index source_files_person on public.source_files (person_id);
+create index source_files_document on public.source_files (document_id);
+create index lab_results_document on public.lab_results (document_id);
+create index lab_results_panel on public.lab_results (panel_id);
+create index lab_panels_document on public.lab_panels (document_id);
+create index documents_encounter on public.documents (encounter_id);
+create index prescriptions_document on public.prescriptions (document_id);
+create index person_aliases_person on public.person_aliases (person_id);
 
 -- Admins read readings too (D-34), so the records manager can see what a confirm produced. Writes stay with 0001 rules.
 create policy readings_admin_read on public.readings for select to authenticated using (public.is_admin());
