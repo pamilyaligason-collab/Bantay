@@ -1,0 +1,9 @@
+{
+    "versionCode":  2000000,
+    "versionName":  "2.0.0",
+    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.0.0/bantay-2.0.0.apk",
+    "sha256":  "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+    "size":  4096,
+    "minShell":  2000000,
+    "notes":  "First v2"
+}

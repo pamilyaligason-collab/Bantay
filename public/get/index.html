@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Get Bantay</title>
+<meta name="description" content="Install the Bantay family app on Android, or add it to an iPhone home screen.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --ground:#F6F1E7; --card:#FFFCF6; --card2:#EFE8DA; --green:#1F3D2B; --green2:#2E5A3F; --amber:#E8A93A;
+  --ink:#1D1F1C; --muted:#5E625B; --on-green:#F6F1E7; --shadow:0 1px 2px rgba(31,61,43,.06),0 8px 24px rgba(31,61,43,.08);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --ground:#0F1712; --card:#18231C; --card2:#1F2C24; --green:#2B5A3D; --green2:#3B7350; --amber:#F0B54C;
+  --ink:#EEF0EA; --muted:#A7B0A6; --on-green:#F6F1E7; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.45 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:480px;margin:0 auto;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));display:grid;gap:16px}
+.center{text-align:center;display:grid;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font:600 30px/1.1 Fraunces,Georgia,"Times New Roman",serif;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.muted{color:var(--muted);margin:0}
+.sub{color:var(--muted);font-size:14px}
+.card{background:var(--card);border-radius:24px;padding:16px;box-shadow:var(--shadow)}
+.quiet{background:var(--card2);box-shadow:none;display:grid;gap:10px}
+ol.steps{list-style:none;margin:0;padding:16px;display:grid;gap:14px}
+ol.steps li{display:flex;gap:12px;align-items:flex-start}
+.n{flex:none;width:40px;height:40px;border-radius:12px;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-weight:700}
+.steps b{display:block}
+.pill{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border-radius:999px;border:0;font-family:inherit;font-weight:600;font-size:16px;background:var(--green);color:var(--on-green);text-decoration:none;cursor:pointer;width:100%}
+.pill.ghost{background:var(--card2);color:var(--ink);min-height:44px;font-size:14px;width:auto}
+.link{background:none;border:0;color:var(--green2);font-family:inherit;font-weight:600;font-size:14px;text-decoration:underline;padding:12px;justify-self:center;cursor:pointer}
+@media (prefers-color-scheme: dark){.link{color:var(--amber)}}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.meta{font-size:12px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.row{display:flex;gap:10px;align-items:flex-start}
+svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+</style>
+</head>
+<body>
+<main>
+  <!-- ===== Android ===== -->
+  <div id="android" class="stack" style="display:grid;gap:16px">
+    <div class="center">
+      <div class="eyebrow">bantay.pages.dev/get</div>
+      <h1>Get the Bantay app</h1>
+      <p class="muted">For our family's Android phones. Takes about a minute.</p>
+    </div>
+
+    <div id="inapp" class="card quiet" hidden>
+      <div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+        <div class="sub"><b style="color:var(--ink)">Opened this from Messenger?</b> Tap the three dots and choose Open in Chrome first. The download only works in Chrome.</div></div>
+      <button type="button" id="copy" class="pill ghost">Copy link</button>
+    </div>
+
+    <ol class="card steps" aria-label="Install steps">
+      <li><span class="n" aria-hidden="true">1</span><div><b>Download</b><span class="sub">Chrome may warn about the file. Tap Download anyway, then Open.</span></div></li>
+      <li><span class="n" aria-hidden="true">2</span><div><b>Allow Chrome to install apps</b><span class="sub">Android asks once: tap Settings, turn on "Allow from this source", then go Back.</span></div></li>
+      <li><span class="n" aria-hidden="true">3</span><div><b>Install</b><span class="sub">If Play Protect asks to scan the app, let it scan, then tap Install.</span></div></li>
+      <li><span class="n" aria-hidden="true">4</span><div><b>Open Bantay</b><span class="sub">Jack Jack meets you there. About 2 minutes in all.</span></div></li>
+    </ol>
+
+    <div class="card quiet">
+      <div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+        <div class="sub"><b style="color:var(--ink)">Didn't see it after the download?</b> Open Files, then Downloads, and tap Bantay.</div></div>
+      <div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <div class="sub">If you have the old Bantay icon (web version), long-press it and choose Uninstall once the app works.</div></div>
+    </div>
+
+    <a id="dl" class="pill" href="https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/bantay.apk">Download Bantay <span id="ver" style="margin-left:.35em"></span></a>
+    <p id="facts" class="meta" hidden></p>
+    <button type="button" class="link" data-show="ios">On an iPhone? See the iPhone steps</button>
+  </div>
+
+  <!-- ===== iPhone ===== -->
+  <div id="ios" style="display:grid;gap:16px" hidden>
+    <div class="center">
+      <div class="eyebrow">bantay.pages.dev/get</div>
+      <h1>Add Bantay to your iPhone</h1>
+      <p class="muted">Nothing to download. Takes about a minute.</p>
+    </div>
+    <ol class="card steps" aria-label="iPhone steps">
+      <li><span class="n" aria-hidden="true">1</span><div><b>Open this link in Safari</b><span class="sub">Opened it from Messenger? Tap the Safari icon or Open in browser first.</span></div></li>
+      <li><span class="n" aria-hidden="true">2</span><div><b>Tap Share</b><span class="sub">The square with an arrow, at the bottom of Safari.</span></div></li>
+      <li><span class="n" aria-hidden="true">3</span><div><b>Tap Add to Home Screen, then Add</b><span class="sub">Bantay now opens from its own icon, like an app.</span></div></li>
+    </ol>
+    <div class="card quiet"><div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+      <div class="sub">There is no APK on iPhone, so there is no file to download or install. Allow notifications when Bantay asks.</div></div></div>
+    <a class="pill" href="/">I added it, open Bantay</a>
+    <button type="button" class="link" data-show="android">Android phone? See the Android steps</button>
+  </div>
+</main>
+<script>
+(function () {
+  var ua = navigator.userAgent
+  var android = document.getElementById('android'), ios = document.getElementById('ios')
+  function show(which) { android.hidden = which !== 'android'; ios.hidden = which !== 'ios' }
+  show(/iPhone|iPad|iPod/.test(ua) ? 'ios' : 'android')
+  Array.prototype.forEach.call(document.querySelectorAll('[data-show]'), function (b) {
+    b.addEventListener('click', function () { show(b.getAttribute('data-show')); window.scrollTo(0, 0) })
+  })
+  if (/FBAN|FBAV|Messenger|Instagram|Line\//.test(ua)) document.getElementById('inapp').hidden = false
+  document.getElementById('copy').addEventListener('click', function () {
+    var b = this
+    var done = function () { b.textContent = 'Link copied' }
+    if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, function () { b.textContent = 'Long-press the address to copy' })
+    else b.textContent = 'Long-press the address to copy'
+  })
+  // Version, size and checksum from latest.json. If it cannot be read the button still works, the line stays hidden.
+  fetch('https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/latest.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null })
+    .then(function (l) {
+      if (!l || typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
+      document.getElementById('ver').textContent = l.versionName
+      var f = document.getElementById('facts')
+      f.textContent = 'Version ' + l.versionName + ' · ' + (l.size / 1048576).toFixed(1) + ' MB · SHA-256 ' + l.sha256.toLowerCase()
+      f.hidden = false
+    })
+    .catch(function () {})
+})()
+</script>
+</body>
+</html>

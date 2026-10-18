@@ -13,3 +13,5 @@ coverage/
 BANTAY_CLAUDE_CODE_PROMPT_*.md
 dist-auth/
 supabase/.temp/
+
+release-out/
