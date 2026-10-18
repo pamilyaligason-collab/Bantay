@@ -1,7 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Capacitor } from '@capacitor/core'
 import SignIn from '../../screens/SignIn'
 import { supabase } from './client'
-import { cacheFamily, passkeyCheck, rememberSignedIn } from './family'
+import { cacheFamily, clearLastPerson, getLastPerson, hasPasskeyFlag, loadFamily, passkeyCheck, rememberSignedIn } from './family'
+import { FingerOffer, LockScreen, fingerAsked } from './FingerGate'
+import { getMember, signOut } from './session'
 
 const doneKey = (uid: string) => `bantay.person.${uid}`
 const seen = (uid: string) => { try { return localStorage.getItem(doneKey(uid)) === '1' } catch { return false } }
@@ -15,12 +18,15 @@ const mark = (uid: string) => { try { localStorage.setItem(doneKey(uid), '1') } 
  */
 export function AuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<'loading' | 'out' | 'in'>(supabase ? 'loading' : 'in')
+  // APK only: 'lock' = fingerprint before the app opens (stored session), 'offer' = "use your fingerprint next time?" after a fresh sign-in.
+  const [gate, setGate] = useState<{ kind: 'lock' | 'offer'; personId: string } | null>(null)
+  const decided = useRef(false) // the gate is decided once per app start, by the first settled session
 
   useEffect(() => {
     const sb = supabase
     if (!sb) return
     let alive = true
-    const settle = async (uid: string | undefined) => {
+    const settle = async (uid: string | undefined, fresh: boolean) => {
       if (!uid) { if (alive) setState('out'); return }
       if (passkeyCheck) {
         // Passkey sign-in is still checking it is the tapped person. Wait; if the session is gone, stay signed out.
@@ -35,12 +41,21 @@ export function AuthGate({ children }: { children: ReactNode }) {
         } catch { /* offline: try again next start */ }
       }
       void (async () => { await cacheFamily(); await rememberSignedIn() })() // trusted device: remember the family picker list (quiet on failure)
+      if (Capacitor.isNativePlatform() && !decided.current) {
+        decided.current = true
+        const last = getLastPerson()
+        if (!fresh && last && hasPasskeyFlag(last)) { if (alive) setGate({ kind: 'lock', personId: last }) }
+        else if (fresh) {
+          const pid = (await getMember().catch(() => null))?.personId
+          if (pid && !hasPasskeyFlag(pid) && !fingerAsked(pid) && alive) setGate({ kind: 'offer', personId: pid })
+        }
+      }
       if (alive) setState('in')
     }
     const { data } = sb.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') setState('out')
+      if (event === 'SIGNED_OUT') { decided.current = false; setGate(null); setState('out') }
       // Run after the callback returns; supabase-js must not be awaited inside it.
-      else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') setTimeout(() => settle(session?.user.id), 0)
+      else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') setTimeout(() => settle(session?.user.id, event === 'SIGNED_IN'), 0)
     })
     return () => { alive = false; data.subscription.unsubscribe() }
   }, [])
@@ -51,5 +66,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return <>{children}</>
   }
   if (state === 'loading') return null
-  return state === 'out' ? <SignIn /> : <>{children}</>
+  if (state === 'out') return <SignIn />
+  if (gate?.kind === 'lock') {
+    const name = loadFamily().find((m) => m.personId === gate.personId)?.displayName.split(' ')[0] ?? ''
+    return <LockScreen name={name} onUnlocked={() => setGate(null)} onUsePin={() => void signOut()} onNotYou={() => { clearLastPerson(); void signOut() }} />
+  }
+  if (gate?.kind === 'offer') return <FingerOffer personId={gate.personId} onDone={() => setGate(null)} />
+  return <>{children}</>
 }
