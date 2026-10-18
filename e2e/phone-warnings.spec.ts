@@ -14,10 +14,11 @@ test.describe('android phone', () => {
     await expect(page.getByText('Not checked')).toBeVisible()
     await page.getByRole('button', { name: 'Done on this phone' }).first().click()
     await expect(page.getByText('1 to check')).toBeVisible()
-    await page.getByRole('button', { name: 'Done on this phone' }).nth(1).click()
-    await expect(page.getByText('All on')).toBeVisible()
+    await page.getByRole('button', { name: 'Done on this phone' }).first().click()
+    // D-61: with every warning on, the card is gone
+    await expect(page.getByText('Phone warnings check')).toHaveCount(0)
     await page.reload()
-    await expect(page.getByText('All on')).toBeVisible()
+    await expect(page.getByText('Phone warnings check')).toHaveCount(0)
   })
 
   for (const [w, h] of [[375, 812], [320, 640]] as const) {

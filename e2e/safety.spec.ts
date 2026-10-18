@@ -28,7 +28,7 @@ test('safety screen: no alerts, hotlines, unknown places, maps load only on requ
 
 test('adding a pin gives a Go button that survives reload (offline store)', async ({ page }) => {
   await page.goto('/#safety')
-  await page.getByRole('button', { name: 'Not confirmed yet, tap to add' }).first().click()
+  await page.getByRole('region', { name: 'Evacuation and rescue' }).getByRole('button', { name: 'Not confirmed yet, tap to add' }).first().click()
   await page.getByLabel('Latitude').fill('9.65')
   await page.getByLabel('Longitude').fill('123.88')
   await page.getByRole('button', { name: 'Save' }).click()
@@ -76,11 +76,11 @@ test.describe('Near me on the maps switcher', () => {
       await page.goto('/#safety')
       const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
       await expect(near).toHaveAttribute('aria-pressed', 'false')
-      await expect(page.locator('.hdr span')).toHaveText('Dampas and Conel')
+      await expect(page.locator('.hdr .sf-chip')).toHaveText('Dampas')
       expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0)
       await near.click()
       await expect(near).toHaveAttribute('aria-pressed', 'true')
-      await expect(page.locator('.hdr span')).toHaveText('Near you')
+      await expect(page.locator('.hdr .sf-chip')).toHaveText('Near you · Conel')
       await page.getByText('Ventusky weather map').click()
       await expect(page.locator('iframe[title^="Ventusky"]')).toHaveAttribute('src', /p=6\.11;125\.17;7/)
     })
@@ -106,4 +106,30 @@ test.describe('Near me on the maps switcher', () => {
       await expect(group.getByRole('button', { pressed: true })).toHaveCount(1)
     })
   })
+})
+
+test('Safety order (D-62): 911, IDs and Insurance, advisory card, Quick dial, Live maps', async ({ page }) => {
+  await page.goto('/#safety')
+  const y = async (loc: ReturnType<typeof page.locator>) => (await loc.first().boundingBox())!.y
+  const call = await y(page.getByRole('link', { name: 'Call 911' }))
+  const ids = await y(page.getByRole('link', { name: 'My IDs' }))
+  const warn = await y(page.getByRole('heading', { name: 'Warnings', exact: true }))
+  const dial = await y(page.getByRole('heading', { name: 'Quick dial' }))
+  const maps = await y(page.getByRole('heading', { name: 'Live maps' }))
+  await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveCount(0)
+  expect(ids).toBeGreaterThan(call)
+  expect(warn).toBeGreaterThan(ids)
+  expect(dial).toBeGreaterThan(warn)
+  expect(maps).toBeGreaterThan(dial)
+  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#records')
+})
+
+test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dampas hazards', async ({ page }) => {
+  await page.goto('/#safety')
+  await expect(page.getByText('BFP Tagbilaran').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Place:/ }).click()
+  await page.getByRole('group', { name: 'Zone' }).getByRole('button', { name: 'Conel' }).click()
+  await expect(page.getByText('BFP Tagbilaran')).toHaveCount(0)
+  await expect(page.getByText('No hazard readings for this zone yet')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toBeVisible()
 })

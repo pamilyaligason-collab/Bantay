@@ -50,7 +50,8 @@ export function PracticeCard({ card }: { card: Card }) {
   )
 }
 
-export function Hazards() {
+export function Hazards({ zone }: { zone: string }) {
+  if (hazards.zone !== zone) return <p className="sf-empty">No hazard readings for this zone yet. <a href={hazards.url} target="_blank" rel="noopener noreferrer">Check HazardHunterPH</a>.</p>
   return (
     <div className="grp">
       {hazards.rows.map((r) => (

@@ -40,7 +40,7 @@ export const LOCATION_OFF ='Location is off for Bantay. Turn it on in your phone
 
 /** `loc`/`ask` let the Safety screen share one location with its header and warnings; left out, the panel uses its own.
  *  "Near me" is always offered and asks for location only when tapped. */
-export default function MapsPanel({ loc, ask }: { loc?: LatLon | null; ask?: () => Promise<Loc> }) {
+export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask?: () => Promise<Loc>; zone?: string }) {
   const own = useLocation()
   const here = loc === undefined ? (own.source === 'gps' ? own : null) : loc
   const doAsk = ask ?? own.ask
@@ -48,7 +48,7 @@ export default function MapsPanel({ loc, ask }: { loc?: LatLon | null; ask?: () 
   const [off, setOff] = useState('')
   const [layer, setLayer] = useState<string>(LAYERS[0][1])
   const [place, setPlace] = useState<string | null>(null) // null = phone location when known, else the first zone
-  const active = place ?? (here ? 'here' : HOME_ZONES[0].id)
+  const active = place ?? (here ? 'here' : zone ?? HOME_ZONES[0].id)
   const c = HOME_ZONES.find((z) => z.id === active) ?? here ?? HOME
   const pickHere = async () => {
     setOff('')

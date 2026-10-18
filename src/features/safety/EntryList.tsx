@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { db } from '../../db'
-import { type Entry, googleGo, hasPoint, NOT_CONFIRMED, organicUrl, osmUrl, OVERRIDES_KEY, type Overrides, parseEdit, telHref, withOverrides } from './entries'
+import { type Entry, googleGo, forZone, hasPoint, NOT_CONFIRMED, organicUrl, osmUrl, OVERRIDES_KEY, type Overrides, parseEdit, telHref, withOverrides } from './entries'
 import { putKv, useKv } from './store'
 import './safety.css'
 
@@ -38,11 +38,12 @@ function EditForm({ entry, geo, onDone }: { entry: Entry; geo: boolean; onDone: 
 }
 
 /** Grouped, editable list. geo = places with a map pin and Go button; otherwise hotlines with a phone number. */
-export default function EntryList({ seed, geo }: { seed: Entry[]; geo: boolean }) {
+export default function EntryList({ seed, geo, zone }: { seed: Entry[]; geo: boolean; zone: string }) {
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE)
   const [editing, setEditing] = useState<string | null>(null)
-  const entries = withOverrides(seed, overrides)
+  const entries = withOverrides(forZone(seed, zone), overrides)
   const groups = [...new Set(entries.map((e) => e.group))]
+  if (!entries.length) return <p className="sf-empty">Nothing confirmed for this zone yet. Ask the barangay hall.</p>
   return (
     <div className="sf">
       {groups.map((g) => (
