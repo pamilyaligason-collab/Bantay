@@ -41,7 +41,7 @@ export function PwaBanner() {
     return () => sub.unsubscribe()
   }, [])
   const show = shouldShowPwaBanner({
-    standalone: window.matchMedia('(display-mode: standalone)').matches,
+    standalone: typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches,
     ua: navigator.userAgent,
     native: Capacitor.isNativePlatform(),
     laterAt
