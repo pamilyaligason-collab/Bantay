@@ -8,6 +8,10 @@ describe('parseHash', () => {
     expect(parseHash('#me')).toEqual({ tab: null, view: 'me' })
     expect(parseHash('#notif')).toEqual({ tab: null, view: 'notif' })
   })
+  it('maps #docs and #docs/insurance to safety/docs', () => {
+    expect(parseHash('#docs')).toEqual({ tab: 'safety', view: 'docs' })
+    expect(parseHash('#docs/insurance')).toEqual({ tab: 'safety', view: 'docs' })
+  })
   it('unknown hash falls back to today', () => expect(parseHash('#nope')).toEqual({ tab: 'today', view: null }))
 })
 describe('familyEntry (D-44)', () => {

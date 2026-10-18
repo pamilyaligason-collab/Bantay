@@ -27,6 +27,7 @@ describe('track allowlist (B-7)', () => {
   it('allows the Me and notifications screens', async () => {
     expect(await track('screen', 'me')).toBe(true)
     expect(await track('screen', 'notif')).toBe(true)
+    expect(await track('screen', 'docs')).toBe(true)
   })
   it('drops unknown kinds, unknown names and digit-bearing names', async () => {
     for (const [k, n] of [['reading', 'health'], ['screen', 'bp_150'], ['screen', 'health2'], ['action', '120/80'], ['screen', ''], ['__proto__', 'x'], ['constructor', 'today'], ['action', 'Health']]) {

@@ -6,6 +6,7 @@ const VIEWS = new Set(['me', 'notif', 'admin'])
 export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   const k = h.replace(/^#/, '')
   if (k === 'records' || k === 'plan' || k === 'people') return { tab: 'family', view: k }
+  if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   if (VIEWS.has(k)) return { tab: null, view: k }
   return { tab: (TABS as string[]).includes(k) ? (k as Tab) : 'today', view: null }
 }

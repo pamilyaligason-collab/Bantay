@@ -1,5 +1,6 @@
 // Contract: docs/CONTRACT-auth-sync-admin.md. Signatures are fixed; the client is the shared one in ./client.
 import { supabase } from './client'
+import { clearDocsCache } from '../docs/api'
 
 export interface Member { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null }
 
@@ -35,5 +36,6 @@ export function onAuthChange(cb: () => void): () => void {
 
 /** Signs out this device only; other devices stay signed in. */
 export async function signOut(): Promise<void> {
+  void clearDocsCache()
   await supabase?.auth.signOut({ scope: 'local' })
 }

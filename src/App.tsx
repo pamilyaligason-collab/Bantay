@@ -8,6 +8,7 @@ import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
 import { AdminScreen, useTrackScreen } from './features/admin'
+import { DocsScreen } from './features/docs/DocsScreen'
 import { getMember, onAuthChange } from './features/auth/session'
 import { parseHash, TABS, type Tab } from './features/shell/routes'
 import { Icon } from './features/shell/Icon'
@@ -68,7 +69,7 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, isTabView && (tab === 'today' || tab === 'safety'))
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
-  useTrackScreen(isTabView ? (hash === '#records' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' ? 'docs' : isTabView ? (hash === '#records' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
@@ -92,7 +93,7 @@ export default function App() {
       {isTabView && <TopBar unread={unread} />}
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Notifications /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Notifications /> : view === 'docs' ? <DocsScreen /> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <Assistant />

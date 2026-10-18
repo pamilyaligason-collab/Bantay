@@ -27,10 +27,9 @@ export default function Safety() {
       <div className="sf-pair">
         <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)' }}>Call 911</a>
       </div>
-      {/* #docs replaces #records here when the records branch (src/features/docs) merges. */}
       <div className="sf-pair">
-        <a href="#records" className="btn2" aria-label="My IDs. Add or view your ID cards in Records">My IDs</a>
-        <a href="#records" className="btn2" aria-label="Insurance. Add or view your insurance cards in Records">Insurance</a>
+        <a href="#docs" className="btn2" aria-label="My IDs. Add or view your ID cards">My IDs</a>
+        <a href="#docs/insurance" className="btn2" aria-label="Insurance. Add or view your insurance cards">Insurance</a>
       </div>
       {place && (<>
       <section aria-labelledby="s-warn"><h2 id="s-warn" className="hd">Warnings</h2><SafetyBrief loc={alertRef(place)} /></section>
