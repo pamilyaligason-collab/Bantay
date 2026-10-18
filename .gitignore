@@ -13,3 +13,7 @@ coverage/
 BANTAY_CLAUDE_CODE_PROMPT_*.md
 dist-auth/
 supabase/.temp/
+
+# Release signing (never commit)
+android/keystore.properties
+*.jks
