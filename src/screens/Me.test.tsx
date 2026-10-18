@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../db'
@@ -25,13 +25,18 @@ describe('Me', () => {
     expect(screen.getByRole('switch', { name: 'Share mood' }).getAttribute('aria-checked')).toBe('true')
     expect((await db.kv.get('share.mood'))?.value).toBe(true)
   })
-  it('SOS text contacts allow at most two', async () => {
+  it('SOS contacts: two slots only, family pick fills name, phone is stored', async () => {
     render(<Me />)
     await userEvent.click(await screen.findByRole('button', { name: /Who gets your SOS text/ }))
-    const boxes = await screen.findAllByRole('checkbox')
-    await userEvent.click(boxes[0]); await userEvent.click(boxes[1]); await userEvent.click(boxes[2])
-    expect(boxes.filter((b) => b.getAttribute('aria-checked') === 'true')).toHaveLength(2)
-    expect(((await db.kv.get('sos.contacts'))?.value as string[]).length).toBe(2)
+    expect(await screen.findAllByLabelText(/phone number/)).toHaveLength(2) // max 2: no third slot to add
+    await userEvent.selectOptions(screen.getByLabelText('Contact 1 family member'), 'Mama')
+    expect((screen.getByLabelText('Contact 1 name') as HTMLInputElement).value).toBe('Mama')
+    await userEvent.type(screen.getByLabelText('Contact 1 phone number'), '09171234567')
+    await userEvent.type(screen.getByLabelText('Contact 2 name'), 'Tita')
+    await userEvent.type(screen.getByLabelText('Contact 2 phone number'), '123')
+    expect(await screen.findByRole('alert')).toBeTruthy()
+    await waitFor(async () => expect((await db.kv.get('sos.contacts'))?.value).toEqual([
+      { name: 'Mama', phone: '09171234567', personId: 'p0' }, { name: 'Tita', phone: '123' }]))
   })
   it('theme picker sets data-theme and system clears it', async () => {
     render(<Me />)

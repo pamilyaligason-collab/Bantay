@@ -1,0 +1,5 @@
+.sos-picker { display: flex; flex-direction: column; gap: 12px; }
+.sos-slot { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
+.sos-slot legend { font-weight: 600; padding: 0 6px; color: var(--ink); }
+.sos-slot select, .sos-slot input { font: inherit; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; background: var(--card2, var(--card)); color: var(--ink); width: 100%; box-sizing: border-box; min-width: 0; }
+.sos-err { color: var(--danger, var(--ink)); font-size: 13px; }

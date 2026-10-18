@@ -6,6 +6,8 @@ import { getMember, signOut, type Member } from '../features/auth/session'
 import { Icon } from '../features/shell/Icon'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { useKv } from '../features/shell/useKv'
+import SosContactsPicker from '../features/sos/SosContactsPicker'
+import { normalizeContacts } from '../features/sos/contacts'
 import '../features/shell/shell.css'
 
 // Me and settings (mockup data-id="me"). Sharing defaults to OFF for everything (D-34); stored on this phone as kv share.<key>, synced in P5.
@@ -17,7 +19,6 @@ const SHARE = [
   { key: 'location', label: 'Live location', sub: 'Off shows your last known place' }
 ] as const
 const THEMES: { id: ThemePref; label: string }[] = [{ id: 'system', label: 'System' }, { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }]
-const MAX_SOS = 2
 
 function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
   return <button type="button" className="sh-switch" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} />
@@ -33,32 +34,13 @@ function ShareRow({ k, label, sub }: { k: string; label: string; sub: string }) 
   )
 }
 
-function SosSheet({ selected, onChange, onClose, selfId }: { selected: string[]; onChange: (v: string[]) => void; onClose: () => void; selfId: string | null }) {
-  const people = loadFamily().filter((f) => f.personId !== selfId)
-  const toggle = (id: string) => {
-    if (selected.includes(id)) onChange(selected.filter((s) => s !== id))
-    else if (selected.length < MAX_SOS) onChange([...selected, id])
-  }
+function SosSheet({ onClose, selfId }: { onClose: () => void; selfId: string | null }) {
   return createPortal(
     <div className="sh sh-sheet-wrap" onClick={onClose}>
       <div className="sh-sheet" role="dialog" aria-modal="true" aria-label="Who gets your SOS text" onClick={(e) => e.stopPropagation()}>
         <span className="sh-grab" />
         <h2 className="sh-h2">Who gets your SOS text</h2>
-        <p className="sh-sub">Pick up to {MAX_SOS}. They get a text with your place if you press SOS.</p>
-        {people.length === 0 && <p className="sh-sub">No family list on this phone yet. Sign in once with data and it appears here.</p>}
-        <div className="sh-list">
-          {people.map((p) => {
-            const on = selected.includes(p.personId)
-            const full = !on && selected.length >= MAX_SOS
-            return (
-              <div key={p.personId}>
-                <span className="sh-av">{p.initials}</span>
-                <div className="sh-grow"><b>{p.displayName}</b></div>
-                <button type="button" className="sh-chk" role="checkbox" aria-checked={on} aria-label={p.displayName} aria-disabled={full || undefined} onClick={() => toggle(p.personId)} />
-              </div>
-            )
-          })}
-        </div>
+        <SosContactsPicker excludePersonId={selfId} />
         <button type="button" className="sh-pill sh-primary sh-block" onClick={onClose}>Done</button>
       </div>
     </div>,
@@ -73,7 +55,7 @@ export default function Me() {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [sosOpen, setSosOpen] = useState(false)
-  const [sos, setSos] = useKv<string[]>('sos.contacts', [])
+  const [sosRaw] = useKv<unknown>('sos.contacts', [])
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
@@ -100,7 +82,7 @@ export default function Me() {
     if (!e) setPasskey(true)
     setBusy(false)
   }
-  const names = sos.map((id) => loadFamily().find((f) => f.personId === id)?.displayName).filter(Boolean).join(' and ')
+  const names = normalizeContacts(sosRaw, loadFamily()).map((c) => c.name).filter(Boolean).join(' and ')
   const version = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
   const built = String(import.meta.env.VITE_BUILD_DATE ?? '')
 
@@ -183,7 +165,7 @@ export default function Me() {
       {who && supabase && <p className="sh-sub sh-note">Signed in as {who}</p>}
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}
 
-      {sosOpen && <SosSheet selected={sos} onChange={setSos} onClose={() => setSosOpen(false)} selfId={member?.personId ?? null} />}
+      {sosOpen && <SosSheet onClose={() => setSosOpen(false)} selfId={member?.personId ?? null} />}
     </div>
   )
 }

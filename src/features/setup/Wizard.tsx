@@ -8,6 +8,7 @@ import PhoneWarnings from '../safety/PhoneWarnings'
 import { isNativeAndroid, openBattery } from '../safety/settingsOpener'
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
+import SosContactsPicker from '../sos/SosContactsPicker'
 import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyState, probe, put, remaining, scheduleTest, type About, type NotifyState, type StepId } from './steps'
 import '../safety/safety.css'
 import './setup.css'
@@ -156,21 +157,7 @@ function Location() {
   )
 }
 
-function Sos() {
-  const [c, setC] = useState(['', ''])
-  useEffect(() => { void kvGet<string[]>('sos.contacts').then((a) => a && setC([a[0] ?? '', a[1] ?? ''])) }, [])
-  const set = (i: number, val: string) => { const n = [...c]; n[i] = val; setC(n); void put('sos.contacts', n.filter((x) => x.trim() !== '')) }
-  return (
-    <div className="wz-body">
-      <p className="sub" style={{ margin: 0 }}>If you press SOS, Bantay opens a text to these two people. Add both.</p>
-      <div className="grp">
-        {c.map((v, i) => (
-          <label className="wz-field" key={i}><span className="sub">{`Contact ${i + 1} phone number`}</span><input type="tel" inputMode="tel" value={v} onChange={(e) => set(i, e.target.value)} /></label>
-        ))}
-      </div>
-    </div>
-  )
-}
+const Sos = () => <div className="wz-body"><SosContactsPicker /></div>
 
 const BODY: Record<StepId, () => ReactNode> = {
   photo: () => <Photo />,

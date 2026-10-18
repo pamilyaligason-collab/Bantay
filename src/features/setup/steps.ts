@@ -1,6 +1,8 @@
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
+import { loadFamily } from '../auth/family'
+import { sosDone } from '../sos/contacts'
 import { batteryStatus, isNativeAndroid } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
 import { hdb } from '../records/store'
@@ -75,7 +77,7 @@ export async function probe(): Promise<Probe> {
     location: (await get<boolean>('loc.asked')) === true || !!(await get('loc.home')),
     health: (await getState()).enabled.length > 0,
     warnings: (await get<boolean>('setup.warnings')) === true || statusOf(pw ?? null, detectPlatform(ua), Date.now(), osKey(ua)).chip === 'All on',
-    sos: Array.isArray(sos) && sos.length >= 2,
+    sos: sosDone(sos, loadFamily()),
     sharing: (await get<boolean>('setup.sharing')) === true
   }
 }
