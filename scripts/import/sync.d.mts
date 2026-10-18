@@ -1,0 +1,10 @@
+export type Entry = {
+  drive_file_id: string; name: string; mime: string; size: number | null; modified: string | null; md5: string | null
+  path: string; person_folder: string; kind_guess: string; date_guess: string; skipped: string | null
+  sha256?: string; duplicate_of?: string | null; stored_mime?: string; download_failed?: boolean
+}
+export function skipReason(row: { name: string; path: string; mime: string; size: string | number | null }): string | null
+export function toEntry(row: Record<string, any>): Entry
+export function needsDownload(entry: Entry, prev: Entry | undefined, fileExists: boolean): boolean
+export function markDuplicates(entries: Entry[]): Entry[]
+export function sha256(buf: Uint8Array): string

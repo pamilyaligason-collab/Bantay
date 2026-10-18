@@ -4,12 +4,13 @@ export function classifyType(text: string): 'laboratory' | 'consultation' | 'ult
 export function dateFrom(text: string): string
 export function csvRow(r: Record<string, string>): string
 export function walk(
-  list: (id: string) => Promise<{ id: string; name: string; mime: string }[]>,
+  list: (id: string) => Promise<{ id: string; name: string; mime: string; size?: string | null; modified?: string | null; md5?: string | null }[]>,
   rootId: string,
-  people: string[]
+  people: string[],
+  onSkip?: () => void
 ): Promise<Record<string, string>[]>
 export function assertAllowed(argv: string[], env: Record<string, string | undefined>): void
-export function buildRequest(o: { model: string; fallbackModel: string; mime: string; base64: string; filename?: string }): {
+export function buildRequest(o: { model: string; fallbackModel: string; mime: string; base64?: string; filename?: string; text?: string }): {
   model: string
   models: string[]
   provider: { zdr: boolean; data_collection: string }

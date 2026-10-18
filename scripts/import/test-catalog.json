@@ -1,0 +1,250 @@
+[
+  {
+    "code": "fasting_glucose",
+    "name": "Fasting glucose",
+    "loinc": "1558-6",
+    "unit": "mg/dL",
+    "aliases": [
+      "fbs",
+      "fasting blood sugar",
+      "fasting glucose",
+      "glucose fasting"
+    ],
+    "conversions": {
+      "mmol/L": 18.016
+    }
+  },
+  {
+    "code": "random_glucose",
+    "name": "Random glucose",
+    "loinc": "2345-7",
+    "unit": "mg/dL",
+    "aliases": [
+      "rbs",
+      "random blood sugar",
+      "glucose random"
+    ],
+    "conversions": {
+      "mmol/L": 18.016
+    }
+  },
+  {
+    "code": "hba1c",
+    "name": "HbA1c",
+    "loinc": "4548-4",
+    "unit": "%",
+    "aliases": [
+      "hba1c",
+      "hba1c ngsp",
+      "glycated hemoglobin",
+      "glycosylated hemoglobin"
+    ],
+    "conversions": {}
+  },
+  {
+    "code": "total_cholesterol",
+    "name": "Total cholesterol",
+    "loinc": "2093-3",
+    "unit": "mg/dL",
+    "aliases": [
+      "cholesterol",
+      "total cholesterol"
+    ],
+    "conversions": {
+      "mmol/L": 38.67
+    }
+  },
+  {
+    "code": "ldl",
+    "name": "LDL cholesterol",
+    "loinc": "13457-7",
+    "unit": "mg/dL",
+    "aliases": [
+      "ldl",
+      "ldl cholesterol",
+      "ldl-c"
+    ],
+    "conversions": {
+      "mmol/L": 38.67
+    }
+  },
+  {
+    "code": "hdl",
+    "name": "HDL cholesterol",
+    "loinc": "2085-9",
+    "unit": "mg/dL",
+    "aliases": [
+      "hdl",
+      "hdl cholesterol",
+      "hdl-c"
+    ],
+    "conversions": {
+      "mmol/L": 38.67
+    }
+  },
+  {
+    "code": "triglycerides",
+    "name": "Triglycerides",
+    "loinc": "2571-8",
+    "unit": "mg/dL",
+    "aliases": [
+      "triglycerides",
+      "trigly",
+      "tg"
+    ],
+    "conversions": {
+      "mmol/L": 88.57
+    }
+  },
+  {
+    "code": "creatinine",
+    "name": "Creatinine",
+    "loinc": "2160-0",
+    "unit": "mg/dL",
+    "aliases": [
+      "creatinine",
+      "crea",
+      "createnine"
+    ],
+    "conversions": {
+      "umol/L": 0.011312
+    }
+  },
+  {
+    "code": "egfr",
+    "name": "eGFR",
+    "loinc": null,
+    "unit": "mL/min/1.73 m2",
+    "aliases": [
+      "egfr"
+    ],
+    "conversions": {}
+  },
+  {
+    "code": "bun",
+    "name": "Blood urea nitrogen",
+    "loinc": "3094-0",
+    "unit": "mg/dL",
+    "aliases": [
+      "bun",
+      "blood urea nitrogen"
+    ],
+    "conversions": {
+      "mmol/L": 2.801
+    }
+  },
+  {
+    "code": "uric_acid",
+    "name": "Uric acid",
+    "loinc": "3084-1",
+    "unit": "mg/dL",
+    "aliases": [
+      "uric acid",
+      "bua"
+    ],
+    "conversions": {
+      "umol/L": 0.016811
+    }
+  },
+  {
+    "code": "alt",
+    "name": "ALT (SGPT)",
+    "loinc": "1742-6",
+    "unit": "U/L",
+    "aliases": [
+      "alt",
+      "sgpt",
+      "alt/sgpt"
+    ],
+    "conversions": {
+      "IU/L": 1
+    }
+  },
+  {
+    "code": "ast",
+    "name": "AST (SGOT)",
+    "loinc": "1920-8",
+    "unit": "U/L",
+    "aliases": [
+      "ast",
+      "sgot",
+      "ast/sgot"
+    ],
+    "conversions": {
+      "IU/L": 1
+    }
+  },
+  {
+    "code": "hemoglobin",
+    "name": "Hemoglobin",
+    "loinc": "718-7",
+    "unit": "g/L",
+    "aliases": [
+      "hemoglobin",
+      "hgb",
+      "hb"
+    ],
+    "conversions": {
+      "g/dL": 10
+    }
+  },
+  {
+    "code": "hematocrit",
+    "name": "Hematocrit",
+    "loinc": "4544-3",
+    "unit": "L/L",
+    "aliases": [
+      "hematocrit",
+      "hct"
+    ],
+    "conversions": {
+      "%": 0.01
+    }
+  },
+  {
+    "code": "rbc",
+    "name": "Red blood cells",
+    "loinc": "789-8",
+    "unit": "x10^12/L",
+    "aliases": [
+      "rbc",
+      "red blood cells"
+    ],
+    "conversions": {}
+  },
+  {
+    "code": "wbc",
+    "name": "White blood cells",
+    "loinc": "6690-2",
+    "unit": "x10^9/L",
+    "aliases": [
+      "wbc",
+      "white blood cells"
+    ],
+    "conversions": {}
+  },
+  {
+    "code": "platelets",
+    "name": "Platelets",
+    "loinc": "777-3",
+    "unit": "x10^9/L",
+    "aliases": [
+      "platelets",
+      "plt",
+      "platelet count"
+    ],
+    "conversions": {}
+  },
+  {
+    "code": "tsh",
+    "name": "TSH",
+    "loinc": "3016-3",
+    "unit": "mIU/L",
+    "aliases": [
+      "tsh"
+    ],
+    "conversions": {
+      "uIU/mL": 1
+    }
+  }
+]

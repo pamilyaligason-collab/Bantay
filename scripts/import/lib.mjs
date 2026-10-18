@@ -1,5 +1,7 @@
 // Shared helpers for the historical-records import. No file contents are read here.
-export const SKIP_RE = /birth|baptismal|^- ?hmo|ids and documents|insurance|home lot|visa/i
+// Non-health files: never downloaded or parsed, only counted.
+export const SKIP_RE =
+  /birth|baptismal|^- ?hmo|ids and documents|insurance|home lot|visa|passport|\bland\b|\blot\b|\bfunds?\b|authori[sz]ation|\bids?\b|\.picasaoriginals/i
 export const CSV_HEADER = 'person,date,type,file_id,mime,path'
 
 export const isSkipped = (segments) => segments.some((s) => SKIP_RE.test(s.trim()))
@@ -31,12 +33,15 @@ export const csvRow = (r) => [r.person, r.date, r.type, r.file_id, r.mime, r.pat
 
 /** list(folderId) returns child items {id,name,mime}. Returns inventory rows (files only). */
 /** people: names of the top-level person folders (from the git-ignored import/people.json). */
-export async function walk(list, rootId, people) {
+export async function walk(list, rootId, people, onSkip = () => {}) {
   const rows = []
   const visit = async (id, segments, person) => {
     for (const it of await list(id)) {
       const segs = [...segments, it.name]
-      if (isSkipped(segs)) continue
+      if (isSkipped(segs)) {
+        onSkip()
+        continue
+      }
       if (it.mime === 'application/vnd.google-apps.folder') {
         await visit(it.id, segs, person ?? people.find((p) => it.name.trim() === p) ?? it.name.trim())
       } else if (!it.name.startsWith('.')) {
@@ -45,6 +50,10 @@ export async function walk(list, rootId, people) {
           date: [...segs].reverse().map(dateFrom).find(Boolean) || '',
           type: classifyType(segs.slice(1).join(' / ')),
           file_id: it.id,
+          name: it.name,
+          size: it.size ?? null,
+          modified: it.modified ?? null,
+          md5: it.md5 ?? null,
           mime: it.mime,
           path: segs.join('/')
         })
@@ -57,8 +66,12 @@ export async function walk(list, rootId, people) {
 
 // ---- OpenRouter extraction ----
 export const PROMPT =
-  'Read this medical document. Return only JSON: {"tests":[{"name","value","unit","lab_range_low","lab_range_high","lab_range_text"}],' +
-  '"consult":{"doctor","reason","medicines":[],"next_visit"},"confidence":0..1}. Use null for anything not printed. Copy values exactly; do not interpret them.'
+  'Read this medical document. Return only JSON: {"doc_kind":"lab|prescription|lab_request|imaging|vaccination|insurance|certificate|other","doc_date","collected_at","released_at","facility","patient_name_as_printed",' +
+  '"tests":[{"panel","name","value","unit","flag","ref_low","ref_high","ref_text"}],' +
+  '"rx":{"date","prescriber","follow_up","lines":[{"line_no","drug","strength","form","dose","frequency","duration","quantity","instructions","unclear","bbox"}]},' +
+  '"imaging":{"modality","body_region","findings","impression","measurements"},' +
+  '"vaccinations":[{"vaccine","dose_no","given_on","facility","lot"}],"confidence":0..1}. ' +
+  'Dates as YYYY-MM-DD, timestamps ISO 8601. Use null for anything not printed. Copy exactly as printed; never interpret, convert or correct. Set unclear true for handwriting you cannot read with confidence.'
 
 /** Strip paid-model URL details and never echo the request body (it holds the document). */
 export async function sendToOpenRouter(fetchImpl, body, key, log = console.error) {
@@ -69,7 +82,7 @@ export async function sendToOpenRouter(fetchImpl, body, key, log = console.error
   })
   if (!r.ok) {
     log(`OpenRouter failed: ${r.status}`)
-    throw new Error(`OpenRouter failed: ${r.status}`)
+    throw Object.assign(new Error(`OpenRouter failed: ${r.status}`), { status: r.status })
   }
   const c = (await r.json()).choices[0].message.content
   try { return JSON.parse(c) } catch { throw new Error('OpenRouter returned non-JSON') } // never echo model output (health values)
@@ -82,10 +95,12 @@ export function assertAllowed(argv, env) {
 }
 
 /** Health data: zero data retention, no providers that collect data, never a free tier. */
-export function buildRequest({ model, fallbackModel, mime, base64, filename = 'document' }) {
+export function buildRequest({ model, fallbackModel, mime, base64, filename = 'document', text }) {
   for (const m of [model, fallbackModel]) if (!m || /:free$/i.test(m)) throw new Error('A paid model is required (no :free tier)')
   const part =
-    mime === 'application/pdf'
+    text != null
+      ? { type: 'text', text: `Document text layer:\n${text}` }
+      : mime === 'application/pdf'
       ? { type: 'file', file: { filename, file_data: `data:${mime};base64,${base64}` } }
       : { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } }
   return {
