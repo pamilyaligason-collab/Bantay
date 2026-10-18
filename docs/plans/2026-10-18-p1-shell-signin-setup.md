@@ -20,7 +20,7 @@
 | B Shell | 2, 3 | src/App.tsx, src/features/shell/* (new), src/screens/Me.tsx (new), e2e/shell.spec.ts |
 | C Sign-in | 4, 5, 6 | src/screens/SignIn.tsx, src/features/auth/*, android/.../BiometricPlugin.java (new), e2e/auth.spec.ts |
 | D Setup | 7, 8 | src/screens/Onboarding.tsx -> src/features/setup/* (new), android/.../SettingsOpenerPlugin.java, e2e/onboarding.spec.ts |
-| E Location | 9 | src/features/location/*, src/features/safety/alerts.ts (one line), src/screens/Safety.tsx (labels only) |
+| E Location + Safety | 9, 10 | src/features/location/*, src/features/safety/alerts.ts (one line), src/screens/Safety.tsx, src/features/safety/PhoneWarnings.tsx |
 
 Task 1 lands first (tokens are shared). MainActivity.java is touched by C and D (one `registerPlugin` line each): the orchestrator resolves that merge.
 
@@ -393,6 +393,31 @@ export function resolvePlace(o: { gps: LatLon | null; lastZone: ZoneId }) {
 
 ---
 
+
+### Task 10: Safety refinements D-61, D-62 (Lane E)
+
+**Files:** Modify `src/screens/Safety.tsx`, `src/features/safety/PhoneWarnings.tsx`; Test `src/features/safety/PhoneWarnings.test.tsx`, `e2e/safety.spec.ts`.
+
+- [ ] **Step 1: Failing test** (PhoneWarnings)
+
+```tsx
+it('renders nothing when every warning is on (D-61)', async () => {
+  mockStatus({ earthquake: 'on', emergency: 'on' })
+  const { container } = render(<PhoneWarnings />)
+  await waitFor(() => expect(container).toBeEmptyDOMElement())
+})
+it('lists only the warnings that need fixing', async () => {
+  mockStatus({ earthquake: 'off', emergency: 'on' })
+  render(<PhoneWarnings />)
+  expect(await screen.findByText(/Earthquake alerts are off/)).toBeVisible()
+  expect(screen.queryByText(/Emergency alerts/)).toBeNull()
+})
+```
+  (`mockStatus` = the existing test helper in PhoneWarnings.test.tsx that stubs the status source; reuse it.)
+- [ ] **Step 2:** FAIL. **Step 3:** filter rows to status !== 'on'; return null when none. **Step 4:** Safety.tsx order: SOS, Call 911 + Medical ID row, IDs + Insurance row (buttons route to `#docs`; until the records lane ships the docs screen they open Records with the upload sheet preset to type id_card / insurance_card), status/advisory card, Quick dial, Live maps, Nearby help, rest unchanged (D-62). e2e safety.spec asserts the advisory card's box is below the 911 button and above "Quick dial". **Step 5:** PASS + screenshots light/dark. **Step 6: Commit** `git commit -m "safety: phone warnings only when something needs fixing (D-61); advisory above quick dial (D-62)"`
+
+---
+
 ## After all lanes merge (orchestrator)
 
 1. Merge order: A, E, B, D, C (C last: it touches SignIn + MainActivity).
@@ -407,3 +432,8 @@ export function resolvePlace(o: { gps: LatLon | null; lastZone: ZoneId }) {
 - Spec coverage: D-29 (Task 1), D-30 simple-mode switch (Task 3; layout P3), D-32 (Tasks 4-7), D-33 (Task 9), D-34 sharing defaults + SOS contacts (Task 3, 7), D-41 name list + PIN states (Task 5), D-44 (Task 2), audit A-10..A-30, A-89, A-90 (Tasks 2-9). Out of P1 by design: offline banner (D-51, P3), inbox content (P3), updater (P2), dependent page (P5/P3).
 - No placeholders: UI tasks reference exact mockup screen ids for layout and carry their own tests.
 - Types: `Tab`, `FamilySeg`, `StepId`, `Probe`, `ZoneId` used consistently.
+
+## Later phases noted from Lloyd's 2026-10-18 refinements
+
+- D-63 IDs and insurance screen + upload: built by the records lane (session records-db, branch claude/records-db-cf8e91) as part of its document storage.
+- D-64 Video of the day: P3 Today task (curated `daily_videos` table, admin list, daily pick by zone risk and season, link-out card, hidden offline).
