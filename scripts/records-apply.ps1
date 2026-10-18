@@ -16,7 +16,8 @@ Step 1 'Checks: clean checkout with the reviewed 0008, applied migrations end at
 if (git status --porcelain) { throw 'step 1 failed: working tree not clean' }
 if (-not (Test-Path supabase\migrations\0008_records.sql)) { throw 'step 1 failed: 0008 missing' }
 $last = (Q "select max(version) as last from supabase_migrations.schema_migrations;" | Out-String); Check 1
-if ($last -notmatch '"last":\s*"0007"') { throw "step 1 failed: expected the last applied migration to be 0007. Output: $last" }
+# the CLI prints a table in a terminal and JSON elsewhere: look for 0007 as a whole number, and refuse if 0008 is already there
+if ($last -notmatch '(^|[^0-9])0007([^0-9]|$)' -or $last -match '(^|[^0-9])0008([^0-9]|$)') { throw "step 1 failed: expected the last applied migration to be 0007. Output: $last" }
 
 Step 2 'Apply 0008 and record it, in one transaction'
 $tmp = Join-Path $env:TEMP ('bantay-0008-' + [guid]::NewGuid() + '.sql')
