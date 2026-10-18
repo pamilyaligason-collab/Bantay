@@ -9,3 +9,4 @@ export function needsDownload(entry: Entry, prev: Entry | undefined, fileExists:
 export function markDuplicates(entries: Entry[]): Entry[]
 export function sha256(buf: Uint8Array): string
 export function carryOver(entry: Entry, prev: Entry): Entry
+export function idsFromCopyLog(jobs: { src: string; folder: string[]; title: string }[], log: { src: string; status: string; new_id?: string }[]): Map<string, string>

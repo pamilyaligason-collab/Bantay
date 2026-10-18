@@ -36,6 +36,6 @@ export function onAuthChange(cb: () => void): () => void {
 
 /** Signs out this device only; other devices stay signed in. */
 export async function signOut(): Promise<void> {
-  void clearDocsCache()
+  void clearDocsCache().catch(() => {})
   await supabase?.auth.signOut({ scope: 'local' })
 }
