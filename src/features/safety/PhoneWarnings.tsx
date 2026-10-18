@@ -54,7 +54,10 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
   const [lines, setLines] = useState<Record<string, string>>({})
   const open = async (id: string) => {
     const t = OPEN_TARGET[id]
-    if (t) { const r = await openSettings(t); setLines((l) => ({ ...l, [id]: r.line })) }
+    if (!t) return
+    setLines((l) => ({ ...l, [id]: '' })) // clear first so a repeat tap is announced again
+    const r = await openSettings(t)
+    setLines((l) => ({ ...l, [id]: r.line }))
   }
   const set = (id: string, state: 'on' | 'unsure') => {
     const at = new Date().toISOString()
@@ -77,7 +80,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
           <div key={it.id} className="pw-item">
             <strong>{it.title}</strong>
             <span className="sub">{it.steps}</span>
-            {native && OPEN_TARGET[it.id] && <button type="button" className="btn2" onClick={() => open(it.id)}>Open Settings</button>}
+            {native && OPEN_TARGET[it.id] && <button type="button" className="btn2" aria-label={`Open Settings for ${it.title}`} onClick={() => open(it.id)}>Open Settings</button>}
             {lines[it.id] && <span className="sub" role="status">{lines[it.id]}</span>}
             <div className="pw-btns">
               <button type="button" className="btn2" aria-pressed={cur === 'on'} onClick={() => set(it.id, 'on')}>Done on this phone</button>

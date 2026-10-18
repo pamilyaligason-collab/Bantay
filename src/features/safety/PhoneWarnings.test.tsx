@@ -99,6 +99,14 @@ describe('Open Settings (native Android)', () => {
     await screen.findByText(/Look for Earthquake alerts and turn it on/)
     expect(open).toHaveBeenCalledWith({ target: 'earthquake' })
   })
+  it('native: wea falling back to generic Settings says to search', async () => {
+    vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(true)
+    plugin.open.mockResolvedValue({ opened: 'settings' })
+    render(<PhoneWarnings ua={AND} now={NOW} />)
+    fireEvent.click((await screen.findAllByText('Open Settings'))[1])
+    await screen.findByText(/Search for the item below/)
+    expect(plugin.open).toHaveBeenCalledWith({ target: 'wea' })
+  })
   it('native: failure falls back to the written steps', async () => {
     vi.spyOn(opener, 'isNativeAndroid').mockReturnValue(true)
     plugin.open.mockRejectedValue(new Error('x'))
