@@ -73,7 +73,7 @@ export function useLocation() {
   return { ...loc, ask, setHome }
 }
 
-/** D-33 place: null until the first resolve. `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
+/** D-33 place: null until the saved zone is read (the saved zone stands in while GPS is pending). `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
 export const usePlace = () => usePlaceFrom(useLocation())
 
 /** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
@@ -86,6 +86,7 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   }, [])
   const lastZone = saved ?? FIRST_ZONE
   const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
-  if (l.source === 'pending' || saved === undefined) return null
+  if (saved === undefined) return null
+  // GPS still pending: show the saved zone now instead of hiding the screen
   return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask }
 }

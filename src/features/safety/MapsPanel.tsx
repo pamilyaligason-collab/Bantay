@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { HOME_ZONES } from '../location/geo'
 import type { Loc } from '../location/geo'
 import { useLocation } from '../location/useLocation'
+import { inPhilippines } from '../location/place'
 import { HOME, type LatLon } from './alerts'
 import Lazy from './Lazy'
 import './safety.css'
@@ -48,7 +49,7 @@ export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask
   const [off, setOff] = useState('')
   const [layer, setLayer] = useState<string>(LAYERS[0][1])
   const [place, setPlace] = useState<string | null>(null) // null = phone location when known, else the first zone
-  const active = place ?? (here ? 'here' : zone ?? HOME_ZONES[0].id)
+  const active = place ?? (here && inPhilippines(here) ? 'here' : zone ?? HOME_ZONES[0].id)
   const c = HOME_ZONES.find((z) => z.id === active) ?? here ?? HOME
   const pickHere = async () => {
     setOff('')

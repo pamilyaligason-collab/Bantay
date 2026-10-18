@@ -55,7 +55,7 @@ export function Hazards({ zone }: { zone: string }) {
   return (
     <div className="grp">
       {hazards.rows.map((r) => (
-        <div key={r.label} className="row" style={{ justifyContent: 'space-between' }}>
+        <div key={r.label} className="row sf-hz">
           <span className="grow">{r.label}</span>
           {r.value ? <span style={{ textAlign: 'right' }}>{r.value}</span> : (
             <a href={hazards.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--warn)', textAlign: 'right' }}>Not confirmed yet, tap to check</a>

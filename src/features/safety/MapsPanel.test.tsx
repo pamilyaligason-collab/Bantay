@@ -14,6 +14,13 @@ afterEach(() => { cleanup(); ask.mockReset(); state = home })
 
 const near = () => screen.getByRole('button', { name: 'Near me' })
 
+describe('MapsPanel abroad', () => {
+  it('defaults to the zone, not the foreign phone position', () => {
+    render(<MapsPanel loc={{ lat: 35.68, lon: 139.69 }} zone="conel" />)
+    expect(near().getAttribute('aria-pressed')).toBe('false')
+  })
+})
+
 describe('MapsPanel Near me', () => {
   it('is offered first without GPS and never asks on mount', () => {
     render(<MapsPanel />)

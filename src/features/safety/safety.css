@@ -24,6 +24,8 @@
 .sf-edit label { display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--ink2); }
 .sf-edit input { min-height: 44px; font: inherit; font-size: 17px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); min-width: 0; }
 .sf-edit .err { color: var(--warn); font-weight: 600; margin: 0; }
+.sf-hz { justify-content: space-between; flex-wrap: wrap; row-gap: 2px; }
+.sf-hz .grow { flex: 1 1 11ch; min-width: 11ch; }
 .sf-src { font-size: 13px; color: var(--ink2); padding: 0 16px 10px; margin: 0; overflow-wrap: anywhere; }
 .sf-poster { width: 100%; max-width: 320px; height: auto; }
 .sf-empty { color: var(--ink2); font-size: 15px; margin: 0 4px; }

@@ -1,4 +1,5 @@
-import { useGpsLoc } from '../location/useLocation'
+import { alertRef } from '../location/place'
+import { usePlace } from '../location/useLocation'
 import { ALERTS_KEY, type Alert, type LatLon, rankAlerts } from './alerts'
 import AlertCard from './AlertCard'
 import { useKv } from './store'
@@ -8,11 +9,11 @@ export { ALERTS_KEY }
 const NONE: Alert[] = []
 
 /** Ranked official warnings. The sync layer writes the list to Dexie kv 'safety.alerts'.
- *  `loc` overrides the phone's current position (D-27); left out, the phone's GPS is used when granted, else nearest of the two home zones. */
+ *  `loc` overrides the phone's current position (D-27); left out, the D-33 place is used: the phone inside the Philippines, else the saved zone (never a foreign point). */
 export default function SafetyBrief({ loc, limit }: { loc?: LatLon | null; limit?: number }) {
-  const gps = useGpsLoc()
+  const place = usePlace()
   const all = useKv<Alert[]>(ALERTS_KEY, NONE)
-  const shown = rankAlerts(all, loc === undefined ? gps : loc).slice(0, limit ?? all.length)
+  const shown = rankAlerts(all, loc === undefined ? (place ? alertRef(place) : null) : loc).slice(0, limit ?? all.length)
   if (!shown.length)
     return <p className="sf-empty" role="status">No active warnings for your area right now. Official bulletins always come first.</p>
   return (
