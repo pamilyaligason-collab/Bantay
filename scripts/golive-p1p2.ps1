@@ -17,11 +17,15 @@ function Step($n, $t) { Write-Host "== step ${n}: $t" -ForegroundColor Cyan }
 # Runs a native command (or only echoes it with -DryRun). Check $LASTEXITCODE after.
 function Run([string]$exe, [string[]]$a) {
   if ($DryRun) { Write-Host "  [dry-run] $exe $($a -join ' ')" -ForegroundColor DarkGray; $global:LASTEXITCODE = 0; return }
-  & $exe @a
+  # PowerShell 5.1 turns any stderr line (e.g. the CLI's "Initialising login role...") into a
+  # terminating error under 'Stop'; native commands are judged by $LASTEXITCODE instead.
+  $ErrorActionPreference = 'Continue'
+  & $exe @a 2>&1 | ForEach-Object { Write-Host "  $_" }
 }
 # Same, but returns the output lines (dry-run returns nothing).
 function RunOut([string]$exe, [string[]]$a) {
   if ($DryRun) { Write-Host "  [dry-run] $exe $($a -join ' ')" -ForegroundColor DarkGray; $global:LASTEXITCODE = 0; return @() }
+  $ErrorActionPreference = 'Continue'
   & $exe @a 2>&1 | ForEach-Object { "$_" }
 }
 
@@ -95,7 +99,7 @@ if ($LASTEXITCODE -ne 0) { throw 'step 8 failed (build)' }
 Run 'npx' @('cap', 'sync', 'android')
 if ($LASTEXITCODE -ne 0) { throw 'step 8 failed (cap sync)' }
 if ($DryRun) { Write-Host '  [dry-run] android\gradlew.bat assembleDebug (in android\)' -ForegroundColor DarkGray }
-else { Push-Location android; try { & .\gradlew.bat assembleDebug } finally { Pop-Location }; if ($LASTEXITCODE -ne 0) { throw 'step 8 failed (gradle)' } }
+else { Push-Location android; try { Run '.\gradlew.bat' @('assembleDebug') } finally { Pop-Location }; if ($LASTEXITCODE -ne 0) { throw 'step 8 failed (gradle)' } }
 $stamp = Get-Date -Format 'yyyyMMdd'
 $dest = "D:\Claude\Bantay-APK\Bantay-debug-$stamp-p1p2.apk"
 if ($DryRun) { Write-Host "  [dry-run] copy android\app\build\outputs\apk\debug\app-debug.apk -> $dest" -ForegroundColor DarkGray }
