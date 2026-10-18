@@ -59,7 +59,9 @@ create table public.source_files (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null default gen_random_uuid(),
   person_id uuid references public.people (id) on delete cascade, -- null until the alias map assigns it (admin only)
-  drive_file_id text not null unique,
+  drive_file_id text unique,         -- null while a phone upload waits for the Drive push (D-46)
+  storage_path text unique,          -- object in the private 'records' bucket: <person_id>/<uuid>.<ext>
+  side text check (side in ('front', 'back')), -- ID and insurance cards (D-63)
   drive_modified_at timestamptz,     -- incremental re-sync: re-read only when this changes
   name text not null,
   mime text not null,
@@ -73,7 +75,8 @@ create table public.source_files (
   skip_reason text,
   created_by uuid default auth.uid() references auth.users (id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  check (drive_file_id is not null or storage_path is not null)
 );
 create index source_files_sha256 on public.source_files (sha256);
 
@@ -103,7 +106,10 @@ create table public.documents (
   client_id uuid not null default gen_random_uuid(),
   person_id uuid not null references public.people (id) on delete cascade,
   encounter_id uuid references public.encounters (id) on delete set null,
-  kind text not null check (kind in ('lab', 'prescription', 'lab_request', 'imaging', 'vaccination', 'insurance', 'certificate', 'other')),
+  kind text not null check (kind in ('lab', 'prescription', 'lab_request', 'imaging', 'vaccination', 'insurance', 'certificate',
+                                     'id_card', 'insurance_card', 'other')),
+  -- D-63: which card. The picture only: Bantay never reads or stores the numbers on it.
+  card_type text check (card_type in ('philsys', 'senior', 'pwd', 'drivers', 'passport', 'umid', 'voters', 'postal', 'philhealth', 'hmo', 'other')),
   doc_date date,
   collected_at timestamptz,
   released_at timestamptz,
@@ -525,7 +531,11 @@ do $$ declare t text; begin
     execute format('create unique index %I on public.%I (client_id)', t || '_client_id', t);
     execute format('create index %I on public.%I (person_id, status)', t || '_person_status', t);
     execute format('create index %I on public.%I (updated_at)', t || '_updated_at', t);
-    execute format('create policy %I on public.%I for select to authenticated using (public.records_reader(person_id, status))', t || '_read', t);
+    if t = 'documents' then -- D-63: ID and insurance cards are never shown to read-only carers
+      execute 'create policy documents_read on public.documents for select to authenticated using (public.records_reader(person_id, status) and (kind not in (''id_card'', ''insurance_card'') or public.records_editor(person_id)))';
+    else
+      execute format('create policy %I on public.%I for select to authenticated using (public.records_reader(person_id, status))', t || '_read', t);
+    end if;
     execute format('create policy %I on public.%I for insert to authenticated with check (public.records_editor(person_id))', t || '_insert', t);
     execute format('create policy %I on public.%I for update to authenticated using (public.records_editor(person_id)) with check (public.records_editor(person_id))', t || '_update', t);
     execute format('create policy %I on public.%I for delete to authenticated using (public.records_editor(person_id))', t || '_delete', t);
@@ -542,6 +552,28 @@ create index prescriptions_document on public.prescriptions (document_id);
 create index person_aliases_person on public.person_aliases (person_id);
 
 -- Admins read readings too (D-34), so the records manager can see what a confirm produced. Writes stay with 0001 rules.
+-- Private bucket for phone uploads (cards now; photos of labs and prescriptions later). Path: <person_id>/<file>.
+-- Same editors as the records; read-only carers get nothing; anon nothing. Objects never public, read via the client SDK.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('records', 'records', false, 15728640, array['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'])
+on conflict (id) do nothing;
+create function public.records_object_editor(object_name text) returns boolean
+  language plpgsql stable security definer set search_path = '' as
+  $$ declare pid uuid; begin
+       begin pid := split_part(object_name, '/', 1)::uuid; exception when others then return false; end;
+       return public.records_editor(pid);
+     end $$;
+revoke execute on function public.records_object_editor(text) from public, anon;
+grant execute on function public.records_object_editor(text) to authenticated;
+create policy records_objects_read on storage.objects for select to authenticated
+  using (bucket_id = 'records' and public.records_object_editor(name));
+create policy records_objects_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'records' and public.records_object_editor(name));
+create policy records_objects_update on storage.objects for update to authenticated
+  using (bucket_id = 'records' and public.records_object_editor(name)) with check (bucket_id = 'records' and public.records_object_editor(name));
+create policy records_objects_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'records' and public.records_object_editor(name));
+
 create policy readings_admin_read on public.readings for select to authenticated using (public.is_admin());
 
 -- Confirm queue counts per person, no values (admin home and the Records badge).

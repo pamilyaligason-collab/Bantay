@@ -25,6 +25,13 @@ insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
 \ir ../migrations/0001_health.sql
 \ir ../migrations/0002_auth.sql
 \ir ../migrations/0003_sync.sql
+-- Supabase Storage stub (only what 0008 touches)
+create schema storage;
+create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id), name text, owner uuid default auth.uid());
+alter table storage.objects enable row level security;
+grant usage on schema storage to authenticated, anon;
+grant select, insert, update, delete on storage.objects to authenticated;
 \ir ../migrations/0008_records.sql
 insert into public.app_roles (user_id, role) values
  ('00000000-0000-0000-0000-00000000000a', 'admin'), ('00000000-0000-0000-0000-00000000000b', 'member'),
@@ -84,8 +91,18 @@ select pg_temp.ok(pg_temp.fails($$insert into public.test_catalog (code, name, u
 insert into public.prescriptions (id, person_id, document_id, rx_date) values ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-0000000000b1', '30000000-0000-0000-0000-0000000000b1', '2024-03-01');
 insert into public.prescription_items (person_id, prescription_id, line_no, drug_raw) values ('10000000-0000-0000-0000-0000000000b1', '50000000-0000-0000-0000-000000000001', 1, 'x');
 
+-- D-63: B adds an ID card picture for themselves
+select pg_temp.ok(not pg_temp.fails($$insert into storage.objects (bucket_id, name) values ('records', '10000000-0000-0000-0000-0000000000b1/card-front.jpg')$$), 'person uploads to own folder');
+select pg_temp.ok(pg_temp.fails($$insert into storage.objects (bucket_id, name) values ('records', '10000000-0000-0000-0000-0000000000d1/x.jpg')$$), 'person cannot upload into another person folder');
+select pg_temp.ok(pg_temp.fails($$insert into storage.objects (bucket_id, name) values ('records', 'not-a-uuid/x.jpg')$$), 'malformed path refused');
+insert into public.documents (id, person_id, kind, card_type, status) values ('30000000-0000-0000-0000-0000000000c1', '10000000-0000-0000-0000-0000000000b1', 'id_card', 'senior', 'confirmed');
+select pg_temp.ok(not pg_temp.fails($$insert into public.source_files (person_id, storage_path, name, mime, side, document_id) values ('10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/card-front.jpg', 'card', 'image/jpeg', 'front', '30000000-0000-0000-0000-0000000000c1')$$), 'card picture row without a Drive id yet');
+select pg_temp.ok(pg_temp.fails($$insert into public.source_files (person_id, name, mime) values ('10000000-0000-0000-0000-0000000000b1', 'x', 'image/jpeg')$$), 'a file needs a Drive id or a storage path');
+
 -- C: read-only carer of PB
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
+select pg_temp.ok((select count(*) from public.documents where kind = 'id_card') = 0, 'read-only carer never sees ID cards, even confirmed');
+select pg_temp.ok((select count(*) from storage.objects) = 0, 'read-only carer cannot read card pictures');
 select pg_temp.ok((select count(*) from public.lab_results) = 4, 'read-only carer sees confirmed results');
 select pg_temp.ok((select count(*) from public.prescription_items) = 0, 'read-only carer does not see drafts');
 select pg_temp.ok((select count(*) from public.documents) = 0, 'read-only carer does not see draft documents');
@@ -98,6 +115,7 @@ select pg_temp.ok((select count(*) from public.source_files) = 0, 'read-only car
 -- D: writer of the no-login PD, stranger to PB
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000d';
 select pg_temp.ok((select count(*) from public.lab_results) = 0 and (select count(*) from public.readings) = 0, 'stranger sees nothing of PB');
+select pg_temp.ok((select count(*) from storage.objects) = 0 and (select count(*) from public.documents where kind = 'id_card') = 0, 'stranger sees no cards');
 select pg_temp.ok(not pg_temp.fails($$insert into public.documents (id, person_id, kind) values ('30000000-0000-0000-0000-0000000000d1', '10000000-0000-0000-0000-0000000000d1', 'vaccination')$$), 'writer adds a document for the dependent');
 select pg_temp.ok(not pg_temp.fails($$insert into public.vaccinations (person_id, document_id, vaccine, status) values ('10000000-0000-0000-0000-0000000000d1', '30000000-0000-0000-0000-0000000000d1', 'v', 'confirmed')$$), 'writer confirms for the dependent');
 select pg_temp.ok(pg_temp.fails($$insert into public.lab_results (person_id, name_raw, value_num) values ('10000000-0000-0000-0000-0000000000b1', 'x', 1)$$), 'stranger cannot add to PB');
@@ -106,7 +124,8 @@ select pg_temp.ok(not pg_temp.fails($$insert into public.medications (person_id,
 
 -- A: admin manages imports for everyone
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
-select pg_temp.ok((select count(*) from public.source_files) = 2, 'admin sees assigned and unassigned files');
+select pg_temp.ok((select count(*) from public.source_files) = 3, 'admin sees assigned, unassigned and phone-upload files');
+select pg_temp.ok((select count(*) from public.documents where kind = 'id_card') = 1 and (select count(*) from storage.objects) = 1, 'admin sees ID cards and pictures');
 select pg_temp.ok((select count(*) from public.lab_results) = 4 and (select count(*) from public.prescription_items) = 1, 'admin sees drafts of members');
 select pg_temp.ok(not pg_temp.fails($$insert into public.person_aliases values ('test b', '10000000-0000-0000-0000-0000000000b1')$$), 'admin writes aliases');
 update public.prescription_items set status = 'confirmed', generic_name = 'g';
