@@ -5,7 +5,7 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 test('onboarding tells members what the admin can see', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Step 8: Sharing' }).click()
+  await page.getByRole('button', { name: /: Sharing$/ }).click()
   await expect(page.locator('h1')).toHaveText('Sharing')
   await expect(page.getByText('Your admin can see which screens you use, never your health values.')).toBeVisible()
 })

@@ -3,7 +3,8 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
 import { batteryStatus, isNativeAndroid } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
-import { getState } from '../sensors/health'
+import { hdb } from '../records/store'
+import { currentPersonId, getState } from '../sensors/health'
 import type { Platform } from '../sensors/health'
 
 export type { Platform }
@@ -39,15 +40,28 @@ export const put = (key: string, value: unknown) => db.kv.put({ key, value })
 export interface NotifyState { display: boolean; exact: boolean; battery: boolean }
 
 /** Reads the three notification switches. Web has no alarm or battery switch, so those count as on. */
+/** Exact alarms are a user switch only from Android 12 (API 31); older phones always allow them. */
+export const exactOk = (ua: string, status: string): boolean => {
+  const v = /Android (\d+)/.exec(ua)
+  return (v ? Number(v[1]) < 12 : false) || status === 'granted'
+}
+/** The notifications step is satisfied when all three switches are on. */
+export const notifyDone = (n: NotifyState) => n.display && n.exact && n.battery
+
 export async function notifyState(): Promise<NotifyState> {
   try {
     const display = (await LocalNotifications.checkPermissions()).display === 'granted'
     if (!isNativeAndroid()) return { display, exact: true, battery: true }
-    const exact = (await LocalNotifications.checkExactNotificationSetting()).exact_alarm === 'granted'
+    const exact = exactOk(navigator.userAgent, (await LocalNotifications.checkExactNotificationSetting()).exact_alarm)
     return { display, exact, battery: (await batteryStatus()).ignoring }
   } catch {
     return { display: false, exact: false, battery: false }
   }
+}
+
+const hasMedicines = async () => {
+  const id = await currentPersonId().catch(() => null)
+  return !!id && (await hdb.consults.where('personId').equals(id).toArray().catch(() => [])).some((c) => c.medicines?.length)
 }
 
 export async function probe(): Promise<Probe> {
@@ -56,15 +70,14 @@ export async function probe(): Promise<Probe> {
   const pw = await get<Rec>(PW_KEY)
   const n = await notifyState()
   const ua = navigator.userAgent
-  // ponytail: medicines counts as done once the member has seen it; reading consults needs the signed-in person id.
   return {
     photo: !!(await get<string>('profile.photo')),
     about: !!about && ABOUT_FIELDS.every((f) => !!about[f]),
-    medicines: (await get<boolean>('setup.medicines')) === true,
-    notifications: n.display && n.exact && n.battery,
-    location: (await get<boolean>('loc.asked')) === true,
+    medicines: (await get<boolean>('setup.medicines')) === true || (await hasMedicines()),
+    notifications: notifyDone(n),
+    location: (await get<boolean>('loc.asked')) === true || !!(await get('loc.home')) || !!(await get('loc.zone')),
     health: (await getState()).enabled.length > 0,
-    warnings: statusOf(pw ?? null, detectPlatform(ua), Date.now(), osKey(ua)).chip === 'All on',
+    warnings: (await get<boolean>('setup.warnings')) === true || statusOf(pw ?? null, detectPlatform(ua), Date.now(), osKey(ua)).chip === 'All on',
     sos: Array.isArray(sos) && sos.length >= 2,
     sharing: (await get<boolean>('share.reviewed')) === true
   }

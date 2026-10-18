@@ -143,7 +143,7 @@ function Location() {
     return (
       <div className="wz-body">
         <div className="grp">{field('name', 'Barangay')}{field('lat', 'Latitude')}{field('lon', 'Longitude')}</div>
-        <button type="button" className="btn" disabled={!valid} onClick={async () => { await saveHome({ name: home.name.trim(), lat, lon }); setState('done') }}>Save my barangay</button>
+        <button type="button" className="btn" disabled={!valid} onClick={async () => { await saveHome({ name: home.name.trim(), lat, lon }); await put('loc.zone', home.name.trim()); setState('done') }}>Save my barangay</button>
       </div>
     )
   }
@@ -199,7 +199,9 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
       const q = remaining(p, currentPlatform())
       if (q.length === 0) return onDone()
       setQueue(q)
-      setI(Math.max(0, start ? q.indexOf(start) : 0))
+      const at = start ? q.indexOf(start) : 0
+      if (at < 0) return onDone() // the tapped step got satisfied meanwhile
+      setI(at)
     })
     return () => { live = false }
   }, [start]) // eslint-disable-line react-hooks/exhaustive-deps -- probe once per open; onDone may change identity
@@ -209,6 +211,7 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
   const next = () => (last ? onDone() : setI(i + 1))
   const cont = async () => {
     if (step === 'medicines') await put('setup.medicines', true)
+    if (step === 'warnings') await put('setup.warnings', true)
     if (step === 'sharing') await put('share.reviewed', true)
     next()
   }

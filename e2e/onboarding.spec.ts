@@ -86,6 +86,10 @@ test.describe('setup wizard', () => {
     await page.getByLabel('Longitude').fill('123.5')
     await page.getByRole('button', { name: 'Save my barangay' }).click()
     expect(await kv(page, 'loc.home')).toMatchObject({ name: 'Test Barangay', lat: 10.5, lon: 123.5 })
+    expect(await kv(page, 'loc.zone')).toBe('Test Barangay')
+    await page.reload()
+    await page.getByRole('button', { name: /: Your phone's warnings$/ }).waitFor()
+    await expect(page.getByRole('button', { name: /: Where you are$/ })).toHaveCount(0)
   })
 })
 
@@ -93,8 +97,8 @@ test.describe('notifications already allowed', () => {
   test.use({ permissions: ['notifications'] })
   test('the notifications step is skipped', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('button', { name: /Reminders and alerts/ })).toHaveCount(0)
     await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
+    await expect(page.getByRole('button', { name: /Reminders and alerts/ })).toHaveCount(0)
   })
 })
 

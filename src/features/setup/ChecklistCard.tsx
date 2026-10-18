@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Wizard from './Wizard'
 import { TITLES, currentPlatform, probe, remaining, type StepId } from './steps'
@@ -16,6 +16,15 @@ export default function ChecklistCard() {
     return () => document.removeEventListener('visibilitychange', on)
   }, [refresh])
   const close = useCallback(() => { setOpen(null); refresh() }, [refresh])
+  const ov = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const prev = document.activeElement as HTMLElement | null
+    const root = document.getElementById('root')
+    root?.setAttribute('inert', '')
+    ov.current?.focus()
+    return () => { root?.removeAttribute('inert'); prev?.focus?.() }
+  }, [open])
   return (
     <>
       {left.length > 0 && (
@@ -26,7 +35,7 @@ export default function ChecklistCard() {
           </ul>
         </section>
       )}
-      {open && createPortal(<div className="wz-ov"><Wizard start={open} onDone={close} /></div>, document.body)}
+      {open && createPortal(<div className="wz-ov" ref={ov} role="dialog" aria-modal="true" aria-label="Finish setting up" tabIndex={-1} onKeyDown={(e) => e.key === 'Escape' && close()}><Wizard start={open} onDone={close} /></div>, document.body)}
     </>
   )
 }
