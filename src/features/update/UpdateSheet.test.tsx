@@ -46,6 +46,16 @@ describe('UpdateSheet', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
     expect(await screen.findByText("Checked. Tap Update in Android's box.")).toBeTruthy()
   })
+  it('pending view Try again reopens Android\'s box on the same file', async () => {
+    const download = vi.fn().mockResolvedValue({ path: '/p' })
+    const install = vi.fn().mockResolvedValue({ status: 'pending_user' })
+    render(<UpdateSheet latest={latest} api={mk({ download, install })} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
+    await screen.findByText("Checked. Tap Update in Android's box.")
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(install).toHaveBeenCalledTimes(2)
+    expect(download).toHaveBeenCalledTimes(1)
+  })
   it('installResult failure shows a retry; success closes the sheet', async () => {
     let cb: (r: { status: 'success' | 'failure' }) => void = () => {}
     const api = mk({

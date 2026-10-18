@@ -7,28 +7,11 @@ import { useKv } from '../shell/useKv'
 import '../shell/shell.css'
 import './update.css'
 import type { Latest } from './check'
-import { resetJob, runJob, useJob, type JobApi } from './job'
+import { resetJob, retryInstall, runJob, startJob, useJob, type JobApi } from './job'
 import { AppUpdater, type AppUpdaterPlugin } from './plugin'
 
 const MB = 1048576
 export const fmtMB = (n: number) => String(Math.round((n / MB) * 10) / 10)
-
-type Conn = { type?: string; addEventListener?: (e: string, f: () => void) => void; removeEventListener?: (e: string, f: () => void) => void }
-export const connection = () => (navigator as unknown as { connection?: Conn }).connection
-export const onCellular = () => connection()?.type === 'cellular'
-
-/** Live "on mobile data" flag. Listens for connection changes and also polls, because not every WebView has connection events. */
-export function useCellular(): boolean {
-  const [cell, setCell] = useState(onCellular)
-  useEffect(() => {
-    const f = () => setCell(onCellular())
-    const c = connection()
-    c?.addEventListener?.('change', f)
-    const t = setInterval(f, 3000)
-    return () => { c?.removeEventListener?.('change', f); clearInterval(t) }
-  }, [])
-  return cell
-}
 
 /** Copy for each err.code from the native plugin (message == code natively; the web stub also sets code). */
 export function errorCopy(code: string, size: number): string {
@@ -47,7 +30,6 @@ type Api = Pick<AppUpdaterPlugin, 'info' | 'openInstallPermission'> & JobApi
 
 export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Latest; api?: Api; onClose?: () => void }) {
   const [canInstall, setCanInstall] = useState<boolean | null>(null)
-  const [waiting, setWaiting] = useState(false)
   const [wifiOnly, setWifiOnly] = useKv<boolean>('update.wifiOnly', true)
   const job = useJob()
   const alive = useRef(true)
@@ -71,21 +53,15 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
 
   useEffect(() => { if (job.phase === 'success') { resetJob(); close.current?.() } }, [job.phase])
 
-  const start = useCallback(() => {
-    if (wifiOnly && onCellular()) { setWaiting(true); return }
-    setWaiting(false)
-    void runJob(latest, api)
-  }, [api, latest, wifiOnly])
-
-  // Waiting for Wi-Fi: re-check when the switch changes, when the connection changes, and every 3 s (no event support in some WebViews).
-  const cell = useCellular()
-  useEffect(() => { if (waiting && !(wifiOnly && cell)) start() }, [waiting, wifiOnly, cell, start])
+  const start = () => startJob(latest, api, wifiOnly)
+  const toggleWifi = () => { setWifiOnly(!wifiOnly); if (wifiOnly && job.phase === 'waiting_wifi') void runJob(latest, api) }
 
   const phase = job.phase
   const err = typeof phase === 'object' ? phase.error : null
   const total = job.total || latest.size
   const pct = total ? Math.min(100, Math.round((job.done / total) * 100)) : 0
-  const idle = phase === 'idle'
+  const waiting = phase === 'waiting_wifi'
+  const idle = phase === 'idle' || waiting
   const body = (
     <div className="sh sh-sheet-wrap up-wrap" onClick={() => onClose?.()}>
       <div className="sh-sheet" role="dialog" aria-modal="true" aria-label={`Update Bantay to ${latest.versionName}`} onClick={(e) => e.stopPropagation()}>
@@ -125,6 +101,7 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
             <h2 className="sh-h2 up-c" role="status">Checked. Tap Update in Android&apos;s box.</h2>
             <p className="sh-sub up-c up-m0">Android shows its own box next. Tap Update there. Bantay restarts when it is done.</p>
             <button type="button" className="sh-pill sh-primary sh-block" onClick={() => onClose?.()}>Done</button>
+            <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => void retryInstall(api)}>Try again</button>
           </>
         )}
         {err !== null && (
@@ -138,7 +115,7 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
         )}
         <div className="sh-row up-between">
           <span><b>Download on Wi-Fi only</b><span className="sh-sub sh-blk">Saves your mobile data</span></span>
-          <button type="button" className="sh-switch" role="switch" aria-checked={wifiOnly} aria-label="Download on Wi-Fi only" onClick={() => setWifiOnly(!wifiOnly)} />
+          <button type="button" className="sh-switch" role="switch" aria-checked={wifiOnly} aria-label="Download on Wi-Fi only" onClick={toggleWifi} />
         </div>
       </div>
     </div>

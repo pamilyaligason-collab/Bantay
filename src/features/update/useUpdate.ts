@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { db } from '../../db'
 import { checkDue, decide, parseLatest, type Decision, type Latest } from './check'
+import { forgetOlder } from './job'
 import { AppUpdater } from './plugin'
 
 export interface UpdateState {
@@ -32,6 +33,7 @@ export async function checkForUpdate(force = false, fetcher: typeof fetch = fetc
         const got = res.ok ? parseLatest(await res.json()) : null
         if (!got) throw new Error('bad latest.json')
         latest = got
+        forgetOlder(got)
         checkedAt = Date.now()
         await kvPut('update.latest', got)
         await kvPut('update.checkedAt', checkedAt)
