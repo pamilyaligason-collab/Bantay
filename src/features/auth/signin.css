@@ -1,6 +1,6 @@
 /* Sign-in extras (P1 Task 5). Tokens fall back to the old names so this works before and after the v2 palette lands. */
 .si-link { align-self: center; min-height: 44px; padding: 0 12px; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600;
-  color: var(--green2, var(--act)); text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; cursor: pointer; }
+  color: var(--link, var(--act)); text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; cursor: pointer; }
 .si-911 { margin: 8px auto 0; color: var(--red, var(--danger)); }
 .si-when { margin: 0; font-size: 18px; font-weight: 600; text-align: center; }
 .si-lock { text-align: center; }
