@@ -1,13 +1,19 @@
+import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null) }))
+const h = vi.hoisted(() => ({ abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null), reset: vi.fn(async () => 'sent' as const) }))
 vi.mock('../features/auth/client', () => ({ supabase: {} }))
 vi.mock('../features/look', () => ({ Sky: () => null }))
-vi.mock('../features/auth/pinLogin', () => ({ signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin }))
+vi.mock('../features/auth/pinLogin', () => ({
+  signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin, requestPinReset: h.reset,
+  SIGN_IN_ERROR: 'Handle or PIN is not right', NO_SIGNAL: 'No signal. Try again when you have data.'
+}))
 vi.mock('../features/auth/family', async () => ({ ...(await vi.importActual<typeof import('../features/auth/family')>('../features/auth/family')), signInWithPasskey: h.pk, abandonPasskeyWait: h.abandon }))
 
 import SignIn from './SignIn'
+import { signInWithGoogle } from '../features/auth/pinLogin'
+import { db } from '../db'
 
 const FAMILY = [
   { personId: 'p-lola', displayName: 'Lola Rosa', handle: 'lola', provider: 'pin' },
@@ -15,7 +21,7 @@ const FAMILY = [
 ]
 const pad = () => screen.queryByRole('button', { name: '5' })
 const tap = (n: RegExp) => fireEvent.click(screen.getByRole('button', { name: n }))
-const choose = (name: string) => { fireEvent.change(screen.getByLabelText('Who are you?'), { target: { value: FAMILY.find((f) => f.displayName === name)!.personId } }); tap(/Continue/) }
+const choose = (name: string) => { fireEvent.change(screen.getByLabelText('Who are you?'), { target: { value: FAMILY.find((f) => f.displayName === name)!.personId } }); fireEvent.click(screen.getByRole('button', { name: 'Continue' })) }
 
 describe('SignIn: fingerprint first (D-27)', () => {
   const credsDesc = Object.getOwnPropertyDescriptor(navigator, 'credentials')
@@ -158,5 +164,82 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     render(<SignIn />)
     expect(screen.queryByLabelText('Who are you?')).toBeNull()
     expect(document.body.textContent).not.toContain('Lola')
+  })
+})
+
+describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
+  const key = (n: string) => screen.getByRole('button', { name: n })
+  const enter = async (digits: string) => { for (const d of digits) fireEvent.click(key(d)) }
+  beforeEach(async () => {
+    localStorage.clear(); h.pin.mockReset(); h.reset.mockClear(); await db.kv.clear()
+    localStorage.setItem('bantay.family', JSON.stringify([...FAMILY, { personId: 'p-ate', displayName: 'Ate Maria', handle: null, provider: 'google' }]))
+    localStorage.setItem('bantay.lastPerson', 'p-kuya')
+  })
+  afterEach(() => cleanup())
+
+  it('a wrong PIN says how many tries are left (kept on the phone)', async () => {
+    h.pin.mockResolvedValue('Handle or PIN is not right')
+    render(<SignIn />)
+    await enter('111222')
+    expect((await screen.findByRole('alert')).textContent).toBe('That PIN did not work. 4 tries left before a 15-minute lock.')
+    expect((await db.kv.get('pin.fail.ben'))?.value).toMatchObject({ n: 1 })
+  })
+
+  it('five failures show the locked screen and stop calling the server', async () => {
+    h.pin.mockResolvedValue('Handle or PIN is not right')
+    render(<SignIn />)
+    for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1)) }
+    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+    expect(screen.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeTruthy()
+    expect(pad()).toBeNull()
+  })
+
+  it('a locked person stays locked after reopening the app', async () => {
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() } })
+    render(<SignIn />)
+    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+  })
+
+  it('no signal is not counted as a wrong PIN', async () => {
+    h.pin.mockResolvedValue('No signal. Try again when you have data.')
+    render(<SignIn />)
+    await enter('111222')
+    expect((await screen.findByRole('alert')).textContent).toBe('No signal. Try again when you have data.')
+    expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
+  })
+
+  it('a good PIN clears the count', async () => {
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 2, lastAt: Date.now() } })
+    h.pin.mockResolvedValue(null)
+    render(<SignIn />)
+    await enter('483920')
+    await waitFor(async () => expect(await db.kv.get('pin.fail.ben')).toBeUndefined())
+  })
+
+  it('Forgot PIN opens Ask an admin, names the admins and sends the request for that handle', async () => {
+    render(<SignIn />)
+    tap(/Forgot PIN\? Ask an admin/)
+    expect(await screen.findByRole('heading', { name: 'Ask an admin' })).toBeTruthy()
+    expect(screen.getByLabelText('Admins').textContent).toContain('Ate Maria')
+    tap(/Send a request/)
+    await waitFor(() => expect(h.reset).toHaveBeenCalledWith('ben'))
+    expect((await screen.findByText(/Request sent/))).toBeTruthy()
+  })
+
+  it('Emergency call 911 is on every sign-in screen', () => {
+    render(<SignIn />)
+    expect(screen.getByRole('link', { name: 'Emergency call 911' }).getAttribute('href')).toBe('tel:911')
+  })
+})
+
+describe('SignIn: Google for admins', () => {
+  beforeEach(() => { localStorage.clear() })
+  afterEach(() => cleanup())
+  it('shows the Chrome waiting screen while Google sign-in is pending', async () => {
+    vi.mocked(signInWithGoogle).mockReturnValue(new Promise(() => {}))
+    render(<SignIn />)
+    fireEvent.click(screen.getByRole('button', { name: /Admin\? Continue with Google/ }))
+    expect(await screen.findByText(/Finishing sign-in in Chrome/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: "I'm back" })).toBeTruthy()
   })
 })

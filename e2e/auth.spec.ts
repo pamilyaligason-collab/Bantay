@@ -67,7 +67,7 @@ test('signed out shows sign-in; wrong PIN gives the generic error; right PIN lan
   await page.getByLabel('Name').fill('Lola')
   await pin.fill('000001')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page.getByRole('alert')).toHaveText('Handle or PIN is not right')
+  await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
   await expect(page.locator('h1')).toHaveText('Sign in')
   await expect(pin).toHaveValue('') // PIN is cleared after a miss
 
@@ -128,10 +128,27 @@ test.describe('quick login (D-24)', () => {
     await who(page, 'Lola Rosa')
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await keys(page, '000001')
-    await expect(page.getByRole('alert')).toHaveText('Handle or PIN is not right')
+    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     expect(seen.pins).toEqual(['000001', '480193'])
+  })
+
+  test('five wrong PINs show the locked screen, which offers Ask an admin and the 911 link', async ({ page }) => {
+    const seen = fresh()
+    await mock(page, seen)
+    await trust(page)
+    await skipOnboarding(page)
+    await page.goto('/')
+    await who(page, 'Lola Rosa')
+    for (let i = 0; i < 5; i++) { await keys(page, '000001'); await expect.poll(() => seen.pins.length).toBe(i + 1) }
+    await expect(page.getByRole('heading', { name: 'PIN locked' })).toBeVisible()
+    await expect(page.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Emergency call 911' })).toHaveAttribute('href', 'tel:911')
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    await page.getByRole('button', { name: 'Ask an admin' }).click()
+    await expect(page.getByRole('heading', { name: 'Ask an admin' })).toBeVisible()
+    await expect(page.getByLabel('Admins')).toContainText('Ate Maria')
   })
 
   test('trusted phone: Google member goes to Google', async ({ page }) => {

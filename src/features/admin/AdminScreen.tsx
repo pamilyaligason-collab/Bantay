@@ -97,6 +97,7 @@ function MemberRow({ m, ask, done }: { m: Member; ask: Ask; done: () => void }) 
         <div className="sub">{m.handle ? `@${m.handle}` : m.provider ?? 'Google'} · last sign-in {when(m.lastSignInAt)}</div>
       </div>
       <button className="ad-b" onClick={() => setPin(pin === null ? '' : null)} aria-label={`Reset PIN for ${m.displayName}`}>Reset PIN</button>
+      {m.handle && <button className="ad-b" onClick={() => act(`Unlock ${m.displayName} so they can try their PIN again?`, { action: 'unlock' })} aria-label={`Unlock ${m.displayName}`}>Unlock</button>}
       <button className="ad-b" onClick={() => act(`Make ${m.displayName} ${m.role === 'admin' ? 'a member' : 'an admin'}?`, { action: 'set_role', role: m.role === 'admin' ? 'member' : 'admin' })} aria-label={`Change role of ${m.displayName}`}>
         {m.role === 'admin' ? 'Make member' : 'Make admin'}
       </button>

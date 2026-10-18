@@ -4,6 +4,7 @@ import { supabase, supabaseUrl, supabasePublishableKey } from './client'
 import { NATIVE_REDIRECT } from './nativeOAuth'
 
 export const SIGN_IN_ERROR = 'Handle or PIN is not right'
+export const NO_SIGNAL = 'No signal. Try again when you have data.'
 
 /** Handle + PIN through the pin-login Edge Function, then hand the session to supabase-js. Returns an error string or null. */
 export async function signInWithPin(handle: string, pin: string): Promise<string | null> {
@@ -22,7 +23,18 @@ export async function signInWithPin(handle: string, pin: string): Promise<string
     if (res.status === 401 || res.status === 429) return SIGN_IN_ERROR
     return 'Could not reach sign-in. Check your connection and try again.'
   } catch {
-    return 'Could not reach sign-in. Check your connection and try again.'
+    return NO_SIGNAL // fetch throws a TypeError when there is no network
+  }
+}
+
+/** "Forgot PIN? Send a request": the server answers the same for any handle, so this only reports whether the phone could reach it. */
+export async function requestPinReset(handle: string): Promise<'sent' | 'no_signal'> {
+  if (!supabase) return 'no_signal'
+  try {
+    const { error } = await supabase.rpc('request_pin_reset', { h: handle.trim().toLowerCase() })
+    return error && !error.code ? 'no_signal' : 'sent' // postgrest-js reports a network failure as an error with no code
+  } catch {
+    return 'no_signal'
   }
 }
 

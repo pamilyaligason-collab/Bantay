@@ -15,6 +15,7 @@ export interface Port {
   setBanned(userId: string, banned: boolean): Promise<boolean>
   deletePushSubscriptions(userId: string): Promise<boolean> // a disabled member gets no broadcasts
   revokeSessions(userId: string): Promise<boolean> // public.revoke_sessions: ends every session of the user
+  clearPinLock(userId: string): Promise<boolean> // deletes the pin_attempts row, so a locked member can try again at once
   insertRole(userId: string, role: Role, handle: string): Promise<'ok' | 'handle_taken' | 'error'>
   updateRole(userId: string, patch: { role?: Role; handle?: string; disabled?: boolean }): Promise<'ok' | 'handle_taken' | 'not_found'>
   insertPerson(userId: string, displayName: string, createdBy: string): Promise<string | null> // returns person id
@@ -58,6 +59,10 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
       if (!email.endsWith('@' + SYNTHETIC_DOMAIN)) return bad // Google members have no PIN
       if (!(await port.setPassword(b.userId, await derivePassword(port.pepper, b.userId, b.pin)))) return bad
       return (await port.revokeSessions(b.userId)) ? { ok: true } : bad // the old PIN's sessions must not outlive the reset
+    }
+    case 'unlock': {
+      if (!isId(b.userId)) return bad
+      return (await port.clearPinLock(b.userId)) ? { ok: true } : bad
     }
     case 'set_handle': {
       const handle = normalizeHandle(b.handle)

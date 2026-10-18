@@ -1,0 +1,15 @@
+/* Sign-in extras (P1 Task 5). Tokens fall back to the old names so this works before and after the v2 palette lands. */
+.si-link { align-self: center; min-height: 44px; padding: 0 12px; background: none; border: 0; font: inherit; font-size: 15px; font-weight: 600;
+  color: var(--green2, var(--act)); text-decoration: underline; text-underline-offset: 3px; display: inline-flex; align-items: center; cursor: pointer; }
+.si-911 { margin: 8px auto 0; color: var(--red, var(--danger)); }
+.si-when { margin: 0; font-size: 18px; font-weight: 600; text-align: center; }
+.si-lock { text-align: center; }
+.si-ask { display: grid; gap: 14px; }
+.si-ask .pname { margin: 0; }
+.si-admins { list-style: none; margin: 0; padding: 0; }
+.si-admins .row { display: flex; align-items: center; gap: 12px; }
+.si-card { display: grid; gap: 8px; padding: 16px; }
+.si-field { display: grid; gap: 4px; }
+.si-field input { min-height: 44px; border: 1px solid var(--line, var(--sep)); border-radius: 12px; padding: 0 12px; background: var(--card, var(--cell)); color: var(--ink); font: inherit; font-size: 17px; }
+@keyframes si-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
+@media (prefers-reduced-motion: no-preference) { .dots.shake { animation: si-shake 0.35s ease-in-out; } }

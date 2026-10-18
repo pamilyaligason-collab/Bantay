@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sky } from '../features/look'
-import { signInWithGoogle, signInWithPin } from '../features/auth/pinLogin'
+import { SIGN_IN_ERROR, requestPinReset, signInWithGoogle, signInWithPin } from '../features/auth/pinLogin'
+import { afterFailure, loadFails, pinState, saveFails } from '../features/auth/pinAttempts'
+import '../features/auth/signin.css'
 import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
 import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
 import { onNativeSignInError } from '../features/auth/nativeOAuth'
 
 /** Six-digit PIN pad (56px keys). Calls onDone with the PIN; the pad clears itself so a miss starts fresh. */
-function PinPad({ busy, onDone }: { busy: boolean; onDone: (pin: string) => void }) {
+function PinPad({ busy, onDone, shake = 0 }: { busy: boolean; onDone: (pin: string) => void; shake?: number }) {
   const [pin, setPin] = useState('')
   const add = (d: string) => { if (!busy) setPin((p) => (p.length < 6 ? p + d : p)) }
   const back = () => setPin((p) => p.slice(0, -1))
@@ -19,7 +21,7 @@ function PinPad({ busy, onDone }: { busy: boolean; onDone: (pin: string) => void
   })
   return (
     <div className="pinpad">
-      <div className="dots" role="img" aria-label={`${pin.length} of 6 digits entered`}>
+      <div key={shake} className={shake ? 'dots shake' : 'dots'} role="img" aria-label={`${pin.length} of 6 digits entered`}>
         {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}
       </div>
       <div className="keys">
@@ -33,17 +35,20 @@ function PinPad({ busy, onDone }: { busy: boolean; onDone: (pin: string) => void
 }
 
 /** The two original ways in, for a new phone or someone not in the list. */
-function OtherWays({ run, busy }: { run: (f: () => Promise<string | null>) => void; busy: boolean }) {
+function OtherWays({ run, busy, tryPin, google, onForgot }: {
+  run: (f: () => Promise<string | null>) => void; busy: boolean
+  tryPin: (handle: string, pin: string) => Promise<string | null>; google: () => void; onForgot: (handle: string) => void
+}) {
   const [showPin, setShowPin] = useState(false)
   const [handle, setHandle] = useState('')
   const [pin, setPin] = useState('')
   return (
     <>
-      <button className="btn" disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>
+      <button className="btn" disabled={busy} onClick={google}>Admin? Continue with Google</button>
       {!showPin ? (
         <button className="btn2" onClick={() => setShowPin(true)}>Sign in with your name and PIN</button>
       ) : (
-        <form className="grp signin" onSubmit={(e) => { e.preventDefault(); if (handle && pin.length === 6) { run(() => signInWithPin(handle, pin)); setPin('') } }}>
+        <form className="grp signin" onSubmit={(e) => { e.preventDefault(); if (handle && pin.length === 6) { run(() => tryPin(handle, pin)); setPin('') } }}>
           <label className="row" htmlFor="si-handle">
             <span className="si-l">Name</span>
             <input id="si-handle" name="bantay-handle" type="text" value={handle} onChange={(e) => setHandle(e.target.value)}
@@ -58,15 +63,17 @@ function OtherWays({ run, busy }: { run: (f: () => Promise<string | null>) => vo
         </form>
       )}
       {showPin && <p className="si-hint">Five wrong tries lock sign-in for 15 minutes. Ask your family admin to reset your PIN.</p>}
+      {showPin && <button className="si-link" onClick={() => onForgot(handle)}>Forgot PIN? Ask an admin</button>}
     </>
   )
 }
 
 /** The tapped person. Fingerprint first when it is on for this phone; the PIN pad shows on cancel, error, mismatch, or
  *  "Use PIN instead". The prompt starts once per mount (the card is keyed by person), so a miss never loops. */
-function PickCard({ pick, busy, run, setError, onBack, returning }: {
+function PickCard({ pick, busy, run, setError, onBack, returning, tryPin, google, shake, onForgot }: {
   pick: FamilyMember; returning: boolean; busy: boolean; run: (f: () => Promise<string | null>) => void
   setError: (e: string) => void; onBack: () => void
+  tryPin: (handle: string, pin: string) => Promise<string | null>; google: () => void; shake: number; onForgot: () => void
 }) {
   const fp = passkeySupported() && hasPasskeyFlag(pick.personId)
   const [phase, setPhase] = useState<'prompting' | 'pin'>(fp ? 'prompting' : 'pin')
@@ -101,13 +108,14 @@ function PickCard({ pick, busy, run, setError, onBack, returning }: {
           <p className="si-hint" role="status">Use your fingerprint or face now.</p>
           {pin
             ? <button className="btn2" autoFocus onClick={() => { ++seq.current; abandonPasskeyWait(); setPhase('pin') }}>Use PIN instead</button>
-            : <button className="btn2" autoFocus disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google instead</button>}
+            : <button className="btn2" autoFocus disabled={busy} onClick={google}>Continue with Google instead</button>}
         </>
       ) : (
         <>
           {fp && <button className="btn" onClick={ask}>Use fingerprint or face</button>}
-          {pin ? <PinPad busy={busy} onDone={(p) => run(() => signInWithPin(pin, p))} />
-            : <button className={fp ? 'btn2' : 'btn'} disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>}
+          {pin ? <PinPad busy={busy} shake={shake} onDone={(p) => run(() => tryPin(pin, p))} />
+            : <button className={fp ? 'btn2' : 'btn'} disabled={busy} onClick={google}>Continue with Google</button>}
+          {pin && <button className="si-link" onClick={onForgot}>Forgot PIN? Ask an admin</button>}
         </>
       )}
       <button className="btn2" onClick={onBack}>{returning ? 'Not you? Switch person' : 'Back'}</button>
@@ -115,8 +123,72 @@ function PickCard({ pick, busy, run, setError, onBack, returning }: {
   )
 }
 
+const hhmm = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+
+/** "PIN locked": the phone counted five misses. The server enforces the real lock; this tells the person when to expect it to end. */
+function Locked({ name, until, onAsk, onBack }: { name: string; until: number; onAsk: () => void; onBack: () => void }) {
+  return (
+    <div className="grp pickcard si-lock">
+      <span className="avatar big" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>
+      <h2 className="pname">PIN locked</h2>
+      <p className="si-when">Locked until {hhmm(until)}, or ask an admin.</p>
+      <p className="si-hint">Too many wrong tries. This keeps your health records safe.</p>
+      <button className="btn" onClick={onAsk}>Ask an admin</button>
+      <button className="btn2" onClick={onBack}>Back</button>
+    </div>
+  )
+}
+
+/** Finishing sign-in in the browser (Google, admins only). The error line below comes from urlError / onNativeSignInError. */
+function GoogleWait({ onBack, onAgain }: { onBack: () => void; onAgain: () => void }) {
+  return (
+    <div className="grp pickcard">
+      <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
+      <h2 className="pname">Finishing sign-in in Chrome…</h2>
+      <p className="si-hint" role="status">Pick your Google account there. When Chrome says you are done, come back here. Bantay may open by itself.</p>
+      <button className="btn" onClick={onBack}>I'm back</button>
+      <button className="btn2" onClick={onAgain}>Try again</button>
+    </div>
+  )
+}
+
+/** Only an admin can add a person or reset a PIN. The request goes to admins; the reply is the same for any handle. */
+function AskAdmin({ admins, handle, onBack }: { admins: FamilyMember[]; handle: string; onBack: () => void }) {
+  const [h, setH] = useState(handle)
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'nosignal'>('idle')
+  const send = async () => {
+    setState('sending')
+    setState((await requestPinReset(h)) === 'sent' ? 'sent' : 'nosignal')
+  }
+  return (
+    <div className="si-ask">
+      <h2 className="pname">Ask an admin</h2>
+      <p className="si-hint">Only an admin can add you to the family, or reset a forgotten PIN.</p>
+      {admins.length > 0 && (
+        <ul className="grp si-admins" aria-label="Admins">
+          {admins.map((a) => <li key={a.personId} className="row"><span className="avatar" aria-hidden="true">{a.initials}</span><span><b>{a.displayName}</b><span className="si-hint"> Admin</span></span></li>)}
+        </ul>
+      )}
+      <div className="grp si-card"><b>Not on the list</b><span className="si-hint">Tell the admin your name. They add you in Admin, then Members, and give you a 6-digit PIN.</span></div>
+      <div className="grp si-card">
+        <b>Forgot your PIN</b>
+        <span className="si-hint">Send a request and the admin resets it. Your records are not touched.</span>
+        <label className="si-field">
+          <span className="si-l">Your name (handle)</span>
+          <input value={h} onChange={(e) => { setH(e.target.value); setState('idle') }} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={20} />
+        </label>
+        <button className="btn" disabled={state === 'sending' || h.trim().length < 3} onClick={send}>Send a request</button>
+        {state === 'sent' && <p className="si-hint" role="status">Request sent. An admin will see it in Admin.</p>}
+        {state === 'nosignal' && <p className="si-hint" role="status">No signal. Try again when you have data.</p>}
+      </div>
+      <button className="btn2" onClick={onBack}>Back to the list</button>
+    </div>
+  )
+}
+
 /** Shown by AuthGate when nobody is signed in. On success supabase-js fires an auth change and AuthGate takes over.
- *  The family picker appears only on a phone that signed in before (cache in localStorage); a fresh phone never lists names. */
+ *  The family picker appears only on a phone that signed in before (cache in localStorage); a fresh phone never lists names.
+ *  Wrong PINs are counted here (pinAttempts, kv pin.fail.<handle>): the server answers every failure the same way. */
 export default function SignIn() {
   const [family] = useState(loadFamily)
   // A returning visit shows only the last person (mascot: the app has no profile photo field) and goes straight to PickCard.
@@ -126,7 +198,11 @@ export default function SignIn() {
   const [other, setOther] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(urlSignInError ?? '')
-  useEffect(() => onNativeSignInError(setError), [])
+  const [shake, setShake] = useState(0)
+  const [locked, setLocked] = useState<{ handle: string; name: string; until: number } | null>(null)
+  const [ask, setAsk] = useState<string | null>(null) // the "Ask an admin" screen, with the handle to prefill
+  const [gwait, setGwait] = useState(false)
+  useEffect(() => onNativeSignInError((e) => { setGwait(false); setError(e) }), [])
 
   const run = async (f: () => Promise<string | null>) => {
     setBusy(true)
@@ -135,7 +211,41 @@ export default function SignIn() {
     if (e) setError(e)
     setBusy(false)
   }
+
+  const lockFor = (handle: string, name: string, until: number) => { setError(''); setLocked({ handle, name, until }) }
+  // A person already locked from an earlier visit goes straight to the locked screen.
+  useEffect(() => {
+    const h = pick?.handle
+    if (!h) return
+    let on = true
+    void loadFails(h).then((f) => { const st = pinState(f, Date.now()); if (on && st.kind === 'locked') lockFor(h, pick.displayName, st.until) })
+    return () => { on = false }
+  }, [pick])
+
+  /** PIN sign-in with the phone-side count. The reply text is the same whichever handle was typed. */
+  const tryPin = async (handle: string, pin: string): Promise<string | null> => {
+    const h = handle.trim().toLowerCase()
+    const name = pick?.handle === h ? pick.displayName : h
+    const before = pinState(await loadFails(h), Date.now())
+    if (before.kind === 'locked') { lockFor(h, name, before.until); return null }
+    const e = await signInWithPin(h, pin)
+    if (e === null) { await saveFails(h, undefined); return null }
+    if (e !== SIGN_IN_ERROR) return e // no signal or server trouble: not a wrong PIN, not counted
+    const f = afterFailure(await loadFails(h), Date.now())
+    await saveFails(h, f)
+    const st = pinState(f, Date.now())
+    if (st.kind === 'locked') { lockFor(h, name, st.until); return null }
+    setShake((n) => n + 1)
+    return `That PIN did not work. ${st.left} ${st.left === 1 ? 'try' : 'tries'} left before a 15-minute lock.`
+  }
+
+  const google = () => {
+    setGwait(true)
+    void run(async () => { const e = await signInWithGoogle(); if (e) setGwait(false); return e })
+  }
   const picker = family.length > 0 && !other
+  const admins = family.filter((m) => m.provider === 'google')
+  const back = () => { setError(''); setPick(null); setReturning(false); setChoice(''); setLocked(null); setAsk(null) }
 
   return (
     <div className="bt">
@@ -147,36 +257,48 @@ export default function SignIn() {
           <span>Family Bantay keeps your family’s health private.</span>
         </div>
 
-        {picker && !pick && (
+        {gwait ? <GoogleWait onBack={() => setGwait(false)} onAgain={google} />
+          : ask !== null ? <AskAdmin admins={admins} handle={ask} onBack={() => setAsk(null)} />
+          : locked ? <Locked name={locked.name} until={locked.until} onAsk={() => setAsk(locked.handle)} onBack={back} />
+          : (
           <>
-            <form className="grp signin" onSubmit={(e) => { e.preventDefault(); const m = family.find((f) => f.personId === choice); if (m) { setError(''); setPick(m) } }}>
-              <label className="row" htmlFor="si-who">
-                <span className="si-l">Who are you?</span>
-                <select id="si-who" value={choice} onChange={(e) => setChoice(e.target.value)}>
-                  <option value="">Choose your name</option>
-                  {family.map((m) => <option key={m.personId} value={m.personId}>{m.displayName}</option>)}
-                </select>
-              </label>
-              <div className="row"><button className="btn" type="submit" disabled={!choice}>Continue</button></div>
-            </form>
-            <button className="btn2" onClick={() => { setError(''); setOther(true) }}>Not in the list?</button>
-          </>
-        )}
+            {picker && !pick && (
+              <>
+                <form className="grp signin" onSubmit={(e) => { e.preventDefault(); const m = family.find((f) => f.personId === choice); if (m) { setError(''); setPick(m) } }}>
+                  <label className="row" htmlFor="si-who">
+                    <span className="si-l">Who are you?</span>
+                    <select id="si-who" value={choice} onChange={(e) => setChoice(e.target.value)}>
+                      <option value="">Choose your name</option>
+                      {family.map((m) => <option key={m.personId} value={m.personId}>{m.displayName}</option>)}
+                    </select>
+                  </label>
+                  <div className="row"><button className="btn" type="submit" disabled={!choice}>Continue</button></div>
+                </form>
+                <button className="si-link" onClick={() => setAsk('')}>Not on the list? Ask an admin to add you</button>
+                <button className="btn2" onClick={() => { setError(''); setOther(true) }}>Not in the list?</button>
+                <button className="btn2" disabled={busy} onClick={google}>Admin? Continue with Google</button>
+              </>
+            )}
 
-        {picker && pick && (
-          <PickCard key={pick.personId} returning={returning} pick={pick} busy={busy} run={run} setError={setError} onBack={() => { setError(''); setPick(null); setReturning(false); setChoice('') }} />
-        )}
+            {picker && pick && (
+              <PickCard key={pick.personId} returning={returning} pick={pick} busy={busy} run={run} setError={setError} onBack={back}
+                tryPin={tryPin} google={google} shake={shake} onForgot={() => setAsk(pick.handle ?? '')} />
+            )}
 
-        {!picker && (
-          <>
-            <OtherWays run={run} busy={busy} />
-            {family.length > 0
-              ? <button className="btn2" onClick={() => setOther(false)}>Back to the family</button>
-              : <p className="si-hint">First time on this phone? Sign in once and it will remember your family.</p>}
+            {!picker && (
+              <>
+                <OtherWays run={run} busy={busy} tryPin={tryPin} google={google} onForgot={(h) => setAsk(h)} />
+                {family.length > 0
+                  ? <button className="btn2" onClick={() => setOther(false)}>Back to the family</button>
+                  : <p className="si-hint">First time on this phone? Sign in once and it will remember your family.</p>}
+                {family.length === 0 && <button className="si-link" onClick={() => setAsk('')}>Not on the list? Ask an admin to add you</button>}
+              </>
+            )}
           </>
         )}
 
         {error && <p className="grp si-err" role="alert">{error}</p>}
+        <a className="si-link si-911" href="tel:911">Emergency call 911</a>
       </main>
     </div>
   )
