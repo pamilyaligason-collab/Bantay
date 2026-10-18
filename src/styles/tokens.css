@@ -1,33 +1,48 @@
-/* Ported from design/Prototype.dc.html (v5). Names are identical to the prototype.
-   --c1/--c2 are the validated chart colour pair. --red/--orange/--indigo/--teal/--purple are label colours. */
+/* Family Bantay v2 palette (D-29), from mockup v6. The old iOS token names stay as aliases (bottom of each block) so untouched screens still render.
+   --c1/--c2 are the validated chart colour pair. Contrast of the pairs is enforced in src/features/look/contrast.test.ts. */
 :root {
-  --bg: #F2F2F7; --cell: #FFFFFF; --ink: #000000; --ink2: #6C6C70; --sep: #C6C6C8;
-  --fill: rgba(118,118,128,0.12); --act: #0066D6; --btn: #0066D6; --btn-fg: #FFFFFF;
-  --ok: #1E7A35; --warn: #B25000; --warn-bg: #FFF4E5; --danger: #D70015; --danger-bg: #D70015;
+  --ground: #F6F1E7; --card: #FFFCF6; --card2: #EFE8DA; --green: #1F3D2B; --green2: #2E5A3F; --soft: #DCE5D8;
+  --amber: #E8A93A; --amber-ink: #7A4E05; --ink: #1D1F1C; --muted: #5E625B; --line: #E4DCCB; --on-green: #F6F1E7;
+  --red: #C2362B; --red-soft: #F7DEDA; --ok: #2A7449; --warn: #8A5A0C;
+  --shadow: 0 1px 2px rgba(31,61,43,.06), 0 8px 24px rgba(31,61,43,.08);
+  --link: var(--green2); --act: var(--green2); --focus: var(--amber-ink); --danger-bg: #C2362B;
+  --fill: rgba(31,61,43,0.08);
+  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
+  --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
+  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
   --c1: #2B6CC4; --c2: #C2610F; --band: rgba(43,108,196,0.12);
-  --bar: rgba(249,249,249,0.78); --bar-edge: rgba(0,0,0,0.08); --shadow: 0 1px 2px rgba(0,0,0,0.06);
-  --red: #D70015; --orange: #C93400; --indigo: #5856D6; --teal: #0071A4; --purple: #8E44B8;
+  --orange: #C93400; --indigo: #5856D6; --teal: #0071A4; --purple: #8E44B8;
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg: #000000; --cell: #1C1C1E; --ink: #FFFFFF; --ink2: #98989F; --sep: #38383A;
-  --fill: rgba(118,118,128,0.24); --act: #4BA1FF; --btn: #0B6BD1; --btn-fg: #FFFFFF;
-  --ok: #30D158; --warn: #FF9F0A; --warn-bg: #2E2414; --danger: #D70015; --danger-bg: #D70015;
+  --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
+  --amber: #F0B54C; --amber-ink: #F0B54C; --ink: #EEF0EA; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7;
+  --red: #E8685C; --red-soft: #3A1F1C; --ok: #6CC08E; --warn: #E3A848;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  --link: var(--amber); --act: var(--amber); --focus: var(--amber); --danger-bg: #B3261E;
+  --fill: rgba(238,240,234,0.10);
+  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
+  --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
+  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
   --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
-  --bar: rgba(30,30,32,0.78); --bar-edge: rgba(255,255,255,0.10); --shadow: none;
-  --red: #FF6961; --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
+  --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #000000; --cell: #1C1C1E; --ink: #FFFFFF; --ink2: #98989F; --sep: #38383A;
-    --fill: rgba(118,118,128,0.24); --act: #4BA1FF; --btn: #0B6BD1; --btn-fg: #FFFFFF;
-    --ok: #30D158; --warn: #FF9F0A; --warn-bg: #2E2414; --danger: #D70015; --danger-bg: #D70015;
+    --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
+    --amber: #F0B54C; --amber-ink: #F0B54C; --ink: #EEF0EA; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7;
+    --red: #E8685C; --red-soft: #3A1F1C; --ok: #6CC08E; --warn: #E3A848;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    --link: var(--amber); --act: var(--amber); --focus: var(--amber); --danger-bg: #B3261E;
+    --fill: rgba(238,240,234,0.10);
+    --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
+    --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
+    --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
     --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
-    --bar: rgba(30,30,32,0.78); --bar-edge: rgba(255,255,255,0.10); --shadow: none;
-    --red: #FF6961; --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
+    --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
     color-scheme: dark;
   }
 }

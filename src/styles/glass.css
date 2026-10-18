@@ -1,35 +1,27 @@
-/* Frosted glass over the animated sky. Contrast of these token pairs is enforced in src/features/look/contrast.test.ts. */
+/* v2 (D-29): cards are solid cream/green, the frosted glass is gone. The sky tokens and .sky layer stay (weather backgrounds, P3). Sky contrast is enforced in src/features/look/contrast.test.ts. */
 :root {
-  --glow: 1; --glass: rgba(255,255,255,0.80); --glass-edge: rgba(255,255,255,0.55); --glass-ink2: #5C5C60; --ink2-sky: #48484C; --act: #005CC2;
+  --glow: 1; --ink2-sky: var(--muted);
   --sky-storm-a: #B4BAD0; --sky-storm-b: #CDD2E3; --sky-rain-a: #BCCFE0; --sky-rain-b: #D5E2EE;
   --sky-clear-a: #BFDCF4; --sky-clear-b: #E1EEFA; --sky-heat-a: #F0CDAA; --sky-heat-b: #F7E2CC;
 }
 :root[data-theme="dark"] {
-  --glow: 0.2; --glass: rgba(28,28,30,0.78); --glass-edge: rgba(255,255,255,0.12); --glass-ink2: #A8A8AF; --ink2-sky: #E4E4EA; --danger: #FF6961; --act: #66B3FF;
+  --glow: 0.2; --ink2-sky: var(--muted);
   --sky-storm-a: #14172A; --sky-storm-b: #222844; --sky-rain-a: #172635; --sky-rain-b: #26394C;
   --sky-clear-a: #12263D; --sky-clear-b: #1E4468; --sky-heat-a: #3A1E0E; --sky-heat-b: #5A3217;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glow: 0.2; --glass: rgba(28,28,30,0.78); --glass-edge: rgba(255,255,255,0.12); --glass-ink2: #A8A8AF; --ink2-sky: #E4E4EA; --danger: #FF6961; --act: #66B3FF;
+    --glow: 0.2; --ink2-sky: var(--muted);
     --sky-storm-a: #14172A; --sky-storm-b: #222844; --sky-rain-a: #172635; --sky-rain-b: #26394C;
     --sky-clear-a: #12263D; --sky-clear-b: #1E4468; --sky-heat-a: #3A1E0E; --sky-heat-b: #5A3217;
   }
 }
 
-.glass, .grp {
-  background: var(--glass); border: 0.5px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-edge), var(--shadow);
-  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
-}
-.glass .sub, .grp .sub, .grp .chev { color: var(--glass-ink2); }
-.hdr span, .sec, .sub { color: var(--ink2-sky); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass, .grp { background: var(--cell); } }
-@media (prefers-reduced-transparency: reduce) {
-  .glass, .grp { background: var(--cell); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
+.glass, .grp { background: var(--card); border: 0; box-shadow: var(--shadow); }
+.hdr span, .sec, .sub { color: var(--muted); }
 
 /* Sky: calm, cheap, CSS only. Only transform animates (compositor); no per-frame repaint. */
-.sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(170deg, var(--a), var(--b)); }
+.sky { display: none; /* v2: solid ground; weather sky returns in P3 */ position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(170deg, var(--a), var(--b)); }
 .sky[data-state="storm"] { --a: var(--sky-storm-a); --b: var(--sky-storm-b); }
 .sky[data-state="rain"] { --a: var(--sky-rain-a); --b: var(--sky-rain-b); }
 .sky[data-state="clear"] { --a: var(--sky-clear-a); --b: var(--sky-clear-b); }
@@ -49,8 +41,7 @@
 @keyframes sky-rain { to { transform: translate3d(0, 160px, 0); } }
 @media (prefers-reduced-motion: reduce) { .sky::before, .sky::after { animation: none; } }
 
-.ptr { position: absolute; top: 0; left: 0; right: 0; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--ink2-sky); pointer-events: none; transform: translate3d(0, -36px, 0); opacity: 0; }
+.ptr { position: absolute; top: 0; left: 0; right: 0; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); pointer-events: none; transform: translate3d(0, -36px, 0); opacity: 0; }
 .ptr[data-on="true"] { transition: transform 200ms ease, opacity 200ms ease; }
 
-/* glass edge highlight on the tab bar (dropped by accident in L3 fix round 1) */
-.tabs.glass { box-shadow: inset 0 1px 0 var(--glass-edge), 0 8px 24px rgba(0,0,0,0.12); }
+.tabs.glass { box-shadow: 0 8px 30px rgba(20,30,20,.18); }
