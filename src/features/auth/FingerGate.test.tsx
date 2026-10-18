@@ -28,6 +28,15 @@ describe('LockScreen', () => {
   })
 })
 
+describe('LockScreen negative button', () => {
+  it("'use_pin' opens the PIN pad at once, no second tap", async () => {
+    h.prompt.mockResolvedValue('use_pin')
+    const onUsePin = vi.fn()
+    render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={onUsePin} onNotYou={() => {}} />)
+    await waitFor(() => expect(onUsePin).toHaveBeenCalledTimes(1))
+  })
+})
+
 describe('FingerOffer', () => {
   it('turns the fingerprint on after a successful prompt', async () => {
     h.mode.mockResolvedValue('fingerprint'); h.prompt.mockResolvedValue(true)

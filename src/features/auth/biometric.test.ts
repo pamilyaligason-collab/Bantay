@@ -38,4 +38,8 @@ describe('unlockMode in the APK', () => {
     h.prompt.mockRejectedValueOnce(new Error('cancelled'))
     expect(await promptFingerprint('Open Bantay')).toBe(false)
   })
+  it("promptFingerprint: the native negative button ('use_pin') is reported as such", async () => {
+    h.prompt.mockRejectedValueOnce(Object.assign(new Error('use_pin'), { code: undefined }))
+    expect(await promptFingerprint('Open Bantay')).toBe('use_pin')
+  })
 })

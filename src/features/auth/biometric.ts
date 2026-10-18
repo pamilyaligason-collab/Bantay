@@ -20,9 +20,13 @@ export async function unlockMode(o: { passkeyFlag: boolean }): Promise<UnlockMod
   } catch { return 'pin' }
 }
 
-/** true when the person passed the prompt. Cancel, failure or a missing plugin all give false: the caller falls back to the PIN. */
-export async function promptFingerprint(title: string): Promise<boolean> {
-  try { return (await Biometric.prompt({ title })).ok === true } catch { return false }
+/** true when the person passed the prompt; 'use_pin' when they tapped the negative button (Android 10 and older), so the caller opens the PIN pad at once.
+ *  Cancel, failure or a missing plugin give false: the caller stays on its screen. */
+export async function promptFingerprint(title: string): Promise<boolean | 'use_pin'> {
+  try { return (await Biometric.prompt({ title })).ok === true } catch (e) {
+    const x = e as { message?: string; code?: string }
+    return x?.message === 'use_pin' || x?.code === 'use_pin' ? 'use_pin' : false
+  }
 }
 
 export async function openFingerprintEnrol(): Promise<void> {

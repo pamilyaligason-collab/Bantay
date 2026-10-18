@@ -12,7 +12,7 @@ export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: str
     setTried(false)
     const ok = await promptFingerprint('Open Bantay')
     if (!alive.current) return
-    if (ok) onUnlocked(); else setTried(true)
+    if (ok === true) onUnlocked(); else if (ok === 'use_pin') onUsePin(); else setTried(true)
   }
   useEffect(() => { alive.current = true; void ask(); return () => { alive.current = false } }, []) // eslint-disable-line react-hooks/exhaustive-deps
   return (
@@ -45,7 +45,7 @@ export function FingerOffer({ personId, onDone }: { personId: string; onDone: ()
     setBusy(true)
     const ok = await promptFingerprint('Turn on fingerprint for Bantay')
     setBusy(false)
-    if (ok) { setPasskeyFlag(personId); finish() } else setNote('That did not work. Try again, or use your PIN each time.')
+    if (ok === true) { setPasskeyFlag(personId); finish() } else setNote('That did not work. Try again, or use your PIN each time.')
   }
   if (!mode) return null
   const first = mode === 'enrol-first'
