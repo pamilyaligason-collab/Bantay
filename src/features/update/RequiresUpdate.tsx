@@ -17,6 +17,7 @@ export function RequiresUpdate() {
       <h1 className="sh-h2">Please update Bantay</h1>
       <p id="up-gate-d" className="sh-sub">This version is too old to keep working. {l.notes} Your data and reminders are safe.</p>
       <button type="button" className="sh-pill sh-primary sh-block" onClick={() => setOpen(true)}>Update to {l.versionName}</button>
+      <a className="sh-sub up-911" href="tel:911">Emergency: Call 911</a>
       {open && <UpdateSheet latest={l} onClose={() => setOpen(false)} />}
     </div>
   )

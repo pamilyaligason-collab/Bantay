@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { resetJob } from './job'
 import { UpdateSheet } from './UpdateSheet'
 const latest = { versionCode: 2000001, versionName: '2.0.1', url: 'https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.0.1/b.apk', sha256: 'a'.repeat(64), size: 9_437_184, minShell: 2000000, notes: 'Fixes' }
 const mk = (over: Record<string, unknown> = {}, canInstall = true) => ({
@@ -9,7 +10,8 @@ const mk = (over: Record<string, unknown> = {}, canInstall = true) => ({
   openInstallPermission: vi.fn(), download: vi.fn(), install: vi.fn(),
   addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }), ...over
 })
-afterEach(cleanup)
+beforeEach(resetJob)
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 describe('UpdateSheet', () => {
   it('asks for install permission first when Bantay cannot install', async () => {
     const api = mk({}, false)
@@ -71,5 +73,45 @@ describe('UpdateSheet', () => {
     const { act } = await import('@testing-library/react')
     await act(async () => prog({ done: 4_300_000, total: 9_437_184 }))
     expect(await screen.findByText('Downloading 4.1 of 9 MB')).toBeTruthy()
+  })
+  it('Hide keeps the download: reopening shows its progress and does not start another', async () => {
+    const download = vi.fn().mockReturnValue(new Promise(() => {}))
+    const api = mk({ download })
+    const a = render(<UpdateSheet latest={latest} api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
+    await screen.findByText(/Downloading 0 of 9 MB/)
+    a.unmount()
+    render(<UpdateSheet latest={latest} api={api} />)
+    expect(await screen.findByText(/Downloading 0 of 9 MB/)).toBeTruthy()
+    expect(download).toHaveBeenCalledTimes(1)
+  })
+  it('install() throwing clears the file so Try again downloads again', async () => {
+    const download = vi.fn().mockResolvedValue({ path: '/p' })
+    const api = mk({ download, install: vi.fn().mockRejectedValue(new Error('busy')) })
+    render(<UpdateSheet latest={latest} api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+    expect(download).toHaveBeenCalledTimes(2)
+  })
+  it('a failed install result keeps the file: Try again only installs', async () => {
+    const download = vi.fn().mockResolvedValue({ path: '/p' })
+    const install = vi.fn().mockResolvedValue({ status: 'failure' })
+    render(<UpdateSheet latest={latest} api={mk({ download, install })} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+    expect(download).toHaveBeenCalledTimes(1)
+    expect(install).toHaveBeenCalledTimes(2)
+  })
+  it('on mobile data with Wi-Fi only on it waits, and turning the switch off starts the download', async () => {
+    Object.defineProperty(navigator, 'connection', { value: { type: 'cellular' }, configurable: true })
+    const download = vi.fn().mockReturnValue(new Promise(() => {}))
+    render(<UpdateSheet latest={latest} api={mk({ download })} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Update now' }))
+    expect(await screen.findByText(/Waiting for Wi-Fi/)).toBeTruthy()
+    expect(download).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('switch', { name: 'Download on Wi-Fi only' }))
+    await screen.findByText('Downloading the update')
+    expect(download).toHaveBeenCalledTimes(1)
+    Object.defineProperty(navigator, 'connection', { value: undefined, configurable: true })
   })
 })

@@ -15,3 +15,5 @@
 .up-gate { position: absolute; inset: 0; z-index: 30; background: var(--ground); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 24px 40px; text-align: center; }
 .up-gate p { margin: 0; max-width: 32ch; }
 .up-card { white-space: nowrap; flex: none; }
+.up-wrap { z-index: 40; } /* above .up-gate (30) so the sheet opens in front of the full-screen update gate */
+.up-911 { min-height: 44px; display: inline-flex; align-items: center; color: var(--link, var(--ink)); text-decoration: underline; }

@@ -1,3 +1,4 @@
+import { App } from '@capacitor/app'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MASCOT_SRC } from '../../assets/mascot'
@@ -6,15 +7,28 @@ import { useKv } from '../shell/useKv'
 import '../shell/shell.css'
 import './update.css'
 import type { Latest } from './check'
+import { resetJob, runJob, useJob, type JobApi } from './job'
 import { AppUpdater, type AppUpdaterPlugin } from './plugin'
 
 const MB = 1048576
 export const fmtMB = (n: number) => String(Math.round((n / MB) * 10) / 10)
 
-type Phase = 'idle' | 'wifi' | 'downloading' | 'pending' | { error: string }
 type Conn = { type?: string; addEventListener?: (e: string, f: () => void) => void; removeEventListener?: (e: string, f: () => void) => void }
 export const connection = () => (navigator as unknown as { connection?: Conn }).connection
 export const onCellular = () => connection()?.type === 'cellular'
+
+/** Live "on mobile data" flag. Listens for connection changes and also polls, because not every WebView has connection events. */
+export function useCellular(): boolean {
+  const [cell, setCell] = useState(onCellular)
+  useEffect(() => {
+    const f = () => setCell(onCellular())
+    const c = connection()
+    c?.addEventListener?.('change', f)
+    const t = setInterval(f, 3000)
+    return () => { c?.removeEventListener?.('change', f); clearInterval(t) }
+  }, [])
+  return cell
+}
 
 /** Copy for each err.code from the native plugin (message == code natively; the web stub also sets code). */
 export function errorCopy(code: string, size: number): string {
@@ -28,16 +42,14 @@ export function errorCopy(code: string, size: number): string {
     default: return 'The update did not finish. Try again.'
   }
 }
-const codeOf = (e: unknown) => { const x = e as { code?: unknown; message?: unknown } | null; return String(x?.code ?? x?.message ?? '') }
 
-type Api = Pick<AppUpdaterPlugin, 'info' | 'openInstallPermission' | 'download' | 'install'> & Partial<Pick<AppUpdaterPlugin, 'addListener'>>
+type Api = Pick<AppUpdaterPlugin, 'info' | 'openInstallPermission'> & JobApi
 
 export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Latest; api?: Api; onClose?: () => void }) {
   const [canInstall, setCanInstall] = useState<boolean | null>(null)
-  const [phase, setPhase] = useState<Phase>('idle')
-  const [prog, setProg] = useState({ done: 0, total: latest.size })
+  const [waiting, setWaiting] = useState(false)
   const [wifiOnly, setWifiOnly] = useKv<boolean>('update.wifiOnly', true)
-  const path = useRef<string | null>(null)
+  const job = useJob()
   const alive = useRef(true)
   const close = useRef(onClose)
   close.current = onClose
@@ -49,60 +61,36 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
     const onVis = () => { if (document.visibilityState === 'visible') recheck() }
     document.addEventListener('visibilitychange', onVis)
     window.addEventListener('focus', recheck)
-    return () => { alive.current = false; document.removeEventListener('visibilitychange', onVis); window.removeEventListener('focus', recheck) }
+    const resume = App.addListener('resume', recheck)
+    return () => {
+      alive.current = false
+      document.removeEventListener('visibilitychange', onVis); window.removeEventListener('focus', recheck)
+      void Promise.resolve(resume).then((h) => h.remove(), () => undefined)
+    }
   }, [recheck])
 
-  useEffect(() => {
-    const subs = [
-      api.addListener?.('progress', (p) => { if (alive.current) setProg(p) }),
-      api.addListener?.('installResult', (r) => {
-        if (!alive.current) return
-        if (r.status === 'success') close.current?.()
-        else setPhase({ error: 'install' })
-      })
-    ]
-    return () => { subs.forEach((s) => void s?.then((h) => h.remove(), () => undefined)) }
-  }, [api])
+  useEffect(() => { if (job.phase === 'success') { resetJob(); close.current?.() } }, [job.phase])
 
-  const install = useCallback(async (p: string) => {
-    try {
-      const r = await api.install({ path: p })
-      if (!alive.current) return
-      if (r.status === 'success') close.current?.()
-      else if (r.status === 'pending_user') setPhase('pending')
-      else setPhase({ error: 'install' })
-    } catch (e) { if (alive.current) setPhase({ error: codeOf(e) || 'install' }) }
-  }, [api])
+  const start = useCallback(() => {
+    if (wifiOnly && onCellular()) { setWaiting(true); return }
+    setWaiting(false)
+    void runJob(latest, api)
+  }, [api, latest, wifiOnly])
 
-  const start = useCallback(async () => {
-    if (wifiOnly && onCellular()) { setPhase('wifi'); return }
-    // The file is already downloaded when only the install step failed: retry just that step.
-    if (path.current) { setPhase('pending'); void install(path.current); return }
-    setProg({ done: 0, total: latest.size })
-    setPhase('downloading')
-    try {
-      const { path: p } = await api.download({ url: latest.url, sha256: latest.sha256, size: latest.size })
-      path.current = p
-      if (alive.current) await install(p)
-    } catch (e) { if (alive.current) setPhase({ error: codeOf(e) }) }
-  }, [api, install, latest, wifiOnly])
+  // Waiting for Wi-Fi: re-check when the switch changes, when the connection changes, and every 3 s (no event support in some WebViews).
+  const cell = useCellular()
+  useEffect(() => { if (waiting && !(wifiOnly && cell)) start() }, [waiting, wifiOnly, cell, start])
 
-  // Waiting for Wi-Fi: begin by itself when the phone leaves mobile data.
-  useEffect(() => {
-    const c = connection()
-    if (phase !== 'wifi' || !c?.addEventListener) return
-    const f = () => { if (!onCellular()) void start() }
-    c.addEventListener('change', f)
-    return () => c.removeEventListener?.('change', f)
-  }, [phase, start])
-
+  const phase = job.phase
   const err = typeof phase === 'object' ? phase.error : null
-  const pct = prog.total ? Math.min(100, Math.round((prog.done / prog.total) * 100)) : 0
+  const total = job.total || latest.size
+  const pct = total ? Math.min(100, Math.round((job.done / total) * 100)) : 0
+  const idle = phase === 'idle'
   const body = (
-    <div className="sh sh-sheet-wrap" onClick={() => onClose?.()}>
+    <div className="sh sh-sheet-wrap up-wrap" onClick={() => onClose?.()}>
       <div className="sh-sheet" role="dialog" aria-modal="true" aria-label={`Update Bantay to ${latest.versionName}`} onClick={(e) => e.stopPropagation()}>
         <span className="sh-grab" />
-        {(phase === 'idle' || phase === 'wifi') && (
+        {idle && (
           <>
             <img className="up-jj" src={MASCOT_SRC} alt="" width={90} height={90} />
             <h2 className="sh-h2 up-c">Update ready: {latest.versionName}</h2>
@@ -117,8 +105,8 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
                 </div>
               </div>
             )}
-            {phase === 'wifi' && <p className="sh-sub up-c up-m0" role="status">Waiting for Wi-Fi. The update starts when you connect.</p>}
-            <button type="button" className="sh-pill sh-primary sh-block" disabled={canInstall !== true || phase === 'wifi'} onClick={() => void start()}>Update now</button>
+            {waiting && <p className="sh-sub up-c up-m0" role="status">Waiting for Wi-Fi. The update starts when you connect, or turn off Wi-Fi only below.</p>}
+            <button type="button" className="sh-pill sh-primary sh-block" disabled={canInstall !== true} onClick={start}>Update now</button>
             <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => onClose?.()}>Later</button>
           </>
         )}
@@ -126,7 +114,8 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
           <>
             <h2 className="sh-h2">Downloading the update</h2>
             <div className="up-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Download progress"><i style={{ width: `${pct}%` }} /></div>
-            <div className="sh-sub up-num" role="status">Downloading {fmtMB(prog.done)} of {fmtMB(prog.total)} MB</div>
+            <div className="sh-sub up-num" role="status">Downloading {fmtMB(job.done)} of {fmtMB(total)} MB</div>
+            <p className="sh-sub up-m0">You can hide this. The download keeps going.</p>
             <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => onClose?.()}>Hide</button>
           </>
         )}
@@ -143,7 +132,7 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
             <h2 className="sh-h2 up-c up-err">Update did not finish</h2>
             <p className="sh-sub up-c up-m0" role="alert">{errorCopy(err, latest.size)}</p>
             <p className="sh-sub up-c up-m0">Nothing was lost. Your data and reminders are untouched.</p>
-            <button type="button" className="sh-pill sh-primary sh-block" onClick={() => void start()}>Try again</button>
+            <button type="button" className="sh-pill sh-primary sh-block" onClick={start}>Try again</button>
             <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => onClose?.()}>Close</button>
           </>
         )}

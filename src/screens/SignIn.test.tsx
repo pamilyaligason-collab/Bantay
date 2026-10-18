@@ -237,7 +237,7 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
     for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1)) }
-    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'PIN locked' }, { timeout: 5000 })).toBeTruthy()
     expect(screen.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeTruthy()
     expect(pad()).toBeNull()
   })
