@@ -11,15 +11,8 @@ describe('remaining', () => {
 })
 
 describe('notifications step on Android', () => {
-  const ua = (v: number) => `Mozilla/5.0 (Linux; Android ${v}; Pixel) Chrome/120 Mobile Safari/537.36`
-  it('is satisfied when display, exact alarms and battery are all on', () => {
-    expect(notifyDone({ display: true, exact: exactOk(ua(14), 'granted'), battery: true })).toBe(true)
-  })
-  it('is not satisfied while exact alarms are denied (default on Android 14)', () => {
-    expect(notifyDone({ display: true, exact: exactOk(ua(14), 'denied'), battery: true })).toBe(false)
-  })
-  it('exact alarms count as granted below API 31 (Android 11 and older)', () => {
-    expect(exactOk(ua(11), 'denied')).toBe(true)
-    expect(exactOk(ua(12), 'denied')).toBe(false)
+  it('needs display, exact alarms (plugin status granted) and battery all on', () => {
+    expect(notifyDone({ display: true, exact: exactOk('granted'), battery: true })).toBe(true)
+    expect(notifyDone({ display: true, exact: exactOk('denied'), battery: true })).toBe(false)
   })
 })

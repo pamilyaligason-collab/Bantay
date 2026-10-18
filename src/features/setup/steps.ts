@@ -40,11 +40,8 @@ export const put = (key: string, value: unknown) => db.kv.put({ key, value })
 export interface NotifyState { display: boolean; exact: boolean; battery: boolean }
 
 /** Reads the three notification switches. Web has no alarm or battery switch, so those count as on. */
-/** Exact alarms are a user switch only from Android 12 (API 31); older phones always allow them. */
-export const exactOk = (ua: string, status: string): boolean => {
-  const v = /Android (\d+)/.exec(ua)
-  return (v ? Number(v[1]) < 12 : false) || status === 'granted'
-}
+/** The plugin reports the exact-alarm switch itself (older Android always reports granted). */
+export const exactOk = (status: string): boolean => status === 'granted'
 /** The notifications step is satisfied when all three switches are on. */
 export const notifyDone = (n: NotifyState) => n.display && n.exact && n.battery
 
@@ -52,7 +49,7 @@ export async function notifyState(): Promise<NotifyState> {
   try {
     const display = (await LocalNotifications.checkPermissions()).display === 'granted'
     if (!isNativeAndroid()) return { display, exact: true, battery: true }
-    const exact = exactOk(navigator.userAgent, (await LocalNotifications.checkExactNotificationSetting()).exact_alarm)
+    const exact = exactOk((await LocalNotifications.checkExactNotificationSetting()).exact_alarm)
     return { display, exact, battery: (await batteryStatus()).ignoring }
   } catch {
     return { display: false, exact: false, battery: false }
@@ -75,11 +72,11 @@ export async function probe(): Promise<Probe> {
     about: !!about && ABOUT_FIELDS.every((f) => !!about[f]),
     medicines: (await get<boolean>('setup.medicines')) === true || (await hasMedicines()),
     notifications: notifyDone(n),
-    location: (await get<boolean>('loc.asked')) === true || !!(await get('loc.home')) || !!(await get('loc.zone')),
+    location: (await get<boolean>('loc.asked')) === true || !!(await get('loc.home')),
     health: (await getState()).enabled.length > 0,
     warnings: (await get<boolean>('setup.warnings')) === true || statusOf(pw ?? null, detectPlatform(ua), Date.now(), osKey(ua)).chip === 'All on',
     sos: Array.isArray(sos) && sos.length >= 2,
-    sharing: (await get<boolean>('share.reviewed')) === true
+    sharing: (await get<boolean>('setup.sharing')) === true
   }
 }
 

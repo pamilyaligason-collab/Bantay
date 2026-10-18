@@ -143,7 +143,7 @@ function Location() {
     return (
       <div className="wz-body">
         <div className="grp">{field('name', 'Barangay')}{field('lat', 'Latitude')}{field('lon', 'Longitude')}</div>
-        <button type="button" className="btn" disabled={!valid} onClick={async () => { await saveHome({ name: home.name.trim(), lat, lon }); await put('loc.zone', home.name.trim()); setState('done') }}>Save my barangay</button>
+        <button type="button" className="btn" disabled={!valid} onClick={async () => { await saveHome({ name: home.name.trim(), lat, lon }); setState('done') }}>Save my barangay</button>
       </div>
     )
   }
@@ -212,7 +212,7 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
   const cont = async () => {
     if (step === 'medicines') await put('setup.medicines', true)
     if (step === 'warnings') await put('setup.warnings', true)
-    if (step === 'sharing') await put('share.reviewed', true)
+    if (step === 'sharing') await put('setup.sharing', true)
     next()
   }
   return (
