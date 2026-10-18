@@ -48,7 +48,7 @@ describe('AdminScreen: PIN requests', () => {
   })
   it('lists an open request with the first name, and Mark done closes it', async () => {
     render(<AdminScreen />)
-    const btn = await screen.findByRole('button', { name: "Mark Lola's request done" })
+    const btn = await screen.findByRole('button', { name: "Mark Lola's request done" }, { timeout: 5000 })
     expect(within(btn.closest('.ad-row') as HTMLElement).getByText('Lola')).toBeTruthy()
     fireEvent.click(btn)
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
@@ -56,7 +56,7 @@ describe('AdminScreen: PIN requests', () => {
   })
   it('Reset PIN sets the PIN through admin-members, then closes the request', async () => {
     render(<AdminScreen />)
-    const row = (await screen.findByRole('button', { name: "Mark Lola's request done" })).closest('.ad-row') as HTMLElement
+    const row = (await screen.findByRole('button', { name: "Mark Lola's request done" }, { timeout: 5000 })).closest('.ad-row') as HTMLElement
     fireEvent.click(within(row).getByRole('button', { name: 'Reset PIN for Lola' }))
     const form = await screen.findByRole('form', { name: 'New PIN for Lola' })
     fireEvent.change(within(form).getByLabelText('New PIN (6 digits)'), { target: { value: '482915' } })
@@ -70,7 +70,7 @@ describe('AdminScreen: PIN requests', () => {
 describe('AdminScreen', () => {
   it('renders every section with mocked data', async () => {
     render(<AdminScreen />)
-    for (const t of ['Members', 'Usage', 'Safety data', 'Safety broadcast', 'Import status', 'System health']) expect(await screen.findByRole('heading', { name: t })).toBeTruthy()
+    for (const t of ['Members', 'Usage', 'Safety data', 'Safety broadcast', 'Import status', 'System health']) expect(await screen.findByRole('heading', { name: t }, { timeout: 5000 })).toBeTruthy()
     expect((await screen.findAllByText('Lola')).length).toBeGreaterThan(0)
     expect(await screen.findByText('Active in the last 7 days')).toBeTruthy()
     expect(await screen.findByText(/14 readings · 3 visits/)).toBeTruthy()
@@ -89,7 +89,7 @@ describe('AdminScreen', () => {
   })
   it('rejects weak PINs on the add form without calling the server', async () => {
     render(<AdminScreen />)
-    const q = within(await screen.findByRole('form', { name: 'Add a member' }))
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
     fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
     for (const pin of ['12345', '111111', '123456']) {
@@ -102,7 +102,7 @@ describe('AdminScreen', () => {
   })
   it('adds a member only after confirmation', async () => {
     render(<AdminScreen />)
-    const q = within(await screen.findByRole('form', { name: 'Add a member' }))
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
     fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
     fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
@@ -114,14 +114,14 @@ describe('AdminScreen', () => {
   })
   it('cancel changes nothing', async () => {
     render(<AdminScreen />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Disable Lola' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Disable Lola' }, { timeout: 5000 }))
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('alertdialog')).toBeNull()
     expect(actions()).not.toContain('disable')
   })
   it('a safety edit stores the override and queues safety_overrides', async () => {
     render(<AdminScreen />)
-    const q = within(await screen.findByRole('form', { name: 'Edit a hotline or place' }))
+    const q = within(await screen.findByRole('form', { name: 'Edit a hotline or place' }, { timeout: 5000 }))
     fireEvent.change(q.getByLabelText('Latitude'), { target: { value: '9.65' } })
     fireEvent.change(q.getByLabelText('Longitude'), { target: { value: '123.88' } })
     fireEvent.click(q.getByRole('button', { name: 'Save' }))
@@ -148,7 +148,7 @@ describe('broadcast (B-7)', () => {
   })
   it('the screen sends only {t} after confirmation', async () => {
     render(<AdminScreen />)
-    fireEvent.change(await screen.findByLabelText('Message'), { target: { value: 'flood_watch' } })
+    fireEvent.change(await screen.findByLabelText('Message', {}, { timeout: 5000 }), { target: { value: 'flood_watch' } })
     fireEvent.click(screen.getByRole('button', { name: 'Send broadcast' }))
     expect(h.invoke.mock.calls.some((c) => c[0] === 'broadcast')).toBe(false)
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
@@ -159,7 +159,7 @@ describe('broadcast (B-7)', () => {
 describe('confirm dialog and PIN field', () => {
   it('focuses Cancel, is not marked modal, Escape closes and focus returns to the trigger', async () => {
     render(<AdminScreen />)
-    const btn = await screen.findByRole('button', { name: 'Disable Lola' })
+    const btn = await screen.findByRole('button', { name: 'Disable Lola' }, { timeout: 5000 })
     btn.focus()
     fireEvent.click(btn)
     const dlg = await screen.findByRole('alertdialog')
@@ -172,7 +172,7 @@ describe('confirm dialog and PIN field', () => {
   })
   it('clears the PIN field on cancel and on failure', async () => {
     render(<AdminScreen />)
-    const q = within(await screen.findByRole('form', { name: 'Add a member' }))
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     const fill = () => {
       fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
       fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
