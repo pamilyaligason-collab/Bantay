@@ -83,7 +83,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
             {native && OPEN_TARGET[it.id] && <button type="button" className="btn2" aria-label={`Open Settings for ${it.title}`} onClick={() => open(it.id)}>Open Settings</button>}
             {lines[it.id] && <span className="sub" role="status">{lines[it.id]}</span>}
             <div className="pw-btns">
-              <button type="button" className="btn2" aria-pressed={cur === 'on'} onClick={() => set(it.id, 'on')}>Done on this phone</button>
+              <button type="button" className="btn2" aria-pressed={cur === 'on'} onClick={() => set(it.id, 'on')} aria-label="Done on this phone">Done</button>
               <button type="button" className="btn2" aria-pressed={cur === 'unsure'} onClick={() => set(it.id, 'unsure')}>Not sure</button>
             </div>
           </div>
