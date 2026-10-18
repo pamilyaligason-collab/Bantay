@@ -75,3 +75,20 @@ describe('passkeySupported', () => {
     expect(passkeySupported()).toBe(false)
   })
 })
+
+describe('appUrlOpen wiring', () => {
+  it('native: listens and fans errors out to subscribers', async () => {
+    vi.resetModules()
+    m.native = true
+    const mod = await import('./nativeOAuth')
+    expect(m.listen).toHaveBeenCalledWith('appUrlOpen', expect.any(Function))
+    const seen: string[] = []
+    const off = mod.onNativeSignInError((e) => seen.push(e))
+    await m.listen.mock.calls[0][1]({ url: `${mod.NATIVE_REDIRECT}?error=access_denied` })
+    expect(seen).toEqual(['Google sign-in was cancelled. Try again.'])
+    off()
+    await m.listen.mock.calls[0][1]({ url: `${mod.NATIVE_REDIRECT}/?code=abc` })
+    expect(m.exchange).toHaveBeenCalledWith('abc')
+    expect(seen).toHaveLength(1)
+  })
+})

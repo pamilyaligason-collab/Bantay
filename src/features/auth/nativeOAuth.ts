@@ -15,7 +15,7 @@ export function onNativeSignInError(cb: (e: string) => void): () => void {
 /** The Custom Tab sends the browser back here (PKCE). Returns an error string or null; other URLs are ignored. */
 export async function handleAuthCallback(url: string): Promise<string | null> {
   if (!url.startsWith(NATIVE_REDIRECT) || !/^([?#/]|$)/.test(url.slice(NATIVE_REDIRECT.length))) return null
-  try { await Browser.close() } catch { /* rejects on Android when no tab is open */ }
+  try { await Browser.close() } catch { /* defensive: resolves on Android, iOS may reject */ }
   const i = url.search(/[?#]/)
   const p = new URLSearchParams(i < 0 ? '' : url.slice(i + 1).replace('#', '&'))
   if (p.get('error')) return mapOAuthError(`${p.get('error')} ${p.get('error_code') ?? ''} ${(p.get('error_description') ?? '').replace(/\+/g, ' ')}`)
