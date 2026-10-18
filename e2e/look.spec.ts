@@ -7,7 +7,7 @@ test('v2 look: cream ground, solid tab bar, self-hosted fonts', async ({ page })
   await page.goto('/#today')
   await expect(page.locator('.sky')).toHaveAttribute('data-state', 'clear')
   await expect(page.locator('.bt')).toHaveCSS('background-color', 'rgb(246, 241, 231)')
-  await expect(page.locator('.tabs')).toHaveCSS('backdrop-filter', 'none')
+  await expect(page.locator('.tabbar')).toHaveCSS('backdrop-filter', 'none')
   await expect.poll(() => page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')) })).toEqual(expect.arrayContaining(['Fraunces', 'Plus Jakarta Sans']))
 })
 
