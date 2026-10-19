@@ -11,23 +11,27 @@ import { MedicineLines } from '../features/records/MedicineLines'
 /** Test picker: a button that opens a short list of 48px choices (the native select looked unstyled and tiny on a phone). */
 function TestPicker({ tests, picked, onPick }: { tests: string[]; picked: string; onPick(t: string): void }) {
   const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const out = (e: MouseEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false) }
     document.addEventListener('keydown', k)
-    return () => document.removeEventListener('keydown', k)
+    document.addEventListener('mousedown', out)
+    root.current?.querySelector<HTMLElement>('.tp-opt[aria-pressed="true"], .tp-opt')?.focus() // move focus into the list
+    return () => { document.removeEventListener('keydown', k); document.removeEventListener('mousedown', out) }
   }, [open])
   return (
-    <div className="tp">
-      <button type="button" className="tp-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+    <div className="tp" ref={root}>
+      <button type="button" className="tp-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <span className="tp-k">Test</span>
         <span className="tp-v">{testLabel(picked, GUIDE)}</span>
         <span className="tp-chev" aria-hidden="true" data-open={open} />
       </button>
       {open && (
-        <div className="tp-list" role="listbox" aria-label="Choose a test">
+        <div className="tp-list" role="group" aria-label="Choose a test">
           {tests.map((t) => (
-            <button key={t} type="button" role="option" aria-selected={t === picked} className="tp-opt" onClick={() => { onPick(t); setOpen(false) }}>
+            <button key={t} type="button" aria-pressed={t === picked} className="tp-opt" onClick={() => { onPick(t); setOpen(false) }}>
               {testLabel(t, GUIDE)}
             </button>
           ))}
@@ -37,10 +41,10 @@ function TestPicker({ tests, picked, onPick }: { tests: string[]; picked: string
   )
 }
 
-/** The same kind of document from the same provider on one date is one chip, not two. */
-const dedupeDocs = <T extends { doc: { kind: string; facility: string | null } }>(docs: T[]): T[] => {
+/** Only a repeat of the same document id collapses; two distinct confirmed documents always stay openable. */
+export const dedupeDocs = <T extends { doc: { id: string } }>(docs: T[]): T[] => {
   const seen = new Set<string>()
-  return docs.filter((x) => { const k = `${x.doc.kind}|${providerName(x.doc.facility).toLowerCase()}`; if (seen.has(k)) return false; seen.add(k); return true })
+  return docs.filter((x) => { if (seen.has(x.doc.id)) return false; seen.add(x.doc.id); return true })
 }
 
 export default function Records() {

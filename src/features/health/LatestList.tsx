@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { latestByTest, latestVsNormal, rangeState, type Range, type Reading } from './ranges'
-import { sparkPath, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
+import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 
@@ -59,7 +59,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
                 <span className="hv-val">
                   <strong>{formatNumber(r.value)}</strong> <small>{r.unit}</small>
                   <Spark path={spark} />
-                  {spark && <small className="hv-last">Last {Math.min(12, hist.length)}</small>}
+                  {spark && <small className="hv-last">Last {sparkCount(hist)}</small>}
                 </span>
               </div>
             )

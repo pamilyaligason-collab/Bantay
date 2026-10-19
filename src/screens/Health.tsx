@@ -5,6 +5,7 @@ import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
+import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
 import MetricScreen from '../features/health/MetricScreen'
 import { bodyNodes, insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
@@ -39,6 +40,7 @@ export default function Health() {
 function Overview() {
   const { ready, people, member, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
   const acts = useActivity(personId)
+  const writable = useWritableIds(member?.userId)
   // Default person: the signed-in user; with nobody signed in, the first person who has readings (not just the first name). A tap on a chip wins.
   const picked = useRef(false)
   useEffect(() => {
@@ -89,7 +91,7 @@ function Overview() {
         <span>Explore your body<small>See how each part works and when to see a doctor</small></span>
       </a>
       {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
-      {personId && <Medicines personId={personId} mine={personId === ownId} canMark={personId === ownId || member?.role === 'admin'} />}
+      {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMarkFor(personId, ownId, writable)} />}
     </>
   )
 }

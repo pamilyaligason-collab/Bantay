@@ -22,7 +22,7 @@ export function trendChart(el: HTMLElement, readings: Reading[], width: number, 
   const [x0, x1] = xRange(xs[0] ?? 0, xs[xs.length - 1] ?? 0)
   const css = getComputedStyle(el)
   const line = css.getPropertyValue('--green2').trim() || c.c1 // v6 green; the shared blue pair is off-palette here
-  const axis = { stroke: c.ink2, grid: { stroke: c.sep, width: 0.5 }, ticks: { show: false } }
+  const axis = { stroke: c.ink2, font: '13px system-ui, sans-serif', grid: { stroke: c.sep, width: 0.5 }, ticks: { show: false } }
   return new uPlot(
     {
       width,

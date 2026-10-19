@@ -108,17 +108,21 @@ export function barLayout(latest: number, prev: number | null, range: Range | nu
   const span = b - a || 1
   const pct = (v: number) => Math.round(Math.min(97, Math.max(3, ((v - a) / span) * 100)) * 10) / 10
   const raw = (v: number) => Math.round(Math.min(100, Math.max(0, ((v - a) / span) * 100)) * 10) / 10
+  const edge = hi != null && latest > hi ? 'high' : lo != null && latest < lo ? 'low' : null
   return {
     band: { from: lo != null ? raw(lo) : 0, to: hi != null ? raw(hi) : 100 },
-    now: pct(latest),
+    now: edge === 'high' ? 97 : edge === 'low' ? 3 : pct(latest), // off the end: the dot sits at the arrow, not mid-track
     prev: prev != null ? pct(prev) : null,
-    edge: (hi != null && latest > hi ? 'high' : lo != null && latest < lo ? 'low' : null) as 'high' | 'low' | null
+    edge: edge as 'high' | 'low' | null
   }
 }
 
 /** SVG path for a tiny trend line (oldest to newest, last 12 readings) in a 60x22 box. Fewer than 2 readings: ''. */
+const usable = (rs: Reading[]) => rs.filter((r) => Number.isFinite(Date.parse(r.takenAt)) && isNum(r.value))
+/** How many points sparkPath actually draws. */
+export const sparkCount = (rs: Reading[]) => Math.min(12, usable(rs).length)
 export function sparkPath(rs: Reading[], w = 60, h = 22): string {
-  const v = [...rs].filter((r) => Number.isFinite(Date.parse(r.takenAt)) && isNum(r.value)).sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).slice(-12).map((r) => r.value)
+  const v = [...usable(rs)].sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).slice(-12).map((r) => r.value)
   if (v.length < 2) return ''
   const lo = Math.min(...v)
   const span = Math.max(...v) - lo || 1

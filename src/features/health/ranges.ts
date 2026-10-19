@@ -42,7 +42,7 @@ export function generalRange(test: string, unit?: string): (Range & { text: stri
   const g = Object.values(GENERAL).find((x) => x.alias.includes(k))
   if (!g) return null
   const u = (unit ?? '').replace(/\s/g, '').replace(/[µμ]/g, 'u')
-  return !u || g.unit.test(u) ? { low: g.low, high: g.high, text: g.text } : null
+  return u && g.unit.test(u) ? { low: g.low, high: g.high, text: g.text } : null
 }
 
 export function position(value: number, r?: { low?: number | null; high?: number | null }): Position {

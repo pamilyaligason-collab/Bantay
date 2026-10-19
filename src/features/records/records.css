@@ -55,4 +55,4 @@
 .tp-list { margin-top: 6px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); max-height: 288px; overflow-y: auto; }
 .tp-opt { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 0 16px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 17px; cursor: pointer; text-align: left; }
 .tp-opt + .tp-opt { border-top: 1px solid var(--line); }
-.tp-opt[aria-selected="true"] { background: var(--soft); font-weight: 700; }
+.tp-opt[aria-pressed="true"] { background: var(--soft); font-weight: 700; }

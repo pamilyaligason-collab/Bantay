@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GUIDE, GUIDE_LABEL, latestByTest, latestVsNormal, position, type Reading } from './ranges'
+import { GUIDE, GUIDE_LABEL, generalRange, latestByTest, latestVsNormal, position, type Reading } from './ranges'
 
 const base: Reading = { personId: 'p1', takenAt: '2024-01-01', test: 'ldl', value: 120, unit: 'mg/dL' }
 
@@ -48,4 +48,12 @@ it('latestByTest keeps the newest reading per test', () => {
   const out = latestByTest([base, { ...base, takenAt: '2024-06-01', value: 99 }, { ...base, test: 'hdl' }])
   expect(out.find((r) => r.test === 'ldl')?.value).toBe(99)
   expect(out).toHaveLength(2)
+})
+
+describe('generalRange units', () => {
+  it('needs a matching unit: no unit or a different unit gives no range', () => {
+    expect(generalRange('hemoglobin', 'g/dL')).not.toBeNull()
+    expect(generalRange('hemoglobin')).toBeNull()
+    expect(generalRange('hemoglobin', 'g/L')).toBeNull()
+  })
 })
