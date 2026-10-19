@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { DEAD_KEY } from './sync'
-import { DeadSheet, reasonText, statusText } from './SyncStatus'
+import { DeadSheet, SyncStatus, reasonText, statusText } from './SyncStatus'
 
 const ready = { ready: true, signedIn: true, offline: false }
 const none = { waiting: 0, unknown: 0, dead: 0 }
@@ -48,5 +48,13 @@ describe('DeadSheet', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Discard all' }))
     await waitFor(async () => expect(((await db.kv.get(DEAD_KEY))?.value as unknown[]).length).toBe(0))
     expect(await db.outbox.count()).toBe(0)
+  })
+})
+
+describe('SyncStatus', () => {
+  afterEach(cleanup)
+  it('keeps an empty live region mounted when there is nothing to say', () => {
+    render(<SyncStatus />)
+    expect(screen.getByRole('status').textContent).toBe('')
   })
 })

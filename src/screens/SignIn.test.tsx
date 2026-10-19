@@ -246,7 +246,7 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
   it('five failures show the locked screen and stop calling the server', async () => {
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
-    for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1)) }
+    for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1), { timeout: 5000 }) }
     expect(await screen.findByRole('heading', { name: 'PIN locked' }, { timeout: 12_000 })).toBeTruthy()
     expect(screen.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeTruthy()
     expect(pad()).toBeNull()

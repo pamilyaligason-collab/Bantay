@@ -82,12 +82,11 @@ export function SyncStatus() {
   const [open, setOpen] = useState(false)
   const text = statusText(s, c)
   const tappable = c.dead > 0 && s.signedIn // parked rows can be seen and discarded offline too
-  if (!text) return null
   const amber = c.waiting + c.unknown + c.dead > 0
   return (
     <>
       <p role="status" className="sync-status" style={{ margin: 0 }}>
-        {tappable
+        {!text ? null : tappable
           ? <button type="button" className="sync-pill" data-amber={amber} onClick={() => setOpen(true)} aria-haspopup="dialog">{text}</button>
           : <span className="sync-pill" data-amber={amber}>{text}</span>}
       </p>
