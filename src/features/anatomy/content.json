@@ -1,6 +1,7 @@
 {
   "source": { "name": "MedlinePlus, National Library of Medicine", "url": "https://medlineplus.gov/" },
   "credits": "Topics follow health information from MedlinePlus, National Library of Medicine. All wording here is our own.",
+  "art": "Illustrations: Mariana Ruiz Villarreal (LadyofHats), Mysid, johnbloor and the US government, public domain or CC0, from Wikimedia Commons.",
   "disclaimer": "For learning, not a diagnosis. If you feel unwell, see a doctor.",
   "systems": [
     { "id": "skeleton", "label": "Skeleton", "url": "https://medlineplus.gov/bonesjointsandmuscles.html" },
