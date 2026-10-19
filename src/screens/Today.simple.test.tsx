@@ -12,7 +12,6 @@ vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/NextUp', () => stub('nextup'))
 vi.mock('../features/today/PlanToday', () => stub('plan'))
 vi.mock('../features/today/QuickLog', () => stub('quicklog'))
-vi.mock('../features/today/SetupCard', () => stub('setup'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
@@ -36,7 +35,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'setup']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on with an SOS contact: Call family dials the first valid number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

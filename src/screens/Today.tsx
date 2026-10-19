@@ -7,7 +7,6 @@ import NearbyList from '../features/today/NearbyList'
 import NextUp from '../features/today/NextUp'
 import PlanToday from '../features/today/PlanToday'
 import QuickLog from '../features/today/QuickLog'
-import SetupCard from '../features/today/SetupCard'
 import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
 import WeekLine from '../features/today/WeekLine'
@@ -49,7 +48,6 @@ export default function Today() {
       <QuickLog notify={notify} />
       <PlanToday />
       <NearbyList />
-      <SetupCard />
       <WeekLine />
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>

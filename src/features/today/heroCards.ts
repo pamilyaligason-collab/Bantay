@@ -1,3 +1,4 @@
+import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { distanceKm, rankAlerts, tierOf, type Alert, type LatLon } from '../safety/alerts'
 
@@ -50,20 +51,14 @@ export function parseDose(s: string): Dose | null {
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
 /** Doses whose time has come, not yet taken or skipped today (same rule as Next up). Oldest first. */
 export function dueDoses(profile: unknown, taken: { name: string; takenAt: string }[], skipped: string[], now: Date): Dose[] {
   if (!Array.isArray(profile)) return []
   const nowMin = minutes(now)
-  return profile
-    .flatMap((s) => (typeof s === 'string' ? [parseDose(s)] : []))
-    .filter((d): d is Dose => !!d && nowMin >= d.at)
-    .filter((d) => !skipped.some((k) => sameName(k, d.name)))
-    .filter((d) => !taken.some((t) => {
-      const when = new Date(t.takenAt)
-      return sameName(t.name, d.name) && sameDay(when, now) && minutes(when) >= d.at - 60
-    }))
+  return doseStates(medSlots(profile.filter((x): x is string => typeof x === 'string')), taken, now)
+    .filter((s) => s.at != null && s.at <= nowMin && !s.taken && !skipped.some((k) => sameName(k, s.name)))
+    .map((s) => ({ name: s.name, at: s.at! }))
     .sort((a, b) => a.at - b.at)
 }
 
@@ -132,7 +127,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   })
   const d = i.doses[0]
   if (d) out.push({
-    key: `dose:${d.name}`, kind: 'dose', kicker: `Due now · ${clock(d.at)}`, title: `Time for ${d.name}`,
+    key: `dose:${d.name}`, kind: 'dose', kicker: `${minutes(i.now ?? new Date()) >= d.at + DOSE_WINDOW_MIN ? 'Not taken yet' : 'Due'} · ${clock(d.at)}`, title: `Time for ${d.name}`,
     body: i.doses.length > 1 ? `${i.doses.length} medicines are due now` : 'Mark it when you have taken it',
     actions: [{ id: 'taken', label: 'Taken' }, { id: 'skip', label: 'Skipped' }], dose: d
   })

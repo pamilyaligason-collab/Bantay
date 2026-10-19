@@ -1,4 +1,4 @@
-import { DOSE_WINDOW_MIN, parseDose } from '../today/heroCards'
+import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
 
 export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update'
@@ -17,25 +17,13 @@ export interface InboxSources {
 }
 
 export const MAX_ALERTS = 5
-const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 const mins = (d: Date) => d.getHours() * 60 + d.getMinutes()
 const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
 
 /** Today's doses that are due now or already past their window and not marked taken or skipped. */
 export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped'>) {
-  if (!Array.isArray(s.profile)) return []
   const nowMin = mins(s.now)
-  return s.profile
-    .flatMap((x) => (typeof x === 'string' ? [parseDose(x)] : []))
-    .filter((d) => !!d && nowMin >= d.at)
-    .map((d) => d!)
-    .filter((d) => !s.skipped.some((k) => sameName(k, d.name)))
-    .filter((d) => !s.taken.some((t) => {
-      const w = new Date(t.takenAt)
-      return sameName(t.name, d.name) && w.toDateString() === s.now.toDateString() && mins(w) >= d.at - 60
-    }))
-    .map((d) => ({ ...d, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
-    .sort((a, b) => a.at - b.at)
+  return dueDoses(s.profile, s.taken, s.skipped, s.now).map((d) => ({ ...d, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
 }
 
 /** Everything the inbox shows, in a fixed order: warnings, medicines, admin work, app update. Ids change when the thing changes, so "read" never hides something new. */

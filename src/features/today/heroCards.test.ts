@@ -21,7 +21,18 @@ describe('parseDose', () => {
   })
 })
 
+describe('dose card kicker', () => {
+  const kick = (n: Date) => heroCards({ alerts: [], ref: null, doses: [{ name: 'Losartan', at: 480 }], weather: null, placeName: '', now: n }).find((c) => c.kind === 'dose')!.kicker
+  it('says Due until two hours pass, then Not taken yet', () => {
+    expect(kick(at(8, 30))).toBe('Due · 8:00 AM')
+    expect(kick(at(10, 0))).toBe('Not taken yet · 8:00 AM')
+  })
+})
+
 describe('dueDoses', () => {
+  it('a dose taken 90 minutes early still counts as taken (same rule as Next up)', () => {
+    expect(dueDoses(['Losartan 8:00'], [{ name: 'Losartan', takenAt: at(6, 30).toISOString() }], [], at(8, 30))).toEqual([])
+  })
   const list = ['Losartan 8:00', 'Metformin 20:00', 'No time here']
   it('is due from its time until taken or skipped', () => {
     expect(dueDoses(list, [], [], at(7, 59))).toEqual([])

@@ -6,6 +6,7 @@ import { useQueue } from '../records/useRecordsServer'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
 import { useUpdate } from '../update/useUpdate'
+import { SKIP_KEY } from '../today/heroCards'
 import { buildInbox, countUnread } from './build'
 
 const NO_ALERTS: Alert[] = []
@@ -18,7 +19,7 @@ const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return 
 export function useInbox(isAdmin: boolean) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NO_ALERTS)
   const profile = useKv<string[]>('profile.medicines', NO_NAMES)
-  const skip = useKv<{ day: string; names: string[] }>('today.skipped', NO_SKIP)
+  const skip = useKv<{ day: string; names: string[] }>(SKIP_KEY, NO_SKIP)
   const seen = useKv<string[]>(SEEN_KEY, NO_NAMES)
   const { decision } = useUpdate()
   const queue = useQueue(isAdmin) // members never hit the records queue
