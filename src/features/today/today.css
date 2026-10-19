@@ -81,7 +81,7 @@
 /* simple mode: hero plus three big buttons, larger type (the tab bar stays) */
 .td-simple { display: flex; flex-direction: column; gap: 16px; font-size: 18px; }
 .td-simple .td-slide { min-height: 240px; }
-.td-simple .td-slide h2, .td-slide h3 { font-size: 32px; }
+.td-simple .td-slide h2, .td-simple .td-slide h3 { font-size: 32px; }
 .td-simple .td-slide p { font-size: 20px; }
 .td-big-btns { display: grid; gap: 12px; }
 .bt .td-bigbtn { display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 28px; border: 0; font: inherit; font-size: 26px; font-weight: 700; text-decoration: none; box-shadow: var(--shadow); box-sizing: border-box; }

@@ -8,9 +8,10 @@ import type { HeroCard } from './heroCards'
 /** The first open plan item for today (overdue tasks, today's tasks and events) as a Next up card, or null. Notes are not "next". */
 export async function planCard(now: Date): Promise<HeroCard | null> {
   const [tasks, events] = await Promise.all([fdb.tasks.toArray(), fdb.events.toArray()])
-  const row = groupPlan(tasks, events, [], now).today[0]
-  if (!row || row.kind === 'note') return null
   const today = dayKey(now)
+  // a timed event that started over an hour ago is no longer "next"
+  const row = groupPlan(tasks, events, [], now).today.find((r) => r.kind === 'task' || (r.kind === 'event' && (r.event.allDay || eventDay(r.event) !== today || new Date(r.event.startsAt).getTime() > now.getTime() - 3_600_000)))
+  if (!row || row.kind === 'note') return null
   if (row.kind === 'task') {
     return { key: `plan:${row.key}`, kind: 'plan', kicker: row.overdue ? 'Plan · overdue' : 'Plan · today', title: `Next: ${row.task.title}`, body: row.overdue ? 'This was due earlier' : 'Due today', actions: [{ id: 'plan', label: 'Open plan' }] }
   }

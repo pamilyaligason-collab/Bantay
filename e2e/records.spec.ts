@@ -37,8 +37,10 @@ test('timeline, trend chart and latest vs normal from seeded data', async ({ pag
   await expect(page.locator('.uplot canvas').first()).toBeVisible()
   await page.goto('/#health')
   const ldl = page.locator('[data-test="ldl"]')
-  await expect(ldl).toContainText('Lab range: 0 to 130')
-  await expect(ldl).toContainText("General guide, not your doctor's target: Under 100")
-  await expect(ldl).toContainText('MedlinePlus')
   await expect(ldl).toContainText('95')
+  await expect(ldl).toContainText('Within range')
+  // the lab range, the general guide and the source now live on the metric page
+  await page.goto('/#health/metric/ldl')
+  await expect(page.getByText('Lab range: 0 to 130')).toBeVisible()
+  await expect(page.getByText(/MedlinePlus/).first()).toBeVisible()
 })
