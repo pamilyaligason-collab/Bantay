@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { FOCUS, VIEW } from '../anatomy/shapes'
-import { hotspotTone, mapHeadline, systemCounts, systemOf, systemStatus } from '../anatomy/status'
+import { hotspotTone, systemCounts, systemOf, systemStatus } from '../anatomy/status'
 import { BodyMap } from './BodyMap'
 import type { NodeView } from './model'
 import type { Reading } from './ranges'
@@ -20,14 +20,6 @@ describe('hotspot state mapping', () => {
     expect(hotspotTone('none')).toBe('none')
     expect(hotspotTone('within', true)).toBe('none') // an empty node never glows
   })
-
-  it('headline is a calm sentence and never calls unknown values steady', () => {
-    expect(mapHeadline([node('bp', 'within'), node('sugar', 'within')])).toBe('Your numbers look steady')
-    expect(mapHeadline([node('bp', 'above'), node('sugar', 'within')])).toBe('One result needs a look')
-    expect(mapHeadline([node('bp', 'above'), node('sugar', 'below')])).toBe('Two results need a look')
-    expect(mapHeadline([node('pulse', 'none')])).toBe('Your latest numbers are in')
-    expect(mapHeadline(all('none', true))).toBe('Nothing to show yet')
-  })
 })
 
 describe('body systems for the Explore badges', () => {
@@ -42,6 +34,12 @@ describe('body systems for the Explore badges', () => {
     const c = systemCounts([r('creatinine', 2, 0.6, 1.2), r('egfr', 80, 60, null), r('rbc', 8.1)])
     expect(c.kidneys).toEqual({ total: 2, flagged: 1, ok: 1 })
     expect(c.heart).toEqual({ total: 1, flagged: 0, ok: 0 }) // no range: counted, but neither flagged nor green
+  })
+
+  it('counts one blood pressure reading once, amber if either number is out of range', () => {
+    const bp = (test: string, value: number, high: number): Reading => ({ personId: 'p', takenAt: '2026-10-01', test, value, labLow: null, labHigh: high })
+    expect(systemCounts([bp('bp_systolic', 150, 130), bp('bp_diastolic', 70, 85)]).heart).toEqual({ total: 1, flagged: 1, ok: 0 })
+    expect(systemCounts([bp('bp_systolic', 120, 130), bp('bp_diastolic', 70, 85)]).heart).toEqual({ total: 1, flagged: 0, ok: 1 })
   })
 
   it('status pill: amber first, green only with a real range, otherwise plain', () => {
@@ -66,7 +64,7 @@ describe('BodyMap', () => {
     expect(container.querySelectorAll('.hv-glow.warn')).toHaveLength(1)
     expect(container.querySelectorAll('.hv-glow.ok')).toHaveLength(1)
     expect(container.querySelectorAll('.hv-glow')).toHaveLength(2)
-    expect(screen.getByTestId('map-headline').textContent).toBe('One result needs a look')
+    expect(screen.queryByTestId('map-headline')).toBeNull() // Health's insight line owns the count
     expect(container.querySelectorAll('a[data-node]')).toHaveLength(7)
   })
 

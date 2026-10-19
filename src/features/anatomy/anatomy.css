@@ -56,18 +56,21 @@
 .hv-explore::after { content: "\203A"; color: var(--ink2); font-size: 22px; font-weight: 400; }
 .hv-explore:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
+/* Keyboard focus, as before the chip CSS was removed. */
+.an-rb:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible, .an-hit:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
 /* Explore: status line, left rail of round system buttons with count badges, glow on the chosen system. */
 .an-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 12px 4px 10px; }
 .an-sys { margin: 0; font-size: 22px; line-height: 1.15; }
-.an-pill, .hv-map-h { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 700; }
-.an-pill::before, .hv-map-h::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
-.an-pill[data-tone="ok"], .hv-map-h[data-tone="ok"] { background: var(--soft); }
-.an-pill[data-tone="ok"]::before, .hv-map-h[data-tone="ok"]::before { background: var(--ok); }
-.an-pill[data-tone="warn"], .hv-map-h[data-tone="warn"] { background: var(--warn-bg); }
-.an-pill[data-tone="warn"]::before, .hv-map-h[data-tone="warn"]::before { background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 35%, transparent); }
-.an-main { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 8px; }
+.an-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 700; }
+.an-pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.an-pill[data-tone="ok"] { background: var(--soft); }
+.an-pill[data-tone="ok"]::before { background: var(--ok); }
+.an-pill[data-tone="warn"] { background: var(--warn-bg); }
+.an-pill[data-tone="warn"]::before { background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 35%, transparent); }
+.an-main { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 8px; }
 .an-rail { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; padding: 6px 0; }
-.an-rb { position: relative; width: 52px; height: 52px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.an-rb { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .an-rb[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .an-badge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 11px; background: var(--card2); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--ground); }
 .an-badge[data-tone="warn"] { background: var(--amber); color: #2B1D00; }
@@ -76,7 +79,6 @@
 
 /* Body map card: frosted figure with the organs inside, glow where a result needs a look. */
 .hv-map-wrap { margin: 12px 0 24px; padding: 14px 12px 20px; border-radius: 24px; box-shadow: var(--shadow); background: radial-gradient(ellipse 34% 48% at 50% 54%, color-mix(in srgb, var(--soft) 90%, transparent), transparent 80%), var(--card); }
-.hv-map-h { margin: 0 4px 10px; }
 .hv-map-wrap .hv-map { display: grid; grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr); grid-template-rows: repeat(5, 66px); gap: 4px 6px; margin: 0; }
 .hv-map .hv-fig { grid-column: 2; grid-row: 1 / 6; width: 100px; height: 346px; overflow: visible; }
 .hv-map .hv-node { height: 58px; min-height: 0; padding: 3px 10px; align-self: center; box-shadow: inset 0 0 0 1px var(--line); }
@@ -89,10 +91,9 @@
 .hv-pt.ok { fill: var(--ok); }
 .hv-pt.warn { fill: var(--amber); }
 .hv-glow.warn { animation: an-pulse 2.6s ease-in-out infinite; }
-.hv-map-empty { padding-bottom: 24px; }
-.hv-map-empty .hv-fig { width: 72px; height: 249px; opacity: 0.4; }
+.hv-map-empty { padding: 20px 16px 24px; border-radius: 24px; background: var(--card); box-shadow: var(--shadow); }
+.hv-map-empty .hv-fig { width: 72px; height: 249px; opacity: 0.6; }
 .hv-map-note { margin: 0; max-width: 28ch; text-align: center; font-size: 16px; color: var(--ink2); }
 @keyframes an-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-.an-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) { .an-layer, .an-layer[data-on="true"], .an-shell, .an-hit::after, .an-rb { transition: none; } .an-glow, .hv-glow { animation: none !important; } .an-hit:hover::after, .an-hit:active::after { transform: none; } }

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialog } from '../docs/useDialog'
 import { latestByTest } from '../health/ranges'
@@ -62,7 +62,7 @@ export default function ExploreScreen() {
   const [sysId, setSysId] = useState(SYSTEMS[0]!.id)
   const [open, setOpen] = useState<Part | null>(null)
   const { readings, thresholds, personId } = useHealthData()
-  const counts = useMemo(() => systemCounts(latestByTest(readings), (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`)), [readings, thresholds, personId])
+  const counts = systemCounts(latestByTest(readings), (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`))
   const parts = PARTS.filter((p) => p.system === sysId)
   const [vx, vy, vw, vh] = VIEW[sysId]!
   const label = SYSTEMS.find((s) => s.id === sysId)!.label

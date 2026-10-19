@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { Silhouette } from '../anatomy/Silhouette'
-import { hotspotTone, mapHeadline } from '../anatomy/status'
+import { hotspotTone } from '../anatomy/status'
 import '../anatomy/anatomy.css'
 import type { NodeId, NodeView } from './model'
 
@@ -38,12 +38,9 @@ export function BodyMap({ nodes, cta }: { nodes: NodeView[]; cta?: { href: strin
       </div>
     )
   }
-  const headline = mapHeadline(nodes)
-  const flagged = nodes.some((n) => hotspotTone(n.state, n.empty) === 'warn')
   return (
     <div className="hv-map-wrap">
-      <p className="hv-map-h" data-tone={flagged ? 'warn' : 'ok'} data-testid="map-headline">{headline}</p>
-      <div className="hv-map" role="group" aria-label={`Your latest numbers on a body map. ${headline}.`}>
+      <div className="hv-map" role="group" aria-label="Your latest numbers on a body map">
         <svg className="hv-fig hv-frost" viewBox={VIEW_BOX} aria-hidden="true" focusable="false">
           <defs>
             {(['ok', 'warn'] as const).map((t) => (

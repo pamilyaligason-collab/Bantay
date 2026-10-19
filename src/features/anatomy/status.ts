@@ -5,16 +5,6 @@ import type { Position, Range, Reading } from '../health/ranges'
 export type Tone = 'warn' | 'ok' | 'none'
 export const hotspotTone = (state: Position, empty = false): Tone => (empty ? 'none' : state === 'within' ? 'ok' : state === 'above' || state === 'below' ? 'warn' : 'none')
 
-const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven']
-/** One calm sentence for the body map. Unknown values never count as steady. */
-export function mapHeadline(nodes: { state: Position; empty: boolean }[]): string {
-  const tones = nodes.map((n) => hotspotTone(n.state, n.empty))
-  const flagged = tones.filter((t) => t === 'warn').length
-  if (flagged > 0) return `${WORDS[flagged] ?? flagged} result${flagged === 1 ? '' : 's'} need${flagged === 1 ? 's' : ''} a look`
-  if (tones.includes('ok')) return 'Your numbers look steady'
-  return nodes.some((n) => !n.empty) ? 'Your latest numbers are in' : 'Nothing to show yet'
-}
-
 // Which body system a lab or vital belongs to, by test key. Unmapped keys count nowhere.
 const SYSTEM_TESTS: [string, RegExp][] = [
   ['kidneys', /creatinine|egfr|^bun$|urea|uric/],
@@ -30,14 +20,22 @@ export interface SystemCount { total: number; flagged: number; ok: number }
 /** Latest results per body system: how many, how many are above or below range, how many are within it. */
 export function systemCounts(latest: Reading[], familyOf: (r: Reading) => Range | undefined = () => undefined): Record<string, SystemCount> {
   const out: Record<string, SystemCount> = {}
+  const bp: Tone[] = [] // systolic and diastolic are one blood pressure reading: counted once below
   for (const r of latest) {
     const sys = systemOf(r.test)
     if (!sys) continue
+    const t = hotspotTone(readingPosition(r, familyOf(r)))
+    if (/^bp_/.test(r.test.toLowerCase())) { bp.push(t); continue }
     const c = (out[sys] ??= { total: 0, flagged: 0, ok: 0 })
     c.total++
-    const t = hotspotTone(readingPosition(r, familyOf(r)))
     if (t === 'warn') c.flagged++
     else if (t === 'ok') c.ok++
+  }
+  if (bp.length) {
+    const c = (out.heart ??= { total: 0, flagged: 0, ok: 0 })
+    c.total++
+    if (bp.includes('warn')) c.flagged++
+    else if (bp.includes('ok')) c.ok++
   }
   return out
 }
