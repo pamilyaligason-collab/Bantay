@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import type { LatLon } from '../location/geo'
-import { rainOutlook, type Wx } from './heroCards'
+import type { Wx } from './heroCards'
 
 // Same Open-Meteo call as the assistant (features/assistant/weather.ts), kept structured here so the hero can show a number.
 const CODE: [number, string][] = [[0, 'clear'], [3, 'partly cloudy'], [48, 'foggy'], [57, 'drizzle'], [67, 'rainy'], [77, 'snowy'], [82, 'rain showers'], [86, 'snow showers'], [99, 'thunderstorms']]
 const words = (c: number) => CODE.find(([max]) => c <= max)?.[1] ?? 'unsettled'
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null) // unknown is null, never 0
+
+const hourlyOf = (t: unknown[] | undefined, p: unknown[] | undefined): Wx['hourly'] =>
+  Array.isArray(t) && Array.isArray(p) && t.length && t.every((x) => typeof x === 'string') ? { time: t as string[], prob: t.map((_, i) => num(p[i])) } : undefined
 
 export async function loadWeather(p: LatLon, f: typeof fetch = fetch): Promise<Wx> {
   const u = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code&daily=precipitation_probability_max&hourly=precipitation_probability,precipitation&timezone=Asia%2FManila&forecast_days=2`
@@ -14,7 +17,7 @@ export async function loadWeather(p: LatLon, f: typeof fetch = fetch): Promise<W
   if (!res.ok) throw new Error(String(res.status))
   const j = (await res.json()) as { current?: { time?: string; temperature_2m?: unknown; weather_code?: unknown }; hourly?: { time?: unknown[]; precipitation_probability?: unknown[] }; daily?: { precipitation_probability_max?: unknown[] } }
   const code = num(j.current?.weather_code)
-  return { temp: num(j.current?.temperature_2m), rainPct: num(j.daily?.precipitation_probability_max?.[0]), words: code == null ? 'unsettled' : words(code), at: new Date().toISOString(), code, rain: rainOutlook(j.hourly?.time, j.hourly?.precipitation_probability, j.current?.time) }
+  return { temp: num(j.current?.temperature_2m), rainPct: num(j.daily?.precipitation_probability_max?.[0]), words: code == null ? 'unsettled' : words(code), at: new Date().toISOString(), code, hourly: hourlyOf(j.hourly?.time, j.hourly?.precipitation_probability) }
 }
 
 const KEY = 'today.weather'

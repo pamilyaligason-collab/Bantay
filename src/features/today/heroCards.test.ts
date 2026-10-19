@@ -76,22 +76,37 @@ describe('heroCards priority', () => {
 })
 
 describe('rain timing', () => {
-  const times = Array.from({ length: 24 }, (_, h) => `2026-10-19T${String(h).padStart(2, '0')}:00`)
-  const probs = (f: (h: number) => number) => times.map((_, h) => f(h))
+  const times = Array.from({ length: 48 }, (_, h) => `2026-10-${h < 24 ? '19' : '20'}T${String(h % 24).padStart(2, '0')}:00`)
+  const hourly = (f: (h: number) => number) => ({ time: times, prob: times.map((_, h) => f(h)) })
+  // 2026-10-19 11:20 Manila = 03:20 UTC
+  const at = (h: number) => new Date(Date.UTC(2026, 9, 19, h - 8, 20))
+  const w = (f: (h: number) => number, code = 3): Wx => ({ ...wx, code, hourly: hourly(f) })
+  const card = (x: Wx, h: number) => heroCards({ ...base, weather: x, now: at(h) })[0]!
   it('finds the start, length and peak from the current hour', () => {
-    const r = rainOutlook(times, probs((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)), '2026-10-19T11:20')
-    expect(r).toEqual({ now: false, startH: 15, endH: 19, hours: 4, peakPct: 100 })
-    const c = heroCards({ ...base, weather: { ...wx, rain: r } })[0]!
+    expect(rainOutlook(times, hourly((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)).prob, '2026-10-19T11:20')).toEqual({ now: false, tomorrow: false, startH: 15, endH: 19, hours: 4, peakPct: 100 })
+    const c = card(w((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)), 11)
     expect(c.body).toBe('Rain likely from 3 PM for about 4 hours. Chance: 100%.')
+    expect(c.title).toBe('Rain likely today in Dampas')
   })
-  it('rain now says when it eases; past rain is ignored', () => {
-    const p = probs((h) => (h >= 1 && h < 3 ? 90 : h >= 14 && h < 17 ? 60 : 0))
-    const r = rainOutlook(times, p, '2026-10-19T14:05')
-    expect(r).toMatchObject({ now: true, startH: 14, endH: 17 })
-    expect(heroCards({ ...base, weather: { ...wx, rain: r } })[0]!.body).toBe('Rain now, easing around 5 PM.')
+  it('rain now only when the sky shows rain; otherwise it looks from the next hour', () => {
+    const f = (h: number) => (h >= 14 && h < 17 ? 60 : 0)
+    expect(card(w(f, 63), 14).body).toBe('Rain now, easing around 5 PM.')
+    expect(card(w(f, 3), 14).body).toBe('Rain likely from 3 PM for about 2 hours. Chance: 60%.')
+  })
+  it('says tomorrow, with a matching title', () => {
+    const c = card(w((h) => (h >= 30 && h < 33 ? 80 : 0)), 20)
+    expect(c.body).toBe('Rain likely tomorrow from 6 AM for about 3 hours. Chance: 80%.')
+    expect(c.title).toBe('Rain likely tomorrow in Dampas')
+  })
+  it('is worked out at render time: later in the day the same cache reads differently, and a past window gives no umbrella', () => {
+    const x = w((h) => (h >= 15 && h < 17 ? 90 : 0))
+    expect(card(x, 11).body).toContain('from 3 PM')
+    const late = card({ ...x, rainPct: 90 }, 20)
+    expect(late.body).toBe('No more rain expected for now.')
+    expect(late.body).not.toContain('umbrella')
   })
   it('null when no hour reaches 50, undefined without hourly data, old text kept', () => {
-    expect(rainOutlook(times, probs(() => 20), '2026-10-19T08:00')).toBeNull()
+    expect(rainOutlook(times, hourly(() => 20).prob, '2026-10-19T08:00')).toBeNull()
     expect(rainOutlook(undefined, undefined, '2026-10-19T08:00')).toBeUndefined()
     expect(heroCards({ ...base, weather: wx })[0]!.body).toBe('Bring an umbrella. Chance of rain: 70%.')
   })

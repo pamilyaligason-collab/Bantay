@@ -24,6 +24,6 @@ export async function loadNews(env: Env = import.meta.env as Env, f: typeof fetc
     await db.kv.put({ key: CACHE, value: rows })
     return rows
   } catch {
-    return ((await db.kv.get(CACHE))?.value as NewsItem[] | undefined) ?? []
+    return (((await db.kv.get(CACHE))?.value as NewsItem[] | undefined) ?? []).filter((n) => !isNoise(n))
   }
 }

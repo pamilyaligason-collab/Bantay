@@ -138,6 +138,11 @@ describe('news', () => {
     expect(out?.map((n) => n.id)).toEqual(['1', '2', '3', '4', '5'])
     expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=15')
   })
+  it('the offline fallback drops bid notices too', async () => {
+    await db.kv.put({ key: 'safety.news', value: [{ ...rows[0], id: 'x', title: 'Notice of Award' }, rows[0]] })
+    const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, (async () => { throw new Error('offline') }) as unknown as typeof fetch)
+    expect(out?.map((n) => n.id)).toEqual(['1'])
+  })
   it('safeUrl', () => {
     expect(safeUrl('https://a.b')).toBe(true)
     expect(safeUrl('javascript:x')).toBe(false)

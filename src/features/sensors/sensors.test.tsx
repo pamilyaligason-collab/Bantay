@@ -242,6 +242,23 @@ describe('reconcileGranted', () => {
   })
 })
 
+describe('off list', () => {
+  it('an OS revoke found by sync does not stick: allowing it again in Health Connect brings it back', async () => {
+    const b = fake({ data: { steps: [S()] } })
+    await enableType('steps', b)
+    const revoked = fake({ granted: async () => false })
+    expect((await syncAll(revoked, 'p')).byType.steps).toBe('revoked')
+    expect((await getState()).enabled).toEqual([])
+    expect(await reconcileGranted(fake())).toContain('steps')
+  })
+  it('state saved before the off list existed: what was not on stays off; a fresh install starts empty', async () => {
+    expect((await getState()).off).toBeUndefined()
+    await db.kv.put({ key: 'sensors.state', value: { enabled: ['steps'], cursor: {} } })
+    expect((await getState()).off).toEqual(['sleep', 'heartRate', 'bloodPressure'])
+    expect(await reconcileGranted(fake())).toEqual([])
+  })
+})
+
 describe('SensorSettings', () => {
   it('explains itself on the web and has no switches', () => {
     render(<SensorSettings native={false} />)

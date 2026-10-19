@@ -37,7 +37,7 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
   const placeName = place && place.source === 'zone' ? (HOME_ZONES.find((z) => z.id === place.zone)?.name.split(',')[0] ?? 'your area') : 'where you are'
   const skipped = skip.day === tick.toDateString() ? skip.names : NO_NAMES
   const cards = useMemo(
-    () => heroCards({ alerts, ref, doses: dueDoses(profile, taken, skipped, tick), weather: wx, placeName }),
+    () => heroCards({ alerts, ref, doses: dueDoses(profile, taken, skipped, tick), weather: wx, placeName, now: tick }),
     [alerts, ref?.lat, ref?.lon, profile, taken, skipped, tick, wx, placeName] // eslint-disable-line react-hooks/exhaustive-deps -- ref is rebuilt each render; its numbers are the key
   )
   const at = Math.min(idx, cards.length - 1)

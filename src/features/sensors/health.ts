@@ -109,7 +109,13 @@ interface State {
 export const STATE_KEY = 'sensors.state'
 const BACKFILL_MS = 7 * 86_400_000
 const OVERLAP_MS = 48 * 3_600_000 // Health Connect data can arrive late from a watch
-export const getState = async (): Promise<State> => ({ enabled: [], cursor: {}, ...((await db.kv.get(STATE_KEY))?.value as Partial<State> | undefined) })
+export const getState = async (): Promise<State> => {
+  const raw = (await db.kv.get(STATE_KEY))?.value as Partial<State> | undefined
+  const st: State = { enabled: [], cursor: {}, ...raw }
+  // Upgrade: state saved before the `off` list existed. Whatever was not on was off, so reconcile never switches it on behind the member's back.
+  if (raw && !raw.off) st.off = SENSORS.map((s) => s.type).filter((t) => !st.enabled.includes(t))
+  return st
+}
 const putState = (s: State) => db.kv.put({ key: STATE_KEY, value: s })
 
 /** Whose data this phone logs: the signed-in member's own person (D-21). null = signed out, so nothing is logged. */
@@ -156,10 +162,15 @@ export async function enableType(type: SensorType, bridge: HealthBridge): Promis
 }
 /** Stops reading. Access itself is revoked in Health Connect or Settings; the screen says so. */
 export async function disableType(type: SensorType) {
+  await dropType(type, true)
+}
+/** Stops reading a type. `byMember` = the switch in the app: only that remembers "off" so reconcile leaves it alone.
+ *  An OS revoke drops it from enabled only, so allowing it again in Health Connect brings it back. */
+async function dropType(type: SensorType, byMember: boolean) {
   const st = await getState()
   const cursor = { ...st.cursor }
   delete cursor[type]
-  await putState({ enabled: st.enabled.filter((t) => t !== type), cursor, off: [...new Set([...(st.off ?? []), type])] })
+  await putState({ enabled: st.enabled.filter((t) => t !== type), cursor, off: byMember ? [...new Set([...(st.off ?? []), type])] : st.off })
 }
 
 /** On open: types the OS already allows (granted earlier, or in Health Connect) but the app does not list get switched on.
@@ -210,7 +221,7 @@ async function run(bridge: HealthBridge, personIdArg?: string): Promise<SyncResu
   for (const type of st.enabled) {
     try {
       if (!(await bridge.granted(type))) {
-        await disableType(type) // user turned it off in the OS: follow them, never nag
+        await dropType(type, false) // user turned it off in the OS: follow them, never nag
         result.byType[type] = 'revoked'
         continue
       }
