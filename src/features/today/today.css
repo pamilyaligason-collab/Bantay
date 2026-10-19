@@ -7,11 +7,12 @@
 .td-row.between { justify-content: space-between; }
 .bt .td-link { color: var(--link); font-weight: 600; font-size: 13px; background: none; border: 0; padding: 0 4px; min-height: 44px; min-width: 44px; }
 .td-sech { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px 10px; }
-.td-sech h2, h2.td-sech { font-family: var(--f-ui); font-size: 15px; font-weight: 700; margin: 0; letter-spacing: 0; }
+.td-sech h2, h2.td-sech { font-family: var(--f-ui); font-size: 17px; font-weight: 700; margin: 0; letter-spacing: 0; }
+.td-sech h2 { margin: 0; }
 
 /* quick-log row */
-.td-quick { margin-top: 8px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-.bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; font-size: 11px; font-weight: 600; color: var(--ink); min-width: 0; }
+.td-quick { margin-top: 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 2px; font-size: 13px; font-weight: 600; color: var(--ink); min-width: 0; }
 .bt .td-q .td-ic { color: var(--green2); }
 :root[data-theme="dark"] .td-q .td-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-q .td-ic { color: var(--amber); } }
@@ -24,9 +25,9 @@
 .td-slide { flex: 0 0 100%; scroll-snap-align: center; background: var(--green); color: var(--on-green); border-radius: 28px; padding: 20px; min-height: 200px; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; box-sizing: border-box; min-width: 0; }
 .td-slide.weather { background: var(--green2); }
 .td-slide.alert { background: color-mix(in srgb, var(--red) 62%, #000); }
-.td-k { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; font-weight: 600; }
-.td-slide h2 { font-family: var(--f-display); font-weight: 600; font-size: 26px; line-height: 1.12; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
-.td-slide.has-big h2 { max-width: 68%; }
+.td-k { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; font-weight: 600; }
+.td-slide h2, .td-slide h3 { font-family: var(--f-display); font-weight: 600; font-size: 26px; line-height: 1.12; margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.td-slide.has-big h2, .td-slide.has-big h3 { max-width: 68%; }
 .td-slide p { margin: 0; opacity: .9; font-size: 16px; }
 .td-big { font-family: var(--f-display); font-size: 54px; line-height: 1; font-weight: 500; position: absolute; right: 20px; top: 22px; }
 .td-act { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; padding-top: 6px; }
@@ -44,7 +45,7 @@
 .td-setup ul { margin: 0; padding: 0; list-style: none; }
 .bt .td-setup li button, .bt .td-next { width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--link); font-size: 15px; font-weight: 600; text-align: left; padding: 0; }
 .td-bar { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
-.td-bar > i { display: block; height: 100%; background: var(--green2); border-radius: 4px; }
+.td-bar > i { display: block; width: 100%; height: 100%; background: var(--green2); transform-origin: left center; } /* scaleX, not width: compositor only */
 
 /* nearby notices, video */
 .td-list { display: grid; padding-top: 4px; padding-bottom: 4px; }
@@ -80,7 +81,7 @@
 /* simple mode: hero plus three big buttons, larger type (the tab bar stays) */
 .td-simple { display: flex; flex-direction: column; gap: 16px; font-size: 18px; }
 .td-simple .td-slide { min-height: 240px; }
-.td-simple .td-slide h2 { font-size: 32px; }
+.td-simple .td-slide h2, .td-slide h3 { font-size: 32px; }
 .td-simple .td-slide p { font-size: 20px; }
 .td-big-btns { display: grid; gap: 12px; }
 .bt .td-bigbtn { display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 28px; border: 0; font: inherit; font-size: 26px; font-weight: 700; text-decoration: none; box-shadow: var(--shadow); box-sizing: border-box; }
@@ -94,16 +95,42 @@
 .sky-clear .td-sky { background: radial-gradient(circle at 88% 12%, rgba(255, 214, 120, .55), rgba(255, 214, 120, 0) 55%); animation: td-glow 6s ease-in-out infinite alternate; }
 .sky-cloud .td-sky, .sky-fog .td-sky { background: radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255, 255, 255, .22), transparent 70%), radial-gradient(ellipse 50% 35% at 75% 70%, rgba(255, 255, 255, .16), transparent 70%); background-size: 160% 100%; animation: td-drift 18s linear infinite alternate; }
 .sky-fog .td-sky { opacity: .8; }
-.sky-rain .td-sky, .sky-storm .td-sky { background: repeating-linear-gradient(105deg, transparent 0 14px, rgba(255, 255, 255, .22) 14px 15px); background-size: 60px 60px; animation: td-rain 0.9s linear infinite; }
+/* rain and storm: the same soft clouds, darker for a storm; no hatching */
+.sky-rain .td-sky, .sky-storm .td-sky { background: radial-gradient(ellipse 70% 45% at 30% 15%, rgba(255, 255, 255, .20), transparent 70%), radial-gradient(ellipse 60% 40% at 80% 75%, rgba(0, 0, 0, .18), transparent 70%); }
 .sky-storm .td-sky { background-color: rgba(0, 0, 0, .18); }
 @keyframes td-glow { from { opacity: .6; } to { opacity: 1; } }
 @keyframes td-drift { from { background-position: 0 0; } to { background-position: 40% 0; } }
-@keyframes td-rain { from { background-position: 0 0; } to { background-position: 0 60px; } }
 @media (prefers-reduced-motion: reduce) { .td-sky { animation: none !important; } }
 
 /* storm card */
-.td-storm { margin-top: 12px; padding: 14px; }
+.td-storm { padding: 14px; }
 .td-storm .td-sech { margin: 0 0 8px; }
 .td-stormmap { min-height: 240px; margin: 10px 0 4px; border-radius: 12px; background: var(--fill); }
 .td-stormmap .sf-frame { height: 240px; }
 .bt .td-storm a.td-link { display: inline-flex; align-items: center; text-decoration: none; }
+
+/* greeting band: the big I'm OK */
+.td-greet { display: flex; flex-direction: column; gap: 6px; }
+.bt .td-okbtn { width: 100%; min-height: 72px; border: 0; border-radius: 28px; background: var(--green); color: var(--on-green); font-family: var(--f-display); font-size: 28px; font-weight: 600; box-shadow: var(--shadow); }
+.td-greet-n { margin: 0; text-align: center; }
+
+/* Your day: movement, walk and sleep in one card */
+.td-day { display: flex; flex-direction: column; gap: 12px; }
+.td-day .td-sech { margin: 0; }
+.td-mv { display: flex; flex-direction: column; gap: 2px; }
+.td-sub-h { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+.td-walk { padding-top: 12px; border-top: 1px solid var(--line); }
+
+/* weather strip: sky gradient instead of a placeholder pattern */
+.td-wx { --a: var(--sky-clear-a); --b: var(--sky-clear-b); display: flex; align-items: center; gap: 14px; padding: 14px 16px; min-height: 64px; border-radius: 24px; background: linear-gradient(170deg, var(--a), var(--b)); color: var(--ink); box-shadow: var(--shadow); box-sizing: border-box; }
+.td-wx[data-state="rain"] { --a: var(--sky-rain-a); --b: var(--sky-rain-b); }
+.td-wx[data-state="heat"] { --a: var(--sky-heat-a); --b: var(--sky-heat-b); }
+.td-wx-t { font-family: var(--f-display); font-size: 34px; font-weight: 500; line-height: 1; flex: none; }
+.td-wx b { font-weight: 600; overflow-wrap: anywhere; }
+.td-wx-s { font-size: 13px; opacity: .85; }
+
+/* one rhythm between sections */
+.td-root { display: flex; flex-direction: column; gap: 16px; }
+.td-root > * { margin-top: 0; margin-bottom: 0; }
+.td-root .td-sech { margin: 0 2px 10px; }
+.td-root .td-dots { margin-top: -6px; }

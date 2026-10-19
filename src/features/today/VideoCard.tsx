@@ -19,7 +19,7 @@ export default function VideoCard() {
   if (!on) return null
   const v = videoOfTheDay()
   return (
-    <section aria-labelledby="td-vid">
+    <section aria-labelledby="td-vid" data-reveal>
       <div className="td-sech"><h2 id="td-vid">Video of the day</h2><span className="td-sub">new each morning</span></div>
       <a className="card td-video" href={v.url} target="_blank" rel="noopener noreferrer">
         <span className="td-thumb" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M8 5v14l11-7z" /></svg></span>

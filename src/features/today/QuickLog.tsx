@@ -12,20 +12,19 @@ const ICONS = {
   drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
   scale: 'M8.5 10a3.5 3.5 0 0 1 7 0zM12 10l1.5-2M3 8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z',
   pill: 'M9.5 8.5l5 7M5.6 13.4l7.8-7.8a3.5 3.5 0 0 1 5 5l-7.8 7.8a3.5 3.5 0 0 1-5-5z',
+  more: 'M4.5 12h1.5M11.25 12h1.5M18 12h1.5',
   smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01'
 } as const
 export function TodayIcon({ name, size = 22 }: { name: keyof typeof ICONS; size?: number }) {
   return <svg className="td-ic" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
 }
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'dose' | 'mood'
-const PILLS: { id: 'ok' | Kind; label: string; icon: keyof typeof ICONS; aria: string }[] = [
-  { id: 'ok', label: "I'm OK", icon: 'check', aria: "Tell the family I'm OK" },
+type Kind = 'bp' | 'sugar' | 'weight' | 'dose' | 'mood' | 'more'
+const PILLS: { id: Kind; label: string; icon: keyof typeof ICONS; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', aria: 'Log weight' },
-  { id: 'dose', label: 'Dose', icon: 'pill', aria: 'Mark a dose taken' },
-  { id: 'mood', label: 'Mood', icon: 'smile', aria: 'Log mood' }
+  { id: 'more', label: 'More', icon: 'more', aria: 'More to log: a dose or how you feel' }
 ]
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
@@ -56,8 +55,8 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
-/** Quick-log row (mockup v6): I'm OK, BP, Sugar, Weight, Dose, Mood. Each opens a small sheet and ends with a toast. */
-export default function QuickLog({ notify, onOk }: { notify: (msg: string) => void; onOk: () => void }) {
+/** Quick-log row: BP, Sugar, Weight, and More (a dose taken, how you feel). Each opens a small sheet and ends with a toast. */
+export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -97,7 +96,7 @@ export default function QuickLog({ notify, onOk }: { notify: (msg: string) => vo
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => (
-          <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => (p.id === 'ok' ? onOk() : setOpen(p.id))}>
+          <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
             <TodayIcon name={p.icon} /><span>{p.label}</span>
           </button>
         ))}
@@ -122,6 +121,14 @@ export default function QuickLog({ notify, onOk }: { notify: (msg: string) => vo
             {err && <p className="td-err" role="alert">{err}</p>}
             <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
           </form>
+        </Sheet>
+      )}
+      {open === 'more' && (
+        <Sheet title="More to log" onClose={close}>
+          <div className="td-form">
+            <button type="button" className="td-opt" onClick={() => setOpen('dose')}>I took a medicine</button>
+            <button type="button" className="td-opt" onClick={() => setOpen('mood')}>How I feel</button>
+          </div>
         </Sheet>
       )}
       {open === 'dose' && (

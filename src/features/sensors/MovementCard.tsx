@@ -20,7 +20,7 @@ export const summarise = (rows: Activity[], dayStartIso: string, now = Date.now(
 const hm = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}` : `${m} min`)
 
 /** What moved today, from walks the person logged and anything synced from the phone's health store. */
-export default function MovementCard({ native = isNative() }: { native?: boolean }) {
+export default function MovementCard({ native = isNative(), embedded = false }: { native?: boolean; embedded?: boolean }) {
   const [rows, setRows] = useState<Activity[]>([])
   useEffect(() => {
     const since = new Date(Date.now() - SLEEP_WINDOW_MS).toISOString()
@@ -31,13 +31,17 @@ export default function MovementCard({ native = isNative() }: { native?: boolean
 
   const { walk, steps, sleep } = summarise(rows, dayStart())
   const parts = [walk ? `${hm(walk)} moving` : '', steps ? `${steps.toLocaleString('en-PH')} steps` : '', sleep ? `slept ${hm(sleep)}` : ''].filter(Boolean)
+  const body = (
+    <>
+      <strong>{parts.length ? parts.join(', ') : 'Nothing logged yet today'}</strong>
+      {steps > 0 && <div className="sub">Steps come from your phone and are approximate.</div>}
+    </>
+  )
+  if (embedded) return <div className="td-mv">{body}</div>
   return (
     <section aria-labelledby="mv-h">
       <h2 id="mv-h" className="hd">Movement</h2>
-      <div className="grp" style={{ padding: 16 }}>
-        <strong>{parts.length ? parts.join(', ') : 'Nothing logged yet today'}</strong>
-        {steps > 0 && <div className="sub">Steps come from your phone and are approximate.</div>}
-      </div>
+      <div className="grp" style={{ padding: 16 }}>{body}</div>
     </section>
   )
 }

@@ -4,7 +4,7 @@ import type { RefreshDetail } from '../look/refresh'
 import './safety.css'
 
 /** Top 5 from the news_items table. Empty state when Supabase is not configured. */
-export default function NewsTop5() {
+export default function NewsTop5({ hideEmpty = false }: { hideEmpty?: boolean }) {
   const [items, setItems] = useState<NewsItem[] | null | undefined>(undefined)
   useEffect(() => {
     let live = true
@@ -15,10 +15,10 @@ export default function NewsTop5() {
     window.addEventListener('bantay:refresh', onRefresh)
     return () => { live = false; window.removeEventListener('bantay:refresh', onRefresh) }
   }, [])
-  if (items === undefined) return null
+  if (items === undefined || (hideEmpty && !items?.length)) return null // hideEmpty: never say the feed is not connected
   if (!items?.length)
     return <p className="sf-empty" role="status">{items === null ? 'The news feed is not connected yet.' : 'No news to show yet.'}</p>
-  return (
+  const list = (
     <div className="grp sf-news">
       {items.map((n) => (
         <a key={n.id} className="row" href={n.url} target="_blank" rel="noopener noreferrer">
@@ -30,4 +30,5 @@ export default function NewsTop5() {
       ))}
     </div>
   )
+  return hideEmpty ? <section aria-labelledby="t-news" data-reveal><h2 id="t-news" className="td-sech">News</h2>{list}</section> : list
 }

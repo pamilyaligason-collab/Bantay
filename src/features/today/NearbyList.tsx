@@ -17,7 +17,7 @@ export default function NearbyList() {
   const rest = rankAlerts(all.filter((a) => a.id !== top?.id), ref)
   if (!rest.length) return null
   return (
-    <section aria-label="Other notices for your area">
+    <section aria-label="Other notices for your area" data-reveal>
       <div className="card td-list">
         {rest.slice(0, SHOW).map((a) => (
           <a key={a.id} className="td-lrow" href="#safety/warnings">

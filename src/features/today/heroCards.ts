@@ -9,10 +9,10 @@ export interface Dose { name: string; at: number } // at = minutes after local m
 export interface RainOutlook { now: boolean; tomorrow: boolean; startH: number; endH: number; hours: number; peakPct: number }
 /** hourly: the forecast as fetched (Manila local times). Absent in old caches; the outlook is worked out from it at render time. */
 export interface Wx { temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null; hourly?: { time: string[]; prob: (number | null)[] } }
-export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip'
+export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'
 export interface HeroCard {
   key: string
-  kind: 'alert' | 'dose' | 'weather' | 'summary'
+  kind: 'alert' | 'dose' | 'plan' | 'weather' | 'summary'
   sky?: Sky
   kicker: string
   title: string
