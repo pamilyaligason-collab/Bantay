@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { dayKey, isMine, timeLabel } from './events'
 import { NoteSheet, ItemSheet } from './PlanSheets'
-import { dayLabel, dayRows, dayStrip, emptyHint, groupPlan, progressOf, type PlanRow } from './planList'
+import { addDay, dayLabel, midSentence, dayRows, dayStrip, emptyHint, groupPlan, progressOf, type PlanRow } from './planList'
 import { useFamilyPeople } from './roster'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
@@ -80,10 +80,12 @@ export default function Plan() {
 
       {rows.length === 0 ? (
         <div className="card fm-teach">
-          <b>{byDay ? `Nothing for ${heading}.` : EMPTY[view as 'later' | 'done']}</b>
+          <b>{byDay ? `Nothing for ${midSentence(heading)}.` : EMPTY[view as 'later' | 'done']}</b>
           {view === 'done'
             ? <span className="sub">Ticked reminders and past events show up here.</span>
-            : <button type="button" className="fm-linkbtn" onClick={add}>{byDay ? emptyHint(people) : 'Add something to look forward to.'}</button>}
+            : byDay && view < today
+              ? <span className="sub">This day has passed. Overdue reminders show under Today.</span>
+              : <button type="button" className="fm-linkbtn" onClick={add}>{byDay ? emptyHint(people) : 'Add something to look forward to.'}</button>}
         </div>
       ) : (
         <ul className="card fm-list fm-rows" aria-label={heading}>
@@ -112,7 +114,7 @@ export default function Plan() {
         </button>
       </div>
 
-      {open?.t === 'item' && <ItemSheet start={open.item} day={byDay ? view : today} people={people} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
+      {open?.t === 'item' && <ItemSheet start={open.item} day={byDay ? addDay(view, today) : today} people={people} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
       {open?.t === 'note' && <NoteSheet note={open.note} onClose={() => setOpen(null)} />}
     </>
   )

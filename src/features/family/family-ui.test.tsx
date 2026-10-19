@@ -79,7 +79,7 @@ describe('Plan', () => {
     render(<Family />)
     const hint = await screen.findByRole('button', { name: /^Add a reminder for / })
     expect(hint.textContent).not.toMatch(/Lola/) // names a real family member, never a made-up one
-    await waitFor(() => expect(screen.getByRole('button', { name: /^Add a reminder for / }).textContent).toMatch(/Kuya|Lloyd/))
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Add a reminder for / }).textContent).toMatch(/^Add a reminder for (Kuya|Lloyd)'s check-up.$/))
     expect(screen.getAllByRole('button', { name: /^Add/ }).length).toBe(2) // the floating Add and the empty-state link
     fireEvent.click(screen.getByRole('button', { name: /^Later/ }))
     expect(screen.getByText('Nothing planned for later.')).toBeTruthy()

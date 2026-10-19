@@ -23,10 +23,10 @@
 .fm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .fm-lbl { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 6px; }
 .fm-hint { margin: 0; }
-.fm-teach { display: grid; gap: 8px; justify-items: start; padding: 20px 16px; }
+.fm-teach { display: grid; gap: 8px; justify-items: start; padding: 20px 16px; margin-bottom: 76px; }
 .fm-teach b { font-family: var(--f-display); font-size: 18px; font-weight: 600; }
 .fm-teach .pill { margin-top: 6px; }
-.fm-rows { list-style: none; margin: 0; }
+.fm-rows { list-style: none; margin: 0 0 76px; } /* room under the last row for the Add button */
 .bt .fm-row .fm-item { justify-content: flex-start; flex: 1; }
 .fm-row .fm-item .grow { flex: 1; display: grid; gap: 2px; text-align: left; justify-items: start; min-width: 0; }
 .fm-row { display: flex; align-items: center; gap: 12px; min-width: 0; }

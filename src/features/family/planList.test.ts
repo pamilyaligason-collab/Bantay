@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupPlan, pickDay, repeatDays, dayLabel, dayRows, dayStrip, progressOf, emptyHint } from './planList'
+import { groupPlan, pickDay, repeatDays, dayLabel, dayRows, dayStrip, progressOf, emptyHint, midSentence, addDay } from './planList'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 
 // Wed 21 Oct 2026, 10:00 on the phone's clock (Manila for this family). Its week ends Sun 25 Oct.
@@ -104,5 +104,13 @@ describe('emptyHint', () => {
     expect(emptyHint([{ name: 'Lloyd Roc', isMe: true }, { name: 'Kuya Ben', isMe: false }])).toBe("Add a reminder for Kuya's check-up.")
     expect(emptyHint([{ name: 'Lloyd Roc', isMe: true }])).toBe("Add a reminder for Lloyd's check-up.")
     expect(emptyHint([])).toBe('Add a reminder for a check-up.')
+    expect(emptyHint([{ name: 'Family member', isMe: true }])).toBe('Add a reminder for a check-up.') // unnamed fallback from roster.ts
+  })
+  it('lower-cases Today/Tomorrow mid-sentence and never opens a new item on a past day', () => {
+    expect(midSentence('Today')).toBe('today')
+    expect(midSentence('Tomorrow')).toBe('tomorrow')
+    expect(midSentence('Fri 23 Oct')).toBe('Fri 23 Oct')
+    expect(addDay('2026-10-19', '2026-10-21')).toBe('2026-10-21')
+    expect(addDay('2026-10-23', '2026-10-21')).toBe('2026-10-23')
   })
 })

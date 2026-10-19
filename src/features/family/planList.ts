@@ -75,7 +75,7 @@ export function progressOf(rows: PlanRow[]): { done: number; total: number } {
 /** The empty-state nudge, naming a real family member (first person who is not me), else a plain version. */
 export function emptyHint(people: { name: string; isMe: boolean }[]): string {
   const p = people.find((x) => !x.isMe) ?? people[0]
-  const name = p?.name.trim().split(/\s+/)[0]
+  const name = p?.name === 'Family member' ? '' : p?.name.trim().split(/\s+/)[0] // roster.ts uses 'Family member' when a name is missing
   return name ? `Add a reminder for ${name}'s check-up.` : 'Add a reminder for a check-up.'
 }
 
@@ -86,3 +86,8 @@ export function dayLabel(day: string, now: Date): string {
   if (day === addDays(today, 1)) return 'Tomorrow'
   return new Date(`${day}T00:00:00`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
 }
+
+/** Sentence form of a day label: "today", "tomorrow", else unchanged ("Fri 23 Oct"). */
+export const midSentence = (label: string): string => (label === 'Today' || label === 'Tomorrow' ? label.toLowerCase() : label)
+/** The day a new item opens on: the viewed day, but never a day already past. */
+export const addDay = (view: string, today: string): string => (view < today ? today : view)
