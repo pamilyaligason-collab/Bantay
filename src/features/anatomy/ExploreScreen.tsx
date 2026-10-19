@@ -1,13 +1,30 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialog } from '../docs/useDialog'
+import { latestByTest } from '../health/ranges'
+import { useHealthData } from '../records/useHealthData'
 import content from './content.json'
-import { HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
+import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
+import { systemCounts, systemStatus, type SystemCount } from './status'
 import './anatomy.css'
 
 export interface Part { id: string; system: string; name: string; what: string; illnesses: string[]; warnings: string[]; prevention: string[] }
 const PARTS = content.parts as Part[]
 const SYSTEMS = content.systems
+const NONE: SystemCount = { total: 0, flagged: 0, ok: 0 }
+
+// One simple 24px glyph per system for the round rail buttons.
+const ICON: Record<string, string> = {
+  skeleton: 'M8 16L16 8M6.5 15a1.8 1.8 0 1 0 2.5 2.5M5.5 17.5a1.8 1.8 0 0 0 3 0M15 6.5a1.8 1.8 0 1 1 2.5 2.5M18.5 5.5a1.8 1.8 0 0 1 0 3',
+  muscles: 'M6 9v6M9 7v10M9 12h6M15 7v10M18 9v6',
+  heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+  lungs: 'M12 3v8M10 6v6c0 3-2 6-5 6-1.5 0-2-1-2-2 0-3 2-8 4-10M14 6v6c0 3 2 6 5 6 1.5 0 2-1 2-2 0-3-2-8-4-10',
+  brain: 'M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 4 3 3 0 0 0 2 4 3 3 0 0 0 3 4V4zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 4 3 3 0 0 1-2 4 3 3 0 0 1-3 4V4z',
+  digestion: 'M8 4v4c0 3-3 4-3 8a4 4 0 0 0 4 4c5 0 9-3 9-8 0-3-2-4-4-4-2 0-3-1-3-3V4',
+  kidneys: 'M14 4c-4 0-7 4-7 8s3 8 7 8c2 0 3-1 3-3 0-1.5-1-2-1-3.5S17 11 17 9.5 16 4 14 4z',
+  skin: 'M12 3c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z',
+  hormones: 'M10 11l4 2M5 9a3 3 0 1 0 6 0 3 3 0 1 0-6 0M13 15a3 3 0 1 0 6 0 3 3 0 1 0-6 0'
+}
 
 function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
   const { ref, onKeyDown } = useDialog(onClose)
@@ -44,15 +61,14 @@ function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
 export default function ExploreScreen() {
   const [sysId, setSysId] = useState(SYSTEMS[0]!.id)
   const [open, setOpen] = useState<Part | null>(null)
-  const chips = useRef<HTMLDivElement>(null)
+  const { readings, thresholds, personId } = useHealthData()
+  const counts = useMemo(() => systemCounts(latestByTest(readings), (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`)), [readings, thresholds, personId])
   const parts = PARTS.filter((p) => p.system === sysId)
   const [vx, vy, vw, vh] = VIEW[sysId]!
   const label = SYSTEMS.find((s) => s.id === sysId)!.label
-
-  // Keep the chosen chip in view inside the scroll row.
-  useEffect(() => {
-    chips.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
-  }, [sysId])
+  const here = counts[sysId] ?? NONE
+  const status = systemStatus(here)
+  const [fx, fy] = FOCUS[sysId]!
 
   return (
     <>
@@ -65,13 +81,25 @@ export default function ExploreScreen() {
           <span>Pick a system, then tap a dot</span>
         </div>
       </div>
-      <div className="an-chips" role="group" aria-label="Body systems" ref={chips}>
-        {SYSTEMS.map((s) => (
-          <button key={s.id} type="button" className="an-chip" aria-pressed={s.id === sysId} onClick={() => setSysId(s.id)}>{s.label}</button>
-        ))}
+      <div className="an-top">
+        <h2 className="an-sys">{label}</h2>
+        {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
       </div>
-      <div className="an-stage" data-sys={sysId}>
-        <div className="an-fig" style={{ '--vw': vw, '--vh': vh, aspectRatio: `${vw} / ${vh}` } as CSSProperties}>
+      <div className="an-main">
+        <div className="an-rail" role="group" aria-label="Body systems">
+          {SYSTEMS.map((s) => {
+            const c = counts[s.id] ?? NONE
+            const n = c.flagged || c.total
+            return (
+              <button key={s.id} type="button" className="an-rb" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
+                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d={ICON[s.id]} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {n > 0 && <span className="an-badge" data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true">{n}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="an-stage" data-sys={sysId}>
+          <div className="an-fig" style={{ '--vw': vw, '--vh': vh, aspectRatio: `${vw} / ${vh}` } as CSSProperties}>
           <svg className={vh < 300 ? 'an-svg an-crop' : 'an-svg'} viewBox={`${vx} ${vy} ${vw} ${vh}`} role="group" aria-label={`${label}, tap a dot`}>
             <use href={`${SPRITE}#body`} className={OWN_BODY.has(sysId) ? 'an-shell an-off' : 'an-shell'} />
             {SYSTEMS.map((s) => (
@@ -80,6 +108,9 @@ export default function ExploreScreen() {
               </g>
             ))}
           </svg>
+          {here.flagged + here.ok > 0 && (
+            <span className="an-glow" data-tone={here.flagged ? 'warn' : 'ok'} aria-hidden="true" style={{ left: `${((fx - vx) / vw) * 100}%`, top: `${((fy - vy) / vh) * 100}%` }} />
+          )}
           {parts.flatMap((p) => HITS[p.id]!.map(([x, y], i) => (
             <button
               key={p.id + i}
@@ -93,6 +124,7 @@ export default function ExploreScreen() {
               onClick={() => setOpen(p)}
             />
           )))}
+          </div>
         </div>
       </div>
       <h2 className="an-h2">Parts you can open</h2>
