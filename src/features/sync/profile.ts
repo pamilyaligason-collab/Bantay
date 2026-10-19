@@ -211,8 +211,7 @@ export async function migrateKv(personId: string): Promise<void> {
 /** After a pull: own profile housekeeping. Profile data is optional, so nothing here may put the health sync into backoff. */
 export async function syncOwnProfile(): Promise<void> {
   try {
-    const m = await getMember()
-    const id = m?.personId ?? ((await db.kv.get(SELF_ID))?.value as string | undefined)
+    const id = await selfIdOrCached() // same-user rule; also stamps SELF_USER once the person is known
     if (!id) return
     await adoptPerson(id)
     await migrateKv(id)
