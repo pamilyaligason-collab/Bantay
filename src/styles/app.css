@@ -17,16 +17,19 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
   font-family: var(--f-ui);
   font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
 }
-.bt button { cursor: pointer; font: inherit; transition: background-color 150ms ease, transform 100ms ease, opacity 150ms ease; }
-.bt button:active { transform: scale(0.98); opacity: 0.85; }
+.bt button { cursor: pointer; font: inherit; transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out); }
+.bt button:active { transform: scale(0.98); }
+@media (hover: hover) { .bt .btn:hover, .bt .btn2:hover, .bt .pill:hover, .bt .key:hover { filter: brightness(1.06); } .bt .seg button:not([aria-pressed="true"]):hover { background: var(--fill); } }
 .bt button:focus-visible, .bt a:focus-visible, .bt input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .bt button { transition: none; } .bt button:active { transform: none; } }
 
-.topbar, .scroll, .tabs { z-index: 1; }
+.scroll, .tabs { z-index: 1; }
+.topbar { z-index: 2; }
 .topbar, .scroll { position: relative; }
-.topbar { padding: calc(14px + var(--sat)) 16px 0; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; }
+/* The bottom 10px of the top bar overlaps the scroll area so content slides under the glass once it scrolls (D-71). */
+.topbar { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; transition: box-shadow var(--dur-base) var(--ease-out); }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
-.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 0 16px 110px; display: flex; flex-direction: column; gap: 22px; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 10px 16px 110px; display: flex; flex-direction: column; gap: 22px; }
 .scroll > * { min-width: 0; flex-shrink: 0; }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
 .hdr h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
@@ -46,7 +49,7 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 .pill { min-height: 36px; border: 0; border-radius: 18px; padding: 0 14px; font-size: 15px; font-weight: 600; }
 .chev { color: var(--ink2); flex: none; }
 .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
-.sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left 200ms ease; }
+.sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left var(--dur-base) var(--ease-out); }
 
 .tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 .tabs button { min-height: 54px; min-width: 0; border: 0; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--ink); background: transparent; }
@@ -91,7 +94,7 @@ img.avatar { object-fit: cover; }
 .seg button[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 
 /* v2 components (mockup v6, D-29). Other lanes build on these names; do not rename. */
-.eyebrow { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.eyebrow { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 .card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
 .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -6px; }
 .sec-h a, .link { color: var(--link); font-weight: 600; font-size: 13px; text-decoration: none; background: none; border: 0; padding: 0; }
@@ -110,11 +113,12 @@ img.avatar { object-fit: cover; }
 .list > *:first-child { border-top: 0; padding-top: 2px; }
 .list > *:last-child { padding-bottom: 2px; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--card2); border-radius: 999px; padding: 4px; gap: 0; margin: 0; }
-.seg button { border: 0; background: none; border-radius: 999px; min-height: 40px; font-weight: 600; color: var(--muted); }
+.seg button { border: 0; background: none; border-radius: 999px; min-height: 44px; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
-.switch { width: 50px; height: 30px; border-radius: 15px; background: var(--line); border: 0; position: relative; flex: none; padding: 0; }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-.switch[aria-checked="true"] { background: var(--green2); }
+.switch { width: 54px; height: 44px; background: none; border: 0; position: relative; flex: none; padding: 0; }
+.switch::before { content: ""; position: absolute; left: 2px; right: 2px; top: 7px; height: 30px; border-radius: 15px; background: var(--line); transition: background-color var(--dur-base) var(--ease-out); }
+.switch::after { content: ""; position: absolute; top: 10px; left: 5px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform var(--dur-base) var(--ease-out); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.switch[aria-checked="true"]::before { background: var(--green2); }
 .switch[aria-checked="true"]::after { transform: translateX(20px); }
 .chk { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--green2); background: none; flex: none; padding: 0; display: grid; place-items: center; }
 .chk[aria-checked="true"] { background: var(--green2); }
@@ -122,8 +126,10 @@ img.avatar { object-fit: cover; }
 .sheet-wrap { position: fixed; inset: 0; background: rgba(10,15,10,.4); z-index: 15; display: flex; align-items: flex-end; justify-content: center; }
 .sheet { background: var(--card); width: 100%; max-width: 520px; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; }
 .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
-.toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--ink); color: var(--ground); padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; z-index: 20; max-width: calc(100vw - 32px); }
+.toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); color: var(--ink); padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 20; max-width: calc(100vw - 32px); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out); }
+@starting-style { .toast { opacity: 0; translate: 0 10px; } }
 .dl { display: grid; grid-template-columns: 96px 1fr; gap: 10px; font-size: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
-.dl > span { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+.dl > span { color: var(--muted); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
 .dl b { font-weight: 600; min-width: 0; }
 .bt .btn, .bt .btn2, .bt .pill, .bt .key { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } .switch::before, .switch::after { transition: none; } }

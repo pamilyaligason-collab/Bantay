@@ -164,8 +164,6 @@ export default function Me() {
             </button>
           </>
         )}
-        <div className="sh-soon"><Icon name="cross" /><span className="sh-grow"><b>Print my cards</b><span className="sh-sub sh-blk">Medical ID + contacts, wallet size. Coming soon</span></span></div>
-        <div className="sh-soon"><Icon name="shield" /><span className="sh-grow"><b>Privacy</b><span className="sh-sub sh-blk">What Bantay keeps and who sees it. Coming soon</span></span></div>
       </div>
       {who && supabase && <p className="sh-sub sh-note">Signed in as {who}</p>}
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}

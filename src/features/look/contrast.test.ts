@@ -67,6 +67,17 @@ for (const [name, get] of themes) {
     it('active tab (--ink on --fill over --card) >= 4.5', () => {
       expect(ratio(c('--ink'), over(parse(v['--fill']), c('--card')))).toBeGreaterThanOrEqual(4.5)
     })
+    // D-71: the tab bar is glass, so its labels sit on --glass-bg over whatever scrolls behind it. Check the worst backdrops: page ground, card, and the dark green fill.
+    for (const back of ['--ground', '--card', '--green', '--red']) {
+      it(`tab label --ink on --glass-bg over ${back} >= 4.5`, () => {
+        const glass = over(parse(v['--glass-bg']), c(back))
+        expect(ratio(c('--ink'), glass)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+    it('active tab pill (--ink on --fill over --glass-bg over --card) >= 4.5', () => {
+      const glass = over(parse(v['--glass-bg']), c('--card'))
+      expect(ratio(c('--ink'), over(parse(v['--fill']), glass))).toBeGreaterThanOrEqual(4.5)
+    })
     it('keeps 8 sky stops for the P3 weather background', () => {
       expect(Object.keys(v).filter((k) => k.startsWith('--sky-'))).toHaveLength(8)
     })

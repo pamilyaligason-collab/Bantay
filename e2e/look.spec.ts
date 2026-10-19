@@ -3,12 +3,26 @@ import { skipOnboarding } from './helpers'
 
 test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
-test('v2 look: cream ground, solid tab bar, self-hosted fonts', async ({ page }) => {
+test('v2 look: cream ground, frosted tab bar (D-71), self-hosted fonts', async ({ page }) => {
   await page.goto('/#today')
   await expect(page.locator('.sky')).toHaveAttribute('data-state', 'clear')
   await expect(page.locator('.bt')).toHaveCSS('background-color', 'rgb(246, 241, 231)')
-  await expect(page.locator('.tabbar')).toHaveCSS('backdrop-filter', 'none')
+  await expect(page.locator('.tabbar')).toHaveCSS('backdrop-filter', /blur\(20px\)/)
+  await expect(page.locator('.card, .grp').first()).toHaveCSS('backdrop-filter', 'none') // content cards stay solid
   await expect.poll(() => page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')) })).toEqual(expect.arrayContaining(['Fraunces', 'Plus Jakarta Sans']))
+})
+
+test('shell frame: top bar turns to glass only after content scrolls under it, sub-page header is one row', async ({ page }) => {
+  await page.goto('/#today')
+  const top = page.locator('.topbar')
+  await expect(top).toHaveAttribute('data-scrolled', 'false')
+  await expect(top).toHaveCSS('backdrop-filter', 'none')
+  await page.goto('/#safety/hazards')
+  const h = page.locator('.hdr.sf-subhdr')
+  await expect(h).toBeVisible()
+  expect((await h.locator('h1').boundingBox())!.height).toBeLessThan(80)
+  const [back, title] = await Promise.all([h.locator('a').first().boundingBox(), h.locator('h1').boundingBox()])
+  expect(Math.abs(back!.y - title!.y)).toBeLessThan(40) // same row
 })
 
 test('reduced motion stops the sky animation', async ({ page }) => {

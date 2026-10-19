@@ -7,7 +7,7 @@ import { HOME_ZONES } from '../location/geo'
 import { alertRef } from '../location/place'
 import type { useLocation, usePlaceFrom } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
-import { Icon } from '../shell/Icon'
+import { SubHeader } from '../shell/SubHeader'
 import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { splitDial } from './dial'
@@ -233,11 +233,7 @@ export default function SafetySub({ sub, l, place }: { sub: Sub; l: Loc; place: 
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [sub])
   return (
     <>
-      <div className="hdr sf-hdr sf-subhdr">
-        <a className="sh-iconbtn" href="#safety" aria-label="Back to Safety"><Icon name="back" /></a>
-        <h1>{TITLES[sub]}</h1>
-        <ZonePicker loc={l} />
-      </div>
+      <SubHeader title={TITLES[sub]} backHref="#safety" backLabel="Back to Safety" trailing={<ZonePicker loc={l} />} className="sf-hdr sf-subhdr" />
       {place && <Body sub={sub} l={l} place={place} />}
     </>
   )

@@ -4,24 +4,28 @@
 .sh-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* top bar */
-.sh-top { padding: calc(14px + var(--sat)) 16px 0; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
+.sh-top { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
 .sh-me-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
 .sh-me-btn img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 .sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .sh-top-date { font-size: 13px; color: var(--muted); }
 .sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sh-top .sync-status { font-size: 12px !important; color: var(--muted) !important; }
-.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; }
+.sh-top .sync-status { font-size: 13px !important; color: var(--muted) !important; }
+.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.sh-iconbtn:active { transform: scale(.98); }
+@media (hover: hover) { .sh-iconbtn:hover { background: var(--card2); } }
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
-/* tab bar */
-.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 72px; border-radius: 28px; background: var(--card); box-shadow: 0 8px 30px rgba(20,30,20,.18); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
-.sh-tabs button { background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--muted); min-height: 56px; min-width: 0; }
+/* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Slots are Today, Health, Ask, Family, Safety, so --slot is 0, 1, 3 or 4. */
+.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 72px; border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
+.tabbar.sh-tabs::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 22px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
+.sh-tabs button { position: relative; background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--ink); min-height: 56px; min-width: 0; }
+@media (hover: hover) { .sh-tabs button:not([aria-current="page"]):not(.sh-ask):hover { background: var(--fill); } }
 .sh-tabs button[aria-current="page"] { color: var(--ink); background: none; }
 .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
 :root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
-.sh-tabs .sh-ask { margin-top: -30px; color: var(--muted); }
+.sh-tabs .sh-ask { margin-top: -30px; color: var(--ink); }
 .sh-tabs .sh-bub { width: 62px; height: 62px; border-radius: 50%; background: var(--green); color: var(--on-green); display: grid; place-items: center; box-shadow: 0 0 0 5px var(--ground), 0 0 0 7px var(--amber); }
 .sh-tabs .sh-bub .sh-ic { color: var(--on-green); }
 .sh-tabs .sh-ask:focus-visible .sh-bub { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -44,15 +48,16 @@
 .sh-list > *:last-child { padding-bottom: 2px; }
 .sh-navrow { background: none; border: 0; width: 100%; text-align: left; min-height: 48px; color: var(--ink); text-decoration: none; font: inherit; }
 .sh-navrow .sh-ic:last-child { color: var(--muted); }
-.sh-soon { opacity: .75; }
 .sh-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; color: #1F3D2B; background: #CFE0CF; overflow: hidden; }
 .sh-av img { width: 100%; height: 100%; object-fit: cover; }
 .sh-av-lg { width: 56px; height: 56px; font-size: 20px; }
-.sh-switch { width: 50px; height: 30px; border-radius: 15px; background: var(--line); border: 0; position: relative; flex: none; padding: 0; }
-.sh-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
-.sh-switch[aria-checked="true"] { background: var(--green2); }
+.sh-switch { width: 54px; height: 44px; background: none; border: 0; position: relative; flex: none; padding: 0; }
+.sh-switch::before { content: ""; position: absolute; left: 2px; right: 2px; top: 7px; height: 30px; border-radius: 15px; background: var(--line); transition: background-color var(--dur-base) var(--ease-out); }
+.sh-switch::after { content: ""; position: absolute; top: 10px; left: 5px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform var(--dur-base) var(--ease-out); box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.sh-switch[aria-checked="true"]::before { background: var(--green2); }
 .sh-switch[aria-checked="true"]::after { transform: translateX(20px); }
-.sh-chk { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--green2); background: none; flex: none; padding: 0; display: grid; place-items: center; }
+.sh-chk { position: relative; width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--green2); background: none; flex: none; padding: 0; display: grid; place-items: center; }
+.sh-chk::before { content: ""; position: absolute; inset: -9px; } /* 44px hit box around the 26px box */
 .sh-chk[aria-checked="true"] { background: var(--green2); }
 .sh-chk[aria-checked="true"]::after { content: ""; width: 10px; height: 6px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
 .sh-chk[aria-disabled="true"] { opacity: .35; }
@@ -60,12 +65,32 @@
 .sh-pill.sh-primary { background: var(--green); color: var(--on-green); }
 .sh-pill.sh-ghost { background: var(--card2); color: var(--ink); }
 .sh-pill.sh-block { width: 100%; min-height: 52px; font-size: 16px; }
-.sh-pill.sh-small { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.sh-pill.sh-small { min-height: 44px; padding: 0 12px; font-size: 13px; }
 .sh-pill:disabled { opacity: .55; }
 .sh-seg { display: grid; grid-auto-flow: column; gap: 2px; background: var(--card2); border-radius: 999px; padding: 3px; }
-.sh-seg button { border: 0; background: none; border-radius: 999px; min-height: 36px; padding: 0 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); }
+.sh-seg button { border: 0; background: none; border-radius: 999px; min-height: 44px; padding: 0 12px; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); }
 .sh-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 .sh-sheet-wrap { position: absolute; inset: 0; background: rgba(10,15,10,.4); z-index: 15; display: flex; align-items: flex-end; }
-.sh-sheet { background: var(--card); width: 100%; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; max-height: 80%; overflow-y: auto; }
+.sh-sheet { width: 100%; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; max-height: 80%; overflow-y: auto; }
 .sh-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
 .sh a:focus-visible, .sh button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+/* Sub-page header (SubHeader.tsx): back, title, optional trailing, always one row. .hdr.sh-subhdr beats the column .hdr in app.css. */
+.hdr.sh-subhdr { flex-direction: row; align-items: center; gap: 10px; }
+.hdr.sh-subhdr h1 { flex: 1 1 0; min-width: 0; margin: 0; font-size: 26px; line-height: 1.15; }
+.hdr.sh-subhdr > :not(h1) { flex: none; }
+
+/* Motion (D-71, D-69). Sheets rise 280ms and the dim fades in; Sheet.tsx plays the 200ms exit through data-closing. */
+@keyframes sh-sheet-in { from { transform: translateY(100%); } }
+@keyframes sh-sheet-out { to { transform: translateY(100%); } }
+@keyframes sh-fade-in { from { opacity: 0; } }
+@keyframes sh-fade-out { to { opacity: 0; } }
+.sh-sheet-wrap, .fm-sheet-wrap, .sf-sheet-bg, .as-back { animation: sh-fade-in var(--dur-base) var(--ease-out); }
+.sh-sheet, .fm-sheet, .sf-sheet, .as-sheet { animation: sh-sheet-in var(--dur-sheet) var(--ease-sheet); }
+[data-closing="true"] { animation: sh-fade-out var(--dur-base) var(--ease-out) forwards; pointer-events: none; }
+[data-closing="true"] > [role="dialog"] { animation: sh-sheet-out var(--dur-base) var(--ease-sheet) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .sh-sheet-wrap, .fm-sheet-wrap, .sf-sheet-bg, .as-back { animation: none; }
+  .sh-sheet, .fm-sheet, .sf-sheet, .as-sheet, [data-closing="true"] > [role="dialog"] { animation: none; }
+  .tabbar.sh-tabs::before, .sh-switch::before, .sh-switch::after { transition: none; }
+}

@@ -44,8 +44,9 @@
 button.sf-chip { border: 0; color: var(--ink); min-height: 44px; padding: 0 14px; border-radius: 22px; font-weight: 600; }
 
 /* v6 Safety header and top buttons */
-.sf-hdr { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
-.sf-hdr h1 { font-size: 30px; }
+/* .hdr.sf-hdr: two classes, so the column .hdr in app.css cannot win the cascade (P0). */
+.hdr.sf-hdr { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+.hdr.sf-hdr h1 { font-size: 30px; }
 .sf-hdr .zp { min-width: 0; }
 .sf-hdr .zp .sf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; border-radius: 22px; padding: 0 14px; }
 .sf-hdr .zp .sf-chip::before { content: ""; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--pin) center/contain no-repeat; mask: var(--pin) center/contain no-repeat; }
@@ -53,11 +54,10 @@ button.sf-chip { border: 0; color: var(--ink); min-height: 44px; padding: 0 14px
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
 .sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; }
 
-/* D-68 hub: frosted tiles in v6 tokens */
+/* D-68 hub: solid tiles in v6 tokens (D-71: glass is for the frame only) */
 .sf-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sf-tile { display: flex; flex-direction: column; gap: 4px; min-height: 124px; min-width: 0; box-sizing: border-box; padding: 14px; border-radius: 20px; text-decoration: none; color: var(--ink);
-  background: color-mix(in srgb, var(--card) 72%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
-  border: 1px solid color-mix(in srgb, var(--card) 60%, var(--line)); box-shadow: var(--shadow); }
+  background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .sf-tile:active { transform: scale(.98); }
 .sf-tile:focus-visible, .sf-i:focus-visible, .sf-call:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .sf-tile-ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--soft); color: var(--green); margin-bottom: 4px; }
@@ -68,23 +68,27 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 @media (prefers-reduced-motion: reduce) { .sf-tile:active { transform: none; } }
 
 /* sub-pages */
-.sf-subhdr { flex-wrap: wrap; justify-content: flex-start; }
-.sf-subhdr h1 { flex: 1 1 8ch; min-width: 0; font-size: 26px; }
+.hdr.sf-subhdr { flex-wrap: nowrap; justify-content: flex-start; }
+.hdr.sf-subhdr h1 { flex: 1 1 0; min-width: 0; font-size: 26px; }
+.sf-subhdr .zp { flex: 0 1 auto; max-width: 48%; align-items: flex-end; }
+.sf-subhdr .zp .sf-chip { max-width: 100%; white-space: normal; text-align: left; line-height: 1.2; padding-top: 6px; padding-bottom: 6px; }
 .sf-dials { display: flex; flex-direction: column; gap: 10px; }
 .sf-dial { display: flex; gap: 8px; align-items: stretch; }
 .sf-call { flex: 1 1 0; min-width: 0; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; text-align: left; padding: 0 18px; font-size: 18px; color: var(--btn-fg) !important; }
 .sf-call b { font-size: 22px; white-space: nowrap; }
 .sf-i { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--sep); background: var(--cell); color: var(--act); font: italic 700 18px Georgia, serif; }
 .sf-sheet-bg { position: fixed; inset: 0; z-index: 50; background: rgba(15, 23, 18, .45); display: flex; align-items: flex-end; justify-content: center; }
-.sf-sheet { width: 100%; max-width: 520px; box-sizing: border-box; background: var(--card); color: var(--ink); border-radius: 22px 22px 0 0; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow); }
+.sf-sheet { width: 100%; max-width: 520px; box-sizing: border-box; color: var(--ink); border-radius: 22px 22px 0 0; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 12px; }
 .sf-sheet-h { margin: 0; font-size: 20px; }
 .sf-sheet-p { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
-.sf-hz-card { background: var(--cell); border-radius: 18px; box-shadow: var(--shadow); padding: 16px; border-left: 6px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
-.sf-hz-card.good { border-left-color: var(--ok); }
-.sf-hz-card.warn { border-left-color: var(--amber); }
+.sf-hz-card { background: var(--cell); border-radius: 18px; box-shadow: var(--shadow); padding: 16px; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+/* Status shows as a tinted card plus the level chip, not a side stripe. */
+.sf-hz-card.good { background: color-mix(in srgb, var(--ok) 9%, var(--cell)); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.sf-hz-card.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }
 .sf-hz-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .sf-hz-top h2 { margin: 0; font-size: 19px; }
 .sf-hz-lvl { font-size: 14px; font-weight: 600; padding: 2px 10px; border-radius: 10px; background: var(--fill); }
-.sf-hz-card.warn .sf-hz-lvl { background: var(--warn-bg); color: var(--warn); }
+.sf-hz-card.warn .sf-hz-lvl { background: var(--card); color: var(--warn); }
+.sf-hz-card.warn .sf-hz-do { color: var(--ink); }
 .sf-hz-read, .sf-hz-do { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
 .sf-hz-do { color: var(--ink2); }

@@ -23,10 +23,17 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
     })
     return () => { live = false }
   }, [])
+  // Glass only once content has scrolled under the bar (D-71). Scroll events do not bubble, so listen in the capture phase.
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const on = (e: Event) => { const t = e.target as HTMLElement | null; if (t?.matches?.('main.scroll')) setScrolled(t.scrollTop > 4) }
+    document.addEventListener('scroll', on, true)
+    return () => document.removeEventListener('scroll', on, true)
+  }, [])
   const now = new Date()
   const first = name.split(/\s+/)[0] ?? ''
   return (
-    <div className="topbar sh sh-top">
+    <div className="topbar sh sh-top" data-scrolled={scrolled}>
       <a className="sh-me-btn" href="#me" aria-label="Me and settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0).toUpperCase() || <Icon name="users" />)}</a>
       <div className="sh-top-text">
         <span className="sh-top-date">{dateLine(now)}</span>

@@ -23,7 +23,8 @@
 .bt .fm-chk { position: relative; width: 32px; height: 32px; flex: none; border-radius: 10px; border: 2.5px solid var(--green2); background: none; padding: 0; display: grid; place-items: center; }
 .bt .fm-chk::before { content: ""; position: absolute; inset: -8px; } /* 48px tap area around the 32px box */
 .bt .fm-chk[aria-checked="true"] { background: var(--green2); }
-.bt .fm-chk[aria-checked="true"]::after { content: ""; width: 14px; height: 8px; border-left: 3px solid #fff; border-bottom: 3px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+.bt .fm-chk[aria-checked="true"]::after { content: ""; width: 18px; height: 18px; background: #fff; -webkit-mask: var(--tick) center/contain no-repeat; mask: var(--tick) center/contain no-repeat; }
+.bt .fm-chk { --tick: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M4 12.5l5 5L20 6.5%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%273.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E"); }
 .fm-ico { width: 32px; height: 32px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--soft); color: var(--ink); }
 .fm-ico.note { background: var(--warn-bg); }
 .fm-fab-wrap { position: sticky; bottom: 100px; height: 0; display: flex; justify-content: flex-end; z-index: 3; pointer-events: none; }

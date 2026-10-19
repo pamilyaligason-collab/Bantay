@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, type CSSProperties } from 'react'
 import { ASK_EVENT } from '../assistant/Assistant'
 import { Icon, type IconName } from './Icon'
 import type { Tab } from './routes'
@@ -13,8 +13,10 @@ const ITEMS: { id: Tab; label: string; icon: IconName }[] = [
 
 /** Five slots, mockup order: Today, Health, raised Ask, Family, Safety. Ask opens the assistant until it becomes a tab (P6). */
 export function TabBar({ active }: { active: Tab | null }) {
+  const at = ITEMS.findIndex((t) => t.id === active)
+  const pill = { '--slot': at < 2 ? at : at + 1, '--pill': at < 0 ? 0 : 1 } as CSSProperties // skip the Ask slot
   return (
-    <nav aria-label="Main" className="tabbar sh sh-tabs">
+    <nav aria-label="Main" className="tabbar sh sh-tabs" style={pill}>
       {ITEMS.map((t, i) => (
         <Fragment key={t.id}>
           {i === 2 && (

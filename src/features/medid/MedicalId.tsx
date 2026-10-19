@@ -4,6 +4,9 @@ import { show } from './card'
 import { useMedicalId } from './useMedicalId'
 import './medid.css'
 
+/** Blank answers show quiet "Not added" text, plus an Add link to Me when the card is the person's own. */
+const Val = ({ v, add }: { v: string; add: boolean }) => v === 'Not added' ? <><span className="mid-none">{v}</span>{add && <a className="mid-add" href="#me">Add</a>}</> : <>{v}</>
+
 const initial = (n: string) => (n.trim().charAt(0) || '?').toUpperCase()
 
 /** Mockup medid: one large, readable card from the person's profile. Works offline (cached). */
@@ -25,14 +28,14 @@ export default function MedicalId() {
             <Icon name="cross" size={30} />
           </div>
           <dl className="mid-dl">
-            <div><dt>Blood type</dt><dd>{show(card.bloodType)}</dd></div>
-            <div><dt>Allergies</dt><dd className="mid-red">{show(card.allergies)}</dd></div>
-            <div><dt>Conditions</dt><dd>{show(card.conditions)}</dd></div>
-            <div><dt>Medicines</dt><dd>{show(card.medicines)}</dd></div>
+            <div><dt>Blood type</dt><dd><Val v={show(card.bloodType)} add={!other} /></dd></div>
+            <div><dt>Allergies</dt><dd className={show(card.allergies) === 'Not added' ? undefined : 'mid-red'}><Val v={show(card.allergies)} add={!other} /></dd></div>
+            <div><dt>Conditions</dt><dd><Val v={show(card.conditions)} add={!other} /></dd></div>
+            <div><dt>Medicines</dt><dd><Val v={show(card.medicines)} add={!other} /></dd></div>
             <div><dt>Call</dt><dd>
               {card.calls.length
                 ? card.calls.map((c) => <a key={c.phone} className="mid-call" href={`tel:${smsNumber(c.phone)}`}>{c.name} · {c.phone}</a>)
-                : 'Not added'}
+                : <Val v="Not added" add={!other} />}
             </dd></div>
           </dl>
         </div>
