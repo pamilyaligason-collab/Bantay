@@ -47,12 +47,22 @@
 .hv-open { color: var(--ink); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; min-height: 28px; }
 .hv-open::after { content: "\203A"; margin-left: 6px; color: var(--ink2); font-weight: 400; }
 .hv-open:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.hv-bar { display: block; position: relative; height: 14px; margin: 8px 8px 4px 0; max-width: 220px; }
-.hv-band { position: absolute; top: 4px; height: 6px; border-radius: 3px; background: var(--soft); box-shadow: inset 0 0 0 1px var(--green2); }
+.hv-bar { display: block; position: relative; height: 14px; margin: 8px 0 4px; width: 100%; max-width: 220px; min-width: 160px; }
+.hv-bar::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 4px; border-radius: 2px; background: var(--card2); }
+.hv-band { position: absolute; top: 3px; height: 8px; border-radius: 4px; background: var(--soft); box-shadow: inset 0 0 0 1px var(--green2); }
 .hv-dot { position: absolute; top: 1px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; box-sizing: border-box; }
 .hv-dot.now { background: var(--ok); }
 .hv-dot.now.above, .hv-dot.now.below { background: var(--amber); }
 .hv-dot.now.none { background: var(--ink2); }
+.hv-dot.now.edge { box-shadow: 0 0 0 2px var(--cell); }
+.hv-arrow { position: absolute; top: 0; width: 0; height: 0; border: 7px solid transparent; }
+.hv-arrow.high { right: -9px; border-left: 8px solid var(--warn); border-right: 0; }
+.hv-arrow.low { left: -9px; border-right: 8px solid var(--warn); border-left: 0; }
+.hv-last { font-size: 13px; color: var(--ink2); }
+.hv-state.none { background: none; color: var(--ink2); box-shadow: inset 0 0 0 1.5px var(--line); font-weight: 600; }
+.hv-novitals { display: grid; justify-items: start; gap: 10px; padding: 20px; margin: 12px 0 8px; }
+.hv-novitals p { margin: 0; }
+.hv-nv-h { margin: 0; font-size: 22px; line-height: 1.2; font-weight: 700; }
 .hv-dot.prev { background: var(--cell); border: 2px solid var(--ink2); }
 .hv-before { font-weight: 600; }
 
@@ -69,8 +79,12 @@
 .hv-graph .uplot { max-width: 100%; }
 .hv-advice { background: var(--soft); box-shadow: none; }
 
-.hv-take { min-height: 44px; min-width: 76px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.hv-take { min-height: 48px; min-width: 96px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
 .hv-take:disabled { opacity: 0.5; }
 .hv-take:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .hv-done { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ok); }
 .hv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* High / Low chips lead with an arrow, not just a colour. */
+.hv-state.above::before, .hv-state.below::before { content: "\25B2"; width: auto; height: auto; margin-right: 5px; border-radius: 0; background: none; font-size: 10px; vertical-align: 1px; color: var(--warn); }
+.hv-state.below::before { content: "\25BC"; }
+.hv-state.none::before { display: none; }

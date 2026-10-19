@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { latestByTest, latestVsNormal, type Range, type Reading } from './ranges'
+import { formatNumber } from '../../lib/labFormat'
+import { latestByTest, latestVsNormal, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
@@ -29,18 +30,22 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
           {latest.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
             const v = latestVsNormal(r, fam)
+            const st = rangeState(v.headline)
+            const hist = readings.filter((x) => x.test === r.test)
+            const spark = sparkPath(hist)
             const prev = previousReading(readings, r.test)
             const layout = barLayout(r.value, showPrev && prev ? prev.value : null, effectiveRange(r, fam).range)
             return (
               <div className="row hv-row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
                 <span className="grow">
                   <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}</a>
-                  {v.headlineText && <span className={`hv-state ${v.headline}`}>{v.headlineText}</span>}
+                  <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>
                   {layout.band && (
                     <span className="hv-bar" aria-hidden="true">
                       <i className="hv-band" style={{ left: `${layout.band.from}%`, width: `${layout.band.to - layout.band.from}%` }} />
                       {layout.prev != null && <i className="hv-dot prev" style={{ left: `${layout.prev}%` }} />}
-                      <i className={`hv-dot now ${v.headline}`} style={{ left: `${layout.now}%` }} />
+                      <i className={`hv-dot now ${v.headline}${layout.edge ? ' edge' : ''}`} style={{ left: `${layout.now}%` }} />
+                      {layout.edge && <i className={`hv-arrow ${layout.edge}`} />}
                     </span>
                   )}
                   {!layout.band && layout.prev != null && (
@@ -52,8 +57,9 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
                   {showPrev && (prev ? <span className="sub hv-before">{beforeLine(r, prev, fam)}</span> : <span className="sub hv-before">Before: no earlier result</span>)}
                 </span>
                 <span className="hv-val">
-                  <strong>{r.value}</strong> <small>{r.unit}</small>
-                  <Spark path={sparkPath(readings.filter((x) => x.test === r.test))} />
+                  <strong>{formatNumber(r.value)}</strong> <small>{r.unit}</small>
+                  <Spark path={spark} />
+                  {spark && <small className="hv-last">Last {Math.min(12, hist.length)}</small>}
                 </span>
               </div>
             )

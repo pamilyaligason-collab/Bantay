@@ -10,8 +10,8 @@ const NO_NAMES: string[] = []
 type Row = Slot & { taken: boolean; detail: string; first: boolean }
 
 /** Medicines today: the profile list (entries may carry times) plus confirmed prescription lines.
- *  Only the person themself can tick "Taken": the server accepts a dose from them, not from every viewer. */
-export function Medicines({ personId, mine }: { personId: string; mine: boolean }) {
+ *  "Mark taken" is for the person themself or an admin carer: the server accepts a dose from them, not from every viewer. */
+export function Medicines({ personId, mine, canMark = mine }: { personId: string; mine: boolean; canMark?: boolean }) {
   const profile = useProfile(personId)
   const own = useKv<string[]>('profile.medicines', NO_NAMES) // offline cache of the signed-in person's own list
   const rx = useConfirmedMedicines(personId)
@@ -71,10 +71,10 @@ export function Medicines({ personId, mine }: { personId: string; mine: boolean 
               </span>
               {r.taken ? (
                 <span className="hv-done"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg> Taken</span>
-              ) : mine && r.first ? (
-                <button type="button" className="hv-take" disabled={busy} aria-label={`Mark ${r.name}${r.at != null ? ` ${clock(r.at)}` : ''} as taken`} onClick={() => void take(r.name)}>Mark taken</button>
+              ) : canMark && r.first ? (
+                <button type="button" className="hv-take" disabled={busy} aria-label={`Mark ${r.name}${r.at != null ? ` ${clock(r.at)}` : ''} as taken${mine ? '' : ' for them'}`} onClick={() => void take(r.name)}>Mark taken</button>
               ) : (
-                <span className="sub">{mine ? 'Later today' : 'Not yet'}</span>
+                <span className="sub">{canMark ? 'Later today' : 'Not yet'}</span>
               )}
             </div>
           ))}

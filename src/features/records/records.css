@@ -31,11 +31,28 @@
 .rx-status { min-height: 22px; font-size: 15px; color: var(--ink2); margin: 0; }
 .rx-open { color: var(--act); font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
 
-/* Person picker (v6 family-records chips): 44px tall, green when selected, count of results to check. */
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.pchip { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: var(--card2); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+/* Person picker (v6 family-records chips): one horizontal scroll row, 48px tall, green when selected.
+   The to-check count is a corner badge on the chip, so it arriving late never changes the layout. */
+.chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 8px 8px 4px 0; margin: -8px 0 0; }
+.chips::-webkit-scrollbar { display: none; }
+.pchip { position: relative; flex: none; min-height: 48px; padding: 0 18px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; background: var(--card2); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .pchip[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 .pchip:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.pchip-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: inline-grid; place-items: center; font-size: 13px; background: var(--amber); color: #2A1C00; }
+.pchip-n { position: absolute; top: -6px; right: -4px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; display: grid; place-items: center; font-size: 13px; line-height: 1; background: var(--amber); color: #2A1C00; box-shadow: 0 0 0 2px var(--ground); }
 .rx-progress { margin: 0; font-size: 15px; color: var(--ink2); }
 .rx-meds .row .sub { display: block; }
+.rx-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rx-count { flex: none; min-width: 32px; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: 16px; display: grid; place-items: center; font-size: 16px; font-weight: 700; background: var(--amber); color: #2A1C00; }
+
+/* Test picker: button plus a list of 48px choices. */
+.tp { position: relative; }
+.tp-btn { width: 100%; min-height: 52px; padding: 0 16px; border: 0; border-radius: 14px; display: flex; align-items: center; gap: 10px; background: var(--card2); color: var(--ink); font: inherit; font-size: 17px; cursor: pointer; text-align: left; }
+.tp-btn:focus-visible, .tp-opt:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.tp-k { font-size: 14px; color: var(--muted); }
+.tp-v { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.tp-chev { width: 10px; height: 10px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg) translate(-2px, -2px); flex: none; }
+.tp-chev[data-open="true"] { transform: rotate(-135deg) translate(-2px, -2px); }
+.tp-list { margin-top: 6px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); max-height: 288px; overflow-y: auto; }
+.tp-opt { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 0 16px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 17px; cursor: pointer; text-align: left; }
+.tp-opt + .tp-opt { border-top: 1px solid var(--line); }
+.tp-opt[aria-selected="true"] { background: var(--soft); font-weight: 700; }

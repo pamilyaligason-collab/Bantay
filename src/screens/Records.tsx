@@ -1,11 +1,47 @@
 import { useEffect, useRef, useState } from 'react'
 import { GUIDE } from '../features/health/ranges'
+import { formatLabValue, providerName } from '../lib/labFormat'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
 import { useConfirmedDocs, useConfirmedMedicines, useQueue } from '../features/records/useRecordsServer'
 import { ConfirmFlow, firstName, KIND } from '../features/records/ConfirmSheet'
 import { RecordDetail } from '../features/records/RecordDetail'
 import { PersonChips } from '../features/records/PersonChips'
 import { MedicineLines } from '../features/records/MedicineLines'
+
+/** Test picker: a button that opens a short list of 48px choices (the native select looked unstyled and tiny on a phone). */
+function TestPicker({ tests, picked, onPick }: { tests: string[]; picked: string; onPick(t: string): void }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', k)
+    return () => document.removeEventListener('keydown', k)
+  }, [open])
+  return (
+    <div className="tp">
+      <button type="button" className="tp-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="tp-k">Test</span>
+        <span className="tp-v">{testLabel(picked, GUIDE)}</span>
+        <span className="tp-chev" aria-hidden="true" data-open={open} />
+      </button>
+      {open && (
+        <div className="tp-list" role="listbox" aria-label="Choose a test">
+          {tests.map((t) => (
+            <button key={t} type="button" role="option" aria-selected={t === picked} className="tp-opt" onClick={() => { onPick(t); setOpen(false) }}>
+              {testLabel(t, GUIDE)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The same kind of document from the same provider on one date is one chip, not two. */
+const dedupeDocs = <T extends { doc: { kind: string; facility: string | null } }>(docs: T[]): T[] => {
+  const seen = new Set<string>()
+  return docs.filter((x) => { const k = `${x.doc.kind}|${providerName(x.doc.facility).toLowerCase()}`; if (seen.has(k)) return false; seen.add(k); return true })
+}
 
 export default function Records() {
   const { ready, people, member, ownId, personId, setPersonId, readings, consults, reload } = useHealthData()
@@ -18,7 +54,8 @@ export default function Records() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [test, setTest] = useState('')
   const tests = [...new Set(readings.map((r) => r.test))].sort()
-  const picked = test && tests.includes(test) ? test : (tests[0] ?? '')
+  const count = (t: string) => readings.filter((r) => r.test === t).length
+  const picked = test && tests.includes(test) ? test : ([...tests].sort((a, b) => count(b) - count(a))[0] ?? '') // default: the test with the most results, so the trend is a line
   const series = readings.filter((r) => r.test === picked)
   const signature = series.map((r) => `${r.id}:${r.takenAt}:${r.value}`).join('|')
   const box = useRef<HTMLDivElement>(null)
@@ -70,9 +107,11 @@ export default function Records() {
         <div className="grp">
           <button className="row" onClick={() => setSheet(true)}>
             <span className="grow">
-              To check ({toCheck})
-              <span className="sub">Imported results waiting for you to confirm.</span>
+              <span aria-hidden="true">To check</span>
+              <span className="rx-sr">To check ({toCheck})</span>
+              <span className="sub">{toCheck === 1 ? '1 imported result is' : `${toCheck} imported results are`} waiting for you. Open one file, check it, and confirm all of it at once.</span>
             </span>
+            <span className="rx-count" aria-hidden="true">{toCheck}</span>
             <span className="chev" aria-hidden="true">&rsaquo;</span>
           </button>
         </div>
@@ -92,16 +131,8 @@ export default function Records() {
           <section aria-labelledby="trend">
             <h2 className="hd" id="trend">Trend</h2>
             <div className="grp" style={{ padding: 16 }}>
-              <label className="sub">
-                Test{' '}
-                <select value={picked} onChange={(e) => setTest(e.target.value)} style={{ font: 'inherit', minHeight: 44 }}>
-                  {tests.map((t) => (
-                    <option key={t} value={t}>
-                      {testLabel(t, GUIDE)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <TestPicker tests={tests} picked={picked} onPick={setTest} />
+              {series.length > 0 && <p className="sub" style={{ margin: '8px 0 0' }}>{series.length === 1 ? '1 result' : `Last ${series.length} results`}</p>}
               {series.length < 2 && <p className="sub">Add one more result to see a trend line.</p>}
               <div ref={box} role="img" aria-label={`Trend of ${testLabel(picked, GUIDE)} over time`} style={{ overflow: 'hidden', minHeight: 150 }} />
             </div>
@@ -115,18 +146,18 @@ export default function Records() {
                   <span className="grow">
                     {day(d).consults.map((c) => (
                       <span key={`c${c.id}`}>
-                        Doctor visit{c.doctor ? `: ${c.doctor}` : ''}
-                        {c.reason && <span className="sub">{c.reason}</span>}
+                        Doctor visit{c.doctor ? `: ${providerName(c.doctor)}` : ''}
+                        {c.reason && <span className="sub" style={{ display: 'block' }}>{c.reason}</span>}
                       </span>
                     ))}
-                    {day(d).docs.map((x) => (
+                    {dedupeDocs(day(d).docs).map((x) => (
                       <button key={x.doc.id} className="rx-btn" style={{ textAlign: 'left', justifyContent: 'flex-start' }} onClick={() => setDetailId(x.doc.id)}>
-                        {KIND[x.doc.kind] ?? 'Document'}{x.doc.facility ? `, ${x.doc.facility}` : ''}
+                        {KIND[x.doc.kind] ?? 'Document'}{x.doc.facility ? `, ${providerName(x.doc.facility)}` : ''}
                       </button>
                     ))}
                     {day(d).tests.map((r) => (
                       <span key={`r${r.id}`}>
-                        {testLabel(r.test, GUIDE)}: {r.value} {r.unit}
+                        {testLabel(r.test, GUIDE)}: {formatLabValue(r.value, r.unit)}
                       </span>
                     ))}
                   </span>

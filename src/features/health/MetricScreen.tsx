@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GUIDE, latestVsNormal, type Reading } from './ranges'
+import { formatNumber } from '../../lib/labFormat'
+import { GUIDE, latestVsNormal, rangeState, type Reading } from './ranges'
 import { PersonChips } from '../records/PersonChips'
 import { useHealthData } from '../records/useHealthData'
 import {
@@ -41,7 +42,7 @@ function Graph({ pts, label }: { pts: Point[]; label: string }) {
     return () => { live = false; ro?.disconnect(); chart?.destroy() }
   }, [sig]) // eslint-disable-line react-hooks/exhaustive-deps
   const vals = pts.map((p) => p.value)
-  return <div ref={box} role="img" aria-label={`${label}, ${pts.length} readings from ${Math.min(...vals)} to ${Math.max(...vals)}${words(pts)}`} />
+  return <div ref={box} role="img" aria-label={`${label}, ${pts.length} readings from ${formatNumber(Math.min(...vals))} to ${formatNumber(Math.max(...vals))}${words(pts)}`} />
 }
 
 /** #health/metric/<code>: the week and month view of one measurement (mockup v6 "metric"). */
@@ -62,7 +63,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const v = latest ? latestVsNormal(latest, family) : null
   const last = pts[pts.length - 1]
   const months = monthlyAverages(pts, now)
-  const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : String(n))
+  const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : formatNumber(n))
 
   return (
     <>
@@ -85,11 +86,11 @@ export default function MetricScreen({ code }: { code: string }) {
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
                 <strong className="hv-big">
-                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? latest.value : last ? dp(last.value) : '--'}
+                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? formatNumber(latest.value) : last ? dp(last.value) : '--'}
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {v?.headlineText && <span className={`hv-state ${v.headline}`}>{v.headlineText}</span>}
+              {v && !activity && (() => { const st = rangeState(v.headline); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
           </div>
 
@@ -127,7 +128,7 @@ export default function MetricScreen({ code }: { code: string }) {
                 <div className="row" style={{ alignItems: 'flex-start' }}>
                   <span className="grow">
                     {rangeLine(latest, family) || 'No range for this yet'}
-                    {!v.lab.text && (v.guide || v.family) && <span className="sub">Lab range: not printed</span>}
+                    {!v.lab.text && (v.guide || v.family || v.general) && <span className="sub">Lab range: not printed</span>}
                     {v.guide && (
                       <span className="sub">
                         <a href={v.guide.url} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>
@@ -136,7 +137,7 @@ export default function MetricScreen({ code }: { code: string }) {
                         </a>
                       </span>
                     )}
-                    {!v.lab.text && !v.family && !v.guide && <span className="sub">Your lab report prints its own range. Confirm the record to see it here.</span>}
+                    {!v.lab.text && !v.family && !v.guide && !v.general && <span className="sub">Your lab report prints its own range. Confirm the record to see it here.</span>}
                   </span>
                 </div>
               </div>
@@ -149,7 +150,7 @@ export default function MetricScreen({ code }: { code: string }) {
               <div className="grp" data-testid="recent">
                 {mine.slice(0, 5).map((r, i) => (
                   <div className="row" key={`${r.takenAt}:${i}`}>
-                    <span className="grow"><strong>{r.value}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{shortDate(r.takenAt)}</span></span>
+                    <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{shortDate(r.takenAt)}</span></span>
                   </div>
                 ))}
               </div>

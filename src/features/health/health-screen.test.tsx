@@ -76,7 +76,8 @@ describe('Health overview', () => {
     render(<Health />)
     await screen.findByRole('link', { name: /^BP 124/ })
     const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
-    expect(within(row).getByText('Above range')).toBeTruthy()
+    expect(within(row).getByText('High')).toBeTruthy()
+    expect(row.querySelector('.hv-state.above')?.textContent).toContain('Above range')
     expect(row.querySelector('svg.hv-spark')).toBeTruthy()
     expect(within(row).queryByText(/Lab range|General guide/)).toBeNull()
   })
