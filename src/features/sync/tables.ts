@@ -39,6 +39,10 @@ export const TABLES: Record<string, TableSpec> = {
     fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines'],
     onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'people', idField: 'id' }
   },
+  // Family plan (0012): edits and soft deletes (deletedAt) are full-row upserts on client_id; the pull removes tombstoned rows.
+  family_tasks: { fields: ['title', 'due', 'assigneePersonId', 'done', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
+  family_events: { fields: ['title', 'startsAt', 'endsAt', 'allDay', 'personId', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
+  family_notes: { fields: ['body', 'pinned', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }
@@ -86,5 +90,9 @@ export const naturalKey: Record<string, (r: Obj) => string> = {
   readings: (r) => `${r.personId}|${r.test}|${ms(r.takenAt)}`,
   consults: (r) => `${r.personId}|${ms(r.takenAt)}`,
   meds_taken: (r) => `${r.personId}|${r.name}|${ms(r.takenAt)}`,
-  activity: (r) => `${r.personId}|${r.kind}|${ms(r.startedAt)}`
+  activity: (r) => `${r.personId}|${r.kind}|${ms(r.startedAt)}`,
+  // plan rows are stamped with a client_id when they are created, so there is no unstamped twin to match
+  family_tasks: (r) => `cid:${r.clientId}`,
+  family_events: (r) => `cid:${r.clientId}`,
+  family_notes: (r) => `cid:${r.clientId}`
 }
