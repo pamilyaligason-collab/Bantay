@@ -59,6 +59,12 @@ export const VIEW: Record<string, [number, number, number, number]> = {
   hormones: [0, 0, 120, 160]
 }
 
+/** Where the soft glow sits for each system (inside its VIEW window). */
+export const FOCUS: Record<string, [number, number]> = {
+  skeleton: [60, 112], muscles: [50, 95], heart: [64, 88], lungs: [60, 82], brain: [60, 24],
+  digestion: [64, 120], kidneys: [60, 120], skin: [60, 118], hormones: [60, 52]
+}
+
 /** Layers that draw their own body, so the shared outline stays hidden. */
 export const OWN_BODY = new Set(['skeleton', 'muscles'])
 

@@ -4,17 +4,10 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --an-body-a: #46594B; --an-body-b: #2E3F34; --an-edge: #6E8A77; --an-bone-c: #E8DCBC; --an-bone-s: #9C8D68; } }
 .an-body { filter: drop-shadow(0 2px 3px rgba(31, 61, 43, 0.22)); }
 
-/* System chips: one row you swipe sideways, so the figure stays above the fold. */
-.an-chips { display: flex; gap: 8px; margin: 12px 0 8px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; padding: 2px 44px 4px 0; -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent); mask-image: linear-gradient(90deg, #000 90%, transparent); }
-.an-chips::-webkit-scrollbar { display: none; }
-.an-chip { flex: none; scroll-snap-align: start; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-.an-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
-.an-chip:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible, .an-hit:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-
 /* The figure: licensed vector art from /anatomy/body.svg, one layer per system. Tap dots sit on top as real buttons. */
-.an-stage { display: grid; place-items: center; margin: 4px 0 8px; padding: 10px; border-radius: 22px; background: var(--card); }
+.an-stage { position: relative; display: grid; place-items: center; min-width: 0; padding: 10px; border-radius: 24px; background: radial-gradient(ellipse 70% 55% at 50% 45%, color-mix(in srgb, var(--soft) 85%, transparent), transparent 75%), var(--card); box-shadow: var(--shadow); }
 .hdr .an-h1 { font-size: 28px; }
-.an-fig { position: relative; width: min(100%, calc(max(360px, min(52svh, 450px)) * var(--vw) / var(--vh))); }
+.an-fig { position: relative; width: min(100%, calc(max(340px, min(50svh, 440px)) * var(--vw) / var(--vh))); }
 .an-svg { display: block; width: 100%; height: 100%; touch-action: manipulation; }
 .an-crop { -webkit-mask-image: linear-gradient(transparent, #000 6%, #000 92%, transparent), linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(transparent, #000 6%, #000 92%, transparent), linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-composite: intersect; }
 .an-shell { --bd: var(--an-body-a); --bo: var(--an-edge); transition: opacity 0.18s ease; }
@@ -63,4 +56,44 @@
 .hv-explore::after { content: "\203A"; color: var(--ink2); font-size: 22px; font-weight: 400; }
 .hv-explore:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
-@media (prefers-reduced-motion: reduce) { .an-layer, .an-layer[data-on="true"], .an-shell, .an-hit::after { transition: none; } .an-hit:hover::after, .an-hit:active::after { transform: none; } }
+/* Keyboard focus, as before the chip CSS was removed. */
+.an-rb:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible, .an-hit:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
+/* Explore: status line, left rail of round system buttons with count badges, glow on the chosen system. */
+.an-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 12px 4px 10px; }
+.an-sys { margin: 0; font-size: 22px; line-height: 1.15; }
+.an-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 700; }
+.an-pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.an-pill[data-tone="ok"] { background: var(--soft); }
+.an-pill[data-tone="ok"]::before { background: var(--ok); }
+.an-pill[data-tone="warn"] { background: var(--warn-bg); }
+.an-pill[data-tone="warn"]::before { background: var(--amber); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 35%, transparent); }
+.an-main { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: stretch; margin-bottom: 8px; }
+.an-rail { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; padding: 6px 0; }
+.an-rb { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.an-rb[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+.an-badge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 11px; background: var(--card2); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--ground); }
+.an-badge[data-tone="warn"] { background: var(--amber); color: #2B1D00; }
+.an-glow { position: absolute; width: 32%; aspect-ratio: 1; min-width: 76px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--glow) 95%, transparent), color-mix(in srgb, var(--glow) 45%, transparent) 45%, transparent 70%); --glow: var(--ok); }
+.an-glow[data-tone="warn"] { --glow: var(--amber); animation: an-pulse 2.6s ease-in-out infinite; }
+
+/* Body map card: frosted figure with the organs inside, glow where a result needs a look. */
+.hv-map-wrap { margin: 12px 0 24px; padding: 14px 12px 20px; border-radius: 24px; box-shadow: var(--shadow); background: radial-gradient(ellipse 34% 48% at 50% 54%, color-mix(in srgb, var(--soft) 90%, transparent), transparent 80%), var(--card); }
+.hv-map-wrap .hv-map { display: grid; grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr); grid-template-rows: repeat(5, 66px); gap: 4px 6px; margin: 0; }
+.hv-map .hv-fig { grid-column: 2; grid-row: 1 / 6; width: 100px; height: 346px; overflow: visible; }
+.hv-map .hv-node { height: 58px; min-height: 0; padding: 3px 10px; align-self: center; box-shadow: inset 0 0 0 1px var(--line); }
+.hv-frost .an-body { opacity: 0.6; filter: drop-shadow(0 1px 3px rgba(31, 61, 43, 0.28)); }
+.hv-organs { fill: color-mix(in srgb, var(--green2) 16%, transparent); stroke: color-mix(in srgb, var(--green2) 55%, transparent); stroke-width: 0.9; stroke-linecap: round; stroke-linejoin: round; }
+.hv-wire { stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 2 3; }
+.hv-wire.warn { stroke: var(--amber); }
+.hv-wire.ok { stroke: color-mix(in srgb, var(--ok) 60%, var(--line)); }
+.hv-pt { stroke: var(--card); stroke-width: 2; fill: var(--muted); }
+.hv-pt.ok { fill: var(--ok); }
+.hv-pt.warn { fill: var(--amber); }
+.hv-glow.warn { animation: an-pulse 2.6s ease-in-out infinite; }
+.hv-map-empty { padding: 20px 16px 24px; border-radius: 24px; background: var(--card); box-shadow: var(--shadow); }
+.hv-map-empty .hv-fig { width: 56px; height: 194px; opacity: 0.6; }
+.hv-map-note { margin: 0; max-width: 28ch; text-align: center; font-size: 16px; color: var(--ink2); }
+@keyframes an-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) { .an-layer, .an-layer[data-on="true"], .an-shell, .an-hit::after, .an-rb { transition: none; } .an-glow, .hv-glow { animation: none !important; } .an-hit:hover::after, .an-hit:active::after { transform: none; } }
