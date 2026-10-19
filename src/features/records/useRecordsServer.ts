@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { liveQuery } from 'dexie'
 import { supabase } from '../auth/client'
 import { hdb, type Person } from './store'
-import { cacheDocs, cachedDocs, listConfirmedDocuments, listQueue, type DocBundle } from './api'
+import { cacheDocs, cachedDocs, listConfirmedDocuments, listConfirmedMedicines, listQueue, type DocBundle, type RxItem } from './api'
 
 /** "To check (N)": 0 while offline, signed out, or nothing waits. `error` is set when the server list could not be read, so the screen says so instead of hiding it. */
 export function useQueue() {
   const [count, setCount] = useState(0)
+  const [byPerson, setByPerson] = useState<Record<string, number>>({})
   const [error, setError] = useState(false)
   // With an auth client, INITIAL_SESSION (fires right after subscribe) makes the first call, once the session is restored.
   const [tick, setTick] = useState(supabase?.auth ? -1 : 0)
@@ -18,6 +19,7 @@ export function useQueue() {
     void listQueue().then((r) => {
       if (!live) return
       setCount(r.ok ? r.data.total : 0)
+      setByPerson(r.ok ? r.data.byPerson : {})
       setError(!r.ok && r.error !== 'not_connected' && r.error !== 'offline')
       if (!r.ok) console.warn('records queue failed', r.code ?? r.error)
     })
@@ -34,7 +36,7 @@ export function useQueue() {
     })
     return () => sub?.data.subscription.unsubscribe()
   }, [refresh])
-  return { count, error, refresh }
+  return { count, byPerson, error, refresh }
 }
 
 /** Confirmed documents: the offline copy first, replaced by the server list when online. */
@@ -52,6 +54,19 @@ export function useConfirmedDocs(personId: string, version = 0) {
     return () => { live = false }
   }, [personId, version])
   return docs
+}
+
+/** Confirmed medicines from prescriptions for one person, newest first. `null` until the first answer; stays empty offline. */
+export function useConfirmedMedicines(personId: string, version = 0) {
+  const [items, setItems] = useState<RxItem[] | null>(null)
+  useEffect(() => {
+    if (!personId) return
+    let live = true
+    setItems(null)
+    void listConfirmedMedicines(personId).then((r) => live && setItems(r.ok ? r.data : []))
+    return () => { live = false }
+  }, [personId, version])
+  return items
 }
 
 /** People from the local store, live: sync may pull them after the screen opened. */

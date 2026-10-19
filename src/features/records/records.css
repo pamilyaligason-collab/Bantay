@@ -2,7 +2,7 @@
 .sheet {
   position: fixed; inset: 0; z-index: 60; max-width: 520px; margin: 0 auto; box-sizing: border-box;
   overflow-y: auto; overflow-x: hidden; padding: 14px 16px 48px; color: var(--ink);
-  background: linear-gradient(170deg, var(--sky-clear-a), var(--sky-clear-b)); /* the same sky the other screens sit on; cards are .grp glass */
+  background: var(--bg); /* v6 cream/green (D-66) */
   font-size: 17px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   display: flex; flex-direction: column; gap: 14px;
 }
@@ -21,7 +21,7 @@
 .rx-badge { font-size: 13px; font-weight: 700; color: var(--warn); }
 .rx-main { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
 .rx-main label.rx-check { min-width: 44px; min-height: 44px; display: grid; place-items: center; flex: none; }
-.rx-main input[type="checkbox"] { width: 24px; height: 24px; }
+.rx-main input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--green2); }
 .rx-val { text-align: right; flex: none; font-weight: 600; }
 .rx-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .rx-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -30,3 +30,12 @@
 .rx-form .wide { grid-column: 1 / -1; }
 .rx-status { min-height: 22px; font-size: 15px; color: var(--ink2); margin: 0; }
 .rx-open { color: var(--act); font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Person picker (v6 family-records chips): 44px tall, green when selected, count of results to check. */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pchip { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: var(--card2); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.pchip[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
+.pchip:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.pchip-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; display: inline-grid; place-items: center; font-size: 13px; background: var(--amber); color: #2A1C00; }
+.rx-progress { margin: 0; font-size: 15px; color: var(--ink2); }
+.rx-meds .row .sub { display: block; }

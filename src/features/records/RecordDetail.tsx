@@ -3,6 +3,7 @@ import { getMember } from '../auth/session'
 import { latestVsNormal } from '../health/ranges'
 import type { DocBundle } from './api'
 import { KIND, labRange, OriginalLink } from './ConfirmSheet'
+import { MedicineLines } from './MedicineLines'
 import './records.css'
 
 /** A confirmed document: results against the lab's own range, prescription lines, imaging impression, original file. */
@@ -45,16 +46,10 @@ export function RecordDetail({ bundle, who, onBack }: { bundle: DocBundle; who: 
         </div>
       )}
       {bundle.items.length > 0 && (
-        <div className="grp">
-          {bundle.items.map((i) => (
-            <div className="row" key={i.id} style={{ alignItems: 'flex-start' }}>
-              <span className="grow">
-                <span>{i.drug_raw ?? 'Line that could not be read'}</span>
-                <span className="sub">{[i.strength, i.dose, i.frequency, i.duration].filter(Boolean).join(' · ')}</span>
-              </span>
-            </div>
-          ))}
-        </div>
+        <section aria-labelledby="rd-rx">
+          <h3 className="hd" id="rd-rx">Medicines from prescriptions</h3>
+          <MedicineLines items={bundle.items} />
+        </section>
       )}
       {bundle.vaccinations.length > 0 && (
         <div className="grp">

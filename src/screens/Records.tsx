@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { GUIDE } from '../features/health/ranges'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
-import { useConfirmedDocs, usePeople, useQueue } from '../features/records/useRecordsServer'
+import { useConfirmedDocs, useConfirmedMedicines, useQueue } from '../features/records/useRecordsServer'
 import { ConfirmFlow, firstName, KIND } from '../features/records/ConfirmSheet'
 import { RecordDetail } from '../features/records/RecordDetail'
+import { PersonChips } from '../features/records/PersonChips'
+import { MedicineLines } from '../features/records/MedicineLines'
 
 export default function Records() {
-  const { ready, people: stored, personId, readings, consults, reload } = useHealthData()
-  const people = usePeople(stored)
+  const { ready, people, member, ownId, personId, setPersonId, readings, consults, reload } = useHealthData()
   const queue = useQueue()
   const [ver, setVer] = useState(0)
   const docs = useConfirmedDocs(personId, ver)
+  const medicines = useConfirmedMedicines(personId, ver)
+  const toCheck = queue.byPerson[personId] ?? 0 // ponytail: rows of a person missing from the local people list have no chip; add when sync can leave that gap
   const [sheet, setSheet] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [test, setTest] = useState('')
@@ -54,7 +57,8 @@ export default function Records() {
 
   return (
     <>
-      {queue.error && (
+      <PersonChips people={people} ownId={ownId} personId={personId} drafts={queue.byPerson} onPick={setPersonId} />
+      {queue.error && member?.role === 'admin' && (
         <div className="grp">
           <div className="row">
             <span className="grow">Could not load records to check. Try again.</span>
@@ -62,18 +66,18 @@ export default function Records() {
           </div>
         </div>
       )}
-      {queue.count > 0 && (
+      {toCheck > 0 && (
         <div className="grp">
           <button className="row" onClick={() => setSheet(true)}>
             <span className="grow">
-              To check ({queue.count})
+              To check ({toCheck})
               <span className="sub">Imported results waiting for you to confirm.</span>
             </span>
             <span className="chev" aria-hidden="true">&rsaquo;</span>
           </button>
         </div>
       )}
-      {sheet && <ConfirmFlow people={people} onClose={() => setSheet(false)} onChanged={changed} />}
+      {sheet && <ConfirmFlow people={people} personId={personId} checkedDocs={docs.length} onClose={() => setSheet(false)} onChanged={changed} />}
       {ready && dates.length === 0 ? (
         <div className="grp">
           <div className="row">
@@ -131,6 +135,12 @@ export default function Records() {
             </div>
           </section>
         </>
+      )}
+      {medicines && medicines.length > 0 && (
+        <section aria-labelledby="rxm">
+          <h2 className="hd" id="rxm">Medicines from prescriptions</h2>
+          <MedicineLines items={medicines} />
+        </section>
       )}
     </>
   )
