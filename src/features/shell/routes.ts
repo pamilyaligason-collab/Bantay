@@ -8,7 +8,9 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k === 'records' || k === 'plan' || k === 'people') return { tab: 'family', view: k }
   if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/people, #family/people/<id>
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
-  if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k } // sub-screens of Safety, drawn by Safety itself
+  if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k }
+  if (k.startsWith('medid/')) return { tab: 'safety', view: 'medid' } // #medid/<personId> from a member page // sub-screens of Safety, drawn by Safety itself
+  if (k.startsWith('health/')) return { tab: 'health', view: null } // #health/metric/<code>
   if (VIEWS.has(k)) return { tab: null, view: k }
   return { tab: (TABS as string[]).includes(k) ? (k as Tab) : 'today', view: null }
 }

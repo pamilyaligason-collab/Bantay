@@ -1,64 +1,64 @@
-import { GUIDE, latestByTest, latestVsNormal } from '../features/health/ranges'
+import { useEffect, useMemo, useState } from 'react'
+import Avatar from '../features/admin/Avatar'
+import '../features/admin/admin.css'
+import { BodyMap } from '../features/health/BodyMap'
+import { LatestList } from '../features/health/LatestList'
+import { Medicines } from '../features/health/Medicines'
+import MetricScreen from '../features/health/MetricScreen'
+import { bodyNodes, insightHeadline } from '../features/health/model'
+import { latestByTest } from '../features/health/ranges'
+import { syncDoseReminders } from '../features/health/reminders'
+import { useActivity } from '../features/health/useActivity'
+import '../features/health/health.css'
 import { PersonChips } from '../features/records/PersonChips'
-import { testLabel, useHealthData } from '../features/records/useHealthData'
+import { useHealthData } from '../features/records/useHealthData'
+import { useKv } from '../features/safety/store'
+import { useProfile } from '../features/setup/useProfile'
 
 const NO_DRAFTS: Record<string, number> = {}
-const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
+const NO_NAMES: string[] = []
+const METRIC = /^#health\/metric\/([\w-]+)$/
 
 export default function Health() {
+  const [hash, setHash] = useState(location.hash)
+  useEffect(() => {
+    const on = () => setHash(location.hash)
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [])
+  // Daily dose reminders follow the signed-in person's own medicine list, whichever person is on screen.
+  const ownMeds = useKv<string[]>('profile.medicines', NO_NAMES)
+  useEffect(() => { void syncDoseReminders(ownMeds) }, [ownMeds])
+  const code = METRIC.exec(hash)?.[1]
+  return code ? <MetricScreen code={code} /> : <Overview />
+}
+
+function Overview() {
   const { ready, people, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
+  const acts = useActivity(personId)
+  const profile = useProfile(personId)
   const latest = latestByTest(readings)
+  const name = people.find((p) => p.id === personId)?.name ?? ''
+  const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
+  const head = insightHeadline(latest, new Date(), familyOf)
+  const nodes = useMemo(() => bodyNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <div className="hdr">
         <h1>Health</h1>
-        <span>Your health, in one place</span>
+        <span>{name ? `${personId === ownId ? 'Me' : name.split(' ')[0]} · your health, in one place` : 'Your health, in one place'}</span>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      <section aria-labelledby="lvn">
-        <h2 className="hd" id="lvn">Latest vs normal</h2>
-        {ready && latest.length === 0 ? (
-          <div className="grp">
-            <div className="row">
-              <span className="grow">
-                No results yet
-                <span className="sub">Lab results you confirm will show here with the lab&apos;s own range.</span>
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="grp">
-            {latest.map((r) => {
-              const v = latestVsNormal(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`))
-              return (
-                <div className="row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }}>
-                  <span className="grow">
-                    <span>{testLabel(r.test, GUIDE)}</span>
-                    <span className="sub">{v.lab.text ? `Lab range: ${v.lab.text}` : 'Lab range: not printed'}</span>
-                    {v.family && <span className="sub">Family limit: {v.family.text}</span>}
-                    {v.guide && (
-                      <span className="sub">
-                        {v.guide.label}: {v.guide.text}.{' '}
-                        <a href={v.guide.url} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>
-                          {v.guide.source}, {v.guide.year}
-                          <span style={HIDDEN}> (opens in new tab)</span>
-                        </a>
-                      </span>
-                    )}
-                  </span>
-                  <span style={{ textAlign: 'right' }}>
-                    <strong>
-                      {r.value} {r.unit}
-                    </strong>
-                    <span className="sub" style={{ display: 'block' }}>{v.headlineText}</span>
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        )}
-        <p className="sub" style={{ margin: '8px 4px 0' }}>Ranges are for information only and are not medical advice. Ask your doctor what is right for you.</p>
-      </section>
+      <div className="hv-head" data-tone={head.tone}>
+        <div className="grow">
+          <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
+          <p className="sub" style={{ margin: '6px 0 0' }}>{head.sub}</p>
+        </div>
+        {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
+      </div>
+      <BodyMap nodes={nodes} />
+      <LatestList readings={readings} thresholds={thresholds} ready={ready} />
+      {personId && <Medicines personId={personId} mine={personId === ownId} />}
     </>
   )
 }
