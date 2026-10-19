@@ -6,6 +6,7 @@ const VIEWS = new Set(['me', 'notif', 'admin'])
 export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   const k = h.replace(/^#/, '')
   if (k === 'records' || k === 'plan' || k === 'people') return { tab: 'family', view: k }
+  if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/people, #family/people/<id>
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k } // sub-screens of Safety, drawn by Safety itself
   if (VIEWS.has(k)) return { tab: null, view: k }

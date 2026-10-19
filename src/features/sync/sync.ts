@@ -4,6 +4,7 @@ import { track } from '../admin/events'
 import { getAccessToken, onAuthChange } from '../auth/session'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
+import { fdb } from '../family/store'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
@@ -78,7 +79,7 @@ async function deadLetter(row: OutboxRow, code: string) {
 }
 
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
-  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity } as Record<string, Table<{ id?: number }, number>>)[t]
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes } as Record<string, Table<{ id?: number }, number>>)[t]
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
   const { url, key } = env()
@@ -188,10 +189,12 @@ async function pull(token: string) {
     let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
     for (let page = 0; page < 20; page++) {
       const page_ = (c: string) => getJson(`${url}/rest/v1/${table}?select=*&order=${c}.asc&limit=${PAGE}` + (from ? `&${c}=gte.${encodeURIComponent(from)}` : ''), key!, token)
-      let rows: Record<string, unknown>[]
+      let rows: Record<string, unknown>[] = []
       try {
         rows = await page_(col)
       } catch (e) {
+        // PGRST205 / 42P01 = the table is not created yet (migration 0012 not applied): skip this table, the rest carry on
+        if (e instanceof SyncError && (e.code === 'PGRST205' || e.code === '42P01')) break
         // 42703 = the column does not exist yet (migration 0008 not applied): this table falls back to created_at, the rest carry on
         if (col === 'created_at' || !(e instanceof SyncError) || e.code !== '42703') throw e
         col = 'created_at'
