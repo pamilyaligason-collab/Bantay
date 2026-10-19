@@ -124,7 +124,9 @@ test.describe('Today checklist', () => {
     await skipOnboarding(page)
     await page.goto('/')
     const card = page.getByRole('region', { name: /left to set up/ })
-    await expect(card).toContainText(`${STEPS.length} things left to set up`)
+    await expect(card).toContainText(`${STEPS.length} things left`)
+    await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
+    await card.getByRole('button', { name: 'See all' }).click()
     await card.getByRole('button', { name: "Your phone's warnings" }).click()
     await expect(page.locator('.wz-ov h1')).toHaveText("Your phone's warnings")
     await expect(page.getByText(`Step 6 of ${STEPS.length}`)).toBeVisible()
@@ -135,7 +137,7 @@ test.describe('Today checklist', () => {
     await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
     await kvSet(page, 'setup.sharing', true)
     await page.reload()
-    await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left to set up`)
+    await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left`)
   })
 })
 

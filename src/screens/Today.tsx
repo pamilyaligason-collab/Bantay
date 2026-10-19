@@ -1,30 +1,47 @@
-import ChecklistCard from '../features/setup/ChecklistCard'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import AlertsBanner from '../features/notify/AlertsBanner'
 import NewsTop5 from '../features/safety/NewsTop5'
-import SafetyBrief from '../features/safety/SafetyBrief'
 import MovementCard from '../features/sensors/MovementCard'
 import QuickWalk from '../features/sensors/QuickWalk'
+import { FAIL_TEXT, checkIn, takeDose } from '../features/today/actions'
+import Hero from '../features/today/Hero'
+import NearbyList from '../features/today/NearbyList'
+import QuickLog from '../features/today/QuickLog'
+import SetupCard from '../features/today/SetupCard'
+import VideoCard from '../features/today/VideoCard'
 import { PwaBanner } from '../features/update/PwaBanner'
 import { UpdateCard } from '../features/update/UpdateCard'
+import '../features/today/today.css'
 
-const date = new Date().toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })
-
+/** Today (mockup v6): quick-log row, the one hero card, update and setup, nearby notices, news, video, movement.
+ *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
+  const [toast, setToast] = useState('')
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const notify = useCallback((msg: string) => {
+    setToast(msg)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setToast(''), 3500)
+  }, [])
+  useEffect(() => () => clearTimeout(timer.current), [])
+  const onOk = useCallback(() => { void checkIn().then((r) => notify(r === 'ok' ? 'Family sees: I am OK' : FAIL_TEXT[r])) }, [notify])
+  const onTaken = useCallback((name: string) => { void takeDose(name).then((r) => notify(r === 'ok' ? `Marked ${name} taken` : FAIL_TEXT[r])) }, [notify])
   return (
     <>
       <PwaBanner />
-      <div className="hdr">
-        <h1>Today</h1>
-        <span>{date}.</span>
-      </div>
-      <ChecklistCard />
+      <h1 className="td-h1">Today</h1>
+      <QuickLog notify={notify} onOk={onOk} />
+      <Hero onOk={onOk} onTaken={onTaken} />
+      {/* D-50: the update card never sits above a warning; the hero alert comes first. */}
+      <UpdateCard />
+      <SetupCard />
       <AlertsBanner />
-      <SafetyBrief limit={1} />
+      <NearbyList />
+      <section aria-labelledby="t-news"><h2 id="t-news" className="td-sech">News</h2><NewsTop5 /></section>
+      <VideoCard />
       <MovementCard />
       <QuickWalk />
-      {/* D-50: the update card never sits above a warning, so it goes below SafetyBrief (active warnings) and the quick actions. */}
-      <UpdateCard />
-      <section aria-labelledby="t-news"><h2 id="t-news" className="hd">News</h2><NewsTop5 /></section>
+      {toast && <div className="toast" role="status">{toast}</div>}
     </>
   )
 }
