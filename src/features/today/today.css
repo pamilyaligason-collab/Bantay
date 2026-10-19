@@ -87,3 +87,10 @@
 .bt .td-bigbtn.ok { background: var(--green); color: var(--on-green); }
 .bt .td-bigbtn.call { background: var(--card); color: var(--ink); }
 .bt .td-bigbtn.sos { background: var(--danger-bg); color: #fff; }
+
+/* storm card */
+.td-storm { margin-top: 12px; padding: 14px; }
+.td-storm .td-sech { margin: 0 0 8px; }
+.td-stormmap { min-height: 240px; margin: 10px 0 4px; border-radius: 12px; background: var(--fill); }
+.td-stormmap .sf-frame { height: 240px; }
+.bt .td-storm a.td-link { display: inline-flex; align-items: center; text-decoration: none; }

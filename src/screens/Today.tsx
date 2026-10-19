@@ -7,7 +7,8 @@ import { FAIL_TEXT, checkIn, takeDose } from '../features/today/actions'
 import Hero from '../features/today/Hero'
 import NearbyList from '../features/today/NearbyList'
 import QuickLog from '../features/today/QuickLog'
-import SetupCard from '../features/today/SetupCard'
+import StormCard from '../features/today/StormCard'
+import SetupCard from'../features/today/SetupCard'
 import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
 import VideoCard from '../features/today/VideoCard'
@@ -44,6 +45,7 @@ export default function Today() {
       <AlertsBanner />
       <NearbyList />
       <section aria-labelledby="t-news"><h2 id="t-news" className="td-sech">News</h2><NewsTop5 /></section>
+      <StormCard />
       <VideoCard />
       <MovementCard />
       <QuickWalk />
