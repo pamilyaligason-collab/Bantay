@@ -45,6 +45,12 @@ describe('isNoise', () => {
   it('keeps real advisories that mention tourists, livestock or vets', () => {
     for (const t of ['Tourists told to stay away from Kanlaon Volcano', 'PHIVOLCS: Taal tourists evacuated', 'Tourism office: boats suspended as Signal No. 1 raised', 'Livestock moved as floods rise in Loboc', 'DOH: rabies vaccine shortage advisory', 'Veterans hospital opens evacuation center', 'Velvet Road closed by landslide']) expect(isNoise(n(t))).toBe(false)
   })
+  it('bare advisory/warning needs an official source; brainstorm is not a storm', () => {
+    expect(isNoise(n('Travel advisory: Panglao travel guide'))).toBe(true)
+    expect(isNoise(n('Tourist brainstorm session'))).toBe(true)
+    expect(isNoise(n('PAGASA warning: Signal No. 1 for tourists in Bohol'))).toBe(false)
+    expect(isNoise(n('Tourism warning issued', 'PHIVOLCS'))).toBe(false)
+  })
   it('still drops bids and vacancies even from an official source', () => {
     expect(isNoise(n('DOH job vacancies 2026', 'DOH'))).toBe(true)
     expect(isNoise(n('Procurement notice: flood control supplies'))).toBe(true)
@@ -74,6 +80,16 @@ describe('rainLine', () => {
     const today = heroCards({ alerts: [], ref: null, doses: [], weather: wx, placeName: 'Dampas', now }).find((c) => c.kind === 'weather')!
     expect(rainLine(wx, now)).toBe('Chance of rain today: 40%.')
     expect(rainLine(wx, now)).toBe(today.body)
+  })
+  it('rain gone from the window: "no more rain" only if the sky showed rain; rounds the percent', () => {
+    const hourly = { time: ['2026-10-19T16:00', '2026-10-19T17:00'], prob: [10, 10] }
+    const now = new Date('2026-10-19T08:00:00Z')
+    const dry = { temp: 30, rainPct: 70.4, words: 'cloudy', at: '', hourly }
+    expect(rainLine(dry, now)).toBe('Chance of rain today: 70%.')
+    expect(heroCards({ alerts: [], ref: null, doses: [], weather: dry, placeName: 'D', now })[0]!.title).not.toMatch(/passed/)
+    const wet = { temp: 26, rainPct: 70, words: 'rain showers', code: 61, at: '', hourly }
+    expect(rainLine(wet, now)).toBe('No more rain expected for now.')
+    expect(heroCards({ alerts: [], ref: null, doses: [], weather: wet, placeName: 'D', now })[0]!.title).toMatch(/passed/)
   })
   it('uses the same words as Today when hourly data says rain is coming', () => {
     const wx = { temp: 28, rainPct: 80, words: 'cloudy', at: '', hourly: { time: ['2026-10-19T13:00', '2026-10-19T14:00', '2026-10-19T15:00'], prob: [10, 80, 60] } }

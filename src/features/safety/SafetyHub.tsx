@@ -44,8 +44,9 @@ export function TileIcon({ name }: { name: string }) {
 export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
   if (!wx) return 'Rain, wind and clouds'
   const sky = skyOf(wx)
-  const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, manilaLocal(now), sky === 'rain' || sky === 'storm') : undefined
-  return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60)
+  const local = manilaLocal(now)
+  const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, local, sky === 'rain' || sky === 'storm') : undefined
+  return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
 }
 
 /** Calm hub: ten big tiles, each with one live status line. Every number comes from data already on the phone. */

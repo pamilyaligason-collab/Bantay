@@ -12,7 +12,7 @@ import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { splitDial } from './dial'
 import { TileIcon } from './SafetyHub'
-import { type Entry, forZone, NOT_CONFIRMED, OVERRIDES_KEY, type Overrides, telHref, withOverrides } from './entries'
+import { type Entry, forZone, OVERRIDES_KEY, type Overrides, telHref, withOverrides } from './entries'
 import EntryList, { EditForm } from './EntryList'
 import { hazardLabel, hazardsFor } from './hazardCards'
 import { ALERTS_KEY, type Alert } from './alerts'
@@ -115,7 +115,7 @@ function QuickDial({ zone }: { zone: string }) {
               <li key={e.id} className="sf-person-wrap">
                 <div className="sf-person">
                   <span className="sf-av sf-av-add" aria-hidden="true">+</span>
-                  <span className="sf-pt"><b>{e.name}</b><span className="sub">{e.group} · {NOT_CONFIRMED}</span></span>
+                  <span className="sf-pt"><b>{e.name}</b><span className="sub">Not confirmed yet</span></span>
                   <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => setInfo(e)}>i</button>
                   <button type="button" className="btn2 sf-addbtn" aria-label={`Add number for ${e.name}`} onClick={() => setEditing(editing === e.id ? null : e.id)}>Add</button>
                 </div>

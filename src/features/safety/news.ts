@@ -10,10 +10,12 @@ export const safeUrl = (u: string) => /^https?:\/\//i.test(u)
 const HARD = /invitation to bid|bid bulletin|notice of award|supply and delivery|procurement|vacanc|job opening|now hiring|we are hiring|career opportunit|plantilla/i
 /** Off-topic words, kept anyway when the item names a hazard or an official warning source. */
 const SOFT = /\b(tourism|tourists?|travel (tips|guide)|veterinar\w*|livestock|vets?|animal (health|welfare)|rabies vaccin\w*)\b/i
-const SAFETY = /pagasa|phivolcs|ndrrmc|\bdoh\b|signal no|evacuat|flood|typhoon|storm|cyclone|quake|earthquake|volcan|landslide|tsunami|warning|advisory|outbreak/i
+const SAFETY = /\b(pagasa|phivolcs|ndrrmc|doh|signal no|evacuat\w*|floods?|flooding|typhoon|storms?|cyclone|quake|earthquake|volcano|volcanic|landslide|tsunami|outbreak)\b/i
+const OFFICIAL = /\b(pagasa|phivolcs|ndrrmc|doh|ocd|lgu)\b/i
+const BARE = /\b(advisory|warning)\b/i
 export const isNoise = (n: Pick<NewsItem, 'title' | 'source'>) => {
   const t = `${n.title} ${n.source}`
-  return /\(\d{9,}-/.test(n.title) || HARD.test(t) || (SOFT.test(t) && !SAFETY.test(t))
+  return /\(\d{9,}-/.test(n.title) || HARD.test(t) || (SOFT.test(t) && !(SAFETY.test(t) || (BARE.test(t) && OFFICIAL.test(t))))
 }
 
 type Env = { VITE_SUPABASE_URL?: string; VITE_SUPABASE_PUBLISHABLE_KEY?: string }
