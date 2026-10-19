@@ -128,7 +128,7 @@ describe('news', () => {
     const f = vi.fn(async () => new Response(JSON.stringify(list), { status: 200 }))
     const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch)
     expect(out?.map((n) => n.id)).toEqual(['1', '2', '3', '4', '5'])
-    expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=15')
+    expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=40')
   })
   it('drops bid and procurement notices and still returns 5', async () => {
     const mk = (id: string, title: string, source = 'PIA') => ({ id, title, url: 'https://a.test/' + id, source, kind: 'article', published_at: '2026-10-17T00:00:00Z' })
@@ -136,7 +136,7 @@ describe('news', () => {
     const f = vi.fn(async () => new Response(JSON.stringify(list), { status: 200 }))
     const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch)
     expect(out?.map((n) => n.id)).toEqual(['1', '2', '3', '4', '5'])
-    expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=15')
+    expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=40')
   })
   it('the offline fallback drops bid notices too', async () => {
     await db.kv.put({ key: 'safety.news', value: [{ ...rows[0], id: 'x', title: 'Notice of Award' }, rows[0]] })

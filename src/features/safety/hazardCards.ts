@@ -35,3 +35,8 @@ export function hazardStatus(v: HazardView | null): string {
   if (w) return `${w.title}: ${w.readings[0]!.value ?? 'check'}`
   return v.cards.some((c) => c.tone === 'none') ? 'Some levels not confirmed' : 'No high risks found'
 }
+
+const TONE_WORD: Record<Tone, string> = { good: 'Lower risk', warn: 'Take care', none: 'Not confirmed yet' }
+/** One label per card: a single reading is its own headline ("Safe"); several readings get one overall word and the readings list below it. */
+export const hazardLabel = (c: Pick<HazardCard, 'readings' | 'tone'>): string =>
+  c.readings.length === 1 ? (c.readings[0]!.value ?? TONE_WORD.none) : TONE_WORD[c.tone]

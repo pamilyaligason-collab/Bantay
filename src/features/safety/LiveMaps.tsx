@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { ALERTS_KEY, r2, type Alert, type LatLon } from './alerts'
+import { ALERTS_KEY, distanceKm, r2, type Alert, type LatLon } from './alerts'
 import { useKv } from './store'
 import './livemaps.css'
 
@@ -21,6 +21,27 @@ const NO_NAME = /^(philippines|the philippines|location not given|taiwan|japan|c
 export const stormName = (a: Alert) => {
   const first = (a.where ?? '').split(',')[0].trim()
   return NO_NAME.test(first) ? a.title : first
+}
+const COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west']
+const bearing = (a: LatLon, b: LatLon) => {
+  const r = Math.PI / 180
+  const y = Math.sin((b.lon - a.lon) * r) * Math.cos(b.lat * r)
+  const x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lon - a.lon) * r)
+  return COMPASS[Math.round((((Math.atan2(y, x) / r) + 360) % 360) / 45) % 8]!
+}
+export const FAR_STORM_KM = 1000
+/** One plain sentence about storms, worked out from the distance to the nearest storm that has a position. Never says "no storms" while a storm is listed. */
+export function stormLine(storms: Alert[], from: LatLon, placeName: string): { text: string; tone: 'calm' | 'watch' } {
+  if (!storms.length) return { text: 'No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.', tone: 'calm' }
+  const pts = storms.filter((s) => s.lat != null && s.lon != null).map((s) => ({ s, p: { lat: s.lat!, lon: s.lon! } }))
+    .map((x) => ({ ...x, km: distanceKm(from, x.p) })).sort((a, b) => a.km - b.km)
+  const n = pts[0]
+  if (!n) return { text: `${stormName(storms[0]!)} is listed, but its position is not given. Check the map and PAGASA.`, tone: 'watch' }
+  const km = n.km >= 100 ? Math.round(n.km / 50) * 50 : Math.round(n.km / 10) * 10
+  const where = `${km.toLocaleString('en-PH')} km ${bearing(from, n.p)} of ${placeName}`
+  return n.km >= FAR_STORM_KM
+    ? { text: `${stormName(n.s)} is about ${where}. That is far from ${placeName}, but check PAGASA for updates.`, tone: 'calm' }
+    : { text: `${stormName(n.s)} is about ${where}. Follow PAGASA and your local officials.`, tone: 'watch' }
 }
 /** issued_at is when the storm started (GDACS fromdate), not when it was last updated. */
 export const since = (iso: string) => {
