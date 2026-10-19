@@ -18,3 +18,5 @@ supabase/.temp/
 android/keystore.properties
 *.jks
 release-out/
+# Generated records SQL holds health values (dry runs, dependents)
+/.scratch/*.sql

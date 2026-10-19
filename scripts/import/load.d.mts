@@ -6,5 +6,6 @@ export function buildLoadSql(o: {
   peopleMap: Record<string, string>
   prevPersons?: Record<string, string>
   catalog?: unknown[]
+  autoConfirm?: { threshold?: number } | null
 }): { sql: string; summary: Record<string, any>; persons: Record<string, string> }
 export function readDrafts(dir: string): { drafts: Record<string, Record<string, any>>; corrupt: number }

@@ -1,0 +1,7 @@
+{
+  "people": [
+    { "name": "Test Parent", "aliases": ["Parent", "Test Parent Sr"], "dependent": true },
+    { "name": "Test Relative", "aliases": ["Test Relative Misspelled"], "dependent": true },
+    { "name": "Test Member", "aliases": ["Member"] }
+  ]
+}

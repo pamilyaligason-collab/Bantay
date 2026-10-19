@@ -1,6 +1,6 @@
 # Records import runbook
 
-Everything real lives under the git-ignored `import/` folder. Scripts print counts only. Nothing is ever loaded as confirmed: every row lands as `draft` and waits in the confirm queue.
+Everything real lives under the git-ignored `import/` folder. Scripts print counts only. Steps 1-6 below are the original draft-only flow; since D-68 the loader auto-confirms high-confidence rows (last section) and `--drafts-only` restores the draft-only behaviour.
 
 ## Env vars (names only)
 
@@ -38,3 +38,16 @@ Zone-less timestamps in drafts are read as Manila time (+08:00). The extract run
 - `encounters` and `insurance_policies` are not created (no source for them in the extraction).
 - `generic_name`, `brand` and appointments from `follow_up` are left for the confirm step.
 - Lab values with no safe unit conversion keep `value_canonical` null and do not trend.
+
+## D-68: the whole family folder, auto-confirm, full profiles
+
+Run `scripts\records-import.ps1` (add `-DryRun` first: it only lists and classifies). Apply migration `0013_records_autoconfirm.sql` before the real run.
+
+- **Folders get a lane** (`scripts/import/folders.mjs`), not a skip: `health` (Medical + labs, the default), `identity` (IDs and Documents, birth and civil papers), `insurance` (Insurance, HMO, PhilHealth), `document_only` (Visa, Home Lot, land, tax, funds, authorization). Priority document_only > insurance > identity > health; folder names decide before the file name. `document_only` files are registered as source files for the person (`ingest_status skipped`, reason `document_only`), never downloaded, read or sent anywhere. Still skipped: `.picasaoriginals`, `*.ini`, zero-byte, non-Doc Google types.
+- **Names** live in git-ignored `import/aliases.json` (`scripts/import/aliases.example.json` shows the shape): `name`, `aliases`, `dependent: true` for family without a login. A spelling variant (two folder spellings of one person) is just another alias. No Drive ids anywhere; files without a Drive id (`LOCAL_PATH_IDS=1`) get `local:<hash of the relative path>`.
+- `node scripts/import/family.mjs dependents` writes `.scratch/add-dependents.sql` (people without a login, created by the first active admin, who becomes their writer carer; aliases also go to `people.aliases` and `person_aliases`). `family.mjs people-map --from <json>` builds `import/people-map.json` from the database people, so every alias resolves to a `people.id`.
+- **Person match** (`family.mjs`): folder name(s) and the name printed on the paper. `both` agree = trusted; folder only and the paper prints no name = trusted for health papers only; unrecognised printed name, no folder match, a conflict or an ambiguous name = never auto-confirmed (conflict gives no person).
+- **Auto-confirm** (`load.mjs`, default): a row loads `confirmed` with `confirmed_source = 'auto'` when the document confidence is >= 0.9 (the floor enforced by `records_auto_threshold()` in 0013) and the match is trusted. Handwriting (vision) prescriptions and lines marked unclear are never auto-confirmed (D-47). Everything else is a `draft`. `--drafts-only` restores the old all-draft load. Re-running never changes an existing row (`on conflict do nothing`), so a person's rejection or edit stands.
+- **Profiles**: confirmed identity papers fill empty `people` columns only (birthdate, sex, blood type, address) after a conflict check (equal-confidence disagreement = left empty); `aliases`, `allergies`, `conditions` (printed on a confirmed paper) and `medicines` (the same drug on 2+ confirmed text prescriptions) are unioned in. ID and insurance numbers go to `person_identifiers` (editors only: the person, a writer carer, an admin; never read-only carers) and never to `insurance_policies.member_no`, summaries or logs.
+- **Dry run**: `node scripts/import/sync.mjs --dry-run` (counts per lane, skip reason, person index) and `node scripts/import/load.mjs --dry-run` (counts per person index x lane x file status and rows per table x status; SQL in `.scratch/records-load-dryrun.sql`, git-ignored). Neither touches the database.
+- Identity and insurance papers are sent to OpenRouter (paid, zero data retention, no data collection), the same route as the lab papers.
