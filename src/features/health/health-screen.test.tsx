@@ -42,6 +42,15 @@ describe('Health overview', () => {
     expect(location.hash).toBe('#health/metric/bp_systolic')
   })
 
+  it('has an Explore your body card that opens the body explorer', async () => {
+    render(<Health />)
+    const card = await screen.findByRole('link', { name: /^Explore your body/ })
+    expect(card.getAttribute('href')).toBe('#health/body')
+    location.hash = '#health/body'
+    fireEvent(window, new HashChangeEvent('hashchange'))
+    expect(await screen.findByRole('heading', { name: 'Explore your body' })).toBeTruthy()
+  })
+
   it('Previous adds the Before line from the earlier reading', async () => {
     render(<Health />)
     const sw = await screen.findByRole('switch', { name: 'Previous' })

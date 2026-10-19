@@ -1,3 +1,5 @@
+import { Silhouette } from '../anatomy/Silhouette'
+import '../anatomy/anatomy.css'
 import type { NodeId, NodeView } from './model'
 
 // Which side and body row each node sits on: head, heart, belly, hips, legs (D-38).
@@ -7,30 +9,24 @@ const PLACE: Record<NodeId, { side: 'l' | 'r'; row: 1 | 2 | 3 | 4 | 5 }> = {
   sugar: { side: 'r', row: 3 }, weight: { side: 'l', row: 4 }, steps: { side: 'r', row: 5 }
 }
 const ROW_Y = [31, 93, 155, 217, 279]
+// Where each dot sits on the body (head, heart, belly, hips, legs).
+const AT: Record<NodeId, [number, number]> = { sleep: [44, 18], mood: [56, 18], bp: [43, 74], pulse: [57, 78], sugar: [58, 112], weight: [41, 148], steps: [61, 255] }
 const DOT = { within: 'var(--ok)', above: 'var(--amber)', below: 'var(--amber)', none: 'var(--muted)' } as const
 const WHERE: Record<NodeId, string> = { sleep: 'head', mood: 'head', bp: 'heart', pulse: 'heart', sugar: 'belly', weight: 'hips', steps: 'legs' }
 
-/** Simple human figure with seven metric buttons tied to body points. Light inline SVG, no external art. */
+/** Soft front-view figure with seven metric buttons tied to body points. Inline SVG, no external art. */
 export function BodyMap({ nodes }: { nodes: NodeView[] }) {
   return (
     <div className="hv-map" role="group" aria-label="Your latest numbers on a body map">
       <svg className="hv-fig" viewBox="0 0 100 310" aria-hidden="true" focusable="false">
-        <g fill="var(--card2)" stroke="var(--line)" strokeWidth="1.5" strokeLinejoin="round">
-          <circle cx="50" cy="31" r="18" />
-          <rect x="43" y="46" width="14" height="14" rx="4" />
-          <path d="M26 62q24-9 48 0l-2 100q-1 40-4 70H32q-3-30-4-70z" />
-          <path d="M22 66l-9 100q-1 8 5 8t7-8l6-70z" />
-          <path d="M78 66l9 100q1 8-5 8t-7-8l-6-70z" />
-          <rect x="31" y="226" width="17" height="78" rx="8" />
-          <rect x="52" y="226" width="17" height="78" rx="8" />
-        </g>
+        <Silhouette />
         {nodes.map((n) => {
           const p = PLACE[n.id]
-          const x = p.side === 'l' ? 38 : 62
-          const y = ROW_Y[p.row - 1]!
+          const [x, y] = AT[n.id]
+          const ry = ROW_Y[p.row - 1]!
           return (
             <g key={n.id}>
-              <line x1={x} y1={y} x2={p.side === 'l' ? 0 : 100} y2={y} stroke="var(--line)" strokeWidth="1.5" strokeDasharray="2 3" />
+              <line x1={x} y1={y} x2={p.side === 'l' ? 0 : 100} y2={ry} stroke="var(--line)" strokeWidth="1.5" strokeDasharray="2 3" />
               <circle cx={x} cy={y} r="5" fill={DOT[n.state]} stroke="var(--card)" strokeWidth="2" />
             </g>
           )

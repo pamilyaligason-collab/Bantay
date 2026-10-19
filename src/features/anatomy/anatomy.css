@@ -1,0 +1,55 @@
+/* Explore your body + the refined body map figure. App tokens only; organ colours are fixed mid-tones that read on both themes. */
+:root { --an-body-a: #F1E6D0; --an-body-b: #DFCFB1; }
+:root[data-theme="dark"] { --an-body-a: #46594B; --an-body-b: #2E3F34; }
+.an-body { filter: drop-shadow(0 2px 3px rgba(31, 61, 43, 0.22)); }
+
+.an-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+.an-chip { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.an-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+.an-chip:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
+.an-stage { display: grid; place-items: center; margin: 4px 0 8px; }
+.hdr .an-h1 { font-size: 28px; }
+.an-svg { height: auto; touch-action: manipulation; }
+.an-crop { -webkit-mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); }
+.an-part { cursor: pointer; outline: none; }
+.an-fill { fill: var(--an-c); fill-opacity: 0.82; stroke: var(--an-s); stroke-width: 0.8; stroke-linejoin: round; transition: fill-opacity 0.15s; }
+.an-line { fill: none; stroke: var(--an-s); stroke-linecap: round; stroke-linejoin: round; }
+.an-hit { fill: transparent; stroke: none; }
+.an-part:hover .an-fill, .an-part:focus-visible .an-fill { fill-opacity: 1; stroke-width: 1.6; }
+.an-part:focus-visible .an-line, .an-part:hover .an-line { stroke-width: 3; }
+.an-part:focus-visible .an-hit { stroke: var(--act); stroke-width: 1.2; stroke-dasharray: 2 2; }
+.an-stage[data-sys="skeleton"] { --an-c: #F6F0E0; --an-s: #8A7A55; }
+.an-stage[data-sys="muscles"] { --an-c: #C8584E; --an-s: #8E2E27; }
+.an-stage[data-sys="heart"] { --an-c: #D4483C; --an-s: #A52E24; }
+.an-stage[data-sys="lungs"] { --an-c: #E9A2A8; --an-s: #B2545E; }
+.an-stage[data-sys="brain"] { --an-c: #B9A3D9; --an-s: #7258A8; }
+.an-stage[data-sys="digestion"] { --an-c: #E5A55A; --an-s: #A5651A; }
+.an-stage[data-sys="kidneys"] { --an-c: #B5654C; --an-s: #8A402C; }
+.an-stage[data-sys="skin"] { --an-c: #D9A47A; --an-s: #8C5A36; }
+.an-stage[data-sys="hormones"] { --an-c: #6FB39A; --an-s: #2F7A60; }
+.an-stage[data-sys="skin"] .an-fill { fill-opacity: 0.45; }
+
+.an-h2 { font-size: 17px; margin: 12px 4px 8px; }
+.an-list { display: flex; flex-direction: column; }
+.an-row { min-height: 52px; padding: 0 16px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.an-row:first-child { border-top: 0; }
+.an-row::after { content: "\203A"; color: var(--ink2); font-weight: 400; }
+.an-note { margin: 10px 4px 0; font-size: 13px; color: var(--ink2); }
+
+.an-sheet { max-height: 88vh; overflow-y: auto; }
+.an-sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.an-sheet-h h2 { margin: 0; font-size: 24px; overflow-wrap: anywhere; }
+.an-x { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.an-sec h3 { margin: 0 0 4px; font-size: 14px; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; }
+.an-sec p { margin: 0; font-size: 16px; line-height: 1.4; }
+.an-sec ul { margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; }
+.an-src { margin: 0; font-size: 14px; }
+.an-src a { color: var(--link); font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
+
+.hv-explore { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 4px; min-height: 52px; text-decoration: none; color: var(--ink); font-weight: 600; font-size: 17px; }
+.hv-explore small { display: block; font-size: 13px; font-weight: 400; color: var(--ink2); }
+.hv-explore::after { content: "\203A"; color: var(--ink2); font-size: 22px; font-weight: 400; }
+.hv-explore:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { .an-fill { transition: none; } }
