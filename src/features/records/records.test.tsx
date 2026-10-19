@@ -21,6 +21,8 @@ const h = vi.hoisted(() => {
 })
 let connected = true
 vi.mock('../auth/client', () => ({ get supabase() { return connected ? h.sb : null } }))
+const who = vi.hoisted(() => ({ member: { userId: 'u1', personId: 'p1', role: 'admin', handle: null } as { userId: string; personId: string | null; role: string; handle: string | null } | null }))
+vi.mock('../auth/session', () => ({ getMember: async () => who.member }))
 
 import Records from '../../screens/Records'
 import { canonicalFor, confirmRows, EDITABLE, listQueue, rejectRows, settleDocument, updateRow } from './api'
@@ -164,6 +166,12 @@ describe('Records queue errors', () => {
   it('a failing queue shows an error row with retry instead of hiding it', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     h.state.handler = () => ({ data: null, error: { code: '42501', message: 'x' } })
+    who.member = { userId: 'u2', personId: 'p1', role: 'member', handle: null } // only an admin sees the error row
+    render(<Records />)
+    await waitFor(() => expect(warn).toHaveBeenCalled())
+    expect(screen.queryByText('Could not load records to check. Try again.')).toBeNull()
+    cleanup()
+    who.member = { userId: 'u1', personId: 'p1', role: 'admin', handle: null }
     render(<Records />)
     expect(await screen.findByText('Could not load records to check. Try again.')).toBeTruthy()
     expect(warn).toHaveBeenCalledWith('records queue failed', '42501')

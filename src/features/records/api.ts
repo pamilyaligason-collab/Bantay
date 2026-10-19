@@ -136,6 +136,10 @@ async function bundles(status: 'draft' | 'confirmed', personId?: string): Promis
   return { ok: true, data: out }
 }
 
+/** Confirmed prescription lines for one person, newest first. Read-only; the medicines list of wave 4 reuses it. */
+export const listConfirmedMedicines = (personId: string) =>
+  run<RxItem[]>((s) => s.from('prescription_items').select('*').eq('person_id', personId).eq('status', 'confirmed').order('created_at', { ascending: false }))
+
 export const listDrafts = (personId?: string) => bundles('draft', personId)
 export const listConfirmedDocuments = (personId: string) => bundles('confirmed', personId)
 

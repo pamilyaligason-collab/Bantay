@@ -161,9 +161,12 @@ function Line({ item, catalog, busy, checked, onCheck, onConfirm, onReject, onFi
   )
 }
 
-export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { people: Person[]; onClose(): void; onChanged(): void }) {
+/** personId: list only this person's documents. checkedDocs: documents of theirs already checked, for the "12 of 60" line. */
+export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, onClose, onChanged }: { people: Person[]; personId?: string; checkedDocs?: number; onClose(): void; onChanged(): void }) {
   const people = usePeople(initialPeople)
-  const [bundles, setBundles] = useState<DocBundle[] | null>(null)
+  const [allBundles, setBundles] = useState<DocBundle[] | null>(null)
+  const bundles = personId && allBundles ? allBundles.filter((b) => b.doc.person_id === personId) : allBundles
+  const [total, setTotal] = useState<number | null>(null) // documents to check at the start, plus those already checked
   const [catalog, setCatalog] = useState<CatalogTest[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
   const [checked, setChecked] = useState<Record<string, boolean>>({})
@@ -174,7 +177,11 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
   const opener = useRef<Element | null>(document.activeElement)
 
   useEffect(() => {
-    void listDrafts().then((r) => (r.ok ? setBundles(r.data) : (setBundles([]), setLoadErr(true))))
+    void listDrafts().then((r) => {
+      if (!r.ok) { setBundles([]); setLoadErr(true); return }
+      setBundles(r.data)
+      setTotal(checkedDocs + r.data.filter((b) => b.doc.status === 'draft' && (!personId || b.doc.person_id === personId)).length)
+    })
     void listTestCatalog().then((r) => r.ok && setCatalog(r.data))
   }, [])
   useEffect(() => { head.current?.focus() }, [openId, bundles === null])
@@ -215,6 +222,8 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
   const items = open ? itemsOf(open) : []
   const isOn = (i: Item) => checked[i.row.id] ?? defaultChecked(i)
   const batch = items.filter((i) => isOn(i) && !unclear(i)) // an unclear line is never swept in
+  const everything = items.filter((i) => !unclear(i)) // "Confirm all on this page": still never an unclear line
+  const left = bundles?.filter((b) => b.doc.status === 'draft').length ?? 0
 
   const patchBundle = (id: string, f: (b: DocBundle) => DocBundle) => setBundles((bs) => bs && bs.map((b) => (b.doc.id === id ? f(b) : b)))
   const without = (ids: string[]) => (b: DocBundle): DocBundle => {
@@ -271,6 +280,7 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
       {open && <p className="sub" style={{ margin: 0 }}>{[who(open.doc.person_id), open.doc.facility].filter(Boolean).join(' · ')}</p>}
       <p className="rx-status" role="status" aria-live="polite">{msg}</p>
 
+      {!open && personId && total != null && total > 0 && <p className="rx-progress">{Math.max(0, total - left)} of {total} documents checked</p>}
       {!open && (
         <div className="grp">
           {bundles === null && <div className="row"><span className="grow sub">Loading</span></div>}
@@ -309,6 +319,9 @@ export function ConfirmFlow({ people: initialPeople, onClose, onChanged }: { peo
           {items.length > 0 && (
             <>
               <button className="btn" disabled={busy || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
+              {everything.length > batch.length && (
+                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>Confirm all on this page ({everything.length})</button>
+              )}
               {items.some(unclear) && <p className="sub" style={{ margin: 0 }}>Unclear lines are confirmed one at a time.</p>}
             </>
           )}
