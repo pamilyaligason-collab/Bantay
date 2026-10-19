@@ -57,8 +57,9 @@ describe('ChipField', () => {
 })
 
 describe('notifications step', () => {
-  it('is done with notifications and exact alarms on; the battery switch never blocks it', () => {
-    expect(notifyDone({ display: true, exact: true, battery: false })).toBe(true)
+  it('is done only with notifications, exact alarms and the battery exemption on', () => {
+    expect(notifyDone({ display: true, exact: true, battery: true })).toBe(true)
+    expect(notifyDone({ display: true, exact: true, battery: false })).toBe(false)
     expect(notifyDone({ display: true, exact: false, battery: true })).toBe(false)
   })
 })

@@ -14,5 +14,6 @@ describe('notifications step on Android', () => {
   it('needs display, exact alarms (plugin status granted) and battery all on', () => {
     expect(notifyDone({ display: true, exact: exactOk('granted'), battery: true })).toBe(true)
     expect(notifyDone({ display: true, exact: exactOk('denied'), battery: true })).toBe(false)
+    expect(notifyDone({ display: true, exact: true, battery: false })).toBe(false)
   })
 })

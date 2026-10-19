@@ -3,7 +3,7 @@ import { db } from '../../db'
 import { isIosNeedsInstall } from '../notify/alerts'
 import { resolveLocation, saveHome } from '../location/useLocation'
 import { hdb } from '../records/store'
-import { isNativeAndroid, openBattery } from '../safety/settingsOpener'
+import { isNativeAndroid, requestBatteryExemption } from '../safety/settingsOpener'
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
 import SosContactsPicker from '../sos/SosContactsPicker'
@@ -14,6 +14,7 @@ import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyDone, notifyState
 import '../safety/safety.css'
 import './setup.css'
 
+const HOME_NAMES = ['Home', 'Dampas', 'Conel', 'Work', 'School', "Parents' house"]
 const standalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
 const kvGet = async <T,>(k: string): Promise<T | undefined> => (await db.kv.get(k).catch(() => undefined))?.value as T | undefined
 
@@ -73,7 +74,7 @@ function About() {
   return (
     <div className="grp wz-body">
       {ABOUT_FIELDS.map((k) => (
-        <ChipField key={k} label={ABOUT_LABEL[k]} multi={k !== 'bloodType'} options={[...ABOUT_OPTIONS[k], NOT_SURE[k]]} exclusive={[...EXCLUSIVE[k], NOT_SURE[k]]}
+        <ChipField key={k} label={ABOUT_LABEL[k]} multi={k !== 'bloodType'} allowOther={k !== 'bloodType'} options={[...ABOUT_OPTIONS[k], NOT_SURE[k]]} exclusive={[...EXCLUSIVE[k], NOT_SURE[k]]}
           value={v[k] === UNKNOWN ? [NOT_SURE[k]] : splitItems(v[k])} onChange={(items) => set(k, items)} />
       ))}
     </div>
@@ -120,7 +121,7 @@ function Notifications() {
       <div className="grp">
         <Row label="Allow notifications" on={n.display} />
         {native && <Row label="Allow alarms and reminders" on={n.exact} />}
-        {native && <Row label="Don't let Android pause Bantay" on={n.battery}><button type="button" className="btn2 wz-sm" onClick={() => void openBattery()}>Open Settings</button></Row>}
+        {native && <Row label="Don't let Android pause Bantay" on={n.battery}><button type="button" className="btn2 wz-sm" onClick={() => void requestBatteryExemption().then(refresh)}>Allow</button></Row>}
       </div>
       {!notifyDone(n) && <button type="button" className="btn" onClick={turnOn}>Turn on</button>}
       {notifyDone(n) && <p className="sf-note" role="status" style={{ background: 'var(--cell)' }}>Reminders and alerts are on.</p>}
@@ -139,10 +140,11 @@ function Location() {
   if (state === 'done') return <p className="sf-note" role="status" style={{ background: 'var(--cell)' }}>Location saved.</p>
   if (state === 'home') {
     const field = (k: 'name' | 'lat' | 'lon', label: string) => (
-      <label className="wz-field" key={k}><span className="sub">{label}</span><input value={home[k]} inputMode={k === 'name' ? 'text' : 'decimal'} onChange={(e) => setHome({ ...home, [k]: e.target.value })} /></label>
+      <label className="wz-field" key={k}><span className="sub">{label}</span><input value={home[k]} inputMode={k === 'name' ? 'text' : 'decimal'} list={k === 'name' ? 'wz-home-names' : undefined} onChange={(e) => setHome({ ...home, [k]: e.target.value })} /></label>
     )
     return (
       <div className="wz-body">
+        <datalist id="wz-home-names">{HOME_NAMES.map((n) => <option key={n} value={n} />)}</datalist>
         <div className="grp">{field('name', 'Barangay')}{field('lat', 'Latitude')}{field('lon', 'Longitude')}</div>
         <button type="button" className="btn" disabled={!valid} onClick={async () => { await saveHome({ name: home.name.trim(), lat, lon }); setState('done') }}>Save my barangay</button>
       </div>

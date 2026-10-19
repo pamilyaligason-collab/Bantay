@@ -3,12 +3,10 @@ import { HOME_ZONES } from '../location/geo'
 import type { Loc } from '../location/geo'
 import { useLocation } from '../location/useLocation'
 import { inPhilippines } from '../location/place'
-import { HOME, type LatLon } from './alerts'
+import { HOME, r2, type LatLon } from './alerts'
 import Lazy from './Lazy'
 import './safety.css'
 
-// Only a rounded location (about 1 km) goes to map hosts.
-const r2 = (n: number) => n.toFixed(2)
 
 // ponytail: layer ids are the Ventusky ones; if a layer shows blank, check the id in the Ventusky address bar.
 export const LAYERS = [
@@ -20,9 +18,6 @@ export const LAYERS = [
 
 export const ventuskyUrl = (c: LatLon, layer: string, zoom = 7) =>
   `https://embed.ventusky.com/?p=${r2(c.lat)};${r2(c.lon)};${zoom}&l=${layer}&w=soft&pin=${r2(c.lat)};${r2(c.lon)};dot;Here`
-
-const windyUrl = (c: LatLon) =>
-  `https://embed.windy.com/embed2.html?lat=${r2(c.lat)}&lon=${r2(c.lon)}&detailLat=${r2(c.lat)}&detailLon=${r2(c.lon)}&zoom=7&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=true&calendar=now&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`
 
 const SANDBOX = 'allow-scripts allow-same-origin allow-popups allow-forms'
 
@@ -79,7 +74,6 @@ export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask
       </div>
       <p className="sf-empty" role="status">{finding ? 'Finding you…' : off}</p>
       <Lazy summary="Ventusky weather map"><Frame title="Ventusky weather map centred on your area" src={ventuskyUrl(c, layer)} /></Lazy>
-      <Lazy summary="Windy rain and wind"><Frame title="Windy rain and wind map" src={windyUrl(c)} /></Lazy>
       <Lazy summary="HazardHunterPH hazards at an address"><Frame title="HazardHunterPH hazard maps" src="https://hazardhunter.georisk.gov.ph/" /></Lazy>
       <Lazy summary="PAGASA forecasts and warnings"><Frame title="PAGASA Panahon forecasts" src="https://www.panahon.gov.ph/" /></Lazy>
       <div className="grp">

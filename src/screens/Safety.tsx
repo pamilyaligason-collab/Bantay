@@ -13,7 +13,7 @@ import { useLocation, usePlaceFrom } from '../features/location/useLocation'
 import ZonePicker from '../features/location/ZonePicker'
 import '../features/safety/safety.css'
 
-/** D-62 order: 911, IDs + Insurance, advisory card, Quick dial, Live maps, then the rest. SOS and Medical ID join the top when they ship (P4, P5).
+/** D-62 order: 911, IDs + Insurance, advisory card, Warnings, Live weather (Windy), Quick dial, Live maps, then the rest. SOS and Medical ID join the top when they ship (P4, P5).
  *  D-33: one place for the whole screen. Warnings rank from the phone inside the Philippines, else from the zone; zone data (numbers, evacuation, hazards) uses the zone. */
 export default function Safety() {
   const l = useLocation()

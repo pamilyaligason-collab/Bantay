@@ -1,28 +1,31 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { ALERTS_KEY, type Alert, type LatLon } from './alerts'
+import { ALERTS_KEY, r2, type Alert, type LatLon } from './alerts'
 import { useKv } from './store'
 import './livemaps.css'
 
 export const WINDY_LAYERS = [['Rain', 'rain'], ['Wind', 'wind'], ['Temp', 'temp'], ['Clouds', 'clouds']] as const
 export type WindyLayer = (typeof WINDY_LAYERS)[number][1]
 
-// Only a rounded location (about 1 km) goes to the map host.
-const r2 = (n: number) => n.toFixed(2)
-
 export const windySrc = (layer: WindyLayer, lat: number, lon: number, zoom = 8) =>
   `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=${zoom}&overlay=${layer}&product=ecmwf&level=surface&lat=${r2(lat)}&lon=${r2(lon)}&detailLat=${r2(lat)}&detailLon=${r2(lon)}&marker=true`
 
 export const STORM_VIEW = { lat: 12, lon: 128, zoom: 4 }
 
-/** Active tropical cyclones from the GDACS rows the ingest keeps in safety.alerts (id gdacs-TC-<eventid>). Newest first. */
+/** Active tropical cyclones from the GDACS rows the ingest keeps in safety.alerts (id gdacs-TC-<eventid>). Newest start first. Stale rows (source unreachable) are hidden. */
 export function cyclones(alerts: Alert[]): Alert[] {
-  return alerts.filter((a) => a.kind === 'gdacs' && a.id.startsWith('gdacs-TC-')).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
+  return alerts.filter((a) => a.kind === 'gdacs' && a.id.startsWith('gdacs-TC-') && !a.stale).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
 }
 
-const stormName = (a: Alert) => a.where.split(',')[0].trim() || a.title
-const updated = (iso: string) => {
+/** A GDACS "where" often names only the country or nothing: then the alert title is the better name. */
+const NO_NAME = /^(philippines|the philippines|location not given|taiwan|japan|china|vietnam|palau|guam)?$/i
+export const stormName = (a: Alert) => {
+  const first = (a.where ?? '').split(',')[0].trim()
+  return NO_NAME.test(first) ? a.title : first
+}
+/** issued_at is when the storm started (GDACS fromdate), not when it was last updated. */
+export const since = (iso: string) => {
   const t = Date.parse(iso)
-  return Number.isNaN(t) ? 'time unknown' : new Date(t).toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+  return Number.isNaN(t) ? 'date unknown' : new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' })
 }
 
 const LINKS = [
@@ -86,7 +89,7 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
       {storms.length ? (
         <div className="grp">
           {storms.map((a) => (
-            <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ?? 'Level unknown'} alert · updated {updated(a.issuedAt)}</span></span></div>
+            <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ? `${a.level} alert` : 'Level unknown'} · since {since(a.issuedAt)}</span></span></div>
           ))}
         </div>
       ) : <p className="sf-empty" role="status">No active storms</p>}

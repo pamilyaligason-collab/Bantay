@@ -6,6 +6,11 @@ const ALERT = {
   lat: 10.1, lon: 124.0, bulletin: 'Magnitude 5.1. No tsunami threat.', previousBulletin: 'Magnitude 4.9. No tsunami threat.'
 }
 
+// no safety test depends on the outside network: the Windy embed is an empty page
+test.beforeEach(async ({ page }) => {
+  await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>map</p>' }))
+})
+
 test('safety screen: no alerts, hotlines, unknown places, maps load only on request', async ({ page }) => {
   await page.goto('/#safety')
   await expect(page.locator('h1')).toHaveText('Safety')
@@ -136,7 +141,6 @@ test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dam
 })
 
 test('live weather: layer switch only changes overlay, storm tracker and links', async ({ page }) => {
-  await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>map</p>' }))
   await page.goto('/#safety')
   const sec = page.getByRole('region', { name: 'Live weather' })
   await sec.scrollIntoViewIfNeeded()

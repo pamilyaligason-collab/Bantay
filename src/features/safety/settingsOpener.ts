@@ -5,7 +5,10 @@ type Plugin = {
   open(o: { target: OpenTarget }): Promise<{ opened: string }>
   batteryStatus(): Promise<{ ignoring: boolean }>
   openBattery(): Promise<void>
+  requestBatteryExemption(): Promise<void>
+  status(): Promise<NativeStatus>
 }
+export type NativeStatus = { notificationsEnabled: boolean; canScheduleExactAlarms: boolean; ignoringBatteryOptimizations: boolean }
 
 /** Native plugin: android/app/src/main/java/ph/bantay/family/SettingsOpenerPlugin.java */
 export const SettingsOpener = registerPlugin<Plugin>('SettingsOpener')
@@ -41,4 +44,18 @@ export async function batteryStatus(): Promise<{ ignoring: boolean }> {
 /** Opens the battery optimisation list (no special permission). Never rejects; false means it did not open. */
 export async function openBattery(): Promise<boolean> {
   try { await SettingsOpener.openBattery(); return true } catch { return false }
+}
+
+/** One-tap "Let Bantay run in the background?" prompt; falls back to the battery list when it cannot open. Never rejects. */
+export async function requestBatteryExemption(): Promise<boolean> {
+  try { await SettingsOpener.requestBatteryExemption(); return true } catch { return openBattery() }
+}
+
+/** What Android says about the three reminder switches. null on web or when the plugin cannot answer. */
+export async function nativeStatus(): Promise<NativeStatus | null> {
+  if (!isNativeAndroid()) return null
+  try {
+    const r = await SettingsOpener.status()
+    return { notificationsEnabled: r.notificationsEnabled === true, canScheduleExactAlarms: r.canScheduleExactAlarms === true, ignoringBatteryOptimizations: r.ignoringBatteryOptimizations === true }
+  } catch { return null }
 }

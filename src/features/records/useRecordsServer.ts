@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { liveQuery } from 'dexie'
 import { supabase } from '../auth/client'
 import { hdb, type Person } from './store'
@@ -8,9 +8,12 @@ import { cacheDocs, cachedDocs, listConfirmedDocuments, listQueue, type DocBundl
 export function useQueue() {
   const [count, setCount] = useState(0)
   const [error, setError] = useState(false)
-  const [tick, setTick] = useState(0)
+  // With an auth client, INITIAL_SESSION (fires right after subscribe) makes the first call, once the session is restored.
+  const [tick, setTick] = useState(supabase?.auth ? -1 : 0)
+  const lastToken = useRef<string | null | undefined>(undefined)
   const refresh = useCallback(() => setTick((t) => t + 1), [])
   useEffect(() => {
+    if (tick < 0) return
     let live = true
     void listQueue().then((r) => {
       if (!live) return
@@ -22,7 +25,13 @@ export function useQueue() {
   }, [tick])
   // the session can finish restoring after the screen opened: ask again once it is signed in
   useEffect(() => {
-    const sub = supabase?.auth?.onAuthStateChange((e) => { if (e === 'SIGNED_IN' || e === 'INITIAL_SESSION' || e === 'TOKEN_REFRESHED') refresh() })
+    const sub = supabase?.auth?.onAuthStateChange((e, session) => {
+      if (e !== 'SIGNED_IN' && e !== 'INITIAL_SESSION') return // TOKEN_REFRESHED is ignored
+      const t = session?.access_token ?? null
+      if (lastToken.current === t) return // one call per auth state
+      lastToken.current = t
+      refresh()
+    })
     return () => sub?.data.subscription.unsubscribe()
   }, [refresh])
   return { count, error, refresh }

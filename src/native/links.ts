@@ -1,12 +1,16 @@
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 
-/** True for an http(s) link to a different origin than `origin`. tel:, mailto:, sms:, geo:, market:, hash and same-origin links are false. */
+// Maps and Play Store links belong to their own apps, not the in-app browser.
+const NATIVE_APP_HOSTS = /^(maps\.google\.com|maps\.app\.goo\.gl|play\.google\.com)$/
+const isMapsOrStore = (u: URL) => NATIVE_APP_HOSTS.test(u.hostname) || (/^(www\.)?google\.com$/.test(u.hostname) && u.pathname.startsWith('/maps'))
+
+/** True for an http(s) link to a different origin than `origin` that should open in the in-app browser. tel:, mailto:, sms:, geo:, market:, hash, same-origin, Google Maps and Play Store links are false. */
 export function isExternal(href: string | null | undefined, origin: string): boolean {
   if (!href) return false
   try {
     const u = new URL(href, origin)
-    return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin !== origin
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin !== origin && !isMapsOrStore(u)
   } catch { return false }
 }
 

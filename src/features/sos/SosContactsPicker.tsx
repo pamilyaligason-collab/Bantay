@@ -25,6 +25,7 @@ export default function SosContactsPicker({ excludePersonId, onSaved }: { exclud
     setRaw(kept)
     onSaved?.(kept)
   }
+  if (!loaded) return null // a tap before storage is read would be overwritten by the seed below
   const native = canPickContact()
   const free = family.filter((f) => !slots.some((s) => s.personId === f.personId))
   const firstEmpty = slots.findIndex((s) => !s.name.trim() && !s.phone.trim())

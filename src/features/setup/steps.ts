@@ -5,7 +5,7 @@ import { db } from '../../db'
 import { loadFamily } from '../auth/family'
 import { enableAlerts } from '../notify/alerts'
 import { sosDone } from '../sos/contacts'
-import { batteryStatus, isNativeAndroid } from '../safety/settingsOpener'
+import { batteryStatus, isNativeAndroid, nativeStatus, requestBatteryExemption } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
 import { hdb } from '../records/store'
 import { currentPersonId, getState } from '../sensors/health'
@@ -46,18 +46,20 @@ export interface NotifyState { display: boolean; exact: boolean; battery: boolea
 /** Reads the three notification switches. Web has no alarm or battery switch, so those count as on. */
 /** The plugin reports the exact-alarm switch itself (older Android always reports granted). */
 export const exactOk = (status: string): boolean => status === 'granted'
-/** The notifications step is satisfied when notifications and exact alarms are on. The battery switch is an extra row, never a blocker. */
-export const notifyDone = (n: NotifyState) => n.display && n.exact
+/** Done when notifications, exact alarms and (on Android) the battery exemption are all on. Web reports battery as on. */
+export const notifyDone = (n: NotifyState) => n.display && n.exact && n.battery
 
 /** Re-runs `fn` when the app comes back to the front (web tab or Android app), e.g. after a Settings switch. Returns the cleanup. */
 export function onResume(fn: () => void): () => void {
+  if (Capacitor.isNativePlatform()) {
+    // native: appStateChange only (visibilitychange fires too, which would run fn twice)
+    let handle: Promise<{ remove(): Promise<void> }> | undefined
+    try { handle = App.addListener('appStateChange', (s) => { if (s.isActive) fn() }) } catch { /* no app plugin */ }
+    return () => { void handle?.then((h) => h.remove()).catch(() => undefined) }
+  }
   const on = () => { if (document.visibilityState === 'visible') fn() }
   document.addEventListener('visibilitychange', on)
-  let handle: Promise<{ remove(): Promise<void> }> | undefined
-  if (Capacitor.isNativePlatform()) {
-    try { handle = App.addListener('appStateChange', (s) => { if (s.isActive) fn() }) } catch { /* no app plugin */ }
-  }
-  return () => { document.removeEventListener('visibilitychange', on); void handle?.then((h) => h.remove()).catch(() => undefined) }
+  return () => document.removeEventListener('visibilitychange', on)
 }
 
 /** The one "Turn on" tap: notification permission, then the exact-alarm switch if it is still off. Never rejects. */
@@ -66,11 +68,16 @@ export async function turnOnReminders(): Promise<void> {
     if (!isNativeAndroid()) { await enableAlerts(); return }
     const p = await LocalNotifications.requestPermissions()
     if (p.display === 'granted' && !exactOk((await LocalNotifications.checkExactNotificationSetting()).exact_alarm)) await LocalNotifications.changeExactNotificationSetting()
+    if (!(await batteryStatus()).ignoring) await requestBatteryExemption()
   } catch { /* the step shows what is still off */ }
 }
 
 export async function notifyState(): Promise<NotifyState> {
   try {
+    if (isNativeAndroid()) {
+      const s = await nativeStatus() // Android's own answer, one call
+      if (s) return { display: s.notificationsEnabled, exact: s.canScheduleExactAlarms, battery: s.ignoringBatteryOptimizations }
+    }
     const display = (await LocalNotifications.checkPermissions()).display === 'granted'
     if (!isNativeAndroid()) return { display, exact: true, battery: true }
     const exact = exactOk((await LocalNotifications.checkExactNotificationSetting()).exact_alarm)

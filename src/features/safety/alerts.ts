@@ -25,6 +25,9 @@ export interface Alert {
   checkedAt?: string | null // ISO, when the server last fetched it
 }
 
+/** Only a rounded location (about 1 km) goes to map hosts. */
+export const r2 = (n: number) => n.toFixed(2)
+
 export const ALERTS_KEY = 'safety.alerts' // Dexie kv key: the sync layer replaces this list, SafetyBrief reads it
 
 // First home zone (Dampas, D-11): the map centre when there is no position and no zone chosen yet (D-33). Conel is the second zone (D-27).
