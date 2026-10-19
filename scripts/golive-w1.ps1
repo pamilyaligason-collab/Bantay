@@ -40,4 +40,4 @@ $id = if (Test-Path 'import\drive-root.txt') { (Get-Content 'import\drive-root.t
 if ($id -and (git log -p origin/main..HEAD | Select-String -SimpleMatch $id)) { throw 'step 6 failed: private Drive folder id in commits' }
 Run 'git' @('push', 'origin', 'HEAD:main'); Check 6
 
-Write-Host "`nDone. Pages redeploys in about 2 minutes. Then install Bantay-debug-20261019-v3.apk from G:\My Drive\- Bantay." -ForegroundColor Green
+Write-Host "`nDone. Pages redeploys in about 2 minutes. Then close and reopen Family Bantay on the phone (APK v2 loads the new site; no reinstall)." -ForegroundColor Green
