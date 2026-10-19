@@ -11,7 +11,7 @@ const state = () => {
   return {
     hidden: document.visibilityState === 'hidden',
     typing: !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || (a as HTMLElement).isContentEditable),
-    inSos: !!document.querySelector('.sos-page')
+    inSos: !!document.querySelector('.sos-page, .sos-btn.holding, .sos-confirm') // also mid-hold and the confirm step
   }
 }
 const flag = (v?: string) => { try { return v ? sessionStorage.setItem(FLAG, v) : sessionStorage.getItem(FLAG) } catch { return null } }

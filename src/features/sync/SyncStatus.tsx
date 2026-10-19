@@ -83,7 +83,7 @@ export function SyncStatus() {
   }, [])
   const [open, setOpen] = useState(false)
   const text = statusText(s, c)
-  const tappable = c.dead > 0 && s.signedIn && !s.offline
+  const tappable = c.dead > 0 && s.signedIn // parked rows can be seen and discarded offline too
   return (
     <>
       <p role="status" className="sync-status" style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--ink2)' }}>

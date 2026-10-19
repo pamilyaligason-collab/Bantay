@@ -12,7 +12,7 @@ import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
 import { PersonChips } from '../features/records/PersonChips'
 import { useHealthData } from '../features/records/useHealthData'
-import { useKv } from '../features/safety/store'
+import { useKv } from '../features/shell/useKv'
 import { useProfile } from '../features/setup/useProfile'
 
 const NO_DRAFTS: Record<string, number> = {}
@@ -27,8 +27,8 @@ export default function Health() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
   // Daily dose reminders follow the signed-in person's own medicine list, whichever person is on screen.
-  const ownMeds = useKv<string[]>('profile.medicines', NO_NAMES)
-  useEffect(() => { void syncDoseReminders(ownMeds) }, [ownMeds])
+  const [ownMeds, , medsLoaded] = useKv<string[]>('profile.medicines', NO_NAMES)
+  useEffect(() => { if (medsLoaded) void syncDoseReminders(ownMeds) }, [ownMeds, medsLoaded]) // not before kv loads: an empty first pass would cancel every reminder
   const code = METRIC.exec(hash)?.[1]
   return code ? <MetricScreen code={code} /> : <Overview />
 }

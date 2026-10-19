@@ -1,6 +1,6 @@
 -- Rehearsal for 0012_family_plan.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002 and 0003.
 -- Run (WSL Postgres 18):
---   wsl -d Ubuntu -- bash -c "service postgresql start >/dev/null; cd /mnt/d/Claude/Bantay/.claude/worktrees/wf_61dae830-ac1-3/supabase/tests && su postgres -c 'dropdb --if-exists bantay_fp; createdb bantay_fp; psql -X -q -v ON_ERROR_STOP=1 -d bantay_fp -f family_plan_rehearsal.sql'"
+--   wsl -d Ubuntu -- bash -c "service postgresql start >/dev/null; cd /mnt/d/Claude/Bantay/supabase/tests && su postgres -c 'dropdb --if-exists bantay_fp; createdb bantay_fp; psql -X -q -v ON_ERROR_STOP=1 -d bantay_fp -f family_plan_rehearsal.sql'"
 -- Actors: A admin (person PA); B member (person PB); C member (read-only carer of PB); F disabled member; anon.
 \set ON_ERROR_STOP on
 do $$ begin
