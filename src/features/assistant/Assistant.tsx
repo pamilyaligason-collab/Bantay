@@ -7,7 +7,7 @@ import { hdb } from '../records/store'
 import { ask } from './client'
 import { DEFAULT_CAP, takeMessage } from './cap'
 import { addTask } from '../family/tasks'
-import { confirmDraft, confirmTask, FIELDS, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
+import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personChoices, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
 import { weatherSummary } from './weather'
 import './assistant.css'
@@ -53,7 +53,7 @@ function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; p
       <div className="as-fields">
         <label>{LABEL.person}
           {edit || (!who && people.length > 0) ? (
-            <select value={who?.id ?? ''} onChange={(e) => setF({ ...f, person: e.target.value })}>{!who && <option value="">Pick who</option>}{people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+            <select value={who?.id ?? ''} onChange={(e) => setF({ ...f, person: e.target.value })}>{!who && <option value="">Pick who</option>}{(who ? people : personChoices(f.person ?? '', people)).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
           ) : <b>{who?.name ?? (people.length ? 'Pick who' : 'Add a family member first')}</b>}
         </label>
         {shown.map((k) => (
@@ -62,6 +62,7 @@ function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; p
           </label>
         ))}
       </div>
+      {!who && people.length > 0 && <span className="as-hint" role="status">Pick who this is for</span>}
       {err && <span role="alert" className="as-err">{err}</span>}
       <div className="as-actions">
         <button className="btn" disabled={state === 'saving' || !who} onClick={confirm}>Confirm</button>
@@ -85,11 +86,17 @@ function Weather() {
 function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; people: People[] }) {
   const [state, setState] = useState<'draft' | 'saving' | 'saved' | 'discarded'>('draft')
   const [err, setErr] = useState('')
-  const a = taskArgs(card.title, card.due, card.assignee, people)
+  // choice: undefined = not picked yet, '' = whole family, else a person id. A named assignee we cannot match must be picked, never dropped.
+  const [choice, setChoice] = useState<string | undefined>()
+  const named = card.assignee.trim() !== '' && !personFor(card.assignee, people)
+  const assignee = choice !== undefined ? choice : card.assignee
+  const a = taskArgs(card.title, card.due, assignee, people)
   const who = a?.assigneePersonId ? people.find((p) => p.id === a.assigneePersonId)?.name : undefined
+  const needPick = named && choice === undefined
+  const options = personChoices(card.assignee, people)
   const confirm = async () => {
     setState('saving') // blocks a second tap while the first save runs
-    try { await confirmTask(card.title, card.due, card.assignee, people, addTask); setState('saved') } catch { setErr('Could not save the task. Please try again.'); setState('draft') }
+    try { await confirmTask(card.title, card.due, assignee, people, addTask); setState('saved') } catch { setErr('Could not save the task. Please try again.'); setState('draft') }
   }
   if (state === 'discarded') return <div className="as-card sub">Discarded.</div>
   if (state === 'saved') return <div className="as-card" role="status">Task added: {a?.title}.</div>
@@ -99,12 +106,17 @@ function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; peo
       <span className="sub">Draft only. Nothing is saved until you confirm.</span>
       <div className="as-fields">
         <label>Task<b>{a?.title ?? 'Not given'}</b></label>
-        <label>Due<b>{a?.due ?? 'No date'}</b></label>
-        <label>For<b>{who ?? 'Anyone'}</b></label>
+        <label>Due<b>{a?.due ? dateWords(a.due) : 'No date'}</b></label>
+        <label>For<b>{needPick ? `Who is "${card.assignee.trim()}"?` : who ?? 'Whole family'}</b></label>
       </div>
+      {named && <div className="as-people" role="group" aria-label="Pick a person">
+        {options.map((p) => <button key={p.id} type="button" className="as-chip" aria-pressed={choice === p.id} onClick={() => setChoice(p.id)}>{p.name}</button>)}
+        <button type="button" className="as-chip" aria-pressed={choice === ''} onClick={() => setChoice('')}>Whole family</button>
+      </div>}
+      {needPick && <span className="as-hint" role="status">Pick who this is for</span>}
       {err && <span role="alert" className="as-err">{err}</span>}
       <div className="as-actions">
-        <button className="btn" disabled={state === 'saving' || !a} onClick={confirm}>Confirm</button>
+        <button className="btn" disabled={state === 'saving' || !a || needPick} onClick={confirm}>Confirm</button>
         <button className="btn2" onClick={() => setState('discarded')}>Discard</button>
       </div>
     </div>
@@ -114,7 +126,8 @@ function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; peo
 /** Answers from this phone's saved readings. No server call, no diagnosis. */
 function RecordsCard({ card, people }: { card: Extract<Card, { kind: 'records' }>; people: People[] }) {
   const [ans, setAns] = useState<RecordsAnswer | null>(null)
-  const who = personFor(card.person, people) ?? (people.length === 1 ? people[0] : undefined)
+  const [picked, setPicked] = useState<string | null>(null)
+  const who = people.find((p) => p.id === picked) ?? personFor(card.person, people) ?? (card.person.trim() === '' && people.length === 1 ? people[0] : undefined)
   useEffect(() => {
     if (!who) return
     void (async () => {
@@ -128,8 +141,11 @@ function RecordsCard({ card, people }: { card: Extract<Card, { kind: 'records' }
   return (
     <div className="as-card" role="status">
       <strong>From your records</strong>
-      <span>{!who ? 'Tell me whose result you mean.' : ans ? ans.text : 'Looking...'}</span>
-      {ans?.cite && <span className="sub">{ans.cite}</span>}
+      <span>{!who ? 'Whose result do you mean?' : ans ? ans.text : 'Looking...'}</span>
+      {!who && <div className="as-people" role="group" aria-label="Pick a person">{personChoices(card.person, people).map((p) => <button key={p.id} type="button" className="as-chip" onClick={() => setPicked(p.id)}>{p.name}</button>)}</div>}
+      {!who && <span className="as-hint" role="status">Pick who this is for</span>}
+      {ans?.cite && <div className="as-src"><span className="sub">Sources</span><span className="as-chip as-chip-static">{ans.cite}</span></div>}
+      {ans && <span className="sub">Not sure? Ask the doctor.</span>}
     </div>
   )
 }
@@ -143,8 +159,8 @@ function CardView({ card, people, go }: { card: Card; people: People[]; go: (t: 
   const src = sourceLink(card.source, card.term)
   return (
     <div className="as-card"><strong>{card.term}</strong><span>{card.answer}</span>
-      <a href={src.url} target="_blank" rel="noopener noreferrer">{src.label}</a>
-      <span className="sub">General information, not medical advice.</span></div>
+      <div className="as-src"><span className="sub">Sources</span><a className="as-chip" href={src.url} target="_blank" rel="noopener noreferrer">{src.label}</a></div>
+      <span className="sub">Not sure? Ask the doctor. General information, not medical advice.</span></div>
   )
 }
 
@@ -185,7 +201,22 @@ export default function Assistant() {
     window.addEventListener(ASK_EVENT, on)
     return () => window.removeEventListener(ASK_EVENT, on)
   }, [])
-  useEffect(() => { list.current?.scrollTo?.({ top: list.current.scrollHeight }) }, [items])
+  // A card starts at the top of the list so Confirm and Discard are in view; plain replies scroll to the end.
+  useEffect(() => {
+    const l = list.current
+    const last = items[items.length - 1]
+    const place = () => {
+      const el = l?.querySelector<HTMLElement>('.as-msg:last-of-type')
+      l?.scrollTo?.({ top: last?.cards?.length && el ? cardScrollTop(el.offsetTop - l.offsetTop, el.offsetHeight, l.clientHeight, l.scrollHeight) : (l?.scrollHeight ?? 0) })
+    }
+    place()
+    // The card grows after it lands (Edit, person chips, the people list loading): place it again.
+    const el = l?.querySelector<HTMLElement>('.as-msg:last-of-type')
+    if (!last?.cards?.length || !el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(place)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [items, people])
 
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
   const go = (tab: string) => { history.replaceState(null, ''); setOpen(false); location.hash = tab }
@@ -228,7 +259,7 @@ export default function Assistant() {
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
     if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
-    setItems([...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? 'Here is what I found.' : 'I am not sure. Please ask your doctor.'), cards: r.cards }])
+    setItems([...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? '' : 'I am not sure. Please ask your doctor.'), cards: r.cards }])
   }
 
   return (
@@ -247,17 +278,17 @@ export default function Assistant() {
               {items.length === 0 && <p className="sub">Try: "I took my losartan" or "What is HbA1c?"</p>}
               {items.map((m, i) => (
                 <div key={i} className={`as-msg ${m.role}`}>
-                  <p>{m.content}</p>
+                  {m.content && <p>{m.content}</p>}
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}
                 </div>
               ))}
               {busy && <p className="sub" role="status">Thinking...</p>}
             </div>
-            <div className="as-chips" role="group" aria-label="Suggestions">
+            {items.length === 0 && <div className="as-chips" role="group" aria-label="Suggestions">
               {CHIPS.map((c) => (
                 <button key={c.label} type="button" className="as-chip" disabled={busy && c.send} onClick={() => (c.send ? void send(c.text) : (setText(c.text), input.current?.focus()))}>{c.label}</button>
               ))}
-            </div>
+            </div>}
             <form className="as-form" onSubmit={(e) => { e.preventDefault(); void send() }}>
               <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
               {Mic.current && (

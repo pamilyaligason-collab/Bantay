@@ -16,9 +16,9 @@ export type Card =
   | { kind: 'task'; id: string; title: string; due: string; assignee: string }
   | { kind: 'records'; id: string; person: string; test: string }
 
-/** Never more than the last 10 messages, and only role + content leave the device. */
+/** Never more than the last 10 messages, and only role + content leave the device. Card-only replies have no text and are not sent. */
 export const buildRequest = (messages: Msg[], screen: string) => ({
-  messages: messages.slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
+  messages: messages.filter((m) => m.content.trim()).slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
   screen
 })
 
@@ -62,10 +62,40 @@ export function sourceLink(source: Source, term: string, kiwix = (import.meta.en
   return { url: `https://vsearch.nlm.nih.gov/vivisimo/cgi-bin/query-meta?v%3Aproject=medlineplus&query=${q}`, label: 'MedlinePlus, medlineplus.gov' }
 }
 
-export interface People { id: string; name: string }
-/** No match means undefined: the card asks the user to pick, nobody is guessed. */
-export const personFor = (name: string, people: People[]) =>
-  people.find((p) => p.id === name) ?? people.find((p) => p.name.toLowerCase() === name.trim().toLowerCase())
+export interface People { id: string; name: string; aliases?: string[] }
+const lc = (s: string) => s.trim().toLowerCase()
+/** Everyone the text could mean, most exact tier first: id, full name or alias, a first/middle name or alias word, then a nickname that starts or ends a name word (Lino for Rosalino). */
+export function personMatches(name: string, people: People[], maxTier = 2): People[] {
+  const q = lc(name)
+  if (!q) return []
+  const labels = (p: People) => [p.name, ...(p.aliases ?? [])].map(lc).filter(Boolean)
+  const words = (p: People) => labels(p).flatMap((l) => l.split(/\s+/))
+  const tiers: ((p: People) => boolean)[] = [
+    (p) => p.id === name || labels(p).includes(q),
+    (p) => words(p).includes(q),
+    (p) => q.length >= 3 && words(p).some((w) => w.startsWith(q) || w.endsWith(q))
+  ]
+  for (const t of tiers.slice(0, maxTier + 1)) { const hit = people.filter(t); if (hit.length) return hit }
+  return []
+}
+/** One clear match only (id, full name or alias, whole word). Several, none, or only a nickname-style prefix/suffix hit means undefined: the card shows person chips (hits first), nobody is guessed. */
+export const personFor = (name: string, people: People[]) => {
+  const m = personMatches(name, people, 1)
+  return m.length === 1 ? m[0] : undefined
+}
+
+/** Chips for an unclear name: loose matches first, then everyone else. */
+export const personChoices = (name: string, people: People[]) => { const m = personMatches(name, people); return [...m, ...people.filter((p) => !m.includes(p))] }
+
+/** Where the list scrolls to for a new card: its top when it fits (title and buttons both in view), else the end so Confirm and Discard are not below the fold. */
+export const cardScrollTop = (elTop: number, elHeight: number, viewHeight: number, scrollHeight: number) => (elHeight <= viewHeight ? elTop : scrollHeight)
+
+/** '2026-10-23' -> 'Fri, Oct 23'. Anything else comes back unchanged. */
+export function dateWords(d: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return d
+  const t = Date.parse(d + 'T00:00:00Z')
+  return Number.isNaN(t) ? d : new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(t)
+}
 
 const num = (s: string) => (s.trim() !== '' && Number.isFinite(Number(s)) ? Number(s) : null)
 const when = (s: string, now: Date) => (s && !Number.isNaN(Date.parse(s)) ? new Date(s).toISOString() : now.toISOString())

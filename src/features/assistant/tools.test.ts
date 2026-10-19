@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
+import { personChoices, buildRequest, cardScrollTop, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
 import type { Reading } from '../health/ranges'
 
 describe('add task + records answer cards', () => {
@@ -130,11 +130,56 @@ describe('buildRequest', () => {
   })
 })
 
+describe('loose name hits are suggestions', () => {
+  it('Lol with only Lolita is not a match but is offered first', () => {
+    const ppl = [{ id: 'x', name: 'Ben' }, { id: 'l', name: 'Lolita' }]
+    expect(personFor('Lol', ppl)).toBeUndefined()
+    expect(personChoices('Lol', ppl).map((p) => p.id)).toEqual(['l', 'x'])
+    expect(validateDraft('log_med_taken', { person: 'Lol', name: 'Losartan' }, ppl)).toBe('Pick who this is for.')
+  })
+})
+
+describe('buildRequest empty turns and card scroll', () => {
+  it('drops assistant turns with no text', () => {
+    const r = buildRequest([{ role: 'user', content: 'hi' }, { role: 'assistant', content: '' }, { role: 'user', content: 'again' }], 'today')
+    expect(r.messages.map((m) => m.content)).toEqual(['hi', 'again'])
+  })
+  it('scrolls to the card top when it fits, to the end when taller than the list', () => {
+    expect(cardScrollTop(100, 200, 300, 900)).toBe(100)
+    expect(cardScrollTop(100, 400, 300, 900)).toBe(900)
+  })
+})
+
 describe('sourceLink', () => {
   it('builds links itself', () => {
     expect(sourceLink('medlineplus', 'HbA1c').url).toMatch(/^https:\/\/vsearch\.nlm\.nih\.gov\/.*HbA1c/)
     expect(sourceLink('wikipedia', 'a b').label).toBe('Read more on Wikipedia (CC BY-SA 4.0)')
     expect(sourceLink('kiwix', 'x', 'http://kiwix.local/').url).toBe('http://kiwix.local/search?pattern=x')
     expect(sourceLink('kiwix', 'x', '').url).toContain('medlineplus')
+  })
+})
+
+describe('personFor first names, nicknames and aliases', () => {
+  const fam = [{ id: 'a', name: 'Rosalino Roc', aliases: ['Papang'] }, { id: 'b', name: 'Maria Roc', aliases: ['Ma'] }, { id: 'c', name: 'Rosa Cruz' }]
+  it('matches case-insensitively by first name, alias and nickname', () => {
+    expect(personFor('rosalino', fam)?.id).toBe('a')
+    expect(personFor('PAPANG', fam)?.id).toBe('a')
+    expect(personFor('Ma', fam)?.id).toBe('b')
+    expect(personFor('Lino', fam)).toBeUndefined() // nickname-style hit is a suggestion only
+    expect(personMatches('Lino', fam).map((p) => p.id)).toEqual(['a'])
+    expect(personFor('Rosalino Roc', fam)?.id).toBe('a')
+  })
+  it('is undefined when unclear, with all candidates listed', () => {
+    expect(personFor('Roc', fam)).toBeUndefined()
+    expect(personMatches('Roc', fam).map((p) => p.id)).toEqual(['a', 'b'])
+    expect(personFor('', fam)).toBeUndefined()
+    expect(personFor('Zed', fam)).toBeUndefined()
+  })
+})
+
+describe('dateWords', () => {
+  it('writes dates in words and leaves other text alone', () => {
+    expect(dateWords('2026-10-23')).toBe('Fri, Oct 23')
+    expect(dateWords('tomorrow')).toBe('tomorrow')
   })
 })
