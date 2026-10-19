@@ -5,6 +5,7 @@ import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
+import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
 import MetricScreen from '../features/health/MetricScreen'
 import { bodyNodes, insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
@@ -37,8 +38,9 @@ export default function Health() {
 }
 
 function Overview() {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
+  const { ready, people, member, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
   const acts = useActivity(personId)
+  const writable = useWritableIds(member?.userId)
   // Default person: the signed-in user; with nobody signed in, the first person who has readings (not just the first name). A tap on a chip wins.
   const picked = useRef(false)
   useEffect(() => {
@@ -64,7 +66,7 @@ function Overview() {
     <>
       <div className="hdr">
         <h1>Health</h1>
-        <span>{name ? `${personId === ownId ? 'Me' : name.split(' ')[0]} · your health, in one place` : 'Your health, in one place'}</span>
+        <span>{name ? (personId === ownId ? 'My health, in one place' : `${name.split(' ')[0]}'s health, in one place`) : 'Your health, in one place'}</span>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
       {ready && (
@@ -76,12 +78,20 @@ function Overview() {
           {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
         </div>
       )}
-      <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
+      {ready && !blank && nodes.every((n) => n.empty) ? (
+        <div className="card hv-novitals" data-testid="no-vitals">
+          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${name.split(' ')[0]}` : ''}</h2>
+          <p className="sub">Blood pressure, sugar, weight and steps show here once they are logged.</p>
+          <a className="hv-cta" href={cta.href}>{cta.label}</a>
+        </div>
+      ) : (
+        <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
+      )}
       <a className="card hv-explore" href="#health/body">
         <span>Explore your body<small>See how each part works and when to see a doctor</small></span>
       </a>
       {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
-      {personId && <Medicines personId={personId} mine={personId === ownId} />}
+      {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMarkFor(personId, ownId, writable)} />}
     </>
   )
 }

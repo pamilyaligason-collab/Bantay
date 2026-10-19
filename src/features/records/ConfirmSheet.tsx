@@ -222,7 +222,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
   const items = open ? itemsOf(open) : []
   const isOn = (i: Item) => checked[i.row.id] ?? defaultChecked(i)
   const batch = items.filter((i) => isOn(i) && !unclear(i)) // an unclear line is never swept in
-  const everything = items.filter((i) => !unclear(i)) // "Confirm all on this page": still never an unclear line
+  const everything = items.filter((i) => !unclear(i)) // "Confirm all from this file": still never an unclear line
   const left = bundles?.filter((b) => b.doc.status === 'draft').length ?? 0
 
   const patchBundle = (id: string, f: (b: DocBundle) => DocBundle) => setBundles((bs) => bs && bs.map((b) => (b.doc.id === id ? f(b) : b)))
@@ -320,7 +320,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
             <>
               <button className="btn" disabled={busy || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
               {everything.length > batch.length && (
-                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>Confirm all on this page ({everything.length})</button>
+                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>Confirm all from this file ({everything.length})</button>
               )}
               {items.some(unclear) && <p className="sub" style={{ margin: 0 }}>Unclear lines are confirmed one at a time.</p>}
             </>

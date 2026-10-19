@@ -111,13 +111,13 @@ describe('confirm -> readings', () => {
 })
 
 describe('check flow', () => {
-  it('Confirm all on this page sends every non-unclear row in one call, and the progress line counts documents', async () => {
+  it('Confirm all from this file sends every non-unclear row in one call, and the progress line counts documents', async () => {
     const people = [{ id: 'p1', name: 'Lola Santos' }]
     const done = vi.fn()
     render(<ConfirmFlow people={people} personId="p1" checkedDocs={1} onClose={() => {}} onChanged={done} />)
     expect(await screen.findByText('1 of 3 documents checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
     fireEvent.click(screen.getAllByRole('button', { name: /Lab results, 2026-09-01/ })[0])
-    const all = await screen.findByRole('button', { name: 'Confirm all on this page (2)' }) // l2 is low confidence (unchecked), still in "all"
+    const all = await screen.findByRole('button', { name: 'Confirm all from this file (2)' }) // l2 is low confidence (unchecked), still in "all"
     fireEvent.click(all)
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('2 confirmed'))
     const u = updates.filter((x) => x.table === 'lab_results')

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  activitySeries, barLayout, beforeLine, bodyNodes, compareToPrevious, doseStates, insightHeadline, medSlots, monthlyAverages, parseMedicine, previousReading
+  activitySeries, barLayout, beforeLine, bodyNodes, compareToPrevious, doseStates, insightHeadline, medSlots, monthlyAverages, parseMedicine, previousReading, sparkCount
 } from './model'
 import type { Reading } from './ranges'
 
@@ -141,5 +141,18 @@ describe('sparkPath', () => {
     const { sparkPath } = await import('./model')
     expect(sparkPath([at(1, 0)])).toBe('')
     expect(sparkPath([at(5, 1), at(1, 0)])).toMatch(/^M2 19L58 3$/) // 1 (older) low, 5 (newer) high
+  })
+})
+
+describe('round-3 fix helpers', () => {
+  it('barLayout pins the dot to the arrow when off the end of a low-only range', () => {
+    const b = barLayout(35, null, { low: 40, high: null })
+    expect(b.edge).toBe('low')
+    expect(b.now).toBe(3)
+    expect(barLayout(200, null, { low: null, high: 100 }).now).toBe(97)
+  })
+  it('sparkCount counts only drawn points', () => {
+    const r = (v: unknown, t: string) => ({ id: t, personId: 'p', test: 't', value: v, unit: '', takenAt: t }) as never
+    expect(sparkCount([r(1, '2026-01-01'), r('x', '2026-01-02'), r(3, 'bad'), r(4, '2026-01-04')])).toBe(2)
   })
 })

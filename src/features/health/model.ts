@@ -1,4 +1,5 @@
-import { GUIDE, position, rangeText, type Position, type Range, type Reading } from './ranges'
+import { formatNumber, labName } from '../../lib/labFormat'
+import { GUIDE, generalRange, position, rangeText, type Position, type Range, type Reading } from './ranges'
 
 /** Pure Health logic (v6, D-38): headline, previous value, body-map nodes, monthly averages, medicine times. No React, no storage. */
 
@@ -14,19 +15,20 @@ const PLAIN: Record<string, string> = {
 }
 /** Heading for a test key: the guide's label, else a plain name (never the raw key). */
 const LABELS: Record<string, string> = { bp: 'Blood pressure', blood_pressure: 'Blood pressure', sugar: 'Blood sugar', pulse: 'Pulse', heart_rate: 'Pulse', weight: 'Weight', glucose: 'Blood sugar (after eating)', steps: 'Steps', sleep: 'Sleep', mood: 'Mood' }
-export const metricLabel = (test: string) => GUIDE[test]?.label ?? LABELS[test] ?? `${test.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}`
+export const metricLabel = (test: string) => GUIDE[test]?.label ?? LABELS[test] ?? labName(test)
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
-export const plainName = (test: string) => PLAIN[test] ?? GUIDE[test]?.label.toLowerCase() ?? test.replace(/_/g, ' ')
+export const plainName = (test: string) => PLAIN[test] ?? GUIDE[test]?.label.toLowerCase() ?? labName(test).split(' ').map((w) => (/[A-Z]/.test(w.slice(1)) ? w : w.toLowerCase())).join(' ')
 
 // ---- the range a reading is judged against: family limit, then the lab's own, then the general guide ----------
-export function effectiveRange(r: Reading, family?: Range | null): { range: Range | null; from: 'family' | 'lab' | 'guide' | 'none' } {
+export function effectiveRange(r: Reading, family?: Range | null): { range: Range | null; from: 'family' | 'lab' | 'guide' | 'general' | 'none' } {
   const has = (x?: Range | null) => !!x && (x.low != null || x.high != null)
   if (has(family)) return { range: family!, from: 'family' }
   const lab = { low: r.labLow ?? null, high: r.labHigh ?? null }
   if (has(lab)) return { range: lab, from: 'lab' }
   const g = GUIDE[r.test]
   if (g && has(g)) return { range: { low: g.low, high: g.high }, from: 'guide' }
-  return { range: null, from: 'none' }
+  const gen = g ? null : generalRange(r.test, r.unit)
+  return gen ? { range: { low: gen.low, high: gen.high }, from: 'general' } : { range: null, from: 'none' }
 }
 export const readingPosition = (r: Reading, family?: Range | null): Position => position(r.value, effectiveRange(r, family).range ?? undefined)
 
@@ -77,30 +79,50 @@ export const shortDate = (iso: string) => {
 export function beforeLine(latest: Reading, prev: Reading, family?: Range | null): string {
   const c = compareToPrevious(latest, prev, family)
   const unit = prev.unit ? ` ${prev.unit}` : ''
-  const move = c.direction === 'same' ? 'no change' : `${c.direction} ${Math.abs(c.delta)}`
+  const move = c.direction === 'same' ? 'no change' : `${c.direction} ${formatNumber(Math.abs(c.delta))}`
   const near = c.trend === 'closer' ? ', closer to normal' : c.trend === 'further' ? ', further from normal' : ''
-  return `Before: ${prev.value}${unit} on ${shortDate(prev.takenAt)}, ${move}${near}`
+  return `Before: ${formatNumber(prev.value)}${unit} on ${shortDate(prev.takenAt)}, ${move}${near}`
 }
 
-/** Positions (0..100) of the band and the two markers on a mini range bar. A missing range draws no band. */
+/** Positions (0..100) of the band and the two markers on a mini range bar. Every bar has the same track: the normal zone is shaded
+ *  (middle half when both limits exist, the low or high side otherwise) and a dot is clamped inside the track, with `edge` set when
+ *  the value is off the end. A missing range draws no band and uses an auto scale. */
 export function barLayout(latest: number, prev: number | null, range: Range | null) {
-  const vals = [latest, ...(prev != null ? [prev] : []), ...(range?.low != null ? [range.low] : []), ...(range?.high != null ? [range.high] : [])]
-  const lo = Math.min(...vals)
-  const hi = Math.max(...vals)
-  const pad = (hi - lo || Math.abs(hi) || 1) * 0.25
-  const a = lo - pad
-  const span = hi + pad - a
-  const pct = (v: number) => Math.round(((v - a) / span) * 1000) / 10
+  const lo = range?.low ?? null
+  const hi = range?.high ?? null
+  if (lo == null && hi == null) {
+    const vals = [latest, ...(prev != null ? [prev] : [])]
+    const mn = Math.min(...vals)
+    const mx = Math.max(...vals)
+    const pad = (mx - mn || Math.abs(mx) || 1) * 0.25
+    const a = mn - pad
+    const span = mx + pad - a
+    const pct = (v: number) => Math.round(((v - a) / span) * 1000) / 10
+    return { band: null, now: pct(latest), prev: prev != null ? pct(prev) : null, edge: null as 'high' | 'low' | null }
+  }
+  // track [a, b]: both limits -> half the span of margin each side; one limit -> 1.5x or 2x of it
+  let a: number, b: number
+  if (lo != null && hi != null) { const m = (hi - lo || Math.abs(hi) || 1) * 0.5; a = lo - m; b = hi + m }
+  else if (hi != null) { a = 0; b = hi * 1.5 }
+  else { a = 0; b = lo! * 2 }
+  const span = b - a || 1
+  const pct = (v: number) => Math.round(Math.min(97, Math.max(3, ((v - a) / span) * 100)) * 10) / 10
+  const raw = (v: number) => Math.round(Math.min(100, Math.max(0, ((v - a) / span) * 100)) * 10) / 10
+  const edge = hi != null && latest > hi ? 'high' : lo != null && latest < lo ? 'low' : null
   return {
-    band: range && (range.low != null || range.high != null) ? { from: range.low != null ? pct(range.low) : 0, to: range.high != null ? pct(range.high) : 100 } : null,
-    now: pct(latest),
-    prev: prev != null ? pct(prev) : null
+    band: { from: lo != null ? raw(lo) : 0, to: hi != null ? raw(hi) : 100 },
+    now: edge === 'high' ? 97 : edge === 'low' ? 3 : pct(latest), // off the end: the dot sits at the arrow, not mid-track
+    prev: prev != null ? pct(prev) : null,
+    edge: edge as 'high' | 'low' | null
   }
 }
 
 /** SVG path for a tiny trend line (oldest to newest, last 12 readings) in a 60x22 box. Fewer than 2 readings: ''. */
+const usable = (rs: Reading[]) => rs.filter((r) => Number.isFinite(Date.parse(r.takenAt)) && isNum(r.value))
+/** How many points sparkPath actually draws. */
+export const sparkCount = (rs: Reading[]) => Math.min(12, usable(rs).length)
 export function sparkPath(rs: Reading[], w = 60, h = 22): string {
-  const v = [...rs].filter((r) => Number.isFinite(Date.parse(r.takenAt)) && isNum(r.value)).sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).slice(-12).map((r) => r.value)
+  const v = [...usable(rs)].sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).slice(-12).map((r) => r.value)
   if (v.length < 2) return ''
   const lo = Math.min(...v)
   const span = Math.max(...v) - lo || 1
@@ -138,17 +160,17 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const sys = last('bp_systolic')
   const dia = last('bp_diastolic')
   const bpPos = worst([sys ? readingPosition(sys, familyOf(sys)) : 'none', dia ? readingPosition(dia, familyOf(dia)) : 'none'])
-  nodes.push({ id: 'bp', label: 'BP', value: sys && dia ? `${sys.value}/${dia.value}` : sys ? String(sys.value) : '--', note: sys ? STATE_NOTE[bpPos] || shortDate(sys.takenAt) : 'No data yet', state: bpPos, code: 'bp_systolic', empty: !sys })
+  nodes.push({ id: 'bp', label: 'BP', value: sys && dia ? `${formatNumber(sys.value)}/${formatNumber(dia.value)}` : sys ? formatNumber(sys.value) : '--', note: sys ? STATE_NOTE[bpPos] || shortDate(sys.takenAt) : 'No data yet', state: bpPos, code: 'bp_systolic', empty: !sys })
 
   const hr = last('heart_rate')
-  nodes.push({ id: 'pulse', label: 'Pulse', value: hr ? String(hr.value) : '--', note: hr ? shortDate(hr.takenAt) : 'No data yet', state: 'none', code: 'heart_rate', empty: !hr })
+  nodes.push({ id: 'pulse', label: 'Pulse', value: hr ? formatNumber(hr.value) : '--', note: hr ? shortDate(hr.takenAt) : 'No data yet', state: 'none', code: 'heart_rate', empty: !hr })
 
   const sug = last('fasting_glucose') ?? last('glucose')
   const sugPos = sug ? readingPosition(sug, familyOf(sug)) : 'none'
-  nodes.push({ id: 'sugar', label: 'Sugar', value: sug ? String(sug.value) : '--', note: sug ? STATE_NOTE[sugPos] || shortDate(sug.takenAt) : 'No data yet', state: sugPos, code: sug?.test ?? 'fasting_glucose', empty: !sug })
+  nodes.push({ id: 'sugar', label: 'Sugar', value: sug ? formatNumber(sug.value) : '--', note: sug ? STATE_NOTE[sugPos] || shortDate(sug.takenAt) : 'No data yet', state: sugPos, code: sug?.test ?? 'fasting_glucose', empty: !sug })
 
   const w = last('weight')
-  nodes.push({ id: 'weight', label: 'Weight', value: w ? `${w.value} kg` : '--', note: w ? shortDate(w.takenAt) : 'No data yet', state: 'none', code: 'weight', empty: !w })
+  nodes.push({ id: 'weight', label: 'Weight', value: w ? `${formatNumber(w.value)} kg` : '--', note: w ? shortDate(w.takenAt) : 'No data yet', state: 'none', code: 'weight', empty: !w })
 
   const steps = dayTotal(acts, 'steps', 'steps', now)
   nodes.push({ id: 'steps', label: 'Steps', value: steps == null ? '--' : steps.toLocaleString('en-PH'), note: steps == null ? 'No data yet' : 'today', state: 'none', code: 'steps', empty: steps == null })
@@ -212,7 +234,9 @@ export const MORE_INFO = { text: 'Read more on MedlinePlus', url: 'https://medli
 
 export const rangeLine = (r: Reading, family?: Range | null) => {
   const { range, from } = effectiveRange(r, family)
-  return from === 'none' ? '' : `${from === 'family' ? 'Family limit' : from === 'lab' ? 'Lab range' : 'General guide'}: ${from === 'guide' ? GUIDE[r.test]!.text : rangeText(range!)}`
+  if (from === 'none') return ''
+  if (from === 'general') return `General guide, labs differ: ${generalRange(r.test, r.unit)!.text}`
+  return `${from === 'family' ? 'Family limit' : from === 'lab' ? 'Lab range' : 'General guide'}: ${from === 'guide' ? GUIDE[r.test]!.text : rangeText(range!)}`
 }
 
 // ---- medicines ----------------------------------------------------------------------------------------------

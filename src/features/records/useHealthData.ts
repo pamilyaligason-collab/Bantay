@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getMember, type Member } from '../auth/session'
+import { labName } from '../../lib/labFormat'
 import { loadAll } from './store'
 import { usePeople } from './useRecordsServer'
 
@@ -52,4 +53,4 @@ export function useHealthData() {
 /** Test helper: forget the shared choice. */
 export const resetPersonChoice = () => setChosen('')
 
-export const testLabel = (key: string, guide: Record<string, { label: string }>) => guide[key]?.label ?? key
+export const testLabel = (key: string, guide: Record<string, { label: string }>) => guide[key]?.label ?? labName(key)
