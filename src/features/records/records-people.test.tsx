@@ -79,8 +79,8 @@ describe('person picker', () => {
     expect(await screen.findByRole('button', { name: /To check \(4\)/ })).toBeTruthy()
     cleanup()
     render(<Health />)
-    const sel = (await screen.findByRole('combobox')) as HTMLSelectElement
-    await waitFor(() => expect(sel.value).toBe('p1'))
+    const lola = await screen.findByRole('button', { name: 'Lola' })
+    await waitFor(() => expect(lola.getAttribute('aria-pressed')).toBe('true'))
   })
 
   it('a member with no person of their own falls back to the first person', async () => {

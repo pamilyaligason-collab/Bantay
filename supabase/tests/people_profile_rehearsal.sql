@@ -1,6 +1,6 @@
--- Rehearsal for 0010_people_profile.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002 and 0008.
+-- Rehearsal for 0010_people_profile.sql and 0011_family_profiles_photo.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002 and 0008.
 -- Run (WSL Postgres 18):
---   wsl -d Ubuntu -- bash -c "service postgresql start >/dev/null; cd /mnt/d/Claude/Bantay/supabase/tests && su postgres -c 'dropdb --if-exists bantay_pp; createdb bantay_pp; psql -X -q -v ON_ERROR_STOP=1 -d bantay_pp -f people_profile_rehearsal.sql'"
+--   wsl -d Ubuntu -- bash -c "service postgresql start >/dev/null; cd /mnt/d/Claude/Bantay/.claude/worktrees/bantay-status-verify-3737fd/supabase/tests && su postgres -c 'dropdb --if-exists bantay_pp; createdb bantay_pp; psql -X -q -v ON_ERROR_STOP=1 -d bantay_pp -f people_profile_rehearsal.sql'"
 -- Actors: A admin (own person PA); B member (own person PB); C read-only carer of PB; D creator + writer of no-login PD; F disabled member.
 \set ON_ERROR_STOP on
 do $$ begin
@@ -44,9 +44,12 @@ insert into public.people (id, auth_user_id, display_name, created_by) values
  ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'Test B', '00000000-0000-0000-0000-00000000000b'),
  ('10000000-0000-0000-0000-0000000000d1', null, 'Test Dependent', '00000000-0000-0000-0000-00000000000d');
 insert into public.carers values ('00000000-0000-0000-0000-00000000000c', '10000000-0000-0000-0000-0000000000b1', false);
+\ir ../migrations/0006_family_profiles.sql
 \ir ../migrations/0010_people_profile.sql
 -- 0010 must be safe to run twice
 \ir ../migrations/0010_people_profile.sql
+\ir ../migrations/0011_family_profiles_photo.sql
+\ir ../migrations/0011_family_profiles_photo.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
@@ -97,11 +100,20 @@ select pg_temp.ok(not pg_temp.fails($$insert into storage.objects (bucket_id, na
 select pg_temp.ok(not pg_temp.fails($$insert into storage.objects (bucket_id, name) values ('avatars', '10000000-0000-0000-0000-0000000000c1.jpg')$$), 'admin uploads for any person id');
 select pg_temp.ok((select count(*) from storage.objects where bucket_id = 'avatars') >= 3, 'admin reads avatars');
 
+-- family_profiles() (0011): returns photo_path and keeps its columns; anon is refused
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select pg_temp.ok((select photo_path = '10000000-0000-0000-0000-0000000000b1.jpg' from public.family_profiles() where person_id = '10000000-0000-0000-0000-0000000000b1'), 'family_profiles returns photo_path');
+select pg_temp.ok((select count(*) from public.family_profiles() where display_name is not null and provider is not null) >= 2, 'family_profiles keeps name and provider');
+select pg_temp.ok((select count(*) from pg_proc where proname = 'family_profiles' and pronamespace = 'public'::regnamespace and prosecdef) = 1, 'family_profiles is security definer, one overload');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000f';
+select pg_temp.ok((select count(*) from public.family_profiles()) = 0, 'disabled member gets no family list');
+
 -- F: disabled member reads nothing; anon nothing
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000f';
 select pg_temp.ok((select count(*) from storage.objects where bucket_id = 'avatars') = 0, 'disabled member reads no avatars');
 set role anon; set request.jwt.claim.sub = '';
 select pg_temp.ok(pg_temp.fails($$select * from storage.objects where bucket_id = 'avatars'$$), 'anon has no storage access');
 select pg_temp.ok(pg_temp.fails($$update public.people set phone = 'x'$$), 'anon cannot update people');
+select pg_temp.ok(pg_temp.fails($$select * from public.family_profiles()$$), 'anon cannot call family_profiles');
 reset role;
 \echo PEOPLE PROFILE REHEARSAL DONE

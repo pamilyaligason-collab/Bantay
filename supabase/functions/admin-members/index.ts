@@ -105,6 +105,8 @@ function adapt(admin: Admin, pepper: string): Port {
         admin.from('people').select('id, auth_user_id, display_name, photo_path, phone, birthdate, blood_type, allergies, conditions, medicines').not('auth_user_id', 'is', null),
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
       ])
+      // A failed select must not look like "everyone has no name" (e.g. deployed before migration 0010): fail the call, the handler answers server_error.
+      if (roles.error || people.error || users.error) throw new Error('list_failed')
       const byUser = new Map(users.data.users.map((x) => [x.id, x]))
       const personOf = new Map((people.data ?? []).map((p) => [p.auth_user_id as string, p]))
       return (roles.data ?? []).map((r): Member => {

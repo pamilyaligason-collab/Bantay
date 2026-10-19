@@ -99,8 +99,8 @@ function PickCard({ pick, busy, run, setError, onBack, returning, tryPin, google
   const pin = pick.provider === 'pin' && pick.handle ? pick.handle : null
   return (
     <div className="grp pickcard">
-      {returning
-        ? <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
+      {pick.photo ? <img className="avatar big" src={pick.photo} alt="" width={72} height={72} />
+        : returning ? <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
         : <span className="avatar big" aria-hidden="true">{pick.initials}</span>}
       <h2 className="pname" ref={head} tabIndex={-1}>{pick.displayName}</h2>
       {phase === 'prompting' ? (
@@ -299,7 +299,7 @@ export default function SignIn() {
                   {roster.map((m) => (
                     <li key={m.personId}>
                       <button type="button" className="wl-row" onClick={() => { setError(''); setPick(m) }}>
-                        <span className="avatar" aria-hidden="true">{m.initials}</span>
+                        {m.photo ? <img className="avatar" src={m.photo} alt="" width={40} height={40} /> : <span className="avatar" aria-hidden="true">{m.initials}</span>}
                         <span className="wl-name"><b>{m.displayName}</b>{m.provider === 'google' && <span className="si-hint">Admin</span>}</span>
                         <svg className="wl-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                       </button>

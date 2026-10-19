@@ -319,3 +319,18 @@ describe('SignIn: Google for admins', () => {
     expect(screen.getByRole('button', { name: "I'm back" })).toBeTruthy()
   })
 })
+
+describe('SignIn: photos from family_profiles', () => {
+  afterEach(() => cleanup())
+  it('shows a member photo in the list and the big avatar, initials when there is none', () => {
+    localStorage.clear()
+    localStorage.setItem('bantay.family', JSON.stringify(FAMILY))
+    localStorage.setItem('bantay.avatars', JSON.stringify({ 'p-lola': { path: 'p-lola.jpg', url: 'data:image/jpeg;base64,AAAA' } }))
+    render(<SignIn />)
+    const list = within(screen.getByLabelText('Who are you?'))
+    expect(list.getByRole('button', { name: /Lola Rosa/ }).querySelector('img.avatar')?.getAttribute('src')).toBe('data:image/jpeg;base64,AAAA')
+    expect(list.getByRole('button', { name: /Kuya Ben/ }).querySelector('img')).toBeNull()
+    choose('Lola Rosa')
+    expect(document.querySelector('.pickcard img.avatar.big')?.getAttribute('src')).toBe('data:image/jpeg;base64,AAAA')
+  })
+})

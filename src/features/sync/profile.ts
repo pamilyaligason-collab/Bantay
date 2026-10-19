@@ -12,7 +12,21 @@ const MIGRATED = 'profile.migrated'
 const PHOTO_UP = 'profile.photoUp' // a picked photo that has not reached the server yet
 const PHOTO_AT = 'profile.photoAt' // when the cached kv photo was last known current
 export const SELF_ID = 'profile.selfId'
+const MIGRATING = 'profile.migrating' // the migration PATCH is queued and not yet confirmed
+const MIGRATE_TRIES = 'profile.migrateTries'
+const COLS_SEEN = 'profile.serverCols' // the server has answered with the profile columns at least once (migration 0010 applied)
 const BUCKET = 'avatars'
+
+// These kv keys are per phone, not per person. The phone's cache belongs to SELF_ID; when a different person
+// signs in, the old person's cache (photo, pending upload, wizard answers, migration flag) is dropped so it can
+// never be shown to, or uploaded for, someone else. Their unsent edits stay in the outbox (those carry their own id).
+const PHONE_KEYS = ['profile.photo', PHOTO_UP, PHOTO_AT, MIGRATED, MIGRATING, MIGRATE_TRIES, 'profile.about', 'profile.medicines', 'profile.photoPath']
+export async function adoptPerson(personId: string): Promise<void> {
+  const owner = (await db.kv.get(SELF_ID))?.value as string | undefined
+  if (owner === personId) return
+  if (owner) await db.kv.bulkDelete(PHONE_KEYS)
+  await db.kv.put({ key: SELF_ID, value: personId })
+}
 
 export const blankProfile = (id: string): ProfileRow => ({
   id, photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null
@@ -60,6 +74,7 @@ async function cacheToKv(p: ProfileRow, all: boolean) {
 
 /** Edit own profile: local row first (so the screen updates now), then one outbox PATCH. Works offline. */
 export async function saveProfile(personId: string, patch: Partial<ProfileFields>): Promise<ProfileRow> {
+  await adoptPerson(personId)
   const now = new Date().toISOString()
   const cur = (await db.profiles.get(personId)) ?? blankProfile(personId)
   const keys = Object.keys(patch) as (keyof ProfileFields)[]
@@ -77,13 +92,14 @@ export const saveAbout = (personId: string, a: About) => saveProfile(personId, a
 
 /** Apply pulled people rows (those carrying profile columns). `selfId` also refreshes this phone's kv cache. */
 export async function applyPulledProfiles(rows: Record<string, unknown>[], selfId: string | null): Promise<void> {
+  if (selfId) await adoptPerson(selfId)
   for (const r of rows) {
     if (!('updated_at' in r) && !('photo_path' in r)) continue // old select (migration 0010 not applied): nothing to store
+    await db.kv.put({ key: COLS_SEEN, value: true })
     const server = fromServer(r)
     const merged = mergeProfile(await db.profiles.get(server.id), server)
     await db.profiles.put(merged)
     if (server.id !== selfId) continue
-    await db.kv.put({ key: SELF_ID, value: selfId })
     await cacheToKv(merged, false)
     const at = (await db.kv.get(PHOTO_AT))?.value as string | undefined
     // another phone changed the photo after ours was cached: drop the cache so the server photo shows
@@ -117,6 +133,7 @@ export async function signedAvatar(path: string | null | undefined): Promise<str
 
 /** Keep a picked photo on this phone, then try to upload it as avatars/<person>.jpg and record the path. Never throws. */
 export async function savePhoto(personId: string | null, dataUrl: string): Promise<void> {
+  if (personId) await adoptPerson(personId)
   const at = new Date().toISOString()
   await db.kv.put({ key: 'profile.photo', value: dataUrl })
   await db.kv.put({ key: PHOTO_AT, value: at })
@@ -142,9 +159,30 @@ export async function flushPhoto(personId: string): Promise<boolean> {
 
 // ---- run from sync
 
-/** Once per phone: copy what the wizard stored in kv up to the server, but only into fields the server has empty (server wins). */
+const outboxHas = async () => (await db.outbox.toArray()).some((r) => r.table === 'people_profile')
+const deadCount = async () => (((await db.kv.get('sync.dead'))?.value as { table: string }[] | undefined) ?? []).filter((d) => d.table === 'people_profile').length
+
+/** Copy what the wizard stored in kv up to the server, only into fields the server has empty (server wins).
+ *  The one-time flag is set only once the server write is confirmed: never while the profile columns are missing
+ *  (migration 0010 not applied), and not if the PATCH dead-lettered (retried on later syncs, at most 3 times). */
 export async function migrateKv(personId: string): Promise<void> {
+  await adoptPerson(personId)
   if ((await db.kv.get(MIGRATED))?.value) return
+  if (!(await db.kv.get(COLS_SEEN))?.value) return
+  const sentAt = (await db.kv.get(MIGRATING))?.value
+  if (typeof sentAt === 'number') { // value = how many profile writes were dead-lettered before ours was queued
+    if (await outboxHas()) return // still on its way
+    if ((await deadCount()) > sentAt) { // the write failed: allow a few more tries
+      const n = (((await db.kv.get(MIGRATE_TRIES))?.value as number | undefined) ?? 0) + 1
+      await db.kv.put({ key: MIGRATE_TRIES, value: n })
+      await db.kv.delete(MIGRATING)
+      if (n >= 3) await db.kv.put({ key: MIGRATED, value: true }) // give up; the answers stay in the local cache
+      return
+    }
+    await db.kv.delete(MIGRATING)
+    await db.kv.put({ key: MIGRATED, value: true })
+    return
+  }
   const cur = (await db.profiles.get(personId)) ?? blankProfile(personId)
   const about = ((await db.kv.get('profile.about'))?.value ?? {}) as About
   const meds = (await db.kv.get('profile.medicines'))?.value
@@ -154,9 +192,14 @@ export async function migrateKv(personId: string): Promise<void> {
   if (!cur.allergies.length && have.allergies.length) patch.allergies = have.allergies
   if (!cur.conditions.length && have.conditions.length) patch.conditions = have.conditions
   if (!cur.medicines.length && Array.isArray(meds) && meds.length) patch.medicines = list(meds)
-  if (Object.keys(patch).length) await saveProfile(personId, patch)
+  // a failed earlier try left its fields marked pending on the local row: send those again
+  for (const k of cur.pending ?? []) if (k !== 'photoPath' && !(k in patch)) (patch as Record<string, unknown>)[k] = cur[k]
   if (!cur.photoPath && (await db.kv.get('profile.photo'))?.value) await db.kv.put({ key: PHOTO_UP, value: true })
-  await db.kv.put({ key: MIGRATED, value: true })
+  if (Object.keys(patch).length) {
+    const before = await deadCount()
+    await saveProfile(personId, patch)
+    await db.kv.put({ key: MIGRATING, value: before })
+  } else await db.kv.put({ key: MIGRATED, value: true }) // nothing to write
 }
 
 /** After a pull: own profile housekeeping. Profile data is optional, so nothing here may put the health sync into backoff. */
@@ -165,6 +208,7 @@ export async function syncOwnProfile(): Promise<void> {
     const m = await getMember()
     const id = m?.personId ?? ((await db.kv.get(SELF_ID))?.value as string | undefined)
     if (!id) return
+    await adoptPerson(id)
     await migrateKv(id)
     await flushPhoto(id)
   } catch { /* try again next sync */ }

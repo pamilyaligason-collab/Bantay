@@ -91,7 +91,7 @@ export default function QuickLog({ notify, onOk }: { notify: (msg: string) => vo
       void run(logWeight(v), `Saved weight ${v} kg`)
     }
   }
-  const names = meds.map((m) => parseDose(m)?.name ?? m.trim()).filter(Boolean)
+  const names = [...new Set(meds.map((m) => parseDose(m)?.name ?? m.trim()).filter(Boolean))] // twice-daily medicines are two entries, one button
 
   return (
     <>

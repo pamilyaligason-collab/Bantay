@@ -19,7 +19,7 @@
 .ad-btns > button { flex: 1; }
 .ad-top { display: flex; align-items: center; gap: 12px; padding: 0 4px; min-width: 0; }
 .ad-h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
-.ad-av { display: inline-grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; color: #2A2A2A; font-weight: 700; }
+.ad-av { display: inline-grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; color: var(--ink); font-weight: 700; }
 .ad-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ad-open { cursor: pointer; min-height: 64px; color: var(--ink); background: transparent; border: 0; border-radius: 0; width: 100%; font: inherit; text-align: left; flex-wrap: nowrap; }
 .ad-open .sh-ic { color: var(--ink2); flex: none; }

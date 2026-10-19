@@ -60,7 +60,7 @@ export function useConfirmedDocs(personId: string, version = 0) {
 export function useConfirmedMedicines(personId: string, version = 0) {
   const [items, setItems] = useState<RxItem[] | null>(null)
   useEffect(() => {
-    if (!personId) return
+    if (!personId) { setItems(null); return }
     let live = true
     setItems(null)
     void listConfirmedMedicines(personId).then((r) => live && setItems(r.ok ? r.data : []))

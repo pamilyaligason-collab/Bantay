@@ -101,8 +101,10 @@ describe('one-time kv migration', () => {
     await db.kv.put({ key: 'profile.about', value: { bloodType: 'B+', allergies: 'Latex', conditions: 'UNKNOWN' } })
     await db.kv.put({ key: 'profile.medicines', value: ['Losartan'] })
     await db.kv.put({ key: 'profile.photo', value: 'data:image/jpeg;base64,AAAA' })
+    await db.kv.put({ key: 'profile.serverCols', value: true })
     await db.profiles.put({ ...blankProfile('me'), bloodType: 'O+', updatedAt: '2026-10-10T10:00:00Z' }) // server already has a blood type
     await migrateKv('me')
+    expect((await db.kv.get('profile.migrated'))?.value).toBeUndefined() // not until the write is confirmed
     const p = (await db.profiles.get('me'))!
     expect(p.bloodType).toBe('O+') // server wins
     expect(p.allergies).toEqual(['Latex'])
@@ -110,8 +112,61 @@ describe('one-time kv migration', () => {
     expect(p.medicines).toEqual(['Losartan'])
     expect((await db.kv.get('profile.photoUp'))?.value).toBe(true) // photo waits for upload
     const queued = await db.outbox.count()
-    await migrateKv('me') // second run does nothing
+    await migrateKv('me') // still queued: waits, writes nothing more
     expect(await db.outbox.count()).toBe(queued)
+    await db.outbox.clear() // the PATCH went through
+    await migrateKv('me')
     expect((await db.kv.get('profile.migrated'))?.value).toBe(true)
+  })
+})
+
+describe('migration flag only after a confirmed write', () => {
+  const seed = async () => {
+    await db.kv.put({ key: 'profile.about', value: { allergies: 'Latex' } })
+  }
+  it('does not set it while the profile columns are missing (0010 not applied)', async () => {
+    await seed()
+    await migrateKv('me')
+    expect(await db.outbox.count()).toBe(0)
+    expect((await db.kv.get('profile.migrated'))?.value).toBeUndefined()
+    await applyPulledProfiles([{ id: 'me', display_name: 'Mama' }], 'me') // old select: still no columns
+    await migrateKv('me')
+    expect((await db.kv.get('profile.migrated'))?.value).toBeUndefined()
+  })
+  it('does not set it when the PATCH dead-lettered, and tries again', async () => {
+    await seed()
+    await db.kv.put({ key: 'profile.serverCols', value: true })
+    await migrateKv('me')
+    expect(await db.outbox.count()).toBe(1)
+    await db.outbox.clear()
+    await db.kv.put({ key: 'sync.dead', value: [{ table: 'people_profile' }] }) // 400 parked it
+    await migrateKv('me')
+    expect((await db.kv.get('profile.migrated'))?.value).toBeUndefined()
+    await migrateKv('me') // retry queues a fresh write
+    expect(await db.outbox.count()).toBe(1)
+  })
+})
+
+describe('two people on one phone', () => {
+  it('pending photo and wizard answers of A never reach B', async () => {
+    await saveProfile('A', { allergies: ['Latex'] })
+    await db.kv.put({ key: 'profile.photo', value: 'data:image/jpeg;base64,AAAA' })
+    await db.kv.put({ key: 'profile.photoUp', value: true })
+    await db.kv.put({ key: 'profile.serverCols', value: true })
+    await db.outbox.clear()
+    await migrateKv('B') // B signs in on the same phone
+    await (await import('./profile')).adoptPerson('B')
+    expect((await db.kv.get('profile.photo'))?.value).toBeUndefined()
+    expect((await db.kv.get('profile.photoUp'))?.value).toBeUndefined()
+    expect((await db.kv.get('profile.about'))?.value).toBeUndefined()
+    await migrateKv('B')
+    expect(await db.outbox.count()).toBe(0) // nothing of A's is written into B
+    expect((await db.kv.get('profile.selfId'))?.value).toBe('B')
+  })
+  it('a photo picked by B is uploaded as B', async () => {
+    await saveProfile('A', { phone: '1' })
+    await (await import('./profile')).savePhoto('B', 'data:image/jpeg;base64,AAAA') // supabase client is absent: stays pending, owned by B
+    expect((await db.kv.get('profile.selfId'))?.value).toBe('B')
+    expect((await db.kv.get('profile.photoUp'))?.value).toBe(true)
   })
 })

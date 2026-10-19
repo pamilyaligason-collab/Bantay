@@ -1,10 +1,12 @@
 import { GUIDE, latestByTest, latestVsNormal } from '../features/health/ranges'
+import { PersonChips } from '../features/records/PersonChips'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
 
+const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
 
 export default function Health() {
-  const { ready, people, personId, setPersonId, readings, thresholds } = useHealthData()
+  const { ready, people, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
   const latest = latestByTest(readings)
   return (
     <>
@@ -12,18 +14,7 @@ export default function Health() {
         <h1>Health</h1>
         <span>Your health, in one place</span>
       </div>
-      {people.length > 1 && (
-        <label className="sub" style={{ padding: '0 4px' }}>
-          Person{' '}
-          <select value={personId} onChange={(e) => setPersonId(e.target.value)} style={{ font: 'inherit', minHeight: 44 }}>
-            {people.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       <section aria-labelledby="lvn">
         <h2 className="hd" id="lvn">Latest vs normal</h2>
         {ready && latest.length === 0 ? (

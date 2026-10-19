@@ -43,6 +43,7 @@ export default defineConfig(({ command, mode }) => {
   ],
   test: {
     environment: 'jsdom',
+    setupFiles: ['src/test-setup.ts'],
     css: true, // so `tokens.css?raw` returns the real file in chart.test.ts
     include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/**/*.test.ts'],
     testTimeout: 15000 // ponytail: parallel lanes load the PC; raise only if a real test needs more
