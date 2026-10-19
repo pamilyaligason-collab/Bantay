@@ -10,6 +10,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-s5.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $Sb = 'supabase@2.121.0'
+$Release = 'a4da38d'   # the Fable-reviewed release commit; later design work on this branch is not shipped by this script
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 function Run([string]$exe, [string[]]$a) {
   if ($DryRun) { Write-Host "  [dry-run] $exe $($a -join ' ')" -ForegroundColor DarkGray; $global:LASTEXITCODE = 0; return }
@@ -35,9 +36,9 @@ Run 'npx' @('-y', $Sb, 'db', 'query', '--linked', "delete from public.news_items
 
 Step 5 'push to main (fast-forward only; Cloudflare Pages deploys it)'
 Run 'git' @('fetch', 'origin'); Check 5
-Run 'git' @('merge-base', '--is-ancestor', 'origin/main', 'HEAD'); if ($LASTEXITCODE -ne 0) { throw 'step 5 failed: not a fast-forward' }
+Run 'git' @('merge-base', '--is-ancestor', 'origin/main', $Release); if ($LASTEXITCODE -ne 0) { throw 'step 5 failed: not a fast-forward' }
 $id = if (Test-Path 'import\drive-root.txt') { (Get-Content 'import\drive-root.txt' -Raw).Trim() } else { '' }
-if ($id -and (git log -p origin/main..HEAD | Select-String -SimpleMatch $id)) { throw 'step 5 failed: private Drive folder id in commits' }
-Run 'git' @('push', 'origin', 'HEAD:main'); Check 5
+if ($id -and (git log -p origin/main..$Release | Select-String -SimpleMatch $id)) { throw 'step 5 failed: private Drive folder id in commits' }
+Run 'git' @('push', 'origin', "${Release}:main"); Check 5
 
 Write-Host "`nDone. Pages redeploys in about 2 minutes. Swipe Family Bantay away and reopen it. Then run: powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1 -DryRun" -ForegroundColor Green
