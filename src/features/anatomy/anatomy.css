@@ -92,7 +92,7 @@
 .hv-pt.warn { fill: var(--amber); }
 .hv-glow.warn { animation: an-pulse 2.6s ease-in-out infinite; }
 .hv-map-empty { padding: 20px 16px 24px; border-radius: 24px; background: var(--card); box-shadow: var(--shadow); }
-.hv-map-empty .hv-fig { width: 72px; height: 249px; opacity: 0.6; }
+.hv-map-empty .hv-fig { width: 56px; height: 194px; opacity: 0.6; }
 .hv-map-note { margin: 0; max-width: 28ch; text-align: center; font-size: 16px; color: var(--ink2); }
 @keyframes an-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 

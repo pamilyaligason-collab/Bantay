@@ -15,7 +15,7 @@ const NONE: SystemCount = { total: 0, flagged: 0, ok: 0 }
 
 // One simple 24px glyph per system for the round rail buttons.
 const ICON: Record<string, string> = {
-  skeleton: 'M8 16L16 8M6.5 15a1.8 1.8 0 1 0 2.5 2.5M5.5 17.5a1.8 1.8 0 0 0 3 0M15 6.5a1.8 1.8 0 1 1 2.5 2.5M18.5 5.5a1.8 1.8 0 0 1 0 3',
+  skeleton: 'M12 4v16M8 7c-2 1-3 2-3 3M16 7c2 1 3 2 3 3M7 11c-2 1-2 2-2 3M17 11c2 1 2 2 2 3M8 15c-1 .5-2 1.5-2 2.5M16 15c1 .5 2 1.5 2 2.5',
   muscles: 'M6 9v6M9 7v10M9 12h6M15 7v10M18 9v6',
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
   lungs: 'M12 3v8M10 6v6c0 3-2 6-5 6-1.5 0-2-1-2-2 0-3 2-8 4-10M14 6v6c0 3 2 6 5 6 1.5 0 2-1 2-2 0-3-2-8-4-10',

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Reading } from '../health/ranges'
 
@@ -16,6 +16,9 @@ describe('Explore rail', () => {
     const heart = container.querySelector('.an-rb[aria-label="Heart and blood"]')!
     expect(heart.querySelector('.an-badge')?.textContent).toBe('1')
     expect(heart.querySelector('.an-badge')?.getAttribute('data-tone')).toBe('warn')
+    fireEvent.click(heart)
+    expect(screen.getByTestId('sys-status').textContent).toBe('1 result to look at')
+    expect(screen.getByTestId('sys-status').getAttribute('data-tone')).toBe('warn')
   })
 
   it('unknown results get a plain badge and no green pill', () => {
