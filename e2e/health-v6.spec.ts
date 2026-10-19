@@ -33,7 +33,7 @@ const seed = (page: Page, phase: 1 | 2) =>
     if (phase === 2) await put('bantay-log', {
       activity: [
         { personId: 'p1', kind: 'sleep', minutes: 400, steps: null, startedAt: d(0.3), source: 'manual' },
-        { personId: 'p1', kind: 'steps', minutes: null, steps: 2100, startedAt: d(0.1), source: 'manual' },
+        { personId: 'p1', kind: 'steps', minutes: null, steps: 2100, startedAt: d(0), source: 'manual' },
         { personId: 'p1', kind: 'mood-good', minutes: null, steps: null, startedAt: d(0.05), source: 'manual' }
       ]
     })

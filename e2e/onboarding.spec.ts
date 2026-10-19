@@ -113,16 +113,18 @@ test.describe('setup wizard', () => {
 test.describe('notifications already allowed', () => {
   test.use({ permissions: ['notifications'] })
   test('the notifications step is skipped', async ({ page }) => {
+    // Headless Chromium grants the permission but still reports Notification.permission as "denied", which the web plugin reads.
+    await page.addInitScript(() => Object.defineProperty(Notification, 'permission', { get: () => 'granted' }))
     await page.goto('/')
     await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
     await expect(page.getByRole('button', { name: /Reminders and alerts/ })).toHaveCount(0)
   })
 })
 
-test.describe('Today checklist', () => {
+test.describe('Me checklist', () => {
   test('lists the same count as the wizard and each item opens its own step', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/')
+    await page.goto('/#me') // round 3: the checklist lives on Me, Today only nudges
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length} things left`)
     await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
@@ -133,7 +135,7 @@ test.describe('Today checklist', () => {
   })
   test('a finished step leaves the list', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/')
+    await page.goto('/#me')
     await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
     await kvSet(page, 'setup.sharing', true)
     await page.reload()
