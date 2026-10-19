@@ -63,7 +63,7 @@ export default function NextUp({ notify }: { notify: (msg: string) => void }) {
     notify(r === 'ok' ? `Marked ${w.meds.length > 1 ? 'them' : w.meds[0]} taken` : FAIL_TEXT[r])
   }
   const skipIt = () => {
-    if (item.who) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, ...item.who.meds] } }).catch(() => undefined)
+    if (item.who) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, ...item.who.skipKeys] } }).catch(() => undefined)
   }
 
   const line = item.kind === 'weather' ? null : weatherLine(wx, tick)

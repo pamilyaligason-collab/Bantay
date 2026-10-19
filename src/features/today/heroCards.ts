@@ -52,14 +52,21 @@ export function parseDose(s: string): Dose | null {
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
 
+/** A skip is stored per dose as name@minute. A legacy name-only entry counts only for that medicine's earliest open dose. */
+export const doseKey = (name: string, at: number) => `${name}@${at}`
+export function isSkipped(skipped: string[], name: string, at: number, firstOpenAt: number): boolean {
+  return skipped.some((k) => (/@[0-9]+$/.test(k) ? sameName(k, doseKey(name, at)) : at === firstOpenAt && sameName(k, name)))
+}
+
 /** Doses whose time has come, not yet taken or skipped today (same rule as Next up). Oldest first. */
 export function dueDoses(profile: unknown, taken: { name: string; takenAt: string }[], skipped: string[], now: Date): Dose[] {
   if (!Array.isArray(profile)) return []
   const nowMin = minutes(now)
-  return doseStates(medSlots(profile.filter((x): x is string => typeof x === 'string')), taken, now)
-    .filter((s) => s.at != null && s.at <= nowMin && !s.taken && !skipped.some((k) => sameName(k, s.name)))
+  const open = doseStates(medSlots(profile.filter((x): x is string => typeof x === 'string')), taken, now)
+    .filter((s) => s.at != null && s.at <= nowMin && !s.taken)
     .map((s) => ({ name: s.name, at: s.at! }))
-    .sort((a, b) => a.at - b.at)
+  const first = (n: string) => Math.min(...open.filter((d) => sameName(d.name, n)).map((d) => d.at))
+  return open.filter((d) => !isSkipped(skipped, d.name, d.at, first(d.name))).sort((a, b) => a.at - b.at)
 }
 
 const clock = (at: number) => {
@@ -128,7 +135,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   const d = i.doses[0]
   if (d) out.push({
     key: `dose:${d.name}`, kind: 'dose', kicker: `${minutes(i.now ?? new Date()) >= d.at + DOSE_WINDOW_MIN ? 'Not taken yet' : 'Due'} · ${clock(d.at)}`, title: `Time for ${d.name}`,
-    body: i.doses.length > 1 ? `${i.doses.length} medicines are due now` : 'Mark it when you have taken it',
+    body: new Set(i.doses.map((x) => x.name)).size > 1 ? `${new Set(i.doses.map((x) => x.name)).size} medicines are due now` : 'Mark it when you have taken it',
     actions: [{ id: 'taken', label: 'Taken' }, { id: 'skip', label: 'Skipped' }], dose: d
   })
   const w = i.weather

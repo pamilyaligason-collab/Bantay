@@ -1,9 +1,9 @@
 import { clock, doseStates, medSlots, sameName } from '../health/model'
-import { HEAT_C, RAIN_HERO_PCT, heroCards, type HeroCard, type Sky, type Wx } from './heroCards'
+import { HEAT_C, doseKey, isSkipped, RAIN_HERO_PCT, heroCards, type HeroCard, type Sky, type Wx } from './heroCards'
 
 /** Next up: ONE item. Due medicine (mine or someone I care for) > plan item due today > nearby storm > weather only when it is rainy or hot > all clear. */
 
-export interface DuePerson { personId: string; name: string; isMe: boolean; meds: string[]; at: number }
+export interface DuePerson { personId: string; name: string; isMe: boolean; meds: string[]; at: number; skipKeys: string[] }
 export interface DueInput { personId: string; name: string; isMe: boolean; entries: string[] }
 export type NextKind = 'dose' | 'plan' | 'storm' | 'weather' | 'calm'
 export interface NextItem { key: string; kind: NextKind; sky?: Sky; kicker: string; title: string; body: string; big?: string; who?: DuePerson; href?: string; linkLabel?: string }
@@ -15,9 +15,11 @@ export function dueMeds(people: DueInput[], taken: { personId: string; name: str
   const nowMin = minutes(now)
   return people.flatMap((p): DuePerson[] => {
     const states = doseStates(medSlots(p.entries), taken.filter((t) => t.personId === p.personId), now)
-    const due = states.filter((s) => s.at != null && s.at <= nowMin && !s.taken && !(p.isMe && skipped.some((k) => sameName(k, s.name))))
+    const open = states.filter((s) => s.at != null && s.at <= nowMin && !s.taken)
+    const first = (n: string) => Math.min(...open.filter((d) => sameName(d.name, n)).map((d) => d.at!))
+    const due = open.filter((s) => !(p.isMe && isSkipped(skipped, s.name, s.at!, first(s.name))))
     if (!due.length) return []
-    return [{ personId: p.personId, name: p.name, isMe: p.isMe, meds: [...new Set(due.map((d) => d.name))], at: Math.min(...due.map((d) => d.at!)) }]
+    return [{ personId: p.personId, name: p.name, isMe: p.isMe, meds: [...new Set(due.map((d) => d.name))], at: Math.min(...due.map((d) => d.at!)), skipKeys: due.map((d) => doseKey(d.name, d.at!)) }]
   }).sort((a, b) => Number(b.isMe) - Number(a.isMe) || a.at - b.at)
 }
 

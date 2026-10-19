@@ -1,19 +1,17 @@
-import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../db'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { ldb } from '../log/store'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
-import { SKIP_KEY, dueDoses, heroCards, type HeroActionId } from './heroCards'
+import { SKIP_KEY, doseKey, dueDoses, type Dose, heroCards, type HeroActionId } from './heroCards'
 import { placeNameOf } from './placeName'
+import { useMyTakes } from './useMyTakes'
 import { useWeather } from './weather'
 
 const NO_ALERTS: Alert[] = []
 const NO_NAMES: string[] = []
 const NO_SKIP = { day: '', names: NO_NAMES }
-const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** Simple mode's card that matters now, a row of swipeable cards when more than one applies (D-31/D-43). Full Today uses NextUp. */
 export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (name: string) => void }) {
@@ -21,14 +19,13 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
   const alerts = useKv<Alert[]>(ALERTS_KEY, NO_ALERTS)
   const profile = useKv<string[]>('profile.medicines', NO_NAMES)
   const skip = useKv<{ day: string; names: string[] }>(SKIP_KEY, NO_SKIP)
-  const [taken, setTaken] = useState<{ name: string; takenAt: string }[]>([])
+  const taken = useMyTakes()
   const [tick, setTick] = useState(() => new Date())
   const [idx, setIdx] = useState(0)
 
   useEffect(() => {
-    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(startOfDay().toISOString()).toArray()).subscribe({ next: setTaken, error: () => undefined })
     const t = setInterval(() => setTick(new Date()), 60_000)
-    return () => { sub.unsubscribe(); clearInterval(t) }
+    return () => clearInterval(t)
   }, [])
 
   const ref = place ? alertRef(place) : null
@@ -41,12 +38,12 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
   )
   const at = Math.min(idx, cards.length - 1)
 
-  const act = (id: HeroActionId, dose?: { name: string }) => {
+  const act = (id: HeroActionId, dose?: Dose) => {
     if (id === 'ok') onOk()
     else if (id === 'plan') location.hash = '#family/plan'
     else if (id === 'safety') location.hash = '#safety/warnings'
     else if (id === 'taken' && dose) onTaken(dose.name)
-    else if (id === 'skip' && dose) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, dose.name] } }).catch(() => undefined)
+    else if (id === 'skip' && dose) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, doseKey(dose.name, dose.at)] } }).catch(() => undefined)
   }
 
   return (

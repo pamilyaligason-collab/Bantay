@@ -28,6 +28,16 @@ describe('buildInbox', () => {
     const items = buildInbox({ ...base, profile, taken, skipped: ['Aspirin'] })
     expect(items.map((i) => i.title)).toEqual(['Losartan was not marked today']) // Statin is not due yet
   })
+  it('a two-time medicine gives two distinct ids, each showing its time', () => {
+    const items = buildInbox({ ...base, now: at(21), profile: ['Metformin 8:00,20:00'] })
+    expect(new Set(items.map((i) => i.id)).size).toBe(2)
+    expect(items.map((i) => i.sub)).toEqual(['Medicine · was due 8:00', 'Medicine · 20:00'])
+  })
+  it('skipping the morning dose does not hide the evening one', () => {
+    const items = buildInbox({ ...base, now: at(20, 30), profile: ['Metformin 8:00,20:00'], skipped: ['Metformin@480'] })
+    expect(items).toHaveLength(1)
+    expect(items[0]!.sub).toContain('20:00')
+  })
   it('profile entries with no time are skipped, never guessed', () => {
     expect(buildInbox({ ...base, profile: ['Losartan'] })).toEqual([])
   })

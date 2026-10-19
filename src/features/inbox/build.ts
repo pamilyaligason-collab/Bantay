@@ -35,8 +35,8 @@ export function buildInbox(s: InboxSources): InboxItem[] {
   const day = s.now.toDateString()
   for (const d of pendingDoses(s)) {
     out.push(d.missed
-      ? { id: `dose:${day}:${d.name}:missed`, kind: 'dose', title: `${d.name} was not marked today`, sub: `Medicine · was due ${clock(d.at)}`, href: '#today' }
-      : { id: `dose:${day}:${d.name}:due`, kind: 'dose', title: `Time for ${d.name}`, sub: `Medicine · ${clock(d.at)}`, href: '#today' })
+      ? { id: `dose:${day}:${d.name}:${d.at}:missed`, kind: 'dose', title: `${d.name} was not marked today`, sub: `Medicine · was due ${clock(d.at)}`, href: '#today' }
+      : { id: `dose:${day}:${d.name}:${d.at}:due`, kind: 'dose', title: `Time for ${d.name}`, sub: `Medicine · ${clock(d.at)}`, href: '#today' })
   }
   for (const p of s.pins) out.push({ id: `pin:${p.id}`, kind: 'pin', title: `${p.handle} asked for a new PIN`, sub: 'PIN reset · open Admin', href: '#admin' })
   if (s.toCheck > 0) out.push({ id: `records:${s.toCheck}`, kind: 'records', title: `${s.toCheck} ${s.toCheck === 1 ? 'record' : 'records'} to check`, sub: 'Records · check the values before they count', href: '#records' })

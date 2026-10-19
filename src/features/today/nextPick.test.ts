@@ -12,13 +12,19 @@ const none = { due: [], plan: null, storm: null, weather: null, placeName: 'Damp
 describe('dueMeds', () => {
   it('lists timed medicines whose time has passed, not later ones or ones with no time', () => {
     const d = dueMeds([ma, { ...me, entries: ['Vitamin C'] }], [], [], at(9))
-    expect(d).toEqual([{ personId: 'ma', name: 'Ma', isMe: false, meds: ['Hydroxurea', 'Aspirin'], at: 480 }])
+    expect(d).toEqual([{ personId: 'ma', name: 'Ma', isMe: false, meds: ['Hydroxurea', 'Aspirin'], at: 480, skipKeys: ['Hydroxurea@480', 'Aspirin@480'] }])
     expect(dueMeds([ma], [], [], at(7, 59))).toEqual([])
   })
   it('a take today clears that medicine; me comes first', () => {
     const taken = [{ personId: 'ma', name: 'aspirin', takenAt: at(8, 5).toISOString() }]
     expect(dueMeds([ma], taken, [], at(9))[0]!.meds).toEqual(['Hydroxurea'])
     expect(dueMeds([ma, me], [], [], at(9)).map((x) => x.personId)).toEqual(['me', 'ma'])
+  })
+  it('skipping the 8:00 dose leaves my 20:00 dose due', () => {
+    const m = { ...me, entries: ['Metformin 8:00,20:00'] }
+    const d = dueMeds([m], [], ['Metformin@480'], at(20, 30))
+    expect(d[0]!.at).toBe(1200)
+    expect(d[0]!.skipKeys).toEqual(['Metformin@1200'])
   })
   it('skip counts for me only', () => {
     expect(dueMeds([me], [], ['Losartan'], at(9))).toEqual([])
