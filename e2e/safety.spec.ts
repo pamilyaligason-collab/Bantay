@@ -113,21 +113,78 @@ test.describe('Near me on the maps switcher', () => {
   })
 })
 
-test('Safety order (D-62): 911, IDs and Insurance, advisory card, Quick dial, Live maps', async ({ page }) => {
+test('Safety order (D-62): SOS, 911 + Medical ID, IDs and Insurance, warnings, Quick dial, Live weather, Live maps', async ({ page }) => {
   await page.goto('/#safety')
   const y = async (loc: ReturnType<typeof page.locator>) => (await loc.first().boundingBox())!.y
+  const sos = await y(page.getByRole('button', { name: /^SOS\./ }))
   const call = await y(page.getByRole('link', { name: 'Call 911' }))
+  const med = await y(page.getByRole('link', { name: 'Medical ID' }))
   const ids = await y(page.getByRole('link', { name: 'My IDs' }))
   const warn = await y(page.getByRole('heading', { name: 'Warnings', exact: true }))
   const dial = await y(page.getByRole('heading', { name: 'Quick dial' }))
+  const wx = await y(page.getByRole('heading', { name: 'Live weather' }))
   const maps = await y(page.getByRole('heading', { name: 'Live maps' }))
-  await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveCount(0)
+  expect(call).toBeGreaterThan(sos)
+  expect(Math.abs(med - call)).toBeLessThan(4)
   expect(ids).toBeGreaterThan(call)
   expect(warn).toBeGreaterThan(ids)
   expect(dial).toBeGreaterThan(warn)
-  expect(maps).toBeGreaterThan(dial)
+  expect(wx).toBeGreaterThan(dial)
+  expect(maps).toBeGreaterThan(wx)
   await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#docs')
   await expect(page.getByRole('link', { name: 'Insurance' })).toHaveAttribute('href', '#docs/insurance')
+  await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveAttribute('href', '#medid')
+})
+
+test('SOS: the confirm button opens the flow, finds the place, builds the text and the safe text', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 9.65, longitude: 123.88 })
+  await page.addInitScript(() => {
+    localStorage.setItem('bantay.onboarded', '1')
+  })
+  await page.goto('/#safety')
+  await page.evaluate(() => new Promise<void>((ok) => {
+    const r = indexedDB.open('bantay')
+    r.onsuccess = () => {
+      const tx = r.result.transaction('kv', 'readwrite')
+      tx.objectStore('kv').put({ key: 'sos.contacts', value: [{ name: 'Papa', phone: '0917 123 4567' }, { name: 'Joy', phone: '+63 918 765 4321' }] })
+      tx.oncomplete = () => ok()
+    }
+  }))
+  await page.reload()
+  await page.getByRole('button', { name: 'Cannot hold? Use a button instead' }).click()
+  await page.getByRole('button', { name: 'Yes, send SOS' }).click()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
+  const text = page.getByRole('link', { name: /Open the text to Papa and Joy/ })
+  await expect(text).toBeVisible()
+  const href = (await text.getAttribute('href'))!
+  expect(href).toMatch(/^sms:09171234567,\+639187654321\?body=/)
+  expect(decodeURIComponent(href)).toMatch(/I need help\. My location: https:\/\/maps\.google\.com\/\?q=9\.65,123\.88 \(/)
+  await page.getByRole('link', { name: /9\.65000, 123\.88000/ }).waitFor()
+  await expect(page.getByRole('button', { name: "I'm safe now" })).toBeEnabled()
+})
+
+test('SOS with no contacts still offers 911 and asks for contacts', async ({ page }) => {
+  await page.goto('/#safety')
+  await page.getByRole('button', { name: 'Cannot hold? Use a button instead' }).click()
+  await page.getByRole('button', { name: 'Yes, send SOS' }).click()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toBeVisible()
+  await expect(page.getByText('Nobody will get a text yet')).toBeVisible()
+})
+
+test('Medical ID and Go-bag screens open from Safety and go back', async ({ page }) => {
+  await page.goto('/#safety')
+  await page.getByRole('link', { name: 'Medical ID' }).click()
+  await expect(page.getByRole('heading', { name: 'Medical ID' })).toBeVisible()
+  await expect(page.getByText('Show on lock screen')).toBeVisible()
+  await page.getByRole('link', { name: 'Back to Safety' }).click()
+  await expect(page.getByRole('heading', { name: 'Safety', exact: true })).toBeVisible()
+  await page.getByRole('link', { name: 'Go-bag checklist' }).click()
+  const water = page.getByRole('checkbox', { name: /Drinking water/ })
+  await water.click()
+  await expect(water).toHaveAttribute('aria-checked', 'true')
+  await page.reload()
+  await expect(page.getByRole('checkbox', { name: /Drinking water/ })).toHaveAttribute('aria-checked', 'true')
 })
 
 test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dampas hazards', async ({ page }) => {
