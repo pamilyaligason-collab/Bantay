@@ -6,6 +6,7 @@
 # Prints counts only. High-confidence rows matched to the right person load as confirmed (confirmed_source 'auto'); the rest wait as drafts.
 param([switch]$DryRun, [string]$LocalRoot = 'G:\My Drive\2.2 Family Files')
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)  # PS 5.1 shows CLI box tables as mojibake otherwise
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $Sb = 'supabase@2.121.0'
@@ -20,9 +21,9 @@ if (-not (Test-Path $LocalRoot)) { throw "step 1 failed: $LocalRoot not found (G
 if (-not $DryRun -and -not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
 if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
 if (-not $DryRun) {
-  $have = npx @Db "select count(*) as ok from information_schema.columns where table_schema='public' and table_name='person_identifiers';" | Out-String
+  $have = npx @Db --output-format json "select count(*) as ok from information_schema.columns where table_schema='public' and table_name='person_identifiers';" | Out-String
   if ($LASTEXITCODE -ne 0) { throw 'step 1 failed: cannot reach the database' }
-  if ($have -notmatch '"?ok"?\W+[1-9]') { throw 'step 1 failed: migration 0013 is not applied yet' }
+  if ($have -notmatch '"ok"\s*:\s*"?[1-9]') { throw 'step 1 failed: migration 0013 is not applied yet' }
 }
 
 $env:LOCAL_ROOT = $LocalRoot
