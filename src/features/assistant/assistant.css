@@ -32,3 +32,4 @@
 .as-people, .as-src { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .as-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
 .as-hint { font-size: 14px; font-weight: 600; color: var(--ink); }
+.as-people .as-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }

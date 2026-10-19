@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, cardScrollTop, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
+import { personChoices, buildRequest, cardScrollTop, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
 import type { Reading } from '../health/ranges'
 
 describe('add task + records answer cards', () => {
@@ -130,6 +130,15 @@ describe('buildRequest', () => {
   })
 })
 
+describe('loose name hits are suggestions', () => {
+  it('Lol with only Lolita is not a match but is offered first', () => {
+    const ppl = [{ id: 'x', name: 'Ben' }, { id: 'l', name: 'Lolita' }]
+    expect(personFor('Lol', ppl)).toBeUndefined()
+    expect(personChoices('Lol', ppl).map((p) => p.id)).toEqual(['l', 'x'])
+    expect(validateDraft('log_med_taken', { person: 'Lol', name: 'Losartan' }, ppl)).toBe('Pick who this is for.')
+  })
+})
+
 describe('buildRequest empty turns and card scroll', () => {
   it('drops assistant turns with no text', () => {
     const r = buildRequest([{ role: 'user', content: 'hi' }, { role: 'assistant', content: '' }, { role: 'user', content: 'again' }], 'today')
@@ -156,7 +165,8 @@ describe('personFor first names, nicknames and aliases', () => {
     expect(personFor('rosalino', fam)?.id).toBe('a')
     expect(personFor('PAPANG', fam)?.id).toBe('a')
     expect(personFor('Ma', fam)?.id).toBe('b')
-    expect(personFor('Lino', fam)?.id).toBe('a')
+    expect(personFor('Lino', fam)).toBeUndefined() // nickname-style hit is a suggestion only
+    expect(personMatches('Lino', fam).map((p) => p.id)).toEqual(['a'])
     expect(personFor('Rosalino Roc', fam)?.id).toBe('a')
   })
   it('is undefined when unclear, with all candidates listed', () => {

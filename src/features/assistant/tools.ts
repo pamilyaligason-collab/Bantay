@@ -65,7 +65,7 @@ export function sourceLink(source: Source, term: string, kiwix = (import.meta.en
 export interface People { id: string; name: string; aliases?: string[] }
 const lc = (s: string) => s.trim().toLowerCase()
 /** Everyone the text could mean, most exact tier first: id, full name or alias, a first/middle name or alias word, then a nickname that starts or ends a name word (Lino for Rosalino). */
-export function personMatches(name: string, people: People[]): People[] {
+export function personMatches(name: string, people: People[], maxTier = 2): People[] {
   const q = lc(name)
   if (!q) return []
   const labels = (p: People) => [p.name, ...(p.aliases ?? [])].map(lc).filter(Boolean)
@@ -75,14 +75,17 @@ export function personMatches(name: string, people: People[]): People[] {
     (p) => words(p).includes(q),
     (p) => q.length >= 3 && words(p).some((w) => w.startsWith(q) || w.endsWith(q))
   ]
-  for (const t of tiers) { const hit = people.filter(t); if (hit.length) return hit }
+  for (const t of tiers.slice(0, maxTier + 1)) { const hit = people.filter(t); if (hit.length) return hit }
   return []
 }
-/** One clear match only. Several or none means undefined: the card shows person chips, nobody is guessed. */
+/** One clear match only (id, full name or alias, whole word). Several, none, or only a nickname-style prefix/suffix hit means undefined: the card shows person chips (hits first), nobody is guessed. */
 export const personFor = (name: string, people: People[]) => {
-  const m = personMatches(name, people)
+  const m = personMatches(name, people, 1)
   return m.length === 1 ? m[0] : undefined
 }
+
+/** Chips for an unclear name: loose matches first, then everyone else. */
+export const personChoices = (name: string, people: People[]) => { const m = personMatches(name, people); return [...m, ...people.filter((p) => !m.includes(p))] }
 
 /** Where the list scrolls to for a new card: its top when it fits (title and buttons both in view), else the end so Confirm and Discard are not below the fold. */
 export const cardScrollTop = (elTop: number, elHeight: number, viewHeight: number, scrollHeight: number) => (elHeight <= viewHeight ? elTop : scrollHeight)
