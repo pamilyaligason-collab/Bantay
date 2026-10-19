@@ -2,7 +2,7 @@
 import { clientsClaim } from 'workbox-core'
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { subscribeAndSave, vapidKey } from './features/notify/alerts'
+import { subscribeAndSave, vapidKey } from './features/notify/subscribe'
 import { claimNudge, handlePush } from './features/notify/push'
 
 declare let self: ServiceWorkerGlobalScope
