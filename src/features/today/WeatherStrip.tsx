@@ -5,7 +5,8 @@ import { placeNameOf } from './placeName'
 import { useWeather } from './weather'
 
 /** Compact weather line on a sky gradient. Nothing known yet (no place, offline, no reading): nothing is drawn. */
-export default function WeatherStrip() {
+/** brief: the Next up card already says the rain sentence, so the strip shows only temperature and sky. */
+export default function WeatherStrip({ brief = false }: { brief?: boolean }) {
   const place = usePlace()
   const wx = useWeather(place?.weather ?? null)
   if (!wx || wx.temp == null) return null
@@ -19,7 +20,7 @@ export default function WeatherStrip() {
       <span className="td-wx-t"><CountUp to={Math.round(wx.temp)} />°</span>
       <span className="td-grow">
         <b>{wx.words[0]!.toUpperCase()}{wx.words.slice(1)} in {placeNameOf(place)}</b>
-        <span className="td-wx-s">{line}</span>
+        <span className="td-wx-s">{brief ? '' : line}</span>
       </span>
     </section>
   )

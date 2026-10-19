@@ -8,6 +8,7 @@ import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { dueDoses, heroCards, type HeroActionId } from './heroCards'
 import { placeNameOf } from './placeName'
+import { usePlanCard } from './planCard'
 import { useWeather } from './weather'
 
 const NO_ALERTS: Alert[] = []
@@ -17,7 +18,7 @@ const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, 
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** The one card that matters now, as a row of swipeable cards when more than one applies (D-31/D-43). */
-export default function Hero({ onOk, onTaken, next = false }: { onOk: () => void; onTaken: (name: string) => void; next?: boolean }) {
+export default function Hero({ onOk, onTaken, next = false, onWeatherFills }: { onOk: () => void; onTaken: (name: string) => void; next?: boolean; onWeatherFills?: (b: boolean) => void }) {
   const H = next ? 'h3' : 'h2' // next: sits under the Next up heading, and weather lives in its own strip
   const place = usePlace()
   const alerts = useKv<Alert[]>(ALERTS_KEY, NO_ALERTS)
@@ -35,21 +36,28 @@ export default function Hero({ onOk, onTaken, next = false }: { onOk: () => void
 
   const ref = place ? alertRef(place) : null
   const wx = useWeather(place?.weather ?? null)
+  const plan = usePlanCard(tick)
   const placeName = placeNameOf(place)
   const skipped = skip.day === tick.toDateString() ? skip.names : NO_NAMES
   const cards = useMemo(
     () => {
       const base = { alerts, ref, doses: dueDoses(profile, taken, skipped, tick), placeName, now: tick }
       const c = heroCards({ ...base, weather: next ? null : wx })
-      // Next up: weather is the last ranked card, shown when no alert or dose applies (its own strip carries it otherwise)
-      return next && c[0]?.kind === 'summary' && wx ? heroCards({ ...base, weather: wx }) : c
+      if (!next) return c
+      // Next up ranks alert, dose due, plan item, then weather; weather shows only when nothing above applies
+      const top = c.filter((x) => x.kind !== 'summary')
+      if (plan) top.push(plan)
+      return top.length || !wx ? (top.length ? top : c) : heroCards({ ...base, weather: wx })
     },
-    [alerts, ref?.lat, ref?.lon, profile, taken, skipped, tick, wx, placeName] // eslint-disable-line react-hooks/exhaustive-deps -- ref is rebuilt each render; its numbers are the key
+    [alerts, ref?.lat, ref?.lon, profile, taken, skipped, tick, wx, placeName, next, plan] // eslint-disable-line react-hooks/exhaustive-deps -- ref is rebuilt each render; its numbers are the key
   )
   const at = Math.min(idx, cards.length - 1)
+  const wxFills = cards[0]?.kind === 'weather'
+  useEffect(() => { onWeatherFills?.(wxFills) }, [wxFills, onWeatherFills])
 
   const act = (id: HeroActionId, dose?: { name: string }) => {
     if (id === 'ok') onOk()
+    else if (id === 'plan') location.hash = '#family/plan'
     else if (id === 'safety') location.hash = '#safety/warnings'
     else if (id === 'taken' && dose) onTaken(dose.name)
     else if (id === 'skip' && dose) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, dose.name] } }).catch(() => undefined)

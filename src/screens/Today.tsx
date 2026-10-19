@@ -31,6 +31,7 @@ export default function Today() {
     timer.current = setTimeout(() => setToast(''), 3500)
   }, [])
   useEffect(() => () => clearTimeout(timer.current), [])
+  const [wxInHero, setWxInHero] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => (loaded && !simple ? wireMotion(root.current) : undefined), [loaded, simple]) // [data-reveal] sections; none on SOS, 911 or the I'm OK confirmation
   const onOk = useCallback(() => { void checkIn().then((r) => notify(r === 'ok' ? 'Family sees: I am OK' : FAIL_TEXT[r])) }, [notify])
@@ -45,7 +46,7 @@ export default function Today() {
       <GreetingBand onOk={onOk} />
       <section aria-labelledby="t-next">
         <h2 id="t-next" className="td-sech">Next up</h2>
-        <Hero next onOk={onOk} onTaken={onTaken} />
+        <Hero next onOk={onOk} onTaken={onTaken} onWeatherFills={setWxInHero} />
       </section>
       {/* D-50: the update card never sits above a warning; the hero alert comes first. */}
       <UpdateCard />
@@ -57,7 +58,7 @@ export default function Today() {
         <MovementCard embedded />
         <QuickWalk embedded />
       </section>
-      <WeatherStrip />
+      <WeatherStrip brief={wxInHero} />
       <StormCard />
       <NearbyList />
       <VideoCard />
