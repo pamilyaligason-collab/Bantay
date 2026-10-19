@@ -5,20 +5,40 @@ import { db } from '../../db'
 export type ThemePref = 'system' | 'light' | 'dark'
 export const THEME_KEY = 'look.theme'
 
-/** Status-bar icon colour: Light = dark icons (for the cream app), Dark = light icons. System follows the phone. */
-export const barStyle = (t: ThemePref): SystemBarsStyle => (t === 'light' ? SystemBarsStyle.Light : t === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Default)
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+const mq = () => (typeof matchMedia === 'function' ? matchMedia(DARK_QUERY) : null)
 
-/** System = no data-theme attribute, so the prefers-color-scheme rule in tokens.css decides. */
+/** Status-bar icon colour: Light = dark icons (for the cream app), Dark = light icons. */
+export const barStyle = (dark: boolean): SystemBarsStyle => (dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light)
+
+// The native plugin freezes its own DEFAULT at start, so always send an explicit style. No-op in a browser.
+const setBars = (dark: boolean) => void Promise.resolve(SystemBars.setStyle({ style: barStyle(dark) })).catch(() => undefined)
+
+let stopWatch: (() => void) | undefined
+export function stopWatchingSystem() { stopWatch?.(); stopWatch = undefined }
+
+/** System = no data-theme attribute, so the prefers-color-scheme rule in tokens.css decides; the bar icons follow the phone live. */
 export function applyTheme(t: ThemePref) {
-  if (t === 'system') delete document.documentElement.dataset.theme
-  else document.documentElement.dataset.theme = t
-  // The native plugin resets to the phone's own theme on start, so say what the app theme is. No-op in a browser.
-  void Promise.resolve(SystemBars.setStyle({ style: barStyle(t) })).catch(() => undefined)
+  stopWatchingSystem()
+  if (t === 'system') {
+    delete document.documentElement.dataset.theme
+    const q = mq()
+    setBars(!!q?.matches)
+    if (q) {
+      const on = () => setBars(q.matches)
+      q.addEventListener('change', on)
+      stopWatch = () => q.removeEventListener('change', on)
+    }
+  } else {
+    document.documentElement.dataset.theme = t
+    setBars(t === 'dark')
+  }
 }
 
-/** Apply the saved theme once at app start. */
+/** Apply the saved theme once at app start (system when nothing is saved). */
 export function useSavedTheme() {
   useEffect(() => {
-    void db.kv.get(THEME_KEY).then((r) => { if (r?.value === 'light' || r?.value === 'dark') applyTheme(r.value) }, () => undefined)
+    void db.kv.get(THEME_KEY).then((r) => applyTheme(r?.value === 'light' || r?.value === 'dark' ? r.value : 'system'), () => applyTheme('system'))
+    return stopWatchingSystem
   }, [])
 }
