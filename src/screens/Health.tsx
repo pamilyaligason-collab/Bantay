@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Avatar from '../features/admin/Avatar'
 import '../features/admin/admin.css'
+import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
@@ -30,6 +31,7 @@ export default function Health() {
   const [ownMeds, , medsLoaded] = useKv<string[]>('profile.medicines', NO_NAMES)
   useEffect(() => { if (medsLoaded) void syncDoseReminders(ownMeds) }, [ownMeds, medsLoaded]) // not before kv loads: an empty first pass would cancel every reminder
   const code = METRIC.exec(hash)?.[1]
+  if (hash === '#health/body') return <ExploreScreen />
   return code ? <MetricScreen code={code} /> : <Overview />
 }
 
@@ -61,6 +63,9 @@ function Overview() {
         </div>
       )}
       <BodyMap nodes={nodes} />
+      <a className="card hv-explore" href="#health/body">
+        <span>Explore your body<small>See how each part works and when to see a doctor</small></span>
+      </a>
       <LatestList readings={readings} thresholds={thresholds} ready={ready} />
       {personId && <Medicines personId={personId} mine={personId === ownId} />}
     </>
