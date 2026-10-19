@@ -52,6 +52,33 @@ const SPAN = { daily: { n: 14, step: 1 }, weekly: { n: 8, step: 7 } } as const
 /** The days a new item lands on: just the start day, or the next 14 days / 8 weeks. */
 export const repeatDays = (start: string, r: Repeat): string[] => (r === 'none' ? [start] : Array.from({ length: SPAN[r].n }, (_, i) => addDays(start, i * SPAN[r].step)))
 
+export interface StripDay { day: string; dow: string; num: number; open: number; today: boolean }
+/** Rows for one calendar day: what is still open that day (Today also holds overdue tasks and pinned notes), then what was ticked or has passed. */
+export function dayRows(g: Record<PlanTab, PlanRow[]>, day: string, now: Date): PlanRow[] {
+  const open = day === dayKey(now) ? g.today : g.week.filter((r) => r.day === day)
+  return [...open, ...g.done.filter((r) => r.day === day)]
+}
+/** The Monday to Sunday strip for the week holding `now`, with how many open items each day has. */
+export function dayStrip(g: Record<PlanTab, PlanRow[]>, now: Date): StripDay[] {
+  const today = dayKey(now)
+  return weekOf(now).map((d) => {
+    const day = dayKey(d)
+    const open = (day === today ? g.today : g.week.filter((r) => r.day === day)).length
+    return { day, dow: d.toLocaleDateString('en', { weekday: 'short' }), num: d.getDate(), open, today: day === today }
+  })
+}
+/** Reminders done out of reminders on the list (events and notes do not tick). */
+export function progressOf(rows: PlanRow[]): { done: number; total: number } {
+  const tasks = rows.filter((r) => r.kind === 'task')
+  return { done: tasks.filter((r) => r.kind === 'task' && r.task.done).length, total: tasks.length }
+}
+/** The empty-state nudge, naming a real family member (first person who is not me), else a plain version. */
+export function emptyHint(people: { name: string; isMe: boolean }[]): string {
+  const p = people.find((x) => !x.isMe) ?? people[0]
+  const name = p?.name === 'Family member' ? '' : p?.name.trim().split(/\s+/)[0] // roster.ts uses 'Family member' when a name is missing
+  return name ? `Add a reminder for ${name}'s check-up.` : 'Add a reminder for a check-up.'
+}
+
 /** "Today", "Tomorrow", else "Fri 23 Oct". */
 export function dayLabel(day: string, now: Date): string {
   const today = dayKey(now)
@@ -59,3 +86,8 @@ export function dayLabel(day: string, now: Date): string {
   if (day === addDays(today, 1)) return 'Tomorrow'
   return new Date(`${day}T00:00:00`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
 }
+
+/** Sentence form of a day label: "today", "tomorrow", else unchanged ("Fri 23 Oct"). */
+export const midSentence = (label: string): string => (label === 'Today' || label === 'Tomorrow' ? label.toLowerCase() : label)
+/** The day a new item opens on: the viewed day, but never a day already past. */
+export const addDay = (view: string, today: string): string => (view < today ? today : view)

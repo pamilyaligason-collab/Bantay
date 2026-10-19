@@ -30,6 +30,17 @@ const seed = (page: Page, db: string, store: string, rows: unknown[]) =>
 
 const brief = (v: { id: string; nodes: { target: unknown; any?: { message: string }[] }[] }) => `${v.id}: ${v.nodes.map((n) => `${String(n.target)} ${n.any?.[0]?.message ?? ''}`).join(' | ')}`
 
+/** The floating Add pill must sit over no row title and no event time. */
+const fabClear = (page: Page) => page.evaluate(() => {
+  const f = document.querySelector('.fm-fab')!.getBoundingClientRect()
+  const hit = [...document.querySelectorAll('.fm-row .fm-tm, .fm-row b')].filter((e) => {
+    const r = e.getBoundingClientRect()
+    return r.width > 0 && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top
+  })
+  return hit.map((e) => e.textContent)
+})
+const scrollEnd = (page: Page) => page.evaluate(() => { for (const e of document.querySelectorAll('*')) if (e.scrollHeight > e.clientHeight + 1 && getComputedStyle(e).overflowY !== 'visible') e.scrollTop = e.scrollHeight; window.scrollTo(0, document.body.scrollHeight) })
+
 test.use({ viewport: { width: 390, height: 844 } })
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -53,7 +64,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByRole('button', { name: 'Plan' }).click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
-      await expect(page.getByText("Add a reminder for Lola's check-up.")).toBeVisible()
+      await expect(page.getByRole('button', { name: /^Add a reminder for / })).toBeVisible()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-empty-${scheme}.png` })
       await page.getByRole('button', { name: 'Add', exact: true }).click()
       await page.getByRole('button', { name: 'Event', exact: true }).click()
@@ -76,6 +87,21 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByText('Family dinner at Lola')).toBeVisible()
       await expect(page.getByText('Gate code 1234')).toBeVisible()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-today-${scheme}.png` })
+      expect(await fabClear(page)).toEqual([]) // short list, at rest
+      await scrollEnd(page)
+      expect(await fabClear(page)).toEqual([])
+      for (let i = 1; i <= 8; i++) { // long list
+        await page.getByRole('button', { name: 'Add', exact: true }).click()
+        await page.getByLabel('What needs doing?').fill(`Extra reminder number ${i}`)
+        await page.getByRole('button', { name: 'Save' }).click()
+      }
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await page.evaluate(() => window.scrollTo(0, 0))
+      expect(await fabClear(page)).toEqual([])
+      await scrollEnd(page)
+      expect(await fabClear(page)).toEqual([])
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-long-${scheme}.png` })
+      await page.getByRole('checkbox', { name: 'Buy maintenance medicines' }).scrollIntoViewIfNeeded()
       await page.getByRole('checkbox', { name: 'Buy maintenance medicines' }).click()
       await page.getByRole('button', { name: 'Done', exact: true }).click()
       await expect(page.getByRole('checkbox', { name: 'Buy maintenance medicines' })).toHaveAttribute('aria-checked', 'true')
@@ -86,11 +112,11 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(wide).toBe(false)
     })
 
-    test('People: roll call, member page, and the phone health switches stay reachable', async ({ page }) => {
+    test('People: roll call, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
       await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
       await expect(page.getByText('No check-in today')).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Phone health data' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Phone health data' })).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
