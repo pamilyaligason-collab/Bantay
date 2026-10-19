@@ -6,6 +6,7 @@ test.describe('movement on Today (web, no step counter)', () => {
   test.beforeEach(async ({ page }) => {
     await skipOnboarding(page)
     await page.goto('/')
+    await page.getByRole('button', { name: 'Log a walk' }).click() // the Walk button in the quick-log row opens a sheet
     await expect(page.getByRole('heading', { name: 'Did you walk today?' })).toBeVisible()
   })
 
@@ -13,7 +14,6 @@ test.describe('movement on Today (web, no step counter)', () => {
   test('signed out: a tap logs nothing and says to sign in', async ({ page }) => {
     await page.getByRole('button', { name: '20 min' }).click()
     await expect(page.getByRole('status').filter({ hasText: 'Sign in to log a walk.' })).toBeVisible()
-    await expect(page.getByText('Nothing logged yet today')).toBeVisible()
   })
 
   test('signed out: custom minutes log nothing either', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('movement on Today (web, no step counter)', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Sign in to log a walk.' })).toBeVisible()
   })
 
-  test('Today has no serious accessibility violations with the movement cards', async ({ page }) => {
+  test('Today has no serious accessibility violations with the walk sheet open', async ({ page }) => {
     const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
     expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([])
   })

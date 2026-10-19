@@ -3,16 +3,17 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
-vi.mock('../features/notify/AlertsBanner', () => ({ default: () => <div data-testid="alerts" /> }))
-vi.mock('../features/safety/NewsTop5', () => ({ default: () => <div data-testid="news" /> }))
-vi.mock('../features/sensors/MovementCard', () => ({ default: () => <div data-testid="movement" /> }))
-vi.mock('../features/sensors/QuickWalk', () => ({ default: () => <div data-testid="walk" /> }))
-vi.mock('../features/today/Hero', () => ({ default: () => <div data-testid="hero" /> }))
-vi.mock('../features/today/NearbyList', () => ({ default: () => <div data-testid="nearby" /> }))
-vi.mock('../features/today/QuickLog', () => ({ default: () => <div data-testid="quicklog" /> }))
-vi.mock('../features/today/SetupCard', () => ({ default: () => <div data-testid="setup" /> }))
-vi.mock('../features/today/StormCard', () => ({ default: () => null }))
-vi.mock('../features/today/VideoCard', () => ({ default: () => <div data-testid="video" /> }))
+const { stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
+vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
+vi.mock('../features/today/AlertBand', () => stub('alertband'))
+vi.mock('../features/today/GreetingBand', () => ({ default: () => <button type="button">I&apos;m OK</button> }))
+vi.mock('../features/today/Hero', () => stub('hero'))
+vi.mock('../features/today/NearbyList', () => stub('nearby'))
+vi.mock('../features/today/NextUp', () => stub('nextup'))
+vi.mock('../features/today/PlanToday', () => stub('plan'))
+vi.mock('../features/today/QuickLog', () => stub('quicklog'))
+vi.mock('../features/today/SetupCard', () => stub('setup'))
+vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
@@ -24,7 +25,8 @@ describe('Today simple mode', () => {
   it('off: the full page', async () => {
     render(<Today />)
     await screen.findByTestId('quicklog')
-    expect(screen.getByTestId('news')).toBeTruthy()
+    for (const id of ['alertband', 'nextup', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
+    for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('link', { name: 'SOS' })).toBeNull()
   })
   it('on: only the hero and three big buttons', async () => {
@@ -34,7 +36,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['quicklog', 'news', 'nearby', 'movement', 'video', 'setup']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'setup']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on with an SOS contact: Call family dials the first valid number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

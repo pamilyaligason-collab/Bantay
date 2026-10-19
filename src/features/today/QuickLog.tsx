@@ -2,9 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useKv } from '../safety/store'
 import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, type LogResult } from './actions'
+import QuickWalk from '../sensors/QuickWalk'
+import { isNative } from '../sensors/bridge'
+import { STATE_KEY } from '../sensors/health'
 import { parseDose } from './heroCards'
 
 const NO_MEDS: string[] = []
+const NO_STATE = { enabled: [] as string[] }
 
 const ICONS = {
   check: 'M5 12.5l4.5 4.5L19 7.5',
@@ -12,6 +16,7 @@ const ICONS = {
   drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
   scale: 'M8.5 10a3.5 3.5 0 0 1 7 0zM12 10l1.5-2M3 8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z',
   pill: 'M9.5 8.5l5 7M5.6 13.4l7.8-7.8a3.5 3.5 0 0 1 5 5l-7.8 7.8a3.5 3.5 0 0 1-5-5z',
+  walk: 'M13.5 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM12 8l-2.5 3.5 2.5 2 .5 6M9.5 11.5L7 13M12 8l3 3 2.5.5M12 13.5l3 2.5',
   more: 'M4.5 12h1.5M11.25 12h1.5M18 12h1.5',
   smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01'
 } as const
@@ -19,11 +24,12 @@ export function TodayIcon({ name, size = 22 }: { name: keyof typeof ICONS; size?
   return <svg className="td-ic" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
 }
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'dose' | 'mood' | 'more'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'dose' | 'mood' | 'more'
 const PILLS: { id: Kind; label: string; icon: keyof typeof ICONS; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', aria: 'Log weight' },
+  { id: 'walk', label: 'Walk', icon: 'walk', aria: 'Log a walk' },
   { id: 'more', label: 'More', icon: 'more', aria: 'More to log: a dose or how you feel' }
 ]
 
@@ -35,17 +41,17 @@ export const readNum = (s: string, min: number, max: number): number | null => {
   return Number.isFinite(n) && n >= min && n <= max ? n : null
 }
 
-function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+function Sheet({ title, onClose, children, focusFirst = true }: { title: string; onClose: () => void; children: ReactNode; focusFirst?: boolean }) {
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
-    box.current?.querySelector<HTMLElement>('input, button.td-opt')?.focus()
+    ;(focusFirst ? box.current?.querySelector<HTMLElement>('input, button.td-opt') : box.current)?.focus() // a sheet with chips first must not pop the keyboard
     return () => prev?.focus?.()
   }, [])
   // Portal into .bt: the scroll area is its own stacking context, so a sheet inside it would sit under the tab bar.
   return createPortal(
     <div className="td-sheet-wrap" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="td-sheet" ref={box} role="dialog" aria-modal="true" aria-label={title} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+      <div className="td-sheet" ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
         <div className="td-grab" />
         <div className="td-sheet-h"><h2>{title}</h2><button type="button" className="td-x" onClick={onClose} aria-label="Close">Close</button></div>
         {children}
@@ -55,12 +61,14 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
-/** Quick-log row: BP, Sugar, Weight, and More (a dose taken, how you feel). Each opens a small sheet and ends with a toast. */
+/** Quick-log row of round buttons: BP, Sugar, Weight, Walk, and More (a dose taken, how you feel). Each opens a small sheet and ends with a toast. */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const meds = useKv<string[]>('profile.medicines', NO_MEDS)
+  const st = useKv(STATE_KEY, NO_STATE)
+  const pills = isNative() && st.enabled.includes('steps') ? PILLS.filter((p) => p.id !== 'walk') : PILLS // the phone counts steps then
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
@@ -95,9 +103,9 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   return (
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
-        {PILLS.map((p) => (
+        {pills.map((p) => (
           <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
-            <TodayIcon name={p.icon} /><span>{p.label}</span>
+            <span className="td-qc"><TodayIcon name={p.icon} size={24} /></span><span>{p.label}</span>
           </button>
         ))}
       </div>
@@ -121,6 +129,11 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
             {err && <p className="td-err" role="alert">{err}</p>}
             <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
           </form>
+        </Sheet>
+      )}
+      {open === 'walk' && (
+        <Sheet title="Walk" onClose={close} focusFirst={false}>
+          <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />
         </Sheet>
       )}
       {open === 'more' && (

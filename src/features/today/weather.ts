@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import type { LatLon } from '../location/geo'
-import type { Wx } from './heroCards'
+import { rainLine, type Wx } from './heroCards'
 
 // Same Open-Meteo call as the assistant (features/assistant/weather.ts), kept structured here so the hero can show a number.
 const CODE: [number, string][] = [[0, 'clear'], [3, 'partly cloudy'], [48, 'foggy'], [57, 'drizzle'], [67, 'rainy'], [77, 'snowy'], [82, 'rain showers'], [86, 'snow showers'], [99, 'thunderstorms']]
@@ -45,4 +45,11 @@ export function useWeather(p: LatLon | null): Wx | null {
     return () => { live = false }
   }, [lat, lon])
   return wx
+}
+
+/** The one weather sentence for the app, e.g. "27° partly cloudy. Rain likely from 3 PM for about 2 hours. Chance: 80%."
+ *  Today and Safety both use it so the numbers never disagree. null when the temperature is unknown (never a made-up 0). */
+export function weatherLine(w: Wx | null, now: Date = new Date()): string | null {
+  if (!w || w.temp == null) return null
+  return `${Math.round(w.temp)}° ${w.words}. ${rainLine(w, now)}`
 }

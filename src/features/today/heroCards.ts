@@ -31,6 +31,8 @@ export const skyOf = (w: Wx): Sky | undefined => {
 }
 
 export const ALERT_RADIUS_KM = 150
+export const RAIN_HERO_PCT = 60 // Next up shows weather only from this chance of rain
+export const HEAT_C = 33 // or from this temperature
 export const DOSE_WINDOW_MIN = 120 // a dose stays "due now" for two hours after its time
 
 /** "Losartan 50 mg 8:00", "Metformin 8:30 PM" -> name and time. No time in the text: null (the card is skipped, never guessed). */
@@ -109,6 +111,17 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
 export const manilaLocal = (d: Date) => d.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).replace(' ', 'T').slice(0, 16)
 
+
+/** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */
+export function rainLine(w: Wx, now: Date): string {
+  const rainy = w.rainPct != null && w.rainPct >= 60
+  const sky = skyOf(w)
+  const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, manilaLocal(now), sky === 'rain' || sky === 'storm') : undefined
+  if (rain) return rainWords(rain)
+  if (rain === null) return rainy ? 'No more rain expected for now.' : w.rainPct == null ? 'No rain chance number yet.' : `Chance of rain today: ${w.rainPct}%.`
+  return w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`
+}
+
 export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[]; weather: Wx | null; placeName: string; now?: Date }): HeroCard[] {
   const out: HeroCard[] = []
   const a = zoneAlert(i.alerts, i.ref)
@@ -125,14 +138,15 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   const w = i.weather
   if (w && w.temp != null) {
     const rainy = w.rainPct != null && w.rainPct >= 60
+    const hot = !rainy && w.temp >= HEAT_C
     const sky = skyOf(w)
     // worked out now, not at fetch time: the cached reading can be hours old
     const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, manilaLocal(i.now ?? new Date()), sky === 'rain' || sky === 'storm') : undefined
     const place = i.placeName
     out.push({
       key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky, big: `${Math.round(w.temp)}°`,
-      title: rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainy ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
-      body: rain ? rainWords(rain) : rain === null ? (rainy ? 'No more rain expected for now.' : (w.rainPct == null ? 'No rain chance number yet.' : `Chance of rain today: ${w.rainPct}%.`)) : w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`,
+      title: hot ? `Hot today in ${place}` : rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainy ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
+      body: hot ? `It is ${Math.round(w.temp)}° now. Drink water and rest in the shade.` : rainLine(w, i.now ?? new Date()),
       actions: []
     })
   }
