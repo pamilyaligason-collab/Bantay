@@ -3,6 +3,7 @@
 # Order matters (Fable review): 0010 -> 0011 -> admin-members -> push web. Stops at the first failure.
 param([switch]$DryRun)
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)  # CLI tables are UTF-8; PS 5.1 shows them as mojibake otherwise
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-w1.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $Sb = 'supabase@2.121.0'
