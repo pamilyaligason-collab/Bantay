@@ -97,7 +97,7 @@ describe('outbox update', () => {
 
   it('a PATCH that RLS filters out (no rows back) is parked as a dead letter, not counted as saved', async () => {
     await saveProfile('me', { phone: '0917 000 0000' })
-    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit = {}) => {
       if (init.method === 'PATCH') return new Response('[]', { status: 200 })
       return new Response('[]', { status: 200 })
     })
