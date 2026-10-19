@@ -303,3 +303,11 @@ describe('sync carryOver (document_only crash, 2026-10-19 live run)', () => {
     expect(() => carryOver(e, undefined as never)).not.toThrow()
   })
 })
+
+describe('fileKey (NTFS streams, 2026-10-19 live run)', () => {
+  it('turns local ids into plain file names', async () => {
+    const { fileKey } = await import('../../../scripts/import/lib.mjs')
+    expect(fileKey('local:ab12')).toBe('local_ab12')
+    expect(fileKey('1AbC-drive_id')).toBe('1AbC-drive_id')
+  })
+})
