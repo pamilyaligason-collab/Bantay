@@ -157,7 +157,7 @@ async function main(argv = process.argv.slice(2), env = process.env) {
     await sleep(delay)
   }
   console.log(JSON.stringify({ ...n, ...stats }))
-  if (n.failed && !n.done_text && !n.done_vision) process.exit(1) // nothing read: do not let the load step run
+  if (n.failed >= 3 && !n.done_text && !n.done_vision) process.exit(1) // a batch where nothing could be read: do not let the load step run (one stubborn file is fine)
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(`extract failed: ${e?.name ?? 'Error'}`); process.exit(1) })
