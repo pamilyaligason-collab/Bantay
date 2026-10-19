@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { dueDoses, heroCards, parseDose, rainOutlook, skyOf, zoneAlert, type Wx } from './heroCards'
+import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -21,12 +21,41 @@ describe('parseDose', () => {
   })
 })
 
+describe('dose card kicker', () => {
+  const kick = (n: Date) => heroCards({ alerts: [], ref: null, doses: [{ name: 'Losartan', at: 480 }], weather: null, placeName: '', now: n }).find((c) => c.kind === 'dose')!.kicker
+  it('says Due until two hours pass, then Not taken yet', () => {
+    expect(kick(at(8, 30))).toBe('Due · 8:00 AM')
+    expect(kick(at(10, 0))).toBe('Not taken yet · 8:00 AM')
+  })
+})
+
+describe('dueDoses skips', () => {
+  const two = ['Metformin 8:00,20:00']
+  it('skipping the 8:00 dose leaves the 20:00 dose due', () => {
+    expect(dueDoses(two, [], [doseKey('Metformin', 480)], at(20, 30)).map((d) => d.at)).toEqual([1200])
+    expect(dueDoses(two, [], [doseKey('Metformin', 480)], at(9, 0))).toEqual([])
+  })
+  it('skip 8:00 then take at 20:30: nothing left due (the take is not given to the skipped slot)', () => {
+    expect(dueDoses(two, [{ name: 'Metformin', takenAt: at(20, 30).toISOString() }], ['Metformin@480'], at(20, 31))).toEqual([])
+  })
+  it('a legacy name-only skip covers only the earliest open dose', () => {
+    expect(dueDoses(two, [], ['Metformin'], at(20, 30)).map((d) => d.at)).toEqual([1200])
+  })
+  it('the card counts medicines, not doses', () => {
+    const doses = [{ name: 'Metformin', at: 480 }, { name: 'Metformin', at: 1200 }]
+    expect(heroCards({ alerts: [], ref: null, doses, weather: null, placeName: '', now: at(20, 30) }).find((c) => c.kind === 'dose')!.body).toBe('Mark it when you have taken it')
+  })
+})
+
 describe('dueDoses', () => {
+  it('a dose taken 90 minutes early still counts as taken (same rule as Next up)', () => {
+    expect(dueDoses(['Losartan 8:00'], [{ name: 'Losartan', takenAt: at(6, 30).toISOString() }], [], at(8, 30))).toEqual([])
+  })
   const list = ['Losartan 8:00', 'Metformin 20:00', 'No time here']
-  it('is due from its time for two hours', () => {
+  it('is due from its time until taken or skipped', () => {
     expect(dueDoses(list, [], [], at(7, 59))).toEqual([])
     expect(dueDoses(list, [], [], at(8, 30)).map((d) => d.name)).toEqual(['Losartan'])
-    expect(dueDoses(list, [], [], at(10, 0))).toEqual([])
+    expect(dueDoses(list, [], [], at(10, 0)).map((d) => d.name)).toEqual(['Losartan'])
   })
   it('drops a dose already taken today or skipped, but not yesterday\'s', () => {
     expect(dueDoses(list, [{ name: 'losartan', takenAt: at(8, 4).toISOString() }], [], at(8, 30))).toEqual([])

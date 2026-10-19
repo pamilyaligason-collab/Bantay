@@ -14,6 +14,13 @@ export function pickStorm(alerts: Alert[], from: LatLon | null): Storm | null {
   return list.reduce((best, a) => (distanceKm(from, a as LatLon) < distanceKm(from, best as LatLon) ? a : best))
 }
 
+export const STORM_NEAR_KM = 500
+/** The storm for Next up: the nearest cyclone, only when it is within STORM_NEAR_KM of a known place. A far storm stays in Safety. */
+export function nearbyStorm(alerts: Alert[], from: LatLon | null): Storm | null {
+  const s = from ? pickStorm(alerts, from) : null
+  return s && from && distanceKm(from, s as LatLon) <= STORM_NEAR_KM ? s : null
+}
+
 const DIRS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest']
 /** "about 420 km east of you". Null when the place is unknown. */
 export function awayText(from: LatLon | null, s: LatLon): string | null {

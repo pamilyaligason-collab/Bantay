@@ -11,7 +11,7 @@ const NO_STATE = { enabled: [] as string[] }
  *  so the person tells us. Logs source 'manual'. Hidden once the app is reading steps from Health Connect or HealthKit.
  *  ponytail: no DeviceMotion step estimate. It only works while this screen is open, needs an iOS permission prompt and a
  *  tuned detector, and a wrong number is worse than none. Add if the family asks for it. */
-export default function QuickWalk({ native = isNative(), embedded = false }: { native?: boolean; embedded?: boolean }) {
+export default function QuickWalk({ native = isNative(), embedded = false, onSaved }: { native?: boolean; embedded?: boolean; onSaved?: (minutes: number) => void }) {
   const st = useKv(STATE_KEY, NO_STATE)
   const [custom, setCustom] = useState('')
   const [busy, setBusy] = useState(false)
@@ -31,6 +31,7 @@ export default function QuickWalk({ native = isNative(), embedded = false }: { n
       const startedAt = new Date(Date.now() - minutes * 60_000).toISOString()
       await logActivity({ personId, kind: 'walk', minutes: Math.round(minutes), steps: null, startedAt, source: 'manual' })
       setDone(Math.round(minutes))
+      onSaved?.(Math.round(minutes))
       setCustom('')
     } catch {
       setFailed(true) // storage blocked: say so, do not pretend it saved
@@ -49,7 +50,7 @@ export default function QuickWalk({ native = isNative(), embedded = false }: { n
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {CHIPS.map((m) => (
             <button key={m} type="button" className="pill" disabled={busy} onClick={() => log(m)}
-              style={{ background: 'var(--fill)', color: 'var(--act)', minHeight: 44, minWidth: 64 }}>
+              style={{ background: 'var(--fill)', color: 'var(--act)', minHeight: 48, minWidth: 64 }}>
               {m} min
             </button>
           ))}
@@ -57,8 +58,8 @@ export default function QuickWalk({ native = isNative(), embedded = false }: { n
         <form style={{ display: 'flex', gap: 8, alignItems: 'center' }} onSubmit={(e) => { e.preventDefault(); void log(n) }}>
           <input aria-label="Other number of minutes" inputMode="numeric" type="number" min={1} max={600} value={custom}
             onChange={(e) => setCustom(e.target.value)} placeholder="Other"
-            style={{ flex: 1, minWidth: 0, minHeight: 44, font: 'inherit', padding: '0 12px', borderRadius: 12, border: '1px solid var(--sep)', background: 'var(--cell)', color: 'var(--ink)' }} />
-          <button type="submit" className="pill" disabled={busy || !(n >= 1)} style={{ background: 'var(--btn)', color: 'var(--btn-fg)', minHeight: 44 }}>Log</button>
+            style={{ flex: 1, minWidth: 0, minHeight: 48, font: 'inherit', padding: '0 12px', borderRadius: 12, border: '1px solid var(--sep)', background: 'var(--cell)', color: 'var(--ink)' }} />
+          <button type="submit" className="pill" disabled={busy || !(n >= 1)} style={{ background: 'var(--btn)', color: 'var(--btn-fg)', minHeight: 48 }}>Log</button>
         </form>
         <span className="sub" role="status" aria-live="polite">
           {signedOut ? 'Sign in to log a walk.' : failed ? 'That did not save. Try again.' : done != null ? `Saved: you walked about ${done} minutes.` : ''}

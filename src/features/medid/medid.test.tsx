@@ -1,10 +1,13 @@
 import 'fake-indexeddb/auto'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ageOf, buildMedicalId, hasData, show } from './card'
 import MedicalId from './MedicalId'
 import { CACHE_KEY } from './useMedicalId'
+
+// offline member: signed in (cached session) but the person row is not fetched; the id cached for that same user is used
+vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: null, role: 'member', handle: null }) }))
 
 const NOW = new Date(2026, 9, 19)
 
@@ -44,7 +47,7 @@ describe('buildMedicalId', () => {
 })
 
 describe('MedicalId screen offline', () => {
-  beforeEach(async () => { await db.kv.clear(); await db.profiles.clear() })
+  beforeEach(async () => { await db.kv.clear(); await db.profiles.clear(); await db.kv.put({ key: 'profile.selfUser', value: 'u1' }) })
   afterEach(cleanup)
 
   it('shows the cached card when there is no profile row yet', async () => {

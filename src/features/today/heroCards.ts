@@ -1,3 +1,4 @@
+import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { distanceKm, rankAlerts, tierOf, type Alert, type LatLon } from '../safety/alerts'
 
@@ -31,7 +32,10 @@ export const skyOf = (w: Wx): Sky | undefined => {
 }
 
 export const ALERT_RADIUS_KM = 150
-export const DOSE_WINDOW_MIN = 120 // a dose stays "due now" for two hours after its time
+export const RAIN_HERO_PCT = 60 // Next up shows weather only from this chance of rain
+export const HEAT_C = 33 // or from this temperature
+export const DOSE_WINDOW_MIN = 120 // the inbox calls a dose missed this long after its time; Today keeps it due until taken or skipped
+export const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, so the card does not come back on reload
 
 /** "Losartan 50 mg 8:00", "Metformin 8:30 PM" -> name and time. No time in the text: null (the card is skipped, never guessed). */
 export function parseDose(s: string): Dose | null {
@@ -47,21 +51,26 @@ export function parseDose(s: string): Dose | null {
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
-/** Doses whose time has come (and is under two hours old), not yet taken or skipped today. Oldest first. */
+/** A skip is stored per dose as name@minute. A legacy name-only entry counts only for that medicine's earliest open dose. */
+export const doseKey = (name: string, at: number) => `${name}@${at}`
+const PER_DOSE = /@[0-9]+$/
+/** Slots skipped per dose are dropped BEFORE takes are allotted, so a later take cannot be handed to a skipped slot. */
+export const notSkippedPerDose = <T extends { name: string; at: number | null }>(slots: T[], skipped: string[]) =>
+  slots.filter((s) => s.at == null || !skipped.some((k) => PER_DOSE.test(k) && sameName(k, doseKey(s.name, s.at!))))
+/** Legacy name-only entries (no @time) cover only that medicine's earliest open dose. */
+export const isSkipped = (skipped: string[], name: string, at: number, firstOpenAt: number) =>
+  skipped.some((k) => !PER_DOSE.test(k) && at === firstOpenAt && sameName(k, name))
+
+/** Doses whose time has come, not yet taken or skipped today (same rule as Next up). Oldest first. */
 export function dueDoses(profile: unknown, taken: { name: string; takenAt: string }[], skipped: string[], now: Date): Dose[] {
   if (!Array.isArray(profile)) return []
   const nowMin = minutes(now)
-  return profile
-    .flatMap((s) => (typeof s === 'string' ? [parseDose(s)] : []))
-    .filter((d): d is Dose => !!d && nowMin >= d.at && nowMin < d.at + DOSE_WINDOW_MIN)
-    .filter((d) => !skipped.some((k) => sameName(k, d.name)))
-    .filter((d) => !taken.some((t) => {
-      const when = new Date(t.takenAt)
-      return sameName(t.name, d.name) && sameDay(when, now) && minutes(when) >= d.at - 60
-    }))
-    .sort((a, b) => a.at - b.at)
+  const open = doseStates(notSkippedPerDose(medSlots(profile.filter((x): x is string => typeof x === 'string')), skipped), taken, now)
+    .filter((s) => s.at != null && s.at <= nowMin && !s.taken)
+    .map((s) => ({ name: s.name, at: s.at! }))
+  const first = (n: string) => Math.min(Infinity, ...open.filter((d) => sameName(d.name, n)).map((d) => d.at))
+  return open.filter((d) => !isSkipped(skipped, d.name, d.at, first(d.name))).sort((a, b) => a.at - b.at)
 }
 
 const clock = (at: number) => {
@@ -109,18 +118,26 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
 export const manilaLocal = (d: Date) => d.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).replace(' ', 'T').slice(0, 16)
 
-/** The one rain sentence Today and the Safety hub both show. rain: rainOutlook result (undefined = no hourly data, null = never raining in the window). */
 /** Rain really came: the sky shows it now, or an earlier hour today reached 50%. A null outlook then means it has stopped, not that it never came. */
 export const rainPassed = (w: Wx, nowLocal: string): boolean => {
   const s = skyOf(w)
   return s === 'rain' || s === 'storm' || !!w.hourly?.time.some((t, i) => t < nowLocal && t.slice(0, 10) === nowLocal.slice(0, 10) && (w.hourly!.prob[i] ?? 0) >= 50)
 }
+/** The one rain sentence Today and the Safety hub both show. rain: rainOutlook result (undefined = no hourly data, null = never raining in the window). */
 export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined, rainy: boolean, nowLocal: string): string {
   if (rain) return rainWords(rain)
   if (w.rainPct == null) return 'No rain chance number yet.'
   const pct = Math.round(w.rainPct)
   if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : `Chance of rain today: ${pct}%.`
   return rainy ? `Bring an umbrella. Chance of rain: ${pct}%.` : `Chance of rain today: ${pct}%.`
+}
+
+/** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */
+export function rainLine(w: Wx, now: Date): string {
+  const sky = skyOf(w)
+  const nowLocal = manilaLocal(now)
+  const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm') : undefined
+  return rainBody(w, rain, w.rainPct != null && w.rainPct >= 60, nowLocal)
 }
 
 export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[]; weather: Wx | null; placeName: string; now?: Date }): HeroCard[] {
@@ -132,13 +149,14 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   })
   const d = i.doses[0]
   if (d) out.push({
-    key: `dose:${d.name}`, kind: 'dose', kicker: `Due now · ${clock(d.at)}`, title: `Time for ${d.name}`,
-    body: i.doses.length > 1 ? `${i.doses.length} medicines are due now` : 'Mark it when you have taken it',
+    key: `dose:${d.name}`, kind: 'dose', kicker: `${minutes(i.now ?? new Date()) >= d.at + DOSE_WINDOW_MIN ? 'Not taken yet' : 'Due'} · ${clock(d.at)}`, title: `Time for ${d.name}`,
+    body: new Set(i.doses.map((x) => x.name)).size > 1 ? `${new Set(i.doses.map((x) => x.name)).size} medicines are due now` : 'Mark it when you have taken it',
     actions: [{ id: 'taken', label: 'Taken' }, { id: 'skip', label: 'Skipped' }], dose: d
   })
   const w = i.weather
   if (w && w.temp != null) {
     const rainy = w.rainPct != null && w.rainPct >= 60
+    const hot = !rainy && w.temp >= HEAT_C
     const sky = skyOf(w)
     // worked out now, not at fetch time: the cached reading can be hours old
     const nowLocal = manilaLocal(i.now ?? new Date())
@@ -146,8 +164,8 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     const place = i.placeName
     out.push({
       key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky, big: `${Math.round(w.temp)}°`,
-      title: rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainPassed(w, nowLocal) ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
-      body: rainBody(w, rain, rainy, nowLocal),
+      title: hot ? `Hot today in ${place}` : rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainPassed(w, nowLocal) ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
+      body: hot ? `It is ${Math.round(w.temp)}° now. Drink water and rest in the shade.` : rainBody(w, rain, rainy, nowLocal),
       actions: []
     })
   }
