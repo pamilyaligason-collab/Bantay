@@ -177,7 +177,7 @@ function StormTracker() {
             <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ? `${a.level} alert` : 'Level unknown'} · since {since(a.issuedAt)}</span></span></div>
           ))}
         </div>
-      ) : <p className="sf-empty" role="status">No active storms</p>}
+      ) : <p className="sf-empty" role="status">No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.</p>}
       <div className="lm-box">
         {online
           ? <iframe className="sf-frame" title="Windy storm map of the Western Pacific" src={windySrc('wind', STORM_VIEW.lat, STORM_VIEW.lon, STORM_VIEW.zoom)} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />

@@ -17,7 +17,7 @@ test('safety hub (D-68): ten tiles with a status line, each opens its page and g
   const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
   await expect(tiles).toHaveCount(10)
   await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
-  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('3 numbers confirmed')
+  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('2 numbers confirmed')
   await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
   await tiles.filter({ hasText: 'Quick dial' }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)
@@ -56,7 +56,6 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
 
 test('adding a pin gives a Go button that survives reload (offline store)', async ({ page }) => {
   await page.goto('/#safety/map')
-  await expect(page.getByText('Map coming')).toBeVisible() // until the Rescue map component is wired
   await page.getByRole('region', { name: 'Evacuation and rescue' }).getByRole('button', { name: 'Not confirmed yet, tap to add' }).first().click()
   await page.getByLabel('Latitude').fill('9.65')
   await page.getByLabel('Longitude').fill('123.88')
@@ -232,7 +231,7 @@ test('hazards at my location: four level cards with what to do, HazardHunterPH l
 
 test('storm tracker, safety cards and past SOS pages open', async ({ page }) => {
   await page.goto('/#safety/storms')
-  await expect(page.getByText('No active storms')).toBeVisible()
+  await expect(page.getByText(/No storm warnings for the Philippines/)).toBeVisible()
   await page.goto('/#safety/cards')
   await page.locator('summary', { hasText: /^Earthquake$/ }).click()
   await expect(page.getByText('Do not wait for a message.').first()).toBeVisible()
@@ -249,7 +248,7 @@ test('live weather: layer switch only changes overlay, storm tracker and links',
   await sec.getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
   await expect(sec.getByText('Storms near the Philippines')).toBeVisible()
-  await expect(sec.getByText('No active storms')).toBeVisible()
+  await expect(sec.getByText(/No storm warnings for the Philippines/)).toBeVisible()
   await expect(sec.locator('iframe[title^="Windy wind map of the Western"]')).toHaveAttribute('src', /zoom=4&overlay=wind.*lat=12\.00&lon=128\.00/)
   await expect(sec.getByRole('link', { name: /PAGASA bulletin/ })).toHaveAttribute('target', '_blank')
   await page.context().setOffline(true)

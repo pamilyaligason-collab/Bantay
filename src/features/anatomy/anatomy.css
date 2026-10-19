@@ -1,6 +1,7 @@
 /* Explore your body + the refined body map figure. App tokens only; organ colours are fixed mid-tones that read on both themes. */
 :root { --an-body-a: #F1E6D0; --an-body-b: #DFCFB1; }
 :root[data-theme="dark"] { --an-body-a: #46594B; --an-body-b: #2E3F34; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --an-body-a: #46594B; --an-body-b: #2E3F34; } }
 .an-body { filter: drop-shadow(0 2px 3px rgba(31, 61, 43, 0.22)); }
 
 .an-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }

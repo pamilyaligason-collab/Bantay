@@ -44,7 +44,7 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
 
   const act = (id: HeroActionId, dose?: { name: string }) => {
     if (id === 'ok') onOk()
-    else if (id === 'safety') location.hash = '#safety'
+    else if (id === 'safety') location.hash = '#safety/warnings'
     else if (id === 'taken' && dose) onTaken(dose.name)
     else if (id === 'skip' && dose) void db.kv.put({ key: SKIP_KEY, value: { day: tick.toDateString(), names: [...skipped, dose.name] } }).catch(() => undefined)
   }
