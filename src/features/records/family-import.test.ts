@@ -294,3 +294,12 @@ describe('re-import keeps ids already in the database (Fable major 1)', () => {
     expect(knownId({ drive_file_id: 'drive-abc', sha256: 'h1' }, known)).toBeNull()
   })
 })
+
+describe('sync carryOver (document_only crash, 2026-10-19 live run)', () => {
+  it('a never-read file with no earlier run is left as is', async () => {
+    const { carryOver, needsDownload } = await import('../../../scripts/import/sync.mjs')
+    const e = { drive_file_id: 'local:x', lane: 'document_only', modified: 't' } as never
+    expect(needsDownload(e, undefined, false)).toBe(false)
+    expect(() => carryOver(e, undefined as never)).not.toThrow()
+  })
+})

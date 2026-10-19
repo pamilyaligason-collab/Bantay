@@ -49,6 +49,7 @@ export function needsDownload(entry, prev, fileExists) {
 
 /** An unchanged file keeps what the last run learned (hash, and the PDF type of an exported Google Doc). */
 export function carryOver(entry, prev) {
+  if (!prev) return entry // document_only files are never read, so they have no earlier run to carry over
   entry.sha256 = prev.sha256
   if (prev.stored_mime) entry.stored_mime = prev.stored_mime
   return entry
@@ -208,7 +209,7 @@ async function main(env = process.env) {
       e.skipped = null
       e.download_failed = true
       n.failed++
-      console.error(`download failed${err?.status ? ` (${err.status})` : ''}`) // never the message
+      console.error(`download failed${err?.status ? ` (${err.status})` : ''}${err?.code ? ` (${err.code})` : ''}`) // never the message
     }
   }
   markDuplicates(entries)
@@ -220,5 +221,6 @@ async function main(env = process.env) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => {
   // name, HTTP status and our own codes only: never the message (it could hold a file name)
   console.error(`sync failed: ${e?.name ?? 'Error'}${e?.status ? ` (HTTP ${e.status})` : ''}${e?.code ? ` (${e.code})` : ''}`)
+  if (process.env.SYNC_DEBUG) console.error(e?.stack) // local debugging only: the stack can name a file
   process.exit(1)
 })
