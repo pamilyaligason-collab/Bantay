@@ -109,6 +109,13 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
 export const manilaLocal = (d: Date) => d.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).replace(' ', 'T').slice(0, 16)
 
+/** The one rain sentence Today and the Safety hub both show. rain: rainOutlook result (undefined = no hourly data, null = never raining in the window). */
+export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined, rainy: boolean): string {
+  if (rain) return rainWords(rain)
+  if (rain === null) return rainy ? 'No more rain expected for now.' : w.rainPct == null ? 'No rain chance number yet.' : `Chance of rain today: ${w.rainPct}%.`
+  return w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`
+}
+
 export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[]; weather: Wx | null; placeName: string; now?: Date }): HeroCard[] {
   const out: HeroCard[] = []
   const a = zoneAlert(i.alerts, i.ref)
@@ -132,7 +139,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     out.push({
       key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky, big: `${Math.round(w.temp)}°`,
       title: rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainy ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
-      body: rain ? rainWords(rain) : rain === null ? (rainy ? 'No more rain expected for now.' : (w.rainPct == null ? 'No rain chance number yet.' : `Chance of rain today: ${w.rainPct}%.`)) : w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`,
+      body: rainBody(w, rain, rainy),
       actions: []
     })
   }

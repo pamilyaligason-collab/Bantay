@@ -40,7 +40,7 @@ export function stormLine(storms: Alert[], from: LatLon, placeName: string): { t
   const km = n.km >= 100 ? Math.round(n.km / 50) * 50 : Math.round(n.km / 10) * 10
   const where = `${km.toLocaleString('en-PH')} km ${bearing(from, n.p)} of ${placeName}`
   return n.km >= FAR_STORM_KM
-    ? { text: `${stormName(n.s)} is about ${where}. Far from land, not expected to reach ${placeName} soon. Check PAGASA for updates.`, tone: 'calm' }
+    ? { text: `${stormName(n.s)} is about ${where}. That is far from ${placeName}, but check PAGASA for updates.`, tone: 'calm' }
     : { text: `${stormName(n.s)} is about ${where}. Follow PAGASA and your local officials.`, tone: 'watch' }
 }
 /** issued_at is when the storm started (GDACS fromdate), not when it was last updated. */

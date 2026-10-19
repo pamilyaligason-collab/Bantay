@@ -37,6 +37,10 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   const addBtn = page.getByRole('button', { name: /^Add number for / }).first()
   await expect(page.getByText('Add a local number')).toBeVisible()
   await expect(addBtn).toBeVisible()
+  // layout: at phone width the name column is wider than the Add button (the button once took the whole row)
+  await page.setViewportSize({ width: 390, height: 844 })
+  const w = await page.locator('.sf-addbtn').first().evaluate((b) => ({ add: b.getBoundingClientRect().width, name: (b.parentElement!.querySelector('.sf-pt') as HTMLElement).getBoundingClientRect().width }))
+  expect(w.name).toBeGreaterThan(w.add)
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(0)
   // source text is behind the small i button, not under every row
   await expect(page.getByText('Source:')).toHaveCount(0)

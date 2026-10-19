@@ -14,9 +14,14 @@ const kindFromHash = (): Kind => (location.hash.startsWith('#docs/insurance') ? 
 const online = () => typeof navigator === 'undefined' || navigator.onLine !== false
 const when = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 /** First name for chips; adds the next initial only when two people share one. */
-const short = (x: { name: string }, all: { name: string }[]) => {
-  const [f = x.name, l = ''] = x.name.trim().split(/\s+/)
-  return all.filter((y) => y.name.trim().split(/\s+/)[0] === f).length > 1 && l ? `${f} ${l[0]}.` : f
+export const short = (x: { name: string }, all: { name: string }[]) => {
+  const parts = (n: string) => n.trim().split(/\s+/)
+  const [f = '', l = ''] = parts(x.name)
+  if (!f) return 'Someone'
+  const same = all.filter((y) => parts(y.name)[0] === f)
+  if (same.length < 2 || !l) return f
+  // same first name and same last initial: show the whole name
+  return same.filter((y) => (parts(y.name)[1] ?? '')[0] === l[0]).length > 1 ? x.name.trim() : `${f} ${l[0]}.`
 }
 const nameOf = (d: Pick<DocRow, 'kind' | 'cardType' | 'title'>) => d.title || LABEL[d.kind][d.cardType] || 'Card'
 const WAITING = 'Saved on this phone, waiting to upload'

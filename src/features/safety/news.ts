@@ -7,9 +7,14 @@ const CACHE = 'safety.news'
 export const safeUrl = (u: string) => /^https?:\/\//i.test(u)
 
 /** Same filter as the n8n news workflow (no tender numbers, no procurement notices), plus job vacancies, tourism promotion and veterinary items: Safety news is warnings and advisories only. */
-export const isNoise = (n: Pick<NewsItem, 'title' | 'source'>) =>
-  /\(\d{9,}-/.test(n.title) ||
-  /invitation to bid|bid bulletin|notice of award|supply and delivery|procurement|vacanc|job opening|now hiring|we are hiring|career opportunit|plantilla|tourism|tourist|travel (tips|guide)|veterinar|livestock|vet|animal (health|welfare)|rabies vaccin/i.test(`${n.title} ${n.source}`)
+const HARD = /invitation to bid|bid bulletin|notice of award|supply and delivery|procurement|vacanc|job opening|now hiring|we are hiring|career opportunit|plantilla/i
+/** Off-topic words, kept anyway when the item names a hazard or an official warning source. */
+const SOFT = /\b(tourism|tourists?|travel (tips|guide)|veterinar\w*|livestock|vets?|animal (health|welfare)|rabies vaccin\w*)\b/i
+const SAFETY = /pagasa|phivolcs|ndrrmc|\bdoh\b|signal no|evacuat|flood|typhoon|storm|cyclone|quake|earthquake|volcan|landslide|tsunami|warning|advisory|outbreak/i
+export const isNoise = (n: Pick<NewsItem, 'title' | 'source'>) => {
+  const t = `${n.title} ${n.source}`
+  return /\(\d{9,}-/.test(n.title) || HARD.test(t) || (SOFT.test(t) && !SAFETY.test(t))
+}
 
 type Env = { VITE_SUPABASE_URL?: string; VITE_SUPABASE_PUBLISHABLE_KEY?: string }
 

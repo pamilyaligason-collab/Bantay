@@ -5,7 +5,7 @@ import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { alertRef } from '../location/place'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
-import { manilaLocal, rainOutlook, rainWords, skyOf, type Wx } from '../today/heroCards'
+import { manilaLocal, rainBody, rainOutlook, skyOf, type Wx } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, type Alert, rankAlerts } from './alerts'
 import { splitDial } from './dial'
@@ -45,9 +45,7 @@ export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): str
   if (!wx) return 'Rain, wind and clouds'
   const sky = skyOf(wx)
   const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, manilaLocal(now), sky === 'rain' || sky === 'storm') : undefined
-  if (r) return rainWords(r)
-  if (r === null) return 'No more rain expected for now.'
-  return typeof wx.rainPct === 'number' && Number.isFinite(wx.rainPct) ? `Chance of rain today: ${Math.round(wx.rainPct)}%.` : 'Rain, wind and clouds'
+  return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60)
 }
 
 /** Calm hub: ten big tiles, each with one live status line. Every number comes from data already on the phone. */
