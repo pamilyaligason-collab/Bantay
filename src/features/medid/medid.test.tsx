@@ -63,3 +63,20 @@ describe('MedicalId screen offline', () => {
     await waitFor(() => expect(screen.getAllByText('Not added').length).toBe(5))
   })
 })
+
+describe('MedicalId for another person (#medid/<id>)', () => {
+  beforeEach(async () => { await db.kv.clear(); await db.profiles.clear() })
+  afterEach(() => { cleanup(); location.hash = '' })
+
+  it('shows that person\'s profile and none of the signed-in person\'s contacts', async () => {
+    await db.kv.put({ key: 'profile.selfId', value: 'me1' })
+    await db.kv.put({ key: 'sos.contacts', value: [{ name: 'Mine', phone: '0917 111 1111' }] })
+    await db.profiles.put({ id: 'p2', bloodType: 'B+', allergies: ['Shellfish'], conditions: [], medicines: [] } as never)
+    location.hash = '#medid/p2'
+    render(<MedicalId />)
+    await waitFor(() => expect(screen.getByText('B+')).toBeTruthy())
+    expect(screen.getByText('Shellfish')).toBeTruthy()
+    expect(screen.queryByText(/Mine/)).toBeNull()
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('#family/people/p2')
+  })
+})

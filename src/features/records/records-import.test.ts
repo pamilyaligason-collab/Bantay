@@ -292,7 +292,7 @@ describe('fix round', () => {
   it('extractPdfText reads a synthetic text layer (pdfjs 6, task.destroy)', async () => {
     const t = await extractPdfText(tinyPdf('Synthetic sample line'))
     expect(t).toContain('Synthetic sample line')
-  })
+  }, 60_000) // first pdfjs load is slow on a busy PC
   it('a corrupt draft is counted and its content never reaches the log', () => {
     const dir = mkdtempSync(`${tmpdir()}/drafts-`)
     try {

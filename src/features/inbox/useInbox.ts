@@ -21,7 +21,7 @@ export function useInbox(isAdmin: boolean) {
   const skip = useKv<{ day: string; names: string[] }>('today.skipped', NO_SKIP)
   const seen = useKv<string[]>(SEEN_KEY, NO_NAMES)
   const { decision } = useUpdate()
-  const queue = useQueue()
+  const queue = useQueue(isAdmin) // members never hit the records queue
   const [taken, setTaken] = useState<{ name: string; takenAt: string }[]>([])
   const [pins, setPins] = useState<{ id: number; handle: string }[]>([])
   const [now, setNow] = useState(() => new Date())
@@ -31,12 +31,21 @@ export function useInbox(isAdmin: boolean) {
     const t = setInterval(() => setNow(new Date()), 60_000)
     return () => { sub.unsubscribe(); clearInterval(t) }
   }, [])
+  const [pinTick, setPinTick] = useState(0)
+  const { refresh } = queue
+  useEffect(() => {
+    if (!isAdmin) return
+    const again = () => { if (document.visibilityState === 'visible') { refresh(); setPinTick((t) => t + 1) } }
+    document.addEventListener('visibilitychange', again)
+    window.addEventListener('focus', again)
+    return () => { document.removeEventListener('visibilitychange', again); window.removeEventListener('focus', again) }
+  }, [isAdmin, refresh])
   useEffect(() => {
     if (!isAdmin) return setPins([])
     let live = true
     void listPinRequests().then((r) => { if (live) setPins(r.ok ? r.data.map((p) => ({ id: p.id, handle: p.handle })) : []) })
     return () => { live = false }
-  }, [isAdmin])
+  }, [isAdmin, pinTick])
 
   const items = useMemo(() => buildInbox({
     now, alerts, profile, taken,

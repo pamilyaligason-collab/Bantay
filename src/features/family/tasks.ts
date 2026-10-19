@@ -2,7 +2,7 @@ import { blank, fdb, newClientId, removeRow, saveRow, type FamilyTask } from './
 
 /** Add a family task. Local first, synced later. Returns null when the title is empty (nothing is saved). Exported for the assistant (W6). */
 export async function addTask(t: { title: string; due?: string | null; assigneePersonId?: string | null }): Promise<FamilyTask | null> {
-  const title = blank(t.title)
+  const title = blank(t.title)?.slice(0, 200) // the server CHECK allows 1..200
   if (!title) return null
   return saveRow<FamilyTask>('family_tasks', { clientId: newClientId(), title, due: blank(t.due), assigneePersonId: t.assigneePersonId || null, done: false })
 }

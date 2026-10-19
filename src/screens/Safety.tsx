@@ -33,7 +33,7 @@ function useHash() {
 
 export default function Safety() {
   const h = useHash()
-  return h === '#medid' ? <MedicalId /> : h === '#gobag' ? <GoBag /> : <SafetyHome />
+  return h === '#medid' || h.startsWith('#medid/') ? <MedicalId /> : h === '#gobag' ? <GoBag /> : <SafetyHome />
 }
 
 /** D-62 order: SOS, Call 911 + Medical ID, My IDs + Insurance, warnings, quick dial, then live weather and maps, evacuation, hazards, cards.
@@ -59,10 +59,10 @@ function SafetyHome() {
         <a href="#docs" className="btn2" aria-label="My IDs. Add or view your ID cards">My IDs</a>
         <a href="#docs/insurance" className="btn2" aria-label="Insurance. Add or view your insurance cards">Insurance</a>
       </div>
-      <SosHistory />
       {place && (<>
       <section aria-labelledby="s-warn"><h2 id="s-warn" className="hd">Warnings</h2><SafetyBrief loc={alertRef(place)} /></section>
       <section aria-labelledby="s-hot"><h2 id="s-hot" className="hd">Quick dial</h2><EntryList seed={hotlines as Entry[]} geo={false} zone={place.zone} /></section>
+      <SosHistory />
       <section aria-labelledby="s-wx"><h2 id="s-wx" className="hd">Live weather</h2><LiveMaps loc={place.weather} /></section>
       <section aria-labelledby="s-map"><h2 id="s-map" className="hd">Live maps</h2><MapsPanel loc={phone} ask={l.ask} zone={place.zone} /></section>
       <section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo zone={place.zone} /></section>

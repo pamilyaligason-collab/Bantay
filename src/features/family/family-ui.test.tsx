@@ -57,7 +57,7 @@ describe('Plan', () => {
     fireEvent.click(box)
     await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Buy rice' }).getAttribute('aria-checked')).toBe('true'))
     expect(screen.getByText('1 of 1 done')).toBeTruthy()
-    expect(await db.outbox.count()).toBe(2)
+    await waitFor(async () => expect(await db.outbox.count()).toBe(2))
   })
 
   it('refuses an empty title with a plain message and saves nothing', async () => {
@@ -77,12 +77,14 @@ describe('Plan', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Family dinner')).toBeTruthy()
     expect(await fdb.events.count()).toBe(1)
+    await waitFor(() => expect(screen.queryByLabelText('What is happening?')).toBeNull()) // sheet closed before the next Add
     // an event for Ben on the same day
     fireEvent.click(screen.getByRole('button', { name: '+ Add' }))
     fireEvent.change(screen.getByLabelText('What is happening?'), { target: { value: 'Ben dentist' } })
     await waitFor(() => expect(within(screen.getByLabelText('Who is it for?')).getAllByRole('option').length).toBe(3))
     fireEvent.change(screen.getByLabelText('Who is it for?'), { target: { value: 'p2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(async () => expect(await fdb.events.count()).toBe(2))
     expect(await screen.findByText('Ben dentist')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Mine' }))
     await waitFor(() => expect(screen.queryByText('Ben dentist')).toBeNull())

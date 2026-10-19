@@ -3,6 +3,8 @@ import { GUIDE, position, rangeText, type Position, type Range, type Reading } f
 /** Pure Health logic (v6, D-38): headline, previous value, body-map nodes, monthly averages, medicine times. No React, no storage. */
 
 const DAY = 86_400_000
+/** Local calendar day (YYYY-MM-DD) of an ISO instant: Manila is UTC+8, so a 00:30 reading belongs to that local day, not the UTC one. */
+export const localDay = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const isNum = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
 
 // ---- plain names --------------------------------------------------------------------------------
@@ -49,9 +51,9 @@ export function insightHeadline(latest: Reading[], now: Date, familyOf: (r: Read
 // ---- previous value ---------------------------------------------------------------------------------------
 /** The reading just before the latest one for a test (an older takenAt). null when there is none. */
 export function previousReading(readings: Reading[], test: string): Reading | null {
-  const s = readings.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => b.takenAt.localeCompare(a.takenAt))
+  const s = readings.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
   const latest = s[0]
-  return (latest && s.find((r) => r.takenAt < latest.takenAt)) || null
+  return (latest && s.find((r) => Date.parse(r.takenAt) < Date.parse(latest.takenAt))) || null
 }
 
 const distance = (v: number, r: Range | null) => (!r ? null : r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
@@ -112,7 +114,7 @@ function dayTotal(acts: Activity[], kind: string, field: 'minutes' | 'steps', da
 }
 
 export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): NodeView[] {
-  const last = (test: string) => readings.filter((r) => r.test === test).sort((a, b) => b.takenAt.localeCompare(a.takenAt))[0]
+  const last = (test: string) => readings.filter((r) => r.test === test).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
   const worst = (ps: Position[]): Position => (ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none')
   const yesterday = new Date(now.getTime() - DAY)
   const nodes: NodeView[] = []
@@ -120,7 +122,7 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const sleepMin = dayTotal(acts, 'sleep', 'minutes', now) ?? dayTotal(acts, 'sleep', 'minutes', yesterday)
   nodes.push({ id: 'sleep', label: 'Sleep', value: sleepMin == null ? '--' : hoursMinutes(sleepMin), note: sleepMin == null ? 'No data yet' : 'last night', state: 'none', code: 'sleep', empty: sleepMin == null })
 
-  const mood = acts.filter((a) => a.kind in MOOD_WORD).sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0]
+  const mood = acts.filter((a) => a.kind in MOOD_WORD).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0]
   nodes.push({ id: 'mood', label: 'Mood', value: mood ? MOOD_WORD[mood.kind]! : '--', note: mood ? (sameDay(mood.startedAt, now) ? 'today' : shortDate(mood.startedAt)) : 'No data yet', state: 'none', code: 'mood', empty: !mood })
 
   const sys = last('bp_systolic')
@@ -154,7 +156,8 @@ export const isActivityCode = (c: string): c is (typeof ACTIVITY_CODES)[number] 
 export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood'): Point[] {
   const byDay = new Map<string, number[]>()
   for (const a of acts) {
-    const day = a.startedAt.slice(0, 10)
+    if (!a.startedAt || Number.isNaN(Date.parse(a.startedAt))) continue
+    const day = localDay(a.startedAt)
     const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : code === 'sleep' ? (a.kind === 'sleep' && isNum(a.minutes) ? Math.round((a.minutes / 60) * 10) / 10 : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
     if (isNum(v) && a.startedAt) byDay.set(day, [...(byDay.get(day) ?? []), v])
   }
@@ -174,7 +177,7 @@ export function monthlyAverages(pts: Point[], now: Date, months = 5): { month: s
     keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
   }
   return keys.flatMap((k) => {
-    const v = pts.filter((p) => p.takenAt.slice(0, 7) === k && isNum(p.value)).map((p) => p.value)
+    const v = pts.filter((p) => Number.isFinite(Date.parse(p.takenAt)) && localDay(p.takenAt).slice(0, 7) === k && isNum(p.value)).map((p) => p.value)
     if (!v.length) return []
     const [y, m] = k.split('-').map(Number)
     return [{ month: k, label: new Date(y!, m! - 1, 1).toLocaleDateString('en-PH', { month: 'short', year: 'numeric' }), avg: Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10, n: v.length }]

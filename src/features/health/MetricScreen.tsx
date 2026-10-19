@@ -51,7 +51,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const now = useMemo(() => new Date(), [])
   const activity = isActivityCode(code)
   const known = activity || readings.some((r) => r.test === code) || !!GUIDE[code]
-  const mine = readings.filter((r) => r.test === code).sort((a, b) => b.takenAt.localeCompare(a.takenAt))
+  const mine = readings.filter((r) => r.test === code).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
   const pts: Point[] = activity ? activitySeries(acts, code as (typeof ACTIVITY_CODES)[number]) : [...mine].reverse().map((r) => ({ takenAt: r.takenAt, value: r.value }))
   const shown = inPeriod(pts, period, now)
   const label = activity ? ACT_LABEL[code]!.label : metricLabel(code)

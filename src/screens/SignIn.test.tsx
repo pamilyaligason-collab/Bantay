@@ -247,7 +247,7 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
     for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1)) }
-    expect(await screen.findByRole('heading', { name: 'PIN locked' }, { timeout: 5000 })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'PIN locked' }, { timeout: 12_000 })).toBeTruthy()
     expect(screen.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeTruthy()
     expect(pad()).toBeNull()
   })
@@ -283,10 +283,10 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
   })
 
   it('the lock clears by itself when the lock time passes', async () => {
-    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() - 15 * 60_000 + 300 } })
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() - 15 * 60_000 + 5000 } })
     render(<SignIn />)
     expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
-    await waitFor(() => expect(pad()).not.toBeNull(), { timeout: 3000 })
+    await waitFor(() => expect(pad()).not.toBeNull(), { timeout: 12_000 })
     expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
   })
 

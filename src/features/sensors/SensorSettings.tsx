@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { track } from '../admin/events'
 import { useKv } from '../safety/store'
 import { capgoBridge, isNative } from './bridge'
-import { disableType, enableTypes, type EnableResult, type HealthBridge, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
+import { disableType, enableTypes, type EnableResult, type HealthBridge, type HealthDiag, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
 
 const NO_STATE = { enabled: [] as SensorType[] }
 const MSG: Record<Exclude<EnableResult, 'on'>, string> = {
@@ -16,6 +16,8 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
   const st = useKv(STATE_KEY, NO_STATE)
   const [note, setNote] = useState<Partial<Record<SensorType, string>>>({})
   const [busy, setBusy] = useState<SensorType | 'all' | null>(null)
+  const [result, setResult] = useState('')
+  const [diag, setDiag] = useState<{ d: HealthDiag | null; error: string } | null>(null)
   const [fix, setFix] = useState<{ kind: 'settings' | 'install'; text: string; error?: string } | null>(null)
 
   if (!native)
@@ -36,16 +38,32 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
     if (busy) return
     setBusy('all')
     setFix(null)
+    setResult('')
     try {
       const b = bridge ?? capgoBridge()
       const r = await enableTypes(SENSORS.map((x) => x.type), b)
+      const n = r.granted.length
       if (r.result === 'on') { void track('action', 'sensors_on'); void syncAll(b) }
-      if (r.result === 'on' && r.granted.length < SENSORS.length) setFix({ kind: 'settings', text: 'Some were not allowed. You can allow the rest in Health Connect.' })
+      if (r.result === 'on' && n < SENSORS.length) setFix({ kind: 'settings', text: 'Some were not allowed. You can allow the rest in Health Connect.' })
       else explain(r.result, r.error)
+      // always end with one visible line
+      setResult(r.result === 'on' ? `Allowed ${n} of ${SENSORS.length}.` : r.result === 'unavailable' ? `Not allowed: Health Connect is not available.${r.error ? ` (${r.error})` : ''}` : r.error ? `Not allowed (0 of ${SENSORS.length}). Error: ${r.error}` : `Declined: 0 of ${SENSORS.length} allowed.`)
+    } catch (e) {
+      setResult(`Error: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setBusy(null)
     }
   }
+  const check = async () => {
+    const b = bridge ?? capgoBridge()
+    try {
+      setDiag({ d: (await b.diagnose?.()) ?? null, error: b.diagnose ? '' : 'This phone has no check available.' })
+    } catch (e) {
+      setDiag({ d: null, error: e instanceof Error ? e.message : String(e) })
+    }
+  }
+  const android = /Android\s+([\d.]+)/.exec(navigator.userAgent)?.[1] ?? 'unknown'
+  const details = diag ? JSON.stringify({ android, userAgent: navigator.userAgent, ...diag.d, error: diag.error || undefined }, null, 2) : ''
   const openFix = () => void (bridge ?? capgoBridge()).openSettings?.(fix!.kind).catch(() => {})
 
   const toggle = async (type: SensorType, on: boolean) => {
@@ -73,12 +91,13 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
       <h2 id="ss-h" className="hd">Phone health data</h2>
       <p className="sec">Off until you turn a switch on. Bantay only reads. It never changes your phone’s health data, and never puts these numbers in a notification.</p>
       <div className="grp">
-        <div className="row">
+        <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
           <span className="grow">
-            <span>Turn on all four</span>
-            <span className="sub" style={{ fontSize: 14 }}>Your phone asks once.</span>
+            <span style={{ display: 'block' }}>Turn on all four</span>
+            <span className="sub" style={{ display: 'block', fontSize: 14 }}>Your phone asks once.</span>
           </span>
-          <button type="button" className="btn2" disabled={busy !== null} onClick={() => void turnOnAll()}>Turn on all</button>
+          <button type="button" className="btn2" style={{ width: '100%' }} disabled={busy !== null} onClick={() => void turnOnAll()}>Turn on all</button>
+          {result && <span className="sub" role="status" style={{ display: 'block', fontSize: 14 }}>{result}</span>}
         </div>
         {fix && (
           <div className="row">
@@ -89,6 +108,23 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
             <button type="button" className="btn2" onClick={openFix}>{fix.kind === 'install' ? 'Get Health Connect' : 'Open Health Connect'}</button>
           </div>
         )}
+        <details className="row" style={{ display: 'block' }} onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) void check() }}>
+          <summary style={{ cursor: 'pointer', minHeight: 32 }}>Health Connect check</summary>
+          {!diag && <p className="sub" style={{ fontSize: 14 }}>Checking...</p>}
+          {diag && (
+            <div className="sub" style={{ fontSize: 14 }}>
+              <p>Health Connect: {diag.d?.available == null ? 'could not tell' : diag.d.available ? 'available' : 'not available'}. {diag.d?.reason}</p>
+              <p>Android version: {android}</p>
+              <p>Allowed now: {diag.d?.granted.length ? diag.d.granted.join(', ') : 'none'}</p>
+              {diag.error && <p>Error: {diag.error}</p>}
+              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 12 }}>{details}</pre>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn2" onClick={() => void (bridge ?? capgoBridge()).openSettings?.('settings').catch(() => {})}>Open Health Connect</button>
+                <button type="button" className="btn2" onClick={() => void navigator.clipboard?.writeText(details).catch(() => {})}>Copy details</button>
+              </div>
+            </div>
+          )}
+        </details>
       </div>
       <div className="grp">
         {SENSORS.map(({ type, label, why }) => {

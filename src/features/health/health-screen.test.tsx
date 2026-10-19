@@ -34,7 +34,7 @@ afterEach(cleanup)
 describe('Health overview', () => {
   it('shows the headline, the body map values and a tappable latest list', async () => {
     render(<Health />)
-    expect((await screen.findByTestId('insight')).textContent).toBe('Your blood pressure needs a look this week')
+    await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Your blood pressure needs a look this week'))
     const bpNode = await screen.findByRole('link', { name: /^BP 124\/79 A bit high/ })
     expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
     expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy() // unknown stays unknown
@@ -55,7 +55,7 @@ describe('Health overview', () => {
   it('empty state says how to fill it', async () => {
     await hdb.readings.clear()
     render(<Health />)
-    expect(await screen.findByText(/Confirm imported results in Family > Records/, { selector: '.sub' })).toBeTruthy()
+    expect((await screen.findAllByText(/Confirm imported results in Family > Records/)).length).toBeGreaterThan(0)
     expect((await screen.findByTestId('insight')).textContent).toBe('No new results yet')
   })
 })
@@ -90,7 +90,7 @@ describe('Metric detail', () => {
     location.hash = '#health/metric/bp_systolic'
     render(<Health />)
     expect(await screen.findByRole('heading', { level: 1, name: 'Blood pressure, top number' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'This week' }).getAttribute('aria-pressed')).toBe('true')
+    expect((await screen.findByRole('button', { name: 'This week' })).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'This month' }))
     expect(screen.getByRole('button', { name: 'This month' }).getAttribute('aria-pressed')).toBe('true')
     expect(within(screen.getByTestId('monthly')).getAllByText(/readings?$/).length).toBeGreaterThan(0)

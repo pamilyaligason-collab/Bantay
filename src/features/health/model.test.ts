@@ -97,6 +97,12 @@ describe('series and monthly averages', () => {
     expect(s).toHaveLength(1)
     expect(s[0]!.value).toBe(150)
   })
+  it('groups a 00:30 local reading under its local day and month, not the UTC one', () => {
+    const early = new Date(2026, 9, 1, 0, 30).toISOString() // 00:30 local on 1 Oct (UTC+8: still 30 Sep in UTC)
+    const s = activitySeries([{ kind: 'steps', minutes: null, steps: 10, startedAt: early }], 'steps')
+    expect(s[0]!.takenAt.slice(0, 10)).toBe('2026-10-01')
+    expect(monthlyAverages([{ takenAt: early, value: 120 }], NOW).map((x) => x.month)).toEqual(['2026-10'])
+  })
   it('averages per calendar month, skipping months with no readings', () => {
     const m = monthlyAverages([{ takenAt: '2026-10-02T08:00:00Z', value: 120 }, { takenAt: '2026-10-09T08:00:00Z', value: 130 }, { takenAt: '2026-08-09T08:00:00Z', value: 140 }], NOW)
     expect(m.map((x) => [x.month, x.avg, x.n])).toEqual([['2026-08', 140, 1], ['2026-10', 125, 2]])

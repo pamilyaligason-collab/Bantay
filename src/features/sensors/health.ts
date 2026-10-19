@@ -27,6 +27,15 @@ export interface RawSample {
   systolic?: number
   diastolic?: number
 }
+export interface HealthDiag {
+  available: boolean | null
+  platform: string
+  reason: string
+  /** Raw text of the last requestAuthorization / checkAuthorization call: the returned list, or the error message and code. */
+  lastRequest: string
+  lastCheck: string
+  granted: SensorType[]
+}
 export interface HealthBridge {
   platform: Platform
   isAvailable(): Promise<boolean>
@@ -38,6 +47,8 @@ export interface HealthBridge {
   openSettings?(kind: 'settings' | 'install'): Promise<void>
   /** Why the phone said Health Connect is not usable, when it said. */
   reason?(): string
+  /** For the 'Health Connect check' row: raw values from the plugin, and the last request/check outcome incl. error text. */
+  diagnose?(): Promise<HealthDiag>
   /** Quiet check, no prompt. False if the user has since turned it off in the OS. */
   granted(type: SensorType): Promise<boolean>
   read(type: SensorType, sinceIso: string): Promise<RawSample[]>

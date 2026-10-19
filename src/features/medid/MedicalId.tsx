@@ -8,19 +8,20 @@ const initial = (n: string) => (n.trim().charAt(0) || '?').toUpperCase()
 
 /** Mockup medid: one large, readable card from the person's profile. Works offline (cached). */
 export default function MedicalId() {
-  const { card, photo, fromCache, ready } = useMedicalId()
+  const hashId = decodeURIComponent(/^#medid\/([^/?]+)/.exec(location.hash)?.[1] ?? '') || null
+  const { card, photo, fromCache, ready, other } = useMedicalId(hashId)
   const sub = card.age !== null ? `${card.age} years old` : ''
   return (
     <div className="sh mid">
       <div className="sh-row">
-        <a className="sh-iconbtn" href="#safety" aria-label="Back to Safety"><Icon name="back" /></a>
+        <a className="sh-iconbtn" href={other ? `#family/people/${hashId}` : '#safety'} aria-label={other ? 'Back' : 'Back to Safety'}><Icon name="back" /></a>
         <div className="sh-grow"><h1 className="sh-h2">Medical ID</h1><div className="sh-sub">Works without internet</div></div>
       </div>
       {!ready ? <div className="mid-card" aria-busy="true">Loading...</div> : (
         <div className="mid-card">
           <div className="mid-head">
             <span className="mid-av">{photo ? <img src={photo} alt="" /> : initial(card.name)}</span>
-            <div className="mid-who"><b>{card.name || 'Me'}</b><div>{sub || 'Birthday not added'}</div></div>
+            <div className="mid-who"><b>{card.name || (other ? 'Family member' : 'Me')}</b><div>{sub || 'Birthday not added'}</div></div>
             <Icon name="cross" size={30} />
           </div>
           <dl className="mid-dl">
@@ -37,7 +38,7 @@ export default function MedicalId() {
         </div>
       )}
       {fromCache && <p className="sh-sub">Showing what was saved on this phone.</p>}
-      {ready && card.missing.length > 0 && (
+      {ready && !other && card.missing.length > 0 && (
         <a className="mid-edit" href="#me">Add the missing answers in Me</a>
       )}
       <div className="sh-card mid-tip">

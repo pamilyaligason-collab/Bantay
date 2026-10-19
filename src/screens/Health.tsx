@@ -40,7 +40,9 @@ function Overview() {
   const latest = latestByTest(readings)
   const name = people.find((p) => p.id === personId)?.name ?? ''
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
-  const head = insightHeadline(latest, new Date(), familyOf)
+  const first = name.split(' ')[0] ?? ''
+  const raw = insightHeadline(latest, new Date(), familyOf)
+  const head = personId && personId !== ownId && first ? { ...raw, title: raw.title.replace(/^Your /, `${first}'s `) } : raw
   const nodes = useMemo(() => bodyNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
@@ -49,13 +51,15 @@ function Overview() {
         <span>{name ? `${personId === ownId ? 'Me' : name.split(' ')[0]} · your health, in one place` : 'Your health, in one place'}</span>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      <div className="hv-head" data-tone={head.tone}>
-        <div className="grow">
-          <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
-          <p className="sub" style={{ margin: '6px 0 0' }}>{head.sub}</p>
+      {ready && (
+        <div className="hv-head" data-tone={head.tone}>
+          <div className="grow">
+            <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
+            <p className="sub" style={{ margin: '6px 0 0' }}>{head.sub}</p>
+          </div>
+          {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
         </div>
-        {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
-      </div>
+      )}
       <BodyMap nodes={nodes} />
       <LatestList readings={readings} thresholds={thresholds} ready={ready} />
       {personId && <Medicines personId={personId} mine={personId === ownId} />}
