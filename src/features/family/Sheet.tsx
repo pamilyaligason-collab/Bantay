@@ -8,7 +8,7 @@ export default function Sheet({ title, onClose, children }: { title: string; onC
   const [closing, setClosing] = useState(false)
   const timer = useRef<number>(0)
   const close = () => {
-    if (closing) return
+    if (closing || timer.current) return
     if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return onClose()
     setClosing(true)
     timer.current = window.setTimeout(onClose, 200)

@@ -124,6 +124,8 @@ describe('Plan', () => {
     fireEvent.click(screen.getByLabelText('Pin it to the top'))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Pinned note')).toBeTruthy()
+    // The list re-renders from the live query before the sheet's onClose runs; wait for the dialog to go or its textarea matches too.
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(screen.getByText('Gate code 1234')).toBeTruthy()
     expect((await fdb.notes.toArray())[0]).toMatchObject({ body: 'Gate code 1234', pinned: true })
   })
