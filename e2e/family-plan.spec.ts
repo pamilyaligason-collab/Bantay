@@ -53,7 +53,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByRole('button', { name: 'Plan' }).click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
-      await expect(page.getByText("Add a reminder for Lola's check-up.")).toBeVisible()
+      await expect(page.getByRole('button', { name: /^Add a reminder for / })).toBeVisible()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-empty-${scheme}.png` })
       await page.getByRole('button', { name: 'Add', exact: true }).click()
       await page.getByRole('button', { name: 'Event', exact: true }).click()
@@ -86,11 +86,11 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(wide).toBe(false)
     })
 
-    test('People: roll call, member page, and the phone health switches stay reachable', async ({ page }) => {
+    test('People: roll call, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
       await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
       await expect(page.getByText('No check-in today')).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Phone health data' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Phone health data' })).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])

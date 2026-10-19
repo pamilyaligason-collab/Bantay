@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { SensorSettings } from '../sensors'
 import { checkIn, FAIL_TEXT } from '../today/actions'
 import FmAvatar from './FmAvatar'
 import { checkInLabel, rollCall, useCheckIns, useFamilyPeople } from './roster'
 import './family.css'
 
-/** Family > People (mockup v6): today's check-in, the roll call, then the phone health data switches. */
+/** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
   const { people, selfId } = useFamilyPeople()
   const last = useCheckIns()
@@ -53,7 +52,6 @@ export default function People() {
         </ul>
       )}
       {note && <div className="toast" role="status">{note}</div>}
-      <SensorSettings />
     </>
   )
 }

@@ -52,10 +52,11 @@ describe('Plan', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     const box = await screen.findByRole('checkbox', { name: 'Buy rice' })
     expect(box.getAttribute('aria-checked')).toBe('false')
-    expect(screen.getByText(/^Kuya . Today/)).toBeTruthy()
+    expect(screen.getByText('Kuya')).toBeTruthy()
+    expect(screen.getByText('0 of 1 completed')).toBeTruthy()
     expect((await fdb.tasks.toArray())[0]).toMatchObject({ title: 'Buy rice', due: dayKey(new Date()), assigneePersonId: 'p2' })
     fireEvent.click(box)
-    await waitFor(() => expect(screen.queryByRole('checkbox', { name: 'Buy rice' })).toBeNull()) // ticked: it leaves Today ...
+    await waitFor(() => expect(screen.getByText('1 of 1 completed')).toBeTruthy()) // ticked: it stays on its day, counted ...
     fireEvent.click(screen.getByRole('button', { name: 'Done' }))
     expect((await screen.findByRole('checkbox', { name: 'Buy rice' })).getAttribute('aria-checked')).toBe('true') // ... and waits in Done
     await waitFor(async () => expect(await db.outbox.count()).toBe(2))
@@ -76,8 +77,11 @@ describe('Plan', () => {
   it('teaches on an empty tab and the Add button is always there', async () => {
     location.hash = '#family/plan'
     render(<Family />)
-    expect(await screen.findByText("Add a reminder for Lola's check-up.")).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Later' }))
+    const hint = await screen.findByRole('button', { name: /^Add a reminder for / })
+    expect(hint.textContent).not.toMatch(/Lola/) // names a real family member, never a made-up one
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Add a reminder for / }).textContent).toMatch(/Kuya|Lloyd/))
+    expect(screen.getAllByRole('button', { name: /^Add/ }).length).toBe(2) // the floating Add and the empty-state link
+    fireEvent.click(screen.getByRole('button', { name: /^Later/ }))
     expect(screen.getByText('Nothing planned for later.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy()
   })
@@ -110,7 +114,7 @@ describe('Plan', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(async () => expect(await fdb.events.count()).toBe(2))
     expect(await screen.findByText('Ben dentist')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Mine' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mine only' }))
     await waitFor(() => expect(screen.queryByText('Ben dentist')).toBeNull())
     expect(screen.getByText('Family dinner')).toBeTruthy()
   })
@@ -143,7 +147,7 @@ describe('People', () => {
     expect(within(roll).getByText('No check-in today')).toBeTruthy()
     expect(screen.getByText('1 of 2 OK today')).toBeTruthy()
     expect(within(roll).getByText('Lloyd Roc (you)')).toBeTruthy()
-    expect(screen.getByText('Phone health data')).toBeTruthy() // the switches stay reachable, at the bottom
+    expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
   })
 
   it('I\'m OK writes a check-in activity row and shows it', async () => {
