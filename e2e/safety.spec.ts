@@ -17,7 +17,7 @@ test('safety hub (D-68): ten tiles with a status line, each opens its page and g
   const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
   await expect(tiles).toHaveCount(10)
   await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
-  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('2 numbers confirmed')
+  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('3 numbers ready')
   await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
   await tiles.filter({ hasText: 'Quick dial' }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)

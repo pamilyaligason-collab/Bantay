@@ -59,7 +59,7 @@ export default function SafetyHub({ place }: { place: Place }) {
     ['#safety/weather', 'weather', 'Weather maps', wx?.rainPct != null ? `Rain chance ${Math.round(wx.rainPct)}% today` : 'Rain, wind and clouds'],
     ['#safety/storms', 'storm', 'Storm tracker', storms.length ? `${stormName(storms[0]!)}${storms.length > 1 ? ` and ${storms.length - 1} more` : ''}` : 'No storms now'],
     ['#safety/map', 'map', 'Rescue map', pins ? plural(pins, 'place') + ' on the map' : 'Shelters and help'],
-    ['#safety/dial', 'dial', 'Quick dial', confirmed ? `${plural(confirmed, 'number')} confirmed` : 'No numbers yet'],
+    ['#safety/dial', 'dial', 'Quick dial', confirmed ? `${plural(confirmed, 'number')} ready` : 'No numbers yet'],
     ['#safety/hazards', 'hazard', 'Hazards at my location', hazardStatus(hazardsFor(place.zone))],
     ['#gobag', 'bag', 'Go-bag', `${bag.done.length} of ${ALL_IDS.length} packed`],
     ['#safety/cards', 'cards', 'Safety cards', `${CARDS.length} how-to guides`],
