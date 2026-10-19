@@ -21,7 +21,7 @@ label.wz-field { flex-direction: column; align-items: stretch; }
 .wz-file { display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; }
 .wz-file input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 .wz-file:focus-within { outline: 2px solid var(--act); outline-offset: 2px; }
-.wz-ov { position: fixed; inset: 0; z-index: 60; background: var(--bg); }
+.wz-ov { position: fixed; inset: 0; z-index: 60; background: var(--bg); padding-top: var(--sat); box-sizing: border-box; }
 .wz-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; }
 .wz-card ul { margin: 0; padding: 0; list-style: none; }
 .wz-card li button { width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--act); font-size: 16px; font-weight: 600; text-align: left; padding: 0; }

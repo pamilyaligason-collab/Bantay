@@ -5,17 +5,29 @@ import { distanceKm, rankAlerts, tierOf, type Alert, type LatLon } from '../safe
  *  active alert for the member's zone > medicine due now > weather for the home zone. Nothing applies: one calm summary. */
 
 export interface Dose { name: string; at: number } // at = minutes after local midnight
-export interface Wx { temp: number | null; rainPct: number | null; words: string; at: string }
+/** Rain from the hourly forecast. startH/endH are clock hours 0-23 in Manila; now = it is already raining this hour. */
+export interface RainOutlook { now: boolean; startH: number; endH: number; hours: number; peakPct: number }
+/** rain: undefined = no hourly data (old cache, or the call lacked it); null = no hour at 50% or more from now on. */
+export interface Wx { temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null; rain?: RainOutlook | null }
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip'
 export interface HeroCard {
   key: string
   kind: 'alert' | 'dose' | 'weather' | 'summary'
+  sky?: Sky
   kicker: string
   title: string
   body: string
   big?: string
   actions: { id: HeroActionId; label: string }[]
   dose?: Dose
+}
+
+export type Sky = 'clear' | 'cloud' | 'rain' | 'storm' | 'fog'
+/** Background mood for the weather card, from the WMO weather_code (unknown = none). */
+export const skyOf = (w: Wx): Sky | undefined => {
+  const c = w.code
+  if (c == null) return undefined
+  return c <= 1 ? 'clear' : c <= 3 ? 'cloud' : c <= 48 ? 'fog' : c >= 95 ? 'storm' : c >= 51 && c <= 86 ? 'rain' : 'cloud'
 }
 
 export const ALERT_RADIUS_KM = 150
@@ -57,6 +69,29 @@ const clock = (at: number) => {
   return `${h % 12 || 12}:${String(at % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`
 }
 
+const hour12 = (h: number) => `${h % 12 || 12} ${h % 24 < 12 ? 'AM' : 'PM'}`
+
+/** First run of hours with chance >= 50%, from the current hour (times are Open-Meteo local "YYYY-MM-DDTHH:MM"). */
+export function rainOutlook(times: unknown[] | undefined, probs: unknown[] | undefined, nowLocal: string | undefined): RainOutlook | null | undefined {
+  if (!Array.isArray(times) || !Array.isArray(probs) || !nowLocal || !times.length) return undefined
+  const from = times.findIndex((t) => typeof t === 'string' && t.slice(0, 13) >= nowLocal.slice(0, 13))
+  if (from < 0) return undefined
+  const p = (i: number) => (typeof probs[i] === 'number' ? (probs[i] as number) : -1)
+  let i = from
+  while (i < times.length && p(i) < 50) i++
+  if (i >= times.length) return null
+  let j = i
+  let peak = 0
+  while (j < times.length && p(j) >= 50) { peak = Math.max(peak, p(j)); j++ }
+  const hr = (k: number) => Number(String(times[k]).slice(11, 13)) % 24
+  return { now: i === from, startH: hr(i), endH: j < times.length ? hr(j) : -1, hours: j - i, peakPct: Math.round(peak) }
+}
+
+export function rainWords(r: RainOutlook): string {
+  if (r.now) return r.endH < 0 ? `Rain now, likely to last. Chance: ${r.peakPct}%.` : `Rain now, easing around ${hour12(r.endH)}.`
+  return `Rain likely from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. Chance: ${r.peakPct}%.`
+}
+
 const asOf = (iso: string) => {
   const t = new Date(iso)
   return Number.isNaN(t.getTime()) ? '' : ` · as of ${t.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })}`
@@ -86,9 +121,9 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   if (w && w.temp != null) {
     const rainy = w.rainPct != null && w.rainPct >= 60
     out.push({
-      key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, big: `${Math.round(w.temp)}°`,
+      key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky: skyOf(w), big: `${Math.round(w.temp)}°`,
       title: rainy ? `Rain likely today in ${i.placeName}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${i.placeName}`,
-      body: w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`,
+      body: w.rain ? rainWords(w.rain) : w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`,
       actions: []
     })
   }

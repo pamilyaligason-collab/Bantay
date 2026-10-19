@@ -5,7 +5,7 @@ import { db } from '../../db'
 import { track } from '../admin/events'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { disableType, enableType, getState, type HealthBridge, normalise, type RawSample, type SensorType, syncAll } from './health'
+import { disableType, enableType, getState, reconcileGranted, type HealthBridge, normalise, type RawSample, type SensorType, syncAll } from './health'
 import QuickWalk from './QuickWalk'
 import SensorSettings from './SensorSettings'
 import { summarise } from './MovementCard'
@@ -72,7 +72,7 @@ describe('permissions', () => {
   })
   it('permission denied: type stays off, nothing is read or logged', async () => {
     const read = vi.fn(async () => [S()])
-    const b = fake({ request: vi.fn(async () => false), read })
+    const b = fake({ request: vi.fn(async () => false), granted: async () => false, read })
     expect(await enableType('steps', b)).toBe('denied')
     expect((await getState()).enabled).toEqual([])
     await syncAll(b, 'p')
@@ -80,7 +80,7 @@ describe('permissions', () => {
     expect(await ldb.activity.count()).toBe(0)
   })
   it('a plugin that throws on request counts as denied', async () => {
-    expect(await enableType('steps', fake({ request: vi.fn(async () => { throw new Error('x') }) }))).toBe('denied')
+    expect(await enableType('steps', fake({ request: vi.fn(async () => { throw new Error('x') }), granted: async () => false }))).toBe('denied')
   })
   it('web has no health store: unavailable, never prompts', async () => {
     const b = fake({ platform: 'web' })
@@ -220,6 +220,28 @@ describe('QuickWalk', () => {
   })
 })
 
+describe('reconcileGranted', () => {
+  it('adds types the OS allows but the app does not list, and starts nothing for the rest', async () => {
+    await enableType('steps', fake())
+    const b = fake({ granted: async (t) => t === 'sleep' || t === 'steps' })
+    expect(await reconcileGranted(b)).toEqual(['sleep'])
+    expect((await getState()).enabled).toEqual(['steps', 'sleep'])
+    expect(await reconcileGranted(b)).toEqual([])
+  })
+  it('keeps a type the member switched off, and does nothing when Health Connect is unavailable', async () => {
+    await enableType('steps', fake())
+    await disableType('steps')
+    expect(await reconcileGranted(fake())).toEqual(['sleep', 'heartRate', 'bloodPressure'])
+    expect((await getState()).enabled).not.toContain('steps')
+    expect(await reconcileGranted(fake({ isAvailable: async () => false }))).toEqual([])
+    expect(await reconcileGranted(fake({ platform: 'web' }))).toEqual([])
+  })
+  it('turning on after an empty prompt answer re-checks the OS grant', async () => {
+    const b = fake({ request: vi.fn(async () => false), granted: async () => true })
+    expect(await enableType('heartRate', b)).toBe('on')
+  })
+})
+
 describe('SensorSettings', () => {
   it('explains itself on the web and has no switches', () => {
     render(<SensorSettings native={false} />)
@@ -260,7 +282,7 @@ describe('SensorSettings', () => {
     warn.mockRestore()
   })
   it('denied: switch stays off and says why', async () => {
-    render(<SensorSettings native bridge={fake({ request: vi.fn(async () => false) })} />)
+    render(<SensorSettings native bridge={fake({ request: vi.fn(async () => false), granted: async () => false })} />)
     fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Not turned on'))
     expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('false')

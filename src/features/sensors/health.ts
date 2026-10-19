@@ -103,6 +103,8 @@ export function normalise(type: SensorType, samples: RawSample[], personId: stri
 interface State {
   enabled: SensorType[]
   cursor: Partial<Record<SensorType, string>>
+  /** Types the member switched off in the app; reconcile does not turn these back on just because the OS still allows them. */
+  off?: SensorType[]
 }
 export const STATE_KEY = 'sensors.state'
 const BACKFILL_MS = 7 * 86_400_000
@@ -141,9 +143,12 @@ export async function enableTypes(types: SensorType[], bridge: HealthBridge): Pr
     error = errText(e)
     console.warn('health permission failed', error)
   }
+  if (!granted.length) { // some phones answer the prompt with an empty list: ask quietly what the OS really allows
+    for (const t of types) if (await bridge.granted(t).catch(() => false)) granted.push(t)
+  }
   if (!granted.length) return { result: 'denied', granted, error }
   const st = await getState()
-  await putState({ ...st, enabled: [...new Set([...st.enabled, ...granted])] })
+  await putState({ ...st, enabled: [...new Set([...st.enabled, ...granted])], off: (st.off ?? []).filter((t) => !granted.includes(t)) })
   return { result: 'on', granted }
 }
 export async function enableType(type: SensorType, bridge: HealthBridge): Promise<EnableResult> {
@@ -154,7 +159,21 @@ export async function disableType(type: SensorType) {
   const st = await getState()
   const cursor = { ...st.cursor }
   delete cursor[type]
-  await putState({ enabled: st.enabled.filter((t) => t !== type), cursor })
+  await putState({ enabled: st.enabled.filter((t) => t !== type), cursor, off: [...new Set([...(st.off ?? []), type])] })
+}
+
+/** On open: types the OS already allows (granted earlier, or in Health Connect) but the app does not list get switched on.
+ *  Quiet check, no prompt. Types the member turned off here stay off. Returns the types it added. */
+export async function reconcileGranted(bridge: HealthBridge): Promise<SensorType[]> {
+  if (!sourceFor(bridge.platform) || !(await bridge.isAvailable().catch(() => false))) return []
+  const st = await getState()
+  const add: SensorType[] = []
+  for (const { type } of SENSORS) if (!st.enabled.includes(type) && !(st.off ?? []).includes(type) && (await bridge.granted(type).catch(() => false))) add.push(type)
+  if (!add.length) return []
+  const now = await getState() // re-read: a switch may have been flipped while we asked the OS
+  const fresh = add.filter((t) => !now.enabled.includes(t) && !(now.off ?? []).includes(t))
+  if (fresh.length) await putState({ ...now, enabled: [...now.enabled, ...fresh] })
+  return fresh
 }
 
 // ---- sync -------------------------------------------------------------------------------------

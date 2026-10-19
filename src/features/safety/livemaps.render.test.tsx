@@ -13,6 +13,12 @@ describe('LiveMaps storm list', () => {
     render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
     expect(screen.getByText('Tropical Cyclone PEPITO')).toBeTruthy()
     expect(screen.getByText(/Orange alert · since \d+ \w+/)).toBeTruthy()
-    expect(screen.queryByText('No active storms')).toBeNull()
+    expect(screen.queryByText(/No storm warnings/)).toBeNull()
+  })
+  it('empty list says GDACS only, never "no storms", and keeps the PAGASA link', () => {
+    rows.list = []
+    render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
+    expect(screen.getByRole('status').textContent).toBe('No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.')
+    expect(screen.getByText('PAGASA bulletin').closest('a')?.getAttribute('href')).toContain('pagasa.dost.gov.ph/tropical-cyclone')
   })
 })

@@ -87,3 +87,16 @@
 .bt .td-bigbtn.ok { background: var(--green); color: var(--on-green); }
 .bt .td-bigbtn.call { background: var(--card); color: var(--ink); }
 .bt .td-bigbtn.sos { background: var(--danger-bg); color: #fff; }
+
+/* weather card mood: one decorative layer behind the text, from weather_code. Pure CSS, still when motion is reduced. */
+.td-slide { isolation: isolate; }
+.td-sky { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+.sky-clear .td-sky { background: radial-gradient(circle at 88% 12%, rgba(255, 214, 120, .55), rgba(255, 214, 120, 0) 55%); animation: td-glow 6s ease-in-out infinite alternate; }
+.sky-cloud .td-sky, .sky-fog .td-sky { background: radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255, 255, 255, .22), transparent 70%), radial-gradient(ellipse 50% 35% at 75% 70%, rgba(255, 255, 255, .16), transparent 70%); background-size: 160% 100%; animation: td-drift 18s linear infinite alternate; }
+.sky-fog .td-sky { opacity: .8; }
+.sky-rain .td-sky, .sky-storm .td-sky { background: repeating-linear-gradient(105deg, transparent 0 14px, rgba(255, 255, 255, .22) 14px 15px); background-size: 60px 60px; animation: td-rain 0.9s linear infinite; }
+.sky-storm .td-sky { background-color: rgba(0, 0, 0, .18); }
+@keyframes td-glow { from { opacity: .6; } to { opacity: 1; } }
+@keyframes td-drift { from { background-position: 0 0; } to { background-position: 40% 0; } }
+@keyframes td-rain { from { background-position: 0 0; } to { background-position: 0 60px; } }
+@media (prefers-reduced-motion: reduce) { .td-sky { animation: none !important; } }

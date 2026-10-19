@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { dueDoses, heroCards, parseDose, zoneAlert, type Wx } from './heroCards'
+import { dueDoses, heroCards, parseDose, rainOutlook, skyOf, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -72,5 +72,30 @@ describe('heroCards priority', () => {
   })
   it('the alert card offers What to do and I am OK', () => {
     expect(heroCards({ ...base, alerts: [alert({})] })[0]!.actions.map((a) => a.id)).toEqual(['safety', 'ok'])
+  })
+})
+
+describe('rain timing', () => {
+  const times = Array.from({ length: 24 }, (_, h) => `2026-10-19T${String(h).padStart(2, '0')}:00`)
+  const probs = (f: (h: number) => number) => times.map((_, h) => f(h))
+  it('finds the start, length and peak from the current hour', () => {
+    const r = rainOutlook(times, probs((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)), '2026-10-19T11:20')
+    expect(r).toEqual({ now: false, startH: 15, endH: 19, hours: 4, peakPct: 100 })
+    const c = heroCards({ ...base, weather: { ...wx, rain: r } })[0]!
+    expect(c.body).toBe('Rain likely from 3 PM for about 4 hours. Chance: 100%.')
+  })
+  it('rain now says when it eases; past rain is ignored', () => {
+    const p = probs((h) => (h >= 1 && h < 3 ? 90 : h >= 14 && h < 17 ? 60 : 0))
+    const r = rainOutlook(times, p, '2026-10-19T14:05')
+    expect(r).toMatchObject({ now: true, startH: 14, endH: 17 })
+    expect(heroCards({ ...base, weather: { ...wx, rain: r } })[0]!.body).toBe('Rain now, easing around 5 PM.')
+  })
+  it('null when no hour reaches 50, undefined without hourly data, old text kept', () => {
+    expect(rainOutlook(times, probs(() => 20), '2026-10-19T08:00')).toBeNull()
+    expect(rainOutlook(undefined, undefined, '2026-10-19T08:00')).toBeUndefined()
+    expect(heroCards({ ...base, weather: wx })[0]!.body).toBe('Bring an umbrella. Chance of rain: 70%.')
+  })
+  it('sky from weather code', () => {
+    expect([0, 2, 45, 63, 96, undefined].map((c) => skyOf({ ...wx, code: c }))).toEqual(['clear', 'cloud', 'fog', 'rain', 'storm', undefined])
   })
 })

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { track } from '../admin/events'
 import { useKv } from '../safety/store'
 import { capgoBridge, isNative } from './bridge'
-import { disableType, enableTypes, type EnableResult, type HealthBridge, type HealthDiag, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
+import { disableType, enableTypes, reconcileGranted, type EnableResult, type HealthBridge, type HealthDiag, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
 
 const NO_STATE = { enabled: [] as SensorType[] }
 const MSG: Record<Exclude<EnableResult, 'on'>, string> = {
@@ -19,6 +19,12 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
   const [result, setResult] = useState('')
   const [diag, setDiag] = useState<{ d: HealthDiag | null; error: string } | null>(null)
   const [fix, setFix] = useState<{ kind: 'settings' | 'install'; text: string; error?: string } | null>(null)
+
+  useEffect(() => { // the OS may already allow what the app does not list yet
+    if (!native) return
+    const b = bridge ?? capgoBridge()
+    void reconcileGranted(b).then((added) => { if (added.length) void syncAll(b) }, () => undefined)
+  }, [native, bridge])
 
   if (!native)
     return (

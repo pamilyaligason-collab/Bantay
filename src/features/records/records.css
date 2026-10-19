@@ -1,7 +1,7 @@
 /* Confirm sheet and record detail. Uses the app tokens and the grp/row/sub/hd classes; only the overlay and small controls are new. */
 .sheet {
   position: fixed; inset: 0; z-index: 60; max-width: 520px; margin: 0 auto; box-sizing: border-box;
-  overflow-y: auto; overflow-x: hidden; padding: 14px 16px 48px; color: var(--ink);
+  overflow-y: auto; overflow-x: hidden; padding: calc(14px + var(--sat)) 16px 48px; color: var(--ink);
   background: var(--bg); /* v6 cream/green (D-66) */
   font-size: 17px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   display: flex; flex-direction: column; gap: 14px;

@@ -27,7 +27,7 @@
 .dc-field select, .dc-field input { min-height: 48px; box-sizing: border-box; border: 0.5px solid var(--sep); border-radius: 12px; padding: 0 12px; font: inherit; font-size: 17px; background: var(--bg); color: var(--ink); min-width: 0; }
 
 /* Full-screen viewer: bright on purpose so a card is easy to read and scan, in light and dark. */
-.dc-viewer { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; color: #000000; display: flex; flex-direction: column; gap: 8px; padding: calc(8px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); box-sizing: border-box; font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+.dc-viewer { position: fixed; inset: 0; z-index: 50; background: #FFFFFF; color: #000000; display: flex; flex-direction: column; gap: 8px; padding: calc(8px + var(--sat)) 12px calc(12px + env(safe-area-inset-bottom)); box-sizing: border-box; font: 17px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
 .dc-vbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dc-vbar h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
 .dc-viewer .dc-btn { background: #E5E5EA; color: #004A99; }

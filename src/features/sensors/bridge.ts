@@ -9,7 +9,9 @@ export const isNative = () => Capacitor.isNativePlatform()
 
 /** The real bridge, over @capgo/capacitor-health. The plugin loads only when a method is called on a phone. */
 export function capgoBridge(): HealthBridge {
-  const plugin = () => import('@capgo/capacitor-health').then((m) => m.Health)
+  let loading: ReturnType<typeof load> | undefined
+  const load = () => import('@capgo/capacitor-health').then((m) => m.Health)
+  const plugin = () => (loading ??= load()) // one import shared by calls that overlap (mount check + a tap)
   let why = ''
   const trace = { request: '(not called yet)', check: '(not called yet)' }
   const fmt = (e: unknown) => { const o = e as { code?: unknown; message?: unknown } | null; return `ERROR code=${String(o?.code ?? '')} message=${String(o?.message ?? e)}` }

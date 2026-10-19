@@ -53,7 +53,8 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
     <>
       <div className={`td-hero${cards.length > 1 ? ' multi' : ''}`} role="region" aria-label="What matters now" onScroll={(e) => setIdx(Math.round(e.currentTarget.scrollLeft / Math.max(1, e.currentTarget.clientWidth)))}>
         {cards.map((c) => (
-          <article key={c.key} className={`td-slide ${c.kind}${c.big ? ' has-big' : ''}`} aria-label={c.title}>
+          <article key={c.key} className={`td-slide ${c.kind}${c.big ? ' has-big' : ''}${c.sky ? ` sky-${c.sky}` : ''}`} aria-label={c.title}>
+            {c.sky && <span className="td-sky" aria-hidden="true" />}
             <div className="td-k">{c.kicker}</div>
             {c.big && <div className="td-big" aria-hidden="true">{c.big}</div>}
             <h2>{c.title}</h2>

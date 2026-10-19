@@ -92,7 +92,7 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
             <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ? `${a.level} alert` : 'Level unknown'} · since {since(a.issuedAt)}</span></span></div>
           ))}
         </div>
-      ) : <p className="sf-empty" role="status">No active storms</p>}
+      ) : <p className="sf-empty" role="status">No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.</p>}
       <div className="grp">
         {LINKS.map(([name, url]) => (
           <a key={url} className="row" href={url} target="_blank" rel="noopener">
