@@ -7,7 +7,6 @@ import {
   metricLabel, monthlyAverages, rangeLine, shortDate, type Period, type Point
 } from './model'
 import { SubHeader } from '../shell/SubHeader'
-import { CountUp } from '../look'
 import { useActivity } from './useActivity'
 
 const NO_DRAFTS: Record<string, number> = {}
@@ -86,7 +85,7 @@ export default function MetricScreen({ code }: { code: string }) {
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
                 <strong className="hv-big">
-                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? <CountUp to={latest.value} decimals={(String(latest.value).split('.')[1] ?? '').length} /> : last ? dp(last.value) : '--'}
+                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? latest.value : last ? dp(last.value) : '--'}
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>

@@ -1,5 +1,6 @@
 /*
  * Adapted from React Bits CountUp (https://reactbits.dev), MIT + Commons Clause.
+ * Never use on medical readings: a mid-count number can sit next to a range chip and mislead.
  * Changes: no framer-motion; GSAP loads lazily; reduced motion renders the final value.
  */
 import { useEffect, useRef } from 'react'
