@@ -51,6 +51,8 @@ body :is(.tabbar, .topbar[data-scrolled="true"], .sh-sheet, .fm-sheet, .sf-sheet
   background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: inset 0 0 0 1px var(--glass-edge), 0 8px 30px rgba(20,30,20,.18);
 }
+/* sheets carry long --muted text: a denser glass keeps it AA over any backdrop (Fable review) */
+body :is(.sh-sheet, .fm-sheet, .sf-sheet, .glass.as-sheet) { background: var(--glass-sheet); }
 body :is(.sh-sheet, .fm-sheet, .sf-sheet, .glass.as-sheet) { box-shadow: inset 0 1px 0 var(--glass-edge), 0 -8px 30px rgba(20,30,20,.18); }
 body .topbar[data-scrolled="true"] { box-shadow: 0 1px 0 var(--glass-edge), 0 6px 20px rgba(20,30,20,.10); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {

@@ -9,7 +9,7 @@ export default function Sheet({ title, onClose, children }: { title: string; onC
   const timer = useRef<number>(0)
   const close = () => {
     if (closing || timer.current) return
-    if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return onClose()
+    if (!window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { timer.current = -1; return onClose() } // -1 marks closed so a second tap is ignored
     setClosing(true)
     timer.current = window.setTimeout(onClose, 200)
   }

@@ -74,6 +74,13 @@ for (const [name, get] of themes) {
         expect(ratio(c('--ink'), glass)).toBeGreaterThanOrEqual(4.5)
       })
     }
+    // sheets: --muted text on --glass-sheet over a 40% black dim over the worst page colours
+    for (const back of ['--green', '--red', '--ground']) {
+      it(`sheet --muted on --glass-sheet over dim over ${back} >= 4.5`, () => {
+        const dimmed = over([[0, 0, 0], 0.4], c(back))
+        expect(ratio(c('--muted'), over(parse(v['--glass-sheet']), dimmed))).toBeGreaterThanOrEqual(4.5)
+      })
+    }
     it('active tab pill (--ink on --fill over --glass-bg over --card) >= 4.5', () => {
       const glass = over(parse(v['--glass-bg']), c('--card'))
       expect(ratio(c('--ink'), over(parse(v['--fill']), glass))).toBeGreaterThanOrEqual(4.5)

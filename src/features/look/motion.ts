@@ -50,6 +50,7 @@ export function wireMotion(root: ParentNode | null): () => void {
       io.unobserve(e.target)
       const el = e.target as HTMLElement
       if ('reveal' in el.dataset) {
+        el.style.opacity = '' // hidden since observe; the animation's backwards fill takes over in the same frame, so no flash
         const i = Number(el.dataset.revealIndex)
         el.animate?.(
           [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
@@ -65,8 +66,9 @@ export function wireMotion(root: ParentNode | null): () => void {
     }
   }, { threshold: 0.15 })
   root.querySelectorAll<HTMLElement>('[data-reveal],[data-count]').forEach((el, i) => {
-    if ('reveal' in el.dataset) el.dataset.revealIndex = String(i)
+    if ('reveal' in el.dataset) { el.dataset.revealIndex = String(i); el.style.opacity = '0' }
     io.observe(el)
   })
-  return () => { io.disconnect(); stops.forEach(s => s()) }
+  // never leave a section hidden if we stop watching before it was seen
+  return () => { io.disconnect(); stops.forEach(s => s()); root.querySelectorAll<HTMLElement>('[data-reveal]').forEach(el => { el.style.opacity = '' }) }
 }
