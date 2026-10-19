@@ -1,5 +1,62 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, confirmDraft, parseReply, personFor, sourceLink, validateDraft } from './tools'
+import { buildRequest, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
+import type { Reading } from '../health/ranges'
+
+describe('add task + records answer cards', () => {
+  it('parseReply makes task and records cards, drops ones with no title or test', () => {
+    const { cards } = parseReply({ tool_calls: [
+      { name: 'add_task', arguments: { title: ' Buy rice ', due: '2026-10-25', assignee: 'Ben' } },
+      { name: 'add_task', arguments: { title: '  ' } },
+      { name: 'records_answer', arguments: { person: 'Lola', test: 'HbA1c' } },
+      { name: 'records_answer', arguments: { person: 'Lola' } }
+    ] })
+    expect(cards).toEqual([
+      { kind: 'task', id: 'c0', title: 'Buy rice', due: '2026-10-25', assignee: 'Ben' },
+      { kind: 'records', id: 'c2', person: 'Lola', test: 'HbA1c' }
+    ])
+  })
+  it('taskArgs keeps only what is valid and guesses nobody', () => {
+    expect(taskArgs('Buy rice', '2026-10-25', 'ben', people)).toEqual({ title: 'Buy rice', due: '2026-10-25', assigneePersonId: 'p2' })
+    expect(taskArgs('Buy rice', 'tomorrow', 'Somebody', people)).toEqual({ title: 'Buy rice' })
+    expect(taskArgs('  ', '', '', people)).toBeNull()
+  })
+  it('confirmTask calls addTask once with the contract shape, and not at all when empty', async () => {
+    const add = vi.fn(async () => undefined)
+    await confirmTask('Buy rice', '2026-10-25', 'Lola', people, add)
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(add).toHaveBeenCalledWith({ title: 'Buy rice', due: '2026-10-25', assigneePersonId: 'p1' })
+    await expect(confirmTask('', '', '', people, add)).rejects.toThrow()
+    expect(add).toHaveBeenCalledTimes(1)
+  })
+})
+
+const rd = (o: Partial<Reading>): Reading => ({ personId: 'p1', takenAt: '2026-10-02T04:00:00.000Z', test: 'hba1c', value: 6.8, unit: '%', ...o })
+describe('recordsAnswer', () => {
+  it('answers from the newest confirmed lab reading with the lab range and a citation', () => {
+    const a = recordsAnswer([rd({ takenAt: '2026-03-01T04:00:00.000Z', value: 7.1 }), rd({ sourceFileId: 'f1', confirmedAt: '2026-10-03T00:00:00Z', labLow: 4, labHigh: 5.6 })], 'Lola', 'HbA1c')
+    expect(a.text).toContain('6.8 %')
+    expect(a.text).toContain('2 Oct 2026')
+    expect(a.text).toContain("above range (the lab's range: 4 to 5.6)")
+    expect(a.text).toContain('not a diagnosis')
+    expect(a.cite).toBe('From your lab result on 2 Oct 2026')
+  })
+  it('ignores an imported reading nobody has checked yet', () => {
+    const a = recordsAnswer([rd({ sourceFileId: 'f1' })], 'Lola', 'hba1c')
+    expect(a.text).toContain('do not have a saved')
+    expect(a.cite).toBe('')
+  })
+  it('never turns an unknown value into a number', () => {
+    expect(recordsAnswer([rd({ value: Number.NaN })], 'Lola', 'hba1c').cite).toBe('')
+  })
+  it('joins blood pressure from the same moment and cites what was logged', () => {
+    const a = recordsAnswer([rd({ test: 'bp_systolic', value: 130, unit: 'mmHg' }), rd({ test: 'bp_diastolic', value: 85, unit: 'mmHg' })], 'Lola', 'blood pressure')
+    expect(a.text).toContain('130/85 mmHg')
+    expect(a.cite).toBe('From what you logged on 2 Oct 2026')
+  })
+  it('says so when there is no range to compare with', () => {
+    expect(recordsAnswer([rd({ test: 'weight', value: 60, unit: 'kg' })], 'Lola', 'weight').text).toContain('no range')
+  })
+})
 
 const people = [{ id: 'p1', name: 'Lola' }, { id: 'p2', name: 'Ben' }]
 const api = () => ({ logReading: vi.fn(), logMedTaken: vi.fn(), logActivity: vi.fn() })
