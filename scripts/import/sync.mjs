@@ -10,7 +10,7 @@ import { extname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { classifyPath } from './folders.mjs'
 import { buildMatcher, matchPerson } from './family.mjs'
-import { classifyType, dateFrom, walk } from './lib.mjs'
+import { classifyType, dateFrom, fileKey, walk } from './lib.mjs'
 
 const GOOGLE_DOC = 'application/vnd.google-apps.document'
 
@@ -187,7 +187,7 @@ async function main(env = process.env) {
   const known = new Map(existsSync('.scratch/known.json') ? knownRows(JSON.parse(readFileSync('.scratch/known.json', 'utf8'))).map((r) => [r.sha256, r.drive_file_id]) : [])
   for (const e of entries) {
     const prev = prevByid.get(e.drive_file_id)
-    const dest = `import/files/${e.drive_file_id}`
+    const dest = `import/files/${fileKey(e.drive_file_id)}`
     if (!e.skipped && e.drive_file_id.startsWith('local-unmatched:')) e.skipped = 'no_drive_id'
     if (e.skipped) continue
     if (!needsDownload(e, prev, existsSync(dest))) {
@@ -202,7 +202,7 @@ async function main(env = process.env) {
       e.sha256 = sha256(buf)
       e.size = buf.length
       const kid = knownId(e, known)
-      if (kid) { renameSync(dest, `import/files/${kid}`); e.drive_file_id = kid }
+      if (kid) { renameSync(dest, `import/files/${fileKey(kid)}`); e.drive_file_id = kid }
       if (e.mime === GOOGLE_DOC) e.stored_mime = 'application/pdf'
       n.downloaded++
     } catch (err) {

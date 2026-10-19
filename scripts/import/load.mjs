@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { pathToFileURL } from 'node:url'
 import { AUTO_THRESHOLD, buildMatcher, buildProfiles, gate, matchPerson, resolveThreshold, stripNumber } from './family.mjs'
 import { loadCatalog, nameKey, normalizeTest } from './normalize.mjs'
+import { fileKey } from './lib.mjs'
 
 // Fixed namespace for this importer's ids. Never change it: re-runs depend on stable ids.
 const NS = '7d1b6f0e-4c2a-5b8e-9a3d-1f0c5e7a2b64'
@@ -78,6 +79,7 @@ const AUTO = { confirmed_source: "'auto'" }
  * @returns {{sql:string, summary:object, persons:Record<string,string>}}
  */
 export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, catalog = loadCatalog(), autoConfirm = null, displayNames = null }) {
+  const draftOf = (f) => drafts[f.drive_file_id] ?? drafts[fileKey(f.drive_file_id)] // draft files are named by fileKey(id)
   const threshold = autoConfirm ? resolveThreshold(autoConfirm.threshold ?? AUTO_THRESHOLD) : null
   const matcher = buildMatcher(peopleMap)
   const files = [...manifest.files].sort((a, b) => a.drive_file_id.localeCompare(b.drive_file_id))
@@ -94,9 +96,9 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
   }
   const bump = (o, k, n = 1) => { o[k] = (o[k] ?? 0) + n }
   const byId = new Map(files.map((f) => [f.drive_file_id, f]))
-  const usable = (f) => drafts[f.drive_file_id] && !drafts[f.drive_file_id].failed && !f.skipped && !f.duplicate_of
+  const usable = (f) => draftOf(f) && !draftOf(f).failed && !f.skipped && !f.duplicate_of
   const segmentsOf = (f) => [...new Set([...(f.path ? f.path.split('/').slice(0, -1) : []), f.person_folder].filter(Boolean))]
-  const matchOf = (f) => matchPerson(matcher, { segments: segmentsOf(f), printed: usable(f) ? drafts[f.drive_file_id].patient_name_as_printed : null })
+  const matchOf = (f) => matchPerson(matcher, { segments: segmentsOf(f), printed: usable(f) ? draftOf(f).patient_name_as_printed : null })
   const mapped = (f) => matchOf(f).id
   // The person written on source_files. A file already loaded under another person keeps that person (remap_needed);
   // a duplicate never differs from its keeper (0008 person_mismatch).
@@ -122,7 +124,7 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
 
   for (const f of files) {
     const sfId = uuid5(`sf:${f.drive_file_id}`)
-    const d = drafts[f.drive_file_id]
+    const d = draftOf(f)
     const lane = f.lane ?? 'health'
     const ident = lane === 'identity' || lane === 'insurance'
     const reason = f.skipped ? f.skipped : f.duplicate_of ? 'duplicate' : lane === 'document_only' ? 'document_only' : null

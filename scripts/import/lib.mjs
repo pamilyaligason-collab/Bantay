@@ -121,3 +121,6 @@ export function buildRequest({ model, fallbackModel, mime, base64, filename = 'd
     messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, part] }]
   }
 }
+
+/** File name for an id: local ids carry ':' which Windows turns into a hidden NTFS stream. The database keeps the real id. */
+export const fileKey = (id) => String(id).replace(/[:\/*?"<>|]/g, '_')

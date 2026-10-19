@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { buildMatcher, matchPerson } from './family.mjs'
 import { promptFor } from './folders.mjs'
-import { assertAllowed, buildRequest, PROMPT_IDENTITY, sendToOpenRouter } from './lib.mjs'
+import { assertAllowed, buildRequest, fileKey, PROMPT_IDENTITY, sendToOpenRouter } from './lib.mjs'
 
 const KINDS = ['lab', 'prescription', 'lab_request', 'imaging', 'vaccination', 'insurance', 'certificate', 'other']
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -135,8 +135,8 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   const manifest = JSON.parse(readFileSync('import/manifest.json', 'utf8'))
   mkdirSync('import/drafts', { recursive: true })
   const peopleMap = existsSync('import/people-map.json') ? JSON.parse(readFileSync('import/people-map.json', 'utf8')) : {}
-  const hasDraft = (id) => existsSync(`import/drafts/${id}.json`)
-  const hasFile = (id) => existsSync(`import/files/${id}`)
+  const hasDraft = (id) => existsSync(`import/drafts/${fileKey(id)}.json`)
+  const hasFile = (id) => existsSync(`import/files/${fileKey(id)}`)
   const all = pending(manifest, hasDraft, hasFile)
   const ready = pending(manifest, hasDraft, hasFile, assignedTo(buildMatcher(peopleMap)))
   const todo = ready.slice(0, limit)
@@ -144,8 +144,8 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   const stats = { text_layer_errors: 0 }
   for (const e of todo) {
     try {
-      const d = await extractOne(e, readFileSync(`import/files/${e.drive_file_id}`), { env, stats })
-      writeFileSync(`import/drafts/${e.drive_file_id}.json`, JSON.stringify(d, null, 2))
+      const d = await extractOne(e, readFileSync(`import/files/${fileKey(e.drive_file_id)}`), { env, stats })
+      writeFileSync(`import/drafts/${fileKey(e.drive_file_id)}.json`, JSON.stringify(d, null, 2))
       if (d.failed) n.unsupported++
       else n[d.via === 'text' ? 'done_text' : 'done_vision']++
     } catch (err) {
