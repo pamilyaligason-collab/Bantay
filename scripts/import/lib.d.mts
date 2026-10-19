@@ -19,3 +19,4 @@ export function buildRequest(o: { model: string; fallbackModel: string; mime: st
   messages: { content: { type: string }[] }[]
 }
 export function sendToOpenRouter(fetchImpl: (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ ok: boolean; status: number; json(): Promise<any> }>, body: unknown, key: string, log?: (m: string) => void): Promise<any>
+export const fileKey: (id: string | number) => string
