@@ -127,7 +127,7 @@ export default function Me() {
       </div>
 
       <div className="sh-card sh-list">
-        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I&apos;m OK, Log, SOS</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
+        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I&apos;m OK, Call family, SOS</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
         <div><div className="sh-grow"><b>Quiet hours</b><div className="sh-sub">10 PM to 6 AM, alerts still ring</div></div><Switch label="Quiet hours" on={quiet} onChange={setQuiet} /></div>
         <div>
           <div className="sh-grow"><b>Theme</b></div>

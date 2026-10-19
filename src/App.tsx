@@ -11,11 +11,11 @@ import { AdminScreen, useTrackScreen } from './features/admin'
 import { DocsScreen } from './features/docs/DocsScreen'
 import { getMember, onAuthChange } from './features/auth/session'
 import { parseHash, TABS, type Tab } from './features/shell/routes'
-import { Icon } from './features/shell/Icon'
+import { Inbox } from './features/inbox/Inbox'
+import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { useSavedTheme } from './features/shell/theme'
 import { TopBar } from './features/shell/TopBar'
-import { useKv } from './features/shell/useKv'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
@@ -27,23 +27,11 @@ const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   safety: { label: 'Safety', Screen: Safety }
 }
 
-function Notifications() {
-  return (
-    <div className="sh sh-me">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href="#today" aria-label="Back to Today"><Icon name="back" /></a>
-        <h1 className="sh-h2">Notifications</h1>
-      </div>
-      <div className="sh-card"><b>No notifications yet</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>The inbox arrives in a later update.</p></div>
-    </div>
-  )
-}
-
 export default function App() {
   const [route, setRoute] = useState(() => parseHash(location.hash))
   const [hash, setHash] = useState(location.hash)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [unread] = useKv<number>('notif.unread', 0)
+  const inbox = useInbox(isAdmin)
   useSavedTheme()
   useUpdateCheckOnOpen()
   useEffect(() => {
@@ -90,10 +78,10 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      {isTabView && <TopBar unread={unread} />}
+      {isTabView && <TopBar unread={inbox.unread} />}
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Notifications /> : view === 'docs' ? <DocsScreen /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <Assistant />

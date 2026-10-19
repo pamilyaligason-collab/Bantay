@@ -2,10 +2,13 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { usePlace } from '../location/useLocation'
 import { track } from '../admin/events'
 import { logActivity, logMedTaken, logReading } from '../log/store'
+import { GUIDE } from '../health/ranges'
 import { hdb } from '../records/store'
 import { ask } from './client'
 import { DEFAULT_CAP, takeMessage } from './cap'
-import { confirmDraft, FIELDS, personFor, sourceLink, validateDraft, type Card, type DraftTool, type Msg, type People } from './tools'
+import { addTask } from '../family/tasks'
+import { confirmDraft, confirmTask, FIELDS, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
+import { speechCtor, type RecCtor } from './speech'
 import { weatherSummary } from './weather'
 import './assistant.css'
 
@@ -79,8 +82,62 @@ function Weather() {
   return <div className="as-card" role="status"><strong>Weather near you</strong><span>{s}</span><span className="sub">Source: Open-Meteo.com. For warnings, follow PAGASA.</span></div>
 }
 
+function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; people: People[] }) {
+  const [state, setState] = useState<'draft' | 'saving' | 'saved' | 'discarded'>('draft')
+  const [err, setErr] = useState('')
+  const a = taskArgs(card.title, card.due, card.assignee, people)
+  const who = a?.assigneePersonId ? people.find((p) => p.id === a.assigneePersonId)?.name : undefined
+  const confirm = async () => {
+    setState('saving') // blocks a second tap while the first save runs
+    try { await confirmTask(card.title, card.due, card.assignee, people, addTask); setState('saved') } catch { setErr('Could not save the task. Please try again.'); setState('draft') }
+  }
+  if (state === 'discarded') return <div className="as-card sub">Discarded.</div>
+  if (state === 'saved') return <div className="as-card" role="status">Task added: {a?.title}.</div>
+  return (
+    <div className="as-card" role="group" aria-label="Draft: Add a task">
+      <strong>Add a task</strong>
+      <span className="sub">Draft only. Nothing is saved until you confirm.</span>
+      <div className="as-fields">
+        <label>Task<b>{a?.title ?? 'Not given'}</b></label>
+        <label>Due<b>{a?.due ?? 'No date'}</b></label>
+        <label>For<b>{who ?? 'Anyone'}</b></label>
+      </div>
+      {err && <span role="alert" className="as-err">{err}</span>}
+      <div className="as-actions">
+        <button className="btn" disabled={state === 'saving' || !a} onClick={confirm}>Confirm</button>
+        <button className="btn2" onClick={() => setState('discarded')}>Discard</button>
+      </div>
+    </div>
+  )
+}
+
+/** Answers from this phone's saved readings. No server call, no diagnosis. */
+function RecordsCard({ card, people }: { card: Extract<Card, { kind: 'records' }>; people: People[] }) {
+  const [ans, setAns] = useState<RecordsAnswer | null>(null)
+  const who = personFor(card.person, people) ?? (people.length === 1 ? people[0] : undefined)
+  useEffect(() => {
+    if (!who) return
+    void (async () => {
+      try {
+        const [rs, th] = await Promise.all([hdb.readings.where('personId').equals(who.id).toArray(), hdb.thresholds.toArray()])
+        const key = Object.keys(GUIDE).find((k) => k === card.test || GUIDE[k]!.label.toLowerCase() === card.test.toLowerCase()) ?? card.test
+        setAns(recordsAnswer(rs, who.name, card.test, th.find((t) => t.key === `${who.id}:${key}`)))
+      } catch { setAns({ text: 'I could not read the saved results on this phone.', cite: '' }) }
+    })()
+  }, [who?.id, card.test]) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="as-card" role="status">
+      <strong>From your records</strong>
+      <span>{!who ? 'Tell me whose result you mean.' : ans ? ans.text : 'Looking...'}</span>
+      {ans?.cite && <span className="sub">{ans.cite}</span>}
+    </div>
+  )
+}
+
 function CardView({ card, people, go }: { card: Card; people: People[]; go: (t: string) => void }) {
   if (card.kind === 'draft') return <DraftCard card={card} people={people} />
+  if (card.kind === 'task') return <TaskCard card={card} people={people} />
+  if (card.kind === 'records') return <RecordsCard card={card} people={people} />
   if (card.kind === 'weather') return <Weather />
   if (card.kind === 'open') return <div className="as-card"><button className="btn2" onClick={() => go(card.tab)}>Open {card.tab[0]!.toUpperCase() + card.tab.slice(1)}</button></div>
   const src = sourceLink(card.source, card.term)
@@ -92,6 +149,13 @@ function CardView({ card, people, go }: { card: Card; people: People[]; go: (t: 
 }
 
 export const ASK_EVENT = 'bantay:ask'
+// A chip with send:true asks right away; the others fill the box so the person can add the numbers.
+export const CHIPS = [
+  { label: 'Log my BP', text: 'Log my blood pressure: ', send: false },
+  { label: 'Did I take my medicine?', text: 'Did I take my medicine today?', send: true },
+  { label: 'What does HbA1c mean?', text: 'What does HbA1c mean?', send: true },
+  { label: 'Add a task', text: 'Add a task: ', send: false }
+]
 
 export default function Assistant() {
   const [open, setOpen] = useState(false)
@@ -134,8 +198,27 @@ export default function Assistant() {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus() }
   }
 
-  const send = async () => {
-    const content = text.trim()
+  const Mic = useRef<RecCtor | null | undefined>(undefined)
+  if (Mic.current === undefined) Mic.current = speechCtor()
+  const rec = useRef<InstanceType<RecCtor> | null>(null)
+  const [listening, setListening] = useState(false)
+  useEffect(() => { if (!open) { rec.current?.stop(); setListening(false) } }, [open])
+  const listen = () => {
+    if (rec.current && listening) return rec.current.stop()
+    const R = Mic.current
+    if (!R) return
+    const r = new R()
+    r.lang = 'en-PH'
+    r.interimResults = false
+    r.onresult = (e) => setText(Array.from(e.results, (x) => x[0]?.transcript ?? '').join(' ').trim().slice(0, 500))
+    r.onend = r.onerror = () => setListening(false)
+    rec.current = r
+    setListening(true)
+    r.start()
+  }
+
+  const send = async (override?: string) => {
+    const content = (override ?? text).trim()
     if (!content || busy) return
     setText('')
     if (!(await takeMessage(CAP))) return setItems((i) => [...i, { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
@@ -155,7 +238,9 @@ export default function Assistant() {
           <div ref={dlg} className="glass as-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
             <div className="as-head">
               <h2 id="as-title">Ask Bantay</h2>
-              <button className="btn2 as-x" onClick={close}>Close</button>
+              <button type="button" className="as-x" onClick={close} aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
             </div>
             <p className="sub as-note">I can mix things up. I cannot diagnose. For an emergency call 911 or your doctor.</p>
             <div className="as-list" ref={list} aria-live="polite" aria-relevant="additions" role="log" aria-label="Conversation">
@@ -168,8 +253,18 @@ export default function Assistant() {
               ))}
               {busy && <p className="sub" role="status">Thinking...</p>}
             </div>
+            <div className="as-chips" role="group" aria-label="Suggestions">
+              {CHIPS.map((c) => (
+                <button key={c.label} type="button" className="as-chip" disabled={busy && c.send} onClick={() => (c.send ? void send(c.text) : (setText(c.text), input.current?.focus()))}>{c.label}</button>
+              ))}
+            </div>
             <form className="as-form" onSubmit={(e) => { e.preventDefault(); void send() }}>
               <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
+              {Mic.current && (
+                <button type="button" className="as-mic" aria-label={listening ? 'Stop listening' : 'Speak'} aria-pressed={listening} onClick={listen}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
+                </button>
+              )}
               <button className="btn" type="submit" disabled={busy || !text.trim()}>Send</button>
             </form>
           </div>
