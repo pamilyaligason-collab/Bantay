@@ -113,6 +113,7 @@ function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; peo
         {options.map((p) => <button key={p.id} type="button" className="as-chip" aria-pressed={choice === p.id} onClick={() => setChoice(p.id)}>{p.name}</button>)}
         <button type="button" className="as-chip" aria-pressed={choice === ''} onClick={() => setChoice('')}>Whole family</button>
       </div>}
+      {needPick && <span className="as-hint" role="status">Pick who this is for</span>}
       {err && <span role="alert" className="as-err">{err}</span>}
       <div className="as-actions">
         <button className="btn" disabled={state === 'saving' || !a || needPick} onClick={confirm}>Confirm</button>

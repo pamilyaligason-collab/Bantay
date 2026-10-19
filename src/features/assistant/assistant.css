@@ -30,3 +30,5 @@
 .as-chip-static { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; }
 .as-chips .as-chip, .as-people .as-chip, .as-src a.as-chip { display: inline-flex; align-items: center; text-decoration: none; }
 .as-people, .as-src { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.as-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
+.as-hint { font-size: 14px; font-weight: 600; color: var(--ink); }

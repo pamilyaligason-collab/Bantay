@@ -170,6 +170,7 @@ describe('Assistant round 3', () => {
     await screen.findByText('Who is "Roc"?')
     expect((screen.getByRole('button', { name: 'Confirm' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByRole('button', { name: 'Lola' })).toBeNull()
+    expect(screen.getByText('Pick who this is for')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Rosalino Roc' }))
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
     await screen.findByText(/Task added/)
