@@ -10,14 +10,29 @@
 .sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .sh-top-date { font-size: 13px; color: var(--muted); }
 .sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sh-top .sync-status { font-size: 13px !important; color: var(--muted) !important; }
+.sh-top .sync-status { margin-top: 2px; }
+/* Sync state: nothing when all sent; an amber pill when rows wait. The pill is 13px text on a 28px chip with a 44px hit area. */
+.sync-pill { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--card2); }
+.sync-pill[data-amber="true"] { background: var(--amber-soft, #F6E7C1); color: #5C3F00; }
+:root[data-theme="dark"] .sync-pill[data-amber="true"] { background: #4A3A12; color: #F6DFA2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sync-pill[data-amber="true"] { background: #4A3A12; color: #F6DFA2; } }
+button.sync-pill { cursor: pointer; }
+button.sync-pill::before { content: ""; position: absolute; inset: -8px -4px; }
+button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+/* Compact band: sub-pages and scrolled content keep one slim row (avatar, greeting, icons). The sync pill waits on the tab home. */
+.sh-top { transition: padding var(--dur-base) var(--ease-out); }
+.sh-top[data-compact="true"] { padding-top: calc(8px + var(--sat)); padding-bottom: 8px; }
+.sh-top[data-compact="true"] .sh-top-date, .sh-top[data-compact="true"] .sync-status { display: none; }
+.sh-top[data-compact="true"] .sh-top-greet { font-size: 17px; }
+.sh-top[data-compact="true"] .sh-me-btn { width: 40px; height: 40px; }
+@media (prefers-reduced-motion: reduce) { .sh-top { transition: none; } }
 .sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 .sh-iconbtn:active { transform: scale(.98); }
 @media (hover: hover) { .sh-iconbtn:hover { background: var(--card2); } }
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
 /* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Slots are Today, Health, Ask, Family, Safety, so --slot is 0, 1, 3 or 4. */
-.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; height: 72px; border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
+.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); height: 68px; border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
 .tabbar.sh-tabs::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 22px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
 .sh-tabs button { position: relative; background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--ink); min-height: 56px; min-width: 0; }
 @media (hover: hover) { .sh-tabs button:not([aria-current="page"]):not(.sh-ask):hover { background: var(--fill); } }
@@ -25,10 +40,13 @@
 .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
 :root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
-.sh-tabs .sh-ask { margin-top: -30px; color: var(--ink); }
-.sh-tabs .sh-bub { width: 62px; height: 62px; border-radius: 50%; background: var(--green); color: var(--on-green); display: grid; place-items: center; box-shadow: 0 0 0 5px var(--ground), 0 0 0 7px var(--amber); }
+.sh-tabs .sh-ask { margin-top: -22px; color: var(--ink); }
+.sh-tabs .sh-bub { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: var(--on-green); display: grid; place-items: center; box-shadow: 0 0 0 4px var(--ground), 0 0 0 6px var(--amber); }
 .sh-tabs .sh-bub .sh-ic { color: var(--on-green); }
 .sh-tabs .sh-ask:focus-visible .sh-bub { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+/* Scrolling content ends above the tab bar: bar height 68 + gap 10 + safe area + 24 breathing room (beats .scroll in app.css). */
+main.scroll { padding-bottom: calc(102px + env(safe-area-inset-bottom, 0px)); }
 
 /* Me screen + shared small parts */
 .sh { color: var(--ink); }
@@ -76,9 +94,15 @@
 .sh a:focus-visible, .sh button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 
 /* Sub-page header (SubHeader.tsx): back, title, optional trailing, always one row. .hdr.sh-subhdr beats the column .hdr in app.css. */
-.hdr.sh-subhdr { flex-direction: row; align-items: center; gap: 10px; }
-.hdr.sh-subhdr h1 { flex: 1 1 0; min-width: 0; margin: 0; font-size: 26px; line-height: 1.15; }
+.hdr.sh-subhdr { flex-direction: row; align-items: center; gap: 8px; padding: 0; }
+.hdr.sh-subhdr h1 { flex: 1 1 0; min-width: 0; margin: 0; font-size: 26px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
 .hdr.sh-subhdr > :not(h1) { flex: none; }
+.hdr.sh-subhdr .sh-iconbtn.sh-back { width: 48px; height: 48px; margin-left: -4px; }
+.sh-me-setup:not(:has(section)) { display: none; }
+.sh-me-setup { display: flex; flex-direction: column; gap: 10px; }
+.sh-me-setup .sh-sech { margin: 6px 2px 0; }
+.sh-me-sensors { display: flex; flex-direction: column; gap: 10px; }
+.sh-me-sensors .hd { font-family: var(--f-ui); font-size: 16px; font-weight: 700; margin: 6px 2px 0; color: var(--ink); }
 
 /* Motion (D-71, D-69). Sheets rise 280ms and the dim fades in; Sheet.tsx plays the 200ms exit through data-closing. */
 @keyframes sh-sheet-in { from { transform: translateY(100%); } }

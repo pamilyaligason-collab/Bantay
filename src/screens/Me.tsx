@@ -10,6 +10,8 @@ import SosContactsPicker from '../features/sos/SosContactsPicker'
 import { normalizeContacts, type SosContact } from '../features/sos/contacts'
 import DetailsSheet from '../features/setup/DetailsSheet'
 import { useOwnAvatar } from '../features/setup/useProfile'
+import SensorSettings from '../features/sensors/SensorSettings'
+import SetupCard from '../features/today/SetupCard'
 import { UpdateRow } from '../features/update/UpdateRow'
 import '../features/shell/shell.css'
 
@@ -136,6 +138,13 @@ export default function Me() {
           </div>
         </div>
       </div>
+
+      <div className="sh-me-setup">
+        <div className="sh-sech"><b>Setup checklist</b></div>
+        <SetupCard />
+      </div>
+
+      <div className="sh-me-sensors"><SensorSettings /></div>
 
       <div className="sh-card sh-list">
         <UpdateRow />

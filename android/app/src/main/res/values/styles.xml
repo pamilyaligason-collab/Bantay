@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- cream app: dark status bar icons; values-night flips them -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
 
