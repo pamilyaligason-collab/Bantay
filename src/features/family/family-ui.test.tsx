@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, configure, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { dayKey } from './events'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 
@@ -43,27 +44,48 @@ describe('Plan', () => {
   it('adds a task offline, ticks it, assigns a person, and writes an outbox row each time', async () => {
     location.hash = '#family/plan'
     render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: '+ Add' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Task' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add' }))
     fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Buy rice' } })
-    fireEvent.change(screen.getByLabelText('Due date (optional)'), { target: { value: '2026-10-23' } })
+    expect(within(screen.getByRole('group', { name: 'When?' })).getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('true') // the quick pick starts on Today
     await waitFor(() => expect(within(screen.getByLabelText('Who does it?')).getAllByRole('option').length).toBe(3)) // Everyone + two people
     fireEvent.change(screen.getByLabelText('Who does it?'), { target: { value: 'p2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     const box = await screen.findByRole('checkbox', { name: 'Buy rice' })
     expect(box.getAttribute('aria-checked')).toBe('false')
-    expect(screen.getByText(/^Kuya . Fri/)).toBeTruthy()
-    expect((await fdb.tasks.toArray())[0]).toMatchObject({ title: 'Buy rice', due: '2026-10-23', assigneePersonId: 'p2' })
+    expect(screen.getByText(/^Kuya . Today/)).toBeTruthy()
+    expect((await fdb.tasks.toArray())[0]).toMatchObject({ title: 'Buy rice', due: dayKey(new Date()), assigneePersonId: 'p2' })
     fireEvent.click(box)
-    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Buy rice' }).getAttribute('aria-checked')).toBe('true'))
-    expect(screen.getByText('1 of 1 done')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('checkbox', { name: 'Buy rice' })).toBeNull()) // ticked: it leaves Today ...
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect((await screen.findByRole('checkbox', { name: 'Buy rice' })).getAttribute('aria-checked')).toBe('true') // ... and waits in Done
     await waitFor(async () => expect(await db.outbox.count()).toBe(2))
+  })
+
+  it('repeat daily adds one reminder per day, each with an outbox row', async () => {
+    location.hash = '#family/plan'
+    render(<Family />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Add' }))
+    fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Take vitamins' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Every day' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(async () => expect(await fdb.tasks.count()).toBe(14))
+    expect(await db.outbox.count()).toBe(14)
+    expect(new Set((await fdb.tasks.toArray()).map((t) => t.clientId)).size).toBe(14)
+  })
+
+  it('teaches on an empty tab and the Add button is always there', async () => {
+    location.hash = '#family/plan'
+    render(<Family />)
+    expect(await screen.findByText("Add a reminder for Lola's check-up.")).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Later' }))
+    expect(screen.getByText('Nothing planned for later.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add' })).toBeTruthy()
   })
 
   it('refuses an empty title with a plain message and saves nothing', async () => {
     location.hash = '#family/plan'
     render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: '+ Add' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add' }))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Type a name first.')
     expect(await db.outbox.count()).toBe(0)
@@ -72,14 +94,16 @@ describe('Plan', () => {
   it('adds an event on the chosen day and the Mine layer hides someone else\'s', async () => {
     location.hash = '#family/plan'
     render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: '+ Add' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Event' }))
     fireEvent.change(screen.getByLabelText('What is happening?'), { target: { value: 'Family dinner' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Family dinner')).toBeTruthy()
     expect(await fdb.events.count()).toBe(1)
     await waitFor(() => expect(screen.queryByLabelText('What is happening?')).toBeNull()) // sheet closed before the next Add
     // an event for Ben on the same day
-    fireEvent.click(screen.getByRole('button', { name: '+ Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Event' }))
     fireEvent.change(screen.getByLabelText('What is happening?'), { target: { value: 'Ben dentist' } })
     await waitFor(() => expect(within(screen.getByLabelText('Who is it for?')).getAllByRole('option').length).toBe(3))
     fireEvent.change(screen.getByLabelText('Who is it for?'), { target: { value: 'p2' } })
@@ -94,11 +118,12 @@ describe('Plan', () => {
   it('adds, pins and edits a note', async () => {
     location.hash = '#family/plan'
     render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: 'New note' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Note' }))
     fireEvent.change(screen.getByLabelText('Note for the family'), { target: { value: 'Gate code 1234' } })
     fireEvent.click(screen.getByLabelText('Pin it to the top'))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    expect(await screen.findByText('Pinned')).toBeTruthy()
+    expect(await screen.findByText('Pinned note')).toBeTruthy()
     expect(screen.getByText('Gate code 1234')).toBeTruthy()
     expect((await fdb.notes.toArray())[0]).toMatchObject({ body: 'Gate code 1234', pinned: true })
   })

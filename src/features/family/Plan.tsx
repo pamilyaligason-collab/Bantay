@@ -1,117 +1,112 @@
-import { useMemo, useState } from 'react'
-import { dayKey, eventsOn, isMine, nextEvent, timeLabel, weekOf } from './events'
+import { useMemo, useState, type ReactNode } from 'react'
+import { dayKey, isMine, timeLabel } from './events'
 import FmAvatar from './FmAvatar'
 import { NoteSheet, ItemSheet } from './PlanSheets'
+import { dayLabel, groupPlan, type PlanRow, type PlanTab } from './planList'
 import { useFamilyPeople } from './roster'
-import { sortNotes } from './notes'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
-import { sortTasks, toggleTask } from './tasks'
+import { toggleTask } from './tasks'
 import { usePlan } from './usePlan'
 import './family.css'
+import './plan.css'
 
 const first = (n: string) => n.trim().split(/\s+/)[0] ?? n
-const longDay = (d: Date) => d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
+const TABS: [PlanTab, string][] = [['today', 'Today'], ['week', 'This week'], ['later', 'Later'], ['done', 'Done']]
+const EMPTY: Record<PlanTab, [string, string]> = {
+  today: ['Nothing for today.', "Add a reminder for Lola's check-up."],
+  week: ['Nothing else this week.', 'Add a family dinner or a pill refill.'],
+  later: ['Nothing planned for later.', 'Add something to look forward to.'],
+  done: ['Nothing done yet.', 'Ticked reminders and past events show up here.']
+}
 
 type Open = { t: 'item'; item: { kind: 'task'; item?: FamilyTask } | { kind: 'event'; item?: FamilyEvent } } | { t: 'note'; note?: FamilyNote }
 
-/** Family > Plan (mockup v6): calendar week strip and agenda, tasks, notes. Everything is written on this phone first and synced later. */
+const Icon = ({ children }: { children: ReactNode }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+)
+const EventIcon = () => <Icon><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></Icon>
+const NoteIcon = () => <Icon><path d="M6 3.5h9l3.5 3.5v13H6z" /><path d="M9 11h6M9 15h6" /></Icon>
+
+/** Family > Plan: one list split into Today / This week / Later / Done. Reminders, events and notes sit together; one Add button. Written on this phone first, synced later. */
 export default function Plan() {
   const { tasks, events, notes } = usePlan()
   const { people, selfId } = useFamilyPeople()
   const [layer, setLayer] = useState<'family' | 'mine'>('family')
-  const [day, setDay] = useState(() => dayKey(new Date()))
+  const [tab, setTab] = useState<PlanTab>('today')
   const [open, setOpen] = useState<Open | null>(null)
 
   const mine = layer === 'mine'
-  const evs = useMemo(() => events.filter((e) => !mine || isMine(e.personId, selfId)), [events, mine, selfId])
-  const tks = useMemo(() => sortTasks(tasks.filter((t) => !mine || isMine(t.assigneePersonId, selfId))), [tasks, mine, selfId])
-  const who = (id: string | null, all: string) => { const p = people.find((x) => x.id === id); return p ? first(p.name) : all }
+  const groups = useMemo(() => groupPlan(
+    tasks.filter((t) => !mine || isMine(t.assigneePersonId, selfId)),
+    events.filter((e) => !mine || isMine(e.personId, selfId)),
+    notes,
+    new Date()
+  ), [tasks, events, notes, mine, selfId])
+  const now = new Date()
+  const rows = groups[tab]
+  const personOf = (id: string | null) => people.find((x) => x.id === id) ?? null
 
-  const selected = new Date(`${day}T00:00:00`)
-  const week = weekOf(selected)
-  const shift = (days: number) => setDay(dayKey(new Date(selected.getFullYear(), selected.getMonth(), selected.getDate() + days)))
-  const agenda = eventsOn(evs, day)
-  const upcoming = nextEvent(evs, new Date())
-  const done = tks.filter((t) => t.done).length
+  const line = (r: PlanRow) => {
+    if (r.kind === 'note') return { sub: r.note.pinned ? 'Pinned note' : 'Note', p: null }
+    const id = r.kind === 'task' ? r.task.assigneePersonId : r.event.personId
+    const p = personOf(id)
+    const whoTxt = p ? first(p.name) : r.kind === 'task' ? 'Everyone' : 'Whole family'
+    const when = r.kind === 'event'
+      ? `${dayLabel(r.day, now)}${r.event.allDay ? ', all day' : `, ${timeLabel(r.event)}`}`
+      : r.day ? `${r.overdue ? 'Overdue, ' : ''}${dayLabel(r.day, now)}` : 'No date'
+    return { sub: `${whoTxt} · ${when}`, p }
+  }
+  const openRow = (r: PlanRow) => setOpen(r.kind === 'note' ? { t: 'note', note: r.note } : { t: 'item', item: r.kind === 'task' ? { kind: 'task', item: r.task } : { kind: 'event', item: r.event } })
 
   return (
     <>
-      <div className="fm-top">
-        <div className="seg" role="group" aria-label="Calendar layer">
-          <button type="button" aria-pressed={!mine} onClick={() => setLayer('family')}>Family</button>
-          <button type="button" aria-pressed={mine} onClick={() => setLayer('mine')}>Mine</button>
-        </div>
-        <button type="button" className="pill primary" onClick={() => setOpen({ t: 'item', item: { kind: 'event' } })}>+ Add</button>
-      </div>
-
-      <section className="fm-cal" aria-label="Calendar">
-        <div className="fm-cal-h">
-          <button type="button" className="fm-nav" aria-label="Previous week" onClick={() => shift(-7)}>‹</button>
-          <b>{selected.toLocaleDateString([], { month: 'long', year: 'numeric' })}</b>
-          <button type="button" className="fm-nav" aria-label="Next week" onClick={() => shift(7)}>›</button>
-        </div>
-        <div className="fm-week" role="group" aria-label="This week">
-          {week.map((d) => {
-            const k = dayKey(d)
-            return (
-              <button type="button" key={k} aria-pressed={k === day} aria-label={`${longDay(d)}${eventsOn(evs, k).length ? ', has plans' : ''}`} onClick={() => setDay(k)}>
-                <small>{d.toLocaleDateString([], { weekday: 'short' })}</small>
-                <b>{d.getDate()}</b>
-                {eventsOn(evs, k).length > 0 && <i />}
-              </button>
-            )
-          })}
-        </div>
-      </section>
-
-      <div className="card fm-list" aria-label={`Plans for ${longDay(selected)}`}>
-        {agenda.length === 0 && <p className="sub fm-empty">Nothing planned on {longDay(selected)}.</p>}
-        {agenda.map((e) => (
-          <button type="button" key={e.clientId} className="fm-item" onClick={() => setOpen({ t: 'item', item: { kind: 'event', item: e } })}>
-            <span className="fm-tm">{timeLabel(e)}</span>
-            <span className="grow"><b>{e.title}</b><span className="sub">{who(e.personId, 'Whole family')}</span></span>
+      <div className="seg fm-tabs" role="group" aria-label="Plan view">
+        {TABS.map(([k, label]) => (
+          <button type="button" key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>
+            {label}{k !== 'done' && groups[k].length > 0 && <small className="fm-n"> {groups[k].length}</small>}
           </button>
         ))}
       </div>
-      {upcoming && <p className="sub fm-coming">Coming up: {longDay(new Date(upcoming.startsAt))}{upcoming.allDay ? '' : ` ${timeLabel(upcoming)}`}, {upcoming.title}</p>}
-
-      <div className="sec-h"><b>Tasks</b><span className="sub">{tks.length ? `${done} of ${tks.length} done` : 'None yet'}</span></div>
-      <div className="card fm-list">
-        {tks.length === 0 && <p className="sub fm-empty">Nothing to do. Tap Add to make a task.</p>}
-        {tks.map((t) => {
-          const p = people.find((x) => x.id === t.assigneePersonId)
-          const due = t.due ? longDay(new Date(`${t.due}T00:00:00`)) : null
-          return (
-            <div key={t.clientId} className="fm-task">
-              <button type="button" className="chk" role="checkbox" aria-checked={t.done} aria-label={t.title} onClick={() => void toggleTask(t)} />
-              <button type="button" className="fm-item grow" onClick={() => setOpen({ t: 'item', item: { kind: 'task', item: t } })}>
-                <span className="grow"><b className={t.done ? 'done' : ''}>{t.title}</b><span className="sub">{[p ? first(p.name) : 'Everyone', due].filter(Boolean).join(' · ')}</span></span>
-              </button>
-              {p && <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={28} />}
-            </div>
-          )
-        })}
+      <div className="fm-layer" role="group" aria-label="Whose plan">
+        <button type="button" aria-pressed={!mine} onClick={() => setLayer('family')}>Family</button>
+        <button type="button" aria-pressed={mine} onClick={() => setLayer('mine')}>Mine</button>
       </div>
 
-      <div className="sec-h"><b>Notes</b><button type="button" className="link" onClick={() => setOpen({ t: 'note' })}>New note</button></div>
-      {notes.length === 0 ? (
-        <div className="card"><p className="sub fm-empty">No notes. Keep the Wi-Fi password or the gate code here.</p></div>
+      {rows.length === 0 ? (
+        <div className="card fm-teach">
+          <b>{EMPTY[tab][0]}</b>
+          <span className="sub">{EMPTY[tab][1]}</span>
+          {tab !== 'done' && <button type="button" className="pill primary" onClick={() => setOpen({ t: 'item', item: { kind: 'task' } })}>Add a reminder</button>}
+        </div>
       ) : (
-        <div className="fm-notes">
-          {sortNotes(notes).map((n) => {
-            const [head, ...rest] = n.body.split('\n')
+        <ul className="card fm-list fm-rows" aria-label={TABS.find(([k]) => k === tab)![1]}>
+          {rows.map((r) => {
+            const { sub, p } = line(r)
+            const title = r.kind === 'task' ? r.task.title : r.kind === 'event' ? r.event.title : r.note.body.split('\n')[0]!
+            const done = r.kind === 'task' && r.task.done
             return (
-              <button type="button" key={n.clientId} className={`fm-note${n.pinned ? ' pinned' : ''}`} onClick={() => setOpen({ t: 'note', note: n })}>
-                <span className="sub">{n.pinned ? 'Pinned' : 'Note'}</span>
-                <b>{head}</b>
-                {rest.join(' ').trim() && <span className="sub fm-clip">{rest.join(' ')}</span>}
-              </button>
+              <li key={r.key} className="fm-row">
+                {r.kind === 'task'
+                  ? <button type="button" className="fm-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.task.title} onClick={() => void toggleTask(r.task)} />
+                  : <span className={`fm-ico ${r.kind}`}>{r.kind === 'event' ? <EventIcon /> : <NoteIcon />}</span>}
+                <button type="button" className="fm-item" onClick={() => openRow(r)}>
+                  <span className="grow"><b className={done ? 'done' : ''}>{title}</b><span className={`sub${r.overdue ? ' fm-warn' : ''}`}>{sub}</span></span>
+                </button>
+                {p && <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />}
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
-      {open?.t === 'item' && <ItemSheet start={open.item} day={day} people={people} onClose={() => setOpen(null)} />}
+      <div className="fm-fab-wrap">
+        <button type="button" className="fm-fab" onClick={() => setOpen({ t: 'item', item: { kind: 'task' } })}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          Add
+        </button>
+      </div>
+
+      {open?.t === 'item' && <ItemSheet start={open.item} day={dayKey(new Date())} people={people} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
       {open?.t === 'note' && <NoteSheet note={open.note} onClose={() => setOpen(null)} />}
     </>
   )

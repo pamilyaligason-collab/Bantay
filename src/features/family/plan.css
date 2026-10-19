@@ -1,0 +1,31 @@
+/* Plan: Today / This week / Later / Done, one list, one Add button. Colours come from tokens.css so dark mode follows. */
+.bt .seg.fm-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 4px 0 0; }
+.bt .seg.fm-tabs button { font-size: 14px; padding: 0 2px; min-width: 0; }
+.fm-n { font-weight: 700; color: var(--green2); }
+:root[data-theme="dark"] .fm-n { color: var(--amber); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fm-n { color: var(--amber); } }
+.bt .seg.fm-kind { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.fm-layer { display: flex; gap: 8px; }
+.bt .fm-layer button, .bt .fm-chips button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 600; }
+.bt .fm-layer button[aria-pressed="true"], .bt .fm-chips button[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
+.fm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-lbl { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 6px; }
+.fm-hint { margin: 0; }
+.fm-teach { display: grid; gap: 8px; justify-items: start; padding: 20px 16px; margin-bottom: 76px; }
+.fm-teach b { font-family: var(--f-display); font-size: 18px; font-weight: 600; }
+.fm-teach .pill { margin-top: 6px; }
+.fm-rows { list-style: none; margin: 0 0 76px; } /* room under the last row for the Add button */
+.bt .fm-row .fm-item { justify-content: flex-start; flex: 1; }
+.fm-row .fm-item .grow { flex: 1; display: grid; gap: 2px; text-align: left; justify-items: start; min-width: 0; }
+.fm-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fm-row + .fm-row { border-top: 1px solid var(--line); }
+.fm-row .done { text-decoration: line-through; color: var(--muted); }
+.bt .fm-chk { position: relative; width: 32px; height: 32px; flex: none; border-radius: 10px; border: 2.5px solid var(--green2); background: none; padding: 0; display: grid; place-items: center; }
+.bt .fm-chk::before { content: ""; position: absolute; inset: -8px; } /* 48px tap area around the 32px box */
+.bt .fm-chk[aria-checked="true"] { background: var(--green2); }
+.bt .fm-chk[aria-checked="true"]::after { content: ""; width: 14px; height: 8px; border-left: 3px solid #fff; border-bottom: 3px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+.fm-ico { width: 32px; height: 32px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--soft); color: var(--ink); }
+.fm-ico.note { background: var(--warn-bg); }
+.fm-fab-wrap { position: sticky; bottom: 100px; height: 0; display: flex; justify-content: flex-end; z-index: 3; pointer-events: none; }
+.bt .fm-fab { pointer-events: auto; position: absolute; right: 0; bottom: 0; min-height: 56px; padding: 0 22px 0 18px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--on-green); font-size: 17px; font-weight: 700; box-shadow: 0 6px 20px rgba(20, 30, 20, .28); }
+@media (prefers-reduced-motion: no-preference) { .bt .fm-fab { transition: transform .12s; } .bt .fm-fab:active { transform: scale(.96); } }
