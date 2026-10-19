@@ -17,18 +17,18 @@ const queue = (page: Page, table: string, payload: unknown) => page.evaluate(([t
 const sync = (page: Page, force = false) => page.evaluate((f) => (window as unknown as W).__bantay.syncNow(f), force)
 const waiting = (page: Page) => page.evaluate(() => (window as unknown as W).__bantay.db.outbox.count())
 
-test('no session: badge says sign in and nothing is sent', async ({ page }) => {
+test('no session: badge is silent and nothing is sent', async ({ page }) => {
   const sent: string[] = []
   await page.route(API + '**', (r) => { sent.push(r.request().url()); return r.fulfill({ status: 201 }) })
   await open(page, null)
-  await expect(page.getByRole('status')).toHaveText('Sign in to sync')
+  await expect(page.getByRole('status')).toHaveText('')
   await queue(page, 'readings', { personId: 'p1', takenAt: '2026-10-01', test: 'ldl', value: 3.2 })
   await sync(page)
   expect(sent).toHaveLength(0)
   expect(await waiting(page)).toBe(1)
 })
 
-test('signed in: a queued reading is posted once with a client_id, then the badge says Synced', async ({ page }) => {
+test('signed in: a queued reading is posted once with a client_id, then the badge goes quiet', async ({ page }) => {
   const bodies: Record<string, unknown>[] = []
   await page.route(API + '**', (r) => {
     const req = r.request()
@@ -36,17 +36,17 @@ test('signed in: a queued reading is posted once with a client_id, then the badg
     return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
   await open(page, 'tok')
-  await expect(page.getByRole('status')).toHaveText('Synced')
+  await expect(page.getByRole('status')).toHaveText('')
   await queue(page, 'readings', { personId: 'p1', takenAt: '2026-10-01', test: 'ldl', value: 3.2, unit: 'mmol/L' })
-  await expect(page.getByRole('status')).toHaveText('1 waiting')
+  await expect(page.getByRole('status')).toHaveText('1 waiting to send')
   await sync(page)
-  await expect(page.getByRole('status')).toHaveText('Synced')
+  await expect(page.getByRole('status')).toHaveText('')
   expect(bodies).toHaveLength(1)
   expect(bodies[0]).toMatchObject({ person_id: 'p1', taken_at: '2026-10-01', test: 'ldl', value: 3.2, unit: 'mmol/L' })
   expect(String(bodies[0].client_id)).toMatch(/^[0-9a-f-]{36}$/)
 })
 
-test('server offline then back: waiting, then synced; badge has no accessibility violations', async ({ page }) => {
+test('server offline then back: waiting, then quiet; badge has no accessibility violations', async ({ page }) => {
   let up = false
   await page.route(API + '**', (r) => {
     if (!up) return r.abort('connectionrefused')
@@ -55,11 +55,11 @@ test('server offline then back: waiting, then synced; badge has no accessibility
   await open(page, 'tok')
   await queue(page, 'meds_taken', { personId: 'p1', name: 'Test med', takenAt: '2026-10-01T08:00:00Z' })
   await sync(page, true)
-  await expect(page.getByRole('status')).toHaveText('Offline, 1 waiting')
+  await expect(page.getByRole('status')).toHaveText('Offline, 1 waiting to send')
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   up = true
   await sync(page, true)
-  await expect(page.getByRole('status')).toHaveText('Synced')
+  await expect(page.getByRole('status')).toHaveText('')
 })
 
 test('a 401 pauses sync and shows the queue waiting', async ({ page }) => {
@@ -73,5 +73,5 @@ test('a 401 pauses sync and shows the queue waiting', async ({ page }) => {
   await sync(page, true)
   await sync(page, true)
   expect(posts).toBe(1)
-  await expect(page.getByRole('status')).toHaveText('1 waiting')
+  await expect(page.getByRole('status')).toHaveText('1 waiting to send')
 })
