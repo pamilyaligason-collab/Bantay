@@ -11,7 +11,7 @@ const NO_STATE = { enabled: [] as string[] }
  *  so the person tells us. Logs source 'manual'. Hidden once the app is reading steps from Health Connect or HealthKit.
  *  ponytail: no DeviceMotion step estimate. It only works while this screen is open, needs an iOS permission prompt and a
  *  tuned detector, and a wrong number is worse than none. Add if the family asks for it. */
-export default function QuickWalk({ native = isNative() }: { native?: boolean }) {
+export default function QuickWalk({ native = isNative(), embedded = false }: { native?: boolean; embedded?: boolean }) {
   const st = useKv(STATE_KEY, NO_STATE)
   const [custom, setCustom] = useState('')
   const [busy, setBusy] = useState(false)
@@ -40,10 +40,11 @@ export default function QuickWalk({ native = isNative() }: { native?: boolean })
   }
   const n = Number(custom)
 
+  const Wrap = embedded ? 'div' : 'section'
   return (
-    <section aria-labelledby="qw-h">
-      <h2 id="qw-h" className="hd">Did you walk today?</h2>
-      <div className="grp" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <Wrap aria-labelledby="qw-h" className={embedded ? 'td-walk' : undefined}>
+      {embedded ? <h3 id="qw-h" className="td-sub-h">Did you walk today?</h3> : <h2 id="qw-h" className="hd">Did you walk today?</h2>}
+      <div className={embedded ? undefined : 'grp'} style={{ padding: embedded ? 0 : 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <span className="sub">Tap how long you walked. About is fine.</span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {CHIPS.map((m) => (
@@ -63,6 +64,6 @@ export default function QuickWalk({ native = isNative() }: { native?: boolean })
           {signedOut ? 'Sign in to log a walk.' : failed ? 'That did not save. Try again.' : done != null ? `Saved: you walked about ${done} minutes.` : ''}
         </span>
       </div>
-    </section>
+    </Wrap>
   )
 }

@@ -1,13 +1,13 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../db'
-import { HOME_ZONES } from '../location/geo'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { ldb } from '../log/store'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { dueDoses, heroCards, type HeroActionId } from './heroCards'
+import { placeNameOf } from './placeName'
 import { useWeather } from './weather'
 
 const NO_ALERTS: Alert[] = []
@@ -17,7 +17,8 @@ const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, 
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** The one card that matters now, as a row of swipeable cards when more than one applies (D-31/D-43). */
-export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (name: string) => void }) {
+export default function Hero({ onOk, onTaken, next = false }: { onOk: () => void; onTaken: (name: string) => void; next?: boolean }) {
+  const H = next ? 'h3' : 'h2' // next: sits under the Next up heading, and weather lives in its own strip
   const place = usePlace()
   const alerts = useKv<Alert[]>(ALERTS_KEY, NO_ALERTS)
   const profile = useKv<string[]>('profile.medicines', NO_NAMES)
@@ -34,10 +35,15 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
 
   const ref = place ? alertRef(place) : null
   const wx = useWeather(place?.weather ?? null)
-  const placeName = place && place.source === 'zone' ? (HOME_ZONES.find((z) => z.id === place.zone)?.name.split(',')[0] ?? 'your area') : 'where you are'
+  const placeName = placeNameOf(place)
   const skipped = skip.day === tick.toDateString() ? skip.names : NO_NAMES
   const cards = useMemo(
-    () => heroCards({ alerts, ref, doses: dueDoses(profile, taken, skipped, tick), weather: wx, placeName, now: tick }),
+    () => {
+      const base = { alerts, ref, doses: dueDoses(profile, taken, skipped, tick), placeName, now: tick }
+      const c = heroCards({ ...base, weather: next ? null : wx })
+      // Next up: weather is the last ranked card, shown when no alert or dose applies (its own strip carries it otherwise)
+      return next && c[0]?.kind === 'summary' && wx ? heroCards({ ...base, weather: wx }) : c
+    },
     [alerts, ref?.lat, ref?.lon, profile, taken, skipped, tick, wx, placeName] // eslint-disable-line react-hooks/exhaustive-deps -- ref is rebuilt each render; its numbers are the key
   )
   const at = Math.min(idx, cards.length - 1)
@@ -57,7 +63,7 @@ export default function Hero({ onOk, onTaken }: { onOk: () => void; onTaken: (na
             {c.sky && <span className="td-sky" aria-hidden="true" />}
             <div className="td-k">{c.kicker}</div>
             {c.big && <div className="td-big" aria-hidden="true">{c.big}</div>}
-            <h2>{c.title}</h2>
+            <H>{c.title}</H>
             <p>{c.body}</p>
             {c.actions.length > 0 && (
               <div className="td-act">

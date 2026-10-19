@@ -44,7 +44,7 @@ export default function SetupCard() {
             <button type="button" className="td-link" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Hide' : 'See all'}</button>
           </div>
           <div className="td-bar" role="progressbar" aria-label="Setup progress" aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.max(0, total - n)}>
-            <i style={{ width: `${total > 0 ? Math.round((Math.max(0, total - n) / total) * 100) : 0}%` }} />
+            <i style={{ transform: `scaleX(${total > 0 ? Math.max(0, total - n) / total : 0})` }} />
           </div>
           {all ? (
             <ul>{left.map((s) => <li key={s}><button type="button" onClick={() => setOpen(s)}>{TITLES[s]}</button></li>)}</ul>
