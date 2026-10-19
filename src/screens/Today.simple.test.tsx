@@ -11,6 +11,7 @@ vi.mock('../features/today/Hero', () => ({ default: () => <div data-testid="hero
 vi.mock('../features/today/NearbyList', () => ({ default: () => <div data-testid="nearby" /> }))
 vi.mock('../features/today/QuickLog', () => ({ default: () => <div data-testid="quicklog" /> }))
 vi.mock('../features/today/SetupCard', () => ({ default: () => <div data-testid="setup" /> }))
+vi.mock('../features/today/StormCard', () => ({ default: () => null }))
 vi.mock('../features/today/VideoCard', () => ({ default: () => <div data-testid="video" /> }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))

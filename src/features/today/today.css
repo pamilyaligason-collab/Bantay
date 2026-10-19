@@ -100,3 +100,10 @@
 @keyframes td-drift { from { background-position: 0 0; } to { background-position: 40% 0; } }
 @keyframes td-rain { from { background-position: 0 0; } to { background-position: 0 60px; } }
 @media (prefers-reduced-motion: reduce) { .td-sky { animation: none !important; } }
+
+/* storm card */
+.td-storm { margin-top: 12px; padding: 14px; }
+.td-storm .td-sech { margin: 0 0 8px; }
+.td-stormmap { min-height: 240px; margin: 10px 0 4px; border-radius: 12px; background: var(--fill); }
+.td-stormmap .sf-frame { height: 240px; }
+.bt .td-storm a.td-link { display: inline-flex; align-items: center; text-decoration: none; }
