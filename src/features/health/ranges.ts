@@ -32,7 +32,7 @@ const GENERAL: Record<string, Range & { unit: RegExp; text: string; alias: strin
   hdl: { low: 40, high: null, unit: /mg\/?dl/i, text: '40 or more', alias: ['hdl', 'hdlcholesterol'] },
   creatinine: { low: 0.6, high: 1.3, unit: /mg\/?dl/i, text: '0.6 to 1.3', alias: ['creatinine', 'serumcreatinine', 'crea'] },
   platelets: { low: 150, high: 450, unit: /10|k\/?u?l|thou/i, text: '150 to 450', alias: ['platelets', 'platelet', 'plt', 'plateletcount'] },
-  hematocrit: { low: 36, high: 50, unit: /%|^$/, text: '36 to 50', alias: ['hematocrit', 'haematocrit', 'hct'] },
+  hematocrit: { low: 36, high: 50, unit: /%/, text: '36 to 50', alias: ['hematocrit', 'haematocrit', 'hct'] },
   wbc: { low: 4, high: 11, unit: /10|k\/?u?l|thou/i, text: '4.0 to 11.0', alias: ['wbc', 'whitebloodcell', 'whitebloodcells', 'whitebloodcellcount'] },
   hemoglobin: { low: 12, high: 17.5, unit: /g\/?dl/i, text: '12 to 17.5', alias: ['hemoglobin', 'haemoglobin', 'hgb', 'hb'] }
 }
