@@ -114,6 +114,11 @@ export default function Me() {
           <span className="sh-grow"><b>Who gets your SOS text</b><span className="sh-sub sh-blk">{names || 'Nobody picked yet'}</span></span>
           <Icon name="chev" />
         </button>
+        <a className="sh-navrow" href="#medid">
+          <Icon name="cross" />
+          <span className="sh-grow"><b>Medical ID</b><span className="sh-sub sh-blk">Blood type, allergies, medicines, who to call</span></span>
+          <Icon name="chev" />
+        </a>
         <a className="sh-navrow" href="#notif">
           <Icon name="bell" />
           <span className="sh-grow"><b>Notifications</b><span className="sh-sub sh-blk">Inbox, and what each one says</span></span>
