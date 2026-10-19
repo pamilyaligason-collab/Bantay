@@ -96,8 +96,8 @@ export function normalizeTest(t, catalog = loadCatalog()) {
 }
 
 // ---- people ----
-const nameKey = (s) => clean(s).replace(/[.,]/g, '').replace(/\s+/g, ' ')
-const sortedKey = (s) => nameKey(s).split(' ').sort().join(' ')
+export const nameKey = (s) => clean(s).replace(/[.,]/g, '').replace(/\s+/g, ' ')
+export const sortedKey = (s) => nameKey(s).split(' ').sort().join(' ')
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** map: {"<person folder or printed name>": "<people.id>"}. Throws (without echoing) on a bad id. */

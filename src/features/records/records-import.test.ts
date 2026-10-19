@@ -90,11 +90,11 @@ describe('people', () => {
 })
 
 describe('skip rules', () => {
-  it('extends SKIP_RE for non-health files', () => {
-    for (const s of ['Passport', 'Land Title', 'Lot 5 Papers', 'Funds', 'Authorization Letter', 'Baptismal Cert', 'Birth Certificate', 'Visa', '.picasaoriginals', 'ID']) {
-      expect(isSkipped(['Test Person', s])).toBe(true)
+  it('SKIP_RE now holds only picasa; the rest is classified by lane', () => {
+    expect(isSkipped(['Test Person', '.picasaoriginals'])).toBe(true)
+    for (const s of ['Passport', 'Land Title', 'Lot 5 Papers', 'Funds', 'Authorization Letter', 'Baptismal Cert', 'Birth Certificate', 'Visa', 'ID', '2024.01.01 Laboratory']) {
+      expect(isSkipped(['Test Person', s])).toBe(false)
     }
-    expect(isSkipped(['Test Person', '2024.01.01 Laboratory'])).toBe(false)
   })
   it('counts skipped folders and files in walk', async () => {
     const tree: Record<string, { id: string; name: string; mime: string }[]> = {
@@ -102,7 +102,7 @@ describe('skip rules', () => {
         { id: 'p', name: 'Test Person', mime: 'application/vnd.google-apps.folder' }
       ],
       p: [
-        { id: 'a', name: 'Passport', mime: 'application/vnd.google-apps.folder' },
+        { id: 'a', name: '.picasaoriginals', mime: 'application/vnd.google-apps.folder' },
         { id: 'f', name: 'visa copy.jpg', mime: 'image/jpeg' },
         { id: 'g', name: 'lab.pdf', mime: 'application/pdf' }
       ],
@@ -110,8 +110,9 @@ describe('skip rules', () => {
     }
     let skipped = 0
     const rows = await walk(async (id: string) => tree[id], 'root', [], () => skipped++)
-    expect(rows.map((r) => r.file_id)).toEqual(['g'])
-    expect(skipped).toBe(2)
+    expect(rows.map((r) => r.file_id)).toEqual(['f', 'g'])
+    expect(rows.map((r) => r.lane)).toEqual(['document_only', 'health'])
+    expect(skipped).toBe(1)
   })
   it('skips zero-byte, ini, picasa and non-doc google types', () => {
     const base = { name: 'a.pdf', path: 'P/a.pdf', mime: 'application/pdf', size: '10' }

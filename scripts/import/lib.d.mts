@@ -10,7 +10,8 @@ export function walk(
   onSkip?: () => void
 ): Promise<Record<string, string>[]>
 export function assertAllowed(argv: string[], env: Record<string, string | undefined>): void
-export function buildRequest(o: { model: string; fallbackModel: string; mime: string; base64?: string; filename?: string; text?: string }): {
+export const PROMPT_IDENTITY: string
+export function buildRequest(o: { model: string; fallbackModel: string; mime: string; base64?: string; filename?: string; text?: string; prompt?: string }): {
   model: string
   models: string[]
   provider: { zdr: boolean; data_collection: string }

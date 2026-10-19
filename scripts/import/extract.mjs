@@ -3,7 +3,8 @@
 // Reads import/manifest.json + import/files/<id>; writes import/drafts/<id>.json. Prints counts only.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { assertAllowed, buildRequest, sendToOpenRouter } from './lib.mjs'
+import { promptFor } from './folders.mjs'
+import { assertAllowed, buildRequest, PROMPT_IDENTITY, sendToOpenRouter } from './lib.mjs'
 
 const KINDS = ['lab', 'prescription', 'lab_request', 'imaging', 'vaccination', 'insurance', 'certificate', 'other']
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -41,6 +42,32 @@ export async function withRetry(fn, { tries = 5, baseMs = 2000, sleepFn = sleep 
   }
 }
 
+const strings = (v) => [...new Set((Array.isArray(v) ? v : []).filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim().slice(0, 80)))].slice(0, 10)
+const CARD_KINDS = ['id_card', 'insurance_card', 'certificate', 'other']
+const clip = (v, n = 300) => (typeof v === 'string' && v.trim() && !/^null$/i.test(v.trim()) ? v.trim().slice(0, n) : null)
+
+/** Identity / insurance papers (D-68). Same rule: only the contract shape survives. id_number is kept here and nowhere else in logs. */
+export function normalizeIdentity(p) {
+  const conf = Number(p?.confidence)
+  return {
+    lane: 'identity',
+    doc_kind: CARD_KINDS.includes(p?.doc_kind) ? p.doc_kind : 'other',
+    card_type: clip(p?.card_type, 20),
+    patient_name_as_printed: clip(p?.holder_name_as_printed ?? p?.patient_name_as_printed, 120),
+    birthdate: clip(p?.birthdate, 10),
+    sex: clip(p?.sex, 10),
+    blood_type: clip(p?.blood_type, 4),
+    address: clip(p?.address),
+    id_type: clip(p?.id_type, 20),
+    id_number: clip(p?.id_number, 60),
+    issued_on: clip(p?.issued_on, 10),
+    expires_on: clip(p?.expires_on, 10),
+    carrier: clip(p?.carrier, 80),
+    plan: clip(p?.plan, 80),
+    confidence: Number.isFinite(conf) && conf >= 0 && conf <= 1 ? conf : null
+  }
+}
+
 /** Keep only the contract shape; anything else the model added is dropped. */
 export function normalizeDraft(p) {
   const arr = (v) => (Array.isArray(v) ? v : [])
@@ -57,13 +84,15 @@ export function normalizeDraft(p) {
     rx: obj(p?.rx) ? { ...p.rx, lines: arr(p.rx.lines).filter(obj) } : null,
     imaging: obj(p?.imaging),
     vaccinations: arr(p?.vaccinations).filter(obj),
+    allergies: strings(p?.allergies),
+    conditions: strings(p?.conditions),
     confidence: Number.isFinite(conf) && conf >= 0 && conf <= 1 ? conf : null
   }
 }
 
-/** Files still needing a draft. Skipped, duplicate and never-downloaded files are left out. */
+/** Files still needing a draft. Skipped, duplicate, never-downloaded and document_only (never read) files are left out. */
 export const pending = (manifest, hasDraft, hasFile) =>
-  manifest.files.filter((e) => !e.skipped && !e.duplicate_of && !e.download_failed && !hasDraft(e.drive_file_id) && hasFile(e.drive_file_id))
+  manifest.files.filter((e) => !e.skipped && e.lane !== 'document_only' && !e.duplicate_of && !e.download_failed && !hasDraft(e.drive_file_id) && hasFile(e.drive_file_id))
 
 /** One file -> draft object, or {failed:true,...} for types we cannot read. Throws on API failure. */
 export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, stats = { text_layer_errors: 0 } }) {
@@ -79,7 +108,9 @@ export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, s
       stats.text_layer_errors++ // count only; the file still goes as vision
     }
   }
+  const identity = promptFor(e.lane) === 'identity'
   const body = buildRequest({
+    prompt: identity ? PROMPT_IDENTITY : undefined,
     model: env.OPENROUTER_MODEL,
     fallbackModel: env.OPENROUTER_FALLBACK_MODEL,
     mime,
@@ -88,7 +119,7 @@ export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, s
     text
   })
   const parsed = await withRetry(() => sendToOpenRouter(fetchImpl, body, env.OPENROUTER_API_KEY, () => {}), retry)
-  return { source_file_id: e.drive_file_id, via: text == null ? 'vision' : 'text', ...normalizeDraft(parsed) }
+  return { source_file_id: e.drive_file_id, via: text == null ? 'vision' : 'text', ...(identity ? normalizeIdentity(parsed) : normalizeDraft(parsed)) }
 }
 
 async function main(argv = process.argv.slice(2), env = process.env) {

@@ -1,16 +1,20 @@
 // Drive -> import/manifest.json + import/files/<drive_file_id>. Read-only Drive scope; prints counts only.
-// Usage: node scripts/import/sync.mjs   (env: DRIVE_ACCESS_TOKEN, DRIVE_ROOT_ID)
+// Usage: node scripts/import/sync.mjs [--dry-run]   (env: DRIVE_ACCESS_TOKEN, DRIVE_ROOT_ID)
+// --dry-run lists and classifies only (counts per lane / skip reason / person index); nothing is downloaded or written.
 //    or: LOCAL_ROOT='G:/My Drive/Bantay Medical' node scripts/import/sync.mjs  (Google Drive for desktop copy; Drive ids come
 //        from import/copy-jobs.json + copy-log.jsonl, the log of the approved copy job; no token needed)
+//    or: LOCAL_ROOT='G:/My Drive/2.2 Family Files' LOCAL_PATH_IDS=1 node scripts/import/sync.mjs  (a file with no Drive id gets local:<hash of its path>)
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { classifyPath } from './folders.mjs'
+import { buildMatcher, matchPerson } from './family.mjs'
 import { classifyType, dateFrom, walk } from './lib.mjs'
 
 const GOOGLE_DOC = 'application/vnd.google-apps.document'
 
-/** Why a walked file is not downloaded, or null. Folder-level skips (SKIP_RE) never reach here; they are only counted. */
+/** Why a walked file is not downloaded, or null. Picasa folders (SKIP_RE) never reach here; they are only counted. */
 export function skipReason(row) {
   if (/\.ini$/i.test(row.name)) return 'ini'
   if (/\.picasaoriginals/i.test(row.path)) return 'picasa'
@@ -32,13 +36,14 @@ export function toEntry(row) {
     person_folder: row.path.includes('/') ? row.path.split('/')[0] : '',
     kind_guess: row.type || classifyType(row.path),
     date_guess: row.date || dateFrom(row.path),
+    lane: row.lane ?? classifyPath(row.path.split('/')).lane,
     skipped: skipReason(row)
   }
 }
 
 /** Incremental: a file is downloaded again only when it is new, changed, or its local copy is gone. */
 export function needsDownload(entry, prev, fileExists) {
-  if (entry.skipped) return false
+  if (entry.skipped || entry.lane === 'document_only') return false // document_only files are registered, never read
   return !(prev && prev.modified === entry.modified && prev.sha256 && fileExists)
 }
 
@@ -88,14 +93,34 @@ export function driveLister(token, fetchImpl = fetch) {
 const EXT_MIME = { '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.heic': 'image/heic', '.webp': 'image/webp',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
 
+/** Stable id for a local file with no Drive id (the family folder): a hash of its relative path, so no name reaches the database. */
+export const localPathId = (rel) => `local:${createHash('sha256').update(rel).digest('hex').slice(0, 32)}`
+
+/** Counts by lane and skip reason, plus per person index when a people-map is given. No names. */
+export function dryRunCounts(entries, peopleMap = {}) {
+  const m = buildMatcher(peopleMap)
+  const ids = new Map()
+  const out = { files: entries.length, by_lane: {}, skipped: {}, by_person_lane: {}, unassigned: 0 }
+  const bump = (o, k) => { o[k] = (o[k] ?? 0) + 1 }
+  for (const e of entries) {
+    if (e.skipped) bump(out.skipped, e.skipped)
+    bump(out.by_lane, e.lane ?? 'none')
+    const { id } = matchPerson(m, { segments: e.path.split('/').slice(0, -1), printed: null })
+    if (!id) { out.unassigned++; continue }
+    if (!ids.has(id)) ids.set(id, `p${ids.size + 1}`)
+    bump((out.by_person_lane[ids.get(id)] ??= {}), e.lane ?? 'none')
+  }
+  return out
+}
+
 /** Lister over a local Drive-for-desktop folder. A file's id is its Drive id from the copy log, or null (then skipped). */
-export function localLister(idByRel, root) {
+export function localLister(idByRel, root, pathIds = false) {
   const rel = (p) => p.slice(root.length + 1).split(/[\\/]/).join('/')
   return async (dir) => readdirSync(dir, { withFileTypes: true }).map((d) => {
     const full = join(dir, d.name)
     if (d.isDirectory()) return { id: full, name: d.name, mime: 'application/vnd.google-apps.folder' }
     const st = statSync(full)
-    return { id: idByRel.get(rel(full)) ?? `local-unmatched:${rel(full)}`, name: d.name, mime: EXT_MIME[extname(d.name).toLowerCase()] ?? 'application/octet-stream',
+    return { id: idByRel.get(rel(full)) ?? (pathIds ? localPathId(rel(full)) : `local-unmatched:${rel(full)}`), name: d.name, mime: EXT_MIME[extname(d.name).toLowerCase()] ?? 'application/octet-stream',
       size: st.size, modified: st.mtime.toISOString(), md5: null, _full: full }
   })
 }
@@ -121,18 +146,25 @@ async function main(env = process.env) {
   const pathById = new Map()
   let lister = local ? null : driveLister(env.DRIVE_ACCESS_TOKEN)
   if (local) {
-    const jobs = JSON.parse(readFileSync('import/copy-jobs.json', 'utf8'))
-    const log = readFileSync('import/copy-log.jsonl', 'utf8').split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l))
-    const base = localLister(idsFromCopyLog(jobs, log), local)
+    const haveLog = existsSync('import/copy-jobs.json') && existsSync('import/copy-log.jsonl')
+    const jobs = haveLog ? JSON.parse(readFileSync('import/copy-jobs.json', 'utf8')) : []
+    const log = !haveLog ? [] : readFileSync('import/copy-log.jsonl', 'utf8').split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l))
+    const base = localLister(idsFromCopyLog(jobs, log), local, env.LOCAL_PATH_IDS === '1')
     lister = async (dir) => { const items = await base(dir); for (const i of items) if (i._full) pathById.set(i.id, i._full); return items }
   }
-  mkdirSync('import/files', { recursive: true })
+  const dryRun = process.argv.includes('--dry-run')
+  if (!dryRun) mkdirSync('import/files', { recursive: true })
   const prevByid = new Map()
   if (existsSync('import/manifest.json')) for (const e of JSON.parse(readFileSync('import/manifest.json', 'utf8')).files) prevByid.set(e.drive_file_id, e)
 
   let folderSkips = 0
   const rows = await walk(lister, local ?? env.DRIVE_ROOT_ID, [], () => folderSkips++)
   const entries = rows.map(toEntry)
+  if (dryRun) { // list and classify only: nothing is downloaded or written
+    const peopleMap = existsSync('import/people-map.json') ? JSON.parse(readFileSync('import/people-map.json', 'utf8')) : {}
+    console.log(JSON.stringify({ dry_run: true, skipped_folder_or_file_rules: folderSkips, ...dryRunCounts(entries, peopleMap) }))
+    return
+  }
   const n = { downloaded: 0, unchanged: 0, failed: 0 }
   for (const e of entries) {
     const prev = prevByid.get(e.drive_file_id)

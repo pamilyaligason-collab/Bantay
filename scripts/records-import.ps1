@@ -1,7 +1,10 @@
-# Family Bantay - import the Bantay Medical Drive folder into the records confirm queue (docs/IMPORT.md). Lloyd runs it.
-# Run from the records worktree:  powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1
-# Needs: import\people-map.json (git-ignored), OPENROUTER_API_KEY in the environment (paid, ZDR), a Drive token (asked below).
-# Prints counts only. Every row lands as draft; nothing reaches trends until someone confirms it in the app.
+# Family Bantay - import the whole family folder (Medical, IDs, Insurance, Visa + Home Lot) into the records tables (docs/IMPORT.md, D-68). Lloyd runs it.
+# Run from the repo worktree:  powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1 [-DryRun]
+# Needs: import\aliases.json (git-ignored, names only; shape in scripts\import\aliases.example.json), OPENROUTER_API_KEY in the environment
+#        (paid, ZDR; ID and insurance papers go through it too), migration 0013 applied.
+# -DryRun: sync (list + classify only), then stop. Nothing is downloaded, sent or written to the database.
+# Prints counts only. High-confidence rows matched to the right person load as confirmed (confirmed_source 'auto'); the rest wait as drafts.
+param([switch]$DryRun, [string]$LocalRoot = 'G:\My Drive\2.2 Family Files')
 $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -9,49 +12,60 @@ $Sb = 'supabase@2.121.0'
 $Ref = 'wuakimpssycbtnmoexuc'
 function Step($n, $t) { Write-Host "`n== Step $n. $t" -ForegroundColor Cyan }
 function Check($n) { if ($LASTEXITCODE -ne 0) { throw "step $n failed (exit $LASTEXITCODE)" } }
+$Db = @('-y', $Sb, 'db', 'query', '--linked', '--project-ref', $Ref)
 
 Step 1 'Checks'
-if (-not (Test-Path import\people-map.json)) { throw 'step 1 failed: import\people-map.json missing' }
-if (-not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
+if (-not (Test-Path import\aliases.json)) { throw 'step 1 failed: import\aliases.json missing (copy scripts\import\aliases.example.json and fill in the family names)' }
+if (-not (Test-Path $LocalRoot)) { throw "step 1 failed: $LocalRoot not found (Google Drive for desktop)" }
+if (-not $DryRun -and -not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
 if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
-
-$LocalRoot = 'G:\My Drive\Bantay Medical'   # Google Drive for desktop copy of the private Bantay Medical folder
-if (Test-Path $LocalRoot) {
-  Step 2 'Using the Google Drive for desktop folder (no token needed)'
-  $env:LOCAL_ROOT = $LocalRoot
-} else {
-  Step 2 'Drive token (OAuth Playground, scope drive.readonly). Copy it in the browser, then press Enter here. It is read from the clipboard, never shown or saved, and the clipboard is wiped.'
-  function Clear-Clip { Set-Clipboard -Value ' '; try { [Windows.ApplicationModel.DataTransfer.Clipboard, Windows.ApplicationModel.DataTransfer, ContentType = WindowsRuntime]::ClearHistory() | Out-Null } catch {} }
-  Read-Host 'Copied the Access token? Press Enter' | Out-Null
-  $tok = "$(Get-Clipboard -Raw)".Trim()
-  Clear-Clip
-  if ($tok.Length -lt 40 -or -not $tok.StartsWith('ya29.')) { $tok = $null; throw "step 2 failed: the clipboard does not hold an access token (it should start with ya29.)." }
-  Write-Host "  token received ($($tok.Length) characters); clipboard wiped"
-  $env:DRIVE_ACCESS_TOKEN = $tok; $tok = $null
-  # Bantay Medical folder id lives in git-ignored import/drive-root.txt (the repo is public).
-  if (-not (Test-Path 'import/drive-root.txt')) { throw "step 2 failed: put the Bantay Medical Drive folder id in import/drive-root.txt (one line)." }
-  $env:DRIVE_ROOT_ID = (Get-Content 'import/drive-root.txt' -Raw).Trim()
+if (-not $DryRun) {
+  $have = npx @Db "select count(*) as ok from information_schema.columns where table_schema='public' and table_name='person_identifiers';" | Out-String
+  if ($LASTEXITCODE -ne 0) { throw 'step 1 failed: cannot reach the database' }
+  if ($have -notmatch '"?ok"?\W+[1-9]') { throw 'step 1 failed: migration 0013 is not applied yet' }
 }
+
+$env:LOCAL_ROOT = $LocalRoot
+$env:LOCAL_PATH_IDS = '1'   # family files have no Drive id from a copy log: a hash of the relative path is the stable id
+if ($DryRun) {
+  Step 2 'Dry run: list and classify only (counts per lane, skip reason, person index)'
+  node scripts/import/sync.mjs --dry-run; Check 2
+  Write-Host "`nDry run done. Nothing downloaded, sent or written." -ForegroundColor Green
+  return
+}
+
+Step 2 'Add missing family members as dependents, then build import\people-map.json from the database'
+node scripts/import/family.mjs dependents; Check 2
+npx @Db -f .scratch/add-dependents.sql | Out-Null; Check 2
+$peopleJson = Join-Path (Get-Location) '.scratch\people.json'
+$out = npx @Db --output-format json "select id, display_name from public.people order by display_name;"; Check 2
+[IO.File]::WriteAllText($peopleJson, ($out -join "`n"), [Text.UTF8Encoding]::new($false))   # no BOM: node's JSON.parse refuses one
+node scripts/import/family.mjs people-map --from $peopleJson; Check 2
+Remove-Item $peopleJson
+
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'
 try {
-  Step 3 'Sync: list, download, hash, dedupe (incremental)'
+  Step 3 'Sync: list, classify, download, hash, dedupe (incremental; visa / land files are listed, never downloaded)'
   node scripts/import/sync.mjs; Check 3
 
-  Step 4 'Extract drafts (PDF text first, else vision; OpenRouter zdr, no data collection)'
+  Step 4 'Extract (PDF text first, else vision; OpenRouter zdr, no data collection). Health and identity prompts by folder; visa / land never sent'
   node scripts/import/extract.mjs --i-am-lloyd; Check 4
 } finally {
-  Remove-Item Env:DRIVE_ACCESS_TOKEN, Env:LOCAL_ROOT -ErrorAction SilentlyContinue
+  Remove-Item Env:LOCAL_ROOT, Env:LOCAL_PATH_IDS -ErrorAction SilentlyContinue
 }
 
-Step 5 'Build load.sql (drafts only, idempotent)'
-node scripts/import/load.mjs; Check 5
+Step 5 'Dry-run the load: counts per person / lane / status, SQL to .scratch (git-ignored). Stop here with Ctrl+C if the counts look wrong'
+node scripts/import/load.mjs --dry-run; Check 5
 
-Step 6 'Apply load.sql to Supabase (one transaction)'
-npx -y $Sb db query --linked --project-ref $Ref -f import/load.sql | Out-Null; Check 6
+Step 6 'Build import\load.sql (auto-confirm >= 0.9 with a trusted person match, rest drafts, idempotent)'
+node scripts/import/load.mjs; Check 6
 
-Step 7 'Queue counts (no values)'
-npx -y $Sb db query --linked --project-ref $Ref "select kind, sum(drafts) as drafts from public.records_queue group by kind order by kind;"; Check 7
-npx -y $Sb db query --linked --project-ref $Ref "select ingest_status, count(*) from public.source_files group by ingest_status order by 1;"; Check 7
+Step 7 'Apply load.sql to Supabase (one transaction)'
+npx @Db -f import/load.sql | Out-Null; Check 7
 
-Write-Host "`nDone. Open Family > Records > To check in the app to confirm each row." -ForegroundColor Green
+Step 8 'Counts (no values)'
+npx @Db "select 'lab_results' as t, status, coalesce(confirmed_source,'-') as src, count(*) from public.lab_results group by 2,3 union all select 'documents', status, coalesce(confirmed_source,'-'), count(*) from public.documents group by 2,3 order by 1,2,3;"; Check 8
+npx @Db "select ingest_status, count(*) from public.source_files group by ingest_status order by 1;"; Check 8
+
+Write-Host "`nDone. Auto-confirmed rows are already in Health trends; open Family > Records > To check for the drafts." -ForegroundColor Green

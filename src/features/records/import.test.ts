@@ -52,9 +52,9 @@ describe('inventory helpers', () => {
     expect(dateFrom('20260728 Test Person.pdf')).toBe('2026-07-28')
     expect(dateFrom('11 Nov 2023')).toBe('')
   })
-  it('skips the listed folders', () => {
-    for (const s of ['Birth Cert - X.pdf', '- HMO', '- IDs and Documents', '- Insurance', '- Home Lot Documents', 'Visa']) expect(isSkipped(['Test Person', s])).toBe(true)
-    expect(isSkipped(['Test Person', '2024.01.01 Laboratory'])).toBe(false)
+  it('skips only picasa folders (D-68: the other folders get a lane instead)', () => {
+    expect(isSkipped(['Test Person', '.picasaoriginals'])).toBe(true)
+    for (const s of ['Birth Cert - X.pdf', '- HMO', '- IDs and Documents', '- Insurance', '- Home Lot Documents', 'Visa', '2024.01.01 Laboratory']) expect(isSkipped(['Test Person', s])).toBe(false)
   })
   it('walks a fake tree, skipping and quoting', async () => {
     const tree: Record<string, { id: string; name: string; mime: string }[]> = {
@@ -67,8 +67,9 @@ describe('inventory helpers', () => {
       h: [{ id: 'f2', name: 'card.jpg', mime: 'image/jpeg' }]
     }
     const rows = await walk(async (id: string) => tree[id], 'root', ['Test Person'])
-    expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ person: 'Test Person', date: '2024-01-02', type: 'laboratory', file_id: 'f1' })
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ person: 'Test Person', date: '2024-01-02', type: 'laboratory', file_id: 'f1', lane: 'health' })
+    expect(rows[1]).toMatchObject({ file_id: 'f2', lane: 'insurance' })
     expect(csvRow(rows[0])).toContain('"Test Person/2024.01.02 Laboratory/a, b.jpg"')
   })
 })
