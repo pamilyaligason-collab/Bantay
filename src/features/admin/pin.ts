@@ -5,5 +5,3 @@ export function pinError(pin: string): string | null {
   if (pin === '123456') return 'Pick a PIN that is harder to guess.'
   return null
 }
-
-export const handleError = (h: string): string | null => (/^[a-z0-9._-]{3,24}$/.test(h) ? null : 'Handle is 3 to 24 letters, numbers, dot, dash or underscore.')

@@ -1,7 +1,9 @@
+import { handleCandidate } from './handle.ts'
 import { SYNTHETIC_DOMAIN, derivePassword, normalizeEmail, normalizeHandle, randomSecret, syntheticEmail, validatePin } from './pin.ts'
 
 export type Role = 'admin' | 'member'
-export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null }
+export interface Profile { photoPath: string | null; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; medicines: string[] }
+export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null }
 export type Err = 'not_admin' | 'bad_input' | 'handle_taken' | 'not_found'
 export type Result = { ok: true; [k: string]: unknown } | { ok: false; error: Err }
 
@@ -21,7 +23,65 @@ export interface Port {
   insertPerson(userId: string, displayName: string, createdBy: string): Promise<string | null> // returns person id
   addInvite(email: string, by: string): Promise<boolean>
   removeInvite(email: string): Promise<boolean>
+  updatePerson(personId: string, patch: PersonPatch): Promise<'ok' | 'not_found' | 'error'>
   listMembers(): Promise<Member[]>
+}
+
+/** Columns of public.people an admin may set (snake_case, as in 0010). A key that is absent is left alone; null clears it. */
+export type PersonPatch = Partial<{ display_name: string; photo_path: string | null; phone: string | null; birthdate: string | null; blood_type: string | null; allergies: string[]; conditions: string[]; medicines: string[] }>
+export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+
+const list = (v: unknown): string[] | null => {
+  if (!Array.isArray(v) || v.length > 30) return null
+  const out: string[] = []
+  for (const x of v) {
+    if (typeof x !== 'string') return null
+    const t = x.replace(/\s+/g, ' ').trim()
+    if (t.length > 40) return null
+    if (t && !out.some((o) => o.toLowerCase() === t.toLowerCase())) out.push(t)
+  }
+  return out
+}
+const validDate = (v: string): boolean => {
+  const d = new Date(v + 'T00:00:00Z')
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= '1900-01-01' && d.getTime() <= Date.now()
+}
+
+/** Checks the 'update' body. Returns null for anything malformed or empty (never a partial guess). */
+export function parsePersonPatch(b: Record<string, unknown>, personId: string): PersonPatch | null {
+  const p: PersonPatch = {}
+  if ('displayName' in b) {
+    const n = typeof b.displayName === 'string' ? b.displayName.trim() : ''
+    if (!n || n.length > 80) return null
+    p.display_name = n
+  }
+  if ('phone' in b) {
+    if (b.phone === null || b.phone === '') p.phone = null
+    else if (typeof b.phone === 'string' && /^[0-9+()\- ]{3,30}$/.test(b.phone.trim())) p.phone = b.phone.trim()
+    else return null
+  }
+  if ('birthdate' in b) {
+    if (b.birthdate === null || b.birthdate === '') p.birthdate = null
+    else if (typeof b.birthdate === 'string' && validDate(b.birthdate)) p.birthdate = b.birthdate
+    else return null
+  }
+  if ('bloodType' in b) {
+    if (b.bloodType === null || b.bloodType === '') p.blood_type = null
+    else if (typeof b.bloodType === 'string' && BLOOD_TYPES.includes(b.bloodType)) p.blood_type = b.bloodType
+    else return null
+  }
+  if ('photoPath' in b) {
+    if (b.photoPath === null) p.photo_path = null
+    else if (b.photoPath === `${personId.toLowerCase()}.jpg`) p.photo_path = b.photoPath // the only object the avatars policy lets anyone write
+    else return null
+  }
+  for (const k of ['allergies', 'conditions', 'medicines'] as const) {
+    if (!(k in b)) continue
+    const l = list(b[k])
+    if (!l) return null
+    p[k] = l
+  }
+  return Object.keys(p).length ? p : null
 }
 
 const bad: Result = { ok: false, error: 'bad_input' }
@@ -39,18 +99,27 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
   switch (b.action) {
     case 'create': {
       const name = typeof b.displayName === 'string' ? b.displayName.trim() : ''
-      const handle = normalizeHandle(b.handle)
-      if (!name || name.length > 80 || !handle || !validatePin(b.pin) || !isRole(b.role) || b.role === 'admin') return bad // admins sign in with Google only, never with a PIN
+      const auto = b.handle === undefined || b.handle === null || b.handle === '' // no handle given: derive it from the name
+      const given = auto ? null : normalizeHandle(b.handle)
+      if (!name || name.length > 80 || (!auto && !given) || !validatePin(b.pin) || !isRole(b.role) || b.role === 'admin') return bad // admins sign in with Google only, never with a PIN
       // The user id is not known until Supabase makes it, so create with a throwaway password, then set the derived one.
       const userId = await port.createAuthUser(syntheticEmail(), randomSecret(), name)
       if (!userId) return bad
       const undo = async (e: Err): Promise<Result> => { await port.deleteAuthUser(userId); return { ok: false, error: e } }
-      const r = await port.insertRole(userId, b.role, handle)
+      let r: 'ok' | 'handle_taken' | 'error' = 'handle_taken'
+      for (let n = 1; n <= (auto ? 50 : 1) && r === 'handle_taken'; n++) r = await port.insertRole(userId, b.role, auto ? handleCandidate(name, n) : given!) // macleofe, macleofe2, macleofe3 ...
       if (r !== 'ok') return undo(r === 'handle_taken' ? 'handle_taken' : 'bad_input')
       if (!(await port.setPassword(userId, await derivePassword(port.pepper, userId, b.pin)))) return undo('bad_input')
       const personId = await port.insertPerson(userId, name, callerId)
       if (!personId) return undo('bad_input')
       return { ok: true, userId, personId }
+    }
+    case 'update': {
+      if (!isId(b.personId)) return bad
+      const patch = parsePersonPatch(b, b.personId)
+      if (!patch) return bad
+      const r = await port.updatePerson(b.personId, patch)
+      return r === 'ok' ? { ok: true } : r === 'not_found' ? { ok: false, error: 'not_found' } : bad
     }
     case 'set_pin': {
       if (!isId(b.userId) || !validatePin(b.pin)) return bad

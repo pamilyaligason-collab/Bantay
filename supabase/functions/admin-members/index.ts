@@ -85,6 +85,11 @@ function adapt(admin: Admin, pepper: string): Port {
       const { data, error } = await admin.from('people').insert({ auth_user_id: userId, display_name: displayName, created_by: createdBy }).select('id').single()
       return error || !data ? null : data.id
     },
+    async updatePerson(personId, patch) {
+      const { data, error } = await admin.from('people').update(patch).eq('id', personId).select('id')
+      if (error) return 'error'
+      return data && data.length > 0 ? 'ok' : 'not_found'
+    },
     async addInvite(email, by) {
       const { error } = await admin.from('invites').upsert({ email, invited_by: by })
       return !error
@@ -97,7 +102,7 @@ function adapt(admin: Admin, pepper: string): Port {
       // ponytail: one page of 1000 auth users; a family never gets near it. Paginate if that changes.
       const [roles, people, users] = await Promise.all([
         admin.from('app_roles').select('user_id, role, handle, disabled'),
-        admin.from('people').select('id, auth_user_id, display_name').not('auth_user_id', 'is', null),
+        admin.from('people').select('id, auth_user_id, display_name, photo_path, phone, birthdate, blood_type, allergies, conditions, medicines').not('auth_user_id', 'is', null),
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
       ])
       const byUser = new Map(users.data.users.map((x) => [x.id, x]))
@@ -107,7 +112,8 @@ function adapt(admin: Admin, pepper: string): Port {
         const p = personOf.get(r.user_id)
         return {
           userId: r.user_id, personId: p?.id ?? null, displayName: p?.display_name ?? '', handle: r.handle,
-          role: r.role as Role, disabled: r.disabled, lastSignInAt: au?.last_sign_in_at ?? null, provider: (au?.app_metadata?.provider as string | undefined) ?? null
+          role: r.role as Role, disabled: r.disabled, lastSignInAt: au?.last_sign_in_at ?? null, provider: (au?.app_metadata?.provider as string | undefined) ?? null,
+          profile: p ? { photoPath: p.photo_path, phone: p.phone, birthdate: p.birthdate, bloodType: p.blood_type, allergies: p.allergies ?? [], conditions: p.conditions ?? [], medicines: p.medicines ?? [] } : null
         }
       })
     }

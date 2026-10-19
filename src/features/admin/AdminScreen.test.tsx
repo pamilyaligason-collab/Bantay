@@ -16,10 +16,11 @@ import AdminScreen from './AdminScreen'
 import { sendBroadcast } from './broadcast'
 
 const members = [
-  { userId: 'u1', personId: 'p1', displayName: 'Lloyd', handle: null, role: 'admin', disabled: false, lastSignInAt: '2026-10-17T01:00:00Z', provider: 'google' },
-  { userId: 'u2', personId: 'p2', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'pin' }
+  { userId: 'u1', personId: 'p1', displayName: 'Lloyd', handle: null, role: 'admin', disabled: false, lastSignInAt: '2026-10-17T01:00:00Z', provider: 'google', profile: null },
+  { userId: 'u2', personId: 'p2', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'pin', profile: { photoPath: null, phone: '0917 111 2222', birthdate: '1948-03-09', bloodType: 'O+', allergies: ['Penicillin'], conditions: [], medicines: ['Losartan'] } }
 ]
 const chain = (data: unknown) => ({ select: () => ({ order: () => ({ limit: async () => ({ data, error: null }) }) }) })
+const openLola = async () => { fireEvent.click(await screen.findByRole('button', { name: 'Open Lola' }, { timeout: 5000 })) }
 const actions = () => h.invoke.mock.calls.map((c) => (c[1] as { body: { action: string } }).body.action)
 
 beforeEach(async () => {
@@ -91,7 +92,6 @@ describe('AdminScreen', () => {
     render(<AdminScreen />)
     const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
-    fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
     for (const pin of ['12345', '111111', '123456']) {
       fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: pin } })
       fireEvent.click(q.getByRole('button', { name: 'Add member' }))
@@ -104,17 +104,70 @@ describe('AdminScreen', () => {
     render(<AdminScreen />)
     const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
-    fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
     fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
     fireEvent.click(q.getByRole('button', { name: 'Add member' }))
     const dlg = await screen.findByRole('alertdialog')
     expect(actions()).not.toContain('create')
     fireEvent.click(within(dlg).getByRole('button', { name: 'Confirm' }))
-    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: { action: 'create', displayName: 'Ben', handle: 'ben', pin: '483920', role: 'member' } }))
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: { action: 'create', displayName: 'Ben', pin: '483920', role: 'member' } }))
+  })
+  it('shows the sign-in name live, read only, and numbers it when taken', async () => {
+    render(<AdminScreen />)
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
+    expect(q.queryByLabelText('Handle')).toBeNull()
+    fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Macleo Fé' } })
+    expect(q.getByText('macleofe')).toBeTruthy()
+    fireEvent.change(q.getByLabelText('Name'), { target: { value: 'LOLA' } })
+    expect(q.getByText('lola2')).toBeTruthy() // Lola already has "lola"
+  })
+  it('an admin cannot be added with a PIN', async () => {
+    render(<AdminScreen />)
+    const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
+    fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
+    fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
+    fireEvent.change(q.getByLabelText('Role'), { target: { value: 'admin' } })
+    fireEvent.click(q.getByRole('button', { name: 'Add member' }))
+    expect((await q.findByRole('alert')).textContent).toMatch(/Google/)
+    expect(actions()).not.toContain('create')
+  })
+  it('opens a member page with the saved details and saves changes through update', async () => {
+    render(<AdminScreen />)
+    await openLola()
+    const form = within(await screen.findByRole('form', { name: 'Member details' }))
+    expect((form.getByLabelText('Phone') as HTMLInputElement).value).toBe('0917 111 2222')
+    expect((form.getByLabelText('Birthday') as HTMLInputElement).value).toBe('1948-03-09')
+    expect(form.getByRole('button', { name: 'O+' }).getAttribute('aria-pressed')).toBe('true')
+    expect(form.getByRole('button', { name: 'Penicillin' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText('lola')).toBeTruthy() // sign-in name, read only
+    fireEvent.change(form.getByLabelText('Phone'), { target: { value: '0918 333 4444' } })
+    fireEvent.click(form.getByRole('button', { name: 'A-' }))
+    fireEvent.click(form.getByRole('button', { name: 'Diabetes' }))
+    fireEvent.change(form.getByLabelText('Medicines: other'), { target: { value: 'Vitamin D' } })
+    fireEvent.click(within(form.getByRole('group', { name: 'Medicines' })).getByRole('button', { name: 'Add' }))
+    fireEvent.click(form.getByRole('button', { name: 'Save details' }))
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: {
+      action: 'update', personId: 'p2', displayName: 'Lola', phone: '0918 333 4444', birthdate: '1948-03-09', bloodType: 'A-',
+      allergies: ['Penicillin'], conditions: ['Diabetes'], medicines: ['Losartan', 'Vitamin D']
+    } }))
+    expect(await screen.findByText('Saved.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Members' }))
+    expect(await screen.findByRole('heading', { name: 'Members' })).toBeTruthy()
+  })
+  it('the member page resets a PIN through set_pin after confirmation', async () => {
+    render(<AdminScreen />)
+    await openLola()
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset PIN for Lola' }))
+    const form = within(await screen.findByRole('form', { name: 'New PIN for Lola' }))
+    fireEvent.change(form.getByLabelText('New PIN (6 digits)'), { target: { value: '482915' } })
+    fireEvent.click(form.getByRole('button', { name: 'Set PIN' }))
+    expect(actions()).not.toContain('set_pin')
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: { action: 'set_pin', pin: '482915', userId: 'u2' } }))
   })
   it('cancel changes nothing', async () => {
     render(<AdminScreen />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Disable Lola' }, { timeout: 5000 }))
+    await openLola()
+    fireEvent.click(await screen.findByRole('button', { name: 'Disable Lola' }))
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('alertdialog')).toBeNull()
     expect(actions()).not.toContain('disable')
@@ -159,7 +212,8 @@ describe('broadcast (B-7)', () => {
 describe('confirm dialog and PIN field', () => {
   it('focuses Cancel, is not marked modal, Escape closes and focus returns to the trigger', async () => {
     render(<AdminScreen />)
-    const btn = await screen.findByRole('button', { name: 'Disable Lola' }, { timeout: 5000 })
+    await openLola()
+    const btn = await screen.findByRole('button', { name: 'Disable Lola' })
     btn.focus()
     fireEvent.click(btn)
     const dlg = await screen.findByRole('alertdialog')
@@ -175,8 +229,7 @@ describe('confirm dialog and PIN field', () => {
     const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     const fill = () => {
       fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Ben' } })
-      fireEvent.change(q.getByLabelText('Handle'), { target: { value: 'ben' } })
-      fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
+        fireEvent.change(q.getByLabelText('PIN (6 digits)'), { target: { value: '483920' } })
       fireEvent.click(q.getByRole('button', { name: 'Add member' }))
     }
     fill()
@@ -185,7 +238,7 @@ describe('confirm dialog and PIN field', () => {
     h.invoke.mockImplementation(async (_n: string, o: { body: { action: string } }) => (o.body.action === 'create' ? { data: { ok: false, error: 'handle_taken' }, error: null } : { data: { ok: true, members }, error: null }))
     fill()
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
-    expect(await screen.findByText('That handle is taken.')).toBeTruthy()
+    expect(await screen.findByText('That sign-in name is taken.')).toBeTruthy()
     expect((q.getByLabelText('PIN (6 digits)') as HTMLInputElement).value).toBe('')
   })
 })

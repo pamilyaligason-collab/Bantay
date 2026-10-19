@@ -6,23 +6,16 @@ import places from '../../data/safety/places.json'
 import { SAFETY_IDS, type TemplateId } from '../notify/templates'
 import { type Entry, OVERRIDES_KEY, type Overrides, parseEdit } from '../safety/entries'
 import { putKv } from '../safety/store'
+import { Icon } from '../shell/Icon'
 import { adminMembers, connected, type Carer, type ImportRow, linkCarer, listCarers, listPinRequests, markRequestDone, type Member, newsLastAt, type PinRequest, rpc, type Res, unlinkCarer, type UsageRow } from './api'
 import { BROADCAST_IDS, sendBroadcast, templateLabel } from './broadcast'
-import { handleError, pinError } from './pin'
+import { pinError } from './pin'
+import Avatar from './Avatar'
+import MemberPage from './MemberPage'
+import { type Ask, Field, NOT_CONNECTED, when, why } from './shared'
+import { pickHandle } from '../../../supabase/functions/_shared/handle'
 import './admin.css'
 
-const NOT_CONNECTED = 'Not connected yet. Admin tools need the internet and the Bantay server.'
-const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }) : 'Never')
-const why = (e: string) =>
-  e === 'not_connected' ? NOT_CONNECTED
-  : e === 'not_admin' ? 'Only an admin can do this.'
-  : e === 'handle_taken' ? 'That handle is taken.'
-  : e === 'bad_input' ? 'Check what you typed and try again.'
-  : e === 'not_found' ? 'That member was not found.'
-  : e === 'forbidden' ? 'This link cannot be removed.'
-  : 'Something went wrong. Try again.'
-
-type Ask = (text: string, run: () => Promise<void>, abort?: () => void) => void
 type Loaded<T> = { state: 'loading' } | { state: 'err'; error: string } | { state: 'ok'; data: T }
 
 /** Load once, with a reload. Never throws. */
@@ -48,24 +41,21 @@ function Section({ id, title, children }: { id: string; title: string; children:
 const Msg = ({ s }: { s: { state: 'loading' } | { state: 'err'; error: string } }) =>
   s.state === 'loading' ? <p className="sub ad-pad">Loading</p> : <p className="ad-err ad-pad" role="alert">{why(s.error)}</p>
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="ad-lbl">{label}{children}</label>
-}
-
 // ---------- Members ----------
-function AddMember({ ask, done }: { ask: Ask; done: () => void }) {
-  const [f, setF] = useState({ displayName: '', handle: '', pin: '', role: 'member' })
+function AddMember({ ask, done, taken }: { ask: Ask; done: () => void; taken: Set<string> }) {
+  const [f, setF] = useState({ displayName: '', pin: '', role: 'member' })
   const [err, setErr] = useState('')
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
+  const name = f.displayName.trim()
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    const bad = f.displayName.trim() === '' ? 'Enter a name.' : handleError(f.handle) ?? pinError(f.pin)
+    const bad = name === '' ? 'Enter a name.' : f.role === 'admin' ? 'Admins sign in with Google. Invite them below, then make them an admin.' : pinError(f.pin)
     if (bad) return setErr(bad)
     setErr('')
-    ask(`Add ${f.displayName.trim()} as ${f.role === 'admin' ? 'an admin' : 'a member'}?`, async () => {
-      const r = await adminMembers({ action: 'create', displayName: f.displayName.trim(), handle: f.handle, pin: f.pin, role: f.role })
+    ask(`Add ${name} as a member?`, async () => {
+      const r = await adminMembers({ action: 'create', displayName: name, pin: f.pin, role: f.role }) // the server makes the sign-in name
       if (!r.ok) throw new Error(why(r.error))
-      setF({ displayName: '', handle: '', pin: '', role: 'member' })
+      setF({ displayName: '', pin: '', role: 'member' })
       done()
     }, () => setF((x) => ({ ...x, pin: '' })))
   }
@@ -73,7 +63,7 @@ function AddMember({ ask, done }: { ask: Ask; done: () => void }) {
     <form className="ad-pad" onSubmit={submit} aria-label="Add a member">
       <strong>Add a member</strong>
       <Field label="Name"><input className="ad-in" value={f.displayName} onChange={set('displayName')} autoComplete="off" /></Field>
-      <Field label="Handle"><input className="ad-in" value={f.handle} onChange={set('handle')} autoComplete="off" autoCapitalize="none" /></Field>
+      {name && <p className="sub ad-signin" aria-live="polite">Sign-in name: <strong>{pickHandle(name, taken)}</strong></p>}
       <Field label="PIN (6 digits)"><input className="ad-in" type="password" inputMode="numeric" maxLength={6} value={f.pin} onChange={set('pin')} autoComplete="new-password" /></Field>
       <Field label="Role">
         <select className="ad-in" value={f.role} onChange={set('role')}><option value="member">Member</option><option value="admin">Admin</option></select>
@@ -84,41 +74,16 @@ function AddMember({ ask, done }: { ask: Ask; done: () => void }) {
   )
 }
 
-function MemberRow({ m, ask, done }: { m: Member; ask: Ask; done: () => void }) {
-  const [pin, setPin] = useState<string | null>(null)
-  const [err, setErr] = useState('')
-  const act = (text: string, body: Record<string, unknown>) =>
-    ask(text, async () => { const r = await adminMembers({ ...body, userId: m.userId }); if (!r.ok) throw new Error(why(r.error)); done() })
+function MemberRow({ m, open }: { m: Member; open: () => void }) {
   return (
-    <div className="ad-row">
-      <div className="ad-grow">
-        <strong>{m.displayName}</strong>{' '}
-        <span className="ad-tag">{m.role}</span>{m.disabled && <> <span className="ad-tag">disabled</span></>}
-        <div className="sub">{m.handle ? `@${m.handle}` : m.provider ?? 'Google'} · last sign-in {when(m.lastSignInAt)}</div>
-      </div>
-      <button className="ad-b" onClick={() => setPin(pin === null ? '' : null)} aria-label={`Reset PIN for ${m.displayName}`}>Reset PIN</button>
-      {m.handle && <button className="ad-b" onClick={() => act(`Unlock ${m.displayName} so they can try their PIN again?`, { action: 'unlock' })} aria-label={`Unlock ${m.displayName}`}>Unlock</button>}
-      <button className="ad-b" onClick={() => act(`Make ${m.displayName} ${m.role === 'admin' ? 'a member' : 'an admin'}?`, { action: 'set_role', role: m.role === 'admin' ? 'member' : 'admin' })} aria-label={`Change role of ${m.displayName}`}>
-        {m.role === 'admin' ? 'Make member' : 'Make admin'}
-      </button>
-      <button className="ad-b bad" onClick={() => act(`${m.disabled ? 'Enable' : 'Disable'} ${m.displayName}?`, { action: 'disable', disabled: !m.disabled })} aria-label={`${m.disabled ? 'Enable' : 'Disable'} ${m.displayName}`}>
-        {m.disabled ? 'Enable' : 'Disable'}
-      </button>
-      {pin !== null && (
-        <form className="ad-grow" style={{ flexBasis: '100%' }} aria-label={`New PIN for ${m.displayName}`} onSubmit={(e) => {
-          e.preventDefault()
-          const bad = pinError(pin)
-          if (bad) return setErr(bad)
-          setErr('')
-          act(`Set a new PIN for ${m.displayName}?`, { action: 'set_pin', pin })
-          setPin(null)
-        }}>
-          <Field label="New PIN (6 digits)"><input className="ad-in" type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value)} autoComplete="new-password" /></Field>
-          {err && <p className="ad-err" role="alert">{err}</p>}
-          <button className="ad-b go" type="submit" style={{ marginTop: 8 }}>Set PIN</button>
-        </form>
-      )}
-    </div>
+    <button className="ad-row ad-open" onClick={open} aria-label={`Open ${m.displayName}`}>
+      <Avatar name={m.displayName} photoPath={m.profile?.photoPath} />
+      <span className="ad-grow">
+        <strong>{m.displayName}</strong>{m.disabled && <> <span className="ad-tag">disabled</span></>}
+        <span className="sub ad-sub">{m.role === 'admin' ? 'Admin' : 'Member'} · {m.handle ?? 'Google account'}</span>
+      </span>
+      <Icon name="chev" />
+    </button>
   )
 }
 
@@ -218,14 +183,14 @@ function CarerLinks({ members, ask }: { members: Member[]; ask: Ask }) {
   )
 }
 
-function Members({ s, reload, ask }: { s: Loaded<Member[]>; reload: () => void; ask: Ask }) {
+function Members({ s, reload, ask, open }: { s: Loaded<Member[]>; reload: () => void; ask: Ask; open: (id: string) => void }) {
   return (
     <Section id="ad-members" title="Members">
       {s.state !== 'ok' ? <Msg s={s} /> : (
         <>
           {s.data.length === 0 && <p className="sub ad-pad">No members yet.</p>}
-          {s.data.map((m) => <MemberRow key={m.userId} m={m} ask={ask} done={reload} />)}
-          <AddMember ask={ask} done={reload} />
+          {s.data.map((m) => <MemberRow key={m.userId} m={m} open={() => open(m.userId)} />)}
+          <AddMember ask={ask} done={reload} taken={new Set(s.data.flatMap((m) => (m.handle ? [m.handle] : [])))} />
           <Invite ask={ask} />
           <CarerLinks members={s.data} ask={ask} />
         </>
@@ -363,9 +328,11 @@ export default function AdminScreen() {
     const r = await adminMembers<{ members: Member[] }>({ action: 'list' })
     return r.ok ? { ok: true, data: r.data.members ?? [] } : r
   })
+  const [openId, setOpenId] = useState<string | null>(null)
   const [pending, setPending] = useState<{ text: string; run: () => Promise<void>; abort?: () => void } | null>(null)
   const [note, setNote] = useState<{ text: string; bad: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
+  const openMember = members.state === 'ok' ? members.data.find((m) => m.userId === openId) : undefined
   const cancelBtn = useRef<HTMLButtonElement>(null)
   const trigger = useRef<HTMLElement | null>(null)
   useEffect(() => { if (pending) cancelBtn.current?.focus() }, [pending])
@@ -386,17 +353,21 @@ export default function AdminScreen() {
   }
   return (
     <div className="ad">
-      <div className="hdr"><h1>Admin</h1><span>Family members, usage and safety tools</span></div>
-      {!connected() && <p className="ad-note" role="status">{NOT_CONNECTED}</p>}
-      <p className="sub" style={{ margin: '0 4px' }}>You see which screens people use and when. You never see health values.</p>
-      {note && <p className={note.bad ? 'ad-err' : 'ad-note'} role={note.bad ? 'alert' : 'status'}>{note.text}</p>}
-      <PinRequests members={members.state === 'ok' ? members.data : []} ask={ask} />
-      <Members s={members} reload={reload} ask={ask} />
-      <Usage members={members.state === 'ok' ? members.data : []} />
-      <SafetyData ask={ask} say={say} />
-      <Broadcast ask={ask} say={say} />
-      <Imports />
-      <System />
+      {openMember ? <MemberPage key={openMember.userId} m={openMember} ask={ask} reload={reload} back={() => setOpenId(null)} /> : (
+        <>
+          <div className="hdr"><h1>Admin</h1><span>Family members, usage and safety tools</span></div>
+          {!connected() && <p className="ad-note" role="status">{NOT_CONNECTED}</p>}
+          <p className="sub" style={{ margin: '0 4px' }}>You see which screens people use and when. You never see health values.</p>
+          {note && <p className={note.bad ? 'ad-err' : 'ad-note'} role={note.bad ? 'alert' : 'status'}>{note.text}</p>}
+          <PinRequests members={members.state === 'ok' ? members.data : []} ask={ask} />
+          <Members s={members} reload={reload} ask={ask} open={setOpenId} />
+          <Usage members={members.state === 'ok' ? members.data : []} />
+          <SafetyData ask={ask} say={say} />
+          <Broadcast ask={ask} say={say} />
+          <Imports />
+          <System />
+        </>
+      )}
       {pending && (
         <div className="ad-confirm" role="alertdialog" aria-label="Confirm" aria-describedby="ad-confirm-text" onKeyDown={(e) => { if (e.key === 'Escape' && !busy) close(true) }}>
           <p id="ad-confirm-text">{pending.text}</p>

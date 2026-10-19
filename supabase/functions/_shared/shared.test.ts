@@ -61,9 +61,10 @@ function mockPort(over: Partial<Port> = {}): Port & { calls: string[] } {
     insertRole: rec<'ok' | 'handle_taken' | 'error'>('insertRole', 'ok'),
     updateRole: rec<'ok' | 'handle_taken' | 'not_found'>('updateRole', 'ok'),
     insertPerson: rec<string | null>('insertPerson', 'person-1'),
+    updatePerson: rec<'ok' | 'not_found' | 'error'>('updatePerson', 'ok'),
     addInvite: rec('addInvite', true),
     removeInvite: rec('removeInvite', true),
-    listMembers: rec<Member[]>('listMembers', [{ userId: ID, personId: 'p', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'email' }]),
+    listMembers: rec<Member[]>('listMembers', [{ userId: ID, personId: 'p', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'email', profile: null }]),
     calls
   }, over) as Port & { calls: string[] }
 }
@@ -95,6 +96,50 @@ describe('admin-members dispatcher', () => {
     const p = mockPort({ insertPerson: vi.fn(async () => null) })
     expect(await runAction(create, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
     expect(p.deleteAuthUser).toHaveBeenCalledWith(ID)
+  })
+  it('create without a handle derives it from the name and moves to the next number when taken', async () => {
+    const { handle: _h, ...noHandle } = create
+    const p = mockPort({ insertRole: vi.fn(async (_u: string, _r: unknown, h: string) => (h === 'macleofe' || h === 'macleofe2' ? ('handle_taken' as const) : ('ok' as const))) })
+    expect(await runAction({ ...noHandle, displayName: ' Macleo Fé ' }, p, ADMIN)).toEqual({ ok: true, userId: ID, personId: 'person-1' })
+    expect((p.insertRole as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[2])).toEqual(['macleofe', 'macleofe2', 'macleofe3'])
+    expect(p.insertPerson).toHaveBeenCalledWith(ID, 'Macleo Fé', ADMIN)
+    expect(p.deleteAuthUser).not.toHaveBeenCalled()
+  })
+  it('create with a handle still checks it, and a taken given handle is not retried', async () => {
+    const p = mockPort({ insertRole: vi.fn(async () => 'handle_taken' as const) })
+    expect(await runAction(create, p, ADMIN)).toEqual({ ok: false, error: 'handle_taken' })
+    expect(p.insertRole).toHaveBeenCalledTimes(1)
+  })
+  it('update sets a checked set of profile columns for one person', async () => {
+    const p = mockPort()
+    const body = { action: 'update', personId: ID, displayName: ' Lola R ', phone: '+63 917 123 4567', birthdate: '1948-03-09', bloodType: 'O+', allergies: ['Penicillin', ' penicillin ', ''], conditions: ['Diabetes'], medicines: [], photoPath: `${ID}.jpg` }
+    expect(await runAction(body, p, ADMIN)).toEqual({ ok: true })
+    expect(p.updatePerson).toHaveBeenCalledWith(ID, { display_name: 'Lola R', phone: '+63 917 123 4567', birthdate: '1948-03-09', blood_type: 'O+', allergies: ['Penicillin'], conditions: ['Diabetes'], medicines: [], photo_path: `${ID}.jpg` })
+  })
+  it('update leaves absent fields alone and clears null ones', async () => {
+    const p = mockPort()
+    expect(await runAction({ action: 'update', personId: ID, phone: null, bloodType: '' }, p, ADMIN)).toEqual({ ok: true })
+    expect(p.updatePerson).toHaveBeenCalledWith(ID, { phone: null, blood_type: null })
+  })
+  it.each([
+    ['no fields', {}],
+    ['bad person id', { personId: 'nope', phone: '0917' }],
+    ['blank name', { displayName: '  ' }],
+    ['letters in phone', { phone: 'call me' }],
+    ['future birthday', { birthdate: '2999-01-01' }],
+    ['impossible date', { birthdate: '2020-02-31' }],
+    ['unknown blood type', { bloodType: 'Z+' }],
+    ['someone else photo', { photoPath: '../other.jpg' }],
+    ['non-list allergies', { allergies: 'Penicillin' }],
+    ['too many items', { medicines: Array.from({ length: 31 }, (_, i) => `m${i}`) }],
+    ['item too long', { conditions: ['x'.repeat(41)] }]
+  ])('update rejects %s', async (_n, extra) => {
+    const p = mockPort()
+    expect(await runAction({ action: 'update', personId: ID, ...extra }, p, ADMIN)).toEqual({ ok: false, error: 'bad_input' })
+    expect(p.updatePerson).not.toHaveBeenCalled()
+  })
+  it('update maps a missing person to not_found', async () => {
+    expect(await runAction({ action: 'update', personId: ID, phone: '0917' }, mockPort({ updatePerson: vi.fn(async () => 'not_found' as const) }), ADMIN)).toEqual({ ok: false, error: 'not_found' })
   })
   it('set_pin derives the password for that user', async () => {
     const p = mockPort()
