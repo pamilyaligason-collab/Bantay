@@ -1,35 +1,45 @@
 /* Explore your body + the refined body map figure. App tokens only; organ colours are fixed mid-tones that read on both themes. */
-:root { --an-body-a: #F1E6D0; --an-body-b: #DFCFB1; }
-:root[data-theme="dark"] { --an-body-a: #46594B; --an-body-b: #2E3F34; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --an-body-a: #46594B; --an-body-b: #2E3F34; } }
+:root { --an-body-a: #F1E6D0; --an-body-b: #DFCFB1; --an-edge: #C9B88F; --an-bone-c: #B9A47A; --an-bone-s: #4E4128; }
+:root[data-theme="dark"] { --an-body-a: #46594B; --an-body-b: #2E3F34; --an-edge: #6E8A77; --an-bone-c: #E8DCBC; --an-bone-s: #9C8D68; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --an-body-a: #46594B; --an-body-b: #2E3F34; --an-edge: #6E8A77; --an-bone-c: #E8DCBC; --an-bone-s: #9C8D68; } }
 .an-body { filter: drop-shadow(0 2px 3px rgba(31, 61, 43, 0.22)); }
 
-.an-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
-.an-chip { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+/* System chips: one row you swipe sideways, so the figure stays above the fold. */
+.an-chips { display: flex; gap: 8px; margin: 12px 0 8px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; padding: 2px 44px 4px 0; -webkit-mask-image: linear-gradient(90deg, #000 90%, transparent); mask-image: linear-gradient(90deg, #000 90%, transparent); }
+.an-chips::-webkit-scrollbar { display: none; }
+.an-chip { flex: none; scroll-snap-align: start; min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .an-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
-.an-chip:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.an-chip:focus-visible, .an-row:focus-visible, .an-x:focus-visible, .an-src a:focus-visible, .an-hit:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
-.an-stage { display: grid; place-items: center; margin: 4px 0 8px; }
+/* The figure: licensed vector art from /anatomy/body.svg, one layer per system. Tap dots sit on top as real buttons. */
+.an-stage { display: grid; place-items: center; margin: 4px 0 8px; padding: 10px; border-radius: 22px; background: var(--card); }
 .hdr .an-h1 { font-size: 28px; }
-.an-svg { height: auto; touch-action: manipulation; }
-.an-crop { -webkit-mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(transparent, #000 10%, #000 90%, transparent); }
-.an-part { cursor: pointer; outline: none; }
-.an-fill { fill: var(--an-c); fill-opacity: 0.82; stroke: var(--an-s); stroke-width: 0.8; stroke-linejoin: round; transition: fill-opacity 0.15s; }
-.an-line { fill: none; stroke: var(--an-s); stroke-linecap: round; stroke-linejoin: round; }
-.an-hit { fill: transparent; stroke: none; }
-.an-part:hover .an-fill, .an-part:focus-visible .an-fill { fill-opacity: 1; stroke-width: 1.6; }
-.an-part:focus-visible .an-line, .an-part:hover .an-line { stroke-width: 3; }
-.an-part:focus-visible .an-hit { stroke: var(--act); stroke-width: 1.2; stroke-dasharray: 2 2; }
-.an-stage[data-sys="skeleton"] { --an-c: #F6F0E0; --an-s: #8A7A55; }
-.an-stage[data-sys="muscles"] { --an-c: #C8584E; --an-s: #8E2E27; }
-.an-stage[data-sys="heart"] { --an-c: #D4483C; --an-s: #A52E24; }
-.an-stage[data-sys="lungs"] { --an-c: #E9A2A8; --an-s: #B2545E; }
-.an-stage[data-sys="brain"] { --an-c: #B9A3D9; --an-s: #7258A8; }
-.an-stage[data-sys="digestion"] { --an-c: #E5A55A; --an-s: #A5651A; }
-.an-stage[data-sys="kidneys"] { --an-c: #B5654C; --an-s: #8A402C; }
-.an-stage[data-sys="skin"] { --an-c: #D9A47A; --an-s: #8C5A36; }
-.an-stage[data-sys="hormones"] { --an-c: #6FB39A; --an-s: #2F7A60; }
-.an-stage[data-sys="skin"] .an-fill { fill-opacity: 0.45; }
+.an-fig { position: relative; width: min(100%, calc(max(360px, min(52svh, 450px)) * var(--vw) / var(--vh))); }
+.an-svg { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+.an-crop { -webkit-mask-image: linear-gradient(transparent, #000 6%, #000 92%, transparent), linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); -webkit-mask-composite: source-in; mask-image: linear-gradient(transparent, #000 6%, #000 92%, transparent), linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-composite: intersect; }
+.an-shell { --bd: var(--an-body-a); --bo: var(--an-edge); transition: opacity 0.18s ease; }
+.an-shell.an-off { opacity: 0; }
+.an-layer { opacity: 0; visibility: hidden; transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+  --an-c: #888; --an-s: #444;
+  --a0: var(--an-s); --a1: color-mix(in srgb, var(--an-s) 45%, var(--an-c)); --a2: var(--an-c);
+  --a3: color-mix(in srgb, var(--an-c) 65%, #fff); --a4: color-mix(in srgb, var(--an-c) var(--an-t4, 30%), #fff);
+  --b0: #0B3F7A; --b1: #1F63B0; --b2: #4F8FD6; --b3: #A5C6EE; --b4: #DCE9F8; }
+.an-layer[data-on="true"] { opacity: 1; visibility: visible; transition: opacity 0.18s ease; }
+.an-layer[data-l="skeleton"] { --an-c: var(--an-bone-c); --an-s: var(--an-bone-s); --an-t4: 55%; }
+.an-layer[data-l="muscles"] { --an-c: #C8584E; --an-s: #7E241D; }
+.an-layer[data-l="heart"] { --an-c: #D4483C; --an-s: #7E1F18; }
+.an-layer[data-l="lungs"] { --an-c: #E9A2A8; --an-s: #A24552; }
+.an-layer[data-l="brain"] { --an-c: #B9A3D9; --an-s: #5E4590; }
+.an-layer[data-l="digestion"] { --an-c: #E5A55A; --an-s: #8F5410; }
+.an-layer[data-l="kidneys"] { --an-c: #B5654C; --an-s: #74321F; }
+.an-layer[data-l="skin"] { --an-c: #D9A47A; --an-s: #7A4A28; }
+.an-layer[data-l="hormones"] { --an-c: #6FB39A; --an-s: #1F6B52; }
+
+/* Tap dots: the button is a 44px target, the dot you see is smaller. */
+.an-hit { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.an-hit::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--btn); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 1px 4px rgba(0, 0, 0, 0.35); transition: transform 0.12s ease; }
+.an-hit:active::after { transform: scale(0.86); }
+@media (hover: hover) { .an-hit:hover::after { transform: scale(1.12); } }
 
 .an-h2 { font-size: 17px; margin: 12px 4px 8px; }
 .an-list { display: flex; flex-direction: column; }
@@ -53,4 +63,4 @@
 .hv-explore::after { content: "\203A"; color: var(--ink2); font-size: 22px; font-weight: 400; }
 .hv-explore:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
-@media (prefers-reduced-motion: reduce) { .an-fill { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .an-layer, .an-layer[data-on="true"], .an-shell, .an-hit::after { transition: none; } .an-hit:hover::after, .an-hit:active::after { transform: none; } }
