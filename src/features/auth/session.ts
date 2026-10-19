@@ -38,5 +38,6 @@ export function onAuthChange(cb: () => void): () => void {
 export async function signOut(): Promise<void> {
   void clearDocsCache().catch(() => {})
   void import('../records/useHealthData').then((m) => m.resetPersonChoice()).catch(() => {}) // next person starts on their own records
+  await import('../sync/profile').then((m) => m.forgetSelf()).catch(() => {}) // before the session goes
   await supabase?.auth.signOut({ scope: 'local' })
 }

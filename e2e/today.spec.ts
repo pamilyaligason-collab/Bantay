@@ -22,6 +22,7 @@ async function seed(page: Page, dbName: string, store: string, rows: Row[], mode
 
 const FAMILY = [{ personId: 'me', displayName: 'Lloyd' }, { personId: 'ma', displayName: 'Ma' }, { personId: 'pa', displayName: 'Pa' }]
 
+// The check-in confirmation and my own Mark taken need a signed-in identity; the no-auth e2e build has none, so they are covered by unit tests (today.test.tsx, selfId.test.ts).
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.addInitScript((f) => localStorage.setItem('bantay.family', JSON.stringify(f)), FAMILY)
@@ -50,36 +51,12 @@ test('I am OK signed out says to sign in and does not claim a check-in', async (
   await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
 })
 
-test('after a check-in it shows when and how many are OK, with a link to see who', async ({ page }) => {
-  const at = new Date()
-  await seed(page, 'bantay', 'kv', [{ key: 'profile.selfId', value: 'me' }])
-  await seed(page, 'bantay-log', 'activity', [
-    { personId: 'me', kind: 'check-in', minutes: null, steps: null, startedAt: at.toISOString(), source: 'manual' },
-    { personId: 'ma', kind: 'check-in', minutes: null, steps: null, startedAt: at.toISOString(), source: 'manual' }
-  ], 'add')
-  await page.reload()
-  await expect(page.getByText(/You checked in/)).toBeVisible()
-  await expect(page.getByText('2 of 3 OK today')).toBeVisible()
-  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'See who' })).toHaveAttribute('href', '#family')
-})
-
 test('Next up names the family member whose medicine is not taken and offers no Mark taken for them', async ({ page }) => {
   await seed(page, 'bantay', 'profiles', [{ id: 'ma', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: ['Hydroxurea 0:00', 'Aspirin 0:00'], updatedAt: null }])
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Ma: Hydroxurea and Aspirin' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Mark taken' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /See Ma's medicines/ })).toHaveAttribute('href', '#health')
-})
-
-test('my own due medicine has a 48px Mark taken that works offline with the cached self id', async ({ page }) => {
-  await seed(page, 'bantay', 'kv', [{ key: 'profile.selfId', value: 'me' }, { key: 'profile.medicines', value: ['Losartan 0:00'] }])
-  await page.reload()
-  await expect(page.getByRole('heading', { name: 'Time for Losartan' })).toBeVisible()
-  const take = page.getByRole('button', { name: 'Mark taken' })
-  expect((await take.boundingBox())!.height).toBeGreaterThanOrEqual(48)
-  await take.click()
-  await expect(page.getByRole('status').filter({ hasText: 'Marked Losartan taken' })).toBeVisible()
 })
 
 test("Today's plan ticks a task off in place and the progress follows", async ({ page }) => {

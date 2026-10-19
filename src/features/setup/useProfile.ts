@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { db, type ProfileRow } from '../../db'
-import { SELF_ID, selfIdNow, signedAvatar } from '../sync/profile'
+import { selfIdOrCached, signedAvatar } from '../sync/profile'
 
 /** One person's profile row, live. undefined until read, null when there is none yet. */
 export function useProfile(personId: string | null | undefined): ProfileRow | null | undefined {
@@ -29,11 +29,7 @@ export function useSelfPersonId(): string | null {
   const [id, setId] = useState<string | null>(null)
   useEffect(() => {
     let live = true
-    void (async () => {
-      const fresh = await selfIdNow()
-      const cached = fresh ?? (((await db.kv.get(SELF_ID).catch(() => undefined))?.value as string | undefined) ?? null)
-      if (live) setId(cached)
-    })()
+    void selfIdOrCached().then((v) => { if (live) setId(v) })
     return () => { live = false }
   }, [])
   return id

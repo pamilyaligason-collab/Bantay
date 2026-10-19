@@ -12,6 +12,7 @@ const MIGRATED = 'profile.migrated'
 const PHOTO_UP = 'profile.photoUp' // a picked photo that has not reached the server yet
 const PHOTO_AT = 'profile.photoAt' // when the cached kv photo was last known current
 export const SELF_ID = 'profile.selfId'
+export const SELF_USER = 'profile.selfUser' // the auth user the cached SELF_ID was seen with; the cache is honoured only for that user
 const MIGRATING = 'profile.migrating' // the migration PATCH is queued and not yet confirmed
 const MIGRATE_TRIES = 'profile.migrateTries'
 const COLS_SEEN = 'profile.serverCols' // the server has answered with the profile columns at least once (migration 0010 applied)
@@ -26,6 +27,11 @@ export async function adoptPerson(personId: string): Promise<void> {
   if (owner === personId) return
   if (owner) await db.kv.bulkDelete(PHONE_KEYS)
   await db.kv.put({ key: SELF_ID, value: personId })
+}
+
+/** Sign-out: this phone forgets whose it was, so the next person (or nobody) never inherits it. */
+export async function forgetSelf(): Promise<void> {
+  await db.kv.bulkDelete([SELF_ID, SELF_USER, ...PHONE_KEYS]).catch(() => undefined)
 }
 
 export const blankProfile = (id: string): ProfileRow => ({
@@ -214,9 +220,15 @@ export async function syncOwnProfile(): Promise<void> {
   } catch { /* try again next sync */ }
 }
 
-/** The signed-in person's id, or the one cached on this phone when offline. */
-export const selfIdOrCached = async (): Promise<string | null> =>
-  (await selfIdNow()) ?? (((await db.kv.get(SELF_ID).catch(() => undefined))?.value as string | undefined) ?? null)
+/** The signed-in person's id; offline (member known, person not fetched) the id cached for this same user. Signed out: null. */
+export async function selfIdOrCached(): Promise<string | null> {
+  const m = await getMember().catch(() => null)
+  if (!m) return null
+  if (m.personId) { await db.kv.put({ key: SELF_USER, value: m.userId }).catch(() => undefined); return m.personId }
+  const user = (await db.kv.get(SELF_USER).catch(() => undefined))?.value
+  if (user !== m.userId) return null
+  return ((await db.kv.get(SELF_ID).catch(() => undefined))?.value as string | undefined) ?? null
+}
 
 export const selfIdNow = async (): Promise<string | null> => {
   try { return (await getMember())?.personId ?? null } catch { return null }
