@@ -1,4 +1,3 @@
-import hazards from '../../data/safety/hazards.json'
 import practice from '../../data/safety/practice.json'
 import { NOT_A_SIREN } from './alerts'
 import './safety.css'
@@ -47,23 +46,6 @@ export function PracticeCard({ card }: { card: Card }) {
         . Posters are drawn for Bantay.
       </p>
     </details>
-  )
-}
-
-export function Hazards({ zone }: { zone: string }) {
-  if (hazards.zone !== zone) return <p className="sf-empty">No hazard readings for this zone yet. <a href={hazards.url} target="_blank" rel="noopener noreferrer">Check HazardHunterPH</a>.</p>
-  return (
-    <div className="grp">
-      {hazards.rows.map((r) => (
-        <div key={r.label} className="row sf-hz">
-          <span className="grow">{r.label}</span>
-          {r.value ? <span style={{ textAlign: 'right' }}>{r.value}</span> : (
-            <a href={hazards.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--warn)', textAlign: 'right' }}>Not confirmed yet, tap to check</a>
-          )}
-        </div>
-      ))}
-      <p className="sf-src">Source: {hazards.source}.</p>
-    </div>
   )
 }
 

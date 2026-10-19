@@ -7,7 +7,7 @@ test.describe('android phone', () => {
   test.use({ userAgent: ANDROID })
 
   test('safety card: android steps only, self-report survives reload', async ({ page }) => {
-    await page.goto('/#safety')
+    await page.goto('/#safety/warnings')
     await expect(page.getByText('Phone warnings check')).toBeVisible()
     await expect(page.getByText('Android Earthquake Alerts')).toBeVisible()
     await expect(page.getByText('Government Alerts')).toHaveCount(0)
@@ -24,7 +24,7 @@ test.describe('android phone', () => {
   for (const [w, h] of [[375, 812], [320, 640]] as const) {
     test(`no sideways scroll at ${w}px, axe clean`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h })
-      await page.goto('/#safety')
+      await page.goto('/#safety/warnings')
       await expect(page.getByText('Phone warnings check')).toBeVisible()
       expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
       expect(await page.evaluate(() => { const e = document.querySelector('.pw')!; return e.scrollWidth <= e.clientWidth })).toBe(true)
