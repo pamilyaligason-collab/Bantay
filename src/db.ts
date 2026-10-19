@@ -13,13 +13,33 @@ export interface KvRow {
   value: unknown
 }
 
+/** One people row's profile columns (public.people, migration 0010), camelCase. Unknown is null, never ''. */
+export interface ProfileFields {
+  photoPath: string | null
+  phone: string | null
+  birthdate: string | null
+  bloodType: string | null
+  allergies: string[]
+  conditions: string[]
+  medicines: string[]
+}
+export interface ProfileRow extends ProfileFields {
+  id: string
+  updatedAt: string | null
+  /** Fields edited here that the server has not confirmed yet (they win a merge while this edit is newer). */
+  pending?: (keyof ProfileFields)[]
+}
+
 class BantayDB extends Dexie {
   outbox!: Table<OutboxRow, number>
   kv!: Table<KvRow, string>
+  profiles!: Table<ProfileRow, string>
   constructor() {
     super('bantay')
     // payload is stored but not indexed (objects are not valid index keys).
     this.version(1).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key' })
+    // v2 only adds a table: existing outbox and kv rows are untouched.
+    this.version(2).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id' })
   }
 }
 

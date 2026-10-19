@@ -3,9 +3,12 @@ import { supabase } from './client'
 import { getMember } from './session'
 
 /** One face on the trusted-device picker. Names only: no emails, no auth ids. */
-export interface FamilyMember { personId: string; displayName: string; handle: string | null; provider: 'pin' | 'google'; initials: string }
+export interface FamilyMember { personId: string; displayName: string; handle: string | null; provider: 'pin' | 'google'; initials: string
+  /** Small cached picture (data URL) for the sign-in list, present only when family_profiles() returned photo_path. */
+  photo?: string | null }
 
 const KEY = 'bantay.family'
+const THUMBS = 'bantay.avatars' // { [personId]: { path, url } } 96px pictures: the sign-in list is shown before anyone is signed in, so it cannot use signed links
 const flagKey = (personId: string) => `bantay.passkey.${personId}` // '1' = this phone has a passkey for that person. No secrets.
 
 export const initialsOf = (name: string) => {
@@ -13,15 +16,38 @@ export const initialsOf = (name: string) => {
   return ((w[0]?.[0] ?? '?') + (w.length > 1 ? w[w.length - 1]![0]! : '')).toUpperCase()
 }
 
+type Thumbs = Record<string, { path: string; url: string }>
+function readThumbs(): Thumbs {
+  try {
+    const t = JSON.parse(localStorage.getItem(THUMBS) ?? '{}')
+    return t && typeof t === 'object' && !Array.isArray(t) ? Object.fromEntries(Object.entries(t as Thumbs).filter(([, v]) => typeof v?.url === 'string' && v.url.startsWith('data:image/'))) : {}
+  } catch { return {} }
+}
+
+/** Download one avatar and shrink it to a 96px jpeg data URL. null on any failure. */
+async function thumbOf(path: string): Promise<string | null> {
+  try {
+    const { data } = await supabase!.storage.from('avatars').download(path)
+    if (!data) return null
+    const img = await createImageBitmap(data)
+    const side = Math.min(img.width, img.height)
+    const c = document.createElement('canvas')
+    c.width = c.height = 96
+    c.getContext('2d')?.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 96, 96)
+    return c.toDataURL('image/jpeg', 0.7)
+  } catch { return null }
+}
+
 export function loadFamily(): FamilyMember[] {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '[]')
     if (!Array.isArray(v)) return []
     // Rebuild every entry from known fields only; the cache is plain localStorage and cannot be trusted.
+    const thumbs = readThumbs()
     return v.flatMap((m): FamilyMember[] =>
       m && typeof m.personId === 'string' && typeof m.displayName === 'string' && m.displayName.trim()
         ? [{ personId: m.personId, displayName: m.displayName.slice(0, 60), handle: typeof m.handle === 'string' ? m.handle.slice(0, 20) : null,
-             provider: m.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(m.displayName) }]
+             provider: m.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(m.displayName), ...(thumbs[m.personId] ? { photo: thumbs[m.personId]!.url } : {}) }]
         : [])
   } catch { return [] }
 }
@@ -34,11 +60,20 @@ export async function cacheFamily(): Promise<void> {
   try {
     const { data, error } = await supabase.rpc('family_profiles')
     if (gen !== generation || error || !Array.isArray(data) || !data.length) return
-    const list: FamilyMember[] = data.map((r: { person_id: string; display_name: string; handle: string | null; provider: string }) => ({
+    const list: FamilyMember[] = data.map((r: { person_id: string; display_name: string; handle: string | null; provider: string; photo_path?: string | null }) => ({
       personId: r.person_id, displayName: r.display_name, handle: r.handle ?? null,
       provider: r.provider === 'pin' ? 'pin' : 'google', initials: initialsOf(r.display_name)
     }))
     localStorage.setItem(KEY, JSON.stringify(list))
+    // Pictures, only when the server sent a photo_path (family_profiles() returns it once extended). A changed path is fetched again.
+    const old = readThumbs(), next: Thumbs = {}
+    for (const r of data as { person_id: string; photo_path?: string | null }[]) {
+      if (typeof r.photo_path !== 'string' || !r.photo_path) continue
+      if (old[r.person_id]?.path === r.photo_path) { next[r.person_id] = old[r.person_id]!; continue }
+      const url = await thumbOf(r.photo_path)
+      if (url) next[r.person_id] = { path: r.photo_path, url }
+    }
+    if (gen === generation) localStorage.setItem(THUMBS, JSON.stringify(next))
   } catch { /* offline or private mode */ }
 }
 
@@ -62,7 +97,7 @@ export async function rememberSignedIn(): Promise<void> {
 export function forgetPhone(): void {
   generation++
   try {
-    const drop: string[] = [KEY, LAST]
+    const drop: string[] = [KEY, LAST, THUMBS]
     for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith('bantay.passkey.')) drop.push(k) }
     drop.forEach((k) => localStorage.removeItem(k))
   } catch { /* private mode */ }

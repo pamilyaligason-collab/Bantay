@@ -1,0 +1,10 @@
+.dt-photo { display: flex; align-items: center; gap: 14px; }
+.dt-file { position: relative; cursor: pointer; }
+.dt-file input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.dt-file:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
+.dt-note { margin: -6px 2px 0; }
+.dt-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dt-field input { font: inherit; min-height: 48px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; background: var(--card2, var(--card)); color: var(--ink); width: 100%; box-sizing: border-box; min-width: 0; }
+.dt-err { color: var(--danger, var(--ink)); font-size: 13px; }
+.sh-sheet .grp { background: var(--card2, var(--card)); border-radius: 18px; overflow: hidden; }
+.sh-edit { background: none; border: 0; min-height: 44px; padding: 0 6px; font: inherit; font-weight: 600; color: var(--link, var(--green)); font-size: 13px; }
