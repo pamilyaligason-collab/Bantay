@@ -16,9 +16,9 @@ export type Card =
   | { kind: 'task'; id: string; title: string; due: string; assignee: string }
   | { kind: 'records'; id: string; person: string; test: string }
 
-/** Never more than the last 10 messages, and only role + content leave the device. */
+/** Never more than the last 10 messages, and only role + content leave the device. Card-only replies have no text and are not sent. */
 export const buildRequest = (messages: Msg[], screen: string) => ({
-  messages: messages.slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
+  messages: messages.filter((m) => m.content.trim()).slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
   screen
 })
 
@@ -83,6 +83,9 @@ export const personFor = (name: string, people: People[]) => {
   const m = personMatches(name, people)
   return m.length === 1 ? m[0] : undefined
 }
+
+/** Where the list scrolls to for a new card: its top when it fits (title and buttons both in view), else the end so Confirm and Discard are not below the fold. */
+export const cardScrollTop = (elTop: number, elHeight: number, viewHeight: number, scrollHeight: number) => (elHeight <= viewHeight ? elTop : scrollHeight)
 
 /** '2026-10-23' -> 'Fri, Oct 23'. Anything else comes back unchanged. */
 export function dateWords(d: string) {

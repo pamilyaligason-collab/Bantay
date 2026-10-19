@@ -7,7 +7,7 @@ import { hdb } from '../records/store'
 import { ask } from './client'
 import { DEFAULT_CAP, takeMessage } from './cap'
 import { addTask } from '../family/tasks'
-import { confirmDraft, confirmTask, FIELDS, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
+import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personMatches, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
 import { weatherSummary } from './weather'
 import './assistant.css'
@@ -85,11 +85,18 @@ function Weather() {
 function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; people: People[] }) {
   const [state, setState] = useState<'draft' | 'saving' | 'saved' | 'discarded'>('draft')
   const [err, setErr] = useState('')
-  const a = taskArgs(card.title, card.due, card.assignee, people)
+  // choice: undefined = not picked yet, '' = whole family, else a person id. A named assignee we cannot match must be picked, never dropped.
+  const [choice, setChoice] = useState<string | undefined>()
+  const named = card.assignee.trim() !== '' && !personFor(card.assignee, people)
+  const assignee = choice !== undefined ? choice : card.assignee
+  const a = taskArgs(card.title, card.due, assignee, people)
   const who = a?.assigneePersonId ? people.find((p) => p.id === a.assigneePersonId)?.name : undefined
+  const needPick = named && choice === undefined
+  const matches = personMatches(card.assignee, people)
+  const options = matches.length ? matches : people
   const confirm = async () => {
     setState('saving') // blocks a second tap while the first save runs
-    try { await confirmTask(card.title, card.due, card.assignee, people, addTask); setState('saved') } catch { setErr('Could not save the task. Please try again.'); setState('draft') }
+    try { await confirmTask(card.title, card.due, assignee, people, addTask); setState('saved') } catch { setErr('Could not save the task. Please try again.'); setState('draft') }
   }
   if (state === 'discarded') return <div className="as-card sub">Discarded.</div>
   if (state === 'saved') return <div className="as-card" role="status">Task added: {a?.title}.</div>
@@ -100,11 +107,15 @@ function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; peo
       <div className="as-fields">
         <label>Task<b>{a?.title ?? 'Not given'}</b></label>
         <label>Due<b>{a?.due ? dateWords(a.due) : 'No date'}</b></label>
-        <label>For<b>{who ?? 'Whole family'}</b></label>
+        <label>For<b>{needPick ? `Who is "${card.assignee.trim()}"?` : who ?? 'Whole family'}</b></label>
       </div>
+      {named && <div className="as-people" role="group" aria-label="Pick a person">
+        {options.map((p) => <button key={p.id} type="button" className="as-chip" aria-pressed={choice === p.id} onClick={() => setChoice(p.id)}>{p.name}</button>)}
+        <button type="button" className="as-chip" aria-pressed={choice === ''} onClick={() => setChoice('')}>Whole family</button>
+      </div>}
       {err && <span role="alert" className="as-err">{err}</span>}
       <div className="as-actions">
-        <button className="btn" disabled={state === 'saving' || !a} onClick={confirm}>Confirm</button>
+        <button className="btn" disabled={state === 'saving' || !a || needPick} onClick={confirm}>Confirm</button>
         <button className="btn2" onClick={() => setState('discarded')}>Discard</button>
       </div>
     </div>
@@ -193,7 +204,7 @@ export default function Assistant() {
     const l = list.current
     const last = items[items.length - 1]
     const el = l?.querySelector<HTMLElement>('.as-msg:last-of-type')
-    l?.scrollTo?.({ top: last?.cards?.length && el ? el.offsetTop - l.offsetTop : (l?.scrollHeight ?? 0) })
+    l?.scrollTo?.({ top: last?.cards?.length && el ? cardScrollTop(el.offsetTop - l.offsetTop, el.offsetHeight, l.clientHeight, l.scrollHeight) : (l?.scrollHeight ?? 0) })
   }, [items])
 
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))

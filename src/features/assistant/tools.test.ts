@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
+import { buildRequest, cardScrollTop, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
 import type { Reading } from '../health/ranges'
 
 describe('add task + records answer cards', () => {
@@ -127,6 +127,17 @@ describe('buildRequest', () => {
     expect(r.messages[0]!.content).toBe('m15')
     expect(Object.keys(r.messages[0]!)).toEqual(['role', 'content'])
     expect(r.screen).toBe('health')
+  })
+})
+
+describe('buildRequest empty turns and card scroll', () => {
+  it('drops assistant turns with no text', () => {
+    const r = buildRequest([{ role: 'user', content: 'hi' }, { role: 'assistant', content: '' }, { role: 'user', content: 'again' }], 'today')
+    expect(r.messages.map((m) => m.content)).toEqual(['hi', 'again'])
+  })
+  it('scrolls to the card top when it fits, to the end when taller than the list', () => {
+    expect(cardScrollTop(100, 200, 300, 900)).toBe(100)
+    expect(cardScrollTop(100, 400, 300, 900)).toBe(900)
   })
 })
 
