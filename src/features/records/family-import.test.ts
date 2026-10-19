@@ -2,7 +2,7 @@
 // Synthetic data only. No real names, values or ids anywhere in this file.
 import { describe, expect, it } from 'vitest'
 import migration from '../../../supabase/migrations/0013_records_autoconfirm.sql?raw'
-import { normalizeIdentity, pending } from '../../../scripts/import/extract.mjs'
+import { assignedTo, normalizeDraft, normalizeIdentity, pending } from '../../../scripts/import/extract.mjs'
 import {
   AUTO_THRESHOLD, buildMatcher, buildPeopleMap, buildProfiles, dependentsSql, extractPeopleRows, gate, matchPerson, parseAliasConfig, pickField, resolveThreshold
 } from '../../../scripts/import/family.mjs'
@@ -146,6 +146,20 @@ describe('profile merge', () => {
   })
 })
 
+describe('extract: unknown confidence and unassigned files', () => {
+  it('confidence null/missing stays null, never 0', () => {
+    expect(normalizeIdentity({ confidence: null }).confidence).toBeNull()
+    expect(normalizeDraft({ confidence: null }).confidence).toBeNull()
+    expect(normalizeDraft({}).confidence).toBeNull()
+    expect(normalizeDraft({ confidence: 0 }).confidence).toBe(0)
+  })
+  it('pending skips files whose person cannot be matched', () => {
+    const m = { files: [{ drive_file_id: 'a', path: 'Test Parent/Lab/a.pdf' }, { drive_file_id: 'b', path: 'Nobody/Lab/b.pdf' }] }
+    const ids = pending(m as never, () => false, () => true, assignedTo(buildMatcher(MAP) as never) as never).map((x) => x.drive_file_id)
+    expect(ids).toEqual(['a'])
+  })
+})
+
 describe('auto-confirm in the load sql', () => {
   const mk = (id: string, path: string, lane: string, extra: Record<string, unknown> = {}) => ({
     drive_file_id: id, name: path.split('/').pop(), mime: 'application/pdf', size: 10, modified: '2024-01-01T00:00:00Z', md5: null, path,
@@ -228,6 +242,7 @@ describe('auto-confirm in the load sql', () => {
     expect(upd[0]).toContain("sex = coalesce(sex, 'female')")
     expect(upd[0]).toContain("blood_type = coalesce(blood_type, 'O+')")
     expect(upd[0]).toContain("'Test Almendras'") // aliases union
+    expect(upd[0]).not.toContain("'Test Parent'") // the person's own display name is not an alias
     expect(upd[0]).toContain("'Penicillin'") // confirmed allergy joins the profile list
     expect(upd[0]).toContain("'Drug A'") // seen on two papers = maintenance medicine
     expect(upd[0]).not.toContain('Drug B')

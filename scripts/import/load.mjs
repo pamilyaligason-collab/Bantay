@@ -77,7 +77,7 @@ const AUTO = { confirmed_source: "'auto'" }
  *          autoConfirm?: {threshold?:number}|null}} o  autoConfirm null/absent = every row a draft (old behaviour)
  * @returns {{sql:string, summary:object, persons:Record<string,string>}}
  */
-export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, catalog = loadCatalog(), autoConfirm = null }) {
+export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, catalog = loadCatalog(), autoConfirm = null, displayNames = null }) {
   const threshold = autoConfirm ? resolveThreshold(autoConfirm.threshold ?? AUTO_THRESHOLD) : null
   const matcher = buildMatcher(peopleMap)
   const files = [...manifest.files].sort((a, b) => a.drive_file_id.localeCompare(b.drive_file_id))
@@ -293,7 +293,9 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
       const prof = profiles.get(pid) ?? {}
       if (prof.birthdate) sets.push(`birthdate = coalesce(birthdate, ${lit(prof.birthdate)}::date)`)
       for (const c of ['sex', 'blood_type', 'address']) if (prof[c]) sets.push(`${c} = coalesce(${c}, ${lit(prof[c])})`)
-      const aliases = [...new Map((keysByPerson.get(pid) ?? []).map((k) => [nameKey(k), k])).values()].slice(0, 20)
+      // the first key per person is the config's own name (= display name): it is not an alias of itself
+      const own = new Set([nameKey(keysByPerson.get(pid)?.[0] ?? ''), nameKey(displayNames?.[pid] ?? '')])
+      const aliases = [...new Map((keysByPerson.get(pid) ?? []).map((k) => [nameKey(k), k])).values()].filter((k) => !own.has(nameKey(k))).slice(0, 20)
       if (aliases.length) sets.push(union('aliases', aliases))
       const meds = [...(rxDrugs.get(pid)?.values() ?? [])].filter((x) => x.docs.size >= 2).map((x) => x.name)
       for (const [col, xs] of [['allergies', confirmedText.allergies.get(pid)], ['conditions', confirmedText.conditions.get(pid)], ['medicines', meds]]) if (xs?.length) sets.push(union(col, [...new Set(xs)]))

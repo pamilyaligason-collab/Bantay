@@ -3,6 +3,7 @@
 // Reads import/manifest.json + import/files/<id>; writes import/drafts/<id>.json. Prints counts only.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { buildMatcher, matchPerson } from './family.mjs'
 import { promptFor } from './folders.mjs'
 import { assertAllowed, buildRequest, PROMPT_IDENTITY, sendToOpenRouter } from './lib.mjs'
 
@@ -48,7 +49,7 @@ const clip = (v, n = 300) => (typeof v === 'string' && v.trim() && !/^null$/i.te
 
 /** Identity / insurance papers (D-68). Same rule: only the contract shape survives. id_number is kept here and nowhere else in logs. */
 export function normalizeIdentity(p) {
-  const conf = Number(p?.confidence)
+  const conf = p?.confidence == null ? NaN : Number(p.confidence) // null/undefined = unknown, never 0
   return {
     lane: 'identity',
     doc_kind: CARD_KINDS.includes(p?.doc_kind) ? p.doc_kind : 'other',
@@ -72,7 +73,7 @@ export function normalizeIdentity(p) {
 export function normalizeDraft(p) {
   const arr = (v) => (Array.isArray(v) ? v : [])
   const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null)
-  const conf = Number(p?.confidence)
+  const conf = p?.confidence == null ? NaN : Number(p.confidence) // null/undefined = unknown, never 0
   return {
     doc_kind: KINDS.includes(p?.doc_kind) ? p.doc_kind : 'other',
     doc_date: p?.doc_date ?? null,
@@ -91,8 +92,12 @@ export function normalizeDraft(p) {
 }
 
 /** Files still needing a draft. Skipped, duplicate, never-downloaded and document_only (never read) files are left out. */
-export const pending = (manifest, hasDraft, hasFile) =>
-  manifest.files.filter((e) => !e.skipped && e.lane !== 'document_only' && !e.duplicate_of && !e.download_failed && !hasDraft(e.drive_file_id) && hasFile(e.drive_file_id))
+export const pending = (manifest, hasDraft, hasFile, isAssigned = () => true) =>
+  manifest.files.filter((e) => !e.skipped && e.lane !== 'document_only' && !e.duplicate_of && !e.download_failed && !hasDraft(e.drive_file_id) && hasFile(e.drive_file_id) && isAssigned(e))
+
+/** True when the folder path names a known person (load.mjs can never load a file without one). */
+export const assignedTo = (matcher) => (e) =>
+  matchPerson(matcher, { segments: [...new Set([...(e.path ? e.path.split('/').slice(0, -1) : []), e.person_folder].filter(Boolean))], printed: null }).id != null
 
 /** One file -> draft object, or {failed:true,...} for types we cannot read. Throws on API failure. */
 export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, stats = { text_layer_errors: 0 } }) {
@@ -129,8 +134,13 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   const delay = opt('--delay', 600)
   const manifest = JSON.parse(readFileSync('import/manifest.json', 'utf8'))
   mkdirSync('import/drafts', { recursive: true })
-  const todo = pending(manifest, (id) => existsSync(`import/drafts/${id}.json`), (id) => existsSync(`import/files/${id}`)).slice(0, limit)
-  const n = { todo: todo.length, done_text: 0, done_vision: 0, unsupported: 0, failed: 0 }
+  const peopleMap = existsSync('import/people-map.json') ? JSON.parse(readFileSync('import/people-map.json', 'utf8')) : {}
+  const hasDraft = (id) => existsSync(`import/drafts/${id}.json`)
+  const hasFile = (id) => existsSync(`import/files/${id}`)
+  const all = pending(manifest, hasDraft, hasFile)
+  const ready = pending(manifest, hasDraft, hasFile, assignedTo(buildMatcher(peopleMap)))
+  const todo = ready.slice(0, limit)
+  const n = { todo: todo.length, unassigned: all.length - ready.length, done_text: 0, done_vision: 0, unsupported: 0, failed: 0 }
   const stats = { text_layer_errors: 0 }
   for (const e of todo) {
     try {
