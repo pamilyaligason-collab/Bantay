@@ -11,28 +11,52 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>map</p>' }))
 })
 
-test('safety screen: no alerts, hotlines, unknown places, maps load only on request', async ({ page }) => {
+test('safety hub (D-68): ten tiles with a status line, each opens its page and goes back', async ({ page }) => {
   await page.goto('/#safety')
   await expect(page.locator('h1')).toHaveText('Safety')
+  const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
+  await expect(tiles).toHaveCount(10)
+  await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
+  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('3 numbers confirmed')
+  await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
+  await tiles.filter({ hasText: 'Quick dial' }).click()
+  await expect(page).toHaveURL(/#safety\/dial$/)
+  await expect(page.locator('h1')).toHaveText('Quick dial')
+  await page.getByRole('link', { name: 'Back to Safety' }).click()
+  await expect(page.locator('h1')).toHaveText('Safety')
+})
+
+test('warnings page: none now; quick dial: only confirmed numbers, the rest collapsed; maps load only on request', async ({ page }) => {
+  await page.goto('/#safety/warnings')
   await expect(page.getByText('No active warnings for your area')).toBeVisible()
-  await expect(page.getByRole('link', { name: '911' }).first()).toBeVisible()
+  await page.goto('/#safety/dial')
+  await expect(page.getByRole('link', { name: /Call National emergency, 911/ })).toHaveAttribute('href', 'tel:911')
+  await expect(page.getByRole('link', { name: /Call Philippine Red Cross, 143/ })).toBeVisible()
   await expect(page.getByText('160', { exact: true })).toHaveCount(0)
-  // unconfirmed values are shown plainly and there is no Go button for them
-  await expect(page.getByRole('button', { name: 'Not confirmed yet, tap to add' }).first()).toBeVisible()
+  // unconfirmed values wait in a closed group and there is no Go button for them
+  const addBtn = page.getByRole('button', { name: 'Not confirmed yet, tap to add' }).first()
+  await expect(addBtn).toBeHidden()
+  await page.getByText('Numbers we still need (tap to add)').click()
+  await expect(addBtn).toBeVisible()
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(0)
+  // source text is behind the small i button, not under every row
+  await expect(page.getByText('Source:')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Where National emergency came from' }).click()
+  await expect(page.getByRole('dialog', { name: 'National emergency' })).toContainText('Source: National emergency number')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.goto('/#safety/weather')
   // iframes are not mounted until asked
   await expect(page.locator('iframe[title^="Ventusky"]')).toHaveCount(0)
   await page.getByText('Ventusky weather map').click()
   const frame = page.locator('iframe[title^="Ventusky"]')
   await expect(frame).toHaveAttribute('src', /^https:\/\/embed\.ventusky\.com\/\?p=9\.65;123\.88;7&l=rain-3h&w=soft&pin=9\.65;123\.88;dot;Here$/)
   await expect(frame).toHaveAttribute('loading', 'lazy')
-  // earthquake card says what Bantay is not
-  await page.locator('summary', { hasText: /^Earthquake$/ }).click()
-  await expect(page.getByText('Do not wait for a message.').first()).toBeVisible()
 })
 
 test('adding a pin gives a Go button that survives reload (offline store)', async ({ page }) => {
-  await page.goto('/#safety')
+  await page.goto('/#safety/map')
+  await expect(page.getByText('Map coming')).toBeVisible() // until the Rescue map component is wired
   await page.getByRole('region', { name: 'Evacuation and rescue' }).getByRole('button', { name: 'Not confirmed yet, tap to add' }).first().click()
   await page.getByLabel('Latitude').fill('9.65')
   await page.getByLabel('Longitude').fill('123.88')
@@ -44,7 +68,7 @@ test('adding a pin gives a Go button that survives reload (offline store)', asyn
 })
 
 test('an alert in Dexie shows on Safety and Today with depth on expand', async ({ page }) => {
-  await page.goto('/#safety')
+  await page.goto('/#safety/warnings')
   await expect(page.getByText('No active warnings')).toBeVisible()
   await page.evaluate(async (alert) => {
     await new Promise<void>((res, rej) => {
@@ -78,7 +102,7 @@ test.describe('Near me on the maps switcher', () => {
           ok({ coords: { latitude: 6.11, longitude: 125.17 } } as GeolocationPosition)
         }
       })
-      await page.goto('/#safety')
+      await page.goto('/#safety/weather')
       const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
       await expect(near).toHaveAttribute('aria-pressed', 'false')
       await expect(page.locator('.hdr .sf-chip')).toHaveText('Dampas')
@@ -100,7 +124,7 @@ test.describe('Near me on the maps switcher', () => {
         navigator.permissions.query = () => Promise.resolve({ state: 'prompt' } as PermissionStatus)
         navigator.geolocation.getCurrentPosition = (_ok, no) => (w.__gpsCalls++, no?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }))
       })
-      await page.goto('/#safety')
+      await page.goto('/#safety/weather')
       const group = page.getByRole('group', { name: 'Map place' })
       const near = group.getByRole('button', { name: 'Near me' })
       await expect(near).toBeVisible()
@@ -113,26 +137,21 @@ test.describe('Near me on the maps switcher', () => {
   })
 })
 
-test('Safety order (D-62): SOS, 911 + Medical ID, IDs and Insurance, warnings, Quick dial, Live weather, Live maps', async ({ page }) => {
+test('Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid', async ({ page }) => {
   await page.goto('/#safety')
   const y = async (loc: ReturnType<typeof page.locator>) => (await loc.first().boundingBox())!.y
   const sos = await y(page.getByRole('button', { name: /^SOS\./ }))
   const call = await y(page.getByRole('link', { name: 'Call 911' }))
   const med = await y(page.getByRole('link', { name: 'Medical ID' }))
-  const ids = await y(page.getByRole('link', { name: 'My IDs' }))
-  const warn = await y(page.getByRole('heading', { name: 'Warnings', exact: true }))
-  const dial = await y(page.getByRole('heading', { name: 'Quick dial' }))
-  const wx = await y(page.getByRole('heading', { name: 'Live weather' }))
-  const maps = await y(page.getByRole('heading', { name: 'Live maps' }))
+  const nav = page.getByRole('navigation', { name: 'Safety topics' })
+  const tiles = await y(nav)
   expect(call).toBeGreaterThan(sos)
   expect(Math.abs(med - call)).toBeLessThan(4)
-  expect(ids).toBeGreaterThan(call)
-  expect(warn).toBeGreaterThan(ids)
-  expect(dial).toBeGreaterThan(warn)
-  expect(wx).toBeGreaterThan(dial)
-  expect(maps).toBeGreaterThan(wx)
-  await expect(page.getByRole('link', { name: 'My IDs' })).toHaveAttribute('href', '#docs')
-  await expect(page.getByRole('link', { name: 'Insurance' })).toHaveAttribute('href', '#docs/insurance')
+  expect(tiles).toBeGreaterThan(call)
+  const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather maps', '#safety/weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
+    ['Hazards at my location', '#safety/hazards'], ['Go-bag', '#gobag'], ['Safety cards', '#safety/cards'], ['IDs and insurance', '#docs'], ['Past SOS', '#safety/sos']]
+  for (const [t, href] of want) await expect(nav.getByRole('link', { name: new RegExp('^' + t) })).toHaveAttribute('href', href)
+  for (const box of await nav.getByRole('link').all()) expect((await box.boundingBox())!.height).toBeGreaterThanOrEqual(44)
   await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveAttribute('href', '#medid')
 })
 
@@ -179,7 +198,7 @@ test('Medical ID and Go-bag screens open from Safety and go back', async ({ page
   await expect(page.getByText('Show on lock screen')).toBeVisible()
   await page.getByRole('link', { name: 'Back to Safety' }).click()
   await expect(page.getByRole('heading', { name: 'Safety', exact: true })).toBeVisible()
-  await page.getByRole('link', { name: 'Go-bag checklist' }).click()
+  await page.getByRole('link', { name: /^Go-bag/ }).click()
   const water = page.getByRole('checkbox', { name: /Drinking water/ })
   await water.click()
   await expect(water).toHaveAttribute('aria-checked', 'true')
@@ -187,18 +206,42 @@ test('Medical ID and Go-bag screens open from Safety and go back', async ({ page
   await expect(page.getByRole('checkbox', { name: /Drinking water/ })).toHaveAttribute('aria-checked', 'true')
 })
 
-test('zone pick reaches zone data (D-33): Conel has no Tagbilaran numbers or Dampas hazards', async ({ page }) => {
-  await page.goto('/#safety')
-  await expect(page.getByText('BFP Tagbilaran').first()).toBeVisible()
+test('zone pick reaches zone data (D-33): Conel has no Tagbilaran places or Dampas hazards', async ({ page }) => {
+  await page.goto('/#safety/map')
+  await expect(page.getByText('BFP Tagbilaran fire station').first()).toBeVisible()
   await page.getByRole('button', { name: /^Place:/ }).click()
   await page.getByRole('group', { name: 'Zone' }).getByRole('button', { name: 'Conel' }).click()
   await expect(page.getByText('BFP Tagbilaran')).toHaveCount(0)
+  await page.goto('/#safety/hazards')
   await expect(page.getByText('No hazard readings for this zone yet')).toBeVisible()
+  await page.goto('/#safety')
   await expect(page.getByRole('link', { name: 'Call 911' })).toBeVisible()
 })
 
+test('hazards at my location: four level cards with what to do, HazardHunterPH link, source behind i', async ({ page }) => {
+  await page.goto('/#safety/hazards')
+  await expect(page.locator('h1')).toHaveText('Hazards at my location')
+  for (const t of ['Flood', 'Landslide', 'Storm surge', 'Earthquake']) await expect(page.getByRole('article', { name: t })).toBeVisible()
+  await expect(page.getByRole('article', { name: 'Flood' })).toContainText('Not confirmed yet')
+  await expect(page.getByRole('article', { name: 'Earthquake' })).toContainText('Prone, Intensity VIII')
+  await expect(page.getByRole('article', { name: 'Earthquake' })).toContainText('Drop, cover and hold on')
+  await expect(page.getByRole('link', { name: 'Open HazardHunterPH' })).toHaveAttribute('href', /hazardhunter\.georisk\.gov\.ph/)
+  await page.getByRole('button', { name: 'Where these readings came from' }).click()
+  await expect(page.getByRole('dialog')).toContainText('HazardHunterPH')
+})
+
+test('storm tracker, safety cards and past SOS pages open', async ({ page }) => {
+  await page.goto('/#safety/storms')
+  await expect(page.getByText('No active storms')).toBeVisible()
+  await page.goto('/#safety/cards')
+  await page.locator('summary', { hasText: /^Earthquake$/ }).click()
+  await expect(page.getByText('Do not wait for a message.').first()).toBeVisible()
+  await page.goto('/#safety/sos')
+  await expect(page.getByText('No SOS sent from this phone yet.')).toBeVisible()
+})
+
 test('live weather: layer switch only changes overlay, storm tracker and links', async ({ page }) => {
-  await page.goto('/#safety')
+  await page.goto('/#safety/weather')
   const sec = page.getByRole('region', { name: 'Live weather' })
   await sec.scrollIntoViewIfNeeded()
   const main = sec.locator('iframe').first()

@@ -6,7 +6,7 @@ import './safety.css'
 
 const NONE: Overrides = {}
 
-function EditForm({ entry, geo, onDone }: { entry: Entry; geo: boolean; onDone: () => void }) {
+export function EditForm({ entry, geo, onDone }: { entry: Entry; geo: boolean; onDone: () => void }) {
   const [f, setF] = useState({ lat: '', lon: '', phone: '' })
   const [err, setErr] = useState('')
   const on = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
