@@ -1,5 +1,5 @@
 import { clock, doseStates, medSlots, sameName } from '../health/model'
-import { HEAT_C, doseKey, isSkipped, RAIN_HERO_PCT, heroCards, type HeroCard, type Sky, type Wx } from './heroCards'
+import { HEAT_C, doseKey, isSkipped, notSkippedPerDose, RAIN_HERO_PCT, heroCards, type HeroCard, type Sky, type Wx } from './heroCards'
 
 /** Next up: ONE item. Due medicine (mine or someone I care for) > plan item due today > nearby storm > weather only when it is rainy or hot > all clear. */
 
@@ -14,9 +14,9 @@ const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
 export function dueMeds(people: DueInput[], taken: { personId: string; name: string; takenAt: string }[], skipped: string[], now: Date): DuePerson[] {
   const nowMin = minutes(now)
   return people.flatMap((p): DuePerson[] => {
-    const states = doseStates(medSlots(p.entries), taken.filter((t) => t.personId === p.personId), now)
+    const states = doseStates(notSkippedPerDose(medSlots(p.entries), p.isMe ? skipped : []), taken.filter((t) => t.personId === p.personId), now)
     const open = states.filter((s) => s.at != null && s.at <= nowMin && !s.taken)
-    const first = (n: string) => Math.min(...open.filter((d) => sameName(d.name, n)).map((d) => d.at!))
+    const first = (n: string) => Math.min(Infinity, ...open.filter((d) => sameName(d.name, n)).map((d) => d.at!))
     const due = open.filter((s) => !(p.isMe && isSkipped(skipped, s.name, s.at!, first(s.name))))
     if (!due.length) return []
     return [{ personId: p.personId, name: p.name, isMe: p.isMe, meds: [...new Set(due.map((d) => d.name))], at: Math.min(...due.map((d) => d.at!)), skipKeys: due.map((d) => doseKey(d.name, d.at!)) }]

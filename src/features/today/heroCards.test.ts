@@ -35,6 +35,9 @@ describe('dueDoses skips', () => {
     expect(dueDoses(two, [], [doseKey('Metformin', 480)], at(20, 30)).map((d) => d.at)).toEqual([1200])
     expect(dueDoses(two, [], [doseKey('Metformin', 480)], at(9, 0))).toEqual([])
   })
+  it('skip 8:00 then take at 20:30: nothing left due (the take is not given to the skipped slot)', () => {
+    expect(dueDoses(two, [{ name: 'Metformin', takenAt: at(20, 30).toISOString() }], ['Metformin@480'], at(20, 31))).toEqual([])
+  })
   it('a legacy name-only skip covers only the earliest open dose', () => {
     expect(dueDoses(two, [], ['Metformin'], at(20, 30)).map((d) => d.at)).toEqual([1200])
   })

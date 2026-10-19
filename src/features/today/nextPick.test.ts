@@ -26,6 +26,10 @@ describe('dueMeds', () => {
     expect(d[0]!.at).toBe(1200)
     expect(d[0]!.skipKeys).toEqual(['Metformin@1200'])
   })
+  it('skip 8:00 then take at 20:30: nothing left due', () => {
+    const m = { ...me, entries: ['Metformin 8:00,20:00'] }
+    expect(dueMeds([m], [{ personId: 'me', name: 'Metformin', takenAt: at(20, 30).toISOString() }], ['Metformin@480'], at(20, 31))).toEqual([])
+  })
   it('skip counts for me only', () => {
     expect(dueMeds([me], [], ['Losartan'], at(9))).toEqual([])
     expect(dueMeds([ma], [], ['Aspirin', 'Hydroxurea'], at(9))).toHaveLength(1) // still on the list for Ma

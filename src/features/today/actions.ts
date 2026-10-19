@@ -1,5 +1,5 @@
 import { logActivity, logMedTaken, logReading } from '../log/store'
-import { currentPersonId } from '../sensors/health'
+import { selfIdOrCached } from '../sync/profile'
 
 /** Writes behind the Today quick-log row. All go through the shared log store (local first, then the outbox).
  *  Signed out: nothing is written and the person is told, never a silent success. */
@@ -7,7 +7,7 @@ export type LogResult = 'ok' | 'signedout' | 'failed'
 
 async function asPerson(fn: (personId: string) => Promise<unknown>): Promise<LogResult> {
   try {
-    const id = await currentPersonId()
+    const id = await selfIdOrCached()
     if (!id) return 'signedout'
     await fn(id)
     return 'ok'

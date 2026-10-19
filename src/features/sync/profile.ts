@@ -214,6 +214,10 @@ export async function syncOwnProfile(): Promise<void> {
   } catch { /* try again next sync */ }
 }
 
+/** The signed-in person's id, or the one cached on this phone when offline. */
+export const selfIdOrCached = async (): Promise<string | null> =>
+  (await selfIdNow()) ?? (((await db.kv.get(SELF_ID).catch(() => undefined))?.value as string | undefined) ?? null)
+
 export const selfIdNow = async (): Promise<string | null> => {
   try { return (await getMember())?.personId ?? null } catch { return null }
 }

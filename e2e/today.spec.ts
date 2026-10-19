@@ -72,14 +72,14 @@ test('Next up names the family member whose medicine is not taken and offers no 
   await expect(page.getByRole('link', { name: /See Ma's medicines/ })).toHaveAttribute('href', '#health')
 })
 
-test('my own due medicine has a 48px Mark taken that says to sign in when signed out', async ({ page }) => {
+test('my own due medicine has a 48px Mark taken that works offline with the cached self id', async ({ page }) => {
   await seed(page, 'bantay', 'kv', [{ key: 'profile.selfId', value: 'me' }, { key: 'profile.medicines', value: ['Losartan 0:00'] }])
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Time for Losartan' })).toBeVisible()
   const take = page.getByRole('button', { name: 'Mark taken' })
   expect((await take.boundingBox())!.height).toBeGreaterThanOrEqual(48)
   await take.click()
-  await expect(page.getByRole('status').filter({ hasText: 'Sign in first' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Marked Losartan taken' })).toBeVisible()
 })
 
 test("Today's plan ticks a task off in place and the progress follows", async ({ page }) => {

@@ -54,18 +54,22 @@ const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
 
 /** A skip is stored per dose as name@minute. A legacy name-only entry counts only for that medicine's earliest open dose. */
 export const doseKey = (name: string, at: number) => `${name}@${at}`
-export function isSkipped(skipped: string[], name: string, at: number, firstOpenAt: number): boolean {
-  return skipped.some((k) => (/@[0-9]+$/.test(k) ? sameName(k, doseKey(name, at)) : at === firstOpenAt && sameName(k, name)))
-}
+const PER_DOSE = /@[0-9]+$/
+/** Slots skipped per dose are dropped BEFORE takes are allotted, so a later take cannot be handed to a skipped slot. */
+export const notSkippedPerDose = <T extends { name: string; at: number | null }>(slots: T[], skipped: string[]) =>
+  slots.filter((s) => s.at == null || !skipped.some((k) => PER_DOSE.test(k) && sameName(k, doseKey(s.name, s.at!))))
+/** Legacy name-only entries (no @time) cover only that medicine's earliest open dose. */
+export const isSkipped = (skipped: string[], name: string, at: number, firstOpenAt: number) =>
+  skipped.some((k) => !PER_DOSE.test(k) && at === firstOpenAt && sameName(k, name))
 
 /** Doses whose time has come, not yet taken or skipped today (same rule as Next up). Oldest first. */
 export function dueDoses(profile: unknown, taken: { name: string; takenAt: string }[], skipped: string[], now: Date): Dose[] {
   if (!Array.isArray(profile)) return []
   const nowMin = minutes(now)
-  const open = doseStates(medSlots(profile.filter((x): x is string => typeof x === 'string')), taken, now)
+  const open = doseStates(notSkippedPerDose(medSlots(profile.filter((x): x is string => typeof x === 'string')), skipped), taken, now)
     .filter((s) => s.at != null && s.at <= nowMin && !s.taken)
     .map((s) => ({ name: s.name, at: s.at! }))
-  const first = (n: string) => Math.min(...open.filter((d) => sameName(d.name, n)).map((d) => d.at))
+  const first = (n: string) => Math.min(Infinity, ...open.filter((d) => sameName(d.name, n)).map((d) => d.at))
   return open.filter((d) => !isSkipped(skipped, d.name, d.at, first(d.name))).sort((a, b) => a.at - b.at)
 }
 
