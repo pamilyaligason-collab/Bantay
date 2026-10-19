@@ -18,6 +18,7 @@ $Db = @('-y', $Sb, 'db', 'query', '--linked', '--project-ref', $Ref)
 Step 1 'Checks'
 if (-not (Test-Path import\aliases.json)) { throw 'step 1 failed: import\aliases.json missing (copy scripts\import\aliases.example.json and fill in the family names)' }
 if (-not (Test-Path $LocalRoot)) { throw "step 1 failed: $LocalRoot not found (Google Drive for desktop)" }
+if ($env:OPENROUTER_API_KEY) { $env:OPENROUTER_API_KEY = $env:OPENROUTER_API_KEY.Trim() }  # a pasted key often carries a space or line break
 if (-not $DryRun -and -not $env:OPENROUTER_API_KEY) { throw 'step 1 failed: OPENROUTER_API_KEY is not set' }
 if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund; Check 1 }
 if (-not $DryRun) {

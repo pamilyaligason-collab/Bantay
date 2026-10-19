@@ -80,7 +80,7 @@ export const PROMPT =
 export async function sendToOpenRouter(fetchImpl, body, key, log = console.error) {
   const r = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${String(key ?? '').trim()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
   if (!r.ok) {
