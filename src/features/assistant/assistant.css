@@ -27,3 +27,6 @@
 .as-form { display: flex; gap: 8px; align-items: center; }
 .as-form input { flex: 1; min-width: 0; min-height: 52px; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 14px; padding: 0 14px; background: var(--cell); color: var(--ink); }
 .as-form .btn { width: auto; }
+.as-chip-static { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; }
+.as-chips .as-chip, .as-people .as-chip, .as-src a.as-chip { display: inline-flex; align-items: center; text-decoration: none; }
+.as-people, .as-src { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

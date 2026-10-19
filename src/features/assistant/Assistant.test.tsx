@@ -136,3 +136,27 @@ describe('Assistant v2', () => {
     expect(screen.getByText('From your lab result on 2 Oct 2026')).toBeTruthy()
   })
 })
+
+describe('Assistant round 3', () => {
+  it('no filler bubble when a card follows, chips collapse, task shows words and whole family', async () => {
+    m.ask.mockResolvedValue({ text: '', cards: [{ kind: 'task', id: 'c0', title: 'Buy rice', due: '2026-10-23', assignee: '' }] })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    fireEvent.change(await screen.findByLabelText('Your question'), { target: { value: 'add a task' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('Fri, Oct 23')
+    expect(screen.getByText('Whole family')).toBeTruthy()
+    expect(screen.queryByText('Here is what I found.')).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Suggestions' })).toBeNull()
+  })
+  it('records card with an unclear person shows chips to pick', async () => {
+    await hdb.people.add({ id: 'p2', name: 'Lolita' })
+    m.ask.mockResolvedValue({ text: '', cards: [{ kind: 'records', id: 'c0', person: 'Lol', test: 'HbA1c' }] })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    fireEvent.change(await screen.findByLabelText('Your question'), { target: { value: 'hba1c' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('Whose result do you mean?')
+    expect(screen.getByRole('button', { name: 'Lolita' })).toBeTruthy()
+  })
+})

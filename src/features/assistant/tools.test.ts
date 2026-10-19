@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildRequest, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
+import { buildRequest, dateWords, personMatches, confirmDraft, confirmTask, parseReply, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft } from './tools'
 import type { Reading } from '../health/ranges'
 
 describe('add task + records answer cards', () => {
@@ -136,5 +136,29 @@ describe('sourceLink', () => {
     expect(sourceLink('wikipedia', 'a b').label).toBe('Read more on Wikipedia (CC BY-SA 4.0)')
     expect(sourceLink('kiwix', 'x', 'http://kiwix.local/').url).toBe('http://kiwix.local/search?pattern=x')
     expect(sourceLink('kiwix', 'x', '').url).toContain('medlineplus')
+  })
+})
+
+describe('personFor first names, nicknames and aliases', () => {
+  const fam = [{ id: 'a', name: 'Rosalino Roc', aliases: ['Papang'] }, { id: 'b', name: 'Maria Roc', aliases: ['Ma'] }, { id: 'c', name: 'Rosa Cruz' }]
+  it('matches case-insensitively by first name, alias and nickname', () => {
+    expect(personFor('rosalino', fam)?.id).toBe('a')
+    expect(personFor('PAPANG', fam)?.id).toBe('a')
+    expect(personFor('Ma', fam)?.id).toBe('b')
+    expect(personFor('Lino', fam)?.id).toBe('a')
+    expect(personFor('Rosalino Roc', fam)?.id).toBe('a')
+  })
+  it('is undefined when unclear, with all candidates listed', () => {
+    expect(personFor('Roc', fam)).toBeUndefined()
+    expect(personMatches('Roc', fam).map((p) => p.id)).toEqual(['a', 'b'])
+    expect(personFor('', fam)).toBeUndefined()
+    expect(personFor('Zed', fam)).toBeUndefined()
+  })
+})
+
+describe('dateWords', () => {
+  it('writes dates in words and leaves other text alone', () => {
+    expect(dateWords('2026-10-23')).toBe('Fri, Oct 23')
+    expect(dateWords('tomorrow')).toBe('tomorrow')
   })
 })
