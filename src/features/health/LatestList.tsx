@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { CountUp } from '../look'
 import { latestByTest, latestVsNormal, type Range, type Reading } from './ranges'
 import { sparkPath, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 
+const decimalsOf = (n: number) => (String(n).split('.')[1] ?? '').length
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 
 function Spark({ path }: { path: string }) {
@@ -52,7 +54,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
                   {showPrev && (prev ? <span className="sub hv-before">{beforeLine(r, prev, fam)}</span> : <span className="sub hv-before">Before: no earlier result</span>)}
                 </span>
                 <span className="hv-val">
-                  <strong data-count>{r.value}</strong> <small>{r.unit}</small>
+                  <strong><CountUp to={r.value} decimals={decimalsOf(r.value)} /></strong> <small>{r.unit}</small>
                   <Spark path={sparkPath(readings.filter((x) => x.test === r.test))} />
                 </span>
               </div>

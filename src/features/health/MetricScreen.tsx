@@ -6,6 +6,8 @@ import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
   metricLabel, monthlyAverages, rangeLine, shortDate, type Period, type Point
 } from './model'
+import { SubHeader } from '../shell/SubHeader'
+import { CountUp } from '../look'
 import { useActivity } from './useActivity'
 
 const NO_DRAFTS: Record<string, number> = {}
@@ -60,21 +62,12 @@ export default function MetricScreen({ code }: { code: string }) {
   const family = thresholds.find((t) => t.key === `${personId}:${code}`)
   const v = latest ? latestVsNormal(latest, family) : null
   const last = pts[pts.length - 1]
-  const who = people.find((p) => p.id === personId)?.name.split(' ')[0] ?? ''
   const months = monthlyAverages(pts, now)
   const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : String(n))
 
   return (
     <>
-      <div className="hv-top">
-        <a className="hv-back" href="#health" aria-label="Back to Health">
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </a>
-        <div className="hdr">
-          <h1>{label}</h1>
-          <span>{who ? `${who} · ` : ''}latest vs normal</span>
-        </div>
-      </div>
+      <SubHeader title={label} backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
 
       {!ready ? null : !known || pts.length === 0 ? (
@@ -93,7 +86,7 @@ export default function MetricScreen({ code }: { code: string }) {
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
                 <strong className="hv-big">
-                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? latest.value : last ? dp(last.value) : '--'}
+                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? <CountUp to={latest.value} decimals={(String(latest.value).split('.')[1] ?? '').length} /> : last ? dp(last.value) : '--'}
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>

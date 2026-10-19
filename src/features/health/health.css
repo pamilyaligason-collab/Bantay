@@ -19,7 +19,7 @@
 .hv-node.within .hv-nn, .hv-node.above .hv-nn, .hv-node.below .hv-nn { color: var(--ink); }
 .hv-node.within .hv-nn { background: var(--soft); }
 .hv-node.above .hv-nn, .hv-node.below .hv-nn { background: var(--warn-bg); }
-.hv-node.within .hv-nn::before, .hv-node.above .hv-nn::before, .hv-node.below .hv-nn::before { display: inline-block; width: 7px; height: 7px; margin-right: 5px; vertical-align: 1px; }
+.hv-node.within .hv-nn::before, .hv-node.above .hv-nn::before, .hv-node.below .hv-nn::before { content: ""; border-radius: 50%; display: inline-block; width: 7px; height: 7px; margin-right: 5px; vertical-align: 1px; }
 .hv-node.within .hv-nn::before { background: var(--ok); }
 .hv-node.above .hv-nn::before, .hv-node.below .hv-nn::before { background: var(--warn); }
 .hv-node.empty .hv-nn { background: none; padding: 0; }
@@ -63,7 +63,7 @@
 .hv-state { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); white-space: nowrap; }
 .hv-state.within { background: var(--soft); color: var(--ink); }
 .hv-state.above, .hv-state.below { background: var(--warn-bg); color: var(--ink); }
-.hv-state.within::before, .hv-state.above::before, .hv-state.below::before, .hv-nn::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--ok); }
+.hv-state.within::before, .hv-state.above::before, .hv-state.below::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--ok); }
 .hv-state.above::before, .hv-state.below::before { background: var(--warn); }
 .hv-graph > div { padding: 8px; min-width: 0; overflow: hidden; }
 .hv-graph .uplot { max-width: 100%; }
