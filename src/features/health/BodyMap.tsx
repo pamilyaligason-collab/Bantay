@@ -14,8 +14,17 @@ const AT: Record<NodeId, [number, number]> = { sleep: [44, 18], mood: [56, 18], 
 const DOT = { within: 'var(--ok)', above: 'var(--amber)', below: 'var(--amber)', none: 'var(--muted)' } as const
 const WHERE: Record<NodeId, string> = { sleep: 'head', mood: 'head', bp: 'heart', pulse: 'heart', sugar: 'belly', weight: 'hips', steps: 'legs' }
 
-/** Soft front-view figure with seven metric buttons tied to body points. Inline SVG, no external art. */
-export function BodyMap({ nodes }: { nodes: NodeView[] }) {
+/** Soft front-view figure (anatomy Silhouette) with seven metric buttons tied to body points. */
+export function BodyMap({ nodes, cta }: { nodes: NodeView[]; cta?: { href: string; label: string } }) {
+  const blank = nodes.every((n) => n.empty)
+  if (blank && cta) {
+    return (
+      <div className="hv-map-empty" data-testid="health-empty">
+        <svg className="hv-fig" viewBox="0 0 100 310" aria-hidden="true" focusable="false"><Silhouette /></svg>
+        <a className="hv-cta" href={cta.href}>{cta.label}</a>
+      </div>
+    )
+  }
   return (
     <div className="hv-map" role="group" aria-label="Your latest numbers on a body map">
       <svg className="hv-fig" viewBox="0 0 100 310" aria-hidden="true" focusable="false">

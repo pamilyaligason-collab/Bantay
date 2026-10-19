@@ -13,8 +13,9 @@ const PLAIN: Record<string, string> = {
   hba1c: 'HbA1c', total_cholesterol: 'cholesterol', ldl: 'LDL cholesterol', triglycerides: 'triglycerides', egfr: 'kidney score', weight: 'weight', heart_rate: 'pulse'
 }
 /** Heading for a test key: the guide's label, else a plain name (never the raw key). */
-const LABELS: Record<string, string> = { heart_rate: 'Pulse', weight: 'Weight', glucose: 'Blood sugar (after eating)', steps: 'Steps', sleep: 'Sleep', mood: 'Mood' }
+const LABELS: Record<string, string> = { bp: 'Blood pressure', blood_pressure: 'Blood pressure', sugar: 'Blood sugar', pulse: 'Pulse', heart_rate: 'Pulse', weight: 'Weight', glucose: 'Blood sugar (after eating)', steps: 'Steps', sleep: 'Sleep', mood: 'Mood' }
 export const metricLabel = (test: string) => GUIDE[test]?.label ?? LABELS[test] ?? `${test.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}`
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
 export const plainName = (test: string) => PLAIN[test] ?? GUIDE[test]?.label.toLowerCase() ?? test.replace(/_/g, ' ')
 
 // ---- the range a reading is judged against: family limit, then the lab's own, then the general guide ----------
@@ -34,18 +35,18 @@ export interface Headline { title: string; sub: string; tone: 'ok' | 'watch' | '
 
 /** One plain sentence from the newest readings of the last 7 days against their ranges. Unknown is never "in range". */
 export function insightHeadline(latest: Reading[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): Headline {
-  if (latest.length === 0) return { title: 'No new results yet', sub: 'Confirm imported results in Family > Records, or log a reading from Today.', tone: 'none' }
+  if (latest.length === 0) return { title: 'No results yet', sub: 'Add one to see it on the body map.', tone: 'none' }
   const week = latest.filter((r) => { const t = Date.parse(r.takenAt); return Number.isFinite(t) && now.getTime() - t <= 7 * DAY })
-  if (week.length === 0) return { title: 'No new readings this week', sub: 'Your last results are below. Log a reading from Today to keep this up to date.', tone: 'none' }
+  if (week.length === 0) return { title: 'No new readings this week', sub: 'Your last results are below.', tone: 'none' }
   const judged = week.map((r) => ({ name: plainName(r.test), pos: readingPosition(r, familyOf(r)) })).filter((j) => j.pos !== 'none')
-  if (judged.length === 0) return { title: 'New results are in', sub: 'They have no range to compare with yet.', tone: 'none' }
+  if (judged.length === 0) return { title: 'New results are in', sub: 'No range to compare with yet.', tone: 'none' }
   const out = [...new Set(judged.filter((j) => j.pos !== 'within').map((j) => j.name))]
   if (out.length === 0) {
     const names = [...new Set(judged.map((j) => j.name))]
-    return { title: names.length === 1 ? `Your ${names[0]} is in range this week` : 'Your numbers are in range this week', sub: 'Everything with a range was inside it. Keep going.', tone: 'ok' }
+    return { title: names.length === 1 ? `${cap(names[0]!)} is in range this week` : 'All in range this week', sub: 'Keep going.', tone: 'ok' }
   }
-  const list = out.length === 1 ? out[0]! : out.length === 2 ? `${out[0]} and ${out[1]}` : `${out[0]}, ${out[1]} and more`
-  return { title: `Your ${list} ${out.length === 1 ? 'needs' : 'need'} a look this week`, sub: 'Outside the range. Ranges are a general guide: ask your doctor what is right for you.', tone: 'watch' }
+  if (out.length === 1) return { title: `${cap(out[0]!)} needs a look this week`, sub: 'Outside the usual range. Ask your doctor.', tone: 'watch' }
+  return { title: 'A few numbers need a look this week', sub: `${cap(out.slice(0, 2).join(' and '))}${out.length > 2 ? ' and more' : ''} are outside the usual range. Ask your doctor.`, tone: 'watch' }
 }
 
 // ---- previous value ---------------------------------------------------------------------------------------
@@ -95,6 +96,15 @@ export function barLayout(latest: number, prev: number | null, range: Range | nu
     now: pct(latest),
     prev: prev != null ? pct(prev) : null
   }
+}
+
+/** SVG path for a tiny trend line (oldest to newest, last 12 readings) in a 60x22 box. Fewer than 2 readings: ''. */
+export function sparkPath(rs: Reading[], w = 60, h = 22): string {
+  const v = [...rs].filter((r) => Number.isFinite(Date.parse(r.takenAt)) && isNum(r.value)).sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).slice(-12).map((r) => r.value)
+  if (v.length < 2) return ''
+  const lo = Math.min(...v)
+  const span = Math.max(...v) - lo || 1
+  return v.map((n, i) => `${i ? 'L' : 'M'}${Math.round((i / (v.length - 1)) * (w - 4) * 10) / 10 + 2} ${Math.round((h - 3 - ((n - lo) / span) * (h - 6)) * 10) / 10}`).join('')
 }
 
 // ---- body map -----------------------------------------------------------------------------------------------

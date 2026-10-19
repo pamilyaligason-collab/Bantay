@@ -9,7 +9,7 @@ const rd = (test: string, value: number, takenAt: string, extra: Partial<Reading
 
 describe('insightHeadline', () => {
   it('says there is nothing yet when there are no readings', () => {
-    expect(insightHeadline([], NOW).title).toBe('No new results yet')
+    expect(insightHeadline([], NOW).title).toBe('No results yet')
   })
   it('is not "in range" when the readings are older than a week', () => {
     const h = insightHeadline([rd('bp_systolic', 110, '2026-09-01T08:00:00')], NOW)
@@ -18,12 +18,12 @@ describe('insightHeadline', () => {
   })
   it('names a single in-range measure', () => {
     const h = insightHeadline([rd('bp_systolic', 110, '2026-10-18T08:00:00'), rd('bp_diastolic', 70, '2026-10-18T08:00:00')], NOW)
-    expect(h.title).toBe('Your blood pressure is in range this week')
+    expect(h.title).toBe('Blood pressure is in range this week')
     expect(h.tone).toBe('ok')
   })
   it('flags what is outside the range', () => {
     const h = insightHeadline([rd('bp_systolic', 110, '2026-10-18T08:00:00'), rd('fasting_glucose', 140, '2026-10-17T08:00:00', { unit: 'mg/dL' })], NOW)
-    expect(h.title).toBe('Your blood sugar needs a look this week')
+    expect(h.title).toBe('Blood sugar needs a look this week')
     expect(h.tone).toBe('watch')
   })
   it('does not call a reading with no range in range', () => {
@@ -132,5 +132,14 @@ describe('medicine times', () => {
       { name: 'Aspirin', takenAt: '2026-10-18T08:05:00' } // yesterday does not count
     ], NOW)
     expect(st.map((s) => [s.name, s.at, s.taken])).toEqual([['Metformin', 480, true], ['Metformin', 1200, false], ['Aspirin', null, false]])
+  })
+})
+
+describe('sparkPath', () => {
+  const at = (v: number, d: number) => ({ personId: 'p', test: 't', value: v, takenAt: `2026-10-${10 + d}T08:00:00Z` })
+  it('needs two readings and draws oldest to newest', async () => {
+    const { sparkPath } = await import('./model')
+    expect(sparkPath([at(1, 0)])).toBe('')
+    expect(sparkPath([at(5, 1), at(1, 0)])).toMatch(/^M2 19L58 3$/) // 1 (older) low, 5 (newer) high
   })
 })

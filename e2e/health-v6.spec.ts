@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 // Health v6 (body map, Previous switch, metric detail, medicines). Synthetic data only.
-const SHOTS = '.scratch/shots/w4-health'
+const SHOTS = '.scratch/shots/L3-health'
 
 // Two phases: the log and profile databases only exist once a person is on screen.
 const seed = (page: Page, phase: 1 | 2) =>
@@ -48,7 +48,12 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
   test.setTimeout(120_000) // two colour schemes, each with screenshots and two axe runs
   await page.goto('/#health')
   await expect(page.locator('h1')).toHaveText('Health')
-  await expect(page.getByTestId('insight')).toHaveText('No new results yet')
+  await expect(page.getByTestId('insight')).toHaveText('No results yet')
+  await expect(page.getByTestId('health-empty').getByRole('link')).toHaveCount(1)
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.screenshot({ path: `${SHOTS}/health-empty-${scheme}.png` })
+  }
   await seed(page, 1)
   await page.reload()
   await expect(page.getByTestId('insight')).toContainText('this week')

@@ -1,9 +1,14 @@
 import { useState } from 'react'
+import { CountUp } from '../look'
 import { latestByTest, latestVsNormal, type Range, type Reading } from './ranges'
-import { barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
+import { sparkPath, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 
-const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
+const decimalsOf = (n: number) => (String(n).split('.')[1] ?? '').length
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
+
+function Spark({ path }: { path: string }) {
+  return path ? <svg className="hv-spark" viewBox="0 0 60 22" width="60" height="22" aria-hidden="true" focusable="false"><path d={path} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" /></svg> : null
+}
 
 /** Latest vs normal (D-38): each row opens the metric detail; the Previous switch adds a hollow marker and the "Before" line. */
 export function LatestList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
@@ -21,16 +26,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
           </button>
         )}
       </div>
-      {ready && latest.length === 0 ? (
-        <div className="grp">
-          <div className="row">
-            <span className="grow">
-              No results yet
-              <span className="sub">Confirm imported results in Family &gt; Records, or log a reading from Today. They show here with the lab&apos;s own range.</span>
-            </span>
-          </div>
-        </div>
-      ) : (
+      {ready && latest.length === 0 ? null : (
         <div className="grp">
           {latest.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
@@ -41,17 +37,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
               <div className="row hv-row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
                 <span className="grow">
                   <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}</a>
-                  <span className="sub">{v.lab.text ? `Lab range: ${v.lab.text}` : 'Lab range: not printed'}</span>
-                  {v.family && <span className="sub">Family limit: {v.family.text}</span>}
-                  {v.guide && (
-                    <span className="sub">
-                      {v.guide.label}: {v.guide.text}.{' '}
-                      <a href={v.guide.url} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }} onClick={(e) => e.stopPropagation()}>
-                        {v.guide.source}, {v.guide.year}
-                        <span style={HIDDEN}> (opens in new tab)</span>
-                      </a>
-                    </span>
-                  )}
+                  {v.headlineText && <span className={`hv-state ${v.headline}`}>{v.headlineText}</span>}
                   {layout.band && (
                     <span className="hv-bar" aria-hidden="true">
                       <i className="hv-band" style={{ left: `${layout.band.from}%`, width: `${layout.band.to - layout.band.from}%` }} />
@@ -67,11 +53,9 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
                   )}
                   {showPrev && (prev ? <span className="sub hv-before">{beforeLine(r, prev, fam)}</span> : <span className="sub hv-before">Before: no earlier result</span>)}
                 </span>
-                <span style={{ textAlign: 'right' }}>
-                  <strong>
-                    {r.value} {r.unit}
-                  </strong>
-                  <span className="sub" style={{ display: 'block' }}>{v.headlineText}</span>
+                <span className="hv-val">
+                  <strong><CountUp to={r.value} decimals={decimalsOf(r.value)} /></strong> <small>{r.unit}</small>
+                  <Spark path={sparkPath(readings.filter((x) => x.test === r.test))} />
                 </span>
               </div>
             )
