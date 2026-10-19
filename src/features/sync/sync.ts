@@ -6,6 +6,7 @@ import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
+import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
 import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
 
 // Outbox -> Supabase REST, then the member's own rows back down. Health values only ever travel in POST bodies,
@@ -90,13 +91,14 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   const spec = TABLES[row.table]
   let res: Response
   try {
-    res = await fetch(`${url}/rest/v1/${row.table}?on_conflict=${spec.onConflict}`, {
-      method: 'POST',
+    const patch = spec.patch // an edit of an existing row: PATCH it by id
+    res = await fetch(patch ? `${url}/rest/v1/${patch.table}?id=eq.${encodeURIComponent(String(payload[patch.idField]))}` : `${url}/rest/v1/${row.table}?on_conflict=${spec.onConflict}`, {
+      method: patch ? 'PATCH' : 'POST',
       headers: {
         apikey: key!,
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        Prefer: `resolution=${spec.resolution},return=minimal`
+        Prefer: patch ? 'return=minimal' : `resolution=${spec.resolution},return=minimal`
       },
       body: JSON.stringify(toRow(row.table, payload, payload.client_id as string))
     })
@@ -204,6 +206,7 @@ async function pull(token: string) {
     }
   }
   await pullPeople(url!, key!, token)
+  await syncOwnProfile()
   await pullSafety(url!, key!, token)
   await pullAlerts(url!, key!, token)
 }
@@ -221,8 +224,17 @@ async function getJson(u: string, key: string, token: string): Promise<Record<st
 // People: RLS limits this to the member and linked persons, so local Person.id == server people.id.
 // Anything that creates a local person must use getMember().personId.
 async function pullPeople(url: string, key: string, token: string) {
-  const rows = await getJson(`${url}/rest/v1/people?select=id,display_name`, key, token)
-  if (rows.length) await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
+  let rows: Record<string, unknown>[]
+  try {
+    rows = await getJson(`${url}/rest/v1/people?select=id,display_name,${PROFILE_COLS}`, key, token)
+  } catch (e) {
+    // 42703 = the profile columns do not exist yet (migration 0010 not applied): names only
+    if (!(e instanceof SyncError) || e.code !== '42703') throw e
+    rows = await getJson(`${url}/rest/v1/people?select=id,display_name`, key, token)
+  }
+  if (!rows.length) return
+  await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
+  await applyPulledProfiles(rows, await selfIdNow())
 }
 
 // Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.

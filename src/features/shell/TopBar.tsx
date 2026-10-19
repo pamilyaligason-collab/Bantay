@@ -3,7 +3,7 @@ import { loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
 import { SyncStatus } from '../sync/SyncStatus'
 import { Icon } from './Icon'
-import { useKv } from './useKv'
+import { useOwnAvatar } from '../setup/useProfile'
 import './shell.css'
 
 const greeting = (d: Date) => (d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening')
@@ -13,7 +13,7 @@ const dateLine = (d: Date) => new Intl.DateTimeFormat('en-PH', { weekday: 'long'
 export function TopBar({ unread = 0 }: { unread?: number }) {
   const [name, setName] = useState('')
   const [admin, setAdmin] = useState(false)
-  const [photo] = useKv<string | null>('profile.photo', null)
+  const photo = useOwnAvatar()
   useEffect(() => {
     let live = true
     void getMember().then((m) => {

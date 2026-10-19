@@ -9,3 +9,6 @@ export const RELATIONSHIPS = ['Spouse', 'Son', 'Daughter', 'Mother', 'Father', '
 export const JOIN = ', '
 export const splitItems = (s: string | undefined): string[] => (s ? s.split(JOIN).map((x) => x.trim()).filter(Boolean) : [])
 export const cleanItem = (s: string): string => s.replace(/,/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40)
+
+/** "Not sure" is stored as this, never as an empty value or 0 (B-5). Also the server value for an unknown blood type / allergy / condition. */
+export const UNKNOWN = 'UNKNOWN'

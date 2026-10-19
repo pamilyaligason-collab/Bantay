@@ -35,8 +35,7 @@ export const remaining = (p: Probe, platform: Platform): StepId[] =>
 
 export const ABOUT_FIELDS = ['bloodType', 'allergies', 'conditions'] as const
 export type About = Partial<Record<(typeof ABOUT_FIELDS)[number], string>>
-/** "Not sure" is stored as this, never as an empty value or 0 (B-5). */
-export const UNKNOWN = 'UNKNOWN'
+export { UNKNOWN } from './lists'
 
 const get = async <T,>(key: string): Promise<T | undefined> => (await db.kv.get(key).catch(() => undefined))?.value as T | undefined
 export const put = (key: string, value: unknown) => db.kv.put({ key, value })
@@ -99,7 +98,7 @@ export async function probe(): Promise<Probe> {
   const n = await notifyState()
   const ua = navigator.userAgent
   return {
-    photo: !!(await get<string>('profile.photo')),
+    photo: !!(await get<string>('profile.photo')) || !!(await get<string>('profile.photoPath')),
     about: !!about && ABOUT_FIELDS.every((f) => !!about[f]),
     medicines: (await get<boolean>('setup.medicines')) === true || ((await get<string[]>('profile.medicines'))?.length ?? 0) > 0 || (await hasMedicines()),
     notifications: notifyDone(n),

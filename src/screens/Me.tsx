@@ -8,6 +8,8 @@ import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { useKv } from '../features/shell/useKv'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
 import { normalizeContacts, type SosContact } from '../features/sos/contacts'
+import DetailsSheet from '../features/setup/DetailsSheet'
+import { useOwnAvatar } from '../features/setup/useProfile'
 import { UpdateRow } from '../features/update/UpdateRow'
 import '../features/shell/shell.css'
 
@@ -60,7 +62,8 @@ export default function Me() {
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
-  const [photo] = useKv<string | null>('profile.photo', null)
+  const photo = useOwnAvatar()
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -98,6 +101,7 @@ export default function Me() {
           <b>{who || 'You'}</b>
           <div className="sh-sub">This phone · fingerprint {passkey ? 'on' : 'off'}</div>
         </div>
+        {member?.personId && <button type="button" className="sh-edit" onClick={() => setDetailsOpen(true)} aria-haspopup="dialog">Edit</button>}
       </div>
 
       <div className="sh-sech"><b>Family can see my</b></div>
@@ -161,6 +165,7 @@ export default function Me() {
       {who && supabase && <p className="sh-sub sh-note">Signed in as {who}</p>}
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}
 
+      {detailsOpen && member?.personId && <DetailsSheet personId={member.personId} name={who} onClose={() => setDetailsOpen(false)} />}
       {sosOpen && <SosSheet onSaved={setSosRaw} onClose={() => setSosOpen(false)} selfId={member?.personId ?? null} />}
     </div>
   )

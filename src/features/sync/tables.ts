@@ -13,6 +13,8 @@ export interface TableSpec {
   cursor?: 'updated_at'
   /** Do not send client_id (the row is keyed another way). */
   noClientId?: boolean
+  /** Send as PATCH of an existing row: REST table name, and the payload field that names the row (matched to column id). */
+  patch?: { table: string; idField: string }
 }
 
 export const TABLES: Record<string, TableSpec> = {
@@ -33,6 +35,11 @@ export const TABLES: Record<string, TableSpec> = {
   push_subscriptions: { fields: ['endpoint', 'p256dh', 'auth', 'expirationTime'], onConflict: 'endpoint', resolution: 'merge-duplicates', noClientId: true },
   usage_events: { fields: ['kind', 'name', 'appVersion'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
+  // A member's own profile columns on people (0010). PATCH, so the row must already exist; RLS decides who may.
+  people_profile: {
+    fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines', 'updatedAt'],
+    onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'people', idField: 'id' }
+  },
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }
 

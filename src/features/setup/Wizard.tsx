@@ -7,9 +7,11 @@ import { isNativeAndroid, requestBatteryExemption } from '../safety/settingsOpen
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
 import SosContactsPicker from '../sos/SosContactsPicker'
+import { saveAbout, saveProfile, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
 import WarningsStep from './WarningsStep'
 import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, MEDICINES, splitItems } from './lists'
+import { useSelfPersonId } from './useProfile'
 import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyDone, notifyState, onResume, probe, put, remaining, scheduleTest, turnOnReminders, type About, type NotifyState, type StepId } from './steps'
 import '../safety/safety.css'
 import './setup.css'
@@ -29,22 +31,26 @@ function Row({ label, on, children }: { label: string; on: boolean; children?: R
   )
 }
 
+/** Square 512px jpeg, cropped from the middle. */
+const PHOTO_PX = 512
+
 function Photo() {
   const [src, setSrc] = useState<string>()
+  const pid = useSelfPersonId()
   useEffect(() => { void kvGet<string>('profile.photo').then(setSrc) }, [])
   const pick = (f?: File) => {
     if (!f) return
     const url = URL.createObjectURL(f)
     const img = new Image()
     img.onload = () => {
+      const side = Math.max(1, Math.min(img.width, img.height))
       const c = document.createElement('canvas')
-      const k = 256 / Math.max(img.width, img.height, 1)
-      c.width = Math.round(img.width * Math.min(k, 1)); c.height = Math.round(img.height * Math.min(k, 1))
-      c.getContext('2d')?.drawImage(img, 0, 0, c.width, c.height)
-      const d = c.toDataURL('image/jpeg', 0.8)
+      c.width = c.height = Math.min(PHOTO_PX, side)
+      c.getContext('2d')?.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, c.width, c.height)
+      const d = c.toDataURL('image/jpeg', 0.85)
       URL.revokeObjectURL(url)
       setSrc(d)
-      void put('profile.photo', d)
+      void savePhoto(pid, d)
     }
     img.src = url
   }
@@ -66,10 +72,11 @@ const EXCLUSIVE = { bloodType: [], allergies: ['None'], conditions: ['None'] } a
 
 function About() {
   const [v, setV] = useState<About>({})
+  const pid = useSelfPersonId()
   useEffect(() => { void kvGet<About>('profile.about').then((a) => a && setV(a)) }, [])
   const set = (k: keyof About, items: string[]) => {
     const n = { ...v, [k]: items.includes(NOT_SURE[k]) ? UNKNOWN : items.join(JOIN) }
-    setV(n); void put('profile.about', n)
+    setV(n); void put('profile.about', n); if (pid) void saveAbout(pid, n)
   }
   return (
     <div className="grp wz-body">
@@ -92,8 +99,9 @@ function Medicines() {
     })()
   }, [])
   const [mine, setMine] = useState<string[]>([])
+  const pid = useSelfPersonId()
   useEffect(() => { void kvGet<string[]>('profile.medicines').then((m) => Array.isArray(m) && setMine(m)) }, [])
-  const set = (m: string[]) => { setMine(m); void put('profile.medicines', m) }
+  const set = (m: string[]) => { setMine(m); void put('profile.medicines', m); if (pid) void saveProfile(pid, { medicines: m }) }
   return (
     <div className="wz-body">
       {line && <p className="sf-note" style={{ background: 'var(--cell)' }}>{line}</p>}
