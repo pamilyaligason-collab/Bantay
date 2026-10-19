@@ -143,7 +143,7 @@ function RecordsCard({ card, people }: { card: Extract<Card, { kind: 'records' }
       <strong>From your records</strong>
       <span>{!who ? 'Whose result do you mean?' : ans ? ans.text : 'Looking...'}</span>
       {!who && <div className="as-people" role="group" aria-label="Pick a person">{personChoices(card.person, people).map((p) => <button key={p.id} type="button" className="as-chip" onClick={() => setPicked(p.id)}>{p.name}</button>)}</div>}
-      {!who && <span className="as-hint" role="status">Pick who this is for</span>}
+      {!who && <span className="as-hint" role="status">{people.length ? 'Pick who this is for' : 'Add a family member first'}</span>}
       {ans?.cite && <div className="as-src"><span className="sub">Sources</span><span className="as-chip as-chip-static">{ans.cite}</span></div>}
       {ans && <span className="sub">Not sure? Ask the doctor.</span>}
     </div>
