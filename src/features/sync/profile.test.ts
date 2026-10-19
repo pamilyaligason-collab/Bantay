@@ -79,7 +79,7 @@ describe('outbox update', () => {
     const calls: { url: string; method: string; body?: string }[] = []
     vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
       calls.push({ url, method: init.method ?? 'GET', body: init.body as string | undefined })
-      if (init.method === 'PATCH') return new Response(null, { status: 204 })
+      if (init.method === 'PATCH') return new Response(JSON.stringify([{ id: 'me' }]), { status: 200 }) // return=representation
       if (url.includes('/people?')) return new Response(JSON.stringify([{ id: 'me', display_name: 'Mama', updated_at: '2999-01-01T00:00:00Z', phone: '0917 123 4567', allergies: [], conditions: [], medicines: [] }]), { status: 200 })
       return new Response('[]', { status: 200 })
     })
@@ -90,9 +90,22 @@ describe('outbox update', () => {
     const body = JSON.parse(patch.body!)
     expect(body.phone).toBe('0917 123 4567')
     expect(body.id).toBeUndefined()
-    expect(typeof body.updated_at).toBe('string')
+    expect(body.updated_at).toBeUndefined() // 0010 grants no UPDATE on updated_at; the trigger stamps it
     expect(await db.outbox.count()).toBe(0)
     expect((await db.profiles.get('me'))?.pending).toBeUndefined()
+  })
+
+  it('a PATCH that RLS filters out (no rows back) is parked as a dead letter, not counted as saved', async () => {
+    await saveProfile('me', { phone: '0917 000 0000' })
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit = {}) => {
+      if (init.method === 'PATCH') return new Response('[]', { status: 200 })
+      return new Response('[]', { status: 200 })
+    })
+    startSync({ url: URL, key: 'pk', getToken: async () => 'tok1' })()
+    await syncNow()
+    expect(await db.outbox.count()).toBe(0)
+    const dead = (await db.kv.get('sync.dead'))?.value as { table: string; code: string }[] | undefined
+    expect(dead?.some((d) => d.table === 'people_profile' && d.code === '0rows')).toBe(true)
   })
 })
 

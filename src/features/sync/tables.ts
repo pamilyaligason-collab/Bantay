@@ -36,7 +36,7 @@ export const TABLES: Record<string, TableSpec> = {
   usage_events: { fields: ['kind', 'name', 'appVersion'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
   // A member's own profile columns on people (0010). PATCH, so the row must already exist; RLS decides who may.
   people_profile: {
-    fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines', 'updatedAt'],
+    fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines'],
     onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'people', idField: 'id' }
   },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.

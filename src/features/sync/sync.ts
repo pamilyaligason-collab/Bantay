@@ -98,7 +98,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
         apikey: key!,
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        Prefer: patch ? 'return=minimal' : `resolution=${spec.resolution},return=minimal`
+        Prefer: patch ? 'return=representation' : `resolution=${spec.resolution},return=minimal`
       },
       body: JSON.stringify(toRow(row.table, payload, payload.client_id as string))
     })
@@ -107,6 +107,8 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     throw new SyncError('net')
   }
   if (res.ok) {
+    // A PATCH that RLS filters out answers 200 with no rows: treat it as refused, not saved.
+    if (spec.patch && !((await res.json().catch(() => [])) as unknown[]).length) return deadLetter({ ...row, payload }, '0rows')
     const lt = localTable(row.table)
     if (lt && typeof payload.id === 'number') await lt.update(payload.id, { clientId: payload.client_id } as never) // so pull recognises it
     return
