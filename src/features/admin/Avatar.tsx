@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { initialsOf } from '../auth/family'
 import { downloadAvatar } from './api'
 
-// Token tints (they follow light and dark): the initials use --ink on each.
-const TINTS = ['var(--soft)', 'var(--card2)', 'var(--warn-bg)', 'var(--red-soft)', 'var(--fill)', 'var(--band)']
+// Token tints (neutral on purpose: no amber or red, which read as an alert; they follow light and dark): the initials use --ink on each.
+const TINTS = ['var(--soft)', 'var(--card2)', 'var(--fill)', 'var(--band)']
 const tint = (s: string) => TINTS[[...s].reduce((n, c) => n + c.charCodeAt(0), 0) % TINTS.length]!
 
 /** Round photo from the avatars bucket, or the initials on a soft colour. `rev` bumps after a new upload. */

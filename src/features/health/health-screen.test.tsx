@@ -34,7 +34,7 @@ afterEach(cleanup)
 describe('Health overview', () => {
   it('shows the headline, the body map values and a tappable latest list', async () => {
     render(<Health />)
-    await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Your blood pressure needs a look this week'))
+    await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Blood pressure needs a look this week'))
     const bpNode = await screen.findByRole('link', { name: /^BP 124\/79 A bit high/ })
     expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
     expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy() // unknown stays unknown
@@ -61,11 +61,24 @@ describe('Health overview', () => {
     expect(row.querySelector('.hv-dot.prev')).toBeTruthy()
   })
 
-  it('empty state says how to fill it', async () => {
+  it('empty state: dimmed figure and exactly one call to action', async () => {
     await hdb.readings.clear()
     render(<Health />)
-    expect((await screen.findAllByText(/Confirm imported results in Family > Records/)).length).toBeGreaterThan(0)
-    expect((await screen.findByTestId('insight')).textContent).toBe('No new results yet')
+    const empty = await screen.findByTestId('health-empty')
+    expect((await screen.findByTestId('insight')).textContent).toBe('No results yet')
+    expect(within(empty).getAllByRole('link')).toHaveLength(1)
+    expect(within(empty).getByRole('link', { name: 'Log a reading' }).getAttribute('href')).toBe('#today') // p1 is the signed-in person
+    expect(screen.queryByText('No data yet')).toBeNull()
+    expect(document.querySelector('[data-node]')).toBeNull()
+  })
+
+  it('list rows keep the status and a sparkline; range text lives on the metric screen', async () => {
+    render(<Health />)
+    await screen.findByRole('link', { name: /^BP 124/ })
+    const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
+    expect(within(row).getByText('Above range')).toBeTruthy()
+    expect(row.querySelector('svg.hv-spark')).toBeTruthy()
+    expect(within(row).queryByText(/Lab range|General guide/)).toBeNull()
   })
 })
 

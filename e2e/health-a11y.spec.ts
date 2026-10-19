@@ -27,7 +27,10 @@ for (const tab of ['health', 'records']) {
     await seed(page)
     await page.reload()
     await expect(page.locator('h1')).toBeVisible()
-    if (tab === 'health') await expect(page.locator('a[target="_blank"]').first()).toContainText('(opens in new tab)')
+    if (tab === 'health') {
+      await page.goto('/#health/metric/ldl') // the range citation lives on the metric screen
+      await expect(page.locator('a[target="_blank"]').first()).toContainText('(opens in new tab)')
+    }
     else if (tab === 'records') await expect(page.locator('.uplot canvas').first()).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
   })

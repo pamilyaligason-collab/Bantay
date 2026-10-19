@@ -135,6 +135,7 @@ export default function MetricScreen({ code }: { code: string }) {
                 <div className="row" style={{ alignItems: 'flex-start' }}>
                   <span className="grow">
                     {rangeLine(latest, family) || 'No range for this yet'}
+                    {!v.lab.text && (v.guide || v.family) && <span className="sub">Lab range: not printed</span>}
                     {v.guide && (
                       <span className="sub">
                         <a href={v.guide.url} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>
