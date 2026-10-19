@@ -5,7 +5,7 @@
 //        from import/copy-jobs.json + copy-log.jsonl, the log of the approved copy job; no token needed)
 //    or: LOCAL_ROOT='G:/My Drive/2.2 Family Files' LOCAL_PATH_IDS=1 node scripts/import/sync.mjs  (a file with no Drive id gets local:<hash of its path>)
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { classifyPath } from './folders.mjs'
@@ -52,6 +52,22 @@ export function carryOver(entry, prev) {
   entry.sha256 = prev.sha256
   if (prev.stored_mime) entry.stored_mime = prev.stored_mime
   return entry
+}
+
+/** Deep-scan any JSON for {drive_file_id, sha256} rows (the CLI's JSON shape is not fixed). */
+export function knownRows(v, out = []) {
+  if (Array.isArray(v)) v.forEach((x) => knownRows(x, out))
+  else if (v && typeof v === 'object') {
+    if (typeof v.drive_file_id === 'string' && typeof v.sha256 === 'string') out.push({ drive_file_id: v.drive_file_id, sha256: v.sha256 })
+    else Object.values(v).forEach((x) => knownRows(x, out))
+  }
+  return out
+}
+
+/** A file already in the database (same sha256) keeps its existing id, so a re-import upserts instead of duplicating. */
+export function knownId(entry, known) {
+  const id = entry.sha256 ? known.get(entry.sha256) : undefined
+  return id && id !== entry.drive_file_id ? id : null
 }
 
 /** Identical sha256: the oldest (modified, then id) is kept; the rest point at it. */
@@ -166,6 +182,8 @@ async function main(env = process.env) {
     return
   }
   const n = { downloaded: 0, unchanged: 0, failed: 0 }
+  // .scratch/known.json: [{drive_file_id, sha256}] already in public.source_files (records-import.ps1 writes it)
+  const known = new Map(existsSync('.scratch/known.json') ? knownRows(JSON.parse(readFileSync('.scratch/known.json', 'utf8'))).map((r) => [r.sha256, r.drive_file_id]) : [])
   for (const e of entries) {
     const prev = prevByid.get(e.drive_file_id)
     const dest = `import/files/${e.drive_file_id}`
@@ -182,6 +200,8 @@ async function main(env = process.env) {
       writeFileSync(dest, buf)
       e.sha256 = sha256(buf)
       e.size = buf.length
+      const kid = knownId(e, known)
+      if (kid) { renameSync(dest, `import/files/${kid}`); e.drive_file_id = kid }
       if (e.mime === GOOGLE_DOC) e.stored_mime = 'application/pdf'
       n.downloaded++
     } catch (err) {

@@ -1,4 +1,5 @@
-import { type ComponentType, type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
+import { RescueMap } from '../rescuemap/RescueMap'
 import { createPortal } from 'react-dom'
 import hotlines from '../../data/safety/hotlines.json'
 import places from '../../data/safety/places.json'
@@ -37,9 +38,6 @@ const TITLES: Record<Sub, string> = {
   dial: 'Quick dial', hazards: 'Hazards at my location', cards: 'Safety cards', sos: 'Past SOS'
 }
 
-// The orchestrator adds src/features/rescuemap/RescueMap.tsx; until then the page shows a small card.
-const mods = import.meta.glob<{ RescueMap?: ComponentType<{ lat: number; lon: number; zoneName?: string }> }>('../rescuemap/RescueMap.tsx', { eager: true })
-const RescueMap = Object.values(mods)[0]?.RescueMap
 
 const NONE_A: Alert[] = []
 const NONE_O: Overrides = {}
@@ -219,9 +217,7 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
     case 'map':
       return (
         <>
-          {RescueMap
-            ? <RescueMap lat={place.weather.lat} lon={place.weather.lon} zoneName={HOME_ZONES.find((z) => z.id === place.zone)?.name} />
-            : <p className="sf-note" role="status">Map coming. For now, use the places below.</p>}
+          <RescueMap lat={place.weather.lat} lon={place.weather.lon} zoneName={HOME_ZONES.find((z) => z.id === place.zone)?.name} />
           <section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo zone={place.zone} /></section>
         </>
       )

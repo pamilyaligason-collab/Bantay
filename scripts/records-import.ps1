@@ -46,6 +46,10 @@ Remove-Item $peopleJson
 $env:OPENROUTER_MODEL = 'google/gemini-3.5-flash-lite'
 $env:OPENROUTER_FALLBACK_MODEL = 'anthropic/claude-haiku-5.5'
 try {
+  Step 3 'Known files: ids already in the database (same content keeps its id, so nothing is loaded twice)'
+  $out = npx @Db --output-format json "select drive_file_id, sha256 from public.source_files where sha256 is not null;"; Check 3
+  [IO.File]::WriteAllText((Join-Path (Get-Location) '.scratch\known.json'), ($out -join "`n"), [Text.UTF8Encoding]::new($false))
+
   Step 3 'Sync: list, classify, download, hash, dedupe (incremental; visa / land files are listed, never downloaded)'
   node scripts/import/sync.mjs; Check 3
 

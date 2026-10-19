@@ -51,7 +51,7 @@ describe('Explore your body', () => {
     const sheet = screen.getByRole('dialog', { name: 'Heart' })
     expect(within(sheet).getByText('What it does')).toBeTruthy()
     expect(within(sheet).getByText('Common illnesses in the Philippines')).toBeTruthy()
-    expect(within(sheet).getByText('See a doctor if you notice')).toBeTruthy()
+    expect(within(sheet).getByText('Get help right away if you notice')).toBeTruthy()
     expect(within(sheet).getByText('How to look after it')).toBeTruthy()
     const link = within(sheet).getByRole('link', { name: 'MedlinePlus, National Library of Medicine' })
     expect(link.getAttribute('href')).toMatch(/^https:\/\/medlineplus\.gov\//)

@@ -50,7 +50,7 @@ function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
           <p>{part.what}</p>
         </section>
         {list('Common illnesses in the Philippines', part.illnesses)}
-        {list('See a doctor if you notice', part.warnings)}
+        {list('Get help right away if you notice', part.warnings)}
         {list('How to look after it', part.prevention)}
         <p className="an-src">
           Source: <a href={sys.url} target="_blank" rel="noopener noreferrer">{content.source.name}</a>

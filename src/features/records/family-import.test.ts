@@ -282,3 +282,15 @@ describe('dry run counts', () => {
     expect(JSON.stringify(r)).not.toContain('Test')
   })
 })
+
+describe('re-import keeps ids already in the database (Fable major 1)', () => {
+  it('maps a file to the stored id when the sha256 matches, and reads any CLI JSON shape', async () => {
+    const { knownId, knownRows } = await import('../../../scripts/import/sync.mjs')
+    const rows = knownRows({ rows: [{ drive_file_id: 'drive-abc', sha256: 'h1' }, { drive_file_id: 'x', sha256: null }] })
+    expect(rows).toEqual([{ drive_file_id: 'drive-abc', sha256: 'h1' }])
+    const known = new Map(rows.map((r) => [r.sha256, r.drive_file_id]))
+    expect(knownId({ drive_file_id: 'local:p1', sha256: 'h1' }, known)).toBe('drive-abc')
+    expect(knownId({ drive_file_id: 'local:p2', sha256: 'h2' }, known)).toBeNull()
+    expect(knownId({ drive_file_id: 'drive-abc', sha256: 'h1' }, known)).toBeNull()
+  })
+})

@@ -139,7 +139,7 @@
       "what": "Your two kidneys clean your blood, remove extra water and waste as urine, and help control blood pressure. Each is about the size of a fist, behind the belly on each side of the spine.",
       "illnesses": ["Chronic kidney disease, often from diabetes or high blood pressure", "Kidney stones", "Kidney infection", "Leptospirosis"],
       "warnings": ["Swollen feet or face", "Much less urine, or foamy or bloody urine", "Pain in the side or back with fever"],
-      "prevention": ["Keep blood pressure and sugar in range", "Drink enough water", "Avoid NSAID pain medicine and herbal products of unknown content"] },
+      "prevention": ["Keep blood pressure and sugar in range", "Drink enough water", "Avoid NSAID pain medicine unless your doctor says it is safe for you, and herbal products of unknown content"] },
     { "id": "bladderorgan", "system": "kidneys", "name": "Bladder",
       "what": "The bladder is a muscle bag that stores urine until you are ready to pass it. When it is full, nerves tell you to go.",
       "illnesses": ["Urinary tract infection (UTI)", "Enlarged prostate in older men", "Bladder stones", "Leaking urine"],

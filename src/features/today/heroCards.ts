@@ -131,7 +131,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     const place = i.placeName
     out.push({
       key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky, big: `${Math.round(w.temp)}°`,
-      title: rain ? `Rain likely ${rain.tomorrow ? 'tomorrow' : rain.now ? 'now' : 'today'} in ${place}` : rain === null && rainy ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
+      title: rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainy ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
       body: rain ? rainWords(rain) : rain === null ? (rainy ? 'No more rain expected for now.' : (w.rainPct == null ? 'No rain chance number yet.' : `Chance of rain today: ${w.rainPct}%.`)) : w.rainPct == null ? 'No rain chance number yet.' : rainy ? `Bring an umbrella. Chance of rain: ${w.rainPct}%.` : `Chance of rain today: ${w.rainPct}%.`,
       actions: []
     })

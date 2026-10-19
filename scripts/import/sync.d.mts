@@ -12,3 +12,5 @@ export function dryRunCounts(entries: Entry[], peopleMap?: Record<string, string
 export function sha256(buf: Uint8Array): string
 export function carryOver(entry: Entry, prev: Entry): Entry
 export function idsFromCopyLog(jobs: { src: string; folder: string[]; title: string }[], log: { src: string; status: string; new_id?: string }[]): Map<string, string>
+export function knownRows(v: unknown, out?: { drive_file_id: string; sha256: string }[]): { drive_file_id: string; sha256: string }[]
+export function knownId(entry: { drive_file_id: string; sha256?: string | null }, known: Map<string, string>): string | null
