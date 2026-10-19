@@ -149,12 +149,15 @@ async function main(argv = process.argv.slice(2), env = process.env) {
       if (d.failed) n.unsupported++
       else n[d.via === 'text' ? 'done_text' : 'done_vision']++
     } catch (err) {
+      // a refused key fails every file the same way: stop now so the load step never runs on nothing
+      if (err?.status === 401 || err?.status === 403) { console.error(`OpenRouter refused the key (${err.status}). Check OPENROUTER_API_KEY on openrouter.ai > Keys (enabled, credit left), then run again.`); process.exit(2) }
       n.failed++ // status only, never the document or model output
       console.error(`file ${n.done_text + n.done_vision + n.unsupported + n.failed}/${n.todo} failed${err.status ? ` (${err.status})` : ''}`)
     }
     await sleep(delay)
   }
   console.log(JSON.stringify({ ...n, ...stats }))
+  if (n.failed && !n.done_text && !n.done_vision) process.exit(1) // nothing read: do not let the load step run
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch((e) => { console.error(`extract failed: ${e?.name ?? 'Error'}`); process.exit(1) })
