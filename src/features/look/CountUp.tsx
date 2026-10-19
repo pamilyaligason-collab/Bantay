@@ -12,7 +12,11 @@ type Props = { to: number | null | undefined; from?: number; decimals?: number; 
 export function CountUp({ to, from = 0, decimals = 0, duration, className }: Props) {
   const ref = useRef<HTMLSpanElement>(null)
   const ok = typeof to === 'number' && Number.isFinite(to)
+  const latest = useRef({ to, from, decimals, duration, ok })
+  latest.current = { to, from, decimals, duration, ok }
+  // first mount only: later value changes render straight through React, never a stale or restarted count
   useEffect(() => {
+    const { to, from, decimals, duration, ok } = latest.current
     const el = ref.current
     if (!el || !ok || prefersReducedMotion() || typeof IntersectionObserver !== 'function') return
     let stop = () => {}
@@ -23,6 +27,6 @@ export function CountUp({ to, from = 0, decimals = 0, duration, className }: Pro
     })
     io.observe(el)
     return () => { io.disconnect(); stop() }
-  }, [to, from, decimals, duration, ok])
+  }, [])
   return <span ref={ref} className={className}>{ok ? formatCount(to as number, decimals) : '–'}</span>
 }

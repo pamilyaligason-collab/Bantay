@@ -27,7 +27,7 @@ export default defineConfig(({ command, mode }) => {
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'anatomy/body.svg'],
       manifest: {
         name: 'Family Bantay',
         short_name: 'Bantay',
