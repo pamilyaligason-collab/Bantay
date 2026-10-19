@@ -17,7 +17,7 @@ test('safety hub (D-68): ten tiles with a status line, each opens its page and g
   const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
   await expect(tiles).toHaveCount(10)
   await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
-  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('3 numbers ready')
+  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('4 numbers ready')
   await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
   await tiles.filter({ hasText: 'Quick dial' }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)
@@ -34,9 +34,8 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   await expect(page.getByRole('link', { name: /Call Philippine Red Cross, 143/ })).toBeVisible()
   await expect(page.getByText('160', { exact: true })).toHaveCount(0)
   // unconfirmed values wait in a closed group and there is no Go button for them
-  const addBtn = page.getByRole('button', { name: 'Not confirmed yet, tap to add' }).first()
-  await expect(addBtn).toBeHidden()
-  await page.getByText('Numbers we still need (tap to add)').click()
+  const addBtn = page.getByRole('button', { name: /^Add number for / }).first()
+  await expect(page.getByText('Add a local number')).toBeVisible()
   await expect(addBtn).toBeVisible()
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(0)
   // source text is behind the small i button, not under every row

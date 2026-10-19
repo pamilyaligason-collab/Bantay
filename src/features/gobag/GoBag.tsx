@@ -1,4 +1,5 @@
 import { Icon } from '../shell/Icon'
+import { SubHeader } from '../shell/SubHeader'
 import { useKv } from '../shell/useKv'
 import { GROUPS, ALL_IDS } from './items'
 import { dueAgain, EMPTY, KEY, readState, toggle } from './state'
@@ -13,14 +14,14 @@ export default function GoBag() {
   const last = s.checkedAt ? new Date(s.checkedAt).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' }) : null
   return (
     <div className="sh gb">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href="#safety" aria-label="Back to Safety"><Icon name="back" /></a>
-        <div className="sh-grow"><h1 className="sh-h2">Go-bag</h1><div className="sh-sub">{s.done.length} of {ALL_IDS.length} packed</div></div>
-      </div>
+      <SubHeader title="Go-bag" backHref="#safety" backLabel="Back to Safety" className="sf-hdr sf-subhdr" />
+      <div className="sh-sub">{s.done.length} of {ALL_IDS.length} packed</div>
       <div className="gb-bar" role="progressbar" aria-label="Go-bag packed" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><i style={{ width: `${pct}%` }} /></div>
       {loaded && (
         <p className={`gb-when${dueAgain(s, now) ? ' due' : ''}`} role="status">
-          {last ? `Last checked ${last}. ` : 'Not checked yet. '}{dueAgain(s, now) ? 'Time to check your bag again.' : 'Check again every 3 months.'}
+          {last
+            ? <>Last checked {last}. {dueAgain(s, now) ? 'Time to check your bag again.' : 'Check again every 3 months.'}</>
+            : 'Not checked yet. Tick what you have packed.'}
         </p>
       )}
       {GROUPS.map((g) => (

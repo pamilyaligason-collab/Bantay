@@ -92,3 +92,20 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-hz-card.warn .sf-hz-do { color: var(--ink); }
 .sf-hz-read, .sf-hz-do { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
 .sf-hz-do { color: var(--ink2); }
+
+/* Quick dial rows: avatar, name + type, round call button on the right */
+.sf-people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sf-person { display: flex; align-items: center; gap: 12px; min-height: 72px; box-sizing: border-box; padding: 10px 12px; background: var(--cell); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.sf-av { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--ink); font: 700 17px/1 var(--font-body, inherit); }
+.sf-av-add { background: transparent; border: 1.5px dashed var(--sep); color: var(--ink2); font-size: 24px; }
+.sf-pt { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.sf-pt b { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.sf-pt .sub { font-size: 15px; }
+.sf-callbtn { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--btn); color: var(--btn-fg); text-decoration: none; }
+.sf-callbtn .sf-ic path { stroke: var(--btn-fg); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sf-callbtn:focus-visible, .sf-addbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.sf-addbtn { flex: none; min-height: 48px; min-width: 64px; padding: 0 16px; }
+.sf-person-wrap { display: flex; flex-direction: column; gap: 8px; }
+.sf-storm-line { margin: 0; padding: 14px 16px; border-radius: 18px; font-size: 17px; line-height: 1.4; border: 1px solid var(--line); background: var(--cell); }
+.sf-storm-line.calm { background: color-mix(in srgb, var(--ok) 9%, var(--cell)); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.sf-storm-line.watch { background: var(--warn-bg); border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }

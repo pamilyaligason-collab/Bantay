@@ -6,12 +6,18 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../auth/client'
 import { addCard, canUse, decideDriveCard, ensureOwner, fetchPeople, fixType, flushQueue, refreshCards, retryCard } from './api'
 import { buildDocs, COMMON, ddb, LABEL, SHORT, TYPES_FOR, type CardRow, type CardType, type DocRow, type DriveCard, type Kind, type PersonRow, type Side } from './store'
+import { SubHeader } from '../shell/SubHeader'
 import { useDialog } from './useDialog'
 import './docs.css'
 
 const kindFromHash = (): Kind => (location.hash.startsWith('#docs/insurance') ? 'insurance_card' : 'id_card')
 const online = () => typeof navigator === 'undefined' || navigator.onLine !== false
 const when = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+/** First name for chips; adds the next initial only when two people share one. */
+const short = (x: { name: string }, all: { name: string }[]) => {
+  const [f = x.name, l = ''] = x.name.trim().split(/\s+/)
+  return all.filter((y) => y.name.trim().split(/\s+/)[0] === f).length > 1 && l ? `${f} ${l[0]}.` : f
+}
 const nameOf = (d: Pick<DocRow, 'kind' | 'cardType' | 'title'>) => d.title || LABEL[d.kind][d.cardType] || 'Card'
 const WAITING = 'Saved on this phone, waiting to upload'
 
@@ -111,7 +117,7 @@ function UploadSheet(p: { owner: string; people: PersonRow[]; forId: string; kin
             <h2 id="dc-st">Add an ID or insurance card</h2>
             <div className="dc-chips" role="group" aria-label="For">
               <span className="sub">For</span>
-              {p.people.map((x) => <button key={x.id} className="dc-chip" aria-pressed={x.id === forId} onClick={() => setForId(x.id)}>{x.name}</button>)}
+              {p.people.map((x) => <button key={x.id} className="dc-chip" aria-pressed={x.id === forId} onClick={() => setForId(x.id)}>{short(x, p.people)}</button>)}
             </div>
             <label className="dc-field">Card
               <select value={type} onChange={(e) => setType(e.target.value as CardType)}>
@@ -224,10 +230,8 @@ export function DocsScreen({ client = supabase }: { client?: SupabaseClient | nu
 
   return (
     <>
-      <div className="dc-head">
-        <a className="btn2 dc-back" href="#safety" aria-label="Back to Safety">Back</a>
-        <div className="hdr"><h1>IDs and insurance</h1><span>Seen only by you, the admins and whoever keeps your records · saved for offline</span></div>
-      </div>
+      <SubHeader title="IDs and insurance" backHref="#safety" backLabel="Back to Safety" className="sf-hdr sf-subhdr" />
+      <p className="sub dc-note">Seen only by you, the admins and whoever keeps your records · saved for offline</p>
       <div className="seg" role="group" aria-label="Kind">
         <button aria-pressed={kind === 'id_card'} onClick={() => choose('id_card')}>My IDs</button>
         <button aria-pressed={kind === 'insurance_card'} onClick={() => choose('insurance_card')}>Insurance</button>
@@ -235,7 +239,7 @@ export function DocsScreen({ client = supabase }: { client?: SupabaseClient | nu
       {people.length > 1 && (
         <div className="dc-chips" role="group" aria-label="Whose cards">
           <span className="sub">For</span>
-          {people.map((x) => <button key={x.id} className="dc-chip" aria-pressed={x.id === forId} onClick={() => setForPick(x.id)}>{x.name}</button>)}
+          {people.map((x) => <button key={x.id} className="dc-chip" aria-pressed={x.id === forId} onClick={() => setForPick(x.id)}>{short(x, people)}</button>)}
         </div>
       )}
       {people.length === 0 ? (

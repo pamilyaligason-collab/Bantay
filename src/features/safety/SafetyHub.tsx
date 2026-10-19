@@ -5,6 +5,7 @@ import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { alertRef } from '../location/place'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
+import { manilaLocal, rainOutlook, rainWords, skyOf, type Wx } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, type Alert, rankAlerts } from './alerts'
 import { splitDial } from './dial'
@@ -39,6 +40,16 @@ export function TileIcon({ name }: { name: string }) {
   return <svg className="sh-ic" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
 }
 
+/** Same rain numbers as Today: the hourly outlook when we have it, else the day chance. */
+export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
+  if (!wx) return 'Rain, wind and clouds'
+  const sky = skyOf(wx)
+  const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, manilaLocal(now), sky === 'rain' || sky === 'storm') : undefined
+  if (r) return rainWords(r)
+  if (r === null) return 'No more rain expected for now.'
+  return typeof wx.rainPct === 'number' && Number.isFinite(wx.rainPct) ? `Chance of rain today: ${Math.round(wx.rainPct)}%.` : 'Rain, wind and clouds'
+}
+
 /** Calm hub: ten big tiles, each with one live status line. Every number comes from data already on the phone. */
 export default function SafetyHub({ place }: { place: Place }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
@@ -56,7 +67,7 @@ export default function SafetyHub({ place }: { place: Place }) {
 
   const tiles: [string, string, string, string][] = [
     ['#safety/warnings', 'warn', 'Warnings', warns ? plural(warns, 'warning') + ' now' : 'None now'],
-    ['#safety/weather', 'weather', 'Weather maps', wx?.rainPct != null ? `Rain chance ${Math.round(wx.rainPct)}% today` : 'Rain, wind and clouds'],
+    ['#safety/weather', 'weather', 'Weather maps', rainLine(wx)],
     ['#safety/storms', 'storm', 'Storm tracker', storms.length ? `${stormName(storms[0]!)}${storms.length > 1 ? ` and ${storms.length - 1} more` : ''}` : 'No storms now'],
     ['#safety/map', 'map', 'Rescue map', pins ? plural(pins, 'place') + ' on the map' : 'Shelters and help'],
     ['#safety/dial', 'dial', 'Quick dial', confirmed ? `${plural(confirmed, 'number')} ready` : 'No numbers yet'],

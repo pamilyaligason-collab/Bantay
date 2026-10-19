@@ -11,11 +11,12 @@ import { SubHeader } from '../shell/SubHeader'
 import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { splitDial } from './dial'
+import { TileIcon } from './SafetyHub'
 import { type Entry, forZone, NOT_CONFIRMED, OVERRIDES_KEY, type Overrides, telHref, withOverrides } from './entries'
 import EntryList, { EditForm } from './EntryList'
-import { hazardsFor, type Tone } from './hazardCards'
+import { hazardLabel, hazardsFor } from './hazardCards'
 import { ALERTS_KEY, type Alert } from './alerts'
-import LiveMaps, { cyclones, STORM_VIEW, stormName, since, windySrc } from './LiveMaps'
+import LiveMaps, { cyclones, STORM_VIEW, stormLine, stormName, since, windySrc } from './LiveMaps'
 import MapsPanel from './MapsPanel'
 import NewsTop5 from './NewsTop5'
 import PhoneWarnings from './PhoneWarnings'
@@ -81,6 +82,8 @@ function SourceInfo({ e }: { e: Entry }) {
   )
 }
 
+const initials = (n: string) => n.split(/[\s/(]+/).filter((w) => /^[A-Za-z]/.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('')
+
 function QuickDial({ zone }: { zone: string }) {
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const [info, setInfo] = useState<Entry | null>(null)
@@ -91,39 +94,41 @@ function QuickDial({ zone }: { zone: string }) {
       {groups.map((g) => (
         <section key={g.name} aria-label={g.name}>
           <p className="sec">{g.name}</p>
-          <div className="sf-dials">
+          <ul className="sf-people">
             {g.items.map((e) => (
-              <div key={e.id} className="sf-dial">
-                <a className="btn sf-call" href={telHref(e.phone)} aria-label={`Call ${e.name}, ${e.phone}`}>
-                  <span>{e.name}</span><b>{e.phone}</b>
-                </a>
+              <li key={e.id} className="sf-person">
+                <span className="sf-av" aria-hidden="true">{initials(e.name)}</span>
+                <span className="sf-pt"><b>{e.name}</b><span className="sub">{g.name} · {e.phone}</span></span>
                 <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => setInfo(e)}>i</button>
-              </div>
+                <a className="sf-callbtn" href={telHref(e.phone)} aria-label={`Call ${e.name}, ${e.phone}`}><TileIcon name="dial" /></a>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       ))}
       {missing.length > 0 && (
-        <details>
-          <summary>Numbers we still need (tap to add)</summary>
-          {missing.map((e) => (
-            <div key={e.id}>
-              <div className="row">
-                <span className="grow">{e.name}</span>
-                <button className="sf-act" style={{ color: 'var(--warn)' }} onClick={() => setEditing(e.id)}>{NOT_CONFIRMED}</button>
-                <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => setInfo(e)}>i</button>
-              </div>
-              {editing === e.id && <EditForm entry={e} geo={false} onDone={() => setEditing(null)} />}
-            </div>
-          ))}
-        </details>
+        <section aria-label="Add a local number">
+          <p className="sec">Add a local number</p>
+          <p className="sub" style={{ margin: '0 4px' }}>We could not find an official number for these yet. If you know one, add it.</p>
+          <ul className="sf-people">
+            {missing.map((e) => (
+              <li key={e.id} className="sf-person-wrap">
+                <div className="sf-person">
+                  <span className="sf-av sf-av-add" aria-hidden="true">+</span>
+                  <span className="sf-pt"><b>{e.name}</b><span className="sub">{e.group} · {NOT_CONFIRMED}</span></span>
+                  <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => setInfo(e)}>i</button>
+                  <button type="button" className="btn2 sf-addbtn" aria-label={`Add number for ${e.name}`} onClick={() => setEditing(editing === e.id ? null : e.id)}>Add</button>
+                </div>
+                {editing === e.id && <EditForm entry={e} geo={false} onDone={() => setEditing(null)} />}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       {info && <InfoSheet title={info.name} onClose={() => setInfo(null)}><SourceInfo e={info} /></InfoSheet>}
     </div>
   )
 }
-
-const TONE: Record<Tone, string> = { good: 'Lower risk', warn: 'Take care', none: 'No reading yet' }
 
 function HazardPage({ place }: { place: Place }) {
   const [src, setSrc] = useState(false)
@@ -138,9 +143,9 @@ function HazardPage({ place }: { place: Place }) {
       </p>
       {v.cards.map((c) => (
         <article key={c.id} className={`sf-hz-card ${c.tone}`} aria-label={c.title}>
-          <div className="sf-hz-top"><h2>{c.title}</h2><span className="sf-hz-lvl">{TONE[c.tone]}</span></div>
-          {c.readings.map((r) => (
-            <p key={r.label} className="sf-hz-read">{c.readings.length > 1 && <>{r.label}: </>}<b>{r.value ?? 'Not confirmed yet'}</b></p>
+          <div className="sf-hz-top"><h2>{c.title}</h2><span className="sf-hz-lvl">{hazardLabel(c)}</span></div>
+          {c.readings.length > 1 && c.readings.map((r) => (
+            <p key={r.label} className="sf-hz-read">{r.label}: <b>{r.value ?? 'Not confirmed yet'}</b></p>
           ))}
           <p className="sf-hz-do">{c.todo}</p>
         </article>
@@ -164,18 +169,21 @@ const STORM_LINKS = [
   ['Zoom Earth', 'https://zoom.earth/maps/satellite/#view=12,128,5z']
 ]
 
-function StormTracker() {
+function StormTracker({ place }: { place: Place }) {
   const online = useOnline()
   const storms = cyclones(useKv<Alert[]>(ALERTS_KEY, NONE_A))
+  const zone = HOME_ZONES.find((z) => z.id === place.zone)
+  const line = stormLine(storms, place.weather, (zone?.name ?? 'your place').split(',')[0]!)
   return (
     <div className="sf">
+      <p className={`sf-storm-line ${line.tone}`} role="status">{line.text}</p>
       {storms.length ? (
         <div className="grp">
           {storms.map((a) => (
             <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ? `${a.level} alert` : 'Level unknown'} · since {since(a.issuedAt)}</span></span></div>
           ))}
         </div>
-      ) : <p className="sf-empty" role="status">No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.</p>}
+      ) : null}
       <div className="lm-box">
         {online
           ? <iframe className="sf-frame" title="Windy storm map of the Western Pacific" src={windySrc('wind', STORM_VIEW.lat, STORM_VIEW.lon, STORM_VIEW.zoom)} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
@@ -201,9 +209,9 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
     case 'warnings':
       return (
         <>
-          <section aria-labelledby="s-warn"><h2 id="s-warn" className="hd">Warnings</h2><SafetyBrief loc={alertRef(place)} /></section>
+          <section aria-label="Official warnings"><SafetyBrief loc={alertRef(place)} /></section>
           <PhoneWarnings level={2} />
-          <section aria-labelledby="s-news"><h2 id="s-news" className="hd">News</h2><NewsTop5 /></section>
+          <section aria-labelledby="s-news"><h2 id="s-news" className="hd">Safety news</h2><NewsTop5 /></section>
         </>
       )
     case 'weather':
@@ -213,7 +221,7 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
           <section aria-labelledby="s-map"><h2 id="s-map" className="hd">Live maps</h2><MapsPanel loc={place.source !== 'zone' ? place.weather : null} ask={l.ask} zone={place.zone} /></section>
         </>
       )
-    case 'storms': return <StormTracker />
+    case 'storms': return <StormTracker place={place} />
     case 'map':
       return (
         <>

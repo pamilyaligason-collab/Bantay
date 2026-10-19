@@ -224,7 +224,7 @@ describe('who the cards are for', () => {
     render(<DocsScreen client={f.client} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Upload PhilSys National ID' }))
     const group = await screen.findAllByRole('group', { name: 'For' })
-    expect([...group[0]!.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Me', 'Test Dependent'])
+    expect([...group[0]!.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Me', 'Test'])
   })
 })
 
