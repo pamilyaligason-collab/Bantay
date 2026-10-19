@@ -33,7 +33,8 @@ export const skyOf = (w: Wx): Sky | undefined => {
 export const ALERT_RADIUS_KM = 150
 export const RAIN_HERO_PCT = 60 // Next up shows weather only from this chance of rain
 export const HEAT_C = 33 // or from this temperature
-export const DOSE_WINDOW_MIN = 120 // a dose stays "due now" for two hours after its time
+export const DOSE_WINDOW_MIN = 120 // the inbox calls a dose missed this long after its time; Today keeps it due until taken or skipped
+export const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, so the card does not come back on reload
 
 /** "Losartan 50 mg 8:00", "Metformin 8:30 PM" -> name and time. No time in the text: null (the card is skipped, never guessed). */
 export function parseDose(s: string): Dose | null {
@@ -51,13 +52,13 @@ const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().t
 const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
-/** Doses whose time has come (and is under two hours old), not yet taken or skipped today. Oldest first. */
+/** Doses whose time has come, not yet taken or skipped today (same rule as Next up). Oldest first. */
 export function dueDoses(profile: unknown, taken: { name: string; takenAt: string }[], skipped: string[], now: Date): Dose[] {
   if (!Array.isArray(profile)) return []
   const nowMin = minutes(now)
   return profile
     .flatMap((s) => (typeof s === 'string' ? [parseDose(s)] : []))
-    .filter((d): d is Dose => !!d && nowMin >= d.at && nowMin < d.at + DOSE_WINDOW_MIN)
+    .filter((d): d is Dose => !!d && nowMin >= d.at)
     .filter((d) => !skipped.some((k) => sameName(k, d.name)))
     .filter((d) => !taken.some((t) => {
       const when = new Date(t.takenAt)

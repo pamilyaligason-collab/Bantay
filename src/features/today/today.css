@@ -118,6 +118,9 @@
 .td-slide.calm { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 .td-slide.calm .td-k { opacity: .7; }
 .td-slide.dose .td-k { color: var(--amber); opacity: 1; }
+/* dark: --amber on dark green is 4.34:1, this lighter amber is 4.93:1 */
+:root[data-theme="dark"] .td-slide.dose .td-k { color: #F5C468; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-slide.dose .td-k { color: #F5C468; } }
 .td-slide .td-act { margin-top: 4px; }
 .td-wxline { margin: 10px 4px 0; font-size: 15px; color: var(--muted); }
 

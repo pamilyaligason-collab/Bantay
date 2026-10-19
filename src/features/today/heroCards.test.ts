@@ -23,10 +23,10 @@ describe('parseDose', () => {
 
 describe('dueDoses', () => {
   const list = ['Losartan 8:00', 'Metformin 20:00', 'No time here']
-  it('is due from its time for two hours', () => {
+  it('is due from its time until taken or skipped', () => {
     expect(dueDoses(list, [], [], at(7, 59))).toEqual([])
     expect(dueDoses(list, [], [], at(8, 30)).map((d) => d.name)).toEqual(['Losartan'])
-    expect(dueDoses(list, [], [], at(10, 0))).toEqual([])
+    expect(dueDoses(list, [], [], at(10, 0)).map((d) => d.name)).toEqual(['Losartan'])
   })
   it('drops a dose already taken today or skipped, but not yesterday\'s', () => {
     expect(dueDoses(list, [{ name: 'losartan', takenAt: at(8, 4).toISOString() }], [], at(8, 30))).toEqual([])

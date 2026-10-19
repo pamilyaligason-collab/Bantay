@@ -65,7 +65,7 @@ test('after a check-in it shows when and how many are OK, with a link to see who
 })
 
 test('Next up names the family member whose medicine is not taken and offers no Mark taken for them', async ({ page }) => {
-  await seed(page, 'bantay', 'profiles', [{ id: 'ma', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: ['Hydroxurea 0:01', 'Aspirin 0:01'], updatedAt: null }])
+  await seed(page, 'bantay', 'profiles', [{ id: 'ma', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: ['Hydroxurea 0:00', 'Aspirin 0:00'], updatedAt: null }])
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Ma: Hydroxurea and Aspirin' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Mark taken' })).toHaveCount(0)
@@ -73,7 +73,7 @@ test('Next up names the family member whose medicine is not taken and offers no 
 })
 
 test('my own due medicine has a 48px Mark taken that says to sign in when signed out', async ({ page }) => {
-  await seed(page, 'bantay', 'kv', [{ key: 'profile.selfId', value: 'me' }, { key: 'profile.medicines', value: ['Losartan 0:01'] }])
+  await seed(page, 'bantay', 'kv', [{ key: 'profile.selfId', value: 'me' }, { key: 'profile.medicines', value: ['Losartan 0:00'] }])
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Time for Losartan' })).toBeVisible()
   const take = page.getByRole('button', { name: 'Mark taken' })

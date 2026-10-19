@@ -6,14 +6,13 @@ import { usePlace } from '../location/useLocation'
 import { ldb } from '../log/store'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
-import { dueDoses, heroCards, type HeroActionId } from './heroCards'
+import { SKIP_KEY, dueDoses, heroCards, type HeroActionId } from './heroCards'
 import { placeNameOf } from './placeName'
 import { useWeather } from './weather'
 
 const NO_ALERTS: Alert[] = []
 const NO_NAMES: string[] = []
 const NO_SKIP = { day: '', names: NO_NAMES }
-const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, so the card does not come back on reload
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** Simple mode's card that matters now, a row of swipeable cards when more than one applies (D-31/D-43). Full Today uses NextUp. */

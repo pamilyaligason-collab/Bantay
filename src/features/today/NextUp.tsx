@@ -9,7 +9,7 @@ import { stormName } from '../safety/LiveMaps'
 import { useKv } from '../safety/store'
 import { useProfiles } from '../setup/useProfile'
 import { FAIL_TEXT, takeDose } from './actions'
-import { type HeroCard } from './heroCards'
+import { SKIP_KEY, type HeroCard } from './heroCards'
 import { dueMeds, pickNext } from './nextPick'
 import { placeNameOf } from './placeName'
 import { usePlanCard } from './planCard'
@@ -20,7 +20,6 @@ const NO_ALERTS: Alert[] = []
 const NO_NAMES: string[] = []
 const NO_SKIP = { day: '', names: NO_NAMES }
 const NO_TAKEN: { personId: string; name: string; takenAt: string }[] = []
-export const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today (mine only)
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** Today's one "Next up" card, plus the one weather line under it (hidden when the card is the weather). */
