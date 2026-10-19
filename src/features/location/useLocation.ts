@@ -20,8 +20,8 @@ export const getHome = async (): Promise<Home> => {
 }
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
-const gps = () =>
-  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 }))
+const gps = (ask: boolean) =>
+  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, ask ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { maximumAge: 600_000, timeout: 15_000 }))
 
 /** ask=true shows the browser prompt (once, from onboarding). ask=false only uses GPS if already granted.
  *  Any failure or denial falls back to the saved home barangay (default Dampas). */
@@ -32,7 +32,7 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
     if (!('geolocation' in navigator)) return fallback
     const st = await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt')
     if (st === 'denied' || (st !== 'granted' && !ask)) return fallback
-    const p = await gps()
+    const p = await gps(ask)
     return { lat: p.coords.latitude, lon: p.coords.longitude, source: 'gps' }
   } catch {
     return fallback

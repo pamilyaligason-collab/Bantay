@@ -1,6 +1,7 @@
 package ph.bantay.family;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,7 +23,7 @@ public class ContactPickerPlugin extends Plugin {
   @PluginMethod
   public void pick(PluginCall call) {
     Intent i = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
-    startActivityForResult(call, i, "pickResult");
+    try { startActivityForResult(call, i, "pickResult"); } catch (ActivityNotFoundException e) { call.reject("unavailable"); }
   }
 
   @ActivityCallback
