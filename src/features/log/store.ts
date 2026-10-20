@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import { enqueue } from '../../db'
+import { track } from '../admin/events'
 import type { Reading } from '../health/ranges'
 import { hdb } from '../records/store'
 
@@ -21,11 +22,13 @@ export const ldb = new LogDB()
 export async function logReading(r: Reading) {
   const id = await hdb.readings.add(r)
   await enqueue('readings', 'insert', { ...r, id })
+  void track('action', 'reading_added')
   return id
 }
 export async function logMedTaken(m: MedTaken) {
   const id = await ldb.meds.add(m)
   await enqueue('meds_taken', 'insert', { ...m, id })
+  void track('action', 'dose_logged')
   return id
 }
 export async function logActivity(a: Activity) {

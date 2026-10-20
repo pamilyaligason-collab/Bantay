@@ -187,6 +187,7 @@ export default function Assistant() {
   // Back (gesture or button) closes the sheet instead of leaving the app.
   useEffect(() => {
     if (!open) return
+    void track('screen', 'ask')
     history.pushState({ bantayAssistant: 1 }, '')
     const pop = () => setOpen(false)
     window.addEventListener('popstate', pop)

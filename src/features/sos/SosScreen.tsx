@@ -3,6 +3,7 @@ import { useKv } from '../shell/useKv'
 import { loadFamily } from '../auth/family'
 import { normalizeContacts } from './contacts'
 import SosContactsPicker from './SosContactsPicker'
+import { track } from '../admin/events'
 import { addHistory } from './history'
 import { sosPosition, type SosFix } from './locate'
 import { mapLink, SAFE_BODY, smsUri, sosBody } from './sms'
@@ -40,6 +41,7 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
     if (!uri) setAdd(true)
     const e = { at: fix.at, lat: fix.lat, lon: fix.lon, gps: fix.gps, texted: !!uri }
     void addHistory(e)
+    void track('action', 'sos_sent')
     if (uri) window.location.href = uri
   }, [fix, loaded, uri])
 

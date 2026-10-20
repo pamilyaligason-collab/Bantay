@@ -33,7 +33,7 @@ export const TABLES: Record<string, TableSpec> = {
   },
   // A device's push subscription is keyed by its endpoint; resubscribing updates the keys.
   push_subscriptions: { fields: ['endpoint', 'p256dh', 'auth', 'expirationTime'], onConflict: 'endpoint', resolution: 'merge-duplicates', noClientId: true },
-  usage_events: { fields: ['kind', 'name', 'appVersion'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
+  usage_events: { fields: ['kind', 'name', 'appVersion', 'clientAt'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
   // A member's own profile columns on people (0010). PATCH, so the row must already exist; RLS decides who may.
   people_profile: {
     fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines'],

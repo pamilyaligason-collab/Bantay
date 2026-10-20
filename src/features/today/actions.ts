@@ -1,4 +1,5 @@
 import { logActivity, logMedTaken, logReading } from '../log/store'
+import { track } from '../admin/events'
 import { selfIdOrCached } from '../sync/profile'
 
 /** Writes behind the Today quick-log row. All go through the shared log store (local first, then the outbox).
@@ -19,7 +20,10 @@ async function asPerson(fn: (personId: string) => Promise<unknown>): Promise<Log
 const now = () => new Date().toISOString()
 
 /** No table fits "I'm OK", so it is an activity row of kind 'check-in' (no minutes, no steps). */
-export const checkIn = () => asPerson((personId) => logActivity({ personId, kind: 'check-in', minutes: null, steps: null, startedAt: now(), source: 'manual' }))
+export const checkIn = () => asPerson(async (personId) => {
+  await logActivity({ personId, kind: 'check-in', minutes: null, steps: null, startedAt: now(), source: 'manual' })
+  void track('action', 'checkin_done')
+})
 /** No mood table either: activity kind mood-good | mood-ok | mood-low. */
 export const logMood = (m: 'good' | 'ok' | 'low') => asPerson((personId) => logActivity({ personId, kind: `mood-${m}`, minutes: null, steps: null, startedAt: now(), source: 'manual' }))
 export const takeDose = (name: string) => asPerson((personId) => logMedTaken({ personId, name, takenAt: now() }))

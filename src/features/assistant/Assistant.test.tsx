@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { hdb } from '../records/store'
 
-const m = vi.hoisted(() => ({ logReading: vi.fn(async () => 1), logMedTaken: vi.fn(async () => 1), logActivity: vi.fn(async () => 1), ask: vi.fn(), addTask: vi.fn(async () => undefined) }))
+const m = vi.hoisted(() => ({ logReading: vi.fn(async () => 1), logMedTaken: vi.fn(async () => 1), logActivity: vi.fn(async () => 1), ask: vi.fn(), addTask: vi.fn(async () => undefined), track: vi.fn(async (_kind: string, _name: string) => true) }))
+vi.mock('../admin/events', () => ({ track: m.track }))
 vi.mock('../family/tasks', () => ({ addTask: m.addTask }))
 vi.mock('../log/store', () => ({ logReading: m.logReading, logMedTaken: m.logMedTaken, logActivity: m.logActivity }))
 vi.mock('./client', () => ({ ask: m.ask }))
@@ -37,6 +38,13 @@ describe('Assistant', () => {
     const dlg = await screen.findByRole('dialog')
     fireEvent.keyDown(dlg, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+  it('opening sends the ask screen event once (session 6 lane T)', async () => {
+    m.track.mockClear()
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByRole('dialog')
+    expect(m.track.mock.calls.filter((c) => c[0] === 'screen')).toEqual([['screen', 'ask']])
   })
   it('Confirm saves exactly once, even on a double tap', async () => {
     await askOnce()
