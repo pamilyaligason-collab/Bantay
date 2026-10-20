@@ -6,9 +6,9 @@ import { track } from '../admin/events'
 import { ldb } from '../log/store'
 import { selfIdOrCached } from '../sync/profile'
 import { MEDS_CURSOR } from './useMedicationRows'
-import { dayOf, remindable, parseSchedule, reminderId, toMinutes } from './meds'
+import { dayOf, remindable, parseSchedule, reminderId, toClock, toMinutes } from './meds'
 import { clock, medSlots } from './model'
-import { DOSE_ACTION_TYPE, handleReminderAction, registerReminderActions } from './reminderActions'
+import { DOSE_ACTION_TYPE, handleReminderAction, markablePeople, registerReminderActions } from './reminderActions'
 import { LANG_KEY, loadLang, t } from '../../lib/i18n'
 
 /** Daily local dose reminders for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids,
@@ -23,7 +23,7 @@ const KEY_SIG = 'health.doseReminderSig'
 export const REMIND_FOR = 'remind.for'
 
 export type ReminderResult = 'web' | 'no-permission' | 'unchanged' | 'scheduled' | 'failed'
-interface Planned { at: number; key: string }
+interface Planned { at: number; key: string; /** People whose doses due at this time the Taken button may log: this user and writer-carer people only. */ people: string[] }
 
 const unique = <T,>(xs: T[]) => [...new Set(xs)]
 
@@ -38,23 +38,29 @@ export async function plannedReminders(legacy: unknown, selfId: string | null, n
   const people = await remindPeople(selfId)
   const meds = people.length ? await ldb.medications.filter((m) => people.includes(m.personId)).toArray() : []
   const byTime = new Map<number, string[]>()
-  const add = (at: number | null, key: string) => { if (at != null) byTime.set(at, [...(byTime.get(at) ?? []), key]) }
+  const whoByTime = new Map<number, Set<string>>()
+  const mayMark = new Set(await markablePeople(selfId))
+  const add = (at: number | null, key: string, who?: string) => {
+    if (at == null) return
+    byTime.set(at, [...(byTime.get(at) ?? []), key])
+    if (who && mayMark.has(who)) whoByTime.set(at, (whoByTime.get(at) ?? new Set()).add(who))
+  }
   if (meds.length) {
     const today = dayOf(now)
     for (const p of people) for (const m of remindable(meds, p, today)) {
       const s = parseSchedule(m.schedule)
       if (s.needsTime) continue
-      for (const t of s.times) add(toMinutes(t), m.serverId ?? m.clientId ?? String(m.id))
+      for (const t of s.times) add(toMinutes(t), m.serverId ?? m.clientId ?? String(m.id), p)
     }
   } else if (Array.isArray(legacy) && !(await db.kv.get(MEDS_CURSOR).catch(() => undefined))?.value) {
     // deprecated profile-text path: only until the medications have been pulled once (an empty first read must never cancel what rings today)
     for (const s of medSlots(legacy.filter((m): m is string => typeof m === 'string'))) add(s.at, 'text')
   }
-  return [...byTime.entries()].sort((a, b) => a[0] - b[0]).slice(0, MAX_REMINDERS).map(([at, keys]) => ({ at, key: keys.sort().join(',') }))
+  return [...byTime.entries()].sort((a, b) => a[0] - b[0]).slice(0, MAX_REMINDERS).map(([at, keys]) => ({ at, key: keys.sort().join(','), people: [...(whoByTime.get(at) ?? [])].sort() }))
 }
 
 /** Collision-safe ids: the hash of (medicines due, time), moved up by one while it is taken. */
-export function reminderIds(planned: Planned[]): number[] {
+export function reminderIds(planned: Pick<Planned, 'at' | 'key'>[]): number[] {
   const used = new Set<number>()
   return planned.map((p) => {
     let id = reminderId(p.key, String(p.at))
@@ -89,7 +95,7 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
     const planned = await plannedReminders(medicines, selfId, opts.now)
     const ids = reminderIds(planned)
     const lang = await loadLang() // the reminder text is in the saved language; a change of language reschedules
-    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',') + (lang === 'en' ? '' : `#${lang}`) + '|act1' // act1: the reminders carry the Taken / Snooze / Open buttons
+    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',') + (lang === 'en' ? '' : `#${lang}`) + '|act2' // act2: the reminders carry the Taken / Snooze / Open buttons
     const [oldIds, oldSig] = await Promise.all([db.kv.get(KEY_IDS), db.kv.get(KEY_SIG)])
     const had = Array.isArray(oldIds?.value) ? (oldIds!.value as number[]) : []
     if (oldSig?.value === sig && had.length === planned.length) return 'unchanged'
@@ -102,7 +108,7 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
           id: ids[i]!,
           title: t('med.title', {}, lang),
           body: t('med.body', { time: clock(p.at) }, lang),
-          extra: { kind: 'dose', at: p.at },
+          extra: { kind: 'dose', at: p.at, slot: toClock(p.at), people: p.people },
           actionTypeId: DOSE_ACTION_TYPE,
           schedule: { on: { hour: Math.floor(p.at / 60), minute: p.at % 60 }, allowWhileIdle: true }
         }))

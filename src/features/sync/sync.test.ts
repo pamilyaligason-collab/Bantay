@@ -190,6 +190,18 @@ describe('push', () => {
     expect(await syncCounts()).toEqual({ waiting: 0, unknown: 0, dead: 0 })
   })
 
+  it('usage_events before migration 0015 (no client_at column): the row is retried once without clientAt and then sent', async () => {
+    let n = 0
+    mockFetch((c) => (n++ === 0 && c.body?.includes('client_at') ? json({ code: 'PGRST204', message: "Could not find the 'client_at' column" }, 400) : new Response(null, { status: 201 })))
+    await enqueue('usage_events', 'insert', { kind: 'screen', name: 'today', appVersion: 'dev', clientAt: '2026-10-20T01:00:00Z' })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(2)
+    expect(posts()[0]!.body).toContain('client_at')
+    expect(posts()[1]!.body).not.toContain('client_at')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
   it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {
     mockFetch(() => json({ code: 'X' }, 418))
     await enqueue('readings', 'insert', reading)

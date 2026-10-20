@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { listDrafts } from '../records/api'
 import { papersLine, progressPct } from '../records/papers'
 import { useConfirmedDocs } from '../records/useRecordsServer'
+import { videosAvailable } from './library/videos'
 import { useMedications } from './useMedications'
 import { useVisits } from './useVisits'
 import { refillLine, stockRows } from './stock'
@@ -44,7 +45,7 @@ export function HealthLinks({ personId }: { personId: string }) {
         <h2 className="hd" id="hl-learn">Learn</h2>
         <div className="hl-learn">
           <a href="#health/library" className="hl-card"><b>Health library</b><span className="sub">Plain summaries</span></a>
-          <a href="#health/videos" className="hl-card"><b>Videos</b><span className="sub">Short and checked</span></a>
+          {videosAvailable() && <a href="#health/videos" className="hl-card"><b>Videos</b><span className="sub">Short and checked</span></a>}
           <a href="#health/body" className="hl-card"><b>Your body</b><span className="sub">How it works</span></a>
         </div>
       </section>

@@ -42,6 +42,9 @@ describe('stock math', () => {
     const rows = stockRows(meds, 'p1', NOW)
     expect(rows.map((r) => [r.name, r.days, r.low])).toEqual([['Metformin', 7, true], ['Amlodipine 5 mg', 18, false]])
     expect(uncounted(meds, 'p1').map((m) => m.name)).toEqual(['Uncounted'])
+    // no times and no per_day: listed so the daily use can be set; as-needed ones are never counted
+    const noUse = [med({ name: 'NoTimes', schedule: { v: 1, times: [] } }), med({ name: 'PRN', asNeeded: true, schedule: { v: 1, times: [] } }), med({ name: 'HasCount', stockQty: 3, schedule: { v: 1, times: [] } })]
+    expect(uncounted(noUse, 'p1').map((m) => m.name)).toEqual(['HasCount', 'NoTimes'])
   })
   it('the Plan task is due the day the stock runs out', () => {
     expect(refillTask('Metformin 500 mg', refillBy(7, NOW))).toEqual({ title: 'Refill Metformin 500 mg', due: '2026-10-27' })

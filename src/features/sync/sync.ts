@@ -117,6 +117,12 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     return
   }
   const code = await errCode(res)
+  // Before migration 0015 is applied there is no client_at column: PostgREST answers 400 PGRST204. Send the same event once more without it (the time is only for ordering).
+  if (row.table === 'usage_events' && res.status === 400 && code === 'PGRST204' && payload.clientAt !== undefined) {
+    const { clientAt: _drop, ...rest } = payload
+    await db.outbox.update(row.id!, { payload: rest })
+    return sendRow({ ...row, payload: rest }, token, failed)
+  }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }

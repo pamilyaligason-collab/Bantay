@@ -8,7 +8,7 @@ import { dayOf, remindable, toClock } from './meds'
  *  The notification text is set in reminders.ts; this file only adds the buttons and what they do. Native only (the web has no lock screen). */
 export const DOSE_ACTION_TYPE = 'DOSE_REMINDER'
 export const SNOOZE_MIN = 15
-const REMIND_FOR_KEY = 'remind.for' // same key as REMIND_FOR in reminders.ts (not imported: that file imports this one)
+const WRITABLE_KEY = 'carers.writable' // the cache written by useCanMark.loadWritable
 
 export const REMINDER_ACTIONS = [
   { id: 'taken', title: 'Taken' },
@@ -22,22 +22,24 @@ export async function registerReminderActions(): Promise<void> {
 
 export interface ReminderEvent {
   actionId?: string
-  notification?: { id?: number; title?: string; body?: string; extra?: { kind?: string; at?: number } }
+  notification?: { id?: number; title?: string; body?: string; extra?: { kind?: string; at?: number; slot?: string; people?: string[] } }
 }
 export type ReminderOutcome = 'logged' | 'nothing-due' | 'snoozed' | 'open' | 'ignored'
 
-async function people(): Promise<string[]> {
-  const self = await selfIdOrCached().catch(() => null)
-  const v = (await db.kv.get(REMIND_FOR_KEY).catch(() => undefined))?.value
-  const extra = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []
-  return [...new Set([...(self ? [self] : []), ...extra])]
+/** The people the Taken button may log for: this user and the people they are a writer carer of (the cached list the Health screens use; read-only carers' people are never in it). */
+export async function markablePeople(selfId?: string | null): Promise<string[]> {
+  const self = selfId !== undefined ? selfId : await selfIdOrCached().catch(() => null)
+  const v = (await db.kv.get(WRITABLE_KEY).catch(() => undefined))?.value as { ids?: unknown } | undefined
+  const ids = Array.isArray(v?.ids) ? v!.ids.filter((x): x is string => typeof x === 'string' && !!x) : []
+  return [...new Set([...(self ? [self] : []), ...ids])]
 }
 
-/** Log every dose due at `at` (minutes after midnight) that is not already logged today. Returns how many were logged. */
-export async function markDue(at: number, now = new Date()): Promise<number> {
+/** Log the doses due at the slot for exactly `who` (those of them this user may write for), skipping any already logged today. Returns how many were logged. */
+export async function markDue(at: number, who: string[], now = new Date()): Promise<number> {
   const slot = toClock(at)
   const today = dayOf(now)
-  const ids = await people()
+  const allowed = new Set(await markablePeople())
+  const ids = who.filter((p) => allowed.has(p))
   const meds = ids.length ? await ldb.medications.filter((m) => ids.includes(m.personId)).toArray() : []
   const done = await ldb.meds.filter((t) => dayOf(t.takenAt) === today && t.slot === slot).toArray()
   let n = 0
@@ -59,7 +61,8 @@ export async function handleReminderAction(ev: ReminderEvent, now = new Date()):
   if (n?.extra?.kind !== 'dose') return 'ignored'
   if (ev.actionId === 'taken') {
     const at = n.extra.at
-    const logged = typeof at === 'number' ? await markDue(at, now) : 0
+    const who = Array.isArray(n.extra.people) ? n.extra.people : [] // an older reminder without people logs nothing rather than guess
+    const logged = typeof at === 'number' ? await markDue(at, who, now) : 0
     try { if (n.id != null) await LocalNotifications.removeDeliveredNotifications({ notifications: [{ id: n.id, title: n.title ?? '', body: n.body ?? '' }] }) } catch { /* already gone */ }
     return logged > 0 ? 'logged' : 'nothing-due'
   }

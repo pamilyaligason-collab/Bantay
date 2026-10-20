@@ -115,7 +115,8 @@ for (const scheme of ['light', 'dark'] as const) {
     test('People: roll call, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
       await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
-      await expect(page.getByText('No check-in today')).toBeVisible()
+      await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible() // a known row first: the status lines wait for the check-ins to load
+      await expect(page.getByRole('button', { name: /^Lola Remy, No check-in today/ })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Phone health data' })).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()

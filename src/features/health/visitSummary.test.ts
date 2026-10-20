@@ -6,7 +6,7 @@ import { adherence, buildSummary } from './visitSummary'
 
 const NOW = new Date(2026, 10, 1, 21, 0) // 1 Nov 2026, 9 PM local
 const ago = (days: number, h = 7) => new Date(2026, 10, 1 - days, h, 30).toISOString()
-const r = (test: string, value: number, days: number, personId = 'p1'): Reading => ({ personId, takenAt: ago(days), test, value, unit: 'x' })
+const r = (test: string, value: number, days: number, personId = 'p1', unit = test.startsWith('bp_') ? 'mmHg' : 'mg/dL'): Reading => ({ personId, takenAt: ago(days), test, value, unit })
 const med = (o: Partial<Medication> = {}): Medication => ({ personId: 'p1', name: 'Losartan', strength: '50 mg', dose: '1 tablet', serverId: 's-los', medStatus: 'active', startedOn: '2026-10-01', schedule: { v: 1, times: ['08:00'] }, ...o })
 const take = (days: number, h: number, o: Partial<MedTaken> = {}): MedTaken => ({ personId: 'p1', name: 'Losartan', takenAt: ago(days, h), medicationId: 's-los', slot: '08:00', ...o })
 
@@ -24,6 +24,12 @@ describe('visit summary', () => {
     expect(s.facts).toEqual(['68 years · blood type O+', 'Allergies: Penicillin', 'Conditions: Hypertension'])
     expect(s.medicines).toEqual(['Losartan 50 mg: 1 tablet, 8:00 AM'])
     expect(s.lines.join('\n')).toContain('Blood pressure average 130/84 mmHg (2 readings, 2 above the general guide)')
+  })
+  it('sugar in mmol/L is converted before averaging, and the unit printed is the one averaged; an unknown unit is left out', () => {
+    const rs = [r('fasting_glucose', 5.5, 1, 'p1', 'mmol/L'), r('fasting_glucose', 100, 2), r('fasting_glucose', 7, 3, 'p1', 'stone'), r('bp_systolic', 120, 1), r('bp_diastolic', 80, 1)]
+    const s = buildSummary({ person: { name: 'A' }, readings: rs, meds: [], takes: [], personId: 'p1', now: NOW })
+    expect(s.sugar).toMatchObject({ text: '99.6 mg/dL', n: 2 }) // (99.1 + 100) / 2
+    expect(s.bp!.text).toBe('120/80 mmHg')
   })
   it('no readings and no medicines say so, never a zero', () => {
     const s = buildSummary({ person: { name: 'A' }, readings: [], meds: [], takes: [], personId: 'p1', now: NOW })

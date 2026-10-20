@@ -12,7 +12,7 @@ import { DOSE_ACTION_TYPE, handleReminderAction, markDue, REMINDER_ACTIONS, regi
 
 const NOW = new Date(2026, 9, 20, 8, 5)
 const add = (o: Partial<Medication> & { name: string }) => ldb.medications.add({ personId: 'me', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, serverId: `s-${o.name}`, ...o })
-const ev = (actionId: string, at: number | undefined = 480) => ({ actionId, notification: { id: 123456, title: 'Medicine time', body: 'It is 8:00 AM.', extra: { kind: 'dose', at } } })
+const ev = (actionId: string, at: number | undefined = 480, people: string[] = ['me']) => ({ actionId, notification: { id: 123456, title: 'Medicine time', body: 'It is 8:00 AM.', extra: { kind: 'dose', at, slot: '08:00', people } } })
 
 beforeEach(async () => {
   vi.clearAllMocks()
@@ -46,7 +46,21 @@ describe('reminder actions', () => {
     expect(await handleReminderAction(ev('taken'), NOW)).toBe('logged')
     expect(await handleReminderAction(ev('taken'), NOW)).toBe('nothing-due')
     expect(await ldb.meds.count()).toBe(1)
-    expect(await markDue(13 * 60, NOW)).toBe(0)
+    expect(await markDue(13 * 60, ['me'], NOW)).toBe(0)
+  })
+  it('Taken logs only people this user may write for, and only the slot of that reminder', async () => {
+    await db.kv.put({ key: 'carers.writable', value: { userId: 'u1', ids: ['ma'] } })
+    await add({ name: 'Losartan' })
+    await add({ name: 'Metformin', personId: 'ma' })
+    await add({ name: 'Aspirin', personId: 'pa' }) // a read-only carer's person: not in the writable cache
+    await add({ name: 'Evening', schedule: { v: 1, times: ['20:00'] } })
+    expect(await handleReminderAction(ev('taken', 480, ['me', 'ma', 'pa']), NOW)).toBe('logged')
+    expect((await ldb.meds.toArray()).map((r) => `${r.personId}:${r.name}`).sort()).toEqual(['ma:Metformin', 'me:Losartan'])
+  })
+  it('a reminder without people (an older one) logs nothing', async () => {
+    await add({ name: 'Losartan' })
+    expect(await handleReminderAction({ actionId: 'taken', notification: { id: 1, extra: { kind: 'dose', at: 480 } } }, NOW)).toBe('nothing-due')
+    expect(await ldb.meds.count()).toBe(0)
   })
   it('Snooze schedules one more reminder 15 minutes later with the same text and buttons', async () => {
     expect(await handleReminderAction(ev('snooze'), NOW)).toBe('snoozed')

@@ -66,7 +66,7 @@ test('My KPIs show the latest reading and time; the Vitals toggle switches Lates
   await expect(row).toContainText('7-day average')
   await page.getByRole('button', { name: 'Normal' }).click()
   const normal = page.getByTestId('normal-rows')
-  await expect(normal).toContainText('70 to 100 mg/dL')
+  await expect(normal).toContainText('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')
   await expect(normal).toContainText('60 to 100 bpm')
   await expect(normal).toContainText('Normal is under 120 over 80')
   await page.getByRole('button', { name: 'Latest' }).click()
@@ -75,7 +75,7 @@ test('My KPIs show the latest reading and time; the Vitals toggle switches Lates
 
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
-  await expect(page.getByRole('link', { name: /^Videos/ })).toHaveAttribute('href', '#health/videos')
+  await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
   await expect(page.getByRole('link', { name: /^Papers · / })).toHaveAttribute('href', '#health/papers')
   await expect(page.getByRole('link', { name: /^Refills/ })).toContainText('Metformin 500 mg: 7 days left')
   await expect(page.getByText('LDL cholesterol is a bit high. Ask your doctor at the next visit.')).toBeVisible()

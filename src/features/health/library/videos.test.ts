@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { embedUrl, forTopic, playable, TOPICS, VIDEO_ID, VIDEOS } from './videos'
+import { embedUrl, forTopic, playable, TOPICS, VIDEO_ID, VIDEOS, videosAvailable } from './videos'
 
 describe('videos playlist', () => {
   it('every entry is either a flagged placeholder or a real 11-character id', () => {
@@ -12,6 +12,10 @@ describe('videos playlist', () => {
     expect(playable(real)).toBe(true)
     expect(embedUrl(real)).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/)
     expect(playable({ ...real, id: 'short' })).toBe(false)
+  })
+  it('the entry points stay hidden while every id is a placeholder', () => {
+    expect(VIDEOS.every((v) => v.placeholder)).toBe(true)
+    expect(videosAvailable()).toBe(false)
   })
   it('topics filter the list', () => {
     expect(TOPICS[0]).toBe('All')

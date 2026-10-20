@@ -2,7 +2,7 @@ import { formatNumber } from '../../lib/labFormat'
 import type { MedTaken, Medication } from '../log/store'
 import { dayOf, isLive, matchDoses, parseSchedule, slotsFor } from './meds'
 import { readingPosition } from './model'
-import type { Reading } from './ranges'
+import { toCanonicalReading, type Reading } from './ranges'
 import { clock12 } from './medActions'
 
 /** One page for the doctor, built on this phone from what it already holds: 30 days of blood pressure and sugar, the medicines being taken, and how many doses were on time.
@@ -75,18 +75,18 @@ const doseLine = (m: Medication) => {
 export function buildSummary(i: { person: SummaryPerson; readings: Reading[]; meds: Medication[]; takes: MedTaken[]; personId: string; now: Date }): Summary {
   const since = i.now.getTime() - SUMMARY_DAYS * DAY
   const inWin = (r: Reading) => isNum(r.value) && Date.parse(r.takenAt) >= since && Date.parse(r.takenAt) <= i.now.getTime() + DAY
-  const mine = i.readings.filter((r) => r.personId === i.personId && inWin(r))
+  const mine = i.readings.filter((r) => r.personId === i.personId && inWin(r)).map(toCanonicalReading).filter((r): r is Reading => !!r) // glucose mmol/L is converted to mg/dL; an unknown unit is left out
   const of = (t: string) => mine.filter((r) => r.test === t)
 
   const sys = of('bp_systolic')
   const dia = of('bp_diastolic')
   const bp = sys.length ? {
-    text: `${Math.round(avg(sys.map((r) => r.value)))}${dia.length ? `/${Math.round(avg(dia.map((r) => r.value)))}` : ''} mmHg`,
+    text: `${Math.round(avg(sys.map((r) => r.value)))}${dia.length ? `/${Math.round(avg(dia.map((r) => r.value)))}` : ''} ${sys[0]!.unit || 'mmHg'}`,
     n: sys.length,
     high: sys.filter((r) => readingPosition(r) === 'above').length
   } : null
   const sg = of('fasting_glucose')
-  const sugar = sg.length ? { text: `${formatNumber(Math.round(avg(sg.map((r) => r.value)) * 10) / 10)} mg/dL`, n: sg.length, high: sg.filter((r) => readingPosition(r) === 'above').length } : null
+  const sugar = sg.length ? { text: `${formatNumber(Math.round(avg(sg.map((r) => r.value)) * 10) / 10)} ${sg[0]!.unit || 'mg/dL'}`, n: sg.length, high: sg.filter((r) => readingPosition(r) === 'above').length } : null
 
   const live = i.meds.filter((m) => m.personId === i.personId && isLive(m))
   const medicines = live.map(doseLine)

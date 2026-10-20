@@ -27,7 +27,7 @@ const seed = (page: Page, phase: 1 | 2) =>
       const visit = new Date(nowMs + 9 * 86_400_000); visit.setHours(9, 0, 0, 0)
       await put('bantay-visits', {
         appointments: [{ clientId: 'a1', personId: 'p1', startsAt: visit.toISOString(), purpose: 'Check-up, internal medicine', provider: 'Dr. Reyes', apptStatus: 'planned' }, { clientId: 'a0', personId: 'p1', startsAt: d(60), purpose: 'Lab tests', apptStatus: 'done' }],
-        followUps: [{ clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2099-01-15', prescriber: 'Dr. Reyes' }]
+        followUps: [{ clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2099-01-15', prescriber: 'Dr. Reyes', status: 'confirmed' }]
       })
       await put('bantay-log', { medications: [{ clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Losartan', strength: '50 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed', schedule: { v: 1, times: ['08:00'] } }] })
     }
@@ -76,6 +76,11 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/summary-light.png` })
   // desktop chromium cannot share files: the page offers to save the picture instead
   await page.getByRole('button', { name: 'Share as picture' }).click()
-  await expect(page.getByRole('status').filter({ hasText: /Shared|Sharing is not available/ })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: /Shared|Take a screenshot to share/ }).first()).toBeVisible()
+  await page.getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Show full screen' }).click()
+  await expect(page.getByRole('dialog', { name: /full screen/ }).getByRole('img')).toBeVisible()
+  await expect(page.getByText('Take a screenshot to share.')).toBeVisible()
+  await page.getByRole('button', { name: 'Close' }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })

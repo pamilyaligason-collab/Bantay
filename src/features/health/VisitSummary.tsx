@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { ldb, type MedTaken } from '../log/store'
@@ -33,17 +34,25 @@ export default function VisitSummary() {
     readings, meds, takes, personId, now
   }), [name, profile, readings, meds, takes, personId, now])
   const [status, setStatus] = useState('')
-  const [dl, setDl] = useState<string | null>(null)
-  useEffect(() => () => { if (dl) URL.revokeObjectURL(dl) }, [dl])
+  const [full, setFull] = useState<string | null>(null)
+  useEffect(() => () => { if (full) URL.revokeObjectURL(full) }, [full])
 
-  const share = async () => {
+  /** The picture of the page, full screen, to screenshot: always works, also in the app where the system share sheet for files is not there. */
+  const showFull = async () => {
     const blob = await renderSummaryImage(s.lines)
-    if (!blob) return setStatus('This phone could not make the picture. Use Show full screen and take a screenshot.')
+    if (!blob) return setStatus('This phone could not make the picture. Scroll the page above and take a screenshot instead.')
+    setFull(URL.createObjectURL(blob))
+    setStatus('')
+  }
+  const share = async () => {
+    if (Capacitor.isNativePlatform()) return showFull() // no file-share plugin in the app: show the picture to screenshot
+    const blob = await renderSummaryImage(s.lines)
+    if (!blob) return setStatus('This phone could not make the picture. Scroll the page above and take a screenshot instead.')
     const r = await shareSummary(blob, s.title)
     if (r === 'shared') return setStatus('Shared.')
     if (r === 'cancelled') return setStatus('')
-    setDl(URL.createObjectURL(blob))
-    setStatus('Sharing is not available here. Save the picture instead.')
+    setFull(URL.createObjectURL(blob))
+    setStatus('Sharing is not available here. Take a screenshot to share.')
   }
 
   return (
@@ -63,8 +72,15 @@ export default function VisitSummary() {
         <p className="sub">Compiled by the family from this phone. Not a medical device and not medical advice.</p>
       </article>
       <button type="button" className="btn" onClick={() => void share()}>Share as picture</button>
-      {dl && <a className="btn2 vs-prep" href={dl} download="visit-summary.png">Save the picture</a>}
+      <button type="button" className="btn2 vs-prep" onClick={() => void showFull()}>Show full screen</button>
       {status && <p className="sub" role="status">{status}</p>}
+      {full && (
+        <div className="vsum-full" role="dialog" aria-modal="true" aria-label="Summary picture, full screen">
+          <img src={full} alt="Summary for the doctor, as a picture" />
+          <p className="vsum-hint" role="status">Take a screenshot to share.</p>
+          <button type="button" className="btn" onClick={() => setFull(null)}>Close</button>
+        </div>
+      )}
     </>
   )
 }

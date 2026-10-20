@@ -56,9 +56,9 @@ export function stockRows(meds: Medication[], personId: string, now: Date): Stoc
   return rows.sort((a, b) => a.days - b.days || a.name.localeCompare(b.name))
 }
 
-/** Live medicines with a daily use but no count yet: "set stock" candidates. */
+/** Live medicines that cannot be counted yet: no count was set, or no daily use is known (no times and no per_day). The screen lets the person set both. */
 export const uncounted = (meds: Medication[], personId: string): Medication[] =>
-  meds.filter((m) => m.personId === personId && isLive(m) && perDayOf(m) != null && (typeof m.stockQty !== 'number')).sort((a, b) => a.name.localeCompare(b.name))
+  meds.filter((m) => m.personId === personId && isLive(m) && !m.asNeeded && (typeof m.stockQty !== 'number' || perDayOf(m) == null)).sort((a, b) => a.name.localeCompare(b.name))
 
 /** As-needed medicines are not counted: the screen says so. */
 export const asNeededNames = (meds: Medication[], personId: string): string[] => meds.filter((m) => m.personId === personId && isLive(m) && m.asNeeded).map((m) => m.name)

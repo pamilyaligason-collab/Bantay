@@ -36,14 +36,19 @@ export function useFamilyPeople(): { people: FamilyPerson[]; selfId: string | nu
 }
 
 /** Each person's latest "I'm OK" (activity of kind check-in), live. */
-export function useCheckIns(): Record<string, string> {
-  const [last, setLast] = useState<Record<string, string>>({})
+export function useCheckInsLoaded(): Record<string, string> | null {
+  const [last, setLast] = useState<Record<string, string> | null>(null) // null until the first read: no status line may say "No check-in today" before we know
   useEffect(() => {
-    const sub = liveQuery(() => ldb.activity.filter((a) => a.kind === 'check-in').toArray()).subscribe({ next: (rows) => setLast(latestCheckIns(rows)), error: () => undefined })
+    const sub = liveQuery(() => ldb.activity.filter((a) => a.kind === 'check-in').toArray()).subscribe({ next: (rows) => setLast(latestCheckIns(rows)), error: () => setLast((cur) => cur ?? {}) })
     return () => sub.unsubscribe()
   }, [])
   return last
 }
+/** The same, with an empty list until it has loaded (for the summary lines on Today). */
+export function useCheckIns(): Record<string, string> {
+  return useCheckInsLoaded() ?? NO_CHECKINS
+}
+const NO_CHECKINS: Record<string, string> = {}
 
 export const latestCheckIns = (rows: { personId: string; kind: string; startedAt: string }[]): Record<string, string> => {
   const out: Record<string, string> = {}

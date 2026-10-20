@@ -54,7 +54,7 @@ export function visitList(appts: Appointment[], rx: FollowUp[], personId: string
   const past = all.filter((v) => !upcoming.some((u) => u.key === v.key)).sort((a, b) => b.day.localeCompare(a.day)).slice(0, 5)
   const covered = (r: FollowUp) => mine.some((a) => open(a) && ((r.serverId && a.sourcePrescriptionId === r.serverId) || (toVisit(a)?.day ?? '') === (r.followUpOn ?? '').slice(0, 10)))
   const followUps = rx
-    .filter((r) => r.personId === personId && r.status !== 'rejected' && !!r.followUpOn && !covered(r))
+    .filter((r) => r.personId === personId && r.status === 'confirmed' && !!r.followUpOn && r.followUpOn.slice(0, 10) >= today && !covered(r)) // confirmed prescriptions only; a date that has passed is not "due"
     .map((r): Visit => ({
       kind: 'followup', key: r.clientId ?? `rx:${r.serverId}`, personId, day: r.followUpOn!.slice(0, 10), at: null, dateOnly: true,
       title: 'Follow-up due', sub: [dayWords(r.followUpOn!), r.prescriber ? `from ${r.prescriber}'s prescription` : 'from a prescription'].join(' · ')

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { latestByTest, latestVsNormal, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
-import { isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
+import { byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 export type VitalsMode = 'latest' | 'average' | 'normal'
@@ -45,7 +45,8 @@ export function LatestList({ readings, thresholds, ready, kind = 'vitals' }: { r
   const vitals = kind === 'vitals'
   const shown = mode === 'latest' || !vitals ? 'latest' : mode
   const pool = readings.filter((r) => isVital(r.test) === vitals)
-  const rows = shown === 'average' ? weekAverages(pool, new Date()) : latestByTest(pool)
+  const raw = shown === 'average' ? weekAverages(pool, new Date()) : latestByTest(pool)
+  const rows = vitals ? byVitalOrder(raw) : raw
   const any = shown === 'latest' && rows.some((r) => previousReading(pool, r.test))
   if (!vitals && rows.length === 0) return null
   if (vitals && ready && pool.length === 0 && mode !== 'normal') return null

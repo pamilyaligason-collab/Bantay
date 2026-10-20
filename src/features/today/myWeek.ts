@@ -1,7 +1,7 @@
 import { formatNumber } from '../../lib/labFormat'
 import { dayOf, isLive, normaliseDrug, slotsFor } from '../health/meds'
 import { readingPosition } from '../health/model'
-import { rangeState, type RangeState } from '../health/ranges'
+import { rangeState, toCanonicalReading, type RangeState } from '../health/ranges'
 import type { Position, Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
 
@@ -54,7 +54,7 @@ const reading = (test: string, value: number, unit: string): Reading => ({ perso
 
 export function computeMyWeek(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date }): Tile[] {
   const days = lastDays(i.now)
-  const mine = i.readings.filter((r) => r.personId === i.personId)
+  const mine = i.readings.filter((r) => r.personId === i.personId).map(toCanonicalReading).filter((r): r is Reading => !!r) // one unit per measure: glucose mmol/L -> mg/dL, an unknown unit is not averaged
   const tiles: Tile[] = []
 
   // blood pressure: average top / bottom, judged on the worse of the two (same rule as the Health body map)

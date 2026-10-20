@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
 import { computeKpis, whenWords } from './kpis'
 import type { Reading } from './ranges'
-import { averageNodes, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
+import { GUIDE } from './ranges'
+import { averageNodes, byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
 
 const NOW = new Date(2026, 9, 20, 10, 0)
 const at = (daysAgo: number, h = 7, m = 30) => new Date(2026, 9, 20 - daysAgo, h, m).toISOString()
@@ -53,6 +54,35 @@ describe('My KPIs: the latest reading, not the average', () => {
   })
 })
 
+describe('units and wording', () => {
+  it('glucose in mmol/L is converted (x 18.016) before judging and averaging; an unknown unit is skipped', () => {
+    const g = (v: number, unit: string, h: number): Reading => ({ personId: 'p1', takenAt: at(0, h), test: 'fasting_glucose', value: v, unit })
+    const k = computeKpis({ personId: 'p1', readings: [g(5.8, 'mmol/L', 8)], now: NOW, ...none })
+    expect(k[0]).toMatchObject({ value: '104.5', unit: 'mg/dL', state: { word: 'A bit high' } }) // 5.8 mmol/L is 104.5 mg/dL, not "5.8 is low"
+    expect(computeKpis({ personId: 'p1', readings: [g(5.8, 'stone', 8)], now: NOW, ...none })).toEqual([])
+    const a = weekAverages([g(5.5, 'mmol/L', 7), g(100, 'mg/dL', 8), g(9, 'stone', 9)], NOW)
+    expect(a).toHaveLength(1)
+    expect(a[0]).toMatchObject({ unit: 'mg/dL', value: 99.6 })
+  })
+  it('KPI chips use the Normal bands: 124/76 is a little raised, 138/86 high, sugar 65 low', () => {
+    const bp = (s: number, d: number) => computeKpis({ personId: 'p1', readings: [r('bp_systolic', s, 0, 7, 30, 'mmHg'), r('bp_diastolic', d, 0, 7, 30, 'mmHg')], now: NOW, ...none })[0]!
+    expect(bp(124, 76).state?.word).toBe('A little raised')
+    expect(bp(138, 86).state?.word).toBe('High')
+    expect(bp(118, 76).state?.word).toBe('Within range')
+    expect(computeKpis({ personId: 'p1', readings: [r('fasting_glucose', 65, 0, 7, 30, 'mg/dL')], now: NOW, ...none })[0]!.state?.word).toBe('Low')
+  })
+  it('vitals list in reading order: top before bottom, and BP averages are whole numbers', () => {
+    expect(byVitalOrder([{ test: 'weight' }, { test: 'bp_diastolic' }, { test: 'heart_rate' }, { test: 'bp_systolic' }, { test: 'fasting_glucose' }]).map((x) => x.test)).toEqual(['bp_systolic', 'bp_diastolic', 'fasting_glucose', 'heart_rate', 'weight'])
+    const a = weekAverages([r('bp_diastolic', 79, 0, 7, 30, 'mmHg'), r('bp_diastolic', 88, 1, 7, 30, 'mmHg')], NOW)
+    expect(a[0]!.value).toBe(84)
+  })
+  it('Normal rows and the guide agree: the fasting sugar range text is the guide text', () => {
+    const f = NORMAL.find((n) => n.code === 'fasting_glucose')!
+    expect(f.range).toBe(GUIDE.fasting_glucose!.text)
+    expect([f.low, f.high]).toEqual([70, 99])
+  })
+})
+
 describe('7-day averages and the Normal list', () => {
   it('averages only the last 7 days, per test', () => {
     const a = weekAverages(readings, NOW)
@@ -78,7 +108,7 @@ describe('7-day averages and the Normal list', () => {
     expect(isVital('bp_systolic') && isVital('weight')).toBe(true)
     expect(isVital('hba1c') || isVital('ldl')).toBe(false)
     expect(NORMAL.map((n) => n.code)).toEqual(['bp_systolic', 'fasting_glucose', 'heart_rate', 'weight'])
-    expect(NORMAL.find((n) => n.code === 'fasting_glucose')!.range).toBe('70 to 100 mg/dL')
+    expect(NORMAL.find((n) => n.code === 'fasting_glucose')!.range).toBe('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')
     expect(NORMAL.find((n) => n.code === 'heart_rate')!.range).toBe('60 to 100 bpm')
     for (const n of NORMAL) expect(n.line.length).toBeGreaterThan(20)
   })

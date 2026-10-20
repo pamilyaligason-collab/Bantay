@@ -26,10 +26,12 @@ describe('visit list', () => {
   })
   it('a follow-up shows as due only when no appointment covers it', () => {
     const rx = [
-      { clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2026-11-10', prescriber: 'Dr. Reyes' },
-      { clientId: 'r2', serverId: 'rx2', personId: 'p1', followUpOn: '2026-10-29' }, // same day as a1
+      { clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2026-11-10', prescriber: 'Dr. Reyes', status: 'confirmed' },
+      { clientId: 'r2', serverId: 'rx2', personId: 'p1', followUpOn: '2026-10-29', status: 'confirmed' }, // same day as a1
       { clientId: 'r3', serverId: 'rx3', personId: 'p1', followUpOn: '2026-12-01', status: 'rejected' },
-      { clientId: 'r4', serverId: 'rx4', personId: 'p2', followUpOn: '2026-11-11' }
+      { clientId: 'r4', serverId: 'rx4', personId: 'p2', followUpOn: '2026-11-11', status: 'confirmed' },
+      { clientId: 'r5', serverId: 'rx5', personId: 'p1', followUpOn: '2026-12-05' }, // a draft prescription
+      { clientId: 'r6', serverId: 'rx6', personId: 'p1', followUpOn: '2026-10-01', status: 'confirmed' } // already past
     ]
     const l = visitList([...appts, { clientId: 'a6', personId: 'p1', dueOn: '2026-11-01', sourcePrescriptionId: 'rx1' }], rx, 'p1', NOW)
     expect(l.followUps).toEqual([])
@@ -39,7 +41,7 @@ describe('visit list', () => {
   })
   it('overview line: next visit, else follow-up, else nothing', () => {
     expect(nextVisitLine(visitList(appts, [], 'p1', NOW))).toEqual({ text: 'Next visit: Sun 25 Oct 9:00 AM', sub: 'Labs' })
-    expect(nextVisitLine(visitList([], [{ personId: 'p1', followUpOn: '2026-11-10' }], 'p1', NOW))).toEqual({ text: 'Follow-up due: Tue 10 Nov', sub: 'No visit booked yet' })
+    expect(nextVisitLine(visitList([], [{ personId: 'p1', followUpOn: '2026-11-10', status: 'confirmed' }], 'p1', NOW))).toEqual({ text: 'Follow-up due: Tue 10 Nov', sub: 'No visit booked yet' })
     expect(nextVisitLine(visitList([], [], 'p1', NOW))).toBeNull()
   })
   it('bring list: readings, medicines, papers, then questions', () => {

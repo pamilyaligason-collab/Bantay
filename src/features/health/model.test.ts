@@ -27,7 +27,7 @@ describe('insightHeadline', () => {
     expect(h.tone).toBe('watch')
   })
   it('does not call a reading with no range in range', () => {
-    expect(insightHeadline([rd('heart_rate', 72, '2026-10-18T08:00:00', { unit: 'bpm' })], NOW).tone).toBe('none')
+    expect(insightHeadline([rd('weight', 61, '2026-10-18T08:00:00', { unit: 'kg' })], NOW).tone).toBe('none')
   })
   it('a family limit beats the general guide', () => {
     const h = insightHeadline([rd('bp_systolic', 110, '2026-10-18T08:00:00')], NOW, () => ({ low: null, high: 100 }))

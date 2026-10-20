@@ -6,6 +6,9 @@ import { db } from '../../db'
 vi.mock('../auth/client', () => ({ supabase: null }))
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+vi.mock('./summaryImage', () => ({ renderSummaryImage: async () => new Blob(['x'], { type: 'image/png' }), shareSummary: async () => 'unsupported' })); // jsdom has no canvas
+(URL as unknown as { createObjectURL: () => string }).createObjectURL = () => 'blob:test';
+(URL as unknown as { revokeObjectURL: () => void }).revokeObjectURL = () => undefined
 
 import Health from '../../screens/Health'
 import { fdb } from '../family/store'
@@ -55,7 +58,7 @@ describe('Doctor visits', () => {
   it('next visit card, follow-up due when no appointment exists, bring checklist, summary link; nothing is written to appointments', async () => {
     const t = new Date(); t.setDate(t.getDate() + 5); t.setHours(9, 0, 0, 0)
     await vdb.appointments.add({ clientId: 'a1', personId: 'p1', startsAt: t.toISOString(), purpose: 'Check-up', provider: 'Dr. Reyes' })
-    await vdb.followUps.add({ clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2099-01-15', prescriber: 'Dr. Reyes' })
+    await vdb.followUps.add({ clientId: 'r1', serverId: 'rx1', personId: 'p1', followUpOn: '2099-01-15', prescriber: 'Dr. Reyes', status: 'confirmed' })
     go('#health/visits')
     render(<Health />)
     const next = await screen.findByTestId('next-visit')
@@ -79,6 +82,8 @@ describe('Doctor visits', () => {
     await waitFor(() => expect(page.textContent).toMatch(/Blood pressure average 130\/84 mmHg \(1 reading/))
     await waitFor(() => expect(page.textContent).toMatch(/Losartan 50 mg: 1 tablet, 8:00 AM/))
     expect(screen.getByRole('button', { name: 'Share as picture' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Show full screen' })) // the fallback where files cannot be shared
+    expect(await screen.findByText('Take a screenshot to share.')).toBeTruthy()
   })
 })
 
@@ -109,6 +114,15 @@ describe('Health library', () => {
     expect(screen.getByText('From MedlinePlus (U.S. National Library of Medicine), summarised; not medical advice')).toBeTruthy()
     vi.unstubAllGlobals()
     vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+  })
+})
+
+describe('Videos entry points', () => {
+  it('are hidden while every id is a placeholder', async () => {
+    go('#health')
+    render(<Health />)
+    await screen.findByRole('link', { name: /^Health library/ })
+    expect(screen.queryByRole('link', { name: /^Videos/ })).toBeNull()
   })
 })
 

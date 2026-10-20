@@ -45,6 +45,24 @@ export function generalRange(test: string, unit?: string): (Range & { text: stri
   return u && g.unit.test(u) ? { low: g.low, high: g.high, text: g.text } : null
 }
 
+const squashUnit = (u: string) => u.replace(/\s/g, '').replace(/[µμ]/g, 'u').toLowerCase()
+export const MMOL_GLUCOSE = 18.016 // mmol/L -> mg/dL, the catalogue factor (migration 0008)
+const GLUCOSE = new Set(['fasting_glucose', 'glucose', 'random_glucose'])
+/** The reading in the unit its guide uses: glucose in mmol/L is converted to mg/dL (x 18.016), a reading with no unit is taken as it is, and a unit that
+ *  cannot be compared (one that is neither the guide's nor a known conversion) gives null: such a reading is never judged and never averaged with the rest. */
+export function toCanonicalReading<T extends Reading>(r: T): T | null {
+  const g = GUIDE[r.test]
+  const u = r.unit ? squashUnit(r.unit) : ''
+  if (!u) return r
+  if (g) {
+    if (u === squashUnit(g.unit)) return r
+    if (GLUCOSE.has(r.test) && g.unit === 'mg/dL' && /^mmol\/?l$/.test(u)) return { ...r, value: Math.round(r.value * MMOL_GLUCOSE * 10) / 10, unit: 'mg/dL', labLow: r.labLow == null ? r.labLow : r.labLow * MMOL_GLUCOSE, labHigh: r.labHigh == null ? r.labHigh : r.labHigh * MMOL_GLUCOSE }
+    return null
+  }
+  if (GLUCOSE.has(r.test) && /^mmol\/?l$/.test(u)) return { ...r, value: Math.round(r.value * MMOL_GLUCOSE * 10) / 10, unit: 'mg/dL', labLow: r.labLow == null ? r.labLow : r.labLow * MMOL_GLUCOSE, labHigh: r.labHigh == null ? r.labHigh : r.labHigh * MMOL_GLUCOSE }
+  return r
+}
+
 export function position(value: number, r?: { low?: number | null; high?: number | null }): Position {
   if (!r || (r.low == null && r.high == null)) return 'none'
   if (r.low != null && value < r.low) return 'below'
@@ -61,9 +79,10 @@ const WORD: Record<Position, string> = { within: 'Within range', below: 'Below r
 export function latestVsNormal(reading: Reading, family?: Range) {
   const lab = { low: reading.labLow ?? null, high: reading.labHigh ?? null }
   const g = GUIDE[reading.test]
+  const canon = toCanonicalReading(reading) // the guide and the family limit are in the guide's unit; the lab's own range is in the lab's unit
   const labPos = position(reading.value, lab)
-  const guidePos = position(reading.value, g)
-  const famPos = position(reading.value, family)
+  const guidePos = canon ? position(canon.value, g) : 'none'
+  const famPos = canon ? position(canon.value, family) : 'none'
   const gen = g ? null : generalRange(reading.test, reading.unit)
   const genPos = position(reading.value, gen ?? undefined)
   const headline = famPos !== 'none' ? famPos : labPos !== 'none' ? labPos : guidePos !== 'none' ? guidePos : genPos

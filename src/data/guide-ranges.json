@@ -24,12 +24,22 @@
     "fasting_glucose": {
       "label": "Fasting glucose",
       "unit": "mg/dL",
-      "low": null,
+      "low": 70,
       "high": 99,
-      "text": "Under 100",
+      "text": "70 to 99 mg/dL (3.9 to 5.5 mmol/L)",
       "source": "ADA, Diagnosis",
       "url": "https://diabetes.org/about-diabetes/diagnosis",
       "year": 2026
+    },
+    "heart_rate": {
+      "label": "Pulse",
+      "unit": "bpm",
+      "low": 60,
+      "high": 100,
+      "text": "60 to 100",
+      "source": "MedlinePlus, Pulse (resting, adults)",
+      "url": "https://medlineplus.gov/ency/article/003399.htm",
+      "year": 2024
     },
     "hba1c": {
       "label": "HbA1c",

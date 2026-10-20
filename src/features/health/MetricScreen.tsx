@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { GUIDE, latestVsNormal, rangeState } from './ranges'
+import { GUIDE, latestVsNormal, rangeState, toCanonicalReading } from './ranges'
 import { PersonChips } from '../records/PersonChips'
 import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
 import { entrySpec } from './readingPreview'
-import { PULSE_RANGE } from './vitals'
 import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
   effectiveRange, metricLabel, monthlyAverages, rangeLine, shortDate, type Period, type Point
@@ -30,7 +29,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const activity = isActivityCode(code)
   const known = activity || readings.some((r) => r.test === code) || !!GUIDE[code]
   const partOf = (iso: string) => (new Date(iso).getHours() < 12 ? 'am' : 'pm')
-  const mine = readings.filter((r) => r.test === code).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
+  const mine = readings.filter((r) => r.test === code).map(toCanonicalReading).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
   const minePart = part ? mine.filter((r) => partOf(r.takenAt) === part) : mine
   const pts: Point[] = activity ? activitySeries(acts, code as (typeof ACTIVITY_CODES)[number]) : [...minePart].reverse().map((r) => ({ takenAt: r.takenAt, value: r.value }))
   const shown = inPeriod(pts, period, now)
@@ -41,7 +40,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const v = latest ? latestVsNormal(latest, family) : null
   const last = pts[pts.length - 1]
   const months = monthlyAverages(pts, now)
-  const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? (code === 'heart_rate' ? PULSE_RANGE : null)
+  const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
   const spec = entrySpec(code)
   const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : formatNumber(n))
 

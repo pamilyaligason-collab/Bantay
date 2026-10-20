@@ -1,5 +1,5 @@
 import { formatNumber, labName } from '../../lib/labFormat'
-import { GUIDE, generalRange, position, rangeText, type Position, type Range, type Reading } from './ranges'
+import { GUIDE, generalRange, position, rangeText, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
 
 /** Pure Health logic (v6, D-38): headline, previous value, body-map nodes, monthly averages, medicine times. No React, no storage. */
 
@@ -30,7 +30,12 @@ export function effectiveRange(r: Reading, family?: Range | null): { range: Rang
   const gen = g ? null : generalRange(r.test, r.unit)
   return gen ? { range: { low: gen.low, high: gen.high }, from: 'general' } : { range: null, from: 'none' }
 }
-export const readingPosition = (r: Reading, family?: Range | null): Position => position(r.value, effectiveRange(r, family).range ?? undefined)
+export function readingPosition(r: Reading, family?: Range | null): Position {
+  const { range, from } = effectiveRange(r, family)
+  if (from === 'lab' || from === 'general') return position(r.value, range ?? undefined) // the lab's own range is in the lab's unit
+  const c = toCanonicalReading(r) // guide and family limits are in the guide's unit (glucose mmol/L is converted; an unknown unit is not judged)
+  return c ? position(c.value, range ?? undefined) : 'none'
+}
 
 // ---- headline -------------------------------------------------------------------------------------------
 export interface Headline { title: string; sub: string; tone: 'ok' | 'watch' | 'none' }
