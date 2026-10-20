@@ -18,7 +18,7 @@ export interface DuePerson extends DoseTarget {
   slots: MedSlot[]
 }
 export type NextKind = 'dose' | 'plan' | 'storm' | 'calm'
-export interface NextItem { key: string; kind: NextKind; kicker: string; title: string; body: string; who?: DuePerson; href?: string; linkLabel?: string }
+export interface NextItem { key: string; kind: NextKind; kicker: string; title: string; body: string; note?: string; who?: DuePerson; href?: string; linkLabel?: string }
 
 type Take = Pick<MedTaken, 'personId' | 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>
 
@@ -43,15 +43,23 @@ export function nextDoses(people: DoseTarget[], meds: Medication[], takes: Take[
 
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
 
-export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }): NextItem {
+/** "40 min" / "1 h 5 min" from a minute count. */
+const span = (n: number) => (n < 60 ? `${n} min` : `${Math.floor(n / 60)} h${n % 60 ? ` ${n % 60} min` : ''}`)
+
+/** "8:00 PM · in 40 min · 1 tablet": only the parts we know (the dose text is the medicine's own dose field; nothing is made up). */
+export function whenLine(d: DuePerson, now: Date): string {
+  const diff = d.rel - (now.getHours() * 60 + now.getMinutes())
+  const dose = d.slots.length === 1 ? d.slots[0]!.dose?.trim() : ''
+  return [clock(d.at), diff > 0 ? `in ${span(diff)}` : diff < 0 ? `${span(-diff)} ago` : 'now', dose].filter(Boolean).join(' · ')
+}
+
+export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }, now: Date = new Date()): NextItem {
   const d = i.due[0]
   if (d) {
     const names = [...new Set(d.slots.map((s) => s.name))]
     const others = [...new Set(i.due.slice(1).map((o) => o.name))]
-    const more = others.length ? ` Also waiting: ${joinNames(others)}.` : ''
-    const title = d.isMe ? `Time for ${joinNames(names)}` : `${d.name}: ${joinNames(names)}`
-    const missed = d.status === 'missed'
-    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: `${missed ? 'Not taken yet' : 'Medicine'} · ${clock(d.at)}`, title, body: `${missed ? 'This dose is waiting.' : 'Coming up soon.'}${more}`, who: d }
+    const title = d.isMe ? joinNames(names) : `${d.name}: ${joinNames(names)}`
+    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: d.status === 'missed' ? 'Next up · not taken yet' : 'Next up · medicine', title, body: whenLine(d, now), note: others.length ? `Also waiting: ${joinNames(others)}.` : undefined, who: d }
   }
   const p = i.plan
   if (p) return { key: p.key, kind: 'plan', kicker: p.kicker, title: p.title, body: p.body, href: '#family/plan', linkLabel: 'Open plan' }

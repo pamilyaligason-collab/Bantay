@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
 import type { HeroCard } from './heroCards'
-import { joinNames, nextDoses, pickNext } from './nextPick'
+import { joinNames, nextDoses, pickNext, whenLine } from './nextPick'
 
 const at = (h: number, m = 0) => new Date(2026, 9, 19, h, m)
 const med = (o: Partial<Medication> & { personId: string; name: string; times: string[] }): Medication => ({ serverId: `${o.personId}-${o.name}`, medStatus: 'active', schedule: { v: 1, times: o.times }, ...o })
@@ -64,9 +64,24 @@ describe('pickNext', () => {
     expect(pickNext(none).kind).toBe('calm')
     expect(pickNext({ ...none, weather: { temp: 40, rainPct: 99 } } as never).kind).toBe('calm')
   })
-  it('names who and what for a family member, plain "Time for" for me', () => {
-    expect(pickNext({ ...none, due }).title).toBe('Ma: Aspirin and Hydroxurea')
-    expect(pickNext({ ...none, due: nextDoses([me], meds, [], at(8)) }).title).toBe('Time for Losartan')
+  it('names who and what for a family member, just the medicine for me', () => {
+    expect(pickNext({ ...none, due }, at(9, 30)).title).toBe('Ma: Aspirin and Hydroxurea')
+    expect(pickNext({ ...none, due: nextDoses([me], meds, [], at(8)) }, at(8)).title).toBe('Losartan')
+  })
+  it('the card kicker says Next up (the heading is visually hidden), the calm pick is only a signal', () => {
+    expect(pickNext({ ...none, due }, at(9, 30)).kicker).toBe('Next up · medicine')
+    expect(pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30)).kicker).toBe('Next up · not taken yet')
+    expect(pickNext(none).kind).toBe('calm')
+  })
+  it('when line: time, minutes away, dose text; parts that are missing are left out', () => {
+    const withDose = nextDoses([me], [med({ personId: 'me', name: 'Losartan', times: ['20:00'], dose: '1 tablet' })], [], at(19, 20))
+    expect(whenLine(withDose[0]!, at(19, 20))).toBe('8:00 PM · in 40 min · 1 tablet')
+    expect(whenLine(withDose[0]!, at(20, 25))).toBe('8:00 PM · 25 min ago · 1 tablet')
+    const bare = nextDoses([me], [med({ personId: 'me', name: 'Losartan', times: ['20:00'] })], [], at(17, 55))
+    expect(whenLine(bare[0]!, at(17, 55))).toBe('8:00 PM · in 2 h 5 min')
+  })
+  it('names who is also waiting in a note', () => {
+    expect(pickNext({ ...none, due: nextDoses([me, ma], meds, [], at(9, 30)) }, at(9, 30)).note).toBe('Also waiting: Ma.')
   })
   it('joinNames', () => { expect(joinNames(['A', 'B', 'C'])).toBe('A, B and C') })
 })

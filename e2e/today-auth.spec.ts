@@ -82,10 +82,12 @@ test.beforeEach(async ({ page }) => {
 
 test('signed in: Next up for me and Ma, weather action, My week tiles, family line, and Taken logs the dose', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Next up' })).toHaveCount(0) // nothing next: no empty card
   await seedWeek(page)
   await page.reload()
-  await expect(page.getByRole('heading', { name: /Time for Losartan|Not taken|Losartan/ }).first()).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Losartan/ }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: /1 medicine to check/ })).toHaveAttribute('href', '#health/meds')
   await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
   const week = page.getByRole('region', { name: 'My week' }).or(page.locator('section[aria-labelledby="t-myweek"]'))
@@ -104,7 +106,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test.skip(!SHOTS, 'set M3_SHOTS to write screenshots')
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
     await seedWeek(page)
     await page.reload()
     await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
