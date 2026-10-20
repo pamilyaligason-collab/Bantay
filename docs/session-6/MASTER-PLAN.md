@@ -18,13 +18,13 @@ Status: [x] done and verified, [~] in progress, [ ] not started.
 | # | Task | Output | Status |
 |---|---|---|---|
 | 1 | Part 1 research, code inventory, licence table | PART-1.md | [x] |
-| 2 | Pre-start gap audit (Opus) | AUDIT.md | [~] |
-| 3 | Part 2: personas and habit targets, with the events that measure them | PART-2.md | [ ] |
-| 4 | Part 3: IA plan (Rx -> scheduled medicine first, Today, weather, safety localisation) | PART-3.md | [ ] |
-| 5 | Part 4a: 390px light and dark mockups, one private Artifact | link in PART-4.md | [ ] |
-| 6 | Part 4b: usability script | PART-4.md | [ ] |
-| 7 | Part 4c: build lanes (implementation plan) | docs/plans/2026-10-20-s6-build.md | [ ] |
-| 8 | Final review (Opus): plan vs audit gaps, privacy scan of the diff | REVIEW section below | [ ] |
+| 2 | Pre-start gap audit (Opus) | AUDIT.md | [x] |
+| 3 | Part 2: personas and habit targets, with the events that measure them | PART-2.md | [x] |
+| 4 | Part 3: IA plan (Rx -> scheduled medicine first, Today, weather, safety localisation) | PART-3.md | [x] |
+| 5 | Part 4a: 390px light and dark mockups, one private Artifact | link in PART-4.md | [~] |
+| 6 | Part 4b: usability script | PART-4.md | [x] |
+| 7 | Part 4c: build lanes (implementation plan) | docs/plans/2026-10-20-s6-build.md | [x] |
+| 8 | Final review (Opus): plan vs audit gaps, privacy scan of the diff | REVIEW section below | [~] |
 | 9 | Push, update PR #2, HANDOFF lines for the vault | PR #2 | [ ] |
 
 ## Verification rules for this phase
