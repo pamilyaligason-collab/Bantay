@@ -4,30 +4,16 @@ import { liveMedicines } from '../health/meds'
 import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, takeMedication, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import QuickWalk from '../sensors/QuickWalk'
-
-
-const ICONS = {
-  check: 'M5 12.5l4.5 4.5L19 7.5',
-  gauge: 'M4 16a8 8 0 1 1 16 0M12 16l4-5',
-  drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
-  scale: 'M8.5 10a3.5 3.5 0 0 1 7 0zM12 10l1.5-2M3 8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z',
-  pill: 'M9.5 8.5l5 7M5.6 13.4l7.8-7.8a3.5 3.5 0 0 1 5 5l-7.8 7.8a3.5 3.5 0 0 1-5-5z',
-  walk: 'M13.5 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zM12 8l-2.5 3.5 2.5 2 .5 6M9.5 11.5L7 13M12 8l3 3 2.5.5M12 13.5l3 2.5',
-  more: 'M4.5 12h1.5M11.25 12h1.5M18 12h1.5',
-  smile: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 14a4 4 0 0 0 7 0M9 9.5h.01M15 9.5h.01'
-} as const
-export function TodayIcon({ name, size = 22 }: { name: keyof typeof ICONS; size?: number }) {
-  return <svg className="td-ic" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
-}
+import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
 type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'dose' | 'mood'
-const PILLS: { id: Kind; label: string; icon: keyof typeof ICONS; aria: string }[] = [
-  { id: 'bp', label: 'BP', icon: 'gauge', aria: 'Log blood pressure' },
-  { id: 'sugar', label: 'Sugar', icon: 'drop', aria: 'Log blood sugar' },
-  { id: 'weight', label: 'Weight', icon: 'scale', aria: 'Log weight' },
-  { id: 'walk', label: 'Walk', icon: 'walk', aria: 'Log a walk' },
-  { id: 'dose', label: 'Dose', icon: 'pill', aria: 'Log a medicine you took' },
-  { id: 'mood', label: 'Mood', icon: 'smile', aria: 'Log how you feel' }
+const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
+  { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
+  { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
+  { id: 'weight', label: 'Weight', icon: 'scale', tone: 'vitals', aria: 'Log weight' },
+  { id: 'walk', label: 'Walk', icon: 'walk', tone: undefined, aria: 'Log a walk' },
+  { id: 'dose', label: 'Dose', icon: 'pill', tone: 'medicine', aria: 'Log a medicine you took' },
+  { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' }
 ]
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
@@ -101,7 +87,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => (
           <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
-            <TodayIcon name={p.icon} size={26} /><span>{p.label}</span>
+            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.label}</span>
           </button>
         ))}
       </div>

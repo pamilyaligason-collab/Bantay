@@ -1,6 +1,7 @@
 import { useFamilyPeople } from '../family/roster'
 import { localDay } from '../health/model'
 import { useActivity } from '../health/useActivity'
+import { Icon } from '../shell/Icon'
 
 /** Days with a walk or steps in the last 7 (today included). Check-ins, mood and sleep rows are not movement. */
 export const activeDays = (rows: { kind: string; minutes: number | null; steps: number | null; startedAt: string }[], now: Date): number => {
@@ -21,7 +22,7 @@ export default function WeekLine() {
         <b>Your week</b>
         <span className="td-sub">{n > 0 ? `You were active on ${n} of the last 7 days` : 'No walks logged this week yet'}</span>
       </span>
-      <span className="td-link" aria-hidden="true">Health ›</span>
+      <span className="td-link" aria-hidden="true">Health<Icon name="chev" size={20} /></span>
     </a>
   )
 }

@@ -6,7 +6,6 @@
 .wx-sech .wx-h { margin-right: 0; }
 .wx-sub { font-size: 14px; color: var(--muted); }
 .wx-note { margin: 0 4px; color: var(--muted); font-size: 16px; }
-.wx-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; color: var(--muted); }
 
 /* place toggle */
 .wx-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--fill); }
@@ -60,6 +59,7 @@
 
 .wx .grp .row { text-decoration: none; }
 .wx .grp .row .sub { font-size: 14px; }
-.wx-out { color: var(--muted); font-size: 18px; flex: none; }
+.wx-out { color: var(--muted); flex: none; display: inline-flex; }
 .wx-map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .wx-foot { margin: 0 4px; font-size: 13px; color: var(--muted); }
+.wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }

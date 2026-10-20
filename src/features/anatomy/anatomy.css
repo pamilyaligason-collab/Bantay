@@ -38,7 +38,6 @@
 .an-list { display: flex; flex-direction: column; }
 .an-row { min-height: 52px; padding: 0 16px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
 .an-row:first-child { border-top: 0; }
-.an-row::after { content: "\203A"; color: var(--ink2); font-weight: 400; }
 .an-note { margin: 10px 4px 0; font-size: 13px; color: var(--ink2); }
 
 .an-sheet { max-height: 88vh; overflow-y: auto; }
@@ -53,7 +52,9 @@
 
 .hv-explore { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 4px; min-height: 52px; text-decoration: none; color: var(--ink); font-weight: 600; font-size: 17px; }
 .hv-explore small { display: block; font-size: 13px; font-weight: 400; color: var(--ink2); }
-.hv-explore::after { content: "\203A"; color: var(--ink2); font-size: 22px; font-weight: 400; }
+.hv-explore > .sh-ic:last-child, .an-row > .sh-ic { color: var(--ink2); flex: none; }
+.hv-explore .grow { flex: 1; min-width: 0; }
+.an-hint { margin: -4px 4px 8px; }
 .hv-explore:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
 /* Keyboard focus, as before the chip CSS was removed. */

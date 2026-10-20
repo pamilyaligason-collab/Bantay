@@ -9,6 +9,8 @@ import { DRUG_NUDGE_NOTE, medicinesActingHere, SYSTEM_INFO, yourNumbers } from '
 import content from './content.json'
 import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
 import { systemCounts, systemStatus, type SystemCount } from './status'
+import { Icon, type IconName } from '../shell/Icon'
+import { SubHeader } from '../shell/SubHeader'
 import './anatomy.css'
 
 export interface Part { id: string; system: string; name: string; what: string; illnesses: string[]; warnings: string[]; prevention: string[] }
@@ -16,18 +18,8 @@ const PARTS = content.parts as Part[]
 const SYSTEMS = content.systems
 const NONE: SystemCount = { total: 0, flagged: 0, ok: 0 }
 
-// One simple 24px glyph per system for the round rail buttons.
-const ICON: Record<string, string> = {
-  skeleton: 'M12 4v16M8 7c-2 1-3 2-3 3M16 7c2 1 3 2 3 3M7 11c-2 1-2 2-2 3M17 11c2 1 2 2 2 3M8 15c-1 .5-2 1.5-2 2.5M16 15c1 .5 2 1.5 2 2.5',
-  muscles: 'M6 9v6M9 7v10M9 12h6M15 7v10M18 9v6',
-  heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
-  lungs: 'M12 3v8M10 6v6c0 3-2 6-5 6-1.5 0-2-1-2-2 0-3 2-8 4-10M14 6v6c0 3 2 6 5 6 1.5 0 2-1 2-2 0-3-2-8-4-10',
-  brain: 'M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 4 3 3 0 0 0 2 4 3 3 0 0 0 3 4V4zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 4 3 3 0 0 1-2 4 3 3 0 0 1-3 4V4z',
-  digestion: 'M8 4v4c0 3-3 4-3 8a4 4 0 0 0 4 4c5 0 9-3 9-8 0-3-2-4-4-4-2 0-3-1-3-3V4',
-  kidneys: 'M14 4c-4 0-7 4-7 8s3 8 7 8c2 0 3-1 3-3 0-1.5-1-2-1-3.5S17 11 17 9.5 16 4 14 4z',
-  skin: 'M12 3c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10z',
-  hormones: 'M10 11l4 2M5 9a3 3 0 1 0 6 0 3 3 0 1 0-6 0M13 15a3 3 0 1 0 6 0 3 3 0 1 0-6 0'
-}
+// Rail glyph per body system: Tabler where one exists, hand-drawn kidney and stomach, else the nearest plain icon.
+const RAIL: Record<string, IconName> = { skeleton: 'cross', muscles: 'walk', heart: 'heart', lungs: 'lungs', brain: 'brain', digestion: 'stomach', kidneys: 'kidney', skin: 'drop', hormones: 'flask' }
 
 function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
   const { ref, onKeyDown } = useDialog(onClose)
@@ -79,15 +71,8 @@ export default function ExploreScreen() {
 
   return (
     <>
-      <div className="hv-top">
-        <a className="hv-back" href="#health" aria-label="Back to Health">
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </a>
-        <div className="hdr">
-          <h1 className="an-h1">Explore your body</h1>
-          <span>Pick a system, then tap a dot</span>
-        </div>
-      </div>
+      <SubHeader title="Explore your body" backHref="#health" backLabel="Back to Health" />
+      <p className="sub an-hint">Pick a system, then tap a dot</p>
       <div className="an-top">
         <h2 className="an-sys">{label}</h2>
         {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
@@ -117,7 +102,7 @@ export default function ExploreScreen() {
             const n = c.flagged || c.total
             return (
               <button key={s.id} type="button" className="an-rb" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
-                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d={ICON[s.id]} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <Icon name={RAIL[s.id] ?? 'heart'} size={24} tone="vitals" />
                 {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
               </button>
             )
@@ -155,7 +140,7 @@ export default function ExploreScreen() {
       <h2 className="an-h2">Parts you can open</h2>
       <div className="grp an-list">
         {parts.map((p) => (
-          <button key={p.id} type="button" className="an-row" onClick={() => setOpen(p)}>{p.name}</button>
+          <button key={p.id} type="button" className="an-row" onClick={() => setOpen(p)}>{p.name}<Icon name="chev" size={20} /></button>
         ))}
       </div>
       <p className="an-note">{content.credits}</p>

@@ -3,6 +3,7 @@ import { formatNumber } from '../../lib/labFormat'
 import { latestByTest, latestVsNormal, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 import { byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
+import { Icon } from '../shell/Icon'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 export type VitalsMode = 'latest' | 'average' | 'normal'
@@ -25,7 +26,7 @@ function NormalRows() {
         return (
           <div className="row hv-row" key={n.code} data-test={n.code} style={{ alignItems: 'flex-start' }} onClick={() => open(n.code)}>
             <span className="grow">
-              <a className="hv-open" href={`#health/metric/${n.code}`} onClick={(e) => e.stopPropagation()}>{n.label}</a>
+              <a className="hv-open" href={`#health/metric/${n.code}`} onClick={(e) => e.stopPropagation()}>{n.label}<Icon name="chev" size={20} /></a>
               {l.band && <span className="hv-bar" aria-hidden="true"><i className="hv-band" style={{ left: `${l.band.from}%`, width: `${l.band.to - l.band.from}%` }} /></span>}
               <span className="sub hv-before">{n.line}</span>
             </span>
@@ -83,7 +84,7 @@ export function LatestList({ readings, thresholds, ready, kind = 'vitals' }: { r
             return (
               <div className="row hv-row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
                 <span className="grow">
-                  <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}</a>
+                  <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}<Icon name="chev" size={20} /></a>
                   <span className={`hv-state ${pos}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>
                   {layout.band && (
                     <span className="hv-bar" aria-hidden="true">

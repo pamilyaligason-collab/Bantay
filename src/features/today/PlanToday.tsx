@@ -3,6 +3,7 @@ import { dayKey, eventDay } from '../family/events'
 import { toggleTask } from '../family/tasks'
 import { usePlan } from '../family/usePlan'
 import type { FamilyEvent, FamilyTask } from '../family/store'
+import { Icon } from '../shell/Icon'
 
 const SHOW = 4
 export type PlanRow = { key: string; title: string; time: string; task?: FamilyTask; event?: FamilyEvent; sort: string }
@@ -47,7 +48,7 @@ export default function PlanToday() {
               <li key={r.key} className={r.task?.done ? 'done' : ''}>
                 {r.task ? (
                   <button type="button" className="td-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.title} onClick={() => tick(r.task!)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <Icon name="check" size={16} stroke={3} />
                   </button>
                 ) : <span className="td-dot" aria-hidden="true" />}
                 <span className="td-grow"><span className="td-ttl">{r.title}</span></span>

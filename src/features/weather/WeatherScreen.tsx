@@ -4,6 +4,7 @@ import { useLocation, usePlaceFrom } from '../location/useLocation'
 import { track } from '../admin/events'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
+import { Icon, type IconName } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
@@ -21,14 +22,10 @@ const LINKS = [
   ['PANaHON', 'PAGASA hourly forecast map', 'https://www.panahon.gov.ph/']
 ] as const
 
-const GLYPH: Record<Kind, string> = {
-  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
-  cloud: 'M7 18a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 8.5 4.8 4.8 0 0 1 17 18z',
-  rain: 'M7 15a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 5.5 4.8 4.8 0 0 1 17 15zM9 18l-1 3M13 18l-1 3M17 18l-1 3',
-  storm: 'M7 14a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 4.5 4.8 4.8 0 0 1 17 14zM12 14l-2 4h3l-2 4',
-  fog: 'M7 12a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 2.5 4.8 4.8 0 0 1 17 12zM4 16h16M6 20h12'
-}
-const Glyph = ({ kind }: { kind: Kind }) => <svg className="wx-ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={GLYPH[kind]} /></svg>
+const Glyph = ({ kind }: { kind: Kind }) => <Icon name={kind} tone="weather" />
+
+/** Icon for the warning that tops the action line: cyclone, quake, flood, storm, heat, else a plain warning triangle. */
+const WARN_ICON: Record<string, IconName> = { tcws: 'typhoon', quake: 'quake', rainfall: 'flood', thunderstorm: 'storm', heat: 'therm', tsunami: 'flood' }
 
 const deg = (n: number | null) => (n == null ? '–' : `${Math.round(n)}°`)
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -87,7 +84,7 @@ export default function WeatherScreen() {
         <h2 className="wx-h">Official sources</h2>
         <div className="grp">
           {LINKS.map(([n, sub, url]) => (
-            <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer"><span className="grow"><b>{n}</b><span className="sub">{sub}</span></span><span aria-hidden="true" className="wx-out">↗</span></a>
+            <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer"><span className="grow"><b>{n}</b><span className="sub">{sub}</span></span><span className="wx-out"><Icon name="out" size={20} /></span></a>
           ))}
         </div>
       </section>
@@ -121,6 +118,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
       <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'}>
         {main ? (
           <>
+            {main.id === 'warning' && warn && <Icon name={WARN_ICON[warn.kind] ?? 'warn'} tone="alert" boxed size={20} />}
             <b className="wx-act-t">{main.text}</b>
             {main.band && <span className="wx-band">{main.band}</span>}
             {lines.slice(1).map((x) => <span key={x.id} className="wx-act-sub">{x.text}</span>)}
