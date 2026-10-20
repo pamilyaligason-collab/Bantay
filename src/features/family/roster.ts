@@ -80,12 +80,12 @@ export function ageOf(birthdate: string | null, now = new Date()): number | null
 export const dial = (phone: string | null) => { const d = (phone ?? '').replace(/[^\d+]/g, ''); return /\d/.test(d) ? d : null }
 
 /** The grey-avatar nudge: someone else who has not checked in today gets "Not checked in today: send a hello", which opens a text to them.
- *  Nothing for the person themself or for someone who is OK. With no phone saved the nudge opens their page instead (href null). */
-export function nudgeFor(p: { name: string; phone: string | null; isMe: boolean }, ok: boolean): { text: string; href: string | null; label: string } | null {
+ *  Nothing for the person themself or for someone who is OK. With no phone saved there is no nudge. */
+export function nudgeFor(p: { name: string; phone: string | null; isMe: boolean }, ok: boolean): { text: string; href: string; label: string } | null {
   if (ok || p.isMe) return null
+  if (!dial(p.phone)) return null // no number to text: the status line says it, no second line
   const first = p.name.trim().split(/\s+/)[0] || p.name
-  const num = dial(p.phone)
-  return { text: 'Not checked in today: send a hello', href: num ? `sms:${num}` : null, label: `Not checked in today: send a hello to ${first}` }
+  return { text: 'Not checked in today: send a hello', href: `sms:${dial(p.phone)}`, label: `Not checked in today: send a hello to ${first}` }
 }
 
 /** How many of the family checked in today, over how many people. */

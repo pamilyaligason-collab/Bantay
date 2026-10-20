@@ -160,14 +160,24 @@ describe('People', () => {
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
-  it('a grey avatar gets "Not checked in today: send a hello"; the person themself and an OK person do not', async () => {
+  it('no phone: Kuya Ben shows one status line and no nudge', async () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
     const roll = await screen.findByRole('list', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getAllByText('Not checked in today: send a hello')).toHaveLength(1)) // Kuya Ben only
-    fireEvent.click(within(roll).getByRole('button', { name: 'Not checked in today: send a hello to Kuya' })) // no phone saved: opens his page
-    expect(location.hash).toBe('#family/people/p2')
+    await waitFor(() => expect(within(roll).getAllByText('No check-in today')).toHaveLength(1))
+    expect(within(roll).queryByText('Not checked in today: send a hello')).toBeNull()
+  })
+
+  it('with a phone saved, the grey avatar shows only the hello link (no duplicate No check-in line)', async () => {
+    await db.profiles.put({ id: 'p2', photoPath: null, phone: '+63 917 123 4567', birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null })
+    await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
+    location.hash = '#family'
+    render(<Family />)
+    const roll = await screen.findByRole('list', { name: 'Family roll call' })
+    await waitFor(() => expect(within(roll).getAllByText('Not checked in today: send a hello')).toHaveLength(1))
+    expect(within(roll).queryByText('No check-in today')).toBeNull()
+    expect(within(roll).getByRole('link', { name: 'Not checked in today: send a hello to Kuya' }).getAttribute('href')).toBe('sms:+639171234567')
   })
 
   it('tapping a person opens their page', async () => {

@@ -15,7 +15,7 @@ export const firstName = (full: string) => { const f = full.trim().split(/\s+/)[
 /** Sub-pages (a metric, a Safety page, a person, Medical ID, Go-bag, Documents) draw their own header, so the band shrinks. */
 export const isSubHash = (h: string) => {
   const k = h.replace(/^#/, '')
-  return k === 'medid' || k === 'gobag' || k === 'docs' || (k.includes('/') && !/^family\/(records|plan|people)$/.test(k))
+  return k === 'medid' || k === 'gobag' || k === 'docs' || (k.includes('/') && !/^family\/(plan|people)$/.test(k))
 }
 /** The greeting and date belong to Today only; every other tab and sub-page shows its own title. */
 export const isTodayHash = (h: string) => { const r = parseHash(h); return r.tab === 'today' && r.view === null }
@@ -58,7 +58,7 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
   const now = new Date()
   const first = firstName(name)
   return (
-    <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub}>
+    <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub || !today}>
       <a className="sh-me-btn" href="#me" aria-label="Me and settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0) || <Icon name="users" />)}</a>
       <div className="sh-top-text">
         {today && <span className="sh-top-date">{dateLine(now)}</span>}

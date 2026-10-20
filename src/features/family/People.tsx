@@ -43,13 +43,11 @@ export default function People() {
                   <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={44} status={c.ok ? 'ok' : 'none'} />
                   <span className="grow">
                     <b>{p.name}{p.isMe ? ' (you)' : ''}</b>
-                    <span className={`sub${c.ok ? '' : ' fm-warn'}`}>{c.text}</span>
+                    {!nudge && <span className={`sub${c.ok ? '' : ' fm-warn'}`}>{c.text}</span>}
                   </span>
                   <svg className="fm-chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                 </button>
-                {nudge && (nudge.href
-                  ? <a className="fm-nudge" href={nudge.href} aria-label={nudge.label}>{nudge.text}</a>
-                  : <button type="button" className="fm-nudge" onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={nudge.label}>{nudge.text}</button>)}
+                {nudge && <a className="fm-nudge" href={nudge.href} aria-label={nudge.label}>{nudge.text}</a>}
               </li>
             )
           })}

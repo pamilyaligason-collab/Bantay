@@ -172,7 +172,10 @@ describe('nudge', () => {
   const ben = { name: 'Kuya Ben', phone: '+63 917 123 4567', isMe: false }
   it('a person who has not checked in gets a text link; no phone means no link', () => {
     expect(nudgeFor(ben, false)).toEqual({ text: 'Not checked in today: send a hello', href: 'sms:+639171234567', label: 'Not checked in today: send a hello to Kuya' })
-    expect(nudgeFor({ ...ben, phone: null }, false)?.href).toBeNull()
+    expect(nudgeFor({ ...ben, phone: null }, false)).toBeNull()
+  })
+  it('a person with no phone gets no nudge at all (one status line only)', () => {
+    expect(nudgeFor({ ...ben, phone: 'n/a' }, false)).toBeNull()
   })
   it('nothing for someone who is OK or for me', () => {
     expect(nudgeFor(ben, true)).toBeNull()

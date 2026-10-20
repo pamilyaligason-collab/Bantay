@@ -118,7 +118,7 @@ describe('check flow', () => {
     const people = [{ id: 'p1', name: 'Lola Santos' }]
     const done = vi.fn()
     render(<ConfirmFlow people={people} personId="p1" checkedDocs={1} onClose={() => {}} onChanged={done} />)
-    expect(await screen.findByText('1 of 3 checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
+    expect(await screen.findByText('1 of 3 papers checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
     fireEvent.click(screen.getAllByRole('button', { name: /Lab results, 2026-09-01/ })[0])
     const all = await screen.findByRole('button', { name: 'Confirm all 2 from this paper' }) // l2 is low confidence (unchecked), still in "all"
     fireEvent.click(all)

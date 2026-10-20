@@ -7,7 +7,7 @@ import {
 } from './api'
 import type { Person } from './store'
 import { usePeople } from './useRecordsServer'
-import { confirmAllLabel, emitConfirmed, progressPct, progressText } from './papers'
+import { confirmClearLabel, showConfirmAll, emitConfirmed, progressPct, progressText } from './papers'
 import './records.css'
 
 // D-36 / D-47: nothing counts until a person confirms it. The sheet lists draft documents, then draft rows to confirm, fix or reject.
@@ -330,8 +330,8 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
           {items.length > 0 && (
             <>
               <button className="btn" disabled={busy || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
-              {everything.length > 0 && (
-                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>{confirmAllLabel(everything.length)}</button>
+              {showConfirmAll(everything.length, batch.length) && (
+                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>{confirmClearLabel(everything.length, items.some(unclear))}</button>
               )}
               {items.some(unclear) && <p className="sub" style={{ margin: 0 }}>Unclear lines are confirmed one at a time.</p>}
             </>

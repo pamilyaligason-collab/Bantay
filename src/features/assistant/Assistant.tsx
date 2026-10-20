@@ -10,7 +10,7 @@ import { addTask } from '../family/tasks'
 import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personChoices, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
 import { weatherSummary } from './weather'
-import { CAUTION, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
+import { CAUTION, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
 import './assistant.css'
 
 const CAP = Number(import.meta.env.VITE_ASSISTANT_DAILY_CAP) || DEFAULT_CAP
@@ -226,6 +226,7 @@ export default function Assistant() {
     return () => ro.disconnect()
   }, [items, people])
 
+  const clearChat = () => { setItems([]); void clearHistory() }
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
   const go = (tab: string) => { history.replaceState(null, ''); setOpen(false); location.hash = tab }
   const onKey = (e: KeyboardEvent) => {
@@ -279,6 +280,7 @@ export default function Assistant() {
           <div ref={dlg} className="glass as-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
             <div className="as-head">
               <h2 id="as-title">Ask Bantay</h2>
+              {items.length > 0 && <button type="button" className="btn2 as-clear" onClick={clearChat}>Clear chat</button>}
               <button type="button" className="as-x" onClick={close} aria-label="Close">
                 <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>

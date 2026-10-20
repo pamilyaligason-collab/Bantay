@@ -19,7 +19,7 @@ const measure = (page: Page) =>
     return { bottom, barTop: bar.top }
   })
 
-for (const tab of ['today', 'health', 'family', 'safety', 'me']) {
+for (const tab of ['today', 'health', 'family', 'safety', 'me', 'weather', 'safety/dial', 'safety/warnings', 'health/meds']) {
   test(`${tab}: the last element ends above the tab bar`, async ({ page }) => {
     await skipOnboarding(page)
     await page.goto('/#' + tab)
@@ -28,6 +28,18 @@ for (const tab of ['today', 'health', 'family', 'safety', 'me']) {
     expect(m.bottom, `${tab}: content bottom ${m.bottom} vs tab bar top ${m.barTop}`).toBeLessThanOrEqual(m.barTop)
   })
 }
+
+test('family plan: the Add button sits above the tab bar', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#family/plan')
+  const fab = page.locator('.fm-fab')
+  await expect(fab).toBeVisible()
+  await page.waitForTimeout(500)
+  const m = await measure(page)
+  const b = (await fab.boundingBox())!
+  expect(b.y + b.height, `FAB bottom ${b.y + b.height} vs tab bar top ${m.barTop}`).toBeLessThanOrEqual(m.barTop)
+  expect(m.bottom).toBeLessThanOrEqual(m.barTop)
+})
 
 test('greeting shows on Today only', async ({ page }) => {
   await skipOnboarding(page)

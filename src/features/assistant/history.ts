@@ -30,6 +30,10 @@ export async function saveHistory(items: Saved[]): Promise<void> {
   try { await db.kv.put({ key: KEY, value: trimHistory(items) }) } catch { /* the chat still works without the copy */ }
 }
 
+export async function clearHistory(): Promise<void> {
+  try { await db.kv.delete(KEY) } catch { /* nothing saved */ }
+}
+
 /** Pixels the on-screen keyboard covers at the bottom of the layout viewport. 0 when it is closed, small browser-bar changes, or visualViewport is missing. */
 export const keyboardInset = (innerHeight: number, vvHeight: number, vvOffsetTop: number) => {
   const covered = Math.round(innerHeight - vvHeight - vvOffsetTop)

@@ -36,3 +36,4 @@
 
 /* Keyboard open: the container ends where the keyboard starts (visualViewport), so the composer sits right above it with no safe-area gap. */
 .as-back[data-kb="open"] .as-sheet { padding-bottom: 8px; height: min(86dvh, 720px, 100%); }
+.as-clear { margin-left: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
