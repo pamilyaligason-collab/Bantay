@@ -1,6 +1,6 @@
 // Supabase side of the cards screen. Errors are swallowed or rethrown without values: no names, paths or URLs in logs (B-7).
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { CARD_TYPES, ddb, type CardType, type Kind, type PersonRow, type QueueRow, type Side } from './store'
+import { CARD_TYPES, ddb, type CardType, type DocKind, type Kind, type PersonRow, type QueueRow, type ScanKind, type Side } from './store'
 
 export const MAX_BYTES = 15 * 1024 * 1024 // same limit as the 'records' bucket
 export const MAX_TRIES = 5 // a picture that fails this many times (not counting no-signal) is given up on; Retry puts it back
@@ -35,6 +35,41 @@ export async function addCard(o: { file: Blob; owner?: string; personId: string;
   return { docId }
 }
 
+const pageName = (n: number) => `p${String(n).padStart(2, '0')}`
+/** What the person chose in the scan form. 'id' is today's ID-card path (kept, not read). */
+export type ScanChoice = ScanKind | 'id'
+
+/** Keep scanned pages on this phone and queue them as ONE document: pages go to '<person_id>/<document_id>/p01.jpg', p02.jpg ...
+ *  The first row creates the document; the last one to land asks the server to read the pages. Contract: src/features/scan/CONTRACT.md */
+export async function addScan(o: { pages: Blob[]; owner?: string; personId: string; kind: ScanChoice; docDate?: string | null; title?: string | null }): Promise<{ docId: string }> {
+  if (!o.pages.length) throw new Error('no pages')
+  const files = await Promise.all(o.pages.map(fixType))
+  if (!files.every(canUse)) throw new Error('unusable file')
+  const docId = crypto.randomUUID()
+  const owner = o.owner ?? ''
+  const isId = o.kind === 'id'
+  const kind: DocKind = o.kind === 'id' ? 'id_card' : o.kind
+  const sums = await Promise.all(files.map(async (f) => hex(await crypto.subtle.digest('SHA-256', await bytes(f)))))
+  const now = Date.now()
+  await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
+    for (const [i, file] of files.entries()) {
+      const ext = EXT[file.type]!
+      const path = `${o.personId}/${docId}/${pageName(i + 1)}.${ext}`
+      const side: Side = !isId || i === 0 ? 'front' : 'back'
+      const base = { docId, personId: o.personId, kind, cardType: 'other' as CardType, title: o.title?.trim() || null, side, mime: file.type }
+      await ddb.cards.put({ ...base, path, blob: file, updated: now, pending: true, owner })
+      await ddb.queue.add({ ...base, side: isId ? side : null, owner, createdAt: now, clientId: crypto.randomUUID(), docNew: i === 0, path, name: `page-${String(i + 1).padStart(2, '0')}.${ext}`, size: file.size, sha256: sums[i]!, tries: 0, page: i + 1, pages: isId ? undefined : files.length, // an ID is kept, never read: no pages count, no extract call
+         docDate: o.docDate || null })
+    }
+  })
+  return { docId }
+}
+
+/** Ask the server to read a scanned document. Failure is ignored: a sweep on the server picks up documents nobody asked about. */
+async function askToRead(client: SupabaseClient, documentId: string) {
+  try { await client.functions?.invoke('records-extract', { body: { document_id: documentId } }) } catch { /* the sweep will do it */ }
+}
+
 const exists = (e: { message?: string; statusCode?: string | number }) => String(e.statusCode) === '409' || /already exists|duplicate/i.test(e.message ?? '')
 const noSignal = (e: { message?: string } | null | undefined) => /fetch|network|load failed|timeout/i.test(e?.message ?? '')
 
@@ -44,14 +79,16 @@ async function sendOne(client: SupabaseClient, q: QueueRow, blob: Blob) {
   if (up.error && !exists(up.error as { message?: string })) fail('upload', up.error as { message?: string })
   if (q.docNew) {
     // Only status is sent for the confirm: the trigger stamps confirmed_by/at. client_id = id = the phone's UUID, so a retry is a no-op.
+    // Scanned papers (lab, prescription, other) go in as 'draft' so they land in "To check" once read; cards stay 'confirmed'.
+    const card = q.kind === 'id_card' || q.kind === 'insurance_card'
     const d = await client.from('documents').upsert(
-      { id: q.docId, client_id: q.docId, person_id: q.personId, kind: q.kind, card_type: q.cardType, title: q.title, status: 'confirmed' },
+      { id: q.docId, client_id: q.docId, person_id: q.personId, kind: q.kind, card_type: card ? q.cardType : null, title: q.title, status: card ? 'confirmed' : 'draft', ...(q.docDate ? { doc_date: q.docDate } : {}) },
       { onConflict: 'client_id', ignoreDuplicates: true }
     )
     if (d.error) fail('document', d.error)
   }
   const f = await client.from('source_files').upsert(
-    { client_id: q.clientId, person_id: q.personId, storage_path: q.path, side: q.side, document_id: q.docId, name: q.name, mime: q.mime, size_bytes: q.size, sha256: q.sha256, drive_file_id: null },
+    { client_id: q.clientId, person_id: q.personId, storage_path: q.path, side: q.side, document_id: q.docId, name: q.name, mime: q.mime, size_bytes: q.size, sha256: q.sha256, drive_file_id: null, ...(q.page ? { page_no: q.page } : {}) },
     { onConflict: 'client_id', ignoreDuplicates: true }
   )
   if (f.error) fail('file', f.error)
@@ -92,16 +129,24 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
           sent++
         }
         await ddb.queue.delete(q.seq!)
+        // The last page of a scanned document is up: ask the server to read it (not awaited; a slow reply must not hold the queue).
+        if (q.pages && !(await ddb.queue.filter((r) => r.docId === q.docId).count())) void askToRead(client, q.docId)
       }
     } while (again)
     return sent
   })().finally(() => { running = null; again = false }))
 }
 
+/** Drain this user's waiting uploads. Called by the app-wide sync loop so a saved scan goes up even when no Docs screen is open (B-78). */
+export async function drainQueue(client: SupabaseClient | null): Promise<number> {
+  if (!client) return 0
+  try { return await flushQueue(client, await ensureOwner(client)) } catch { return 0 }
+}
+
 /** Put a given-up card back in the queue from the picture kept on this phone. */
 export async function retryCard(docId: string): Promise<void> {
   const failed = (await ddb.cards.where('docId').equals(docId).toArray()).filter((c) => c.failed && c.retry)
-  for (const c of failed.sort((a, b) => Number(b.retry!.docNew) - Number(a.retry!.docNew) || Number(b.side === 'front') - Number(a.side === 'front'))) { // the row that creates the document goes first
+  for (const c of failed.sort((a, b) => Number(b.retry!.docNew) - Number(a.retry!.docNew) || Number(b.side === 'front') - Number(a.side === 'front') || (a.retry!.page ?? 0) - (b.retry!.page ?? 0))) { // the row that creates the document goes first
     await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
       await ddb.queue.add({ ...c.retry!, createdAt: Date.now() })
       await ddb.cards.update(c.path, { failed: false, pending: true, retry: undefined })

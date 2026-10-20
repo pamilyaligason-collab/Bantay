@@ -40,3 +40,9 @@
 .dc-drive { align-items: flex-start; }
 .dc-decide { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .dc-vfail { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 12px; background: #FFF4E5; color: #6B3300; font-size: 15px; }
+
+/* B-77: a card row with its buttons (Add back, Show) leaves the text only a sliver; let the buttons drop under the text instead of squeezing it to one word per line. */
+.grp .row:has(> .dc-btn) { flex-wrap: wrap; }
+.grp .row:has(> .dc-btn) > .grow { flex: 1 1 160px; min-width: 0; }
+.grp .row:has(> .dc-btn) > .grow .sub { overflow-wrap: break-word; }
+.grp .row:has(> .dc-btn) > .dc-btn { flex: none; }
