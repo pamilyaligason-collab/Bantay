@@ -22,7 +22,37 @@ Members are anonymised. Lloyd approves this part before Part 2 starts.
 | Everywhere | The bottom nav overlaps content. |
 
 ## 3. Code inventory (src/)
-Pending: the screen inventory is being re-run (routes, components, data sources, actions, where medicines come from).
+Hash routes (`features/shell/routes.ts`). Tabs: Today, Health, Ask (raised button, opens the assistant sheet), Family, Safety.
+Me, Inbox and Admin have no tab.
+
+| Screen | Main parts (in order) | Data | Actions |
+|---|---|---|---|
+| Today | PwaBanner, AlertBand, GreetingBand, NextUp, UpdateCard, AlertsBanner, QuickLog, PlanToday, NearbyList (alerts only), WeekLine. Simple mode: Hero plus I'm OK / Call family / SOS | kv, `ldb.activity`, `ldb.meds`, `fdb.tasks/events`, Open-Meteo | I'm OK, Mark taken, Skip, quick log (BP, sugar, weight, walk, dose, mood), tick task |
+| Health | PersonChips, BodyMap, LatestList, Medicines | `hdb.*`, `carers`, confirmed `prescription_items` | Mark taken, open metric |
+| Family | Records / Plan / People segments | `records_queue`, documents, labs, prescriptions; `fdb` | Confirm imports, add tasks/events/notes, call/text |
+| Safety | ZonePicker, SOS (hold 3 s), Call 911, Medical ID, 10 hub tiles | bundled `hotlines.json`, `places.json`, `hazards.json`; `news_items`; `safety_alerts` | SOS by SMS, dial, maps |
+| Me | Profile, sharing, SOS contacts, modes, sensors, passkey | `people`, kv | Edit profile, toggles |
+| Ask | Chat, chips, mic, draft cards | n8n webhook, `hdb`, Open-Meteo | Confirm drafts (reading, dose, activity), add task |
+
+**Where medicines come from (root cause of 0 doses):**
+1. Scheduled doses come only from free-text profile entries (`people.medicines`). A time is parsed from the text ("Name 8:00");
+   the onboarding chips carry no time, so those entries are never due (`health/model.ts:248-270`).
+2. `public.medications` (with `schedule` and `source_item_id -> prescription_items`) exists in SQL but nothing in the app,
+   edge functions or triggers reads or writes it. **No code converts a prescription into a scheduled medicine.**
+3. Confirmed prescription lines appear only as read-only text (Health > Medicines, Records). NextUp and Hero ignore them.
+4. A dose is logged through `logMedTaken` -> `ldb.meds` -> outbox `meds_taken`, matched to a slot by name, today only.
+5. Native reminders (Android) cover timed profile entries only.
+
+**Why weather wins Next up** (`today/nextPick.ts`): the order is dose, plan, storm, weather. But a dose counts only if it has a
+time *and* that time has passed. Untimed or later-today doses never show, while weather qualifies at 60% rain or 33 °C, which
+is most days.
+
+**Events** (`features/admin/events.ts`): `dose_logged`, `reading_added`, `sos_sent` (and the `import_*` names) are allowed
+but never sent. Natural homes: `logMedTaken`, `logReading`, `SosScreen`. SOS only writes local history.
+
+**Safety is fixed to one place:** 8 of 12 hotlines and all 6 places and hazard cards are tagged for the first home zone;
+none for the second. There is no nearby-hospital lookup. The storm map is pinned to 12°N 128°E. This explains the
+"wrong island / other province" findings in the screenshots.
 
 ## 4. Reference: weather screens in Lloyd's other two apps
 Lloyd shared 5 shots (2026-10-20) from a house app and a rental app. They set the bar Bantay's weather should meet.
