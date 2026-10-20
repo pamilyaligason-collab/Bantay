@@ -19,6 +19,7 @@
     "@capacitor/local-notifications": "^8.3.1",
     "@capgo/capacitor-health": "8.11.12",
     "@supabase/supabase-js": "2.118.0",
+    "@tabler/icons-react": "3.49.0",
     "canvas-confetti": "^1.9.4",
     "dexie": "^4.4.6",
     "gsap": "3.15.0",
