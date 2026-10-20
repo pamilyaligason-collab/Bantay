@@ -5,6 +5,8 @@ import { JOIN, UNKNOWN, splitItems } from '../setup/lists'
 import type { About } from '../setup/steps'
 
 // Profile columns of public.people (migration 0010), kept in Dexie `profiles` and edited through the outbox.
+// DEPRECATED: the `medicines` column of people (and the kv profile.medicines cache) is read-only, kept for one release for screens that
+// still show it; the schedule lives in the medications table (PART-3 1.1). Nothing here writes it any more.
 // kv keys stay as the offline cache the wizard and probe read: profile.about, profile.medicines, profile.photo, profile.photoPath.
 
 export const PROFILE_COLS = 'photo_path,phone,birthdate,blood_type,allergies,conditions,medicines,updated_at'
@@ -83,10 +85,13 @@ export async function saveProfile(personId: string, patch: Partial<ProfileFields
   await adoptPerson(personId)
   const now = new Date().toISOString()
   const cur = (await db.profiles.get(personId)) ?? blankProfile(personId)
-  const keys = Object.keys(patch) as (keyof ProfileFields)[]
+  // people.medicines is read-only from the app now (S6 M1): the live schedule is the medications table. A medicines edit stays in
+  // the local row (the old screens still show it) but is never sent, so it never becomes a pending field either.
+  const { medicines: _local, ...sendable } = patch
+  const keys = Object.keys(sendable) as (keyof ProfileFields)[]
   const next: ProfileRow = { ...cur, ...patch, updatedAt: now, pending: [...new Set([...(cur.pending ?? []), ...keys])] }
   await db.profiles.put(next)
-  await enqueue('people_profile', 'update', { id: personId, ...patch, updatedAt: now })
+  if (keys.length) await enqueue('people_profile', 'update', { id: personId, ...sendable, updatedAt: now })
   await cacheToKv(next, true)
   if ((await db.kv.get('profile.photo'))?.value) await db.kv.put({ key: PHOTO_AT, value: now }) // our cached photo is current as of this edit
   return next
@@ -191,13 +196,12 @@ export async function migrateKv(personId: string): Promise<void> {
   }
   const cur = (await db.profiles.get(personId)) ?? blankProfile(personId)
   const about = ((await db.kv.get('profile.about'))?.value ?? {}) as About
-  const meds = (await db.kv.get('profile.medicines'))?.value
   const have = aboutFields(about)
   const patch: Partial<ProfileFields> = {}
   if (!cur.bloodType && have.bloodType) patch.bloodType = have.bloodType
   if (!cur.allergies.length && have.allergies.length) patch.allergies = have.allergies
   if (!cur.conditions.length && have.conditions.length) patch.conditions = have.conditions
-  if (!cur.medicines.length && Array.isArray(meds) && meds.length) patch.medicines = list(meds)
+  // profile.medicines (kv) is no longer copied up: people.medicines is read-only and medications is the schedule
   // a failed earlier try left its fields marked pending on the local row: send those again
   for (const k of cur.pending ?? []) if (k !== 'photoPath' && !(k in patch)) (patch as Record<string, unknown>)[k] = cur[k]
   if (!cur.photoPath && (await db.kv.get('profile.photo'))?.value) await db.kv.put({ key: PHOTO_UP, value: true })

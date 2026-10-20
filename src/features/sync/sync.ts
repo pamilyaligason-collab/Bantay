@@ -79,7 +79,7 @@ async function deadLetter(row: OutboxRow, code: string) {
 }
 
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
-  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes } as Record<string, Table<{ id?: number }, number>>)[t]
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes } as Record<string, Table<{ id?: number }, number>>)[t]
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
   const { url, key } = env()

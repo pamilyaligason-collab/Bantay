@@ -13,6 +13,10 @@ export interface TableSpec {
   cursor?: 'updated_at'
   /** Do not send client_id (the row is keyed another way). */
   noClientId?: boolean
+  /** Columns that are read on pull but never sent (the server stamps them). */
+  pullOnly?: string[]
+  /** The server row id is kept locally as `serverId` and sent as `id` when the row has one (other rows point at it by that id). */
+  serverId?: boolean
   /** Send as PATCH of an existing row: REST table name, and the payload field that names the row (matched to column id). */
   patch?: { table: string; idField: string }
 }
@@ -26,7 +30,7 @@ export const TABLES: Record<string, TableSpec> = {
     fields: ['personId', 'takenAt', 'doctor', 'reason', 'medicines', 'nextVisit', 'sourceFileId', 'driveUrl', 'confirmedBy', 'confirmedAt'],
     onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
   },
-  meds_taken: { fields: ['personId', 'name', 'takenAt'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true },
+  meds_taken: { fields: ['personId', 'name', 'takenAt', 'medicationId', 'slot', 'skipped'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true },
   activity: {
     fields: ['personId', 'kind', 'minutes', 'steps', 'startedAt', 'source'],
     onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
@@ -36,13 +40,19 @@ export const TABLES: Record<string, TableSpec> = {
   usage_events: { fields: ['kind', 'name', 'appVersion', 'clientAt'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
   // A member's own profile columns on people (0010). PATCH, so the row must already exist; RLS decides who may.
   people_profile: {
-    fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions', 'medicines'],
+    fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions'],
     onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'people', idField: 'id' }
   },
   // Family plan (0012): edits and soft deletes (deletedAt) are full-row upserts on client_id; the pull removes tombstoned rows.
   family_tasks: { fields: ['title', 'due', 'assigneePersonId', 'done', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   family_events: { fields: ['title', 'startsAt', 'endsAt', 'allDay', 'personId', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   family_notes: { fields: ['body', 'pinned', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
+  // The live medicine schedule (0014). Edits and soft deletes are full-row upserts on client_id, like the plan rows. origin and
+  // edited_at are stamped by the server (converter / edit trigger), so they are read but never sent. App-made rows use status 'confirmed'.
+  medications: {
+    fields: ['personId', 'name', 'genericName', 'strength', 'form', 'dose', 'schedule', 'asNeeded', 'perDay', 'stockQty', 'stockUnit', 'medStatus', 'startedOn', 'stoppedOn', 'status', 'deletedAt'],
+    onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at', pullOnly: ['origin', 'editedAt'], serverId: true
+  },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }
@@ -69,6 +79,7 @@ export function toRow(table: string, payload: unknown, clientId?: string): Obj {
   const out: Obj = {}
   for (const f of spec.fields) if (p[f] !== undefined) out[toSnake(f)] = p[f]
   if (!spec.noClientId && clientId) out.client_id = clientId
+  if (spec.serverId && typeof p.serverId === 'string' && p.serverId) out.id = p.serverId
   return out
 }
 
@@ -76,7 +87,9 @@ export function toRow(table: string, payload: unknown, clientId?: string): Obj {
 const KEEP_NULL = new Set(['labLow', 'labHigh', 'minutes', 'steps'])
 export function fromRow(table: string, row: Obj): Obj {
   const out: Obj = { clientId: row.client_id }
-  for (const f of TABLES[table].fields) {
+  const spec = TABLES[table]
+  if (spec.serverId && typeof row.id === 'string') out.serverId = row.id
+  for (const f of [...spec.fields, ...(spec.pullOnly ?? [])]) {
     const v = row[toSnake(f)]
     if (v === undefined || (v === null && !KEEP_NULL.has(f))) continue
     out[f] = v
@@ -93,6 +106,7 @@ export const naturalKey: Record<string, (r: Obj) => string> = {
   activity: (r) => `${r.personId}|${r.kind}|${ms(r.startedAt)}`,
   // plan rows are stamped with a client_id when they are created, so there is no unstamped twin to match
   family_tasks: (r) => `cid:${r.clientId}`,
+  medications: (r) => `cid:${r.clientId}`,
   family_events: (r) => `cid:${r.clientId}`,
   family_notes: (r) => `cid:${r.clientId}`
 }

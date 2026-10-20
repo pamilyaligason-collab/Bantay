@@ -183,3 +183,26 @@ describe('dateWords', () => {
     expect(dateWords('tomorrow')).toBe('tomorrow')
   })
 })
+
+describe('confirmDraft log_med_taken resolves the name to a medication', () => {
+  const ppl = [{ id: 'p1', name: 'Lola' }]
+  const mk = () => ({ logReading: vi.fn(), logMedTaken: vi.fn(), logActivity: vi.fn() })
+  const meds = [{ personId: 'p1', name: 'Drug A 50 mg tab', serverId: 'srv-a', medStatus: 'active' as const, schedule: { v: 1, times: ['08:00', '20:00'] } }]
+  it('passes medicationId and the nearest open slot for a name with strength and form words', async () => {
+    const a = mk()
+    await confirmDraft('log_med_taken', { person: 'Lola', name: 'drug a 500mg tablet', takenAt: new Date(2026, 9, 20, 8, 10).toISOString() }, ppl, a, new Date(2026, 9, 20, 9, 0), meds)
+    expect(a.logMedTaken.mock.calls[0]![0]).toMatchObject({ personId: 'p1', name: 'Drug A 50 mg tab', medicationId: 'srv-a', slot: '08:00' })
+  })
+  it('an unknown name still logs by name, with no medicationId', async () => {
+    const a = mk()
+    await confirmDraft('log_med_taken', { person: 'Lola', name: 'Vitamin Z' }, ppl, a, new Date(2026, 9, 20, 9, 0), meds)
+    const arg = a.logMedTaken.mock.calls[0]![0]
+    expect(arg).toMatchObject({ personId: 'p1', name: 'Vitamin Z' })
+    expect(arg).not.toHaveProperty('medicationId')
+  })
+  it('a medication that has no server id yet is logged by name', async () => {
+    const a = mk()
+    await confirmDraft('log_med_taken', { person: 'Lola', name: 'Drug A' }, ppl, a, new Date(2026, 9, 20, 9, 0), [{ ...meds[0]!, serverId: undefined }])
+    expect(a.logMedTaken.mock.calls[0]![0]).not.toHaveProperty('medicationId')
+  })
+})

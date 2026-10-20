@@ -1,14 +1,19 @@
 import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
+import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import type { MedTaken, Medication } from '../log/store'
 
 export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update'
 export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string }
 export interface InboxSources {
   now: Date
   alerts: Alert[]
-  /** kv profile.medicines: "Losartan 8:00". Entries with no time are skipped, never guessed. */
+  /** @deprecated kv profile.medicines text "Losartan 8:00" (used only when `medications` is not given). Entries with no time are skipped, never guessed. */
   profile: unknown
-  taken: { name: string; takenAt: string }[]
+  /** The live schedule: this person's medications rows. When given, doses come from it (taken/skipped by medicationId + slot) and `profile` and `skipped` are ignored. */
+  medications?: Medication[]
+  personId?: string
+  taken: (Pick<MedTaken, 'name' | 'takenAt'> & Partial<Pick<MedTaken, 'medicationId' | 'slot' | 'skipped'>>)[]
   skipped: string[]
   updateVersion: string | null
   /** Admins only: open "Forgot PIN" requests and records waiting to be checked. Pass [] and 0 for everyone else. */
@@ -21,8 +26,14 @@ const mins = (d: Date) => d.getHours() * 60 + d.getMinutes()
 const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
 
 /** Today's doses that are due now or already past their window and not marked taken or skipped. */
-export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped'>) {
+export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped' | 'medications' | 'personId'>) {
   const nowMin = mins(s.now)
+  if (s.medications && s.personId) {
+    const day = dayOf(s.now)
+    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day)
+      .filter((d) => d.state === 'pending' && d.at <= nowMin)
+      .map((d) => ({ name: d.name, at: d.at, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
+  }
   return dueDoses(s.profile, s.taken, s.skipped, s.now).map((d) => ({ ...d, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
 }
 

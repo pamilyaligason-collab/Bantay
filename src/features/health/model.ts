@@ -240,6 +240,14 @@ export const rangeLine = (r: Reading, family?: Range | null) => {
 }
 
 // ---- medicines ----------------------------------------------------------------------------------------------
+// The live schedule is the `medications` table: use the helpers re-exported below (slotsFor, matchDoses, reviewOverdue ...).
+// @deprecated The profile-text functions here (parseMedicine, medSlots, doseStates) read people.medicines text. They stay only
+// until Medicines.tsx, NextUp and Hero (other lanes) move to medications; then they go.
+export {
+  REVIEW_GRACE_DAYS, dayOf, isLive, liveMedicines, matchDoses, normaliseDrug, parseSchedule, remindable, resolveMedication, reviewOverdue, slotsFor, toClock, toMinutes,
+  type DoseState, type MedSlot, type ParsedSchedule
+} from './meds'
+
 export interface Slot { name: string; at: number | null } // at = minutes after local midnight; null = no time given
 
 const TIME = /(\d{1,2}):(\d{2})\s*(am|pm)?/gi
