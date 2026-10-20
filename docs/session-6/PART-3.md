@@ -158,7 +158,20 @@ Everything follows `resolvePlace()` (GPS, else chosen home zone). Zones stay in 
 **Data Lloyd must supply (ping):** zone 2 hotlines and nearest hospitals; confirm zone 2 area name. Until then
 the zone 2 view shows national numbers plus "Add local numbers" for admins.
 
-## 5. Health, Family, Records tidy (priority 5)
+## 5. Health, Family, Records (priority 5)
+### 5.1 Health tab structure (mockup screens health, metric, addreading, anatomy, library, article, videos, papers)
+1. Person chips + "Showing: Name".
+2. **My KPIs** grid: BP, fasting sugar, weight, steps, doses on time, resting heart; sparkline + range chip; opens the
+   metric detail (30-day chart with normal band, AM/PM toggle, readings list, Add reading, Share with doctor).
+3. **Body map** (kept from v6), opening **Explore your body** (`features/anatomy/*`, kept and extended): system chips,
+   organ highlight, "what it does" in 2 lines, "your numbers" link, "medicines that act here", "learn more".
+4. **Medicines** summary (ring: 2 of 3 today), opening Health > Medicines.
+5. Vitals with range bars; labs with plain-language flags.
+6. **Learn**: Health library (MedlinePlus Connect summaries keyed by condition and generic name, cached; source and
+   "not medical advice" line; English/Filipino) and Videos (curated fixed playlists, YouTube embed, no search API).
+7. Papers (records) with progress ring; Refills; Doctor visits.
+
+### 5.2 Tidy
 - Health header says whose health it is ("Showing: Name") with the person chips; Medicines section first, then
   vitals, then labs. Lab High/Low flags get a one-line plain meaning and the range.
 - Records moves under Health as "Papers" (it duplicates Health inside Family today). Family = People + Plan.
