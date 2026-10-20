@@ -199,3 +199,6 @@
 
 /* family line */
 .td-attn { color: var(--amber-ink); font-weight: 600; }
+
+.td-due { margin: 10px 4px 0; font-size: 15px; font-weight: 600; }
+.td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }

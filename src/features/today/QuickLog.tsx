@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useKv } from '../safety/store'
-import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, type LogResult } from './actions'
+import { liveMedicines } from '../health/meds'
+import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, takeMedication, type LogResult } from './actions'
+import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import QuickWalk from '../sensors/QuickWalk'
-import { parseDose } from './heroCards'
 
-const NO_MEDS: string[] = []
 
 const ICONS = {
   check: 'M5 12.5l4.5 4.5L19 7.5',
@@ -64,7 +63,9 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const meds = useKv<string[]>('profile.medicines', NO_MEDS)
+  const allMeds = useMyMedications()
+  const takes = useMyDoseRows()
+  const meds = useMemo(() => liveMedicines(allMeds, allMeds[0]?.personId ?? ''), [allMeds])
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
@@ -94,7 +95,6 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       void run(logWeight(v), `Saved weight ${v} kg`)
     }
   }
-  const names = [...new Set(meds.map((m) => parseDose(m)?.name ?? m.trim()).filter(Boolean))] // twice-daily medicines are two entries, one button
 
   return (
     <>
@@ -135,8 +135,8 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       {open === 'dose' && (
         <Sheet title="Which medicine did you take?" onClose={close}>
           <div className="td-form">
-            {names.length ? names.map((n) => (
-              <button key={n} type="button" className="td-opt" disabled={busy} onClick={() => void run(takeDose(n), `Marked ${n} taken`)}>{n}</button>
+            {meds.length ? meds.map((m) => (
+              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(takeMedication(m, takes), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
             )) : (
               <>
                 <label>Medicine name<input value={a} onChange={(e) => setA(e.target.value)} placeholder="Losartan" /></label>

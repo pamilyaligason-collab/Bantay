@@ -1,4 +1,5 @@
-import { logActivity, logMedTaken, logReading } from '../log/store'
+import { pickSlot } from '../health/meds'
+import { logActivity, logDose, logMedTaken, logReading, type MedTaken, type Medication } from '../log/store'
 import { track } from '../admin/events'
 import { selfIdOrCached } from '../sync/profile'
 
@@ -27,6 +28,12 @@ export const checkIn = () => asPerson(async (personId) => {
 /** No mood table either: activity kind mood-good | mood-ok | mood-low. */
 export const logMood = (m: 'good' | 'ok' | 'low') => asPerson((personId) => logActivity({ personId, kind: `mood-${m}`, minutes: null, steps: null, startedAt: now(), source: 'manual' }))
 export const takeDose = (name: string) => asPerson((personId) => logMedTaken({ personId, name, takenAt: now() }))
+/** A dose of one of my medications from the quick log: logged against its medication id and the open slot nearest now (no slot for an as-needed medicine or an extra dose). */
+export const takeMedication = (med: Medication, takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[]) => asPerson(async (personId) => {
+  const slot = pickSlot(med, takes, new Date())
+  if (slot) await logDose({ personId, name: med.name, serverId: med.serverId }, slot)
+  else await logMedTaken({ personId, name: med.name, takenAt: now(), ...(med.serverId ? { medicationId: med.serverId } : {}) })
+})
 export const logBp = (sys: number, dia: number) =>
   asPerson(async (personId) => {
     const takenAt = now()

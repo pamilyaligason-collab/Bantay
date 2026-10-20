@@ -32,7 +32,7 @@ describe('GreetingBand', () => {
     roster.last = { ma: new Date().toISOString() }
     render(<GreetingBand onOk={() => undefined} />)
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
-    expect(screen.getByText('1 of 3 family checked in today')).toBeTruthy()
+    expect(screen.getByText('1 of 2 others checked in today')).toBeTruthy()
   })
   it('after a check-in: when, the live count and See who; the button is gone', () => {
     const t = new Date(); t.setHours(20, 41, 0, 0)
@@ -40,17 +40,17 @@ describe('GreetingBand', () => {
     render(<GreetingBand onOk={() => undefined} />)
     expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
     expect(screen.getByText(/8:41/)).toBeTruthy()
-    expect(screen.getByText('1 of 3 OK today')).toBeTruthy()
+    expect(screen.getByText('0 of 2 others OK today')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'See who' }).getAttribute('href')).toBe('#family')
   })
   it('the count and button update live when a check-in arrives after mount', () => {
     roster.last = {}
     const { rerender } = render(<GreetingBand onOk={() => undefined} />)
-    expect(screen.getByText('0 of 3 family checked in today')).toBeTruthy()
+    expect(screen.getByText('0 of 2 others checked in today')).toBeTruthy()
     roster.last = { me: new Date().toISOString(), ma: new Date().toISOString() }
     act(() => rerender(<GreetingBand onOk={() => undefined} />))
     expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
-    expect(screen.getByText('2 of 3 OK today')).toBeTruthy()
+    expect(screen.getByText('1 of 2 others OK today')).toBeTruthy()
   })
   it('a check-in from yesterday does not count as checked in', () => {
     roster.last = { me: new Date(Date.now() - 36 * 3_600_000).toISOString() }

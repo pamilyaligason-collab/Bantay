@@ -18,6 +18,12 @@ describe('NextUp', () => {
     expect(screen.getByRole('heading', { name: 'All clear' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: /to check/ })).toBeNull()
   })
+  it('Skip is hidden for a medicine with no server id (it could never be matched)', () => {
+    h.due = [{ ...ma, slots: [{ ...ma.slots[0]!, medicationId: null }] }]; h.review = 0
+    render(<NextUp notify={() => undefined} />)
+    expect(screen.getByRole('button', { name: 'Taken' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
+  })
   it('a cared-for person dose: Taken and Skip log through markDue; footer counts medicines to check', async () => {
     h.due = [ma]; h.review = 2
     const notify = vi.fn()

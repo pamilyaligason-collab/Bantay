@@ -36,6 +36,24 @@ describe('nextDoses', () => {
   })
 })
 
+describe('nextDoses across midnight', () => {
+  const sleeper = med({ personId: 'me', name: 'Sleeper', times: ['23:00'] })
+  const early = med({ personId: 'me', name: 'Early', times: ['00:30'] })
+  const on = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m)
+  it('a 23:00 dose stays open until 01:00 the next morning', () => {
+    expect(nextDoses([me], [sleeper], [], on(20, 0, 30))[0]).toMatchObject({ status: 'missed', at: 1380 })
+    expect(nextDoses([me], [sleeper], [], on(20, 1, 1))).toEqual([])
+  })
+  it('a 00:30 dose shows from 21:30 the evening before', () => {
+    expect(nextDoses([me], [early], [], on(19, 21, 30))[0]).toMatchObject({ status: 'upcoming', at: 30 })
+    expect(nextDoses([me], [early], [], on(19, 21, 29))).toEqual([])
+  })
+  it("yesterday's take clears yesterday's slot", () => {
+    const t: MedTaken = { personId: 'me', name: 'Sleeper', takenAt: on(19, 23, 5).toISOString(), medicationId: 'me-Sleeper', slot: '23:00' }
+    expect(nextDoses([me], [sleeper], [t], on(20, 0, 30))).toEqual([])
+  })
+})
+
 describe('pickNext', () => {
   const due = nextDoses([ma], meds, [], at(9, 30))
   it('a dose beats the plan, a storm and everything else; weather is never picked', () => {

@@ -3,11 +3,12 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
-const { stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
+const { stub, storm } = vi.hoisted(() => ({ storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
 vi.mock('../features/today/GreetingBand', () => ({ default: () => <button type="button">I&apos;m OK</button> }))
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: [{ personId: 'me', name: 'Lloyd', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: 0, tick: new Date() }), markDue: async () => true }))
+vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
 vi.mock('../features/today/WeatherCard', () => stub('weather'))
 vi.mock('../features/today/MyWeek', () => stub('myweek'))
 vi.mock('../features/today/FamilyLine', () => stub('famline'))
@@ -46,6 +47,14 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
     for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'famline']) expect(screen.queryByTestId(id)).toBeNull()
+  })
+  it('on: the warning band and a storm within 500 km are not lost', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    storm.v = { title: 'Pepito is near', body: 'about 400 km east of you' }
+    render(<Today />)
+    await screen.findByRole('button', { name: 'Taken' })
+    expect(screen.getByTestId('alertband')).toBeTruthy()
+    storm.v = null
   })
   it('on with an SOS contact: Call family dials the first valid number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

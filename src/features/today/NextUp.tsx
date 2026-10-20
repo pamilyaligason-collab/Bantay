@@ -1,33 +1,24 @@
 import { useMemo, useState } from 'react'
-import { usePlace } from '../location/useLocation'
-import { ALERTS_KEY, type Alert } from '../safety/alerts'
-import { stormName } from '../safety/LiveMaps'
-import { useKv } from '../safety/store'
 import { FAIL_TEXT } from './actions'
 import type { HeroCard } from './heroCards'
 import { joinNames, pickNext } from './nextPick'
 import { usePlanCard } from './planCard'
-import { awayText, nearbyStorm } from './stormView'
 import { markDue, useDueMeds } from './useDueMeds'
+import { useStorm } from './useStorm'
 
-const NO_ALERTS: Alert[] = []
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
 
 /** Today's one "Next up" card: the dose due within 3 hours or missed in the last 2 (mine or someone I care for), else the plan, else a nearby storm,
  *  else all clear. A footer row counts medicines waiting for "Still taking it?". Weather has its own card. */
 export default function NextUp({ notify }: { notify: (msg: string) => void }) {
-  const place = usePlace()
-  const alerts = useKv<Alert[]>(ALERTS_KEY, NO_ALERTS)
   const { due, review, tick } = useDueMeds()
   const [busy, setBusy] = useState(false)
   const plan = usePlanCard(tick)
-  const from = place?.weather ?? null
-  const s = nearbyStorm(alerts, from)
-  const storm = s ? { title: `${stormName(s)} is near`, body: `${s.level ? `${s.level} alert, ` : ''}${awayText(from, s) ?? 'check the tracker'}` } : null
+  const storm = useStorm()
 
   const item = useMemo(
     () => pickNext({ due, plan: plan as HeroCard | null, storm }),
-    [due, plan, storm?.title, storm?.body] // eslint-disable-line react-hooks/exhaustive-deps -- storm is rebuilt each render; its text is the key
+    [due, plan, storm]
   )
 
   const act = async (skip: boolean) => {
@@ -50,7 +41,7 @@ export default function NextUp({ notify }: { notify: (msg: string) => void }) {
         {item.who && (
           <div className="td-act">
             <button type="button" className="td-pill light td-taken" disabled={busy} onClick={() => void act(false)}>Taken</button>
-            <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>
+            {item.who.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
           </div>
         )}
         {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}

@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
-import { getMember } from '../auth/session'
+import { getMember, onAuthChange } from '../auth/session'
 import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { isLive, parseSchedule } from '../health/meds'
@@ -9,7 +9,7 @@ import { nextDoses, type DuePerson } from './nextPick'
 
 const NO_MEDS: Medication[] = []
 const NO_TAKES: MedTaken[] = []
-const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
+const startOfYesterday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 1); return d } // yesterday's late doses count at the midnight edge
 
 /** Medicines for Next up: the dose due soon (or just missed) for me and the people I can mark for, from the medications table (no profile text).
  *  `review` counts those people's medicines still waiting for "Still taking it?". */
@@ -23,11 +23,13 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
 
   useEffect(() => {
     let live = true
-    getMember().then((m) => { if (live) setUserId(m?.userId) }, () => undefined)
+    const who = () => { void getMember().then((m) => { if (live) setUserId(m?.userId) }, () => undefined) }
+    who()
+    const off = onAuthChange(who) // signing in or out re-reads who I can mark for
     const a = liveQuery(() => ldb.medications.toArray()).subscribe({ next: setMeds, error: () => undefined })
-    const b = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(startOfDay().toISOString()).toArray()).subscribe({ next: setTakes, error: () => undefined })
+    const b = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()).subscribe({ next: setTakes, error: () => undefined })
     const t = setInterval(() => setTick(new Date()), 60_000)
-    return () => { live = false; a.unsubscribe(); b.unsubscribe(); clearInterval(t) }
+    return () => { live = false; off(); a.unsubscribe(); b.unsubscribe(); clearInterval(t) }
   }, [])
 
   const targets = useMemo(() => people.filter((p) => canMarkFor(p.id, selfId ?? '', writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])

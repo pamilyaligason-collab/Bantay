@@ -1,8 +1,8 @@
 import { formatNumber } from '../../lib/labFormat'
-import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import { dayOf, isLive, normaliseDrug, slotsFor } from '../health/meds'
 import { readingPosition } from '../health/model'
 import { rangeState, type RangeState } from '../health/ranges'
-import type { Reading } from '../health/ranges'
+import type { Position, Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
 
 /** A step row; personId is absent on rows already filtered to one person. */
@@ -13,6 +13,7 @@ export interface StepRow { kind: string; steps: number | null; startedAt: string
 
 export const STEP_GOAL = 6000
 export const DAYS = 7
+export const ON_TIME_MIN = 120 // H1: a dose is on time when taken within 2 hours of its slot
 
 export interface Tile {
   code: string // #health/metric/<code>; doses open #health
@@ -48,6 +49,7 @@ function byDay(rows: Reading[], test: string, days: string[]): Map<string, numbe
 }
 const sparkOf = (days: string[], m: Map<string, number[]>, f: (v: number[]) => number): (number | null)[] => days.map((d) => (m.has(d) ? f(m.get(d)!) : null))
 const flat = (m: Map<string, number[]>) => [...m.values()].flat()
+const worst = (ps: Position[]): Position => (ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none')
 const reading = (test: string, value: number, unit: string): Reading => ({ personId: '', takenAt: '', test, value, unit })
 
 export function computeMyWeek(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date }): Tile[] {
@@ -55,7 +57,7 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
   const mine = i.readings.filter((r) => r.personId === i.personId)
   const tiles: Tile[] = []
 
-  // blood pressure: average top / bottom, judged on the top number
+  // blood pressure: average top / bottom, judged on the worse of the two (same rule as the Health body map)
   const sys = byDay(mine, 'bp_systolic', days)
   const dia = byDay(mine, 'bp_diastolic', days)
   if (sys.size) {
@@ -63,7 +65,7 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
     const d = dia.size ? Math.round(avg(flat(dia))) : null
     tiles.push({
       code: 'bp_systolic', href: '#health/metric/bp_systolic', label: 'Blood pressure', value: d == null ? String(s) : `${s}/${d}`, unit: 'mmHg',
-      sub: `average of ${flat(sys).length} ${flat(sys).length === 1 ? 'reading' : 'readings'}`, state: rangeState(readingPosition(reading('bp_systolic', s, 'mmHg'))), spark: sparkOf(days, sys, (v) => Math.round(avg(v)))
+      sub: `average of ${flat(sys).length} ${flat(sys).length === 1 ? 'reading' : 'readings'}`, state: rangeState(worst([readingPosition(reading('bp_systolic', s, 'mmHg')), d == null ? 'none' : readingPosition(reading('bp_diastolic', d, 'mmHg'))])), spark: sparkOf(days, sys, (v) => Math.round(avg(v)))
     })
   }
 
@@ -104,21 +106,37 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
     tiles.push({ code: 'steps', href: '#health/metric/steps', label: 'Steps a day', value: per.toLocaleString('en-US'), unit: 'steps', sub: `goal ${STEP_GOAL.toLocaleString('en-US')}${per >= STEP_GOAL ? ', reached' : ''}`, spark: daily })
   }
 
-  // doses on time: taken of scheduled, over the days that have passed (today counts only slots whose time has come)
+  // doses on time (H1): a dose counts when it was taken within 2 hours of its time. Each medicine counts from its first day (started on, else its first take, else today);
+  // today counts a slot only once it was taken on time or its 2 hours have passed.
   const nowMin = i.now.getHours() * 60 + i.now.getMinutes()
   const today = dayOf(i.now)
-  const myTakes = i.takes.filter((t) => t.personId === i.personId)
+  const myTakes = i.takes.filter((t) => t.personId === i.personId && !t.skipped)
+  const firstDay = new Map<string, string>()
+  for (const m of i.meds) {
+    const key = m.serverId ?? m.clientId ?? String(m.id ?? m.name)
+    const taken = myTakes.filter((t) => (m.serverId && t.medicationId === m.serverId) || (!t.medicationId && t.name.trim().toLowerCase() === m.name.trim().toLowerCase())).map((t) => dayOf(t.takenAt)).sort()[0]
+    firstDay.set(key, m.startedOn?.slice(0, 10) ?? taken ?? today)
+  }
   let want = 0
   let done = 0
   const perDay = days.map((d) => {
-    const slots = slotsFor(i.meds, i.personId, d).filter((s) => d !== today || s.at <= nowMin)
-    const st = matchDoses(slots, myTakes, d)
-    const got = st.filter((x) => x.state === 'taken').length
-    want += slots.length
-    done += got
-    return slots.length ? got : null
+    const used = new Set<MedTaken>()
+    let dayWant = 0
+    let dayDone = 0
+    for (const sl of slotsFor(i.meds, i.personId, d)) {
+      if (d < (firstDay.get(sl.key) ?? today)) continue
+      const hit = myTakes.filter((t) => !used.has(t) && dayOf(t.takenAt) === d && (sl.medicationId ? t.medicationId === sl.medicationId && t.slot === sl.slot : !t.medicationId && t.name.trim().toLowerCase() === sl.name.trim().toLowerCase()))
+        .map((t) => ({ t, gap: Math.abs(new Date(t.takenAt).getHours() * 60 + new Date(t.takenAt).getMinutes() - sl.at) })).filter((x) => x.gap <= ON_TIME_MIN).sort((a, b) => a.gap - b.gap)[0]
+      if (hit) used.add(hit.t)
+      else if (d === today && sl.at + ON_TIME_MIN > nowMin) continue // still inside its 2 hours
+      dayWant++
+      if (hit) dayDone++
+    }
+    want += dayWant
+    done += dayDone
+    return dayWant ? dayDone : null
   })
-  if (want > 0) tiles.push({ code: 'doses', href: '#health', label: 'Doses on time', value: `${done} of ${want}`, unit: '', sub: done >= want ? 'every dose taken' : 'doses taken this week', spark: perDay })
+  if (want > 0) tiles.push({ code: 'doses', href: '#health', label: 'Doses on time', value: `${done} of ${want}`, unit: '', sub: done >= want ? 'all within 2 hours of the time' : 'taken within 2 hours of the time', spark: perDay })
 
   // resting heart rate: the lowest reading of each day, averaged
   const hr = byDay(mine, 'heart_rate', days)
@@ -137,4 +155,19 @@ export function sparkPoints(spark: (number | null)[], w: number, h: number, pad 
   const hi = Math.max(...pts.map((p) => p.v))
   const span = hi - lo || 1
   return pts.map((p) => ({ x: pad + (p.i / Math.max(1, spark.length - 1)) * (w - 2 * pad), y: hi === lo ? h / 2 : h - pad - ((p.v - lo) / span) * (h - 2 * pad) }))
+}
+
+const BP_DRUGS = ['losartan', 'amlodipine', 'valsartan', 'telmisartan', 'lisinopril', 'enalapril', 'atenolol', 'metoprolol', 'carvedilol', 'bisoprolol', 'nifedipine', 'hydrochlorothiazide', 'candesartan', 'irbesartan', 'olmesartan', 'captopril', 'perindopril', 'ramipril', 'clonidine']
+const SUGAR_DRUGS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'linagliptin', 'pioglitazone', 'empagliflozin', 'dapagliflozin', 'insulin']
+const has = (name: string, list: string[]) => { const n = normaliseDrug(name) ?? ''; return list.some((d) => n.includes(d)) }
+
+/** H6 nudge: "Next reading due: blood pressure" when this person takes a blood pressure (or sugar) medicine and logged no such reading in the last 7 days. null otherwise. */
+export function nextReadingDue(i: { personId: string; readings: Reading[]; meds: Medication[]; now: Date }): string | null {
+  const live = i.meds.filter((m) => m.personId === i.personId && isLive(m))
+  const days = lastDays(i.now)
+  const seen = (tests: string[]) => i.readings.some((r) => r.personId === i.personId && tests.includes(r.test) && days.includes(dayOf(r.takenAt)))
+  const due: string[] = []
+  if (live.some((m) => has(m.name, BP_DRUGS) || has(m.genericName ?? '', BP_DRUGS)) && !seen(['bp_systolic', 'bp_diastolic'])) due.push('blood pressure')
+  if (live.some((m) => has(m.name, SUGAR_DRUGS) || has(m.genericName ?? '', SUGAR_DRUGS)) && !seen(['fasting_glucose', 'glucose'])) due.push('blood sugar')
+  return due.length ? `Next reading due: ${due.join(' and ')}` : null
 }

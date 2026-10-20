@@ -15,6 +15,8 @@ export default function WeatherCard() {
   const sky = skyOf(wx)
   const rain = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, manilaLocal(now), sky === 'rain' || sky === 'storm') : undefined
   const action = weatherAction(wx)
+  const t = new Date(wx.at)
+  const asOf = Number.isNaN(t.getTime()) ? null : `as of ${t.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })}`
   const cond = `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
   return (
     <section aria-label="Weather">
@@ -24,6 +26,7 @@ export default function WeatherCard() {
           <b>{cond} · {placeNameOf(place)}</b>
           {rain && <span className="td-sub">{rainWords(rain)}</span>}
           {action && <span className="td-wx-act">{action}</span>}
+          {asOf && <span className="td-sub">{asOf}</span>}
         </span>
         <span className="td-link" aria-hidden="true">›</span>
       </a>

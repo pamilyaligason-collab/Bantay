@@ -11,7 +11,8 @@ export const MISSED_MIN = 120 // ... and stays on the card for 2 hours after it
 
 export interface DoseTarget { personId: string; name: string; isMe: boolean }
 export interface DuePerson extends DoseTarget {
-  at: number // minutes after local midnight of the earliest open dose
+  at: number // minutes after local midnight (of its own day) of the earliest open dose
+  rel: number // minutes from today's midnight: negative for yesterday's slot, 1440+ for tomorrow's
   status: 'upcoming' | 'missed'
   /** The open doses at that time (one per medicine). */
   slots: MedSlot[]
@@ -21,17 +22,23 @@ export interface NextItem { key: string; kind: NextKind; kicker: string; title: 
 
 type Take = Pick<MedTaken, 'personId' | 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>
 
-/** Per person, the earliest open dose that is due within 3 hours or was missed within the last 2. Earliest time first, me first on a tie. */
+const DAY_MIN = 1440
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12)
+
+/** Per person, the earliest open dose that is due within 3 hours or was missed within the last 2, looking at yesterday's, today's and tomorrow's slots
+ *  so the window holds across midnight (a 22:00 dose stays until 00:00 + 2 h; a 00:30 dose shows from 21:30). Earliest first, me first on a tie. */
 export function nextDoses(people: DoseTarget[], meds: Medication[], takes: Take[], now: Date): DuePerson[] {
-  const day = dayOf(now)
   const nowMin = now.getHours() * 60 + now.getMinutes()
   return people.flatMap((p): DuePerson[] => {
-    const open = matchDoses(slotsFor(meds, p.personId, day), takes.filter((t) => t.personId === p.personId), day)
-      .filter((d) => d.state === 'pending' && d.at - nowMin <= UPCOMING_MIN && nowMin - d.at <= MISSED_MIN)
+    const mine = takes.filter((t) => t.personId === p.personId)
+    const open = [-1, 0, 1].flatMap((k) => {
+      const day = dayOf(addDays(now, k))
+      return matchDoses(slotsFor(meds, p.personId, day), mine, day).filter((d) => d.state === 'pending').map((d) => ({ d, rel: d.at + k * DAY_MIN }))
+    }).filter(({ rel }) => rel - nowMin <= UPCOMING_MIN && nowMin - rel <= MISSED_MIN).sort((a, b) => a.rel - b.rel)
     if (!open.length) return []
-    const at = open[0]!.at // matchDoses keeps the slot order: earliest first
-    return [{ ...p, at, status: at < nowMin ? 'missed' : 'upcoming', slots: open.filter((d) => d.at === at) }]
-  }).sort((a, b) => a.at - b.at || Number(b.isMe) - Number(a.isMe))
+    const first = open[0]!
+    return [{ ...p, at: first.d.at, rel: first.rel, status: first.rel < nowMin ? 'missed' : 'upcoming', slots: open.filter((x) => x.rel === first.rel).map((x) => x.d) }]
+  }).sort((a, b) => a.rel - b.rel || Number(b.isMe) - Number(a.isMe))
 }
 
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)

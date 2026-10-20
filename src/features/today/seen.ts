@@ -18,9 +18,9 @@ export function useSeenDaily(ref: RefObject<Element | null>, name: SeenCard, on:
       void (async () => {
         try {
           if ((await db.kv.get(key))?.value === dayKey()) return
-          await db.kv.put({ key, value: dayKey() })
-        } catch { return } // storage blocked: skip rather than send on every visit
-        if (live) void track('action', name)
+          const day = dayKey()
+          if (live && (await track('action', name))) await db.kv.put({ key, value: day }) // only a queued event counts as seen: signed out or blocked tracking tries again later
+        } catch { /* storage blocked: skip rather than send on every visit */ }
       })()
     }, { threshold: 0.5 })
     io.observe(el)

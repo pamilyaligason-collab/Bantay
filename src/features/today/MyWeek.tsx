@@ -6,7 +6,7 @@ import type { Reading } from '../health/ranges'
 import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
 import { useSelfPersonId } from '../setup/useProfile'
-import { computeMyWeek, DAYS, sparkPoints, type Tile } from './myWeek'
+import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeek'
 import { useSeenDaily } from './seen'
 
 const NO_READINGS: Reading[] = []
@@ -61,13 +61,15 @@ export default function MyWeek() {
   const activity = useActivity(personId, DAYS + 1)
   const meds = useMedications(personId)
   const tiles = useMemo(() => computeMyWeek({ personId, readings, activity, meds, takes, now: new Date() }), [personId, readings, activity, meds, takes])
+  const due = useMemo(() => nextReadingDue({ personId, readings, meds, now: new Date() }), [personId, readings, meds])
   const ref = useRef<HTMLElement>(null)
-  useSeenDaily(ref, 'card_seen_my_week', tiles.length > 0)
-  if (!tiles.length) return null
+  useSeenDaily(ref, 'card_seen_my_week', tiles.length > 0 || !!due)
+  if (!tiles.length && !due) return null
   return (
     <section ref={ref} aria-labelledby="t-myweek">
       <h2 id="t-myweek" className="td-sech">My week</h2>
-      <div className="td-tiles">{tiles.map((t) => <TileView key={t.code} t={t} />)}</div>
+      {tiles.length > 0 && <div className="td-tiles">{tiles.map((t) => <TileView key={t.code} t={t} />)}</div>}
+      {due && <p className="td-due"><a href="#health">{due}</a></p>}
     </section>
   )
 }
