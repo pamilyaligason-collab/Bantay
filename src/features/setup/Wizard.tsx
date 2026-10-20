@@ -7,10 +7,11 @@ import { isNativeAndroid, requestBatteryExemption } from '../safety/settingsOpen
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
 import SosContactsPicker from '../sos/SosContactsPicker'
-import { saveAbout, saveProfile, savePhoto } from '../sync/profile'
+import { saveAbout, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
 import WarningsStep from './WarningsStep'
-import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, MEDICINES, splitItems } from './lists'
+import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, splitItems } from './lists'
+import MedicineEditor, { useSelfId } from './MedicineEditor'
 import { useSelfPersonId } from './useProfile'
 import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyDone, notifyState, onResume, probe, put, remaining, scheduleTest, turnOnReminders, type About, type NotifyState, type StepId } from './steps'
 import '../safety/safety.css'
@@ -98,14 +99,11 @@ function Medicines() {
       setLine(rows[0] ? `From your prescription of ${new Date(rows[0].takenAt).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}: ${rows[0].medicines!.join(', ')}.` : null)
     })()
   }, [])
-  const [mine, setMine] = useState<string[]>([])
-  const pid = useSelfPersonId()
-  useEffect(() => { void kvGet<string[]>('profile.medicines').then((m) => Array.isArray(m) && setMine(m)) }, [])
-  const set = (m: string[]) => { setMine(m); void put('profile.medicines', m); if (pid) void saveProfile(pid, { medicines: m }) }
+  const pid = useSelfId()
   return (
     <div className="wz-body">
       {line && <p className="sf-note" style={{ background: 'var(--cell)' }}>{line}</p>}
-      <div className="grp"><ChipField label="Medicines you take every day" multi options={MEDICINES} value={mine} onChange={set} /></div>
+      <MedicineEditor personId={pid} />
     </div>
   )
 }

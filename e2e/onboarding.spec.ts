@@ -80,8 +80,10 @@ test.describe('setup wizard', () => {
     await page.getByRole('button', { name: 'Asthma' }).click()
     await expect.poll(() => kv(page, 'profile.about')).toEqual({ bloodType: 'O+', allergies: 'Penicillin', conditions: 'Diabetes, Asthma' })
     await page.getByRole('button', { name: 'Step 3: Your medicines' }).click()
-    await page.getByRole('button', { name: 'Losartan' }).click()
-    await expect.poll(() => kv(page, 'profile.medicines')).toEqual(['Losartan'])
+    // medicines go to the medications table with a time (needs a signed-in person: profile-auth.spec.ts covers the writes); signed out there is nothing to save to
+    await expect(page.getByText('Sign in to add medicines, each with a time.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Losartan' })).toHaveCount(0)
+    expect(await kv(page, 'profile.medicines')).toBeUndefined()
   })
 
   test('notifications step: rows are off and the test reminder waits for permission', async ({ page }) => {

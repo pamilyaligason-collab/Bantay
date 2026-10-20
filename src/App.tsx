@@ -7,6 +7,7 @@ import Safety from './screens/Safety'
 import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
+import { watchDoseReminders } from './features/health/reminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
 import { DocsScreen } from './features/docs/DocsScreen'
 import { getMember, onAuthChange } from './features/auth/session'
@@ -59,6 +60,7 @@ export default function App() {
   const prev = useRef(idx)
   useTrackScreen(view === 'docs' ? 'docs' : isTabView ? (hash === '#records' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
+  useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {

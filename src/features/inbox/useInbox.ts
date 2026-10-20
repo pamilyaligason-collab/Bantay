@@ -6,6 +6,8 @@ import { putKv, useKv } from '../safety/store'
 import { useUpdate } from '../update/useUpdate'
 import { SKIP_KEY } from '../today/heroCards'
 import { useMyTakes } from '../today/useMyTakes'
+import { useMedicationRows } from '../health/useMedicationRows'
+import { useSelf } from '../sos/useSelf'
 import { buildInbox, countUnread } from './build'
 
 const NO_ALERTS: Alert[] = []
@@ -22,6 +24,8 @@ export function useInbox(isAdmin: boolean) {
   const { decision } = useUpdate()
   const queue = useQueue(isAdmin) // members never hit the records queue
   const taken = useMyTakes()
+  const self = useSelf()
+  const medications = useMedicationRows(self.personId) // undefined while loading: the inbox then waits on the old path instead of showing nothing as if there were no medicines
   const [pins, setPins] = useState<{ id: number; handle: string }[]>([])
   const [now, setNow] = useState(() => new Date())
 
@@ -46,12 +50,12 @@ export function useInbox(isAdmin: boolean) {
   }, [isAdmin, pinTick])
 
   const items = useMemo(() => buildInbox({
-    now, alerts, profile, taken,
+    now, alerts, profile, taken, medications, personId: self.personId ?? undefined,
     skipped: skip.day === now.toDateString() ? skip.names : NO_NAMES,
     updateVersion: decision.kind === 'none' ? null : decision.latest.versionName,
     pins: isAdmin ? pins : [],
     toCheck: isAdmin ? queue.count : 0
-  }), [now, alerts, profile, taken, skip, decision, pins, queue.count, isAdmin])
+  }), [now, alerts, profile, taken, medications, self.personId, skip, decision, pins, queue.count, isAdmin])
   const unread = countUnread(items, seen)
   const markAllRead = () => void putKv(SEEN_KEY, items.map((i) => i.id)).catch(() => undefined)
   return { items, unread, seen, markAllRead }

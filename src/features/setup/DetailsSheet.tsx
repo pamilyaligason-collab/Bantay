@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import { validPhone } from '../sos/contacts'
 import { saveProfile, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
-import { ALLERGIES, BLOOD_TYPES, CONDITIONS, MEDICINES, UNKNOWN } from './lists'
+import { ALLERGIES, BLOOD_TYPES, CONDITIONS, UNKNOWN } from './lists'
+import MedicineEditor from './MedicineEditor'
 import { useOwnAvatar, useProfile } from './useProfile'
 import './setup.css'
 import './details.css'
@@ -38,7 +39,7 @@ export default function DetailsSheet({ personId, name, onClose }: { personId: st
   const typed = useRef(false)
   const serverPhone = row?.phone ?? ''
   useEffect(() => { if (!typed.current) setPhone(serverPhone) }, [serverPhone]) // follows the row until the member starts typing
-  const p = row ?? { bloodType: null, allergies: [], conditions: [], medicines: [], birthdate: null, phone: null }
+  const p = row ?? { bloodType: null, allergies: [], conditions: [], birthdate: null, phone: null }
   const bad = phone.trim() !== '' && !validPhone(phone)
   const savePhone = () => {
     const v = phone.trim()
@@ -77,9 +78,8 @@ export default function DetailsSheet({ personId, name, onClose }: { personId: st
             value={chips(p.allergies, NOT_SURE.allergies)} onChange={(v) => void saveProfile(personId, { allergies: store(v, NOT_SURE.allergies) })} />
           <ChipField label="Health conditions" multi options={[...CONDITIONS, NOT_SURE.conditions]} exclusive={['None', NOT_SURE.conditions]}
             value={chips(p.conditions, NOT_SURE.conditions)} onChange={(v) => void saveProfile(personId, { conditions: store(v, NOT_SURE.conditions) })} />
-          <ChipField label="Medicines you take every day" multi options={MEDICINES} value={p.medicines}
-            onChange={(v) => void saveProfile(personId, { medicines: v })} />
         </div>
+        <MedicineEditor personId={personId} />
         <button type="button" className="sh-pill sh-primary sh-block" onClick={() => { savePhone(); onClose() }}>Done</button>
       </div>
     </div>,

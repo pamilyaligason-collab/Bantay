@@ -8,6 +8,7 @@ import { sosDone } from '../sos/contacts'
 import { batteryStatus, isNativeAndroid, nativeStatus, requestBatteryExemption } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
 import { hdb } from '../records/store'
+import { ldb } from '../log/store'
 import { currentPersonId, getState } from '../sensors/health'
 import type { Platform } from '../sensors/health'
 
@@ -88,6 +89,7 @@ export async function notifyState(): Promise<NotifyState> {
 
 const hasMedicines = async () => {
   const id = await currentPersonId().catch(() => null)
+  if (id && (await ldb.medications.where('personId').equals(id).filter((m) => m.medStatus !== 'stopped').count().catch(() => 0)) > 0) return true
   return !!id && (await hdb.consults.where('personId').equals(id).toArray().catch(() => [])).some((c) => c.medicines?.length)
 }
 

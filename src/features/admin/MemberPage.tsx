@@ -1,7 +1,8 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Icon } from '../shell/Icon'
 import ChipField from '../setup/ChipField'
-import { ALLERGIES, BLOOD_TYPES, CONDITIONS, MEDICINES } from '../setup/lists'
+import { ALLERGIES, BLOOD_TYPES, CONDITIONS } from '../setup/lists'
+import MedicineEditor from '../setup/MedicineEditor'
 import '../setup/setup.css'
 import { adminMembers, type Member, updatePerson, uploadAvatar } from './api'
 import Avatar from './Avatar'
@@ -12,7 +13,7 @@ import { type Ask, Field, when, why } from './shared'
 /** One family member: photo, details, and the account tools (PIN, unlock, role, disable). Opened from the Members list. */
 export default function MemberPage({ m, ask, reload, back }: { m: Member; ask: Ask; reload: () => void; back: () => void }) {
   const pr = m.profile
-  const [f, setF] = useState({ displayName: m.displayName, phone: pr?.phone ?? '', birthdate: pr?.birthdate ?? '', bloodType: pr?.bloodType ? [pr.bloodType] : [] as string[], allergies: pr?.allergies ?? [], conditions: pr?.conditions ?? [], medicines: pr?.medicines ?? [] })
+  const [f, setF] = useState({ displayName: m.displayName, phone: pr?.phone ?? '', birthdate: pr?.birthdate ?? '', bloodType: pr?.bloodType ? [pr.bloodType] : [] as string[], allergies: pr?.allergies ?? [], conditions: pr?.conditions ?? [] })
   const [status, setStatus] = useState<{ text: string; bad: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [rev, setRev] = useState(0)
@@ -30,7 +31,7 @@ export default function MemberPage({ m, ask, reload, back }: { m: Member; ask: A
     setBusy(true)
     const r = await updatePerson(pid, {
       displayName: f.displayName.trim(), phone: f.phone.trim() || null, birthdate: f.birthdate || null, bloodType: f.bloodType[0] ?? null,
-      allergies: f.allergies, conditions: f.conditions, medicines: f.medicines
+      allergies: f.allergies, conditions: f.conditions
     })
     setBusy(false)
     if (!r.ok) return say(why(r.error), true)
@@ -87,8 +88,9 @@ export default function MemberPage({ m, ask, reload, back }: { m: Member; ask: A
           <ChipField label="Blood type" options={BLOOD_TYPES} value={f.bloodType} onChange={(v) => setF({ ...f, bloodType: v })} allowOther={false} />
           <ChipField label="Allergies" options={ALLERGIES} value={f.allergies} onChange={(v) => setF({ ...f, allergies: v })} multi exclusive={['None']} />
           <ChipField label="Conditions" options={CONDITIONS} value={f.conditions} onChange={(v) => setF({ ...f, conditions: v })} multi exclusive={['None']} />
-          <ChipField label="Medicines" options={MEDICINES} value={f.medicines} onChange={(v) => setF({ ...f, medicines: v })} multi />
         </div>
+        <h2 className="hd">Medicines</h2>
+        {pid ? <MedicineEditor personId={pid} label="Medicines" /> : <p className="sub ad-pad">Medicines can be added once this member has a profile.</p>}
         {!pid && <p className="sub ad-pad">This member has no profile yet, so details cannot be saved.</p>}
         <button className="ad-b go ad-wide" type="submit" disabled={!pid || busy}>Save details</button>
       </form>
