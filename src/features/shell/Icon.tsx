@@ -1,5 +1,5 @@
 import {
-  IconAlertTriangle, IconArrowLeft, IconBackpack, IconBell, IconBolt, IconBrain, IconCalendar, IconCamera, IconCheck, IconChevronLeft,
+  IconAlertTriangle, IconArrowLeft, IconBackpack, IconBell, IconBolt, IconBrain, IconCalendar, IconCamera, IconCheck, IconChevronLeft, IconChevronUp, IconChevronDown,
   IconChevronRight, IconClock, IconCloud, IconCloudFog, IconCloudRain, IconCloudStorm, IconCrop, IconDental, IconDots, IconDownload,
   IconDroplet, IconExternalLink, IconEye, IconFileText, IconFileTypePdf, IconFingerprint, IconFirstAidKit, IconFlask, IconGauge, IconHeartbeat,
   IconHome, IconInfoCircle, IconKey, IconLungs, IconMap, IconMapPin, IconMedicalCross, IconMessage, IconMessageCircle, IconMicrophone,
@@ -18,7 +18,7 @@ import { IconKidney, IconStomach, IconQuake, IconTyphoon, type CustomIconProps }
 // so the family can change in one place. Stroke 1.8 matches the mockup sprite; colour is currentColor.
 const ICONS = {
   home: IconHome, heart: IconHeartbeat, chat: IconMessageCircle, users: IconUsers, shield: IconShieldCheck, bell: IconBell,
-  back: IconChevronLeft, chev: IconChevronRight, arrowLeft: IconArrowLeft, phone: IconPhone, gear: IconSettings, cross: IconMedicalCross,
+  back: IconChevronLeft, chev: IconChevronRight, up: IconChevronUp, down: IconChevronDown, arrowLeft: IconArrowLeft, phone: IconPhone, gear: IconSettings, cross: IconMedicalCross,
   bolt: IconBolt, check: IconCheck, dl: IconDownload, pill: IconPill, camera: IconCamera, scan: IconScan, file: IconFileText,
   pdf: IconFileTypePdf, upload: IconUpload, photo: IconPhoto, crop: IconCrop, rotate: IconRotateClockwise, calendar: IconCalendar,
   flask: IconFlask, msg: IconMessage, pin: IconMapPin, map: IconMap, therm: IconTemperature, warn: IconAlertTriangle, info: IconInfoCircle,

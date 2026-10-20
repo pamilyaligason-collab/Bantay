@@ -1,7 +1,7 @@
 export type Tab = 'today' | 'health' | 'family' | 'safety'
 export type FamilySeg = 'plan' | 'people'
 export const TABS: Tab[] = ['today', 'health', 'family', 'safety']
-const VIEWS = new Set(['me', 'notif', 'admin'])
+const VIEWS = new Set(['me', 'notif', 'admin', 'scan'])
 
 /** Old Records links (#records, #family/records) now open Health > Papers. Callers replace the hash with this when it differs. */
 export const canonicalHash = (h: string) => (h === '#records' || h === '#family/records' ? '#health/papers' : h)
