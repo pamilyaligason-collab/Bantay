@@ -49,6 +49,7 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.goto('/#safety/weather')
+  await page.getByRole('button', { name: 'Open live map' }).click()
   // iframes are not mounted until asked
   await expect(page.locator('iframe[title^="Ventusky"]')).toHaveCount(0)
   await page.getByText('Ventusky weather map').click()
@@ -105,6 +106,7 @@ test.describe('Near me on the maps switcher', () => {
         }
       })
       await page.goto('/#safety/weather')
+      await page.getByRole('button', { name: 'Open live map' }).click()
       const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
       await expect(near).toHaveAttribute('aria-pressed', 'false')
       await expect(page.locator('.hdr .sf-chip')).toHaveText('Dampas')
@@ -127,6 +129,7 @@ test.describe('Near me on the maps switcher', () => {
         navigator.geolocation.getCurrentPosition = (_ok, no) => (w.__gpsCalls++, no?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }))
       })
       await page.goto('/#safety/weather')
+      await page.getByRole('button', { name: 'Open live map' }).click()
       const group = page.getByRole('group', { name: 'Map place' })
       const near = group.getByRole('button', { name: 'Near me' })
       await expect(near).toBeVisible()
@@ -150,7 +153,7 @@ test('Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid', asyn
   expect(call).toBeGreaterThan(sos)
   expect(Math.abs(med - call)).toBeLessThan(4)
   expect(tiles).toBeGreaterThan(call)
-  const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather maps', '#safety/weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
+  const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather', '#weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
     ['Hazards at my location', '#safety/hazards'], ['Go-bag', '#gobag'], ['Safety cards', '#safety/cards'], ['IDs and insurance', '#docs'], ['Past SOS', '#safety/sos']]
   for (const [t, href] of want) await expect(nav.getByRole('link', { name: new RegExp('^' + t) })).toHaveAttribute('href', href)
   for (const box of await nav.getByRole('link').all()) expect((await box.boundingBox())!.height).toBeGreaterThanOrEqual(44)
@@ -244,11 +247,12 @@ test('storm tracker, safety cards and past SOS pages open', async ({ page }) => 
 
 test('live weather: layer switch only changes overlay, storm tracker and links', async ({ page }) => {
   await page.goto('/#safety/weather')
-  const sec = page.getByRole('region', { name: 'Live weather' })
+  await page.getByRole('button', { name: 'Open live map' }).click()
+  const sec = page.getByRole('region', { name: 'Live weather map' })
   await sec.scrollIntoViewIfNeeded()
   const main = sec.locator('iframe').first()
   await expect(main).toHaveAttribute('src', /overlay=rain&.*lat=9\.65&lon=123\.88/)
-  await sec.getByRole('button', { name: 'Wind' }).click()
+  await sec.getByRole('group', { name: 'Weather layer' }).getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
   await expect(sec.getByText('Storms near the Philippines')).toBeVisible()
   await expect(sec.getByText(/No storm warnings for the Philippines/)).toBeVisible()

@@ -10,6 +10,7 @@ import { startSync } from './features/sync/sync'
 import { watchDoseReminders } from './features/health/reminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
 import { DocsScreen } from './features/docs/DocsScreen'
+import WeatherScreen from './features/weather/WeatherScreen'
 import { getMember, onAuthChange } from './features/auth/session'
 import { parseHash, TABS, type Tab } from './features/shell/routes'
 import { Inbox } from './features/inbox/Inbox'
@@ -58,10 +59,10 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, isTabView && (tab === 'today' || tab === 'safety'))
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
-  useTrackScreen(view === 'docs' ? 'docs' : isTabView ? (hash === '#records' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#records' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
-  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : SCREENS[tab].label
+  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'weather' ? 'Weather' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current
@@ -83,7 +84,7 @@ export default function App() {
       {isTabView && <TopBar unread={inbox.unread} />}
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <Assistant />

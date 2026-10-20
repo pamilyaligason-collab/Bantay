@@ -72,7 +72,7 @@ export default function SafetyHub({ place }: { place: Place }) {
 
   const tiles: [string, string, string, string][] = [
     ['#safety/warnings', 'warn', 'Warnings', warns ? plural(warns, 'warning') + ' now' : 'None now'],
-    ['#safety/weather', 'weather', 'Weather maps', rainLine(wx)],
+    ['#weather', 'weather', 'Weather', rainLine(wx)],
     ['#safety/storms', 'storm', 'Storm tracker', storms.length ? `${stormName(storms[0]!)}${storms.length > 1 ? ` and ${storms.length - 1} more` : ''}` : 'No storms now'],
     ['#safety/map', 'map', 'Rescue map', pins ? plural(pins, 'place') + ' on the map' : 'Shelters and help'],
     ['#safety/dial', 'dial', 'Quick dial', confirmed ? `${plural(confirmed, 'number')} ready` : 'No numbers yet'],

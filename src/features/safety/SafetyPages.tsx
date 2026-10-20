@@ -16,7 +16,8 @@ import { type Entry, firstNumber, OVERRIDES_KEY, type Overrides, telHref, withOv
 import EntryList, { EditForm } from './EntryList'
 import { hazardLabel, hazardsFor } from './hazardCards'
 import { ALERTS_KEY, type Alert } from './alerts'
-import LiveMaps, { cyclones, stormLine, stormName, since, windySrc } from './LiveMaps'
+import LiveMapToggle from '../weather/LiveMapToggle'
+import { cyclones, stormLine, stormName, since, windySrc } from './LiveMaps'
 import { stormCentre, zoomEarthUrl } from './stormView'
 import MapsPanel from './MapsPanel'
 import NewsTop5 from './NewsTop5'
@@ -270,8 +271,8 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
     case 'weather':
       return (
         <>
-          <section aria-labelledby="s-wx"><h2 id="s-wx" className="hd">Live weather</h2><LiveMaps loc={place.weather} /></section>
-          <section aria-labelledby="s-map"><h2 id="s-map" className="hd">Live maps</h2><MapsPanel loc={place.source !== 'zone' ? place.weather : null} ask={l.ask} zone={place.zone} /></section>
+          <a className="btn2 sf-ico" href="#weather">See the forecast</a>
+          <LiveMapToggle loc={place.weather} more={<section aria-labelledby="s-map"><h2 id="s-map" className="hd">Live maps</h2><MapsPanel loc={place.source !== 'zone' ? place.weather : null} ask={l.ask} zone={place.zone} /></section>} />
         </>
       )
     case 'storms': return <StormTracker place={place} />

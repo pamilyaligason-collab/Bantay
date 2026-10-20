@@ -1,0 +1,65 @@
+/* Weather screen (#weather). Tokens only, so light and dark both follow the app theme. */
+.wx { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
+.wx > section, .wx ul { min-width: 0; }
+.wx-h { font-size: 20px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -.01em; }
+.wx-sech { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.wx-sech .wx-h { margin-right: 0; }
+.wx-sub { font-size: 14px; color: var(--muted); }
+.wx-note { margin: 0 4px; color: var(--muted); font-size: 16px; }
+.wx-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; color: var(--muted); }
+
+/* place toggle */
+.wx-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--fill); }
+.wx-seg button { min-height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font-size: 15px; font-weight: 600; padding: 0 6px; overflow-wrap: anywhere; }
+.wx-seg button[aria-pressed="true"] { background: var(--card); box-shadow: var(--shadow); }
+.wx-seg button:disabled { color: var(--muted); opacity: .6; }
+.wx-seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* action line */
+.wx-action { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); border-left: 6px solid var(--line); }
+.wx-action.on { background: var(--warn-bg); border-left-color: var(--amber); }
+.wx-action[data-id="heat"], .wx-action[data-id="warning"] { border-left-color: var(--red); }
+.wx-act-t { font-size: 18px; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; }
+.wx-act-t.calm { font-weight: 600; font-size: 16px; color: var(--muted); }
+.wx-band { font-size: 15px; font-weight: 600; color: var(--warn); }
+.wx-act-sub { font-size: 15px; color: var(--ink); }
+
+/* heat scale: text, never colour alone */
+.wx-scale { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.wx-scale span { font-size: 13px; line-height: 1.25; text-align: center; padding: 8px 2px; border-radius: 10px; background: var(--fill); color: var(--muted); overflow-wrap: anywhere; }
+.wx-scale span.on { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: inset 0 0 0 2px var(--amber); }
+
+/* hero: numbers only */
+.wx-hero { display: flex; flex-direction: column; gap: 4px; }
+.wx-k { font-size: 14px; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
+.wx-temp { font-family: var(--f-display); font-size: 72px; line-height: 1; font-weight: 500; letter-spacing: -.02em; }
+.wx-cond { font-size: 20px; }
+
+.wx-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.wx-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }
+.wx-tile b { font-size: 26px; font-weight: 700; }
+
+/* next 24 hours: sideways strip with a fade on the right edge so it is clear there is more */
+.wx-stripbox { padding: 12px 0 12px 12px; position: relative; overflow: hidden; }
+.wx-stripbox::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px; pointer-events: none; background: linear-gradient(to right, transparent, var(--card)); }
+.wx-strip { list-style: none; margin: 0; padding: 0 40px 6px 0; display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.wx-strip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wx-strip li { flex: 0 0 62px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px; color: var(--muted); }
+.wx-strip li b { color: var(--ink); font-size: 17px; }
+.wx-rp { font-size: 14px; font-weight: 600; color: var(--c1); }
+
+/* 7 days */
+.wx-days { list-style: none; margin: 0; padding: 4px 16px; }
+.wx-days li { display: grid; grid-template-columns: 48px 22px 34px minmax(0, 1fr) 34px 40px; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; }
+.wx-days li + li { border-top: .5px solid var(--sep); }
+.wx-lo { color: var(--muted); text-align: right; }
+.wx-hi { text-align: right; font-weight: 600; }
+.wx-days .wx-rp { text-align: right; }
+.wx-range { position: relative; height: 6px; border-radius: 3px; background: var(--fill); }
+.wx-range i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--amber); }
+
+.wx .grp .row { text-decoration: none; }
+.wx .grp .row .sub { font-size: 14px; }
+.wx-out { color: var(--muted); font-size: 18px; flex: none; }
+.wx-map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.wx-foot { margin: 0 4px; font-size: 13px; color: var(--muted); }
