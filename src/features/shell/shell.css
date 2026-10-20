@@ -74,7 +74,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-list > *:first-child { border-top: 0; padding-top: 2px; }
 .sh-list > *:last-child { padding-bottom: 2px; }
 .sh-navrow { background: none; border: 0; width: 100%; text-align: left; min-height: 48px; color: var(--ink); text-decoration: none; font: inherit; }
-.sh-navrow .sh-ic:last-child { color: var(--muted); }
+.sh-navrow > .sh-ic:last-child { color: var(--muted); }
 .sh-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; color: #1F3D2B; background: #CFE0CF; overflow: hidden; }
 .sh-av img { width: 100%; height: 100%; object-fit: cover; }
 .sh-av-lg { width: 56px; height: 56px; font-size: 20px; }

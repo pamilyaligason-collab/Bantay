@@ -116,7 +116,7 @@ export default function Me() {
 
       <div className="sh-card sh-list">
         <button type="button" className="sh-navrow" onClick={() => setSosOpen(true)} aria-haspopup="dialog">
-          <Icon name="phone" />
+          <Icon name="phone" boxed size={20} />
           <span className="sh-grow"><b>Who gets your SOS text</b><span className="sh-sub sh-blk">{names || 'Nobody picked yet'}</span></span>
           <Icon name="chev" />
         </button>
@@ -179,7 +179,7 @@ export default function Me() {
               <Icon name="users" boxed size={20} /><span className="sh-grow"><b>Not you? Switch person</b></span><Icon name="chev" />
             </button>
             <button type="button" className="sh-navrow" onClick={() => { forgetPhone(); void signOut() }}>
-              <Icon name="shield" /><span className="sh-grow"><b>Forget this phone</b></span><Icon name="chev" />
+              <Icon name="shield" boxed size={20} /><span className="sh-grow"><b>Forget this phone</b></span><Icon name="chev" />
             </button>
           </>
         )}
