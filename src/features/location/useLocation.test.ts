@@ -2,8 +2,9 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
-const h = vi.hoisted(() => ({ native: false }))
-vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native } }))
+const h = vi.hoisted(() => ({ native: false, plugin: false, os: 'granted' as string | Error }))
+vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native, isPluginAvailable: () => h.plugin } }))
+vi.mock('@capacitor/geolocation', () => ({ Geolocation: { checkPermissions: () => (h.os instanceof Error ? Promise.reject(h.os) : Promise.resolve({ location: h.os })) } }))
 import { resolveLocation } from './useLocation'
 
 const setup = (perm: string, gpsOk = true) => {
@@ -14,7 +15,7 @@ const setup = (perm: string, gpsOk = true) => {
 const asked = () => db.kv.put({ key: 'loc.asked', value: true })
 
 describe('resolveLocation(false)', () => {
-  beforeEach(async () => { h.native = false; await db.kv.clear() })
+  beforeEach(async () => { h.native = false; h.plugin = false; h.os = 'granted'; await db.kv.clear() })
   it('native + prompt + asked uses GPS', async () => {
     h.native = true; await asked(); const g = setup('prompt')
     expect((await resolveLocation(false)).source).toBe('gps'); expect(g).toHaveBeenCalled()
@@ -37,5 +38,17 @@ describe('resolveLocation(false)', () => {
   it('GPS error falls back home', async () => {
     h.native = true; await asked(); setup('prompt', false)
     expect((await resolveLocation(false)).source).toBe('home')
+  })
+  it('APK 2.2 plugin: OS granted uses GPS even though WebView says prompt and nothing was asked', async () => {
+    h.native = true; h.plugin = true; const g = setup('prompt')
+    expect((await resolveLocation(false)).source).toBe('gps'); expect(g).toHaveBeenCalled()
+  })
+  it('APK 2.2 plugin: OS denied stays home even after an earlier yes', async () => {
+    h.native = true; h.plugin = true; h.os = 'denied'; await asked(); const g = setup('prompt')
+    expect((await resolveLocation(false)).source).toBe('home'); expect(g).not.toHaveBeenCalled()
+  })
+  it('APK 2.2 plugin: location switched off (throws) stays home and never prompts', async () => {
+    h.native = true; h.plugin = true; h.os = new Error('Location services are not enabled'); await asked(); const g = setup('prompt')
+    expect((await resolveLocation(false)).source).toBe('home'); expect(g).not.toHaveBeenCalled()
   })
 })
