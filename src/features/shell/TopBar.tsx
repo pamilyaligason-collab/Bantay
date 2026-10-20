@@ -21,8 +21,6 @@ export const isSubHash = (h: string) => {
 }
 /** The greeting and date belong to Today only; every other tab and sub-page shows its own title. */
 export const isTodayHash = (h: string) => { const r = parseHash(h); return r.tab === 'today' && r.view === null }
-// A key: tells the admin door apart from the Safety shield.
-const ADMIN_PATH = 'M7.5 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM11 11.5h10M18 11.5v3M15 11.5v2'
 
 /** Avatar (opens Me), greeting + date, bell (opens the inbox). The place name joins the date line once known. */
 export function TopBar({ unread = 0 }: { unread?: number }) {
@@ -71,7 +69,7 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
       </div>
       {admin && (
         <a className="sh-iconbtn" href="#admin" aria-label="Admin">
-          <svg className="sh-ic" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ADMIN_PATH} /></svg>
+          <Icon name="key" />
         </a>
       )}
       <a className="sh-iconbtn" href="#notif" aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}>

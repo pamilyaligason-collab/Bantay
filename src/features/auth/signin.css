@@ -26,5 +26,5 @@
 .wl-name .si-hint { display: block; margin: 0; }
 .wl-row b { display: block; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .wl-row .avatar { width: 40px; height: 40px; font-size: 16px; }
-.wl-chev { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--ink2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wl-chev { display: inline-flex; flex: none; color: var(--ink2); }
 .wl-row:focus-visible { outline: 3px solid var(--focus, var(--ink)); outline-offset: -3px; }

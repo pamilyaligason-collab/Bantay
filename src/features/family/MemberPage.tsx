@@ -1,6 +1,7 @@
 import FmAvatar from './FmAvatar'
 import { ageOf, checkInLabel, dial, lastCheckIn, useCheckIns, useFamilyPeople } from './roster'
 import './family.css'
+import { Icon } from '../shell/Icon'
 
 const back = () => { location.hash = 'family' }
 
@@ -12,7 +13,7 @@ export default function MemberPage({ id }: { id: string }) {
   if (!p) {
     return (
       <>
-        <button type="button" className="fm-back" onClick={back}>‹ Back to People</button>
+        <button type="button" className="fm-back" onClick={back}><Icon name="back" size={20} />Back to People</button>
         <div className="card"><p className="sub fm-empty">We could not find this person on this phone yet.</p></div>
       </>
     )
@@ -25,7 +26,7 @@ export default function MemberPage({ id }: { id: string }) {
 
   return (
     <>
-      <button type="button" className="fm-back" onClick={back}>‹ Back to People</button>
+      <button type="button" className="fm-back" onClick={back}><Icon name="back" size={20} />Back to People</button>
       <div className="hdr"><h1>{p.name}</h1></div>
       <div className="card fm-who">
         <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={64} status={c.ok ? 'ok' : 'none'} />
@@ -44,7 +45,7 @@ export default function MemberPage({ id }: { id: string }) {
       )}
       <div className="card list">
         <div><div className="grow"><b>Last check-in</b><span className="sub">{when ?? 'Never checked in on this phone'}</span></div></div>
-        <a className="fm-link" href={`#medid/${p.id}`}><span className="grow"><b>{first}'s Medical ID</b><span className="sub">Allergies, conditions, who to call</span></span><svg className="fm-chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg></a>
+        <a className="fm-link" href={`#medid/${p.id}`}><span className="grow"><b>{first}'s Medical ID</b><span className="sub">Allergies, conditions, who to call</span></span><span className="fm-chev"><Icon name="chev" size={20} /></span></a>
       </div>
       <div className="card fm-share">
         <b>What stays private</b>

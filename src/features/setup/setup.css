@@ -1,6 +1,6 @@
 .wz-top { gap: 8px; }
 .wz-back, .wz-skip { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--act); font-size: 17px; font-weight: 600; border-radius: 12px; }
-.wz-back { font-size: 24px; }
+.wz-back { display: inline-grid; place-items: center; }
 .wz-back:disabled { opacity: 0.3; }
 .wz-dots { display: flex; justify-content: center; gap: 2px; flex-wrap: wrap; }
 .wz-dot { width: 36px; height: 44px; border: 0; background: transparent; position: relative; padding: 0; }
