@@ -3,7 +3,7 @@
 As of 2026-10-20.
 
 ## 4a. Mockups
-One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (version 6,
+One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (version 8,
 2026-10-20). Base: the Family Bantay v2 mockup (all 34 v2 screens kept), with the session 6 changes layered on: 53
 screens. The original v2 mockup is unchanged. All names and numbers are sample data.
 - Replaced: Today (Lloyd's order), Health (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal),
@@ -13,8 +13,9 @@ screens. The original v2 mockup is unchanged. All names and numbers are sample d
   mode, Feature map.
 - Moved: Records -> Health > Papers. v2 Me gains Language and per-person reminders; v2 metric gains AM/PM.
 - Checks (Playwright, 53 screens x light/dark x 390 and 1200 wide): 0 console errors, 0 sideways scroll, 0 missing
-  links; S6 parts: 0 overflow, 0 targets under 44px, 0 contrast failures; 46/46 interaction flows pass. Remaining
-  small-target and contrast findings are in unchanged v2 elements (fewer than in v2 alone), for the build to fix.
+  links, 0 overflow, 0 targets under 44px, 0 contrast failures, 0 content under the tab bar, 0 dead buttons (every
+  button opens a screen or gives feedback); 46/46 interaction flows pass (version 8). Only intended sideways rows
+  scroll (body-map tabs, plan notes, safety guides), each with an edge fade.
 
 ## 4b. Usability script (moderated, 20 minutes per person, on the person's own phone)
 Run with the mockup first (before build), then again on the built APK (after build). 4 sessions: one per persona
