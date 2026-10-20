@@ -50,7 +50,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
         <a href="#medid" className="btn2 sf-ico"><Icon name="cross" size={20} />Medical ID</a>
       </div>
       {place && <SafetyHub place={place} />}
-      <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. Sources and dates are in docs/SOURCES.md.</p>
+      <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. <a href="#safety/sources">Sources</a></p>
     </>
   )
 }

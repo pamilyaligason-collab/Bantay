@@ -43,7 +43,7 @@ export default function EntryList({ seed, geo, zone }: { seed: Entry[]; geo: boo
   const [editing, setEditing] = useState<string | null>(null)
   const entries = withOverrides(forZone(seed, zone), overrides)
   const groups = [...new Set(entries.map((e) => e.group))]
-  if (!entries.length) return <p className="sf-empty">Nothing confirmed for this zone yet. Ask the barangay hall.</p>
+  if (!entries.length) return <p className="sf-empty">{geo ? 'Nearest hospitals: ask your barangay or call 911. We have no verified list for this area yet.' : 'Nothing confirmed for this zone yet. Ask the barangay hall.'}</p>
   return (
     <div className="sf">
       {groups.map((g) => (

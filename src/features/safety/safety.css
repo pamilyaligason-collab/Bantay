@@ -69,7 +69,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 
 /* sub-pages */
 .hdr.sf-subhdr { flex-wrap: nowrap; justify-content: flex-start; }
-.hdr.sf-subhdr h1 { flex: 1 1 0; min-width: 0; font-size: 26px; }
+.hdr.sf-subhdr h1 { flex: 1 1 0; min-width: 0; font-size: 26px; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
 .sf-subhdr .zp { flex: 0 1 auto; max-width: 48%; align-items: flex-end; }
 .sf-subhdr .zp .sf-chip { max-width: 100%; white-space: normal; text-align: left; line-height: 1.2; padding-top: 6px; padding-bottom: 6px; }
 .sf-dials { display: flex; flex-direction: column; gap: 10px; }
@@ -93,19 +93,23 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-hz-read, .sf-hz-do { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
 .sf-hz-do { color: var(--ink2); }
 
-/* Quick dial rows: avatar, name + type, round call button on the right */
-.sf-people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.sf-person { display: flex; align-items: center; gap: 12px; min-height: 72px; box-sizing: border-box; padding: 10px 12px; background: var(--cell); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
-.sf-av { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--ink); font: 700 17px/1 var(--font-body, inherit); }
-.sf-av-add { background: transparent; border: 1.5px dashed var(--sep); color: var(--ink2); font-size: 24px; }
-.sf-pt { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
-.sf-pt b { font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
-.sf-pt .sub { font-size: 15px; }
-.sf-callbtn { flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--btn); color: var(--btn-fg); text-decoration: none; }
-.sf-callbtn .sf-ic path { stroke: var(--btn-fg); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Quick dial rows: one line each, name + number on the left, Call on the right. Text never stacks letter by letter. */
+.sf .sf-dial-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sf-dialrow { display: grid; grid-template-columns: minmax(11ch, 1fr) auto auto; align-items: center; column-gap: 8px; min-height: 64px; box-sizing: border-box; padding: 10px 12px; background: var(--cell); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+.sf-dt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sf-dt b { font-size: 17px; line-height: 1.25; overflow-wrap: break-word; word-break: normal; }
+.sf-dt .sub { font-size: 15px; overflow-wrap: break-word; word-break: normal; }
+.sf-chk { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 8px; font-size: 12px; font-weight: 700; line-height: 18px; vertical-align: 1px; background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--amber) 55%, var(--line)); }
+.sf-callbtn { min-height: 44px; min-width: 68px; box-sizing: border-box; padding: 0 14px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 700; font-size: 16px; white-space: nowrap; }
+.sf-callbtn .sh-ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sf-callbtn:focus-visible, .sf-addbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.sf-addbtn { flex: none; width: auto; min-height: 48px; min-width: 64px; padding: 0 16px; }
-.sf-person-wrap { display: flex; flex-direction: column; gap: 8px; }
+.sf-addbtn { grid-column: 3; min-height: 44px; min-width: 68px; width: auto; padding: 0 16px; white-space: nowrap; flex: none; }
+.sf-dial-edit { grid-column: 1 / -1; }
+.sf-dial-edit .sf-edit { padding: 8px 0 0; }
+.sf-dialrow-add { border-style: dashed; }
+.sf h2.sec { margin: 0 4px; font-size: 15px; font-weight: 700; color: var(--ink2); }
+.sf .sf-src-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.sf-src-list li { overflow-wrap: anywhere; }
 .sf-storm-line { margin: 0; padding: 14px 16px; border-radius: 18px; font-size: 17px; line-height: 1.4; border: 1px solid var(--line); background: var(--cell); }
 .sf-storm-line.calm { background: color-mix(in srgb, var(--ok) 9%, var(--cell)); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
 .sf-storm-line.watch { background: var(--warn-bg); border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }

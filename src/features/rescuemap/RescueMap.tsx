@@ -10,7 +10,7 @@ const NONE: Overrides = {}
 const LAST_KEY = 'rescuemap.last'
 const ALL = new Set<Kind>(KINDS.map((k) => k.id))
 const valid = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
-const STATUS: Record<Spot['status'], string> = { CONFIRMED: 'Confirmed', LISTED: 'Listed', FAMILY: 'Added by family', UNKNOWN: 'Not confirmed' }
+const STATUS: Record<Spot['status'], string> = { CONFIRMED: 'Confirmed', LISTED: 'Listed', UNVERIFIED: 'Number not yet confirmed', FAMILY: 'Added by family', UNKNOWN: 'Not confirmed' }
 
 function useOnline() {
   const [on, setOn] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))

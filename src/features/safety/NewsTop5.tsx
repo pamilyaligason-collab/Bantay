@@ -3,18 +3,18 @@ import { loadNews, type NewsItem } from './news'
 import type { RefreshDetail } from '../look/refresh'
 import './safety.css'
 
-/** Top 5 from the news_items table. Empty state when Supabase is not configured. */
-export default function NewsTop5({ hideEmpty = false }: { hideEmpty?: boolean }) {
+/** Up to 3 for my area from the news_items table. Empty state when Supabase is not configured. */
+export default function NewsTop5({ hideEmpty = false, zone = null }: { hideEmpty?: boolean; zone?: string | null }) {
   const [items, setItems] = useState<NewsItem[] | null | undefined>(undefined)
   useEffect(() => {
     let live = true
-    const load = () => loadNews().then((r) => { if (live) setItems(r) })
+    const load = () => loadNews(undefined, undefined, zone).then((r) => { if (live) setItems(r) })
     load()
     // pull-to-refresh contract (src/features/look/refresh.ts)
     const onRefresh = (e: Event) => (e as CustomEvent<RefreshDetail>).detail.waitUntil(load())
     window.addEventListener('bantay:refresh', onRefresh)
     return () => { live = false; window.removeEventListener('bantay:refresh', onRefresh) }
-  }, [])
+  }, [zone])
   if (items === undefined || (hideEmpty && !items?.length)) return null // hideEmpty: never say the feed is not connected
   if (!items?.length)
     return <p className="sf-empty" role="status">{items === null ? 'The news feed is not connected yet.' : 'No news to show yet.'}</p>
