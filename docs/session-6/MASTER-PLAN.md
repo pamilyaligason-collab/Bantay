@@ -52,5 +52,5 @@ new files marked. Privacy scan: no emails, keys, phones, addresses, health value
 name appears as in earlier plans.
 
 ## Lloyd's changes after review (2026-10-20)
-- Today: family list replaced by a one-line family card; Today order is weather, next up + medicines to check,
-  My week health KPIs, family, plan, more. Feature map added: nothing removed.
+- Today: family list replaced by a one-line family card; Today order is next up + medicines to check, weather,
+  quick log, My week health KPIs, family, plan, more. Feature map added: nothing removed.

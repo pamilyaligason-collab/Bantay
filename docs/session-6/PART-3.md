@@ -88,19 +88,19 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
 - Events: the single list is PART-2 section 4. Adherence is measured from `meds_taken`, not events.
 
 ## 2. Today (priority 2; order set by Lloyd 2026-10-20)
-1. **Weather** card on top: temp, condition, place, rain window, and the action line; opens `#weather`. An alert band
-   for my place, when one applies, sits inside this card.
-2. **Next up + medicines to check**: one card. The next dose due in 3 hours (or missed in the last 2) with Taken /
+1. **Next up + medicines to check**: one card. The next dose due in 3 hours (or missed in the last 2) with Taken /
    Skip; a footer row "N medicines to check" when reviews are open.
-3. **My week** health KPIs, last 7 days, for the signed-in person (or the person picked in Health): blood pressure
+2. **Weather** card: temp, condition, place, rain window, and the action line; opens `#weather`. An alert band for my
+   place, when one applies, sits inside this card.
+3. **Quick log**: BP, sugar, weight, walk, dose, mood.
+4. **My week** health KPIs, last 7 days, for the signed-in person (or the person picked in Health): blood pressure
    average with range chip, fasting sugar average, weight change, steps a day vs goal, doses on time (x of y from
    `meds_taken` vs schedule), resting heart rate (if sensors are on). Each tile has a 7-day sparkline and opens the
    matching Health metric. Tiles with no data for this person are hidden, never shown as zero; a "next reading due"
    line nudges H6.
-4. **Family** line: "Family: 2 of 3 OK today" plus the one thing that needs attention; opens Family (full list there).
-5. **Plan today**: tasks and events, Open plan.
-6. **More**: Quick log (BP, sugar, weight, walk, dose, mood), I'm OK today, alerts setup, Ask hint, update and install
-   banners, week line.
+5. **Family** line: "Family: 2 of 3 OK today" plus the one thing that needs attention; opens Family (full list there).
+6. **Plan today**: tasks and events, Open plan.
+7. **More**: I'm OK today, alerts setup, Ask hint, update and install banners, week line.
 
 Weather leaves Next up except for a storm within 500 km (then Next up shows the storm). Simple mode: next dose (big
 Taken button), I'm OK, Call family, SOS, plus the weather action line.
