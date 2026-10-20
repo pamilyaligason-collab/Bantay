@@ -115,6 +115,16 @@ test('refill rows give the text the full row width at 360px', async ({ page }) =
   expect(ratios.every((x) => x > 0.5)).toBe(true)
 })
 
+test('a lab result opens as a dated list: no period, time-of-day or monthly average controls', async ({ page }) => {
+  await page.goto('/#health/metric/ldl')
+  await expect(page.getByTestId('recent')).toContainText('162')
+  await expect(page.getByRole('group', { name: 'Period' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Time of day' })).toHaveCount(0)
+  await expect(page.getByText('Monthly averages')).toHaveCount(0)
+  await page.goto('/#health/metric/bp_systolic')
+  await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
+})
+
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
