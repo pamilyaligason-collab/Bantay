@@ -3,7 +3,7 @@ import { manilaLocal, rainOutlook, rainWords, skyOf, weatherAction } from './her
 import { placeNameOf } from './placeName'
 import { useWeather } from './weather'
 
-export const WEATHER_HREF = '#safety/weather' // the existing Safety weather page; lane M4 moves this to #weather
+export const WEATHER_HREF = '#weather?from=action' // the one Weather screen (lane M4); from=action counts weather_opened_action
 
 /** Today's one compact weather card from the cached forecast: temperature, condition, place, the rain window when there is one, and an action line
  *  for heat or likely rain. Nothing is drawn until a temperature is known (never a made-up 0). */
