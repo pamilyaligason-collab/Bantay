@@ -9,6 +9,8 @@ import { DEFAULT_CAP, takeMessage } from './cap'
 import { addTask } from '../family/tasks'
 import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personChoices, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
+import { Icon } from '../shell/Icon'
+import { openScan } from '../scan/open'
 import { weatherSummary } from './weather'
 import { CAUTION, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
 import './assistant.css'
@@ -228,6 +230,7 @@ export default function Assistant() {
 
   const clearChat = () => { setItems([]); void clearHistory() }
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
+  const scan = () => { history.replaceState(null, ''); setOpen(false); openScan() }
   const go = (tab: string) => { history.replaceState(null, ''); setOpen(false); location.hash = tab }
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') return close()
@@ -300,8 +303,10 @@ export default function Assistant() {
               {CHIPS.map((c) => (
                 <button key={c.label} type="button" className="as-chip" disabled={busy && c.send} onClick={() => (c.send ? void send(c.text) : (setText(c.text), input.current?.focus()))}>{c.label}</button>
               ))}
+              <button type="button" className="as-chip" onClick={scan}>Scan a paper</button>
             </div>}
             <form className="as-form" onSubmit={(e) => { e.preventDefault(); void send() }}>
+              <button type="button" className="as-mic as-cam" aria-label="Scan a paper" onClick={scan}><Icon name="camera" /></button>
               <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
               {Mic.current && (
                 <button type="button" className="as-mic" aria-label={listening ? 'Stop listening' : 'Speak'} aria-pressed={listening} onClick={listen}>

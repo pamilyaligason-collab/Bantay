@@ -13,7 +13,20 @@ const PATHS = {
   cross: 'M9 3h6v6h6v6h-6v6H9v-6H3V9h6z',
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
   check: 'M5 12.5l4.5 4.5L19 7.5',
-  dl: 'M12 4v12M7 11l5 5 5-5M5 20h14'
+  dl: 'M12 4v12M7 11l5 5 5-5M5 20h14',
+  camera: 'M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zM12 10.5a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4z',
+  scan: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10',
+  crop: 'M7 3v14h14M3 7h14v14',
+  rotate: 'M20 12a8 8 0 1 1-2.6-5.9M20 4v4.5h-4.5',
+  photo: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
+  file: 'M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M8.5 13h7M8.5 16.5h7',
+  pdf: 'M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v5h5M8.5 17v-5h1.6a1.4 1.4 0 0 1 0 2.8H8.5',
+  upload: 'M12 16V4M7 9l5-5 5 5M5 20h14',
+  close: 'M6 6l12 12M18 6L6 18',
+  plus: 'M12 5v14M5 12h14',
+  trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6',
+  up: 'M6 15l6-6 6 6',
+  down: 'M6 9l6 6 6-6'
 } as const
 export type IconName = keyof typeof PATHS
 

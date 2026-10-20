@@ -11,6 +11,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@capacitor-mlkit/document-scanner": "8.2.1",
     "@capacitor/android": "8.5.3",
     "@capacitor/app": "8.1.2",
     "@capacitor/browser": "8.0.5",

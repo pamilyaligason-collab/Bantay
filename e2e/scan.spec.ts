@@ -1,0 +1,145 @@
+import { expect, test, type Page, type Route } from '@playwright/test'
+import { deflateSync } from 'node:zlib'
+
+// Scan a paper on the docs test page at #scan (docs-harness.html). Supabase is mocked with page.route. The "photo" is a generated
+// PNG (a light sheet on a dark table), never a real document.
+test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
+
+const API = 'https://docs.supabase.test/'
+const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
+
+function crc(buf: Buffer) {
+  let c = ~0
+  for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)) }
+  return ~c >>> 0
+}
+const chunk = (type: string, data: Buffer) => {
+  const t = Buffer.concat([Buffer.from(type), data])
+  const out = Buffer.alloc(12 + data.length)
+  out.writeUInt32BE(data.length, 0); t.copy(out, 4); out.writeUInt32BE(crc(t), 8 + data.length)
+  return out
+}
+function png(w: number, h: number) {
+  const raw = Buffer.alloc((w * 3 + 1) * h)
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const o = y * (w * 3 + 1) + 1 + x * 3
+    const sheet = x > w * 0.1 && x < w * 0.9 && y > h * 0.1 && y < h * 0.9
+    raw[o] = raw[o + 1] = raw[o + 2] = sheet ? (y % 20 < 3 ? 60 : 235) : 30
+  }
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))])
+}
+const photo = (name: string) => ({ name, mimeType: 'image/png', buffer: png(300, 400) })
+
+type Srv = { calls: string[]; docs: Record<string, unknown>[]; files: Record<string, unknown>[]; uploads: string[]; invokes: unknown[] }
+async function mock(page: Page): Promise<Srv> {
+  const s: Srv = { calls: [], docs: [], files: [], uploads: [], invokes: [] }
+  await page.addInitScript(() => {
+    localStorage.setItem('bantay.onboarded', '1')
+    const exp = Math.floor(Date.now() / 1000) + 36000
+    localStorage.setItem('docs-harness-auth', JSON.stringify({ access_token: 'a.b.c', refresh_token: 'r', token_type: 'bearer', expires_in: 36000, expires_at: exp, user: { id: 'u1', aud: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' } }))
+  })
+  const json = (route: Route, body: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', headers: cors, body: JSON.stringify(body) })
+  await page.route(API + '**', async (route) => {
+    const req = route.request()
+    const url = new URL(req.url())
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
+    const p = url.pathname
+    if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id') ? [{ id: 'p-self', display_name: 'Test Person' }] : [])
+    if (p.startsWith('/rest/v1/carers')) return json(route, [])
+    if (p.startsWith('/rest/v1/documents') && req.method() === 'POST') { s.calls.push('documents'); s.docs.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
+    if (p.startsWith('/rest/v1/source_files') && req.method() === 'POST') { s.calls.push('source_files'); s.files.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
+    if (p.startsWith('/rest/v1/')) return json(route, [])
+    if (p.startsWith('/storage/v1/object/records/') && req.method() === 'POST') {
+      const path = decodeURIComponent(p.replace('/storage/v1/object/records/', ''))
+      s.calls.push('upload'); s.uploads.push(path)
+      return json(route, { Key: 'records/' + path })
+    }
+    if (p.startsWith('/functions/v1/records-extract')) { s.calls.push('invoke'); s.invokes.push(req.postDataJSON()); return json(route, { ok: true }) }
+    return json(route, {}, 404)
+  })
+  return s
+}
+
+test('photo, crop, two pages, form, Save: pages queue, upload in order, the server is asked to read', async ({ page }) => {
+  const s = await mock(page)
+  await page.goto('/docs-harness.html#scan')
+  await expect(page.getByRole('heading', { level: 1, name: 'Scan a paper' })).toBeVisible()
+
+  // page 1
+  await page.getByTestId('scan-camera').setInputFiles(photo('one.png'))
+  await expect(page.getByTestId('corner-0')).toBeVisible()
+  const crop = await page.locator('.sc-crop').boundingBox()
+  const c0 = await page.getByTestId('corner-0').boundingBox()
+  // handles start 6% in and are at least 44px to touch
+  expect(c0!.width).toBeGreaterThanOrEqual(44)
+  expect(Math.round(((c0!.x + c0!.width / 2 - crop!.x) / crop!.width) * 100)).toBe(6)
+  await page.mouse.move(c0!.x + 22, c0!.y + 22)
+  await page.mouse.down()
+  await page.mouse.move(c0!.x + 22 + 20, c0!.y + 22 + 20, { steps: 4 })
+  await page.mouse.up()
+  const moved = await page.getByTestId('corner-0').boundingBox()
+  expect(moved!.x).toBeGreaterThan(c0!.x + 10)
+  await page.getByRole('button', { name: 'Rotate' }).click()
+  await expect(page.getByTestId('corner-0')).toBeVisible()
+  await page.screenshot({ path: process.env.SCAN_SHOTS ? `${process.env.SCAN_SHOTS}/crop.png` : undefined })
+  await page.getByRole('button', { name: 'Add page' }).click() // adds page 1 and opens the camera again
+
+  // page 2
+  await expect(page.getByTestId('scan-page')).toHaveCount(1)
+  await page.getByTestId('scan-camera').setInputFiles(photo('two.png'))
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByTestId('scan-page')).toHaveCount(2)
+  await page.getByRole('button', { name: 'Move page 2 up' }).click()
+  await page.getByRole('button', { name: 'Delete page 1' }).click()
+  await expect(page.getByTestId('scan-page')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Add page' }).click()
+  await page.getByTestId('scan-camera').setInputFiles(photo('three.png'))
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByTestId('scan-page')).toHaveCount(2)
+  await page.getByRole('button', { name: 'Continue' }).click()
+
+  // form
+  await page.getByRole('button', { name: 'Prescription' }).click()
+  await page.getByLabel('Date on the paper (optional)').fill('2026-03-04')
+  await page.screenshot({ path: process.env.SCAN_SHOTS ? `${process.env.SCAN_SHOTS}/form.png` : undefined })
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  await expect.poll(() => s.invokes.length).toBe(1)
+  expect(s.uploads).toHaveLength(2)
+  expect(s.uploads[0]).toMatch(/^p-self\/[0-9a-f-]{36}\/p01\.jpg$/)
+  expect(s.uploads[1]).toMatch(/\/p02\.jpg$/)
+  expect(s.docs).toHaveLength(1)
+  expect(s.docs[0]).toMatchObject({ kind: 'prescription', status: 'draft', person_id: 'p-self', doc_date: '2026-03-04' })
+  expect(s.files.map((f) => f.page_no)).toEqual([1, 2])
+  expect(s.invokes[0]).toEqual({ document_id: s.docs[0]!.id })
+  // order: every upload and row before the invoke
+  expect(s.calls[s.calls.length - 1]).toBe('invoke')
+  expect(s.calls.filter((c) => c === 'upload')).toHaveLength(2)
+  // the queue on the phone is empty once everything went up
+  const left = await page.evaluate(() => new Promise<number>((res) => {
+    const r = indexedDB.open('bantay-docs')
+    r.onsuccess = () => { const q = r.result.transaction('queue').objectStore('queue').count(); q.onsuccess = () => res(q.result) }
+  }))
+  expect(left).toBe(0)
+})
+
+test('offline: Save keeps the pages queued and nothing is sent', async ({ page, context }) => {
+  const s = await mock(page)
+  await page.goto('/docs-harness.html#scan')
+  await page.getByTestId('scan-file').setInputFiles(photo('one.png'))
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('button', { name: 'Me' })).toBeVisible() // the family list came while there was signal
+  await context.setOffline(true)
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#health/papers')
+  const queued = await page.evaluate(() => new Promise<{ page: number; pages: number; kind: string }[]>((res) => {
+    const r = indexedDB.open('bantay-docs')
+    r.onsuccess = () => { const q = r.result.transaction('queue').objectStore('queue').getAll(); q.onsuccess = () => res(q.result) }
+  }))
+  expect(queued).toHaveLength(1)
+  expect(queued[0]).toMatchObject({ page: 1, pages: 1, kind: 'lab' })
+  expect(s.calls).toEqual([])
+})
