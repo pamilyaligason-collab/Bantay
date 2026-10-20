@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, zoneAlert, type Wx } from './heroCards'
+import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, weatherAction, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -141,5 +141,20 @@ describe('rain timing', () => {
   })
   it('sky from weather code', () => {
     expect([0, 2, 45, 63, 96, undefined].map((c) => skyOf({ ...wx, code: c }))).toEqual(['clear', 'cloud', 'fog', 'rain', 'storm', undefined])
+  })
+})
+
+describe('weatherAction (Today and Simple mode action line)', () => {
+  const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', ...o })
+  it('heat from 33 C, rain from 60%, heat first, nothing otherwise', () => {
+    expect(weatherAction(w({ temp: 33 }))).toBe('Hot: drink water, avoid the noon sun')
+    expect(weatherAction(w({ temp: 32.9 }))).toBeNull()
+    expect(weatherAction(w({ rainPct: 60 }))).toBe('Rain likely, bring an umbrella')
+    expect(weatherAction(w({ rainPct: 59 }))).toBeNull()
+    expect(weatherAction(w({ temp: 35, rainPct: 90 }))).toBe('Hot: drink water, avoid the noon sun')
+  })
+  it('unknown temperature or no reading gives no line, never a guess', () => {
+    expect(weatherAction(w({ temp: null, rainPct: 90 }))).toBeNull()
+    expect(weatherAction(null)).toBeNull()
   })
 })

@@ -176,3 +176,13 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   })
   return out
 }
+
+export const HEAT_ACTION = 'Hot: drink water, avoid the noon sun'
+export const RAIN_ACTION = 'Rain likely, bring an umbrella'
+/** The one action line weather earns on Today and in Simple mode: heat first (33 C or more), then rain (60% or more). null when neither applies or the temperature is unknown. */
+export function weatherAction(w: Wx | null): string | null {
+  if (!w || w.temp == null) return null
+  if (w.temp >= HEAT_C) return HEAT_ACTION
+  if (w.rainPct != null && w.rainPct >= RAIN_HERO_PCT) return RAIN_ACTION
+  return null
+}

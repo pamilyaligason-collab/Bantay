@@ -3,12 +3,9 @@ import { createPortal } from 'react-dom'
 import { useKv } from '../safety/store'
 import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, type LogResult } from './actions'
 import QuickWalk from '../sensors/QuickWalk'
-import { isNative } from '../sensors/bridge'
-import { STATE_KEY } from '../sensors/health'
 import { parseDose } from './heroCards'
 
 const NO_MEDS: string[] = []
-const NO_STATE = { enabled: [] as string[] }
 
 const ICONS = {
   check: 'M5 12.5l4.5 4.5L19 7.5',
@@ -24,13 +21,14 @@ export function TodayIcon({ name, size = 22 }: { name: keyof typeof ICONS; size?
   return <svg className="td-ic" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
 }
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'dose' | 'mood' | 'more'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'dose' | 'mood'
 const PILLS: { id: Kind; label: string; icon: keyof typeof ICONS; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', aria: 'Log weight' },
   { id: 'walk', label: 'Walk', icon: 'walk', aria: 'Log a walk' },
-  { id: 'more', label: 'More', icon: 'more', aria: 'More to log: a dose or how you feel' }
+  { id: 'dose', label: 'Dose', icon: 'pill', aria: 'Log a medicine you took' },
+  { id: 'mood', label: 'Mood', icon: 'smile', aria: 'Log how you feel' }
 ]
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
@@ -61,14 +59,12 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick-log row of round buttons: BP, Sugar, Weight, Walk, and More (a dose taken, how you feel). Each opens a small sheet and ends with a toast. */
+/** Quick log: six buttons in a 3 x 2 grid (BP, Sugar, Weight, Walk, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const meds = useKv<string[]>('profile.medicines', NO_MEDS)
-  const st = useKv(STATE_KEY, NO_STATE)
-  const pills = isNative() && st.enabled.includes('steps') ? PILLS.filter((p) => p.id !== 'walk') : PILLS // the phone counts steps then
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
@@ -103,9 +99,9 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   return (
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
-        {pills.map((p) => (
+        {PILLS.map((p) => (
           <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
-            <span className="td-qc"><TodayIcon name={p.icon} size={24} /></span><span>{p.label}</span>
+            <TodayIcon name={p.icon} size={26} /><span>{p.label}</span>
           </button>
         ))}
       </div>
@@ -134,14 +130,6 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       {open === 'walk' && (
         <Sheet title="Walk" onClose={close} focusFirst={false}>
           <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />
-        </Sheet>
-      )}
-      {open === 'more' && (
-        <Sheet title="More to log" onClose={close}>
-          <div className="td-form">
-            <button type="button" className="td-opt" onClick={() => setOpen('dose')}>I took a medicine</button>
-            <button type="button" className="td-opt" onClick={() => setOpen('mood')}>How I feel</button>
-          </div>
         </Sheet>
       )}
       {open === 'dose' && (
