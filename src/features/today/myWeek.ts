@@ -157,8 +157,8 @@ export function sparkPoints(spark: (number | null)[], w: number, h: number, pad 
   return pts.map((p) => ({ x: pad + (p.i / Math.max(1, spark.length - 1)) * (w - 2 * pad), y: hi === lo ? h / 2 : h - pad - ((p.v - lo) / span) * (h - 2 * pad) }))
 }
 
-const BP_DRUGS = ['losartan', 'amlodipine', 'valsartan', 'telmisartan', 'lisinopril', 'enalapril', 'atenolol', 'metoprolol', 'carvedilol', 'bisoprolol', 'nifedipine', 'hydrochlorothiazide', 'candesartan', 'irbesartan', 'olmesartan', 'captopril', 'perindopril', 'ramipril', 'clonidine']
-const SUGAR_DRUGS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'linagliptin', 'pioglitazone', 'empagliflozin', 'dapagliflozin', 'insulin']
+const BP_DRUGS = ['losartan', 'amlodipine', 'valsartan', 'telmisartan', 'lisinopril', 'enalapril', 'atenolol', 'metoprolol', 'carvedilol', 'bisoprolol', 'nifedipine', 'hydrochlorothiazide', 'candesartan', 'irbesartan', 'olmesartan', 'captopril', 'perindopril', 'ramipril', 'clonidine', 'indapamide', 'felodipine', 'methyldopa'] // nudge only (H6): a reading reminder, never a dose rule
+const SUGAR_DRUGS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'linagliptin', 'pioglitazone', 'empagliflozin', 'dapagliflozin', 'insulin', 'glipizide', 'acarbose', 'canagliflozin']
 const has = (name: string, list: string[]) => { const n = normaliseDrug(name) ?? ''; return list.some((d) => n.includes(d)) }
 
 /** H6 nudge: "Next reading due: blood pressure" when this person takes a blood pressure (or sugar) medicine and logged no such reading in the last 7 days. null otherwise. */
