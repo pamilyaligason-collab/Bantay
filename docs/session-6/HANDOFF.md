@@ -4,9 +4,8 @@ No app code changes in this phase. Plan before code; Lloyd approves Parts 1-4 fi
 Public repo: no real names, health values, screenshots or keys here. Members below are anonymised.
 
 ## Access for the next session
-- Supabase: Bantay is project `wuakimpssycbtnmoexuc`, in a different Supabase org from the one the
-  claude.ai connector was authorised for (that one sees only two other projects). Re-authorise the
-  Supabase connector with the account/org that owns Bantay, then start a new session.
+- Supabase: project `wuakimpssycbtnmoexuc`; the connector reaches it (fixed 2026-10-20).
+- GitHub: Claude app installed on the repo (fixed 2026-10-20).
 - Google Drive works: folder "2026.10.19 screenshots" (22 phone shots) is readable.
 - Not reachable from the cloud: the vault, the laptop, and the two other projects' repos (ask Lloyd for the weather screen files or a screenshot).
 
@@ -27,11 +26,18 @@ Public repo: no real names, health values, screenshots or keys here. Members bel
 - No screen event for Ask; no card-open events; `at` is sync time, not tap time.
 - Plan item: emit those actions, add card-open names, add client time (small migration).
 
-## Still to run (docs/session-6/baseline-30d.sql)
-Q1 check-ins, Q3 scheduled medicines vs expected doses, Q4 readings per week, Q6 daily active people.
+## Baseline run 2026-10-20 (Supabase connector now reaches the project)
+Usage tracking started 2026-10-17, so the "30 days" window is really 4 days.
+- Q1 check-ins: admin 4 on 2 days; every other profile 0.
+- Q2/Q3 doses: `medications` has **0 rows** (all users), `meds_taken` 0 rows ever, while 19 prescriptions
+  were imported. Prescriptions never became scheduled medicines, so there is nothing to remind, show in
+  Next up, or log. This is the root cause of zero doses, not reluctance.
+- Q4 readings: none in the window. 64 readings exist from imports (2023-02 to 2026-10-06); none entered by hand since launch.
+- Q6 daily active people: 2, 4, 1, 1 (Oct 17-20).
+- Totals: 10 profiles, 5 sign-ins, 5 push subscriptions, 593 lab results, 192 documents, 0 appointments.
 
 ## Next
-1. Run Q1, Q3, Q4, Q6 (connector or Lloyd pastes results).
+1. Decide with Lloyd: turning imported prescriptions into scheduled medicines is the first habit fix.
 2. Read the 22 screenshots plus src/ screens; list what each does now.
 3. Primary-source licence/API table (PAGASA, PANaHON, NOAH, HazardHunterPH, Worldview, MedlinePlus Connect, openFDA/DailyMed, DOH/WHO, YouTube, Overpass).
 4. Then Parts 2-4 per the session brief.
