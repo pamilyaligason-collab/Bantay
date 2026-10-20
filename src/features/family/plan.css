@@ -4,6 +4,7 @@
 .fm-days small { font-size: 13px; color: var(--muted); font-weight: 600; }
 .fm-days b { font-size: 18px; }
 .fm-days i { position: absolute; bottom: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+.fm-days .fm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .bt .fm-days button[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 .bt .fm-days button[aria-pressed="true"] small { color: var(--on-green); opacity: .9; }
 .bt .fm-days button[aria-pressed="true"] i { background: var(--on-green); }

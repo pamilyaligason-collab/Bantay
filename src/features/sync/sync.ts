@@ -7,6 +7,7 @@ import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
+import { vdb } from '../health/visitsStore'
 import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
 import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
 
@@ -80,7 +81,7 @@ async function deadLetter(row: OutboxRow, code: string) {
 }
 
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
-  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes } as Record<string, Table<{ id?: number }, number>>)[t]
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes, appointments: vdb.appointments, prescriptions: vdb.followUps } as Record<string, Table<{ id?: number }, number>>)[t]
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
   const { url, key } = env()

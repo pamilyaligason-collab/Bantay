@@ -50,9 +50,12 @@ export const TABLES: Record<string, TableSpec> = {
   // The live medicine schedule (0014). Edits and soft deletes are full-row upserts on client_id, like the plan rows. origin and
   // edited_at are stamped by the server (converter / edit trigger), so they are read but never sent. App-made rows use status 'confirmed'.
   medications: {
-    fields: ['personId', 'name', 'genericName', 'strength', 'form', 'dose', 'schedule', 'asNeeded', 'perDay', 'stockQty', 'stockUnit', 'medStatus', 'startedOn', 'stoppedOn', 'status', 'deletedAt'],
+    fields: ['personId', 'name', 'genericName', 'strength', 'form', 'dose', 'schedule', 'asNeeded', 'perDay', 'stockQty', 'stockUnit', 'stockSetAt', 'medStatus', 'startedOn', 'stoppedOn', 'status', 'deletedAt'],
     onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at', pullOnly: ['origin', 'editedAt'], serverId: true
   },
+  // Doctor visits (0008): read-only here, nothing on this phone writes them. Follow-ups come from prescriptions.follow_up_on.
+  appointments: { fields: ['personId', 'startsAt', 'dueOn', 'provider', 'facility', 'purpose', 'apptStatus', 'sourcePrescriptionId', 'status'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at' },
+  prescriptions: { fields: ['personId', 'rxDate', 'prescriber', 'followUpOn', 'status'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at', serverId: true },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }
@@ -108,5 +111,7 @@ export const naturalKey: Record<string, (r: Obj) => string> = {
   family_tasks: (r) => `cid:${r.clientId}`,
   medications: (r) => `cid:${r.clientId}`,
   family_events: (r) => `cid:${r.clientId}`,
-  family_notes: (r) => `cid:${r.clientId}`
+  family_notes: (r) => `cid:${r.clientId}`,
+  appointments: (r) => `cid:${r.clientId}`,
+  prescriptions: (r) => `cid:${r.clientId}`
 }

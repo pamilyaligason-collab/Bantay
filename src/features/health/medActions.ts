@@ -42,7 +42,7 @@ export function buildSchedule(prev: unknown, times: string[], asNeeded: boolean)
 
 const blank = (s: string) => s.trim() || undefined
 const asObj = (s: unknown): Record<string, unknown> => (s && typeof s === 'object' && !Array.isArray(s) ? { ...(s as Record<string, unknown>) } : { v: 1, times: Array.isArray(s) ? s : [] })
-const FIELDS = ['genericName', 'strength', 'form', 'dose', 'schedule', 'asNeeded', 'perDay', 'stockQty', 'stockUnit', 'medStatus', 'startedOn', 'stoppedOn', 'status'] as const
+const FIELDS = ['genericName', 'strength', 'form', 'dose', 'schedule', 'asNeeded', 'perDay', 'stockQty', 'stockUnit', 'stockSetAt', 'medStatus', 'startedOn', 'stoppedOn', 'status'] as const
 
 /** Local row + outbox upsert of what changed. `mode` 'delete' removes the local copy and sends deleted_at; 'restore' sends deleted_at null. */
 async function write(old: Medication | null, next: Medication, mode: 'save' | 'delete' | 'restore' = 'save'): Promise<Medication> {
@@ -108,3 +108,9 @@ export function confirmStillTaking(m: Medication): Promise<Medication> {
 export function deleteMedication(m: Medication): Promise<Medication> { void track('action', 'med_deleted'); return write(m, m, 'delete') }
 /** Undo of a delete: the same row (same client id) comes back and the server gets deleted_at null. */
 export const restoreMedication = (m: Medication): Promise<Medication> => write(null, m, 'restore')
+
+/** Refill: "I counted N left" (or bought more) at `at`. Days left count down from here; perDay is saved when given (a medicine with no daily use cannot be counted). */
+export function setStock(m: Medication, qty: number, opts: { perDay?: number; unit?: string; at?: Date } = {}): Promise<Medication> {
+  void track('action', 'med_edited')
+  return write(m, { ...m, stockQty: Math.max(0, qty), stockSetAt: (opts.at ?? new Date()).toISOString(), ...(opts.perDay != null ? { perDay: opts.perDay } : {}), ...(opts.unit ? { stockUnit: opts.unit } : {}) })
+}

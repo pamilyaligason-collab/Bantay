@@ -33,7 +33,7 @@ describe('Health overview', () => {
   it('shows the headline, the body map values and a tappable latest list', async () => {
     render(<Health />)
     await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Blood pressure needs a look this week'))
-    const bpNode = await screen.findByRole('link', { name: /^BP 124\/79 A bit high/ })
+    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 A bit high/ })
     expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
     expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy() // unknown stays unknown
     fireEvent.click(document.querySelector('[data-test="bp_systolic"]')!)
@@ -59,6 +59,47 @@ describe('Health overview', () => {
     expect(row.querySelector('.hv-dot.prev')).toBeTruthy()
   })
 
+  it('My KPIs show the latest reading with its time; the body map says it is the 7-day average', async () => {
+    render(<Health />)
+    const kpis = await screen.findByTestId('kpis')
+    const tile = kpis.querySelector('[data-kpi="bp_systolic"]') as HTMLElement
+    expect(within(tile).getByText('124/79')).toBeTruthy() // latest, not the 130/84 average on the body map
+    expect(tile.textContent).toMatch(/yesterday/)
+    expect(tile.getAttribute('href')).toBe('#health/metric/bp_systolic')
+    expect(screen.getByTestId('avg-note').textContent).toMatch(/7-day average/)
+  })
+
+  it('Vitals has a Latest | Average | Normal toggle that changes what is shown', async () => {
+    render(<Health />)
+    await screen.findByRole('link', { name: /^BP 130/ })
+    const row = () => document.querySelector('[data-test="bp_systolic"]') as HTMLElement
+    expect(screen.getByRole('button', { name: 'Latest' }).getAttribute('aria-pressed')).toBe('true')
+    expect(within(row()).getByText('124')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Average' }))
+    expect(screen.getByRole('button', { name: 'Average' }).getAttribute('aria-pressed')).toBe('true')
+    expect(within(row()).getByText('130')).toBeTruthy() // average of 124 and 136
+    expect(within(row()).getByText('7-day average')).toBeTruthy()
+    expect(screen.queryByRole('switch', { name: 'Previous' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Normal' }))
+    const normal = screen.getByTestId('normal-rows')
+    expect(within(normal).getByText('70 to 100 mg/dL')).toBeTruthy()
+    expect(within(normal).getByText('60 to 100 bpm')).toBeTruthy()
+    expect(within(normal).getByText(/Normal is under 120 over 80/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Latest' }))
+    expect(within(row()).getByText('124')).toBeTruthy()
+  })
+
+  it('Learn, Refills, Doctor visits and Papers are reachable from the overview', async () => {
+    render(<Health />)
+    const hrefs = async (name: RegExp) => (await screen.findByRole('link', { name })).getAttribute('href')
+    expect(await hrefs(/^Health library/)).toBe('#health/library')
+    expect(await hrefs(/^Videos/)).toBe('#health/videos')
+    expect(await hrefs(/^Refills/)).toBe('#health/refill')
+    expect(await hrefs(/^Doctor visits/)).toBe('#health/visits')
+    expect(await hrefs(/^Papers · /)).toBe('#health/papers')
+    expect((await screen.findByRole('link', { name: /^Papers · / })).textContent).toMatch(/Papers · (Add your first paper|\d+ of \d+ papers? checked)/)
+  })
+
   it('empty state: dimmed figure and exactly one call to action', async () => {
     await hdb.readings.clear()
     render(<Health />)
@@ -72,7 +113,7 @@ describe('Health overview', () => {
 
   it('list rows keep the status and a sparkline; range text lives on the metric screen', async () => {
     render(<Health />)
-    await screen.findByRole('link', { name: /^BP 124/ })
+    await screen.findByRole('link', { name: /^BP 130\/84/ })
     const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
     expect(within(row).getByText('High')).toBeTruthy()
     expect(row.querySelector('.hv-state.above')?.textContent).toContain('Above range')
@@ -177,14 +218,51 @@ describe('Metric detail', () => {
     location.hash = '#health/metric/bp_systolic'
     render(<Health />)
     expect(await screen.findByRole('heading', { level: 1, name: 'Blood pressure, top number' })).toBeTruthy()
-    expect((await screen.findByRole('button', { name: 'This week' })).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(screen.getByRole('button', { name: 'This month' }))
-    expect(screen.getByRole('button', { name: 'This month' }).getAttribute('aria-pressed')).toBe('true')
+    expect((await screen.findByRole('button', { name: 'This month' })).getAttribute('aria-pressed')).toBe('true') // 30 days is the default
+    fireEvent.click(screen.getByRole('button', { name: 'This week' }))
+    expect(screen.getByRole('button', { name: 'This week' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByTestId('metric-chart')).toBeTruthy()
     expect(within(screen.getByTestId('monthly')).getAllByText(/readings?$/).length).toBeGreaterThan(0)
     expect(screen.getByText(/General guide: Under 120/)).toBeTruthy()
     expect(screen.getByText(/AHA, Understanding Blood Pressure Readings/)).toBeTruthy()
     expect(screen.getByText(/not medical advice/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
+  })
+
+  it('morning / evening toggle filters the readings list; the chart shows the normal band', async () => {
+    await hdb.readings.clear()
+    const at = (ago: number, h: number) => { const d = new Date(Date.now() - ago * 86_400_000); d.setHours(h, 0, 0, 0); return d.toISOString() }
+    await hdb.readings.bulkAdd([
+      { personId: 'p1', test: 'bp_systolic', value: 120, unit: 'mmHg', takenAt: at(1, 7) },
+      { personId: 'p1', test: 'bp_systolic', value: 138, unit: 'mmHg', takenAt: at(2, 20) }
+    ])
+    location.hash = '#health/metric/bp_systolic'
+    render(<Health />)
+    await screen.findByTestId('metric-chart')
+    expect(document.querySelector('.mc-band')).toBeTruthy()
+    const list = () => screen.getByTestId('recent')
+    expect(within(list()).getAllByText(/mmHg/)).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Evening' }))
+    expect(within(list()).getAllByText(/mmHg/)).toHaveLength(1)
+    expect(within(list()).getByText(/138/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Morning' }))
+    expect(within(list()).getByText(/120/)).toBeTruthy()
+  })
+
+  it('Add reading: previews the colour and line, then saves through logReading (two rows for blood pressure)', async () => {
+    location.hash = '#health/metric/bp_systolic'
+    render(<Health />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Add reading' }))
+    fireEvent.change(screen.getByLabelText('Top'), { target: { value: '138' } })
+    fireEvent.change(screen.getByLabelText('Bottom'), { target: { value: '86' } })
+    const prev = await screen.findByTestId('reading-preview')
+    expect(prev.getAttribute('data-state')).toBe('above')
+    expect(prev.textContent).toMatch(/A bit high.*Rest for 5 minutes/)
+    fireEvent.click(screen.getByRole('button', { name: 'Save reading' }))
+    await waitFor(async () => expect(await hdb.readings.where('test').equals('bp_diastolic').count()).toBe(3))
+    const rows = await hdb.readings.where('test').equals('bp_systolic').toArray()
+    expect(rows.some((r) => r.value === 138)).toBe(true)
+    expect(await db.outbox.where('table').equals('readings').count()).toBe(2)
   })
 
   it('a metric with no readings says how to fill it', async () => {

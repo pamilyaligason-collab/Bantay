@@ -58,9 +58,10 @@ export default function Plan() {
     <>
       <div className="fm-days" role="group" aria-label="Day of this week">
         {strip.map((d) => (
-          <button type="button" key={d.day} aria-pressed={view === d.day} aria-label={`${d.dow} ${d.num}${d.today ? ', today' : ''}, ${d.open === 0 ? 'nothing open' : `${d.open} open`}`} onClick={() => setView(d.day)}>
-            <small aria-hidden="true">{d.dow}</small>
-            <b aria-hidden="true">{d.num}</b>
+          <button type="button" key={d.day} aria-pressed={view === d.day} onClick={() => setView(d.day)}>
+            <small>{d.dow}</small>{' '}
+            <b>{d.num}</b>
+            <span className="fm-sr">{`${d.today ? ', today' : ''}, ${d.open === 0 ? 'nothing open' : `${d.open} open`}`}</span>
             {d.open > 0 && <i aria-hidden="true" />}
           </button>
         ))}

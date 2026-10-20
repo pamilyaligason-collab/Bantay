@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom'
 import { useDialog } from '../docs/useDialog'
 import { latestByTest } from '../health/ranges'
 import { useHealthData } from '../records/useHealthData'
+import { useMedications } from '../health/useMedications'
+import { articleHref } from '../health/library/medline'
+import { DRUG_NUDGE_NOTE, medicinesActingHere, SYSTEM_INFO, yourNumbers } from './systemInfo'
 import content from './content.json'
 import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
 import { systemCounts, systemStatus, type SystemCount } from './status'
@@ -63,6 +66,10 @@ export default function ExploreScreen() {
   const [open, setOpen] = useState<Part | null>(null)
   const { readings, thresholds, personId } = useHealthData()
   const counts = systemCounts(latestByTest(readings), (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`))
+  const meds = useMedications(personId)
+  const info = SYSTEM_INFO[sysId]
+  const nums = yourNumbers(sysId, latestByTest(readings))
+  const acting = medicinesActingHere(meds, sysId)
   const parts = PARTS.filter((p) => p.system === sysId)
   const [vx, vy, vw, vh] = VIEW[sysId]!
   const label = SYSTEMS.find((s) => s.id === sysId)!.label
@@ -85,6 +92,24 @@ export default function ExploreScreen() {
         <h2 className="an-sys">{label}</h2>
         {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
       </div>
+      {info && (
+        <section className="card an-info" aria-label={`About ${label}`} data-testid="system-info">
+          <p className="an-what">{info.what[0]}<br />{info.what[1]}</p>
+          {(nums || info.metric) && (
+            <p className="an-line"><b>Your numbers</b>{' '}
+              {nums ? <a href={`#health/metric/${nums.code}`}>{nums.text}</a> : info.metric ? <a href={`#health/metric/${info.metric}`}>Open the chart</a> : null}
+            </p>
+          )}
+          {acting.length > 0 && (
+            <div className="an-line" data-testid="acting-here">
+              <b>Medicines that act here</b>
+              <ul>{acting.map((a) => <li key={a.name}>{a.name}: {a.effect}</li>)}</ul>
+              <small className="an-note">{DRUG_NUDGE_NOTE}</small>
+            </div>
+          )}
+          <p className="an-line"><a href={articleHref(info.learnKind, info.learn)}>Learn more: {info.learn}</a></p>
+        </section>
+      )}
       <div className="an-main">
         <div className="an-rail" role="group" aria-label="Body systems">
           {SYSTEMS.map((s) => {
@@ -93,7 +118,7 @@ export default function ExploreScreen() {
             return (
               <button key={s.id} type="button" className="an-rb" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
                 <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d={ICON[s.id]} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                {n > 0 && <span className="an-badge" data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true">{n}</span>}
+                {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
               </button>
             )
           })}

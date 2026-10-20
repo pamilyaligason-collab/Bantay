@@ -73,6 +73,7 @@
 .an-rb { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .an-rb[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .an-badge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 11px; background: var(--card2); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--ground); }
+.an-badge::after { content: attr(data-n); } /* drawn by CSS: the button's name is the system, and axe compares visible text with the name */
 .an-badge[data-tone="warn"] { background: var(--amber); color: #2B1D00; }
 .an-glow { position: absolute; width: 32%; aspect-ratio: 1; min-width: 76px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; background: radial-gradient(circle, color-mix(in srgb, var(--glow) 95%, transparent), color-mix(in srgb, var(--glow) 45%, transparent) 45%, transparent 70%); --glow: var(--ok); }
 .an-glow[data-tone="warn"] { --glow: var(--amber); animation: an-pulse 2.6s ease-in-out infinite; }

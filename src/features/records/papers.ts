@@ -10,6 +10,11 @@ export const progressText = (checked: number, total: number) => {
   const t = Math.max(0, Math.floor(total))
   return `${Math.min(t, Math.max(0, Math.floor(checked)))} of ${t} ${t === 1 ? 'paper' : 'papers'} checked`
 }
+/** "3 of 5 papers checked" (the Health overview row): papers, not single results. No papers at all: an invitation. */
+export const papersLine = (checked: number, total: number) => {
+  const t = Math.max(0, Math.floor(total))
+  return t === 0 ? 'Add your first paper' : `${Math.min(t, Math.max(0, Math.floor(checked)))} of ${t} ${t === 1 ? 'paper' : 'papers'} checked`
+}
 /** Whole-number percent for a progress bar. */
 export const progressPct = (checked: number, total: number) => (total > 0 ? Math.min(100, Math.round((Math.max(0, checked) / total) * 100)) : 0)
 

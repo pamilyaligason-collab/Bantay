@@ -8,6 +8,7 @@ import { selfIdOrCached } from '../sync/profile'
 import { MEDS_CURSOR } from './useMedicationRows'
 import { dayOf, remindable, parseSchedule, reminderId, toMinutes } from './meds'
 import { clock, medSlots } from './model'
+import { DOSE_ACTION_TYPE, handleReminderAction, registerReminderActions } from './reminderActions'
 import { LANG_KEY, loadLang, t } from '../../lib/i18n'
 
 /** Daily local dose reminders for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids,
@@ -74,6 +75,7 @@ function bindTap() {
     void Promise.resolve(LocalNotifications.addListener('localNotificationActionPerformed', (a) => {
       const kind = (a?.notification?.extra as { kind?: string } | undefined)?.kind
       if (kind === 'dose') void track('action', 'reminder_opened')
+      void handleReminderAction(a as never).catch(() => undefined) // Taken / Snooze buttons (reminderActions.ts); a plain tap does nothing more
     })).catch(() => { tapBound = false })
   } catch { tapBound = false }
 }
@@ -87,19 +89,21 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
     const planned = await plannedReminders(medicines, selfId, opts.now)
     const ids = reminderIds(planned)
     const lang = await loadLang() // the reminder text is in the saved language; a change of language reschedules
-    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',') + (lang === 'en' ? '' : `#${lang}`)
+    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',') + (lang === 'en' ? '' : `#${lang}`) + '|act1' // act1: the reminders carry the Taken / Snooze / Open buttons
     const [oldIds, oldSig] = await Promise.all([db.kv.get(KEY_IDS), db.kv.get(KEY_SIG)])
     const had = Array.isArray(oldIds?.value) ? (oldIds!.value as number[]) : []
     if (oldSig?.value === sig && had.length === planned.length) return 'unchanged'
     if ((await LocalNotifications.checkPermissions()).display !== 'granted') return 'no-permission'
     if (had.length) await LocalNotifications.cancel({ notifications: had.map((id) => ({ id })) })
     if (planned.length) {
+      await registerReminderActions()
       await LocalNotifications.schedule({
         notifications: planned.map((p, i) => ({
           id: ids[i]!,
           title: t('med.title', {}, lang),
           body: t('med.body', { time: clock(p.at) }, lang),
-          extra: { kind: 'dose' },
+          extra: { kind: 'dose', at: p.at },
+          actionTypeId: DOSE_ACTION_TYPE,
           schedule: { on: { hour: Math.floor(p.at / 60), minute: p.at % 60 }, allowWhileIdle: true }
         }))
       })

@@ -7,8 +7,17 @@ import { LatestList } from '../features/health/LatestList'
 import { Medicines, MedicinesSummary } from '../features/health/Medicines'
 import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
 import MetricScreen from '../features/health/MetricScreen'
-import { bodyNodes, insightHeadline } from '../features/health/model'
+import { insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
+import { Kpis } from '../features/health/Kpis'
+import { HealthLinks } from '../features/health/HealthLinks'
+import Library from '../features/health/library/Library'
+import Article from '../features/health/library/Article'
+import Videos from '../features/health/library/Videos'
+import Refill from '../features/health/Refill'
+import Visits from '../features/health/Visits'
+import VisitSummary from '../features/health/VisitSummary'
+import { averageNodes } from '../features/health/vitals'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
 import { SubHeader } from '../features/shell/SubHeader'
@@ -18,6 +27,7 @@ import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
 import { useProfile } from '../features/setup/useProfile'
 
+const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
 const METRIC = /^#health\/metric\/([\w-]+)$/
 
@@ -32,6 +42,12 @@ export default function Health() {
   if (hash === '#health/body') return <ExploreScreen />
   if (hash === '#health/meds') return <MedsPage />
   if (hash === '#health/papers') return <Papers />
+  if (hash === '#health/library') return <Library />
+  if (hash === '#health/videos') return <Videos />
+  if (hash.startsWith('#health/library/')) return <Article rawKey={safeDecode(hash.slice('#health/library/'.length))} />
+  if (hash === '#health/refill') return <Refill />
+  if (hash === '#health/visits') return <Visits />
+  if (hash === '#health/summary') return <VisitSummary />
   return code ? <MetricScreen code={code} /> : <Overview />
 }
 
@@ -56,7 +72,7 @@ function Overview() {
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
   const raw = insightHeadline(latest, new Date(), familyOf)
   const head = raw
-  const nodes = useMemo(() => bodyNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
+  const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
   const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
   return (
@@ -75,6 +91,7 @@ function Overview() {
           {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
         </div>
       )}
+      {personId && <Kpis personId={personId} readings={readings} />}
       {ready && !blank && nodes.every((n) => n.empty) ? (
         <div className="card hv-novitals" data-testid="no-vitals">
           <h2 className="hv-nv-h">No vitals yet{name ? ` for ${name.split(' ')[0]}` : ''}</h2>
@@ -82,13 +99,18 @@ function Overview() {
           <a className="hv-cta" href={cta.href}>{cta.label}</a>
         </div>
       ) : (
-        <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
+        <>
+          <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
+          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My KPIs.</p>}
+        </>
       )}
       <a className="card hv-explore" href="#health/body">
         <span>Explore your body<small>See how each part works and when to see a doctor</small></span>
       </a>
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
       {personId && <MedicinesSummary personId={personId} />}
+      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="vitals" />}
+      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="labs" />}
+      {personId && <HealthLinks personId={personId} />}
     </>
   )
 }

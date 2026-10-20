@@ -14,7 +14,7 @@ describe('Explore rail', () => {
     data.readings = [r('bp_systolic', 150, null, 130), r('bp_diastolic', 95, null, 85)]
     const { container } = render(<ExploreScreen />)
     const heart = container.querySelector('.an-rb[aria-label="Heart and blood"]')!
-    expect(heart.querySelector('.an-badge')?.textContent).toBe('1')
+    expect(heart.querySelector('.an-badge')?.getAttribute('data-n')).toBe('1')
     expect(heart.querySelector('.an-badge')?.getAttribute('data-tone')).toBe('warn')
     fireEvent.click(heart)
     expect(screen.getByTestId('sys-status').textContent).toBe('1 result to look at')

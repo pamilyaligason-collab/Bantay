@@ -18,6 +18,8 @@ export interface Medication {
   /** Schedule shape v1 {"v":1,"times":["08:00"],...}; the legacy array form is tolerated (see health/meds.ts). */
   schedule?: unknown
   asNeeded?: boolean; perDay?: number; stockQty?: number; stockUnit?: string
+  /** When stockQty was counted (ISO). Days left count down from here (public.medications.stock_set_at, 0008). */
+  stockSetAt?: string
   medStatus?: MedStatus; startedOn?: string; stoppedOn?: string
   status?: string; origin?: string; editedAt?: string
 }
