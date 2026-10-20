@@ -25,7 +25,7 @@ Status: [x] done and verified, [~] in progress, [ ] not started.
 | 6 | Part 4b: usability script | PART-4.md | [x] |
 | 7 | Part 4c: build lanes (implementation plan) | docs/plans/2026-10-20-s6-build.md | [x] |
 | 8 | Final review (Opus): plan vs audit gaps, privacy scan of the diff | REVIEW section below | [x] |
-| 9 | Push, update PR #2, HANDOFF lines for the vault | PR #2 | [ ] |
+| 9 | Push, update PR #2, HANDOFF lines for the vault | PR #2 | [x] |
 
 ## Verification rules for this phase
 - Every claim about code cites `file:line`; every claim about data cites a read-only query run on 2026-10-20.
