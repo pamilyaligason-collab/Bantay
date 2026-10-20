@@ -1,5 +1,5 @@
 import { pickLocalSet, type LatLon } from '../location/geo'
-import { type Entry, ZONE_SET } from './entries'
+import { type Entry, FAMILY_SET, ZONE_SET } from './entries'
 
 type Dialable = Entry & { phone: string }
 
@@ -15,7 +15,7 @@ export function splitDial(entries: Entry[]): { groups: { name: string; items: Di
 }
 
 export const isLink = (e: Entry): e is Entry & { sourceUrl: string } => e.link === true && e.status !== 'UNKNOWN' && !!e.sourceUrl
-export const needsCheck = (e: Entry) => e.status === 'UNVERIFIED'
+export const needsCheck = (e: Entry) => e.status === 'UNVERIFIED' && !e.link
 export const CHECK_LABEL = 'number not yet confirmed'
 
 /** Where to look up the emergency number of a country we have no list for. Never a guessed number. */
@@ -52,6 +52,8 @@ export function planDial(pos: LatLon, entries: Entry[], fromGps: boolean): DialP
   if (pick.where !== 'abroad' && !(pick.where === 'area' && pick.area.id === 'texas')) sets.push({ id: 'ph', header: 'Philippines, national', entries: inSet(entries, 'ph') })
   sets.push({ id: 'ofw', header: 'Filipinos abroad (OFW)', entries: inSet(entries, 'ofw') })
   sets.push({ id: 'tele', header: 'Talk to a doctor by phone', entries: inSet(entries, 'tele') })
+  const family = inSet(entries, FAMILY_SET)
+  if (family.length) sets.push({ id: FAMILY_SET, header: 'Family-added', entries: family })
   return { where: pick.where, note, sets, noLocal: pick.where === 'ph' || (pick.where === 'area' && sets[0]!.entries.length === 0), abroad: pick.where === 'abroad' }
 }
 

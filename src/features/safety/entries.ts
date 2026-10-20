@@ -30,9 +30,45 @@ export const withOverrides = (seed: Entry[], o: Overrides): Entry[] => seed.map(
 export const googleGo = (lat: number, lon: number) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`
 export const osmUrl = (lat: number, lon: number) => `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`
 export const organicUrl = (lat: number, lon: number, name: string) => `om://map?v=1&ll=${lat},${lon}&n=${encodeURIComponent(name)}`
-/** The first number in a text such as "1553 / 1800-1888-1553", "1348 (abroad: +63 2 1348)" or "(02) 8426-1468 to 79". */
-export const firstNumber = (n: string) => n.split(/\s\/\s|\sto\s/)[0]!.replace(/\s*\([^)]*[A-Za-z][^)]*\)/g, '').trim()
-export const telHref = (n: string) => 'tel:' + firstNumber(n).replace(/[^0-9+]/g, '')
+/** The first number in a text such as "1553 / 1800-1888-1553", "1348 (abroad: +63 2 1348)" or "(02) 8426-1468 to 79".
+ *  A trailing extension ("loc. 4031", "local 1100") is cut off: it is not part of the number (see extensionOf). */
+const EXT = /\s*,?\s*\b(?:loc\.?|local)\s*(\d+)\b.*$/i
+const head = (n: string) => n.split(/\s\/\s|\sto\s/)[0]!
+export const firstNumber = (n: string) => head(n).replace(EXT, '').replace(/\s*\([^)]*[A-Za-z][^)]*\)/g, '').trim()
+/** The extension digits after "loc." or "local", or ''. */
+export const extensionOf = (n: string) => EXT.exec(head(n))?.[1] ?? ''
+/** The number to dial from abroad: the "abroad:" number when the entry gives one, else the first number with a leading 0 turned into +63. */
+export function abroadNumber(n: string): string {
+  const ab = /\(abroad:\s*([^)]*)\)/i.exec(head(n))?.[1]?.trim()
+  if (ab) return ab
+  const f = firstNumber(n)
+  const digits = f.replace(/[^0-9+]/g, '')
+  return digits.startsWith('0') ? '+63' + digits.slice(1) : f
+}
+/** The number as dialled: local format inside the Philippines, international when the person is abroad. */
+export const dialNumber = (n: string, abroad = false) => (abroad ? abroadNumber(n) : firstNumber(n))
+export const telHref = (n: string, abroad = false) => {
+  const ext = abroad ? '' : extensionOf(n)
+  return 'tel:' + dialNumber(n, abroad).replace(/[^0-9+]/g, '') + (ext ? ',' + ext : '')
+}
+
+/** Older hotline ids that are no longer in hotlines.json. A family number typed against one must not disappear. */
+const LEGACY_NAMES: Record<string, string> = {
+  'hl-tag911': 'Tagbilaran 911', 'hl-pdrrmo': 'Bohol PDRRMO', 'hl-prc-bohol': 'Red Cross Bohol', 'hl-bfp': 'Fire (BFP)', 'hl-pnp': 'Police (PNP)'
+}
+export const FAMILY_SET = 'family'
+/** Overrides keyed to an id the seed no longer has, and that carry a number, shown as family-added rows (set 'family'). */
+export function orphanRows(seed: Entry[], o: Overrides): Entry[] {
+  const known = new Set(seed.map((e) => e.id))
+  return Object.entries(o)
+    .filter(([id, p]) => !known.has(id) && typeof p?.phone === 'string' && p.phone.trim() !== '')
+    .map(([id, p]) => ({
+      id, zone: FAMILY_SET, group: 'Family-added', phone: null, status: 'FAMILY' as const, source: 'Added by the family', sourceUrl: null, date: '',
+      ...p, name: p.name ?? LEGACY_NAMES[id] ?? id.replace(/^hl-/, '').replace(/-/g, ' ')
+    }))
+}
+/** The seed with family edits, plus any family-added rows whose seed entry no longer exists. */
+export const withFamilyAdded = (seed: Entry[], o: Overrides): Entry[] => [...withOverrides(seed, o), ...orphanRows(seed, o)]
 
 export const hasPoint = (e: Entry): e is Entry & { lat: number; lon: number } => typeof e.lat === 'number' && typeof e.lon === 'number'
 

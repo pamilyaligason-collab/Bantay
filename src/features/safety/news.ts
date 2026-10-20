@@ -22,20 +22,32 @@ type Env = { VITE_SUPABASE_URL?: string; VITE_SUPABASE_PUBLISHABLE_KEY?: string 
 
 export const NEWS_MAX = 3
 
-/** Words that stay in capitals when an all-caps headline is turned into a sentence. */
-const KEEP_CAPS = new Set(['PAGASA', 'PHIVOLCS', 'NDRRMC', 'DOH', 'OCD', 'LGU', 'PNP', 'BFP', 'NCR', 'MMDA', 'DSWD', 'DILG', 'DepEd', 'PIA', 'US', 'USA', 'UN', 'WHO', 'TCWS', 'NGCP', 'GMA', 'ABS-CBN', 'COVID-19'])
+/** Words that keep their own capitals when an all-caps headline is turned into a sentence. Looked up in any case. */
+const KEEP_CAPS = new Map<string, string>(
+  ['PAGASA', 'PHIVOLCS', 'NDRRMC', 'DOH', 'OCD', 'LGU', 'PNP', 'BFP', 'NCR', 'MMDA', 'DSWD', 'DILG', 'DepEd', 'PIA', 'US', 'USA', 'UN', 'WHO', 'TCWS', 'NGCP', 'GMA', 'ABS-CBN', 'COVID-19'].map((w) => [w.toUpperCase(), w])
+)
 /** Place names that keep a capital letter. */
 const PLACES = new Set(['cebu', 'davao', 'manila', 'tagbilaran', 'bohol', 'santos', 'general', 'texas', 'philippines', 'luzon', 'visayas', 'mindanao', 'quezon', 'sarangani', 'cotabato', 'metro', 'mindoro', 'leyte', 'samar'])
+/** The word after one of these is a storm's name ("Typhoon Paeng"). */
+const STORM_LEAD = new Set(['typhoon', 'tropical storm', 'tropical depression'])
 const isShout = (t: string) => /[A-Z]{3}/.test(t) && t === t.toUpperCase()
+const cap = (w: string) => w.replace(/[a-z]/, (c) => c.toUpperCase())
+const letters = (w: string) => w.replace(/[^a-z ]/g, '')
 /** ALL CAPS headline -> sentence case ("HEAVY RAIN IN CEBU" -> "Heavy rain in Cebu"). Mixed-case titles are left alone. */
 export function sentenceCase(title: string): string {
   if (!isShout(title)) return title
-  const words = title.toLowerCase().replace(/\s+/g, ' ').trim().split(' ').map((w) => {
-    const bare = w.replace(/[^a-z0-9-]/g, '').toUpperCase()
-    return KEEP_CAPS.has(bare) ? w.toUpperCase() : PLACES.has(bare.toLowerCase()) ? w.replace(/[a-z]/, (c) => c.toUpperCase()) : w
+  const src = title.toLowerCase().replace(/\s+/g, ' ').trim().split(' ')
+  const words = src.map((w, i) => {
+    const m = /^([^a-z0-9]*)([a-z0-9-]+?)(['’]s)?([^a-z0-9]*)$/.exec(w)
+    if (!m) return w
+    const pre = m[1] ?? '', core = m[2] ?? '', poss = m[3] ?? '', post = m[4] ?? ''
+    const keep = KEEP_CAPS.get(core.toUpperCase())
+    if (keep) return pre + keep + poss + post
+    if (PLACES.has(core)) return pre + cap(core) + poss + post
+    const lead = STORM_LEAD.has(letters(src[i - 1] ?? '')) || STORM_LEAD.has(letters(`${src[i - 2] ?? ''} ${src[i - 1] ?? ''}`))
+    return lead ? pre + cap(core) + poss + post : w
   })
-  const out = words.join(' ')
-  return out.replace(/(^|[.!?]\s+)([a-z])/g, (_m, pre: string, c: string) => pre + c.toUpperCase())
+  return words.join(' ').replace(/(^|[.!?]\s+)([a-z])/g, (_m, pre: string, c: string) => pre + c.toUpperCase())
 }
 
 const mine = (n: NewsItem, zone: string | null | undefined) => n.zone == null || n.zone === zone

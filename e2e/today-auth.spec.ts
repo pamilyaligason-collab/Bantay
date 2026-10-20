@@ -18,7 +18,7 @@ async function mock(page: Page) {
   await page.addInitScript(([token, u]) => {
     localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: u }))
   }, [jwt(), user] as const)
-  await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ current: { time: '2026-10-20T10:00', temperature_2m: 34.2, weather_code: 2 }, daily: { precipitation_probability_max: [70] }, hourly: { time: [], precipitation_probability: [] } }) }))
+  await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ current: { time: '2026-10-20T10:00', temperature_2m: 34.2, relative_humidity_2m: 70, weather_code: 2 }, daily: { precipitation_probability_max: [70] }, hourly: { time: [], precipitation_probability: [] } }) }))
   await page.route(`${API}/**`, async (route) => {
     const req = route.request()
     const url = new URL(req.url())
@@ -87,7 +87,7 @@ test('signed in: Next up for me and Ma, weather action, My week tiles, family li
   await page.reload()
   await expect(page.getByRole('heading', { name: /Time for Losartan|Not taken|Losartan/ }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: /1 medicine to check/ })).toHaveAttribute('href', '#health/meds')
-  await expect(page.getByText('Hot: drink water, avoid the noon sun')).toBeVisible()
+  await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
   const week = page.getByRole('region', { name: 'My week' }).or(page.locator('section[aria-labelledby="t-myweek"]'))
   await expect(week.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
   await expect(week.getByRole('link', { name: /Steps a day/ })).toContainText('goal 6,000')
@@ -107,7 +107,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible()
     await seedWeek(page)
     await page.reload()
-    await expect(page.getByText('Hot: drink water, avoid the noon sun')).toBeVisible()
+    await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
     await page.waitForTimeout(800)
     const scroller = () => page.evaluate(() => { const el = document.querySelector('.td-root')!; let p: Element | null = el; while (p && !(p.scrollHeight > p.clientHeight + 2 && /(auto|scroll)/.test(getComputedStyle(p).overflowY))) p = p.parentElement; return !!p })
     await scroller()

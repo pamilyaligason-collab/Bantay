@@ -103,11 +103,27 @@ describe('time zone', () => {
     expect(placeTimezone({ lat: 32.8, lon: -96.8 })).toBeUndefined()
     expect(placeTimezone({ lat: 32.8, lon: -96.8 }, 'America/Chicago')).toBe('America/Chicago')
   })
-  it('Today keeps working: Wx hourly times are shifted to Manila wall clock', () => {
+  it('Today keeps the place wall clock: Wx hourly times are the place time, with its offset and zone, not Manila', () => {
     const fc = parseForecast(fixture({ now: NOW, offsetS: -5 * 3600, tz: 'America/Chicago' }), NOW.toISOString())!
     const wx = toWx(fc)
     expect(wx.temp).toBe(33)
-    expect(wx.hourly!.time[0]).toBe('2026-10-20T13:00') // 00:00 in Chicago is 13:00 in Manila
+    expect(wx.hourly!.time[0]).toBe('2026-10-20T00:00') // Chicago time, not Manila
+    expect(wx).toMatchObject({ utcOffset: -5 * 3600, tz: 'America/Chicago', offline: false })
     expect(wx.rainPct).toBe(30)
+  })
+})
+
+describe('forecast cache size', () => {
+  it('keeps the 5 most recently fetched places and drops the oldest', async () => {
+    for (let i = 0; i < 7; i++) {
+      const at = { lat: 10 + i, lon: 120 }
+      await getForecast(at, ok(fixture({ now: NOW, offsetS: 8 * 3600 })), { now: NOW.getTime() + i * 60_000 })
+      await new Promise((r) => setTimeout(r, 15)) // the prune runs after the write
+    }
+    const keys = (await db.kv.toArray()).map((r) => r.key).filter((k) => k.startsWith('weather.forecast.')).sort()
+    expect(keys).toHaveLength(5)
+    expect(keys).not.toContain(forecastKey({ lat: 10, lon: 120 }))
+    expect(keys).not.toContain(forecastKey({ lat: 11, lon: 120 }))
+    expect(keys).toContain(forecastKey({ lat: 16, lon: 120 }))
   })
 })

@@ -254,9 +254,9 @@ test('live weather: layer switch only changes overlay, storm tracker and links',
   await expect(main).toHaveAttribute('src', /overlay=rain&.*lat=9\.65&lon=123\.88/)
   await sec.getByRole('group', { name: 'Weather layer' }).getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
-  await expect(sec.getByText('Storms near the Philippines')).toBeVisible()
+  await expect(sec.getByText('Storms near you')).toBeVisible()
   await expect(sec.getByText(/No storm warnings for the Philippines/)).toBeVisible()
-  await expect(sec.locator('iframe[title^="Windy wind map of the Western"]')).toHaveAttribute('src', /zoom=4&overlay=wind.*lat=12\.00&lon=128\.00/)
+  await expect(sec.locator('iframe[title^="Windy wind map around"]')).toHaveAttribute('src', /zoom=5&overlay=wind.*lat=9\.65&lon=123\.88/)
   await expect(sec.getByRole('link', { name: /PAGASA bulletin/ })).toHaveAttribute('target', '_blank')
   await page.context().setOffline(true)
   await expect(sec.getByText('Maps need internet').first()).toBeVisible()
@@ -264,7 +264,6 @@ test('live weather: layer switch only changes overlay, storm tracker and links',
 
 
 // ---- Quick dial: one local set by place (PART-3 4.1) ----
-const headers = (page: import('@playwright/test').Page) => page.locator('.sf h2.sec').allTextContents()
 
 async function dialAt(page: import('@playwright/test').Page, context: import('@playwright/test').BrowserContext, lat: number, lon: number) {
   await context.grantPermissions(['geolocation'])
@@ -278,7 +277,7 @@ test('quick dial at the home zone: Tagbilaran set first, then national, OFW and 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#safety/dial')
   await expect(page.locator('h1')).toHaveText('Quick dial')
-  expect(await headers(page)).toEqual(['Your home area is Tagbilaran', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Your home area is Tagbilaran', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
   const local = page.getByRole('region', { name: 'Your home area is Tagbilaran' })
   await expect(local.getByRole('link', { name: /Call Gov\. Celestino Gallares Memorial Hospital/ })).toBeVisible()
   await expect(page.getByText('Davao City Central 911')).toHaveCount(0)
@@ -320,21 +319,21 @@ test('quick dial rows are one horizontal line each at 390px: no vertical text, C
 test('quick dial in Davao by GPS: only the Davao set, then national', async ({ page, context }) => {
   await dialAt(page, context, 7.07, 125.61)
   await expect(page.getByRole('region', { name: 'You are in Davao' })).toBeVisible()
-  expect(await headers(page)).toEqual(['You are in Davao', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.locator('.sf h2.sec')).toHaveText(['You are in Davao', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
   await expect(page.getByText('Tagbilaran City 911')).toHaveCount(0)
 })
 
 test('quick dial in the Philippines outside every list: national first, with the reason', async ({ page, context }) => {
   await dialAt(page, context, 17.6, 121.7)
   await expect(page.getByRole('status').filter({ hasText: 'You are outside our local lists' })).toBeVisible()
-  expect(await headers(page)).toEqual(['Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
   await expect(page.getByRole('link', { name: /Call National emergency, 911/ })).toBeVisible()
 })
 
 test('quick dial in Texas: the Texas set and OFW, no Philippine national', async ({ page, context }) => {
   await dialAt(page, context, 29.76, -95.37)
   await expect(page.getByRole('region', { name: 'You are in Texas' })).toBeVisible()
-  expect(await headers(page)).toEqual(['You are in Texas', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.locator('.sf h2.sec')).toHaveText(['You are in Texas', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
   await expect(page.getByRole('link', { name: /Call Emergency \(US\), 911/ })).toBeVisible()
   await expect(page.getByText('PhilHealth')).toHaveCount(0)
 })
@@ -342,10 +341,23 @@ test('quick dial in Texas: the Texas set and OFW, no Philippine national', async
 test('quick dial abroad (not Texas): OFW numbers and a link to an official list, no guessed local number', async ({ page, context }) => {
   await dialAt(page, context, 1.35, 103.82)
   await expect(page.getByRole('status').filter({ hasText: 'outside the Philippines' })).toBeVisible()
-  expect(await headers(page)).toEqual(['Filipinos abroad (OFW)', 'Talk to a doctor by phone', 'Emergency number where you are'])
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Filipinos abroad (OFW)', 'Talk to a doctor by phone', 'Emergency number where you are'])
   await expect(page.getByRole('link', { name: 'Emergency numbers by country' })).toHaveAttribute('href', /^https:\/\//)
-  await expect(page.getByRole('link', { name: /Call DMW-OWWA 24\/7 hotline/ })).toHaveAttribute('href', 'tel:1348')
+  await expect(page.getByRole('link', { name: /Call DMW-OWWA 24\/7 hotline/ })).toHaveAttribute('href', 'tel:+6321348')
+  await expect(page.getByRole('link', { name: /Call DMW central hotlines/ })).toHaveAttribute('href', 'tel:+63287221144')
   await expect(page.getByRole('link', { name: /Call National emergency/ })).toHaveCount(0)
+})
+
+test('Safety hub abroad (not Texas): no red Call 911, a Local emergency number link instead; Texas keeps 911', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 1.35, longitude: 103.82 })
+  await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
+  await page.goto('/#safety')
+  await expect(page.getByRole('link', { name: 'Local emergency number' })).toHaveAttribute('href', /^https:\/\//)
+  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveCount(0)
+  await context.setGeolocation({ latitude: 29.76, longitude: -95.37 })
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
 })
 
 test('storm tracker map is centred on my place, not 12N 128E', async ({ page, context }) => {

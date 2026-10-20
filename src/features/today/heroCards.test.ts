@@ -145,16 +145,20 @@ describe('rain timing', () => {
 })
 
 describe('weatherAction (Today and Simple mode action line)', () => {
-  const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', ...o })
-  it('heat from 33 C, rain from 60%, heat first, nothing otherwise', () => {
-    expect(weatherAction(w({ temp: 33 }))).toBe('Hot: drink water, avoid the noon sun')
-    expect(weatherAction(w({ temp: 32.9 }))).toBeNull()
-    expect(weatherAction(w({ rainPct: 60 }))).toBe('Rain likely, bring an umbrella')
-    expect(weatherAction(w({ rainPct: 59 }))).toBeNull()
-    expect(weatherAction(w({ temp: 35, rainPct: 90 }))).toBe('Hot: drink water, avoid the noon sun')
+  const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', humidity: 60, ...o })
+  const now = new Date('2026-10-19T02:00:00Z') // 10:00 in Manila
+  it('is the top line of the Weather screen actionLines(): heat index first, then rain, nothing otherwise', () => {
+    expect(weatherAction(w({ temp: 31, humidity: 65 }), now)).toBe('Avoid the noon sun. Drink water often.')
+    expect(weatherAction(w({ temp: 28, humidity: 60 }), now)).toBeNull() // heat index 31: Caution is not an action line
+    const hourly = { time: ['2026-10-19T12:00', '2026-10-19T13:00'], prob: [80, 70] }
+    expect(weatherAction(w({ hourly }), now)).toMatch(/^Rain likely 12-2 PM/)
+    expect(weatherAction(w({ temp: 36, humidity: 70, hourly }), now)).toMatch(/^Stay indoors/) // heat outranks rain
+  })
+  it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
+    expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()
   })
   it('unknown temperature or no reading gives no line, never a guess', () => {
-    expect(weatherAction(w({ temp: null, rainPct: 90 }))).toBeNull()
+    expect(weatherAction(w({ temp: null, rainPct: 90 }), now)).toBeNull()
     expect(weatherAction(null)).toBeNull()
   })
 })

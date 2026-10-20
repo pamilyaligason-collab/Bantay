@@ -5,11 +5,11 @@ import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { alertRef } from '../location/place'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
-import { manilaLocal, rainBody, rainOutlook, skyOf, type Wx } from '../today/heroCards'
+import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, type Alert, rankAlerts } from './alerts'
 import { coversHere, planDial, splitDial } from './dial'
-import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withOverrides } from './entries'
+import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
 import { hazardsFor, hazardStatus } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
@@ -42,7 +42,7 @@ export function TileIcon({ name }: { name: string }) {
 
 /** Numbers a person can call from Quick dial here: the one local set plus national, OFW and teleconsult sets that show for this place. */
 export function dialCount(place: Place, overrides: Overrides): number {
-  const plan = planDial(place.weather, withOverrides(hotlines as Entry[], overrides), place.source !== 'zone')
+  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), place.source !== 'zone')
   return plan.sets.reduce((n, s) => n + splitDial(s.entries).groups.reduce((m, g) => m + g.items.length, 0), 0)
 }
 
@@ -50,7 +50,7 @@ export function dialCount(place: Place, overrides: Overrides): number {
 export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
   if (!wx) return 'Rain, wind and clouds'
   const sky = skyOf(wx)
-  const local = manilaLocal(now)
+  const local = wxLocal(wx, now)
   const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, local, sky === 'rain' || sky === 'storm') : undefined
   return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
 }

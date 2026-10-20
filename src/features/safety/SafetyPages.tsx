@@ -12,7 +12,7 @@ import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { getMember, onAuthChange } from '../auth/session'
 import { ABROAD_SOURCE, CHECK_LABEL, coversHere, isLink, needsCheck, planDial, splitDial } from './dial'
-import { type Entry, firstNumber, OVERRIDES_KEY, type Overrides, telHref, withOverrides } from './entries'
+import { dialNumber, type Entry, firstNumber, OVERRIDES_KEY, type Overrides, telHref, withFamilyAdded } from './entries'
 import EntryList, { EditForm } from './EntryList'
 import { hazardLabel, hazardsFor } from './hazardCards'
 import { ALERTS_KEY, type Alert } from './alerts'
@@ -85,21 +85,21 @@ function SourceInfo({ e }: { e: Entry }) {
   )
 }
 
-function DialRow({ e, onInfo }: { e: Entry; onInfo: (e: Entry) => void }) {
+function DialRow({ e, onInfo, abroad }: { e: Entry; onInfo: (e: Entry) => void; abroad: boolean }) {
   const link = isLink(e)
   return (
     <li className="sf-dialrow">
       <span className="sf-dt">
         <b>{e.name}</b>
         <span className="sub">
-          {e.group}{e.phone ? ` · ${firstNumber(e.phone)}` : ''}
-          {needsCheck(e) && <span className="sf-chk" role="img" aria-label={CHECK_LABEL} title={CHECK_LABEL}>check</span>}
+          {e.group}{e.phone ? ` · ${dialNumber(e.phone, abroad)}` : ''}
+          {!link && needsCheck(e) && <span className="sf-chk" role="img" aria-label={CHECK_LABEL} title={CHECK_LABEL}>check</span>}
         </span>
       </span>
       <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => onInfo(e)}>i</button>
       {link
         ? <a className="sf-callbtn" href={e.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${e.name}`}>Open</a>
-        : <a className="sf-callbtn" href={telHref(e.phone!)} aria-label={`Call ${e.name}, ${firstNumber(e.phone!)}`}>Call</a>}
+        : <a className="sf-callbtn" href={telHref(e.phone!, abroad)} aria-label={`Call ${e.name}, ${dialNumber(e.phone!, abroad)}`}>Call</a>}
     </li>
   )
 }
@@ -117,7 +117,7 @@ function QuickDial({ place }: { place: Place }) {
     const off = onAuthChange(check)
     return () => { live = false; off() }
   }, [])
-  const plan = planDial(place.weather, withOverrides(hotlines as Entry[], overrides), place.source !== 'zone')
+  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), place.source !== 'zone')
   return (
     <div className="sf">
       {plan.note && <p className="sf-note" role="status">{plan.note}</p>}
@@ -131,7 +131,7 @@ function QuickDial({ place }: { place: Place }) {
             <h2 className="sec">{set.header}</h2>
             {!items.length && !links.length && !missing.length && <p className="sub" style={{ margin: '0 4px' }}>{admin ? <>No local numbers yet. <a href="#admin">Add them</a></> : 'No local numbers yet. Ask an admin to add them.'}</p>}
             <ul className="sf-dial-list">
-              {[...items, ...links].map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} />)}
+              {[...items, ...links].map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} abroad={plan.abroad} />)}
               {missing.map((e) => (
                 <li key={e.id} className="sf-dialrow sf-dialrow-add">
                   <span className="sf-dt"><b>{e.name}</b><span className="sub">Not confirmed yet</span></span>

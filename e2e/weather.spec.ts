@@ -90,3 +90,28 @@ test('weather offline: the cached forecast shows "as of"', async ({ page, contex
   await expect(page.locator('.wx-temp')).toHaveText('33°')
   await expect(page.getByText(/as of \d{1,2}:\d\d [AP]M/)).toBeVisible()
 })
+
+test('weather: the live map and Zoom Earth follow my place (Home 2 = Conel), not 12N 128E', async ({ page }) => {
+  await skipOnboarding(page)
+  await mockForecast(page)
+  await page.goto('/#weather')
+  await page.getByRole('button', { name: 'Home 2' }).click()
+  await page.getByRole('button', { name: 'Open live map' }).click()
+  await expect(page.getByRole('link', { name: /Zoom Earth/ })).toHaveAttribute('href', /#view=6\.20,125\.19,5z/)
+})
+
+test('today weather card: from=action only when an action line shows, and it is the Weather screen line', async ({ page }) => {
+  await skipOnboarding(page)
+  await mockForecast(page) // 33 C at 70% humidity: Danger, so an action line shows
+  await page.goto('/#today')
+  const card = page.getByRole('region', { name: 'Weather' }).getByRole('link')
+  await expect(card).toHaveAttribute('href', '#weather?from=action')
+  await expect(card).toContainText('Stay indoors 11 AM-3 PM')
+})
+
+test('today weather card: a calm day opens plain #weather', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: new Date(), temp: 26, humidity: 50, hourlyProb: () => 5, uvMax: 3 }) }))
+  await page.goto('/#today')
+  await expect(page.getByRole('region', { name: 'Weather' }).getByRole('link')).toHaveAttribute('href', '#weather')
+})

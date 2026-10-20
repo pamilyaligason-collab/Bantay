@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { HOME_ZONES, type LatLon } from '../location/geo'
 import { useLocation, usePlaceFrom } from '../location/useLocation'
 import { track } from '../admin/events'
-import { ALERTS_KEY, distanceKm, type Alert } from '../safety/alerts'
+import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
-import { zoneAlert, ALERT_RADIUS_KM } from '../today/heroCards'
 import { SubHeader } from '../shell/SubHeader'
+import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
 import { HEAT_BANDS, heatBand, heatIndexC } from './heatIndex'
 import LiveMapToggle from './LiveMapToggle'
+import { weatherWarning } from './warning'
 import './weather.css'
 
 type Sel = 'me' | 'h1' | 'h2'
@@ -105,12 +106,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
   const band = heatBand(hi)
   const next6 = hoursFrom(fc, 6, now)
   const rain6 = next6.length ? Math.max(...next6.map((h) => h.prob ?? 0)) : null
-  const warn = useMemo(() => {
-    const official = zoneAlert(alerts, point)
-    if (official) return { kind: official.kind, title: official.title, doNow: official.doNow }
-    const air = alerts.find((a) => a.kind === 'air' && !a.stale && (a.lat == null || a.lon == null || distanceKm(point, { lat: a.lat, lon: a.lon }) <= ALERT_RADIUS_KM))
-    return air ? { kind: air.kind, title: air.title, doNow: air.doNow } : null
-  }, [alerts, point])
+  const warn = useMemo(() => weatherWarning(alerts, point), [alerts, point])
   const lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
   const main = lines[0]
   const strip = hoursFrom(fc, 25, now).filter((_, i) => i % 3 === 0)
@@ -118,7 +114,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
   const lo = Math.min(...days.map((d) => d.min ?? Infinity))
   const hiAll = Math.max(...days.map((d) => d.max ?? -Infinity))
   const span = Math.max(1, hiAll - lo)
-  const asOf = clockIn(fc.fetchedAt, fc.tz)
+  const asOf = clockIn(fc.fetchedAt, placeTimezone(point, fc.tz))
 
   return (
     <>

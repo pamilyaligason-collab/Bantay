@@ -57,7 +57,20 @@ export function parseForecast(j: unknown, fetchedAt: string): Forecast | null {
   }
 }
 
-export const forecastKey = (p: LatLon) => `weather.forecast.${r2(p.lat)},${r2(p.lon)}`
+const KEEP_PLACES = 5 // forecasts kept for at most this many places; the oldest is dropped
+const PREFIX = 'weather.forecast.'
+
+/** Keep only the `keep` most recently fetched forecasts (a phone that travels would otherwise cache every place it has been). */
+export async function pruneForecasts(keep = KEEP_PLACES): Promise<void> {
+  try {
+    const rows = await db.kv.where('key').startsWith(PREFIX).toArray()
+    const age = (r: { value: unknown }) => { const t = Date.parse((r.value as Forecast | undefined)?.fetchedAt ?? ''); return Number.isNaN(t) ? 0 : t }
+    const old = rows.sort((a, b) => age(b) - age(a)).slice(keep)
+    if (old.length) await db.kv.bulkDelete(old.map((r) => r.key))
+  } catch { /* the cache is a convenience */ }
+}
+
+export const forecastKey = (p: LatLon) => `${PREFIX}${r2(p.lat)},${r2(p.lon)}`
 
 export async function readCached(p: LatLon, now = Date.now()): Promise<Forecast | null> {
   try {
@@ -84,7 +97,7 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
       if (!res.ok) throw new Error(String(res.status))
       const fc = parseForecast(await res.json(), new Date(now).toISOString())
       if (!fc) throw new Error('bad forecast')
-      void db.kv.put({ key, value: fc }).catch(() => undefined)
+      void db.kv.put({ key, value: fc }).then(() => pruneForecasts()).catch(() => undefined)
       return { fc, fromCache: false }
     } catch (e) {
       if (cached) return { fc: cached, fromCache: true }
