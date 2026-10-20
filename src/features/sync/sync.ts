@@ -27,6 +27,7 @@ export interface SyncState { ready: boolean; signedIn: boolean; offline: boolean
 
 const BACKOFF_KEY = 'sync.backoff'
 export const DEAD_KEY = 'sync.dead'
+export const LAST_PULL_KEY = 'sync.lastPull'
 const cursorKey = (t: string) => `sync.cursor.${t}`
 
 class SyncError extends Error {
@@ -301,6 +302,7 @@ async function run(force: boolean) {
     const err = await push(token)
     if (err) throw err
     await pull(token)
+    await db.kv.put({ key: LAST_PULL_KEY, value: Date.now() }) // when this phone last had fresh data (the offline bar says so)
     await db.kv.delete(BACKOFF_KEY)
     setState({ offline: false })
   } catch (e) {

@@ -2,9 +2,8 @@ import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
 
-/** kv key: the last moment this phone knew it was online (ms). What an offline person is looking at is data from about then. */
-export const LAST_ONLINE_KEY = 'net.lastOnline'
-const REFRESH_MS = 60_000
+/** kv key written by sync.ts after each successful push and pull (ms): what an offline person is looking at is data from then. */
+export const LAST_ONLINE_KEY = 'sync.lastPull'
 
 const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
@@ -16,25 +15,21 @@ export function offlineText(since: number | null): string {
   return since == null ? 'Offline · showing saved data · will sync' : `Offline · showing data from ${clockText(since)} · will sync`
 }
 
-const stamp = (ms = Date.now()) => db.kv.put({ key: LAST_ONLINE_KEY, value: ms }).catch(() => undefined)
-
-/** Live: is the phone offline, and since when was the data last known fresh. Stamps the time while online so the bar has something true to say. */
+/** Live: is the phone offline, and when did the last successful sync finish (null when there has been none on this phone). */
 export function useOffline(): { offline: boolean; since: number | null } {
   const [offline, setOffline] = useState(isOffline)
   const [since, setSince] = useState<number | null>(null)
   useEffect(() => {
-    const on = () => { setOffline(false); void stamp() }
-    const off = () => { setOffline(true); setSince((s) => s ?? Date.now()); void stamp() } // lost the connection just now: data is from now
+    const on = () => setOffline(false)
+    const off = () => setOffline(true)
     window.addEventListener('online', on)
     window.addEventListener('offline', off)
-    if (!isOffline()) void stamp()
-    const t = setInterval(() => { if (!isOffline()) void stamp() }, REFRESH_MS)
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); clearInterval(t) }
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
   useEffect(() => {
     if (!offline) return
     let live = true
-    void db.kv.get(LAST_ONLINE_KEY).then((r) => { if (live && typeof r?.value === 'number') setSince(r.value) }).catch(() => undefined)
+    void db.kv.get(LAST_ONLINE_KEY).then((r) => { if (live) setSince(typeof r?.value === 'number' ? r.value : null) }).catch(() => undefined)
     return () => { live = false }
   }, [offline])
   return { offline, since }

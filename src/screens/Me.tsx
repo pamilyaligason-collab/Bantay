@@ -5,6 +5,7 @@ import { clearLastPerson, enablePasskey, forgetPhone, hasPasskeyFlag, loadFamily
 import { getMember, signOut, type Member } from '../features/auth/session'
 import { Icon } from '../features/shell/Icon'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
+import { Capacitor } from '@capacitor/core'
 import { useKv } from '../features/shell/useKv'
 import { isLang, LANG_KEY, LANGS, setLang, type Lang } from '../lib/i18n'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
@@ -141,7 +142,7 @@ export default function Me() {
           </div>
         </div>
         <div>
-          <div className="sh-grow"><b>Language</b><div className="sh-sub">Medicine reminders</div></div>
+          <div className="sh-grow"><b>Language</b><div className="sh-sub">Reminders and safety lines on this phone{Capacitor.isNativePlatform() ? '' : '. Reminders are on the Android app.'}</div></div>
           <div className="sh-seg" role="group" aria-label="Language">
             {LANGS.map((l) => <button key={l.id} type="button" aria-pressed={(isLang(lang) ? lang : 'en') === l.id} onClick={() => pickLang(l.id)}>{l.label}</button>)}
           </div>

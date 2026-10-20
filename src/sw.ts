@@ -19,7 +19,7 @@ self.addEventListener('push', (e) => {
   e.waitUntil(
     handlePush(raw, {
       claimNudge,
-      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.tag, icon: 'icon.svg' })
+      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.tag, icon: 'icon.svg', ...(n.silent ? { silent: true } : {}) })
     })
   )
 })

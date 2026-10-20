@@ -18,7 +18,7 @@ describe('t', () => {
   })
   it('fills placeholders and leaves unknown ones as written', () => {
     expect(t('med.body', { time: '8:00 AM' }, 'en')).toBe('It is 8:00 AM. Open Bantay to see what is due.')
-    expect(t('med.body', { time: '8:00 AM' }, 'fil')).toBe('8:00 AM na. Buksan ang Bantay para makita ang iinumin.')
+    expect(t('med.body', { time: '8:00 AM' }, 'fil')).toBe('8:00 AM na. Pakibuksan ang Bantay para makita ang dapat inumin.')
     expect(t('med.body', {}, 'en')).toContain('{time}')
   })
   it('no string carries a medicine name or a health value (B-7)', () => {

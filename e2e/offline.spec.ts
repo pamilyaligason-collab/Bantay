@@ -8,7 +8,7 @@ test('offline bar appears when the phone goes offline and goes when it is back',
   await context.setOffline(true)
   const bar = page.getByTestId('offline-bar')
   await expect(bar).toBeVisible()
-  await expect(bar).toHaveText(/^Offline · showing data from \d{1,2}:\d{2} (AM|PM) · will sync$/)
+  await expect(bar).toHaveText(/^Offline · showing (saved data|data from \d{1,2}:\d{2} (AM|PM)) · will sync$/)
   // it is a thin strip, not a wall: the page does not scroll sideways
   const wide = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(wide).toBe(0)

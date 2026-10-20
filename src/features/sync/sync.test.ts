@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, drain, enqueue } from '../../db'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { backoffMinutes, DEAD_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
+import { backoffMinutes, DEAD_KEY, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 import { track } from '../admin/events'
@@ -92,6 +92,19 @@ describe('push', () => {
     expect(JSON.parse(p.body!).client_id).toMatch(/^[0-9a-f-]{36}$/)
     expect(await db.outbox.count()).toBe(0)
     expect(clientIdOf(await hdb.readings.get(id))).toBe(JSON.parse(p.body!).client_id)
+  })
+
+  it('records the time of the last successful sync (the offline bar shows it), and not after a failed one', async () => {
+    mockFetch((c) => (c.method === 'GET' ? json([]) : new Response(null, { status: 201 })))
+    startSync(cfg())()
+    await syncNow()
+    const at = (await db.kv.get(LAST_PULL_KEY))?.value as number
+    expect(Math.abs(Date.now() - at)).toBeLessThan(5000)
+    await db.kv.put({ key: LAST_PULL_KEY, value: 123 })
+    mockFetch(() => { throw new TypeError('offline') })
+    await enqueue('readings', 'insert', reading)
+    await syncNow(true)
+    expect((await db.kv.get(LAST_PULL_KEY))?.value).toBe(123)
   })
 
   it('a retry after a network failure reuses the same client_id (idempotent)', async () => {

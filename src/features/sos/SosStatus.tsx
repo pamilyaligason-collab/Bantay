@@ -1,3 +1,4 @@
+import { t, type StrKey } from '../../lib/i18n'
 import { smsNumber } from './sms'
 import type { SosContact } from './contacts'
 
@@ -13,23 +14,23 @@ export function statusRows(contacts: SosContact[], opened: boolean): StatusRow[]
   })
 }
 
-const LABEL: Record<ContactState, string> = { sent: 'Sent', ready: 'Ready', 'no-number': 'No number' }
+const LABEL: Record<ContactState, StrKey> = { sent: 'sos.sent', ready: 'sos.ready', 'no-number': 'sos.noNumber' }
 
 export function SosStatus({ contacts, opened }: { contacts: SosContact[]; opened: boolean }) {
   const rows = statusRows(contacts, opened)
   if (!rows.length) return null
   return (
     <div className="sos-status" data-testid="sos-status">
-      <b>Text prepared for</b>
+      <b>{t('sos.title')}</b>
       <ul>
         {rows.map((r) => (
           <li key={r.phone + r.name}>
             <span className="sos-who">{r.name}<span className="sub">{r.phone}</span></span>
-            <span className="sos-st-chip" data-state={r.state}>{LABEL[r.state]}</span>
+            <span className="sos-st-chip" data-state={r.state}>{t(LABEL[r.state])}</span>
           </li>
         ))}
       </ul>
-      <p className="sub">Sent means your text app opened with the message. Bantay cannot see if it was delivered.</p>
+      <p className="sub">{t('sos.note')}</p>
     </div>
   )
 }

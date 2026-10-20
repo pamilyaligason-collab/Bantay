@@ -155,7 +155,7 @@ describe('reminder language (M7b)', () => {
     expect(sched()[0]).toMatchObject({ title: 'Medicine time', body: 'It is 8:00 AM. Open Bantay to see what is due.' })
     await db.kv.put({ key: 'lang', value: 'fil' })
     expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('scheduled')
-    expect(sched()[0]).toMatchObject({ title: 'Oras na ng gamot', body: '8:00 AM na. Buksan ang Bantay para makita ang iinumin.' })
+    expect(sched()[0]).toMatchObject({ title: 'Oras na ng gamot', body: '8:00 AM na. Pakibuksan ang Bantay para makita ang dapat inumin.' })
     expect(JSON.stringify(sched())).not.toMatch(/Drug/)
     expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('unchanged')
     await db.kv.put({ key: 'lang', value: 'en' })

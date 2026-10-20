@@ -77,6 +77,13 @@ select pg_temp.ok(not pg_temp.fails($$select public.dose_watch_claim('10000000-0
 select pg_temp.ok((select count(*) from public.dose_watch_sent) = 5, 'the service role reads');
 reset role;
 
+-- ===== release: the function gives a claim back when every send failed on the network =====
+set role service_role;
+delete from public.dose_watch_sent where person_id = '10000000-0000-0000-0000-0000000000b1' and day = '2026-10-22' and slot = '08:00';
+select public.dose_watch_claim('10000000-0000-0000-0000-0000000000b1', '2026-10-22', '08:00') as reclaimed \gset
+reset role;
+select pg_temp.ok(:'reclaimed' = 't', 'service role can release a claim, and the next run claims the slot again');
+
 -- ===== prune: only claims older than 7 days go =====
 update public.dose_watch_sent set sent_at = now() - interval '8 days' where day = '2026-10-21';
 select public.dose_watch_prune() as pruned \gset

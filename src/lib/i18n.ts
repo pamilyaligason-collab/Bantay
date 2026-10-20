@@ -24,26 +24,37 @@ const EN = {
   'dial.home': 'Your home area is {place}',
   'dial.ph': 'Philippines, national',
   'dial.ofw': 'Filipinos abroad (OFW)',
-  'dial.tele': 'Talk to a doctor by phone'
+  'dial.tele': 'Talk to a doctor by phone',
+  // SOS status (sos/SosStatus.tsx): "Text opened" is all we can know, never "delivered"
+  'sos.title': 'Text prepared for',
+  'sos.sent': 'Text opened',
+  'sos.ready': 'Ready',
+  'sos.noNumber': 'No number',
+  'sos.note': 'Text opened means your text app opened with the message. Bantay cannot see if it was sent or delivered.'
 } as const
 export type StrKey = keyof typeof EN
 
-// Every Filipino string below: review by a native speaker.
+// Every Filipino string below: review by a native speaker. Polite register (po, kayo, inyo) throughout.
 const FIL: Record<StrKey, string> = {
   'med.title': 'Oras na ng gamot', // review by a native speaker
-  'med.body': '{time} na. Buksan ang Bantay para makita ang iinumin.', // review by a native speaker
-  'wx.heat.caution': 'Uminom ng tubig palagi.', // review by a native speaker
-  'wx.heat.extremeCaution': 'Iwasan ang araw sa tanghali. Uminom ng tubig palagi.', // review by a native speaker
-  'wx.heat.danger': 'Manatili sa loob mula 11 AM hanggang 3 PM. Uminom ng tubig palagi. Kumustahin ang mga nakatatanda.', // review by a native speaker
-  'wx.heat.extremeDanger': 'Manatili sa loob at magpalamig. Tumawag sa 911 kung may nalilito o nanghihina.', // review by a native speaker
-  'wx.rain': 'Malamang umulan {when} ({pct}%)', // review by a native speaker
-  'wx.uv': 'Matindi ang araw: sumilong at magsuot ng sombrero 10 AM-3 PM', // review by a native speaker
+  'med.body': '{time} na. Pakibuksan ang Bantay para makita ang dapat inumin.', // review by a native speaker
+  'wx.heat.caution': 'Uminom po ng tubig nang madalas.', // review by a native speaker
+  'wx.heat.extremeCaution': 'Iwasan po ang araw sa tanghali. Uminom ng tubig nang madalas.', // review by a native speaker
+  'wx.heat.danger': 'Manatili po sa loob mula 11 AM hanggang 3 PM. Uminom ng tubig nang madalas. Kumustahin po ang mga nakatatanda.', // review by a native speaker
+  'wx.heat.extremeDanger': 'Manatili po sa loob at magpalamig. Tumawag sa 911 kung may taong nalilito o nanghihina.', // review by a native speaker
+  'wx.rain': 'Malamang uulan {when} ({pct}%)', // review by a native speaker
+  'wx.uv': 'Matindi ang araw: sumilong po at magsuot ng sombrero 10 AM-3 PM', // review by a native speaker
   'dial.title': 'Mabilis na tawag', // review by a native speaker
-  'dial.here': 'Nasa {place} ka', // review by a native speaker
-  'dial.home': 'Ang lugar ng iyong tahanan ay {place}', // review by a native speaker
+  'dial.here': 'Nasa {place} po kayo', // review by a native speaker
+  'dial.home': 'Ang inyong lugar: {place}', // review by a native speaker
   'dial.ph': 'Pilipinas, pambansa', // review by a native speaker
   'dial.ofw': 'Mga Pilipino sa ibang bansa (OFW)', // review by a native speaker
-  'dial.tele': 'Kausapin ang doktor sa telepono' // review by a native speaker
+  'dial.tele': 'Makipag-usap po sa doktor sa telepono', // review by a native speaker
+  'sos.title': 'Pinaghandaan ng text', // review by a native speaker
+  'sos.sent': 'Bukas ang text', // review by a native speaker
+  'sos.ready': 'Handa na', // review by a native speaker
+  'sos.noNumber': 'Walang numero', // review by a native speaker
+  'sos.note': 'Ang ibig sabihin ng "Bukas ang text" ay nabuksan ang inyong text app na may mensahe. Hindi po makita ng Bantay kung naipadala o natanggap ito.' // review by a native speaker
 }
 
 export const STRINGS: Record<Lang, Record<StrKey, string>> = { en: EN, fil: FIL }

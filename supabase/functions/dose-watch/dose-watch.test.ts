@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildNotification } from '../../../src/features/notify/templates'
 import {
-  type Carer, doseWatchPayload, doseWatchText, dueSlots, firstName, type MedRow, type Port, recipients, reviewOverdue, runDoseWatch, scheduleTimes, type Sub, type TakenRow
+  type Carer, doseWatchPayload, doseWatchText, dueSlots, firstName, type MedRow, type Port, recipients, runDoseWatch, scheduleTimes, type Sub, type TakenRow
 } from './logic.ts'
 
 const NOW = Date.parse('2026-10-20T10:05:00+08:00')
@@ -33,12 +33,27 @@ describe('dueSlots', () => {
       expect(dueSlots([m], [], NOW)).toEqual([])
     }
   })
-  it('skips a medicine whose "Still taking it?" review is more than 3 days old (D5)', () => {
+  it('skips every medicine still in review (not yet confirmed), whatever the date', () => {
     const s = (since: string) => ({ v: 1, times: ['08:00'], review: true, review_since: since })
-    expect(dueSlots([med({ schedule: s('2026-10-18') })], [], NOW)).toHaveLength(1)
-    expect(dueSlots([med({ schedule: s('2026-10-17') })], [], NOW)).toEqual([])
-    expect(reviewOverdue(s('2026-10-17'), '2026-10-20')).toBe(true)
-    expect(reviewOverdue({ v: 1, times: [] }, '2026-10-20')).toBe(false)
+    expect(dueSlots([med({ schedule: s('2026-10-20') })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ schedule: s('2026-10-01') })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ schedule: { v: 1, times: ['08:00'], review: false } })], [], NOW)).toHaveLength(1)
+  })
+  it('skips needs_time, not started yet and already stopped medicines', () => {
+    expect(dueSlots([med({ schedule: { v: 1, times: ['08:00'], needs_time: true } })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ started_on: '2026-10-21' })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ started_on: '2026-10-20' })], [], NOW)).toHaveLength(1)
+    expect(dueSlots([med({ stopped_on: '2026-10-19' })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ stopped_on: '2026-10-20' })], [], NOW)).toHaveLength(1)
+  })
+  it('an old dose row with no slot and no medication id covers one slot by normalised name', () => {
+    const two = med({ name: 'Metformin 500 mg tab', schedule: { v: 1, times: ['06:00', '08:00'] } })
+    const old = (name: string, medication_id: string | null = null) => took({ medication_id, slot: null, name, taken_at: '2026-10-20T07:00:00+08:00' })
+    expect(dueSlots([two], [old('METFORMIN 850mg')], NOW)).toEqual([{ personId: 'p1', day: '2026-10-20', slot: '08:00' }]) // earliest covered
+    expect(dueSlots([two], [old('Metformin'), old('metformin')], NOW)).toEqual([])
+    expect(dueSlots([two], [old('Losartan')], NOW)).toHaveLength(2)
+    expect(dueSlots([med({ name: 'Metformin' })], [old('x', 'm1')], NOW)).toEqual([]) // by medication id, slot null
+    expect(dueSlots([med({ name: 'Metformin' })], [{ ...old('Metformin'), taken_at: '2026-10-19T07:00:00+08:00' }], NOW)).toHaveLength(1) // another day
   })
   it('two medicines in one slot make one alert; one open medicine keeps it open', () => {
     const two = [med(), med({ id: 'm2' })]
@@ -61,10 +76,16 @@ describe('text and recipients (B-7)', () => {
     expect(firstName('Maria Santos')).toBe('Maria')
     expect(firstName('  ')).toBe('Someone')
     expect(firstName('J0hn <b>')).toBe('Jhn')
+    expect(firstName('Lola Rosa Santos')).toBe('Lola Rosa')
+    expect(firstName('Dr. Cruz')).toBe('Dr. Cruz')
+    expect(firstName('Lola')).toBe('Lola')
+    expect(firstName('Niño Reyes')).toBe('Niño')
+    expect(firstName('Maria Lourdes')).toBe('Maria')
+    expect([...firstName('Ate ' + '😀'.repeat(2) + 'é'.repeat(40))].length).toBeLessThanOrEqual(24)
     expect(doseWatchText('Maria')).toBe('Maria has not marked a medicine (2 h).')
     const n = buildNotification(doseWatchPayload('Maria Santos'))!
     expect(n.body).toBe('Maria has not marked a medicine (2 h).')
-    expect(n.cls).toBe('health')
+    expect(n.cls).toBe('carer')
   })
   it('the payload holds only t and the first name, never a medicine', () => {
     const p = doseWatchPayload('Maria Santos')
@@ -92,6 +113,7 @@ function fakePort(over: { meds?: MedRow[]; taken?: TakenRow[]; status?: number |
     subs: async (ids) => ids.map((u) => ({ user_id: u, endpoint: `https://push/${u}`, p256dh: 'k', auth: 'a' })),
     claim: async (p, d, s) => { const k = `${p}|${d}|${s}`; if (claimed.has(k)) return false; claimed.add(k); return true },
     push: async (sub, payload) => { pushes.push({ sub, payload }); return over.status === undefined ? 201 : over.status },
+    release: async (p, d, sl) => { claimed.delete(`${p}|${d}|${sl}`) },
     removeSub: async (e) => { removed.push(e) }
   }
   return { port, pushes, removed }
@@ -101,7 +123,7 @@ describe('runDoseWatch', () => {
   it('sends one push per writer carer device with the generic payload', async () => {
     const f = fakePort()
     const r = await runDoseWatch(f.port, NOW)
-    expect(r).toEqual({ due: 1, claimed: 1, sent: 2, removed: 0 })
+    expect(r).toEqual({ due: 1, claimed: 1, sent: 2, removed: 0, released: 0 })
     expect(f.pushes.map((p) => p.sub.user_id)).toEqual(['w1', 'w2'])
     expect(f.pushes[0]!.payload).toEqual({ t: 'dose_watch', n: 'Maria' })
   })
@@ -112,6 +134,15 @@ describe('runDoseWatch', () => {
     const hour = await runDoseWatch(f.port, NOW + 60 * 60_000)
     expect(again.sent + hour.sent).toBe(0)
     expect(f.pushes).toHaveLength(2)
+  })
+  it('releases the claim when every send failed on the network, so the next run retries; not when only some did', async () => {
+    const f = fakePort({ status: null })
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ sent: 0, released: 1, claimed: 0 })
+    const again = fakePort({ status: 201 })
+    expect((await runDoseWatch(again.port, NOW)).sent).toBe(2)
+    const f2 = fakePort({ status: null })
+    await runDoseWatch(f2.port, NOW)
+    expect(await runDoseWatch(f2.port, NOW)).toMatchObject({ released: 1 }) // retried once per run
   })
   it('sends nothing when the dose was marked, and drops a gone subscription', async () => {
     const quiet = fakePort({ taken: [took()] })

@@ -31,14 +31,25 @@ describe('SosStatus', () => {
   it('lists the contacts with Sent and never claims delivery', () => {
     render(<SosStatus contacts={two} opened />)
     expect(screen.getByText('Ana')).toBeTruthy()
-    expect(screen.getByText('Sent')).toBeTruthy()
+    expect(screen.getByText('Text opened')).toBeTruthy()
     expect(screen.getByText('No number')).toBeTruthy()
-    expect(document.body.textContent).toMatch(/cannot see if it was delivered/)
-    expect(document.body.textContent).not.toMatch(/Delivered\b/)
+    expect(document.body.textContent).toMatch(/cannot see if it was sent or delivered/)
+    expect(document.body.textContent).not.toMatch(/\bSent\b/)
   })
   it('renders nothing with no contacts', () => {
     render(<SosStatus contacts={[]} opened />)
     expect(screen.queryByTestId('sos-status')).toBeNull()
+  })
+})
+
+describe('SosStatus in Filipino', () => {
+  it('uses the Filipino chip and note', async () => {
+    const { setLang } = await import('../../lib/i18n')
+    await setLang('fil')
+    render(<SosStatus contacts={two} opened />)
+    expect(screen.getByText('Bukas ang text')).toBeTruthy()
+    expect(document.body.textContent).toMatch(/Hindi po makita ng Bantay/)
+    await setLang('en')
   })
 })
 
@@ -48,7 +59,7 @@ describe('SosScreen', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: { ...loc, href: '' } })
     render(<SosScreen onClose={() => undefined} />)
     const list = await screen.findByTestId('sos-status')
-    await waitFor(() => expect(list.textContent).toContain('Sent'))
+    await waitFor(() => expect(list.textContent).toContain('Text opened'))
     expect(list.textContent).toContain('Ana')
     fireEvent.click(screen.getByRole('button', { name: /safe now/ }))
     expect(screen.getByText('Glad you are safe')).toBeTruthy()

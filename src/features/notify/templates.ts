@@ -1,6 +1,6 @@
 // B-7: notifications never carry health values. Every notification is one of these fixed templates,
 // picked by id. There is no free-text path: buildNotification rejects any payload but exactly {t: id}.
-export type Cls = 'safety' | 'health'
+export type Cls = 'safety' | 'health' | 'carer' // carer: a family member's missed dose, sent by dose-watch; own rules in push.ts
 export type Tab = 'today' | 'health' | 'records' | 'family' | 'safety'
 type Tpl = { cls: Cls; title: string; body: string; tab: Tab }
 
@@ -26,16 +26,18 @@ export interface Built {
   title: string
   body: string
   data: { tab: Tab }
+  /** Show without sound or vibration (set by handlePush in quiet hours). */
+  silent?: boolean
 }
 
 /** The one payload with a second field: carers' "<first name> has not marked a medicine (2 h)." Sent by the dose-watch function.
- *  Only a first name rides along (letters, at most 24); never a medicine or a value (B-7). */
-const NAME = /^[\p{L}.'’-]{1,24}$/u
+ *  Only a first name (or a title and name) rides along (letters, at most 24); the tag is per person so two alerts both show; never a medicine or a value (B-7). */
+const NAME = /^\p{L}[\p{L}.'’-]*( [\p{L}.'’-]+)?$/u // a first name, or a title and a name ("Lola Rosa"): letters (incl. ñ), one space, dot
 function doseWatch(payload: object): Built | null {
   const keys = Object.keys(payload).sort()
   const n = (payload as { n?: unknown }).n
-  if (keys.length !== 2 || keys[0] !== 'n' || keys[1] !== 't' || typeof n !== 'string' || !NAME.test(n)) return null
-  return { id: 'dose_missed', tag: 'dose_watch', cls: 'health', title: 'Medicine not marked', body: `${n} has not marked a medicine (2 h).`, data: { tab: 'health' } }
+  if (keys.length !== 2 || keys[0] !== 'n' || keys[1] !== 't' || typeof n !== 'string' || [...n].length > 24 || !NAME.test(n)) return null
+  return { id: 'dose_missed', tag: `dose_watch:${n}`, cls: 'carer', title: 'Medicine not marked', body: `${n} has not marked a medicine (2 h).`, data: { tab: 'health' } }
 }
 
 export function buildNotification(payload: unknown): Built | null {

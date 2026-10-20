@@ -21,17 +21,23 @@ describe('offlineText', () => {
 
 describe('OfflineBar', () => {
   it('is absent while online, appears when the phone goes offline, and goes when it is back', async () => {
+    await db.kv.put({ key: LAST_ONLINE_KEY, value: Date.parse('2026-10-20T02:42:00Z') }) // written by sync.ts after each successful pull
     render(<OfflineBar />)
     expect(screen.queryByTestId('offline-bar')).toBeNull()
     setOnline(false)
     act(() => { window.dispatchEvent(new Event('offline')) })
     expect(await screen.findByTestId('offline-bar')).toBeTruthy()
-    expect(screen.getByTestId('offline-bar').textContent).toMatch(/^Offline · showing data from \d{1,2}:\d{2} (AM|PM) · will sync$/)
+    await waitFor(() => expect(screen.getByTestId('offline-bar').textContent).toMatch(/^Offline · showing data from \d{1,2}:\d{2} (AM|PM) · will sync$/))
     setOnline(true)
     act(() => { window.dispatchEvent(new Event('online')) })
     await waitFor(() => expect(screen.queryByTestId('offline-bar')).toBeNull())
   })
-  it('opening the app already offline shows the last time it was online', async () => {
+  it('never synced on this phone: says saved data, no invented time', async () => {
+    setOnline(false)
+    render(<OfflineBar />)
+    await waitFor(() => expect(screen.getByTestId('offline-bar').textContent).toBe('Offline · showing saved data · will sync'))
+  })
+  it('opening the app already offline shows the last successful pull time', async () => {
     await db.kv.put({ key: LAST_ONLINE_KEY, value: Date.parse('2026-10-20T02:42:00Z') })
     setOnline(false)
     render(<OfflineBar />)
