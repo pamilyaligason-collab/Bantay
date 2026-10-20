@@ -3,7 +3,7 @@
 # Lloyd runs it from the repo root, dry run first:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-m0.ps1 -DryRun
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-m0.ps1
-# Rehearsed on a throwaway Postgres: supabase\tests\medications_rehearsal.sql (50 checks). Undo: 0014_medications_live.down.sql.
+# Rehearsed on a throwaway Postgres: supabase\tests\medications_rehearsal.sql (61 checks). Undo: 0014_medications_live.down.sql.
 # Stops at the first failure.
 param([switch]$DryRun)
 $ErrorActionPreference = 'Stop'

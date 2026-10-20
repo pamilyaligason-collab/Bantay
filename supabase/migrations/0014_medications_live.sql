@@ -35,7 +35,7 @@ create index if not exists meds_taken_medication on public.meds_taken (medicatio
 create or replace function public.normalise_drug(x text) returns text
   language sql immutable parallel safe set search_path = '' as
   $$ select nullif(btrim(regexp_replace(regexp_replace(regexp_replace(regexp_replace(lower(coalesce(x, '')),
-       '[0-9]+([.,][0-9]+)?\s*(mg|mcg|ug|g|ml|iu|units?|%)', ' ', 'g'),
+       '[0-9]+([.,][0-9]+)?\s*(mg|mcg|ug|g|ml|iu|units?|%)(\s*/\s*(ml|l|dose|tab))?(?![a-z])', ' ', 'g'),
        '\m(tab|tabs|tablet|tablets|cap|caps|capsule|capsules|syrup|susp|suspension|drop|drops|cream|ointment|oint|sachet|inhaler|neb|nebule|amp|ampule|vial)\M', ' ', 'g'),
        '[^a-z0-9]+', ' ', 'g'), '\s+', ' ', 'g')), '') $$;
 
@@ -50,6 +50,8 @@ create or replace function public.rx_times(f text) returns text[]
   language sql immutable parallel safe set search_path = '' as
   $$ select case
        when f is null or btrim(f) = '' then null
+       -- weekly, monthly or every-few-days doses are never turned into daily reminders: a person sets them
+       when lower(f) ~ '\m(week|weekly|wk|wks|month|monthly|other day|alternate days?)\M' or lower(f) ~ 'every\s*[2-9]\s*days?\M' then null
        when lower(f) ~ '\m(qid|q6h?|4x|four times|4 times)\M' or lower(f) ~ 'every\s*6\s*(h|hr|hrs|hour|hours)\M' then '{08:00,12:00,16:00,20:00}'::text[]
        when lower(f) ~ '\m(tid|q8h?|3x|thrice|three times|3 times)\M' or lower(f) ~ 'every\s*8\s*(h|hr|hrs|hour|hours)\M' then '{08:00,14:00,20:00}'::text[]
        when lower(f) ~ '\m(bid|q12h?|2x|twice|two times|2 times)\M' or lower(f) ~ 'every\s*12\s*(h|hr|hrs|hour|hours)\M' then '{08:00,20:00}'::text[]
@@ -70,13 +72,13 @@ create or replace function public.rx_days(d text) returns int
        when lower(d) ~ '([0-9]+)\s*(mo|month|months)\M' then (substring(lower(d) from '([0-9]+)\s*(?:mo|month|months)\M'))::int * 30
        else null end $$;
 
--- "Vitamin D 8:00 PM" -> {20:00}; 12-hour or 24-hour clock tokens.
+-- "Vitamin D 8:00 PM" -> {20:00}; 12-hour (am/pm, a.m./p.m., any case) or 24-hour clock tokens.
 create or replace function public.text_times(x text) returns text[]
   language sql immutable parallel safe set search_path = '' as
   $$ select array(
        select distinct lpad(case when m[3] is null then m[1]::int
-                                 else (m[1]::int % 12) + case when lower(m[3]) = 'pm' then 12 else 0 end end::text, 2, '0') || ':' || m[2]
-       from regexp_matches(coalesce(x, ''), '([0-9]{1,2}):([0-5][0-9])\s*(am|pm|AM|PM)?', 'g') m
+                                 else (m[1]::int % 12) + case when m[3] = 'p' then 12 else 0 end end::text, 2, '0') || ':' || m[2]
+       from regexp_matches(lower(coalesce(x, '')), '([0-9]{1,2}):([0-5][0-9])\s*(?:(a|p)\.?\s*m\.?)?', 'g') m
        where m[1]::int <= 23
        order by 1) $$;
 
@@ -84,6 +86,7 @@ create or replace function public.text_times(x text) returns text[]
 create table if not exists public.medication_sources (
   medication_id uuid not null references public.medications (id) on delete cascade,
   item_id uuid not null references public.prescription_items (id) on delete cascade,
+  drug_key text not null, -- normalise_drug of the item when it was linked; a renamed item drops the link
   primary key (medication_id, item_id)
 );
 create table if not exists public.medication_changes (
@@ -156,10 +159,17 @@ drop trigger if exists meds_taken_same_person on public.meds_taken;
 create trigger meds_taken_same_person before insert or update on public.meds_taken for each row execute function public.meds_taken_same_person();
 
 -- ---------- the converter ----------
+-- Finds a drug's medication through its linked items first (so a person may rename it), then by name. Re-computes
+-- the target values from the winning item and writes only when they differ (idempotent); an edited or deleted row is
+-- never touched. review_since is kept from the existing row so a re-run changes nothing.
 create or replace function public.rx_to_medications(p_person uuid default null) returns void
   language plpgsql security definer set search_path = '' as
-  $$ declare k record; w record; cur record; t text[]; prn boolean; days int; st text; stop date; sched jsonb; begin
+  $$ declare k record; w record; cur record; t text[]; prn boolean; days int; st text; stop date; sched jsonb; nm text; begin
        perform set_config('bantay.converter', 'on', true);
+       -- links whose item now names another drug (or was rejected) no longer hold the medication
+       delete from public.medication_sources s using public.prescription_items i
+         where i.id = s.item_id and (p_person is null or i.person_id = p_person)
+           and (i.status = 'rejected' or public.normalise_drug(coalesce(i.drug_raw, i.generic_name)) is distinct from s.drug_key);
        for k in
          select i.person_id, public.normalise_drug(coalesce(i.drug_raw, i.generic_name)) as drug
          from public.prescription_items i
@@ -181,47 +191,62 @@ create or replace function public.rx_to_medications(p_person uuid default null) 
          st := case when stop is not null and stop < current_date then 'stopped'
                     when days is not null and w.rx_date is null then 'paused'
                     else 'active' end;
+         nm := btrim(coalesce(w.drug_raw, w.generic_name));
+
+         cur := null;
+         select m.* into cur from public.medications m join public.medication_sources s on s.medication_id = m.id
+           where m.person_id = k.person_id and s.drug_key = k.drug
+           order by m.deleted_at nulls first, m.created_at limit 1;
+         if cur.id is null then
+           select * into cur from public.medications
+             where person_id = k.person_id and public.normalise_drug(name) = k.drug
+             order by deleted_at nulls first, created_at limit 1;
+         end if;
+
          sched := jsonb_strip_nulls(jsonb_build_object(
            'v', 1,
            'times', to_jsonb(coalesce(t, '{}'::text[])),
            'needs_time', case when t is null then true end,
            'needs_check', case when w.unclear then true end,
            'review', case when st <> 'stopped' then true end,
-           'review_since', case when st <> 'stopped' then current_date end));
+           'review_since', case when st <> 'stopped' then coalesce((cur.schedule ->> 'review_since')::date, current_date) end));
 
-         select * into cur from public.medications
-           where person_id = k.person_id and public.normalise_drug(name) = k.drug
-           order by deleted_at nulls first, created_at limit 1;
          if cur.id is null then
            insert into public.medications (person_id, name, generic_name, strength, form, dose, schedule, as_needed, per_day,
                                            stock_qty, med_status, started_on, stopped_on, source_item_id,
                                            status, confidence, confirmed_source, origin)
-           values (k.person_id, btrim(coalesce(w.drug_raw, w.generic_name)), w.generic_name, w.strength, w.form, w.dose, sched, prn,
+           values (k.person_id, nm, w.generic_name, w.strength, w.form, w.dose, sched, prn,
                    case when t is not null and cardinality(t) > 0 then cardinality(t) end,
                    case when w.quantity ~ '^\s*[0-9]+([.][0-9]+)?\s*$' then btrim(w.quantity)::numeric end,
                    st, w.rx_date, case when st = 'stopped' then stop end, w.id,
                    'confirmed', 1, 'auto', 'rx')
            returning * into cur;
-         elsif cur.deleted_at is null and cur.edited_at is null and cur.origin = 'rx' and cur.source_item_id is distinct from w.id then
+         elsif cur.deleted_at is null and cur.edited_at is null and cur.origin = 'rx'
+               and (cur.name, cur.generic_name, cur.strength, cur.form, cur.dose, cur.schedule, cur.as_needed, cur.per_day,
+                    cur.med_status, cur.started_on, cur.stopped_on, cur.source_item_id)
+                   is distinct from
+                   (nm, w.generic_name, w.strength, w.form, w.dose, sched, prn,
+                    case when t is not null and cardinality(t) > 0 then cardinality(t) end::numeric,
+                    st, w.rx_date, case when st = 'stopped' then stop end, w.id) then
            update public.medications set
-             name = btrim(coalesce(w.drug_raw, w.generic_name)), generic_name = w.generic_name, strength = w.strength, form = w.form,
-             dose = w.dose, schedule = sched, as_needed = prn,
+             name = nm, generic_name = w.generic_name, strength = w.strength, form = w.form, dose = w.dose,
+             schedule = sched, as_needed = prn,
              per_day = case when t is not null and cardinality(t) > 0 then cardinality(t) end,
              med_status = st, started_on = w.rx_date, stopped_on = case when st = 'stopped' then stop end, source_item_id = w.id
            where id = cur.id;
          end if;
-         insert into public.medication_sources (medication_id, item_id)
-           select cur.id, i.id from public.prescription_items i
-           where i.person_id = k.person_id and public.normalise_drug(coalesce(i.drug_raw, i.generic_name)) = k.drug
+         insert into public.medication_sources (medication_id, item_id, drug_key)
+           select cur.id, i.id, k.drug from public.prescription_items i
+           where i.person_id = k.person_id and i.status <> 'rejected'
+             and public.normalise_drug(coalesce(i.drug_raw, i.generic_name)) = k.drug
            on conflict do nothing;
        end loop;
 
-       -- an unedited converted medication whose every source is now rejected (or gone) is removed
+       -- an unedited converted medication with no live source left (all rejected, renamed or gone) is removed
        delete from public.medications m
          where m.origin = 'rx' and m.edited_at is null and m.deleted_at is null
            and (p_person is null or m.person_id = p_person)
-           and not exists (select 1 from public.medication_sources s join public.prescription_items i on i.id = s.item_id
-                           where s.medication_id = m.id and i.status <> 'rejected');
+           and not exists (select 1 from public.medication_sources s where s.medication_id = m.id);
        perform set_config('bantay.converter', 'off', true);
      end $$;
 revoke execute on function public.rx_to_medications(uuid) from public, anon, authenticated;
@@ -239,13 +264,28 @@ create trigger prescription_items_convert
 revoke execute on function public.medications_edit_stamp(), public.medications_log_changes(), public.meds_taken_same_person(),
   public.prescription_items_convert() from public, anon, authenticated;
 
+-- Rows the converter writes stay stamped by the system actor even when a signed-in person's item edit ran it
+-- (records_stamp would stamp that person). Before-triggers fire in name order, so this runs after medications_stamp.
+create or replace function public.medications_converter_stamp() returns trigger
+  language plpgsql set search_path = '' as
+  $$ begin
+       if coalesce(current_setting('bantay.converter', true), '') = 'on' and new.origin in ('rx', 'profile') and new.status = 'confirmed' then
+         new.confirmed_source := 'auto'; new.confirmed_by := null;
+       end if;
+       return new;
+     end $$;
+drop trigger if exists medications_zz_converter_stamp on public.medications;
+create trigger medications_zz_converter_stamp before insert or update on public.medications
+  for each row execute function public.medications_converter_stamp();
+revoke execute on function public.medications_converter_stamp() from public, anon, authenticated;
+
 -- ---------- one-time: profile medicine text -> medications (origin profile) ----------
 do $$ declare p record; e text; nm text; t text[]; begin
   perform set_config('bantay.converter', 'on', true);
   for p in select id, medicines from public.people where cardinality(medicines) > 0 loop
     foreach e in array p.medicines loop
       t := public.text_times(e);
-      nm := btrim(regexp_replace(e, '[0-9]{1,2}:[0-5][0-9]\s*(am|pm|AM|PM)?', '', 'g'));
+      nm := btrim(regexp_replace(e, '[0-9]{1,2}:[0-5][0-9]\s*([ap]\.?\s*m\.?)?', '', 'gi'));
       if public.normalise_drug(nm) is not null and not exists (
            select 1 from public.medications where person_id = p.id and public.normalise_drug(name) = public.normalise_drug(nm)) then
         insert into public.medications (person_id, name, schedule, per_day, med_status, status, confidence, confirmed_source, origin)

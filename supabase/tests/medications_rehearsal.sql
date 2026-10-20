@@ -134,6 +134,29 @@ select pg_temp.ok((select count(*) from public.medications where public.normalis
 update public.prescription_items set status = 'rejected' where id = '21000000-0000-0000-0000-000000000002';
 select pg_temp.ok(pg_temp.times('amlodipine') = '["09:00"]', 'an EDITED medication survives its source being rejected');
 
+-- ===== review fixes (Opus review 2026-10-20) =====
+select pg_temp.ok(public.rx_times('once a week') is null and public.rx_times('twice a week') is null and public.rx_times('every other day') is null
+  and public.rx_times('every 3 days') is null and public.rx_times('once a month') is null, 'weekly, monthly and every-few-days doses never become daily reminders');
+select pg_temp.ok(public.text_times('8:00 Pm') = '{20:00}' and public.text_times('7:30 a.m.') = '{07:30}' and public.text_times('12:00 AM') = '{00:00}'
+  and public.text_times('12:30 pm') = '{12:30}' and public.text_times('00:15') = '{00:15}', 'clock times in any case, a.m./p.m., midnight and noon');
+select pg_temp.ok(public.normalise_drug('Omega 3 Gold') = 'omega 3 gold' and public.normalise_drug('Insulin 100 units/ml') = 'insulin', 'strength removal does not eat words');
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+update public.prescription_items set frequency = 'BID' where id = '21000000-0000-0000-0000-000000000004';
+update public.prescription_items set unclear = false where id = '21000000-0000-0000-0000-000000000005';
+update public.medications set name = 'Cozaar' where public.normalise_drug(name) = 'losartan';
+reset role;
+select pg_temp.ok(pg_temp.times('atorvastatin') = '["08:00", "20:00"]' and not ((pg_temp.med('atorvastatin')).schedule ? 'needs_time'), 'editing the winning item''s frequency updates the medication');
+select pg_temp.ok(not ((pg_temp.med('unreadable drug')).schedule ? 'needs_check'), 'clearing unclear on the item clears needs_check');
+select pg_temp.ok((pg_temp.med('atorvastatin')).confirmed_source = 'auto' and (pg_temp.med('atorvastatin')).confirmed_by is null and (pg_temp.med('atorvastatin')).edited_at is null,
+  'a converter write inside a signed-in session keeps the system stamp and is not an edit');
+select public.rx_to_medications();
+select pg_temp.ok((select count(*) from public.medications where public.normalise_drug(name) = 'losartan') = 0 and (pg_temp.med('cozaar')).deleted_at is null,
+  'a medicine the person renamed is not re-created under its old name');
+update public.prescription_items set drug_raw = 'Gliclazide 80mg' where id in ('21000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000007');
+select pg_temp.ok(pg_temp.times('gliclazide') = '["08:00"]' and (select count(*) from public.medications where public.normalise_drug(name) = 'metformin' and deleted_at is null) = 0,
+  'renaming the items moves the medicine: the new drug appears, the unedited old one goes');
+select pg_temp.ok((select count(*) from public.medications) = (select count(*) from snap) + 1, 'no duplicates after all of that (first conversion + the 1 manual medicine)');
+
 -- ===== C: read-only carer of PB =====
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
 select pg_temp.ok((select count(*) from public.medications where person_id = '10000000-0000-0000-0000-0000000000b1') >= 9, 'read-only carer sees the converted (confirmed) medicines');
@@ -163,7 +186,9 @@ reset role;
 select pg_temp.ok(to_regclass('public.medication_sources') is null and to_regclass('public.medication_changes') is null, 'down drops the new tables');
 select pg_temp.ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'medications' and column_name in ('origin', 'deleted_at', 'edited_at'))
   and not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'meds_taken' and column_name in ('medication_id', 'slot', 'skipped')), 'down drops the new columns');
-select pg_temp.ok((select count(*) from public.medications) = 3, 'down removes unedited converted rows and user-deleted rows, keeps the 3 a person wrote (2 edited, 1 manual)');
+select pg_temp.ok((select count(*) from public.medications) = 4, 'down removes unedited converted rows and user-deleted rows, keeps the 4 a person wrote (3 edited, 1 manual)');
+select pg_temp.ok((select bool_and(jsonb_typeof(schedule) = 'array') from public.medications), 'down gives kept rows the old array schedule');
+select pg_temp.ok((select count(*) from public.meds_taken) = 1, 'down deletes skip rows (they would read as doses taken), keeps the real dose');
 \ir ../migrations/0014_medications_live.sql
 select pg_temp.ok((select count(*) from public.medications where deleted_at is null) >= 9, 'up again after down converts again');
 \echo MEDICATIONS REHEARSAL DONE

@@ -5,6 +5,8 @@ drop trigger if exists prescription_items_convert on public.prescription_items;
 drop trigger if exists medications_edit_stamp on public.medications;
 drop trigger if exists medications_log_changes on public.medications;
 drop trigger if exists meds_taken_same_person on public.meds_taken;
+drop trigger if exists medications_zz_converter_stamp on public.medications;
+drop function if exists public.medications_converter_stamp();
 drop function if exists public.prescription_items_convert();
 drop function if exists public.rx_to_medications(uuid);
 drop function if exists public.medications_edit_stamp();
@@ -14,6 +16,12 @@ drop function if exists public.meds_taken_same_person();
 do $$ begin
   if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'medications' and column_name = 'origin') then
     delete from public.medications where deleted_at is not null or (origin in ('rx', 'profile') and edited_at is null);
+    -- the old app reads schedule as an array of times
+    update public.medications set schedule = coalesce(schedule -> 'times', '[]'::jsonb) where jsonb_typeof(schedule) = 'object';
+  end if;
+  -- a skip only means something with the skipped column; without it the row would read as a dose taken
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'meds_taken' and column_name = 'skipped') then
+    delete from public.meds_taken where skipped;
   end if;
 end $$;
 
