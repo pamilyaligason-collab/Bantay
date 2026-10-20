@@ -51,3 +51,6 @@ Run `scripts\records-import.ps1` (add `-DryRun` first: it only lists and classif
 - **Profiles**: confirmed identity papers fill empty `people` columns only (birthdate, sex, blood type, address) after a conflict check (equal-confidence disagreement = left empty); `aliases`, `allergies`, `conditions` (printed on a confirmed paper) and `medicines` (the same drug on 2+ confirmed text prescriptions) are unioned in. ID and insurance numbers go to `person_identifiers` (editors only: the person, a writer carer, an admin; never read-only carers) and never to `insurance_policies.member_no`, summaries or logs.
 - **Dry run**: `node scripts/import/sync.mjs --dry-run` (counts per lane, skip reason, person index) and `node scripts/import/load.mjs --dry-run` (counts per person index x lane x file status and rows per table x status; SQL in `.scratch/records-load-dryrun.sql`, git-ignored). Neither touches the database.
 - Identity and insurance papers are sent to OpenRouter (paid, zero data retention, no data collection), the same route as the lab papers.
+
+From migration 0014 (session 6), every prescription item that is not rejected becomes a scheduled medicine at once
+(trigger `prescription_items_convert`, function `rx_to_medications`); see `docs/session-6/PART-3.md` section 1.
