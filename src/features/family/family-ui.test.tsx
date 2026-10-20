@@ -27,14 +27,14 @@ describe('Family segments', () => {
     expect(parseFamily('#family/plan')).toEqual({ seg: 'plan', member: null })
     expect(parseFamily('#family/people')).toEqual({ seg: 'people', member: null })
     expect(parseFamily('#family/people/p2')).toEqual({ seg: 'people', member: 'p2' })
-    expect(parseFamily('#records')).toEqual({ seg: 'records', member: null })
+    expect(parseFamily('#family/records')).toEqual({ seg: 'people', member: null }) // Records moved to Health > Papers
     expect(parseFamily('#plan')).toEqual({ seg: 'plan', member: null })
   })
 
-  it('shows Records | Plan | People in that order and Plan writes #family/plan', async () => {
+  it('shows People | Plan only (no Records) and Plan writes #family/plan', async () => {
     render(<Family />)
     const seg = screen.getByRole('group', { name: 'Family view' })
-    expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['Records', 'Plan', 'People'])
+    expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['People', 'Plan'])
     fireEvent.click(within(seg).getByRole('button', { name: 'Plan' }))
     expect(location.hash).toBe('#family/plan')
   })
@@ -158,6 +158,16 @@ describe('People', () => {
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
     await waitFor(() => expect(screen.getByText('1 of 2 OK today')).toBeTruthy())
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
+  })
+
+  it('a grey avatar gets "Not checked in today: send a hello"; the person themself and an OK person do not', async () => {
+    await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
+    location.hash = '#family'
+    render(<Family />)
+    const roll = await screen.findByRole('list', { name: 'Family roll call' })
+    await waitFor(() => expect(within(roll).getAllByText('Not checked in today: send a hello')).toHaveLength(1)) // Kuya Ben only
+    fireEvent.click(within(roll).getByRole('button', { name: 'Not checked in today: send a hello to Kuya' })) // no phone saved: opens his page
+    expect(location.hash).toBe('#family/people/p2')
   })
 
   it('tapping a person opens their page', async () => {

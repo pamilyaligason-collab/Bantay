@@ -69,7 +69,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const patches: Patch[] = []
     await mock(page, patches)
     await skipOnboarding(page)
-    await page.goto('/#records')
+    await page.goto('/#health/papers')
 
     const entry = page.getByRole('button', { name: /To check \(2\)/ })
     await expect(entry).toBeVisible()

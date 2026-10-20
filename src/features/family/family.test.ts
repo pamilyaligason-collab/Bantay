@@ -7,7 +7,7 @@ import { resetSyncForTests, startSync, syncNow } from '../sync/sync'
 import { fromRow, toRow } from '../sync/tables'
 import { dayKey, eventsOn, instant, isMine, nextEvent, toEvent, weekOf } from './events'
 import { addNote, sortNotes, saveNote, removeNote } from './notes'
-import { ageOf, checkInLabel, lastCheckIn, latestCheckIns, rollCall, type FamilyPerson } from './roster'
+import { ageOf, checkInLabel, dial, lastCheckIn, latestCheckIns, nudgeFor, rollCall, type FamilyPerson } from './roster'
 import { fdb } from './store'
 import { addTask, removeTask, sortTasks, toggleTask } from './tasks'
 
@@ -165,6 +165,22 @@ describe('sync mapping', () => {
     expect(rows.map((r) => r.title).sort()).toEqual(['Buy rice', 'Mine (edited elsewhere)'])
     expect(rows.find((r) => r.clientId === 'from-other')).toMatchObject({ due: '2026-10-24', assigneePersonId: 'p9', done: false })
     expect(await db.kv.get('sync.backoff')).toBeUndefined() // the missing events table did not put sync into backoff
+  })
+})
+
+describe('nudge', () => {
+  const ben = { name: 'Kuya Ben', phone: '+63 917 123 4567', isMe: false }
+  it('a person who has not checked in gets a text link; no phone means no link', () => {
+    expect(nudgeFor(ben, false)).toEqual({ text: 'Not checked in today: send a hello', href: 'sms:+639171234567', label: 'Not checked in today: send a hello to Kuya' })
+    expect(nudgeFor({ ...ben, phone: null }, false)?.href).toBeNull()
+  })
+  it('nothing for someone who is OK or for me', () => {
+    expect(nudgeFor(ben, true)).toBeNull()
+    expect(nudgeFor({ ...ben, isMe: true }, false)).toBeNull()
+  })
+  it('dial keeps digits and a leading plus', () => {
+    expect(dial('0917 123-4567')).toBe('09171234567')
+    expect(dial('n/a')).toBeNull()
   })
 })
 

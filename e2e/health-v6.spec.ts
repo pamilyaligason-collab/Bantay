@@ -112,3 +112,15 @@ test('medicines list shows and is read-only when nobody is signed in', async ({ 
   await expect(page.getByRole('button', { name: /^Take / })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Add' })).toHaveCount(0)
 })
+
+test('header says whose health it is, and Papers sits under Health with the same person', async ({ page }) => {
+  await page.goto('/#health')
+  await expect(page.locator('h1')).toHaveText('Health')
+  await seed(page, 1)
+  await page.reload()
+  await expect(page.getByTestId('showing')).toHaveText('Showing: Maria Sample')
+  await page.goto('/#health/papers')
+  await expect(page.locator('h1')).toHaveText('Papers')
+  await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Health' })).toHaveAttribute('aria-current', 'page')
+})

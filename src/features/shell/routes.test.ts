@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { parseHash, familyEntry } from './routes'
+import { canonicalHash, parseHash, familyEntry } from './routes'
 
 describe('parseHash', () => {
   it('defaults to today', () => expect(parseHash('')).toEqual({ tab: 'today', view: null }))
-  it('maps #records to family/records', () => expect(parseHash('#records')).toEqual({ tab: 'family', view: 'records' }))
+  it('maps the old #records and #family/records links to Health > Papers', () => {
+    expect(canonicalHash('#records')).toBe('#health/papers')
+    expect(canonicalHash('#family/records')).toBe('#health/papers')
+    expect(canonicalHash('#family/plan')).toBe('#family/plan')
+    expect(parseHash('#records')).toEqual({ tab: 'health', view: null })
+    expect(parseHash('#family/records')).toEqual({ tab: 'health', view: null })
+    expect(parseHash('#health/papers')).toEqual({ tab: 'health', view: null })
+  })
   it('maps #family/plan, #family/people and a member page to the family tab', () => {
     expect(parseHash('#family/plan')).toEqual({ tab: 'family', view: 'plan' })
     expect(parseHash('#family/people')).toEqual({ tab: 'family', view: 'people' })
@@ -20,7 +27,7 @@ describe('parseHash', () => {
   it('unknown hash falls back to today', () => expect(parseHash('#nope')).toEqual({ tab: 'today', view: null }))
 })
 describe('familyEntry (D-44)', () => {
-  it('opens People during an alert or SOS', () => expect(familyEntry({ alertActive: true, last: 'records' })).toBe('people'))
+  it('opens People during an alert or SOS', () => expect(familyEntry({ alertActive: true, last: 'plan' })).toBe('people'))
   it('else reopens the last segment', () => expect(familyEntry({ alertActive: false, last: 'plan' })).toBe('plan'))
-  it('first time opens Records', () => expect(familyEntry({ alertActive: false, last: null })).toBe('records'))
+  it('first time opens People', () => expect(familyEntry({ alertActive: false, last: null })).toBe('people'))
 })

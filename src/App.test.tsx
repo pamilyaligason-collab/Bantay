@@ -30,15 +30,15 @@ describe('tab shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health'))
   })
 
-  it('#records opens Family with Records selected; People switches back', async () => {
-    location.hash = '#records'
-    render(<App />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Family')
-    expect(screen.getByRole('button', { name: 'Family' }).getAttribute('aria-current')).toBe('page')
-    expect(screen.getByRole('button', { name: 'Records' }).getAttribute('aria-pressed')).toBe('true')
-    fireEvent.click(screen.getByRole('button', { name: 'People' }))
-    expect(location.hash).toBe('#family')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'People' }).getAttribute('aria-pressed')).toBe('true'))
+  it('old #records and #family/records links land on Health > Papers', async () => {
+    for (const old of ['#records', '#family/records']) {
+      location.hash = old
+      const { unmount } = render(<App />)
+      await waitFor(() => expect(location.hash).toBe('#health/papers'))
+      await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Papers'))
+      expect(screen.getByRole('button', { name: 'Health' }).getAttribute('aria-current')).toBe('page')
+      unmount()
+    }
   })
 
   it('centre Ask opens the assistant; no floating button remains', async () => {

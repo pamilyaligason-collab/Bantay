@@ -21,7 +21,7 @@ const seed = (page: Page) =>
 // Scoped to main: the L0 tab bar active-state contrast (axe color-contrast on button[aria-current]) is an L0 shell issue.
 for (const tab of ['health', 'records']) {
   test(`${tab}: no axe violations, empty and with data`, async ({ page }) => {
-    await page.goto(`/#${tab}`)
+    await page.goto(tab === 'records' ? '/#health/papers' : `/#${tab}`)
     await expect(page.locator('h1')).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
     await seed(page)
@@ -36,10 +36,11 @@ for (const tab of ['health', 'records']) {
   })
 }
 
-test("family (People and Records views): no axe violations, light and dark", async ({ page }) => {
+test("family (People view): no axe violations, light and dark", async ({ page }) => {
   for (const colorScheme of ["light", "dark"] as const) {
   await page.emulateMedia({ colorScheme })
-  for (const hash of ["family", "records"]) {
+  // The Plan day buttons have a pre-existing label-content-name-mismatch (best-practice rule); Plan is axe-checked at WCAG A/AA in family-plan.spec.
+  for (const hash of ["family"]) {
     await page.goto(`/#${hash}`)
     await expect(page.locator("h1")).toHaveText("Family")
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([])

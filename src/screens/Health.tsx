@@ -11,6 +11,8 @@ import { bodyNodes, insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
+import { SubHeader } from '../features/shell/SubHeader'
+import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
 import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
@@ -29,6 +31,7 @@ export default function Health() {
   const code = METRIC.exec(hash)?.[1]
   if (hash === '#health/body') return <ExploreScreen />
   if (hash === '#health/meds') return <MedsPage />
+  if (hash === '#health/papers') return <Papers />
   return code ? <MetricScreen code={code} /> : <Overview />
 }
 
@@ -55,14 +58,14 @@ function Overview() {
   const head = raw
   const nodes = useMemo(() => bodyNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
-  const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#records', label: 'Confirm records' }
+  const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
   return (
     <>
       <div className="hdr">
         <h1>Health</h1>
-        <span>{name ? (personId === ownId ? 'My health, in one place' : `${name.split(' ')[0]}'s health, in one place`) : 'Your health, in one place'}</span>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
+      {name && <p className="sub" style={{ margin: '4px 4px 0' }} data-testid="showing">Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
       {ready && (
         <div className="hv-head" data-tone={head.tone}>
           <div className="grow">
@@ -106,6 +109,16 @@ function MedsPage() {
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
       {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMark} canEdit={canEdit} />}
+    </>
+  )
+}
+
+/** Health > Papers: the old Records screen (trend, timeline, the check queue) under Health. */
+function Papers() {
+  return (
+    <>
+      <SubHeader title="Papers" backHref="#health" backLabel="Back to Health" />
+      <Records />
     </>
   )
 }

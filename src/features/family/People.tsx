@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { checkIn, FAIL_TEXT } from '../today/actions'
 import FmAvatar from './FmAvatar'
-import { checkInLabel, rollCall, useCheckIns, useFamilyPeople } from './roster'
+import { checkInLabel, nudgeFor, rollCall, useCheckIns, useFamilyPeople } from './roster'
 import './family.css'
 
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
@@ -36,8 +36,9 @@ export default function People() {
         <ul className="card list fm-roll" aria-label="Family roll call">
           {people.map((p) => {
             const c = checkInLabel(last[p.id])
+            const nudge = nudgeFor(p, c.ok)
             return (
-              <li key={p.id}>
+              <li key={p.id} className={nudge ? 'fm-has-nudge' : undefined}>
                 <button type="button" className="fm-person" onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={`${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}. Open page`}>
                   <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={44} status={c.ok ? 'ok' : 'none'} />
                   <span className="grow">
@@ -46,6 +47,9 @@ export default function People() {
                   </span>
                   <svg className="fm-chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
                 </button>
+                {nudge && (nudge.href
+                  ? <a className="fm-nudge" href={nudge.href} aria-label={nudge.label}>{nudge.text}</a>
+                  : <button type="button" className="fm-nudge" onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={nudge.label}>{nudge.text}</button>)}
               </li>
             )
           })}

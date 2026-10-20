@@ -12,7 +12,7 @@ import { AdminScreen, useTrackScreen } from './features/admin'
 import { DocsScreen } from './features/docs/DocsScreen'
 import WeatherScreen from './features/weather/WeatherScreen'
 import { getMember, onAuthChange } from './features/auth/session'
-import { parseHash, TABS, type Tab } from './features/shell/routes'
+import { canonicalHash, parseHash, TABS, type Tab } from './features/shell/routes'
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
@@ -42,7 +42,12 @@ export default function App() {
     return onAuthChange(check)
   }, [])
   useEffect(() => {
-    const on = () => { setRoute(parseHash(location.hash)); setHash(location.hash) }
+    const on = () => {
+      const c = canonicalHash(location.hash)
+      if (c !== location.hash) { location.replace(c); return } // old #records / #family/records links land on Health > Papers
+      setRoute(parseHash(location.hash)); setHash(location.hash)
+    }
+    on()
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
@@ -59,7 +64,7 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, isTabView && (tab === 'today' || tab === 'safety'))
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
-  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#records' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'weather' ? 'Weather' : SCREENS[tab].label

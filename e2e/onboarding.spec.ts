@@ -163,7 +163,7 @@ test('skipOnboarding helper goes straight to the app at /', async ({ page }) => 
 
 test('a deep link skips onboarding', async ({ page }) => {
   await page.goto('/#records')
-  await expect(page.locator('h1')).toHaveText('Family')
+  await expect(page.locator('h1')).toHaveText('Papers')
 })
 
 test.describe('375px', () => {

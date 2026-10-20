@@ -10,6 +10,7 @@ import { addTask } from '../family/tasks'
 import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personChoices, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
 import { weatherSummary } from './weather'
+import { CAUTION, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
 import './assistant.css'
 
 const CAP = Number(import.meta.env.VITE_ASSISTANT_DAILY_CAP) || DEFAULT_CAP
@@ -183,6 +184,8 @@ export default function Assistant() {
   const dlg = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
+  const kb = useKeyboardInset(open)
+  const restored = useRef(false)
 
   // Back (gesture or button) closes the sheet instead of leaving the app.
   useEffect(() => {
@@ -192,6 +195,10 @@ export default function Assistant() {
     const pop = () => setOpen(false)
     window.addEventListener('popstate', pop)
     hdb.people.toArray().then(setPeople, () => setPeople([]))
+    if (!restored.current) { // the last 20 messages come back from this phone, once per app start
+      restored.current = true
+      void loadHistory().then((h) => setItems((cur) => (cur.length ? cur : h)))
+    }
     input.current?.focus()
     const b = opener.current
     return () => { window.removeEventListener('popstate', pop); b?.focus() }
@@ -260,13 +267,15 @@ export default function Assistant() {
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
     if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
-    setItems([...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? '' : 'I am not sure. Please ask your doctor.'), cards: r.cards }])
+    const done: Item[] = [...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? '' : 'I am not sure. Please ask your doctor.'), cards: r.cards }]
+    setItems(done)
+    void saveHistory(trimHistory(done))
   }
 
   return (
     <>
       {open && (
-        <div className="as-back" onClick={close}>
+        <div className="as-back" style={kb ? { bottom: kb } : undefined} data-kb={kb > 0 ? 'open' : undefined} onClick={close}>
           <div ref={dlg} className="glass as-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
             <div className="as-head">
               <h2 id="as-title">Ask Bantay</h2>
@@ -274,7 +283,7 @@ export default function Assistant() {
                 <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
             </div>
-            <p className="sub as-note">I can mix things up. I cannot diagnose. For an emergency call 911 or your doctor.</p>
+            <p className="sub as-note">{CAUTION} For an emergency call 911.</p>
             <div className="as-list" ref={list} aria-live="polite" aria-relevant="additions" role="log" aria-label="Conversation">
               {items.length === 0 && <p className="sub">Try: "I took my losartan" or "What is HbA1c?"</p>}
               {items.map((m, i) => (

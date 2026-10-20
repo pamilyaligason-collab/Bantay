@@ -1,9 +1,8 @@
 import FmAvatar from './FmAvatar'
-import { ageOf, checkInLabel, lastCheckIn, useCheckIns, useFamilyPeople } from './roster'
+import { ageOf, checkInLabel, dial, lastCheckIn, useCheckIns, useFamilyPeople } from './roster'
 import './family.css'
 
 const back = () => { location.hash = 'family' }
-const dial = (phone: string | null) => { const d = (phone ?? '').replace(/[^\d+]/g, ''); return /\d/.test(d) ? d : null }
 
 /** A family member's page (mockup v6 "member"): photo, who and how old, call and text, last check-in, their Medical ID. */
 export default function MemberPage({ id }: { id: string }) {

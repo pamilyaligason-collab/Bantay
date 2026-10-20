@@ -133,3 +133,14 @@ for (const scheme of ['light', 'dark'] as const) {
     })
   })
 }
+
+test('Family is People and Plan only; Records moved to Health', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#family')
+  await expect(page.locator('h1')).toHaveText('Family')
+  const seg = page.getByRole('group', { name: 'Family view' })
+  await expect(seg.getByRole('button')).toHaveText(['People', 'Plan'])
+  await expect(seg.getByRole('button', { name: 'Records' })).toHaveCount(0)
+  await page.goto('/#family/records')
+  await expect(page).toHaveURL(/#health\/papers$/)
+})
