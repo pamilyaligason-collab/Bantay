@@ -158,6 +158,28 @@ Everything follows `resolvePlace()` (GPS, else chosen home zone). Zones stay in 
 **Data Lloyd must supply (ping):** zone 2 hotlines and nearest hospitals; confirm zone 2 area name. Until then
 the zone 2 view shows national numbers plus "Add local numbers" for admins.
 
+### 4.1 Quick dial: one local set (Lloyd 2026-10-20)
+Six local sets ship as defaults: **General Santos, Tagbilaran, Davao, Cebu City, Manila, Texas (USA)**, plus
+**Philippine national**, **OFW** and **Teleconsult** sets. Numbers and sources: `HOTLINES.md` and
+`hotlines-proposed.json` in this folder (each row has a source URL, status CONFIRMED or UNVERIFIED, and a read date).
+
+Which set shows (pure function `pickLocalSet(position)`, unit tested):
+1. Take the phone position (GPS if allowed, else the chosen home zone, as today in `resolvePlace()`).
+2. If it is inside exactly one area, show **that one local set only**. Areas: a 30 km circle round each Philippine
+   city centre (25 km for Manila, so it does not swallow nearby cities), and the Texas state bounding box. If two
+   circles overlap, the nearest centre wins.
+3. If it is inside no area:
+   - in the Philippines (existing PH bounding box): show **national + OFW + teleconsult** and an "Add local numbers"
+     button for admins;
+   - abroad, not Texas: show **OFW** (DMW/OWWA, DFA, the nearest Philippine embassy finder link) and an online
+     source for the local emergency number of that country, never a guessed number.
+4. Order on screen: local set (if any), then national (PH only), then OFW, then teleconsult. Group headers say why a
+   set shows ("You are in Davao", "You are outside our local lists").
+5. The home-zone alert logic (`HOME_ZONES`, twin of `alerts-ingest`) is unchanged; hotline areas are a separate list
+   (`HOTLINE_AREAS` in `location/geo.ts`) so adding a city never changes alert watching.
+6. Each number keeps `status`; UNVERIFIED rows show a small "check" mark, and admins can edit any row
+   (`safety_overrides`, already synced). A yearly re-check is a release task.
+
 ## 5. Health, Family, Records (priority 5)
 ### 5.1 Health tab structure (mockup screens health, metric, addreading, anatomy, library, article, videos, papers)
 1. Person chips + "Showing: Name".
