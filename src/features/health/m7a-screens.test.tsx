@@ -151,7 +151,8 @@ describe('Explore your body', () => {
     const panel = await screen.findByTestId('system-info')
     expect(panel.textContent).toMatch(/pumps blood/)
     await waitFor(() => expect(within(panel).getByRole('link', { name: /Blood pressure 126\/80/ }).getAttribute('href')).toBe('#health/metric/bp_systolic'))
-    expect(within(screen.getByTestId('acting-here')).getByText('Amlodipine 5 mg: relaxes vessels')).toBeTruthy()
+    // Medicines load after the readings; wait for them too (a slower machine showed the panel without them yet).
+    await waitFor(() => expect(within(screen.getByTestId('acting-here')).getByText('Amlodipine 5 mg: relaxes vessels')).toBeTruthy())
     expect(panel.textContent).toMatch(/not medical advice/)
     expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#health/library/c%3AHigh%20blood%20pressure')
   })
