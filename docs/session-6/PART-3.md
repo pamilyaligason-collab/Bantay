@@ -11,56 +11,74 @@ header shows once (Today only); sub-screens use the shared `SubHeader` with a ba
 ## 1. Medicines: prescription -> scheduled medicine (D1, priority 1)
 
 ### 1.1 One source of truth
-`public.medications` becomes the only schedule. Profile medicine text and prescription lines feed it; nothing
-else schedules a dose.
+`public.medications` becomes the only schedule. Everything that used to read `people.medicines` (NextUp, Hero,
+reminders, Medical ID `medid/card.ts:32`, Health) reads `medications`. Writers of `people.medicines` (wizard,
+`MemberPage.tsx:90`, import loader) switch to `medications`; the column stays read-only for one release, then goes.
 
 | Source | How it enters `medications` | `confirmed_source` |
 |---|---|---|
-| Imported prescription item | Auto-convert (1.2), server side, idempotent on `source_item_id` | `rx_auto` |
-| Profile medicine text (wizard, Me) | One-time migration, then the wizard writes `medications` directly | `profile` |
-| Added by hand (new Add button) | Edit sheet | `manual` |
+| Imported prescription item | Auto-convert (1.2) | `rx_auto` |
+| Profile medicine text | One-time copy in the same migration (0 people have any today) | `profile` |
+| Added by hand | Edit sheet Add button | `manual` |
 
-### 1.2 Auto-convert rules (SQL function `rx_to_medications(person)` + trigger on `prescription_items`)
-1. One medication per person per normalised drug name (lower case, strength stripped). If several prescriptions
-   carry the same drug, the newest `rx_date` wins; older items are linked as history, not duplicated.
-2. Frequency text to times (Asia/Manila):
-   - once a day / OD / QD / morning -> 08:00; at night / HS / bedtime -> 21:00
-   - twice a day / BID -> 08:00, 20:00
-   - three times / TID -> 08:00, 14:00, 20:00
-   - four times / QID -> 08:00, 12:00, 16:00, 20:00
+### 1.2 Auto-convert (migration `00xx_medications_from_rx.sql`, applied by Lloyd; reversible)
+Where it runs: one SQL function `rx_to_medications(p_person uuid default null)`, called once by the migration for
+everyone, and by a trigger when a `prescription_items` row is inserted or confirmed (future imports). Not in the client.
+
+1. **One medication per person per drug.** Key = person + normalised `drug_raw` (lower case, strength and form
+   words stripped). 5 person+drug groups repeat today: the newest `rx_date` wins (null dates rank oldest); every
+   contributing item is linked in a new table `medication_sources(medication_id, item_id)`.
+2. **Times from frequency text** (no item contains a clock time today):
+   - once a day / OD / QD / daily / morning -> 08:00; bedtime / HS / at night -> 21:00
+   - twice a day / BID -> 08:00, 20:00; three times / TID -> 08:00, 14:00, 20:00; four times / QID -> 08:00, 12:00, 16:00, 20:00
    - as needed / PRN -> `as_needed = true`, no times
-   - missing or not understood (13 of 31 today) -> 08:00 with `needs_time = true` in `schedule`
-3. Duration: if the course has an end (`duration` like "7 days") and that end is in the past, `med_status = 'stopped'`
-   with `stopped_on` set; otherwise `active`.
-4. Items flagged unclear keep `drug_raw` as the name and get `needs_check = true`.
-5. Never overwrite a row a person has edited (`confirmed_at` not null); re-running is a no-op for those rows.
-6. Writes an audit row (who, when, from which item) through the existing `created_by` and `confirmed_*` columns.
+   - missing or not understood (13 + 4 today) -> **no time**, `needs_time = true`, no reminder; shows "Set a time"
+3. **Status.** Course with an end in the past -> `stopped` (`stopped_on` set). Everything else -> `active`, with
+   `review = true` (1.3).
+4. **Unclear items** keep `drug_raw` as the name and get `needs_check = true`.
+5. **Visibility.** Converted rows are written `status = 'confirmed'`, `confirmed_source = 'rx_auto'` (Lloyd's D1 is the
+   confirmation), so read-only carers see them; the source item keeps its own status.
+6. **Idempotent.** Partial unique index on (person, normalised name) where `deleted_at is null`; rows with
+   `edited_at` set are never overwritten; a deleted medication keeps a tombstone (`deleted_at`) so re-import does not
+   bring it back. Down migration drops rows with `confirmed_source = 'rx_auto'` and `edited_at is null`.
+7. **Quantity** maps to `stock_qty` only when it is a plain number; `per_day` = number of times.
 
-Schedule shape (`schedule jsonb`): `{"times":["08:00","20:00"],"days":"daily","needs_time":false,"needs_check":false}`.
+Schedule shape v1 (`schedule jsonb`): `{"v":1,"times":["08:00","20:00"],"needs_time":false,"needs_check":false,
+"review":true}`. Times are local clock strings; the app converts to minutes (`model.ts:243`) in one helper.
 
-### 1.3 The "Check medicines" step (makes stale auto-conversions safe)
-Because the newest prescription is from 2024-11, every auto-converted medicine shows a small "From a prescription
-dated MMM YYYY. Still taking it?" line until someone confirms, edits, pauses or deletes it. Today shows one card,
-"N medicines to check", for the carer (P1, P3) and for the person; it disappears when the list is reviewed.
-Reminders fire only for active medicines; unreviewed ones still remind (Lloyd chose auto-convert) but say
-"(from prescription)" in the edit sheet, never in the notification text.
+New columns on `medications`: `deleted_at`, `edited_at`. New table `medication_changes(medication_id, by, at, field,
+old, new)` for history (B-7: stored in the database, never sent in notifications).
+
+### 1.3 "Still taking it?" review (default chosen, Lloyd to confirm)
+The newest prescription is about 11 months old and 6 have no date, so every converted active medicine carries
+`review = true`:
+- It shows "From a prescription dated MMM YYYY. Still taking it?" with **Yes / Change / Stopped**.
+- **Default: reminders stay on for reviewed-or-timed medicines** (Lloyd chose auto-convert). If a review is still
+  open after 3 days, the reminder for that medicine pauses and Today shows "N medicines to check" to the person and
+  their carers. Alternative if Lloyd prefers: reminders off until reviewed.
+- Today shows one card "N medicines to check" until the list is reviewed.
 
 ### 1.4 Screens
-- **Health > Medicines** (per person): sections Today (doses with Take / Skip), Active, Paused, Past. Each row
-  opens the **edit sheet**: name, strength, dose, times (chips: Morning 08:00, Noon 12:00, Afternoon 14:00,
-  Evening 20:00, Night 21:00, or custom), as needed, Pause, Stop, Delete (with Undo toast), source line.
-  An Add button creates a manual medicine.
-- **Today > Next up**: shows the next dose due in the next 3 hours or any missed in the last 2 hours, for me and for
-  the people I care for. Upcoming doses count, not only overdue ones (fixes PART-1 "why weather wins").
-- **Medical ID**: lists active medicines from the same table.
-- **Wizard medicines step**: writes `medications` rows with a time chip per medicine (no untimed chips).
+- **Health > Medicines** (per person): Today (doses with Take / Skip), Active, Paused, Past. Each row opens the
+  **edit sheet**: name, strength, dose, times (chips Morning 08:00, Noon 12:00, Afternoon 14:00, Evening 20:00,
+  Night 21:00, Custom), As needed, Pause, Stop, Delete (Undo toast), source line. Add button for a manual medicine.
+- **Today > Next up**: the next dose due in the next 3 hours, or missed in the last 2 hours, for me and the people I
+  care for. Upcoming counts, not only overdue (fixes PART-1 "why weather wins").
+- **Medical ID**: active medicines from the same table.
+- **Wizard medicines step**: writes `medications` with a time chip per medicine.
 
-### 1.5 Data and sync
-- Dexie: new `medications` table in `bantay-log`; sync spec in `sync/tables.ts` (pull and push, carers may write
-  for the people they care for, same rule as `meds_taken`).
-- `meds_taken` gains `medication_id` and `slot` (nullable for old rows); "taken" is matched by id, not by name.
-- Reminders (`health/reminders.ts`) read active `medications`, not profile text.
-- Events: `dose_logged`, `dose_skipped`, `med_reviewed`, `med_edited`, `med_paused`, `med_deleted` (PART-2).
+### 1.5 Data, sync, permissions, reminders
+- Dexie: `medications` table in `bantay-log`; sync spec in `sync/tables.ts` with `cursor: 'updated_at'`,
+  merge-duplicates and `deletedAt` soft delete (same pattern as `family_tasks`).
+- Edit rights: the person, admins (`records_editor`) and writer carers. Logging a dose: unchanged (person or writer
+  carer, `0003:88-89`); admins are viewers for doses (kept on purpose).
+- `meds_taken` gains `medication_id` and `slot` (nullable for old rows); matching moves from name to id. Skips become
+  `meds_taken` rows with `skipped = true` so they sync (today they are per device, `NextUp.tsx:66`). The assistant's
+  `log_med_taken` resolves the name to a `medication_id` first.
+- Reminders (`health/reminders.ts`) read active, timed medications for me **and** the people I care for (carer
+  setting "Remind me for ..."); notification text stays generic (B-7). Id range widened from 31000-31099.
+- Events: `dose_logged`, `dose_skipped`, `med_added`, `med_edited`, `med_paused`, `med_deleted`, `reminder_opened`
+  (PART-2). Adherence is measured from `meds_taken`, not events.
 
 ## 2. Today (priority 2)
 Order: Alert band (only when an alert applies to my place) -> **Next up** (dose first) -> **Family status**
@@ -70,7 +88,24 @@ Weather leaves Next up except for a storm within 500 km; it appears once on Toda
 Simple mode: Next dose (big Taken button), I'm OK, Call family, SOS.
 
 ## 3. Weather (D2, priority 3)
-One screen, `#weather` (Safety's weather tile and Today's weather line both open it; the old duplicate panels go).
+### 3.0 Where weather lives (6 surfaces today, AUDIT.md C)
+| Surface | Becomes |
+|---|---|
+| Weather screen (new `#weather`) | The only full weather view (hero card) |
+| Today Next up (`NextUp.tsx:69,90`) | Removed, except storm within 500 km |
+| Today weather line (new) | One compact line: temp, condition, action line; opens `#weather` |
+| Simple-mode Hero (`Hero.tsx:32`) | Action line only, when one applies |
+| Safety tile (`SafetyHub.tsx:69`) + Safety weather page (`SafetyPages.tsx:220-221`) | Tile opens `#weather`; Windy/Ventusky move behind "Open live map" |
+| Assistant card (`Assistant.tsx:157`) | Kept, reads the same cached forecast |
+
+### 3.1 Data
+Open-Meteo request (`weather.ts:15`) adds: current `relative_humidity_2m`, `apparent_temperature`,
+`wind_speed_10m`, `wind_gusts_10m`, `uv_index`; hourly `precipitation_probability`, `temperature_2m`; daily
+`temperature_2m_min/max`, `uv_index_max`; `forecast_days=7`; `timezone=auto` (fixes Manila-only when abroad). One fetch,
+cached, shared by every surface. Heat index computed in a pure helper (Rothfusz with the low-humidity adjustments),
+unit tested. Air quality from alerts-ingest when present.
+
+### 3.2 Screen
 1. **Place toggle**: My location / Home 1 / Home 2 (from `HOME_ZONES`).
 2. **Action line first**, plain words, from the worst of:
    - Heat index (computed from temperature and humidity, Rothfusz formula) mapped to PAGASA bands: Caution,
@@ -88,14 +123,15 @@ One screen, `#weather` (Safety's weather tile and Today's weather line both open
 8. **Footer**: "Forecast: Open-Meteo. Your rounded location is sent only to the weather service."
 
 ## 4. Safety localisation (D3, priority 4)
-Everything follows `resolvePlace()` (GPS, else chosen home zone).
+Everything follows `resolvePlace()` (GPS, else chosen home zone). Zones stay in `geo.ts:13-17` and must match
+`alerts-ingest/parse.ts` (the zone twin test guards this).
 | Item | Today | Plan |
 |---|---|---|
 | Hotlines (Quick dial) | 8 of 12 tagged zone 1, none zone 2 | Add zone 2 hotlines; national numbers (911, Red Cross) tagged `all`; show zone first then national. |
-| Places (hospital, evacuation) | 6, all zone 1 | Add zone 2 hospitals; evacuation centres "ask your barangay/DRRMO" until a list exists. |
+| Places (hospital, evacuation) | 6, all zone 1 | Add zone 2 hospitals (static OSM extract per zone, ODbL credit); evacuation centres "ask your barangay/DRRMO" until a list exists. |
 | Hazard cards | zone 1 only | Add zone 2 (flood, landslide, quake, storm surge as applicable from HazardHunterPH). |
 | Storm map | pinned 12N 128E | Centre on my place; storm track overlay unchanged. |
-| News | top 5 from `news_items`, not local, all caps | Filter by place keywords in the n8n feed, sentence case, max 3, "why this matters" line. |
+| News | top 5 from `news_items`, no zone column, all caps | Add `zone` to `news_items`; n8n tags by place keywords and adds a zone 2 feed; app shows my zone, sentence case, max 3. |
 | Quick dial layout | placeholder rows render vertical text, Add clipped | Fix row layout; hide empty placeholders; Add button full width. |
 | Footer | shows `docs/SOURCES.md` | "Sources" link to an in-app page. |
 | Hazards title | truncated | Allow wrap. |

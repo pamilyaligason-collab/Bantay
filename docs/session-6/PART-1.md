@@ -7,8 +7,9 @@ Members are anonymised. Lloyd approves this part before Part 2 starts.
 - **Medicines cannot be reminded or logged.** 19 prescriptions (31 items, 5 people) were imported, but `medications` has 0 rows and
   `meds_taken` has 0 rows. None of the items has a generic name, and 8 are unclear. The newest prescription is from 2024-11; none is
   from the last 180 days.
-- **Fix #1 is therefore "confirm what you take now", prefilled from the prescriptions.** An automatic conversion would schedule
-  stale medicines. A generic name is needed before any label lookup (openFDA, DailyMed, MedlinePlus).
+- **Fix #1 (Lloyd, D1): auto-convert every prescription item into a scheduled medicine, with edit, pause and delete.**
+  Stale items are handled by a "Still taking it?" review (PART-3 1.3). A generic name is needed before any label lookup
+  (openFDA, DailyMed, MedlinePlus).
 - Usage tracking is only 4 days old (see HANDOFF.md), so the habit baseline is thin.
 
 ## 2. Screenshot audit (22 phone shots, Android; Me and Admin not captured)
@@ -17,7 +18,7 @@ Members are anonymised. Lloyd approves this part before Part 2 starts.
 | Today | Weather fills Next up while the plan shows empty, though Health lists 2 medicines due. Greeting header repeats. |
 | Health | It is unclear whose health is shown. Lab rows are heavy and High flags are unexplained. Medicines are buried, with no Take button. |
 | Family | Records duplicates Health and asks for 229 items to be checked. People are all grey, with no nudge. |
-| Safety | Quick dial placeholder rows render as one-character vertical text and the Add button is clipped (severe). Content is not local: the map shows the wrong island, the news is irrelevant and in all caps, the hospital is in another province. The footer shows `docs/SOURCES.md`. Weather appears 3 times. The Hazards title is truncated. |
+| Safety | Quick dial placeholder rows render as one-character vertical text and the Add button is clipped (severe). Content is not local: the map shows the wrong island, the news is irrelevant and in all caps, the hospital is in another province. The footer shows `docs/SOURCES.md`. Weather appears on several screens (6 surfaces in code, AUDIT.md C). The Hazards title is truncated. |
 | Ask | Gap above the keyboard, no history, and the line "I can mix things up" undermines trust. |
 | Everywhere | The bottom nav overlaps content. |
 
@@ -39,13 +40,14 @@ Me, Inbox and Admin have no tab.
    the onboarding chips carry no time, so those entries are never due (`health/model.ts:248-270`).
 2. `public.medications` (with `schedule` and `source_item_id -> prescription_items`) exists in SQL but nothing in the app,
    edge functions or triggers reads or writes it. **No code converts a prescription into a scheduled medicine.**
-3. Confirmed prescription lines appear only as read-only text (Health > Medicines, Records). NextUp and Hero ignore them.
+3. Confirmed prescription lines appear in Health > Medicines as untimed rows with Mark taken (when the user may mark;
+   `Medicines.tsx:27-33,74-75`) and read-only in Records. NextUp, Hero, reminders and `Health.tsx:34` ignore them.
 4. A dose is logged through `logMedTaken` -> `ldb.meds` -> outbox `meds_taken`, matched to a slot by name, today only.
-5. Native reminders (Android) cover timed profile entries only.
+5. Native reminders (Android) cover the signed-in person's own timed profile entries only, never people they care for.
 
 **Why weather wins Next up** (`today/nextPick.ts`): the order is dose, plan, storm, weather. But a dose counts only if it has a
 time *and* that time has passed. Untimed or later-today doses never show, while weather qualifies at 60% rain or 33 °C, which
-is most days.
+is common in a Philippine city (frequency not measured).
 
 **Events** (`features/admin/events.ts`): `dose_logged`, `reading_added`, `sos_sent` (and the `import_*` names) are allowed
 but never sent. Natural homes: `logMedTaken`, `logReading`, `SosScreen`. SOS only writes local history.
@@ -113,7 +115,7 @@ Risks:
 - There are no published evacuation-centre lists for the family's two areas. Ask the local DRRMO.
 - YouTube and openFDA rows were re-checked on 2026-10-20 by web search (the official pages are blocked from the cloud session).
 
-## 7. Decisions needed from Lloyd before Part 2
-1. Approve fix #1: "confirm what you take now", prefilled from prescriptions (not automatic conversion).
-2. Approve the weather direction: one hero card, an action line first, hourly then 7 days, weather shown once (not 3 times).
-3. Approve Safety localisation as a Part 3 item (map, news, hospital follow the member's place).
+## 7. Decisions (Lloyd, 2026-10-20; see MASTER-PLAN.md)
+1. D1: auto-convert all prescription items, with manual edit, pause and delete.
+2. D2: one hero card, an action line first, hourly then 7 days, weather shown once.
+3. D3: Safety localisation planned in Part 3 (map, news, hospital follow the member's place).
