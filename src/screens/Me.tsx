@@ -121,12 +121,12 @@ export default function Me() {
           <Icon name="chev" />
         </button>
         <a className="sh-navrow" href="#medid">
-          <Icon name="cross" />
+          <Icon name="cross" boxed size={20} />
           <span className="sh-grow"><b>Medical ID</b><span className="sh-sub sh-blk">Blood type, allergies, medicines, who to call</span></span>
           <Icon name="chev" />
         </a>
         <a className="sh-navrow" href="#notif">
-          <Icon name="bell" />
+          <Icon name="bell" boxed size={20} />
           <span className="sh-grow"><b>Notifications</b><span className="sh-sub sh-blk">Inbox, and what each one says</span></span>
           <Icon name="chev" />
         </a>
@@ -160,7 +160,7 @@ export default function Me() {
         <UpdateRow />
         {member?.role === 'admin' && (
           <a className="sh-navrow" href="#admin">
-            <Icon name="gear" />
+            <Icon name="gear" boxed size={20} />
             <span className="sh-grow"><b>Admin</b><span className="sh-sub sh-blk">Admins only</span></span>
             <Icon name="chev" />
           </a>
@@ -169,14 +169,14 @@ export default function Me() {
           <>
             {passkeySupported() && !passkey && (
               <button type="button" className="sh-navrow" disabled={busy} onClick={turnOnPasskey}>
-                <Icon name="check" />
+                <Icon name="check" boxed size={20} />
                 <span className="sh-grow"><b>Turn on fingerprint or face sign-in</b></span>
                 <Icon name="chev" />
               </button>
             )}
             {passkey && <div><Icon name="check" /><div className="sh-grow"><b>Fingerprint or face sign-in is on</b></div></div>}
             <button type="button" className="sh-navrow" onClick={() => { clearLastPerson(); void signOut() }}>
-              <Icon name="users" /><span className="sh-grow"><b>Not you? Switch person</b></span><Icon name="chev" />
+              <Icon name="users" boxed size={20} /><span className="sh-grow"><b>Not you? Switch person</b></span><Icon name="chev" />
             </button>
             <button type="button" className="sh-navrow" onClick={() => { forgetPhone(); void signOut() }}>
               <Icon name="shield" /><span className="sh-grow"><b>Forget this phone</b></span><Icon name="chev" />
