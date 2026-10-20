@@ -4,7 +4,7 @@ import { db } from '../../db'
 import { placeTimezone } from '../location/place'
 import { toWx } from '../today/weather'
 import { openMeteoFixture as fixture } from './fixture'
-import { clockIn, forecastKey, forecastUrl, getForecast, hoursFrom, nowLocal, parseForecast, readCached } from './forecast'
+import { clockIn, forecastKey, forecastUrl, getForecast, hoursFrom, nowLocal, parseForecast, pruneForecasts, readCached } from './forecast'
 
 const P = { lat: 9.645705, lon: 123.877951 }
 const NOW = new Date('2026-10-20T05:00:00Z') // 13:00 in Manila
@@ -120,6 +120,7 @@ describe('forecast cache size', () => {
       await getForecast(at, ok(fixture({ now: NOW, offsetS: 8 * 3600 })), { now: NOW.getTime() + i * 60_000 })
       await new Promise((r) => setTimeout(r, 15)) // the prune runs after the write
     }
+    await pruneForecasts() // the background prune may still be running under load: settle it deterministically
     const keys = (await db.kv.toArray()).map((r) => r.key).filter((k) => k.startsWith('weather.forecast.')).sort()
     expect(keys).toHaveLength(5)
     expect(keys).not.toContain(forecastKey({ lat: 10, lon: 120 }))
