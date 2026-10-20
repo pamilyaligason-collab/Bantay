@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, weatherAction, zoneAlert, type Wx } from './heroCards'
+import { doseKey, dueDoses, heroCards, parseDose, rainLine, rainOutlook, skyOf, weatherAction, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -8,7 +8,7 @@ const alert = (o: Partial<Alert>): Alert => ({
 })
 const wx: Wx = { temp: 29.4, rainPct: 70, words: 'rainy', at: '2026-10-18T08:10:00Z' }
 const at = (h: number, m = 0) => new Date(2026, 9, 18, h, m)
-const base = { alerts: [] as Alert[], ref: null, doses: [], weather: null, placeName: 'Dampas' }
+const base = { alerts: [] as Alert[], ref: null, doses: [] }
 
 describe('parseDose', () => {
   it('reads 24h and am/pm times, and skips text with no time', () => {
@@ -22,7 +22,7 @@ describe('parseDose', () => {
 })
 
 describe('dose card kicker', () => {
-  const kick = (n: Date) => heroCards({ alerts: [], ref: null, doses: [{ name: 'Losartan', at: 480 }], weather: null, placeName: '', now: n }).find((c) => c.kind === 'dose')!.kicker
+  const kick = (n: Date) => heroCards({ alerts: [], ref: null, doses: [{ name: 'Losartan', at: 480 }], now: n }).find((c) => c.kind === 'dose')!.kicker
   it('says Due until two hours pass, then Not taken yet', () => {
     expect(kick(at(8, 30))).toBe('Due · 8:00 AM')
     expect(kick(at(10, 0))).toBe('Not taken yet · 8:00 AM')
@@ -43,7 +43,7 @@ describe('dueDoses skips', () => {
   })
   it('the card counts medicines, not doses', () => {
     const doses = [{ name: 'Metformin', at: 480 }, { name: 'Metformin', at: 1200 }]
-    expect(heroCards({ alerts: [], ref: null, doses, weather: null, placeName: '', now: at(20, 30) }).find((c) => c.kind === 'dose')!.body).toBe('Mark it when you have taken it')
+    expect(heroCards({ alerts: [], ref: null, doses, now: at(20, 30) }).find((c) => c.kind === 'dose')!.body).toBe('Mark it when you have taken it')
   })
 })
 
@@ -81,20 +81,8 @@ describe('zoneAlert', () => {
 
 describe('heroCards priority', () => {
   const dose = { name: 'Losartan', at: 480 }
-  it('alert, then dose, then weather', () => {
-    const k = heroCards({ ...base, alerts: [alert({})], doses: [dose], weather: wx }).map((c) => c.kind)
-    expect(k).toEqual(['alert', 'dose', 'weather'])
-  })
-  it('dose before weather when there is no alert', () => {
-    expect(heroCards({ ...base, doses: [dose], weather: wx })[0]!.kind).toBe('dose')
-  })
-  it('weather alone, rainy wording and rounded temperature', () => {
-    const [c, ...rest] = heroCards({ ...base, weather: wx })
-    expect(rest).toEqual([])
-    expect(c).toMatchObject({ kind: 'weather', big: '29°', title: 'Rain likely today in Dampas' })
-  })
-  it('unknown temperature is not shown as 0', () => {
-    expect(heroCards({ ...base, weather: { ...wx, temp: null } })[0]!.kind).toBe('summary')
+  it('alert, then dose', () => {
+    expect(heroCards({ ...base, alerts: [alert({})], doses: [dose] }).map((c) => c.kind)).toEqual(['alert', 'dose'])
   })
   it('nothing applies: one calm summary', () => {
     expect(heroCards(base).map((c) => c.kind)).toEqual(['summary'])
@@ -110,12 +98,11 @@ describe('rain timing', () => {
   // 2026-10-19 11:20 Manila = 03:20 UTC
   const at = (h: number) => new Date(Date.UTC(2026, 9, 19, h - 8, 20))
   const w = (f: (h: number) => number, code = 3): Wx => ({ ...wx, code, hourly: hourly(f) })
-  const card = (x: Wx, h: number) => heroCards({ ...base, weather: x, now: at(h) })[0]!
+  const card = (x: Wx, h: number) => ({ body: rainLine(x, at(h)) })
   it('finds the start, length and peak from the current hour', () => {
     expect(rainOutlook(times, hourly((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)).prob, '2026-10-19T11:20')).toEqual({ now: false, tomorrow: false, startH: 15, endH: 19, hours: 4, peakPct: 100 })
     const c = card(w((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)), 11)
     expect(c.body).toBe('Rain likely from 3 PM for about 4 hours. Chance: 100%.')
-    expect(c.title).toBe('Rain likely today in Dampas')
   })
   it('rain now only when the sky shows rain; otherwise it looks from the next hour', () => {
     const f = (h: number) => (h >= 14 && h < 17 ? 60 : 0)
@@ -125,7 +112,6 @@ describe('rain timing', () => {
   it('says tomorrow, with a matching title', () => {
     const c = card(w((h) => (h >= 30 && h < 33 ? 80 : 0)), 20)
     expect(c.body).toBe('Rain likely tomorrow from 6 AM for about 3 hours. Chance: 80%.')
-    expect(c.title).toBe('Rain likely tomorrow in Dampas')
   })
   it('is worked out at render time: later in the day the same cache reads differently, and a past window gives no umbrella', () => {
     const x = w((h) => (h >= 15 && h < 17 ? 90 : 0))
@@ -137,7 +123,7 @@ describe('rain timing', () => {
   it('null when no hour reaches 50, undefined without hourly data, old text kept', () => {
     expect(rainOutlook(times, hourly(() => 20).prob, '2026-10-19T08:00')).toBeNull()
     expect(rainOutlook(undefined, undefined, '2026-10-19T08:00')).toBeUndefined()
-    expect(heroCards({ ...base, weather: wx })[0]!.body).toBe('Bring an umbrella. Chance of rain: 70%.')
+    expect(rainLine(wx, at(11))).toBe('Bring an umbrella. Chance of rain: 70%.')
   })
   it('sky from weather code', () => {
     expect([0, 2, 45, 63, 96, undefined].map((c) => skyOf({ ...wx, code: c }))).toEqual(['clear', 'cloud', 'fog', 'rain', 'storm', undefined])
