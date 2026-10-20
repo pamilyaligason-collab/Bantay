@@ -1,0 +1,9 @@
+{
+    "versionCode":  2001000,
+    "versionName":  "2.1.0",
+    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.1.0/bantay-2.1.0.apk",
+    "sha256":  "89765c49a9307f62321b597d54c61207ec841a712fb2472fb338c6109ded3bf5",
+    "size":  5874196,
+    "minShell":  2000000,
+    "notes":  "Medicines with reminders, new Today, Weather, Safety by place, carer alerts."
+}
