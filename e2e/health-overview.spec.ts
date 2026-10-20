@@ -83,6 +83,27 @@ for (const width of [390, 360]) {
   })
 }
 
+test('Latest / Average / Normal switch fits on one line at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.reload()
+  const btns = page.locator('.hv-modes button')
+  await expect(btns).toHaveCount(3)
+  const boxes = await btns.evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return { h: Math.round(r.height), w: Math.round(r.width), lines: Math.round(r.height / parseFloat(getComputedStyle(b).lineHeight || '20')) } }))
+  expect(new Set(boxes.map((b) => b.h)).size).toBe(1)
+  expect(boxes.every((b) => b.h <= 48)).toBe(true)
+  expect(Math.max(...boxes.map((b) => b.w)) - Math.min(...boxes.map((b) => b.w))).toBeLessThanOrEqual(1)
+})
+
+test('a whole vital row is the link, 44px tall, with one tab stop', async ({ page }) => {
+  const row = page.locator('.hv-row[data-test="bp_systolic"]')
+  await row.scrollIntoViewIfNeeded()
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+  expect(await row.locator('a, button, [tabindex]').count()).toBe(1)
+  const b = (await row.boundingBox())!
+  await page.mouse.click(b.x + b.width - 6, b.y + 6) // far from the name
+  await expect(page).toHaveURL(/#health\/metric\/bp_systolic$/)
+})
+
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
