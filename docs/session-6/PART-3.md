@@ -161,12 +161,15 @@ the zone 2 view shows national numbers plus "Add local numbers" for admins.
 ## 5. Health, Family, Records (priority 5)
 ### 5.1 Health tab structure (mockup screens health, metric, addreading, anatomy, library, article, videos, papers)
 1. Person chips + "Showing: Name".
-2. **My KPIs** grid: BP, fasting sugar, weight, steps, doses on time, resting heart; sparkline + range chip; opens the
-   metric detail (30-day chart with normal band, AM/PM toggle, readings list, Add reading, Share with doctor).
-3. **Body map** (kept from v6), opening **Explore your body** (`features/anatomy/*`, kept and extended): system chips,
+2. **My KPIs** grid shows the **latest** record per measure with its time ("126/80 · today 7:30 AM"): BP, fasting
+   sugar, weight, steps, doses on time, resting heart; sparkline + range chip; opens the metric detail (30-day chart with normal band, AM/PM toggle, readings list, Add reading, Share with doctor).
+3. **Body map** (kept from v6) shows the **7-day average** per measure, coloured by status, opening **Explore your body** (`features/anatomy/*`, kept and extended): system chips,
    organ highlight, "what it does" in 2 lines, "your numbers" link, "medicines that act here", "learn more".
 4. **Medicines** summary (ring: 2 of 3 today), opening Health > Medicines.
-5. Vitals with range bars; labs with plain-language flags.
+5. **Vitals** with range bars and a toggle **Latest | Average | Normal**: Latest and Average move the marker and
+   value; Normal shows the standard ranges (BP normal below 120/80, elevated 120-129 systolic; fasting sugar
+   3.9-5.6 mmol/L; resting pulse 60-100 bpm) with a one-line explanation. Ranges come from `health/ranges.ts` and are
+   re-checked against the source cited there before build. Labs keep plain-language flags.
 6. **Learn**: Health library (MedlinePlus Connect summaries keyed by condition and generic name, cached; source and
    "not medical advice" line; English/Filipino) and Videos (curated fixed playlists, YouTube embed, no search API).
 7. Papers (records) with progress ring; Refills; Doctor visits.
