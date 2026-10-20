@@ -10,6 +10,7 @@ health values or screenshots.
 | D1 | Medicines | **Auto-convert every imported prescription item into a scheduled medicine**, with a screen to edit, pause and delete each one. |
 | D2 | Weather | One hero card, a "what to do" action line first, hourly strip, 7 days; weather shown once, not 3 times. |
 | D3 | Safety localisation | Planned in Part 3 (map, news, hospitals, hotlines follow each member's place). |
+| D5 | Stale prescriptions | **Keep**: reminders on; a medicine's reminder pauses if "Still taking it?" is unanswered 3 days after `review_since`. |
 | D4 | Autonomy | Run Parts 2-4 to completion without stopping; ping Lloyd only when his input is required. Audit first. |
 
 ## Task list (updated as work lands)

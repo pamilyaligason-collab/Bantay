@@ -56,13 +56,13 @@ Times are local clock strings; the app converts to minutes (`model.ts:243`) in o
 New columns on `medications`: `origin`, `deleted_at`, `edited_at`. New table `medication_changes(medication_id, by, at, field,
 old, new)` for history (B-7: stored in the database, never sent in notifications).
 
-### 1.3 "Still taking it?" review (default chosen, Lloyd to confirm)
+### 1.3 "Still taking it?" review (Lloyd confirmed "keep", 2026-10-20)
 The newest prescription is about 11 months old and 6 have no date, so every converted active medicine carries
 `review = true`:
 - It shows "From a prescription dated MMM YYYY. Still taking it?" with **Yes / Change / Stopped**.
 - **Default: reminders stay on for reviewed-or-timed medicines** (Lloyd chose auto-convert). If a review is still
   open 3 days after `review_since`, the reminder for that medicine pauses and Today shows "N medicines to check" to the person and
-  their carers. Alternative if Lloyd prefers: reminders off until reviewed.
+  their carers.
 - Today shows one card "N medicines to check" until the list is reviewed.
 
 ### 1.4 Screens
