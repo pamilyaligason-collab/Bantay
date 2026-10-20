@@ -2,6 +2,8 @@
    classes (.row .tile .pill .seg .sub) that Lane A replaces. Values are mockup v6. */
 
 .sh-ic { stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* raw <svg class="sh-ic"> paths without their own stroke-width (Tabler and custom icons set it) */
+.sh-ic:not([stroke-width]) { stroke-width: 1.8; }
 .sh-ic-f { fill: currentColor; stroke: none; }
 .sh-t-medicine { color: var(--c-medicine); } .sh-t-vitals { color: var(--c-vitals); } .sh-t-labs { color: var(--c-labs); } .sh-t-weather { color: var(--c-weather); }
 .sh-t-safety { color: var(--c-safety); } .sh-t-family { color: var(--c-family); } .sh-t-alert { color: var(--c-alert); } .sh-t-neutral { color: var(--c-neutral); }

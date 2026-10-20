@@ -18,13 +18,16 @@ export const IconKidney = make([
 export const IconStomach = make([
   'M10 6C5.5 6 3 10 3.5 14.5 4 19 8 21 12 21c4.5 0 8.5-2 8.5-5.5v-3.5a2 2 0 0 0-4 0V15c0 1.5-1.3 2-2.7 2-2.3 0-3.8-2-3.8-5V3'
 ])
+// A house with a crack and shake marks (a zigzag alone reads as a heart trace).
 export const IconQuake = make([
-  'M3 8h3l2.5-5 3 8 2.5-6 1.5 3H21',
-  'M3 16.5h6.5l1.5 4.5',
-  'M13.5 19.5H21'
+  'M6 20v-8.5l6-5 6 5V20z',
+  'M12.5 8.5 11 12l2 1.5-1.5 3.5',
+  'M3 11v4',
+  'M21 11v4'
 ])
+// The weather-map tropical cyclone symbol: an eye with two opposite hooked arms.
 export const IconTyphoon = make([
-  'M12 10.3a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4z',
-  'M13.7 11C14.5 6.5 10 3 4.5 5.5',
-  'M10.3 13c-.8 4.5 3.7 8 9.2 5.5'
+  'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+  'M14.5 12c0-5 2-8 5.5-9',
+  'M9.5 12c0 5-2 8-5.5 9'
 ])
