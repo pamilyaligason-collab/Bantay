@@ -8,6 +8,7 @@ import { selfIdOrCached } from '../sync/profile'
 import { MEDS_CURSOR } from './useMedicationRows'
 import { dayOf, remindable, parseSchedule, reminderId, toMinutes } from './meds'
 import { clock, medSlots } from './model'
+import { LANG_KEY, loadLang, t } from '../../lib/i18n'
 
 /** Daily local dose reminders for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids,
  *  default none). Native only (web: nothing). A medicine whose "Still taking it?" review is over 3 days old is left out (D5).
@@ -85,7 +86,8 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
     const selfId = opts.selfId !== undefined ? opts.selfId : await selfIdOrCached().catch(() => null)
     const planned = await plannedReminders(medicines, selfId, opts.now)
     const ids = reminderIds(planned)
-    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',')
+    const lang = await loadLang() // the reminder text is in the saved language; a change of language reschedules
+    const sig = planned.map((p, i) => `${ids[i]}@${p.at}`).join(',') + (lang === 'en' ? '' : `#${lang}`)
     const [oldIds, oldSig] = await Promise.all([db.kv.get(KEY_IDS), db.kv.get(KEY_SIG)])
     const had = Array.isArray(oldIds?.value) ? (oldIds!.value as number[]) : []
     if (oldSig?.value === sig && had.length === planned.length) return 'unchanged'
@@ -95,8 +97,8 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
       await LocalNotifications.schedule({
         notifications: planned.map((p, i) => ({
           id: ids[i]!,
-          title: 'Medicine time',
-          body: `It is ${clock(p.at)}. Open Bantay to see what is due.`,
+          title: t('med.title', {}, lang),
+          body: t('med.body', { time: clock(p.at) }, lang),
           extra: { kind: 'dose' },
           schedule: { on: { hour: Math.floor(p.at / 60), minute: p.at % 60 }, allowWhileIdle: true }
         }))
@@ -114,8 +116,8 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
 export function watchDoseReminders(): () => void {
   if (!Capacitor.isNativePlatform()) return () => undefined
   let t: ReturnType<typeof setTimeout> | undefined
-  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value, (await db.kv.get(MEDS_CURSOR))?.value, (await db.kv.get('profile.medicines'))?.value]).subscribe({
-    next: ([, , , legacy]) => { clearTimeout(t); t = setTimeout(() => void syncDoseReminders(legacy), 1500) },
+  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value, (await db.kv.get(MEDS_CURSOR))?.value, (await db.kv.get(LANG_KEY))?.value, (await db.kv.get('profile.medicines'))?.value]).subscribe({
+    next: ([, , , , legacy]) => { clearTimeout(t); t = setTimeout(() => void syncDoseReminders(legacy), 1500) },
     error: () => undefined
   })
   return () => { clearTimeout(t); sub.unsubscribe() }

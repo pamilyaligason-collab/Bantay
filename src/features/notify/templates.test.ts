@@ -35,3 +35,18 @@ describe('buildNotification (B-7)', () => {
     expect(buildNotification({ t: 'storm_warning' })!.data.tab).toBe('safety')
   })
 })
+
+describe('dose_watch (carers, M7b)', () => {
+  it('builds the generic text from a first name only', () => {
+    const n = buildNotification({ t: 'dose_watch', n: 'Maria' })!
+    expect(n.body).toBe('Maria has not marked a medicine (2 h).')
+    expect(n.cls).toBe('health')
+    expect(n.data.tab).toBe('health')
+  })
+  it('rejects anything else riding along or a name with digits or markup', () => {
+    expect(buildNotification({ t: 'dose_watch' })).toBeNull()
+    expect(buildNotification({ t: 'dose_watch', n: 'Maria', med: 'Metformin 500 mg' })).toBeNull()
+    expect(buildNotification({ t: 'dose_watch', n: 'BP 150/95' })).toBeNull()
+    expect(buildNotification({ t: 'dose_watch', n: '<b>x</b>' })).toBeNull()
+  })
+})

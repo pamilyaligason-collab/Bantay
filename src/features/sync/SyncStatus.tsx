@@ -68,6 +68,8 @@ export function DeadSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
+export { OfflineBar, QueuedBadge } from './OfflineBar'
+
 const NONE: Counts = { waiting: 0, unknown: 0, dead: 0 }
 
 /** Small text badge. Place it anywhere (for example under the page heading). */

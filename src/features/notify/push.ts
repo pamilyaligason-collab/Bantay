@@ -31,7 +31,7 @@ export async function handlePush(raw: unknown, deps: PushDeps, now = new Date())
   const n = buildNotification(raw)
   if (!n) {
     const t = (raw as { t?: unknown } | null)?.t
-    if (typeof t === 'string' && HEALTH_IDS.includes(t as TemplateId)) return
+    if (typeof t === 'string' && (t === 'dose_watch' || HEALTH_IDS.includes(t as TemplateId))) return
     return deps.show(FALLBACK)
   }
   if (n.cls === 'health' && !(await deps.claimNudge(dayKey(now), MAX_NUDGES_PER_DAY))) return

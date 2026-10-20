@@ -1,3 +1,5 @@
 .bt .in-read { min-height: 44px; padding: 0 14px; border: 0; background: none; color: var(--link); font: inherit; font-weight: 600; font-size: 14px; }
 .in-row.unread b { font-weight: 700; }
 .in-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex: none; }
+.in-h { margin: 6px 4px 6px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.in-row > svg:first-child { color: var(--green); }

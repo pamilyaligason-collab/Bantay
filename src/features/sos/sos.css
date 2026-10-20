@@ -44,3 +44,9 @@
 .sos-hist li:first-child { border-top: 0; }
 .sos-hist a { color: var(--act); }
 .sos-page .btn2 { box-sizing: border-box; }
+.sos-status { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 14px; display: grid; gap: 8px; }
+.sos-status ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sos-status li { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.sos-who { display: grid; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.sos-st-chip { flex: none; min-height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--soft); color: var(--ink); }
+.sos-st-chip[data-state="ready"], .sos-st-chip[data-state="no-number"] { background: var(--card2); color: var(--muted); }

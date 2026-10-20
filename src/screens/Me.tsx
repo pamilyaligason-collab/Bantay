@@ -6,6 +6,7 @@ import { getMember, signOut, type Member } from '../features/auth/session'
 import { Icon } from '../features/shell/Icon'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { useKv } from '../features/shell/useKv'
+import { isLang, LANG_KEY, LANGS, setLang, type Lang } from '../lib/i18n'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
 import { normalizeContacts, type SosContact } from '../features/sos/contacts'
 import DetailsSheet from '../features/setup/DetailsSheet'
@@ -64,6 +65,7 @@ export default function Me() {
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
+  const [lang, setLangKv] = useKv<Lang>(LANG_KEY, 'en')
   const photo = useOwnAvatar()
   const [detailsOpen, setDetailsOpen] = useState(false)
 
@@ -81,6 +83,7 @@ export default function Me() {
   }, [])
 
   const pickTheme = (t: ThemePref) => { setTheme(t); applyTheme(t) }
+  const pickLang = (l: Lang) => { setLangKv(l); void setLang(l) }
   const turnOnPasskey = async () => {
     setBusy(true)
     const e = member?.personId ? await enablePasskey(member.personId) : 'Not available on this phone yet'
@@ -135,6 +138,12 @@ export default function Me() {
           <div className="sh-grow"><b>Theme</b></div>
           <div className="sh-seg" role="group" aria-label="Theme">
             {THEMES.map((t) => <button key={t.id} type="button" aria-pressed={theme === t.id} onClick={() => pickTheme(t.id)}>{t.label}</button>)}
+          </div>
+        </div>
+        <div>
+          <div className="sh-grow"><b>Language</b><div className="sh-sub">Medicine reminders</div></div>
+          <div className="sh-seg" role="group" aria-label="Language">
+            {LANGS.map((l) => <button key={l.id} type="button" aria-pressed={(isLang(lang) ? lang : 'en') === l.id} onClick={() => pickLang(l.id)}>{l.label}</button>)}
           </div>
         </div>
       </div>

@@ -2,9 +2,27 @@ import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
 import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
+import type { AlertKind } from '../safety/alerts'
 
 export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update'
-export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string }
+/** `at` (ms) is when the thing happened, when the source says (an alert's issue time). Without it the thing is current, so it counts as Today. */
+export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string; at?: number; alertKind?: AlertKind }
+
+const WEATHER_KINDS: AlertKind[] = ['tcws', 'rainfall', 'thunderstorm', 'heat', 'air']
+/** The icon family of an item: dose, weather, family (PIN asks), record, or the generic alert and update. */
+export type InboxIcon = 'dose' | 'weather' | 'family' | 'record' | 'alert' | 'update'
+export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind'>): InboxIcon =>
+  i.kind === 'dose' ? 'dose' : i.kind === 'pin' ? 'family' : i.kind === 'records' ? 'record' : i.kind === 'update' ? 'update'
+    : i.alertKind && WEATHER_KINDS.includes(i.alertKind) ? 'weather' : 'alert'
+
+/** Today (this local calendar day, or no time given) and Earlier, each keeping the order they came in. */
+export function groupInbox(items: InboxItem[], now: Date): { today: InboxItem[]; earlier: InboxItem[] } {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const today: InboxItem[] = []
+  const earlier: InboxItem[] = []
+  for (const i of items) (i.at != null && i.at < start ? earlier : today).push(i)
+  return { today, earlier }
+}
 export interface InboxSources {
   now: Date
   alerts: Alert[]
@@ -41,7 +59,7 @@ export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' |
 export function buildInbox(s: InboxSources): InboxItem[] {
   const out: InboxItem[] = []
   for (const a of rankAlerts(s.alerts, null).slice(0, MAX_ALERTS)) {
-    out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety' })
+    out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety', alertKind: a.kind, ...(Number.isNaN(Date.parse(a.issuedAt)) ? {} : { at: Date.parse(a.issuedAt) }) })
   }
   const day = s.now.toDateString()
   for (const d of pendingDoses(s)) {

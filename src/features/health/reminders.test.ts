@@ -147,3 +147,18 @@ describe('reminders from medications', () => {
     expect(track).toHaveBeenCalledWith('action', 'reminder_opened')
   })
 })
+
+describe('reminder language (M7b)', () => {
+  it('uses the saved language for the text, with no medicine name, and reschedules when the language changes', async () => {
+    await add({ name: 'Drug A', schedule: { v: 1, times: ['08:00'] } })
+    expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('scheduled')
+    expect(sched()[0]).toMatchObject({ title: 'Medicine time', body: 'It is 8:00 AM. Open Bantay to see what is due.' })
+    await db.kv.put({ key: 'lang', value: 'fil' })
+    expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('scheduled')
+    expect(sched()[0]).toMatchObject({ title: 'Oras na ng gamot', body: '8:00 AM na. Buksan ang Bantay para makita ang iinumin.' })
+    expect(JSON.stringify(sched())).not.toMatch(/Drug/)
+    expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('unchanged')
+    await db.kv.put({ key: 'lang', value: 'en' })
+    expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('scheduled')
+  })
+})

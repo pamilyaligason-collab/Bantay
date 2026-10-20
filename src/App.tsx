@@ -18,6 +18,8 @@ import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { useSavedTheme } from './features/shell/theme'
 import { TopBar } from './features/shell/TopBar'
+import { OfflineBar } from './features/sync/OfflineBar'
+import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
@@ -66,6 +68,7 @@ export default function App() {
   const prev = useRef(idx)
   useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
+  useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'weather' ? 'Weather' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
@@ -87,6 +90,7 @@ export default function App() {
     <div className="bt">
       <Sky state="clear" />
       {isTabView && <TopBar unread={inbox.unread} />}
+      <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
         {view === 'admin' ? <AdminScreen /> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
