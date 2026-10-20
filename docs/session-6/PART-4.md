@@ -3,7 +3,7 @@
 As of 2026-10-20.
 
 ## 4a. Mockups
-One private Artifact, 390px phone, light and dark: MOCKUP-LINK
+One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (private; Lloyd shares if wanted)
 Screens: Today (normal and simple), Health > Medicines, medicine edit sheet, delete with undo, Weather, Safety home
 and Quick dial (zone with and without local numbers), Family status. All names and numbers are sample data.
 
