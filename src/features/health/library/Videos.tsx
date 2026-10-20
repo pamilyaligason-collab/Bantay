@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SubHeader } from '../../shell/SubHeader'
-import { embedUrl, forTopic, TOPICS, type Video } from './videos'
+import { embedUrl, forTopic, TOPICS, type Video } from './videosLogic'
 import '../health.css'
 import '../m7a.css'
 

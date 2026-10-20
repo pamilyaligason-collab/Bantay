@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
-import { visitList, type VisitList } from './visits'
+import { visitList, type VisitList } from './visitsLogic'
 import { vdb, type Appointment, type FollowUp } from './visitsStore'
 
 const NA: Appointment[] = []

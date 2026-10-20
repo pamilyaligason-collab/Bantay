@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { familyGlance } from './familyLine'
+import { familyGlance } from './familyLineLogic'
 
 const others = [{ id: 'ma', name: 'Ma' }, { id: 'pa', name: 'Pa' }]
 const at = (h: number) => new Date(2026, 9, 19, h, 0)

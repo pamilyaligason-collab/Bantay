@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
 import type { Reading } from './ranges'
 import { shareSummary } from './summaryImage'
-import { adherence, buildSummary } from './visitSummary'
+import { adherence, buildSummary } from './visitSummaryLogic'
 
 const NOW = new Date(2026, 10, 1, 21, 0) // 1 Nov 2026, 9 PM local
 const ago = (days: number, h = 7) => new Date(2026, 10, 1 - days, h, 30).toISOString()

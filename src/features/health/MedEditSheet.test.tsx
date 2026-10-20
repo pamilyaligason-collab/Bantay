@@ -90,8 +90,9 @@ describe('MedEditSheet', () => {
     const { sheet, notes } = await open(base())
     fireEvent.click(sheet.getByRole('button', { name: 'Pause' }))
     await waitFor(async () => expect((await ldb.medications.toArray())[0]!.medStatus).toBe('paused'))
+    // the event and the toast follow the local write; wait for them too
+    await waitFor(() => expect(notes[0]?.text).toMatch(/paused/))
     expect(events()).toEqual(['med_paused'])
-    expect(notes[0]!.text).toMatch(/paused/)
     cleanup()
     const again = await open((await ldb.medications.toArray())[0])
     expect(again.sheet.getByRole('button', { name: 'Resume' })).toBeTruthy()

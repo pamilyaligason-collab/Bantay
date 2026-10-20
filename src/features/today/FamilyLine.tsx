@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useCheckIns } from '../family/roster'
-import { familyGlance } from './familyLine'
+import { familyGlance } from './familyLineLogic'
 import { useOthers } from './useOthers'
 import { useSeenDaily } from './seen'
 

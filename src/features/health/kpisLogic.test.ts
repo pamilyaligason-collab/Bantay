@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
-import { computeKpis, whenWords } from './kpis'
+import { computeKpis, whenWords } from './kpisLogic'
 import type { Reading } from './ranges'
 import { GUIDE } from './ranges'
 import { averageNodes, byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'

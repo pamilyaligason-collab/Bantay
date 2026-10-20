@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { listDrafts } from '../records/api'
 import { papersLine, progressPct } from '../records/papers'
 import { useConfirmedDocs } from '../records/useRecordsServer'
-import { videosAvailable } from './library/videos'
+import { videosAvailable } from './library/videosLogic'
 import { useMedications } from './useMedications'
 import { useVisits } from './useVisits'
 import { refillLine, stockRows } from './stock'
-import { nextVisitLine } from './visits'
+import { nextVisitLine } from './visitsLogic'
 import './m7a.css'
 
 function Row({ href, title, sub, extra }: { href: string; title: string; sub?: string; extra?: React.ReactNode }) {

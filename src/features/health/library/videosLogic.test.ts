@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { embedUrl, forTopic, playable, TOPICS, VIDEO_ID, VIDEOS, videosAvailable } from './videos'
+import { embedUrl, forTopic, playable, TOPICS, VIDEO_ID, VIDEOS, videosAvailable } from './videosLogic'
 
 describe('videos playlist', () => {
   it('every entry is either a flagged placeholder or a real 11-character id', () => {

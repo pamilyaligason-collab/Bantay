@@ -8,7 +8,7 @@ import { useProfile } from '../setup/useProfile'
 import { renderSummaryImage, shareSummary } from './summaryImage'
 import { useHealthPerson } from './useHealthPerson'
 import { useMedications } from './useMedications'
-import { buildSummary, SUMMARY_DAYS } from './visitSummary'
+import { buildSummary, SUMMARY_DAYS } from './visitSummaryLogic'
 import './health.css'
 import './m7a.css'
 
