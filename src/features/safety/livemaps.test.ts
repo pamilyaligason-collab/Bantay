@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from './alerts'
 import { cyclones, since, stormName, windySrc } from './LiveMaps'
+import { STORM_ZOOM, stormCentre, zoomEarthUrl } from './stormView'
 
 const a = (id: string, kind: Alert['kind'], issuedAt: string) => ({ id, kind, issuedAt, title: id, where: 'X, Philippines', level: 'Orange' }) as Alert
 
@@ -31,5 +32,19 @@ describe('storm list', () => {
   it('shows since date', () => {
     expect(since('2026-10-12T00:00:00Z')).toMatch(/12|11/)
     expect(since('nope')).toBe('date unknown')
+  })
+})
+
+describe('storm map centre', () => {
+  it('is the person\'s place, not 12N 128E', () => {
+    expect(stormCentre({ lat: 6.2015, lon: 125.1878 })).toEqual({ lat: 6.2, lon: 125.19, zoom: STORM_ZOOM })
+    expect(stormCentre({ lat: 29.7604, lon: -95.3698 })).toEqual({ lat: 29.76, lon: -95.37, zoom: STORM_ZOOM })
+    const v = stormCentre({ lat: 9.65, lon: 123.88 })
+    const u = windySrc('wind', v.lat, v.lon, v.zoom)
+    expect(u).toContain('lat=9.65&lon=123.88')
+    expect(u).not.toContain('lat=12.00')
+  })
+  it('the Zoom Earth link follows the same place', () => {
+    expect(zoomEarthUrl({ lat: 9.65, lon: 123.88 })).toBe('https://zoom.earth/maps/satellite/#view=9.65,123.88,5z')
   })
 })

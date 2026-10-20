@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ session: null as null | { access_token: string; user: { id: string } }, rows: {} as Record<string, unknown> }))
@@ -13,6 +14,7 @@ vi.mock('./client', () => ({
   }
 }))
 
+import { db } from '../../db'
 import { getAccessToken, getMember, onAuthChange, signOut } from './session'
 
 describe('session', () => {
@@ -40,5 +42,10 @@ describe('session', () => {
     expect(state.rows.unsub).toBe(true)
     await signOut()
     expect(state.rows.out).toBe(true)
+  })
+  it('signOut wipes the Ask history so the next person on a shared phone cannot read it', async () => {
+    await db.kv.put({ key: 'assistant.history', value: [{ role: 'user', content: 'my blood pressure' }] })
+    await signOut()
+    expect(await db.kv.get('assistant.history')).toBeUndefined()
   })
 })

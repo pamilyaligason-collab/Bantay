@@ -7,7 +7,7 @@ import { type Alert, NOT_A_SIREN } from './alerts'
 import AlertCard from './AlertCard'
 import EntryList from './EntryList'
 import type { Entry } from './entries'
-import { loadNews, safeUrl } from './news'
+import { loadNews, safeUrl, sentenceCase } from './news'
 import NewsTop5 from './NewsTop5'
 import { PracticeCard, CARDS } from './Practice'
 import { ALERTS_KEY } from './SafetyBrief'
@@ -122,26 +122,50 @@ describe('news', () => {
     const again = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, offline as unknown as typeof fetch)
     expect(again?.map((n) => n.id)).toEqual(['1'])
   })
-  it('drops bid and procurement notices and still returns 5', async () => {
+  it('drops bid and procurement notices and still returns 3', async () => {
     const mk = (id: string, title: string, source = 'PIA') => ({ id, title, url: 'https://a.test/' + id, source, kind: 'article', published_at: '2026-10-17T00:00:00Z' })
     const list = [mk('b1', 'Invitation to Bid for road works'), mk('b2', 'Ref (123456789-AB) tender'), mk('b3', 'Notice', 'Procurement Service'), ...['1', '2', '3', '4', '5', '6'].map((i) => mk(i, 'News ' + i))]
     const f = vi.fn(async () => new Response(JSON.stringify(list), { status: 200 }))
     const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch)
-    expect(out?.map((n) => n.id)).toEqual(['1', '2', '3', '4', '5'])
+    expect(out?.map((n) => n.id)).toEqual(['1', '2', '3'])
     expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=40')
   })
-  it('drops bid and procurement notices and still returns 5', async () => {
+  it('drops bid and procurement notices and still returns 3', async () => {
     const mk = (id: string, title: string, source = 'PIA') => ({ id, title, url: 'https://a.test/' + id, source, kind: 'article', published_at: '2026-10-17T00:00:00Z' })
     const list = [mk('b1', 'Invitation to Bid for road works'), mk('b2', 'Ref (123456789-AB) tender'), mk('b3', 'Notice', 'Procurement Service'), ...['1', '2', '3', '4', '5', '6'].map((i) => mk(i, 'News ' + i))]
     const f = vi.fn(async () => new Response(JSON.stringify(list), { status: 200 }))
     const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch)
-    expect(out?.map((n) => n.id)).toEqual(['1', '2', '3', '4', '5'])
+    expect(out?.map((n) => n.id)).toEqual(['1', '2', '3'])
     expect((f.mock.calls[0] as unknown as [string])[0]).toContain('limit=40')
   })
   it('the offline fallback drops bid notices too', async () => {
     await db.kv.put({ key: 'safety.news', value: [{ ...rows[0], id: 'x', title: 'Notice of Award' }, rows[0]] })
     const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, (async () => { throw new Error('offline') }) as unknown as typeof fetch)
     expect(out?.map((n) => n.id)).toEqual(['1'])
+  })
+  it('asks for my zone or no zone, and keeps only those, newest 3', async () => {
+    const mk = (id: string, zone: string | null) => ({ id, title: 'News ' + id, url: 'https://a.test/' + id, source: 'PIA', kind: 'article', published_at: '2026-10-17T00:00:00Z', zone })
+    const f = vi.fn(async () => new Response(JSON.stringify([mk('a', 'cebu'), mk('b', null), mk('c', 'davao'), mk('d', 'davao'), mk('e', null), mk('f', 'davao')]), { status: 200 }))
+    const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch, 'davao')
+    expect(out?.map((n) => n.id)).toEqual(['b', 'c', 'd'])
+    expect(decodeURIComponent((f.mock.calls[0] as unknown as [string])[0])).toContain('or=(zone.is.null,zone.eq.davao)')
+    const none = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch, null)
+    expect(none?.map((n) => n.id)).toEqual(['b', 'e'])
+    expect((f.mock.calls[1] as unknown as [string])[0]).toContain('zone=is.null')
+  })
+  it('retries without the zone filter while the column is not live yet', async () => {
+    const f = vi.fn()
+      .mockResolvedValueOnce(new Response('{"code":"42703"}', { status: 400 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([rows[0]]), { status: 200 }))
+    const out = await loadNews({ VITE_SUPABASE_URL: 'https://x.supabase.test' }, f as unknown as typeof fetch, 'davao')
+    expect(out?.map((n) => n.id)).toEqual(['1'])
+    expect((f.mock.calls[1] as unknown as [string])[0]).not.toContain('zone')
+  })
+  it('turns ALL CAPS titles into sentence case and leaves normal titles alone', () => {
+    expect(sentenceCase('HEAVY RAIN WARNING IN CEBU CITY. PAGASA SAYS STAY HOME')).toBe('Heavy rain warning in Cebu city. PAGASA says stay home')
+    expect(sentenceCase('Heavy rain in Cebu')).toBe('Heavy rain in Cebu')
+    expect(sentenceCase('PAGASA')).toBe('PAGASA')
+    expect(sentenceCase('Signal No. 2 raised by PAGASA')).toBe('Signal No. 2 raised by PAGASA')
   })
   it('safeUrl', () => {
     expect(safeUrl('https://a.b')).toBe(true)

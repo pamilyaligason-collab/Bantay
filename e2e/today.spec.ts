@@ -30,18 +30,30 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
 })
 
-test('Today is short: no news, no video, one weather line at most, a round quick-log row', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Next up' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: "Today's plan" })).toBeVisible()
+test('Today follows Lloyd\'s order: Next up, quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
+  const heading = (name: string) => page.getByRole('heading', { name })
+  await expect(heading('Next up')).toBeVisible()
+  await expect(heading("Today's plan")).toBeVisible()
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
-  for (const gone of ['Video of the day', 'Your day', 'Top news', 'News']) await expect(page.getByRole('heading', { name: gone })).toHaveCount(0)
+  for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
-  await expect(row.getByRole('button')).toHaveCount(5)
+  await expect(row.getByRole('button')).toHaveCount(6)
+  const boxes = []
   for (const b of await row.getByRole('button').all()) {
     const box = (await b.boundingBox())!
-    expect(box.height).toBeGreaterThanOrEqual(48)
+    expect(box.height).toBeGreaterThanOrEqual(72)
     expect(box.width).toBeGreaterThanOrEqual(48)
+    boxes.push(box)
   }
+  expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(2) // two rows of three
+  expect(new Set(boxes.map((b) => Math.round(b.x))).size).toBe(3)
+  const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
+  const next = await y(heading('Next up'))
+  const quick = await y(row)
+  const plan = await y(heading("Today's plan"))
+  const ok = await y(page.getByRole('button', { name: "I'm OK" }))
+  const week = await y(page.getByRole('link', { name: /Your week/ }))
+  expect([next, quick, plan, ok, week]).toEqual([...[next, quick, plan, ok, week]].sort((p, q) => p - q))
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 })
 
@@ -51,12 +63,13 @@ test('I am OK signed out says to sign in and does not claim a check-in', async (
   await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
 })
 
-test('Next up names the family member whose medicine is not taken and offers no Mark taken for them', async ({ page }) => {
-  await seed(page, 'bantay', 'profiles', [{ id: 'ma', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: ['Hydroxurea 0:00', 'Aspirin 0:00'], updatedAt: null }])
-  await page.reload()
-  await expect(page.getByRole('heading', { name: 'Ma: Hydroxurea and Aspirin' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Mark taken' })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: /See Ma's medicines/ })).toHaveAttribute('href', '#health')
+test('Next up is calm with no medicines, and the quick-log Dose and Mood buttons open their sheets', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'All clear' })).toBeVisible()
+  await page.getByRole('button', { name: 'Log how you feel' }).click()
+  await expect(page.getByRole('dialog', { name: 'How are you feeling?' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Log a medicine you took' }).click()
+  await expect(page.getByRole('dialog', { name: 'Which medicine did you take?' })).toBeVisible()
 })
 
 test("Today's plan ticks a task off in place and the progress follows", async ({ page }) => {

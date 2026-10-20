@@ -61,3 +61,22 @@ name appears as in earlier plans.
   5.1 (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal, anatomy, library, videos).
 - Mockup rebuilt on the v2 mockup as the base (Lloyd): version 6, 53 screens, every v2 screen kept (PART-4 4a).
 - User-POV audit of the mockup (15 bugs, 9 persona issues) fixed and re-verified with Playwright.
+
+## Build status (2026-10-20, PR #4)
+| Lane | What | Built | Opus review | Fixes in |
+|---|---|---|---|---|
+| M0 | 0014 medications live (applied to production, 24 medications) | yes | yes (6 major fixed) | PR #3, merged |
+| T | habit events + client time (0015) | yes | yes (with M1) | PR #4 |
+| M1 | medicines data on the phone + 0016 tombstones | yes | yes (5 major fixed) | PR #4 |
+| M2 | Medicines screens, edit, review, setup/Me/admin | yes | yes (3 major fixed) | PR #4 |
+| M3 | Today in Lloyd's order, My week, family line, simple mode | yes | yes (1 blocker + 4 major fixed) | PR #4 |
+| M4 | one Weather screen, heat index, action line | yes | yes (with M5) | PR #4 |
+| M5 | Safety by place, 58 numbers, news zone (0017) | yes | yes (4 major fixed) | PR #4 |
+| M6 | tidy: tab bar, Papers under Health, People nudge, Ask | yes | yes (1 blocker + 2 major fixed) | PR #4 |
+| M7b | dose-watch carer alert (0018), offline bar, inbox, SOS status, Filipino | yes | yes (2 major fixed) | PR #4 |
+| M7a | Health overview, metric chart, refill, visits, library, videos, reminder buttons | yes | in progress | PR #4 |
+
+Release: `scripts/golive-s6.ps1` (0015-0018 + dose-watch), then merge PR #4 (Cloudflare Pages redeploys), then APK.
+Lloyd still supplies: PAGASA heat bands check, real YouTube video ids (`src/data/videos.json`), an official
+"emergency number abroad" source, native-speaker check of the Filipino strings, a phone check of the lock-screen
+Taken button, and confirmation of the UNVERIFIED hotline numbers.

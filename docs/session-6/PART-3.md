@@ -224,7 +224,7 @@ Only duplicates go: weather inside Next up, the second weather panel in Safety, 
 All use tables that already exist; no new external services.
 | Feature | What the user sees | Data | Persona |
 |---|---|---|---|
-| Missed-dose alert to carer | "Lola Rosa has not marked her 8 AM dose (2 h)" push to writer carers; generic text on the lock screen (B-7) | `medications`, `meds_taken`; new edge function `dose-watch` on a 15-min schedule | P1, P3 |
+| Missed-dose alert to carer | "Lola Rosa has not marked her 8 AM dose (2 h)" push to writer carers; generic text on the lock screen (B-7) | `medications`, `meds_taken`; new edge function `dose-watch` on a 15-min schedule; advisory: the slot is claimed before the push, so a push lost on the network is not repeated (all-network-error sends release the claim); only confirmed medicines (review not true) are watched | P1, P3 |
 | Reminder actions | Lock-screen reminder with Taken / Snooze 15 min / Open; Taken logs without opening the app | Capacitor LocalNotifications action types | P2 |
 | Refill and stock | "7 days left: refill by Oct 27", add to Plan; go-bag "medicines for 7 days" check | `medications.stock_qty`, `per_day`, `stock_set_at` | P3 |
 | Doctor visits | Next visit card, "bring" checklist, follow-ups created from `prescriptions.follow_up_on` | `appointments` (0 rows today; `source_prescription_id` exists) | P3, P1 |

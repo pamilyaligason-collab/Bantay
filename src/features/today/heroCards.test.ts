@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, zoneAlert, type Wx } from './heroCards'
+import { doseKey, dueDoses, heroCards, parseDose, rainOutlook, skyOf, weatherAction, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -141,5 +141,24 @@ describe('rain timing', () => {
   })
   it('sky from weather code', () => {
     expect([0, 2, 45, 63, 96, undefined].map((c) => skyOf({ ...wx, code: c }))).toEqual(['clear', 'cloud', 'fog', 'rain', 'storm', undefined])
+  })
+})
+
+describe('weatherAction (Today and Simple mode action line)', () => {
+  const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', humidity: 60, ...o })
+  const now = new Date('2026-10-19T02:00:00Z') // 10:00 in Manila
+  it('is the top line of the Weather screen actionLines(): heat index first, then rain, nothing otherwise', () => {
+    expect(weatherAction(w({ temp: 31, humidity: 65 }), now)).toBe('Avoid the noon sun. Drink water often.')
+    expect(weatherAction(w({ temp: 28, humidity: 60 }), now)).toBeNull() // heat index 31: Caution is not an action line
+    const hourly = { time: ['2026-10-19T12:00', '2026-10-19T13:00'], prob: [80, 70] }
+    expect(weatherAction(w({ hourly }), now)).toMatch(/^Rain likely 12-2 PM/)
+    expect(weatherAction(w({ temp: 36, humidity: 70, hourly }), now)).toMatch(/^Stay indoors/) // heat outranks rain
+  })
+  it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
+    expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()
+  })
+  it('unknown temperature or no reading gives no line, never a guess', () => {
+    expect(weatherAction(w({ temp: null, rainPct: 90 }), now)).toBeNull()
+    expect(weatherAction(null)).toBeNull()
   })
 })

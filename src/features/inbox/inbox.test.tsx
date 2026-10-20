@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { buildInbox, countUnread, type InboxSources } from './build'
+import { buildInbox, countUnread, groupInbox, iconOf, type InboxSources } from './build'
 import { Inbox } from './Inbox'
 
 afterEach(cleanup)
@@ -71,5 +71,53 @@ describe('Inbox screen', () => {
     render(<Inbox inbox={inbox(items, items.map((x) => x.id))} />)
     expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull()
     expect(screen.queryByRole('img', { name: 'New' })).toBeNull()
+  })
+})
+
+describe('buildInbox from medications', () => {
+  const med = { personId: 'me', name: 'Drug A', serverId: 'srv-a', medStatus: 'active' as const, schedule: { v: 1, times: ['07:00', '20:00'] } }
+  const src = (o: Partial<InboxSources>): InboxSources => ({ ...base, medications: [med], personId: 'me', ...o })
+  it('lists a past-due slot, missed once the window passed, and not slots later today', () => {
+    const items = buildInbox(src({ now: at(10) }))
+    expect(items.map((i) => i.title)).toEqual(['Drug A was not marked today'])
+  })
+  it('a take by medication id and slot clears it, a synced skip clears it, a take for another medication does not', () => {
+    const t = at(7, 20).toISOString()
+    expect(buildInbox(src({ now: at(10), taken: [{ name: 'x', takenAt: t, medicationId: 'srv-a', slot: '07:00' }] }))).toEqual([])
+    expect(buildInbox(src({ now: at(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'srv-a', slot: '07:00', skipped: true }] }))).toEqual([])
+    expect(buildInbox(src({ now: at(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'other', slot: '07:00' }] }))).toHaveLength(1)
+  })
+  it('paused and as-needed medicines never show, and the old profile text is ignored once medications are given', () => {
+    const items = buildInbox(src({ now: at(21), profile: ['Old 7:00'], medications: [{ ...med, medStatus: 'paused' }, { ...med, name: 'Prn', asNeeded: true }] }))
+    expect(items).toEqual([])
+  })
+})
+
+describe('grouping and icons (M7b)', () => {
+  const inbox = (items: ReturnType<typeof buildInbox>, seen: string[] = []) => ({ items, unread: countUnread(items, seen), seen, markAllRead: vi.fn() })
+  it('splits Today and Earlier by the alert issue time; things with no time are Today', () => {
+    const items = buildInbox({ ...base, alerts: [alert({ id: 'old', issuedAt: new Date(2026, 9, 17, 9).toISOString() }), alert({ id: 'new', title: 'Heat today', kind: 'heat', issuedAt: new Date(2026, 9, 19, 6).toISOString() })], toCheck: 1 })
+    const g = groupInbox(items, at(10))
+    expect(g.today.map((i) => i.kind + ':' + i.title)).toEqual(['alert:Heat today', 'records:1 record to check'])
+    expect(g.earlier.map((i) => i.title)).toEqual(['Typhoon signal no. 2'])
+  })
+  it('picks an icon per type: dose, weather, family, record', () => {
+    const items = buildInbox({ ...base, alerts: [alert({ kind: 'quake' }), alert({ id: 'w', kind: 'heat', issuedAt: '2026-10-19T04:00:00Z' })], profile: ['Losartan 9:00'], pins: [{ id: 1, handle: 'lola' }], toCheck: 1, updateVersion: '1.2.0' })
+    expect(items.map(iconOf)).toEqual(['weather', 'alert', 'dose', 'family', 'record', 'update'])
+  })
+  it('renders the Today and Earlier headings with an icon type per row and unread dots', () => {
+    const items = buildInbox({ ...base, alerts: [alert({ issuedAt: new Date(2026, 9, 17, 9).toISOString() })], toCheck: 2 })
+    const { container } = render(<Inbox inbox={inbox(items, [items[0]!.id])} now={at(10)} />)
+    expect(screen.getByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Earlier' })).toBeTruthy()
+    expect(screen.getByTestId('inbox-today').textContent).toContain('2 records to check')
+    expect(screen.getByTestId('inbox-earlier').textContent).toContain('Typhoon signal no. 2')
+    expect(container.querySelector('[data-icon="record"]')).toBeTruthy()
+    expect(container.querySelector('[data-icon="weather"]')).toBeTruthy()
+    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
+  })
+  it('shows no Earlier heading when nothing is older', () => {
+    render(<Inbox inbox={inbox(buildInbox({ ...base, toCheck: 1 }))} now={at(10)} />)
+    expect(screen.queryByRole('heading', { name: 'Earlier' })).toBeNull()
   })
 })

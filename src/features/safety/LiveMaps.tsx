@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { ALERTS_KEY, distanceKm, r2, type Alert, type LatLon } from './alerts'
+import { stormCentre, zoomEarthUrl } from './stormView'
 import { useKv } from './store'
 import './livemaps.css'
 
@@ -8,8 +9,6 @@ export type WindyLayer = (typeof WINDY_LAYERS)[number][1]
 
 export const windySrc = (layer: WindyLayer, lat: number, lon: number, zoom = 8) =>
   `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=${zoom}&overlay=${layer}&product=ecmwf&level=surface&lat=${r2(lat)}&lon=${r2(lon)}&detailLat=${r2(lat)}&detailLon=${r2(lon)}&marker=true`
-
-export const STORM_VIEW = { lat: 12, lon: 128, zoom: 4 }
 
 /** Active tropical cyclones from the GDACS rows the ingest keeps in safety.alerts (id gdacs-TC-<eventid>). Newest start first. Stale rows (source unreachable) are hidden. */
 export function cyclones(alerts: Alert[]): Alert[] {
@@ -49,10 +48,10 @@ export const since = (iso: string) => {
   return Number.isNaN(t) ? 'date unknown' : new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' })
 }
 
-const LINKS = [
+const links = (loc: LatLon) => [
   ['PAGASA bulletin', 'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin'],
   ['JTWC', 'https://www.metoc.navy.mil/jtwc/jtwc.html'],
-  ['Zoom Earth', 'https://zoom.earth/maps/satellite/#view=12,128,5z'],
+  ['Zoom Earth', zoomEarthUrl(loc)],
   ['World Monitor', 'https://www.worldmonitor.app/dashboard']
 ]
 
@@ -94,6 +93,7 @@ const NONE: Alert[] = []
 export default function LiveMaps({ loc }: { loc: LatLon }) {
   const [layer, setLayer] = useState<WindyLayer>('rain')
   const online = useOnline()
+  const view = stormCentre(loc)
   const storms = cyclones(useKv<Alert[]>(ALERTS_KEY, NONE))
   return (
     <div className="sf">
@@ -104,8 +104,8 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
       </div>
       <WindyMap title={`Windy ${layer} map for your place`} src={windySrc(layer, loc.lat, loc.lon)} online={online} />
       <p className="sub lm-credit">Map by Windy.com</p>
-      <h3 className="hd lm-sub">Storms near the Philippines</h3>
-      <WindyMap title="Windy wind map of the Western Pacific" src={windySrc('wind', STORM_VIEW.lat, STORM_VIEW.lon, STORM_VIEW.zoom)} online={online} />
+      <h3 className="hd lm-sub">Storms near you</h3>
+      <WindyMap title="Windy wind map around your place" src={windySrc('wind', view.lat, view.lon, view.zoom)} online={online} />
       <p className="sub lm-credit">Map by Windy.com</p>
       {storms.length ? (
         <div className="grp">
@@ -115,7 +115,7 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
         </div>
       ) : <p className="sf-empty" role="status">No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.</p>}
       <div className="grp">
-        {LINKS.map(([name, url]) => (
+        {links(loc).map(([name, url]) => (
           <a key={url} className="row" href={url} target="_blank" rel="noopener">
             <span className="grow"><span>{name}</span><span className="sub" style={{ fontSize: 14 }}>Opens in a new tab.</span></span>
           </a>

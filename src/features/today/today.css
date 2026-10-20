@@ -10,13 +10,13 @@
 .td-sech h2, h2.td-sech { font-family: var(--f-ui); font-size: 17px; font-weight: 700; margin: 0; letter-spacing: 0; }
 .td-sech h2 { margin: 0; }
 
-/* quick-log row: round icon buttons with a label under each */
-.td-quick { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-.bt .td-q { border: 0; background: none; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; padding: 4px 0; font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; }
-.td-qc { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--soft); color: var(--green2); box-shadow: var(--shadow); }
-.bt .td-q:active .td-qc { background: var(--card2); }
-:root[data-theme="dark"] .td-qc { color: var(--amber); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-qc { color: var(--amber); } }
+/* quick log: 3 x 2 grid of tiles, icon above the label, 72px tall */
+.td-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; }
+.bt .td-q .td-ic { color: var(--green2); }
+.bt .td-q:active { background: var(--card2); }
+:root[data-theme="dark"] .bt .td-q .td-ic { color: var(--amber); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bt .td-q .td-ic { color: var(--amber); } }
 
 /* hero */
 
@@ -81,7 +81,7 @@
 
 /* simple mode: hero plus three big buttons, larger type (the tab bar stays) */
 .td-simple { display: flex; flex-direction: column; gap: 16px; font-size: 18px; }
-.td-simple .td-slide { min-height: 240px; }
+.td-simple .td-slide { flex: 0 0 auto; }
 .td-simple .td-slide h2, .td-simple .td-slide h3 { font-size: 32px; }
 .td-simple .td-slide p { font-size: 20px; }
 .td-big-btns { display: grid; gap: 12px; }
@@ -164,3 +164,41 @@
 .td-week { display: flex; align-items: center; gap: 12px; min-height: 64px; text-decoration: none; color: var(--ink); box-sizing: border-box; }
 .td-week b { font-weight: 700; }
 .td-nowrap { white-space: nowrap; }
+
+/* Next up: Taken dominates, Skip is a quiet text button, the footer counts medicines to check */
+.bt .td-taken { min-height: 52px; flex: 1 1 auto; font-size: 17px; }
+.bt .td-taken-big { min-height: 72px; font-size: 24px; width: 100%; }
+.bt .td-skip { background: none; border: 0; color: var(--on-green); opacity: .85; font-size: 15px; font-weight: 600; min-height: 48px; padding: 0 14px; text-decoration: underline; text-underline-offset: 3px; }
+.bt .td-skip:disabled { opacity: .5; }
+.td-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, .22); min-height: 44px; color: inherit; text-decoration: none; font-weight: 600; font-size: 15px; }
+.td-slide.calm .td-foot { border-top-color: var(--line); color: var(--link); }
+.td-wxline-big { font-size: 20px; color: var(--ink); font-weight: 600; margin: 0 4px; }
+
+/* weather card */
+.bt .td-wx { display: flex; align-items: center; gap: 14px; min-height: 72px; text-decoration: none; color: var(--ink); box-sizing: border-box; }
+.td-wx-t { font-family: var(--f-display); font-size: 40px; line-height: 1; font-weight: 500; flex: none; }
+.td-wx b { font-weight: 700; overflow-wrap: anywhere; }
+.td-wx-act { font-weight: 600; font-size: 15px; color: var(--amber-ink); overflow-wrap: anywhere; }
+
+/* My week */
+.td-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.td-tile { display: flex; flex-direction: column; gap: 2px; background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; text-decoration: none; color: var(--ink); min-width: 0; box-sizing: border-box; min-height: 44px; }
+.td-tile-l { font-size: 13px; font-weight: 600; color: var(--muted); }
+.td-tile-v { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.td-tile-v b { font-family: var(--f-display); font-size: 26px; font-weight: 600; line-height: 1.1; }
+.td-tile-v span { font-size: 13px; color: var(--muted); }
+.td-tile-s { font-size: 13px; color: var(--muted); }
+.td-tile-f { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; margin-top: 6px; min-height: 28px; }
+.td-spark { width: 72px; height: 28px; flex: none; stroke: var(--green2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.td-spark circle { fill: var(--green2); stroke: none; }
+:root[data-theme="dark"] .td-spark { stroke: var(--amber); }
+:root[data-theme="dark"] .td-spark circle { fill: var(--amber); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-spark { stroke: var(--amber); } :root:not([data-theme="light"]) .td-spark circle { fill: var(--amber); } }
+.td-chip { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--ok); white-space: nowrap; }
+.td-chip.high, .td-chip.low { background: var(--warn-bg); color: var(--warn); }
+
+/* family line */
+.td-attn { color: var(--amber-ink); font-weight: 600; }
+
+.td-due { margin: 10px 4px 0; font-size: 15px; font-weight: 600; }
+.td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }

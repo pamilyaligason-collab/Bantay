@@ -3,9 +3,11 @@ import { useKv } from '../shell/useKv'
 import { loadFamily } from '../auth/family'
 import { normalizeContacts } from './contacts'
 import SosContactsPicker from './SosContactsPicker'
+import { track } from '../admin/events'
 import { addHistory } from './history'
 import { sosPosition, type SosFix } from './locate'
 import { mapLink, SAFE_BODY, smsUri, sosBody } from './sms'
+import { SosStatus } from './SosStatus'
 import { useSelf } from './useSelf'
 import './sos.css'
 
@@ -20,6 +22,7 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
   const { name } = useSelf()
   const [fix, setFix] = useState<SosFix | null>(null)
   const [safe, setSafe] = useState(false)
+  const [opened, setOpened] = useState(false) // the text app was opened with the message (all we can know)
   const [add, setAdd] = useState(false) // stays open once shown, so the picker does not vanish while a second contact is typed
   const tried = useRef(false)
   const started = useRef(Date.now())
@@ -40,7 +43,8 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
     if (!uri) setAdd(true)
     const e = { at: fix.at, lat: fix.lat, lon: fix.lon, gps: fix.gps, texted: !!uri }
     void addHistory(e)
-    if (uri) window.location.href = uri
+    void track('action', 'sos_sent')
+    if (uri) { setOpened(true); window.location.href = uri }
   }, [fix, loaded, uri])
 
   const imSafe = () => {
@@ -67,8 +71,9 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
       </div>
       <a href="tel:911" className="sos-911">Call 911</a>
       {fix && uri && (
-        <a href={uri} className="sos-text">Open the text to {contacts.map((c) => c.name || c.phone).join(' and ')}</a>
+        <a href={uri} className="sos-text" onClick={() => setOpened(true)}>Open the text to {contacts.map((c) => c.name || c.phone).join(' and ')}</a>
       )}
+      {fix && uri && <SosStatus contacts={contacts} opened={opened} />}
       {add && (
         <div className="sos-need">
           <b>{uri ? 'Who gets the text' : 'Nobody will get a text yet'}</b>

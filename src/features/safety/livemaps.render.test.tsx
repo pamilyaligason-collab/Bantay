@@ -12,7 +12,7 @@ describe('LiveMaps storm list', () => {
     rows.list = [{ id: 'gdacs-TC-1', kind: 'gdacs', issuedAt: '2026-10-12T00:00:00Z', title: 'Tropical Cyclone PEPITO', where: 'Philippines', level: 'Orange' } as Alert]
     render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
     expect(screen.getByText('Tropical Cyclone PEPITO')).toBeTruthy()
-    expect(screen.getByText(/Orange alert · since \d+ \w+/)).toBeTruthy()
+    expect(screen.getByText(/Orange alert · since (\d+ \w+|\w+ \d+)/)).toBeTruthy() // day-month order follows the device locale
     expect(screen.queryByText(/No storm warnings/)).toBeNull()
   })
   it('empty list says GDACS only, never "no storms", and keeps the PAGASA link', () => {

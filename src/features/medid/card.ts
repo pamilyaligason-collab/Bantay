@@ -1,4 +1,6 @@
 import type { ProfileFields } from '../../db'
+import { isLive } from '../health/meds'
+import type { Medication } from '../log/store'
 import { UNKNOWN } from '../setup/lists'
 import type { SosContact } from '../sos/contacts'
 
@@ -27,9 +29,14 @@ export function ageOf(birthdate: string | null | undefined, now: Date): number |
 
 const clean = (l: readonly string[] | undefined) => (l ?? []).map((s) => s.trim()).filter(Boolean)
 
-export function buildMedicalId(o: { name: string; profile: Partial<ProfileFields> | null | undefined; contacts: SosContact[]; now: Date }): MedicalId {
+/** `medications` = this person's medications rows (the live schedule). Only active ones are listed, by name (no times, doses or stock).
+ *  @deprecated When it is not given the profile text list `profile.medicines` is used; that path goes once every caller passes medications. */
+export function buildMedicalId(o: { name: string; profile: Partial<ProfileFields> | null | undefined; contacts: SosContact[]; now: Date; medications?: Medication[] }): MedicalId {
   const p = o.profile ?? {}
-  const allergies = clean(p.allergies), conditions = clean(p.conditions), medicines = clean(p.medicines)
+  const allergies = clean(p.allergies), conditions = clean(p.conditions)
+  const medicines = o.medications
+    ? [...new Set(clean(o.medications.filter(isLive).map((m) => m.name)))]
+    : clean(p.medicines)
   const calls = o.contacts.filter((c) => c.phone.trim()).map((c) => ({ name: c.name.trim() || 'Contact', phone: c.phone.trim() }))
   const bloodType = p.bloodType?.trim() || null
   const missing: MedicalId['missing'] = []

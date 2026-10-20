@@ -1,14 +1,37 @@
 import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
+import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import type { MedTaken, Medication } from '../log/store'
+import type { AlertKind } from '../safety/alerts'
 
 export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update'
-export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string }
+/** `at` (ms) is when the thing happened, when the source says (an alert's issue time). Without it the thing is current, so it counts as Today. */
+export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string; at?: number; alertKind?: AlertKind }
+
+const WEATHER_KINDS: AlertKind[] = ['tcws', 'rainfall', 'thunderstorm', 'heat', 'air']
+/** The icon family of an item: dose, weather, family (PIN asks), record, or the generic alert and update. */
+export type InboxIcon = 'dose' | 'weather' | 'family' | 'record' | 'alert' | 'update'
+export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind'>): InboxIcon =>
+  i.kind === 'dose' ? 'dose' : i.kind === 'pin' ? 'family' : i.kind === 'records' ? 'record' : i.kind === 'update' ? 'update'
+    : i.alertKind && WEATHER_KINDS.includes(i.alertKind) ? 'weather' : 'alert'
+
+/** Today (this local calendar day, or no time given) and Earlier, each keeping the order they came in. */
+export function groupInbox(items: InboxItem[], now: Date): { today: InboxItem[]; earlier: InboxItem[] } {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const today: InboxItem[] = []
+  const earlier: InboxItem[] = []
+  for (const i of items) (i.at != null && i.at < start ? earlier : today).push(i)
+  return { today, earlier }
+}
 export interface InboxSources {
   now: Date
   alerts: Alert[]
-  /** kv profile.medicines: "Losartan 8:00". Entries with no time are skipped, never guessed. */
+  /** @deprecated kv profile.medicines text "Losartan 8:00" (used only when `medications` is not given). Entries with no time are skipped, never guessed. */
   profile: unknown
-  taken: { name: string; takenAt: string }[]
+  /** The live schedule: this person's medications rows. When given, doses come from it (taken/skipped by medicationId + slot) and `profile` and `skipped` are ignored. */
+  medications?: Medication[]
+  personId?: string
+  taken: (Pick<MedTaken, 'name' | 'takenAt'> & Partial<Pick<MedTaken, 'medicationId' | 'slot' | 'skipped'>>)[]
   skipped: string[]
   updateVersion: string | null
   /** Admins only: open "Forgot PIN" requests and records waiting to be checked. Pass [] and 0 for everyone else. */
@@ -21,8 +44,14 @@ const mins = (d: Date) => d.getHours() * 60 + d.getMinutes()
 const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
 
 /** Today's doses that are due now or already past their window and not marked taken or skipped. */
-export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped'>) {
+export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped' | 'medications' | 'personId'>) {
   const nowMin = mins(s.now)
+  if (s.medications && s.personId) {
+    const day = dayOf(s.now)
+    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day)
+      .filter((d) => d.state === 'pending' && d.at <= nowMin)
+      .map((d) => ({ name: d.name, at: d.at, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
+  }
   return dueDoses(s.profile, s.taken, s.skipped, s.now).map((d) => ({ ...d, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
 }
 
@@ -30,7 +59,7 @@ export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' |
 export function buildInbox(s: InboxSources): InboxItem[] {
   const out: InboxItem[] = []
   for (const a of rankAlerts(s.alerts, null).slice(0, MAX_ALERTS)) {
-    out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety' })
+    out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety', alertKind: a.kind, ...(Number.isNaN(Date.parse(a.issuedAt)) ? {} : { at: Date.parse(a.issuedAt) }) })
   }
   const day = s.now.toDateString()
   for (const d of pendingDoses(s)) {

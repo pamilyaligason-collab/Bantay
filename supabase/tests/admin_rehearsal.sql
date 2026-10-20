@@ -78,4 +78,16 @@ select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000
 select pg_temp.ok(pg_temp.fails($$insert into public.carers values ('00000000-0000-0000-0000-00000000000a','10000000-0000-0000-0000-0000000000b1', false)$$), 'admin cannot link self as carer');
 select pg_temp.ok((select count(*) from public.readings) = 0, 'admin role alone does not read readings');
 reset role;
+-- ===== 0015: client time on usage events (session 6 lane T) =====
+\ir ../migrations/0015_usage_client_at.sql
+\ir ../migrations/0015_usage_client_at.sql
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select pg_temp.ok(not pg_temp.fails($$insert into public.usage_events (kind, name, client_at) values ('action','dose_logged', now() - interval '3 hours')$$), 'member inserts an event with the phone time');
+select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name, client_at) values ('action','dose_logged', now() + interval '3 days')$$), 'a phone clock days in the future is refused');
+select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name, client_at) values ('action','dose_logged', timestamptz '2020-01-01')$$), 'a phone clock years in the past is refused');
+reset role;
+select pg_temp.ok((select count(*) from public.usage_events where client_at is not null) = 1 and (select client_at < at from public.usage_events where client_at is not null), 'client_at stored and earlier than arrival');
+\ir ../migrations/0015_usage_client_at.down.sql
+select pg_temp.ok(not exists (select 1 from information_schema.columns where table_name = 'usage_events' and column_name = 'client_at'), 'down drops client_at');
+\ir ../migrations/0015_usage_client_at.down.sql
 \echo REHEARSAL DONE

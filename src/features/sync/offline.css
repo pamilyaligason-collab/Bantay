@@ -1,0 +1,7 @@
+/* Offline bar (M7b): a thin amber strip under the top bar; "Queued" tag on a dose saved on this phone but not sent yet. */
+.offline-bar { flex: none; margin: 10px 16px 0; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; line-height: 1.3; text-align: center; background: var(--amber-soft, #F6E7C1); color: #5C3F00; position: relative; z-index: 2; }
+:root[data-theme="dark"] .offline-bar { background: #4A3A12; color: #F6DFA2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .offline-bar { background: #4A3A12; color: #F6DFA2; } }
+.queued-badge { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--amber-soft, #F6E7C1); color: #5C3F00; }
+:root[data-theme="dark"] .queued-badge { background: #4A3A12; color: #F6DFA2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .queued-badge { background: #4A3A12; color: #F6DFA2; } }

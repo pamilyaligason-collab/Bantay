@@ -19,6 +19,8 @@ vi.mock('../auth/client', () => ({ supabase: h.sb }))
 const who = vi.hoisted(() => ({ member: { userId: 'u1', personId: 'p2' as string | null, role: 'admin', handle: null } }))
 vi.mock('../auth/session', () => ({ getMember: async () => who.member }))
 
+const tracked = vi.hoisted(() => ({ calls: [] as string[][] }))
+vi.mock('../admin/events', async (orig) => ({ ...(await orig<typeof import('../admin/events')>()), track: async (k: string, n: string) => { tracked.calls.push([k, n]); return true } }))
 configure({ asyncUtilTimeout: 6000 }) // the full suite loads the machine
 vi.mock('./trend', () => ({ trendChart: () => ({ destroy() {}, setSize() {} }) })) // uPlot needs a canvas
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
@@ -39,7 +41,7 @@ const updates: { table: string; body: unknown; ids: unknown }[] = []
 function serve() {
   h.state.handler = (c) => {
     const upd = c.ops.find((o) => o[0] === 'update')
-    if (upd) { const ids = (c.ops.find((o) => o[0] === 'in')?.[2] as string[] | undefined) ?? ['x']; updates.push({ table: c.table, body: upd[1], ids }); return ok(ids.map((id) => ({ id }))) }
+    if (upd) { const ids = (c.ops.find((o) => o[0] === 'in')?.[2] as string[] | undefined) ?? ['x']; updates.push({ table: c.table, body: upd[1], ids }); for (const r of (tables[c.table] ?? []) as Record<string, unknown>[]) if (ids.includes(r.id as string)) Object.assign(r, upd[1]); return ok(ids.map((id) => ({ id }))) }
     let rows = (tables[c.table] ?? []) as Record<string, unknown>[]
     for (const o of c.ops) if (o[0] === 'eq' && typeof o[1] === 'string' && o[1] !== 'unclear') rows = rows.filter((r) => !((o[1] as string) in r) || r[o[1] as string] === o[2])
     return ok(rows)
@@ -49,6 +51,7 @@ function serve() {
 beforeEach(async () => {
   who.member = { userId: 'u1', personId: 'p2', role: 'admin', handle: null }
   updates.length = 0
+  tracked.calls.length = 0
   resetPersonChoice()
   await Promise.all([db.kv.clear(), hdb.readings.clear(), hdb.people.clear(), hdb.consults.clear()])
   await hdb.people.bulkPut([{ id: 'p1', name: 'Lola Santos' }, { id: 'p2', name: 'Lloyd Roc' }])
@@ -111,19 +114,21 @@ describe('confirm -> readings', () => {
 })
 
 describe('check flow', () => {
-  it('Confirm all from this file sends every non-unclear row in one call, and the progress line counts documents', async () => {
+  it('Confirm all N from this paper sends every non-unclear row in one call, the progress line counts papers, and one records_confirmed is sent', async () => {
     const people = [{ id: 'p1', name: 'Lola Santos' }]
     const done = vi.fn()
     render(<ConfirmFlow people={people} personId="p1" checkedDocs={1} onClose={() => {}} onChanged={done} />)
-    expect(await screen.findByText('1 of 3 documents checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
+    expect(await screen.findByText('1 of 3 papers checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
     fireEvent.click(screen.getAllByRole('button', { name: /Lab results, 2026-09-01/ })[0])
-    const all = await screen.findByRole('button', { name: 'Confirm all from this file (2)' }) // l2 is low confidence (unchecked), still in "all"
+    const all = await screen.findByRole('button', { name: 'Confirm all 2 from this paper' }) // l2 is low confidence (unchecked), still in "all"
     fireEvent.click(all)
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('2 confirmed'))
     const u = updates.filter((x) => x.table === 'lab_results')
     expect(u).toHaveLength(1)
     expect(u[0]).toMatchObject({ body: { status: 'confirmed' }, ids: ['l1', 'l2'] })
     expect(done).toHaveBeenCalled()
+    await waitFor(() => expect(tracked.calls.filter((c) => c[1] === 'records_confirmed')).toHaveLength(1))
+    expect(tracked.calls[0]).toEqual(['action', 'records_confirmed'])
   })
 
   it('the sheet lists only the picked person', async () => {

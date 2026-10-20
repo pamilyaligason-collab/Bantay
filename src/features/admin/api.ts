@@ -4,7 +4,7 @@ import { supabase } from '../auth/client'
 export interface Profile { photoPath: string | null; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; medicines: string[] }
 export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: 'admin' | 'member'; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null }
 /** What the member page can change. A key left out is untouched; null clears it. */
-export type ProfilePatch = Partial<{ displayName: string; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; medicines: string[]; photoPath: string | null }>
+export type ProfilePatch = Partial<{ displayName: string; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; photoPath: string | null }>
 export interface UsageRow { user_id: string; last_seen: string; events: number; top_screens: { name: string; count: number }[]; active_7: boolean; active_30: boolean; alerts_on: boolean; sensors_on: boolean }
 export interface ImportRow { person_id: string; display_name: string; readings: number; consults: number }
 export interface Carer { carer_id: string; person_id: string; can_write: boolean }

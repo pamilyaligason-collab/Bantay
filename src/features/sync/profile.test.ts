@@ -122,7 +122,7 @@ describe('one-time kv migration', () => {
     expect(p.bloodType).toBe('O+') // server wins
     expect(p.allergies).toEqual(['Latex'])
     expect(p.conditions).toEqual(['UNKNOWN'])
-    expect(p.medicines).toEqual(['Losartan'])
+    expect(p.medicines).toEqual([]) // people.medicines is no longer written: the medications table is the schedule
     expect((await db.kv.get('profile.photoUp'))?.value).toBe(true) // photo waits for upload
     const queued = await db.outbox.count()
     await migrateKv('me') // still queued: waits, writes nothing more

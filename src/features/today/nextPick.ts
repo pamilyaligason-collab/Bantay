@@ -1,45 +1,60 @@
-import { clock, doseStates, medSlots, sameName } from '../health/model'
-import { HEAT_C, doseKey, isSkipped, notSkippedPerDose, RAIN_HERO_PCT, heroCards, type HeroCard, type Sky, type Wx } from './heroCards'
+import { clock } from '../health/model'
+import { dayOf, matchDoses, slotsFor, type MedSlot } from '../health/meds'
+import type { MedTaken, Medication } from '../log/store'
+import type { HeroCard } from './heroCards'
 
-/** Next up: ONE item. Due medicine (mine or someone I care for) > plan item due today > nearby storm > weather only when it is rainy or hot > all clear. */
+/** Next up: ONE item. Medicine due soon or just missed (mine or someone I care for) > plan item due today > storm within 500 km > all clear.
+ *  Weather is never picked here: it has its own card on Today. */
 
-export interface DuePerson { personId: string; name: string; isMe: boolean; meds: string[]; at: number; skipKeys: string[] }
-export interface DueInput { personId: string; name: string; isMe: boolean; entries: string[] }
-export type NextKind = 'dose' | 'plan' | 'storm' | 'weather' | 'calm'
-export interface NextItem { key: string; kind: NextKind; sky?: Sky; kicker: string; title: string; body: string; big?: string; who?: DuePerson; href?: string; linkLabel?: string }
+export const UPCOMING_MIN = 180 // a dose is "next" from 3 hours before its time ...
+export const MISSED_MIN = 120 // ... and stays on the card for 2 hours after it
 
-const minutes = (d: Date) => d.getHours() * 60 + d.getMinutes()
+export interface DoseTarget { personId: string; name: string; isMe: boolean }
+export interface DuePerson extends DoseTarget {
+  at: number // minutes after local midnight (of its own day) of the earliest open dose
+  rel: number // minutes from today's midnight: negative for yesterday's slot, 1440+ for tomorrow's
+  status: 'upcoming' | 'missed'
+  /** The open doses at that time (one per medicine). */
+  slots: MedSlot[]
+}
+export type NextKind = 'dose' | 'plan' | 'storm' | 'calm'
+export interface NextItem { key: string; kind: NextKind; kicker: string; title: string; body: string; who?: DuePerson; href?: string; linkLabel?: string }
 
-/** Who has a timed medicine whose time has passed and is not taken (or skipped) today. Me first, then the oldest dose. */
-export function dueMeds(people: DueInput[], taken: { personId: string; name: string; takenAt: string }[], skipped: string[], now: Date): DuePerson[] {
-  const nowMin = minutes(now)
+type Take = Pick<MedTaken, 'personId' | 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>
+
+const DAY_MIN = 1440
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12)
+
+/** Per person, the earliest open dose that is due within 3 hours or was missed within the last 2, looking at yesterday's, today's and tomorrow's slots
+ *  so the window holds across midnight (a 22:00 dose stays until 00:00 + 2 h; a 00:30 dose shows from 21:30). Earliest first, me first on a tie. */
+export function nextDoses(people: DoseTarget[], meds: Medication[], takes: Take[], now: Date): DuePerson[] {
+  const nowMin = now.getHours() * 60 + now.getMinutes()
   return people.flatMap((p): DuePerson[] => {
-    const states = doseStates(notSkippedPerDose(medSlots(p.entries), p.isMe ? skipped : []), taken.filter((t) => t.personId === p.personId), now)
-    const open = states.filter((s) => s.at != null && s.at <= nowMin && !s.taken)
-    const first = (n: string) => Math.min(Infinity, ...open.filter((d) => sameName(d.name, n)).map((d) => d.at!))
-    const due = open.filter((s) => !(p.isMe && isSkipped(skipped, s.name, s.at!, first(s.name))))
-    if (!due.length) return []
-    return [{ personId: p.personId, name: p.name, isMe: p.isMe, meds: [...new Set(due.map((d) => d.name))], at: Math.min(...due.map((d) => d.at!)), skipKeys: due.map((d) => doseKey(d.name, d.at!)) }]
-  }).sort((a, b) => Number(b.isMe) - Number(a.isMe) || a.at - b.at)
+    const mine = takes.filter((t) => t.personId === p.personId)
+    const open = [-1, 0, 1].flatMap((k) => {
+      const day = dayOf(addDays(now, k))
+      return matchDoses(slotsFor(meds, p.personId, day), mine, day).filter((d) => d.state === 'pending').map((d) => ({ d, rel: d.at + k * DAY_MIN }))
+    }).filter(({ rel }) => rel - nowMin <= UPCOMING_MIN && nowMin - rel <= MISSED_MIN).sort((a, b) => a.rel - b.rel)
+    if (!open.length) return []
+    const first = open[0]!
+    return [{ ...p, at: first.d.at, rel: first.rel, status: first.rel < nowMin ? 'missed' : 'upcoming', slots: open.filter((x) => x.rel === first.rel).map((x) => x.d) }]
+  }).sort((a, b) => a.rel - b.rel || Number(b.isMe) - Number(a.isMe))
 }
 
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
 
-export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null; weather: Wx | null; placeName: string; now: Date }): NextItem {
+export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }): NextItem {
   const d = i.due[0]
   if (d) {
-    const others = i.due.slice(1).map((o) => o.name)
+    const names = [...new Set(d.slots.map((s) => s.name))]
+    const others = [...new Set(i.due.slice(1).map((o) => o.name))]
     const more = others.length ? ` Also waiting: ${joinNames(others)}.` : ''
-    const title = d.isMe ? `Time for ${joinNames(d.meds)}` : `${d.name}: ${joinNames(d.meds)}`
-    return { key: `dose:${d.personId}`, kind: 'dose', kicker: `Medicine · due ${clock(d.at)}`, title, body: `Not taken yet.${more}`, who: d }
+    const title = d.isMe ? `Time for ${joinNames(names)}` : `${d.name}: ${joinNames(names)}`
+    const missed = d.status === 'missed'
+    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: `${missed ? 'Not taken yet' : 'Medicine'} · ${clock(d.at)}`, title, body: `${missed ? 'This dose is waiting.' : 'Coming up soon.'}${more}`, who: d }
   }
   const p = i.plan
   if (p) return { key: p.key, kind: 'plan', kicker: p.kicker, title: p.title, body: p.body, href: '#family/plan', linkLabel: 'Open plan' }
   if (i.storm) return { key: 'storm', kind: 'storm', kicker: 'Storm nearby', title: i.storm.title, body: i.storm.body, href: '#safety/storms', linkLabel: 'Storm tracker' }
-  const w = i.weather
-  if (w && w.temp != null && ((w.rainPct != null && w.rainPct >= RAIN_HERO_PCT) || w.temp >= HEAT_C)) {
-    const c = heroCards({ alerts: [], ref: null, doses: [], weather: w, placeName: i.placeName, now: i.now }).find((x) => x.kind === 'weather')
-    if (c) return { key: c.key, kind: 'weather', sky: c.sky, kicker: c.kicker, title: c.title, body: c.body, big: c.big }
-  }
   return { key: 'calm', kind: 'calm', kicker: 'Next up', title: 'All clear', body: 'Nothing needs you right now.' }
 }

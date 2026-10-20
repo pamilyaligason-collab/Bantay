@@ -34,3 +34,12 @@ describe('writable ids cache', () => {
     await waitFor(() => expect(result.current).toEqual([]))
   })
 })
+
+describe('canMarkFor with medication-linked doses', () => {
+  it('the rule does not depend on the medication: person or writable carer only', () => {
+    // a dose row now carries medication_id; RLS (0003) still decides by person, so the client rule is unchanged
+    expect(canMarkFor('p2', 'p1', ['p2'])).toBe(true)
+    expect(canMarkFor('p2', 'p1', [])).toBe(false)
+    expect(canMarkFor('p1', 'p1', [])).toBe(true)
+  })
+})

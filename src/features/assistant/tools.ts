@@ -1,5 +1,6 @@
 import { GUIDE, latestVsNormal, type Range, type Reading } from '../health/ranges'
-import type { Activity, MedTaken } from '../log/store'
+import { pickSlot, resolveMedication } from '../health/meds'
+import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 
 export const MAX_MESSAGES = 10
 export const TABS = ['today', 'health', 'records', 'family', 'safety'] as const
@@ -110,13 +111,13 @@ export function validateDraft(tool: DraftTool, f: Record<string, string>, people
 }
 
 export interface LogApi {
-  logReading: (r: Reading) => Promise<unknown>
+  logReading: (r: Reading, opts?: { track?: boolean }) => Promise<unknown>
   logMedTaken: (m: MedTaken) => Promise<unknown>
   logActivity: (a: Activity) => Promise<unknown>
 }
 
 /** The only place a draft becomes a saved record. Called by Confirm. */
-export async function confirmDraft(tool: DraftTool, f: Record<string, string>, people: People[], api: LogApi, now = new Date()) {
+export async function confirmDraft(tool: DraftTool, f: Record<string, string>, people: People[], api: LogApi, now = new Date(), meds?: Medication[]) {
   if (validateDraft(tool, f, people)) throw new Error('incomplete')
   const personId = personFor(f.person ?? '', people)!.id
   if (tool === 'log_reading') {
@@ -124,7 +125,19 @@ export async function confirmDraft(tool: DraftTool, f: Record<string, string>, p
     if (f.unit?.trim()) r.unit = f.unit.trim()
     return api.logReading(r)
   }
-  if (tool === 'log_med_taken') return api.logMedTaken({ personId, name: f.name!.trim(), takenAt: when(f.takenAt ?? '', now) })
+  if (tool === 'log_med_taken') {
+    const takenAt = when(f.takenAt ?? '', now)
+    const name = f.name!.trim()
+    // The spoken name is matched to this person's medication (same rule as SQL normalise_drug); an unknown name still logs by name.
+    let own: Medication[] = meds ?? []
+    if (!meds) { try { own = await ldb.medications.where('personId').equals(personId).toArray() } catch { own = [] } }
+    const med = resolveMedication(own, personId, name)
+    if (!med?.serverId) return api.logMedTaken({ personId, name, takenAt })
+    let takes: MedTaken[] = []
+    try { takes = await ldb.meds.where('personId').equals(personId).toArray() } catch { takes = [] }
+    const slot = pickSlot(med, takes, new Date(takenAt))
+    return api.logMedTaken({ personId, name: med.name, takenAt, medicationId: med.serverId, ...(slot ? { slot } : {}) })
+  }
   return api.logActivity({ personId, kind: f.kind!.trim(), minutes: num(f.minutes ?? ''), steps: num(f.steps ?? ''), startedAt: when(f.startedAt ?? '', now), source: 'manual' })
 }
 

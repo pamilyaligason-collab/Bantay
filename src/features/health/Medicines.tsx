@@ -1,87 +1,199 @@
-import { useMemo, useState } from 'react'
-import { useKv } from '../safety/store'
-import { logMedTaken } from '../log/store'
-import { useProfile } from '../setup/useProfile'
-import { useConfirmedMedicines } from '../records/useRecordsServer'
-import { clock, doseStates, medSlots, sameName, type Slot } from './model'
-import { useTakenToday } from './useActivity'
+import { liveQuery } from 'dexie'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
+import MedEditSheet, { type MedNote } from './MedEditSheet'
+import { MedReview, toCheck } from './MedReview'
+import { clock12, setMedStatus } from './medActions'
+import { dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
+import { QueuedBadge } from '../sync/OfflineBar'
+import { useQueuedDoseIds } from '../sync/useOffline'
+import { useMedicationRows } from './useMedicationRows'
+import './health.css'
+import './medicines.css'
 
-const NO_NAMES: string[] = []
-type Row = Slot & { taken: boolean; detail: string; first: boolean }
+const NONE: MedTaken[] = []
+const TOAST_MS = 3500
+const UNDO_MS = 6000
 
-/** Medicines today: the profile list (entries may carry times) plus confirmed prescription lines.
- *  "Mark taken" is for the person themself or an admin carer: the server accepts a dose from them, not from every viewer. */
-export function Medicines({ personId, mine, canMark = mine }: { personId: string; mine: boolean; canMark?: boolean }) {
-  const profile = useProfile(personId)
-  const own = useKv<string[]>('profile.medicines', NO_NAMES) // offline cache of the signed-in person's own list
-  const rx = useConfirmedMedicines(personId)
-  const taken = useTakenToday(personId)
-  const [err, setErr] = useState('')
+/** Doses logged on `day` for one person, live. Full rows: the medication id, slot and skipped flag decide what is taken. */
+function useDayTakes(personId: string, day: string): MedTaken[] {
+  const [rows, setRows] = useState<MedTaken[]>(NONE)
+  useEffect(() => {
+    if (!personId) return setRows(NONE)
+    const since = new Date(`${day}T00:00:00`).toISOString()
+    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: setRows, error: () => setRows(NONE) })
+    return () => sub.unsubscribe()
+  }, [personId, day])
+  return rows
+}
+
+const timeOf = (iso: string) => { const d = new Date(iso); return clock12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`) }
+const label = (m: Pick<Medication, 'name' | 'strength'>) => [m.name, m.strength].filter(Boolean).join(' ')
+const byName = (a: Medication, b: Medication) => a.name.localeCompare(b.name)
+
+/** The take (or skip) that settled a dose, for "Taken 8:12 AM". */
+function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
+  const mine = takes.filter((t) => d.medicationId && t.medicationId === d.medicationId && t.slot === d.slot)
+  return mine.find((t) => !t.skipped) ?? mine[0]
+}
+
+/** Today's doses for one person, shared by the screen and the Health summary. */
+function useToday(personId: string) {
+  const meds = useMedicationRows(personId)
+  const day = dayOf(new Date())
+  const takes = useDayTakes(personId, day)
+  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day), [meds, personId, day, takes])
+  return { meds, takes, doses, day }
+}
+
+/** Health > Medicines for one person: Today (Take / Skip), Active, Paused, Past, and Add.
+ *  `canMark`: this person, or a writer carer (the server takes a dose from them). `canEdit`: also an admin (records_editor). */
+export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }: { personId: string; mine?: boolean; canMark?: boolean; canEdit?: boolean }) {
+  const { meds, takes, doses } = useToday(personId)
+  const queued = useQueuedDoseIds()
+  const [sheet, setSheet] = useState<{ med?: Medication } | null>(null)
+  const [note, setNote] = useState<MedNote | null>(null)
   const [busy, setBusy] = useState(false)
-  const entries = profile?.medicines?.length ? profile.medicines : mine ? own : NO_NAMES
-
-  const rows = useMemo<Row[]>(() => {
-    const slots = medSlots(entries)
-    const detail = new Map<string, string>()
-    const extra: Slot[] = []
-    for (const i of rx ?? []) {
-      const name = i.drug_raw?.trim()
-      if (!name) continue
-      const d = [i.strength, i.dose, i.frequency].filter(Boolean).join(' · ')
-      const hit = slots.find((s) => sameName(s.name, name) || name.toLowerCase().startsWith(`${s.name.toLowerCase()} `))
-      if (hit) { if (d && !detail.has(hit.name.toLowerCase())) detail.set(hit.name.toLowerCase(), d) }
-      else if (!extra.some((s) => sameName(s.name, name))) { extra.push({ name, at: null }); if (d) detail.set(name.toLowerCase(), d) }
-    }
-    const seen = new Set<string>()
-    return doseStates([...slots, ...extra], taken, new Date()).map((s) => {
-      const k = s.name.toLowerCase()
-      const first = !s.taken && !seen.has(k)
-      if (!s.taken) seen.add(k)
-      return { ...s, detail: detail.get(k) ?? '', first }
-    })
-  }, [entries, rx, taken])
-
-  const take = async (name: string) => {
+  const timer = useRef<number>(0)
+  useEffect(() => () => window.clearTimeout(timer.current), [])
+  const say = (n: MedNote) => {
+    window.clearTimeout(timer.current)
+    setNote(n)
+    timer.current = window.setTimeout(() => setNote(null), n.undo ? UNDO_MS : TOAST_MS)
+  }
+  const mark = async (d: DoseState, skipped: boolean) => {
     if (busy) return
     setBusy(true)
-    setErr('')
-    try { await logMedTaken({ personId, name, takenAt: new Date().toISOString() }) } catch { setErr('Could not save on this phone. Try again.') }
+    try { await logDose({ personId, name: d.name, serverId: d.medicationId ?? undefined }, d.slot, { skipped }) } catch { say({ text: 'Could not save on this phone. Try again.' }) }
     setBusy(false)
   }
 
+  const live = (meds ?? []).filter(isLive).sort(byName)
+  const paused = (meds ?? []).filter((m) => m.medStatus === 'paused').sort(byName)
+  const past = (meds ?? []).filter((m) => m.medStatus === 'stopped').sort((a, b) => (b.stoppedOn ?? '').localeCompare(a.stoppedOn ?? ''))
+  const done = doses.filter((d) => d.state !== 'pending').length
+  const open = (med?: Medication) => canEdit && setSheet({ med })
+  const empty = meds !== undefined && live.length + paused.length + past.length === 0
+
   return (
-    <section aria-labelledby="hv-med">
-      <h2 className="hd" id="hv-med">Medicines today</h2>
-      {rows.length === 0 ? (
-        <div className="grp">
-          <div className="row">
-            <span className="grow">
-              No medicines yet
-              <span className="sub">Add them in Me, or confirm a prescription in Family &gt; Records.</span>
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="grp" data-testid="meds-today">
-          {rows.map((r, i) => (
-            <div className="row" key={`${r.name}:${r.at ?? 'x'}:${i}`} data-med={r.name}>
-              <span className="grow">
-                <span>{r.name}</span>
-                <span className="sub">{[r.at != null ? clock(r.at) : 'Any time today', r.detail].filter(Boolean).join(' · ')}</span>
-              </span>
-              {r.taken ? (
-                <span className="hv-done"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg> Taken</span>
-              ) : canMark && r.first ? (
-                <button type="button" className="hv-take" disabled={busy} aria-label={`Mark ${r.name}${r.at != null ? ` ${clock(r.at)}` : ''} as taken${mine ? '' : ' for them'}`} onClick={() => void take(r.name)}>Mark taken</button>
-              ) : (
-                <span className="sub">{canMark ? 'Later today' : 'Not yet'}</span>
-              )}
-            </div>
-          ))}
+    <section aria-label="Medicines" className="md">
+      {canEdit && (
+        <div className="md-addrow">
+          <button type="button" className="md-add" onClick={() => open()}><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>Add</button>
         </div>
       )}
-      {err && <p className="sub" role="alert" style={{ margin: '8px 4px 0', color: 'var(--red)' }}>{err}</p>}
-      {mine && rows.some((r) => r.at != null) && <p className="sub" style={{ margin: '8px 4px 0' }}>On Android, a reminder rings at each time you added, once reminders are allowed for this phone.</p>}
+      {empty && (
+        <div className="grp"><div className="row"><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Family > Records.' : 'Nothing has been added for them yet.'}</span></span></div></div>
+      )}
+
+      {doses.length > 0 && (
+        <>
+          <div className="md-sech"><h2 className="hd">Today</h2><span className="sub">{done} of {doses.length} done</span></div>
+          <div className="grp" data-testid="meds-today">
+            {doses.map((d) => {
+              const t = settledBy(d, takes)
+              return (
+                <div className="row md-dose" key={`${d.key}:${d.slot}`} data-med={d.name} data-state={d.state}>
+                  <span className="md-tm">{clock12(d.slot)}</span>
+                  <span className="grow md-main">
+                    <strong>{label({ name: d.name, strength: meds?.find((m) => (m.serverId ?? m.clientId ?? String(m.id)) === d.key)?.strength })}</strong>
+                    <span className="sub">{d.state === 'taken' ? (t ? `Taken ${timeOf(t.takenAt)}` : 'Taken') : d.state === 'skipped' ? 'Skipped' : 'Not yet'}</span>
+                  </span>
+                  {t?.id != null && queued.has(t.id) && <QueuedBadge />}
+                  {d.state === 'taken' && <span className="hv-done"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg> Taken</span>}
+                  {d.state === 'skipped' && <span className="md-tag">Skipped</span>}
+                  {d.state === 'pending' && canMark && (
+                    <span className="md-rowacts">
+                      <button type="button" className="hv-take" disabled={busy} aria-label={`Take ${d.name} ${clock12(d.slot)}`} onClick={() => void mark(d, false)}>Take</button>
+                      <button type="button" className="md-pill" disabled={busy} aria-label={`Skip ${d.name} ${clock12(d.slot)}`} onClick={() => void mark(d, true)}>Skip</button>
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {live.length > 0 && (
+        <>
+          <div className="md-sech"><h2 className="hd">Active</h2><span className="sub">{live.length}</span></div>
+          <div className="grp" data-testid="meds-active">
+            {live.map((m) => {
+              const s = parseSchedule(m.schedule)
+              const body = (
+                <>
+                  <strong>{label(m)}</strong>
+                  <span className="md-chips">
+                    {s.times.map((t) => <span className="md-tag" key={t}>{clock12(t)}</span>)}
+                    {m.asNeeded && <span className="md-tag">As needed</span>}
+                    {s.needsTime && !m.asNeeded && <span className="md-tag warn">Set a time</span>}
+                    {s.needsCheck && <span className="md-tag warn">Check the name</span>}
+                  </span>
+                </>
+              )
+              return (
+                <div className="md-li" key={m.clientId ?? m.serverId ?? m.id} data-med={m.name}>
+                  {canEdit
+                    ? <button type="button" className="md-medrow" onClick={() => open(m)}>{body}</button>
+                    : <div className="md-medrow">{body}</div>}
+                  {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} />}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {paused.length > 0 && (
+        <>
+          <div className="md-sech"><h2 className="hd">Paused</h2><span className="sub">{paused.length}</span></div>
+          <div className="grp" data-testid="meds-paused">
+            {paused.map((m) => (
+              <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
+                <span className="grow md-main"><strong>{label(m)}</strong><span className="sub">Paused, no reminders</span></span>
+                {canEdit && <button type="button" className="md-pill" aria-label={`Resume ${m.name}`} onClick={() => void setMedStatus(m, 'active').then(() => say({ text: `${m.name} resumed. Reminders are back on.` })).catch(() => say({ text: 'Could not save on this phone. Try again.' }))}>Resume</button>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {past.length > 0 && (
+        <>
+          <div className="md-sech"><h2 className="hd">Past</h2><span className="sub">{past.length}</span></div>
+          <div className="grp" data-testid="meds-past">
+            {past.map((m) => (
+              <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
+                <span className="grow md-main"><strong>{label(m)}</strong><span className="sub">{m.stoppedOn ? `Stopped ${new Date(`${m.stoppedOn}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'Stopped'}</span></span>
+                {canEdit && <button type="button" className="md-pill" aria-label={`Open ${m.name}`} onClick={() => open(m)}>Open</button>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {sheet && <MedEditSheet med={sheet.med} personId={personId} onClose={() => setSheet(null)} onNote={say} onOpen={(m) => setSheet({ med: m })} />}
+      {note && (
+        <div className="toast md-toast" role="status">
+          <span>{note.text}</span>
+          {note.undo && <button type="button" className="md-undo" onClick={() => { note.undo?.(); say({ text: 'Back again.' }) }}>Undo</button>}
+        </div>
+      )}
     </section>
+  )
+}
+
+/** The Health overview line: how many of today's doses are done, and how many medicines still need a check. Opens Health > Medicines. */
+export function MedicinesSummary({ personId }: { personId: string }) {
+  const { meds, doses } = useToday(personId)
+  if (meds === undefined) return null
+  const done = doses.filter((d) => d.state !== 'pending').length
+  const check = toCheck(meds).length
+  const sub = doses.length ? `${done} of ${doses.length} doses today${check ? ` · ${check} to check` : ''}` : meds.some(isLive) ? `Nothing due today${check ? ` · ${check} to check` : ''}` : 'No medicines yet'
+  return (
+    <a className="card hv-explore md-summary" href="#health/meds" data-testid="meds-summary">
+      <span>Medicines<small>{sub}</small></span>
+    </a>
   )
 }

@@ -119,7 +119,6 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
   // profile material gathered while walking the files (only auto-confirmed grade material ever lands here)
   const profileItems = []
   const extras = new Map() // allergies / conditions rows, one per person + text; confirmed wins over draft
-  const rxDrugs = new Map() // person -> drug key -> {name, docs}: a medicine seen on 2+ papers is a maintenance medicine
   const touched = new Set()
 
   for (const f of files) {
@@ -222,15 +221,6 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
                 frequency: lit(str(l.frequency)), duration: lit(str(l.duration)), quantity: lit(str(l.quantity)), instructions: lit(str(l.instructions)),
                 crop: json(l.bbox && typeof l.bbox === 'object' ? l.bbox : null), unclear: lit(l.unclear === true), confidence: base.confidence
               }, lineOk ? 'confirmed' : 'draft')
-              const drug = str(l.drug)
-              if (lineOk && drug) {
-                const per = rxDrugs.get(personId) ?? new Map()
-                const key = nameKey(drug)
-                const cur = per.get(key) ?? { name: drug.slice(0, 80), docs: new Set() }
-                cur.docs.add(f.drive_file_id)
-                per.set(key, cur)
-                rxDrugs.set(personId, per)
-              }
             })
           }
           const im = d.imaging
@@ -299,8 +289,8 @@ export function buildLoadSql({ manifest, drafts, peopleMap, prevPersons = {}, ca
       const own = new Set([nameKey(keysByPerson.get(pid)?.[0] ?? ''), nameKey(displayNames?.[pid] ?? '')])
       const aliases = [...new Map((keysByPerson.get(pid) ?? []).map((k) => [nameKey(k), k])).values()].filter((k) => !own.has(nameKey(k))).slice(0, 20)
       if (aliases.length) sets.push(union('aliases', aliases))
-      const meds = [...(rxDrugs.get(pid)?.values() ?? [])].filter((x) => x.docs.size >= 2).map((x) => x.name)
-      for (const [col, xs] of [['allergies', confirmedText.allergies.get(pid)], ['conditions', confirmedText.conditions.get(pid)], ['medicines', meds]]) if (xs?.length) sets.push(union(col, [...new Set(xs)]))
+      // people.medicines is no longer written (S6 M1): prescription_items are inserted above and the DB trigger turns them into medications
+      for (const [col, xs] of [['allergies', confirmedText.allergies.get(pid)], ['conditions', confirmedText.conditions.get(pid)]]) if (xs?.length) sets.push(union(col, [...new Set(xs)]))
       if (sets.length) { late.push(`update public.people set ${sets.join(', ')} where id = ${lit(pid)};`); summary.profile_updates++ }
     }
   }

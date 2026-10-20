@@ -17,7 +17,7 @@ test('safety hub (D-68): ten tiles with a status line, each opens its page and g
   const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
   await expect(tiles).toHaveCount(10)
   await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
-  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText('4 numbers ready')
+  await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText(/\d+ numbers ready/)
   await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
   await tiles.filter({ hasText: 'Quick dial' }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)
@@ -33,14 +33,14 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   await expect(page.getByRole('link', { name: /Call National emergency, 911/ })).toHaveAttribute('href', 'tel:911')
   await expect(page.getByRole('link', { name: /Call Philippine Red Cross, 143/ })).toBeVisible()
   await expect(page.getByText('160', { exact: true })).toHaveCount(0)
-  // unconfirmed values wait in a closed group and there is no Go button for them
+  // numbers we still need wait as dashed Add rows and there is no Go button for them
   const addBtn = page.getByRole('button', { name: /^Add number for / }).first()
-  await expect(page.getByText('Add a local number')).toBeVisible()
   await expect(addBtn).toBeVisible()
-  // layout: at phone width the name column is wider than the Add button (the button once took the whole row)
+  // layout: at phone width the name column is wider than the Add button, and the button is never clipped
   await page.setViewportSize({ width: 390, height: 844 })
-  const w = await page.locator('.sf-addbtn').first().evaluate((b) => ({ add: b.getBoundingClientRect().width, name: (b.parentElement!.querySelector('.sf-pt') as HTMLElement).getBoundingClientRect().width }))
+  const w = await page.locator('.sf-addbtn').first().evaluate((b) => ({ add: b.getBoundingClientRect().width, right: b.getBoundingClientRect().right, name: (b.parentElement!.querySelector('.sf-dt') as HTMLElement).getBoundingClientRect().width }))
   expect(w.name).toBeGreaterThan(w.add)
+  expect(w.right).toBeLessThanOrEqual(390)
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(0)
   // source text is behind the small i button, not under every row
   await expect(page.getByText('Source:')).toHaveCount(0)
@@ -49,6 +49,7 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.goto('/#safety/weather')
+  await page.getByRole('button', { name: 'Open live map' }).click()
   // iframes are not mounted until asked
   await expect(page.locator('iframe[title^="Ventusky"]')).toHaveCount(0)
   await page.getByText('Ventusky weather map').click()
@@ -105,6 +106,7 @@ test.describe('Near me on the maps switcher', () => {
         }
       })
       await page.goto('/#safety/weather')
+      await page.getByRole('button', { name: 'Open live map' }).click()
       const near = page.getByRole('group', { name: 'Map place' }).getByRole('button', { name: 'Near me' })
       await expect(near).toHaveAttribute('aria-pressed', 'false')
       await expect(page.locator('.hdr .sf-chip')).toHaveText('Dampas')
@@ -127,6 +129,7 @@ test.describe('Near me on the maps switcher', () => {
         navigator.geolocation.getCurrentPosition = (_ok, no) => (w.__gpsCalls++, no?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }))
       })
       await page.goto('/#safety/weather')
+      await page.getByRole('button', { name: 'Open live map' }).click()
       const group = page.getByRole('group', { name: 'Map place' })
       const near = group.getByRole('button', { name: 'Near me' })
       await expect(near).toBeVisible()
@@ -150,7 +153,7 @@ test('Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid', asyn
   expect(call).toBeGreaterThan(sos)
   expect(Math.abs(med - call)).toBeLessThan(4)
   expect(tiles).toBeGreaterThan(call)
-  const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather maps', '#safety/weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
+  const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather', '#weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
     ['Hazards at my location', '#safety/hazards'], ['Go-bag', '#gobag'], ['Safety cards', '#safety/cards'], ['IDs and insurance', '#docs'], ['Past SOS', '#safety/sos']]
   for (const [t, href] of want) await expect(nav.getByRole('link', { name: new RegExp('^' + t) })).toHaveAttribute('href', href)
   for (const box of await nav.getByRole('link').all()) expect((await box.boundingBox())!.height).toBeGreaterThanOrEqual(44)
@@ -244,16 +247,148 @@ test('storm tracker, safety cards and past SOS pages open', async ({ page }) => 
 
 test('live weather: layer switch only changes overlay, storm tracker and links', async ({ page }) => {
   await page.goto('/#safety/weather')
-  const sec = page.getByRole('region', { name: 'Live weather' })
+  await page.getByRole('button', { name: 'Open live map' }).click()
+  const sec = page.getByRole('region', { name: 'Live weather map' })
   await sec.scrollIntoViewIfNeeded()
   const main = sec.locator('iframe').first()
   await expect(main).toHaveAttribute('src', /overlay=rain&.*lat=9\.65&lon=123\.88/)
-  await sec.getByRole('button', { name: 'Wind' }).click()
+  await sec.getByRole('group', { name: 'Weather layer' }).getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
-  await expect(sec.getByText('Storms near the Philippines')).toBeVisible()
+  await expect(sec.getByText('Storms near you')).toBeVisible()
   await expect(sec.getByText(/No storm warnings for the Philippines/)).toBeVisible()
-  await expect(sec.locator('iframe[title^="Windy wind map of the Western"]')).toHaveAttribute('src', /zoom=4&overlay=wind.*lat=12\.00&lon=128\.00/)
+  await expect(sec.locator('iframe[title^="Windy wind map around"]')).toHaveAttribute('src', /zoom=5&overlay=wind.*lat=9\.65&lon=123\.88/)
   await expect(sec.getByRole('link', { name: /PAGASA bulletin/ })).toHaveAttribute('target', '_blank')
   await page.context().setOffline(true)
   await expect(sec.getByText('Maps need internet').first()).toBeVisible()
+})
+
+
+// ---- Quick dial: one local set by place (PART-3 4.1) ----
+
+async function dialAt(page: import('@playwright/test').Page, context: import('@playwright/test').BrowserContext, lat: number, lon: number) {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: lat, longitude: lon })
+  await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#safety/dial')
+}
+
+test('quick dial at the home zone: Tagbilaran set first, then national, OFW and teleconsult', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#safety/dial')
+  await expect(page.locator('h1')).toHaveText('Quick dial')
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Your home area is Tagbilaran', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  const local = page.getByRole('region', { name: 'Your home area is Tagbilaran' })
+  await expect(local.getByRole('link', { name: /Call Gov\. Celestino Gallares Memorial Hospital/ })).toBeVisible()
+  await expect(page.getByText('Davao City Central 911')).toHaveCount(0)
+  await expect(page.getByText('General Santos City Police')).toHaveCount(0)
+  // an unverified number is dialable and carries the check mark with an accessible label; a confirmed one does not
+  await expect(local.getByRole('link', { name: /Call BFP Tagbilaran City Fire Station, \(038\) 422-8362/ })).toHaveAttribute('href', 'tel:0384228362')
+  const fire = local.getByRole('listitem').filter({ hasText: 'BFP Tagbilaran City Fire Station' })
+  await expect(fire.getByRole('img', { name: 'number not yet confirmed' })).toBeVisible()
+  const hosp = local.getByRole('listitem').filter({ hasText: 'Gov. Celestino Gallares' })
+  await expect(hosp.getByRole('img', { name: 'number not yet confirmed' })).toHaveCount(0)
+  // an app has no number: it opens its source
+  await expect(page.getByRole('link', { name: 'Open NowServing by SeriousMD (app)' })).toHaveAttribute('href', /apps\.apple\.com/)
+})
+
+test('quick dial rows are one horizontal line each at 390px: no vertical text, Call never clipped, 44px targets', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#safety/dial')
+  const rows = page.locator('.sf-dialrow')
+  await expect(rows.first()).toBeVisible()
+  expect(await rows.count()).toBeGreaterThan(10)
+  for (const r of await rows.all()) {
+    const m = await r.evaluate((el) => {
+      const rr = el.getBoundingClientRect()
+      const t = el.querySelector('.sf-dt b')!.getBoundingClientRect()
+      const act = el.querySelector('.sf-callbtn, .sf-addbtn')!.getBoundingClientRect()
+      const lh = parseFloat(getComputedStyle(el.querySelector('.sf-dt b')!).lineHeight)
+      return { right: rr.right, name: t.width, lines: Math.round(t.height / lh), actRight: act.right, actH: act.height, actW: act.width }
+    })
+    expect(m.right).toBeLessThanOrEqual(390)
+    expect(m.actRight).toBeLessThanOrEqual(390)
+    expect(m.actH).toBeGreaterThanOrEqual(44)
+    expect(m.actW).toBeGreaterThanOrEqual(44)
+    expect(m.name).toBeGreaterThanOrEqual(90) // a name column this narrow would stack letters
+    expect(m.lines).toBeLessThanOrEqual(4)
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+})
+
+test('quick dial in Davao by GPS: only the Davao set, then national', async ({ page, context }) => {
+  await dialAt(page, context, 7.07, 125.61)
+  await expect(page.getByRole('region', { name: 'You are in Davao' })).toBeVisible()
+  await expect(page.locator('.sf h2.sec')).toHaveText(['You are in Davao', 'Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.getByText('Tagbilaran City 911')).toHaveCount(0)
+})
+
+test('quick dial in the Philippines outside every list: national first, with the reason', async ({ page, context }) => {
+  await dialAt(page, context, 17.6, 121.7)
+  await expect(page.getByRole('status').filter({ hasText: 'You are outside our local lists' })).toBeVisible()
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Philippines, national', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.getByRole('link', { name: /Call National emergency, 911/ })).toBeVisible()
+})
+
+test('quick dial in Texas: the Texas set and OFW, no Philippine national', async ({ page, context }) => {
+  await dialAt(page, context, 29.76, -95.37)
+  await expect(page.getByRole('region', { name: 'You are in Texas' })).toBeVisible()
+  await expect(page.locator('.sf h2.sec')).toHaveText(['You are in Texas', 'Filipinos abroad (OFW)', 'Talk to a doctor by phone'])
+  await expect(page.getByRole('link', { name: /Call Emergency \(US\), 911/ })).toBeVisible()
+  await expect(page.getByText('PhilHealth')).toHaveCount(0)
+})
+
+test('quick dial abroad (not Texas): OFW numbers and a link to an official list, no guessed local number', async ({ page, context }) => {
+  await dialAt(page, context, 1.35, 103.82)
+  await expect(page.getByRole('status').filter({ hasText: 'outside the Philippines' })).toBeVisible()
+  await expect(page.locator('.sf h2.sec')).toHaveText(['Filipinos abroad (OFW)', 'Talk to a doctor by phone', 'Emergency number where you are'])
+  await expect(page.getByRole('link', { name: 'Emergency numbers by country' })).toHaveAttribute('href', /^https:\/\//)
+  await expect(page.getByRole('link', { name: /Call DMW-OWWA 24\/7 hotline/ })).toHaveAttribute('href', 'tel:+6321348')
+  await expect(page.getByRole('link', { name: /Call DMW central hotlines/ })).toHaveAttribute('href', 'tel:+63287221144')
+  await expect(page.getByRole('link', { name: /Call National emergency/ })).toHaveCount(0)
+})
+
+test('Safety hub abroad (not Texas): no red Call 911, a Local emergency number link instead; Texas keeps 911', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 1.35, longitude: 103.82 })
+  await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
+  await page.goto('/#safety')
+  await expect(page.getByRole('link', { name: 'Local emergency number' })).toHaveAttribute('href', /^https:\/\//)
+  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveCount(0)
+  await context.setGeolocation({ latitude: 29.76, longitude: -95.37 })
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
+})
+
+test('storm tracker map is centred on my place, not 12N 128E', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 7.07, longitude: 125.61 })
+  await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
+  await page.goto('/#safety/storms')
+  await expect(page.locator('iframe[title^="Windy storm map"]')).toHaveAttribute('src', /lat=7\.07&lon=125\.61/)
+  await expect(page.getByRole('link', { name: /Zoom Earth/ })).toHaveAttribute('href', /#view=7\.07,125\.61,5z/)
+})
+
+test('footer has an in-app Sources link, not a repo path; the Hazards title wraps', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#safety')
+  await expect(page.getByText('docs/SOURCES.md')).toHaveCount(0)
+  await page.getByRole('link', { name: 'Sources', exact: true }).click()
+  await expect(page).toHaveURL(/#safety\/sources$/)
+  await expect(page.locator('h1')).toHaveText('Sources')
+  await expect(page.getByText('HazardHunterPH').first()).toBeVisible()
+  await page.goto('/#safety/hazards')
+  const h = await page.locator('h1').evaluate((el) => ({ over: el.scrollWidth > el.clientWidth + 1, ell: getComputedStyle(el).textOverflow }))
+  expect(h.over).toBe(false)
+  expect(h.ell).not.toBe('ellipsis')
+})
+
+test('rescue map away from our areas says to ask the barangay or call 911 and invents nothing', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: 29.76, longitude: -95.37 })
+  await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
+  await page.goto('/#safety/map')
+  await expect(page.getByText(/Nearest hospitals: ask your barangay or call 911/)).toBeVisible()
+  await page.goto('/#safety/hazards')
+  await expect(page.getByText(/No hazard readings for where you are yet/)).toBeVisible()
 })

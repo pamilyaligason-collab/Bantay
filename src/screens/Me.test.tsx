@@ -56,3 +56,21 @@ describe('Me', () => {
     expect(document.documentElement.dataset.theme).toBeUndefined()
   })
 })
+
+describe('language toggle (M7b)', () => {
+  it('shows English / Filipino, stores the choice in kv lang and reads it back', async () => {
+    render(<Me />)
+    const group = await screen.findByRole('group', { name: 'Language' })
+    expect(document.body.textContent).toMatch(/Reminders and safety lines on this phone\. Reminders are on the Android app\./)
+    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe('true')
+    await userEvent.click(screen.getByRole('button', { name: 'Filipino' }))
+    expect(screen.getByRole('button', { name: 'Filipino' }).getAttribute('aria-pressed')).toBe('true')
+    expect(group).toBeTruthy()
+    await waitFor(async () => expect((await db.kv.get('lang'))?.value).toBe('fil'))
+  })
+  it('starts on the saved language', async () => {
+    await db.kv.put({ key: 'lang', value: 'fil' })
+    render(<Me />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Filipino' }).getAttribute('aria-pressed')).toBe('true'))
+  })
+})

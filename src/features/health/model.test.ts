@@ -27,7 +27,7 @@ describe('insightHeadline', () => {
     expect(h.tone).toBe('watch')
   })
   it('does not call a reading with no range in range', () => {
-    expect(insightHeadline([rd('heart_rate', 72, '2026-10-18T08:00:00', { unit: 'bpm' })], NOW).tone).toBe('none')
+    expect(insightHeadline([rd('weight', 61, '2026-10-18T08:00:00', { unit: 'kg' })], NOW).tone).toBe('none')
   })
   it('a family limit beats the general guide', () => {
     const h = insightHeadline([rd('bp_systolic', 110, '2026-10-18T08:00:00')], NOW, () => ({ low: null, high: 100 }))
@@ -135,6 +135,13 @@ describe('medicine times', () => {
   })
 })
 
+describe('doseStates skipped', () => {
+  it('a skipped row is not a taken dose', () => {
+    const st = doseStates(medSlots(['Metformin 8:00']), [{ name: 'Metformin', takenAt: '2026-10-19T08:05:00', skipped: true }], NOW)
+    expect(st[0]!.taken).toBe(false)
+  })
+})
+
 describe('sparkPath', () => {
   const at = (v: number, d: number) => ({ personId: 'p', test: 't', value: v, takenAt: `2026-10-${10 + d}T08:00:00Z` })
   it('needs two readings and draws oldest to newest', async () => {
@@ -154,5 +161,21 @@ describe('round-3 fix helpers', () => {
   it('sparkCount counts only drawn points', () => {
     const r = (v: unknown, t: string) => ({ id: t, personId: 'p', test: 't', value: v, unit: '', takenAt: t }) as never
     expect(sparkCount([r(1, '2026-01-01'), r('x', '2026-01-02'), r(3, 'bad'), r(4, '2026-01-04')])).toBe(2)
+  })
+})
+
+describe('medications-based exports (live schedule)', () => {
+  it('model re-exports the pure helpers next to the deprecated text path', async () => {
+    const m = await import('./model')
+    const med = { personId: 'p', name: 'Drug A', medStatus: 'active' as const, serverId: 's1', schedule: { v: 1, times: ['08:00', '20:00'] } }
+    const slots = m.slotsFor([med], 'p', '2026-10-20')
+    expect(slots.map((s) => s.slot)).toEqual(['08:00', '20:00'])
+    expect(m.matchDoses(slots, [{ name: 'Drug A', takenAt: new Date(2026, 9, 20, 8, 5).toISOString(), medicationId: 's1', slot: '08:00' }], '2026-10-20').map((d) => d.state)).toEqual(['taken', 'pending'])
+    expect(m.reviewOverdue({ schedule: { review: true, review_since: '2026-10-01' } }, '2026-10-20')).toBe(true)
+  })
+  it('the profile-text path still works for the screens that have not moved yet', async () => {
+    const { medSlots, doseStates } = await import('./model')
+    const slots = medSlots(['Losartan 8:00'])
+    expect(doseStates(slots, [{ name: 'losartan', takenAt: new Date(2026, 9, 20, 8, 1).toISOString() }], new Date(2026, 9, 20, 9, 0))[0]!.taken).toBe(true)
   })
 })

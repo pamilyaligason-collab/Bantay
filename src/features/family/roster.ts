@@ -36,14 +36,19 @@ export function useFamilyPeople(): { people: FamilyPerson[]; selfId: string | nu
 }
 
 /** Each person's latest "I'm OK" (activity of kind check-in), live. */
-export function useCheckIns(): Record<string, string> {
-  const [last, setLast] = useState<Record<string, string>>({})
+export function useCheckInsLoaded(): Record<string, string> | null {
+  const [last, setLast] = useState<Record<string, string> | null>(null) // null until the first read: no status line may say "No check-in today" before we know
   useEffect(() => {
-    const sub = liveQuery(() => ldb.activity.filter((a) => a.kind === 'check-in').toArray()).subscribe({ next: (rows) => setLast(latestCheckIns(rows)), error: () => undefined })
+    const sub = liveQuery(() => ldb.activity.filter((a) => a.kind === 'check-in').toArray()).subscribe({ next: (rows) => setLast(latestCheckIns(rows)), error: () => setLast((cur) => cur ?? {}) })
     return () => sub.unsubscribe()
   }, [])
   return last
 }
+/** The same, with an empty list until it has loaded (for the summary lines on Today). */
+export function useCheckIns(): Record<string, string> {
+  return useCheckInsLoaded() ?? NO_CHECKINS
+}
+const NO_CHECKINS: Record<string, string> = {}
 
 export const latestCheckIns = (rows: { personId: string; kind: string; startedAt: string }[]): Record<string, string> => {
   const out: Record<string, string> = {}
@@ -74,6 +79,18 @@ export function ageOf(birthdate: string | null, now = new Date()): number | null
   let age = now.getFullYear() - b.getFullYear()
   if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--
   return age
+}
+
+/** Digits (and a leading +) of a phone number for tel: and sms: links, or null when there are no digits. */
+export const dial = (phone: string | null) => { const d = (phone ?? '').replace(/[^\d+]/g, ''); return /\d/.test(d) ? d : null }
+
+/** The grey-avatar nudge: someone else who has not checked in today gets "Not checked in today: send a hello", which opens a text to them.
+ *  Nothing for the person themself or for someone who is OK. With no phone saved there is no nudge. */
+export function nudgeFor(p: { name: string; phone: string | null; isMe: boolean }, ok: boolean): { text: string; href: string; label: string } | null {
+  if (ok || p.isMe) return null
+  if (!dial(p.phone)) return null // no number to text: the status line says it, no second line
+  const first = p.name.trim().split(/\s+/)[0] || p.name
+  return { text: 'Not checked in today: send a hello', href: `sms:${dial(p.phone)}`, label: `Not checked in today: send a hello to ${first}` }
 }
 
 /** How many of the family checked in today, over how many people. */

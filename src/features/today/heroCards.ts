@@ -1,6 +1,8 @@
 import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { distanceKm, rankAlerts, tierOf, type Alert, type LatLon } from '../safety/alerts'
+import { actionLine, type WarningIn } from '../weather/actionLine'
+import { heatIndexC } from '../weather/heatIndex'
 
 /** Hero card engine (D-31/D-43): one card per thing that matters now, in priority order:
  *  active alert for the member's zone > medicine due now > weather for the home zone. Nothing applies: one calm summary. */
@@ -9,7 +11,16 @@ export interface Dose { name: string; at: number } // at = minutes after local m
 /** Rain from the hourly forecast. startH/endH are clock hours 0-23 in Manila; now = it is raining this hour; tomorrow = it starts after midnight. */
 export interface RainOutlook { now: boolean; tomorrow: boolean; startH: number; endH: number; hours: number; peakPct: number }
 /** hourly: the forecast as fetched (Manila local times). Absent in old caches; the outlook is worked out from it at render time. */
-export interface Wx { temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null; hourly?: { time: string[]; prob: (number | null)[] } }
+export interface Wx {
+  temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null
+  /** Place-local "YYYY-MM-DDTHH:MM" times (the clock of the place the forecast is for, with utcOffset). */
+  hourly?: { time: string[]; prob: (number | null)[] }
+  utcOffset?: number // seconds; absent in old caches and fixtures = Manila
+  tz?: string // IANA zone the forecast service reported
+  humidity?: number | null
+  uvMax?: number | null
+  offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
+}
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'
 export interface HeroCard {
   key: string
@@ -103,9 +114,9 @@ export function rainWords(r: RainOutlook): string {
   return `Rain likely ${r.tomorrow ? 'tomorrow ' : ''}from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. Chance: ${r.peakPct}%.`
 }
 
-const asOf = (iso: string) => {
+const asOf = (iso: string, tz = 'Asia/Manila') => {
   const t = new Date(iso)
-  return Number.isNaN(t.getTime()) ? '' : ` · as of ${t.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })}`
+  return Number.isNaN(t.getTime()) ? '' : ` · as of ${t.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: tz })}`
 }
 
 /** Official warnings only (PAGASA, PHIVOLCS tier), inside the radius of where the member is. Area-wide alerts count. */
@@ -117,6 +128,10 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
 
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
 export const manilaLocal = (d: Date) => d.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' }).replace(' ', 'T').slice(0, 16)
+
+/** The wall clock of the place a reading is for, "YYYY-MM-DDTHH:MM": from its UTC offset, else Manila (the hourly times are in that same clock). */
+export const wxLocal = (w: Pick<Wx, 'utcOffset'>, d: Date): string =>
+  w.utcOffset == null ? manilaLocal(d) : new Date(d.getTime() + w.utcOffset * 1000).toISOString().slice(0, 16)
 
 /** Rain really came: the sky shows it now, or an earlier hour today reached 50%. A null outlook then means it has stopped, not that it never came. */
 export const rainPassed = (w: Wx, nowLocal: string): boolean => {
@@ -135,7 +150,7 @@ export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined
 /** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */
 export function rainLine(w: Wx, now: Date): string {
   const sky = skyOf(w)
-  const nowLocal = manilaLocal(now)
+  const nowLocal = wxLocal(w, now)
   const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm') : undefined
   return rainBody(w, rain, w.rainPct != null && w.rainPct >= 60, nowLocal)
 }
@@ -159,11 +174,11 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     const hot = !rainy && w.temp >= HEAT_C
     const sky = skyOf(w)
     // worked out now, not at fetch time: the cached reading can be hours old
-    const nowLocal = manilaLocal(i.now ?? new Date())
+    const nowLocal = wxLocal(w, i.now ?? new Date())
     const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm') : undefined
     const place = i.placeName
     out.push({
-      key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at)}`, sky, big: `${Math.round(w.temp)}°`,
+      key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at, w.tz)}`, sky, big: `${Math.round(w.temp)}°`,
       title: hot ? `Hot today in ${place}` : rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainPassed(w, nowLocal) ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
       body: hot ? `It is ${Math.round(w.temp)}° now. Drink water and rest in the shade.` : rainBody(w, rain, rainy, nowLocal),
       actions: []
@@ -175,4 +190,17 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     actions: [{ id: 'safety', label: 'Open Safety' }]
   })
   return out
+}
+
+/** The one action line weather earns on Today and in Simple mode. It is the top line of the Weather screen's actionLines() (heat index first,
+ *  then rain in the next 12 hours, then strong sun), so Today and Weather never disagree. null when none applies. */
+export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
+  if (!w || w.temp == null) return null
+  return actionLine({
+    heatIndexC: heatIndexC(w.temp, w.humidity),
+    hourly: (w.hourly?.time ?? []).map((time, i) => ({ time, prob: w.hourly!.prob[i] ?? null })),
+    nowLocal: wxLocal(w, now),
+    uvMax: w.uvMax ?? null,
+    warning
+  })?.text ?? null
 }

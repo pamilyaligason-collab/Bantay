@@ -15,8 +15,10 @@ const PEOPLE = [
   { id: 'p2', display_name: 'Papa', phone: '0918 222 3333', birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }
 ]
 type Req = { method: string; path: string; id: string | null; body: unknown }
+const LOSARTAN = { id: 'srv-m1', client_id: 'cm-losartan', person_id: 'p1', name: 'Losartan', schedule: { v: 1, times: ['08:00'] }, as_needed: false, med_status: 'active', status: 'confirmed', origin: 'rx', deleted_at: null, updated_at: '2026-10-10T10:00:00Z' }
 
-async function mock(page: Page, reqs: Req[], scheme: 'light' | 'dark', people: Record<string, unknown>[] = PEOPLE) {
+async function mock(page: Page, reqs: Req[], scheme: 'light' | 'dark', people: Record<string, unknown>[] = PEOPLE, meds: Record<string, unknown>[] = []) {
+  const medStore = new Map(meds.map((m) => [m.client_id as string, m])) // a tiny medications table: POST upserts on client_id, GET returns it
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
   await page.addInitScript(([token, u, fam]) => {
@@ -35,6 +37,13 @@ async function mock(page: Page, reqs: Req[], scheme: 'light' | 'dark', people: R
     }
     if (!url.pathname.startsWith('/rest/v1/')) return reply({})
     const t = url.pathname.replace('/rest/v1/', '')
+    if (t === 'medications' && req.method() === 'POST') {
+      const body = req.postDataJSON() as Record<string, unknown>
+      reqs.push({ method: 'POST', path: t, id: null, body })
+      medStore.set(body.client_id as string, { ...medStore.get(body.client_id as string), ...body, updated_at: new Date().toISOString() })
+      return route.fulfill({ status: 201, headers: cors })
+    }
+    if (t === 'medications') return reply([...medStore.values()])
     if (req.method() === 'PATCH') {
       reqs.push({ method: 'PATCH', path: t, id: url.searchParams.get('id'), body: req.postDataJSON() })
       return route.fulfill({ status: 204, headers: cors })
@@ -46,6 +55,7 @@ async function mock(page: Page, reqs: Req[], scheme: 'light' | 'dark', people: R
     return reply(t === 'people' ? people : [])
   })
 }
+const medPosts = (reqs: Req[]) => reqs.filter((r) => r.method === 'POST' && r.path === 'medications').map((r) => r.body as Record<string, unknown>)
 const patches = (reqs: Req[]) => reqs.filter((r) => r.method === 'PATCH' && r.path === 'people')
 const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/app-${name}-${scheme}.png` })
 
@@ -53,7 +63,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`Me: My details shows the server row and saves edits as a PATCH (${scheme})`, async ({ page }) => {
     mkdirSync(SHOTS, { recursive: true })
     const reqs: Req[] = []
-    await mock(page, reqs, scheme)
+    await mock(page, reqs, scheme, PEOPLE, [LOSARTAN])
     await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
     await page.goto('/#me')
     await expect(page.getByRole('heading', { name: 'Me' })).toBeVisible()
@@ -68,10 +78,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await sheet.getByLabel('Phone number').fill('0999 888 7777')
     await sheet.getByLabel('Phone number').blur()
     await sheet.getByRole('button', { name: 'Amlodipine' }).click()
-    await expect.poll(() => patches(reqs).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(2) // sync pushes after a short nudge
+    await expect(sheet.getByRole('button', { name: 'Morning 8:00 AM' })).toHaveCount(2) // every medicine has a time chip: Losartan and the new Amlodipine
+    await expect.poll(() => patches(reqs).length, { timeout: 15_000 }).toBeGreaterThanOrEqual(1) // sync pushes after a short nudge
+    await expect.poll(() => medPosts(reqs).some((m) => m.name === 'Amlodipine'), { timeout: 15_000 }).toBe(true)
     expect(patches(reqs).every((p) => p.id === 'eq.p1')).toBe(true)
     expect(patches(reqs).some((p) => (p.body as { phone?: string }).phone === '0999 888 7777')).toBe(true)
-    expect(patches(reqs).some((p) => ((p.body as { medicines?: string[] }).medicines ?? []).includes('Amlodipine'))).toBe(true)
+    expect(patches(reqs).some((p) => 'medicines' in (p.body as object))).toBe(false) // medicines are no longer written to the person row
+    const amlo = medPosts(reqs).find((m) => m.name === 'Amlodipine')!
+    expect(amlo).toMatchObject({ person_id: 'p1', status: 'confirmed', med_status: 'active', schedule: { v: 1, times: ['08:00'] } })
   })
 
   test(`SOS picker fills a family member's phone from their profile (${scheme})`, async ({ page }) => {
@@ -106,12 +120,17 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'wizard-about', scheme)
     await page.getByRole('button', { name: 'Step 3: Your medicines' }).click()
     await page.getByRole('button', { name: 'Metformin' }).click()
+    await expect(page.getByRole('button', { name: 'Morning 8:00 AM' })).toBeVisible() // a time chip per medicine
+    await page.getByRole('button', { name: 'Evening 8:00 PM' }).click()
     await shot(page, 'wizard-medicines', scheme)
     // sync starts after onboarding: the edits wait in the outbox until Finish
     for (let i = 0; i < 9 && !(await page.getByRole('button', { name: 'Finish' }).isVisible()); i++) await page.getByRole('button', { name: 'Skip' }).click()
     await page.getByRole('button', { name: 'Finish' }).click()
     await expect.poll(() => patches(reqs).some((p) => (p.body as { photo_path?: string }).photo_path === 'p1.jpg'), { timeout: 20_000 }).toBe(true)
     await expect.poll(() => patches(reqs).some((p) => (p.body as { blood_type?: string }).blood_type === 'A+'), { timeout: 15_000 }).toBe(true)
-    await expect.poll(() => patches(reqs).some((p) => ((p.body as { medicines?: string[] }).medicines ?? []).includes('Metformin')), { timeout: 15_000 }).toBe(true)
+    await expect.poll(() => medPosts(reqs).filter((m) => m.name === 'Metformin').pop()?.schedule, { timeout: 15_000 }).toEqual({ v: 1, times: ['08:00', '20:00'] })
+    expect(medPosts(reqs).filter((m) => m.name === 'Metformin').pop()).toMatchObject({ person_id: 'p1', schedule: { v: 1, times: ['08:00', '20:00'] } })
+    expect(medPosts(reqs).find((m) => m.name === 'Metformin')).toMatchObject({ status: 'confirmed', med_status: 'active' }) // the first write carries everything; later edits only what changed
+    expect(patches(reqs).some((p) => 'medicines' in (p.body as object))).toBe(false)
   })
 }

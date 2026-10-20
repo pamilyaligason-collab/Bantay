@@ -36,4 +36,12 @@ describe('TopBar greeting', () => {
     expect(['#medid', '#gobag', '#docs/x', '#safety/map', '#health/metric/bp', '#family/people/p1'].every(isSubHash)).toBe(true)
     expect(['', '#today', '#health', '#family/plan', '#records', '#safety'].some(isSubHash)).toBe(false)
   })
+  it('is compact (data-compact) off Today and roomy on Today', () => {
+    for (const [h, want] of [['#health', 'true'], ['#family', 'true'], ['#safety', 'true'], ['#today', 'false']]) {
+      location.hash = h
+      const { container, unmount } = render(<TopBar />)
+      expect(container.querySelector('.topbar')?.getAttribute('data-compact')).toBe(want)
+      unmount()
+    }
+  })
 })

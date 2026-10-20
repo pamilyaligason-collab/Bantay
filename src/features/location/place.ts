@@ -18,3 +18,10 @@ export function resolvePlace(o: { gps: LatLon | null; lastZone: ZoneId }) {
   if (!inPhilippines(o.gps)) return { weather: o.gps, zone: last.id as ZoneId, source: 'gps-abroad' as const }
   return { weather: o.gps, zone: nearestZone(o.gps).id as ZoneId, source: 'gps' as const }
 }
+
+/** IANA time zone of a place. The forecast reports the real one (Open-Meteo `timezone=auto`); before it arrives, inside the Philippines
+ *  it is Asia/Manila, anywhere else undefined (the phone's own zone). Never a fixed Manila for a member who is abroad. */
+export function placeTimezone(p: LatLon, reported?: string | null): string | undefined {
+  if (reported) return reported
+  return inPhilippines(p) ? 'Asia/Manila' : undefined
+}

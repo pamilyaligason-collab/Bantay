@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, drain, enqueue } from '../../db'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { backoffMinutes, DEAD_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
+import { backoffMinutes, DEAD_KEY, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 import { track } from '../admin/events'
@@ -94,6 +94,19 @@ describe('push', () => {
     expect(clientIdOf(await hdb.readings.get(id))).toBe(JSON.parse(p.body!).client_id)
   })
 
+  it('records the time of the last successful sync (the offline bar shows it), and not after a failed one', async () => {
+    mockFetch((c) => (c.method === 'GET' ? json([]) : new Response(null, { status: 201 })))
+    startSync(cfg())()
+    await syncNow()
+    const at = (await db.kv.get(LAST_PULL_KEY))?.value as number
+    expect(Math.abs(Date.now() - at)).toBeLessThan(5000)
+    await db.kv.put({ key: LAST_PULL_KEY, value: 123 })
+    mockFetch(() => { throw new TypeError('offline') })
+    await enqueue('readings', 'insert', reading)
+    await syncNow(true)
+    expect((await db.kv.get(LAST_PULL_KEY))?.value).toBe(123)
+  })
+
   it('a retry after a network failure reuses the same client_id (idempotent)', async () => {
     mockFetch(() => { throw new TypeError('offline') })
     await enqueue('meds_taken', 'insert', { personId: 'p1', name: 'M', takenAt: '2026-10-01T08:00:00Z' })
@@ -165,6 +178,28 @@ describe('push', () => {
     expect(posts()).toHaveLength(1)
     expect(await db.outbox.count()).toBe(0)
     expect((await syncCounts()).dead).toBe(0)
+  })
+
+  it('an unsendable usage_events row is dropped silently: no dead letter, not counted', async () => {
+    mockFetch(() => json({ code: '23514' }, 400))
+    await enqueue('usage_events', 'insert', { kind: 'screen', name: 'today', appVersion: 'dev' })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+    expect(await syncCounts()).toEqual({ waiting: 0, unknown: 0, dead: 0 })
+  })
+
+  it('usage_events before migration 0015 (no client_at column): the row is retried once without clientAt and then sent', async () => {
+    let n = 0
+    mockFetch((c) => (n++ === 0 && c.body?.includes('client_at') ? json({ code: 'PGRST204', message: "Could not find the 'client_at' column" }, 400) : new Response(null, { status: 201 })))
+    await enqueue('usage_events', 'insert', { kind: 'screen', name: 'today', appVersion: 'dev', clientAt: '2026-10-20T01:00:00Z' })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(2)
+    expect(posts()[0]!.body).toContain('client_at')
+    expect(posts()[1]!.body).not.toContain('client_at')
+    expect(await db.outbox.count()).toBe(0)
   })
 
   it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {

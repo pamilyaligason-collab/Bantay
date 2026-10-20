@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { ldb } from '../log/store'
 
 const h = vi.hoisted(() => {
   const invoke = vi.fn()
@@ -27,6 +28,7 @@ beforeEach(async () => {
   connected = true
   await db.outbox.clear()
   await db.kv.clear()
+  await ldb.medications.clear()
   h.invoke.mockReset(); h.rpc.mockReset(); h.from.mockReset()
   h.invoke.mockImplementation(async (_n: string, o: { body: { action: string } }) => ({ data: o.body.action === 'list' ? { ok: true, members } : { ok: true }, error: null }))
   h.rpc.mockImplementation(async (name: string) => {
@@ -147,9 +149,12 @@ describe('AdminScreen', () => {
     fireEvent.click(form.getByRole('button', { name: 'Save details' }))
     await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: {
       action: 'update', personId: 'p2', displayName: 'Lola', phone: '0918 333 4444', birthdate: '1948-03-09', bloodType: 'A-',
-      allergies: ['Penicillin'], conditions: ['Diabetes'], medicines: ['Losartan', 'Vitamin D']
+      allergies: ['Penicillin'], conditions: ['Diabetes']
     } }))
     expect(await screen.findByText('Saved.')).toBeTruthy()
+    // the medicines field writes the medications table (with a time), never the person's profile text
+    await waitFor(async () => expect((await ldb.medications.toArray()).map((m) => [m.personId, m.name, m.medStatus, (m.schedule as { times: string[] }).times])).toEqual([['p2', 'Vitamin D', 'active', ['08:00']]]))
+    expect((await db.outbox.toArray()).some((o) => o.table === 'medications')).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Back to Members' }))
     expect(await screen.findByRole('heading', { name: 'Members' })).toBeTruthy()
   })

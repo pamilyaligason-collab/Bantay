@@ -1,12 +1,16 @@
 export type Tab = 'today' | 'health' | 'family' | 'safety'
-export type FamilySeg = 'records' | 'plan' | 'people'
+export type FamilySeg = 'plan' | 'people'
 export const TABS: Tab[] = ['today', 'health', 'family', 'safety']
 const VIEWS = new Set(['me', 'notif', 'admin'])
 
+/** Old Records links (#records, #family/records) now open Health > Papers. Callers replace the hash with this when it differs. */
+export const canonicalHash = (h: string) => (h === '#records' || h === '#family/records' ? '#health/papers' : h)
+
 export function parseHash(h: string): { tab: Tab | null; view: string | null } {
-  const k = h.replace(/^#/, '')
-  if (k === 'records' || k === 'plan' || k === 'people') return { tab: 'family', view: k }
+  const k = canonicalHash(h).replace(/^#/, '')
+  if (k === 'plan' || k === 'people') return { tab: 'family', view: k }
   if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/people, #family/people/<id>
+  if (k === 'weather' || k.startsWith('weather?')) return { tab: 'today', view: 'weather' } // #weather, #weather?from=action
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   // sub-screens of Safety, drawn by Safety itself; #medid/<personId> comes from a member page
   if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k }
@@ -19,5 +23,5 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
 
 export function familyEntry(o: { alertActive: boolean; last: FamilySeg | null }): FamilySeg {
   if (o.alertActive) return 'people'
-  return o.last ?? 'records'
+  return o.last ?? 'people'
 }

@@ -244,9 +244,8 @@ describe('auto-confirm in the load sql', () => {
     expect(upd[0]).toContain("'Test Almendras'") // aliases union
     expect(upd[0]).not.toContain("'Test Parent'") // the person's own display name is not an alias
     expect(upd[0]).toContain("'Penicillin'") // confirmed allergy joins the profile list
-    expect(upd[0]).toContain("'Drug A'") // seen on two papers = maintenance medicine
-    expect(upd[0]).not.toContain('Drug B')
-    expect(upd[0]).not.toContain('Drug C')
+    expect(upd[0]).not.toContain('medicines') // the DB trigger turns prescription_items into medications; people.medicines is not written
+    expect(upd[0]).not.toContain('Drug A')
     expect(sql.indexOf('insert into public.person_identifiers')).toBeGreaterThan(sql.lastIndexOf('insert into public.source_files'))
     expect(sql.indexOf('insert into public.insurance_policies')).toBeGreaterThan(sql.lastIndexOf('insert into public.source_files'))
     expect(line(sql, 'person_identifiers', "'9999-TEST'")).toMatch(/on conflict do nothing;$/)

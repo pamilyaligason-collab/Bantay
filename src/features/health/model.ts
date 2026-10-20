@@ -1,5 +1,5 @@
 import { formatNumber, labName } from '../../lib/labFormat'
-import { GUIDE, generalRange, position, rangeText, type Position, type Range, type Reading } from './ranges'
+import { GUIDE, generalRange, position, rangeText, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
 
 /** Pure Health logic (v6, D-38): headline, previous value, body-map nodes, monthly averages, medicine times. No React, no storage. */
 
@@ -30,7 +30,12 @@ export function effectiveRange(r: Reading, family?: Range | null): { range: Rang
   const gen = g ? null : generalRange(r.test, r.unit)
   return gen ? { range: { low: gen.low, high: gen.high }, from: 'general' } : { range: null, from: 'none' }
 }
-export const readingPosition = (r: Reading, family?: Range | null): Position => position(r.value, effectiveRange(r, family).range ?? undefined)
+export function readingPosition(r: Reading, family?: Range | null): Position {
+  const { range, from } = effectiveRange(r, family)
+  if (from === 'lab' || from === 'general') return position(r.value, range ?? undefined) // the lab's own range is in the lab's unit
+  const c = toCanonicalReading(r) // guide and family limits are in the guide's unit (glucose mmol/L is converted; an unknown unit is not judged)
+  return c ? position(c.value, range ?? undefined) : 'none'
+}
 
 // ---- headline -------------------------------------------------------------------------------------------
 export interface Headline { title: string; sub: string; tone: 'ok' | 'watch' | 'none' }
@@ -240,6 +245,14 @@ export const rangeLine = (r: Reading, family?: Range | null) => {
 }
 
 // ---- medicines ----------------------------------------------------------------------------------------------
+// The live schedule is the `medications` table: use the helpers re-exported below (slotsFor, matchDoses, reviewOverdue ...).
+// @deprecated The profile-text functions here (parseMedicine, medSlots, doseStates) read people.medicines text. They stay only
+// until Medicines.tsx, NextUp and Hero (other lanes) move to medications; then they go.
+export {
+  REVIEW_GRACE_DAYS, dayOf, isLive, liveMedicines, matchDoses, normaliseDrug, parseSchedule, remindable, resolveMedication, reviewOverdue, slotsFor, toClock, toMinutes,
+  type DoseState, type MedSlot, type ParsedSchedule
+} from './meds'
+
 export interface Slot { name: string; at: number | null } // at = minutes after local midnight; null = no time given
 
 const TIME = /(\d{1,2}):(\d{2})\s*(am|pm)?/gi
@@ -273,8 +286,8 @@ export const clock = (at: number) => `${Math.floor(at / 60) % 12 || 12}:${String
 export const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
 /** Marks the earliest slots of a medicine taken, one per take logged today. A medicine with no times is taken after one take. */
-export function doseStates(slots: Slot[], takes: { name: string; takenAt: string }[], now: Date): (Slot & { taken: boolean })[] {
-  const today = takes.filter((t) => sameDay(t.takenAt, now))
+export function doseStates(slots: Slot[], takes: { name: string; takenAt: string; skipped?: boolean }[], now: Date): (Slot & { taken: boolean })[] {
+  const today = takes.filter((t) => !t.skipped && sameDay(t.takenAt, now)) // a skipped dose is not a taken one
   const used = new Map<string, number>()
   return [...slots]
     .sort((a, b) => (a.at ?? 1e9) - (b.at ?? 1e9))

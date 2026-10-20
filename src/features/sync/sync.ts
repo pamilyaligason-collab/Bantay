@@ -7,6 +7,7 @@ import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
+import { vdb } from '../health/visitsStore'
 import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
 import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
 
@@ -27,6 +28,7 @@ export interface SyncState { ready: boolean; signedIn: boolean; offline: boolean
 
 const BACKOFF_KEY = 'sync.backoff'
 export const DEAD_KEY = 'sync.dead'
+export const LAST_PULL_KEY = 'sync.lastPull'
 const cursorKey = (t: string) => `sync.cursor.${t}`
 
 class SyncError extends Error {
@@ -48,7 +50,7 @@ export async function syncCounts() {
   // usage_events (screen tracking) still sync, but a new row on every tab switch must not make the header count climb
   const waiting = rows.filter((r) => isSyncable(r.table) && r.table !== 'usage_events').length
   const hidden = rows.filter((r) => r.table === 'usage_events').length
-  const dead = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined)?.length ?? 0
+  const dead = (((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined) ?? []).filter((d) => d.table !== 'usage_events').length
   return { waiting, unknown: rows.length - waiting - hidden, dead }
 }
 
@@ -79,7 +81,7 @@ async function deadLetter(row: OutboxRow, code: string) {
 }
 
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
-  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes } as Record<string, Table<{ id?: number }, number>>)[t]
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes, appointments: vdb.appointments, prescriptions: vdb.followUps } as Record<string, Table<{ id?: number }, number>>)[t]
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
   const { url, key } = env()
@@ -115,10 +117,17 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     return
   }
   const code = await errCode(res)
+  // Before migration 0015 is applied there is no client_at column: PostgREST answers 400 PGRST204. Send the same event once more without it (the time is only for ordering).
+  if (row.table === 'usage_events' && res.status === 400 && code === 'PGRST204' && payload.clientAt !== undefined) {
+    const { clientAt: _drop, ...rest } = payload
+    await db.outbox.update(row.id!, { payload: rest })
+    return sendRow({ ...row, payload: rest }, token, failed)
+  }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
+  if (row.table === 'usage_events' && (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES)) return void (await db.outbox.delete(row.id!)) // tracking is never worth a banner: drop silently
   if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code)
   throw new SyncError('perm', code)
 }
@@ -300,6 +309,7 @@ async function run(force: boolean) {
     const err = await push(token)
     if (err) throw err
     await pull(token)
+    await db.kv.put({ key: LAST_PULL_KEY, value: Date.now() }) // when this phone last had fresh data (the offline bar says so)
     await db.kv.delete(BACKOFF_KEY)
     setState({ offline: false })
   } catch (e) {

@@ -22,14 +22,29 @@ const seed = (page: Page) =>
   })
 
 test('empty states', async ({ page }) => {
-  await page.goto('/#records')
+  await page.goto('/#health/papers')
   await expect(page.getByText('No records yet')).toBeVisible()
   await page.goto('/#health')
   await expect(page.getByText('No results yet')).toBeVisible()
 })
 
+test('Papers lives under Health; the old #records and #family/records links land there', async ({ page }) => {
+  await page.goto('/#health/papers')
+  await expect(page.locator('h1')).toHaveText('Papers')
+  await expect(page.getByRole('button', { name: 'Health', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
+  for (const old of ['/#records', '/#family/records']) {
+    await page.goto('/#health')
+    await page.goto(old)
+    await expect(page).toHaveURL(/#health\/papers$/)
+    await expect(page.locator('h1')).toHaveText('Papers')
+  }
+  await page.getByRole('link', { name: 'Back to Health' }).click()
+  await expect(page.locator('h1')).toHaveText('Health')
+})
+
 test('timeline, trend chart and latest vs normal from seeded data', async ({ page }) => {
-  await page.goto('/#records')
+  await page.goto('/#health/papers')
   await expect(page.getByText('No records yet')).toBeVisible()
   await seed(page)
   await page.reload()

@@ -7,6 +7,7 @@ import {
 } from './api'
 import type { Person } from './store'
 import { usePeople } from './useRecordsServer'
+import { confirmClearLabel, showConfirmAll, emitConfirmed, progressPct, progressText } from './papers'
 import './records.css'
 
 // D-36 / D-47: nothing counts until a person confirms it. The sheet lists draft documents, then draft rows to confirm, fix or reject.
@@ -175,6 +176,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
   const [loadErr, setLoadErr] = useState(false)
   const head = useRef<HTMLHeadingElement>(null)
   const opener = useRef<Element | null>(document.activeElement)
+  const counted = useRef(new Set<string>()) // documents already reported as records_confirmed
 
   useEffect(() => {
     void listDrafts().then((r) => {
@@ -203,7 +205,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
     const b = bundles?.find((x) => x.doc.id === openId)
     if (!b || itemsOf(b).length > 0) return
     void settleDocument(b.doc.id).then((s) => {
-      if (s.ok && s.data !== 'open') { setBundles((bs) => bs && bs.filter((x) => x.doc.id !== b.doc.id)); setOpenId(null); onChanged() }
+      if (s.ok && s.data !== 'open') { if (s.data === 'confirmed') emitConfirmed(b.doc.id, counted.current); setBundles((bs) => bs && bs.filter((x) => x.doc.id !== b.doc.id)); setOpenId(null); onChanged() }
     })
   }, [openId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -213,6 +215,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
     const r = kind === 'confirm' ? await confirmRows('documents', [open.doc.id]) : await rejectRows('documents', [open.doc.id])
     setBusy(false)
     if (!r.ok) return setMsg('Could not save. Check your connection and try again.')
+    if (kind === 'confirm') emitConfirmed(open.doc.id, counted.current)
     setBundles((bs) => bs && bs.filter((b) => b.doc.id !== open.doc.id))
     setOpenId(null)
     setMsg(kind === 'confirm' ? 'Document confirmed' : 'Document rejected')
@@ -247,7 +250,10 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
     if (done) {
       onChanged()
       const s = await settleDocument(open.doc.id)
-      if (s.ok && s.data !== 'open') { setBundles((bs) => bs && bs.filter((b) => b.doc.id !== open.doc.id)); setOpenId(null) }
+      if (s.ok && s.data !== 'open') {
+        if (s.data === 'confirmed') emitConfirmed(open.doc.id, counted.current)
+        setBundles((bs) => bs && bs.filter((b) => b.doc.id !== open.doc.id)); setOpenId(null)
+      }
     }
     setBusy(false)
   }
@@ -280,7 +286,12 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
       {open && <p className="sub" style={{ margin: 0 }}>{[who(open.doc.person_id), open.doc.facility].filter(Boolean).join(' · ')}</p>}
       <p className="rx-status" role="status" aria-live="polite">{msg}</p>
 
-      {!open && personId && total != null && total > 0 && <p className="rx-progress">{Math.max(0, total - left)} of {total} documents checked</p>}
+      {!open && total != null && total > 0 && (
+        <div>
+          <p className="rx-progress" data-testid="papers-progress">{progressText(total - left, total)}</p>
+          <div className="rx-bar" aria-hidden="true"><span style={{ width: `${progressPct(total - left, total)}%` }} /></div>
+        </div>
+      )}
       {!open && (
         <div className="grp">
           {bundles === null && <div className="row"><span className="grow sub">Loading</span></div>}
@@ -319,8 +330,8 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
           {items.length > 0 && (
             <>
               <button className="btn" disabled={busy || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
-              {everything.length > batch.length && (
-                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>Confirm all from this file ({everything.length})</button>
+              {showConfirmAll(everything.length, batch.length) && (
+                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>{confirmClearLabel(everything.length, items.some(unclear))}</button>
               )}
               {items.some(unclear) && <p className="sub" style={{ margin: 0 }}>Unclear lines are confirmed one at a time.</p>}
             </>

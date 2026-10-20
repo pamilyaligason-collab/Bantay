@@ -2,15 +2,15 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
-  await page.goto('/#records')
+  await page.goto('/#family/plan')
   await expect(page.locator('h1')).toHaveText('Family')
-  await expect(page.getByRole('button', { name: 'Records', pressed: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
   await page.getByRole('button', { name: 'People' }).click()
   await expect(page.getByRole('button', { name: 'People', pressed: true })).toBeVisible()
   await expect(page.locator('h1')).toHaveText('Family')
   await expect(page).toHaveURL(/#family$/)
   await page.goBack()
-  await expect(page.getByRole('button', { name: 'Records', pressed: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
 })
 
 test('installable: manifest fields and service worker', async ({ page }) => {

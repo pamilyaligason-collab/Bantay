@@ -22,7 +22,20 @@ describe('track allowlist (B-7)', () => {
     const rows = await db.outbox.toArray()
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ table: 'usage_events', op: 'insert' })
-    expect(Object.keys(rows[0]!.payload as object).sort()).toEqual(['appVersion', 'kind', 'name'])
+    expect(Object.keys(rows[0]!.payload as object).sort()).toEqual(['appVersion', 'clientAt', 'kind', 'name'])
+    const at = Date.parse((rows[0]!.payload as { clientAt: string }).clientAt)
+    expect(Math.abs(Date.now() - at)).toBeLessThan(5000) // the phone's own time of the tap
+  })
+  it('leaves clientAt out when the device clock is wrong, still queues the event', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      for (const t of ['2001-01-01T00:00:00Z', '2150-01-01T00:00:00Z']) {
+        vi.setSystemTime(new Date(t))
+        await db.outbox.clear()
+        expect(await track('screen', 'today')).toBe(true)
+        expect(Object.keys((await db.outbox.toArray())[0]!.payload as object).sort()).toEqual(['appVersion', 'kind', 'name'])
+      }
+    } finally { vi.useRealTimers() }
   })
   it('allows the Me and notifications screens', async () => {
     expect(await track('screen', 'me')).toBe(true)
@@ -34,6 +47,13 @@ describe('track allowlist (B-7)', () => {
       expect(await track(k!, n!), `${k}/${n}`).toBe(false)
     }
     expect(await db.outbox.count()).toBe(0)
+  })
+  it('allows every session 6 habit event (PART-2 section 4) and the Ask screen', async () => {
+    for (const n of ['dose_logged', 'dose_skipped', 'reading_added', 'sos_sent', 'checkin_done', 'med_added', 'med_edited', 'med_paused',
+      'med_deleted', 'reminder_opened', 'card_seen_my_week', 'card_seen_family_line', 'weather_opened', 'weather_opened_action', 'records_confirmed']) {
+      expect(await track('action', n), n).toBe(true)
+    }
+    expect(await track('screen', 'ask')).toBe(true)
   })
   it('every allowed name is letters and underscores only (matches the DB check)', () => {
     for (const names of Object.values(EVENT_NAMES)) for (const n of names) expect(n).toMatch(/^[a-z_]{1,40}$/)

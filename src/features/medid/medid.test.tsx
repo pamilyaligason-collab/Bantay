@@ -83,3 +83,16 @@ describe('MedicalId for another person (#medid/<id>)', () => {
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('#family/people/p2')
   })
 })
+
+describe('buildMedicalId from medications', () => {
+  const m = (name: string, medStatus: 'active' | 'paused' | 'stopped' = 'active', personId = 'p') => ({ personId, name, medStatus, schedule: { v: 1, times: ['08:00'] } })
+  it('lists active medicines by name only and ignores the profile text', () => {
+    const c = buildMedicalId({ name: 'A', now: NOW, profile: { medicines: ['Old text 8:00'] }, contacts: [], medications: [m('Drug A'), m('Drug B', 'paused'), m('Drug C', 'stopped'), m('Drug A')] })
+    expect(c.medicines).toEqual(['Drug A'])
+    expect(c.missing).not.toContain('medicines')
+  })
+  it('an empty medications list is authoritative; no list falls back to the deprecated text', () => {
+    expect(buildMedicalId({ name: 'A', now: NOW, profile: { medicines: ['Old'] }, contacts: [], medications: [] }).medicines).toEqual([])
+    expect(buildMedicalId({ name: 'A', now: NOW, profile: { medicines: ['Old'] }, contacts: [] }).medicines).toEqual(['Old'])
+  })
+})

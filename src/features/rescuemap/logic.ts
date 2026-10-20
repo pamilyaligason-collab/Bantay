@@ -16,7 +16,7 @@ export function kindOf(e: Pick<Entry, 'group' | 'name'>): Kind | null {
   if (/fire|bfp/i.test(e.name)) return 'fire'
   if (/police|pnp/i.test(e.name)) return 'police'
   if (/^evacuation/i.test(e.group)) return 'evac'
-  if (/^health/i.test(e.group)) return 'health'
+  if (/^(health|hospital)/i.test(e.group)) return 'health'
   return null
 }
 

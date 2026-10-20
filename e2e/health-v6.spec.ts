@@ -25,12 +25,9 @@ const seed = (page: Page, phase: 1 | 2) =>
         r('fasting_glucose', 104, 'mg/dL', 2), r('fasting_glucose', 96, 'mg/dL', 12), r('weight', 61.5, 'kg', 3), r('heart_rate', 70, 'bpm', 0.1)
       ]
     })
-    const meds = ['Losartan 8:00', 'Metformin 8:00,20:00', 'Vitamin D']
-    if (phase === 2) await put('bantay', {
-      kv: [{ key: 'profile.medicines', value: meds }],
-      profiles: [{ id: 'p1', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: meds, updatedAt: null }]
-    })
+    const med = (name: string, times: string[], extra: Record<string, unknown> = {}) => ({ clientId: `c-${name}`, serverId: `s-${name}`, personId: 'p1', name, medStatus: 'active', status: 'confirmed', schedule: { v: 1, times }, ...extra })
     if (phase === 2) await put('bantay-log', {
+      medications: [med('Losartan', ['08:00']), med('Metformin', ['08:00', '20:00'], { strength: '500 mg' }), med('Vitamin D', [], { asNeeded: true })],
       activity: [
         { personId: 'p1', kind: 'sleep', minutes: 400, steps: null, startedAt: d(0.3), source: 'manual' },
         { personId: 'p1', kind: 'steps', minutes: null, steps: 2100, startedAt: d(0), source: 'manual' },
@@ -63,25 +60,32 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
     await page.goto('/#health')
     await page.reload()
     await expect(page.getByTestId('insight')).toContainText('this week')
-    await expect(page.getByRole('link', { name: /^BP 124\/79/ })).toBeVisible()
-    await expect(page.getByRole('link', { name: /^Steps 2,?100/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: /^BP 130\/84/ })).toBeVisible()
+    await expect(page.locator('[data-node="steps"]')).toContainText('2,100')
     await page.getByRole('switch', { name: 'Previous' }).click()
     await expect(page.getByText(/^Before: 136 mmHg/).first()).toBeVisible()
-    await expect(page.getByTestId('meds-today')).toContainText('Metformin')
+    await expect(page.getByTestId('meds-summary')).toContainText('0 of 3 doses today')
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/health-${scheme}.png` })
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, 760))
     await page.screenshot({ path: `${SHOTS}/health-lower-${scheme}.png` })
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, 1500))
     await page.screenshot({ path: `${SHOTS}/health-meds-${scheme}.png` })
+    await page.getByTestId('meds-summary').click()
+    await expect(page).toHaveURL(/#health\/meds$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Medicines' })).toBeVisible()
+    await expect(page.getByTestId('meds-today')).toContainText('Metformin 500 mg')
+    await page.screenshot({ path: `${SHOTS}/medicines-screen-${scheme}.png` })
+    await page.getByRole('link', { name: 'Back to Health' }).click()
+    await expect(page.getByTestId('insight')).toBeVisible()
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, 0))
     expect((await new AxeBuilder({ page }).include('main').analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
 
-    await page.getByRole('link', { name: /^BP 124\/79/ }).click()
+    await page.getByRole('link', { name: /^BP 130\/84/ }).click()
     await expect(page).toHaveURL(/#health\/metric\/bp_systolic$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Blood pressure, top number' })).toBeVisible()
     await page.getByRole('button', { name: 'This month' }).click()
-    await expect(page.locator('.uplot canvas').first()).toBeVisible()
+    await expect(page.getByTestId('metric-chart')).toBeVisible()
     await expect(page.getByTestId('monthly')).toBeVisible()
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/metric-${scheme}.png` })
@@ -103,6 +107,20 @@ test('medicines list shows and is read-only when nobody is signed in', async ({ 
   await seed(page, 2)
   await page.reload()
   // Signed out in the no-auth e2e build: nobody is "me", so the dose is read-only here and says so.
+  await page.goto('/#health/meds')
   await expect(page.getByTestId('meds-today')).toContainText('Losartan')
-  await expect(page.getByRole('button', { name: /as taken/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Take / })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Add' })).toHaveCount(0)
+})
+
+test('header says whose health it is, and Papers sits under Health with the same person', async ({ page }) => {
+  await page.goto('/#health')
+  await expect(page.locator('h1')).toHaveText('Health')
+  await seed(page, 1)
+  await page.reload()
+  await expect(page.getByTestId('showing')).toHaveText('Showing: Maria Sample')
+  await page.goto('/#health/papers')
+  await expect(page.locator('h1')).toHaveText('Papers')
+  await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Health' })).toHaveAttribute('aria-current', 'page')
 })

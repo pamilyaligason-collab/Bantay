@@ -5,7 +5,9 @@ import GoBag from '../features/gobag/GoBag'
 import MedicalId from '../features/medid/MedicalId'
 import SosButton from '../features/sos/SosButton'
 import SosScreen from '../features/sos/SosScreen'
+import { pickLocalSet } from '../features/location/geo'
 import { useLocation, usePlaceFrom } from '../features/location/useLocation'
+import { ABROAD_SOURCE } from '../features/safety/dial'
 import ZonePicker from '../features/location/ZonePicker'
 import { Icon } from '../features/shell/Icon'
 import '../features/safety/safety.css'
@@ -37,6 +39,8 @@ function SafetyRoute({ hash }: { hash: string }) {
  *  D-33: one place for the whole screen. Warnings rank from the phone inside the Philippines, else from the zone; zone data (numbers, evacuation, hazards) uses the zone. */
 function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: ReturnType<typeof usePlaceFrom> }) {
   const [sos, setSos] = useState(false)
+  // 911 only works in the Philippines and the US (Texas). Elsewhere abroad it would dial nothing useful: point at the official list instead.
+  const abroad = !!place && pickLocalSet(place.weather).where === 'abroad'
   if (sos) return <SosScreen onClose={() => setSos(false)} />
   return (
     <>
@@ -46,11 +50,13 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
       </div>
       <SosButton onSend={() => setSos(true)} />
       <div className="sf-pair">
-        <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)' }}>Call 911</a>
+        {abroad
+          ? <a href={ABROAD_SOURCE.url} target="_blank" rel="noopener noreferrer" className="btn" style={{ background: 'var(--danger-bg)' }}>Local emergency number</a>
+          : <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)' }}>Call 911</a>}
         <a href="#medid" className="btn2 sf-ico"><Icon name="cross" size={20} />Medical ID</a>
       </div>
       {place && <SafetyHub place={place} />}
-      <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. Sources and dates are in docs/SOURCES.md.</p>
+      <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. <a href="#safety/sources">Sources</a></p>
     </>
   )
 }

@@ -3,6 +3,7 @@ import { loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
 import { SyncStatus } from '../sync/SyncStatus'
 import { Icon } from './Icon'
+import { parseHash } from './routes'
 import { useOwnAvatar } from '../setup/useProfile'
 import './shell.css'
 
@@ -14,8 +15,10 @@ export const firstName = (full: string) => { const f = full.trim().split(/\s+/)[
 /** Sub-pages (a metric, a Safety page, a person, Medical ID, Go-bag, Documents) draw their own header, so the band shrinks. */
 export const isSubHash = (h: string) => {
   const k = h.replace(/^#/, '')
-  return k === 'medid' || k === 'gobag' || k === 'docs' || (k.includes('/') && !/^family\/(records|plan|people)$/.test(k))
+  return k === 'medid' || k === 'gobag' || k === 'docs' || (k.includes('/') && !/^family\/(plan|people)$/.test(k))
 }
+/** The greeting and date belong to Today only; every other tab and sub-page shows its own title. */
+export const isTodayHash = (h: string) => { const r = parseHash(h); return r.tab === 'today' && r.view === null }
 // A key: tells the admin door apart from the Safety shield.
 const ADMIN_PATH = 'M7.5 8a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM11 11.5h10M18 11.5v3M15 11.5v2'
 
@@ -46,14 +49,20 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
+  const [today, setToday] = useState(() => isTodayHash(location.hash))
+  useEffect(() => {
+    const on = () => setToday(isTodayHash(location.hash))
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [])
   const now = new Date()
   const first = firstName(name)
   return (
-    <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub}>
+    <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub || !today}>
       <a className="sh-me-btn" href="#me" aria-label="Me and settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0) || <Icon name="users" />)}</a>
       <div className="sh-top-text">
-        <span className="sh-top-date">{dateLine(now)}</span>
-        <span className="sh-top-greet">{greeting(now)}{first && `, ${first}`}</span>
+        {today && <span className="sh-top-date">{dateLine(now)}</span>}
+        {today && <span className="sh-top-greet">{greeting(now)}{first && `, ${first}`}</span>}
         <SyncStatus />
       </div>
       {admin && (

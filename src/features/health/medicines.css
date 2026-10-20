@@ -1,0 +1,49 @@
+/* Medicines screen, review line, edit sheet, undo toast (lane M2). App tokens only. */
+.md-addrow { display: flex; justify-content: flex-end; margin: 4px 0 0; }
+.md-add { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; }
+.md-sech { display: flex; align-items: baseline; justify-content: space-between; margin-top: 16px; }
+.md-sech .hd { margin-bottom: 8px; }
+.md-dose { align-items: center; flex-wrap: wrap; }
+.md-tm { flex: none; width: 70px; font-weight: 700; font-size: 15px; }
+.md-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 120px; overflow-wrap: anywhere; }
+.md-rowacts { display: flex; gap: 8px; flex-basis: 100%; margin-left: 82px; }
+.md-pill { min-height: 44px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill, var(--card2)); color: var(--act); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.md-pill.md-pri { background: var(--btn); color: var(--btn-fg); }
+.md-pill:disabled { opacity: 0.5; }
+.md-pill:focus-visible, .md-add:focus-visible, .md-medrow:focus-visible, .md-undo:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.md-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--card2); color: var(--ink); }
+.md-tag.warn { background: var(--warn-bg); color: var(--ink); box-shadow: inset 0 0 0 1px var(--warn); }
+.md-li { position: relative; }
+.md-li + .md-li::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 0.5px; background: var(--sep); }
+.md-medrow { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; min-height: 52px; padding: 12px 16px; box-sizing: border-box; border: 0; background: none; color: var(--ink); font: inherit; font-size: 17px; text-align: left; cursor: pointer; }
+div.md-medrow { cursor: default; }
+.md-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.md-review { display: flex; flex-direction: column; gap: 8px; margin: 0 12px 12px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; }
+.md-rv { display: flex; flex-wrap: wrap; gap: 8px; }
+.md-check { display: grid; gap: 2px; margin: 8px 0 4px; text-decoration: none; color: var(--ink); background: var(--warn-bg); }
+.md-form { padding-bottom: 4px; }
+.md-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.md-two > div { display: grid; gap: 6px; min-width: 0; }
+.md-lbl { font-size: 14px; font-weight: 600; color: var(--muted); }
+.md-times { display: grid; gap: 8px; margin-top: 6px; }
+.md-times .md-chips { gap: 8px; }
+.md-times .wz-chip:disabled { opacity: 0.45; }
+.md-custom { display: flex; gap: 8px; align-items: center; }
+.md-custom input { flex: 1; }
+.md-note { margin: 0 0 6px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); font-size: 15px; }
+.md-switchrow { display: flex; align-items: center; gap: 12px; min-height: 52px; margin-top: 4px; }
+.md-switchrow .grow { display: flex; flex-direction: column; }
+.md-sub { display: block; font-size: 14px; }
+.md-err { margin: 0; color: var(--red); font-weight: 600; }
+.md-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+.md-acts .btn2 { padding: 0 8px; width: auto; }
+.bt .md-acts .md-del { background: var(--red-soft); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--red); }
+.md-help { margin: 0; font-size: 14px; }
+.md-toast { display: flex; align-items: center; gap: 10px; width: max-content; }
+.md-undo { min-height: 44px; min-width: 56px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-weight: 700; }
+.hdr.hv-back-row { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 4px; text-align: left; }
+.hv-back-row h1 { margin: 0; text-align: left; }
+.md-foot { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--card); border-top: 0.5px solid var(--sep); z-index: 1; }
+.md-acts[data-two] { grid-template-columns: 1fr 1fr; }
+.md-dup { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; font-weight: 600; }
+.md-ed-toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 50; }

@@ -5,11 +5,11 @@ import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { alertRef } from '../location/place'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
-import { manilaLocal, rainBody, rainOutlook, skyOf, type Wx } from '../today/heroCards'
+import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, type Alert, rankAlerts } from './alerts'
-import { splitDial } from './dial'
-import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withOverrides } from './entries'
+import { coversHere, planDial, splitDial } from './dial'
+import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
 import { hazardsFor, hazardStatus } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
@@ -40,11 +40,17 @@ export function TileIcon({ name }: { name: string }) {
   return <svg className="sh-ic" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
 }
 
+/** Numbers a person can call from Quick dial here: the one local set plus national, OFW and teleconsult sets that show for this place. */
+export function dialCount(place: Place, overrides: Overrides): number {
+  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), place.source !== 'zone')
+  return plan.sets.reduce((n, s) => n + splitDial(s.entries).groups.reduce((m, g) => m + g.items.length, 0), 0)
+}
+
 /** Same rain numbers as Today: the hourly outlook when we have it, else the day chance. */
 export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
   if (!wx) return 'Rain, wind and clouds'
   const sky = skyOf(wx)
-  const local = manilaLocal(now)
+  const local = wxLocal(wx, now)
   const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, local, sky === 'rain' || sky === 'storm') : undefined
   return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
 }
@@ -59,18 +65,18 @@ export default function SafetyHub({ place }: { place: Place }) {
 
   const warns = rankAlerts(alerts, alertRef(place)).length
   const storms = cyclones(alerts)
-  const confirmed = splitDial(withOverrides(forZone(hotlines as Entry[], place.zone), overrides)).groups.reduce((n, g) => n + g.items.length, 0)
+  const confirmed = dialCount(place, overrides)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
   const sos = Array.isArray(sosRaw) ? sosRaw.filter((e) => e && Number.isFinite(e.at)) : []
   const last = sos[0] ? new Date(sos[0].at).toLocaleDateString('en-PH', { day: 'numeric', month: 'short' }) : null
 
   const tiles: [string, string, string, string][] = [
     ['#safety/warnings', 'warn', 'Warnings', warns ? plural(warns, 'warning') + ' now' : 'None now'],
-    ['#safety/weather', 'weather', 'Weather maps', rainLine(wx)],
+    ['#weather', 'weather', 'Weather', rainLine(wx)],
     ['#safety/storms', 'storm', 'Storm tracker', storms.length ? `${stormName(storms[0]!)}${storms.length > 1 ? ` and ${storms.length - 1} more` : ''}` : 'No storms now'],
     ['#safety/map', 'map', 'Rescue map', pins ? plural(pins, 'place') + ' on the map' : 'Shelters and help'],
     ['#safety/dial', 'dial', 'Quick dial', confirmed ? `${plural(confirmed, 'number')} ready` : 'No numbers yet'],
-    ['#safety/hazards', 'hazard', 'Hazards at my location', hazardStatus(hazardsFor(place.zone))],
+    ['#safety/hazards', 'hazard', 'Hazards at my location', hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null)],
     ['#gobag', 'bag', 'Go-bag', `${bag.done.length} of ${ALL_IDS.length} packed`],
     ['#safety/cards', 'cards', 'Safety cards', `${CARDS.length} how-to guides`],
     ['#docs', 'ids', 'IDs and insurance', 'Keep copies handy'],

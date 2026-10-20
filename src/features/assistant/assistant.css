@@ -1,5 +1,5 @@
 .as-back { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; }
-.as-sheet { width: 100%; max-width: 640px; height: min(86dvh, 720px); border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); box-sizing: border-box; min-width: 0; color: var(--ink); }
+.as-sheet { width: 100%; max-width: 640px; height: min(86dvh, 720px); border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 16px calc(12px + env(safe-area-inset-bottom)); max-height: 100%; box-sizing: border-box; min-width: 0; color: var(--ink); }
 .as-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .as-head h2 { margin: 0; font-size: 22px; }
 .as-head h2 { white-space: nowrap; }
@@ -33,3 +33,7 @@
 .as-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
 .as-hint { font-size: 14px; font-weight: 600; color: var(--ink); }
 .as-people .as-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+
+/* Keyboard open: the container ends where the keyboard starts (visualViewport), so the composer sits right above it with no safe-area gap. */
+.as-back[data-kb="open"] .as-sheet { padding-bottom: 8px; height: min(86dvh, 720px, 100%); }
+.as-clear { margin-left: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }

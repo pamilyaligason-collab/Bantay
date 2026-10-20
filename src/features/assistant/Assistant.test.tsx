@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { hdb } from '../records/store'
 
-const m = vi.hoisted(() => ({ logReading: vi.fn(async () => 1), logMedTaken: vi.fn(async () => 1), logActivity: vi.fn(async () => 1), ask: vi.fn(), addTask: vi.fn(async () => undefined) }))
+const m = vi.hoisted(() => ({ logReading: vi.fn(async () => 1), logMedTaken: vi.fn(async () => 1), logActivity: vi.fn(async () => 1), ask: vi.fn(), addTask: vi.fn(async () => undefined), track: vi.fn(async (_kind: string, _name: string) => true) }))
+vi.mock('../admin/events', () => ({ track: m.track }))
 vi.mock('../family/tasks', () => ({ addTask: m.addTask }))
 vi.mock('../log/store', () => ({ logReading: m.logReading, logMedTaken: m.logMedTaken, logActivity: m.logActivity }))
 vi.mock('./client', () => ({ ask: m.ask }))
@@ -37,6 +38,13 @@ describe('Assistant', () => {
     const dlg = await screen.findByRole('dialog')
     fireEvent.keyDown(dlg, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+  it('opening sends the ask screen event once (session 6 lane T)', async () => {
+    m.track.mockClear()
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByRole('dialog')
+    expect(m.track.mock.calls.filter((c) => c[0] === 'screen')).toEqual([['screen', 'ask']])
   })
   it('Confirm saves exactly once, even on a double tap', async () => {
     await askOnce()
@@ -211,5 +219,48 @@ describe('Assistant round 3', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
     await screen.findByText(/Task added/)
     expect(m.addTask).toHaveBeenCalledWith({ title: 'Buy rice' })
+  })
+  it('shows the new caution line, not "I can mix things up"', async () => {
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByRole('dialog')
+    expect(screen.getByText(/I can be wrong\. Check with your doctor for medical decisions\./)).toBeTruthy()
+    expect(screen.queryByText(/mix things up/)).toBeNull()
+  })
+  it('brings back only the last 20 messages from this phone', async () => {
+    const old = Array.from({ length: 25 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `old message ${i}` }))
+    await db.kv.put({ key: 'assistant.history', value: old })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByText('old message 24')
+    expect(screen.getByText('old message 5')).toBeTruthy()
+    expect(screen.queryByText('old message 4')).toBeNull()
+  })
+  it('keeps the chat on the device after a reply, 20 at most, without cards', async () => {
+    const old = Array.from({ length: 20 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `m${i}` }))
+    await db.kv.put({ key: 'assistant.history', value: old })
+    m.ask.mockResolvedValue({ text: 'It means a 3 month sugar average.', cards: [{ kind: 'weather', id: 'c0' }] })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByText('m19')
+    fireEvent.change(screen.getByLabelText('Your question'), { target: { value: 'what is hba1c' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('It means a 3 month sugar average.')
+    await waitFor(async () => {
+      const kept = (await db.kv.get('assistant.history'))?.value as { content: string; cards?: unknown }[]
+      expect(kept).toHaveLength(20)
+      expect(kept[19]).toEqual({ role: 'assistant', content: 'It means a 3 month sugar average.' })
+      expect(kept[0]!.content).toBe('m2')
+    })
+  })
+  it('Clear chat empties the list and removes the saved history', async () => {
+    await db.kv.put({ key: 'assistant.history', value: [{ role: 'user', content: 'private question' }] })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    await screen.findByText('private question')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear chat' }))
+    await waitFor(() => expect(screen.queryByText('private question')).toBeNull())
+    await waitFor(async () => expect(await db.kv.get('assistant.history')).toBeUndefined())
+    expect(screen.queryByRole('button', { name: 'Clear chat' })).toBeNull()
   })
 })
