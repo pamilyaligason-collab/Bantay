@@ -1,7 +1,15 @@
 /* Shell + Me styles (Lane B). Everything is scoped under .sh or uses the sh- prefix so it cannot collide with the old global
    classes (.row .tile .pill .seg .sub) that Lane A replaces. Values are mockup v6. */
 
-.sh-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sh-ic { stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sh-ic-f { fill: currentColor; stroke: none; }
+.sh-t-medicine { color: var(--c-medicine); } .sh-t-vitals { color: var(--c-vitals); } .sh-t-labs { color: var(--c-labs); } .sh-t-weather { color: var(--c-weather); }
+.sh-t-safety { color: var(--c-safety); } .sh-t-family { color: var(--c-family); } .sh-t-alert { color: var(--c-alert); } .sh-t-neutral { color: var(--c-neutral); }
+.sh-icbox { --tint: 14%; display: inline-grid; place-items: center; flex: none; background: color-mix(in srgb, currentColor var(--tint), var(--card)); }
+.sh-icbox.is-active { --tint: 24%; }
+:root[data-theme="dark"] .sh-icbox { --tint: 22%; }
+:root[data-theme="dark"] .sh-icbox.is-active { --tint: 34%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-icbox { --tint: 22%; } :root:not([data-theme="light"]) .sh-icbox.is-active { --tint: 34%; } }
 
 /* top bar */
 .sh-top { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
