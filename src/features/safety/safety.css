@@ -113,3 +113,6 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-storm-line { margin: 0; padding: 14px 16px; border-radius: 18px; font-size: 17px; line-height: 1.4; border: 1px solid var(--line); background: var(--cell); }
 .sf-storm-line.calm { background: color-mix(in srgb, var(--ok) 9%, var(--cell)); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
 .sf-storm-line.watch { background: var(--warn-bg); border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }
+/* Dark: --green on --soft is 1.6:1, so the tile icons use --amber. */
+:root[data-theme="dark"] .sf-tile-ic { color: var(--amber); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sf-tile-ic { color: var(--amber); } }

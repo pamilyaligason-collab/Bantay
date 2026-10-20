@@ -11,9 +11,9 @@
 .kp-v b { font-size: 26px; line-height: 1.1; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .kp-v small { font-size: 13px; color: var(--ink2); }
 .kp-w { font-size: 14px; color: var(--ink2); }
-.kp-f { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; min-height: 26px; }
-.kp-sub { font-size: 13px; color: var(--ink2); }
-.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); white-space: nowrap; }
+.kp-f { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 6px; min-width: 0; margin-top: 6px; min-height: 26px; }
+.kp-sub { min-width: 0; overflow-wrap: anywhere; font-size: 13px; color: var(--ink2); }
+.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
 .kp-chip.within { background: var(--soft); }
 .kp-chip.high, .kp-chip.low { background: var(--warn-bg); }
 .kp-spark { width: 64px; height: 24px; flex: none; }
@@ -23,7 +23,8 @@
 
 /* Vitals toggle */
 .hv-modes, .vd-topics { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
-.hv-modes { margin: 4px 0 6px; }
+.hv-modes { margin: 4px 0 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hv-modes button { white-space: nowrap; padding: 0 4px; min-width: 0; }
 .hv-modeline { margin: 0 4px 8px; }
 .hv-norm { font-size: 15px; }
 
@@ -60,11 +61,13 @@
 .rf-hero .btn { margin-top: 6px; }
 .rf-note, .rf-foot { margin: 8px 4px 0; }
 .rf-list { list-style: none; padding: 0; margin-top: 12px; }
-.rf-row { align-items: center; gap: 8px; flex-wrap: wrap; }
+.rf-row { align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.rf-row .grow { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
 .rf-row .sub { display: block; }
 .rf-row[data-low] b { color: var(--ink); }
 .rf-row[data-low]::before { content: ""; width: 4px; align-self: stretch; border-radius: 2px; background: var(--amber); margin-right: 4px; }
-.rf-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.rf-acts { display: flex; gap: 8px; flex: 1 1 100%; } /* buttons sit under the text so it keeps the full row */
+.rf-acts .md-pill { flex: 1; }
 
 /* Doctor visits */
 .vs-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 48px; min-height: 48px; border-radius: 12px; background: var(--soft); color: var(--ink); flex: none; line-height: 1.1; }

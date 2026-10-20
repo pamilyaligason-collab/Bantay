@@ -117,3 +117,6 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
   .sh-sheet, .fm-sheet, .sf-sheet, .as-sheet, [data-closing="true"] > [role="dialog"] { animation: none; }
   .tabbar.sh-tabs::before, .sh-switch::before, .sh-switch::after { transition: none; }
 }
+/* Dark: --green on --soft is 1.6:1, so the avatar initial and icon use --ink. */
+:root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }

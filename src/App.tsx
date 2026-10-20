@@ -12,7 +12,7 @@ import { AdminScreen, useTrackScreen } from './features/admin'
 import { DocsScreen } from './features/docs/DocsScreen'
 import WeatherScreen from './features/weather/WeatherScreen'
 import { getMember, onAuthChange } from './features/auth/session'
-import { canonicalHash, parseHash, TABS, type Tab } from './features/shell/routes'
+import { canonicalHash, hasOwnHeader, parseHash, TABS, type Tab } from './features/shell/routes'
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
@@ -89,7 +89,7 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      {isTabView && <TopBar unread={inbox.unread} />}
+      {isTabView && !hasOwnHeader(hash) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
