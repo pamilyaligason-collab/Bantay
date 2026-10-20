@@ -3,10 +3,18 @@
 As of 2026-10-20.
 
 ## 4a. Mockups
-One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (private; Lloyd shares if wanted)
-Screens: Today in Lloyd's order (next up + medicines to check, weather, quick log, My week health KPIs, family
-line, plan, more) and simple mode; Feature map (every current feature: kept, improved, moved or new; nothing removed), Health > Medicines, medicine edit sheet, delete with undo, Weather, Safety home
-and Quick dial (zone with and without local numbers), Family status. All names and numbers are sample data.
+One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (version 6,
+2026-10-20). Base: the Family Bantay v2 mockup (all 34 v2 screens kept), with the session 6 changes layered on: 53
+screens. The original v2 mockup is unchanged. All names and numbers are sample data.
+- Replaced: Today (Lloyd's order), Health (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal),
+  Safety (place toggle, local and national).
+- Added: Medicines, edit, undo, Weather, Quick dial, Explore your body, Health library, article, Videos, Refill,
+  Doctor visits, add reading, lock-screen reminder, Warnings, Storm tracker, setup medicines step, Offline, Simple
+  mode, Feature map.
+- Moved: Records -> Health > Papers. v2 Me gains Language and per-person reminders; v2 metric gains AM/PM.
+- Checks (Playwright, 53 screens x light/dark x 390 and 1200 wide): 0 console errors, 0 sideways scroll, 0 missing
+  links; S6 parts: 0 overflow, 0 targets under 44px, 0 contrast failures; 46/46 interaction flows pass. Remaining
+  small-target and contrast findings are in unchanged v2 elements (fewer than in v2 alone), for the build to fix.
 
 ## 4b. Usability script (moderated, 20 minutes per person, on the person's own phone)
 Run with the mockup first (before build), then again on the built APK (after build). 4 sessions: one per persona
