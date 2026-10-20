@@ -181,6 +181,25 @@ The mockup shows only screens that change; every other screen stays as in v6 (mo
 | Ask, Me, other | Me settings, Inbox, Docs, Admin, sign-in, wizard, sync, updates | Ask history, keyboard gap | | |
 Only duplicates go: weather inside Next up, the second weather panel in Safety, the family list on Today.
 
-## 8. Out of scope this build
+## 8. New features (Lloyd 2026-10-20: "more comprehensive"), priority 7
+All use tables that already exist; no new external services.
+| Feature | What the user sees | Data | Persona |
+|---|---|---|---|
+| Missed-dose alert to carer | "Lola Rosa has not marked her 8 AM dose (2 h)" push to writer carers; generic text on the lock screen (B-7) | `medications`, `meds_taken`; new edge function `dose-watch` on a 15-min schedule | P1, P3 |
+| Reminder actions | Lock-screen reminder with Taken / Snooze 15 min / Open; Taken logs without opening the app | Capacitor LocalNotifications action types | P2 |
+| Refill and stock | "7 days left: refill by Oct 27", add to Plan; go-bag "medicines for 7 days" check | `medications.stock_qty`, `per_day`, `stock_set_at` | P3 |
+| Doctor visits | Next visit card, "bring" checklist, follow-ups created from `prescriptions.follow_up_on` | `appointments` (0 rows today; `source_prescription_id` exists) | P3, P1 |
+| Visit summary | One page for the doctor: 30-day BP/sugar trends, active medicines, adherence; share as image/PDF from the phone | readings, `medications`, `meds_taken` | P3 |
+| Health metric detail | 30-day chart with the normal band, morning/evening toggle, plain-language summary, add reading sheet | readings, `health/ranges.ts` | P2, P3 |
+| Papers progress | "180 of 229 checked" ring; confirm all items from one paper | `records_queue` | P1, P3 |
+| Storm tracker graphic | Track, cone and distance to each home; signal legend | GDACS rows already ingested | P1, P4 |
+| SOS status | Who received the location (sent / delivered when SMS reports it), I'm safe | `sos.history` (local) | all |
+| Go-bag progress | Illustrated checklist by category | `gobag/state.ts` | P4 |
+| Offline state | "Offline, showing 7:05 PM data"; Taken still works and shows "queued" | outbox | P1 |
+| Inbox | Grouped notifications by type with unread dots | existing inbox | all |
+| Language | English / Filipino for the medicine, weather and safety lines (strings only, start with those three areas) | new string table | P2 |
+| Medical ID on lock screen | Toggle to show the ID card from the lock screen (Android) | `medid` | all |
+
+## 9. Out of scope this build
 Brand names for PH drugs (no open source), live hospital lookup (Overpass is static only), evacuation lists (none
 published), YouTube search (quota; fixed playlists only).
