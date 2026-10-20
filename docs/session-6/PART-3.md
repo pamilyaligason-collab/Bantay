@@ -168,7 +168,7 @@ the zone 2 view shows national numbers plus "Add local numbers" for admins.
 4. **Medicines** summary (ring: 2 of 3 today), opening Health > Medicines.
 5. **Vitals** with range bars and a toggle **Latest | Average | Normal**: Latest and Average move the marker and
    value; Normal shows the standard ranges (BP normal below 120/80, elevated 120-129 systolic; fasting sugar
-   3.9-5.6 mmol/L; resting pulse 60-100 bpm) with a one-line explanation. Ranges come from `health/ranges.ts` and are
+   70-100 mg/dL (3.9-5.6 mmol/L), shown in mg/dL like v2 and the lab papers; resting pulse 60-100 bpm) with a one-line explanation. Ranges come from `health/ranges.ts` and are
    re-checked against the source cited there before build. Labs keep plain-language flags.
 6. **Learn**: Health library (MedlinePlus Connect summaries keyed by condition and generic name, cached; source and
    "not medical advice" line; English/Filipino) and Videos (curated fixed playlists, YouTube embed, no search API).
@@ -187,7 +187,8 @@ Fix the gap above the keyboard; keep the last 20 messages on the device; replace
 "I can be wrong. Check with your doctor for medical decisions." Add a screen event for Ask.
 
 ## 7. Feature map: nothing is removed
-The mockup shows only screens that change; every other screen stays as in v6 (mockup screen "Feature map").
+The mockup (version 6) is the v2 mockup with every v2 screen kept and the S6 changes layered on; its "Feature map"
+screen lists each feature as Kept, Improved, Moved or New and taps through to it. Section 8 lists the new features.
 | Area | Kept | Improved | Moved | New |
 |---|---|---|---|---|
 | Today | Quick log, Plan, I'm OK, alert band, update/install banners, week line | Weather card, Next up, family line, simple mode | | My week KPIs |

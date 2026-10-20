@@ -54,3 +54,9 @@ name appears as in earlier plans.
 ## Lloyd's changes after review (2026-10-20)
 - Today: family list replaced by a one-line family card; Today order is next up + medicines to check, weather,
   quick log, My week health KPIs, family, plan, more. Feature map added: nothing removed.
+- Today quick log uses icon buttons.
+- "More comprehensive": new features in PART-3 section 8 and build lane M7 (missed-dose alert to carers, reminder
+  actions, refill, doctor visits + summary, metric chart, offline, inbox, language); Health tab structure in PART-3
+  5.1 (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal, anatomy, library, videos).
+- Mockup rebuilt on the v2 mockup as the base (Lloyd): version 6, 53 screens, every v2 screen kept (PART-4 4a).
+- User-POV audit of the mockup (15 bugs, 9 persona issues) fixed and re-verified with Playwright.
