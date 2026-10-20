@@ -11,9 +11,9 @@
 .kp-v b { font-size: 26px; line-height: 1.1; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .kp-v small { font-size: 13px; color: var(--ink2); }
 .kp-w { font-size: 14px; color: var(--ink2); }
-.kp-f { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; min-height: 26px; }
-.kp-sub { font-size: 13px; color: var(--ink2); }
-.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); white-space: nowrap; }
+.kp-f { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 6px; min-width: 0; margin-top: 6px; min-height: 26px; }
+.kp-sub { min-width: 0; overflow-wrap: anywhere; font-size: 13px; color: var(--ink2); }
+.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
 .kp-chip.within { background: var(--soft); }
 .kp-chip.high, .kp-chip.low { background: var(--warn-bg); }
 .kp-spark { width: 64px; height: 24px; flex: none; }

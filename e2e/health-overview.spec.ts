@@ -73,6 +73,16 @@ test('My KPIs show the latest reading and time; the Vitals toggle switches Lates
   await expect(row).toContainText('124')
 })
 
+for (const width of [390, 360]) {
+  test(`KPI tiles keep every child inside the tile at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    await page.reload()
+    await expect(page.getByTestId('kpis')).toBeVisible()
+    const over = await page.locator('.kp-tile').evaluateAll((tiles) => tiles.flatMap((t) => { const r = t.getBoundingClientRect(); return [...t.querySelectorAll('*')].filter((c) => { const b = c.getBoundingClientRect(); return b.width > 0 && (b.right > r.right + 0.5 || b.left < r.left - 0.5) }).map((c) => c.className.toString() || c.tagName) }))
+    expect(over).toEqual([])
+  })
+}
+
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
