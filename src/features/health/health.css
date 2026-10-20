@@ -42,7 +42,8 @@
 .hv-sw[aria-checked="true"] .hv-sw-t::after { transform: translateX(18px); }
 .hv-sw:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; border-radius: 10px; }
 
-.hv-row { cursor: pointer; }
+.hv-row { cursor: pointer; position: relative; min-height: 44px; }
+.hv-open::before { content: ""; position: absolute; inset: 0; } /* the whole row is the link; one tab stop */
 .hv-row .sub { display: block; }
 .hv-open { color: var(--ink); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; min-height: 28px; }
 .hv-open::after { content: "\203A"; margin-left: 6px; color: var(--ink2); font-weight: 400; }
