@@ -69,6 +69,8 @@ update public.people set medicines = '{"Vitamin D 1000IU 8:00 PM"}' where id = '
 \ir ../migrations/0014_medications_live.sql
 -- 0014 must be safe to run twice
 \ir ../migrations/0014_medications_live.sql
+\ir ../migrations/0016_medications_softdelete.sql
+\ir ../migrations/0016_medications_softdelete.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
@@ -130,7 +132,12 @@ insert into public.prescription_items (id, person_id, prescription_id, line_no, 
  ('21000000-0000-0000-0000-000000000010', '10000000-0000-0000-0000-0000000000b1', '20000000-0000-0000-0000-000000000001', 7, 'Omeprazole 20mg cap', 'OD', 'draft');
 select pg_temp.ok(pg_temp.times('omeprazole') = '["08:00"]', 'a newly imported item becomes a medication at once (trigger)');
 update public.prescription_items set status = 'rejected' where id = '21000000-0000-0000-0000-000000000010';
-select pg_temp.ok((select count(*) from public.medications where public.normalise_drug(name) = 'omeprazole') = 0, 'rejecting its only source removes an unedited converted medication');
+select pg_temp.ok((select count(*) from public.medications where public.normalise_drug(name) = 'omeprazole' and deleted_at is null) = 0
+  and (select count(*) from public.medications where public.normalise_drug(name) = 'omeprazole' and deleted_at is not null) = 1, 'rejecting its only source tombstones (not deletes) an unedited converted medication, so phones drop it on the next pull');
+create temp table ome as select id from public.medications where public.normalise_drug(name) = 'omeprazole';
+update public.prescription_items set status = 'draft' where id = '21000000-0000-0000-0000-000000000010';
+select pg_temp.ok((select deleted_at is null and id = (select id from ome) from public.medications where public.normalise_drug(name) = 'omeprazole'), 'un-rejecting brings the SAME medication back (the converter''s own tombstone)');
+update public.prescription_items set status = 'rejected' where id = '21000000-0000-0000-0000-000000000010';
 update public.prescription_items set status = 'rejected' where id = '21000000-0000-0000-0000-000000000002';
 select pg_temp.ok(pg_temp.times('amlodipine') = '["09:00"]', 'an EDITED medication survives its source being rejected');
 
@@ -155,7 +162,7 @@ select pg_temp.ok((select count(*) from public.medications where public.normalis
 update public.prescription_items set drug_raw = 'Gliclazide 80mg' where id in ('21000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000007');
 select pg_temp.ok(pg_temp.times('gliclazide') = '["08:00"]' and (select count(*) from public.medications where public.normalise_drug(name) = 'metformin' and deleted_at is null) = 0,
   'renaming the items moves the medicine: the new drug appears, the unedited old one goes');
-select pg_temp.ok((select count(*) from public.medications) = (select count(*) from snap) + 1, 'no duplicates after all of that (first conversion + the 1 manual medicine)');
+select pg_temp.ok(not exists (select 1 from public.medications where deleted_at is null group by person_id, public.normalise_drug(name) having count(*) > 1), 'no drug has two live rows after all of that');
 
 -- ===== C: read-only carer of PB =====
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
@@ -174,7 +181,10 @@ select pg_temp.ok((select med_status = 'paused' from public.medications where pe
 
 -- ===== A: admin =====
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
-select pg_temp.ok((select count(*) from public.medications) = 10, 'admin sees every medicine (9 converted + 1 manual, incl. the deleted one)');
+reset role;
+select count(*) as nall from public.medications \gset
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+select pg_temp.ok((select count(*) from public.medications) = :nall, 'admin sees every medicine, tombstones included');
 
 -- ===== anon =====
 set role anon;
