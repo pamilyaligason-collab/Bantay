@@ -82,7 +82,7 @@ async function sendOne(client: SupabaseClient, q: QueueRow, blob: Blob) {
     // Scanned papers (lab, prescription, other) go in as 'draft' so they land in "To check" once read; cards stay 'confirmed'.
     const card = q.kind === 'id_card' || q.kind === 'insurance_card'
     const d = await client.from('documents').upsert(
-      { id: q.docId, client_id: q.docId, person_id: q.personId, kind: q.kind, card_type: card ? q.cardType : null, title: q.title, status: card ? 'confirmed' : 'draft', ...(q.docDate ? { doc_date: q.docDate } : {}) },
+      { id: q.docId, client_id: q.docId, person_id: q.personId, kind: q.kind, card_type: card ? q.cardType : null, title: q.title, status: card ? 'confirmed' : 'draft', ...(q.docDate ? { doc_date: q.docDate } : {}), ...(q.pages ? { page_count: q.pages } : {}) },
       { onConflict: 'client_id', ignoreDuplicates: true }
     )
     if (d.error) fail('document', d.error)

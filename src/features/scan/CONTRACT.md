@@ -17,7 +17,7 @@ The phone code is `src/features/docs/api.ts` (`addScan`, `sendOne`, `flushQueue`
    `{ client_id, person_id, storage_path, side, document_id, name: 'page-NN.jpg', mime: 'image/jpeg', size_bytes, sha256, drive_file_id: null, page_no }`
    - `page_no` is 1-based. **This column does not exist yet: L6 must add `source_files.page_no int`.** Until it does, the upsert fails (PostgREST PGRST204) and the card is marked failed after 5 tries.
    - `side` is `null` for lab/prescription/other. `ingest_status` is not sent (default `'new'`).
-   - Rows are written after their object is uploaded; pages go in order 1..N.
+   - Rows are written after their object is uploaded; pages go in order 1..N. The documents row carries page_count = N so the server sweep waits for every page.
 3. Phone uploads of IDs also leave `ingest_status = 'new'` forever. The Papers "Reading N" count therefore only looks at documents that are
    `status = 'draft'` AND `kind in ('lab','prescription','other')` AND a file with `ingest_status = 'new'` and `storage_path is not null`
    (`listReading` in `src/features/records/api.ts`, an embedded select `source_files ... documents!inner(status, kind)`). L6 should move the files off `'new'`

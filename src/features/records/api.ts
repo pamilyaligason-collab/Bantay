@@ -53,10 +53,10 @@ const none = <T,>(): Res<T[]> => ({ ok: true, data: [] })
 
 export const driveUrl = (id: string) => (/^[\w-]+$/.test(id) ? `https://drive.google.com/file/d/${id}/view` : null)
 
-/** Scanned papers the server is still reading: ids of draft lab/prescription/other documents whose phone-uploaded files are ingest_status 'new'. */
+/** Scanned papers the server is still reading: ids of draft lab/prescription/other documents whose phone-uploaded files are still 'new' or 'reading' (records-extract). */
 export async function listReading(personId?: string): Promise<Res<string[]>> {
   const r = await run<{ document_id: string | null }[]>((s) => {
-    const q = s.from('source_files').select('document_id, documents!inner(status, kind)').eq('ingest_status', 'new').not('storage_path', 'is', null)
+    const q = s.from('source_files').select('document_id, documents!inner(status, kind)').in('ingest_status', ['new', 'reading']).not('storage_path', 'is', null)
       .eq('documents.status', 'draft').in('documents.kind', ['lab', 'prescription', 'other'])
     return (personId ? q.eq('person_id', personId) : q) as unknown as PromiseLike<{ data: unknown; error: unknown }>
   })

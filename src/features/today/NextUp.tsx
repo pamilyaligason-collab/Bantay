@@ -49,7 +49,7 @@ export function MedsCheck({ review, quiet }: { review: number; quiet?: boolean }
     <a className="td-mc" href={MEDS_HREF}>
       <Icon name="pill" size={22} />
       <span className="td-grow">
-        {quiet ? <span>All medicines done today · <b>{n} to check</b></span> : <><b>{n} to check</b><span className="td-sub">Still taking {review === 1 ? 'it' : 'them'}?</span></>}
+        {quiet ? <span>Nothing due right now · <b>{n} to check</b></span> : <><b>{n} to check</b><span className="td-sub">Still taking {review === 1 ? 'it' : 'them'}?</span></>}
       </span>
       <Icon name="chev" size={20} />
     </a>

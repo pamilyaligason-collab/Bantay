@@ -45,7 +45,7 @@ describe('scan queue', () => {
     expect(f.calls[f.calls.length - 1]).toBe(`invoke:records-extract:${JSON.stringify({ document_id: docId })}`)
     const doc = f.upserts.filter((u) => u.table === 'documents')
     expect(doc).toHaveLength(1)
-    expect(doc[0]!.row).toMatchObject({ id: docId, kind: 'prescription', status: 'draft', card_type: null })
+    expect(doc[0]!.row).toMatchObject({ id: docId, kind: 'prescription', status: 'draft', card_type: null, page_count: 2 })
     expect(f.upserts.filter((u) => u.table === 'source_files').map((u) => u.row.page_no)).toEqual([1, 2])
     expect(await ddb.queue.count()).toBe(0)
   })

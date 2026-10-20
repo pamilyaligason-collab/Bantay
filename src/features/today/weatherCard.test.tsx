@@ -83,7 +83,7 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
     m.wx = base
     render(<WeatherCard expanded review={2} />)
-    const a = screen.getByRole('link', { name: /All medicines done today · 2 medicines to check/ })
+    const a = screen.getByRole('link', { name: /Nothing due right now · 2 medicines to check/ })
     expect(a.getAttribute('href')).toBe('#health/meds')
   })
 })
