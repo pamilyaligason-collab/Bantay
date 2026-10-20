@@ -10,7 +10,8 @@ Checked gztchan/awesome-design and noahelhadedy/400-free-design-resources. Only 
 | @capacitor/core, cli, android, ios 8.5.3 | Yes, native shell | MIT | https://github.com/ionic-team/capacitor |
 | Fraunces (600, opsz 36, Latin subset woff2 in `public/fonts/fraunces-600.woff2`) | Yes, display headings | SIL OFL 1.1, Copyright 2018 The Fraunces Project Authors (https://github.com/undercasetype/Fraunces). Instanced and subset from the Google Fonts repo file; no Reserved Font Name is claimed. | https://github.com/google/fonts/tree/main/ofl/fraunces |
 | Plus Jakarta Sans (400, 600, 700, Latin subset woff2 in `public/fonts/jakarta-*.woff2`) | Yes, UI text | SIL OFL 1.1, Copyright 2020 The Plus Jakarta Sans Project Authors (https://github.com/tokotype/PlusJakartaSans). Instanced and subset from the Google Fonts repo file. | https://github.com/google/fonts/tree/main/ofl/plusjakartasans |
-| Tabler Icons | Planned only, nothing downloaded. Current tab icons are inline paths from the prototype. | MIT | https://tabler.io/icons |
+| @tabler/icons-react 3.49.0 | Yes, every `<Icon name>` glyph (`src/features/shell/Icon.tsx`) | MIT, Copyright (c) 2020-2024 Paweł Kuna. Keep this licence notice. | https://tabler.io/icons |
+| Hand-drawn icons: kidney, stomach, quake, typhoon (`src/features/shell/icons/custom.tsx`) | Yes, same props as Tabler icons | Own work, no third-party source. | none |
 
 Known but unused (nothing downloaded). The list pages state no licence, so these are the upstream licences, noted for later:
 
