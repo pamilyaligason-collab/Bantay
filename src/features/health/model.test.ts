@@ -135,6 +135,13 @@ describe('medicine times', () => {
   })
 })
 
+describe('doseStates skipped', () => {
+  it('a skipped row is not a taken dose', () => {
+    const st = doseStates(medSlots(['Metformin 8:00']), [{ name: 'Metformin', takenAt: '2026-10-19T08:05:00', skipped: true }], NOW)
+    expect(st[0]!.taken).toBe(false)
+  })
+})
+
 describe('sparkPath', () => {
   const at = (v: number, d: number) => ({ personId: 'p', test: 't', value: v, takenAt: `2026-10-${10 + d}T08:00:00Z` })
   it('needs two readings and draws oldest to newest', async () => {

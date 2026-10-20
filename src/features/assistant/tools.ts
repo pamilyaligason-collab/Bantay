@@ -111,7 +111,7 @@ export function validateDraft(tool: DraftTool, f: Record<string, string>, people
 }
 
 export interface LogApi {
-  logReading: (r: Reading) => Promise<unknown>
+  logReading: (r: Reading, opts?: { track?: boolean }) => Promise<unknown>
   logMedTaken: (m: MedTaken) => Promise<unknown>
   logActivity: (a: Activity) => Promise<unknown>
 }

@@ -26,6 +26,17 @@ describe('track allowlist (B-7)', () => {
     const at = Date.parse((rows[0]!.payload as { clientAt: string }).clientAt)
     expect(Math.abs(Date.now() - at)).toBeLessThan(5000) // the phone's own time of the tap
   })
+  it('leaves clientAt out when the device clock is wrong, still queues the event', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      for (const t of ['2001-01-01T00:00:00Z', '2150-01-01T00:00:00Z']) {
+        vi.setSystemTime(new Date(t))
+        await db.outbox.clear()
+        expect(await track('screen', 'today')).toBe(true)
+        expect(Object.keys((await db.outbox.toArray())[0]!.payload as object).sort()).toEqual(['appVersion', 'kind', 'name'])
+      }
+    } finally { vi.useRealTimers() }
+  })
   it('allows the Me and notifications screens', async () => {
     expect(await track('screen', 'me')).toBe(true)
     expect(await track('screen', 'notif')).toBe(true)

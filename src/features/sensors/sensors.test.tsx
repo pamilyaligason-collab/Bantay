@@ -120,6 +120,14 @@ describe('sync', () => {
     expect((await db.outbox.toArray()).map((r) => r.table).sort()).toEqual(['activity', 'activity', 'readings', 'readings'])
     expect((await ldb.activity.toArray()).every((a) => a.source === 'health-connect')).toBe(true)
   })
+  it('a sensor sync sends no reading_added event', async () => {
+    vi.mocked(track).mockClear()
+    const b = fake({ data: { bloodPressure: [S({ systolic: 120, diastolic: 80 })] } })
+    await enableType('bloodPressure', b)
+    await syncAll(b, 'p')
+    expect(await hdb.readings.count()).toBeGreaterThan(0)
+    expect(track).not.toHaveBeenCalledWith('action', 'reading_added')
+  })
   it('iOS rows are tagged healthkit', async () => {
     const b = fake({ platform: 'ios', data: { steps: [S()] } })
     await enableType('steps', b)

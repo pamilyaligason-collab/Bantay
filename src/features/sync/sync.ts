@@ -48,7 +48,7 @@ export async function syncCounts() {
   // usage_events (screen tracking) still sync, but a new row on every tab switch must not make the header count climb
   const waiting = rows.filter((r) => isSyncable(r.table) && r.table !== 'usage_events').length
   const hidden = rows.filter((r) => r.table === 'usage_events').length
-  const dead = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined)?.length ?? 0
+  const dead = (((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined) ?? []).filter((d) => d.table !== 'usage_events').length
   return { waiting, unknown: rows.length - waiting - hidden, dead }
 }
 
@@ -119,6 +119,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
+  if (row.table === 'usage_events' && (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES)) return void (await db.outbox.delete(row.id!)) // tracking is never worth a banner: drop silently
   if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code)
   throw new SyncError('perm', code)
 }

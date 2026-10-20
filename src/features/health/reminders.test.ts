@@ -122,6 +122,19 @@ describe('reminders from medications', () => {
     for (const id of ids) { expect(id).toBeGreaterThanOrEqual(100_000); expect(id).toBeLessThan(2_147_483_647) }
     expect(reminderIds([{ at: 5, key: 'same' }, { at: 5, key: 'same' }])[0]).not.toBe(reminderIds([{ at: 5, key: 'same' }, { at: 5, key: 'same' }])[1])
   })
+  it('the tap listener is bound on the unchanged path too (cold start from a tap)', async () => {
+    await add({ name: 'Drug A' })
+    await syncDoseReminders(undefined, { selfId: 'me', now: NOW })
+    resetReminderTapForTests() // a new process: the signature is stored, nothing is scheduled again
+    LN.addListener.mockClear()
+    expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('unchanged')
+    const handler = LN.addListener.mock.calls.find((c) => c[0] === 'localNotificationActionPerformed')?.[1]
+    expect(handler).toBeTypeOf('function')
+    handler({ notification: { extra: { kind: 'dose' } } })
+    expect(track).toHaveBeenCalledWith('action', 'reminder_opened')
+    await syncDoseReminders(undefined, { selfId: 'me', now: NOW })
+    expect(LN.addListener).toHaveBeenCalledTimes(1) // idempotent
+  })
   it('a tap on a reminder is one reminder_opened event, nothing else', async () => {
     resetReminderTapForTests()
     await add({ name: 'Drug A' })

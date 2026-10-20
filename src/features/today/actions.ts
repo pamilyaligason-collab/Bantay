@@ -31,7 +31,7 @@ export const logBp = (sys: number, dia: number) =>
   asPerson(async (personId) => {
     const takenAt = now()
     await logReading({ personId, takenAt, test: 'bp_systolic', value: sys, unit: 'mmHg' })
-    await logReading({ personId, takenAt, test: 'bp_diastolic', value: dia, unit: 'mmHg' })
+    await logReading({ personId, takenAt, test: 'bp_diastolic', value: dia, unit: 'mmHg' }, { track: false }) // one blood pressure is one reading_added
   })
 export const logSugar = (v: number, fasting: boolean) => asPerson((personId) => logReading({ personId, takenAt: now(), test: fasting ? 'fasting_glucose' : 'glucose', value: v, unit: 'mg/dL' }))
 export const logWeight = (kg: number) => asPerson((personId) => logReading({ personId, takenAt: now(), test: 'weight', value: kg, unit: 'kg' }))

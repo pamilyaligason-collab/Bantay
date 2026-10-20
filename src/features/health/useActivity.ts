@@ -21,13 +21,15 @@ export function useActivity(personId: string, days = 120): Activity[] {
 }
 
 /** Doses this person marked taken today, live. */
-export function useTakenToday(personId: string): TakenToday[] {
+/** Skipped rows are not takes: they are left out unless `includeSkipped` (the new id-based screens read skips themselves). */
+export function useTakenToday(personId: string, opts: { includeSkipped?: boolean } = {}): TakenToday[] {
+  const includeSkipped = !!opts.includeSkipped
   const [rows, setRows] = useState<TakenToday[]>(NO_TAKEN)
   useEffect(() => {
     if (!personId) return setRows(NO_TAKEN)
     const since = startOfDay().toISOString()
-    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: setRows, error: () => setRows(NO_TAKEN) })
+    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId && (includeSkipped || !m.skipped)).toArray()).subscribe({ next: setRows, error: () => setRows(NO_TAKEN) })
     return () => sub.unsubscribe()
-  }, [personId])
+  }, [personId, includeSkipped])
   return rows
 }

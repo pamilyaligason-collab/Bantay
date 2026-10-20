@@ -33,6 +33,9 @@ describe('normaliseDrug (same rule as SQL normalise_drug)', () => {
     expect(normaliseDrug('Drug B 10 mg/ml syrup')).toBe('drug b')
     expect(normaliseDrug('drug-a capsules')).toBe('drug a')
     expect(normaliseDrug('  ')).toBeNull()
+    expect(normaliseDrug('Losartán 50mg')).toBe('losart n') // non-ASCII letters are separators, as [^a-z0-9] in SQL
+    expect(normaliseDrug('ñtab')).toBe('tab') // no word edge between ñ and tab (PG UTF-8 \\m), so the form word is not stripped
+    expect(normaliseDrug('ñ tab')).toBeNull()
     expect(normaliseDrug(null)).toBeNull()
   })
 })
@@ -91,12 +94,27 @@ describe('matchDoses', () => {
   })
 })
 
+describe('matchDoses name fallback', () => {
+  it('matches an old "Losartan" take to a "Losartan 50mg tab" slot', () => {
+    const slots = slotsFor([med({ name: 'Losartan 50mg tab', serverId: undefined })], 'p1', DAY)
+    expect(matchDoses(slots, [{ name: 'Losartan', takenAt: iso('08:05') }], DAY)[0]!.state).toBe('taken')
+    expect(matchDoses(slots, [{ name: 'LOSARTAN 50 mg', takenAt: iso('08:05') }], DAY)[0]!.state).toBe('taken')
+    expect(matchDoses(slots, [{ name: 'Metformin', takenAt: iso('08:05') }], DAY)[0]!.state).toBe('pending')
+  })
+})
+
 describe('reviewOverdue (D5)', () => {
   const m = (since: string | undefined, review = true) => ({ schedule: { v: 1, times: ['08:00'], review, ...(since ? { review_since: since } : {}) } })
-  it('is false up to 3 days after review_since and true after', () => {
-    expect(reviewOverdue(m('2026-10-21'), '2026-10-24')).toBe(false) // exactly 3 days
+  it('is false before review_since + 3 days and true ON and after it', () => {
+    expect(reviewOverdue(m('2026-10-21'), '2026-10-23')).toBe(false)
+    expect(reviewOverdue(m('2026-10-21'), '2026-10-24')).toBe(true) // pauses ON day 3
     expect(reviewOverdue(m('2026-10-21'), '2026-10-25')).toBe(true)
     expect(reviewOverdue(m('2026-10-21'), new Date(2026, 9, 25, 9, 0))).toBe(true)
+  })
+  it('compares dates in Asia/Manila, not UTC', () => {
+    // 2026-10-23T17:00Z is already 2026-10-24 01:00 in Manila
+    expect(reviewOverdue(m('2026-10-21'), new Date('2026-10-23T17:00:00Z'))).toBe(true)
+    expect(reviewOverdue(m('2026-10-21'), new Date('2026-10-23T15:59:00Z'))).toBe(false) // 23:59 Manila on the 23rd
   })
   it('is false when answered, without a start date, or for a legacy array', () => {
     expect(reviewOverdue(m('2026-10-01', false), '2026-12-01')).toBe(false)
@@ -123,15 +141,21 @@ describe('resolveMedication', () => {
 
 describe('pickSlot and remindable', () => {
   const twice = med({ name: 'Drug A', schedule: { v: 1, times: ['08:00', '20:00'] } })
-  it('picks the nearest open slot', () => {
-    expect(pickSlot(twice, [], new Date(`${DAY}T07:30:00`))).toBe('08:00')
-    expect(pickSlot(twice, [], new Date(`${DAY}T19:00:00`))).toBe('20:00')
-    expect(pickSlot(twice, [{ name: 'Drug A', takenAt: iso('08:05'), medicationId: 's-Drug A', slot: '08:00' }], new Date(`${DAY}T09:00:00`))).toBe('20:00')
+  it('picks the latest open slot at or before now, never a future one; none before: the earliest', () => {
+    expect(pickSlot(twice, [], new Date(`${DAY}T07:30:00`))).toBe('08:00') // nothing yet at or before: earliest
+    expect(pickSlot(twice, [], new Date(`${DAY}T19:00:00`))).toBe('08:00') // 20:00 is still in the future
+    expect(pickSlot(twice, [], new Date(`${DAY}T20:00:00`))).toBe('20:00')
+    expect(pickSlot(twice, [], new Date(`${DAY}T21:30:00`))).toBe('20:00')
+    expect(pickSlot(twice, [{ name: 'Drug A', takenAt: iso('08:05'), medicationId: 's-Drug A', slot: '08:00' }], new Date(`${DAY}T09:00:00`))).toBe('20:00') // only open slot left
   })
   it('gives none for as-needed or when every slot is done', () => {
     expect(pickSlot(med({ name: 'P', asNeeded: true }), [], new Date(`${DAY}T09:00:00`))).toBeUndefined()
     const done = ['08:00', '20:00'].map((slot) => ({ name: 'Drug A', takenAt: iso('09:00'), medicationId: 's-Drug A', slot }))
     expect(pickSlot(twice, done, new Date(`${DAY}T21:00:00`))).toBeUndefined()
+  })
+  it('remindable honours startedOn and stoppedOn like slotsFor', () => {
+    const rows = [med({ name: 'NotYet', startedOn: '2026-10-21' }), med({ name: 'Over', stoppedOn: '2026-10-19' }), med({ name: 'Live', startedOn: '2026-10-20', stoppedOn: '2026-10-20' })]
+    expect(remindable(rows, 'p1', DAY).map((m) => m.name)).toEqual(['Live'])
   })
   it('remindable drops paused, as-needed and overdue reviews', () => {
     const overdue = med({ name: 'Old', schedule: { v: 1, times: ['08:00'], review: true, review_since: '2026-10-01' } })

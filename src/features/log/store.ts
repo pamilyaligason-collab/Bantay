@@ -37,10 +37,11 @@ class LogDB extends Dexie {
 }
 export const ldb = new LogDB()
 
-export async function logReading(r: Reading) {
+/** `track: false` for bulk callers (sensors) and for the second value of a pair (blood pressure), so one log is one reading_added. */
+export async function logReading(r: Reading, opts: { track?: boolean } = {}) {
   const id = await hdb.readings.add(r)
   await enqueue('readings', 'insert', { ...r, id })
-  void track('action', 'reading_added')
+  if (opts.track !== false) void track('action', 'reading_added')
   return id
 }
 export async function logMedTaken(m: MedTaken) {

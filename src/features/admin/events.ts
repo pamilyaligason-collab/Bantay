@@ -15,6 +15,7 @@ export const EVENT_NAMES = {
 } as const
 export type EventKind = keyof typeof EVENT_NAMES
 
+const BUILD_YEAR = 2026 // a device clock before this year is wrong
 const version = (): string => {
   const v = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
   return /^[0-9a-z.+-]{1,20}$/.test(v) ? v : 'dev'
@@ -27,7 +28,12 @@ export async function track(kind: string, name: string): Promise<boolean> {
   try {
     if (!supabase || !(await getAccessToken())) return false // nobody to sync for: signed out or not configured
     // clientAt: when the tap happened (an offline phone syncs later; `at` on the server is arrival time)
-    await enqueue('usage_events', 'insert', { kind, name, appVersion: version(), clientAt: new Date().toISOString() })
+    // A wrong device clock must not make the server refuse the row: leave clientAt out (the server stamps arrival time).
+    const now = new Date()
+    const y = now.getFullYear()
+    const payload: Record<string, unknown> = { kind, name, appVersion: version() }
+    if (y >= BUILD_YEAR && y <= 2100) payload.clientAt = now.toISOString()
+    await enqueue('usage_events', 'insert', payload)
     return true
   } catch {
     return false // tracking must never break the app

@@ -167,6 +167,16 @@ describe('push', () => {
     expect((await syncCounts()).dead).toBe(0)
   })
 
+  it('an unsendable usage_events row is dropped silently: no dead letter, not counted', async () => {
+    mockFetch(() => json({ code: '23514' }, 400))
+    await enqueue('usage_events', 'insert', { kind: 'screen', name: 'today', appVersion: 'dev' })
+    startSync(cfg())()
+    await syncNow()
+    expect(posts()).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+    expect(await syncCounts()).toEqual({ waiting: 0, unknown: 0, dead: 0 })
+  })
+
   it('an undecided 4xx (418) is retried and parked after 5 tries', async () => {
     mockFetch(() => json({ code: 'X' }, 418))
     await enqueue('readings', 'insert', reading)

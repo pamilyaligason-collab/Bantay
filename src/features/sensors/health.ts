@@ -232,7 +232,7 @@ async function run(bridge: HealthBridge, personIdArg?: string): Promise<SyncResu
       const lastHr = type === 'heartRate' ? (await hdb.readings.where('test').equals('heart_rate').filter((x) => x.personId === personId).toArray()).map((x) => Date.parse(x.takenAt)).sort((a, b) => b - a)[0] : undefined
       const { activities, readings } = normalise(type, samples, personId, source, lastHr)
       for (const a of activities) if (!(await hasActivity(a))) { await logActivity(a); result.added++ }
-      for (const r of readings) if (!(await hasReading(r))) { await logReading(r); result.added++ }
+      for (const r of readings) if (!(await hasReading(r))) { await logReading(r, { track: false }); result.added++ }
       const end = samples.map((s) => Date.parse(s.endDate)).filter(Number.isFinite)
       if (end.length) {
         const cur = await getState()

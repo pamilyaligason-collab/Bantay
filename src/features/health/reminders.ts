@@ -79,6 +79,7 @@ function bindTap() {
 /** `medicines` is the deprecated profile text list, used only while this phone has no medications rows yet. */
 export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: string | null; now?: Date } = {}): Promise<ReminderResult> {
   if (!Capacitor.isNativePlatform()) return 'web'
+  bindTap() // idempotent: a cold start from a notification tap must still emit reminder_opened, whatever path below returns
   try {
     const selfId = opts.selfId !== undefined ? opts.selfId : await selfIdOrCached().catch(() => null)
     const planned = await plannedReminders(medicines, selfId, opts.now)
@@ -99,7 +100,6 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
           schedule: { on: { hour: Math.floor(p.at / 60), minute: p.at % 60 }, allowWhileIdle: true }
         }))
       })
-      bindTap()
     }
     await db.kv.put({ key: KEY_IDS, value: ids })
     await db.kv.put({ key: KEY_SIG, value: sig })

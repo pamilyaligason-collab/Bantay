@@ -281,8 +281,8 @@ export const clock = (at: number) => `${Math.floor(at / 60) % 12 || 12}:${String
 export const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase()
 
 /** Marks the earliest slots of a medicine taken, one per take logged today. A medicine with no times is taken after one take. */
-export function doseStates(slots: Slot[], takes: { name: string; takenAt: string }[], now: Date): (Slot & { taken: boolean })[] {
-  const today = takes.filter((t) => sameDay(t.takenAt, now))
+export function doseStates(slots: Slot[], takes: { name: string; takenAt: string; skipped?: boolean }[], now: Date): (Slot & { taken: boolean })[] {
+  const today = takes.filter((t) => !t.skipped && sameDay(t.takenAt, now)) // a skipped dose is not a taken one
   const used = new Map<string, number>()
   return [...slots]
     .sort((a, b) => (a.at ?? 1e9) - (b.at ?? 1e9))
