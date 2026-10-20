@@ -61,11 +61,13 @@
 .rf-hero .btn { margin-top: 6px; }
 .rf-note, .rf-foot { margin: 8px 4px 0; }
 .rf-list { list-style: none; padding: 0; margin-top: 12px; }
-.rf-row { align-items: center; gap: 8px; flex-wrap: wrap; }
+.rf-row { align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.rf-row .grow { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
 .rf-row .sub { display: block; }
 .rf-row[data-low] b { color: var(--ink); }
 .rf-row[data-low]::before { content: ""; width: 4px; align-self: stretch; border-radius: 2px; background: var(--amber); margin-right: 4px; }
-.rf-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.rf-acts { display: flex; gap: 8px; flex: 1 1 100%; } /* buttons sit under the text so it keeps the full row */
+.rf-acts .md-pill { flex: 1; }
 
 /* Doctor visits */
 .vs-date { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 48px; min-height: 48px; border-radius: 12px; background: var(--soft); color: var(--ink); flex: none; line-height: 1.1; }

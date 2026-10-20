@@ -104,6 +104,17 @@ test('a whole vital row is the link, 44px tall, with one tab stop', async ({ pag
   await expect(page).toHaveURL(/#health\/metric\/bp_systolic$/)
 })
 
+test('refill rows give the text the full row width at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/#health/refill')
+  await expect(page.getByTestId('refill-soon')).toBeVisible()
+  const rows = page.locator('.rf-row')
+  await expect(rows.first()).toBeVisible()
+  const ratios = await rows.evaluateAll((rs) => rs.map((r) => r.querySelector('.grow')!.getBoundingClientRect().width / r.getBoundingClientRect().width))
+  expect(ratios.length).toBeGreaterThan(0)
+  expect(ratios.every((x) => x > 0.5)).toBe(true)
+})
+
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
