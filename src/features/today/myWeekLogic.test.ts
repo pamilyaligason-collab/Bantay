@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
-import { computeMyWeek, lastDays, nextReadingDue, sparkPoints } from './myWeek'
+import { computeMyWeek, lastDays, nextReadingDue, sparkPoints } from './myWeekLogic'
 
 const now = new Date(2026, 9, 20, 15, 0)
 const day = (back: number, h = 9) => new Date(2026, 9, 20 - back, h).toISOString()

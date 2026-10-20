@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bringList, nextVisitLine, visitList } from './visits'
+import { bringList, nextVisitLine, visitList } from './visitsLogic'
 
 const NOW = new Date(2026, 9, 20, 9, 0)
 const at = (d: number, h = 9) => new Date(2026, 9, d, h, 0).toISOString()

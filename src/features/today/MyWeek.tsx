@@ -6,7 +6,7 @@ import type { Reading } from '../health/ranges'
 import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
 import { useSelfPersonId } from '../setup/useProfile'
-import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeek'
+import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeekLogic'
 import { useSeenDaily } from './seen'
 
 const NO_READINGS: Reading[] = []

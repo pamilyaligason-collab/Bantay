@@ -63,6 +63,14 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   await page.getByLabel('A question for the doctor').fill('Is my sugar high enough to change the dose?')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await expect(page.getByRole('checkbox', { name: /^Question: Is my sugar/ })).toBeVisible()
+  // Add saves to IndexedDB without awaiting; reload only once the question is stored, or the reload can beat the write.
+  await expect.poll(() => page.evaluate(() => new Promise<number>((res) => {
+    const r = indexedDB.open('bantay')
+    r.onsuccess = () => {
+      const all = r.result.transaction('kv').objectStore('kv').getAll()
+      all.onsuccess = () => { res(all.result.filter((x: { key: string; value: unknown }) => x.key.startsWith('visits.questions.') && Array.isArray(x.value) && x.value.length > 0).length); r.result.close() }
+    }
+  }))).toBe(1)
   await page.reload()
   await expect(page.getByRole('checkbox', { name: 'Medicine list' })).toHaveAttribute('aria-checked', 'true')
   await expect(page.getByRole('checkbox', { name: /^Question: Is my sugar/ })).toBeVisible()

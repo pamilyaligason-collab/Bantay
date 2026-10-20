@@ -4,7 +4,7 @@ import { PersonChips } from '../records/PersonChips'
 import { SubHeader } from '../shell/SubHeader'
 import { useHealthPerson } from './useHealthPerson'
 import { useVisits } from './useVisits'
-import { bringList, monthDay, type Visit } from './visits'
+import { bringList, monthDay, type Visit } from './visitsLogic'
 import './health.css'
 import './m7a.css'
 

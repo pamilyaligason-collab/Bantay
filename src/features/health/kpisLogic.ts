@@ -1,6 +1,6 @@
 import { formatNumber } from '../../lib/labFormat'
 import type { MedTaken, Medication } from '../log/store'
-import { computeMyWeek, STEP_GOAL, type StepRow } from '../today/myWeek'
+import { computeMyWeek, STEP_GOAL, type StepRow } from '../today/myWeekLogic'
 import { dayOf } from './meds'
 import { rangeState, toCanonicalReading, type Position, type Reading, type RangeState } from './ranges'
 import { positionOf } from './vitals'
