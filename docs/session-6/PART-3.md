@@ -92,7 +92,8 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
    Skip; a footer row "N medicines to check" when reviews are open.
 2. **Weather** card: temp, condition, place, rain window, and the action line; opens `#weather`. An alert band for my
    place, when one applies, sits inside this card.
-3. **Quick log**: BP, sugar, weight, walk, dose, mood.
+3. **Quick log**: six icon buttons (3 x 2, 72px tall, icon above label): BP (gauge), sugar (drop), weight (scale),
+   walk (walker), dose (pill), mood (smile). Icons reuse the v6 symbol set; each button has an aria-label.
 4. **My week** health KPIs, last 7 days, for the signed-in person (or the person picked in Health): blood pressure
    average with range chip, fasting sugar average, weight change, steps a day vs goal, doses on time (x of y from
    `meds_taken` vs schedule), resting heart rate (if sensors are on). Each tile has a 7-day sparkline and opens the
