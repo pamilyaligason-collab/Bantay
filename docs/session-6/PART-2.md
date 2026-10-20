@@ -29,7 +29,8 @@ Baseline column is the 4-day baseline of 2026-10-20.
 | H1 | Doses logged | each person with an active medicine | >= 70% of scheduled doses marked taken or skipped within 2 h of the slot | 0 (no schedule) | `meds_taken` joined to `medications` by `medication_id` and `slot` (taken or skipped); events `dose_logged`, `dose_skipped` for funnels |
 | H2 | Medicine list reviewed | P1 or P3 for each person | every auto-converted medicine opened or edited at least once in the first 7 days | 0 | `medications.schedule.review` cleared; events `med_edited`, `med_paused`, `med_deleted` |
 | H3 | Daily check-in | P2, P4 | "I'm OK" on >= 4 days a week | 1 profile, 4 check-ins | `checkin_done` (activity row exists; add the event) |
-| H4 | Family glance | P1 | opens Today on >= 5 days a week and sees the family status card | Today 61 opens / 4 days (builder only) | `screen:today` + `card_seen:family` |
+| H4 | Family glance | P1 | opens Today on >= 5 days a week; taps the family line when it flags someone | Today 61 opens / 4 days (builder only) | `screen:today` + `card_seen:family_line` |
+| H8 | Own progress seen | everyone | opens Today's "My week" card (in view) on >= 4 days a week | not measurable | `card_seen:my_week` |
 | H5 | Weather action seen | P2, P4 | when an action line shows (heat danger or rain watch), >= 50% open it or dismiss it | not measurable | `weather_opened` (with `from: action_line`) |
 | H6 | Reading added | people with a BP or sugar medicine | >= 1 reading a week | 0 by hand since launch | `reading_added` |
 | H7 | Records backlog | P3 or P1 | items waiting to be checked go from 229 to 0 within 14 days | 229 | `records_confirmed` (count), `records_queue` size |

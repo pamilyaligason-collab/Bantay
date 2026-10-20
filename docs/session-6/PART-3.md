@@ -81,9 +81,14 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
   (PART-2). Adherence is measured from `meds_taken`, not events.
 
 ## 2. Today (priority 2)
-Order: Alert band (only when an alert applies to my place) -> **Next up** (dose first) -> **Family status**
-(everyone's "OK today" and doses done, one row each) -> **Weather line** (one compact card: temp, condition, and
+Order: Alert band (only when an alert applies to my place) -> **Next up** (dose first) -> "N medicines to check"
+(when any) -> **My week** (personal KPIs, below) -> **Family line** (one compact row: "Family: 2 of 3 OK today", the
+one thing that needs attention, opens Family; the full list stays in Family only, Lloyd 2026-10-20) -> **Weather line** (one compact card: temp, condition, and
 the action line; tap opens Weather) -> Quick log -> Plan today -> Week line.
+**My week** (Mon to today, the signed-in person's own numbers): doses on time (x of y, from `meds_taken` vs
+schedule), check-ins (days), readings (count vs goal 1 a week, only if the person has a BP or sugar medicine), walks or
+active minutes (if sensors are on), plus a streak line ("4-day streak of doses on time"). Tiles with no data source
+for this person are hidden, not shown as zero. Goals come from PART-2 habit targets.
 Weather leaves Next up except for a storm within 500 km; it appears once on Today, as the weather line.
 Simple mode: Next dose (big Taken button), I'm OK, Call family, SOS.
 
