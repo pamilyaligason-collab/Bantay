@@ -10,7 +10,20 @@ Lloyd's step, never done by an agent. The key and its passwords never enter the 
 2. Write `android/keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
 3. Back the `.jks` up offline. Losing it means every member must uninstall Bantay to update.
 
-## Each release
+## Each release (GitHub, no PC needed)
+
+GitHub > Actions > **Release Android app** > Run workflow (the GitHub phone app works too). Type the notes; leave the
+version empty for the next patch (2.1.0 -> 2.1.1) or type one. The workflow runs the tests, builds and signs the APK,
+refuses to publish if it is not signed with the family key (`ANDROID_CERT_SHA256`), creates release `v<version>` with the
+three files, and commits `public/latest.json` to main (Pages then serves `/get`). Phones on the APK see the update in
+the app. A failed run publishes nothing; fix and run it again.
+
+One-time setup, in repo Settings > Secrets and variables > Actions (Lloyd's step; the key never leaves GitHub secrets):
+- secret `ANDROID_KEYSTORE_BASE64`: the `.jks` as base64; secret `ANDROID_KEYSTORE_PASSWORD`: its password (store and key are the same, PKCS12).
+- variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (public build values) and `ANDROID_CERT_SHA256`
+  (`bd95d4fd50fabcbf17d3d0979e8fb46e47a3daf46ccaf080ae754fa9f66cc218`, the certificate of the v2.1.0 APK).
+
+## Each release (from the PC, fallback)
 
 ```powershell
 .\scripts\release-apk.ps1 -Version 2.0.1 -Notes "Faster sign-in." -DryRun   # builds, prints latest.json, writes scripts/fixtures/latest.sample.json, no release
