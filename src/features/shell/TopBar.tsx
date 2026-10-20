@@ -30,6 +30,7 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
   const [admin, setAdmin] = useState(false)
   const photo = useOwnAvatar()
   const place = usePlace()
+  const where = place && placeNameOf(place)
   useEffect(() => {
     let live = true
     void getMember().then((m) => {
@@ -64,7 +65,7 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
     <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub || !today}>
       <a className="sh-me-btn" href="#me" aria-label="Me and settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0) || <Icon name="users" />)}</a>
       <div className="sh-top-text">
-        {today && <span className="sh-top-date">{dateLine(now)}{place && ` · ${placeNameOf(place)}`}</span>}
+        {today && <span className="sh-top-date">{dateLine(now)}{where && where !== 'where you are' && ` · ${where}`}</span>}
         {today && <span className="sh-top-greet">{greeting(now)}{first && `, ${first}`}</span>}
         <SyncStatus />
       </div>
