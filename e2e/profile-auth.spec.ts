@@ -129,7 +129,8 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect.poll(() => patches(reqs).some((p) => (p.body as { photo_path?: string }).photo_path === 'p1.jpg'), { timeout: 20_000 }).toBe(true)
     await expect.poll(() => patches(reqs).some((p) => (p.body as { blood_type?: string }).blood_type === 'A+'), { timeout: 15_000 }).toBe(true)
     await expect.poll(() => medPosts(reqs).filter((m) => m.name === 'Metformin').pop()?.schedule, { timeout: 15_000 }).toEqual({ v: 1, times: ['08:00', '20:00'] })
-    expect(medPosts(reqs).filter((m) => m.name === 'Metformin').pop()).toMatchObject({ person_id: 'p1', schedule: { v: 1, times: ['08:00', '20:00'] }, status: 'confirmed' })
+    expect(medPosts(reqs).filter((m) => m.name === 'Metformin').pop()).toMatchObject({ person_id: 'p1', schedule: { v: 1, times: ['08:00', '20:00'] } })
+    expect(medPosts(reqs).find((m) => m.name === 'Metformin')).toMatchObject({ status: 'confirmed', med_status: 'active' }) // the first write carries everything; later edits only what changed
     expect(patches(reqs).some((p) => 'medicines' in (p.body as object))).toBe(false)
   })
 }

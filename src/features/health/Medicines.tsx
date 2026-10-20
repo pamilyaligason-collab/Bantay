@@ -148,7 +148,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
             {paused.map((m) => (
               <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
                 <span className="grow md-main"><strong>{label(m)}</strong><span className="sub">Paused, no reminders</span></span>
-                {canEdit && <button type="button" className="md-pill" aria-label={`Resume ${m.name}`} onClick={() => void setMedStatus(m, 'active').then(() => say({ text: `${m.name} resumed. Reminders are back on.` }))}>Resume</button>}
+                {canEdit && <button type="button" className="md-pill" aria-label={`Resume ${m.name}`} onClick={() => void setMedStatus(m, 'active').then(() => say({ text: `${m.name} resumed. Reminders are back on.` })).catch(() => say({ text: 'Could not save on this phone. Try again.' }))}>Resume</button>}
               </div>
             ))}
           </div>
@@ -169,7 +169,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </>
       )}
 
-      {sheet && <MedEditSheet med={sheet.med} personId={personId} onClose={() => setSheet(null)} onNote={say} />}
+      {sheet && <MedEditSheet med={sheet.med} personId={personId} onClose={() => setSheet(null)} onNote={say} onOpen={(m) => setSheet({ med: m })} />}
       {note && (
         <div className="toast md-toast" role="status">
           <span>{note.text}</span>

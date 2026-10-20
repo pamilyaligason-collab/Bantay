@@ -93,7 +93,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(sheet).toHaveCount(0)
     await expect(today.locator('[data-med="Amlodipine"]')).toHaveCount(2)
     await expect.poll(() => sent(posts, 'medications').filter((m) => m.name === 'Amlodipine').length).toBeGreaterThan(0)
-    expect(sent(posts, 'medications').filter((m) => m.name === 'Amlodipine').pop()).toMatchObject({ client_id: 'cm-aml', schedule: { v: 1, times: ['08:00', '20:00'] }, deleted_at: null })
+    expect(sent(posts, 'medications').filter((m) => m.name === 'Amlodipine').pop()).toMatchObject({ client_id: 'cm-aml', schedule: { v: 1, times: ['08:00', '20:00'] } })
 
     // delete and undo
     await page.getByRole('button', { name: /^Amlodipine 5 mg/ }).click()

@@ -23,7 +23,7 @@ export function useMedicalId(otherId?: string | null): { card: MedicalId; photo:
   const personId = other ? otherId : self.personId
   const name = other ? (people.find((p) => p.id === otherId)?.name ?? '') : self.name
   const profile = useProfile(personId)
-  const medications = useMedicationRows(personId) // undefined while loading, so the card does not flash "no medicines"
+  const medications = useMedicationRows(personId, true) // undefined while loading, so the card does not flash "no medicines"
   const ownPhoto = useOwnAvatar()
   const otherPhoto = useAvatar(other ? otherId : null)
   const photo = other ? otherPhoto : ownPhoto

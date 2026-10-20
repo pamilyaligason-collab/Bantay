@@ -25,7 +25,7 @@ export function useInbox(isAdmin: boolean) {
   const queue = useQueue(isAdmin) // members never hit the records queue
   const taken = useMyTakes()
   const self = useSelf()
-  const medications = useMedicationRows(self.personId) // undefined while loading: the inbox then waits on the old path instead of showing nothing as if there were no medicines
+  const medications = useMedicationRows(self.personId, true) // undefined while loading: the inbox then waits on the old path instead of showing nothing as if there were no medicines
   const [pins, setPins] = useState<{ id: number; handle: string }[]>([])
   const [now, setNow] = useState(() => new Date())
 

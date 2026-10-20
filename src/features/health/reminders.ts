@@ -5,6 +5,7 @@ import { db } from '../../db'
 import { track } from '../admin/events'
 import { ldb } from '../log/store'
 import { selfIdOrCached } from '../sync/profile'
+import { MEDS_CURSOR } from './useMedicationRows'
 import { dayOf, remindable, parseSchedule, reminderId, toMinutes } from './meds'
 import { clock, medSlots } from './model'
 
@@ -43,8 +44,8 @@ export async function plannedReminders(legacy: unknown, selfId: string | null, n
       if (s.needsTime) continue
       for (const t of s.times) add(toMinutes(t), m.serverId ?? m.clientId ?? String(m.id))
     }
-  } else if (Array.isArray(legacy)) {
-    // deprecated profile-text path: only until the medicines have been pulled into the medications table
+  } else if (Array.isArray(legacy) && !(await db.kv.get(MEDS_CURSOR).catch(() => undefined))?.value) {
+    // deprecated profile-text path: only until the medications have been pulled once (an empty first read must never cancel what rings today)
     for (const s of medSlots(legacy.filter((m): m is string => typeof m === 'string'))) add(s.at, 'text')
   }
   return [...byTime.entries()].sort((a, b) => a[0] - b[0]).slice(0, MAX_REMINDERS).map(([at, keys]) => ({ at, key: keys.sort().join(',') }))
@@ -113,8 +114,8 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
 export function watchDoseReminders(): () => void {
   if (!Capacitor.isNativePlatform()) return () => undefined
   let t: ReturnType<typeof setTimeout> | undefined
-  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value]).subscribe({
-    next: () => { clearTimeout(t); t = setTimeout(() => void syncDoseReminders(), 1500) },
+  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value, (await db.kv.get(MEDS_CURSOR))?.value, (await db.kv.get('profile.medicines'))?.value]).subscribe({
+    next: ([, , , legacy]) => { clearTimeout(t); t = setTimeout(() => void syncDoseReminders(legacy), 1500) },
     error: () => undefined
   })
   return () => { clearTimeout(t); sub.unsubscribe() }

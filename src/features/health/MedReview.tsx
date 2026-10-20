@@ -6,8 +6,8 @@ import { isLive, parseSchedule } from './meds'
 import './health.css'
 import './medicines.css'
 
-/** Active medicines whose "Still taking it?" or name check is open. */
-export const toCheck = (meds: Medication[]): Medication[] => meds.filter((m) => isLive(m) && (parseSchedule(m.schedule).review || parseSchedule(m.schedule).needsCheck))
+/** Active medicines whose "Still taking it?" is open. A row that only needs its name checked has its own tag but is not counted here. */
+export const toCheck = (meds: Medication[]): Medication[] => meds.filter((m) => isLive(m) && parseSchedule(m.schedule).review)
 
 /** "Still taking it?" line under a medicine: Yes clears the review, Stopped moves it to Past, Change opens the edit sheet. */
 export function MedReview({ med, onChange, onNote }: { med: Medication; onChange: () => void; onNote: (n: MedNote) => void }) {

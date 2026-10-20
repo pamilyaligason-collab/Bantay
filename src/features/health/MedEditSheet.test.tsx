@@ -10,6 +10,8 @@ vi.mock('../admin/events', () => ev)
 import { ldb, type Medication } from '../log/store'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { Medicines } from './Medicines'
+import { setMedStatus } from './medActions'
+import { toCheck } from './MedReview'
 
 const base = (over: Partial<Medication> = {}): Medication => ({
   clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Metformin', strength: '500 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed',
@@ -56,7 +58,9 @@ describe('MedEditSheet', () => {
     const row = (await ldb.medications.toArray())[0]!
     expect(row.schedule).toEqual({ v: 1, times: ['08:00', '20:00'], keep: 'me' })
     const [o] = await outbox()
-    expect(o).toMatchObject({ client_id: 'c1', serverId: 's1', personId: 'p1', name: 'Metformin', deletedAt: null, medStatus: 'active', status: 'confirmed' })
+    // only what changed travels (plus keys, person and name): strength, dose and status were not touched
+    expect(o).toMatchObject({ client_id: 'c1', serverId: 's1', personId: 'p1', name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'], keep: 'me' } })
+    for (const k of ['strength', 'dose', 'status', 'medStatus', 'deletedAt', 'asNeeded']) expect(o).not.toHaveProperty(k)
     expect(o!.id).toBeUndefined()
     expect(events()).toEqual(['med_edited'])
     expect(notes[0]!.text).toBe('Metformin saved.')
@@ -153,5 +157,65 @@ describe('Delete and Undo on the Medicines screen', () => {
     expect(screen.queryByRole('button', { name: /^Take / })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Edit / })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Yes, still/ })).toBeNull()
+  })
+})
+
+describe('M2 review fixes', () => {
+  it('refuses a second row for the same drug and offers Open; a paused one offers Start again', async () => {
+    await ldb.medications.add(base({ medStatus: 'paused' }))
+    const { sheet } = await open()
+    fireEvent.change(sheet.getByLabelText('Name'), { target: { value: 'metformin 850mg tab' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Save' }))
+    expect((await sheet.findByRole('alert')).textContent).toContain('Metformin is already on the list (paused)')
+    expect(sheet.getByRole('button', { name: 'Open Metformin' })).toBeTruthy()
+    expect(await ldb.medications.count()).toBe(1)
+    expect(await outbox()).toEqual([])
+    fireEvent.click(sheet.getByRole('button', { name: 'Start again' }))
+    await waitFor(async () => expect((await ldb.medications.toArray())[0]!.medStatus).toBe('active'))
+    expect(await ldb.medications.count()).toBe(1)
+  })
+
+  it('Stop settles the review, keeps needs_check, and does not re-stamp an existing stopped_on', async () => {
+    const m = base({ schedule: { v: 1, times: ['08:00'], review: true, review_since: '2026-10-20', needs_check: true } })
+    m.id = await ldb.medications.add(m)
+    const stopped = await setMedStatus(m, 'stopped')
+    expect(stopped.schedule).toEqual({ v: 1, times: ['08:00'], needs_check: true })
+    expect(stopped.stoppedOn).toBe(new Date().toLocaleDateString('en-CA'))
+    const again = await setMedStatus({ ...stopped, stoppedOn: '2025-01-02' }, 'stopped')
+    expect(again.stoppedOn).toBe('2025-01-02')
+  })
+
+  it('a stopped medicine shows Start again, not Pause or Stop; starting clears stopped_on on the server too', async () => {
+    const { sheet } = await open(base({ medStatus: 'stopped', stoppedOn: '2025-01-02', schedule: { v: 1, times: ['08:00'] } }))
+    expect(sheet.queryByRole('button', { name: 'Pause' })).toBeNull()
+    expect(sheet.queryByRole('button', { name: 'Stop' })).toBeNull()
+    fireEvent.click(sheet.getByRole('button', { name: 'Start again' }))
+    await waitFor(async () => expect((await outbox())[0]).toMatchObject({ medStatus: 'active', stoppedOn: null }))
+    expect((await ldb.medications.toArray())[0]!.stoppedOn).toBeUndefined()
+  })
+
+  it('an existing medicine opens focused on the title, has the Pause help line, and Tab stays in the sheet', async () => {
+    const { sheet } = await open(base())
+    expect(document.activeElement?.textContent).toBe('Edit medicine')
+    expect(sheet.getByText('Pause: no reminders until you resume.')).toBeTruthy()
+    const save = sheet.getByRole('button', { name: 'Save' })
+    save.focus()
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Tab' })
+    expect(document.activeElement).not.toBe(save)
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+  })
+
+  it('Resume that fails shows the error toast', async () => {
+    await ldb.medications.add(base({ medStatus: 'paused', schedule: { v: 1, times: ['08:00'] } }))
+    render(<Medicines personId="p1" mine canMark canEdit />)
+    const btn = await screen.findByRole('button', { name: 'Resume Metformin' })
+    vi.spyOn(ldb.medications, 'put').mockRejectedValueOnce(new Error('disk'))
+    fireEvent.click(btn)
+    expect((await screen.findByRole('status')).textContent).toContain('Could not save on this phone')
+  })
+
+  it('"N to check" counts only rows still asking Still taking it', () => {
+    const rows = [base({ schedule: { v: 1, times: ['08:00'], review: true } }), base({ clientId: 'c2', schedule: { v: 1, times: ['08:00'], needs_check: true } })]
+    expect(toCheck(rows)).toHaveLength(1)
   })
 })
