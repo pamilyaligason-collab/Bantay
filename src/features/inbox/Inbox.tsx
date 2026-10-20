@@ -36,7 +36,7 @@ export function Inbox({ inbox, now }: { inbox: InboxState; now?: Date }) {
       ) : (
         <>{group('Today', today)}{group('Earlier', earlier)}</>
       )}
-      <p className="sh-sub" style={{ margin: 0 }}>Notifications never show readings, medicines or results. Open Bantay to see more.</p>
+      <p className="sh-sub" style={{ margin: 0 }}>Phone notifications never show readings, medicines or results. Open Bantay to see more.</p>
     </div>
   )
 }
