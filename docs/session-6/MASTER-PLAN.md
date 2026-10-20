@@ -24,7 +24,7 @@ Status: [x] done and verified, [~] in progress, [ ] not started.
 | 5 | Part 4a: 390px light and dark mockups, one private Artifact | link in PART-4.md | [x] |
 | 6 | Part 4b: usability script | PART-4.md | [x] |
 | 7 | Part 4c: build lanes (implementation plan) | docs/plans/2026-10-20-s6-build.md | [x] |
-| 8 | Final review (Opus): plan vs audit gaps, privacy scan of the diff | REVIEW section below | [~] |
+| 8 | Final review (Opus): plan vs audit gaps, privacy scan of the diff | REVIEW section below | [x] |
 | 9 | Push, update PR #2, HANDOFF lines for the vault | PR #2 | [ ] |
 
 ## Verification rules for this phase
@@ -38,3 +38,19 @@ Status: [x] done and verified, [~] in progress, [ ] not started.
 4 other), 13 have none; 4 have a bounded duration; 8 flagged unclear; 0 have a generic name; 7 confirmed, 24 draft.
 `medications` already has `schedule jsonb`, `as_needed`, `per_day`, `med_status`, `started_on`, `stopped_on`,
 `source_item_id`, stock fields and confirm fields; it has 0 rows.
+
+## Review (Opus, 2026-10-20)
+Verdict before fixes: NOT READY (3 blockers). All fixed in the same push:
+1. `confirmed_source` only accepts `user`/`auto` and is re-stamped on edit (`0013:63,96-101`): origin moved to a new
+   `origin` column; converted rows use `auto` with confidence 1; down script selects on `origin`.
+2. `track(kind, name)` has no payload: event list is names only, one table in PART-2 section 4 with an owner lane each.
+3. Unowned files (profile writers, `assistant/tools.ts`, `location/place.ts`, check-in emit) assigned; shared-file
+   rule covers `sync/tables.ts`, `today/weather.ts`, `SafetyPages.tsx`.
+Also fixed: seed arithmetic (8 items -> 8 rows), profile copy step, IMMUTABLE `normalise_drug`, `schedule` default,
+`meds_taken` grant, `review_since`, 16:00 chip, 0015 down + rehearsal, all rehearsals run, unnamed tests listed,
+new files marked. Privacy scan: no emails, keys, phones, addresses, health values or family names; the owner's first
+name appears as in earlier plans.
+
+## Lloyd's changes after review (2026-10-20)
+- Today: family list replaced by a one-line family card; Today order is weather, next up + medicines to check,
+  My week health KPIs, family, plan, more. Feature map added: nothing removed.

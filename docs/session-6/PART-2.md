@@ -29,23 +29,36 @@ Baseline column is the 4-day baseline of 2026-10-20.
 | H1 | Doses logged | each person with an active medicine | >= 70% of scheduled doses marked taken or skipped within 2 h of the slot | 0 (no schedule) | `meds_taken` joined to `medications` by `medication_id` and `slot` (taken or skipped); events `dose_logged`, `dose_skipped` for funnels |
 | H2 | Medicine list reviewed | P1 or P3 for each person | every auto-converted medicine opened or edited at least once in the first 7 days | 0 | `medications.schedule.review` cleared; events `med_edited`, `med_paused`, `med_deleted` |
 | H3 | Daily check-in | P2, P4 | "I'm OK" on >= 4 days a week | 1 profile, 4 check-ins | `checkin_done` (activity row exists; add the event) |
-| H4 | Family glance | P1 | opens Today on >= 5 days a week; taps the family line when it flags someone | Today 61 opens / 4 days (builder only) | `screen:today` + `card_seen:family_line` |
-| H8 | Own progress seen | everyone | opens Today's "My week" card (in view) on >= 4 days a week | not measurable | `card_seen:my_week` |
-| H5 | Weather action seen | P2, P4 | when an action line shows (heat danger or rain watch), >= 50% open it or dismiss it | not measurable | `weather_opened` (with `from: action_line`) |
+| H4 | Family glance | P1 | opens Today on >= 5 days a week; taps the family line when it flags someone | Today 61 opens / 4 days (builder only) | `screen:today` + `card_seen_family_line` |
+| H8 | Own health seen | everyone | sees the "My week" health KPI card on >= 4 days a week and opens a tile at least weekly | not measurable | `card_seen_my_week`, `screen:health` from a tile |
+| H5 | Weather action seen | P2, P4 | when an action line shows (heat danger or rain watch), >= 50% open it or dismiss it | not measurable | `weather_opened_action` (vs `weather_opened`) |
 | H6 | Reading added | people with a BP or sugar medicine | >= 1 reading a week | 0 by hand since launch | `reading_added` |
-| H7 | Records backlog | P3 or P1 | items waiting to be checked go from 229 to 0 within 14 days | 229 | `records_confirmed` (count), `records_queue` size |
+| H7 | Records backlog | P3 or P1 | items waiting to be checked go from 229 to 0 within 14 days | 229 | SQL on `records_queue` size (daily); event `records_confirmed` |
 
 Guard metrics (must not get worse): alerts turned off (`alerts_off`), sign-in failures, sync failures (`sync_failed`).
 
 ## 4. Tracking changes these targets need
 1. Emit the allowed-but-silent events: `dose_logged` in `logMedTaken`, `reading_added` in `logReading`, `sos_sent` in
    `SosScreen` (PART-1 section 3).
-2. Add new names to the allow-list: `dose_skipped`, `med_added`, `med_edited`, `med_paused`, `med_deleted`,
-   `reminder_opened`, `checkin_done`, `card_seen`, `weather_opened`, `records_confirmed`, and an `ask` screen event.
+2. **The single event list** (names only: `track(kind, name)` takes no payload, `events.ts:21`):
+
+   | Name | Emitted in | Lane |
+   |---|---|---|
+   | `dose_logged` | `logMedTaken` (`log/store.ts:26`) | T |
+   | `reading_added` | `logReading` (`log/store.ts:21`) | T |
+   | `sos_sent` | SosScreen send | T |
+   | `checkin_done` | I'm OK action (`today/actions.ts`) | T |
+   | `ask` (screen) | Assistant open | T |
+   | `dose_skipped` | Skip in Next up and Medicines | M3, M2 |
+   | `med_added`, `med_edited`, `med_paused`, `med_deleted` | edit sheet | M2 |
+   | `reminder_opened` | notification tap handler (`health/reminders.ts`) | M1 |
+   | `card_seen_my_week`, `card_seen_family_line` | Today cards (first time in view per day) | M3 |
+   | `weather_opened`, `weather_opened_action` | Weather screen open, from the action line | M4 |
+   | `records_confirmed` | Records confirm (each document) | M6 |
 3. Add `client_at timestamptz` to `usage_events` with its column grant, and `clientAt` in `sync/tables.ts` (today `at`
    is arrival time, so an offline phone shifts every habit).
 4. Events are per signed-in user, not per person: dose adherence (H1) comes from `meds_taken`, not from events.
-5. Keep event payloads free of health values: ids, slot times and counts only (rule B-7).
+5. Event names carry no health values (rule B-7); counts and sizes come from SQL, not payloads.
 
 ## 5. Open questions for the usability test (not blockers)
 - Language: is English enough for P2, or are Filipino labels needed for the medicine and weather lines?

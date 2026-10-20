@@ -4,7 +4,8 @@ As of 2026-10-20.
 
 ## 4a. Mockups
 One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (private; Lloyd shares if wanted)
-Screens: Today (normal and simple; "My week" personal KPIs and a one-line family card replace the family list), Health > Medicines, medicine edit sheet, delete with undo, Weather, Safety home
+Screens: Today in Lloyd's order (weather, next up + medicines to check, My week health KPIs, family line, plan,
+more) and simple mode; Feature map (every current feature: kept, improved, moved or new; nothing removed), Health > Medicines, medicine edit sheet, delete with undo, Weather, Safety home
 and Quick dial (zone with and without local numbers), Family status. All names and numbers are sample data.
 
 ## 4b. Usability script (moderated, 20 minutes per person, on the person's own phone)

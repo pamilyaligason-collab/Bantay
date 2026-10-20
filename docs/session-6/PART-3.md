@@ -12,41 +12,48 @@ header shows once (Today only); sub-screens use the shared `SubHeader` with a ba
 
 ### 1.1 One source of truth
 `public.medications` becomes the only schedule. Everything that used to read `people.medicines` (NextUp, Hero,
-reminders, Medical ID `medid/card.ts:32`, Health) reads `medications`. Writers of `people.medicines` (wizard,
-`MemberPage.tsx:90`, import loader) switch to `medications`; the column stays read-only for one release, then goes.
+reminders, Medical ID `medid/card.ts:32`, Health, inbox `inbox/build.ts`) reads `medications`. Writers of
+`people.medicines` (wizard `setup/steps.ts` and `setup/DetailsSheet.tsx`, `admin/MemberPage.tsx:90` and
+`admin/api.ts`, `sync/profile.ts`, the import loader) switch to `medications`; the column stays read-only for one
+release, then goes.
 
-| Source | How it enters `medications` | `confirmed_source` |
-|---|---|---|
-| Imported prescription item | Auto-convert (1.2) | `rx_auto` |
-| Profile medicine text | One-time copy in the same migration (0 people have any today) | `profile` |
-| Added by hand | Edit sheet Add button | `manual` |
+The database only accepts `confirmed_source` `user` or `auto`, and re-stamps it to `user` on any edit
+(`0013_records_autoconfirm.sql:63,96-101`). So the origin goes in a new column `origin`:
 
-### 1.2 Auto-convert (migration `00xx_medications_from_rx.sql`, applied by Lloyd; reversible)
+| Source | How it enters `medications` | `origin` | confirm stamp |
+|---|---|---|---|
+| Imported prescription item | Auto-convert (1.2) | `rx` | `confirmed_source='auto'`, `confidence=1` |
+| Profile medicine text | One-time copy in migration 0014 (0 people have any today) | `profile` | same |
+| Added by hand | Edit sheet Add button | `manual` | `user` (signed-in editor) |
+
+### 1.2 Auto-convert (migration `0014_medications_live.sql`, applied by Lloyd; reversible)
 Where it runs: one SQL function `rx_to_medications(p_person uuid default null)`, called once by the migration for
 everyone, and by a trigger when a `prescription_items` row is inserted or confirmed (future imports). Not in the client.
 
-1. **One medication per person per drug.** Key = person + normalised `drug_raw` (lower case, strength and form
-   words stripped). 5 person+drug groups repeat today: the newest `rx_date` wins (null dates rank oldest); every
+1. **One medication per person per drug.** Key = person + `normalise_drug(drug_raw)` (lower case, strength and form
+   words stripped; declared IMMUTABLE so it can back an index). 5 person+drug groups repeat today: the newest `rx_date` wins (null dates rank oldest); every
    contributing item is linked in a new table `medication_sources(medication_id, item_id)`.
 2. **Times from frequency text** (no item contains a clock time today):
    - once a day / OD / QD / daily / morning -> 08:00; bedtime / HS / at night -> 21:00
-   - twice a day / BID -> 08:00, 20:00; three times / TID -> 08:00, 14:00, 20:00; four times / QID -> 08:00, 12:00, 16:00, 20:00
+   - twice a day / BID -> 08:00, 20:00; three times / TID -> 08:00, 14:00, 20:00; four times / QID -> 08:00, 12:00, 16:00, 20:00 (16:00 has its own chip, 1.4)
    - as needed / PRN -> `as_needed = true`, no times
    - missing or not understood (13 + 4 today) -> **no time**, `needs_time = true`, no reminder; shows "Set a time"
 3. **Status.** Course with an end in the past -> `stopped` (`stopped_on` set). Everything else -> `active`, with
    `review = true` (1.3).
 4. **Unclear items** keep `drug_raw` as the name and get `needs_check = true`.
-5. **Visibility.** Converted rows are written `status = 'confirmed'`, `confirmed_source = 'rx_auto'` (Lloyd's D1 is the
-   confirmation), so read-only carers see them; the source item keeps its own status.
+5. **Visibility (decided by D1, Lloyd may reverse).** Converted rows are written `status = 'confirmed'`,
+   `confirmed_source = 'auto'`, `confidence = 1`, `origin = 'rx'`, so read-only carers see them (they only see
+   confirmed rows, `0008:21,537`); the source item keeps its own status.
 6. **Idempotent.** Partial unique index on (person, normalised name) where `deleted_at is null`; rows with
    `edited_at` set are never overwritten; a deleted medication keeps a tombstone (`deleted_at`) so re-import does not
-   bring it back. Down migration drops rows with `confirmed_source = 'rx_auto'` and `edited_at is null`.
+   bring it back. Down migration drops rows with `origin in ('rx','profile')` and `edited_at is null`.
 7. **Quantity** maps to `stock_qty` only when it is a plain number; `per_day` = number of times.
 
-Schedule shape v1 (`schedule jsonb`): `{"v":1,"times":["08:00","20:00"],"needs_time":false,"needs_check":false,
-"review":true}`. Times are local clock strings; the app converts to minutes (`model.ts:243`) in one helper.
+Schedule shape v1 (`schedule jsonb`, default changes from `'[]'` to `'{"v":1,"times":[]}'`):
+`{"v":1,"times":["08:00","20:00"],"needs_time":false,"needs_check":false,"review":true,"review_since":"2026-10-21"}`.
+Times are local clock strings; the app converts to minutes (`model.ts:243`) in one helper.
 
-New columns on `medications`: `deleted_at`, `edited_at`. New table `medication_changes(medication_id, by, at, field,
+New columns on `medications`: `origin`, `deleted_at`, `edited_at`. New table `medication_changes(medication_id, by, at, field,
 old, new)` for history (B-7: stored in the database, never sent in notifications).
 
 ### 1.3 "Still taking it?" review (default chosen, Lloyd to confirm)
@@ -54,14 +61,14 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
 `review = true`:
 - It shows "From a prescription dated MMM YYYY. Still taking it?" with **Yes / Change / Stopped**.
 - **Default: reminders stay on for reviewed-or-timed medicines** (Lloyd chose auto-convert). If a review is still
-  open after 3 days, the reminder for that medicine pauses and Today shows "N medicines to check" to the person and
+  open 3 days after `review_since`, the reminder for that medicine pauses and Today shows "N medicines to check" to the person and
   their carers. Alternative if Lloyd prefers: reminders off until reviewed.
 - Today shows one card "N medicines to check" until the list is reviewed.
 
 ### 1.4 Screens
 - **Health > Medicines** (per person): Today (doses with Take / Skip), Active, Paused, Past. Each row opens the
-  **edit sheet**: name, strength, dose, times (chips Morning 08:00, Noon 12:00, Afternoon 14:00, Evening 20:00,
-  Night 21:00, Custom), As needed, Pause, Stop, Delete (Undo toast), source line. Add button for a manual medicine.
+  **edit sheet**: name, strength, dose, times (chips Morning 08:00, Noon 12:00, Afternoon 14:00, Late afternoon
+  16:00, Evening 20:00, Night 21:00, Custom), As needed, Pause, Stop, Delete (Undo toast), source line. Add button for a manual medicine.
 - **Today > Next up**: the next dose due in the next 3 hours, or missed in the last 2 hours, for me and the people I
   care for. Upcoming counts, not only overdue (fixes PART-1 "why weather wins").
 - **Medical ID**: active medicines from the same table.
@@ -72,25 +79,31 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
   merge-duplicates and `deletedAt` soft delete (same pattern as `family_tasks`).
 - Edit rights: the person, admins (`records_editor`) and writer carers. Logging a dose: unchanged (person or writer
   carer, `0003:88-89`); admins are viewers for doses (kept on purpose).
-- `meds_taken` gains `medication_id` and `slot` (nullable for old rows); matching moves from name to id. Skips become
+- `meds_taken` gains `medication_id`, `slot` and `skipped` (nullable or defaulted for old rows; the update grant at
+  `0003_sync.sql:83` widens to these columns); matching moves from name to id. Skips become
   `meds_taken` rows with `skipped = true` so they sync (today they are per device, `NextUp.tsx:66`). The assistant's
   `log_med_taken` resolves the name to a `medication_id` first.
 - Reminders (`health/reminders.ts`) read active, timed medications for me **and** the people I care for (carer
   setting "Remind me for ..."); notification text stays generic (B-7). Id range widened from 31000-31099.
-- Events: `dose_logged`, `dose_skipped`, `med_added`, `med_edited`, `med_paused`, `med_deleted`, `reminder_opened`
-  (PART-2). Adherence is measured from `meds_taken`, not events.
+- Events: the single list is PART-2 section 4. Adherence is measured from `meds_taken`, not events.
 
-## 2. Today (priority 2)
-Order: Alert band (only when an alert applies to my place) -> **Next up** (dose first) -> "N medicines to check"
-(when any) -> **My week** (personal KPIs, below) -> **Family line** (one compact row: "Family: 2 of 3 OK today", the
-one thing that needs attention, opens Family; the full list stays in Family only, Lloyd 2026-10-20) -> **Weather line** (one compact card: temp, condition, and
-the action line; tap opens Weather) -> Quick log -> Plan today -> Week line.
-**My week** (Mon to today, the signed-in person's own numbers): doses on time (x of y, from `meds_taken` vs
-schedule), check-ins (days), readings (count vs goal 1 a week, only if the person has a BP or sugar medicine), walks or
-active minutes (if sensors are on), plus a streak line ("4-day streak of doses on time"). Tiles with no data source
-for this person are hidden, not shown as zero. Goals come from PART-2 habit targets.
-Weather leaves Next up except for a storm within 500 km; it appears once on Today, as the weather line.
-Simple mode: Next dose (big Taken button), I'm OK, Call family, SOS.
+## 2. Today (priority 2; order set by Lloyd 2026-10-20)
+1. **Weather** card on top: temp, condition, place, rain window, and the action line; opens `#weather`. An alert band
+   for my place, when one applies, sits inside this card.
+2. **Next up + medicines to check**: one card. The next dose due in 3 hours (or missed in the last 2) with Taken /
+   Skip; a footer row "N medicines to check" when reviews are open.
+3. **My week** health KPIs, last 7 days, for the signed-in person (or the person picked in Health): blood pressure
+   average with range chip, fasting sugar average, weight change, steps a day vs goal, doses on time (x of y from
+   `meds_taken` vs schedule), resting heart rate (if sensors are on). Each tile has a 7-day sparkline and opens the
+   matching Health metric. Tiles with no data for this person are hidden, never shown as zero; a "next reading due"
+   line nudges H6.
+4. **Family** line: "Family: 2 of 3 OK today" plus the one thing that needs attention; opens Family (full list there).
+5. **Plan today**: tasks and events, Open plan.
+6. **More**: Quick log (BP, sugar, weight, walk, dose, mood), I'm OK today, alerts setup, Ask hint, update and install
+   banners, week line.
+
+Weather leaves Next up except for a storm within 500 km (then Next up shows the storm). Simple mode: next dose (big
+Taken button), I'm OK, Call family, SOS, plus the weather action line.
 
 ## 3. Weather (D2, priority 3)
 ### 3.0 Where weather lives (6 surfaces today, AUDIT.md C)
@@ -107,7 +120,7 @@ Simple mode: Next dose (big Taken button), I'm OK, Call family, SOS.
 Open-Meteo request (`weather.ts:15`) adds: current `relative_humidity_2m`, `apparent_temperature`,
 `wind_speed_10m`, `wind_gusts_10m`, `uv_index`; hourly `precipitation_probability`, `temperature_2m`; daily
 `temperature_2m_min/max`, `uv_index_max`; `forecast_days=7`; `timezone=auto` (fixes Manila-only when abroad). One fetch,
-cached, shared by every surface. Heat index computed in a pure helper (Rothfusz with the low-humidity adjustments),
+cached, shared by every surface. `location/place.ts` passes the place's own timezone. Heat index computed in a pure helper (Rothfusz with the low-humidity adjustments),
 unit tested. Air quality from alerts-ingest when present.
 
 ### 3.2 Screen
@@ -156,6 +169,17 @@ the zone 2 view shows national numbers plus "Add local numbers" for admins.
 Fix the gap above the keyboard; keep the last 20 messages on the device; replace "I can mix things up" with
 "I can be wrong. Check with your doctor for medical decisions." Add a screen event for Ask.
 
-## 7. Out of scope this build
+## 7. Feature map: nothing is removed
+The mockup shows only screens that change; every other screen stays as in v6 (mockup screen "Feature map").
+| Area | Kept | Improved | Moved | New |
+|---|---|---|---|---|
+| Today | Quick log, Plan, I'm OK, alert band, update/install banners, week line | Weather card, Next up, family line, simple mode | | My week KPIs |
+| Health | Body map, Explore body, metric screens, trends | Medicines (edit, pause, delete, reminders), lab flag meaning | Papers (Records) from Family | |
+| Family | People, member page, call/text, Plan (tasks, events, notes) | Check-in nudge | Records -> Health | |
+| Safety | SOS hold + SMS, I'm safe, Call 911, Medical ID, go-bag, practice | Warnings, news, storm map, rescue map, quick dial, places, hazards (local) | Weather page -> Weather screen | |
+| Ask, Me, other | Me settings, Inbox, Docs, Admin, sign-in, wizard, sync, updates | Ask history, keyboard gap | | |
+Only duplicates go: weather inside Next up, the second weather panel in Safety, the family list on Today.
+
+## 8. Out of scope this build
 Brand names for PH drugs (no open source), live hospital lookup (Overpass is static only), evacuation lists (none
 published), YouTube search (quota; fixed playlists only).
