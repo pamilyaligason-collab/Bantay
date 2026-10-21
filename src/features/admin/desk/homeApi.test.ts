@@ -87,6 +87,6 @@ describe('needsYou', () => {
   })
   it('lists duplicates, failed scans and locked members', () => {
     const n = needsYou({ ...base, dupes: 1, failed: 4, locked: [{ name: 'Test Person', personId: 'p2' }] })
-    expect(n.map((x) => x.text)).toEqual(['1 duplicate pair to review', '4 scans failed', 'Test Person is locked out'])
+    expect(n.map((x) => x.text)).toEqual(['1 duplicate group to review', '4 scans failed', 'Test Person is locked out'])
   })
 })

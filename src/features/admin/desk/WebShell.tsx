@@ -143,12 +143,12 @@ export default function WebShell() {
       <a className="wa-skip" href="#wa-main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <header className="wa-top">
         <button className="wa-ib wa-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="menu" /></button>
-        <a className="wa-brand" href={deskHref('home')}><Icon name="shield" />Bantay Admin</a>
+        <a className="wa-brand" href={deskHref('home')}><Icon name="shield" /><span>Bantay Admin</span></a>
         <Search />
         <a className="wa-ib" href={deskHref('members')} aria-label={`${pins} PIN reset requests`}><Icon name="key" />{pins > 0 && <b>{pins}</b>}</a>
         <button className="wa-ib" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
         <details className="wa-me">
-          <summary><span className="wa-av" aria-hidden="true">{(name || 'A').slice(0, 1).toUpperCase()}</span><span className="wa-name">{name || 'Admin'}</span></summary>
+          <summary aria-label={`Account: ${name || 'Admin'}`}><span className="wa-av" aria-hidden="true">{(name || 'A').slice(0, 1).toUpperCase()}</span><span className="wa-name">{name || 'Admin'}</span></summary>
           <div className="wa-pop"><a href="/">Open the family app</a><a href="/#admin">Phone admin tools</a><button onClick={() => void signOut().then(() => location.assign('/'))}>Sign out</button></div>
         </details>
       </header>

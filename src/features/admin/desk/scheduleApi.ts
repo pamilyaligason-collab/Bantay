@@ -229,12 +229,13 @@ export const setTaskDone = (id: string, done: boolean): Promise<Res> => run((s) 
 export const APPT_STATUSES = ['planned', 'done', 'missed', 'cancelled'] as const
 export async function updateAppointment(id: string, day: string, time: string | null, apptStatus: string): Promise<Res> {
   const at = time ? toInstant(day, time) : null
-  if (!at || !(APPT_STATUSES as readonly string[]).includes(apptStatus)) return { ok: false, error: 'invalid' }
-  return run((s) => s.from('appointments').update({ starts_at: at, appt_status: apptStatus }).eq('id', id), nothing)
+  if ((time && !at) || !DAY.test(day) || !(APPT_STATUSES as readonly string[]).includes(apptStatus)) return { ok: false, error: 'invalid' }
+  // No time: a date-only appointment (due_on). With a time: starts_at, and the stale due_on is cleared.
+  return run((s) => s.from('appointments').update({ starts_at: at, due_on: at ? null : day, appt_status: apptStatus }).eq('id', id), nothing)
 }
 export const setApptStatus = (id: string, apptStatus: string): Promise<Res> => run((s) => s.from('appointments').update({ appt_status: apptStatus }).eq('id', id), nothing)
-export const restoreAppointment = (id: string, startsAt: string | null, apptStatus: string): Promise<Res> =>
-  run((s) => s.from('appointments').update({ starts_at: startsAt, appt_status: apptStatus }).eq('id', id), nothing)
+export const restoreAppointment = (id: string, startsAt: string | null, dueOn: string | null, apptStatus: string): Promise<Res> =>
+  run((s) => s.from('appointments').update({ starts_at: startsAt, due_on: dueOn, appt_status: apptStatus }).eq('id', id), nothing)
 export async function updateMedTimes(id: string, oldSchedule: unknown, times: string[]): Promise<Res> {
   if (!times.every(isTime)) return { ok: false, error: 'invalid' }
   return run((s) => s.from('medications').update({ schedule: scheduleWithTimes(oldSchedule, times) }).eq('id', id), nothing)

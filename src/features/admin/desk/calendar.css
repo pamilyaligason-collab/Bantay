@@ -96,5 +96,4 @@
 }
 
 /* Shell gap in W0 (move to desk.css): the top-bar search could not shrink below its input width, so the phone page scrolled sideways. */
-.wa-search { min-width: 0; }
-.wa-search input { width: 100%; }
+.cal-hint { font-weight: 400; color: var(--muted); }

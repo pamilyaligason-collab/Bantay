@@ -21,7 +21,7 @@ export default function ScheduleCard() {
 
   const doses = (items ?? []).filter((i) => i.kind === 'dose' && itemDay(i) === today)
   const people = new Set(doses.map((d) => d.personId)).size
-  const list = (items ?? []).filter((i) => i.kind !== 'dose' && !i.done)
+  const list = (items ?? []).filter((i) => i.kind !== 'dose' && !i.done && !(i.kind === 'appointment' && (i.status === 'cancelled' || i.status === 'missed')))
   const shown = [...list.filter((i) => i.overdue), ...list.filter((i) => !i.overdue)].slice(0, MAX)
 
   return (

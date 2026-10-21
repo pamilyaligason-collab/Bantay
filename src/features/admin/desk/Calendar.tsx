@@ -84,7 +84,7 @@ export default function Calendar({ id, sub }: PageProps) {
     } else if (form.t === 'appt') {
       const old = { at: new Date(form.item.when).toISOString(), status: form.item.status }
       const r = await updateAppointment(form.item.rowId, str('date'), str('time') || null, str('status'))
-      if (await done(r, 'Appointment saved', () => restoreAppointment(form.item.rowId, form.item.allDay ? null : old.at, old.status))) after(back)
+      if (await done(r, 'Appointment saved', () => restoreAppointment(form.item.rowId, form.item.allDay ? null : old.at, form.item.dueOn ?? null, old.status))) after(back)
     } else {
       const times = parseTimesText(str('times'))
       if (!times) { toast.show('Use 24-hour times like 08:00, 20:00.'); return }
@@ -344,7 +344,7 @@ function FormBody({ form, people, onSave, onCancel, onDelete }: { form: Form; pe
       {form.t === 'appt' && <>
         <p className="dk-wide cal-about">{form.item.title}</p>
         <label className="dk-field">Date<input className="dk-in" type="date" value={String(v.date)} onChange={set('date')} required /></label>
-        <label className="dk-field">Time<input className="dk-in" type="time" value={String(v.time)} onChange={set('time')} required /></label>
+        <div className="dk-field"><label htmlFor="cal-time">Time</label><input id="cal-time" aria-describedby="cal-time-hint" className="dk-in" type="time" value={String(v.time)} onChange={set('time')} /><span id="cal-time-hint" className="cal-hint">Leave empty for a whole day</span></div>
         <label className="dk-field dk-wide">Status<select className="dk-in" value={String(v.status)} onChange={set('status')}>{APPT_STATUSES.map((s) => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}</select></label>
       </>}
       {form.t === 'meds' && <>

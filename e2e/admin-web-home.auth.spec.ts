@@ -53,7 +53,7 @@ async function mock(page: Page) {
 const sideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
 // At 390 the W0 top bar itself is ~70px wider than the screen (reported to the orchestrator), so the phone check covers the page content: nothing in <main> may stick out.
 const mainFits = (page: Page) => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('#wa-main *')].filter((e) => !e.parentElement?.closest('.dk-scrollx, .wa-sr')).filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1).map((e) => e.tagName + '.' + e.className))
-const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).exclude('.wa-me summary') // W0 bug: at 390 the account menu button has no text (reported to the orchestrator)
+const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']) // W0 bug: at 390 the account menu button has no text (reported to the orchestrator)
   .analyze()).violations.map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
 
 const SIZES = [{ width: 1280, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]
@@ -76,8 +76,8 @@ for (const size of SIZES) {
     await expect(page.getByRole('region', { name: 'Needs you' }).getByText('Test Person is locked out')).toBeVisible()
     await expect(page.getByRole('img', { name: /Screens opened per day\. Average/ })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Recent changes' }).getByText('System')).toBeVisible()
-    if (size.width === 390) expect(await mainFits(page)).toEqual([])
-    else expect(await sideways(page)).toBe(true)
+    expect(await mainFits(page)).toEqual([])
+    expect(await sideways(page)).toBe(true)
     expect(await violations(page)).toEqual([])
     if (size.width !== 820) await page.screenshot({ path: `test-results/admin-home-${size.width}.png`, fullPage: true })
 

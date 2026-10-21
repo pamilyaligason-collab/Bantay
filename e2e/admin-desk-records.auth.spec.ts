@@ -100,16 +100,15 @@ const AREAS = [{ path: 'records', h1: 'Records' }, { path: 'queue', h1: 'Confirm
 const SIZES = [{ w: 1280, h: 800 }, { w: 390, h: 844 }, { w: 820, h: 1180 }]
 
 async function checkPage(page: Page, label: string) {
-  // The page's own content must fit. The shell top bar is W0 and overflows at 390 (reported in needs), so the document-level number is only noted.
   expect(await page.evaluate(() => [...document.querySelectorAll('.wa-main *')].filter((e) => !e.closest('.dk-scrollx, .dk-tabs') && e.getBoundingClientRect().right > window.innerWidth + 1).map((e) => e.tagName + '.' + e.className)), `${label}: content past the right edge`).toEqual([])
-  if (await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)) test.info().annotations.push({ type: 'shell-overflow', description: label })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${label}: page scrolls sideways`).toBe(true)
   const small: string[] = []
   for (const el of await page.locator('.wa-main button:visible, .wa-main a[href]:visible, .wa-main input:visible, .wa-main select:visible').all()) {
     const bb = await el.boundingBox()
     if (bb && bb.height < (page.viewportSize()!.width < 768 ? 43.5 : 39.5)) small.push(`${(await el.getAttribute('aria-label')) ?? (await el.innerText()) ?? ''} ${Math.round(bb.height)}px`)
   }
   expect(small, `${label}: targets under 44px`).toEqual([])
-  const v = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).exclude('.wa-me').analyze()).violations // .wa-me: W0 account menu has no name at 390 (see needs)
+  const v = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations
   expect(v.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(' | ')}`), `${label}: axe`).toEqual([])
 }
 
@@ -205,6 +204,7 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `test-results
 
 for (const s of SIZES) {
   test(`records tabs at ${s.w}x${s.h}: every tab, no sideways scroll, targets, axe`, async ({ page }) => {
+    test.setTimeout(120_000) // 9 tabs x axe in one test
     await page.setViewportSize({ width: s.w, height: s.h })
     await mock(page, state(), [])
     await skipOnboarding(page)
@@ -236,7 +236,7 @@ test('records tabs in dark mode: axe', async ({ page }) => {
     await page.goto(`/admin#/records/p1/${tab}`)
     await expect(page.getByRole('navigation', { name: 'Kinds of record' })).toBeVisible()
     await page.waitForTimeout(300)
-    const v = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).exclude('.wa-me').analyze()).violations // .wa-me: W0 account menu has no name at 390 (see needs)
+    const v = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations
     expect(v.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(' | ')}`), `dark ${tab}: axe`).toEqual([])
   }
 })

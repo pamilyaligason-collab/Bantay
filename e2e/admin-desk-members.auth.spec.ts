@@ -53,11 +53,11 @@ async function mock(page: Page, calls: Record<string, unknown>[] = []) {
   })
 }
 
-const sideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth || [...document.querySelectorAll('*')].filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1).slice(0, 5).map((e) => e.tagName + '.' + e.className) as unknown as boolean)
+const sideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
 const short = (page: Page, min: number) => page.evaluate((m) => [...document.querySelectorAll<HTMLElement>('button, a[href], select, input:not([type=file]):not([hidden])')]
   .filter((e) => e.offsetParent !== null && getComputedStyle(e).visibility !== 'hidden' && !e.closest('.wa-top, .wa-side, .wa-foot') && !e.classList.contains('wa-skip'))
   .filter((e) => e.getBoundingClientRect().height < m - 0.5).map((e) => (e.getAttribute('aria-label') ?? e.textContent ?? e.tagName).trim().slice(0, 30)), min)
-const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).exclude('.wa-me').analyze()).violations.map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
+const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations.map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
 const clean = async (page: Page, min: number) => {
   expect(await sideways(page)).toBe(true)
   expect(await short(page, min)).toEqual([])

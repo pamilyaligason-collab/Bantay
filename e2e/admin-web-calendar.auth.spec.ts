@@ -52,8 +52,7 @@ const sideways = (page: Page) => page.evaluate(() => document.documentElement.sc
 const short = (page: Page, min: number) => page.evaluate((m) => [...document.querySelectorAll<HTMLElement>('.wa-main button, .wa-main a[href], .wa-main select, .wa-main input:not([type=file]):not([type=checkbox]), .dk-panel button, .dk-panel select, .dk-panel input:not([type=checkbox])')]
   .filter((e) => e.offsetParent !== null && getComputedStyle(e).visibility !== 'hidden')
   .filter((e) => e.getBoundingClientRect().height < m - 0.5).map((e) => (e.getAttribute('aria-label') ?? e.textContent ?? e.tagName).trim().slice(0, 30)), min)
-// .wa-me summary is the W0 shell's account button: its name is hidden on a phone (needs: aria-label), so it is left out here.
-const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).exclude('.wa-me summary').analyze()).violations.map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
+const violations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations.map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
 
 const SIZES = [{ width: 1280, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]
 for (const size of SIZES) {

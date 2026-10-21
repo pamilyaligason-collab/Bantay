@@ -92,7 +92,7 @@ export function queueSummary(rows: QueueRow[]) {
 export type Need = { key: string; text: string; href: string; action: string }
 export function needsYou(i: { pins: PinRequest[]; personOf: (userId: string) => string | null; dupes: number | null; failed: number | null; locked: { name: string; personId: string | null }[] }): Need[] {
   const out: Need[] = i.pins.map((p) => { const pid = i.personOf(p.user_id); return { key: `pin${p.id}`, text: `PIN reset asked by ${p.handle}`, href: pid ? deskHref('members', pid, 'account') : deskHref('members'), action: 'Reset PIN' } })
-  if (i.dupes) out.push({ key: 'dupes', text: `${i.dupes} duplicate ${i.dupes === 1 ? 'pair' : 'pairs'} to review`, href: deskHref('duplicates'), action: 'Review' })
+  if (i.dupes) out.push({ key: 'dupes', text: `${i.dupes} duplicate ${i.dupes === 1 ? 'group' : 'groups'} to review`, href: deskHref('duplicates'), action: 'Review' })
   if (i.failed) out.push({ key: 'failed', text: `${i.failed} ${i.failed === 1 ? 'scan' : 'scans'} failed`, href: deskHref('files'), action: 'Open' })
   for (const l of i.locked) out.push({ key: `lock${l.personId ?? l.name}`, text: `${l.name} is locked out`, href: l.personId ? deskHref('members', l.personId, 'account') : deskHref('members'), action: 'Unlock' })
   return out

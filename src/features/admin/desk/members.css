@@ -41,7 +41,6 @@
   .mb-page .dk-b, .mb-page .dk-in, .mb-page .dk-chip, .mb-page .dk-sort, .mb-page .dk-tabs a { min-height: 44px; }
 }
 /* Shell top bar at phone width: the search box may shrink below its input natural width (W0 desk.css does not say so). */
-.wa-search { min-width: 0; }
 .mb-page .dk-crumbs a { display: inline-flex; align-items: center; min-height: 40px; }
 @media (max-width: 767px) { .mb-page .dk-crumbs a { min-height: 44px; } }
 .mb-page .ad-av { display: inline-grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; font-weight: 700; color: var(--ink); }
