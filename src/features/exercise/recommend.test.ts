@@ -125,3 +125,20 @@ describe('profile data helpers', () => {
     expect(latestVitals([r('bp_systolic', 150, '2026-10-19T07:00:00Z')], now)).toEqual({ latestBp: null, latestSugar: null })
   })
 })
+
+describe("the person's own limits win over the guide", () => {
+  const hyp = { conditions: ['Hypertension'], latestBp: { sys: 135, dia: 85 } }
+  it('guide only: 135/85 is above, so rest', () => expect(rec(hyp).rest?.why).toBe('bp'))
+  it('family limit higher than the reading: no rest day', () => {
+    expect(rec({ ...hyp, family: { sys: { low: null, high: 150 }, dia: { low: null, high: 95 } } }).rest).toBeNull()
+  })
+  it('family limit lower than the guide: rest day for a reading the guide calls fine', () => {
+    const r = rec({ conditions: ['Hypertension'], latestBp: { sys: 115, dia: 70 }, family: { sys: { low: null, high: 110 } } })
+    expect(r.rest?.why).toBe('bp')
+  })
+  it('sugar: family low of 60 lets 65 through; family low of 80 rests at 75', () => {
+    expect(rec({ conditions: ['Diabetes'], latestSugar: 65, family: { sugar: { low: 60, high: null } } }).rest).toBeNull()
+    expect(rec({ conditions: ['Diabetes'], latestSugar: 75, family: { sugar: { low: 80, high: null } } }).rest?.why).toBe('sugar')
+    expect(rec({ conditions: ['Diabetes'], latestSugar: 65 }).rest?.why).toBe('sugar')
+  })
+})

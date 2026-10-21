@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useActivity } from '../health/useActivity'
 import { toCanonicalReading, type Reading } from '../health/ranges'
 import { hdb } from '../records/store'
+import type { Range } from '../health/ranges'
 import { useKv } from '../safety/store'
 import { useProfile, useSelfPersonId } from '../setup/useProfile'
 import { DOCTOR_OK_KEY, GATE_KEY, type RecommendInput } from './recommend'
@@ -32,6 +33,12 @@ export function latestVitals(rows: Reading[], now = new Date()): Pick<RecommendI
   return { latestBp: sys && dia ? { sys: sys.value, dia: dia.value } : null, latestSugar: gc ? gc.value : null }
 }
 
+/** The person's own limits for BP and sugar, from Health thresholds (key `personId:test`). */
+export function familyOf(ts: (Range & { key: string })[], personId: string): RecommendInput['family'] {
+  const get = (...tests: string[]) => tests.map((t) => ts.find((x) => x.key === `${personId}:${t}`)).find(Boolean) ?? null
+  return { sys: get('bp_systolic'), dia: get('bp_diastolic'), sugar: get('fasting_glucose', 'glucose') }
+}
+
 const NO_ROWS: Reading[] = []
 /** Everything Move needs for the signed-in person: age and conditions from the profile, today's vitals, this week's rows, and the two saved acknowledgements. */
 export function useMoveData() {
@@ -46,5 +53,11 @@ export function useMoveData() {
     const sub = liveQuery(() => hdb.readings.where('personId').equals(personId).toArray()).subscribe({ next: setReadings, error: () => setReadings(NO_ROWS) })
     return () => sub.unsubscribe()
   }, [personId])
-  return { personId, acts, gateOk, doctorOk, age: ageFrom(profile?.birthdate), conditions: profile?.conditions ?? [], ...latestVitals(readings) }
+  const [family, setFamily] = useState<RecommendInput['family']>(undefined)
+  useEffect(() => {
+    if (!personId) return setFamily(undefined)
+    const sub = liveQuery(() => hdb.thresholds.toArray()).subscribe({ next: (ts) => setFamily(familyOf(ts, personId)), error: () => setFamily(undefined) })
+    return () => sub.unsubscribe()
+  }, [personId])
+  return { personId, acts, gateOk, doctorOk, family, age: ageFrom(profile?.birthdate), conditions: profile?.conditions ?? [], ...latestVitals(readings) }
 }

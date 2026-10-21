@@ -1,5 +1,6 @@
 import movesJson from './moves.json'
-import { GUIDE, position } from '../health/ranges'
+import { readingPosition } from '../health/model'
+import type { Range } from '../health/ranges'
 
 /** Bantay-original senior exercise picks. Rules are listed in docs/session-8/CLINICAL-REVIEW.md and wait for a clinician's review.
  *  Sources: WHO 2020 physical activity guidelines, CDC older adults (docs/SOURCES.md). */
@@ -45,6 +46,8 @@ export interface RecommendInput {
   conditions: string[]
   latestBp?: { sys: number; dia: number } | null
   latestSugar?: number | null
+  /** The person's own doctor-set limits (Health thresholds). They win over the general guide, as everywhere else in the app. */
+  family?: { sys?: Range | null; dia?: Range | null; sugar?: Range | null }
   /** Move ids done in the last 7 days (repeats allowed). */
   doneThisWeek?: string[]
   gateOk?: boolean
@@ -64,10 +67,15 @@ export interface Recommendation {
 
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
-/** The app's own guide bands (ranges.ts, AHA): above the guide on either number. */
-export const bpHigh = (bp?: { sys: number; dia: number } | null) =>
-  !!bp && num(bp.sys) && num(bp.dia) && (position(bp.sys, GUIDE.bp_systolic) === 'above' || position(bp.dia, GUIDE.bp_diastolic) === 'above')
-export const sugarLow = (v?: number | null) => num(v) && position(v, GUIDE.fasting_glucose) === 'below'
+/** Above the person's own limit on either BP number, else the app's guide (AHA). Same judge as the Health screens. */
+export const bpHigh = (bp?: { sys: number; dia: number } | null, fam?: RecommendInput['family']) => {
+  if (!bp || !num(bp.sys) || !num(bp.dia)) return false
+  const at = (test: string, value: number, f?: Range | null) => readingPosition({ personId: '', takenAt: '', test, value }, f) === 'above'
+  return at('bp_systolic', bp.sys, fam?.sys) || at('bp_diastolic', bp.dia, fam?.dia)
+}
+/** latestSugar is already mg/dL (data.ts converts). */
+export const sugarLow = (v?: number | null, fam?: RecommendInput['family']) =>
+  num(v) && readingPosition({ personId: '', takenAt: '', test: 'fasting_glucose', value: v }, fam?.sugar) === 'below'
 
 const ORDER_OLDER: Group[] = ['balance', 'strength', 'walk', 'stretch', 'breathe']
 const ORDER_YOUNGER: Group[] = ['strength', 'walk', 'balance', 'stretch', 'breathe']
@@ -80,8 +88,8 @@ export function recommend(i: RecommendInput): Recommendation {
   const base: Recommendation = { gate: !i.gateOk, rest: null, picks: [], notes: [], restricted }
   if (base.gate) return base
 
-  if (has('hypertension') && bpHigh(i.latestBp)) return { ...base, rest: { why: 'bp', text: 'Rest today. Check your blood pressure first and tell your doctor if it stays high.' } }
-  if (has('diabetes') && sugarLow(i.latestSugar)) return { ...base, rest: { why: 'sugar', text: 'Your sugar was low. Rest today, eat something and check it again before you move.' } }
+  if (has('hypertension') && bpHigh(i.latestBp, i.family)) return { ...base, rest: { why: 'bp', text: 'Rest today. Check your blood pressure first and tell your doctor if it stays high.' } }
+  if (has('diabetes') && sugarLow(i.latestSugar, i.family)) return { ...base, rest: { why: 'sugar', text: 'Your sugar was low. Rest today, eat something and check it again before you move.' } }
 
   const age = num(i.age) && i.age > 0 ? i.age : null
   const older = age == null || age >= 65 // unknown age is treated as 65+

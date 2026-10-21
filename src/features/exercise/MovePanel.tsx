@@ -33,7 +33,7 @@ export default function MovePanel({ notify }: { notify?: (msg: string) => void }
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const week = useMemo(() => weekProgress(d.acts), [d.acts])
-  const rec = useMemo(() => recommend({ age: d.age, conditions: d.conditions, latestBp: d.latestBp, latestSugar: d.latestSugar, doneThisWeek: week.doneIds, gateOk: d.gateOk, doctorOk: d.doctorOk }), [d.age, d.conditions, d.latestBp, d.latestSugar, week.doneIds, d.gateOk, d.doctorOk])
+  const rec = useMemo(() => recommend({ age: d.age, conditions: d.conditions, latestBp: d.latestBp, latestSugar: d.latestSugar, family: d.family, doneThisWeek: week.doneIds, gateOk: d.gateOk, doctorOk: d.doctorOk }), [d.age, d.conditions, d.latestBp, d.latestSugar, d.family, week.doneIds, d.gateOk, d.doctorOk])
   const ack = (key: string) => { setBusy(true); void putKv(key, true).catch(() => setErr('Could not save on this phone. Try again.')).finally(() => setBusy(false)) }
 
   if (rec.gate) {
@@ -75,7 +75,7 @@ export default function MovePanel({ notify }: { notify?: (msg: string) => void }
     <div className="mv">
       <WeekRing {...week} />
       {rec.rest ? (
-        <div className="mv-rest" role="status"><Icon name="heart" tone="alert" boxed /><p>{rec.rest.text}</p></div>
+        <div className="mv-rest" role="status"><Icon name="move" tone="alert" boxed /><p>{rec.rest.text}</p></div>
       ) : (
         <>
           {rec.notes.map((n) => <p key={n} className="mv-n">{n}</p>)}

@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Icon } from '../shell/Icon'
+import { VIDEO_ID } from '../health/library/videosLogic'
 import { useOnline } from './useOnline'
 import './media.css'
 
-export const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
 
-/** Same idea as lite-youtube-embed (Apache-2.0, docs/ASSETS.md): a poster that loads nothing from YouTube until tapped.
+/** Click-to-load pattern (self-built, no dependency): a poster that loads nothing from YouTube until tapped.
  *  We draw the poster ourselves (title + icon), so not even i.ytimg.com is contacted before the tap. The player is the no-cookie address. */
 export function LiteVideo({ id, title, start }: { id: string; title: string; start?: number }) {
   const [playing, setPlaying] = useState(false)

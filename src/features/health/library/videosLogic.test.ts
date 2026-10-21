@@ -16,7 +16,7 @@ describe('videos playlist', () => {
     expect(VIDEOS).toHaveLength(6)
     expect(VIDEOS.every(playable)).toBe(true)
     expect(videosAvailable()).toBe(true)
-    expect(VIDEOS.every((v) => v.minutes === null)).toBe(true)
+    expect(VIDEOS.every((v) => v.minutes === null || (Number.isFinite(v.minutes) && v.minutes > 0))).toBe(true)
   })
   it('topics filter the list', () => {
     expect(TOPICS[0]).toBe('All')

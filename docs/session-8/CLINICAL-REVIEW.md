@@ -16,7 +16,10 @@ Status: NOT reviewed. All text below was written by Bantay (no third-party exerc
 9. Arthritis: no deep-knee or impact moves; reminder that sharp joint pain is not fine.
 10. Asthma: reminder to keep the inhaler within reach.
 11. Weekly ring: last 7 days, minutes from walk logs and Move logs toward 150; days with a strength or balance move toward 2. A counted set (reps) is logged as about 2 minutes. REVIEW: confirm that counting all light moves toward the 150 minutes is acceptable.
-12. Sources: WHO 2020 and CDC older adults (docs/SOURCES.md).
+12. Rest rules (6 and 7) only fire when the condition is listed in the person's profile (hypertension for blood pressure, diabetes for sugar). A high pressure or low sugar with no listed condition shows moves as normal. REVIEW: confirm this is acceptable or whether any person with a high reading should rest.
+13. A person's own doctor-set limits (Health thresholds) replace the general guide in rules 6 and 7.
+14. REVIEW, tags: "Sit to stand from a chair" (sit-to-stand) and "Slow chair stand" (chair-stand-slow) are tagged deep-knee, so arthritis never gets them. Confirm that is right, since sit-to-stand is also a common arthritis exercise. "Foot in front of foot, holding a chair" (tandem-stand) is tagged hold, so hypertension never gets it. Confirm that a 30-second balance stance counts as an isometric hold.
+15. Sources: WHO 2020 and CDC older adults (docs/SOURCES.md).
 
 ### Moves (src/features/exercise/moves.json)
 
@@ -356,3 +359,14 @@ Status: NOT reviewed. All text below was written by Bantay (no third-party exerc
   4. Repeat for 2 minutes.
 - Stop if: You feel dizzy or faint; You feel worse
 
+
+## Videos (src/data/videos.json) - titles for wording review
+
+The six official health videos' titles, as shown in the app (the videos themselves are from their publishers on YouTube):
+
+1. Hands-only CPR
+2. BE FAST: signs of a stroke
+3. Heat exhaustion and heatstroke
+4. Diabetic emergency: what to do
+5. Five a day: eating more fruit and vegetables
+6. Lusog-Isip: looking after your mental health

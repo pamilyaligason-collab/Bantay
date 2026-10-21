@@ -4,7 +4,9 @@ import { AnimatedDemo } from './AnimatedDemo'
 import { LiteVideo } from './LiteVideo'
 import VideoCard from '../today/VideoCard'
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+const realPlay = HTMLMediaElement.prototype.play
+const realPause = HTMLMediaElement.prototype.pause
+afterEach(() => { HTMLMediaElement.prototype.play = realPlay; HTMLMediaElement.prototype.pause = realPause; cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 const setOnline = (v: boolean) => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(v)
 
 describe('LiteVideo', () => {

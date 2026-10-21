@@ -18,7 +18,7 @@ export function AnimatedDemo({ src, label }: { src: string; label: string }) {
     <figure className="ad">
       <video ref={ref} className="ad-video" src={src} muted loop playsInline autoPlay={playing} aria-label={label} />
       <button type="button" className="ad-toggle" onClick={() => setPlaying((p) => !p)}>
-        {playing ? 'Pause' : <><Icon name="play" size={20} />Play</>}<span className="lv-sr"> {label}</span>
+        {playing ? <><Icon name="pause" size={20} />Pause</> : <><Icon name="play" size={20} />Play</>}<span className="lv-sr"> {label}</span>
       </button>
     </figure>
   )

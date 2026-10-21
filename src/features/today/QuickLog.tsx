@@ -13,7 +13,7 @@ const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefin
   { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', tone: 'vitals', aria: 'Log weight' },
   { id: 'walk', label: 'Walk', icon: 'walk', tone: undefined, aria: 'Log a walk' },
-  { id: 'move', label: 'Move', icon: 'heart', tone: undefined, aria: 'Gentle exercise for today' },
+  { id: 'move', label: 'Move', icon: 'move', tone: undefined, aria: 'Gentle exercise for today' },
   { id: 'dose', label: 'Dose', icon: 'pill', tone: 'medicine', aria: 'Log a medicine you took' },
   { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' }
 ]
@@ -46,7 +46,7 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick log: seven buttons in a 4-column grid (BP, Sugar, Weight, Walk, Move, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
+/** Quick log: seven buttons, 4 + 3 centred (BP, Sugar, Weight, Walk, Move, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
