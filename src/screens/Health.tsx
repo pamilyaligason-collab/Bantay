@@ -114,7 +114,7 @@ function Overview() {
         <Icon name="chev" size={20} />
       </a>
       <a className="card hv-explore" href="#health/move">
-        <Icon name="walk" tone="vitals" boxed />
+        <Icon name="move" tone="vitals" boxed />
         <span className="grow">Move<small>Gentle exercise picks for today and your week</small></span>
         <Icon name="chev" size={20} />
       </a>
