@@ -3,7 +3,7 @@ import { SYNTHETIC_DOMAIN, derivePassword, normalizeEmail, normalizeHandle, rand
 
 export type Role = 'admin' | 'member'
 export interface Profile { photoPath: string | null; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; medicines: string[] }
-export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null }
+export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null; lockedUntil?: string | null; fails?: number }
 export type Err = 'not_admin' | 'bad_input' | 'handle_taken' | 'not_found'
 export type Result = { ok: true; [k: string]: unknown } | { ok: false; error: Err }
 
@@ -82,6 +82,13 @@ export function parsePersonPatch(b: Record<string, unknown>, personId: string): 
     p[k] = l
   }
   return Object.keys(p).length ? p : null
+}
+
+/** pin_attempts is keyed by user id (login.ts). No row or a lapsed window = not locked and 0 wrong tries. A future lockedUntil is only a LOCK once fails reaches HANDLE_LIMIT (the window also starts on try 1). */
+export function lockState(row: { fails: number | null; locked_until: string | null } | undefined, now = Date.now()): { lockedUntil: string | null; fails: number } {
+  const until = row?.locked_until ? Date.parse(row.locked_until) : NaN
+  if (!row || Number.isNaN(until) || until <= now) return { lockedUntil: null, fails: 0 }
+  return { lockedUntil: new Date(until).toISOString(), fails: row.fails ?? 0 }
 }
 
 const bad: Result = { ok: false, error: 'bad_input' }

@@ -1,0 +1,27 @@
+/* Members and People pages only. Shared desk rules live in desk.css. */
+.mb-cap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.dk-table tbody th { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); border-top: 1px solid var(--line); border-bottom: 0; }
+.dk-table tbody tr:first-child th { border-top: 0; }
+.dk-table tr.mb-on th, .dk-table tr.mb-on td { background: var(--soft); }
+.mb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.mb-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); font-weight: 700; }
+.mb-link:focus-visible, .mb-sel:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.mb-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.mb-form { display: grid; gap: 12px; }
+.mb-form p { margin: 0; }
+.mb-err { color: var(--red); font-weight: 600; font-size: 14px; }
+.mb-ok { color: var(--ok); font-weight: 600; font-size: 14px; }
+.mb-grow { flex: 1; min-width: 0; }
+.mb-pinrow { display: flex; gap: 8px; align-items: flex-end; }
+.mb-pin { font-size: 32px; letter-spacing: .2em; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mb-ta { min-height: 88px; padding: 10px 12px; resize: vertical; }
+.mb-sel { all: unset; cursor: pointer; display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--ink); }
+.mb-who { display: flex; align-items: center; gap: 12px; }
+.mb-sec { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.mb-sec h3 { margin: 0; font-size: 14px; }
+.mb-carer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ad-av { display: inline-grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; color: var(--ink); font-weight: 700; }
+.ad-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Contrast: desk.css .ok tag and .bad button measure 4.44 and 4.25 against 4.5 in axe; darkened here for these pages (L0 fix proposed in the lane report). */
+.dk-table .dk-tag.ok, .mb-carer .dk-tag.ok { color: color-mix(in srgb, var(--ok) 70%, var(--ink)); }
+.mb-acts .dk-b.bad, .mb-carer .dk-b.bad { color: color-mix(in srgb, var(--red) 70%, var(--ink)); }

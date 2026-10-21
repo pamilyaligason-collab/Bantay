@@ -3,7 +3,7 @@
 // Secrets: PIN_PEPPER, ALLOWED_ORIGIN. Never log request bodies, PINs or derived passwords.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
-import { runAction, type Member, type Port, type Role } from '../_shared/members.ts'
+import { lockState, runAction, type Member, type Port, type Role } from '../_shared/members.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
 
@@ -100,19 +100,22 @@ function adapt(admin: Admin, pepper: string): Port {
     },
     async listMembers() {
       // ponytail: one page of 1000 auth users; a family never gets near it. Paginate if that changes.
-      const [roles, people, users] = await Promise.all([
+      const [roles, people, users, locks] = await Promise.all([
         admin.from('app_roles').select('user_id, role, handle, disabled'),
         admin.from('people').select('id, auth_user_id, display_name, photo_path, phone, birthdate, blood_type, allergies, conditions, medicines').not('auth_user_id', 'is', null),
-        admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+        admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+        admin.from('pin_attempts').select('user_id, fails, locked_until')
       ])
       // A failed select must not look like "everyone has no name" (e.g. deployed before migration 0010): fail the call, the handler answers server_error.
-      if (roles.error || people.error || users.error) throw new Error('list_failed')
+      if (roles.error || people.error || users.error || locks.error) throw new Error('list_failed')
       const byUser = new Map(users.data.users.map((x) => [x.id, x]))
+      const lockOf = new Map((locks.data ?? []).map((l) => [l.user_id as string, l]))
       const personOf = new Map((people.data ?? []).map((p) => [p.auth_user_id as string, p]))
       return (roles.data ?? []).map((r): Member => {
         const au = byUser.get(r.user_id)
         const p = personOf.get(r.user_id)
         return {
+          ...lockState(lockOf.get(r.user_id)),
           userId: r.user_id, personId: p?.id ?? null, displayName: p?.display_name ?? '', handle: r.handle,
           role: r.role as Role, disabled: r.disabled, lastSignInAt: au?.last_sign_in_at ?? null, provider: (au?.app_metadata?.provider as string | undefined) ?? null,
           profile: p ? { photoPath: p.photo_path, phone: p.phone, birthdate: p.birthdate, bloodType: p.blood_type, allergies: p.allergies ?? [], conditions: p.conditions ?? [], medicines: p.medicines ?? [] } : null
