@@ -1,0 +1,18 @@
+/* Dashboard home. Tokens only. */
+.hm-fail { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); }
+.hm-chart { padding: 8px 16px 12px; }
+.hm-chart svg { width: 100%; height: auto; display: block; }
+.hm-grid { stroke: var(--line); stroke-width: 1; }
+.hm-axis { fill: var(--muted); font-size: 11px; font-family: var(--f-ui); }
+.hm-line { fill: none; stroke: var(--green2); stroke-width: 2.5; stroke-linejoin: round; }
+.hm-dot { fill: var(--green2); }
+.hm-bar { fill: var(--green2); }
+.hm-sum { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.hm-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.hm-list { list-style: none; margin: 0; padding: 4px 0; }
+.hm-list li + li { border-top: 1px solid var(--line); }
+.hm-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 16px; color: var(--ink); text-decoration: none; }
+.hm-list a:hover { background: color-mix(in srgb, var(--soft) 45%, var(--card)); }
+.hm-list b { font-size: 13px; color: var(--link); white-space: nowrap; }
+.hm-fields { color: var(--muted); }
+.dk-grid > .dk-s3 > .dk-kpi { height: 100%; box-sizing: border-box; }
