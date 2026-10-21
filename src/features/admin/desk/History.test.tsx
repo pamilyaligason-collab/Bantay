@@ -63,4 +63,16 @@ describe('History', () => {
     expect(await screen.findByText('abcdef12')).toBeTruthy()
     expect(screen.getByText('2', { selector: 'td.num' })).toBeTruthy()
   })
+  it('with a person prop the query is fixed to that person and the pickers are hidden', async () => {
+    render(<History id={null} person="p9" embedded />)
+    await screen.findByText('value_num, unit_raw')
+    expect(h.state.eqs).toContainEqual(['person_id', 'p9'])
+    expect(screen.queryByLabelText('Person')).toBeNull()
+    expect(screen.queryByRole('columnheader', { name: 'Person' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull() // embedded: no page header
+    expect(screen.queryByRole('button', { name: /Duplicate clean-up/ })).toBeNull() // global log, not per person
+    fireEvent.change(screen.getByLabelText('Action'), { target: { value: 'reveal' } })
+    await waitFor(() => expect(h.state.eqs.at(-1)).toEqual(['action', 'reveal']))
+    expect(h.state.eqs.filter((e) => (e as string[])[0] === 'person_id').length).toBeGreaterThan(1) // still fixed after another filter
+  })
 })

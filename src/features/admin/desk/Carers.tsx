@@ -46,7 +46,7 @@ export default function Carers({ personId, people, me, ask, say, onChange }: Pro
     <section className="mb-sec" aria-label="Carers">
       <h3>Carers</h3>
       {err && <p className="mb-err" role="alert">{err}</p>}
-      {rows === null ? <p className="dk-sub">Loading carers.</p> : rows.length === 0 ? <p className="dk-sub">No carers linked.</p> : (
+      {rows === null ? <p className="dk-sub">Loading carers.</p> : rows.length === 0 ? <p className="dk-sub">No carers linked yet. Pick a member below to give them read-only access.</p> : (
         <ul className="mb-list">
           {rows.map((c) => (
             <li key={c.carer_id} className="mb-carer">

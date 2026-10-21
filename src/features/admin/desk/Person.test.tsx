@@ -1,37 +1,61 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ upsert: vi.fn(), del: vi.fn(), update: vi.fn(), getUser: vi.fn() }))
 const ME = '11111111-1111-4111-8111-111111111111'
+const h = vi.hoisted(() => ({ invoke: vi.fn(), rpc: vi.fn(), upsert: vi.fn(), del: vi.fn(), update: vi.fn(), getUser: vi.fn() }))
 const people = [
   { id: 'p1', display_name: 'Test Admin', auth_user_id: ME, photo_path: null },
   { id: 'p2', display_name: 'Test Person', auth_user_id: 'u2', photo_path: null },
-  { id: 'p3', display_name: 'Test Child', auth_user_id: null, photo_path: null },
-  { id: 'p4', display_name: 'Test Cousin', auth_user_id: 'u4', photo_path: null }
+  { id: 'p3', display_name: 'Test Guest', auth_user_id: 'u3', photo_path: null },
+  { id: 'p4', display_name: 'Test Child', auth_user_id: null, photo_path: null },
+  { id: 'p5', display_name: 'Test Cousin', auth_user_id: 'u5', photo_path: null }
 ]
-const details = people.map((p) => ({ id: p.id, phone: null, birthdate: p.id === 'p3' ? '2020-01-02' : null, sex: null, blood_type: p.id === 'p3' ? 'O+' : null, address: null, aliases: [], allergies: ['Test Allergy'], conditions: [] }))
-const carers = [{ carer_id: ME, person_id: 'p3', can_write: true }, { carer_id: 'u2', person_id: 'p3', can_write: false }]
-// select() is awaitable and also has .order() / .eq(), like the PostgREST builder
-const sel = (rows: unknown[]) => Object.assign(Promise.resolve({ data: rows, error: null }), { order: async () => ({ data: rows, error: null }) })
+const details = people.map((p) => ({ id: p.id, phone: null, birthdate: p.id === 'p4' ? '2020-01-02' : null, sex: null, blood_type: p.id === 'p4' ? 'O+' : null, address: null, aliases: [], allergies: ['Test Allergy'], conditions: [] }))
+const carers = [{ carer_id: ME, person_id: 'p4', can_write: true }, { carer_id: 'u2', person_id: 'p4', can_write: false }]
+const members = [
+  { userId: ME, personId: 'p1', displayName: 'Test Admin', handle: null, role: 'admin', disabled: false, lastSignInAt: null, provider: 'google', profile: null },
+  { userId: 'u2', personId: 'p2', displayName: 'Test Person', handle: 'testp', role: 'member', disabled: false, lastSignInAt: null, provider: 'email', profile: null, lockedUntil: '2999-01-01T00:00:00Z', fails: 5 },
+  { userId: 'u3', personId: 'p3', displayName: 'Test Guest', handle: null, role: 'member', disabled: false, lastSignInAt: null, provider: 'google', profile: null }
+]
+const chain = (rows: unknown[]) => {
+  const c: Record<string, unknown> = {}
+  for (const k of ['select', 'eq', 'order', 'limit']) c[k] = () => c
+  c.then = (ok: (v: unknown) => unknown, bad: (e: unknown) => unknown) => Promise.resolve({ data: rows, error: null, count: 7 }).then(ok, bad)
+  return c
+}
 vi.mock('../../auth/client', () => ({
   supabase: {
-    auth: { getUser: h.getUser },
+    auth: { getUser: h.getUser }, functions: { invoke: h.invoke }, rpc: h.rpc,
     from: (t: string) => t === 'people'
-      ? { select: (cols: string) => sel(cols.includes('auth_user_id') ? people : details), update: (p: unknown) => ({ eq: () => ({ select: () => h.update(p) }) }) }
-      : { select: () => sel(carers), upsert: h.upsert, delete: () => ({ eq: () => ({ eq: () => ({ select: h.del }) }) }) }
+      ? { select: (cols: string) => chain(cols.includes('auth_user_id') ? people : details), update: (p: unknown) => ({ eq: () => ({ select: () => h.update(p) }) }) }
+      : t === 'carers' ? { ...(chain(carers) as object), upsert: h.upsert, delete: () => ({ eq: () => ({ eq: () => ({ select: h.del }) }) }) }
+      : chain(t === 'records_queue' ? [{ person_id: 'p4', drafts: 2 }] : [])
   }
 }))
+// The embedded tabs belong to other lanes: stand-ins that show the props they get.
+vi.mock('./Records', () => ({ default: (p: { id: string | null; embedded?: boolean }) => <p>Records of {p.id} {p.embedded ? 'embedded' : 'page'}</p> }))
+vi.mock('./Ids', () => ({ default: (p: { id: string | null; embedded?: boolean }) => <p>IDs of {p.id} {p.embedded ? 'embedded' : 'page'}</p> }))
+vi.mock('./History', () => ({ default: (p: { id: string | null; person?: string; embedded?: boolean }) => <p>History of {p.person} {p.embedded ? 'embedded' : 'page'}</p> }))
 
 import { addReadOnly } from './Carers'
-import People, { ageOf, formOf, GRANTED, profilePatch } from './Person'
+import Members from './Members'
+import { ageOf, formOf, GRANTED, profilePatch } from './Person'
 
 beforeEach(() => {
   h.upsert.mockReset().mockResolvedValue({ error: null })
   h.del.mockReset().mockResolvedValue({ data: [{}], error: null })
-  h.update.mockReset().mockResolvedValue({ data: [{ id: 'p3' }], error: null })
+  h.update.mockReset().mockResolvedValue({ data: [{ id: 'p4' }], error: null })
   h.getUser.mockReset().mockResolvedValue({ data: { user: { id: ME } } })
+  h.invoke.mockReset().mockImplementation(async (_n: string, o: { body: { action: string } }) => ({ data: o.body.action === 'list' ? { ok: true, members } : { ok: true }, error: null }))
+  h.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'admin_identifiers' ? [{ id: 'i1' }, { id: 'i2' }] : [], error: null }))
+  location.hash = '#/members/p4'
 })
 afterEach(cleanup)
+const bodies = () => h.invoke.mock.calls.map((c) => (c[1] as { body: Record<string, unknown> }).body)
+const page = async (id: string, sub: string | null = null) => {
+  render(<Members id={id} sub={sub} />)
+  await screen.findByRole('navigation', { name: 'Member sections' })
+}
 
 const blank = formOf('Test Person', undefined)
 
@@ -64,55 +88,147 @@ describe('ageOf', () => {
 
 describe('addReadOnly', () => {
   it('always upserts can_write false', async () => {
-    expect((await addReadOnly('u4', 'p3', ME)).ok).toBe(true)
-    expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u4', person_id: 'p3', can_write: false }, expect.anything())
+    expect((await addReadOnly('u5', 'p4', ME)).ok).toBe(true)
+    expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u5', person_id: 'p4', can_write: false }, expect.anything())
   })
   it('never links the admin themself', async () => {
-    expect((await addReadOnly(ME, 'p3', ME)).ok).toBe(false)
+    expect((await addReadOnly(ME, 'p4', ME)).ok).toBe(false)
     expect(h.upsert).not.toHaveBeenCalled()
   })
 })
 
-describe('People page', () => {
-  it('lists name, sign-in, age, blood type and carers count', async () => {
-    render(<People id={null} />)
-    const row = (await screen.findByRole('button', { name: 'Open Test Child' })).closest('tr') as HTMLElement
-    await waitFor(() => expect(within(row).getByText('O+')).toBeTruthy())
-    expect(within(row).getByText('No')).toBeTruthy()
-    expect(within(row).getByText('2')).toBeTruthy() // two carers
+describe('Member page', () => {
+  it('summary card: role, sign-in, state, age, blood type and the counts', async () => {
+    await page('p4')
+    const sum = screen.getByRole('region', { name: 'Summary' })
+    expect(within(sum).getByText('Dependent')).toBeTruthy()
+    expect(within(sum).getByText('No phone')).toBeTruthy()
+    expect(within(sum).getByText('Cared for')).toBeTruthy()
+    await waitFor(() => expect(within(sum).getByText('O+')).toBeTruthy())
+    expect(within(sum).getAllByText('2', { selector: 'dd' })).toHaveLength(2) // drafts and IDs
+    expect(within(sum).getByText('2 (1 can edit)')).toBeTruthy()
+    expect(within(sum).getByText('7')).toBeTruthy() // papers
+    expect(screen.getByRole('link', { name: 'Members' }).getAttribute('href')).toBe('#/members')
   })
 
-  it('panel shows carers with Can edit / Read only and adds a read-only link', async () => {
-    render(<People id="p3" />)
-    const carers = await screen.findByRole('region', { name: 'Carers' })
-    await within(carers).findByText('Can edit')
-    expect(within(carers).getByText('Read only')).toBeTruthy()
-    const pick = within(carers).getByLabelText('Add a read-only carer') as HTMLSelectElement
-    const names = [...pick.options].map((o) => o.text)
-    expect(names).toEqual(['Choose a member', 'Test Cousin']) // not the admin, not the person, not existing carers
-    fireEvent.change(pick, { target: { value: 'u4' } })
-    fireEvent.click(within(carers).getByRole('button', { name: 'Add read-only link' }))
+  it('tabs are links with aria-current; the default is Profile', async () => {
+    await page('p4')
+    const tabs = screen.getByRole('navigation', { name: 'Member sections' })
+    expect(within(tabs).getByRole('link', { name: 'Profile' }).getAttribute('aria-current')).toBe('page')
+    expect(within(tabs).getByRole('link', { name: /Carers/ }).getAttribute('href')).toBe('#/members/p4/carers')
+    expect(within(tabs).getAllByRole('link').map((a) => a.textContent?.replace(/\d+$/, ''))).toEqual(['Profile', 'Account', 'Carers', 'Records', 'IDs', 'History'])
+  })
+
+  it('Records, IDs and History tabs embed their pages for this person', async () => {
+    await page('p4', 'records')
+    expect(screen.getByText('Records of p4 embedded')).toBeTruthy()
+    cleanup(); await page('p4', 'ids')
+    expect(screen.getByText('IDs of p4 embedded')).toBeTruthy()
+    cleanup(); await page('p4', 'history')
+    expect(screen.getByText('History of p4 embedded')).toBeTruthy()
+  })
+
+  it('the form shows the real values from the start and Save sends only granted columns', async () => {
+    await page('p4')
+    const form = await screen.findByRole('form', { name: 'Profile' })
+    expect((within(form).getByLabelText('Birthday') as HTMLInputElement).value).toBe('2020-01-02') // no empty first render
+    const save = within(form).getByRole('button', { name: 'Save profile' }) as HTMLButtonElement
+    expect(save.disabled).toBe(true) // nothing changed yet
+    fireEvent.change(within(form).getByLabelText('Address'), { target: { value: 'Test Street 1' } })
+    expect(save.disabled).toBe(false)
+    fireEvent.click(save)
+    await waitFor(() => expect(h.update).toHaveBeenCalled())
+    const patch = h.update.mock.calls[0]![0] as Record<string, unknown>
+    expect(patch).toMatchObject({ display_name: 'Test Child', address: 'Test Street 1', blood_type: 'O+', birthdate: '2020-01-02', allergies: ['Test Allergy'] })
+    expect(Object.keys(patch).every((k) => (GRANTED as readonly string[]).includes(k))).toBe(true)
+  })
+
+  it('Cancel puts the saved values back', async () => {
+    await page('p4')
+    const form = await screen.findByRole('form', { name: 'Profile' })
+    fireEvent.change(within(form).getByLabelText('Address'), { target: { value: 'Elsewhere' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+    expect((within(form).getByLabelText('Address') as HTMLInputElement).value).toBe('')
+  })
+
+  it('leaving the Profile tab with unsaved changes asks first', async () => {
+    await page('p4')
+    const form = await screen.findByRole('form', { name: 'Profile' })
+    fireEvent.change(within(form).getByLabelText('Address'), { target: { value: 'Test Street 1' } })
+    const to = screen.getByRole('link', { name: 'Account' })
+    fireEvent.click(to)
+    expect(location.hash).toBe('#/members/p4') // not moved yet
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
-    await waitFor(() => expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u4', person_id: 'p3', can_write: false }, expect.anything()))
+    await waitFor(() => expect(location.hash).toBe('#/members/p4/account'))
+  })
+
+  it('a dependent with no login shows No sign-in for this person and an Invite', async () => {
+    await page('p4', 'account')
+    expect(screen.getByText('No sign-in for this person.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Invite by email' }))
+    expect(await screen.findByRole('form', { name: 'Invite by email' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Disable/ })).toBeNull()
+  })
+
+  it('Account: PIN member can be reset, unlocked and disabled; no Make admin for a PIN sign-in', async () => {
+    await page('p2', 'account')
+    expect(await screen.findByRole('button', { name: 'Reset PIN' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Make admin' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'unlock', userId: 'u2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Disable Test Person' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'disable', userId: 'u2', disabled: true }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'disable', userId: 'u2', disabled: false }))
+  })
+
+  it('Reset PIN sends set_pin with the typed PIN and shows it once', async () => {
+    await page('p2', 'account')
+    fireEvent.click(await screen.findByRole('button', { name: 'Reset PIN' }))
+    const form = await screen.findByRole('form', { name: 'New PIN for Test Person' })
+    fireEvent.change(within(form).getByLabelText('PIN (6 digits)'), { target: { value: '480193' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Set PIN' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'set_pin', userId: 'u2', pin: '480193' }))
+    expect(await screen.findByText('A new PIN is shown once, to the admin. Give it to the person yourself.')).toBeTruthy()
+  })
+
+  it('Account: a Google member can be made admin; never yourself', async () => {
+    await page('p3', 'account')
+    fireEvent.click(await screen.findByRole('button', { name: 'Make admin' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'set_role', userId: 'u3', role: 'admin' }))
+    cleanup(); await page('p1', 'account')
+    await screen.findByText(/your own account/)
+    expect(screen.queryByRole('button', { name: /Make member|Make admin|Disable|Enable/ })).toBeNull()
+    expect(screen.queryByText('Danger zone')).toBeNull()
+  })
+
+  it('Carers tab lists carers and adds a read-only link only', async () => {
+    await page('p4', 'carers')
+    const carersBox = await screen.findByRole('region', { name: 'Carers' })
+    await within(carersBox).findByText('Can edit')
+    expect(within(carersBox).getByText('Read only')).toBeTruthy()
+    const pick = within(carersBox).getByLabelText('Add a read-only carer') as HTMLSelectElement
+    expect([...pick.options].map((o) => o.text)).toEqual(['Choose a member', 'Test Guest', 'Test Cousin']) // not the admin, not existing carers
+    fireEvent.change(pick, { target: { value: 'u5' } })
+    fireEvent.click(within(carersBox).getByRole('button', { name: 'Add read-only link' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u5', person_id: 'p4', can_write: false }, expect.anything()))
   })
 
   it('Remove maps an RLS refusal to the forbidden message', async () => {
     h.del.mockResolvedValue({ data: [], error: null })
-    render(<People id="p3" />)
+    await page('p4', 'carers')
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Test Person as carer' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
     expect((await screen.findByText('This link cannot be removed.')).getAttribute('role')).toBe('alert')
   })
 
-  it('Save profile updates only granted columns', async () => {
-    render(<People id="p3" />)
-    const form = await screen.findByRole('form', { name: 'Profile' })
-    await waitFor(() => expect((within(form).getByLabelText('Birthday') as HTMLInputElement).value).toBe('2020-01-02'))
-    fireEvent.change(within(form).getByLabelText('Address'), { target: { value: 'Test Street 1' } })
-    fireEvent.click(within(form).getByRole('button', { name: 'Save profile' }))
-    await waitFor(() => expect(h.update).toHaveBeenCalled())
-    const patch = h.update.mock.calls[0]![0] as Record<string, unknown>
-    expect(patch).toMatchObject({ display_name: 'Test Child', address: 'Test Street 1', blood_type: 'O+', birthdate: '2020-01-02', allergies: ['Test Allergy'] })
-    expect(Object.keys(patch).every((k) => (GRANTED as readonly string[]).includes(k))).toBe(true)
+  it('an unknown person says so', async () => {
+    render(<Members id="nope" />)
+    expect(await screen.findByText(/not in the family list/)).toBeTruthy()
   })
 })

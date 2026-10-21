@@ -1,28 +1,16 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { supabase } from '../../auth/client'
-import { adminMembers, rpc, type Member, type Res, type UsageRow } from '../api'
+import { adminMembers } from '../api'
+import Avatar from '../Avatar'
 import { pinError } from '../pin'
-import { NOT_CONNECTED, when, why } from '../shared'
+import { NOT_CONNECTED, why } from '../shared'
+import MemberPage, { Ago, carersText, Form, Invite, needsAttention, Pin, roleOf, selfId, Shown, signInOf, stateOf, useRoster, type Ask, type Line } from './Person'
 import { deskHref, type PageProps } from './types'
-import { Empty, Filters, PageHead, Panel, Tag, useConfirm, useToast, type Tone } from './ui'
+import { Empty, Filters, PageHead, Panel, SortTh, Skeleton, Tag, useConfirm, useSort, useToast } from './ui'
 import './members.css'
 
-/** admin-members `list` after E1 adds lockedUntil and fails; both are absent from an older deploy. */
-export type Row = Member & { lockedUntil?: string | null; fails?: number }
+export { memberState, selfId, signInType, type Row } from './Person'
 
-export const LOCK_AT = 5 // wrong PINs that start the lock (HANDLE_LIMIT in supabase/functions/_shared/login.ts)
-const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Manila' })
-
-/** pin_attempts also holds a window that has not locked yet, so a future time alone is not a lock: it needs LOCK_AT wrong tries. */
-export function memberState(m: Row, now = Date.now()): { tone: Tone; text: string; locked: boolean } {
-  if (m.disabled) return { tone: 'bad', text: 'Disabled', locked: false }
-  const until = m.lockedUntil ? Date.parse(m.lockedUntil) : NaN
-  const fails = m.fails ?? 0
-  if (!Number.isNaN(until) && until > now && fails >= LOCK_AT) return { tone: 'warn', text: `Locked until ${hhmm(until)}, ${fails} wrong tries`, locked: true }
-  return { tone: 'ok', text: 'Active', locked: false }
-}
-
-export const signInType = (m: Row) => (m.provider === 'google' ? 'Google' : 'PIN')
 export const HANDLE_OK = /^[a-z][a-z0-9_]{2,19}$/
 
 /** Body for admin-members `create`: a member (never an admin), handle optional. */
@@ -30,70 +18,19 @@ export const createBody = (name: string, handle: string, pin: string) => ({ acti
 /** A person with no phone: the DB trigger adds the creator as writer carer. */
 export const dependentRow = (name: string, createdBy: string) => ({ display_name: name.trim(), created_by: createdBy })
 
-/** The signed-in admin's user id, or null. */
-export async function selfId(): Promise<string | null> {
-  if (!supabase) return null
-  try { return (await supabase.auth.getUser()).data.user?.id ?? null } catch { return null }
-}
+export const FILTERS = [['all', 'All'], ['login', 'With sign-in'], ['dependents', 'Dependents'], ['attention', 'Needs attention']] as const
+export type MemberFilter = (typeof FILTERS)[number][0]
 
-const randomPin = () => {
-  for (;;) {
-    const n = crypto.getRandomValues(new Uint32Array(1))[0]! % 1_000_000
-    const pin = String(n).padStart(6, '0')
-    if (!pinError(pin)) return pin
-  }
-}
-
-type Sheet = { k: 'pin'; m: Row } | { k: 'add' } | { k: 'dep' } | { k: 'invite' }
-type Ask = (text: string, run: () => Promise<void>) => void
-
-function Pin({ pin, set }: { pin: string; set: (v: string) => void }) {
-  return (
-    <div className="mb-pinrow">
-      <label className="dk-field mb-grow">PIN (6 digits)<input className="dk-in" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} onChange={(e) => set(e.target.value.replace(/\D/g, ''))} /></label>
-      <button type="button" className="dk-b" onClick={() => set(randomPin())}>Make one</button>
-    </div>
-  )
-}
-
-function Shown({ title, pin, onClose }: { title: string; pin: string; onClose: () => void }) {
-  const [copied, setCopied] = useState(false)
-  const copy = async () => { try { await navigator.clipboard.writeText(pin); setCopied(true) } catch { /* the PIN stays on screen */ } }
-  return (
-    <>
-      <p>{title}</p>
-      <p className="mb-pin" aria-label="PIN">{pin}</p>
-      <p className="dk-sub">A new PIN is shown once, to the admin. Give it to the person yourself.</p>
-      <div className="dk-acts"><button className="dk-b" onClick={copy}>{copied ? 'Copied' : 'Copy PIN'}</button><button className="dk-b go" onClick={onClose}>Done</button></div>
-    </>
-  )
-}
-
-function Form({ children, onSubmit, err, label }: { children: ReactNode; onSubmit: (e: FormEvent) => void; err: string; label: string }) {
-  return <form className="mb-form" aria-label={label} onSubmit={onSubmit}>{children}{err && <p className="mb-err" role="alert">{err}</p>}</form>
-}
-
-function ResetPin({ m, ask, done, close }: { m: Row; ask: Ask; done: () => void; close: () => void }) {
-  const [pin, setPin] = useState('')
-  const [err, setErr] = useState('')
-  const [shown, setShown] = useState<string | null>(null)
-  if (shown) return <Shown title={`New PIN for ${m.displayName}`} pin={shown} onClose={close} />
-  return (
-    <Form label={`New PIN for ${m.displayName}`} err={err} onSubmit={(e) => {
-      e.preventDefault()
-      const bad = pinError(pin)
-      if (bad) return setErr(bad)
-      setErr('')
-      ask(`Set a new PIN for ${m.displayName}? Their current sessions end.`, async () => {
-        const r = await adminMembers({ action: 'set_pin', userId: m.userId, pin })
-        if (!r.ok) return setErr(why(r.error))
-        setShown(pin); done()
-      })
-    }}>
-      <Pin pin={pin} set={setPin} />
-      <button className="dk-b go" type="submit">Set PIN</button>
-    </Form>
-  )
+/** Filter chips, the carers toggle and the search box, applied in that order. */
+export function filterLines(lines: Line[], f: MemberFilter, hasCarers: boolean, q: string, now = Date.now()): Line[] {
+  const t = q.trim().toLowerCase()
+  return lines.filter((l) => {
+    if (f === 'login' && !l.p.auth_user_id) return false
+    if (f === 'dependents' && l.p.auth_user_id) return false
+    if (f === 'attention' && !needsAttention(l, now)) return false
+    if (hasCarers && !(l.carers && l.carers > 0)) return false
+    return !t || l.p.display_name.toLowerCase().includes(t) || (l.m?.handle ?? '').toLowerCase().includes(t) || signInOf(l).toLowerCase().includes(t)
+  })
 }
 
 function AddMember({ ask, done, close }: { ask: Ask; done: () => void; close: () => void }) {
@@ -144,118 +81,93 @@ function AddDependent({ ask, done, close, say }: { ask: Ask; done: () => void; c
   )
 }
 
-function Invite({ ask, close, say }: { ask: Ask; close: () => void; say: (t: string) => void }) {
-  const [email, setEmail] = useState('')
-  const [err, setErr] = useState('')
-  return (
-    <Form label="Invite by email" err={err} onSubmit={(e) => {
-      e.preventDefault()
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setErr('Enter a full email address.')
-      setErr('')
-      ask(`Invite ${email.trim()} to sign in with Google?`, async () => {
-        const r = await adminMembers({ action: 'invite', email: email.trim() })
-        if (!r.ok) return setErr(why(r.error))
-        say(`${email.trim()} invited.`); close()
-      })
-    }}>
-      <label className="dk-field">Google email<input className="dk-in" type="email" value={email} maxLength={254} autoComplete="off" onChange={(e) => setEmail(e.target.value)} /></label>
-      <button className="dk-b go" type="submit">Invite</button>
-    </Form>
-  )
-}
+type Sheet = 'add' | 'dep' | 'invite'
+const SHEET_TITLE: Record<Sheet, string> = { add: 'Add member', dep: 'Add dependent', invite: 'Invite by email' }
 
-export default function Members(_: PageProps) {
-  const [rows, setRows] = useState<Row[] | null>(null)
-  const [usage, setUsage] = useState<Map<string, UsageRow>>(new Map())
-  const [err, setErr] = useState('')
-  const [me, setMe] = useState<string | null>(null)
+function MembersList() {
+  const roster = useRoster()
+  const [f, setF] = useState<MemberFilter>('all')
+  const [hasCarers, setHasCarers] = useState(false)
   const [q, setQ] = useState('')
   const [sheet, setSheet] = useState<Sheet | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
 
-  const reload = () => {
-    void adminMembers<{ members: Row[] }>({ action: 'list' }).then((r) => { if (r.ok) { setRows(r.data.members); setErr('') } else setErr(why(r.error)) })
-    void rpc<UsageRow[]>('admin_usage_summary', { days: 30 }).then((r: Res<UsageRow[]>) => { if (r.ok) setUsage(new Map(r.data.map((u) => [u.user_id, u]))) })
-  }
-  useEffect(() => { reload(); void selfId().then(setMe) }, [])
-
-  const shown = useMemo(() => {
-    const t = q.trim().toLowerCase()
-    return (rows ?? []).filter((m) => !t || m.displayName.toLowerCase().includes(t) || (m.handle ?? '').includes(t)).sort((a, b) => a.displayName.localeCompare(b.displayName))
-  }, [rows, q])
-
-  const act = (text: string, body: Record<string, unknown>, doneText: string, undo?: Record<string, unknown>) =>
-    confirm.ask(text, async () => {
-      const r = await adminMembers(body)
-      if (!r.ok) return toast.show(why(r.error))
-      reload()
-      toast.show(doneText, undo && (async () => { const u = await adminMembers(undo); toast.show(u.ok ? 'Undone.' : why(u.error)); reload() }))
-    })
-  const close = () => setSheet(null)
-  const title = !sheet ? '' : sheet.k === 'pin' ? `Reset PIN: ${sheet.m.displayName}` : sheet.k === 'add' ? 'Add member' : sheet.k === 'dep' ? 'Add dependent' : 'Invite by email'
+  const shown = useMemo(() => filterLines(roster.lines, f, hasCarers, q), [roster.lines, f, hasCarers, q]) // eslint-disable-line react-hooks/exhaustive-deps
+  const sort = useSort<Line>(shown, (l, key) => {
+    switch (key) {
+      case 'name': return l.p.display_name
+      case 'signin': return signInOf(l)
+      case 'role': return roleOf(l)
+      case 'state': return stateOf(l).text
+      case 'carers': return l.carers
+      case 'seen': return l.seen ? Date.parse(l.seen) : null
+      default: return l.drafts
+    }
+  }, { key: 'name', dir: 1 })
+  const open = (id: string) => { location.hash = deskHref('members', id) }
+  const counts = useMemo(() => ({ attention: roster.lines.filter((l) => needsAttention(l)).length }), [roster.lines])
 
   return (
-    <>
-      <PageHead title="Members" sub="Everyone who can sign in. People without a phone are on the People page.">
-        <button className="dk-b go" onClick={() => setSheet({ k: 'add' })}>Add member</button>
-        <button className="dk-b" onClick={() => setSheet({ k: 'dep' })}>Add dependent</button>
-        <button className="dk-b" onClick={() => setSheet({ k: 'invite' })}>Invite by email</button>
+    <div className="mb-page">
+      <PageHead title="Members" sub="Everyone in the family, with or without a phone. Open a row for the profile, sign-in, carers and records.">
+        <button className="dk-b" onClick={() => setSheet('invite')}>Invite by email</button>
+        <button className="dk-b" onClick={() => setSheet('dep')}>Add dependent</button>
+        <button className="dk-b go" onClick={() => setSheet('add')}>Add member</button>
       </PageHead>
       <Filters>
-        <input className="dk-in" type="search" aria-label="Search members" placeholder="Search name or sign-in name" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="dk-in" type="search" aria-label="Search members" placeholder="Search name or sign-in" value={q} onChange={(e) => setQ(e.target.value)} />
+        {FILTERS.map(([k, label]) => (
+          <button key={k} className="dk-chip" aria-pressed={f === k} onClick={() => setF(k)}>{label}{k === 'attention' && counts.attention > 0 ? ` (${counts.attention})` : ''}</button>
+        ))}
+        <button className="dk-chip" aria-pressed={hasCarers} onClick={() => setHasCarers((v) => !v)}>Has carers</button>
       </Filters>
-      {err ? <Empty>{err}</Empty> : rows === null ? <Empty>Loading members.</Empty> : shown.length === 0 ? <Empty>No members match.</Empty> : (
-        <div className="dk-scrollx">
-          <table className="dk-table">
-            <caption className="mb-cap">Members</caption>
-            <thead><tr>
-              <th scope="col">Name</th><th scope="col">Sign-in name</th><th scope="col">Role</th><th scope="col">Sign-in type</th><th scope="col">State</th>
-              <th scope="col">Last sign-in</th><th scope="col">Last seen</th><th scope="col" className="num">Events 30 d</th><th scope="col">Actions</th>
-            </tr></thead>
-            <tbody>
-              {shown.map((m) => {
-                const st = memberState(m)
-                const u = usage.get(m.userId)
-                const self = m.userId === me
-                const pinUser = signInType(m) === 'PIN'
-                return (
-                  <tr key={m.userId}>
-                    <th scope="row">{m.personId ? <a className="mb-link" href={deskHref('members', m.personId)}>{m.displayName || 'No name'}</a> : (m.displayName || 'No name')}</th>
-                    <td>{m.handle ?? 'None'}</td>
-                    <td>{m.role === 'admin' ? 'Admin' : 'Member'}</td>
-                    <td>{signInType(m)}</td>
-                    <td><Tag tone={st.tone}>{st.text}</Tag></td>
-                    <td>{when(m.lastSignInAt)}</td>
-                    <td>{when(u?.last_seen)}</td>
-                    <td className="num">{u ? u.events : 'None'}</td>
-                    <td>
-                      <div className="mb-acts">
-                        {pinUser && <button className="dk-b" onClick={() => setSheet({ k: 'pin', m })} aria-label={`Reset PIN for ${m.displayName}`}>Reset PIN</button>}
-                        {pinUser && st.locked && <button className="dk-b" onClick={() => act(`Unlock ${m.displayName} so they can try their PIN again?`, { action: 'unlock', userId: m.userId }, `${m.displayName} unlocked.`)} aria-label={`Unlock ${m.displayName}`}>Unlock</button>}
-                        {!self && m.role === 'member' && !pinUser && <button className="dk-b" onClick={() => act(`Make ${m.displayName} an admin?`, { action: 'set_role', userId: m.userId, role: 'admin' }, `${m.displayName} is now an admin.`, { action: 'set_role', userId: m.userId, role: 'member' })} aria-label={`Make ${m.displayName} admin`}>Make admin</button>}
-                        {!self && m.role === 'admin' && <button className="dk-b" onClick={() => act(`Make ${m.displayName} a member?`, { action: 'set_role', userId: m.userId, role: 'member' }, `${m.displayName} is now a member.`, { action: 'set_role', userId: m.userId, role: 'admin' })} aria-label={`Make ${m.displayName} member`}>Make member</button>}
-                        {!self && <button className="dk-b bad" onClick={() => act(`${m.disabled ? 'Enable' : 'Disable'} ${m.displayName}?${m.disabled ? '' : ' They are signed out and cannot sign in.'}`, { action: 'disable', userId: m.userId, disabled: !m.disabled }, `${m.displayName} ${m.disabled ? 'enabled' : 'disabled'}.`, { action: 'disable', userId: m.userId, disabled: m.disabled })} aria-label={`${m.disabled ? 'Enable' : 'Disable'} ${m.displayName}`}>{m.disabled ? 'Enable' : 'Disable'}</button>}
-                        {self && <Tag>You</Tag>}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      {roster.error ? <Empty>{NOT_CONNECTED}</Empty> : !roster.ready ? <Skeleton rows={8} /> : (
+        <>
+          {roster.err && <p className="mb-err" role="alert">Sign-in details could not be loaded ({roster.err}). Names and carers still show.</p>}
+          {sort.sorted.length === 0 ? <Empty>{roster.lines.length === 0 ? 'No one yet. Add a member or a dependent with the buttons above.' : 'No one matches. Clear the search or pick All.'}</Empty> : (
+            <div className="dk-scrollx">
+              <table className="dk-table">
+                <caption className="mb-cap">Members</caption>
+                <thead><tr>
+                  <SortTh k="name" label="Name" sort={sort} /><SortTh k="signin" label="Sign-in" sort={sort} /><SortTh k="role" label="Role" sort={sort} /><SortTh k="state" label="State" sort={sort} />
+                  <SortTh k="carers" label="Carers" sort={sort} /><SortTh k="seen" label="Last seen" sort={sort} /><SortTh k="drafts" label="To confirm" sort={sort} />
+                </tr></thead>
+                <tbody>
+                  {sort.sorted.map((l) => {
+                    const st = stateOf(l)
+                    return (
+                      <tr key={l.p.id} className="dk-click" onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) open(l.p.id) }}>
+                        <th scope="row"><a className="mb-link" href={deskHref('members', l.p.id)}><Avatar name={l.p.display_name} photoPath={l.p.photo_path} size={28} />{l.p.display_name || 'No name'}</a></th>
+                        <td>{signInOf(l)}</td>
+                        <td>{roleOf(l)}</td>
+                        <td><Tag tone={st.tone}>{st.text}</Tag></td>
+                        <td>{carersText(l)}</td>
+                        <td>{l.m ? <Ago iso={l.seen} /> : ''}</td>
+                        <td className="num">{l.drafts === null ? 'Unknown' : l.drafts}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
       {sheet && (
-        <Panel title={title} onClose={close}>
-          {sheet.k === 'pin' && <ResetPin m={sheet.m} ask={confirm.ask} done={reload} close={close} />}
-          {sheet.k === 'add' && <AddMember ask={confirm.ask} done={reload} close={close} />}
-          {sheet.k === 'dep' && <AddDependent ask={confirm.ask} done={reload} close={close} say={(t) => toast.show(t)} />}
-          {sheet.k === 'invite' && <Invite ask={confirm.ask} close={close} say={(t) => toast.show(t)} />}
+        <Panel title={SHEET_TITLE[sheet]} onClose={() => setSheet(null)}>
+          {sheet === 'add' && <AddMember ask={confirm.ask} done={roster.reload} close={() => setSheet(null)} />}
+          {sheet === 'dep' && <AddDependent ask={confirm.ask} done={roster.reload} close={() => setSheet(null)} say={(t) => toast.show(t)} />}
+          {sheet === 'invite' && <Invite ask={confirm.ask} close={() => setSheet(null)} say={(t) => toast.show(t)} />}
         </Panel>
       )}
       {confirm.node}
       {toast.node}
-    </>
+    </div>
   )
+}
+
+/** #/members is the list, #/members/<personId>[/<tab>] the member page. */
+export default function Members(props: PageProps) {
+  return props.id ? <MemberPage {...props} /> : <MembersList />
 }
