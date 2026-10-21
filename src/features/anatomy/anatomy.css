@@ -73,6 +73,7 @@
 .an-rail { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; padding: 6px 0; }
 .an-rb { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .an-rb[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
+.an-rb[aria-pressed="true"] .sh-ic { color: var(--btn-fg); } /* the vitals tone on --btn is under 3:1 */
 .an-badge { position: absolute; top: -4px; right: -4px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 11px; background: var(--card2); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--ground); }
 .an-badge::after { content: attr(data-n); } /* drawn by CSS: the button's name is the system, and axe compares visible text with the name */
 .an-badge[data-tone="warn"] { background: var(--amber); color: #2B1D00; }
