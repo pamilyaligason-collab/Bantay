@@ -92,3 +92,16 @@ Steps and "Call 911 when" lists are written in Bantay's own words; no third-part
 | After a fall | none | https://www.nhs.uk/conditions/falls/ | |
 
 The DOH and AHA video pages were verified through YouTube oEmbed only (title and channel), not read as web pages.
+
+## Family report, learning hub and Memories (session 8)
+
+Bantay's own words throughout. Nothing below is copied or bundled; each source is linked or embedded only.
+
+- Member report verdict words and ranges: the same guide file as the rest of Health (src/data/guide-ranges.json, sources named there: AHA, ADA and others). "Things to bring up" are questions written by Bantay, following the MedlinePlus lab-test pages for what each test measures (https://medlineplus.gov/lab-tests/), public domain.
+- Learning hub (src/features/family/hub.json):
+  - NIMH, "So stressed out" fact sheet: https://www.nimh.nih.gov/health/publications/so-stressed-out-fact-sheet . Linked only. NIMH text is public domain; credited on the card.
+  - MedlinePlus, Healthy sleep: https://medlineplus.gov/healthysleep.html . Linked only. Public domain; credited on the card.
+  - Department of Health (Philippines) YouTube videos AQimPkd7g5I, HKK-58RZlMA, ExEXOfe81Nc: embedded through the click-to-load player (youtube-nocookie.com), ids checked against YouTube oEmbed on 2026-10-21. Not downloaded or re-hosted.
+  - NHS, "How much is five a day?" YouTube video b-uX6N4RZjg: embedded the same way. NHS web text is OGL; the video is only embedded.
+  - WHO, Healthy diet fact sheet: https://www.who.int/news-room/fact-sheets/detail/healthy-diet . Link only (WHO content is CC BY-NC-SA, so none of its text or images is bundled).
+- Memories: no outside content. Photos are the family's own, kept in a private Supabase bucket (migration 0023). The app removes Exif and GPS by re-encoding through a canvas before upload; no face recognition and no social media import.
