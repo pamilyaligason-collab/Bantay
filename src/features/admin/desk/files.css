@@ -1,0 +1,14 @@
+/* Files, IDs and History (lane LC). Prefix dk- shared; fl- for page-only rules. */
+.fl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.fl-name { text-align: left; font-weight: 600; white-space: nowrap; }
+.fl-file { max-width: 240px; overflow-wrap: anywhere; }
+.fl-num { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+.fl-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.fl-fields { max-width: 280px; overflow-wrap: anywhere; }
+.fl-note { margin: 0; color: var(--muted); font-size: 13px; }
+.dk-field select.dk-in, .dk-field input.dk-in { width: 100%; }
+.dk-table th[scope="row"] { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); border-bottom: 0; border-top: 1px solid var(--line); }
+.fl { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* L0 red/green tag text is under 4.5:1 on its tinted fill; mix toward the ink colour (darker in light mode, lighter in dark). */
+.fl .dk-tag.bad, .fl .dk-b.bad { color: color-mix(in srgb, var(--red) 70%, var(--ink)); }
+.fl .dk-tag.ok { color: color-mix(in srgb, var(--ok) 70%, var(--ink)); }
