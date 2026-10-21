@@ -4,6 +4,7 @@ import { OVERRIDES_KEY, telHref, type Overrides } from '../safety/entries'
 import { putKv, useKv } from '../safety/store'
 import { driveUrl, KINDS, kmLabel, spotsFor, splitSpots, type Kind, type Pin, type Spot } from './logic'
 import './rescuemap.css'
+import { Icon } from '../shell/Icon'
 
 const MapView = lazy(() => import('./MapView'))
 const NONE: Overrides = {}
@@ -60,7 +61,7 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
       {props.zoneName && <p className="rm-zone">{props.zoneName}</p>}
       <div className="rm-chips" role="group" aria-label="Show">
         {KINDS.map((k) => (
-          <button key={k.id} type="button" className="rm-chip" aria-pressed={kinds.has(k.id)} onClick={() => toggle(k.id)}>{k.label}</button>
+          <button key={k.id} type="button" className="rm-chip" aria-pressed={kinds.has(k.id)} onClick={() => toggle(k.id)}>{kinds.has(k.id) && <Icon name="check" size={18} />}{k.label}</button>
         ))}
       </div>
 

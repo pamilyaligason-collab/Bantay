@@ -12,13 +12,13 @@ test.beforeEach(async ({ page }) => {
 })
 
 // WCAG relative luminance contrast from computed rgb() strings
-const lum = (c: string) => { const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number).map((v) => { const s = v! / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
+const lum = (c: string) => { const k = c.startsWith('color(') ? 255 : 1; const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => Number(v) * k).map((v) => { const s = v! / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
 const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05) }
 
 test('dark mode: Safety tile icons >= 3:1 and the top-bar avatar initial >= 4.5:1', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/#safety')
-  const tile = page.locator('.sf-tile-ic').first()
+  const tile = page.locator('.sf-tile .sh-icbox').first()
   await expect(tile).toBeVisible()
   const t = await tile.evaluate((e) => ({ fg: getComputedStyle(e).color, bg: getComputedStyle(e).backgroundColor }))
   expect(ratio(t.fg, t.bg)).toBeGreaterThanOrEqual(3)

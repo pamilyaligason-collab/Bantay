@@ -7,6 +7,7 @@ import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
 import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
 import { onNativeSignInError } from '../features/auth/nativeOAuth'
+import { Icon } from '../features/shell/Icon'
 
 /** Six-digit PIN pad (56px keys). Calls onDone with the PIN; the pad clears itself so a miss starts fresh. */
 function PinPad({ busy, onDone, shake = 0 }: { busy: boolean; onDone: (pin: string) => void; shake?: number }) {
@@ -301,7 +302,7 @@ export default function SignIn() {
                       <button type="button" className="wl-row" onClick={() => { setError(''); setPick(m) }}>
                         {m.photo ? <img className="avatar" src={m.photo} alt="" width={40} height={40} /> : <span className="avatar" aria-hidden="true">{m.initials}</span>}
                         <span className="wl-name"><b>{m.displayName}</b>{m.provider === 'google' && <span className="si-hint">Admin</span>}</span>
-                        <svg className="wl-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                        <span className="wl-chev"><Icon name="chev" size={20} /></span>
                       </button>
                     </li>
                   ))}

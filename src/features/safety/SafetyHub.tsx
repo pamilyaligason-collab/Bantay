@@ -13,6 +13,7 @@ import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamil
 import { hazardsFor, hazardStatus } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
+import { Icon, type IconName } from '../shell/Icon'
 import { useKv } from './store'
 import './safety.css'
 
@@ -22,23 +23,8 @@ const NONE_O: Overrides = {}
 const NONE_S: SosEvent[] = []
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
 
-// 24px stroke paths in the same style as shell/Icon
-const ICONS: Record<string, string> = {
-  warn: 'M12 3 2.5 20h19zM12 10v4.5M12 17.2v.3',
-  weather: 'M7 18a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 8.5 4.8 4.8 0 0 1 17 18zM9 21l1-2M13 21l1-2',
-  storm: 'M12 12m-1.5 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 1 0-3 0M12 3a9 9 0 0 1 8.5 6M12 21a9 9 0 0 1-8.5-6M6 6.5A9 9 0 0 1 12 3M18 17.5A9 9 0 0 1 12 21',
-  map: 'M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
-  dial: 'M6 3h4l1.5 4-2 1.5a11 11 0 0 0 6 6L17 12.5l4 1.5v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z',
-  hazard: 'M3 20h18L15 9l-3 5-2-3zM3 20l5-9',
-  bag: 'M8 7V5a4 4 0 0 1 8 0v2M5 7h14l1 13H4zM9 12h6',
-  cards: 'M5 4h14v16H5zM8.5 9h7M8.5 12.5h7M8.5 16h4',
-  ids: 'M3 6h18v12H3zM7 11a2 2 0 1 0 0-.01M12 10h6M12 14h5',
-  sos: 'M12 7v5l3 2M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z'
-}
-
-export function TileIcon({ name }: { name: string }) {
-  return <svg className="sh-ic" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[name]} /></svg>
-}
+// Tile icon per topic, all safety tone.
+const ICONS: Record<string, IconName> = { warn: 'warn', weather: 'rain', storm: 'typhoon', map: 'pin', dial: 'phone', hazard: 'flood', bag: 'bag', cards: 'file', ids: 'fp', sos: 'sos' }
 
 /** Numbers a person can call from Quick dial here: the one local set plus national, OFW and teleconsult sets that show for this place. */
 export function dialCount(place: Place, overrides: Overrides): number {
@@ -86,7 +72,7 @@ export default function SafetyHub({ place }: { place: Place }) {
     <nav className="sf-tiles" aria-label="Safety topics">
       {tiles.map(([href, icon, title, status]) => (
         <a key={href} href={href} className="sf-tile">
-          <span className="sf-tile-ic"><TileIcon name={icon} /></span>
+          <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
           <span className="sf-tile-t">{title}</span>
           <span className="sf-tile-s">{status}</span>
         </a>

@@ -285,7 +285,7 @@ export default function Assistant() {
               <h2 id="as-title">Ask Bantay</h2>
               {items.length > 0 && <button type="button" className="btn2 as-clear" onClick={clearChat}>Clear chat</button>}
               <button type="button" className="as-x" onClick={close} aria-label="Close">
-                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                <Icon name="close" size={20} />
               </button>
             </div>
             <p className="sub as-note">{CAUTION} For an emergency call 911.</p>
@@ -310,7 +310,7 @@ export default function Assistant() {
               <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
               {Mic.current && (
                 <button type="button" className="as-mic" aria-label={listening ? 'Stop listening' : 'Speak'} aria-pressed={listening} onClick={listen}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
+                  <Icon name="mic" active={listening} />
                 </button>
               )}
               <button className="btn" type="submit" disabled={busy || !text.trim()}>Send</button>

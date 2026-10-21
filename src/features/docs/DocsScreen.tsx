@@ -1,5 +1,6 @@
 // "IDs and insurance" (D-63): shows each card full screen from the phone's own cache, uploads when one is missing.
 // Bantay keeps the picture only: no OCR, no numbers read or stored, nothing is sent to a model.
+import { Icon } from '../shell/Icon'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { createPortal } from 'react-dom'
@@ -267,7 +268,7 @@ export function DocsScreen({ client = supabase }: { client?: SupabaseClient | nu
           {driveRows.map((d) => <DriveRow key={d.docId} card={d} client={client} onDone={() => void reload()} />)}
           {missing.map((t) => (
             <div className="row" role="listitem" key={t}>
-              <span className="dc-thumb miss" aria-hidden="true">+</span>
+              <span className="dc-thumb miss" aria-hidden="true"><Icon name="plus" /></span>
               <div className="grow"><b>{LABEL[kind][t]}</b><div className="sub">Not added yet</div></div>
               <button className="dc-btn dc-primary" aria-label={`Upload ${LABEL[kind][t]}`} onClick={() => setSheet({ cardType: t })}>Upload</button>
             </div>

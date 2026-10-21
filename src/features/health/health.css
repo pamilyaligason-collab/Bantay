@@ -46,7 +46,7 @@
 .hv-open::before { content: ""; position: absolute; inset: 0; } /* the whole row is the link; one tab stop */
 .hv-row .sub { display: block; }
 .hv-open { color: var(--ink); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; min-height: 28px; }
-.hv-open::after { content: "\203A"; margin-left: 6px; color: var(--ink2); font-weight: 400; }
+.hv-open .sh-ic { margin-left: 4px; color: var(--ink2); }
 .hv-open:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .hv-bar { display: block; position: relative; height: 14px; margin: 8px 0 4px; width: 100%; max-width: 220px; min-width: 160px; }
 .hv-bar::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; height: 4px; border-radius: 2px; background: var(--card2); }
@@ -67,9 +67,6 @@
 .hv-dot.prev { background: var(--cell); border: 2px solid var(--ink2); }
 .hv-before { font-weight: 600; }
 
-.hv-top { display: flex; align-items: center; gap: 4px; }
-.hv-back { width: 44px; height: 44px; display: inline-grid; place-items: center; border-radius: 50%; color: var(--ink); text-decoration: none; flex: none; }
-.hv-back:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .hv-big { display: block; font-size: 34px; line-height: 1.1; font-weight: 700; }
 .hv-state { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); white-space: nowrap; }
 .hv-state.within { background: var(--soft); color: var(--ink); }

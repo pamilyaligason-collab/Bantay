@@ -3,6 +3,7 @@ import { checkIn, FAIL_TEXT } from '../today/actions'
 import FmAvatar from './FmAvatar'
 import { checkInLabel, nudgeFor, rollCall, useCheckInsLoaded, useFamilyPeople } from './roster'
 import './family.css'
+import { Icon } from '../shell/Icon'
 
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
@@ -47,7 +48,7 @@ export default function People() {
                     <b>{p.name}{p.isMe ? ' (you)' : ''}</b>
                     {known && !nudge && <span className={`sub${c.ok ? '' : ' fm-warn'}`}>{c.text}</span>}
                   </span>
-                  <svg className="fm-chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                  <span className="fm-chev"><Icon name="chev" size={20} /></span>
                 </button>
                 {nudge && <a className="fm-nudge" href={nudge.href} aria-label={nudge.label}>{nudge.text}</a>}
               </li>

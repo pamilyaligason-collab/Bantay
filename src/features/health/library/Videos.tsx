@@ -3,6 +3,7 @@ import { SubHeader } from '../../shell/SubHeader'
 import { embedUrl, forTopic, TOPICS, type Video } from './videosLogic'
 import '../health.css'
 import '../m7a.css'
+import { Icon } from '../../shell/Icon'
 
 function Card({ v, playing, onPlay }: { v: Video; playing: boolean; onPlay: () => void }) {
   const url = playing ? embedUrl(v) : null
@@ -14,7 +15,7 @@ function Card({ v, playing, onPlay }: { v: Video; playing: boolean; onPlay: () =
         <p className="sub vd-soon" role="status">Coming soon: this video is not set up yet.</p>
       ) : (
         <button type="button" className="vd-play" onClick={onPlay} aria-label={`Play ${v.title}`}>
-          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor" /></svg>
+          <Icon name="play" size={28} active />
         </button>
       )}
       <span className="vd-t"><b>{v.title}</b><span className="sub">{v.topic} · {v.minutes} min · {v.source}</span></span>
