@@ -33,7 +33,7 @@ export function buildFoods(recipes) {
     ...perServing(f.parts, recipes.ingredients),
     // only a fully verified food may claim USDA as its source; until then it is labelled as an estimate (Fable W3 review)
     ...(f.parts.every(([k]) => recipes.ingredients[k].verified === true)
-      ? { src: f.parts.length === 1 ? 'USDA SR Legacy' : 'USDA SR Legacy (recipe)' }
+      ? { src: f.parts.length === 1 ? 'USDA SR Legacy' : 'Recipe estimate from USDA SR Legacy ingredients' }
       : { src: 'Estimate, to be checked against USDA FoodData Central', estimate: true })
   }))
 }

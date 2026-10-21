@@ -54,6 +54,7 @@
 .nu-tile b { font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
 .nu-tile span { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
 .nu-tile em { font-style: normal; font-size: 14px; color: var(--muted); }
+.nu-tile .nu-est { font-size: 13px; font-weight: 600; color: var(--muted); }
 .nu-empty { font-size: 16px; color: var(--muted); padding: 8px 2px; }
 .nu-plate { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px 16px; background: var(--card); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
 .nu-picked { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one scrolling row keeps the tiles in view */

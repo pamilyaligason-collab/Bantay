@@ -58,10 +58,11 @@ export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
 
   const tile = (f: Food) => (
     <li key={f.key}>
-      <button type="button" className="nu-tile" onClick={() => add(f)} aria-label={`Add ${f.tl}, ${f.name}, ${f.serving_label}`}>
+      <button type="button" className="nu-tile" onClick={() => add(f)} aria-label={`Add ${f.tl}, ${f.name}, ${f.serving_label}${f.estimate ? ', estimate' : ''}`}>
         <b>{f.tl}</b>
         <span>{f.name}</span>
         <em>{f.serving_label}</em>
+        {f.estimate && <small className="nu-est">Estimate</small>}
       </button>
     </li>
   )
@@ -81,7 +82,7 @@ export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
       <div>
         <p className="nu-lab" id="nu-salty-l">Salty extras, one tap</p>
         <div className="nu-chips" role="group" aria-labelledby="nu-salty-l">
-          {salty.map((f) => <button key={f.key} type="button" className="nu-chip" disabled={busy} onClick={() => void salt(f)} aria-label={`Add ${f.tl} to ${mealName.en}, ${f.serving_label}`}>{f.tl}<small>{f.sodium_mg == null ? '–' : `${fmt(f.sodium_mg)} mg`}</small></button>)}
+          {salty.map((f) => <button key={f.key} type="button" className="nu-chip" disabled={busy} onClick={() => void salt(f)} aria-label={`Add ${f.tl} to ${mealName.en}, ${f.serving_label}`}>{f.tl}<small>{f.sodium_mg == null ? '–' : `${fmt(f.sodium_mg)} mg`}{f.estimate ? ' (estimate)' : ''}</small></button>)}
         </div>
       </div>
       <div>

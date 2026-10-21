@@ -23,7 +23,7 @@ const text = () => '[\n' + buildFoods(recipes).map((f) => ' ' + JSON.stringify(f
 const NUM = { kcal: 1008, sodium_mg: 1093, potassium_mg: 1092, protein_g: 1003 } // FDC nutrient ids
 /** Compare one ingredient with the nutrients `got` from FDC; prints OK/DIFF and returns true when it differs (or a value is missing). */
 function report(k, ing, description, got) {
-  const diffs = Object.entries(NUM).filter(([f]) => got[f] == null || Math.abs(got[f] - ing[f]) > Math.max(1, Math.abs(ing[f]) * 0.03)).map(([f]) => `${f} ${ing[f]} vs ${got[f] ?? 'missing'}`)
+  const diffs = Object.entries(NUM).filter(([f]) => got[f] == null || ing[f] == null || Math.abs(got[f] - ing[f]) > Math.max(1, Math.abs(ing[f]) * 0.03)).map(([f]) => `${f} ${ing[f]} vs ${got[f] ?? 'missing'}`)
   console.log(`${diffs.length ? 'DIFF' : 'OK  '} ${k} (${ing.fdc} "${description}")${diffs.length ? ': ' + diffs.join('; ') : ''}`)
   return diffs.length > 0
 }
