@@ -3,6 +3,8 @@ import { supabase } from '../../auth/client'
 import { getMember, onAuthChange, signOut } from '../../auth/session'
 import { Icon, type IconName } from '../../shell/Icon'
 import { listPinRequests } from '../api'
+import { db } from '../../../db'
+import { applyTheme, THEME_KEY, useSavedTheme, type ThemePref } from '../../shell/theme'
 import { useDeskPeople } from './people'
 import { DESK_GROUPS, DESK_LABELS, deskHref, parseDesk, type DeskPage, type PageProps } from './types'
 import Home from './Home'
@@ -97,6 +99,23 @@ function Help({ close }: { close: () => void }) {
   )
 }
 
+const NEXT_THEME: Record<ThemePref, ThemePref> = { system: 'light', light: 'dark', dark: 'system' }
+const THEME_ICON: Record<ThemePref, IconName> = { system: 'screen', light: 'sun', dark: 'moon' }
+const THEME_LABEL: Record<ThemePref, string> = { system: 'Theme: same as this computer', light: 'Theme: light', dark: 'Theme: dark' }
+
+/** Light / dark / system, saved where the app keeps it (same browser = same choice). */
+function ThemeButton() {
+  useSavedTheme()
+  const [t, setT] = useState<ThemePref>('system')
+  useEffect(() => { void db.kv.get(THEME_KEY).then((r) => setT(r?.value === 'light' || r?.value === 'dark' ? r.value : 'system'), () => undefined) }, [])
+  const next = () => {
+    const n = NEXT_THEME[t]
+    setT(n); applyTheme(n)
+    void db.kv.put({ key: THEME_KEY, value: n }).catch(() => undefined) // not saved in a private window; still applied now
+  }
+  return <button className="wa-ib" onClick={next} aria-label={`${THEME_LABEL[t]}. Change theme`} title={THEME_LABEL[t]}><Icon name={THEME_ICON[t]} /></button>
+}
+
 export default function WebShell() {
   const [admin, setAdmin] = useState<'checking' | 'yes' | 'no'>('checking')
   const [name, setName] = useState('')
@@ -146,6 +165,7 @@ export default function WebShell() {
         <a className="wa-brand" href={deskHref('home')} aria-label="Bantay Admin, dashboard"><Icon name="shield" /><span>Bantay Admin</span></a>
         <Search />
         <a className="wa-ib" href={deskHref('members')} aria-label={`${pins} PIN reset requests`}><Icon name="key" />{pins > 0 && <b>{pins}</b>}</a>
+        <ThemeButton />
         <button className="wa-ib" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
         <details className="wa-me">
           <summary aria-label={`Account: ${name || 'Admin'}`}><span className="wa-av" aria-hidden="true">{(name || 'A').slice(0, 1).toUpperCase()}</span><span className="wa-name">{name || 'Admin'}</span></summary>
