@@ -6,7 +6,7 @@ export default function MoveScreen() {
   return (
     <>
       <SubHeader title="Move" backHref="#health" backLabel="Back to Health" />
-      <MovePanel />
+      <div className="mv-page"><MovePanel /></div>
     </>
   )
 }

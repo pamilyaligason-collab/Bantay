@@ -18,9 +18,10 @@
 .mv-card > .sh-ic:last-child { color: var(--muted); flex: none; }
 .mv-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 44px; border: 0; background: none; font-size: 16px; font-weight: 600; padding: 0 6px; color: var(--act); }
 .mv-head { display: flex; gap: 12px; align-items: center; }
-.mv-head h3 { margin: 0; font-family: var(--f-display); font-size: 24px; font-weight: 600; }
+.mv-head h3 { margin: 0; font-family: var(--f-display); font-size: 20px; font-weight: 600; }
 .mv-steps { margin: 0; padding-left: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 18px; line-height: 1.4; }
-.mv-stop { border: 2px solid var(--red); background: var(--red-soft); border-radius: 18px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.mv-stop { border: 0; background: var(--warn-bg); border-radius: 18px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.mv-stop .sh-ic { color: var(--warn); }
 .mv-stop b { display: flex; align-items: center; gap: 8px; font-size: 17px; color: var(--ink); }
 .mv-stop ul { margin: 0; padding-left: 22px; font-size: 16px; }
 .mv-big { min-height: 56px; border: 0; border-radius: 999px; background: var(--green); color: var(--on-green); font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; padding: 0 20px; }
@@ -32,3 +33,6 @@
 .mv-rest p { font-size: 18px; font-weight: 600; }
 .mv-card:focus-visible, .mv-big:focus-visible, .mv-sec:focus-visible, .mv-back:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .mv-card { transition: background .15s; } }
+
+.mv-page .mv-card, .mv-page .mv-week { background: var(--card); box-shadow: var(--shadow); }
+.mv-page .mv-ring::before { background: var(--card); }

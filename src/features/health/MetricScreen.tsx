@@ -6,6 +6,8 @@ import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
 import { LabDetail } from './LabDetail'
+import { Icon } from '../shell/Icon'
+import { labVerdict, lastThree } from './labsLogic'
 import { entrySpec } from './readingPreview'
 import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
@@ -74,7 +76,7 @@ export default function MetricScreen({ code }: { code: string }) {
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {v && !activity && (() => { const st = rangeState(v.headline); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
+              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
           </div>
 

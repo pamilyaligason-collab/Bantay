@@ -20,7 +20,7 @@ function LabCard({ row }: { row: LabRow }) {
         <span className="lr-name">{metricLabel(r.test)}</span>
         <span className="lr-val">{formatNumber(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
       </span>
-      {v ? <span className={`lr-verdict ${pos}`}><Icon name={v.icon} size={20} />{v.word}</span> : <span className="lr-verdict none">{unitGap ? 'Not compared: different unit. Ask your doctor' : 'No range on the paper'}</span>}
+      {v ? <span className={`lr-verdict ${pos}`}><Icon name={v.icon} size={20} />{v.word}</span> : <span className="lr-verdict none">{unitGap ? 'Different unit, not compared' : 'No range on the paper'}</span>}
       {b && range && (
         <>
           <span className="lr-track" aria-hidden="true">
@@ -40,7 +40,8 @@ function LabCard({ row }: { row: LabRow }) {
 /** Lab results (session 8): "Ask about" (out of range) first, then "In the usual range"; each card has the value, a plain verdict, and a number line with the usual range. Opens #health/metric/<code>. */
 export function LabsList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
   const rows = latestByTest(readings.filter((r) => !isVital(r.test))).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
-  if (!ready || rows.length === 0) return null
+  if (!ready) return null
+  if (rows.length === 0) return <section aria-labelledby="lvn-labs" data-testid="labs-list"><h2 className="hd" id="lvn-labs">Labs</h2><div className="grp"><p className="sub" style={{ margin: 0, padding: 16 }}>No lab results yet. Scan a paper with Ask.</p></div></section>
   const g = groupLabs(rows)
   const groups: [string, string, LabRow[]][] = [['Ask about', 'ask', g.ask], ['In the usual range', 'usual', g.usual], ['Not compared', 'none', g.noRange]]
   return (
@@ -52,7 +53,7 @@ export function LabsList({ readings, thresholds, ready }: { readings: Reading[];
           {list.map((row) => <LabCard key={row.reading.test} row={row} />)}
         </div>
       ))}
-      <p className="sub" style={{ margin: '8px 4px 0' }}>Ranges are for information only and are not medical advice. Ask your doctor what is right for you.</p>
+      <p className="sub" style={{ margin: '8px 4px 0' }}>Ranges are for information only and are not medical advice. Ask your doctor what is right for you. Ask your doctor about any result marked not compared.</p>
     </section>
   )
 }

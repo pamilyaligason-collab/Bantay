@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { VIDEO_ID } from '../health/library/videosLogic'
 import { useOnline } from './useOnline'
@@ -9,6 +9,7 @@ import './media.css'
  *  We draw the poster ourselves (title + icon), so not even i.ytimg.com is contacted before the tap. The player is the no-cookie address. */
 export function LiteVideo({ id, title, start }: { id: string; title: string; start?: number }) {
   const [playing, setPlaying] = useState(false)
+  const frame = useRef<HTMLIFrameElement>(null)
   const online = useOnline()
   if (!VIDEO_ID.test(id)) return null
   const t = typeof start === 'number' && Number.isFinite(start) && start > 0 ? Math.floor(start) : null
@@ -19,9 +20,9 @@ export function LiteVideo({ id, title, start }: { id: string; title: string; sta
       {!online ? (
         <div className="lv-poster lv-off" role="status"><b>{title}</b><span>Open when online</span></div>
       ) : playing ? (
-        <iframe className="lv-frame" src={src} title={title} allow="encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+        <iframe ref={frame} className="lv-frame" src={src} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       ) : (
-        <button type="button" className="lv-poster lv-play" onClick={() => setPlaying(true)} aria-label={`Play ${title}`}>
+        <button type="button" className="lv-poster lv-play" onClick={() => { setPlaying(true); setTimeout(() => frame.current?.focus(), 0) }} aria-label={`Play ${title}`}>
           <span className="lv-btn" aria-hidden="true"><Icon name="play" size={32} active /></span>
           <b>{title}</b>
         </button>

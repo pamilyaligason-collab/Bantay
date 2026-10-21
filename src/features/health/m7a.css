@@ -101,10 +101,12 @@
 .ar-h { font-size: 24px; margin: 0; }
 .ar-body { margin: 0; line-height: 1.45; }
 .ar-more { align-self: flex-start; min-height: 44px; }
-.vd-topics { margin-top: 12px; flex-wrap: wrap; }
+.seg.vd-topics { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-top: 12px; }
+.seg.vd-topics button { flex: 0 0 auto; padding: 0 16px; }
+.vd-card .lv-play b { display: none; }
 .vd-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
 .vd-card { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
-.vd-t { display: flex; flex-direction: column; gap: 2px; flex: 1 1 140px; min-width: 0; }
+.vd-t { display: flex; flex-direction: column; gap: 2px; flex: none; min-width: 0; }
 .vd-soon { margin: 0; padding: 12px; flex: 1 1 100%; }
 
 /* Explore your body info panel */

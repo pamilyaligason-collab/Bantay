@@ -42,7 +42,7 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
         <h2 id="ask-title">What would you like to do?</h2>
         {ROWS.map((r, i) => (
           <button key={r.id} type="button" className="ask-row" data-autofocus={i === 0 ? '' : undefined} onClick={pick[r.id]}>
-            <span className="ask-ic"><Icon name={r.icon} size={26} /></span>
+            <Icon name={r.icon} size={26} tone={({ talk: 'medicine', scan: 'labs', upload: 'vitals' } as const)[r.id]} boxed />
             <span className="grow"><b>{r.title}</b><span className="sub">{r.sub}</span></span>
             <Icon name="chev" />
           </button>

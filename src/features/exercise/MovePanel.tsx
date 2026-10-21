@@ -17,9 +17,10 @@ const amount = (m: Move) => m.durationSec ? (m.durationSec >= 60 ? `${Math.round
 export function WeekRing({ minutes, goalMinutes, pct, strengthDays, goalDays }: ReturnType<typeof weekProgress>) {
   return (
     <div className="mv-week" role="group" aria-label="This week">
-      <div className="mv-ring" style={{ '--mv-pct': `${pct}%` } as React.CSSProperties} aria-hidden="true"><span>{pct}%</span></div>
+      <div className="mv-ring" style={{ '--mv-pct': `${pct}%` } as React.CSSProperties} aria-hidden="true">{pct > 0 && <span>{pct}%</span>}</div>
       <div className="mv-week-t">
         <b>{minutes} of {goalMinutes} minutes</b>
+        {pct === 0 && <span>Start with one move today</span>}
         <span>{strengthDays} of {goalDays} days of strength or balance</span>
       </div>
     </div>
@@ -59,7 +60,7 @@ export default function MovePanel({ notify }: { notify?: (msg: string) => void }
     return (
       <div className="mv" data-testid="move-detail">
         <button type="button" className="mv-back" onClick={() => { setOpen(null); setErr('') }}><Icon name="back" size={20} />All moves</button>
-        <div className="mv-head"><Icon name={GROUP_ICON[open.group]} tone="vitals" boxed size={24} /><div><h3>{open.name}</h3><p className="sub">{open.tl} - {amount(open)}</p></div></div>
+        <div className="mv-head"><Icon name={GROUP_ICON[open.group]} tone="vitals" boxed size={24} /><div><h3>{open.name}</h3><p className="sub">{open.tl} · {amount(open)}</p></div></div>
         <ol className="mv-steps">{open.steps.map((s) => <li key={s}>{s}</li>)}</ol>
         <div className="mv-stop" role="group" aria-label="Stop if">
           <b><Icon name="warn" size={20} />Stop if</b>
@@ -85,7 +86,7 @@ export default function MovePanel({ notify }: { notify?: (msg: string) => void }
               <li key={m.id}>
                 <button type="button" className="mv-card" onClick={() => setOpen(m)}>
                   <Icon name={GROUP_ICON[m.group]} tone="vitals" boxed size={22} />
-                  <span className="mv-card-t"><b>{m.name}</b><small>{GROUP_WORD[m.group]} - {amount(m)}</small></span>
+                  <span className="mv-card-t"><b>{m.name}</b><small>{GROUP_WORD[m.group]} · {amount(m)}</small></span>
                   <Icon name="chev" size={20} />
                 </button>
               </li>
