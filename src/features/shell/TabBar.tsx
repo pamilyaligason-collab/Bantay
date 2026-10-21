@@ -1,5 +1,6 @@
-import { Fragment, type CSSProperties } from 'react'
-import { ASK_EVENT } from '../assistant/Assistant'
+import { Fragment, useCallback, useState, type CSSProperties } from 'react'
+import { AskSheet } from './AskSheet'
+import { useKv } from './useKv'
 import { Icon, type IconName } from './Icon'
 import type { Tab } from './routes'
 import './shell.css'
@@ -13,6 +14,11 @@ const ITEMS: { id: Tab; label: string; icon: IconName }[] = [
 
 /** Five slots, mockup order: Today, Health, raised Ask, Family, Safety. Ask opens the assistant until it becomes a tab (P6). */
 export function TabBar({ active }: { active: Tab | null }) {
+  const [sheet, setSheet] = useState(false)
+  const [seen, setSeen, loaded] = useKv('askHintSeen', false)
+  const open = () => { setSheet(true); if (!seen) setSeen(true) }
+  const onClose = useCallback(() => { if (history.state?.bantayAsk) history.back(); else setSheet(false) }, [])
+  const onDone = useCallback(() => setSheet(false), [])
   const at = ITEMS.findIndex((t) => t.id === active)
   const pill = { '--slot': at < 2 ? at : at + 1, '--pill': at < 0 ? 0 : 1 } as CSSProperties // skip the Ask slot
   return (
@@ -20,8 +26,8 @@ export function TabBar({ active }: { active: Tab | null }) {
       {ITEMS.map((t, i) => (
         <Fragment key={t.id}>
           {i === 2 && (
-            <button type="button" className="sh-ask" aria-label="Ask Bantay" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event(ASK_EVENT))}>
-              <span className="sh-bub"><Icon name="chat" size={26} /></span>
+            <button type="button" className="sh-ask" aria-label="Ask Bantay" aria-haspopup="dialog" onClick={open}>
+              <span className="sh-bub"><Icon name="chat" size={26} /><span className="sh-cam" aria-hidden="true"><Icon name="camera" size={12} /></span></span>
               <span aria-hidden="true">Ask</span>
             </button>
           )}
@@ -31,6 +37,8 @@ export function TabBar({ active }: { active: Tab | null }) {
           </button>
         </Fragment>
       ))}
+      {loaded && !seen && !sheet && <p className="sh-hint" role="status">Scan papers here too</p>}
+      {sheet && <AskSheet onClose={onClose} onDone={onDone} />}
     </nav>
   )
 }
