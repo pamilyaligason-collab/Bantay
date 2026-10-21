@@ -1,6 +1,6 @@
 # Admin dashboard plan (2026-10-21)
 
-Status: **APPROVED 2026-10-21** (Lloyd: carers read-only, history field names only, IDs masked + logged Show, all F1-F8 in one wave). No migration applied; apply and deploy stay with Lloyd's "apply" / "merge".
+Status: **APPROVED 2026-10-21** (Lloyd: carers read-only, history field names only, IDs masked + logged Show, all F1-F8 in one wave). 0021 applied live 2026-10-21 by Lloyd (recorded in schema_migrations; 12 audit triggers), admin-members redeployed (E1). Web merge to main waits for Lloyd's "merge".
 Counts only; no names or health values in this file (public repo).
 
 ## 1. Where it lives
