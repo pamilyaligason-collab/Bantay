@@ -6,7 +6,10 @@
 .rc-h3 { font-size: 16px; margin: 0; }
 .rc-person { display: flex; flex-direction: column; gap: 12px; }
 .rc-paper { display: flex; flex-direction: column; gap: 8px; }
-.rc-check { width: 44px; height: 44px; margin: 0; accent-color: var(--green); }
+.rc-check { appearance: none; position: relative; width: 44px; height: 44px; margin: 0; border: 0; background: none; cursor: pointer; } /* 44 px hit area, 20 px drawn box */
+.rc-check::before { content: ""; position: absolute; inset: 12px; border: 2px solid var(--muted); border-radius: 4px; background: var(--card); }
+.rc-check:checked::before { background: var(--green2); border-color: var(--green2); }
+.rc-check:checked::after { content: ""; position: absolute; left: 18px; top: 14px; width: 6px; height: 11px; border: solid var(--on-green); border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .rc-qrow:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .rc-edit { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; align-items: end; }
 .rc-edit .dk-acts, .rc-edit .rc-err { grid-column: 1 / -1; }

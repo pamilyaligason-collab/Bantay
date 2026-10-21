@@ -171,7 +171,7 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
   .wa-menu .wa-shade { display: block; position: fixed; inset: var(--wa-top) 0 0 0; z-index: 24; border: 0; background: rgb(10 15 10 / .4); }
   .wa-main { padding: 16px; }
   .dk-head h1 { font-size: 22px; }
-  .dk-s3 { grid-column: span 12; }
+  .dk-s3, .dk-s6 { grid-column: span 12; }
   .dk-grid { gap: 12px; }
   .dk-form { grid-template-columns: minmax(0, 1fr); }
   .dk-panel { width: 100%; }
