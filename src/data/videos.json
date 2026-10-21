@@ -1,11 +1,11 @@
 {
-  "_todo": "TODO(Lloyd): every id below is a made-up placeholder (placeholder: true). Replace each with a real 11-character YouTube video id from a checked health-agency playlist and set placeholder to false. Placeholder videos never load a player.",
+  "_note": "Official videos, ids checked against YouTube oEmbed (2026-10-21). minutes is null where the length is not recorded. An entry with placeholder: true never loads a player.",
   "videos": [
-    { "id": "TODOvid0001", "placeholder": true, "title": "How to take your blood pressure at home", "topic": "Heart", "source": "Health agency playlist", "minutes": 4 },
-    { "id": "TODOvid0002", "placeholder": true, "title": "Taking medicines on time", "topic": "Heart", "source": "Health agency playlist", "minutes": 3 },
-    { "id": "TODOvid0003", "placeholder": true, "title": "Healthy plate for diabetes", "topic": "Diabetes", "source": "Health agency playlist", "minutes": 6 },
-    { "id": "TODOvid0004", "placeholder": true, "title": "Checking your sugar at home", "topic": "Diabetes", "source": "Health agency playlist", "minutes": 4 },
-    { "id": "TODOvid0005", "placeholder": true, "title": "Typhoon preparation in 5 minutes", "topic": "Safety", "source": "Disaster agency playlist", "minutes": 5 },
-    { "id": "TODOvid0006", "placeholder": true, "title": "Chair exercises for seniors", "topic": "Exercise", "source": "Health agency playlist", "minutes": 6 }
+    { "id": "M4ACYp75mjU", "placeholder": false, "title": "Hands-only CPR", "topic": "Safety", "source": "American Heart Association", "minutes": null },
+    { "id": "C8EO3SM0Y_w", "placeholder": false, "title": "BE FAST: signs of a stroke", "topic": "Safety", "source": "American Heart Association", "minutes": null },
+    { "id": "0xubzGiAjEU", "placeholder": false, "title": "Heat exhaustion and heatstroke", "topic": "Safety", "source": "Mayo Clinic", "minutes": null },
+    { "id": "gDBzUF4E1IU", "placeholder": false, "title": "Diabetic emergency: what to do", "topic": "Diabetes", "source": "British Red Cross", "minutes": null },
+    { "id": "b-uX6N4RZjg", "placeholder": false, "title": "Five a day: eating more fruit and vegetables", "topic": "Food", "source": "NHS", "minutes": null },
+    { "id": "AQimPkd7g5I", "placeholder": false, "title": "Lusog-Isip: looking after your mental health", "topic": "Mind", "source": "DOH Philippines", "minutes": null }
   ]
 }
