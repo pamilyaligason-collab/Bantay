@@ -1,4 +1,6 @@
-# Session 7 plan (2026-10-21) - for Lloyd's approval, no app code before "go"
+# Session 7 plan (2026-10-21)
+
+> **Status 2026-10-21:** B1-B5 were built by the cloud session on branch `s7-build` (PR #7: GPS-first weather, Today without empty cards, Tabler icons, Scan a paper, high audit fixes). Do not rebuild them from this plan. This branch keeps Part A, migration 0019 and the findings; the build table below is superseded by PR #7.
 
 Counts only; no names or health values in this file (public repo).
 
