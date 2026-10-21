@@ -5,7 +5,7 @@ drafts, the same rows the laptop import writes (`scripts/import/load.mjs`). Conf
 rest on confirm: a confirmed lab value becomes a reading (`lab_result_to_reading`, 0008), a confirmed prescription becomes
 medicines (`rx_to_medications`, 0014). **Nothing from a phone scan is confirmed by the server**, whatever the confidence.
 
-Needs migration `0020_scan_extract.sql` (after 0019, the records dedupe from the PC session). Rehearsal: `supabase/tests/scan_extract_rehearsal.sql`.
+Needs migration `0020_scan_extract.sql` (independent of 0019, the records dedupe from the PC session: either order works; its pre-check query must return 0 rows). Rehearsal: `supabase/tests/scan_extract_rehearsal.sql`.
 
 ## Contract with the app (lane L5)
 
@@ -39,7 +39,7 @@ Needs migration `0020_scan_extract.sql` (after 0019, the records dedupe from the
    "Reading" for it rather than an empty confirm sheet.
 
 Limits: at most 10 pages, 10 MB per page or PDF, 20 MB per document. Images: any `image/*` the bucket takes (jpeg, png, webp,
-heic; jpeg is safest for the model). `ingest_error` codes: `too_many_pages`, `too_large`, `unsupported_mime`, `no_pages`,
+heic; jpeg is safest for the model). `ingest_error` codes: `bad_path` (a page outside the person's own folder), `too_many_pages`, `too_large`, `unsupported_mime`, `no_pages`,
 `download`, `openrouter_<status>` (402 = no credit, 401 = bad key), `not_json`, `write`, `read`, `not_a_scan`,
 `too_many_tries` (three runs died mid-read), `failed`.
 

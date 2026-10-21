@@ -16,13 +16,18 @@
 --   ingest_error holds a short code only (never document text or values, B-7). The app retries a failed scan by setting its
 --   pages back to 'new'.
 
+-- Pre-check (must return 0 rows, else the unique index below fails):
+--   select document_id, count(*) from public.source_files where side is null and document_id is not null group by 1 having count(*) > 1;
+
+begin;
+
 -- ---------- source_files: page order, claim state, short error code ----------
 alter table public.source_files
   add column if not exists page_no int not null default 1,
   add column if not exists ingest_error text,
   add column if not exists ingest_tries int not null default 0;
 do $$ begin
-  alter table public.source_files add constraint source_files_page_no_check check (page_no between 1 and 50);
+  alter table public.source_files add constraint source_files_page_no_check check (page_no between 1 and 10);
 exception when duplicate_object then null; end $$;
 do $$ begin
   alter table public.source_files add constraint source_files_ingest_error_check check (ingest_error is null or ingest_error ~ '^[a-z0-9_]{1,40}$');
@@ -42,7 +47,7 @@ create index if not exists source_files_ingest_new on public.source_files (inges
 -- page is still on a phone with no signal is never read half). Null: read whatever pages are there (2 minutes after the last one).
 alter table public.documents add column if not exists page_count int;
 do $$ begin
-  alter table public.documents add constraint documents_page_count_check check (page_count is null or page_count between 1 and 50);
+  alter table public.documents add constraint documents_page_count_check check (page_count is null or page_count between 1 and 10);
 exception when duplicate_object then null; end $$;
 
 -- ---------- the claim: one run reads a document at a time ----------
@@ -89,3 +94,5 @@ create or replace function public.records_scan_due(p_limit int default 3, p_age 
 
 revoke execute on function public.records_scan_claim(uuid, interval, int), public.records_scan_due(int, interval, interval) from public, anon, authenticated;
 grant execute on function public.records_scan_claim(uuid, interval, int), public.records_scan_due(int, interval, interval) to service_role;
+
+commit;
