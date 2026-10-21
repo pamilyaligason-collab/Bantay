@@ -17,6 +17,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k.startsWith('safety/')) return { tab: 'safety', view: 'safety' } // #safety/warnings, #safety/map ... drawn by Safety itself
   if (k.startsWith('medid/')) return { tab: 'safety', view: 'medid' }
   if (k.startsWith('health/')) return { tab: 'health', view: null } // #health/metric/<code>
+  if (k.startsWith('admin/')) return { tab: null, view: 'admin' } // #admin/<page>/<id>: the wide admin dashboard
   if (VIEWS.has(k)) return { tab: null, view: k }
   return { tab: (TABS as string[]).includes(k) ? (k as Tab) : 'today', view: null }
 }

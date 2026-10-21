@@ -25,6 +25,7 @@ import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
+const AdminDesk = lazy(() => import('./features/admin/desk/Shell')) // the wide dashboard loads only for the admin
 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
@@ -88,17 +89,18 @@ export default function App() {
   }, [idx])
 
   const Tabbed = SCREENS[tab].Screen
+  const desk = view === 'admin' && hash.startsWith('#admin/') // #admin stays the phone page; #admin/<page> is the dashboard
   return (
-    <div className="bt">
+    <div className={desk ? 'bt bt-wide' : 'bt'}>
       <Sky state="clear" />
       {isTabView && !hasOwnHeader(hash) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
+        {desk ? <Suspense fallback={null}><AdminDesk /></Suspense> : view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
       </main>
-      <TabBar active={isTabView ? tab : null} />
-      <Assistant />
+      {!desk && <TabBar active={isTabView ? tab : null} />}
+      {!desk && <Assistant />}
       <RequiresUpdate />
       <UpdatedToast />
     </div>
