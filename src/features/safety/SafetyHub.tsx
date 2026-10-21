@@ -15,6 +15,9 @@ import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
 import { useKv } from './store'
+import { ActEarly } from './FirstAid'
+import { ddb } from '../docs/store'
+import { useEffect, useState } from 'react'
 import './safety.css'
 
 type Place = NonNullable<ReturnType<typeof usePlaceFrom>>
@@ -41,7 +44,32 @@ export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): str
   return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
 }
 
-/** Calm hub: ten big tiles, each with one live status line. Every number comes from data already on the phone. */
+/** Saved ID and insurance cards on this phone (one per card, front and back count once), plus cards that live only in the family Drive. Null while unknown. */
+export async function savedCards(): Promise<number | null> {
+  try {
+    const ids = new Set<string>()
+    for (const c of await ddb.cards.toArray()) if (c.kind === 'id_card' || c.kind === 'insurance_card') ids.add(c.docId)
+    for (const d of await ddb.driveOnly.toArray()) ids.add(d.docId)
+    return ids.size
+  } catch { return null }
+}
+
+export const idsLine = (n: number | null) => (n ? `${n} saved` : 'Add your PhilHealth, Senior ID, HMO')
+
+/** Full-width row under Call 911 and Medical ID. */
+export function IdsRow() {
+  const [n, setN] = useState<number | null>(null)
+  useEffect(() => { let on = true; void savedCards().then((v) => { if (on) setN(v) }); return () => { on = false } }, [])
+  return (
+    <a href="#docs" className="sf-ids">
+      <Icon name={ICONS.ids as IconName} tone="safety" boxed size={24} />
+      <span className="sf-ids-t"><b>IDs and insurance</b><span>{idsLine(n)}</span></span>
+      <Icon name="chev" size={20} />
+    </a>
+  )
+}
+
+/** Calm hub: nine big tiles, each with one live status line. Every number comes from data already on the phone. */
 export default function SafetyHub({ place }: { place: Place }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
@@ -65,18 +93,20 @@ export default function SafetyHub({ place }: { place: Place }) {
     ['#safety/hazards', 'hazard', 'Hazards at my location', hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null)],
     ['#gobag', 'bag', 'Go-bag', `${bag.done.length} of ${ALL_IDS.length} packed`],
     ['#safety/cards', 'cards', 'Safety cards', `${CARDS.length} how-to guides`],
-    ['#docs', 'ids', 'IDs and insurance', 'Keep copies handy'],
     ['#safety/sos', 'sos', 'Past SOS', last ? `Last one ${last}` : 'None sent']
   ]
   return (
-    <nav className="sf-tiles" aria-label="Safety topics">
-      {tiles.map(([href, icon, title, status]) => (
-        <a key={href} href={href} className="sf-tile">
-          <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
-          <span className="sf-tile-t">{title}</span>
-          <span className="sf-tile-s">{status}</span>
-        </a>
-      ))}
-    </nav>
+    <>
+      <nav className="sf-tiles" aria-label="Safety topics">
+        {tiles.map(([href, icon, title, status]) => (
+          <a key={href} href={href} className="sf-tile">
+            <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
+            <span className="sf-tile-t">{title}</span>
+            <span className="sf-tile-s">{status}</span>
+          </a>
+        ))}
+      </nav>
+      <ActEarly />
+    </>
   )
 }

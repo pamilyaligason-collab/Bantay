@@ -1,0 +1,514 @@
+{
+  "topics": [
+    {
+      "id": "stroke",
+      "title": "Stroke (BE FAST)",
+      "tl": "Stroke",
+      "urgency": "high",
+      "steps": [
+        "Check Balance, Eyes, Face, Arms, Speech. Sudden trouble in any one is a warning.",
+        "Face: ask them to smile. Does one side droop? Arms: ask them to lift both. Does one drift down?",
+        "Speech: ask them to say a short sentence. Is it slurred or strange?",
+        "Note the time the signs began and tell the 911 operator.",
+        "Keep them still and comfortable. Give no food, drink or pills."
+      ],
+      "call911": [
+        "Any one BE FAST sign, even if it fades",
+        "Sudden severe headache, or sudden confusion",
+        "Do not wait to see if it passes"
+      ],
+      "video": {
+        "id": "C8EO3SM0Y_w",
+        "title": "B.E. F.A.S.T. to spot a stroke",
+        "channel": "American Heart Association"
+      },
+      "sources": [
+        {
+          "label": "NHS: Stroke symptoms",
+          "url": "https://www.nhs.uk/conditions/stroke/symptoms/"
+        },
+        {
+          "label": "WHO: Stroke fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/stroke"
+        }
+      ]
+    },
+    {
+      "id": "dengue-warning-signs",
+      "title": "Dengue warning signs",
+      "tl": "Senyales ng dengue",
+      "urgency": "high",
+      "steps": [
+        "Fever for 2 to 7 days with body pain or headache can be dengue. Rest and sip fluids often.",
+        "Watch closely when the fever goes down, usually on day 3 to 7. This is when it can turn serious.",
+        "Go to a clinic or hospital at once for belly pain, repeated vomiting, bleeding gums or nose, black stool, or cold clammy skin.",
+        "Also go if the person is very sleepy, restless, or breathing fast.",
+        "Use paracetamol for fever only if a doctor agrees. Avoid aspirin and ibuprofen."
+      ],
+      "call911": [
+        "Cannot stay awake, or is confused",
+        "Severe belly pain or vomiting that will not stop",
+        "Bleeding that will not stop, or vomiting blood",
+        "Cold, clammy, pale skin, or trouble breathing"
+      ],
+      "video": null,
+      "sources": [
+        {
+          "label": "WHO: Dengue and severe dengue",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue"
+        },
+        {
+          "label": "NHS: Dengue",
+          "url": "https://www.nhs.uk/conditions/dengue/"
+        }
+      ]
+    },
+    {
+      "id": "cpr",
+      "title": "CPR (hands-only)",
+      "tl": "CPR",
+      "urgency": "normal",
+      "steps": [
+        "Check the person: no answer and not breathing normally. Shout for help.",
+        "Call 911, or ask someone to call and bring an AED if there is one.",
+        "Kneel beside them. Put the heel of one hand on the middle of the chest, the other hand on top.",
+        "Push hard and fast, about 2 pushes every second, at least 5 cm deep. Let the chest come back up each time.",
+        "Keep going without stopping until help or an AED arrives, or they wake up."
+      ],
+      "call911": [
+        "Always: call 911 first for anyone who will not wake and is not breathing normally"
+      ],
+      "video": {
+        "id": "M4ACYp75mjU",
+        "title": "Hands-Only CPR instructional video",
+        "channel": "American Heart Association"
+      },
+      "sources": [
+        {
+          "label": "American Red Cross: CPR steps",
+          "url": "https://www.redcross.org/take-a-class/cpr/performing-cpr/cpr-steps"
+        },
+        {
+          "label": "Video: National CPR Day, Philippine Red Cross",
+          "url": "https://www.youtube.com/watch?v=aks4waFy5yU"
+        }
+      ]
+    },
+    {
+      "id": "choking",
+      "title": "Choking (adult)",
+      "tl": "Nabulunan",
+      "urgency": "normal",
+      "steps": [
+        "Ask: are you choking? If they can cough, let them cough.",
+        "If they cannot cough, speak or breathe, call 911 or have someone call.",
+        "Lean them forward. Give 5 firm blows on the back between the shoulder blades.",
+        "If still stuck, give 5 quick inward and upward pushes just above the belly button.",
+        "Alternate 5 back blows and 5 belly pushes until it clears or they pass out. If they pass out, start CPR."
+      ],
+      "call911": [
+        "They cannot cough, speak or breathe",
+        "They pass out",
+        "Anything is still stuck after the first round"
+      ],
+      "video": {
+        "id": "8R3RWC-xx1I",
+        "title": "What to do when an adult is choking",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "Video: American Red Cross, adult choking",
+          "url": "https://www.youtube.com/watch?v=8R3RWC-xx1I"
+        }
+      ]
+    },
+    {
+      "id": "bleeding",
+      "title": "Heavy bleeding",
+      "tl": "Dumudugo",
+      "urgency": "normal",
+      "steps": [
+        "Call 911 if the blood is spurting, soaking through, or will not stop.",
+        "Press hard directly on the wound with a clean cloth or your gloved hand.",
+        "Keep pressing. Do not lift to peek. Add more cloth on top if it soaks through.",
+        "Once it slows, wrap a firm bandage over the pad. Not so tight that fingers turn pale or numb.",
+        "Lay the person down and keep them warm until help arrives."
+      ],
+      "call911": [
+        "Blood spurts or soaks through a thick pad",
+        "Bleeding does not slow after 10 minutes of pressure",
+        "The person is pale, faint or confused",
+        "A deep wound on the head, chest or belly"
+      ],
+      "video": {
+        "id": "YJB3fI3T1oo",
+        "title": "How to use direct pressure to control life-threatening bleeding",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "Video: Bleeding, Philippine Red Cross",
+          "url": "https://www.youtube.com/watch?v=caPHddkuT4M"
+        },
+        {
+          "label": "Video: American Red Cross, direct pressure",
+          "url": "https://www.youtube.com/watch?v=YJB3fI3T1oo"
+        }
+      ]
+    },
+    {
+      "id": "heart-attack",
+      "title": "Heart attack",
+      "tl": "Atake sa puso",
+      "urgency": "normal",
+      "steps": [
+        "Signs: pressure or squeezing in the chest, pain spreading to the arm, jaw or back, sweating, breathlessness, nausea.",
+        "Call 911 right away. Do not drive yourself.",
+        "Sit the person down and keep them calm and still.",
+        "If a doctor has prescribed chest-pain medicine, help them take it as directed.",
+        "If they stop responding and are not breathing normally, start CPR."
+      ],
+      "call911": [
+        "Chest pain or pressure lasting more than a few minutes",
+        "Pain with sweating, breathlessness or feeling faint",
+        "Any time you are unsure: call"
+      ],
+      "video": {
+        "id": "Z5QJ7tz2OTc",
+        "title": "How to help someone experiencing a heart attack",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Heart attack",
+          "url": "https://www.nhs.uk/conditions/heart-attack/"
+        }
+      ]
+    },
+    {
+      "id": "burns",
+      "title": "Burns",
+      "tl": "Paso o sunog",
+      "urgency": "normal",
+      "steps": [
+        "Move away from the heat. Remove rings, watches and tight clothing near the burn before it swells.",
+        "Cool the burn under cool running water for 20 minutes. Not ice.",
+        "Do not pop blisters. Do not put toothpaste, oil or butter on it.",
+        "Cover loosely with a clean non-fluffy cover, such as kitchen cling film or a clean cloth.",
+        "Keep the person warm. Give paracetamol for pain if they can normally take it."
+      ],
+      "call911": [
+        "Burn bigger than the person's hand, or on the face, hands, feet or private parts",
+        "Deep burn, white, brown or charred skin",
+        "Burn from electricity or chemicals",
+        "Trouble breathing after smoke, or a burn in a baby or older adult"
+      ],
+      "video": {
+        "id": "ELrT-y1nsJk",
+        "title": "How do you care for a burn",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Burns and scalds",
+          "url": "https://www.nhs.uk/conditions/burns-and-scalds/"
+        }
+      ]
+    },
+    {
+      "id": "heat-stroke",
+      "title": "Heat stroke",
+      "tl": "Heat stroke",
+      "urgency": "normal",
+      "steps": [
+        "Signs: very hot skin, confusion, fainting, a fast pulse, headache. Sweating may stop.",
+        "Call 911. Heat stroke is an emergency.",
+        "Move them into shade or a cool room. Remove extra clothing.",
+        "Cool the body fast: wet skin with cool water and fan, or put cool wet cloths on neck, armpits and groin.",
+        "If fully awake, give small sips of cool water. Do not force fluids."
+      ],
+      "call911": [
+        "Confused, very sleepy or fainting",
+        "Hot skin with no sweat",
+        "A seizure, or not getting better in 15 minutes"
+      ],
+      "video": {
+        "id": "0xubzGiAjEU",
+        "title": "Mayo Clinic Minute: Heat exhaustion and heatstroke",
+        "channel": "Mayo Clinic"
+      },
+      "sources": [
+        {
+          "label": "NHS: Heat exhaustion and heatstroke",
+          "url": "https://www.nhs.uk/conditions/heat-exhaustion-heatstroke/"
+        }
+      ]
+    },
+    {
+      "id": "seizure",
+      "title": "Seizure",
+      "tl": "Seizure",
+      "urgency": "normal",
+      "steps": [
+        "Stay calm and note the time it started.",
+        "Clear hard or sharp things away. Cushion their head with something soft.",
+        "Do not hold them down. Never put anything in their mouth.",
+        "When shaking stops, roll them gently onto their side.",
+        "Stay with them until fully awake. Speak softly and tell them what happened."
+      ],
+      "call911": [
+        "It lasts more than 5 minutes",
+        "A second seizure follows, or they do not wake up",
+        "First seizure ever, or an injury, pregnancy, or trouble breathing afterwards"
+      ],
+      "video": {
+        "id": "7MPJauo4DdY",
+        "title": "How to help someone who is having a seizure",
+        "channel": "British Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Epilepsy",
+          "url": "https://www.nhs.uk/conditions/epilepsy/"
+        },
+        {
+          "label": "Video: British Red Cross, seizure",
+          "url": "https://www.youtube.com/watch?v=7MPJauo4DdY"
+        }
+      ]
+    },
+    {
+      "id": "fainting",
+      "title": "Fainting",
+      "tl": "Nahimatay",
+      "urgency": "normal",
+      "steps": [
+        "Lay the person flat on their back. Raise their legs about 30 cm if you can.",
+        "Loosen tight collars and belts. Give them air and space.",
+        "If they are breathing and do not wake within a minute, roll them onto their side and call 911.",
+        "When they wake, keep them lying down for a few minutes. Sit up slowly.",
+        "Give water once fully alert. Do not give food or drink to someone who is not awake."
+      ],
+      "call911": [
+        "Does not wake within a minute",
+        "Chest pain, trouble breathing or a very uneven heartbeat",
+        "Injured in the fall, pregnant, or a first-ever faint in an older adult",
+        "Faints again"
+      ],
+      "video": {
+        "id": "oF6NS7iJyAA",
+        "title": "Helping someone who is unresponsive and breathing",
+        "channel": "British Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Fainting",
+          "url": "https://www.nhs.uk/symptoms/fainting/"
+        }
+      ]
+    },
+    {
+      "id": "fracture",
+      "title": "Broken bone",
+      "tl": "Baling buto",
+      "urgency": "normal",
+      "steps": [
+        "Keep the person still. Do not try to straighten the bone.",
+        "Support the injured part in the position you found it, with rolled clothes or a pillow.",
+        "Cover any open wound with a clean cloth. Press around it, not on the bone.",
+        "Put a cold pack wrapped in cloth on it for pain and swelling.",
+        "Do not let them eat or drink in case they need an operation. Get them to a hospital."
+      ],
+      "call911": [
+        "Bone through the skin, or heavy bleeding",
+        "Neck, back or head injury",
+        "Leg or hip injury they cannot move",
+        "Numb, pale or blue fingers or toes below the injury"
+      ],
+      "video": {
+        "id": "IPlazeozEOU",
+        "title": "Broken bone: first aid steps and key action",
+        "channel": "British Red Cross"
+      },
+      "sources": [
+        {
+          "label": "Video: British Red Cross, broken bone",
+          "url": "https://www.youtube.com/watch?v=IPlazeozEOU"
+        }
+      ]
+    },
+    {
+      "id": "drowning",
+      "title": "Drowning",
+      "tl": "Nalunod",
+      "urgency": "normal",
+      "steps": [
+        "Shout for help and call 911. Reach or throw something that floats. Do not swim out unless trained.",
+        "Once out of the water, check if they wake and breathe normally.",
+        "If not breathing, lay them flat and start CPR. Begin with 5 rescue breaths if you know how.",
+        "Keep going until help arrives.",
+        "If they wake, lay them on their side, keep them warm, and still go to a hospital."
+      ],
+      "call911": [
+        "Always call 911 for any drowning, even if they seem fine afterwards",
+        "Coughing, trouble breathing or sleepiness hours later"
+      ],
+      "video": {
+        "id": "nfh5WgCDwMo",
+        "title": "What to do if you suspect someone is drowning",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "WHO: Drowning fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/drowning"
+        }
+      ]
+    },
+    {
+      "id": "snake-bite",
+      "title": "Snake bite",
+      "tl": "Kagat ng ahas",
+      "urgency": "normal",
+      "steps": [
+        "Move away from the snake. Keep the person calm and still. Moving speeds the venom.",
+        "Call 911 or get to a hospital quickly.",
+        "Keep the bitten limb still and at about heart level. Take off rings and tight items.",
+        "Do not cut the bite, suck it, use a tourniquet, or apply ice.",
+        "Note what the snake looked like if safe. Do not try to catch it."
+      ],
+      "call911": [
+        "Every snake bite is an emergency",
+        "Swelling spreading, drooping eyelids, trouble breathing or speaking"
+      ],
+      "video": {
+        "id": "hAgkZfCaIQ4",
+        "title": "Every snakebite should be treated as a medical emergency",
+        "channel": "World Health Organization"
+      },
+      "sources": [
+        {
+          "label": "WHO: Snakebite envenoming",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/snakebite-envenoming"
+        }
+      ]
+    },
+    {
+      "id": "dog-bite-rabies",
+      "title": "Dog or cat bite (rabies)",
+      "tl": "Kagat ng aso o pusa",
+      "urgency": "normal",
+      "steps": [
+        "Wash the bite or scratch right away with soap and running water for 15 minutes.",
+        "Put on a clean cover. Do not close a deep wound tightly.",
+        "Go to an Animal Bite Treatment Centre the same day. Rabies shots work only if started early.",
+        "Do not wait to see if the animal stays healthy. Do not use herbs, garlic or stones.",
+        "Tell the doctor about the animal and any past tetanus shot."
+      ],
+      "call911": [
+        "Bleeding that will not stop",
+        "Bite on the face, head or neck",
+        "Fever, confusion or fear of water after any animal bite"
+      ],
+      "video": {
+        "id": "AaL7zL5S7Ww",
+        "title": "DOH: Higit sa kalahati ng kaso ng rabies",
+        "channel": "Department of Health (Philippines)"
+      },
+      "sources": [
+        {
+          "label": "WHO: Rabies fact sheet",
+          "url": "https://www.who.int/news-room/fact-sheets/detail/rabies"
+        },
+        {
+          "label": "Video: Rabies, our time to act is now, WHO",
+          "url": "https://www.youtube.com/watch?v=_hchkrLTr98"
+        }
+      ]
+    },
+    {
+      "id": "low-sugar",
+      "title": "Low blood sugar",
+      "tl": "Mababang asukal",
+      "urgency": "normal",
+      "steps": [
+        "Signs: shaky, sweaty, hungry, pale, confused, or acting oddly. Think of it if they have diabetes.",
+        "If they can swallow safely, give fast sugar: 3 teaspoons of sugar in water, or half a glass of juice.",
+        "Wait 15 minutes. Check sugar if you have a meter.",
+        "If still low or symptoms stay, give the sugar again.",
+        "Once better, give a snack such as bread or biscuits."
+      ],
+      "call911": [
+        "They are too drowsy to swallow safely",
+        "They pass out or have a seizure",
+        "Not better after two rounds of sugar"
+      ],
+      "video": {
+        "id": "gDBzUF4E1IU",
+        "title": "Diabetic emergency: first aid steps and key action",
+        "channel": "British Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Low blood sugar",
+          "url": "https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/"
+        }
+      ]
+    },
+    {
+      "id": "allergic-reaction",
+      "title": "Severe allergic reaction",
+      "tl": "Matinding allergy",
+      "urgency": "normal",
+      "steps": [
+        "Signs: swollen lips or face, hives, wheezing, throat tightness, dizziness, or vomiting after food, a sting or medicine.",
+        "Call 911 right away.",
+        "If they have a prescribed adrenaline pen, help them use it at once, in the outer thigh.",
+        "Lay them flat with legs raised. If they struggle to breathe, let them sit up.",
+        "Stay with them. Follow the pen instructions if a second dose is needed."
+      ],
+      "call911": [
+        "Trouble breathing or a tight throat",
+        "Swelling of the face or tongue",
+        "Feeling faint or collapsing"
+      ],
+      "video": {
+        "id": "O-8pPTVql5k",
+        "title": "Anaphylactic reaction: symptoms and treatment",
+        "channel": "American Red Cross"
+      },
+      "sources": [
+        {
+          "label": "NHS: Anaphylaxis",
+          "url": "https://www.nhs.uk/conditions/anaphylaxis/"
+        }
+      ]
+    },
+    {
+      "id": "falls",
+      "title": "After a fall",
+      "tl": "Pagkatapos mahulog",
+      "urgency": "normal",
+      "steps": [
+        "Do not rush to pull them up. Ask where it hurts and stay calm.",
+        "Check for head, neck, back, hip or wrist pain, bleeding, or confusion.",
+        "If none of those and they feel able, help them roll to the side, then up to hands and knees and onto a sturdy chair.",
+        "If they cannot get up, keep them warm with a blanket and call for help.",
+        "Tell their doctor about any fall, even without injury."
+      ],
+      "call911": [
+        "Hit the head, especially on a blood thinner",
+        "Cannot move, or hip, back or neck pain",
+        "Confused, bleeding badly, or chest pain"
+      ],
+      "video": null,
+      "sources": [
+        {
+          "label": "NHS: Falls",
+          "url": "https://www.nhs.uk/conditions/falls/"
+        }
+      ]
+    }
+  ]
+}
