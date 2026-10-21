@@ -3,6 +3,7 @@ import Avatar from '../features/admin/Avatar'
 import '../features/admin/admin.css'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
+import { LabsList } from '../features/health/LabsList'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines, MedicinesSummary } from '../features/health/Medicines'
 import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
@@ -14,6 +15,7 @@ import { HealthLinks } from '../features/health/HealthLinks'
 import Library from '../features/health/library/Library'
 import Article from '../features/health/library/Article'
 import Videos from '../features/health/library/Videos'
+import MoveScreen from '../features/exercise/MoveScreen'
 import Refill from '../features/health/Refill'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
@@ -46,6 +48,7 @@ export default function Health() {
   if (hash === '#health/library') return <Library />
   if (hash === '#health/videos') return <Videos />
   if (hash.startsWith('#health/library/')) return <Article rawKey={safeDecode(hash.slice('#health/library/'.length))} />
+  if (hash === '#health/move') return <MoveScreen />
   if (hash === '#health/refill') return <Refill />
   if (hash === '#health/visits') return <Visits />
   if (hash === '#health/summary') return <VisitSummary />
@@ -110,9 +113,14 @@ function Overview() {
         <span className="grow">Explore your body<small>See how each part works and when to see a doctor</small></span>
         <Icon name="chev" size={20} />
       </a>
+      <a className="card hv-explore" href="#health/move">
+        <Icon name="move" tone="vitals" boxed />
+        <span className="grow">Move<small>Gentle exercise picks for today and your week</small></span>
+        <Icon name="chev" size={20} />
+      </a>
       {personId && <MedicinesSummary personId={personId} />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="vitals" />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="labs" />}
+      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
+      {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {personId && <HealthLinks personId={personId} />}
     </>
   )

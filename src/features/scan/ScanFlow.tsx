@@ -10,7 +10,7 @@ import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { convex, defaultQuad, type Mode, type Quad } from './crop'
 import { scannerKind, scanNative } from './nativeScan'
-import { closeScan } from './open'
+import { closeScan, takePendingFile } from './open'
 import { cropToJpeg, decodePhoto, rotateCanvas } from './pipeline'
 import './scan.css'
 
@@ -127,10 +127,12 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
     setBusy(false)
   }
 
-  const onPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+  const onPhoto = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     e.target.value = ''
-    if (!f) return
+    if (f) void openFile(f)
+  }
+  const openFile = async (f: File) => {
     setErr('')
     setBusy(true)
     try {
@@ -144,6 +146,8 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
     }
     setBusy(false)
   }
+
+  useEffect(() => { const f = takePendingFile(); if (f) void openFile(f) }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival from the Ask sheet
 
   const rotate = () => { if (src) { setSrc(rotateCanvas(src)); setQuad(defaultQuad()) } }
   const retake = () => { setSrc(null); setStage(pages.length ? 'pages' : 'start'); openCamera() }

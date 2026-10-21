@@ -93,7 +93,7 @@ describe('Health overview', () => {
     render(<Health />)
     const hrefs = async (name: RegExp) => (await screen.findByRole('link', { name })).getAttribute('href')
     expect(await hrefs(/^Health library/)).toBe('#health/library')
-    expect(screen.queryByRole('link', { name: /^Videos/ })).toBeNull() // hidden while every video id is a placeholder
+    expect(await hrefs(/^Videos/)).toBe('#health/videos')
     expect(await hrefs(/^Refills/)).toBe('#health/refill')
     expect(await hrefs(/^Doctor visits/)).toBe('#health/visits')
     expect(await hrefs(/^Papers · /)).toBe('#health/papers')

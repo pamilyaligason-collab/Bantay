@@ -11,3 +11,15 @@ export function closeScan() {
   if (history.state?.bantayScan) history.back()
   else location.hash = '#health/papers'
 }
+
+// A photo picked in the Ask sheet waits here until the scan flow opens and takes it (same crop path as "Choose a photo").
+let pending: File | null = null
+export function openScanWithFile(f: File) {
+  pending = f
+  openScan()
+}
+export function takePendingFile(): File | null {
+  const f = pending
+  pending = null
+  return f
+}

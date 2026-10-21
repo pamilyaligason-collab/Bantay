@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { openChat, skipOnboarding } from './helpers'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
@@ -44,7 +44,7 @@ test('button opens a dialog, Esc closes it, focus returns', async ({ page }) => 
   await page.goto('/')
   const fab = page.getByRole('button', { name: 'Ask Bantay' })
   await expect(fab).toBeVisible()
-  await fab.click()
+  await openChat(page)
   await expect(page.getByRole('dialog', { name: 'Ask Bantay' })).toBeVisible()
   await expect(page.getByLabel('Your question')).toBeFocused()
   await page.keyboard.press('Escape')
@@ -54,7 +54,7 @@ test('button opens a dialog, Esc closes it, focus returns', async ({ page }) => 
 
 test('focus stays inside the sheet and the Back gesture closes it', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Ask Bantay' }).click()
+  await openChat(page)
   for (let i = 0; i < 8; i++) {
     await page.keyboard.press('Tab')
     expect(await page.evaluate(() => !!document.activeElement?.closest('[role=dialog]'))).toBe(true)
@@ -82,11 +82,11 @@ test.describe('with a mocked webhook', () => {
     await page.route(HOOK, (route) => route.request().method() === 'OPTIONS' ? route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' } }) : route.fallback())
     await page.goto('/')
     // Opening the sheet makes Dexie create the health database; seed after that.
-    await page.getByRole('button', { name: 'Ask Bantay' }).click()
+    await openChat(page)
     await page.keyboard.press('Escape')
     await seedPerson(page)
     const ask = async () => {
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await openChat(page)
       await page.getByLabel('Your question').fill('I took my test med')
       await page.getByRole('button', { name: 'Send' }).click()
       await expect(page.getByRole('group', { name: /Draft/ })).toBeVisible()
@@ -111,7 +111,7 @@ test.describe('with a mocked webhook', () => {
         : route.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { reply: 'Sure.', tool_calls: [{ name: 'open_screen', arguments: { tab: 'health' } }] } })
     )
     await page.goto('/')
-    await page.getByRole('button', { name: 'Ask Bantay' }).click()
+    await openChat(page)
     await page.getByLabel('Your question').fill('show health')
     await page.getByRole('button', { name: 'Send' }).click()
     await page.getByRole('button', { name: 'Open Health' }).click()
@@ -126,7 +126,7 @@ test.describe('with a mocked webhook', () => {
         : route.fulfill({ status: 429, headers: { 'access-control-allow-origin': '*' }, json: { error: 'limit' } })
     )
     await page.goto('/')
-    await page.getByRole('button', { name: 'Ask Bantay' }).click()
+    await openChat(page)
     await page.getByLabel('Your question').fill('hi')
     await page.getByRole('button', { name: 'Send' }).click()
     await expect(page.getByText(/used all of today/)).toBeVisible()

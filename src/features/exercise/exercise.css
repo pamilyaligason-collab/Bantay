@@ -1,0 +1,38 @@
+/* Move: gentle exercise picks. v6 tokens only; body 16-17px, targets 44px+, main actions 56px. */
+.mv { display: flex; flex-direction: column; gap: 14px; font-size: 16px; color: var(--ink); }
+.mv p { margin: 0; }
+.mv-week { display: flex; align-items: center; gap: 16px; background: var(--card2); border-radius: 20px; padding: 14px 16px; }
+.mv-ring { --mv-pct: 0%; width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center; background: conic-gradient(var(--green2) var(--mv-pct), var(--line) 0); position: relative; }
+.mv-ring::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--card2); }
+.mv-ring span { position: relative; font-weight: 700; font-size: 15px; }
+.mv-week-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mv-week-t b { font-size: 20px; font-family: var(--f-display); font-weight: 600; }
+.mv-week-t span { font-size: 15px; color: var(--muted); }
+.mv-n { font-size: 16px; color: var(--ink); background: var(--warn-bg); border-radius: 14px; padding: 10px 14px; }
+.mv-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mv-card, .mv-back, .mv-sec { font: inherit; color: var(--ink); cursor: pointer; }
+.mv-card { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 72px; border: 0; border-radius: 20px; background: var(--card2); padding: 10px 14px; text-align: left; box-sizing: border-box; }
+.mv-card-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mv-card-t b { font-size: 17px; overflow-wrap: anywhere; }
+.mv-card-t small { font-size: 14px; color: var(--muted); }
+.mv-card > .sh-ic:last-child { color: var(--muted); flex: none; }
+.mv-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 44px; border: 0; background: none; font-size: 16px; font-weight: 600; padding: 0 6px; color: var(--act); }
+.mv-head { display: flex; gap: 12px; align-items: center; }
+.mv-head h3 { margin: 0; font-family: var(--f-display); font-size: 20px; font-weight: 600; }
+.mv-steps { margin: 0; padding-left: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 18px; line-height: 1.4; }
+.mv-stop { border: 0; background: var(--warn-bg); border-radius: 18px; padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+.mv-stop .sh-ic { color: var(--warn); }
+.mv-stop b { display: flex; align-items: center; gap: 8px; font-size: 17px; color: var(--ink); }
+.mv-stop ul { margin: 0; padding-left: 22px; font-size: 16px; }
+.mv-big { min-height: 56px; border: 0; border-radius: 999px; background: var(--green); color: var(--on-green); font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; padding: 0 20px; }
+.mv-sec { min-height: 48px; border: 2px solid var(--green2); background: none; border-radius: 999px; font-size: 16px; font-weight: 600; padding: 0 18px; align-self: flex-start; }
+.mv-big:disabled, .mv-sec:disabled { opacity: .55; }
+.mv-note { display: flex; gap: 12px; align-items: center; }
+.mv-note p { font-size: 18px; font-weight: 600; }
+.mv-rest { display: flex; gap: 12px; align-items: center; background: var(--red-soft); border-radius: 18px; padding: 14px 16px; }
+.mv-rest p { font-size: 18px; font-weight: 600; }
+.mv-card:focus-visible, .mv-big:focus-visible, .mv-sec:focus-visible, .mv-back:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .mv-card { transition: background .15s; } }
+
+.mv-page .mv-card, .mv-page .mv-week { background: var(--card); box-shadow: var(--shadow); }
+.mv-page .mv-ring::before { background: var(--card); }

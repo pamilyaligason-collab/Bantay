@@ -131,3 +131,21 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 /* Dark: --green on --soft is 1.6:1, so the avatar initial and icon use --ink. */
 :root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }
+
+/* Ask choice sheet (S8 L2): three 76px rows over a dimmed screen; the camera badge and one-time hint sit on the Ask tab. */
+.sh-tabs .sh-bub { position: relative; }
+.sh-tabs .sh-cam { position: absolute; right: -4px; bottom: -2px; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); color: var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--ground); }
+.sh-tabs .sh-cam .sh-ic { color: var(--ink); }
+.sh-hint { position: absolute; left: 50%; bottom: calc(100% + 38px); transform: translateX(-50%); margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+.ask-back { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; }
+.ask-sheet { width: 100%; max-width: 520px; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 18px 16px calc(14px + env(safe-area-inset-bottom)); box-sizing: border-box; color: var(--ink); animation: ask-up var(--dur-sheet) var(--ease-sheet); }
+.ask-sheet h2 { margin: 0 0 4px; font-family: var(--f-display); font-size: 22px; }
+.ask-row { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 10px 14px; box-sizing: border-box; width: 100%; border: 0; border-radius: 18px; background: var(--cell); color: var(--ink); text-align: left; font-size: 17px; }
+.ask-row b { display: block; font-size: 18px; font-weight: 700; }
+.ask-row .sub { display: block; font-size: 15px; }
+.ask-row:focus-visible, .ask-cancel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ask-cancel { min-height: 48px; }
+.ask-pdf { display: flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 15px; color: var(--ink); text-decoration: underline; }
+.ask-pdf:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }

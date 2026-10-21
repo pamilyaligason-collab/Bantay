@@ -41,10 +41,11 @@ describe('tab shell', () => {
     }
   })
 
-  it('centre Ask opens the assistant; no floating button remains', async () => {
+  it('centre Ask opens the choice sheet, Talk reaches the assistant; no floating button remains', async () => {
     render(<App />)
     expect(document.querySelector('.as-fab')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Ask Bantay' }))
+    fireEvent.click(await screen.findByRole('button', { name: /Talk to Jack Jack/ }))
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Ask Bantay' })).toBeTruthy())
   })
 
