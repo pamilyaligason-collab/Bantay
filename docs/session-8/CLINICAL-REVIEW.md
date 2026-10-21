@@ -385,3 +385,31 @@ The six official health videos' titles, as shown in the app (the videos themselv
 4. Diabetic emergency: what to do
 5. Five a day: eating more fruit and vegetables
 6. Lusog-Isip: looking after your mental health
+
+## W2 Safety: Act early first-aid pages
+
+Code: `src/features/safety/firstaid.json` (17 topics, shown at `#safety/firstaid/<id>`). All steps and "Call 911 when" lines are Bantay's own words, written from general knowledge of the linked guidance, NOT copied from fetched pages. Footer on every page: "General first-aid guidance, not a diagnosis." Please check each topic against its linked source and Philippine practice (for example 911, Animal Bite Treatment Centres, paracetamol only).
+
+1. Stroke (BE FAST): signs, "note the time", no food, drink or pills.
+2. Dengue warning signs: warning-sign list, "watch when the fever goes down, usually day 3 to 7", paracetamol only if a doctor agrees, avoid aspirin and ibuprofen. REVIEW: wording of the "go at once" list and the paracetamol line.
+3. CPR (hands-only): about 2 pushes per second, at least 5 cm deep.
+4. Choking (adult): 5 back blows then 5 inward-upward belly pushes, alternate; CPR if they pass out.
+5. Heavy bleeding: direct pressure, no tourniquet advice, "10 minutes of pressure" as a call-911 line. REVIEW: the 10-minute figure is our own choice.
+6. Heart attack: signs, "do not drive yourself", "help them take prescribed chest-pain medicine as directed". Aspirin is deliberately NOT mentioned. REVIEW: confirm omission.
+7. Burns: cool running water 20 minutes, no ice or home remedies, cover loosely, paracetamol for pain. REVIEW: the call-911 size rule ("bigger than the person's hand").
+8. Heat stroke: cooling steps and small sips only if fully awake.
+9. Seizure: time it, protect the head, nothing in the mouth, recovery position, call at 5 minutes.
+10. Fainting: flat, legs raised about 30 cm, call if no wake in a minute. REVIEW: the one-minute figure.
+11. Broken bone: keep still, cold pack, nothing to eat or drink.
+12. Drowning: reach or throw, CPR starting with 5 rescue breaths, hospital even if they recover. REVIEW: rescue-breath advice for lay people.
+13. Snake bite: still limb at heart level, no cutting, sucking, tourniquet or ice.
+14. Dog or cat bite: wash 15 minutes with soap and water, "Go to an Animal Bite Treatment Centre the same day".
+15. Low blood sugar: 3 teaspoons of sugar in water or half a glass of juice, repeat after 15 minutes. REVIEW: the amounts are ours.
+16. Severe allergic reaction: prescribed adrenaline pen in the outer thigh, call 911.
+17. After a fall: do not rush to lift, check pain and confusion, roll to side and up via hands and knees, call if head strike on a blood thinner.
+
+Sources still UNVERIFIED as web pages: the DOH rabies video (AaL7zL5S7Ww) and the AHA videos (M4ACYp75mjU, C8EO3SM0Y_w) were checked by YouTube oEmbed only; no AHA or DOH web page is linked. The NHS epilepsy page (linked for Seizure) was opened but its seizure first-aid section was not read line by line.
+
+## W2 Safety: IDs and insurance row
+
+"{n} saved" counts distinct ID and insurance cards stored on this phone plus Drive-only cards. With none: "Add your PhilHealth, Senior ID, HMO". No health text.

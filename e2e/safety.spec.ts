@@ -26,11 +26,11 @@ test('dark mode: Safety tile icons >= 3:1 and the top-bar avatar initial >= 4.5:
   expect(ratio(a.fg, a.bg)).toBeGreaterThanOrEqual(4.5)
 })
 
-test('safety hub (D-68): ten tiles with a status line, each opens its page and goes back', async ({ page }) => {
+test('safety hub (D-68): nine tiles with a status line, each opens its page and goes back', async ({ page }) => {
   await page.goto('/#safety')
   await expect(page.locator('h1')).toHaveText('Safety')
   const tiles = page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link')
-  await expect(tiles).toHaveCount(10)
+  await expect(tiles).toHaveCount(9)
   await expect(tiles.filter({ hasText: 'Warnings' })).toContainText('None now')
   await expect(tiles.filter({ hasText: 'Quick dial' })).toContainText(/\d+ numbers ready/)
   await expect(tiles.filter({ hasText: 'Past SOS' })).toContainText('None sent')
@@ -169,7 +169,7 @@ test('Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid', asyn
   expect(Math.abs(med - call)).toBeLessThan(4)
   expect(tiles).toBeGreaterThan(call)
   const want: [string, string][] = [['Warnings', '#safety/warnings'], ['Weather', '#weather'], ['Storm tracker', '#safety/storms'], ['Rescue map', '#safety/map'], ['Quick dial', '#safety/dial'],
-    ['Hazards at my location', '#safety/hazards'], ['Go-bag', '#gobag'], ['Safety cards', '#safety/cards'], ['IDs and insurance', '#docs'], ['Past SOS', '#safety/sos']]
+    ['Hazards at my location', '#safety/hazards'], ['Go-bag', '#gobag'], ['Safety cards', '#safety/cards'], ['Past SOS', '#safety/sos']]
   for (const [t, href] of want) await expect(nav.getByRole('link', { name: new RegExp('^' + t) })).toHaveAttribute('href', href)
   for (const box of await nav.getByRole('link').all()) expect((await box.boundingBox())!.height).toBeGreaterThanOrEqual(44)
   await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveAttribute('href', '#medid')
