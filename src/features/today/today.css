@@ -10,7 +10,7 @@
 .td-sech h2 { margin: 0; }
 
 /* quick log: 3 x 2 grid of tiles, icon above the label, 72px tall */
-.td-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.td-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; }
 .bt .td-q:active { background: var(--card2); }
 

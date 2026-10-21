@@ -30,14 +30,14 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
 })
 
-test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
+test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (4 columns), plan, then More; no news, video or full family list', async ({ page }) => {
   const heading = (name: string) => page.getByRole('heading', { name })
   await expect(heading('Next up')).toHaveCount(0) // calm: no empty card
   await expect(heading("Today's plan")).toBeVisible()
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
   for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
-  await expect(row.getByRole('button')).toHaveCount(6)
+  await expect(row.getByRole('button')).toHaveCount(7)
   const boxes = []
   for (const b of await row.getByRole('button').all()) {
     const box = (await b.boundingBox())!
@@ -45,8 +45,8 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
     expect(box.width).toBeGreaterThanOrEqual(48)
     boxes.push(box)
   }
-  expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(2) // two rows of three
-  expect(new Set(boxes.map((b) => Math.round(b.x))).size).toBe(3)
+  expect(new Set(boxes.map((b) => Math.round(b.y))).size).toBe(2) // two rows
+  expect(new Set(boxes.map((b) => Math.round(b.x))).size).toBe(4)
   const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
   const quick = await y(row)
   const plan = await y(heading("Today's plan"))
