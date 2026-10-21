@@ -48,3 +48,8 @@ Live-check script: `supabase/tests/people_archive_live_check.sql` applies 0022 i
 
 ## Known limit (decision for the orchestrator)
 Hiding is done at `people` (and the sign-in list). Record tables keep their own RLS, which goes through `is_carer_of` / `is_writer_of`, not through `people`. The rehearsal asserts this: a writer carer can still read an archived child's lab row if they query the table directly with the person id. Phones list people from `people`, so the app (lanes A3/A4) must also drop archived people from local Dexie data and sync filters. Hiding rows at the database too would need a change to `records_editor` / `records_reader` / `is_writer_of`, which would also hide them from the person's own offline-edit sync; it is not in the contract, so it is not in 0022.
+
+## Orchestrator re-run (2026-10-21, fresh WSL Postgres db)
+`people_archive_rehearsal.sql`: exit 0, 44 PASS lines (44 assertion calls; ON_ERROR_STOP, any failed assertion raises).
+`people_archive_live_check.sql` on the same throwaway db (ends in a raised RESULT, nothing kept):
+`RESULT cols=2 archived_real=0 people_total=2 member_sees_child_before=1 member_sees_child_after=0 admin_sees_all_after=3 member_call=not_admin member_direct_update=permission denied for table people admin_null_call=bad_input audit_rows=1 signin_before=2 signin_after=2 reactivated=1`

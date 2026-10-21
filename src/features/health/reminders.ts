@@ -124,11 +124,11 @@ export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: st
   }
 }
 
-/** Keep reminders in step with the medications table and the `remind.for` setting. Returns a stop function. Native only. */
+/** Keep reminders in step with the medications table, the people on this phone and the `remind.for` setting. Returns a stop function. Native only. */
 export function watchDoseReminders(): () => void {
   if (!Capacitor.isNativePlatform()) return () => undefined
   let t: ReturnType<typeof setTimeout> | undefined
-  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value, (await db.kv.get(MEDS_CURSOR))?.value, (await db.kv.get(LANG_KEY))?.value, (await db.kv.get('profile.medicines'))?.value]).subscribe({
+  const sub = liveQuery(async () => [await ldb.medications.toArray(), (await db.kv.get(REMIND_FOR))?.value, (await db.kv.get(MEDS_CURSOR))?.value, (await db.kv.get(LANG_KEY))?.value, (await db.kv.get('profile.medicines'))?.value, await hdb.people.toCollection().primaryKeys()]).subscribe({ // people too: an archived person dropped by sync must lose their reminders
     next: ([, , , , legacy]) => { clearTimeout(t); t = setTimeout(() => void syncDoseReminders(legacy), 1500) },
     error: () => undefined
   })
