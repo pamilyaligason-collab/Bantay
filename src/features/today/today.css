@@ -9,11 +9,9 @@
 .td-sech h2, h2.td-sech { font-family: var(--f-ui); font-size: 17px; font-weight: 700; margin: 0; letter-spacing: 0; }
 .td-sech h2 { margin: 0; }
 
-/* quick log: seven tiles, icon above the label, 72px tall: 4 on the first row, 3 centred on the second (8 half-columns, each tile spans 2) */
-.td-quick { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
-.td-quick > * { grid-column: span 2; }
-.td-quick > :nth-child(5) { grid-column: 2 / span 2; }
-.bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; font-size: 14px; font-weight: 600; color: var(--ink); min-width: 0; }
+/* quick log: nine tiles, icon above the label, 72px tall, a 3 x 3 grid (BP, Sugar, Weight / Walk, Move, Dose / Mood, Meal, Water) */
+.td-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.bt .td-q { border: 0; background: var(--card); box-shadow: var(--shadow); border-radius: 20px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 0 4px; font-size: 16px; font-weight: 600; color: var(--ink); min-width: 0; }
 .bt .td-q:active { background: var(--card2); }
 
 /* hero */
