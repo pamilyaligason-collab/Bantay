@@ -62,9 +62,11 @@ function mockPort(over: Partial<Port> = {}): Port & { calls: string[] } {
     updateRole: rec<'ok' | 'handle_taken' | 'not_found'>('updateRole', 'ok'),
     insertPerson: rec<string | null>('insertPerson', 'person-1'),
     updatePerson: rec<'ok' | 'not_found' | 'error'>('updatePerson', 'ok'),
+    getPersonLogin: rec<{ authUserId: string | null; displayName: string } | null>('getPersonLogin', null),
+    attachPerson: rec<'ok' | 'not_found' | 'error'>('attachPerson', 'ok'),
     addInvite: rec('addInvite', true),
     removeInvite: rec('removeInvite', true),
-    listMembers: rec<Member[]>('listMembers', [{ userId: ID, personId: 'p', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'email', profile: null }]),
+    listMembers: rec<Member[]>('listMembers', [{ userId: ID, personId: 'p', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'email', archivedAt: null, profile: null }]),
     calls
   }, over) as Port & { calls: string[] }
 }

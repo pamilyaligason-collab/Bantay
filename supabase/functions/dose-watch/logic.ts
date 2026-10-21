@@ -13,6 +13,7 @@ export interface MedRow {
   schedule: unknown
   started_on?: string | null // YYYY-MM-DD
   stopped_on?: string | null
+  people?: { archived_at: string | null } | null // embedded owner; an archived person is never watched
 }
 export interface TakenRow {
   person_id: string
@@ -67,7 +68,7 @@ export function dueSlots(meds: MedRow[], taken: TakenRow[], nowMs: number): DueS
   const days = [...new Set([manilaDay(nowMs - WATCH_MAX_LATE_MIN * 60_000), today])] // also yesterday, for a slot just before midnight
   const rows = taken.flatMap((t) => { const at = Date.parse(t.taken_at); return Number.isNaN(at) ? [] : [{ ...t, day: manilaDay(at), key: normaliseDrug(t.name) }] })
   for (const m of meds) {
-    if (m.deleted_at || (m.med_status ?? 'active') !== 'active' || m.as_needed) continue
+    if (m.people?.archived_at || m.deleted_at || (m.med_status ?? 'active') !== 'active' || m.as_needed) continue
     if (inReview(m.schedule) || needsTime(m.schedule)) continue
     const key = normaliseDrug(m.name)
     for (const day of days) {

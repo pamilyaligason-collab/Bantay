@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
   const port: Port = {
     async medications() {
-      return pages<MedRow>((from, to) => sb.from('medications').select('id,person_id,name,med_status,deleted_at,as_needed,schedule,started_on,stopped_on').is('deleted_at', null).eq('med_status', 'active').eq('as_needed', false).order('id').range(from, to))
+      return pages<MedRow>((from, to) => sb.from('medications').select('id,person_id,name,med_status,deleted_at,as_needed,schedule,started_on,stopped_on,people!inner(archived_at)').is('deleted_at', null).eq('med_status', 'active').eq('as_needed', false).is('people.archived_at', null).order('id').range(from, to))
     },
     async taken(sinceIso) {
       return pages<TakenRow>((from, to) => sb.from('meds_taken').select('person_id,medication_id,slot,taken_at,name').gte('taken_at', sinceIso).order('id').range(from, to))

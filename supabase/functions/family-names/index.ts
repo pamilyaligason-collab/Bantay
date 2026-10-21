@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     async listPinMembers() {
       const [roles, people, users] = await Promise.all([
         admin.from('app_roles').select('user_id, handle').eq('disabled', false).not('handle', 'is', null),
-        admin.from('people').select('auth_user_id, display_name').not('auth_user_id', 'is', null),
+        admin.from('people').select('auth_user_id, display_name').not('auth_user_id', 'is', null).is('archived_at', null),
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 }) // ponytail: one page, as in admin-members
       ])
       const pinUsers = new Set(users.data.users.filter((u) => /^m-.+@members\.bantay\.invalid$/.test(u.email ?? '')).map((u) => u.id))

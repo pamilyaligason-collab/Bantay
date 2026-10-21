@@ -90,6 +90,17 @@ function adapt(admin: Admin, pepper: string): Port {
       if (error) return 'error'
       return data && data.length > 0 ? 'ok' : 'not_found'
     },
+    async getPersonLogin(personId) {
+      const { data, error } = await admin.from('people').select('auth_user_id, display_name').eq('id', personId).maybeSingle()
+      if (error) throw new Error('read') // an unreadable row must not look like "no such person"
+      return data ? { authUserId: (data.auth_user_id as string | null) ?? null, displayName: data.display_name as string } : null
+    },
+    async attachPerson(personId, userId) {
+      // .is(auth_user_id, null) keeps two admins from attaching two logins to one person
+      const { data, error } = await admin.from('people').update({ auth_user_id: userId, archived_at: null, archived_by: null }).eq('id', personId).is('auth_user_id', null).select('id')
+      if (error) return 'error'
+      return data && data.length > 0 ? 'ok' : 'not_found'
+    },
     async addInvite(email, by) {
       const { error } = await admin.from('invites').upsert({ email, invited_by: by })
       return !error
@@ -102,7 +113,7 @@ function adapt(admin: Admin, pepper: string): Port {
       // ponytail: one page of 1000 auth users; a family never gets near it. Paginate if that changes.
       const [roles, people, users, locks] = await Promise.all([
         admin.from('app_roles').select('user_id, role, handle, disabled'),
-        admin.from('people').select('id, auth_user_id, display_name, photo_path, phone, birthdate, blood_type, allergies, conditions, medicines').not('auth_user_id', 'is', null),
+        admin.from('people').select('id, auth_user_id, display_name, photo_path, phone, birthdate, blood_type, allergies, conditions, medicines, archived_at').not('auth_user_id', 'is', null),
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
         admin.from('pin_attempts').select('user_id, fails, locked_until')
       ])
@@ -117,7 +128,7 @@ function adapt(admin: Admin, pepper: string): Port {
         return {
           ...lockState(lockOf.get(r.user_id)),
           userId: r.user_id, personId: p?.id ?? null, displayName: p?.display_name ?? '', handle: r.handle,
-          role: r.role as Role, disabled: r.disabled, lastSignInAt: au?.last_sign_in_at ?? null, provider: (au?.app_metadata?.provider as string | undefined) ?? null,
+          role: r.role as Role, disabled: r.disabled, lastSignInAt: au?.last_sign_in_at ?? null, provider: (au?.app_metadata?.provider as string | undefined) ?? null, archivedAt: p?.archived_at ?? null,
           profile: p ? { photoPath: p.photo_path, phone: p.phone, birthdate: p.birthdate, bloodType: p.blood_type, allergies: p.allergies ?? [], conditions: p.conditions ?? [], medicines: p.medicines ?? [] } : null
         }
       })
