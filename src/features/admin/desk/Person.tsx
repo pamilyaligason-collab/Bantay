@@ -16,7 +16,7 @@ import './members.css'
 
 // ---------- shared by the Members list and the member page ----------
 /** admin-members `list` after E1 adds lockedUntil and fails; both are absent from an older deploy. */
-export type Row = Member & { lockedUntil?: string | null; fails?: number }
+export type Row = Member & { lockedUntil?: string | null; fails?: number; archivedAt?: string | null }
 export type Ask = (text: string, run: () => Promise<void>) => void
 
 export const LOCK_AT = 5 // wrong PINs that start the lock (HANDLE_LIMIT in supabase/functions/_shared/login.ts)
@@ -35,11 +35,16 @@ export const signInType = (m: Row) => (m.provider === 'google' ? 'Google' : 'PIN
 
 /** One person with everything the table and the summary card show. A count is null while unknown, never 0. */
 export type Line = { p: DeskPerson; m: Row | undefined; seen: string | null; drafts: number | null; carers: number | null; edit: number | null }
+export const HANDLE_OK = /^[a-z][a-z0-9_]{2,19}$/
+/** '21 Oct 2026' in Manila time. */
+export const dayText = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Manila' })
+/** Archived (0022): hidden from every phone; only /admin shows the person. */
+export const archivedOf = (l: Line): string | null => l.p.archived_at ?? null
 export const roleOf = (l: Line) => (l.m ? (l.m.role === 'admin' ? 'Admin' : 'Member') : l.p.auth_user_id ? 'Unknown' : 'Dependent')
 export const stateOf = (l: Line, now = Date.now()): { tone: Tone; text: string; locked: boolean } =>
-  l.m ? memberState(l.m, now) : { tone: 'plain', text: l.p.auth_user_id ? 'Unknown' : 'Cared for', locked: false }
+  archivedOf(l) ? { tone: 'plain', text: 'Archived', locked: false } : l.m ? memberState(l.m, now) : { tone: 'plain', text: l.p.auth_user_id ? 'Unknown' : 'Cared for', locked: false }
 export const signInOf = (l: Line) => (l.m ? (l.m.provider === 'google' ? 'Google' : l.m.handle ? `PIN, ${l.m.handle}` : 'PIN') : l.p.auth_user_id ? 'Unknown' : 'No phone')
-export const needsAttention = (l: Line, now = Date.now()) => !!l.m?.disabled || stateOf(l, now).locked || (l.drafts ?? 0) > 0
+export const needsAttention = (l: Line, now = Date.now()) => !archivedOf(l) && (!!l.m?.disabled || stateOf(l, now).locked || (l.drafts ?? 0) > 0)
 export const carersText = (l: Line) => (l.carers === null ? 'Unknown' : l.carers === 0 ? 'None' : l.edit ? `${l.carers} (${l.edit} can edit)` : String(l.carers))
 
 /** '2 h ago' for recent times, the date after a month. Null or unreadable is 'Never'. */
@@ -297,20 +302,78 @@ function ProfileForm({ id, name, photoPath, detail, say, saved, onDirty }: { id:
   )
 }
 
+// ---------- archive and sign-in ----------
+const whyArchive = (e: string) => (e === 'self' ? 'You cannot archive your own person.' : why(e))
+/** Archive or reactivate one person (RPC from 0022). Reloads, then offers Undo (the opposite call). */
+export async function setArchived(p: DeskPerson, archived: boolean, reload: () => void, toast: ReturnType<typeof useToast>) {
+  const r = await rpc('admin_set_archived', { p_person: p.id, p_archived: archived })
+  if (!r.ok) return toast.show(whyArchive(r.error))
+  reload()
+  toast.show(archived ? `${p.display_name} archived.` : `${p.display_name} reactivated.`, async () => {
+    const u = await rpc('admin_set_archived', { p_person: p.id, p_archived: !archived })
+    toast.show(u.ok ? 'Undone.' : whyArchive(u.error)); reload()
+  })
+}
+
+/** Body for admin-members `create` that attaches the new PIN login to an existing person (history stays). */
+export const signInBody = (p: { id: string; display_name: string }, handle: string, pin: string) =>
+  ({ action: 'create', displayName: p.display_name, ...(handle.trim() ? { handle: handle.trim().toLowerCase() } : {}), pin, role: 'member', personId: p.id })
+
+function GiveSignIn({ p, ask, done, shown }: { p: DeskPerson; ask: Ask; done: () => void; shown: (pin: string) => void }) {
+  const [f, setF] = useState({ handle: '', pin: '' })
+  const [err, setErr] = useState('')
+  const archived = !!p.archived_at
+  return (
+    <Form label="Give a sign-in" err={err} onSubmit={(e) => {
+      e.preventDefault()
+      const bad = f.handle.trim() && !HANDLE_OK.test(f.handle.trim().toLowerCase()) ? 'Sign-in name: 3 to 20 letters, digits or _, starting with a letter.' : pinError(f.pin)
+      if (bad) return setErr(bad)
+      setErr('')
+      ask(`Give ${p.display_name} a sign-in with a PIN${archived ? ' and reactivate them' : ''}? Their records stay on this same person.`, async () => {
+        const r = await adminMembers(signInBody(p, f.handle, f.pin))
+        if (!r.ok) return setErr(whyArchive(r.error))
+        shown(f.pin); done()
+      })
+    }}>
+      {archived && <p className="dk-sub">{p.display_name} is archived. Giving a sign-in also reactivates them.</p>}
+      <label className="dk-field">Sign-in name (optional, made from the name if empty)<input className="dk-in" value={f.handle} maxLength={20} autoComplete="off" onChange={(e) => setF({ ...f, handle: e.target.value })} /></label>
+      <Pin pin={f.pin} set={(pin) => setF({ ...f, pin })} />
+      <button className="dk-b go" type="submit">Give a sign-in</button>
+    </Form>
+  )
+}
+
+/** Archive card for a person who is not the signed-in admin and is not archived (an archived one gets the banner). */
+function ArchiveCard({ p, ask, reload, toast }: { p: DeskPerson; ask: Ask; reload: () => void; toast: ReturnType<typeof useToast> }) {
+  return (
+    <div className="dk-card mp-danger"><div className="dk-card-h"><h2>Archive</h2></div><div className="dk-card-b mb-stack">
+      <p className="dk-sub">Archiving hides {p.display_name} on every family phone. Their records stay and you can reactivate any time.</p>
+      <div><button className="dk-b bad" onClick={() => ask(`Archive ${p.display_name}? They disappear from every family phone: lists, reminders and alerts. Their records stay. You can reactivate any time.`, () => setArchived(p, true, reload, toast))}>Archive {p.display_name}</button></div>
+    </div></div>
+  )
+}
+
 // ---------- account ----------
 function Account({ l, me, reload, ask, toast }: { l: Line; me: string | null; reload: () => void; ask: Ask; toast: ReturnType<typeof useToast> }) {
   const [pinOpen, setPinOpen] = useState(false)
-  const [inviting, setInviting] = useState(false)
+  const [giving, setGiving] = useState(false)
+  const [given, setGiven] = useState<string | null>(null) // the new PIN, shown once; kept here because the reload turns this person into a member
   const m = l.m
+  const mine = !!me && l.p.auth_user_id === me // the admin's own person is never archived
+  const archive = !mine && !archivedOf(l) ? <ArchiveCard p={l.p} ask={ask} reload={reload} toast={toast} /> : null
+  if (given) return <div className="dk-card"><div className="dk-card-h"><h2>Sign-in</h2></div><div className="dk-card-b"><Shown title={`${l.p.display_name} can now sign in with the sign-in name and this PIN.`} pin={given} onClose={() => setGiven(null)} /></div></div>
   if (!m) {
     return (
-      <div className="dk-card"><div className="dk-card-h"><h2>Sign-in</h2></div><div className="dk-card-b mb-stack">
-        {l.p.auth_user_id ? <p>Sign-in details could not be loaded. Reload the page to try again.</p> : <>
-          <p>No sign-in for this person.</p>
-          <p className="dk-sub">{l.p.display_name} is cared for by other members. To give a person their own phone sign-in, invite them by email.</p>
-          {inviting ? <Invite ask={ask} close={() => setInviting(false)} say={(t) => toast.show(t)} /> : <div><button className="dk-b go" onClick={() => setInviting(true)}>Invite by email</button></div>}
-        </>}
-      </div></div>
+      <>
+        <div className="dk-card"><div className="dk-card-h"><h2>Sign-in</h2></div><div className="dk-card-b mb-stack">
+          {l.p.auth_user_id ? <p>Sign-in details could not be loaded. Reload the page to try again.</p> : <>
+            <p>No sign-in for this person.</p>
+            <p className="dk-sub">{l.p.display_name} is cared for by other members. A sign-in gives them their own phone login on this same person, so their records stay.</p>
+            {giving ? <GiveSignIn p={l.p} ask={ask} done={reload} shown={(pin) => { setGiven(pin); setGiving(false) }} /> : <div><button className="dk-b go" onClick={() => setGiving(true)}>Give a sign-in</button></div>}
+          </>}
+        </div></div>
+        {archive}
+      </>
     )
   }
   const self = m.userId === me
@@ -342,6 +405,7 @@ function Account({ l, me, reload, ask, toast }: { l: Line; me: string | null; re
         {self && <p className="dk-sub">This is your own account, so you cannot change your role or disable it here.</p>}
         {!pinUser && m.role === 'member' && !self && <p className="dk-sub">Only Google sign-ins can be made admin.</p>}
       </div></div>
+      {archive}
       {!self && (
         <div className="dk-card mp-danger"><div className="dk-card-h"><h2>Danger zone</h2></div><div className="dk-card-b mb-stack">
           <p className="dk-sub">{m.disabled ? `${m.displayName} cannot sign in. Enabling lets them sign in again.` : `Disabling signs ${m.displayName} out and stops them signing in. Their records stay.`}</p>
@@ -423,6 +487,12 @@ export default function MemberPage({ id, sub }: PageProps) {
       <PageHead title={p.display_name} crumbs={[['Members', deskHref('members')]]}>
         {m && memberState(m).locked && <Tag tone="warn">Locked</Tag>}
       </PageHead>
+      {p.archived_at && (
+        <div className="mp-archived" role="status">
+          <span>Archived on {dayText(p.archived_at)}. Hidden from family phones.</span>
+          <button className="dk-b" onClick={() => void setArchived(p, false, roster.reload, toast)}>Reactivate</button>
+        </div>
+      )}
       <nav className="dk-tabs" aria-label="Member sections">
         {TABS.map(([k, label]) => (
           <a key={k} href={deskHref('members', id, k)} aria-current={k === tab ? 'page' : undefined}>

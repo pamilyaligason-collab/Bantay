@@ -113,7 +113,7 @@ export type PeopleState = { total: number; active: number | null; locked: { name
 export const loadPeopleState = (): Promise<Res<PeopleState>> => guard(async () => {
   const [m, u] = await Promise.all([adminMembers<{ members: MemberRow[] }>({ action: 'list' }), rpc<UsageRow[]>('admin_usage_summary', { days: 30 })])
   if (!m.ok) return m
-  const live = m.data.members.filter((x) => !x.disabled)
+  const live = m.data.members.filter((x) => !x.disabled && !x.archivedAt) // an archived person is not counted as a family member
   const seen = u.ok ? new Set(u.data.filter((x) => x.active_7).map((x) => x.user_id)) : null
   return { ok: true, data: {
     total: live.length,

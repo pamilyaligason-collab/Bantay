@@ -4,27 +4,27 @@ import { adminMembers } from '../api'
 import Avatar from '../Avatar'
 import { pinError } from '../pin'
 import { NOT_CONNECTED, why } from '../shared'
-import MemberPage, { Ago, carersText, Form, Invite, needsAttention, Pin, roleOf, selfId, Shown, signInOf, stateOf, useRoster, type Ask, type Line } from './Person'
+import MemberPage, { Ago, archivedOf, carersText, dayText, Form, Invite, needsAttention, Pin, roleOf, selfId, Shown, signInOf, stateOf, useRoster, type Ask, type Line } from './Person'
 import { deskHref, type PageProps } from './types'
 import { Empty, Filters, PageHead, Panel, SortTh, Skeleton, Tag, useConfirm, useSort, useToast } from './ui'
 import './members.css'
 
-export { memberState, selfId, signInType, type Row } from './Person'
-
-export const HANDLE_OK = /^[a-z][a-z0-9_]{2,19}$/
+import { HANDLE_OK } from './Person'
+export { HANDLE_OK, memberState, selfId, signInType, type Row } from './Person'
 
 /** Body for admin-members `create`: a member (never an admin), handle optional. */
 export const createBody = (name: string, handle: string, pin: string) => ({ action: 'create', displayName: name.trim(), ...(handle.trim() ? { handle: handle.trim().toLowerCase() } : {}), pin, role: 'member' })
 /** A person with no phone: the DB trigger adds the creator as writer carer. */
 export const dependentRow = (name: string, createdBy: string) => ({ display_name: name.trim(), created_by: createdBy })
 
-export const FILTERS = [['all', 'All'], ['login', 'With sign-in'], ['dependents', 'Dependents'], ['attention', 'Needs attention']] as const
+export const FILTERS = [['all', 'All'], ['login', 'With sign-in'], ['dependents', 'Dependents'], ['attention', 'Needs attention'], ['archived', 'Archived']] as const
 export type MemberFilter = (typeof FILTERS)[number][0]
 
 /** Filter chips, the carers toggle and the search box, applied in that order. */
 export function filterLines(lines: Line[], f: MemberFilter, hasCarers: boolean, q: string, now = Date.now()): Line[] {
   const t = q.trim().toLowerCase()
   return lines.filter((l) => {
+    if (f === 'archived') { if (!archivedOf(l)) return false } else if (archivedOf(l)) return false // archived people show only under their own chip
     if (f === 'login' && !l.p.auth_user_id) return false
     if (f === 'dependents' && l.p.auth_user_id) return false
     if (f === 'attention' && !needsAttention(l, now)) return false
@@ -106,7 +106,7 @@ function MembersList() {
     }
   }, { key: 'name', dir: 1 })
   const open = (id: string) => { location.hash = deskHref('members', id) }
-  const counts = useMemo(() => ({ attention: roster.lines.filter((l) => needsAttention(l)).length }), [roster.lines])
+  const counts = useMemo(() => ({ attention: roster.lines.filter((l) => needsAttention(l)).length, archived: roster.lines.filter((l) => archivedOf(l)).length }), [roster.lines])
 
   return (
     <div className="mb-page">
@@ -118,14 +118,14 @@ function MembersList() {
       <Filters>
         <input className="dk-in" type="search" aria-label="Search members" placeholder="Search name or sign-in" value={q} onChange={(e) => setQ(e.target.value)} />
         {FILTERS.map(([k, label]) => (
-          <button key={k} className="dk-chip" aria-pressed={f === k} onClick={() => setF(k)}>{label}{k === 'attention' && counts.attention > 0 ? ` (${counts.attention})` : ''}</button>
+          <button key={k} className="dk-chip" aria-pressed={f === k} onClick={() => setF(k)}>{label}{k === 'attention' && counts.attention > 0 ? ` (${counts.attention})` : ''}{k === 'archived' ? ` (${counts.archived})` : ''}</button>
         ))}
         <button className="dk-chip" aria-pressed={hasCarers} onClick={() => setHasCarers((v) => !v)}>Has carers</button>
       </Filters>
       {roster.error ? <Empty>{NOT_CONNECTED}</Empty> : !roster.ready ? <Skeleton rows={8} /> : (
         <>
           {roster.err && <p className="mb-err" role="alert">Sign-in details could not be loaded ({roster.err}). Names and carers still show.</p>}
-          {sort.sorted.length === 0 ? <Empty>{roster.lines.length === 0 ? 'No one yet. Add a member or a dependent with the buttons above.' : 'No one matches. Clear the search or pick All.'}</Empty> : (
+          {sort.sorted.length === 0 ? <Empty>{roster.lines.length === 0 ? 'No one yet. Add a member or a dependent with the buttons above.' : f === 'archived' && !q.trim() && !hasCarers ? 'No one is archived.' : 'No one matches. Clear the search or pick All.'}</Empty> : (
             <div className="dk-scrollx">
               <table className="dk-table">
                 <caption className="mb-cap">Members</caption>
@@ -136,12 +136,13 @@ function MembersList() {
                 <tbody>
                   {sort.sorted.map((l) => {
                     const st = stateOf(l)
+                    const gone = archivedOf(l)
                     return (
                       <tr key={l.p.id} className="dk-click" onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) open(l.p.id) }}>
                         <th scope="row"><a className="mb-link" href={deskHref('members', l.p.id)}><Avatar name={l.p.display_name} photoPath={l.p.photo_path} size={28} />{l.p.display_name || 'No name'}</a></th>
                         <td>{signInOf(l)}</td>
                         <td>{roleOf(l)}</td>
-                        <td><Tag tone={st.tone}>{st.text}</Tag></td>
+                        <td><Tag tone={st.tone}>{st.text}</Tag>{gone && <span className="dk-sub mb-when"> {dayText(gone)}</span>}</td>
                         <td>{carersText(l)}</td>
                         <td>{l.m ? <Ago iso={l.seen} /> : ''}</td>
                         <td className="num">{l.drafts === null ? 'Unknown' : l.drafts}</td>

@@ -46,3 +46,6 @@
 .mb-page .ad-av { display: inline-grid; place-items: center; flex: none; border-radius: 50%; overflow: hidden; font-weight: 700; color: var(--ink); }
 .mb-page .ad-av img { width: 100%; height: 100%; object-fit: cover; }
 .mb-page .dk-filters input[type="search"] { width: 260px; max-width: 100%; }
+
+.mp-archived { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; font-weight: 600; }
+.mb-when { white-space: nowrap; }

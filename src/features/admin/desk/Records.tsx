@@ -310,7 +310,7 @@ export default function Records({ id, sub, embedded }: PageProps) {
           <label className="rc-lbl">Person
             <select className="dk-in" value={person ?? 'all'} onChange={(e) => { location.hash = deskHref('records', e.target.value, tab.key) }}>
               <option value="all">Everyone</option>
-              {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.display_name}</option>)}
+              {[...(people ?? [])].sort((a, b) => Number(!!a.archived_at) - Number(!!b.archived_at)).map((p) => <option key={p.id} value={p.id}>{p.display_name}{p.archived_at ? ' (archived)' : ''}</option>)}
             </select>
           </label>
         )}

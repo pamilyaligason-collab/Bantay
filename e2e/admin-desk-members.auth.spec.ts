@@ -22,7 +22,11 @@ const MEMBERS = [
 ]
 const CARERS = [{ carer_id: UID, person_id: 'p3', can_write: true }, { carer_id: 'u2', person_id: 'p3', can_write: false }]
 
-async function mock(page: Page, calls: Record<string, unknown>[] = []) {
+/** Archive state the mock keeps: the RPC flips it and the people read shows it, like 0022. */
+type Arch = { on: boolean; rpc: Record<string, unknown>[] }
+const ARCHIVED_AT = '2026-10-20T02:00:00Z'
+
+async function mock(page: Page, calls: Record<string, unknown>[] = [], arch: Arch = { on: false, rpc: [] }) {
   await page.addInitScript(([token, u]) => {
     localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: u }))
   }, [jwt(), user] as const)
@@ -41,12 +45,17 @@ async function mock(page: Page, calls: Record<string, unknown>[] = []) {
       if (body.action !== 'list') calls.push(body)
       return reply({ ok: true, members: MEMBERS })
     }
+    if (url.pathname === '/rest/v1/rpc/admin_set_archived') {
+      const b = (req.postDataJSON() ?? {}) as Record<string, unknown>
+      arch.rpc.push(b); arch.on = b.p_archived === true
+      return reply(null, 200)
+    }
     if (url.pathname === '/rest/v1/rpc/admin_usage_summary') return reply([{ user_id: 'u2', last_seen: '2026-10-20T02:00:00Z', events: 12 }])
     if (url.pathname.startsWith('/rest/v1/rpc/')) return reply([])
     if (!url.pathname.startsWith('/rest/v1/')) return reply({})
     if (req.method() !== 'GET' && req.method() !== 'HEAD') return reply([])
     if (t === 'app_roles') return rows([{ role: 'admin', handle: 'admin' }])
-    if (t === 'people') return rows(select.includes('birthdate') ? DETAILS : select.includes('auth_user_id') ? PEOPLE : [{ id: 'p1' }])
+    if (t === 'people') return rows(select.includes('birthdate') ? DETAILS : select.includes('auth_user_id') ? PEOPLE.map((p) => (p.id === 'p3' && arch.on ? { ...p, archived_at: ARCHIVED_AT } : p)) : [{ id: 'p1' }])
     if (t === 'carers') return rows(CARERS)
     if (t === 'records_queue') return rows([{ person_id: 'p3', drafts: 2 }])
     return rows([])
@@ -189,3 +198,61 @@ test('dark mode at 1280: list, profile and account have no axe violations', asyn
   }
   await page.screenshot({ path: 'test-results/members-dark-1280.png' })
 })
+
+for (const size of SIZES) {
+  test(`archive, reactivate and give a sign-in (${size.width}x${size.height})`, async ({ page }) => {
+    const min = size.width < 768 ? 44 : 40
+    await page.setViewportSize(size)
+    const calls: Record<string, unknown>[] = []
+    const arch: Arch = { on: false, rpc: [] }
+    await mock(page, calls, arch)
+    await skipOnboarding(page)
+
+    // never for the admin's own person
+    await page.goto('/admin#/members/p1/account')
+    await expect(page.getByText(/your own account/)).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Archive/ })).toHaveCount(0)
+
+    // archive with a confirm
+    await page.goto('/admin#/members/p3/account')
+    await expect(page.getByRole('heading', { level: 1, name: 'Test Child' })).toBeVisible()
+    await page.getByRole('button', { name: 'Archive Test Child' }).click()
+    await expect(page.getByText(/Archive Test Child\? They disappear from every family phone/)).toBeVisible()
+    expect(arch.rpc).toEqual([])
+    await page.getByRole('button', { name: 'Confirm' }).click()
+    await expect.poll(() => arch.rpc).toEqual([{ p_person: 'p3', p_archived: true }])
+    const banner = page.locator('.mp-archived')
+    await expect(banner).toContainText('Archived on 20 Oct 2026. Hidden from family phones.')
+    await expect(page.getByRole('button', { name: 'Archive Test Child' })).toHaveCount(0)
+    await clean(page, min)
+
+    // the list hides them by default; the Archived chip finds them
+    await page.goto('/admin#/members')
+    const table = page.getByRole('table')
+    await expect(table.getByRole('link', { name: /Test Person/ })).toBeVisible()
+    await expect(table.getByRole('link', { name: /Test Child/ })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Archived (1)' }).click()
+    const row = table.getByRole('row', { name: /Test Child/ })
+    await expect(row.getByText('Archived', { exact: true })).toBeVisible()
+    await expect(row.getByText('20 Oct 2026')).toBeVisible()
+    await expect(table.getByRole('link', { name: /Test Person/ })).toHaveCount(0)
+    await clean(page, min)
+
+    // give a sign-in on the same person reactivates them
+    await page.goto('/admin#/members/p3/account')
+    await page.getByRole('button', { name: 'Give a sign-in' }).click()
+    await expect(page.getByText(/is archived\. Giving a sign-in also reactivates them/)).toBeVisible()
+    await page.getByLabel('PIN (6 digits)').fill('480193')
+    await clean(page, min)
+    await page.getByRole('form', { name: 'Give a sign-in' }).getByRole('button', { name: 'Give a sign-in' }).click()
+    await page.getByRole('button', { name: 'Confirm' }).click()
+    await expect.poll(() => calls).toContainEqual({ action: 'create', displayName: 'Test Child', pin: '480193', role: 'member', personId: 'p3' })
+    await expect(page.getByLabel('PIN', { exact: true })).toHaveText('480193')
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    // reactivate from the banner
+    await page.getByRole('button', { name: 'Reactivate' }).click()
+    await expect.poll(() => arch.rpc).toContainEqual({ p_person: 'p3', p_archived: false })
+    await expect(page.locator('.mp-archived')).toHaveCount(0)
+  })
+}
