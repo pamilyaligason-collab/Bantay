@@ -4,6 +4,7 @@
 @font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-700.woff2) format("woff2"); font-weight: 700; font-display: swap; }
 :root { --f-display: "Fraunces", Georgia, serif; --f-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif; --wa-top: 56px; --wa-side: 240px; }
+*, *::before, *::after { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; }
 body { background: var(--ground); color: var(--ink); font: 14px/1.45 var(--f-ui); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
 button, input, select, textarea { font: inherit; color: inherit; }
