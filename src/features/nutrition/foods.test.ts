@@ -24,9 +24,9 @@ describe('foods.json schema', () => {
       expect(Object.keys(f).every((k) => ['key', 'name', 'tl', 'serving_label', 'kcal', 'sodium_mg', 'potassium_mg', 'protein_g', 'src', 'estimate'].includes(k)), f.key).toBe(true)
     }
   })
-  it('credits USDA FoodData Central and nothing else (no PhilFCT / FNRI values)', () => {
+  it('credits USDA SR Legacy and nothing else (no PhilFCT / FNRI values)', () => {
     // verified foods credit USDA; unverified ones say they are estimates to be checked against USDA (never PhilFCT/FNRI)
-    for (const f of FOODS) expect(f.src, f.key).toMatch(f.estimate ? /^Estimate, to be checked against USDA FoodData Central$/ : /^USDA FoodData Central( \(recipe\))?$/)
+    for (const f of FOODS) expect(f.src, f.key).toMatch(f.estimate ? /^Estimate, to be checked against USDA FoodData Central$/ : /^USDA SR Legacy( \(recipe\))?$/)
     expect(/philfct|fnri/i.test(foodsRaw + recipesRaw)).toBe(false)
   })
   it('has the salty one-tap items and the key Filipino dishes', () => {

@@ -23,7 +23,7 @@ export function perServing(parts, ingredients) {
   return out
 }
 
-/** recipes.json -> the foods.json array, in the same order. estimate is true while any ingredient is not verified against the FDC API. */
+/** recipes.json -> the foods.json array, in the same order. estimate is true while any ingredient is not verified against USDA SR Legacy. */
 export function buildFoods(recipes) {
   return recipes.foods.map((f) => ({
     key: f.key,
@@ -33,7 +33,7 @@ export function buildFoods(recipes) {
     ...perServing(f.parts, recipes.ingredients),
     // only a fully verified food may claim USDA as its source; until then it is labelled as an estimate (Fable W3 review)
     ...(f.parts.every(([k]) => recipes.ingredients[k].verified === true)
-      ? { src: f.parts.length === 1 ? 'USDA FoodData Central' : 'USDA FoodData Central (recipe)' }
+      ? { src: f.parts.length === 1 ? 'USDA SR Legacy' : 'USDA SR Legacy (recipe)' }
       : { src: 'Estimate, to be checked against USDA FoodData Central', estimate: true })
   }))
 }
