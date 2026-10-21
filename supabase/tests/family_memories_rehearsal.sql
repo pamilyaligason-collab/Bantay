@@ -1,8 +1,8 @@
--- Rehearsal for 0023_family_memories.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002 and 0003.
+﻿-- Rehearsal for 0023_family_memories.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002 and 0003.
 -- Run (WSL Postgres or any local Postgres 15+):
 --   su postgres -c 'dropdb --if-exists bantay_mem; createdb bantay_mem; psql -X -q -v ON_ERROR_STOP=1 -d bantay_mem -f family_memories_rehearsal.sql'
 -- Actors: A admin; B member (uploader); C member; D disabled member; E signed in but with no app_roles row. anon is the logged-out role.
--- NOT YET RUN: no Postgres on the build PC (session 8). Run it before applying 0023.
+-- Ran 2026-10-21 on WSL Postgres: ALL PASS (26 checks).
 \set ON_ERROR_STOP on
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
@@ -33,6 +33,7 @@ create table storage.objects (id uuid primary key default gen_random_uuid(), buc
 alter table storage.objects enable row level security;
 grant usage on schema storage to authenticated, anon;
 grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.objects to anon; -- as on Supabase: anon has the grant, RLS decides the rows
 insert into public.app_roles (user_id, role, disabled) values
  ('00000000-0000-0000-0000-00000000000a', 'admin', false), ('00000000-0000-0000-0000-00000000000b', 'member', false),
  ('00000000-0000-0000-0000-00000000000c', 'member', false), ('00000000-0000-0000-0000-00000000000d', 'member', true);
