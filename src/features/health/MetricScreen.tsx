@@ -5,6 +5,7 @@ import { PersonChips } from '../records/PersonChips'
 import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
+import { LabDetail } from './LabDetail'
 import { entrySpec } from './readingPreview'
 import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
@@ -77,6 +78,7 @@ export default function MetricScreen({ code }: { code: string }) {
             </div>
           </div>
 
+          {lab && latest && <LabDetail code={code} readings={readings} family={family} personId={personId} />}
           {spec && canMark && personId && <button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button>}
           {saved && <p className="sub" role="status">{saved}</p>}
           {!lab && (
