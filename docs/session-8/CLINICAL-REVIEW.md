@@ -724,3 +724,29 @@ Review ask: the three DOH video titles come from their YouTube titles ("Mental H
 ### Memories
 
 Privacy text on the card: "Only your family on Bantay sees these. Location and camera details are removed from every photo." Not a health text; listed so the claim can be checked against the code (canvas re-encode, 0023 policies).
+
+
+## W3 Nutrition (food, salt and water) - for clinician review
+
+Status: NOT reviewed. All wording below was written by Bantay. Nothing here is a diagnosis or a prescription. Code: `src/features/nutrition/` (rules in `logic.ts`), data in `src/features/nutrition/foods.json` (USDA FoodData Central, see docs/SOURCES.md).
+
+### Targets
+
+1. Daily sodium limit: default 2000 mg, option 1500 mg, chosen on Health > Food and salt by the person or a carer who can write for them. 2000 mg is the WHO adult ceiling (https://www.who.int/news-room/fact-sheets/detail/salt-reduction). REVIEW: confirm 1500 mg is the right lower option (AHA names 1500 mg as the ideal limit for most adults and 2300 mg as the upper limit), and whether people on dialysis or with heart failure need a different default.
+2. Salt in grams = sodium in mg x 2.5 / 1000 (2000 mg is 5 g). Shown with one decimal.
+3. Water goal: 1500 ml a day by default, 250 ml a glass. REVIEW: a fixed 1500 ml is wrong for people on a fluid limit (heart failure, advanced kidney disease). The app has no screen to change or hide the water goal yet (the column is editable in the database only). Decide whether to add "ask your doctor about fluids" wording or an off switch.
+4. Calories, protein and potassium are stored and calories are shown as information only. There is NO calorie goal, no weight advice and no "good" or "bad" food label. Potassium is stored but not shown (people on some kidney or blood-pressure medicines are told to limit it; REVIEW before ever showing it).
+
+### Wording (exact text on screen)
+
+5. Bands, by share of the person's own limit: "Under" below 80%, "Near" from 80% up to the limit, "Over" at the limit or more. Each has a word, an icon and a colour. Lines under the bar: "Under your limit", "Close to your limit", "Over your limit", then "your limit is N mg sodium, about X g of salt." REVIEW: confirm "Over" is not alarming for older readers and that 80% is a sensible "Near".
+6. "Ask your doctor about your salt limit" with "The WHO says adults should have less than 2000 mg of sodium a day (about 5 g of salt)." and the WHO link, next to the limit buttons.
+7. "Salt can raise blood pressure in some people. These two charts share the same 7 days so you can look at them together. This is not a diagnosis; talk to your doctor." (under the week's sodium chart and the blood pressure chart). The app draws no conclusion from the two charts.
+8. "Food numbers come from USDA FoodData Central and are estimates for a typical serving. A packaged food label is more exact." Every food is flagged `estimate` in the data until its numbers are checked against the FDC API.
+9. "Saltiest today" lists the 3 foods with the most sodium that day. "N foods have no salt number, so the total may be low" appears when a logged food has no sodium value (unknown is never counted as 0).
+10. The salty one-tap items (patis, toyo, bagoong, tuyo, instant noodles) show their mg per serving on the button. REVIEW: serving sizes (1 tbsp, 3 small tuyo, 1 pack of instant noodles) and the numbers, especially bagoong, tuyo and instant noodles, which vary a lot by brand.
+
+### Not built
+
+11. No photo or AI estimation of food. No barcode lookup (Open Food Facts was optional and skipped). No third-party calls from the app.
+12. Usage analytics record only the fixed event names meal_logged, water_logged and salt_goal_set. A food name is never logged (rule B-7).

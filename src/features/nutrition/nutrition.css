@@ -1,0 +1,68 @@
+/* Food, salt and water. v6 tokens only; body 16-17px, values 24-28px, targets 44px+ (56px+ for the main actions). Meaning is never colour alone: every band has a word and an icon. */
+.nu { display: flex; flex-direction: column; gap: 14px; font-size: 16px; color: var(--ink); }
+.nu p, .nu ol, .nu ul, .nu h3 { margin: 0; }
+.nu-card { display: flex; flex-direction: column; gap: 10px; }
+.nu-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.nu-big { font-family: var(--f-display); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.nu-big small { font-family: inherit; font-size: 16px; font-weight: 500; color: var(--muted); }
+.nu-band { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 17px; font-weight: 700; color: var(--ink); background: var(--soft); }
+.nu-band.near { background: var(--warn-bg); }
+.nu-band.over { background: var(--red-soft); }
+.nu-bar { position: relative; height: 16px; border-radius: 8px; background: var(--card2); box-shadow: inset 0 0 0 1.5px var(--line); overflow: hidden; }
+.nu-bar > i { display: block; width: 100%; height: 100%; background: var(--ok); transform-origin: left center; border-radius: 8px; }
+.nu-bar.near > i { background: var(--amber-ink); }
+.nu-bar.over > i { background: var(--red); }
+.nu-tick { position: absolute; top: 0; bottom: 0; left: 80%; width: 2px; background: var(--ink); opacity: .55; }
+.nu-scale { display: flex; justify-content: space-between; font-size: 15px; color: var(--muted); }
+.nu-line { font-size: 17px; }
+.nu-sub { font-size: 15px; color: var(--muted); }
+.nu-h3 { font-size: 17px; font-weight: 700; }
+.nu-list { list-style: none; padding: 0; display: flex; flex-direction: column; }
+.nu-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; min-height: 44px; border-top: 1px solid var(--line); box-sizing: border-box; font-size: 17px; }
+.nu-list li:first-child { border-top: 0; }
+.nu-list li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.nu-list b { white-space: nowrap; font-weight: 700; }
+.nu-water { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+.nu-water-v { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nu-water-v b { font-family: var(--f-display); font-size: 24px; font-weight: 600; }
+.nu-water-v span { font-size: 15px; color: var(--muted); }
+.nu-act { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.nu-big-btn { min-height: 56px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--green); color: var(--on-green); font: inherit; font-size: 18px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.nu-big-btn:disabled { opacity: .55; }
+.nu-ghost { min-height: 48px; padding: 0 18px; border: 2px solid var(--green2); border-radius: 999px; background: none; color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; box-sizing: border-box; }
+.nu-ghost:disabled { opacity: .55; }
+.nu-link { min-height: 44px; display: inline-flex; align-items: center; color: var(--link); font-weight: 600; font-size: 16px; text-decoration: none; }
+.nu-err { color: var(--ink); background: var(--warn-bg); border-radius: 14px; padding: 10px 14px; font-size: 16px; }
+.nu-note { background: var(--warn-bg); border-radius: 14px; padding: 10px 14px; font-size: 16px; }
+
+/* plate sheet */
+.nu-seg { display: grid; gap: 4px; background: var(--card2); border-radius: 18px; padding: 4px; }
+.nu-seg.m4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nu-seg.m3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.nu-seg.m2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bt .nu-seg button { border: 0; background: none; border-radius: 14px; min-height: 52px; font: inherit; font-size: 16px; font-weight: 600; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; padding: 4px 6px; cursor: pointer; }
+.bt .nu-seg button small { font-size: 14px; font-weight: 500; }
+.bt .nu-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow), inset 0 0 0 2px var(--green2); }
+.nu-lab { font-size: 15px; font-weight: 700; color: var(--muted); }
+.nu-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.bt .nu-chip { min-height: 48px; border: 0; border-radius: 999px; background: var(--warn-bg); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.bt .nu-chip small { font-size: 14px; font-weight: 500; color: var(--ink); }
+.nu-search { font: inherit; font-size: 18px; min-height: 52px; border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; background: var(--card); color: var(--ink); width: 100%; box-sizing: border-box; min-width: 0; }
+.nu-tiles { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bt .nu-tile { width: 100%; min-height: 72px; border: 0; border-radius: 18px; background: var(--card2); color: var(--ink); font: inherit; text-align: left; padding: 8px 12px; display: flex; flex-direction: column; justify-content: center; gap: 1px; cursor: pointer; box-sizing: border-box; }
+.bt .nu-tile:active { background: var(--soft); }
+.nu-tile b { font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.nu-tile span { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
+.nu-tile em { font-style: normal; font-size: 14px; color: var(--muted); }
+.nu-tile .nu-est { font-size: 13px; font-weight: 600; color: var(--muted); }
+.nu-empty { font-size: 16px; color: var(--muted); padding: 8px 2px; }
+.nu-plate { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px 16px; background: var(--card); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.nu-picked { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one scrolling row keeps the tiles in view */
+.nu-picked li { flex: none; }
+.bt .nu-pick { min-height: 44px; border: 0; border-radius: 999px; background: var(--soft); color: var(--ink); font: inherit; font-size: 16px; padding: 0 12px 0 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.nu-total { font-size: 16px; }
+
+.nu button:focus-visible, .nu a:focus-visible, .nu-search:focus-visible, .nu-plate button:focus-visible, .nu-tiles button:focus-visible, .nu-seg button:focus-visible, .nu-chips button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .nu-bar > i { transition: transform .3s ease-out; } .bt .nu-tile { transition: background .15s; } }
+@media (prefers-reduced-motion: reduce) { .nu-bar > i, .bt .nu-tile { transition: none; } }
+

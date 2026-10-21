@@ -55,7 +55,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean', async ({ page }) => {
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.getByRole('button')).toHaveCount(7)
+      await expect(row.getByRole('button')).toHaveCount(9)
       await row.getByRole('button', { name: 'Gentle exercise for today' }).click()
       const sheet = page.getByRole('dialog', { name: 'Move' })
       await expect(sheet.getByText('Check with your doctor before starting new exercise.')).toBeVisible()

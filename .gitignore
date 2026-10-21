@@ -21,4 +21,6 @@ release-out/
 # Generated records SQL holds health values (dry runs, dependents)
 /.scratch/*.sql
 /.scratch/shots/
+# Cached USDA FoodData Central responses (scripts/nutrition/build-foods.mjs --verify)
+/.scratch/fdc/
 tsconfig.tsbuildinfo

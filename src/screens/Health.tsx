@@ -16,6 +16,7 @@ import Library from '../features/health/library/Library'
 import Article from '../features/health/library/Article'
 import Videos from '../features/health/library/Videos'
 import MoveScreen from '../features/exercise/MoveScreen'
+import NutritionScreen from '../features/nutrition/NutritionScreen'
 import Refill from '../features/health/Refill'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
@@ -49,6 +50,7 @@ export default function Health() {
   if (hash === '#health/videos') return <Videos />
   if (hash.startsWith('#health/library/')) return <Article rawKey={safeDecode(hash.slice('#health/library/'.length))} />
   if (hash === '#health/move') return <MoveScreen />
+  if (hash === '#health/nutrition') return <NutritionScreen />
   if (hash === '#health/refill') return <Refill />
   if (hash === '#health/visits') return <Visits />
   if (hash === '#health/summary') return <VisitSummary />
@@ -116,6 +118,11 @@ function Overview() {
       <a className="card hv-explore" href="#health/move">
         <Icon name="move" tone="vitals" boxed />
         <span className="grow">Move<small>Gentle exercise picks for today and your week</small></span>
+        <Icon name="chev" size={20} />
+      </a>
+      <a className="card hv-explore" href="#health/nutrition">
+        <Icon name="salt" tone="vitals" boxed />
+        <span className="grow">Food and salt<small>Salt eaten today and this week, next to blood pressure</small></span>
         <Icon name="chev" size={20} />
       </a>
       {personId && <MedicinesSummary personId={personId} />}

@@ -5,9 +5,12 @@ import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, takeMedicatio
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
+import PlateSheet from '../nutrition/PlateSheet'
+import SaltTodayCard from '../nutrition/SaltSummary'
+import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water'
 const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
@@ -15,7 +18,9 @@ const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefin
   { id: 'walk', label: 'Walk', icon: 'walk', tone: undefined, aria: 'Log a walk' },
   { id: 'move', label: 'Move', icon: 'move', tone: undefined, aria: 'Gentle exercise for today' },
   { id: 'dose', label: 'Dose', icon: 'pill', tone: 'medicine', aria: 'Log a medicine you took' },
-  { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' }
+  { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' },
+  { id: 'meal', label: 'Meal', icon: 'meal', tone: undefined, aria: 'Log what you ate' },
+  { id: 'water', label: 'Water', icon: 'glass', tone: undefined, aria: 'Log water you drank' }
 ]
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
@@ -46,7 +51,7 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick log: seven buttons, 4 + 3 centred (BP, Sugar, Weight, Walk, Move, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
+/** Quick log: nine buttons in a 3 x 3 grid (BP, Sugar, Weight, Walk, Move, Dose, Mood, Meal, Water), icon above the label. Each opens a small sheet and ends with a toast. */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
@@ -93,6 +98,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
           </button>
         ))}
       </div>
+      <SaltTodayCard onMeal={() => setOpen('meal')} />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>
@@ -123,6 +129,16 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       {open === 'move' && (
         <Sheet title="Move" onClose={close} focusFirst={false}>
           <MovePanel notify={(m) => { close(); notify(m) }} />
+        </Sheet>
+      )}
+      {open === 'meal' && (
+        <Sheet title="Meal" onClose={close} focusFirst={false}>
+          <PlateSheet onDone={(m) => { close(); notify(m) }} />
+        </Sheet>
+      )}
+      {open === 'water' && (
+        <Sheet title="Water" onClose={close} focusFirst={false}>
+          <WaterSheet />
         </Sheet>
       )}
       {open === 'dose' && (
