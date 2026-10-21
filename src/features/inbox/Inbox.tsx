@@ -1,4 +1,5 @@
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
+import { SubHeader } from '../shell/SubHeader'
 import { groupInbox, iconOf, type InboxIcon, type InboxItem } from './build'
 import type { Inbox as InboxState } from './useInbox'
 import './inbox.css'
@@ -27,11 +28,7 @@ export function Inbox({ inbox, now }: { inbox: InboxState; now?: Date }) {
   )
   return (
     <div className="sh sh-me">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href="#today" aria-label="Back to Today"><Icon name="back" /></a>
-        <h1 className="sh-h2 sh-grow">Notifications</h1>
-        {inbox.unread > 0 && <button type="button" className="in-read" onClick={inbox.markAllRead}>Mark all read</button>}
-      </div>
+      <SubHeader title="Notifications" backHref="#today" backLabel="Back to Today" trailing={inbox.unread > 0 ? <button type="button" className="in-read" onClick={inbox.markAllRead}>Mark all read</button> : undefined} />
       {inbox.items.length === 0 ? (
         <div className="sh-card"><b>No notifications yet</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>Warnings, medicine reminders and updates show here.</p></div>
       ) : (

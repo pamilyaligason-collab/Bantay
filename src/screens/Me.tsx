@@ -4,6 +4,7 @@ import { supabase } from '../features/auth/client'
 import { clearLastPerson, enablePasskey, forgetPhone, hasPasskeyFlag, loadFamily, passkeySupported } from '../features/auth/family'
 import { getMember, signOut, type Member } from '../features/auth/session'
 import { Icon } from '../features/shell/Icon'
+import { SubHeader } from '../features/shell/SubHeader'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
 import { Capacitor } from '@capacitor/core'
 import { useKv } from '../features/shell/useKv'
@@ -96,10 +97,7 @@ export default function Me() {
 
   return (
     <div className="sh sh-me">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href="#today" aria-label="Back to Today"><Icon name="back" /></a>
-        <h1 className="sh-h2">Me</h1>
-      </div>
+      <SubHeader title="Me" backHref="#today" backLabel="Back to Today" />
 
       <div className="sh-card sh-row">
         <span className="sh-av sh-av-lg">{photo ? <img src={photo} alt="" /> : (who || '?').charAt(0).toUpperCase()}</span>
