@@ -39,7 +39,7 @@ vi.mock('./History', () => ({ default: (p: { id: string | null; person?: string;
 
 import { addReadOnly } from './Carers'
 import Members from './Members'
-import { ageOf, formOf, GRANTED, profilePatch } from './Person'
+import { ageOf, formOf, GRANTED, profilePatch, signInBody } from './Person'
 
 beforeEach(() => {
   h.upsert.mockReset().mockResolvedValue({ error: null })
@@ -49,6 +49,7 @@ beforeEach(() => {
   h.invoke.mockReset().mockImplementation(async (_n: string, o: { body: { action: string } }) => ({ data: o.body.action === 'list' ? { ok: true, members } : { ok: true }, error: null }))
   h.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'admin_identifiers' ? [{ id: 'i1' }, { id: 'i2' }] : [], error: null }))
   location.hash = '#/members/p4'
+  Object.assign(people[3]!, { archived_at: null })
 })
 afterEach(cleanup)
 const bodies = () => h.invoke.mock.calls.map((c) => (c[1] as { body: Record<string, unknown> }).body)
@@ -162,11 +163,11 @@ describe('Member page', () => {
     await waitFor(() => expect(location.hash).toBe('#/members/p4/account'))
   })
 
-  it('a dependent with no login shows No sign-in for this person and an Invite', async () => {
+  it('a dependent with no login shows No sign-in for this person and Give a sign-in', async () => {
     await page('p4', 'account')
     expect(screen.getByText('No sign-in for this person.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Invite by email' }))
-    expect(await screen.findByRole('form', { name: 'Invite by email' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Give a sign-in' }))
+    expect(await screen.findByRole('form', { name: 'Give a sign-in' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Disable/ })).toBeNull()
   })
 
@@ -230,5 +231,66 @@ describe('Member page', () => {
   it('an unknown person says so', async () => {
     render(<Members id="nope" />)
     expect(await screen.findByText(/not in the family list/)).toBeTruthy()
+  })
+})
+
+const archiveCalls = () => h.rpc.mock.calls.filter((c) => c[0] === 'admin_set_archived').map((c) => c[1])
+
+describe('Archive and sign-in', () => {
+  it('Archive asks first, calls admin_set_archived true, and Undo calls it with false', async () => {
+    await page('p4', 'account')
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive Test Child' }))
+    expect(await screen.findByText(/disappear from every family phone: lists, reminders and alerts\. Their records stay\. You can reactivate any time\./)).toBeTruthy()
+    expect(archiveCalls()).toEqual([])
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(archiveCalls()).toEqual([{ p_person: 'p4', p_archived: true }]))
+    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
+    await waitFor(() => expect(archiveCalls()).toContainEqual({ p_person: 'p4', p_archived: false }))
+  })
+
+  it('a member can be archived too', async () => {
+    await page('p2', 'account')
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive Test Person' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(archiveCalls()).toEqual([{ p_person: 'p2', p_archived: true }]))
+  })
+
+  it('the admin never gets Archive for their own person', async () => {
+    await page('p1', 'account')
+    await screen.findByText(/your own account/)
+    expect(screen.queryByRole('button', { name: /^Archive/ })).toBeNull()
+  })
+
+  it('an archived person shows the banner; Reactivate calls admin_set_archived false', async () => {
+    Object.assign(people[3]!, { archived_at: '2026-10-20T02:00:00Z' })
+    await page('p4', 'account')
+    const banner = (await screen.findByText(/^Archived on/)).closest('.mp-archived') as HTMLElement
+    expect(banner.textContent).toContain('Archived on 20 Oct 2026. Hidden from family phones.')
+    expect(screen.queryByRole('button', { name: /^Archive / })).toBeNull()
+    fireEvent.click(within(banner).getByRole('button', { name: 'Reactivate' }))
+    await waitFor(() => expect(archiveCalls()).toEqual([{ p_person: 'p4', p_archived: false }]))
+  })
+
+  it('Give a sign-in sends personId, says it reactivates an archived person, and shows the PIN once', async () => {
+    Object.assign(people[3]!, { archived_at: '2026-10-20T02:00:00Z' })
+    await page('p4', 'account')
+    fireEvent.click(await screen.findByRole('button', { name: 'Give a sign-in' }))
+    const form = await screen.findByRole('form', { name: 'Give a sign-in' })
+    expect(within(form).getByText(/also reactivates them/)).toBeTruthy()
+    fireEvent.change(within(form).getByLabelText('PIN (6 digits)'), { target: { value: '123456' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Give a sign-in' }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/harder to guess/)
+    expect(bodies().some((b) => b.action === 'create')).toBe(false)
+    fireEvent.change(within(form).getByLabelText('PIN (6 digits)'), { target: { value: '480193' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Give a sign-in' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(bodies()).toContainEqual({ action: 'create', displayName: 'Test Child', pin: '480193', role: 'member', personId: 'p4' }))
+    expect(await screen.findByText('A new PIN is shown once, to the admin. Give it to the person yourself.')).toBeTruthy()
+    expect(screen.getByLabelText('PIN').textContent).toBe('480193')
+  })
+
+  it('signInBody includes the sign-in name only when typed', () => {
+    expect(signInBody({ id: 'p4', display_name: 'Test Child' }, ' Kid_One ', '480193')).toEqual({ action: 'create', displayName: 'Test Child', handle: 'kid_one', pin: '480193', role: 'member', personId: 'p4' })
+    expect(signInBody({ id: 'p4', display_name: 'Test Child' }, '', '480193')).not.toHaveProperty('handle')
   })
 })

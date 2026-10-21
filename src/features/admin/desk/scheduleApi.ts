@@ -75,6 +75,10 @@ export function monthGrid(month: string): string[] {
 }
 export const weekDays = (day: string) => Array.from({ length: 7 }, (_, i) => addDays(day, i - dow(day)))
 
+/** Drop anything that belongs to an archived person (items with no person stay). */
+export const withoutArchived = <T extends { person_id?: unknown; personId?: string | null }>(list: T[], archived: Set<string>): T[] =>
+  archived.size ? list.filter((i) => { const id = i.personId ?? i.person_id; return typeof id !== 'string' || !archived.has(id) }) : list
+
 export const itemDay = (i: AgendaItem) => manilaDay(i.when)
 const sortKey = (i: AgendaItem) => itemDay(i) + (i.allDay ? '00:00' : manilaTime(i.when)) + i.title
 export const sortItems = (list: AgendaItem[]) => [...list].sort((a, b) => (sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0))
@@ -150,7 +154,7 @@ export async function loadAgenda(from: string, to: string, opts: { overdue?: boo
   const get = async (build: () => PromiseLike<{ data: unknown; error: unknown }>): Promise<Row[] | null> => {
     try { const { data, error } = await build(); return error ? null : ((data ?? []) as Row[]) } catch { return null }
   }
-  const [ev, tk, ap, md, rx, ids, ins] = await Promise.all([
+  const [ev, tk, ap, md, rx, ids, ins, gone] = await Promise.all([
     get(() => sb.from('family_events').select('id, title, starts_at, ends_at, all_day, person_id').is('deleted_at', null).gte('starts_at', t0).lt('starts_at', t1).limit(500)),
     get(() => {
       let q = sb.from('family_tasks').select('id, title, due, assignee_person_id, done').is('deleted_at', null).not('due', 'is', null).lte('due', to)
@@ -161,9 +165,11 @@ export async function loadAgenda(from: string, to: string, opts: { overdue?: boo
     get(() => sb.from('medications').select('id, person_id, name, strength, schedule, as_needed, med_status, deleted_at, status').is('deleted_at', null).eq('med_status', 'active').limit(500)),
     get(() => sb.from('prescriptions').select('id, person_id, prescriber, follow_up_on, status').neq('status', 'rejected').gte('follow_up_on', from).lte('follow_up_on', to).limit(500)),
     get(() => sb.from('person_identifiers').select('id, person_id, id_type, expires_on, status').neq('status', 'rejected').gte('expires_on', from).lte('expires_on', to).limit(500)), // never id_number
-    get(() => sb.from('insurance_policies').select('id, person_id, carrier, plan, valid_to, status').neq('status', 'rejected').gte('valid_to', from).lte('valid_to', to).limit(500)) // never member_no
+    get(() => sb.from('insurance_policies').select('id, person_id, carrier, plan, valid_to, status').neq('status', 'rejected').gte('valid_to', from).lte('valid_to', to).limit(500)), // never member_no
+    get(() => sb.from('people').select('id, archived_at').limit(500)) // fails before migration 0022: then nobody is archived
   ])
   const all = [ev, tk, ap, md, rx, ids, ins]
+  const away = new Set((gone ?? []).filter((r) => r.archived_at).map((r) => String(r.id)))
   if (all.every((r) => r === null)) throw new Error('not_connected')
   const today = todayManila()
   const items: AgendaItem[] = []
@@ -178,12 +184,12 @@ export async function loadAgenda(from: string, to: string, opts: { overdue?: boo
   }
   // A wide range shows its 14 dose days from today when today is inside it (what the family needs next), else from the start.
   const doseFrom = today >= from && today <= to ? today : from
-  const d = expandDoses((md ?? []) as unknown as MedRow[], doseFrom, to)
+  const d = expandDoses(withoutArchived((md ?? []) as unknown as MedRow[], away), doseFrom, to)
   items.push(...d.items)
   for (const r of rx ?? []) items.push({ kind: 'followup', id: `followup:${r.id}`, rowId: String(r.id), when: String(r.follow_up_on), allDay: true, title: r.prescriber ? `Follow-up with ${r.prescriber}` : 'Follow-up after prescription', personId: str(r.person_id), status: str(r.status) ?? 'draft', source: 'prescriptions', editable: false })
   for (const r of ids ?? []) items.push({ kind: 'expiry', id: `id:${r.id}`, rowId: String(r.id), when: String(r.expires_on), allDay: true, title: `${ID_LABEL[String(r.id_type)] ?? 'ID'} expires`, personId: str(r.person_id), status: str(r.status) ?? 'draft', source: 'person_identifiers', editable: false })
   for (const r of ins ?? []) items.push({ kind: 'expiry', id: `policy:${r.id}`, rowId: String(r.id), when: String(r.valid_to), allDay: true, title: `${str(r.carrier) ?? 'Insurance'}${r.plan ? ' ' + r.plan : ''} ends`, personId: str(r.person_id), status: str(r.status) ?? 'draft', source: 'insurance_policies', editable: false })
-  return { items: sortItems(items.filter((i) => i.when)), doseCapped: d.capped, doseFrom, partial: all.some((r) => r === null) }
+  return { items: sortItems(withoutArchived(items, away).filter((i) => i.when)), doseCapped: d.capped, doseFrom, partial: all.some((r) => r === null) }
 }
 
 // ---- Writes ----

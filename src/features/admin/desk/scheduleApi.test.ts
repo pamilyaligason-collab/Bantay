@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('../../auth/client', () => ({ supabase: null }))
 
 import {
-  DOSE_CAP_DAYS, addDays, clock12, dayLabel, eventFields, eventInsert, expandDoses, manilaDay, manilaTime, monthGrid, parseTimesText, scheduleWithTimes, shiftMonth, taskInsert, toInstant, weekDays, type MedRow
+  DOSE_CAP_DAYS, addDays, clock12, dayLabel, eventFields, eventInsert, expandDoses, manilaDay, manilaTime, monthGrid, parseTimesText, scheduleWithTimes, shiftMonth, taskInsert, toInstant, weekDays, withoutArchived, type MedRow
 } from './scheduleApi'
 
 const med = (o: Partial<MedRow> = {}): MedRow => ({ id: 'm1', person_id: 'p1', name: 'Test Medicine', strength: '5 mg', schedule: { v: 1, times: ['08:00', '20:00'] }, as_needed: false, med_status: 'active', deleted_at: null, status: 'confirmed', ...o })
@@ -116,5 +116,19 @@ describe('medicine time editing', () => {
     expect(scheduleWithTimes(['08:00'], ['07:00'])).toEqual({ v: 1, times: ['07:00'] })
     expect(scheduleWithTimes(null, [])).toEqual({ v: 1, times: [] })
     expect(scheduleWithTimes({ v: 1, needs_time: true }, [])).toEqual({ v: 1, needs_time: true, times: [] })
+  })
+})
+
+describe('archived people', () => {
+  const gone = new Set(['p9'])
+  it('doses of an archived person are left out, others stay', () => {
+    const meds = withoutArchived([med(), med({ id: 'm2', person_id: 'p9' })], gone)
+    expect(meds.map((m) => m.id)).toEqual(['m1'])
+    expect(expandDoses(meds, '2026-10-21', '2026-10-21').items.every((i) => i.personId === 'p1')).toBe(true)
+  })
+  it('agenda items drop by personId; no person or an empty set keeps everything', () => {
+    const items = [{ personId: 'p9' }, { personId: 'p1' }, { personId: null }]
+    expect(withoutArchived(items, gone)).toEqual([{ personId: 'p1' }, { personId: null }])
+    expect(withoutArchived(items, new Set())).toBe(items)
   })
 })

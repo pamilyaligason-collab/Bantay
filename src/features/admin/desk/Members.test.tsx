@@ -40,6 +40,7 @@ beforeEach(() => {
   h.insert.mockReset().mockResolvedValue({ error: null })
   h.getUser.mockReset().mockResolvedValue({ data: { user: { id: ME } } })
   location.hash = '#/members'
+  Object.assign(people[3]!, { archived_at: null })
 })
 afterEach(cleanup)
 const bodies = () => h.invoke.mock.calls.map((c) => (c[1] as { body: Record<string, unknown> }).body)
@@ -102,6 +103,19 @@ describe('filters', () => {
   })
 })
 
+describe('archived filter', () => {
+  const kid = line({ p: { ...people[3]!, archived_at: '2026-10-20T02:00:00Z' }, m: undefined, drafts: 4, carers: 2, edit: 1 })
+  const act = line({ p: people[0]!, m: { ...base, role: 'admin', provider: 'google', displayName: 'Test Admin', handle: null } })
+  const names = (f: Parameters<typeof filterLines>[1]) => filterLines([kid, act], f, false, '').map((l) => l.p.display_name)
+  it('archived people only show under the Archived chip, never in the others', () => {
+    expect(names('archived')).toEqual(['Test Child'])
+    expect(names('all')).toEqual(['Test Admin'])
+    expect(names('dependents')).toEqual([])
+    expect(names('attention')).toEqual([]) // drafts do not count for an archived person
+    expect(stateOf(kid).text).toBe('Archived')
+  })
+})
+
 describe('payloads', () => {
   it('create is a member with an optional handle', () => {
     expect(createBody(' Test Person ', '', '480193')).toEqual({ action: 'create', displayName: 'Test Person', pin: '480193', role: 'member' })
@@ -145,6 +159,18 @@ describe('Members page', () => {
     expect(screen.getAllByRole('row')).toHaveLength(4)
     fireEvent.change(screen.getByLabelText('Search members'), { target: { value: 'zzz' } })
     expect(screen.getByText(/No one matches/)).toBeTruthy()
+  })
+
+  it('Archived chip counts archived people and shows the tag and date; the default list hides them', async () => {
+    Object.assign(people[3]!, { archived_at: '2026-10-20T02:00:00Z' })
+    render(<Members id={null} />)
+    await screen.findByRole('link', { name: /Test Person/ })
+    expect(screen.queryByRole('link', { name: /Test Child/ })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Archived (1)' }))
+    const kid = screen.getByRole('link', { name: /Test Child/ }).closest('tr') as HTMLElement
+    expect(within(kid).getByText('Archived')).toBeTruthy()
+    expect(within(kid).getByText('20 Oct 2026')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: /Test Person/ })).toBeNull()
   })
 
   it('sorts by a column', async () => {
