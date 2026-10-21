@@ -65,3 +65,15 @@ Order: L0 first (about 20 min), then LA-LD in parallel. Session-7 files are not 
 2. History: store changed **field names only** (recommended, no health values copied), or old and new values too?
 3. ID numbers: masked with a logged 30-second "Show" (recommended), or always masked in the dashboard?
 4. Scope: all of F1-F8 in one wave of 4 lanes (recommended, about 2-3 h), or Members + Profiles + Confirm queue first?
+
+## 9. Web UI redesign (2026-10-21, Lloyd: "make the admin dashboard a web UI and not a mobile app")
+Answers: v6 green in a web-admin layout (reference: classic admin template); own page `/admin`; desktop first, phone usable; Dashboard home with KPI tiles, charts, work panels and recent history; plus a proper Members area to see, update and edit each member.
+Mockup: `docs/admin-dashboard/mockup-web.html` (made-up numbers, no real names).
+
+- **Own page:** `admin.html` as a second Vite entry -> `bantay.pages.dev/admin`. No phone shell (no tab bar, sky, Ask bubble, offline bar). Same Supabase session (same origin). Not signed in -> link to sign in at `/`; not admin -> "Admins only". The service worker must not serve the phone app for `/admin` (navigateFallbackDenylist). `#admin/<page>` in the app redirects to `/admin#/<page>`; the phone Admin page gets an "Open web admin" link.
+- **Layout:** dark green top bar (brand, search, PIN-request and alert bells, admin menu with sign out); cream sidebar grouped Overview / People / Records / Private / System with count badges; content area with page header and breadcrumb; flat 8 px panels, compact tables (44 px rows), footer. Sidebar collapses to a menu button under 1024 px.
+- **Dashboard home (new):** 4 KPI tiles (active this week of members, drafts to confirm, failed scans, IDs expiring in 60 days), chart of screens opened per day for 30 days with records confirmed per week, "Confirm queue by person", "Needs you" (PIN requests, duplicates, failed scans, locked members), "Recent changes" (last 10 audit rows). Counts only; no new migration (head-count queries).
+- **Members (merged with People):** one table of everyone incl. dependents: sign-in, role, state (active / locked / disabled / cared for), carers, last seen, drafts to confirm; actions Add member, Add dependent, Invite. **Member page** `/admin#/members/<personId>`: summary card + tabs Profile (edit), Account (PIN, unlock, role, disable), Carers, Records, IDs, History (that person only).
+- Existing pages (Confirm queue, Records, Duplicates, Files and scans, IDs, History) move into the new shell unchanged in function; Safety data/broadcast and Usage reuse the phone admin sections.
+
+Lanes: W0 orchestrator (entry, shell, theme, redirect, SW); W1 Dashboard home (Sonnet, Opus review); W2 Members area + member page (Sonnet, Fable review). Gates as section 7 (1280 / 820 / 390 px, axe 0).

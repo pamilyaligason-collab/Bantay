@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bantay Admin - web mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--ground:#F6F1E7;--card:#FFFCF6;--card2:#EFE8DA;--green:#1F3D2B;--green2:#2E5A3F;--soft:#DCE5D8;--amber:#E8A93A;--amber-ink:#7A4E05;--ink:#1D1F1C;--muted:#5E625B;--line:#E4DCCB;--on-green:#F6F1E7;--red:#C2362B;--red-soft:#F7DEDA;--ok:#2E7D4F;--slate:#3E4F5C}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 "Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:var(--ground)}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}
+.top{height:56px;background:var(--green);color:var(--on-green);display:flex;align-items:center;gap:16px;padding:0 20px;position:sticky;top:0;z-index:5}
+.brand{font-family:Fraunces,serif;font-size:20px;display:flex;gap:10px;align-items:center;width:220px}
+.top .sp{flex:1}.search{background:rgba(255,255,255,.12);border:0;border-radius:8px;color:var(--on-green);height:36px;width:320px;padding:0 12px}
+.ib{position:relative;width:40px;height:40px;border-radius:8px;border:0;background:rgba(255,255,255,.1);color:var(--on-green);font-size:20px}
+.ib b{position:absolute;top:2px;right:2px;background:var(--amber);color:#2A1C00;font-size:11px;border-radius:9px;min-width:18px;line-height:18px}
+.me{display:flex;align-items:center;gap:10px}.av{width:34px;height:34px;border-radius:50%;background:var(--soft);color:var(--green);display:grid;place-items:center;font-weight:700}
+.wrap{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 56px)}
+.side{background:var(--card);border-right:1px solid var(--line);padding:12px 0}
+.grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:16px 20px 6px}
+.nav{display:flex;align-items:center;gap:12px;padding:0 20px;height:44px;color:var(--ink);font-weight:500;border-left:3px solid transparent}
+.nav i{font-size:19px;color:var(--green2)}.nav span{flex:1}
+.nav[aria-current]{background:var(--soft);border-left-color:var(--green2);font-weight:700}
+.cnt{font-size:11px;font-weight:700;border-radius:9px;padding:0 7px;line-height:18px;background:var(--card2);color:var(--muted)}.cnt.w{background:var(--amber);color:#2A1C00}.cnt.r{background:var(--red);color:#fff}
+.main{padding:20px 24px 40px;min-width:0}
+.ph{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px}.ph h1{font-family:Fraunces,serif;font-weight:600;font-size:26px;margin:0}.ph .crumb{color:var(--muted);font-size:13px}.ph .sp{flex:1}
+.btn{height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-weight:600}.btn.go{background:var(--green);color:var(--on-green);border-color:var(--green)}.btn.bad{color:var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.kpi{border-radius:8px;color:#fff;overflow:hidden}.kpi .k{padding:12px 16px 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;opacity:.9;display:flex;justify-content:space-between}
+.kpi .v{font-family:Fraunces,serif;font-size:38px;text-align:center;padding:6px 0 10px}.kpi .f{background:rgba(0,0,0,.12);padding:8px 16px;font-size:12px;display:flex;justify-content:space-between}
+.g{background:var(--green2)}.a{background:#B7791F}.s{background:var(--slate)}.r{background:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.pan{background:var(--card);border:1px solid var(--line);border-radius:8px;min-width:0}.pan>h2{margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.pan .b{padding:12px 16px}.c8{grid-column:span 8}.c4{grid-column:span 4}.c6{grid-column:span 6}.c12{grid-column:span 12}
+table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);background:var(--card2)}
+td{padding:0 12px;height:44px;border-top:1px solid var(--line)}tr:hover td{background:#FBF7EF}
+.tag{font-size:11px;font-weight:700;border-radius:4px;padding:2px 7px}.ok{background:#DDEEDF;color:#1E5A36}.warn{background:#F7E7C6;color:var(--amber-ink)}.bad{background:var(--red-soft);color:#8E241C}.pl{background:var(--card2);color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}.mut{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 16px}.tabs a{padding:10px 14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}.tabs a[aria-current]{color:var(--green);border-bottom-color:var(--green2)}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--muted)}input,select,textarea{height:38px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font:inherit;background:#fff;color:var(--ink)}textarea{height:72px;padding:8px 10px}
+.card-h{display:flex;gap:16px;align-items:center}.big{width:72px;height:72px;border-radius:50%;background:var(--soft);color:var(--green);display:grid;place-items:center;font-family:Fraunces,serif;font-size:28px}
+.foot{margin-top:24px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:10px}
+[data-v]{display:none}[data-v].on{display:block}
+.note{background:#FFF7E3;border:1px dashed var(--amber);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--amber-ink);margin-bottom:12px}
+</style></head><body>
+<header class="top"><div class="brand"><i class="ti ti-shield-check"></i>Bantay Admin</div><input class="search" placeholder="Search members, papers, IDs"><div class="sp"></div>
+<button class="ib" aria-label="PIN requests"><i class="ti ti-key"></i><b>1</b></button><button class="ib" aria-label="Alerts"><i class="ti ti-bell"></i><b>4</b></button>
+<div class="me"><div class="av">L</div>Admin<i class="ti ti-chevron-down"></i></div></header>
+<div class="wrap"><nav class="side" aria-label="Admin">
+<div class="grp">Overview</div><a class="nav" href="#home" data-n="home"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></a>
+<div class="grp">People</div><a class="nav" href="#members" data-n="members"><i class="ti ti-users"></i><span>Members</span><em class="cnt">10</em></a><a class="nav" href="#members"><i class="ti ti-heart-handshake"></i><span>Carers</span></a>
+<div class="grp">Records</div><a class="nav" href="#home"><i class="ti ti-checks"></i><span>Confirm queue</span><em class="cnt w">178</em></a><a class="nav" href="#home"><i class="ti ti-files"></i><span>Records</span></a><a class="nav" href="#home"><i class="ti ti-copy"></i><span>Duplicates</span><em class="cnt w">7</em></a><a class="nav" href="#home"><i class="ti ti-scan"></i><span>Files and scans</span><em class="cnt r">4</em></a>
+<div class="grp">Private</div><a class="nav" href="#home"><i class="ti ti-id"></i><span>IDs and insurance</span></a>
+<div class="grp">System</div><a class="nav" href="#home"><i class="ti ti-history"></i><span>History</span></a><a class="nav" href="#home"><i class="ti ti-speakerphone"></i><span>Safety data and alerts</span></a><a class="nav" href="#home"><i class="ti ti-chart-line"></i><span>Usage</span></a>
+</nav>
+<main class="main">
+<section data-v="home">
+<div class="note">Mockup with made-up numbers. Same pages as today, new web layout.</div>
+<div class="ph"><div><div class="crumb">Overview</div><h1>Dashboard</h1></div><div class="sp"></div><button class="btn"><i class="ti ti-refresh"></i> Refresh</button></div>
+<div class="kpis">
+<a class="kpi g" href="#members"><div class="k">Active this week<i class="ti ti-users"></i></div><div class="v">7 / 10</div><div class="f"><span>manage members</span><span>+1 vs last week</span></div></a>
+<a class="kpi a" href="#home"><div class="k">To confirm<i class="ti ti-checks"></i></div><div class="v">178</div><div class="f"><span>open queue</span><span>86 labs</span></div></a>
+<a class="kpi r" href="#home"><div class="k">Failed scans<i class="ti ti-alert-triangle"></i></div><div class="v">4</div><div class="f"><span>files and scans</span><span>retry</span></div></a>
+<a class="kpi s" href="#home"><div class="k">IDs expiring<i class="ti ti-id"></i></div><div class="v">2</div><div class="f"><span>next 60 days</span><span>IDs page</span></div></a></div>
+<div class="grid">
+<div class="pan c8"><h2>App use, last 30 days<span class="mut">screens opened per day</span></h2><div class="b"><svg viewBox="0 0 640 180" width="100%" height="180" role="img" aria-label="App use per day"><g stroke="#E4DCCB"><line x1="30" y1="20" x2="630" y2="20"/><line x1="30" y1="70" x2="630" y2="70"/><line x1="30" y1="120" x2="630" y2="120"/><line x1="30" y1="160" x2="630" y2="160"/></g><polyline fill="none" stroke="#2E5A3F" stroke-width="2.5" points="30,120 50,100 70,110 90,80 110,95 130,70 150,85 170,60 190,90 210,75 230,65 250,100 270,80 290,55 310,70 330,90 350,60 370,75 390,50 410,80 430,65 450,95 470,70 490,58 510,85 530,62 550,74 570,48 590,66 610,58 630,52"/><g fill="#E8A93A">
+<rect x="34" y="140" width="8" height="20"/><rect x="94" y="130" width="8" height="30"/><rect x="154" y="135" width="8" height="25"/><rect x="214" y="125" width="8" height="35"/><rect x="274" y="138" width="8" height="22"/><rect x="334" y="128" width="8" height="32"/><rect x="394" y="120" width="8" height="40"/><rect x="454" y="136" width="8" height="24"/><rect x="514" y="130" width="8" height="30"/><rect x="574" y="126" width="8" height="34"/></g><g font-size="10" fill="#5E625B"><text x="0" y="24">60</text><text x="0" y="74">40</text><text x="0" y="124">20</text><text x="6" y="164">0</text></g></svg><div class="row mut"><span style="color:#2E5A3F">— screens opened</span><span style="color:#B7791F">▮ records confirmed per week</span></div></div></div>
+<div class="pan c4"><h2>Confirm queue by person<a class="mut" href="#home">open</a></h2><table><tbody>
+<tr><td>Member A</td><td><span class="tag warn">64 labs</span></td></tr><tr><td>Member B</td><td><span class="tag warn">41 labs</span></td></tr><tr><td>Member C</td><td><span class="tag warn">22 papers</span></td></tr><tr><td>Member D</td><td><span class="tag warn">12 Rx lines</span></td></tr><tr><td>Others (3)</td><td><span class="tag pl">39</span></td></tr></tbody></table></div>
+<div class="pan c4"><h2>Needs you</h2><table><tbody>
+<tr><td><i class="ti ti-key"></i> PIN reset asked by m-handle</td><td><button class="btn">Reset</button></td></tr>
+<tr><td><i class="ti ti-copy"></i> 7 duplicate pairs</td><td><button class="btn">Review</button></td></tr>
+<tr><td><i class="ti ti-alert-triangle"></i> 4 scans failed</td><td><button class="btn">Retry</button></td></tr>
+<tr><td><i class="ti ti-lock"></i> 1 member locked</td><td><button class="btn">Unlock</button></td></tr></tbody></table></div>
+<div class="pan c8"><h2>Recent changes<a class="mut" href="#home">History</a></h2><table><thead><tr><th>When</th><th>Who</th><th>What</th><th>Person</th><th>Fields</th></tr></thead><tbody>
+<tr><td>10:42</td><td>Admin</td><td><span class="tag ok">Confirm</span> lab result</td><td>Member A</td><td class="mut">status</td></tr>
+<tr><td>10:41</td><td>Admin</td><td><span class="tag pl">Update</span> profile</td><td>Member C</td><td class="mut">blood_type, allergies</td></tr>
+<tr><td>09:15</td><td>Member B</td><td><span class="tag pl">Update</span> medicine</td><td>Member B</td><td class="mut">dose</td></tr>
+<tr><td>Yesterday</td><td>Admin</td><td><span class="tag bad">Reveal</span> ID number</td><td>Member D</td><td class="mut">id_number</td></tr></tbody></table></div>
+</div></section>
+
+<section data-v="members">
+<div class="ph"><div><div class="crumb">People</div><h1>Members</h1></div><div class="sp"></div><input placeholder="Search name or sign-in" style="width:240px"><button class="btn">Invite by email</button><button class="btn">Add dependent</button><button class="btn go"><i class="ti ti-plus"></i> Add member</button></div>
+<div class="pan"><table><thead><tr><th>Name</th><th>Sign-in</th><th>Role</th><th>State</th><th>Carers</th><th>Last seen</th><th>To confirm</th><th></th></tr></thead><tbody>
+<tr><td><a class="row" href="#member"><span class="av">A</span><b>Member A</b></a></td><td>PIN · a-handle</td><td>Admin</td><td><span class="tag ok">Active</span></td><td>—</td><td>today 10:40</td><td>64</td><td><a class="btn" href="#member">Open</a></td></tr>
+<tr><td><a class="row" href="#member"><span class="av">B</span><b>Member B</b></a></td><td>Google</td><td>Member</td><td><span class="tag ok">Active</span></td><td>1 read-only</td><td>today 09:15</td><td>41</td><td><a class="btn" href="#member">Open</a></td></tr>
+<tr><td><a class="row" href="#member"><span class="av">C</span><b>Member C</b></a></td><td>PIN · c-handle</td><td>Member</td><td><span class="tag bad">Locked until 14:20 · 5 tries</span></td><td>—</td><td>2 days ago</td><td>22</td><td><a class="btn" href="#member">Open</a></td></tr>
+<tr><td><a class="row" href="#member"><span class="av">D</span><b>Member D</b></a></td><td><span class="tag pl">No phone</span></td><td>Dependent</td><td><span class="tag pl">Cared for</span></td><td>2 (1 can edit)</td><td>—</td><td>12</td><td><a class="btn" href="#member">Open</a></td></tr>
+<tr><td><a class="row" href="#member"><span class="av">E</span><b>Member E</b></a></td><td>PIN · e-handle</td><td>Member</td><td><span class="tag warn">Disabled</span></td><td>—</td><td>3 weeks ago</td><td>0</td><td><a class="btn" href="#member">Open</a></td></tr>
+</tbody></table></div></section>
+
+<section data-v="member">
+<div class="ph"><div><div class="crumb"><a href="#members">Members</a> / Member C</div><h1>Member C</h1></div><div class="sp"></div><button class="btn">Reset PIN</button><button class="btn">Unlock</button><button class="btn bad">Disable</button></div>
+<div class="grid"><div class="pan c4"><div class="b"><div class="card-h"><div class="big">C</div><div><b style="font-size:16px">Member C</b><div class="mut">Member · PIN sign-in c-handle</div><span class="tag bad">Locked until 14:20</span></div></div>
+<table style="margin-top:12px"><tbody><tr><td class="mut">Age</td><td>58</td></tr><tr><td class="mut">Blood type</td><td>O+</td></tr><tr><td class="mut">Last seen</td><td>2 days ago</td></tr><tr><td class="mut">Papers</td><td>31 (22 to confirm)</td></tr><tr><td class="mut">IDs</td><td>3 (1 expiring)</td></tr><tr><td class="mut">Carers</td><td>none</td></tr></tbody></table></div></div>
+<div class="c8"><nav class="tabs"><a aria-current="page" href="#member">Profile</a><a href="#member">Account</a><a href="#member">Carers</a><a href="#member">Records</a><a href="#member">IDs</a><a href="#member">History</a></nav>
+<div class="pan"><div class="b"><div class="form">
+<label>Name<input value="Member C"></label><label>Phone<input value="0900 000 0000"></label>
+<label>Birthdate<input type="date" value="1968-05-01"></label><label>Sex<select><option>Female</option><option>Male</option><option></option></select></label>
+<label>Blood type<select><option>O+</option></select></label><label>Address<input value="Sample street, Sample city"></label>
+<label>Also known as (one per line)<textarea>C. Sample</textarea></label><label>Allergies (one per line)<textarea>Sample allergy</textarea></label>
+<label style="grid-column:span 2">Conditions (one per line)<textarea>Sample condition</textarea></label></div>
+<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn">Cancel</button><button class="btn go">Save profile</button></div></div></div></div></div>
+</section>
+<div class="foot">Family Bantay admin · v6 tokens · counts only, no health values on Dashboard</div>
+</main></div>
+<script>
+const show=()=>{const v=(location.hash||'#home').slice(1);document.querySelectorAll('[data-v]').forEach(s=>s.classList.toggle('on',s.dataset.v===v));document.querySelectorAll('.nav[data-n]').forEach(n=>n.toggleAttribute('aria-current',n.dataset.n===(v==='member'?'members':v)))};addEventListener('hashchange',show);show();
+</script></body></html>
