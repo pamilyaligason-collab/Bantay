@@ -21,3 +21,4 @@ release-out/
 # Generated records SQL holds health values (dry runs, dependents)
 /.scratch/*.sql
 /.scratch/shots/
+tsconfig.tsbuildinfo
