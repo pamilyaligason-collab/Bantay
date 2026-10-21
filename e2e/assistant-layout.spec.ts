@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { openChat, skipOnboarding } from './helpers'
 
 test.use({ viewport: { width: 375, height: 812 } })
 
@@ -11,7 +11,7 @@ test('the centre Ask tab is raised in the tab bar, there is no floating button, 
   expect(f.width).toBeGreaterThanOrEqual(44)
   expect(await page.locator('.as-fab').count()).toBe(0)
   expect(await page.getByRole('navigation', { name: 'Main' }).getByRole('button').count()).toBe(5)
-  await fab.click()
+  await openChat(page)
   const bad = await page.evaluate(() => {
     const root = document.scrollingElement as Element
     const out = root.scrollWidth > root.clientWidth ? ['document'] : []
@@ -31,7 +31,7 @@ test('with the keyboard open the composer sits directly above it, and the cautio
     (window as unknown as { __kb: (h: number) => void }).__kb = (h) => { vv.height = h; vv.dispatchEvent(new Event('resize')) }
   })
   await page.goto('/')
-  await page.getByRole('button', { name: 'Ask Bantay' }).click()
+  await openChat(page)
   await expect(page.getByText('I can be wrong. Check with your doctor for medical decisions.')).toBeVisible()
   await expect(page.getByText(/mix things up/)).toHaveCount(0)
   await page.waitForTimeout(600) // the sheet slides in

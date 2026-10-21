@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { openChat, skipOnboarding } from './helpers'
 
 test.use({ viewport: { width: 390, height: 844 } })
 
@@ -54,7 +54,7 @@ test('greeting shows on Today only', async ({ page }) => {
 test('Ask: the composer sits at the bottom of the screen with no gap under it', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await page.getByRole('button', { name: 'Ask Bantay' }).click()
+  await openChat(page)
   const form = page.locator('.as-form')
   await expect(form).toBeVisible()
   await page.waitForTimeout(600) // the sheet slides in
