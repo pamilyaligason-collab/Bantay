@@ -4,10 +4,12 @@ import { getMember, onAuthChange } from '../auth/session'
 import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { isLive, parseSchedule } from '../health/meds'
+import { hdb } from '../records/store'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import { nextDoses, type DuePerson } from './nextPick'
 
 const NO_MEDS: Medication[] = []
+const NO_IDS: string[] = []
 const NO_TAKES: MedTaken[] = []
 const startOfYesterday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 1); return d } // yesterday's late doses count at the midnight edge
 
@@ -17,7 +19,8 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
   const { people, selfId } = useFamilyPeople()
   const [userId, setUserId] = useState<string | undefined>(undefined)
   const writable = useWritableIds(userId)
-  const [meds, setMeds] = useState(NO_MEDS)
+  const [allMeds, setMeds] = useState(NO_MEDS)
+  const [known, setKnown] = useState(NO_IDS) // people this phone still knows; an archived person's medicines may linger in the local table
   const [takes, setTakes] = useState(NO_TAKES)
   const [tick, setTick] = useState(() => new Date())
 
@@ -27,11 +30,13 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
     who()
     const off = onAuthChange(who) // signing in or out re-reads who I can mark for
     const a = liveQuery(() => ldb.medications.toArray()).subscribe({ next: setMeds, error: () => undefined })
+    const k = liveQuery(() => hdb.people.toCollection().primaryKeys()).subscribe({ next: (ids) => setKnown(ids as string[]), error: () => undefined })
     const b = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()).subscribe({ next: setTakes, error: () => undefined })
     const t = setInterval(() => setTick(new Date()), 60_000)
-    return () => { live = false; off(); a.unsubscribe(); b.unsubscribe(); clearInterval(t) }
+    return () => { live = false; off(); a.unsubscribe(); k.unsubscribe(); b.unsubscribe(); clearInterval(t) }
   }, [])
 
+  const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === selfId || ok.has(m.personId)) }, [allMeds, known, selfId])
   const targets = useMemo(() => people.filter((p) => canMarkFor(p.id, selfId ?? '', writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])
   const due = useMemo(() => nextDoses(targets, meds, takes, tick), [targets, meds, takes, tick])
   const review = useMemo(() => {
