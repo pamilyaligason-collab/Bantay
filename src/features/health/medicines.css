@@ -41,8 +41,6 @@ div.md-medrow { cursor: default; }
 .md-help { margin: 0; font-size: 14px; }
 .md-toast { display: flex; align-items: center; gap: 10px; width: max-content; }
 .md-undo { min-height: 44px; min-width: 56px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-weight: 700; }
-.hdr.hv-back-row { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 4px; text-align: left; }
-.hv-back-row h1 { margin: 0; text-align: left; }
 .md-foot { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--card); border-top: 0.5px solid var(--sep); z-index: 1; }
 .md-acts[data-two] { grid-template-columns: 1fr 1fr; }
 .md-dup { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; font-weight: 600; }

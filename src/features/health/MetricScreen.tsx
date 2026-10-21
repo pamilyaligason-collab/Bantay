@@ -12,6 +12,7 @@ import {
 } from './model'
 import { SubHeader } from '../shell/SubHeader'
 import { useActivity } from './useActivity'
+import { isVital } from './vitals'
 
 const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
@@ -27,6 +28,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const [saved, setSaved] = useState('')
   const now = useMemo(() => new Date(), [])
   const activity = isActivityCode(code)
+  const lab = !activity && !isVital(code) // lab results: sparse and dated, so a list, not a week/month chart
   const known = activity || readings.some((r) => r.test === code) || !!GUIDE[code]
   const partOf = (iso: string) => (new Date(iso).getHours() < 12 ? 'am' : 'pm')
   const mine = readings.filter((r) => r.test === code).map(toCanonicalReading).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
@@ -41,6 +43,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const last = pts[pts.length - 1]
   const months = monthlyAverages(pts, now)
   const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
+  const labRange = (r: Parameters<typeof latestVsNormal>[0]) => latestVsNormal(r, family).lab.text
   const spec = entrySpec(code)
   const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : formatNumber(n))
 
@@ -76,24 +79,26 @@ export default function MetricScreen({ code }: { code: string }) {
 
           {spec && canMark && personId && <button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button>}
           {saved && <p className="sub" role="status">{saved}</p>}
-          <div className="seg" role="group" aria-label="Period">
-            <button type="button" aria-pressed={period === 'week'} onClick={() => setPeriod('week')}>This week</button>
-            <button type="button" aria-pressed={period === 'month'} onClick={() => setPeriod('month')}>This month</button>
-          </div>
-          {!activity && (
+          {!lab && (
+            <div className="seg" role="group" aria-label="Period">
+              <button type="button" aria-pressed={period === 'week'} onClick={() => setPeriod('week')}>This week</button>
+              <button type="button" aria-pressed={period === 'month'} onClick={() => setPeriod('month')}>This month</button>
+            </div>
+          )}
+          {!activity && !lab && (
             <div className="seg mc-part" role="group" aria-label="Time of day">
               <button type="button" aria-pressed={part === 'am'} onClick={() => setPart(part === 'am' ? null : 'am')}>Morning</button>
               <button type="button" aria-pressed={part === 'pm'} onClick={() => setPart(part === 'pm' ? null : 'pm')}>Evening</button>
             </div>
           )}
-          <div className="grp hv-graph">
+          {!lab && <div className="grp hv-graph">
             {shown.length === 0 ? (
               <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer readings will show here.</p>
             ) : (
               <MetricChart pts={shown} days={period === 'week' ? 7 : 30} now={now} band={band} label={`${label} ${period === 'week' ? 'this week' : 'this month'}`} unit={unit} />
             )}
-          </div>
-          <section aria-labelledby="hv-ma">
+          </div>}
+          {!lab && <section aria-labelledby="hv-ma">
             <h2 className="hd" id="hv-ma">Monthly averages</h2>
             {months.length === 0 ? (
               <div className="grp"><div className="row"><span className="grow">Not enough yet<span className="sub">Averages show once there are readings in a month.</span></span></div></div>
@@ -107,7 +112,7 @@ export default function MetricScreen({ code }: { code: string }) {
                 ))}
               </div>
             )}
-          </section>
+          </section>}
 
           {!activity && latest && v && (
             <section aria-labelledby="hv-src">
@@ -137,9 +142,9 @@ export default function MetricScreen({ code }: { code: string }) {
               <h2 className="hd" id="hv-rec">Readings</h2>
               <div className="grp" data-testid="recent">
                 {minePart.length === 0 && <div className="row"><span className="grow">No {part === 'am' ? 'morning' : 'evening'} readings<span className="sub">Try the other time of day.</span></span></div>}
-                {minePart.slice(0, 12).map((r, i) => (
+                {minePart.slice(0, lab ? 30 : 12).map((r, i) => (
                   <div className="row" key={`${r.takenAt}:${i}`}>
-                    <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{shortDate(r.takenAt)} · {new Date(r.takenAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}</span></span>
+                    <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{lab ? shortDate(r.takenAt) : `${shortDate(r.takenAt)} · ${new Date(r.takenAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`}</span>{lab && labRange(r) && <span className="sub" style={{ display: 'block' }}>Lab range {labRange(r)}</span>}</span>
                   </div>
                 ))}
               </div>

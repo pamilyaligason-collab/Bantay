@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
@@ -30,8 +31,14 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
   const fallback: Loc = { lat: home.lat, lon: home.lon, source: 'home' }
   try {
     if (!('geolocation' in navigator)) return fallback
-    const st = await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt')
-    if (st === 'denied' || (st !== 'granted' && !ask)) return fallback
+    // APK 2.2+: the Geolocation plugin reads Android's own permission (it throws when location is switched off: treat as denied).
+    const os = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Geolocation')
+      ? await import('@capacitor/geolocation').then((m) => m.Geolocation.checkPermissions()).then((p) => (p.location.startsWith('prompt') ? 'prompt' : p.location), () => 'denied')
+      : null
+    const st = os ?? (await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt'))
+    // Older APKs: Android WebView never retains the grant, so permissions.query stays 'prompt' after a yes: trust our own record there.
+    const allowed = st === 'granted' || (!os && st === 'prompt' && Capacitor.isNativePlatform() && (await db.kv.get('loc.asked').catch(() => undefined))?.value === true)
+    if (st === 'denied' || (!allowed && !ask)) return fallback
     const p = await gps(ask)
     return { lat: p.coords.latitude, lon: p.coords.longitude, source: 'gps' }
   } catch {

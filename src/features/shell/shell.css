@@ -1,14 +1,24 @@
 /* Shell + Me styles (Lane B). Everything is scoped under .sh or uses the sh- prefix so it cannot collide with the old global
    classes (.row .tile .pill .seg .sub) that Lane A replaces. Values are mockup v6. */
 
-.sh-ic { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sh-ic { stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* raw <svg class="sh-ic"> paths without their own stroke-width (Tabler and custom icons set it) */
+.sh-ic:not([stroke-width]) { stroke-width: 1.8; }
+.sh-ic-f { fill: currentColor; stroke: none; }
+.sh-t-medicine { color: var(--c-medicine); } .sh-t-vitals { color: var(--c-vitals); } .sh-t-labs { color: var(--c-labs); } .sh-t-weather { color: var(--c-weather); }
+.sh-t-safety { color: var(--c-safety); } .sh-t-family { color: var(--c-family); } .sh-t-alert { color: var(--c-alert); } .sh-t-neutral { color: var(--c-neutral); }
+.sh-icbox { --tint: 14%; display: inline-grid; place-items: center; flex: none; background: color-mix(in srgb, currentColor var(--tint), var(--card)); }
+.sh-icbox.is-active { --tint: 24%; }
+:root[data-theme="dark"] .sh-icbox { --tint: 22%; }
+:root[data-theme="dark"] .sh-icbox.is-active { --tint: 34%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-icbox { --tint: 22%; } :root:not([data-theme="light"]) .sh-icbox.is-active { --tint: 34%; } }
 
 /* top bar */
 .sh-top { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
 .sh-me-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
 .sh-me-btn img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 .sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.sh-top-date { font-size: 13px; color: var(--muted); }
+.sh-top-date { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sh-top .sync-status { margin-top: 2px; }
 /* Sync state: nothing when all sent; an amber pill when rows wait. The pill is 13px text on a 28px chip with a 44px hit area. */
@@ -64,7 +74,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-list > *:first-child { border-top: 0; padding-top: 2px; }
 .sh-list > *:last-child { padding-bottom: 2px; }
 .sh-navrow { background: none; border: 0; width: 100%; text-align: left; min-height: 48px; color: var(--ink); text-decoration: none; font: inherit; }
-.sh-navrow .sh-ic:last-child { color: var(--muted); }
+.sh-navrow > .sh-ic:last-child { color: var(--muted); }
 .sh-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: none; color: #1F3D2B; background: #CFE0CF; overflow: hidden; }
 .sh-av img { width: 100%; height: 100%; object-fit: cover; }
 .sh-av-lg { width: 56px; height: 56px; font-size: 20px; }
@@ -117,3 +127,6 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
   .sh-sheet, .fm-sheet, .sf-sheet, .as-sheet, [data-closing="true"] > [role="dialog"] { animation: none; }
   .tabbar.sh-tabs::before, .sh-switch::before, .sh-switch::after { transition: none; }
 }
+/* Dark: --green on --soft is 1.6:1, so the avatar initial and icon use --ink. */
+:root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }

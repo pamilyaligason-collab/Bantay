@@ -5,7 +5,7 @@ import { actionLine, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
 
 /** Hero card engine (D-31/D-43): one card per thing that matters now, in priority order:
- *  active alert for the member's zone > medicine due now > weather for the home zone. Nothing applies: one calm summary. */
+ *  active alert for the member's zone > medicine due now. Nothing applies: one calm summary. Weather has its own card on Today. */
 
 export interface Dose { name: string; at: number } // at = minutes after local midnight
 /** Rain from the hourly forecast. startH/endH are clock hours 0-23 in Manila; now = it is raining this hour; tomorrow = it starts after midnight. */
@@ -14,7 +14,8 @@ export interface RainOutlook { now: boolean; tomorrow: boolean; startH: number; 
 export interface Wx {
   temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null
   /** Place-local "YYYY-MM-DDTHH:MM" times (the clock of the place the forecast is for, with utcOffset). */
-  hourly?: { time: string[]; prob: (number | null)[] }
+  hourly?: { time: string[]; prob: (number | null)[]; code?: (number | null)[] }
+  high?: number | null; low?: number | null // today's range
   utcOffset?: number // seconds; absent in old caches and fixtures = Manila
   tz?: string // IANA zone the forecast service reported
   humidity?: number | null
@@ -24,12 +25,10 @@ export interface Wx {
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'
 export interface HeroCard {
   key: string
-  kind: 'alert' | 'dose' | 'plan' | 'weather' | 'summary'
-  sky?: Sky
+  kind: 'alert' | 'dose' | 'plan' | 'summary'
   kicker: string
   title: string
   body: string
-  big?: string
   actions: { id: HeroActionId; label: string }[]
   dose?: Dose
 }
@@ -43,8 +42,6 @@ export const skyOf = (w: Wx): Sky | undefined => {
 }
 
 export const ALERT_RADIUS_KM = 150
-export const RAIN_HERO_PCT = 60 // Next up shows weather only from this chance of rain
-export const HEAT_C = 33 // or from this temperature
 export const DOSE_WINDOW_MIN = 120 // the inbox calls a dose missed this long after its time; Today keeps it due until taken or skipped
 export const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, so the card does not come back on reload
 
@@ -114,11 +111,6 @@ export function rainWords(r: RainOutlook): string {
   return `Rain likely ${r.tomorrow ? 'tomorrow ' : ''}from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. Chance: ${r.peakPct}%.`
 }
 
-const asOf = (iso: string, tz = 'Asia/Manila') => {
-  const t = new Date(iso)
-  return Number.isNaN(t.getTime()) ? '' : ` · as of ${t.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: tz })}`
-}
-
 /** Official warnings only (PAGASA, PHIVOLCS tier), inside the radius of where the member is. Area-wide alerts count. */
 export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
   const refs: LatLon[] = ref ? [ref] : [...HOME_ZONES]
@@ -155,7 +147,7 @@ export function rainLine(w: Wx, now: Date): string {
   return rainBody(w, rain, w.rainPct != null && w.rainPct >= 60, nowLocal)
 }
 
-export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[]; weather: Wx | null; placeName: string; now?: Date }): HeroCard[] {
+export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[]; now?: Date }): HeroCard[] {
   const out: HeroCard[] = []
   const a = zoneAlert(i.alerts, i.ref)
   if (a) out.push({
@@ -168,22 +160,6 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
     body: new Set(i.doses.map((x) => x.name)).size > 1 ? `${new Set(i.doses.map((x) => x.name)).size} medicines are due now` : 'Mark it when you have taken it',
     actions: [{ id: 'taken', label: 'Taken' }, { id: 'skip', label: 'Skipped' }], dose: d
   })
-  const w = i.weather
-  if (w && w.temp != null) {
-    const rainy = w.rainPct != null && w.rainPct >= 60
-    const hot = !rainy && w.temp >= HEAT_C
-    const sky = skyOf(w)
-    // worked out now, not at fetch time: the cached reading can be hours old
-    const nowLocal = wxLocal(w, i.now ?? new Date())
-    const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm') : undefined
-    const place = i.placeName
-    out.push({
-      key: 'weather', kind: 'weather', kicker: `Weather${asOf(w.at, w.tz)}`, sky, big: `${Math.round(w.temp)}°`,
-      title: hot ? `Hot today in ${place}` : rain ? (rain.now ? `Raining now in ${place}` : `Rain likely ${rain.tomorrow ? 'tomorrow' : 'today'} in ${place}`) : rain === null && rainPassed(w, nowLocal) ? `Rain has passed in ${place}` : rainy ? `Rain likely today in ${place}` : `${w.words[0]!.toUpperCase()}${w.words.slice(1)} in ${place}`,
-      body: hot ? `It is ${Math.round(w.temp)}° now. Drink water and rest in the shade.` : rainBody(w, rain, rainy, nowLocal),
-      actions: []
-    })
-  }
   if (!out.length) out.push({
     key: 'summary', kind: 'summary', kicker: 'Today', title: 'All calm for now',
     body: 'No warnings for your area and nothing due. Official bulletins always come first.',

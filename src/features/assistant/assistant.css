@@ -4,7 +4,6 @@
 .as-head h2 { margin: 0; font-size: 22px; }
 .as-head h2 { white-space: nowrap; }
 .as-x, .as-mic { flex: none; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--fill); color: var(--ink); }
-.as-x svg, .as-mic svg { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .as-mic[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .as-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 4px; flex: none; }
 .as-chip { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 0.5px solid var(--sep); background: var(--cell); color: var(--ink); font-size: 14px; font-weight: 600; }
@@ -25,7 +24,7 @@
 .as-actions .btn, .as-actions .btn2 { flex: 1; min-width: 80px; }
 .as-err { color: var(--danger); font-size: 14px; }
 .as-form { display: flex; gap: 8px; align-items: center; }
-.as-form input { flex: 1; min-width: 0; min-height: 52px; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 14px; padding: 0 14px; background: var(--cell); color: var(--ink); }
+.as-form input { font: inherit; flex: 1; min-width: 0; min-height: 52px; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 14px; padding: 0 14px; background: var(--cell); color: var(--ink); }
 .as-form .btn { width: auto; }
 .as-chip-static { display: inline-flex; align-items: center; min-height: 36px; font-size: 14px; }
 .as-chips .as-chip, .as-people .as-chip, .as-src a.as-chip { display: inline-flex; align-items: center; text-decoration: none; }

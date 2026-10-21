@@ -1,7 +1,7 @@
 export type Tab = 'today' | 'health' | 'family' | 'safety'
 export type FamilySeg = 'plan' | 'people'
 export const TABS: Tab[] = ['today', 'health', 'family', 'safety']
-const VIEWS = new Set(['me', 'notif', 'admin'])
+const VIEWS = new Set(['me', 'notif', 'admin', 'scan'])
 
 /** Old Records links (#records, #family/records) now open Health > Papers. Callers replace the hash with this when it differs. */
 export const canonicalHash = (h: string) => (h === '#records' || h === '#family/records' ? '#health/papers' : h)
@@ -24,4 +24,10 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
 export function familyEntry(o: { alertActive: boolean; last: FamilySeg | null }): FamilySeg {
   if (o.alertActive) return 'people'
   return o.last ?? 'people'
+}
+
+/** Routes whose screen draws its own Back + title header, so the avatar/bell top bar stays off. Tab roots and #family/plan|people keep it. */
+export const hasOwnHeader = (h: string) => {
+  const k = canonicalHash(h).replace(/^#/, '')
+  return k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people)$/.test(k))
 }

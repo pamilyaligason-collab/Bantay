@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canonicalHash, parseHash, familyEntry } from './routes'
+import { canonicalHash, hasOwnHeader, parseHash, familyEntry } from './routes'
 
 describe('parseHash', () => {
   it('defaults to today', () => expect(parseHash('')).toEqual({ tab: 'today', view: null }))
@@ -25,6 +25,10 @@ describe('parseHash', () => {
     expect(parseHash('#docs/insurance')).toEqual({ tab: 'safety', view: 'docs' })
   })
   it('unknown hash falls back to today', () => expect(parseHash('#nope')).toEqual({ tab: 'today', view: null }))
+})
+describe('hasOwnHeader', () => {
+  it('is true for sub-pages that draw Back + title', () => expect(['#weather', '#weather?from=action', '#health/metric/bp', '#health/refill', '#safety/map', '#gobag', '#medid', '#docs', '#family/people/p1'].every(hasOwnHeader)).toBe(true))
+  it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/people', '#safety', '#me'].some(hasOwnHeader)).toBe(false))
 })
 describe('familyEntry (D-44)', () => {
   it('opens People during an alert or SOS', () => expect(familyEntry({ alertActive: true, last: 'plan' })).toBe('people'))

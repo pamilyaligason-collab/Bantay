@@ -16,6 +16,7 @@ import { useSelfPersonId } from './useProfile'
 import { ABOUT_FIELDS, TITLES, UNKNOWN, currentPlatform, notifyDone, notifyState, onResume, probe, put, remaining, scheduleTest, turnOnReminders, type About, type NotifyState, type StepId } from './steps'
 import '../safety/safety.css'
 import './setup.css'
+import { Icon } from '../shell/Icon'
 
 const HOME_NAMES = ['Home', 'Dampas', 'Conel', 'Work', 'School', "Parents' house"]
 const standalone = () => matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
@@ -213,7 +214,7 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
   return (
     <div className="bt">
       <div className="topbar wz-top">
-        <button type="button" className="wz-back" aria-label="Back" disabled={i === 0} onClick={() => setI(i - 1)}>←</button>
+        <button type="button" className="wz-back" aria-label="Back" disabled={i === 0} onClick={() => setI(i - 1)}><Icon name="back" /></button>
         <span className="sub grow" style={{ textAlign: 'center' }}>Step {i + 1} of {queue.length}</span>
         <button type="button" className="wz-skip" onClick={next}>Skip</button>
       </div>

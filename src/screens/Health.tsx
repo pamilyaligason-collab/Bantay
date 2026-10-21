@@ -20,6 +20,7 @@ import VisitSummary from '../features/health/VisitSummary'
 import { averageNodes } from '../features/health/vitals'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
+import { Icon } from '../features/shell/Icon'
 import { SubHeader } from '../features/shell/SubHeader'
 import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
@@ -105,7 +106,9 @@ function Overview() {
         </>
       )}
       <a className="card hv-explore" href="#health/body">
-        <span>Explore your body<small>See how each part works and when to see a doctor</small></span>
+        <Icon name="lungs" tone="vitals" boxed />
+        <span className="grow">Explore your body<small>See how each part works and when to see a doctor</small></span>
+        <Icon name="chev" size={20} />
       </a>
       {personId && <MedicinesSummary personId={personId} />}
       {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="vitals" />}
@@ -124,10 +127,7 @@ function MedsPage() {
   const canEdit = canMark || member?.role === 'admin' // self, writer carer and admin (records_editor) may edit; only self or a writer carer marks a dose
   return (
     <>
-      <div className="hdr hv-back-row">
-        <a className="hv-back" href="#health" aria-label="Back to Health"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg></a>
-        <h1>Medicines</h1>
-      </div>
+      <SubHeader title="Medicines" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
       {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMark} canEdit={canEdit} />}

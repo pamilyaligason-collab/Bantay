@@ -53,15 +53,26 @@ const none = <T,>(): Res<T[]> => ({ ok: true, data: [] })
 
 export const driveUrl = (id: string) => (/^[\w-]+$/.test(id) ? `https://drive.google.com/file/d/${id}/view` : null)
 
+/** Scanned papers the server is still reading: ids of draft lab/prescription/other documents whose phone-uploaded files are still 'new' or 'reading' (records-extract). */
+export async function listReading(personId?: string): Promise<Res<string[]>> {
+  const r = await run<{ document_id: string | null }[]>((s) => {
+    const q = s.from('source_files').select('document_id, documents!inner(status, kind)').in('ingest_status', ['new', 'reading']).not('storage_path', 'is', null)
+      .eq('documents.status', 'draft').in('documents.kind', ['lab', 'prescription', 'other'])
+    return (personId ? q.eq('person_id', personId) : q) as unknown as PromiseLike<{ data: unknown; error: unknown }>
+  })
+  return r.ok ? { ok: true, data: [...new Set(r.data.map((x) => x.document_id).filter((x): x is string => !!x))] } : r
+}
+
 /** N for "To check (N)": draft rows waiting, plus draft documents that have no rows (insurance, certificate, cards...). Matches the list. */
 export async function listQueue(): Promise<Res<Queue>> {
   const r = await run<{ person_id: string; kind: string; drafts: number }[]>((s) => s.from('records_queue').select('*'))
   if (!r.ok) return queueFromTables(r)
   const byPerson: Record<string, number> = {}
   for (const x of r.data.filter((x) => x.kind !== 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts)
-  const d = await bundles('draft')
+  const [d, reading] = await Promise.all([bundles('draft'), listReading()])
+  const unread = new Set(reading.ok ? reading.data : []) // a scan still being read has no rows yet: it is "Reading", not "To check"
   if (d.ok) {
-    for (const b of d.data) if (b.labs.length + b.items.length + b.vaccinations.length + b.imaging.length === 0) byPerson[b.doc.person_id] = (byPerson[b.doc.person_id] ?? 0) + 1
+    for (const b of d.data) if (b.labs.length + b.items.length + b.vaccinations.length + b.imaging.length === 0 && !unread.has(b.doc.id)) byPerson[b.doc.person_id] = (byPerson[b.doc.person_id] ?? 0) + 1
   } else {
     for (const x of r.data.filter((x) => x.kind === 'documents')) byPerson[x.person_id] = (byPerson[x.person_id] ?? 0) + Number(x.drafts) // list unavailable: the view's own count
   }

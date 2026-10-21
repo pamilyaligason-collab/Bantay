@@ -1,10 +1,11 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { dayKey, isMine, timeLabel } from './events'
 import { NoteSheet, ItemSheet } from './PlanSheets'
 import { addDay, dayLabel, midSentence, dayRows, dayStrip, emptyHint, groupPlan, progressOf, type PlanRow } from './planList'
 import { useFamilyPeople } from './roster'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
+import { Icon } from '../shell/Icon'
 import { usePlan } from './usePlan'
 import './family.css'
 import './plan.css'
@@ -14,12 +15,6 @@ type View = string // a yyyy-mm-dd day, or 'later' / 'done'
 const EMPTY = { later: 'Nothing planned for later.', done: 'Nothing done yet.' }
 
 type Open = { t: 'item'; item: { kind: 'task'; item?: FamilyTask } | { kind: 'event'; item?: FamilyEvent } } | { t: 'note'; note?: FamilyNote }
-
-const Icon = ({ children }: { children: ReactNode }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
-)
-const EventIcon = () => <Icon><rect x="3.5" y="5" width="17" height="15" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></Icon>
-const NoteIcon = () => <Icon><path d="M6 3.5h9l3.5 3.5v13H6z" /><path d="M9 11h6M9 15h6" /></Icon>
 
 /** Family > Plan: a Mon to Sun day strip, an "N of M completed" card and one list. Reminders, events and notes sit together; one floating Add. Written on this phone first, synced later. */
 export default function Plan() {
@@ -97,7 +92,7 @@ export default function Plan() {
               <li key={r.key} className="fm-row">
                 {r.kind === 'task'
                   ? <button type="button" className="fm-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.task.title} onClick={() => void toggleTask(r.task)} />
-                  : <span className={`fm-ico ${r.kind}`}>{r.kind === 'event' ? <EventIcon /> : <NoteIcon />}</span>}
+                  : <Icon name={r.kind === 'event' ? 'calendar' : 'file'} tone={r.kind === 'event' ? 'family' : undefined} boxed size={18} />}
                 <button type="button" className="fm-item" onClick={() => openRow(r)}>
                   <span className="grow"><b className={done ? 'done' : ''}>{title}</b><span className={`sub${r.overdue ? ' fm-warn' : ''}`}>{line(r)}</span></span>
                   {r.kind === 'event' && <span className="fm-tm">{timeLabel(r.event)}</span>}
@@ -110,7 +105,7 @@ export default function Plan() {
 
       <div className="fm-fab-wrap">
         <button type="button" className="fm-fab" onClick={add}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          <Icon name="plus" />
           Add
         </button>
       </div>

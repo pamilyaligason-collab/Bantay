@@ -1,7 +1,9 @@
 import type { Table } from 'dexie'
 import { db, drain, type OutboxRow } from '../../db'
 import { track } from '../admin/events'
+import { supabase } from '../auth/client'
 import { getAccessToken, onAuthChange } from '../auth/session'
+import { drainQueue } from '../docs/api'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
@@ -303,6 +305,7 @@ async function run(force: boolean) {
   if (!token) return setState({ ready: true, signedIn: false })
   if (state.paused && token === pausedToken) return // 401 pauses sync until a new session
   setState({ ready: true, signedIn: true, paused: false })
+  void drainQueue(supabase) // waiting ID/insurance/scan uploads go up from here too, not only while the Docs screen is open (B-78); single flight
   const bo = (await db.kv.get(BACKOFF_KEY))?.value as { fails: number; nextAt: number } | undefined
   if (!force && bo && Date.now() < bo.nextAt) return
   try {

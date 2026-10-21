@@ -7,6 +7,7 @@ import { ConfirmFlow, firstName, KIND } from '../features/records/ConfirmSheet'
 import { RecordDetail } from '../features/records/RecordDetail'
 import { PersonChips } from '../features/records/PersonChips'
 import { MedicineLines } from '../features/records/MedicineLines'
+import { useScanProgress } from '../features/scan/useScanProgress'
 
 /** Test picker: a button that opens a short list of 48px choices (the native select looked unstyled and tiny on a phone). */
 function TestPicker({ tests, picked, onPick }: { tests: string[]; picked: string; onPick(t: string): void }) {
@@ -54,6 +55,7 @@ export default function Records() {
   const docs = useConfirmedDocs(personId, ver)
   const medicines = useConfirmedMedicines(personId, ver)
   const toCheck = queue.byPerson[personId] ?? 0 // ponytail: rows of a person missing from the local people list have no chip; add when sync can leave that gap
+  const { uploading, reading } = useScanProgress(personId, ver)
   const [sheet, setSheet] = useState(false)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [test, setTest] = useState('')
@@ -104,6 +106,16 @@ export default function Records() {
           <div className="row">
             <span className="grow">Could not load records to check. Try again.</span>
             <button type="button" className="btn2" onClick={queue.refresh}>Try again</button>
+          </div>
+        </div>
+      )}
+      {uploading + reading > 0 && (
+        <div className="grp">
+          <div className="row" role="status" data-testid="scan-progress">
+            <span className="grow">
+              {[uploading > 0 && `Uploading ${uploading}`, reading > 0 && `Reading ${reading}`].filter(Boolean).join(' · ')}
+              <span className="sub">Scanned papers. They show up under To check when they are ready.</span>
+            </span>
           </div>
         </div>
       )}

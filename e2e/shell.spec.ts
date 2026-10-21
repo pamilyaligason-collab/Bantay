@@ -47,6 +47,23 @@ test('tab bar has five slots with Ask raised in the middle', async ({ page }) =>
   expect(box!.y).toBeLessThan(today!.y) // raised
 })
 
+test('component button rules beat the .bt reset: tab labels are 13px/600', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  const b = page.locator('.sh-tabs button').first()
+  await expect(b).toBeVisible()
+  expect(await b.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['13px', '600'])
+})
+
+test('sub-pages show only their own header; tab roots keep the top bar', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#weather')
+  await expect(page.locator('.sh-back')).toBeVisible()
+  await expect(page.locator('.topbar')).toHaveCount(0)
+  await page.goto('/#health')
+  await expect(page.locator('.topbar')).toHaveCount(1)
+})
+
 test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
@@ -57,6 +74,7 @@ test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await page.getByRole('link', { name: /Notifications/ }).click()
   await expect(page).toHaveURL(/#notif$/)
   await expect(page.getByText('No notifications yet')).toBeVisible()
+  await expect(page.getByText('Phone notifications never show readings, medicines or results. Open Bantay to see more.')).toBeVisible()
 })
 
 test('Me: sharing is off, no tab is active, Family no longer shows phone settings', async ({ page }) => {

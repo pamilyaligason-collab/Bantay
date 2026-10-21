@@ -1,0 +1,29 @@
+/* Scan a paper. Tokens only, so light and dark both follow the theme. */
+.sc { display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; min-width: 0; }
+.sc .sub { margin: 0 4px; font-size: 15px; color: var(--ink2); }
+.sc-actions { background: var(--cell); }
+.sc-actions .row { cursor: pointer; font-family: inherit; gap: 14px; }
+.sc-actions .row:disabled { opacity: .5; }
+.sc-h2 { margin: 4px 4px 0; }
+
+/* the photo and its four corners; width follows the photo's shape so it never needs a sideways scroll */
+.sc-crop { --ar: 0.75; position: relative; margin: 8px auto; width: min(100%, calc((100dvh - 330px) * var(--ar))); aspect-ratio: var(--ar); touch-action: none; user-select: none; background: var(--fill); border-radius: 8px; }
+.sc-crop canvas { width: 100%; height: 100%; display: block; border-radius: 8px; }
+.sc-crop svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.sc-crop polygon { fill: rgba(232, 169, 58, .18); stroke: var(--amber); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.sc-h { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; padding: 0; border: 0; background: transparent; touch-action: none; cursor: grab; }
+.sc-h::after { content: ""; position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--amber); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .5); box-sizing: border-box; }
+.sc-h:focus-visible { outline: none; }
+.sc-h:focus-visible::after { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.sc-mode { margin: 0; }
+.sc-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.sc-tools .dc-btn { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.sc-tools .dc-btn:disabled { opacity: .5; }
+
+.sc-page { gap: 10px; }
+.sc-page .sh-iconbtn { width: 44px; height: 44px; background: var(--fill); box-shadow: none; border: 0; cursor: pointer; }
+.sc-page .sh-iconbtn:disabled { opacity: .35; cursor: default; }
+.sc-thumb { width: 44px; height: 58px; flex: none; object-fit: cover; border-radius: 6px; background: var(--fill); border: .5px solid var(--sep); }
+.sc .dc-field input { min-height: 48px; }
+.sc .dc-chip:focus-visible, .sc .dc-btn:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }

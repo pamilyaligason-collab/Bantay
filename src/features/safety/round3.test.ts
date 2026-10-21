@@ -5,7 +5,6 @@ import { stormLine } from './LiveMaps'
 import { isNoise } from './news'
 import { rainLine } from './SafetyHub'
 import { short } from '../docs/DocsScreen'
-import { heroCards } from '../today/heroCards'
 import hotlines from '../../data/safety/hotlines.json'
 
 const storm = (lat: number | null, lon: number | null): Alert => ({ id: 'gdacs-TC-1', kind: 'gdacs', level: 'Green', title: 'Tropical Cyclone MARIE', what: '', where: 'Pacific Ocean', when: '', doNow: '', source: 'GDACS', sourceUrl: null, issuedAt: '2026-10-18T00:00:00Z', lat, lon, bulletin: '' })
@@ -74,22 +73,17 @@ describe('rainLine', () => {
     expect(rainLine({ temp: 28, rainPct: null, words: 'cloudy', at: '' })).toBe('No rain chance number yet.')
     expect(rainLine(null)).toBe('Rain, wind and clouds')
   })
-  it('never raining in the window: same sentence as Today, not "no more rain"', () => {
+  it('never raining in the window: the day chance, not "no more rain"', () => {
     const wx = { temp: 30, rainPct: 40, words: 'sunny', at: '', hourly: { time: ['2026-10-19T16:00', '2026-10-19T17:00', '2026-10-19T18:00'], prob: [10, 10, 10] } }
-    const now = new Date('2026-10-19T08:00:00Z')
-    const today = heroCards({ alerts: [], ref: null, doses: [], weather: wx, placeName: 'Dampas', now }).find((c) => c.kind === 'weather')!
-    expect(rainLine(wx, now)).toBe('Chance of rain today: 40%.')
-    expect(rainLine(wx, now)).toBe(today.body)
+    expect(rainLine(wx, new Date('2026-10-19T08:00:00Z'))).toBe('Chance of rain today: 40%.')
   })
   it('rain gone from the window: "no more rain" only if the sky showed rain; rounds the percent', () => {
     const hourly = { time: ['2026-10-19T16:00', '2026-10-19T17:00'], prob: [10, 10] }
     const now = new Date('2026-10-19T08:00:00Z')
     const dry = { temp: 30, rainPct: 70.4, words: 'cloudy', at: '', hourly }
     expect(rainLine(dry, now)).toBe('Chance of rain today: 70%.')
-    expect(heroCards({ alerts: [], ref: null, doses: [], weather: dry, placeName: 'D', now })[0]!.title).not.toMatch(/passed/)
     const wet = { temp: 26, rainPct: 70, words: 'rain showers', code: 61, at: '', hourly }
     expect(rainLine(wet, now)).toBe('No more rain expected for now.')
-    expect(heroCards({ alerts: [], ref: null, doses: [], weather: wet, placeName: 'D', now })[0]!.title).toMatch(/passed/)
   })
   it('uses the same words as Today when hourly data says rain is coming', () => {
     const wx = { temp: 28, rainPct: 80, words: 'cloudy', at: '', hourly: { time: ['2026-10-19T13:00', '2026-10-19T14:00', '2026-10-19T15:00'], prob: [10, 80, 60] } }

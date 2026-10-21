@@ -2,7 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { needsCheck } from '../safety/dial'
 import type { Entry } from '../safety/entries'
-import type { Wx } from './heroCards'
+import { wxLocal, type Wx } from './heroCards'
 import WeatherCard from './WeatherCard'
 
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' } as unknown, wx: null as unknown }))
@@ -30,11 +30,61 @@ describe('Today weather card', () => {
     render(<WeatherCard />)
     expect(screen.queryByText(/noon sun|Stay indoors/)).toBeNull()
   })
+  it('compact: one row with temperature, condition and place, feels like, a chevron icon and no glyph arrow', () => {
+    m.wx = { ...base, temp: 31, humidity: 70, words: 'partly cloudy' }
+    const { container } = render(<WeatherCard />)
+    expect(screen.getByText('31°')).toBeTruthy()
+    expect(screen.getByText('Partly cloudy · Dampas')).toBeTruthy()
+    expect(screen.getByText(/^Feels like 3\d°$/)).toBeTruthy()
+    expect(container.querySelector('.td-link svg')).toBeTruthy()
+    expect(container.textContent).not.toContain('›')
+    expect(container.querySelector('.td-wxh')).toBeNull()
+  })
+  it('compact: the action sits in an amber box below the row', () => {
+    m.wx = { ...base, temp: 34, humidity: 70 }
+    const { container } = render(<WeatherCard />)
+    expect(container.querySelector('.td-act-box svg')).toBeTruthy()
+    expect(container.querySelector('.td-act-box')!.textContent).toMatch(/^Stay indoors/)
+  })
+  it('no feels like without humidity', () => {
+    m.wx = { ...base, temp: 34, humidity: null }
+    render(<WeatherCard />)
+    expect(screen.queryByText(/Feels like/)).toBeNull()
+  })
+})
+
+describe('Today weather card, expanded', () => {
+  const hours = (n: number) => {
+    const t0 = new Date(`${wxLocal(base, new Date()).slice(0, 13)}:00:00Z`).getTime()
+    const time = Array.from({ length: n }, (_, i) => new Date(t0 + i * 3600_000).toISOString().slice(0, 16))
+    return { time, prob: time.map((_, i) => 10 * i), code: time.map(() => 61) }
+  }
+  it('is the hero: eyebrow with place and as-of, big temperature, condition, range, three slots, one link to #weather', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
+    m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
+    const { container } = render(<WeatherCard expanded review={0} />)
+    expect(screen.getByText(/^Weather · Dampas · as of /)).toBeTruthy()
+    expect(screen.getByText('33°')).toBeTruthy()
+    expect(screen.getByText('Partly cloudy')).toBeTruthy()
+    expect(screen.getByText(/^Feels like 4\d° · High 34° · Low 26°$/)).toBeTruthy()
+    expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
+    expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
+    expect(screen.getAllByRole('link')).toHaveLength(1)
+    expect(screen.getByRole('link').getAttribute('href')).toBe('#weather?from=action')
+    expect(screen.queryByText(/medicines/)).toBeNull()
+  })
   it('"as of" uses the place time zone when abroad, not Manila', () => {
     m.place = { weather: { lat: 32.78, lon: -96.8 }, zone: 'dampas', source: 'gps-abroad' }
     m.wx = { ...base, utcOffset: -5 * 3600, tz: 'America/Chicago', at: '2026-10-20T05:00:00Z' }
-    render(<WeatherCard />)
-    expect(screen.getByText('as of 12:00 AM')).toBeTruthy()
+    render(<WeatherCard expanded />)
+    expect(screen.getByText(/as of 12:00 AM/)).toBeTruthy()
+  })
+  it('quiet medicines row with the count, linking to the medicines screen', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
+    m.wx = base
+    render(<WeatherCard expanded review={2} />)
+    const a = screen.getByRole('link', { name: /Nothing due right now · 2 medicines to check/ })
+    expect(a.getAttribute('href')).toBe('#health/meds')
   })
 })
 
