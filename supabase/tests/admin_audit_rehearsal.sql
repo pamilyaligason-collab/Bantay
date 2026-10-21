@@ -40,8 +40,10 @@ insert into public.people (id, auth_user_id, display_name, created_by) values
 \ir ../migrations/0013_records_autoconfirm.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
+-- fails_with: the call raises exactly this message (a typo on the refusal path must not pass)
+create function pg_temp.fails_with(q text, msg text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return sqlerrm = msg; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
-grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text) to authenticated, anon, service_role;
+grant execute on function pg_temp.fails(text), pg_temp.fails_with(text, text), pg_temp.ok(boolean, text) to authenticated, anon, service_role;
 
 \ir ../migrations/0021_admin_audit.sql
 -- 0021 must be safe to run twice
@@ -91,8 +93,8 @@ select pg_temp.ok((select count(*) from public.audit_log where tbl = 'carers' an
 -- non-admin: no audit rows, no identifiers, no reveal, sees only own people
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
 select pg_temp.ok((select count(*) from public.audit_log) = 0, 'non-admin select on audit_log returns 0');
-select pg_temp.ok(pg_temp.fails($$select * from public.admin_identifiers('10000000-0000-0000-0000-0000000000b1')$$), 'non-admin admin_identifiers raises');
-select pg_temp.ok(pg_temp.fails($$select public.admin_reveal_identifier('id', '50000000-0000-0000-0000-000000000001')$$), 'non-admin admin_reveal_identifier raises');
+select pg_temp.ok(pg_temp.fails_with($$select * from public.admin_identifiers('10000000-0000-0000-0000-0000000000b1')$$, 'not_admin'), 'non-admin admin_identifiers raises');
+select pg_temp.ok(pg_temp.fails_with($$select public.admin_reveal_identifier('id', '50000000-0000-0000-0000-000000000001')$$, 'not_admin'), 'non-admin admin_reveal_identifier raises');
 select pg_temp.ok(pg_temp.fails($$insert into public.audit_log (tbl, action) values ('x', 'insert')$$), 'clients cannot insert into audit_log');
 select pg_temp.ok((select count(*) from public.people) = 1, 'non-admin sees only their own person');
 reset role;
@@ -116,8 +118,8 @@ delete from public.audit_log where action = 'reveal';
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 select pg_temp.ok(public.admin_reveal_identifier('id', '50000000-0000-0000-0000-000000000001') = '0000-1111-2222', 'reveal returns the full id number');
 select pg_temp.ok(public.admin_reveal_identifier('insurance', '60000000-0000-0000-0000-000000000001') = 'MEM-0000-9999', 'reveal returns the full member number');
-select pg_temp.ok(pg_temp.fails($$select public.admin_reveal_identifier('bogus', '50000000-0000-0000-0000-000000000001')$$), 'unknown source raises');
-select pg_temp.ok(pg_temp.fails($$select public.admin_reveal_identifier('id', '50000000-0000-0000-0000-0000000000ff')$$), 'missing row raises');
+select pg_temp.ok(pg_temp.fails_with($$select public.admin_reveal_identifier('bogus', '50000000-0000-0000-0000-000000000001')$$, 'not_found'), 'unknown source raises');
+select pg_temp.ok(pg_temp.fails_with($$select public.admin_reveal_identifier('id', '50000000-0000-0000-0000-0000000000ff')$$, 'not_found'), 'missing row raises');
 reset role;
 select pg_temp.ok((select count(*) from public.audit_log where action = 'reveal') = 2, 'each reveal wrote exactly one reveal row');
 select pg_temp.ok((select fields from public.audit_log where tbl = 'person_identifiers' and action = 'reveal') = array['id_number'], 'id reveal logs id_number');

@@ -70,6 +70,7 @@ export default function Ids({ id }: PageProps) {
     toast.show(`${kind(r)} ${status}.`, () => { void setIdStatus(r.source, r.id, prev).then(reload) })
   }
   const showNumber = async (r: Ident) => { if (!(await reveal.show(r))) toast.show('Could not show the number.') }
+  const nm = (r: Ident) => kind(r) + (r.last4 ? ` ending ${r.last4}` : r.plan ? ` ${r.plan}` : '') // distinct accessible names when two rows share a type
   const open = async (r: Ident) => { if (!r.source_file_id || !(await openSourceFile(r.source_file_id))) toast.show('Could not open that page.') }
 
   return (
@@ -102,19 +103,19 @@ export default function Ids({ id }: PageProps) {
                       <div className="dk-acts">
                         <span className="fl-num">{on ? reveal.shown?.value : maskNumber(r.last4)}</span>
                         {on
-                          ? <button className="dk-b" onClick={reveal.hide} aria-label={`Hide number for ${kind(r)}`}>Hide</button>
-                          : <button className="dk-b" onClick={() => showNumber(r)} aria-label={`Show number for ${kind(r)}`}>Show</button>}
+                          ? <button className="dk-b" onClick={reveal.hide} aria-label={`Hide number for ${nm(r)}`}>Hide</button>
+                          : <button className="dk-b" onClick={() => showNumber(r)} aria-label={`Show number for ${nm(r)}`}>Show</button>}
                       </div>
                     </td>
                     <td>{r.issued_on ?? ''}</td>
                     <td>{r.expires_on ?? ''}{isExpired(r.expires_on) && <> <Tag tone="bad">Expired</Tag></>}</td>
                     <td><Tag tone={statusTone(r.status)}>{r.status}</Tag></td>
-                    <td>{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${kind(r)}`}>Open page</button> : ''}</td>
+                    <td>{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${nm(r)}`}>Open page</button> : ''}</td>
                     <td>
                       <div className="dk-acts">
-                        <button className="dk-b" onClick={() => setEdit(r)} aria-label={`Edit ${kind(r)}`}>Edit</button>
-                        {r.status !== 'confirmed' && <button className="dk-b go" onClick={() => setStatus(r, 'confirmed')} aria-label={`Confirm ${kind(r)}`}>Confirm</button>}
-                        {r.status !== 'rejected' && <button className="dk-b bad" onClick={() => confirm.ask(`Reject this ${kind(r)}? You can undo it right after.`, () => setStatus(r, 'rejected'))} aria-label={`Reject ${kind(r)}`}>Reject</button>}
+                        <button className="dk-b" onClick={() => setEdit(r)} aria-label={`Edit ${nm(r)}`}>Edit</button>
+                        {r.status !== 'confirmed' && <button className="dk-b go" onClick={() => setStatus(r, 'confirmed')} aria-label={`Confirm ${nm(r)}`}>Confirm</button>}
+                        {r.status !== 'rejected' && <button className="dk-b bad" onClick={() => confirm.ask(`Reject this ${kind(r)}? You can undo it right after.`, () => setStatus(r, 'rejected'))} aria-label={`Reject ${nm(r)}`}>Reject</button>}
                       </div>
                     </td>
                   </tr>

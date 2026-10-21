@@ -213,7 +213,7 @@ function Detail({ row, title, person, busy, onClose, onDecide, onFix }: { row: K
       <p className="dk-sub">{person} <Tag tone={statusTone(row.status)}>{row.status}</Tag></p>
       <div className="dk-acts">
         <button className="dk-b go" disabled={busy || row.status === 'confirmed'} onClick={() => onDecide('confirmed')}>Confirm</button>
-        <button className="dk-b bad rc-bad" disabled={busy || row.status === 'rejected'} onClick={() => onDecide('rejected')}>Reject</button>
+        <button className="dk-b bad" disabled={busy || row.status === 'rejected'} onClick={() => onDecide('rejected')}>Reject</button>
       </div>
       {docId && <Preview docId={docId} />}
       {edit && <EditFields table={row._table} row={row} onSave={onFix} />}

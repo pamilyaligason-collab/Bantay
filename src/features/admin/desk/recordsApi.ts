@@ -105,9 +105,9 @@ export const defaultChecked = (i: QItem) => !i.row.unclear && !isLow(i.row.confi
 
 /** Keyboard on the queue: j/k move, x toggles, c confirms checked. Typing in a field never triggers it. */
 export type QKey = 'next' | 'prev' | 'toggle' | 'confirm'
-export function queueKey(e: { key: string; target?: { tagName?: string; isContentEditable?: boolean } | null; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): QKey | null {
+export function queueKey(e: { key: string; target?: { tagName?: string; type?: string; isContentEditable?: boolean } | null; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): QKey | null {
   const tag = (e.target?.tagName ?? '').toUpperCase()
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable || e.ctrlKey || e.metaKey || e.altKey) return null
+  if ((tag === 'INPUT' && e.target?.type !== 'checkbox') || tag === 'TEXTAREA' || tag === 'SELECT' || e.target?.isContentEditable || e.ctrlKey || e.metaKey || e.altKey) return null
   return e.key === 'j' ? 'next' : e.key === 'k' ? 'prev' : e.key === 'x' ? 'toggle' : e.key === 'c' ? 'confirm' : null
 }
 

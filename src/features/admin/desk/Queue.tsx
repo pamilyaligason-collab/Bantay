@@ -165,7 +165,7 @@ export default function Queue(_: PageProps) {
                   <h3 className="dk-grow rc-h3">{paperName(b.doc)}</h3>
                   <div className="dk-acts">
                     {its.length === 0 && <button className="dk-b go" disabled={busy} aria-label={`Confirm paper ${paperName(b.doc)}`} onClick={() => void apply([], 'confirmed', [{ table: 'documents', id: b.doc.id }])}>Confirm paper</button>}
-                    <button className="dk-b bad rc-bad" disabled={busy} aria-label={`Reject paper ${paperName(b.doc)}`} onClick={() => rejectPaper(b)}>Reject paper</button>
+                    <button className="dk-b bad" disabled={busy} aria-label={`Reject paper ${paperName(b.doc)}`} onClick={() => rejectPaper(b)}>Reject paper</button>
                   </div>
                 </div>
                 {its.length === 0 ? <p className="dk-sub">No rows were read from this paper.</p> : (

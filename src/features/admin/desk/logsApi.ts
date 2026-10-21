@@ -49,8 +49,7 @@ export const retryFile = async (id: string): Promise<Res<null>> => {
 }
 
 /** Opens a file in a new tab: a 60 s signed link, else the Drive link. The tab opens first so the popup blocker allows it. */
-export async function openFile(f: { storage_path: string | null; drive_file_id: string | null }): Promise<boolean> {
-  const w = window.open('about:blank', '_blank')
+export async function openFile(f: { storage_path: string | null; drive_file_id: string | null }, w = window.open('about:blank', '_blank')): Promise<boolean> {
   let url: string | null = null
   if (f.storage_path) { const r = await signedUrl(f.storage_path); if (r.ok) url = r.data }
   if (!url && f.drive_file_id) url = driveUrl(f.drive_file_id)
@@ -61,8 +60,10 @@ export async function openFile(f: { storage_path: string | null; drive_file_id: 
   return true
 }
 export async function openSourceFile(id: string): Promise<boolean> {
+  const w = window.open('about:blank', '_blank') // before the await, while the click still counts as a user gesture
   const r = await run<{ storage_path: string | null; drive_file_id: string | null }>((s) => s.from('source_files').select('storage_path, drive_file_id').eq('id', id).single())
-  return r.ok ? openFile(r.data) : false
+  if (!r.ok) { w?.close(); return false }
+  return openFile(r.data, w)
 }
 
 // ---------- IDs and insurance ----------

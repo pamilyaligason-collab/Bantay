@@ -42,20 +42,20 @@ describe('Ids', () => {
 
   it('Show reveals one number at a time', async () => {
     const { container } = await load()
-    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Hide number for SSS' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Hide number for SSS ending 4321' })).toBeTruthy())
     expect(h.rpc).toHaveBeenCalledWith('admin_reveal_identifier', { p_source: 'id', p_id: 'i1' })
     expect(container.textContent).toContain(FULL)
-    fireEvent.click(screen.getByRole('button', { name: 'Show number for Test Carrier' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Hide number for Test Carrier' })).toBeTruthy())
-    expect(screen.getByRole('button', { name: 'Show number for SSS' })).toBeTruthy() // the first one hid itself
+    fireEvent.click(screen.getByRole('button', { name: 'Show number for Test Carrier Gold' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Hide number for Test Carrier Gold' })).toBeTruthy())
+    expect(screen.getByRole('button', { name: 'Show number for SSS ending 4321' })).toBeTruthy() // the first one hid itself
     expect(container.textContent?.split(FULL).length).toBe(2) // exactly one visible
   })
 
   it('hides at 30 s', async () => {
     const { container } = await load()
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))
     await act(async () => { await vi.advanceTimersByTimeAsync(0) })
     expect(container.textContent).toContain(FULL)
     await act(async () => { await vi.advanceTimersByTimeAsync(29_999) })
@@ -66,11 +66,11 @@ describe('Ids', () => {
 
   it('hides on unmount (timer cleared) and on page change', async () => {
     const { container, unmount } = await load()
-    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))
     await waitFor(() => expect(container.textContent).toContain(FULL))
     act(() => { window.dispatchEvent(new HashChangeEvent('hashchange')) })
     expect(container.textContent).not.toContain(FULL)
-    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))
     await waitFor(() => expect(container.textContent).toContain(FULL))
     const spy = vi.spyOn(window, 'clearTimeout')
     unmount()
@@ -80,7 +80,7 @@ describe('Ids', () => {
 
   it('Confirm sets status and offers Undo that restores the previous one', async () => {
     await load()
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm SSS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm SSS ending 4321' }))
     await waitFor(() => expect(patches).toContainEqual(['person_identifiers', { status: 'confirmed' }]))
     fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
     await waitFor(() => expect(patches).toContainEqual(['person_identifiers', { status: 'draft' }]))
@@ -88,7 +88,7 @@ describe('Ids', () => {
 
   it('Replace number is write-only: never prefilled, asks first, clears after', async () => {
     await load()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit SSS' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit SSS ending 4321' }))
     const input = screen.getByLabelText(/Replace number/) as HTMLInputElement
     expect(input.value).toBe('')
     fireEvent.change(input, { target: { value: ' 1111-2222-3333 ' } })

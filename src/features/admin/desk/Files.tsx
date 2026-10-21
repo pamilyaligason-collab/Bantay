@@ -57,10 +57,10 @@ export default function Files(_: PageProps) {
                   <th scope="row" className="fl-name">{r.person_id ? nameOf(r.person_id) : 'Not assigned'}</th>
                   <td className="fl-file">{r.name}</td>
                   <td>{kindWords(r.documents?.kind)}</td>
-                  <td className="num">{r.page_no ?? 1}{r.documents?.page_count ? ` of ${r.documents.page_count}` : ''}</td>
+                  <td className="num">{r.page_no ?? ''}{r.documents?.page_count ? ` of ${r.documents.page_count}` : ''}</td>
                   <td><Tag tone={TONE[r.ingest_status] ?? 'plain'}>{r.ingest_status}</Tag></td>
                   <td>{errorWords(r.ingest_error)}</td>
-                  <td className="num">{r.ingest_tries ?? 0}</td>
+                  <td className="num">{r.ingest_tries ?? ''}</td>
                   <td>{when(r.created_at)}</td>
                   <td>
                     <div className="dk-acts">

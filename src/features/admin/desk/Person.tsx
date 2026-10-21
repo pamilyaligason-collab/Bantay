@@ -167,7 +167,7 @@ export default function People({ id }: PageProps) {
                 const d = details.get(p.id)
                 const age = ageOf(d?.birthdate)
                 return (
-                  <tr key={p.id} className={p.id === id ? 'mb-on' : undefined}>
+                  <tr key={p.id} aria-selected={p.id === id}>
                     <th scope="row"><button className="mb-sel" onClick={() => open(p.id)} aria-label={`Open ${p.display_name}`}>{p.display_name}</button></th>
                     <td>{p.auth_user_id ? 'Yes' : 'No'}</td>
                     <td className="num">{age ?? 'Unknown'}</td>
