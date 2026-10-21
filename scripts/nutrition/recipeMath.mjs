@@ -31,7 +31,9 @@ export function buildFoods(recipes) {
     tl: f.tl,
     serving_label: f.serving_label,
     ...perServing(f.parts, recipes.ingredients),
-    src: f.parts.length === 1 ? 'USDA FoodData Central' : 'USDA FoodData Central (recipe)',
-    ...(f.parts.every(([k]) => recipes.ingredients[k].verified === true) ? {} : { estimate: true })
+    // only a fully verified food may claim USDA as its source; until then it is labelled as an estimate (Fable W3 review)
+    ...(f.parts.every(([k]) => recipes.ingredients[k].verified === true)
+      ? { src: f.parts.length === 1 ? 'USDA FoodData Central' : 'USDA FoodData Central (recipe)' }
+      : { src: 'Estimate, to be checked against USDA FoodData Central', estimate: true })
   }))
 }

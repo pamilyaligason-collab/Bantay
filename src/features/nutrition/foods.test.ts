@@ -25,7 +25,8 @@ describe('foods.json schema', () => {
     }
   })
   it('credits USDA FoodData Central and nothing else (no PhilFCT / FNRI values)', () => {
-    for (const f of FOODS) expect(f.src, f.key).toMatch(/^USDA FoodData Central( \(recipe\))?$/)
+    // verified foods credit USDA; unverified ones say they are estimates to be checked against USDA (never PhilFCT/FNRI)
+    for (const f of FOODS) expect(f.src, f.key).toMatch(f.estimate ? /^Estimate, to be checked against USDA FoodData Central$/ : /^USDA FoodData Central( \(recipe\))?$/)
     expect(/philfct|fnri/i.test(foodsRaw + recipesRaw)).toBe(false)
   })
   it('has the salty one-tap items and the key Filipino dishes', () => {
