@@ -9,6 +9,7 @@ const SHOTS = process.env.M7A_SHOTS
 const seed = (page: Page, phase: 1 | 2) =>
   page.evaluate(async ([nowMs, phase]) => {
     const d = (n: number) => new Date(nowMs - n * 86_400_000).toISOString()
+    const today = Math.min(0.2, (nowMs - new Date(nowMs).setHours(0, 0, 0, 0)) / 86_400_000 / 2) // still today just after midnight
     const open = (name: string) => new Promise<IDBDatabase>((res, rej) => { const r = indexedDB.open(name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
     const put = async (name: string, rows: Record<string, unknown[]>) => {
       const db = await open(name)
@@ -21,7 +22,7 @@ const seed = (page: Page, phase: 1 | 2) =>
     if (phase === 1) await put('bantay-health', {
       people: [{ id: 'p1', name: 'Maria Sample' }],
       readings: [
-        r('bp_systolic', 124, 'mmHg', 0.2), r('bp_diastolic', 79, 'mmHg', 0.2), r('bp_systolic', 136, 'mmHg', 5), r('bp_diastolic', 88, 'mmHg', 5), r('bp_systolic', 129, 'mmHg', 20),
+        r('bp_systolic', 124, 'mmHg', today), r('bp_diastolic', 79, 'mmHg', today), r('bp_systolic', 136, 'mmHg', 5), r('bp_diastolic', 88, 'mmHg', 5), r('bp_systolic', 129, 'mmHg', 20),
         r('fasting_glucose', 104, 'mg/dL', 2), r('fasting_glucose', 96, 'mg/dL', 12), r('weight', 61.5, 'kg', 3), r('heart_rate', 70, 'bpm', 0.1), r('ldl', 162, 'mg/dL', 30)
       ]
     })
