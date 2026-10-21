@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { ASK_EVENT } from '../assistant/Assistant'
 import { useDialog } from '../docs/useDialog'
 import { openScan, openScanWithFile } from '../scan/open'
@@ -7,7 +8,7 @@ import { Icon, type IconName } from './Icon'
 const ROWS: { id: 'talk' | 'scan' | 'upload'; icon: IconName; title: string; sub: string }[] = [
   { id: 'talk', icon: 'chat', title: 'Talk to Jack Jack', sub: 'Ask a question or say what you took' },
   { id: 'scan', icon: 'camera', title: 'Scan a paper', sub: 'Take a photo of a lab or prescription' },
-  { id: 'upload', icon: 'upload', title: 'Upload a file', sub: 'Choose a photo you already have' }
+  { id: 'upload', icon: 'upload', title: 'Upload a photo', sub: 'Choose a photo you already have' }
 ]
 
 /** Bottom sheet behind the centre Ask tab: three big rows. Back, Escape and a tap outside close it. */
@@ -21,15 +22,21 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
     return () => window.removeEventListener('popstate', onClose)
   }, [onClose])
 
-  const leave = () => { if (history.state?.bantayAsk) history.replaceState(null, ''); onDone() }
+  /** Pop our history entry (one Back press afterwards, no dead entry), then run `then` once the pop has landed. */
+  const leave = (then: () => void) => {
+    onDone()
+    if (!history.state?.bantayAsk) return then()
+    window.addEventListener('popstate', then, { once: true })
+    history.back()
+  }
   const pick: Record<string, () => void> = {
-    talk: () => { leave(); document.querySelector<HTMLElement>('.sh-ask')?.focus(); window.dispatchEvent(new Event(ASK_EVENT)) },
-    scan: () => { leave(); openScan() },
+    talk: () => leave(() => { document.querySelector<HTMLElement>('.sh-ask')?.focus(); window.dispatchEvent(new Event(ASK_EVENT)) }),
+    scan: () => leave(openScan),
     upload: () => file.current?.click()
   }
-  const chosen = (f?: File) => { if (!f) return; leave(); openScanWithFile(f) }
+  const chosen = (f?: File) => { if (f) leave(() => openScanWithFile(f)) }
 
-  return (
+  return createPortal(
     <div className="ask-back" onClick={onClose}>
       <div ref={ref} className="glass ask-sheet" role="dialog" aria-modal="true" aria-labelledby="ask-title" onKeyDown={onKeyDown} onClick={(e) => e.stopPropagation()}>
         <h2 id="ask-title">What would you like to do?</h2>
@@ -40,9 +47,11 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
             <Icon name="chev" />
           </button>
         ))}
+        <a className="ask-pdf" href="#health/papers" onClick={(e) => { e.preventDefault(); leave(() => { location.hash = '#health/papers' }) }}>For PDF files use Health &gt; Papers</a>
         <button type="button" className="btn2 ask-cancel" onClick={onClose}>Cancel</button>
-        <input ref={file} type="file" accept="image/*" hidden aria-label="Choose a file" data-testid="ask-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; chosen(f) }} />
+        <input ref={file} type="file" accept="image/*" hidden aria-label="Choose a photo" data-testid="ask-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; chosen(f) }} />
       </div>
-    </div>
+    </div>,
+    document.querySelector('.bt') ?? document.body // out of the glass tab bar: its backdrop-filter would trap position:fixed
   )
 }

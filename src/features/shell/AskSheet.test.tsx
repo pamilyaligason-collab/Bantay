@@ -15,12 +15,40 @@ afterEach(cleanup)
 const ask = () => fireEvent.click(screen.getByRole('button', { name: 'Ask Bantay' }))
 
 describe('Ask choice sheet', () => {
+  it('renders into the page body, outside the glass tab bar', async () => {
+    render(<TabBar active="today" />)
+    ask()
+    const dlg = await screen.findByRole('dialog')
+    expect(dlg.closest('nav')).toBeNull()
+  })
+
+  it.each(['back', 'cancel', 'outside'])('closes via %s and leaves no extra history entry', async (how) => {
+    render(<TabBar active="today" />)
+    const before = history.length
+    ask()
+    const dlg = await screen.findByRole('dialog')
+    if (how === 'back') history.back()
+    else if (how === 'cancel') fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    else fireEvent.click(dlg.parentElement!)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await waitFor(() => expect(history.state?.bantayAsk).toBeUndefined())
+    expect(history.length).toBeLessThanOrEqual(before + 1) // jsdom keeps forward entries; the point is state is ours no more
+  })
+
+  it('PDF line points to Health > Papers', async () => {
+    render(<TabBar active="today" />)
+    ask()
+    fireEvent.click(await screen.findByRole('link', { name: /PDF files use Health > Papers/ }))
+    await waitFor(() => expect(location.hash).toBe('#health/papers'))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('opens a modal with three rows; Escape closes it', async () => {
     render(<TabBar active="today" />)
     ask()
     const dlg = await screen.findByRole('dialog', { name: 'What would you like to do?' })
     expect(dlg.getAttribute('aria-modal')).toBe('true')
-    for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a file/]) expect(screen.getByRole('button', { name: n })).toBeTruthy()
+    for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a photo/]) expect(screen.getByRole('button', { name: n })).toBeTruthy()
     fireEvent.keyDown(dlg, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
@@ -32,7 +60,7 @@ describe('Ask choice sheet', () => {
     render(<TabBar active="today" />)
     ask()
     fireEvent.click(await screen.findByRole('button', { name: /Talk to Jack Jack/ }))
-    expect(n).toBe(1)
+    await waitFor(() => expect(n).toBe(1))
     expect(screen.queryByRole('dialog')).toBeNull()
     window.removeEventListener(ASK_EVENT, on)
   })
@@ -40,9 +68,11 @@ describe('Ask choice sheet', () => {
   it('Scan opens the scan route and closes the sheet', async () => {
     render(<TabBar active="today" />)
     ask()
+    const before = history.length
     fireEvent.click(await screen.findByRole('button', { name: /Scan a paper/ }))
-    expect(location.hash).toBe('#scan')
+    await waitFor(() => expect(location.hash).toBe('#scan'))
     expect(history.state?.bantayScan).toBe(1)
+    expect(history.length).toBe(before) // our pushed entry was popped, scan took its place: no dead entry
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
@@ -52,7 +82,7 @@ describe('Ask choice sheet', () => {
     await screen.findByRole('dialog')
     const f = new File(['x'], 'p.png', { type: 'image/png' })
     fireEvent.change(screen.getByTestId('ask-file'), { target: { files: [f] } })
-    expect(location.hash).toBe('#scan')
+    await waitFor(() => expect(location.hash).toBe('#scan'))
     expect(takePendingFile()).toBe(f)
     expect(takePendingFile()).toBeNull()
   })

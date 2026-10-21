@@ -147,5 +147,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .ask-ic .sh-ic { color: var(--on-green); }
 .ask-row:focus-visible, .ask-cancel:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .ask-cancel { min-height: 48px; }
+.ask-pdf { display: flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 15px; color: var(--ink); text-decoration: underline; }
+.ask-pdf:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 @keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }

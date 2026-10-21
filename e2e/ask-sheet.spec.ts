@@ -36,7 +36,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const dlg = page.getByRole('dialog', { name: 'What would you like to do?' })
       await expect(dlg).toBeVisible()
       await page.waitForTimeout(400) // slide-in
-      for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a file/]) {
+      for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a photo/]) {
         const b = (await dlg.getByRole('button', { name: n }).boundingBox())!
         expect(b.height).toBeGreaterThanOrEqual(76)
       }
@@ -44,6 +44,62 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(res.violations).toEqual([])
       await page.keyboard.press('Escape')
       await expect(dlg).toHaveCount(0)
+    })
+
+    test('backdrop covers the whole viewport, tap outside / Cancel / Back close it, page behind stays out of reach', async ({ page }) => {
+      await skipOnboarding(page)
+      await page.goto('/#today')
+      const ask = page.getByRole('button', { name: 'Ask Bantay' })
+      const dlg = page.getByRole('dialog', { name: 'What would you like to do?' })
+      await ask.click()
+      await expect(dlg).toBeVisible()
+      await page.waitForTimeout(400)
+      const box = (await page.locator('.ask-back').boundingBox())!
+      expect(box).toMatchObject({ x: 0, y: 0, width: 390, height: 844 })
+      expect(await page.locator('.ask-back').evaluate((el) => !!el.closest('nav'))).toBe(false)
+      // focus stays inside the sheet through a full Tab cycle
+      for (let i = 0; i < 8; i++) {
+        await page.keyboard.press('Tab')
+        expect(await page.evaluate(() => !!document.activeElement?.closest('.ask-sheet'))).toBe(true)
+      }
+      // tap on the dim area above the sheet closes
+      await page.mouse.click(195, 40)
+      await expect(dlg).toHaveCount(0)
+      await ask.click()
+      await expect(dlg).toBeVisible()
+      await dlg.getByRole('button', { name: 'Cancel' }).click()
+      await expect(dlg).toHaveCount(0)
+      await ask.click()
+      await expect(dlg).toBeVisible()
+      await page.goBack()
+      await expect(dlg).toHaveCount(0)
+      await expect(page).toHaveURL(/#today$/)
+    })
+
+    test('leaving via Scan leaves one Back press to return', async ({ page }) => {
+      await skipOnboarding(page)
+      await page.goto('/#today')
+      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: /Scan a paper/ }).click()
+      await expect(page).toHaveURL(/#scan$/)
+      await page.goBack()
+      await expect(page).toHaveURL(/#today$/)
+    })
+
+    test('PDF line goes to Health > Papers', async ({ page }) => {
+      await skipOnboarding(page)
+      await page.goto('/#today')
+      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
+      await expect(page).toHaveURL(/#health\/papers/)
+    })
+
+    test('one-time hint and camera badge pass axe', async ({ page }) => {
+      await skipOnboarding(page)
+      await page.goto('/#today')
+      await expect(page.getByText('Scan papers here too')).toBeVisible()
+      const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').analyze()
+      expect(res.violations).toEqual([])
     })
 
     test('Talk reaches the chat', async ({ page }) => {
@@ -64,11 +120,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: /Take a photo of page 1/ })).toBeVisible()
     })
 
-    test('Upload a file has a file input and a chosen photo lands in the crop step', async ({ page }) => {
+    test('Upload a photo has a file input and a chosen photo lands in the crop step', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
       await page.getByRole('button', { name: 'Ask Bantay' }).click()
-      await expect(page.getByRole('button', { name: /Upload a file/ })).toBeVisible()
+      await expect(page.getByRole('button', { name: /Upload a photo/ })).toBeVisible()
       await expect(page.getByTestId('ask-file')).toHaveCount(1)
       await page.getByTestId('ask-file').setInputFiles({ name: 'one.png', mimeType: 'image/png', buffer: png(300, 400) })
       await expect(page).toHaveURL(/#scan$/)
