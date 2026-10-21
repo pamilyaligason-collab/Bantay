@@ -29,23 +29,26 @@ beforeEach(async () => {
 afterEach(cleanup)
 const go = (hash: string) => { location.hash = hash }
 
+// The first Health render lazy-loads the screens; under a loaded full run that outlasts the 1 s default of findBy/waitFor.
+const SLOW = { timeout: 8000 }
+
 describe('Refill', () => {
   it('shows days left and the refill date, adds a Plan task once, and sets the stock through the medications write path', async () => {
     await ldb.medications.bulkAdd([med({ name: 'Metformin', strength: '500 mg', stockQty: 14, stockSetAt: new Date().toISOString() }), med({ name: 'Vitamin D' })])
     go('#health/refill')
     render(<Health />)
-    const hero = await screen.findByTestId('refill-soon')
+    const hero = await screen.findByTestId('refill-soon', {}, SLOW)
     expect(hero.textContent).toMatch(/Metformin 500 mg: 7 days left/)
     expect(hero.textContent).toMatch(/Refill by \w{3} \d+ \w{3}\./)
     fireEvent.click(within(hero).getByRole('button', { name: 'Add refill to plan' }))
-    await waitFor(async () => expect(await fdb.tasks.count()).toBe(1))
+    await waitFor(async () => expect(await fdb.tasks.count()).toBe(1), SLOW)
     expect((await fdb.tasks.toArray())[0]).toMatchObject({ title: 'Refill Metformin 500 mg', done: false })
-    expect(screen.getByRole('status').textContent).toMatch(/Added to the Plan/)
+    expect((await screen.findByRole('status', {}, SLOW)).textContent).toMatch(/Added to the Plan/)
     // set stock for the uncounted medicine
-    fireEvent.click(screen.getByRole('button', { name: 'Set stock for Vitamin D' }))
-    fireEvent.change(await screen.findByLabelText('How many are left now?'), { target: { value: '30' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    await waitFor(async () => expect((await ldb.medications.where('clientId').equals('c-Vitamin D').first())?.stockQty).toBe(30))
+    fireEvent.click(await screen.findByRole('button', { name: 'Set stock for Vitamin D' }, SLOW))
+    fireEvent.change(await screen.findByLabelText('How many are left now?', {}, SLOW), { target: { value: '30' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Save' }, SLOW))
+    await waitFor(async () => expect((await ldb.medications.where('clientId').equals('c-Vitamin D').first())?.stockQty).toBe(30), SLOW)
     const m = await ldb.medications.where('clientId').equals('c-Vitamin D').first()
     expect(m?.stockSetAt).toBeTruthy()
     const up = (await db.outbox.where('table').equals('medications').toArray()).at(-1)!.payload as Record<string, unknown>
