@@ -184,6 +184,7 @@ test.describe("alerts-off card on Today", () => {
     const card = page.getByRole("region", { name: "Alerts are off" })
     await expect(card).toBeVisible()
     await page.waitForTimeout(1500)
+    await card.scrollIntoViewIfNeeded() // the card sits in the "More" group, below the fold on a 812px phone by design (D-50 order)
     expect(await card.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true)
     await expect(card.getByRole("button", { name: "Turn on alerts" })).toBeInViewport()
   })
