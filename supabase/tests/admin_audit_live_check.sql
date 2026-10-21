@@ -106,7 +106,7 @@ begin
   set local role authenticated;
   select count(*) into n_adm from public.people;
   select count(*) into n_ids from public.admin_identifiers(pid);
-  update public.lab_results set confidence = coalesce(confidence, 0.5) + 0.0001 where id = lab;
+  update public.lab_results set confidence = case when coalesce(confidence, 0.5) > 0.5 then confidence - 0.0001 else coalesce(confidence, 0.5) + 0.0001 end where id = lab; -- stays inside the 0..1 check
   update public.lab_results set status = 'rejected' where id = lab;
   reset role;
   select fields into f from public.audit_log where row_id = lab and action = 'update' order by id desc limit 1;
