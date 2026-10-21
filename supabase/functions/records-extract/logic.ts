@@ -390,6 +390,8 @@ export async function extractDocument(port: Port, documentId: string, env: Env):
     if (!doc || doc.status !== 'draft' || CARD_KINDS.includes(doc.kind)) return await fail('not_a_scan')
     const ordered = orderPages(await port.pages(documentId))
     if ('error' in ordered) return await fail(ordered.error)
+    // the service role reads storage: only pages under this person's own folder (a row could point at another person's file)
+    if (ordered.pages.some((p) => !p.storage_path!.startsWith(`${doc.person_id}/`))) return await fail('bad_path')
     const parts: PagePart[] = []
     let total = 0
     for (const p of ordered.pages) {

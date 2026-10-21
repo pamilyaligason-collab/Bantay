@@ -235,6 +235,15 @@ describe('extractDocument', () => {
     const f = fakePort({ document: async () => null })
     expect((await extractDocument(f.port, DOC, env)).error).toBe('not_a_scan')
   })
+  it("a page outside the person's own folder is never downloaded or read", async () => {
+    const f = fakePort({
+      pages: async () => [{ id: 's1', page_no: 1, name: 'p01.jpg', mime: 'image/jpeg', size_bytes: 3, storage_path: `someone-else/${DOC}/p01.jpg` }],
+      download: async () => { throw new Error('must not download') },
+      read: async () => { throw new Error('must not read') }
+    })
+    expect(await extractDocument(f.port, DOC, env)).toMatchObject({ status: 'failed', error: 'bad_path' })
+    expect(f.inserted).toEqual({})
+  })
   it('failures leave the pages failed with a short code and no drafts', async () => {
     const cases: [Partial<Port>, string][] = [
       [{ download: async () => null }, 'download'],
