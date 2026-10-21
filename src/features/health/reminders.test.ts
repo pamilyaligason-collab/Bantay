@@ -10,6 +10,7 @@ vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: LN }))
 import { db } from '../../db'
 import { track } from '../admin/events'
 import { ldb, type Medication } from '../log/store'
+import { hdb } from '../records/store'
 import { REMIND_FOR, reminderIds, resetReminderTapForTests, syncDoseReminders } from './reminders'
 
 beforeEach(async () => {
@@ -20,6 +21,7 @@ beforeEach(async () => {
   LN.schedule.mockResolvedValue({ notifications: [] })
   await db.kv.clear()
   await ldb.medications.clear()
+  await hdb.people.clear()
   vi.clearAllMocks()
   LN.checkPermissions.mockImplementation(async () => ({ display: m.perm }))
   LN.addListener.mockResolvedValue({ remove: vi.fn() })
@@ -100,15 +102,23 @@ describe('reminders from medications', () => {
     await add({ name: 'Stranger', personId: 'x', schedule: { v: 1, times: ['11:00'] } })
     await syncDoseReminders(undefined, { selfId: 'me', now: NOW })
     expect(sched().map((x) => x.schedule.on.hour)).toEqual([8])
+    await hdb.people.put({ id: 'ma', name: 'Test Child' })
     await db.kv.put({ key: REMIND_FOR, value: ['ma'] })
     expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('scheduled')
     expect(sched().map((x) => x.schedule.on.hour)).toEqual([8, 10])
   })
   it('works for a carer with no own medicines', async () => {
     await add({ name: 'Cared', personId: 'ma' })
+    await hdb.people.put({ id: 'ma', name: 'Test Child' })
     await db.kv.put({ key: REMIND_FOR, value: ['ma'] })
     await syncDoseReminders(undefined, { selfId: null, now: NOW })
     expect(sched()).toHaveLength(1)
+  })
+  it('no reminder for a person this phone no longer knows (archived)', async () => {
+    await add({ name: 'Cared', personId: 'ma' })
+    await db.kv.put({ key: REMIND_FOR, value: ['ma'] })
+    await syncDoseReminders(undefined, { selfId: null, now: NOW })
+    expect(LN.schedule).not.toHaveBeenCalled()
   })
   it('medications win over the deprecated profile text', async () => {
     await add({ name: 'Drug A', schedule: { v: 1, times: ['06:00'] } })

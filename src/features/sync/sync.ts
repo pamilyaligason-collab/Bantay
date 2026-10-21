@@ -250,7 +250,12 @@ async function pullPeople(url: string, key: string, token: string) {
   }
   if (!rows.length) return
   await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
-  await applyPulledProfiles(rows, await selfIdNow())
+  const selfId = await selfIdNow()
+  await applyPulledProfiles(rows, selfId)
+  // The server no longer sends archived (or unlinked) people: forget them here too. Only after a full successful pull, never my own row.
+  const keep = new Set([...rows.map((r) => r.id as string), ...(selfId ? [selfId] : [])])
+  const gone = (await hdb.people.toCollection().primaryKeys()).filter((id) => !keep.has(id))
+  if (gone.length) await Promise.all([hdb.people.bulkDelete(gone), db.profiles.bulkDelete(gone)])
 }
 
 // Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.

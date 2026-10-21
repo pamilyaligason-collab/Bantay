@@ -9,6 +9,8 @@ import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 import { track } from '../admin/events'
 
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
+const who = vi.hoisted(() => ({ id: null as string | null }))
+vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => (who.id ? { personId: who.id } : null) }))
 
 const URL = 'https://x.supabase.test'
 const cfg = (token: string | null = 'tok1') => ({ url: URL, key: 'pk', getToken: async () => token })
@@ -31,6 +33,7 @@ const clientIdOf = (r: unknown) => (r as { clientId?: string } | undefined)?.cli
 beforeEach(async () => {
   vi.restoreAllMocks()
   await Promise.all([db.outbox.clear(), db.kv.clear(), hdb.readings.clear(), hdb.consults.clear(), ldb.meds.clear(), ldb.activity.clear()])
+  who.id = null
   resetSyncForTests()
 })
 afterEach(() => vi.unstubAllGlobals())
@@ -373,6 +376,24 @@ describe('pull', () => {
     await syncNow()
     expect(await hdb.people.get('u-1')).toEqual({ id: 'u-1', name: 'Test Person' })
     expect(calls.find((c) => c.url.includes('/people?'))!.url).toContain('select=id,display_name')
+  })
+
+  it('forgets a person the server no longer sends, keeps my own row, and keeps everything when the pull fails', async () => {
+    await hdb.people.clear()
+    await hdb.people.bulkPut([{ id: 'me', name: 'Test Me' }, { id: 'gone', name: 'Test Child' }, { id: 'kept', name: 'Test Kept' }])
+    await db.profiles.put({ id: 'gone', photoPath: null, phone: null, birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null })
+    who.id = 'me'
+    mockFetch((c) => (c.url.includes('/people?') ? json({ code: 'PGRST' }, 500) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    expect(await hdb.people.count()).toBe(3)
+    resetSyncForTests()
+    await db.kv.delete('sync.backoff') // the failed run set a wait; startSync's own first run would honour it
+    mockFetch((c) => (c.url.includes('/people?') ? json([{ id: 'kept', display_name: 'Test Kept' }]) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    expect((await hdb.people.toArray()).map((p) => p.id).sort()).toEqual(['kept', 'me'])
+    expect(await db.profiles.get('gone')).toBeUndefined()
   })
 
   it('merges admin safety edits into the kv overrides and drops removed ones', async () => {

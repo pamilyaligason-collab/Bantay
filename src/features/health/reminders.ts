@@ -4,6 +4,7 @@ import { liveQuery } from 'dexie'
 import { db } from '../../db'
 import { track } from '../admin/events'
 import { ldb } from '../log/store'
+import { hdb } from '../records/store'
 import { selfIdOrCached } from '../sync/profile'
 import { MEDS_CURSOR } from './useMedicationRows'
 import { dayOf, remindable, parseSchedule, reminderId, toClock, toMinutes } from './meds'
@@ -30,7 +31,8 @@ const unique = <T,>(xs: T[]) => [...new Set(xs)]
 async function remindPeople(selfId: string | null): Promise<string[]> {
   const v = (await db.kv.get(REMIND_FOR).catch(() => undefined))?.value
   const extra = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []
-  return unique([...(selfId ? [selfId] : []), ...extra])
+  const known = new Set(await hdb.people.toCollection().primaryKeys()) // an archived person is gone from here: no reminder for their medicines
+  return unique([...(selfId ? [selfId] : []), ...extra.filter((x) => known.has(x))])
 }
 
 /** The times to remind at, each with the medicines due then (as a key, never shown). */
