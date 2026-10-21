@@ -1,0 +1,40 @@
+{
+  "_note": "Learning hub cards. Titles and blurbs are Bantay's own words (docs/session-8/CLINICAL-REVIEW.md). Videos play through LiteVideo (official YouTube, ids checked against oEmbed 2026-10-21). Links open the publisher's page; nothing from WHO is bundled, only linked. credit is shown on the card.",
+  "categories": [
+    {
+      "id": "stress",
+      "label": "Stress",
+      "icon": "brain",
+      "items": [
+        { "id": "stress-nimh", "kind": "link", "title": "Feeling stressed? What helps", "blurb": "What stress does to the body, and small things that ease it.", "url": "https://www.nimh.nih.gov/health/publications/so-stressed-out-fact-sheet", "credit": "NIMH", "read": "5 min read" }
+      ]
+    },
+    {
+      "id": "sleep",
+      "label": "Sleep",
+      "icon": "moon",
+      "items": [
+        { "id": "sleep-medline", "kind": "link", "title": "Sleeping better", "blurb": "Why sleep matters, and habits that make it easier to rest.", "url": "https://medlineplus.gov/healthysleep.html", "credit": "MedlinePlus", "read": "5 min read" }
+      ]
+    },
+    {
+      "id": "mind",
+      "label": "Mental health",
+      "icon": "smile",
+      "items": [
+        { "id": "mind-lusog", "kind": "video", "title": "Lusog-Isip: caring for your mind", "blurb": "How the Lusog-Isip app helps with self-care.", "videoId": "AQimPkd7g5I", "credit": "Department of Health, Philippines" },
+        { "id": "mind-cope", "kind": "video", "title": "Coping with stress", "blurb": "Ways to cope when things feel like too much.", "videoId": "HKK-58RZlMA", "credit": "Department of Health, Philippines" },
+        { "id": "mind-aware", "kind": "video", "title": "Mental health awareness", "blurb": "Why mental health is part of staying well.", "videoId": "ExEXOfe81Nc", "credit": "Department of Health, Philippines" }
+      ]
+    },
+    {
+      "id": "move-eat",
+      "label": "Move and eat well",
+      "icon": "move",
+      "items": [
+        { "id": "eat-nhs", "kind": "video", "title": "How much is five a day?", "blurb": "A quick look at what counts as a portion of fruit and vegetables.", "videoId": "b-uX6N4RZjg", "credit": "NHS" },
+        { "id": "eat-who", "kind": "link", "title": "Healthy diet: the basics", "blurb": "The World Health Organization's short guide to eating well.", "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet", "credit": "WHO", "read": "8 min read" }
+      ]
+    }
+  ]
+}

@@ -385,3 +385,342 @@ The six official health videos' titles, as shown in the app (the videos themselv
 4. Diabetic emergency: what to do
 5. Five a day: eating more fruit and vegetables
 6. Lusog-Isip: looking after your mental health
+
+## W2 Safety: Act early first-aid pages
+
+Code: `src/features/safety/firstaid.json` (17 topics, shown at `#safety/firstaid/<id>`). All steps and "Call 911 when" lines are Bantay's own words, written from general knowledge of the linked guidance, NOT copied from fetched pages. Footer on every page: "General first-aid guidance, not a diagnosis." Please check each topic against its linked source and Philippine practice (for example 911, Animal Bite Treatment Centres, paracetamol only).
+
+1. Stroke (BE FAST): signs, "note the time", no food, drink or pills.
+2. Dengue warning signs: warning-sign list, "watch when the fever goes down, usually day 3 to 7", paracetamol only if a doctor agrees, avoid aspirin and ibuprofen. REVIEW: wording of the "go at once" list and the paracetamol line.
+3. CPR (hands-only): about 2 pushes per second, at least 5 cm deep.
+4. Choking (adult): 5 back blows then 5 inward-upward belly pushes, alternate; CPR if they pass out.
+5. Heavy bleeding: direct pressure, no tourniquet advice, "10 minutes of pressure" as a call-911 line. REVIEW: the 10-minute figure is our own choice.
+6. Heart attack: signs, "do not drive yourself", "help them take prescribed chest-pain medicine as directed". Aspirin is deliberately NOT mentioned. REVIEW: confirm omission.
+7. Burns: cool running water 20 minutes, no ice or home remedies, cover loosely, paracetamol for pain. REVIEW: the call-911 size rule ("bigger than the person's hand").
+8. Heat stroke: cooling steps and small sips only if fully awake.
+9. Seizure: time it, protect the head, nothing in the mouth, recovery position, call at 5 minutes.
+10. Fainting: flat, legs raised about 30 cm, call if no wake in a minute. REVIEW: the one-minute figure.
+11. Broken bone: keep still, cold pack, nothing to eat or drink.
+12. Drowning: reach or throw, CPR starting with 5 rescue breaths, hospital even if they recover. REVIEW: rescue-breath advice for lay people.
+13. Snake bite: still limb at heart level, no cutting, sucking, tourniquet or ice.
+14. Dog or cat bite: wash 15 minutes with soap and water, "Go to an Animal Bite Treatment Centre the same day".
+15. Low blood sugar: 3 teaspoons of sugar in water or half a glass of juice, repeat after 15 minutes. REVIEW: the amounts are ours.
+16. Severe allergic reaction: prescribed adrenaline pen in the outer thigh, call 911.
+17. After a fall: do not rush to lift, check pain and confusion, roll to side and up via hands and knees, call if head strike on a blood thinner.
+
+Sources still UNVERIFIED as web pages: the DOH rabies video (AaL7zL5S7Ww) and the AHA videos (M4ACYp75mjU, C8EO3SM0Y_w) were checked by YouTube oEmbed only; no AHA or DOH web page is linked. The NHS epilepsy page (linked for Seizure) was opened but its seizure first-aid section was not read line by line.
+
+### W2 Safety: full first-aid text for clinician review (copied from src/features/safety/firstaid.json)
+
+#### Stroke (BE FAST) (stroke)
+Steps:
+1. Check Balance, Eyes, Face, Arms, Speech. Sudden trouble in any one is a warning.
+2. Face: ask them to smile. Does one side droop? Arms: ask them to lift both. Does one drift down?
+3. Speech: ask them to say a short sentence. Is it slurred or strange?
+4. Note the time the signs began and tell the 911 operator.
+5. Keep them still and comfortable. Give no food, drink or pills.
+
+Call 911 when:
+- Any one BE FAST sign, even if it fades
+- Sudden severe headache, or sudden confusion
+- Do not wait to see if it passes
+
+Sources: https://www.nhs.uk/conditions/stroke/symptoms/, https://www.who.int/news-room/fact-sheets/detail/stroke
+
+#### Dengue warning signs (dengue-warning-signs)
+Steps:
+1. Fever for 2 to 7 days with body pain or headache can be dengue. Rest and sip fluids often.
+2. Watch closely when the fever goes down, usually on day 3 to 7. This is when it can turn serious.
+3. Go to a clinic or hospital at once for belly pain, repeated vomiting, bleeding gums or nose, black stool, or cold clammy skin.
+4. Also go if the person is very sleepy, restless, or breathing fast.
+5. Use paracetamol for fever only if a doctor agrees. Avoid aspirin and ibuprofen.
+
+Call 911 when:
+- Cannot stay awake, or is confused
+- Severe belly pain or vomiting that will not stop
+- Bleeding that will not stop, or vomiting blood
+- Cold, clammy, pale skin, or trouble breathing
+
+Sources: https://www.who.int/news-room/fact-sheets/detail/dengue-and-severe-dengue, https://www.nhs.uk/conditions/dengue/
+
+#### CPR (hands-only) (cpr)
+Steps:
+1. Check the person: no answer and not breathing normally. Shout for help.
+2. Call 911, or ask someone to call and bring an AED if there is one.
+3. Kneel beside them. Put the heel of one hand on the middle of the chest, the other hand on top.
+4. Push hard and fast, about 2 pushes every second, at least 5 cm deep. Let the chest come back up each time.
+5. Keep going without stopping until help or an AED arrives, or they wake up.
+
+Call 911 when:
+- Always: call 911 first for anyone who will not wake and is not breathing normally
+
+Sources: https://www.redcross.org/take-a-class/cpr/performing-cpr/cpr-steps, https://www.youtube.com/watch?v=aks4waFy5yU
+
+#### Choking (adult) (choking)
+Steps:
+1. Ask: are you choking? If they can cough, let them cough.
+2. If they cannot cough, speak or breathe, call 911 or have someone call.
+3. Lean them forward. Give 5 firm blows on the back between the shoulder blades.
+4. If still stuck, give 5 quick inward and upward pushes just above the belly button.
+5. Alternate 5 back blows and 5 belly pushes until it clears or they pass out. If they pass out, start CPR.
+
+Call 911 when:
+- They cannot cough, speak or breathe
+- They pass out
+- Anything is still stuck after the first round
+
+Sources: https://www.youtube.com/watch?v=8R3RWC-xx1I
+
+#### Heavy bleeding (bleeding)
+Steps:
+1. Call 911 if the blood is spurting, soaking through, or will not stop.
+2. Press hard directly on the wound with a clean cloth or your gloved hand.
+3. Keep pressing. Do not lift to peek. Add more cloth on top if it soaks through.
+4. Once it slows, wrap a firm bandage over the pad. Not so tight that fingers turn pale or numb.
+5. Lay the person down and keep them warm until help arrives.
+
+Call 911 when:
+- Blood spurts or soaks through a thick pad
+- Bleeding does not slow after 10 minutes of pressure
+- The person is pale, faint or confused
+- A deep wound on the head, chest or belly
+
+Sources: https://www.youtube.com/watch?v=caPHddkuT4M, https://www.youtube.com/watch?v=YJB3fI3T1oo
+
+#### Heart attack (heart-attack)
+Steps:
+1. Signs: pressure or squeezing in the chest, pain spreading to the arm, jaw or back, sweating, breathlessness, nausea.
+2. Call 911 right away. Do not drive yourself.
+3. Sit the person down and keep them calm and still.
+4. If a doctor has prescribed chest-pain medicine, help them take it as directed.
+5. If they stop responding and are not breathing normally, start CPR.
+
+Call 911 when:
+- Chest pain or pressure lasting more than a few minutes
+- Pain with sweating, breathlessness or feeling faint
+- Any time you are unsure: call
+
+Sources: https://www.nhs.uk/conditions/heart-attack/
+
+#### Burns (burns)
+Steps:
+1. Move away from the heat. Remove rings, watches and tight clothing near the burn before it swells.
+2. Cool the burn under cool running water for 20 minutes. Not ice.
+3. Do not pop blisters. Do not put toothpaste, oil or butter on it.
+4. Cover loosely with a clean non-fluffy cover, such as kitchen cling film or a clean cloth.
+5. Keep the person warm. Give paracetamol for pain if they can normally take it.
+
+Call 911 when:
+- Burn bigger than the person's hand, or on the face, hands, feet or private parts
+- Deep burn, white, brown or charred skin
+- Burn from electricity or chemicals
+- Trouble breathing after smoke, or a burn in a baby or older adult
+
+Sources: https://www.nhs.uk/conditions/burns-and-scalds/
+
+#### Heat stroke (heat-stroke)
+Steps:
+1. Signs: very hot skin, confusion, fainting, a fast pulse, headache. Sweating may stop.
+2. Call 911. Heat stroke is an emergency.
+3. Move them into shade or a cool room. Remove extra clothing.
+4. Cool the body fast: wet skin with cool water and fan, or put cool wet cloths on neck, armpits and groin.
+5. If fully awake, give small sips of cool water. Do not force fluids.
+
+Call 911 when:
+- Confused, very sleepy or fainting
+- Hot skin with no sweat
+- A seizure, or not getting better in 15 minutes
+
+Sources: https://www.nhs.uk/conditions/heat-exhaustion-heatstroke/
+
+#### Seizure (seizure)
+Steps:
+1. Stay calm and note the time it started.
+2. Clear hard or sharp things away. Cushion their head with something soft.
+3. Do not hold them down. Never put anything in their mouth.
+4. When shaking stops, roll them gently onto their side.
+5. Stay with them until fully awake. Speak softly and tell them what happened.
+
+Call 911 when:
+- It lasts more than 5 minutes
+- A second seizure follows, or they do not wake up
+- First seizure ever, or an injury, pregnancy, or trouble breathing afterwards
+
+Sources: https://www.nhs.uk/conditions/epilepsy/, https://www.youtube.com/watch?v=7MPJauo4DdY
+
+#### Fainting (fainting)
+Steps:
+1. Lay the person flat on their back. Raise their legs about 30 cm if you can.
+2. Loosen tight collars and belts. Give them air and space.
+3. If they are breathing and do not wake within a minute, roll them onto their side and call 911.
+4. When they wake, keep them lying down for a few minutes. Sit up slowly.
+5. Give water once fully alert. Do not give food or drink to someone who is not awake.
+
+Call 911 when:
+- Does not wake within a minute
+- Chest pain, trouble breathing or a very uneven heartbeat
+- Injured in the fall, pregnant, or a first-ever faint in an older adult
+- Faints again
+
+Sources: https://www.nhs.uk/symptoms/fainting/
+
+#### Broken bone (fracture)
+Steps:
+1. Keep the person still. Do not try to straighten the bone.
+2. Support the injured part in the position you found it, with rolled clothes or a pillow.
+3. Cover any open wound with a clean cloth. Press around it, not on the bone.
+4. Put a cold pack wrapped in cloth on it for pain and swelling.
+5. Do not let them eat or drink in case they need an operation. Get them to a hospital.
+
+Call 911 when:
+- Bone through the skin, or heavy bleeding
+- Neck, back or head injury
+- Leg or hip injury they cannot move
+- Numb, pale or blue fingers or toes below the injury
+
+Sources: https://www.youtube.com/watch?v=IPlazeozEOU
+
+#### Drowning (drowning)
+Steps:
+1. Shout for help and call 911. Reach or throw something that floats. Do not swim out unless trained.
+2. Once out of the water, check if they wake and breathe normally.
+3. If not breathing, lay them flat and start CPR. Begin with 5 rescue breaths if you know how.
+4. Keep going until help arrives.
+5. If they wake, lay them on their side, keep them warm, and still go to a hospital.
+
+Call 911 when:
+- Always call 911 for any drowning, even if they seem fine afterwards
+- Coughing, trouble breathing or sleepiness hours later
+
+Sources: https://www.who.int/news-room/fact-sheets/detail/drowning
+
+#### Snake bite (snake-bite)
+Steps:
+1. Move away from the snake. Keep the person calm and still. Moving speeds the venom.
+2. Call 911 or get to a hospital quickly.
+3. Keep the bitten limb still and at about heart level. Take off rings and tight items.
+4. Do not cut the bite, suck it, use a tourniquet, or apply ice.
+5. Note what the snake looked like if safe. Do not try to catch it.
+
+Call 911 when:
+- Every snake bite is an emergency
+- Swelling spreading, drooping eyelids, trouble breathing or speaking
+
+Sources: https://www.who.int/news-room/fact-sheets/detail/snakebite-envenoming
+
+#### Dog or cat bite (rabies) (dog-bite-rabies)
+Steps:
+1. Wash the bite or scratch right away with soap and running water for 15 minutes.
+2. Put on a clean cover. Do not close a deep wound tightly.
+3. Go to an Animal Bite Treatment Centre the same day. Rabies shots work only if started early.
+4. Do not wait to see if the animal stays healthy. Do not use herbs, garlic or stones.
+5. Tell the doctor about the animal and any past tetanus shot.
+
+Call 911 when:
+- Bleeding that will not stop
+- Bite on the face, head or neck
+- Fever, confusion or fear of water after any animal bite
+
+Sources: https://www.who.int/news-room/fact-sheets/detail/rabies, https://www.youtube.com/watch?v=_hchkrLTr98
+
+#### Low blood sugar (low-sugar)
+Steps:
+1. Signs: shaky, sweaty, hungry, pale, confused, or acting oddly. Think of it if they have diabetes.
+2. If they can swallow safely, give fast sugar: 3 teaspoons of sugar in water, or half a glass of juice.
+3. Wait 15 minutes. Check sugar if you have a meter.
+4. If still low or symptoms stay, give the sugar again.
+5. Once better, give a snack such as bread or biscuits.
+
+Call 911 when:
+- They are too drowsy to swallow safely
+- They pass out or have a seizure
+- Not better after two rounds of sugar
+
+Sources: https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/
+
+#### Severe allergic reaction (allergic-reaction)
+Steps:
+1. Signs: swollen lips or face, hives, wheezing, throat tightness, dizziness, or vomiting after food, a sting or medicine.
+2. Call 911 right away.
+3. If they have a prescribed adrenaline pen, help them use it at once, in the outer thigh.
+4. Lay them flat with legs raised. If they struggle to breathe, let them sit up.
+5. Stay with them. Follow the pen instructions if a second dose is needed.
+
+Call 911 when:
+- Trouble breathing or a tight throat
+- Swelling of the face or tongue
+- Feeling faint or collapsing
+
+Sources: https://www.nhs.uk/conditions/anaphylaxis/
+
+#### After a fall (falls)
+Steps:
+1. Do not rush to pull them up. Ask where it hurts and stay calm.
+2. Check for head, neck, back, hip or wrist pain, bleeding, or confusion.
+3. If none of those and they feel able, help them roll to the side, then up to hands and knees and onto a sturdy chair.
+4. If they cannot get up, keep them warm with a blanket and call for help.
+5. Tell their doctor about any fall, even without injury.
+
+Call 911 when:
+- Hit the head, especially on a blood thinner
+- Cannot move, or hip, back or neck pain
+- Confused, bleeding badly, or chest pain
+
+Sources: https://www.nhs.uk/conditions/falls/
+
+
+## W2 Safety: IDs and insurance row
+
+"{n} saved" counts distinct ID and insurance cards stored on this phone plus Drive-only cards. With none: "Add your PhilHealth, Senior ID, HMO". No health text.
+
+
+## Family: member report, learning hub, Memories (wave 2, lane W2-family)
+
+For a clinician or a careful reader to check. Nothing here diagnoses or gives dosing advice; suggestions are questions to ask a doctor.
+
+### Report: verdict words (src/features/family/reportLogic.ts)
+
+Shown beside each vital, from the guide ranges (family limit, then the lab's own, then the guide):
+
+- Above the usual range: "A bit high"
+- Below the usual range: "A bit low"
+- Within: "Usual"
+- No range or a unit that cannot be compared: "No range to compare" (never "Usual")
+- Blood pressure is one card, judged by the worse of the top and bottom numbers.
+- Labs outside the range are listed under "Labs to ask about" with the words "High" or "Low".
+
+### Report: things to bring up (generated questions)
+
+Numbered, up to 8, in this order. Templates (the bracketed parts are filled from the person's own data):
+
+1. For each vital outside its range: "My [blood pressure / blood sugar / pulse / weight] was [a bit high / a bit low] on [date]. What should I do about it?"
+2. For each lab outside its range: "[Test name] was [high / low] on [date]. " followed by the first question already reviewed for that lab in labsLogic.ts (the lab question list above).
+3. If any dose was missed in the last 7 days: "Some doses were missed this week ([up to 3 medicine names]). Can the times, or the way I take them, be made easier?"
+4. Then the person's own saved questions (visits.questions.<person>), unchanged.
+
+Footer under the list: "Questions to ask, made by Bantay from the numbers above and your saved questions. Not medical advice."
+
+Review asks: is "A bit high" / "A bit low" right for older adults, or too soft? Should a very high blood pressure or sugar say "see a doctor soon" instead of the same wording? (Today it does not; the alert rules elsewhere in the app handle urgent values.)
+
+### Report: medicine doses
+
+Seven day cells: a day is "all taken", "missed" (any dose not taken or skipped on a past day), "still to take" (today, doses still open) or "none due". The line reads "Missed: [medicine] on [day]". The count "x of y doses" leaves out today's open doses. Review ask: should a deliberately skipped dose count as missed? Today it does.
+
+### People list line
+
+"[n] to check" or "All up to date", counting vitals out of range, labs out of range, and one for "missed doses this week". No numbers. Nothing is shown for a person this phone has no data for.
+
+### Learning hub (src/features/family/hub.json)
+
+Own-words titles and blurbs on cards that link to the sources named in docs/SOURCES.md:
+
+- Stress: "Feeling stressed? What helps" - "What stress does to the body, and small things that ease it." (NIMH link)
+- Sleep: "Sleeping better" - "Why sleep matters, and habits that make it easier to rest." (MedlinePlus link)
+- Mental health: "Lusog-Isip: caring for your mind" - "How the Lusog-Isip app helps with self-care."; "Coping with stress" - "Ways to cope when things feel like too much."; "Mental health awareness" - "Why mental health is part of staying well." (DOH Philippines videos)
+- Move and eat well: "How much is five a day?" - "A quick look at what counts as a portion of fruit and vegetables." (NHS video); "Healthy diet: the basics" - "The World Health Organization's short guide to eating well." (WHO link only)
+
+Review ask: the three DOH video titles come from their YouTube titles ("Mental Health - Cope up with stress", "Mental Health Awareness"); watch them once to confirm they suit older users and nothing in them needs a caution.
+
+### Memories
+
+Privacy text on the card: "Only your family on Bantay sees these. Location and camera details are removed from every photo." Not a health text; listed so the claim can be checked against the code (canvas re-encode, 0023 policies).
