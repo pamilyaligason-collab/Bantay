@@ -120,6 +120,11 @@ function fakePort(over: { meds?: MedRow[]; taken?: TakenRow[]; status?: number |
 }
 
 describe('runDoseWatch', () => {
+  it('an archived person gets no claim and no push', async () => {
+    const f = fakePort({ meds: [med({ people: { archived_at: '2026-10-20T00:00:00Z' } })] })
+    expect(await runDoseWatch(f.port, NOW)).toEqual({ due: 0, claimed: 0, sent: 0, removed: 0, released: 0 })
+    expect(f.pushes).toHaveLength(0)
+  })
   it('sends one push per writer carer device with the generic payload', async () => {
     const f = fakePort()
     const r = await runDoseWatch(f.port, NOW)

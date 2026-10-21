@@ -3,7 +3,7 @@ import { SYNTHETIC_DOMAIN, derivePassword, normalizeEmail, normalizeHandle, rand
 
 export type Role = 'admin' | 'member'
 export interface Profile { photoPath: string | null; phone: string | null; birthdate: string | null; bloodType: string | null; allergies: string[]; conditions: string[]; medicines: string[] }
-export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null; lockedUntil?: string | null; fails?: number }
+export interface Member { userId: string; personId: string | null; displayName: string; handle: string | null; role: Role; disabled: boolean; lastSignInAt: string | null; provider: string | null; profile: Profile | null; archivedAt: string | null; lockedUntil?: string | null; fails?: number }
 export type Err = 'not_admin' | 'bad_input' | 'handle_taken' | 'not_found'
 export type Result = { ok: true; [k: string]: unknown } | { ok: false; error: Err }
 
@@ -24,6 +24,8 @@ export interface Port {
   addInvite(email: string, by: string): Promise<boolean>
   removeInvite(email: string): Promise<boolean>
   updatePerson(personId: string, patch: PersonPatch): Promise<'ok' | 'not_found' | 'error'>
+  getPersonLogin(personId: string): Promise<{ authUserId: string | null; displayName: string } | null> // null = no such person
+  attachPerson(personId: string, userId: string): Promise<'ok' | 'not_found' | 'error'> // sets auth_user_id (only while it is null) and clears archived_at/archived_by, one update
   listMembers(): Promise<Member[]>
 }
 
@@ -105,10 +107,22 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
   const b = body as Record<string, unknown>
   switch (b.action) {
     case 'create': {
-      const name = typeof b.displayName === 'string' ? b.displayName.trim() : ''
+      const attach = b.personId !== undefined && b.personId !== null // re-register: the new login goes onto an existing person with no login
+      if (attach && !isId(b.personId)) return bad
+      let name = typeof b.displayName === 'string' ? b.displayName.trim() : ''
       const auto = b.handle === undefined || b.handle === null || b.handle === '' // no handle given: derive it from the name
       const given = auto ? null : normalizeHandle(b.handle)
+      if (attach && !name && b.displayName === undefined) { // name is only needed to derive the handle: take the person's own
+        const cur = await port.getPersonLogin(b.personId as string)
+        if (!cur) return { ok: false, error: 'not_found' }
+        name = cur.displayName.trim()
+      }
       if (!name || name.length > 80 || (!auto && !given) || !validatePin(b.pin) || !isRole(b.role) || b.role === 'admin') return bad // admins sign in with Google only, never with a PIN
+      if (attach) { // check before creating anything
+        const cur = await port.getPersonLogin(b.personId as string)
+        if (!cur) return { ok: false, error: 'not_found' }
+        if (cur.authUserId) return bad
+      }
       // The user id is not known until Supabase makes it, so create with a throwaway password, then set the derived one.
       const userId = await port.createAuthUser(syntheticEmail(), randomSecret(), name)
       if (!userId) return bad
@@ -117,6 +131,10 @@ export async function runAction(body: unknown, port: Port, callerId: string): Pr
       for (let n = 1; n <= (auto ? 50 : 1) && r === 'handle_taken'; n++) r = await port.insertRole(userId, b.role, auto ? handleCandidate(name, n) : given!) // macleofe, macleofe2, macleofe3 ...
       if (r !== 'ok') return undo(r === 'handle_taken' ? 'handle_taken' : 'bad_input')
       if (!(await port.setPassword(userId, await derivePassword(port.pepper, userId, b.pin)))) return undo('bad_input')
+      if (attach) {
+        const a = await port.attachPerson(b.personId as string, userId)
+        return a === 'ok' ? { ok: true, userId, personId: b.personId } : undo(a === 'not_found' ? 'not_found' : 'bad_input')
+      }
       const personId = await port.insertPerson(userId, name, callerId)
       if (!personId) return undo('bad_input')
       return { ok: true, userId, personId }
