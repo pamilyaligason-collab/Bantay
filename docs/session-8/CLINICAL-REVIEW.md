@@ -385,3 +385,55 @@ The six official health videos' titles, as shown in the app (the videos themselv
 4. Diabetic emergency: what to do
 5. Five a day: eating more fruit and vegetables
 6. Lusog-Isip: looking after your mental health
+
+
+## Family: member report, learning hub, Memories (wave 2, lane W2-family)
+
+For a clinician or a careful reader to check. Nothing here diagnoses or gives dosing advice; suggestions are questions to ask a doctor.
+
+### Report: verdict words (src/features/family/reportLogic.ts)
+
+Shown beside each vital, from the guide ranges (family limit, then the lab's own, then the guide):
+
+- Above the usual range: "A bit high"
+- Below the usual range: "A bit low"
+- Within: "Usual"
+- No range or a unit that cannot be compared: "No range to compare" (never "Usual")
+- Blood pressure is one card, judged by the worse of the top and bottom numbers.
+- Labs outside the range are listed under "Labs to ask about" with the words "High" or "Low".
+
+### Report: things to bring up (generated questions)
+
+Numbered, up to 8, in this order. Templates (the bracketed parts are filled from the person's own data):
+
+1. For each vital outside its range: "My [blood pressure / blood sugar / pulse / weight] was [a bit high / a bit low] on [date]. What should I do about it?"
+2. For each lab outside its range: "[Test name] was [high / low] on [date]. " followed by the first question already reviewed for that lab in labsLogic.ts (the lab question list above).
+3. If any dose was missed in the last 7 days: "Some doses were missed this week ([up to 3 medicine names]). Can the times, or the way I take them, be made easier?"
+4. Then the person's own saved questions (visits.questions.<person>), unchanged.
+
+Footer under the list: "Questions to ask, made by Bantay from the numbers above and your saved questions. Not medical advice."
+
+Review asks: is "A bit high" / "A bit low" right for older adults, or too soft? Should a very high blood pressure or sugar say "see a doctor soon" instead of the same wording? (Today it does not; the alert rules elsewhere in the app handle urgent values.)
+
+### Report: medicine doses
+
+Seven day cells: a day is "all taken", "missed" (any dose not taken or skipped on a past day), "still to take" (today, doses still open) or "none due". The line reads "Missed: [medicine] on [day]". The count "x of y doses" leaves out today's open doses. Review ask: should a deliberately skipped dose count as missed? Today it does.
+
+### People list line
+
+"[n] to check" or "All up to date", counting vitals out of range, labs out of range, and one for "missed doses this week". No numbers. Nothing is shown for a person this phone has no data for.
+
+### Learning hub (src/features/family/hub.json)
+
+Own-words titles and blurbs on cards that link to the sources named in docs/SOURCES.md:
+
+- Stress: "Feeling stressed? What helps" - "What stress does to the body, and small things that ease it." (NIMH link)
+- Sleep: "Sleeping better" - "Why sleep matters, and habits that make it easier to rest." (MedlinePlus link)
+- Mental health: "Lusog-Isip: caring for your mind" - "How the Lusog-Isip app helps with self-care."; "Coping with stress" - "Ways to cope when things feel like too much."; "Mental health awareness" - "Why mental health is part of staying well." (DOH Philippines videos)
+- Move and eat well: "How much is five a day?" - "A quick look at what counts as a portion of fruit and vegetables." (NHS video); "Healthy diet: the basics" - "The World Health Organization's short guide to eating well." (WHO link only)
+
+Review ask: the three DOH video titles come from their YouTube titles ("Mental Health - Cope up with stress", "Mental Health Awareness"); watch them once to confirm they suit older users and nothing in them needs a caution.
+
+### Memories
+
+Privacy text on the card: "Only your family on Bantay sees these. Location and camera details are removed from every photo." Not a health text; listed so the claim can be checked against the code (canvas re-encode, 0023 policies).

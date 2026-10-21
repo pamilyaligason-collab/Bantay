@@ -47,6 +47,7 @@ export default function MemberPage({ id }: { id: string }) {
         <div><div className="grow"><b>Last check-in</b><span className="sub">{when ?? 'Never checked in on this phone'}</span></div></div>
         <a className="fm-link" href={`#medid/${p.id}`}><span className="grow"><b>{first}'s Medical ID</b><span className="sub">Allergies, conditions, who to call</span></span><span className="fm-chev"><Icon name="chev" size={20} /></span></a>
       </div>
+      <a className="btn fm-report" href={`#family/people/${p.id}/report`}><Icon name="file" size={22} />Full report</a>
       <div className="card fm-share">
         <b>What stays private</b>
         <p className="sub">Health readings and records are private. Only {first}, the people who care for {first}, and the admins can see them.</p>

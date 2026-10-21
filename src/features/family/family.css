@@ -83,3 +83,7 @@
 /* People nudge: a grey avatar gets one line under the row that opens a text. The row stays a 60px button; the nudge is a 44px link under it. */
 .fm-roll > li.fm-has-nudge { flex-wrap: wrap; row-gap: 0; padding-bottom: 4px; }
 .fm-roll .fm-nudge { flex: 1 0 calc(100% - 56px); display: flex; align-items: center; min-height: 44px; margin: -6px 0 0 56px; padding: 0; border: 0; background: none; color: var(--link); font: inherit; font-size: 14px; font-weight: 600; text-align: left; text-decoration: none; }
+
+/* neutral flag line on the roll call (no numbers) and the report button */
+.fm-flag { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
+.bt .fm-report { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 18px; font-size: 17px; font-weight: 700; text-decoration: none; }
