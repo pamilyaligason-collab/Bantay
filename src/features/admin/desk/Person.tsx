@@ -146,8 +146,8 @@ export default function People({ id }: PageProps) {
   useEffect(() => { loadExtra(); void selfId().then(setMe) }, [])
   const shown = useMemo(() => (people ?? []).filter((p) => !q.trim() || p.display_name.toLowerCase().includes(q.trim().toLowerCase())), [people, q])
   const sel = id ? people?.find((p) => p.id === id) : undefined
-  const open = (pid: string) => { location.hash = deskHref('people', pid) }
-  const close = () => { location.hash = deskHref('people') }
+  const open = (pid: string) => { location.hash = deskHref('members', pid) }
+  const close = () => { location.hash = deskHref('members') }
 
   return (
     <>

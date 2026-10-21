@@ -221,7 +221,7 @@ export default function Members(_: PageProps) {
                 const pinUser = signInType(m) === 'PIN'
                 return (
                   <tr key={m.userId}>
-                    <th scope="row">{m.personId ? <a className="mb-link" href={deskHref('people', m.personId)}>{m.displayName || 'No name'}</a> : (m.displayName || 'No name')}</th>
+                    <th scope="row">{m.personId ? <a className="mb-link" href={deskHref('members', m.personId)}>{m.displayName || 'No name'}</a> : (m.displayName || 'No name')}</th>
                     <td>{m.handle ?? 'None'}</td>
                     <td>{m.role === 'admin' ? 'Admin' : 'Member'}</td>
                     <td>{signInType(m)}</td>

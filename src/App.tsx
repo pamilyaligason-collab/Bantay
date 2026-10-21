@@ -9,6 +9,7 @@ import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
 import { watchDoseReminders } from './features/health/reminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
+import { webAdminUrl } from './features/admin/desk/types'
 import { DocsScreen } from './features/docs/DocsScreen'
 import WeatherScreen from './features/weather/WeatherScreen'
 import { getMember, onAuthChange } from './features/auth/session'
@@ -25,7 +26,6 @@ import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
-const AdminDesk = lazy(() => import('./features/admin/desk/Shell')) // the wide dashboard loads only for the admin
 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
@@ -48,6 +48,8 @@ export default function App() {
   }, [])
   useEffect(() => {
     const on = () => {
+      const w = webAdminUrl(location.hash)
+      if (w) { location.replace(w); return } // the dashboard moved to its own page, /admin
       const c = canonicalHash(location.hash)
       if (c !== location.hash) { location.replace(c); return } // old #records / #family/records links land on Health > Papers
       setRoute(parseHash(location.hash)); setHash(location.hash)
@@ -89,18 +91,17 @@ export default function App() {
   }, [idx])
 
   const Tabbed = SCREENS[tab].Screen
-  const desk = view === 'admin' && hash.startsWith('#admin/') // #admin stays the phone page; #admin/<page> is the dashboard
   return (
-    <div className={desk ? 'bt bt-wide' : 'bt'}>
+    <div className="bt">
       <Sky state="clear" />
       {isTabView && !hasOwnHeader(hash) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {desk ? <Suspense fallback={null}><AdminDesk /></Suspense> : view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
       </main>
-      {!desk && <TabBar active={isTabView ? tab : null} />}
-      {!desk && <Assistant />}
+      <TabBar active={isTabView ? tab : null} />
+      <Assistant />
       <RequiresUpdate />
       <UpdatedToast />
     </div>

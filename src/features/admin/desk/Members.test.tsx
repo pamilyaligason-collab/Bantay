@@ -50,7 +50,7 @@ describe('Members page', () => {
   it('lists members with state, links the name to the person and hides self actions', async () => {
     render(<Members id={null} />)
     const row = (await screen.findByRole('link', { name: 'Test Person' })).closest('tr') as HTMLElement
-    expect(screen.getByRole('link', { name: 'Test Person' }).getAttribute('href')).toBe('#admin/people/p2')
+    expect(screen.getByRole('link', { name: 'Test Person' }).getAttribute('href')).toBe('#/members/p2')
     expect(within(row).getByText(/^Locked until/)).toBeTruthy()
     expect(within(row).getByText('PIN')).toBeTruthy()
     expect(within(row).getByText('12')).toBeTruthy()

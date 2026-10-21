@@ -74,18 +74,18 @@ const open = async (page: Page, hash: string, hits: Hit[] = [], size = SIZES[0])
   await page.setViewportSize(size)
   await mock(page, hits)
   await skipOnboarding(page)
-  await page.goto('/' + hash)
+  await page.goto(hash)
 }
 
 for (const size of SIZES) {
   test(`files page ${size.width}x${size.height}`, async ({ page }) => {
-    await open(page, '#admin/files', [], size)
+    await open(page, '/admin#/files', [], size)
     await expect(page.getByRole('heading', { name: 'Files and scans' })).toBeVisible()
     await expect(page.getByRole('row', { name: /scan-a\.jpg/ })).toContainText('Tried too many times')
     await checkLayout(page)
   })
   test(`ids page ${size.width}x${size.height}`, async ({ page }) => {
-    await open(page, '#admin/ids/p1', [], size)
+    await open(page, '/admin#/ids/p1', [], size)
     await expect(page.getByText('•••• 4321')).toBeVisible()
     await checkLayout(page)
     await page.getByRole('button', { name: 'Edit SSS ending 4321' }).click()
@@ -93,7 +93,7 @@ for (const size of SIZES) {
     await checkLayout(page)
   })
   test(`history page ${size.width}x${size.height}`, async ({ page }) => {
-    await open(page, '#admin/history', [], size)
+    await open(page, '/admin#/history', [], size)
     await expect(page.getByText('value_num, unit_raw')).toBeVisible()
     await expect(page.getByRole('cell', { name: 'System' })).toBeVisible()
     await checkLayout(page)
@@ -105,7 +105,7 @@ for (const size of SIZES) {
 
 test('files: Retry asks first, then resets the scan', async ({ page }) => {
   const hits: Hit[] = []
-  await open(page, '#admin/files', hits)
+  await open(page, '/admin#/files', hits)
   await expect(page.getByRole('button', { name: /^Retry / })).toHaveCount(1) // only the failed row
   await page.getByRole('button', { name: 'Retry scan-a.jpg' }).click()
   expect(hits).toHaveLength(0)
@@ -117,7 +117,7 @@ test('files: Retry asks first, then resets the scan', async ({ page }) => {
 test('ids: masked by default, Show reveals for 30 s then hides', async ({ page }) => {
   const hits: Hit[] = []
   await page.clock.install()
-  await open(page, '#admin/ids/p1', hits)
+  await open(page, '/admin#/ids/p1', hits)
   await expect(page.getByText('•••• 4321')).toBeVisible()
   await expect(page.getByText('••••••••', { exact: true })).toBeVisible()
   expect(await page.content()).not.toContain(FULL)

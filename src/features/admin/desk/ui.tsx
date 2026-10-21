@@ -1,12 +1,16 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDialog } from '../../docs/useDialog'
 
 // Shared dashboard pieces. Pages build on these so every page looks and behaves the same.
 
-export function PageHead({ title, sub, children }: { title: string; sub?: string; children?: ReactNode }) {
+/** Page title row. `crumbs` are the parent pages ([label, href]); the title is the last crumb. */
+export function PageHead({ title, sub, crumbs, children }: { title: string; sub?: string; crumbs?: [string, string][]; children?: ReactNode }) {
   return (
     <header className="dk-head">
-      <div className="dk-grow"><h1>{title}</h1>{sub && <p className="dk-sub">{sub}</p>}</div>
+      <div className="dk-grow">
+        {crumbs?.length ? <nav className="dk-crumbs" aria-label="Breadcrumb">{crumbs.map(([l, h]) => <span key={h}><a href={h}>{l}</a> / </span>)}</nav> : null}
+        <h1>{title}</h1>{sub && <p className="dk-sub">{sub}</p>}
+      </div>
       {children && <div className="dk-acts">{children}</div>}
     </header>
   )
@@ -65,4 +69,42 @@ export function useToast() {
     </div>
   )
   return { node, show }
+}
+
+/** Number tile for the dashboard. `tone` colours it only when something needs action (audit: a red tile at 0 reads as an alarm). */
+export function Kpi({ label, value, foot, href, tone = 'plain' }: { label: string; value: ReactNode; foot?: ReactNode; href?: string; tone?: Tone }) {
+  const body = <><span className="dk-kpi-l">{label}</span><span className="dk-kpi-v">{value}</span>{foot && <span className="dk-kpi-f">{foot}</span>}</>
+  return href ? <a className={`dk-kpi ${tone}`} href={href}>{body}</a> : <div className={`dk-kpi ${tone}`}>{body}</div>
+}
+
+/** Grey placeholder rows while a table loads. */
+export const Skeleton = ({ rows = 5 }: { rows?: number }) => (
+  <div className="dk-skel" aria-busy="true" aria-label="Loading">{Array.from({ length: rows }, (_, i) => <i key={i} />)}</div>
+)
+
+/** Client-side sorting for small tables. `get` maps a row to the value of a column key. */
+export function useSort<T>(rows: T[] | null | undefined, get: (r: T, key: string) => string | number | null | undefined, initial?: { key: string; dir: 1 | -1 }) {
+  const [by, setBy] = useState(initial ?? null)
+  const sorted = useMemo(() => {
+    if (!rows || !by) return rows ?? []
+    const v = (r: T) => get(r, by.key)
+    return [...rows].sort((a, b) => {
+      const x = v(a), y = v(b)
+      if (x == null || x === '') return 1 // blanks last either way
+      if (y == null || y === '') return -1
+      return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))) * by.dir
+    })
+  }, [rows, by]) // eslint-disable-line react-hooks/exhaustive-deps
+  const toggle = (key: string) => setBy((b) => (b?.key === key ? { key, dir: b.dir === 1 ? -1 : 1 } : { key, dir: 1 }))
+  return { sorted, by, toggle }
+}
+
+/** Sortable column header: a button inside <th> with aria-sort. */
+export function SortTh({ k, label, sort }: { k: string; label: string; sort: { by: { key: string; dir: 1 | -1 } | null; toggle: (k: string) => void } }) {
+  const on = sort.by?.key === k
+  return (
+    <th scope="col" aria-sort={on ? (sort.by!.dir === 1 ? 'ascending' : 'descending') : 'none'}>
+      <button className="dk-sort" onClick={() => sort.toggle(k)}>{label}<span aria-hidden="true">{on ? (sort.by!.dir === 1 ? ' ▲' : ' ▼') : ''}</span></button>
+    </th>
+  )
 }

@@ -59,7 +59,7 @@ for (const size of SIZES) {
     await page.setViewportSize(size)
     await mock(page)
     await skipOnboarding(page)
-    await page.goto('/#admin/members')
+    await page.goto('/admin#/members')
 
     const table = page.getByRole('table')
     await expect(table.getByRole('link', { name: 'Test Person' })).toBeVisible()
@@ -77,7 +77,7 @@ for (const size of SIZES) {
     expect(await violations(page)).toEqual([])
     await page.keyboard.press('Escape')
 
-    await page.goto('/#admin/people/p3')
+    await page.goto('/admin#/people/p3')
     await expect(page.getByRole('button', { name: 'Open Test Child' })).toBeVisible()
     const panel = page.getByRole('dialog', { name: 'Test Child' })
     await expect(panel).toBeVisible()

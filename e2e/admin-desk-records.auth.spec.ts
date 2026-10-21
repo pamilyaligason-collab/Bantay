@@ -113,7 +113,7 @@ for (const s of SIZES) {
     await mock(page, state(), [])
     await skipOnboarding(page)
     for (const a of AREAS) {
-      await page.goto(`/#admin/${a.path}`)
+      await page.goto(`/admin#/${a.path}`)
       await expect(page.getByRole('heading', { level: 1, name: a.h1 })).toBeVisible()
       if (a.path === 'records') await expect(page.getByRole('button', { name: 'Lab paper' })).toBeVisible()
       if (a.path === 'queue') await expect(page.getByRole('heading', { name: 'Test Person' })).toBeVisible()
@@ -121,7 +121,7 @@ for (const s of SIZES) {
       await checkPage(page, `${a.path} ${s.w}`)
     }
     // the open panel and the confirm dialog are checked too
-    await page.goto('/#admin/records')
+    await page.goto('/admin#/records')
     await page.getByRole('button', { name: 'Lab paper' }).click()
     await expect(page.getByRole('dialog', { name: /Papers/ })).toBeVisible()
     await expect(page.getByRole('img', { name: 'Source page page1.jpg' })).toHaveCount(1)
@@ -135,7 +135,7 @@ test('queue: bulk confirm sends the checked ids only; Undo restores', async ({ p
   const patches: Patch[] = []
   await mock(page, st, patches)
   await skipOnboarding(page)
-  await page.goto('/#admin/queue')
+  await page.goto('/admin#/queue')
   await expect(page.getByRole('heading', { name: 'Test Person' })).toBeVisible()
   // l2 is low confidence so it starts unticked: l1, l3 and the two prescription lines are ticked
   await expect(page.getByLabel('Include Glucose Test')).not.toBeChecked()
@@ -166,7 +166,7 @@ test('records: row opens the panel, Confirm then Undo', async ({ page }) => {
   const patches: Patch[] = []
   await mock(page, st, patches)
   await skipOnboarding(page)
-  await page.goto('/#admin/records')
+  await page.goto('/admin#/records')
   await page.getByRole('button', { name: 'Labs' }).click()
   await page.getByRole('button', { name: 'LDL Test' }).click()
   const panel = page.getByRole('dialog')
@@ -185,7 +185,7 @@ test('duplicates: Keep this one rejects the other copy and its draft rows', asyn
   const patches: Patch[] = []
   await mock(page, st, patches)
   await skipOnboarding(page)
-  await page.goto('/#admin/duplicates')
+  await page.goto('/admin#/duplicates')
   await expect(page.getByRole('table', { name: /Prescription line differences/ })).toBeVisible()
   await page.getByRole('button', { name: 'Keep copy 1 in group 1' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' }).click()

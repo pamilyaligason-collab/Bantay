@@ -358,6 +358,7 @@ export default function AdminScreen() {
           <div className="hdr"><h1>Admin</h1><span>Family members, usage and safety tools</span></div>
           {!connected() && <p className="ad-note" role="status">{NOT_CONNECTED}</p>}
           <p className="sub" style={{ margin: '0 4px' }}>You see which screens people use and when. You never see health values.</p>
+          <a className="ad-b go" href="/admin" style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center' }}>Open web admin (computer)</a>
           {note && <p className={note.bad ? 'ad-err' : 'ad-note'} role={note.bad ? 'alert' : 'status'}>{note.text}</p>}
           <PinRequests members={members.state === 'ok' ? members.data : []} ask={ask} />
           <Members s={members} reload={reload} ask={ask} open={setOpenId} />
