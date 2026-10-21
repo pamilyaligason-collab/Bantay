@@ -46,6 +46,11 @@ describe('Today weather card', () => {
     expect(container.querySelector('.td-act-box svg')).toBeTruthy()
     expect(container.querySelector('.td-act-box')!.textContent).toMatch(/^Stay indoors/)
   })
+  it('feels like is the forecast apparent temperature, the same number the Weather screen shows', () => {
+    m.wx = { ...base, temp: 33, humidity: 70, feels: 42 } // heat index alone would say 43
+    render(<WeatherCard />)
+    expect(screen.getByText('Feels like 42°')).toBeTruthy()
+  })
   it('no feels like without humidity', () => {
     m.wx = { ...base, temp: 34, humidity: null }
     render(<WeatherCard />)

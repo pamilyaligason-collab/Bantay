@@ -19,6 +19,7 @@ export interface Wx {
   utcOffset?: number // seconds; absent in old caches and fixtures = Manila
   tz?: string // IANA zone the forecast service reported
   humidity?: number | null
+  feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null
   offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
 }

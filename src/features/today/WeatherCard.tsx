@@ -43,8 +43,9 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   const action = weatherAction(wx, now, warn)
   const href = action ? WEATHER_ACTION_HREF : WEATHER_HREF
   const cond = `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
-  const hi = heatIndexC(wx.temp, wx.humidity)
-  const feels = hi != null && Math.round(hi) > Math.round(wx.temp) ? `Feels like ${deg(hi)}` : null
+  // Same number as the Weather screen (forecast apparent temperature); heat index only when the forecast has none.
+  const fl = wx.feels ?? heatIndexC(wx.temp, wx.humidity)
+  const feels = fl != null && Math.round(fl) > Math.round(wx.temp) ? `Feels like ${deg(fl)}` : null
   const box = action && <span className="td-act-box"><Icon name="therm" size={22} /><b>{action}</b></span>
 
   if (expanded) {
