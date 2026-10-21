@@ -9,23 +9,25 @@ import './files.css'
 const ACTION_TONE: Record<string, Tone> = { confirm: 'ok', reject: 'bad', delete: 'bad', reveal: 'warn' }
 const short = (id: string | null) => (id ? id.slice(0, 8) : '')
 
-export default function History(_: PageProps) {
+/** `person` fixes the person filter (and hides it) for the member page; `embedded` drops the page header. The duplicate clean-up log is global, so it shows only on the full page. */
+export default function History({ person, embedded }: PageProps & { person?: string }) {
   const [tab, setTab] = useState<'audit' | 'dedupe'>('audit')
   return (
     <div className="fl">
-      <PageHead title="History" sub="Who changed what. Field names only, never the values." />
-      <div className="fl-tabs">
+      {!embedded && <PageHead title="History" sub="Who changed what. Field names only, never the values." />}
+      {!person && <div className="fl-tabs">
         <button className="dk-chip" aria-pressed={tab === 'audit'} onClick={() => setTab('audit')}>Changes</button>
         <button className="dk-chip" aria-pressed={tab === 'dedupe'} onClick={() => setTab('dedupe')}>Duplicate clean-up (0019)</button>
-      </div>
-      {tab === 'audit' ? <Audit /> : <Dedupe />}
+      </div>}
+      {tab === 'audit' || person ? <Audit person={person} /> : <Dedupe />}
     </div>
   )
 }
 
-function Audit() {
+function Audit({ person }: { person?: string }) {
   const { people, nameOf } = useDeskPeople()
-  const [f, setF] = useState({ person: '', table: '', action: '', from: '', to: '' })
+  const [own, setF] = useState({ person: '', table: '', action: '', from: '', to: '' })
+  const f = useMemo(() => ({ ...own, person: person ?? own.person }), [own, person])
   const [page, setPage] = useState(0)
   const [rows, setRows] = useState<AuditRow[] | null>(null)
   const [state, setState] = useState<'ok' | 'error' | 'missing'>('ok')
@@ -49,11 +51,13 @@ function Audit() {
   return (
     <>
       <Filters>
-        <label className="fl-sr" htmlFor="hi-person">Person</label>
-        <select id="hi-person" className="dk-in" value={f.person} onChange={(e) => set('person', e.target.value)}>
-          <option value="">Everyone</option>
-          {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.display_name}</option>)}
-        </select>
+        {!person && <>
+          <label className="fl-sr" htmlFor="hi-person">Person</label>
+          <select id="hi-person" className="dk-in" value={f.person} onChange={(e) => set('person', e.target.value)}>
+            <option value="">Everyone</option>
+            {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.display_name}</option>)}
+          </select>
+        </>}
         <label className="fl-sr" htmlFor="hi-table">Table</label>
         <select id="hi-table" className="dk-in" value={f.table} onChange={(e) => set('table', e.target.value)}>
           <option value="">All tables</option>
@@ -76,7 +80,7 @@ function Audit() {
         <div className="dk-scrollx" tabIndex={0} role="region" aria-label="Changes, newest first">
           <table className="dk-table">
             <caption className="fl-sr">Changes, newest first</caption>
-            <thead><tr>{['When', 'Who', 'Action', 'Table', 'Person', 'Fields'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
+            <thead><tr>{['When', 'Who', 'Action', 'Table', ...(person ? [] : ['Person']), 'Fields'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
             <tbody>
               {shown.map((r) => (
                 <tr key={r.id}>
@@ -84,7 +88,7 @@ function Audit() {
                   <td>{actor(r.actor)}</td>
                   <td><Tag tone={ACTION_TONE[r.action] ?? 'plain'}>{r.action}</Tag></td>
                   <td>{tableWords(r.tbl)}</td>
-                  <td>{r.person_id ? nameOf(r.person_id) : ''}</td>
+                  {!person && <td>{r.person_id ? nameOf(r.person_id) : ''}</td>}
                   <td className="fl-fields">{(r.fields ?? []).join(', ')}</td>
                 </tr>
               ))}
