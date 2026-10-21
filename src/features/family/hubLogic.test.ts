@@ -17,6 +17,9 @@ describe('learning hub', () => {
     expect(new Set(c.map((x) => x.category.id)).size).toBe(4)
     expect(c.map((x) => x.size)).toEqual(SLOTS)
   })
+  it('leads with a video card when one exists', () => {
+    for (let i = 0; i < 8; i++) expect(featured(new Date(2026, 9, 21 + i))[0]!.item.kind).toBe('video')
+  })
   it('keeps the same picks all day and changes them on following days', () => {
     const key = (d: Date) => featured(d).map((x) => x.item.id).join()
     expect(key(new Date(2026, 9, 21, 7))).toBe(key(new Date(2026, 9, 21, 22)))

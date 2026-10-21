@@ -37,7 +37,7 @@ function Body({ r, first }: { r: ReportData; first: string }) {
         <section aria-labelledby="rp-meds" data-testid="rp-meds">
           <h2 className="hd" id="rp-meds">Medicines, last 7 days</h2>
           <div className="card">
-            <div className="rp-tot"><b>Medicines</b><b>{a.due > 0 ? `${a.taken} of ${a.due} doses` : 'No doses due yet'}</b></div>
+            <div className="rp-tot"><span className="sub">Doses taken</span><b>{a.due > 0 ? `${a.taken} of ${a.due} doses` : 'No doses due yet'}</b></div>
             <ul className="rp-cells" aria-label="Doses by day">
               {a.cells.map((c) => (
                 <li key={c.day} className={`rp-cell ${c.state}`} data-state={c.state} aria-label={`${c.label}: ${CELL_WORD[c.state]}`}>
@@ -103,12 +103,12 @@ export default function Report({ id }: { id: string }) {
   return (
     <div className="rp" data-testid="report">
       <SubHeader title={p ? `${first}'s report` : 'Report'} backHref={back} backLabel="Back to member" />
-      <h2 className="rp-print-title">{p?.name ?? 'Health report'}</h2>
+      <h2 className="rp-print-title">{p ? `Health report for ${p.name}` : 'Health report'}</h2>
       <Body r={report} first={first} />
       <div className="rp-actions no-print">
         <button type="button" className="btn" onClick={() => window.print()}><Icon name="dl" size={22} />Print or save as PDF for the doctor</button>
       </div>
-      <p className="sub rp-privacy"><Icon name="shield" size={18} /> Private. Only {first}, the people who care for {first} and the admins can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
+      <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the people who care for {first} and the admins can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
     </div>
   )
 }

@@ -120,10 +120,12 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-ids-t b { font-size: 17px; }
 .sf-ids-t span { font-size: 14px; color: var(--ink2); overflow-wrap: anywhere; }
 .sf-act-sec { display: flex; flex-direction: column; gap: 10px; }
-.sf-act-note { margin: 0 4px; font-size: 16px; line-height: 1.35; }
-.sf-tile.sf-wide { grid-column: 1 / -1; min-height: 96px; }
+.sf-act-note { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 18px; background: var(--red-soft); color: var(--ink); font-size: 16px; line-height: 1.35; }
+.sf-tile.sf-wide { grid-column: 1 / -1; min-height: 88px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: center; }
+.sf-wide > .sh-icbox { grid-row: span 2; margin: 0; }
+.sf-tiles > .sf-tile:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; }
 .fa { gap: 16px; }
-.sf a.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; }
+.sf a.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; gap: 8px; }
 .fa-steps { list-style: none; padding: 0 !important; gap: 12px !important; }
 .fa-steps li { display: flex; gap: 14px; align-items: flex-start; font-size: 17px; line-height: 1.4; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow-wrap: anywhere; }
 .fa-n { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; background: var(--btn); color: var(--btn-fg); }

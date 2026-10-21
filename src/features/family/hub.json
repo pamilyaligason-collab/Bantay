@@ -6,7 +6,7 @@
       "label": "Stress",
       "icon": "brain",
       "items": [
-        { "id": "stress-nimh", "kind": "link", "title": "Feeling stressed? What helps", "blurb": "What stress does to the body, and small things that ease it.", "url": "https://www.nimh.nih.gov/health/publications/so-stressed-out-fact-sheet", "credit": "NIMH, public domain", "read": "5 min read" }
+        { "id": "stress-nimh", "kind": "link", "title": "Feeling stressed? What helps", "blurb": "What stress does to the body, and small things that ease it.", "url": "https://www.nimh.nih.gov/health/publications/so-stressed-out-fact-sheet", "credit": "NIMH", "read": "5 min read" }
       ]
     },
     {
@@ -14,7 +14,7 @@
       "label": "Sleep",
       "icon": "moon",
       "items": [
-        { "id": "sleep-medline", "kind": "link", "title": "Sleeping better", "blurb": "Why sleep matters, and habits that make it easier to rest.", "url": "https://medlineplus.gov/healthysleep.html", "credit": "MedlinePlus, public domain", "read": "5 min read" }
+        { "id": "sleep-medline", "kind": "link", "title": "Sleeping better", "blurb": "Why sleep matters, and habits that make it easier to rest.", "url": "https://medlineplus.gov/healthysleep.html", "credit": "MedlinePlus", "read": "5 min read" }
       ]
     },
     {
@@ -33,7 +33,7 @@
       "icon": "move",
       "items": [
         { "id": "eat-nhs", "kind": "video", "title": "How much is five a day?", "blurb": "A quick look at what counts as a portion of fruit and vegetables.", "videoId": "b-uX6N4RZjg", "credit": "NHS" },
-        { "id": "eat-who", "kind": "link", "title": "Healthy diet: the basics", "blurb": "The World Health Organization's short guide to eating well.", "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet", "credit": "WHO (link only)", "read": "8 min read" }
+        { "id": "eat-who", "kind": "link", "title": "Healthy diet: the basics", "blurb": "The World Health Organization's short guide to eating well.", "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet", "credit": "WHO", "read": "8 min read" }
       ]
     }
   ]

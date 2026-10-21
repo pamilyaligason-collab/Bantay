@@ -67,7 +67,7 @@ function MemoriesOn({ turnOff }: { turnOff: () => void }) {
       )}
       <input ref={input} type="file" accept="image/*" hidden data-testid="mem-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
       {note && <p className="sub" role="status">{note}</p>}
-      <p className="sub mem-privacy"><Icon name="shield" size={18} /> Only your family on Bantay sees these. Location and camera details are removed from every photo.</p>
+      <p className="sub mem-privacy"><Icon name="lock" size={18} /> Only your family on Bantay sees these. Location and camera details are removed from every photo.</p>
       <button type="button" className="mem-off-link" onClick={turnOff}>Turn Memories off on this phone</button>
 
       {picked && <AddSheet jpeg={picked} onClose={() => setPicked(null)} onDone={() => { setPicked(null); void load() }} />}

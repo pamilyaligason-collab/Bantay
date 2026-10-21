@@ -10,7 +10,7 @@ function Card({ c }: { c: HubCard }) {
   const kind = item.kind === 'video' ? 'Video' : item.read ?? 'Read'
   const head = (
     <>
-      <span className="hub-pic" aria-hidden="true"><Icon name={item.kind === 'video' ? 'play' : category.icon} size={size === 'feat' ? 32 : 26} /></span>
+      <span className="hub-pic" aria-hidden="true"><Icon name={item.kind === 'video' ? 'play' : category.icon} size={size === 'feat' ? 48 : 26} /></span>
       <span className="hub-txt">
         <span className="hub-kind"><Icon name={item.kind === 'video' ? 'play' : 'file'} size={16} />{kind}</span>
         <b>{item.title}</b>
