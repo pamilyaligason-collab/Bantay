@@ -3,6 +3,7 @@ import Avatar from '../features/admin/Avatar'
 import '../features/admin/admin.css'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
+import { LabsList } from '../features/health/LabsList'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines, MedicinesSummary } from '../features/health/Medicines'
 import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
@@ -111,8 +112,8 @@ function Overview() {
         <Icon name="chev" size={20} />
       </a>
       {personId && <MedicinesSummary personId={personId} />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="vitals" />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="labs" />}
+      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
+      {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {personId && <HealthLinks personId={personId} />}
     </>
   )

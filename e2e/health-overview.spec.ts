@@ -131,7 +131,7 @@ test('the overview links to Learn, Refills, Doctor visits and Papers; labs have 
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveCount(0) // hidden while every video id is a placeholder
   await expect(page.getByRole('link', { name: /^Papers · / })).toHaveAttribute('href', '#health/papers')
   await expect(page.getByRole('link', { name: /^Refills/ })).toContainText('Metformin 500 mg: 7 days left')
-  await expect(page.getByText('LDL cholesterol is a bit high. Ask your doctor at the next visit.')).toBeVisible()
+  await expect(page.getByTestId('labs-list').locator('[data-test="ldl"]')).toContainText('High')
 })
 
 for (const scheme of ['light', 'dark'] as const) {
