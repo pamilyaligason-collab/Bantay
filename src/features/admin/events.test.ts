@@ -55,6 +55,10 @@ describe('track allowlist (B-7)', () => {
     }
     expect(await track('screen', 'ask')).toBe(true)
   })
+  it('allows the three nutrition events and never a food name (B-7)', async () => {
+    for (const n of ['meal_logged', 'water_logged', 'salt_goal_set']) expect(await track('action', n), n).toBe(true)
+    for (const n of ['chicken_adobo', 'Adobong manok', 'patis', 'instant_noodles']) expect(await track('action', n), n).toBe(false)
+  })
   it('every allowed name is letters and underscores only (matches the DB check)', () => {
     for (const names of Object.values(EVENT_NAMES)) for (const n of names) expect(n).toMatch(/^[a-z_]{1,40}$/)
   })
