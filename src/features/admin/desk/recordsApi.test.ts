@@ -32,7 +32,7 @@ function fakeSb(tables: Record<string, R[]>, writes: W[]) {
 }
 
 import {
-  applyKeep, CAP, countsFor, defaultChecked, groupDuplicates, listKind, KINDS, loadDuplicates, planKeep, queueKey, REFUSED, restore, rxDiff, searchRows, setStatusFor,
+  applyKeep, CAP, countsFor, defaultChecked, groupDuplicates, listKind, KINDS, loadDuplicates, planKeep, queueKey, REFUSED, restore, rxDiff, searchRows, setStatusFor, resolveTab, TABS, toChanges, labValue, labRange, labNumber, isAbnormal, docOf, type KRow,
   type DocLite, type FileLite, type Kids, type QItem, type RxLine
 } from './recordsApi'
 
@@ -190,4 +190,31 @@ describe('status writes', () => {
     expect(writes).toEqual([])
   })
   beforeEach(() => { h.sb = null })
+})
+
+describe('tabs and lab cells', () => {
+  it('resolveTab: known keys, everything else is Laboratory', () => {
+    expect(TABS.map((t) => t.key)).toEqual(['lab', 'rx', 'meds', 'imaging', 'vaccines', 'ids', 'papers', 'conditions', 'visits'])
+    expect(resolveTab('rx').key).toBe('rx')
+    for (const bad of [null, undefined, '', 'nope', 'LAB']) expect(resolveTab(bad).key).toBe('lab')
+  })
+  it('lab value, range and flag keep unknown as blank, never 0', () => {
+    expect(labValue({ id: 'x', value_num: 95, unit_raw: 'mg/dL' })).toBe('95 mg/dL')
+    expect(labValue({ id: 'x', value_num: null, value_text: 'Negative', unit_raw: null })).toBe('Negative')
+    expect(labValue({ id: 'x', value_num: null, value_text: null })).toBe('')
+    expect(labNumber({ id: 'x', value_num: null })).toBeNull()
+    expect(labNumber({ id: 'x', value_num: '' })).toBeNull()
+    expect(labRange({ id: 'x', ref_low: 0, ref_high: 100 })).toBe('0 to 100')
+    expect(labRange({ id: 'x', ref_low: null, ref_high: 5 })).toBe('5 or less')
+    expect(labRange({ id: 'x', ref_low: null, ref_high: null, ref_text: 'negative' })).toBe('negative')
+    expect([isAbnormal('H'), isAbnormal('L'), isAbnormal('A'), isAbnormal('N'), isAbnormal(null)]).toEqual([true, true, true, false, false])
+  })
+  it('toChanges groups by table and previous status; docOf skips papers', () => {
+    const r = (id: string, _table: string, status: 'draft' | 'confirmed', document_id?: string) => ({ id, _table, status, document_id }) as KRow
+    expect(toChanges([r('a', 'lab_results', 'draft'), r('b', 'lab_results', 'draft'), r('c', 'lab_results', 'confirmed'), r('d', 'medications', 'draft')])).toEqual([
+      { table: 'lab_results', ids: ['a', 'b'], prev: 'draft' }, { table: 'lab_results', ids: ['c'], prev: 'confirmed' }, { table: 'medications', ids: ['d'], prev: 'draft' }
+    ])
+    expect(docOf(r('a', 'documents', 'draft', 'zzz'))).toBeNull()
+    expect(docOf(r('a', 'lab_results', 'draft', 'd1'))).toBe('d1')
+  })
 })

@@ -42,7 +42,7 @@ export function useReveal(personId: string | null, fetchNumber: typeof revealNum
   return { shown, show, hide }
 }
 
-export default function Ids({ id }: PageProps) {
+export default function Ids({ id, embedded }: PageProps) {
   const { people, nameOf } = useDeskPeople()
   const [rows, setRows] = useState<Ident[] | null>(null)
   const [error, setError] = useState(false)
@@ -75,14 +75,16 @@ export default function Ids({ id }: PageProps) {
 
   return (
     <div className="fl">
-      <PageHead title="IDs and insurance" sub={id ? nameOf(id) : undefined} />
-      <Filters>
-        <label className="fl-sr" htmlFor="id-person">Person</label>
-        <select id="id-person" className="dk-in" value={id ?? ''} onChange={(e) => { location.hash = e.target.value ? deskHref('ids', e.target.value) : deskHref('ids') }}>
-          <option value="">Choose a person</option>
-          {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.display_name}</option>)}
-        </select>
-      </Filters>
+      {!embedded && <>
+        <PageHead title="IDs and insurance" sub={id ? nameOf(id) : undefined} />
+        <Filters>
+          <label className="fl-sr" htmlFor="id-person">Person</label>
+          <select id="id-person" className="dk-in" value={id ?? ''} onChange={(e) => { location.hash = e.target.value ? deskHref('ids', e.target.value) : deskHref('ids') }}>
+            <option value="">Choose a person</option>
+            {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.display_name}</option>)}
+          </select>
+        </Filters>
+      </>}
       <p className="fl-note">Numbers stay hidden. Show reveals one for 30 seconds and the dashboard logs that it was shown.</p>
       {!id && <Empty>Choose a person to see their IDs and insurance.</Empty>}
       {id && error && <Empty>Could not load. The admin update (0021) may not be applied yet.</Empty>}

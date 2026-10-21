@@ -29,9 +29,10 @@ type Src = { table: string; date: string; ts: boolean; where?: 'live' | 'notCard
 export type Kind = { key: KindKey; label: string; src: Src[]; text: string[]; cols: { key: string; label: string }[] }
 export const KINDS: Kind[] = [
   { key: 'papers', label: 'Papers', src: [{ table: 'documents', date: 'doc_date', ts: false, where: 'notCard' }], text: ['title', 'facility', 'kind'], cols: [{ key: 'doc_date', label: 'Date' }, { key: 'kind', label: 'Kind' }, { key: 'title', label: 'Title' }, { key: 'facility', label: 'Facility' }] },
-  { key: 'labs', label: 'Labs', src: [{ table: 'lab_results', date: 'collected_at', ts: true }], text: ['name_raw', 'test_code', 'value_text', 'unit_raw'], cols: [{ key: 'collected_at', label: 'Date' }, { key: 'name_raw', label: 'Test' }, { key: 'value_num', label: 'Value' }, { key: 'unit_raw', label: 'Unit' }] },
+  { key: 'labs', label: 'Laboratory', src: [{ table: 'lab_results', date: 'collected_at', ts: true }], text: ['name_raw', 'test_code', 'value_text', 'unit_raw'], cols: [{ key: 'collected_at', label: 'Date' }, { key: 'name_raw', label: 'Test' }, { key: 'value_num', label: 'Value' }, { key: 'unit_raw', label: 'Unit' }] },
   { key: 'medicines', label: 'Medicines', src: [{ table: 'medications', date: 'started_on', ts: false, where: 'live' }], text: ['name', 'generic_name', 'strength'], cols: [{ key: 'started_on', label: 'Started' }, { key: 'name', label: 'Medicine' }, { key: 'strength', label: 'Strength' }, { key: 'med_status', label: 'Taking' }] },
-  { key: 'rx', label: 'Prescriptions', src: [{ table: 'prescription_items', date: 'created_at', ts: true }], text: ['drug_raw', 'generic_name', 'brand', 'instructions'], cols: [{ key: 'created_at', label: 'Added' }, { key: 'drug_raw', label: 'Medicine' }, { key: 'dose', label: 'Dose' }, { key: 'frequency', label: 'How often' }] },
+  // headers only; the lines under each come from listItems
+  { key: 'rx', label: 'Prescriptions', src: [{ table: 'prescriptions', date: 'rx_date', ts: false }], text: ['prescriber'], cols: [{ key: 'rx_date', label: 'Date' }, { key: 'prescriber', label: 'Prescriber' }, { key: 'follow_up_on', label: 'Follow-up' }] },
   { key: 'imaging', label: 'Imaging', src: [{ table: 'imaging_reports', date: 'reported_at', ts: true }], text: ['modality', 'body_region', 'findings', 'impression'], cols: [{ key: 'reported_at', label: 'Date' }, { key: 'modality', label: 'Type' }, { key: 'body_region', label: 'Region' }, { key: 'impression', label: 'Impression' }] },
   { key: 'vaccinations', label: 'Vaccinations', src: [{ table: 'vaccinations', date: 'given_on', ts: false }], text: ['vaccine', 'facility', 'lot'], cols: [{ key: 'given_on', label: 'Given' }, { key: 'vaccine', label: 'Vaccine' }, { key: 'dose_no', label: 'Dose' }, { key: 'facility', label: 'Facility' }] },
   { key: 'allergies', label: 'Allergies', src: [{ table: 'allergies', date: 'created_at', ts: true }], text: ['substance', 'reaction', 'severity'], cols: [{ key: 'created_at', label: 'Added' }, { key: 'substance', label: 'Substance' }, { key: 'reaction', label: 'Reaction' }, { key: 'severity', label: 'Severity' }] },
@@ -42,17 +43,35 @@ export const KINDS: Kind[] = [
 export type Filter = { person: string | null; status: Status | 'all'; from: string; to: string }
 export type KRow = Row & { _table: string; status: Status; when?: string | null }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const narrow = (q: any, s: Src, f: Filter) => {
+  if (f.person) q = q.eq('person_id', f.person)
+  if (f.status !== 'all') q = q.eq('status', f.status)
+  if (s.where === 'live') q = q.is('deleted_at', null)
+  if (s.where === 'notCard') q = q.not('kind', 'in', '(id_card,insurance_card)') // cards live on the IDs tab
+  if (f.from) q = q.gte(s.date, f.from)
+  if (f.to) q = q.lte(s.date, s.ts ? `${f.to}T23:59:59.999Z` : f.to)
+  return q
+}
+
+/** Row count for a tab badge. Null when unknown (a failed count is never shown as 0). */
+export async function countKinds(keys: readonly KindKey[], f: Filter): Promise<number | null> {
+  const sb = supabase
+  if (!sb) return null
+  const srcs = keys.flatMap((k) => KINDS.find((x) => x.key === k)!.src)
+  try {
+    const parts = await Promise.all(srcs.map(async (s) => {
+      const { count, error } = await narrow(sb.from(s.table).select('id', { count: 'exact', head: true }), s, f)
+      return error || count == null ? null : (count as number)
+    }))
+    return parts.some((p) => p == null) ? null : (parts as number[]).reduce((a, b) => a + b, 0)
+  } catch {
+    return null
+  }
+}
+
 export async function listKind(kind: Kind, f: Filter): Promise<Res<KRow[]>> {
-  const parts = await Promise.all(kind.src.map((s) => run<Row[]>((sb) => {
-    let q = sb.from(s.table).select('*')
-    if (f.person) q = q.eq('person_id', f.person)
-    if (f.status !== 'all') q = q.eq('status', f.status)
-    if (s.where === 'live') q = q.is('deleted_at', null)
-    if (s.where === 'notCard') q = q.not('kind', 'in', '(id_card,insurance_card)') // cards live on the IDs page
-    if (f.from) q = q.gte(s.date, f.from)
-    if (f.to) q = q.lte(s.date, s.ts ? `${f.to}T23:59:59.999Z` : f.to)
-    return q.order(s.date, { ascending: false, nullsFirst: false }).limit(CAP)
-  })))
+  const parts = await Promise.all(kind.src.map((s) => run<Row[]>((sb) => narrow(sb.from(s.table).select('*'), s, f).order(s.date, { ascending: false, nullsFirst: false }).limit(CAP))))
   const bad = parts.find((p) => !p.ok)
   if (bad && !bad.ok) return bad
   const rows = parts.flatMap((p, i) => (p.ok ? p.data : []).map((r) => ({ ...r, _table: kind.src[i].table, when: (r[kind.src[i].date] as string | null) ?? null }) as KRow))
@@ -234,4 +253,86 @@ export async function parentDoc(table: string, row: Row): Promise<{ id: string; 
 export async function filesOf(docId: string): Promise<Res<PageFile[]>> {
   const r = await run<PageFile[]>((s) => s.from('source_files').select('id,name,mime,drive_file_id,storage_path,side,page_no').eq('document_id', docId))
   return r.ok ? { ok: true, data: [...r.data].sort((a, b) => (a.page_no ?? 0) - (b.page_no ?? 0)) } : r
+}
+
+// ---- Records tabs ----
+export const TABS = [
+  { key: 'lab', label: 'Laboratory', kinds: ['labs'] },
+  { key: 'rx', label: 'Prescriptions', kinds: ['rx'] },
+  { key: 'meds', label: 'Medicines', kinds: ['medicines'] },
+  { key: 'imaging', label: 'Imaging', kinds: ['imaging'] },
+  { key: 'vaccines', label: 'Vaccinations', kinds: ['vaccinations'] },
+  { key: 'ids', label: 'IDs and insurance', kinds: [] },
+  { key: 'papers', label: 'Papers', kinds: ['papers'] },
+  { key: 'conditions', label: 'Allergies and conditions', kinds: ['allergies', 'conditions'] },
+  { key: 'visits', label: 'Visits', kinds: ['visits'] }
+] as const satisfies readonly { key: string; label: string; kinds: readonly KindKey[] }[]
+export type TabKey = (typeof TABS)[number]['key']
+/** Unknown or missing tab falls back to Laboratory. */
+export const resolveTab = (s: string | null | undefined): (typeof TABS)[number] => TABS.find((t) => t.key === s) ?? TABS[0]
+
+const chunks = <T,>(a: T[], n = 100) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n))
+
+/** Lines of the given prescriptions. Each carries its paper's id so bulk actions can settle the paper. */
+export async function listItems(headers: KRow[]): Promise<Res<KRow[]>> {
+  const out: KRow[] = []
+  for (const part of chunks(headers)) {
+    const r = await run<Row[]>((s) => s.from('prescription_items').select('*').in('prescription_id', part.map((h) => h.id)).order('line_no'))
+    if (!r.ok) return r
+    for (const i of r.data) {
+      const h = part.find((x) => x.id === i.prescription_id)
+      out.push({ ...i, _table: 'prescription_items', document_id: h?.document_id ?? null, when: (i.created_at as string | null) ?? null } as unknown as KRow)
+    }
+  }
+  return { ok: true, data: out }
+}
+
+/** Paper title for each row's document_id (title, else facility, else kind). Empty map on failure: the Source cell just stays blank. */
+export async function sourceNames(rows: Row[]): Promise<Map<string, string>> {
+  const ids = [...new Set(rows.map((r) => r.document_id as string | null).filter((x): x is string => !!x))]
+  const m = new Map<string, string>()
+  for (const part of chunks(ids)) {
+    const r = await run<{ id: string; title: string | null; facility: string | null; kind: string }[]>((s) => s.from('documents').select('id,title,facility,kind').in('id', part))
+    if (r.ok) for (const d of r.data) m.set(d.id, d.title || d.facility || d.kind)
+  }
+  return m
+}
+
+export async function docStatuses(ids: string[]): Promise<Map<string, Status>> {
+  const m = new Map<string, Status>()
+  for (const part of chunks(ids)) {
+    const r = await run<{ id: string; status: Status }[]>((s) => s.from('documents').select('id,status').in('id', part))
+    if (r.ok) for (const d of r.data) m.set(d.id, d.status)
+  }
+  return m
+}
+
+/** The paper a row settles (null for a paper itself or a row without one). */
+export const docOf = (r: KRow) => (r._table === 'documents' ? null : ((r.document_id as string | null | undefined) ?? null))
+
+/** Rows grouped by table and previous status, ready for restore(). */
+export function toChanges(rows: KRow[]): Change[] {
+  const m = new Map<string, Change>()
+  for (const r of rows) {
+    const k = `${r._table}|${r.status}`
+    const c = m.get(k) ?? { table: r._table, ids: [], prev: r.status }
+    c.ids.push(r.id)
+    m.set(k, c)
+  }
+  return [...m.values()]
+}
+
+// ---- Laboratory cells ----
+export const FLAGS: Record<string, { word: string; tone: 'warn' | 'plain' }> = { H: { word: 'High', tone: 'warn' }, L: { word: 'Low', tone: 'warn' }, A: { word: 'Abnormal', tone: 'warn' }, N: { word: 'Normal', tone: 'plain' } }
+export const isAbnormal = (flag: unknown) => flag === 'H' || flag === 'L' || flag === 'A'
+const num = (v: unknown) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v)) // unknown stays null, never 0
+export const labNumber = (r: Row) => num(r.value_num)
+export const labValue = (r: Row) => {
+  const n = num(r.value_num)
+  const v = n != null ? String(n) : ((r.value_text as string | null) ?? '')
+  return [v, (r.unit_raw as string | null) ?? ''].filter(Boolean).join(' ')
+}
+export const labRange = (r: Row) => {
+  const lo = num(r.ref_low), hi = num(r.ref_high)
+  return lo != null && hi != null ? `${lo} to ${hi}` : lo != null ? `${lo} or more` : hi != null ? `${hi} or less` : ((r.ref_text as string | null) ?? '')
 }
