@@ -40,3 +40,7 @@
   .wa-main .dk-chip, .wa-main .dk-in, .wa-main .dk-rowbtn, .wa-main .dk-sort, .wa-main .dk-b { min-height: 44px; }
   .rc-bulk { bottom: 8px; }
 }
+/* Confirm queue: select-all bar */
+.rc-selectall { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 4px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+.rc-sa-l { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; cursor: pointer; }
+.rc-warn { margin: 0; flex: 1; min-width: 240px; color: var(--ink); }

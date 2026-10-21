@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { supabase } from '../../auth/client'
+import { deskHref } from './types'
 import { confirmRows, listDrafts, rejectRows, settleDocument, updateRow, type DocBundle, type Table } from '../../records/api'
 import { KIND } from '../../records/ConfirmSheet'
 import { emitConfirmed } from '../../records/papers'
@@ -26,6 +28,28 @@ const itemsOf = (b: DocBundle): QItem[] => [
   ...b.labs.map((row) => ({ table: 'lab_results' as const, row })), ...b.items.map((row) => ({ table: 'prescription_items' as const, row })),
   ...b.vaccinations.map((row) => ({ table: 'vaccinations' as const, row })), ...b.imaging.map((row) => ({ table: 'imaging_reports' as const, row }))
 ] as unknown as QItem[]
+const isUnclear = (i: QItem) => i.table === 'prescription_items' && !!i.row.unclear
+
+// Drafts the queue does not hold: each is confirmed on its own page.
+const OTHER: { table: string; label: [string, string]; href: string }[] = [
+  { table: 'person_identifiers', label: ['ID', 'IDs'], href: deskHref('ids') },
+  { table: 'insurance_policies', label: ['insurance policy', 'insurance policies'], href: deskHref('ids') },
+  { table: 'conditions', label: ['condition', 'conditions'], href: deskHref('records', 'all', 'conditions') },
+  { table: 'allergies', label: ['allergy', 'allergies'], href: deskHref('records', 'all', 'conditions') },
+  { table: 'medications', label: ['medicine', 'medicines'], href: deskHref('records', 'all', 'meds') },
+  { table: 'appointments', label: ['appointment', 'appointments'], href: deskHref('records', 'all', 'visits') },
+  { table: 'encounters', label: ['visit', 'visits'], href: deskHref('records', 'all', 'visits') }
+]
+function useOtherDrafts() {
+  const [n, setN] = useState<{ table: string; count: number }[]>([])
+  useEffect(() => {
+    if (!supabase) return
+    void Promise.all(OTHER.map((o) => supabase!.from(o.table).select('id', { count: 'exact', head: true }).eq('status', 'draft').then(({ count }) => ({ table: o.table, count: count ?? 0 }))))
+      .then((x) => setN(x.filter((c) => c.count > 0)))
+  }, [])
+  return n
+}
+
 const paperName = (d: DocBundle['doc']) => [KIND[d.kind] ?? 'Document', d.title, d.facility, d.doc_date].filter(Boolean).join(', ')
 
 export default function Queue(_: PageProps) {
@@ -33,6 +57,8 @@ export default function Queue(_: PageProps) {
   const [papers, setPapers] = useState<DocBundle[] | null>(null)
   const [err, setErr] = useState('')
   const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [docsOn, setDocsOn] = useState<Set<string>>(new Set()) // papers with no rows, ticked for the bulk confirm
+  const others = useOtherDrafts()
   const [cursor, setCursor] = useState(-1)
   const [fixing, setFixing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -64,6 +90,17 @@ export default function Queue(_: PageProps) {
   const totals = { lab_results: 0, prescription_items: 0, vaccinations: 0, imaging_reports: 0 }
   for (const i of flat) totals[i.table]++
   const checkedItems = flat.filter((i) => checked.has(i.row.id))
+  const selectable = flat.filter((i) => !isUnclear(i))
+  const unclearCount = flat.length - selectable.length
+  const emptyPapers = (papers ?? []).filter((b) => itemsOf(b).length === 0)
+  const checkedDocs = emptyPapers.filter((b) => docsOn.has(b.doc.id))
+  const allOn = selectable.length + emptyPapers.length > 0 && selectable.every((i) => checked.has(i.row.id)) && checkedDocs.length === emptyPapers.length
+  const someOn = checkedItems.length + checkedDocs.length > 0
+  const selectAll = (on: boolean) => {
+    setChecked(on ? new Set(selectable.map((i) => i.row.id)) : new Set())
+    setDocsOn(on ? new Set(emptyPapers.map((b) => b.doc.id)) : new Set())
+  }
+  const bulkCount = checkedItems.length + checkedDocs.length
   const docOf = new Map<string, DocBundle>()
   for (const b of papers ?? []) for (const i of itemsOf(b)) docOf.set(i.row.id, b)
 
@@ -106,10 +143,12 @@ export default function Queue(_: PageProps) {
   }
 
   const confirmChecked = () => {
-    const n = checkedItems.length
-    if (n === 0 || busy) return
-    const go = () => apply(checkedItems, 'confirmed')
-    if (n > 1) conf.ask(`Confirm ${n} checked rows? Unchecked rows stay in the queue.`, go)
+    const n = checkedItems.length, d = checkedDocs.length
+    if (n + d === 0 || busy) return
+    const go = () => apply(checkedItems, 'confirmed', checkedDocs.map((b) => ({ table: 'documents' as const, id: b.doc.id })))
+    const what = [n ? `${n} ${n === 1 ? 'row' : 'rows'}` : '', d ? `${d} ${d === 1 ? 'paper' : 'papers'} with no rows` : ''].filter(Boolean).join(' and ')
+    const left = unclearCount ? ` ${unclearCount} ${unclearCount === 1 ? 'line has' : 'lines have'} unclear handwriting and ${unclearCount === 1 ? 'is' : 'are'} not included: check the paper and confirm ${unclearCount === 1 ? 'it' : 'each'} on its own.` : ''
+    if (n + d > 1) conf.ask(`Confirm ${what}? Unticked rows stay in the queue.${left} You can undo right after.`, go)
     else void go()
   }
   const rejectPaper = (b: DocBundle) => {
@@ -150,9 +189,19 @@ export default function Queue(_: PageProps) {
   return (
     <>
       <PageHead title="Confirm queue" sub={papers ? `${flat.length} draft ${flat.length === 1 ? 'row' : 'rows'} in ${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}` : 'Loading...'}>
-        <button className="dk-b go" disabled={busy || checkedItems.length === 0} onClick={confirmChecked}>Confirm {checkedItems.length} checked</button>
+        <button className="dk-b go" disabled={busy || bulkCount === 0} onClick={confirmChecked}>Confirm {bulkCount} checked</button>
       </PageHead>
       {papers && <p className="dk-sub" data-testid="q-totals">Lab results {totals.lab_results} · Prescription lines {totals.prescription_items} · Vaccinations {totals.vaccinations} · Imaging {totals.imaging_reports}. Keys: j and k move, x ticks, c confirms the ticked rows.</p>}
+      {papers && papers.length > 0 && (
+        <div className="rc-selectall">
+          <label className="rc-sa-l">
+            <input type="checkbox" className="rc-check" checked={allOn} ref={(el) => { if (el) el.indeterminate = someOn && !allOn }} onChange={(e) => selectAll(e.target.checked)} />
+            Select all ({selectable.length + emptyPapers.length})
+          </label>
+          {unclearCount > 0 && <p className="rc-warn" role="note"><Tag tone="warn">Unclear</Tag> {unclearCount} prescription {unclearCount === 1 ? 'line has' : 'lines have'} unclear handwriting. Select all leaves {unclearCount === 1 ? 'it' : 'them'} out: check the paper and confirm {unclearCount === 1 ? 'it' : 'each one'} on its own.</p>}
+        </div>
+      )}
+      {others.length > 0 && <p className="dk-sub" data-testid="q-others">Also waiting, confirmed on their own pages: {others.map((o, k) => { const m = OTHER.find((x) => x.table === o.table)!; return <Fragment key={o.table}>{k ? ', ' : ''}<a href={m.href}>{o.count} {m.label[o.count === 1 ? 0 : 1]}</a></Fragment> })}.</p>}
       {err && <p className="rc-err" role="alert">{err}</p>}
       {papers === null ? <Empty>Loading...</Empty> : papers.length === 0 ? <Empty>Nothing to confirm.</Empty> : [...byPerson].map(([pid, bs]) => (
         <section key={pid} className="rc-person" aria-label={nameOf(pid)}>
@@ -164,6 +213,7 @@ export default function Queue(_: PageProps) {
                 <div className="dk-head">
                   <h3 className="dk-grow rc-h3">{paperName(b.doc)}</h3>
                   <div className="dk-acts">
+                    {its.length === 0 && <label className="rc-sa-l"><input type="checkbox" className="rc-check" checked={docsOn.has(b.doc.id)} onChange={(e) => setDocsOn((x) => { const n = new Set(x); if (e.target.checked) n.add(b.doc.id); else n.delete(b.doc.id); return n })} aria-label={`Include paper ${paperName(b.doc)}`} />Include</label>}
                     {its.length === 0 && <button className="dk-b go" disabled={busy} aria-label={`Confirm paper ${paperName(b.doc)}`} onClick={() => void apply([], 'confirmed', [{ table: 'documents', id: b.doc.id }])}>Confirm paper</button>}
                     <button className="dk-b bad" disabled={busy} aria-label={`Reject paper ${paperName(b.doc)}`} onClick={() => rejectPaper(b)}>Reject paper</button>
                   </div>

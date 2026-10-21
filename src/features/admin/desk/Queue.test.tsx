@@ -66,7 +66,7 @@ describe('Confirm queue', () => {
     expect(await screen.findByRole('heading', { name: 'Test Person' })).toBeTruthy()
     expect(screen.getByTestId('q-totals').textContent).toContain('Lab results 3 · Prescription lines 2')
     expect(screen.getAllByRole('table')).toHaveLength(2)
-    const on = Object.fromEntries(boxes().map((b) => [b.getAttribute('aria-label'), b.checked]))
+    const on = Object.fromEntries(boxes().filter((b) => b.getAttribute('aria-label')).map((b) => [b.getAttribute('aria-label'), b.checked]))
     expect(on).toEqual({ 'Include LDL Test': true, 'Include Glucose Test': false, 'Include Blank Test': false, 'Include Test Drug A': true, 'Line that could not be read is unclear: confirm it on its own': false })
     expect(boxes().find((b) => b.disabled)).toBeTruthy() // the unclear line cannot be ticked
     expect(screen.getByRole('button', { name: 'Confirm 2 checked' })).toBeTruthy()
@@ -164,5 +164,29 @@ describe('Confirm queue', () => {
     tables.documents = []; tables.lab_results = []; tables.prescription_items = []; tables.prescriptions = []
     render(<Queue id={null} />)
     expect(await screen.findByText('Nothing to confirm.')).toBeTruthy()
+  })
+})
+
+describe('Queue select all', () => {
+  it('ticks every clear row and empty paper, leaves unclear lines out and says so before confirming', async () => {
+    tables.documents.push({ id: 'd3', person_id: 'p1', kind: 'other', status: 'draft', doc_date: '2026-07-01', facility: 'Test Clinic', title: 'Empty paper' })
+    render(<Queue id={null} />)
+    const all = await screen.findByRole('checkbox', { name: /Select all \(5\)/ }) // l1, l2, l3, i1 and the empty paper d3; i2 is unclear
+    expect(screen.getByRole('note').textContent).toMatch(/1 prescription line has unclear handwriting/)
+    fireEvent.click(all)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm 5 checked' }))
+    const dlg = await screen.findByRole('alertdialog')
+    expect(dlg.textContent).toMatch(/Confirm 4 rows and 1 paper with no rows\?/)
+    expect(dlg.textContent).toMatch(/1 line has unclear handwriting and is not included/)
+    fireEvent.click(within(dlg).getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(statusWrites()).toEqual(expect.arrayContaining([['lab_results', 'confirmed', ['l1', 'l2', 'l3']], ['prescription_items', 'confirmed', ['i1']], ['documents', 'confirmed', ['d3']]])))
+    expect(tables.prescription_items.find((r) => r.id === 'i2')!.status).toBe('draft')
+  })
+  it('unticks everything when clicked again', async () => {
+    render(<Queue id={null} />)
+    const all = await screen.findByRole('checkbox', { name: /Select all/ })
+    fireEvent.click(all) // partly ticked by default -> all
+    fireEvent.click(all) // -> none
+    expect(screen.getByRole('button', { name: 'Confirm 0 checked' })).toHaveProperty('disabled', true)
   })
 })
