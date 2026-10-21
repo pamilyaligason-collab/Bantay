@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import SafetyHub, { IdsRow } from '../features/safety/SafetyHub'
-import { FirstAidPage, topicOf } from '../features/safety/FirstAid'
+import { ActEarly, FirstAidPage, topicOf } from '../features/safety/FirstAid'
 import SafetySub, { subOf } from '../features/safety/SafetyPages'
 import GoBag from '../features/gobag/GoBag'
 import MedicalId from '../features/medid/MedicalId'
@@ -60,6 +60,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
       </div>
       <IdsRow />
       {place && <SafetyHub place={place} />}
+      <ActEarly />
       <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. <a href="#safety/sources">Sources</a></p>
     </>
   )

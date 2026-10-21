@@ -15,7 +15,6 @@ import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
 import { useKv } from './store'
-import { ActEarly } from './FirstAid'
 import { ddb } from '../docs/store'
 import { useEffect, useState } from 'react'
 import './safety.css'
@@ -106,7 +105,6 @@ export default function SafetyHub({ place }: { place: Place }) {
           </a>
         ))}
       </nav>
-      <ActEarly />
     </>
   )
 }
