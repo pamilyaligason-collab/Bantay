@@ -12,3 +12,376 @@ Code: `src/features/health/labsLogic.ts` (`INFO`), shown on the lab detail page.
 4. "Toward / away from the usual range" wording compares each result with the one before it, by distance to the range limits. It never says better or worse.
 5. NOT added, needs clinician-supplied values: the dashed "many doctors are not concerned until ..." line from the mockup.
 6. Reference ranges come from the lab printout, the family limit, or `guide-ranges.json` / the general guide in `ranges.ts`; no new ranges were added.
+
+
+## Move (senior exercise) - for clinician review
+
+Status: NOT reviewed. All text below was written by Bantay (no third-party exercise text or images). Nothing here is a diagnosis or a prescription. Please check every rule and every move.
+
+### Rules (src/features/exercise/recommend.ts)
+
+1. Gate: before anything else, EVERYONE sees "Check with your doctor before starting new exercise." and taps "I understand" once (stored on the phone). No picks until then.
+2. Age 65 or more, or age unknown: level 1 moves only, balance and strength first, seated and supported moves ranked before others. Under 65: levels 1 and 2, strength first.
+3. Age 80 or more: seated or standing-with-support moves only (no floor work).
+4. Moves done in the last 7 days are ranked lower so the 3 picks change through the week.
+5. Free-text conditions are matched by keyword, English and Tagalog: hypertension (hypertension, high blood, altapresyon), arthritis (arthritis, rayuma), diabetes (diabetes, asukal), heart (heart, puso), osteoporosis (osteopor), asthma (asthma, hika).
+6. Hypertension: no move tagged "hold" (isometric holds); reminder to keep breathing and not hold breath. If the person has hypertension AND a blood pressure logged in the last 24 hours is above the app's general guide (top number over 119 or bottom number over 79, from src/data/guide-ranges.json, AHA), show "Rest today" and no moves. REVIEW: the guide cut-off is the AHA normal band, which is strict; confirm whether a higher cut-off (for example 160/100 or the person's own doctor target) is the right line for "rest today".
+7. Diabetes: reminder to keep a small snack nearby. If a sugar logged in the last 24 hours is below 70 mg/dL (guide low), show "Rest today, eat something and recheck" and no moves. REVIEW: confirm the 70 mg/dL line and the wording.
+8. Heart condition or osteoporosis: only walking and seated moves until the person taps "My doctor said OK" (stored on the phone). Osteoporosis also never gets forward-bend, floor or impact moves, even after "OK".
+9. Arthritis: no deep-knee or impact moves; reminder that sharp joint pain is not fine.
+10. Asthma: reminder to keep the inhaler within reach.
+11. Weekly ring: last 7 days, minutes from walk logs and Move logs toward 150; days with a strength or balance move toward 2. A counted set (reps) is logged as about 2 minutes. REVIEW: confirm that counting all light moves toward the 150 minutes is acceptable.
+12. Rest rules (6 and 7) only fire when the condition is listed in the person's profile (hypertension for blood pressure, diabetes for sugar). A high pressure or low sugar with no listed condition shows moves as normal. REVIEW: confirm this is acceptable or whether any person with a high reading should rest.
+13. A person's own doctor-set limits (Health thresholds) replace the general guide in rules 6 and 7.
+14. REVIEW, tags: "Sit to stand from a chair" (sit-to-stand) and "Slow chair stand" (chair-stand-slow) are tagged deep-knee, so arthritis never gets them. Confirm that is right, since sit-to-stand is also a common arthritis exercise. "Foot in front of foot, holding a chair" (tandem-stand) is tagged hold, so hypertension never gets it. Confirm that a 30-second balance stance counts as an isometric hold.
+15. Sources: WHO 2020 and CDC older adults (docs/SOURCES.md).
+
+### Moves (src/features/exercise/moves.json)
+
+#### Sit to stand from a chair (sit-to-stand)
+- Tagalog line: Tumayo mula sa upuan
+- Group: strength; posture: seated; level 1; 8 repetitions
+- Avoid tags: deep-knee
+- Steps:
+  1. Sit near the front of a sturdy chair, feet flat, hip-width apart.
+  2. Lean forward a little and push through your feet to stand.
+  3. Stand tall for a moment, then sit down slowly.
+  4. Use your hands on the chair arms or your knees if you need to.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles); Chest pain or pressure
+
+#### Slow chair stand (chair-stand-slow)
+- Tagalog line: Dahan-dahang tayo
+- Group: strength; posture: seated; level 2; 6 repetitions
+- Avoid tags: deep-knee
+- Steps:
+  1. Sit at the front of a sturdy chair.
+  2. Stand up slowly.
+  3. Sit back down, taking 3 slow counts to lower.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles); Chest pain or pressure
+
+#### Heel raises holding a counter (heel-raises)
+- Tagalog line: Itaas ang takong
+- Group: strength; posture: standing-with-support; level 1; 10 repetitions
+- Avoid tags: none
+- Steps:
+  1. Stand behind a chair or at a counter, both hands on it.
+  2. Rise up onto your toes slowly.
+  3. Lower your heels slowly.
+  4. Keep your knees soft, not locked.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles); Your calf cramps and does not ease
+
+#### Toe raises holding a counter (toe-raises)
+- Tagalog line: Itaas ang daliri ng paa
+- Group: strength; posture: standing-with-support; level 1; 10 repetitions
+- Avoid tags: none
+- Steps:
+  1. Stand with both hands on a counter or chair back.
+  2. Lift the front of your feet, heels stay down.
+  3. Lower slowly.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles)
+
+#### Seated march (seated-march)
+- Tagalog line: Pagmartsa habang nakaupo
+- Group: strength; posture: seated; level 1; 60 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit tall near the front of a chair.
+  2. Lift one knee, then lower it.
+  3. Switch legs, like slow walking in place.
+  4. Breathe normally.
+- Stop if: You feel dizzy or faint; Chest pain or pressure; You cannot talk while you do it
+
+#### Wall push-up (wall-push-up)
+- Tagalog line: Push-up sa dingding
+- Group: strength; posture: standing-with-support; level 1; 8 repetitions
+- Avoid tags: none
+- Steps:
+  1. Face a wall, an arm's length away, hands on the wall at shoulder height.
+  2. Bend your elbows to bring your chest toward the wall.
+  3. Push back to straight arms, slowly.
+  4. Keep your back straight.
+- Stop if: Sharp pain (not just tired muscles); Shoulder pain; You feel dizzy or faint
+
+#### Seated knee straightening (seated-knee-straighten)
+- Tagalog line: Itaas ang tuhod habang nakaupo
+- Group: strength; posture: seated; level 1; 10 repetitions
+- Avoid tags: none
+- Steps:
+  1. Sit tall in a chair.
+  2. Slowly straighten one knee until your leg is level.
+  3. Lower it slowly. Do the other leg.
+  4. Breathe out as you lift.
+- Stop if: Sharp pain (not just tired muscles); Knee pain that gets worse
+
+#### Seated leg lift with a hold (seated-leg-hold)
+- Tagalog line: Itaas at hawakan ang binti
+- Group: strength; posture: seated; level 2; 45 seconds
+- Avoid tags: hold
+- Steps:
+  1. Sit tall in a chair.
+  2. Straighten one knee and hold it level for 5 slow counts.
+  3. Lower and switch legs.
+  4. Keep breathing; do not hold your breath.
+- Stop if: Sharp pain (not just tired muscles); You feel dizzy or faint
+
+#### Seated arm raises (arm-raises)
+- Tagalog line: Itaas ang mga braso
+- Group: strength; posture: seated; level 1; 10 repetitions
+- Avoid tags: none
+- Steps:
+  1. Sit tall, arms by your sides. Hold a small water bottle if you like.
+  2. Lift both arms to the front, up to shoulder height.
+  3. Lower slowly.
+  4. Breathe out as you lift.
+- Stop if: Shoulder pain; You feel dizzy or faint
+
+#### Bottle curls (bottle-curl)
+- Tagalog line: Pagbuhat ng bote
+- Group: strength; posture: seated; level 1; 10 repetitions
+- Avoid tags: none
+- Steps:
+  1. Sit tall holding a small water bottle in each hand.
+  2. Bend your elbows to bring the bottles to your shoulders.
+  3. Lower slowly.
+- Stop if: Sharp pain (not just tired muscles); You feel dizzy or faint
+
+#### Standing leg out to the side (side-leg-lift)
+- Tagalog line: Ilabas ang binti sa gilid
+- Group: strength; posture: standing-with-support; level 2; 8 repetitions
+- Avoid tags: none
+- Steps:
+  1. Stand tall holding a counter or chair back.
+  2. Slowly lift one leg out to the side, a small way.
+  3. Lower it. Do the other leg.
+  4. Keep your toes pointing forward.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles)
+
+#### Hip bridge on the bed (hip-bridge)
+- Tagalog line: Itaas ang balakang
+- Group: strength; posture: floor; level 2; 8 repetitions
+- Avoid tags: floor
+- Steps:
+  1. Lie on your back, knees bent, feet flat.
+  2. Press your feet down and lift your hips a little.
+  3. Lower slowly.
+  4. Breathe out as you lift.
+- Stop if: Sharp pain (not just tired muscles); You feel dizzy or faint; Back pain
+
+#### March in place near a chair (march-in-place)
+- Tagalog line: Martsa sa lugar
+- Group: balance; posture: standing-with-support; level 1; 60 seconds
+- Avoid tags: none
+- Steps:
+  1. Stand tall next to a sturdy chair, one hand on it.
+  2. Lift one knee, then the other, at an easy pace.
+  3. Swing your free arm.
+  4. Slow down if you get out of breath.
+- Stop if: You feel dizzy or faint; Chest pain or pressure; You cannot talk while you do it
+
+#### Foot in front of foot, holding a chair (tandem-stand)
+- Tagalog line: Isang paa sa harap ng isa
+- Group: balance; posture: standing-with-support; level 1; 30 seconds
+- Avoid tags: hold
+- Steps:
+  1. Stand next to a sturdy chair and hold it.
+  2. Place one foot directly in front of the other, heel touching toes.
+  3. Stay for up to 30 seconds. Switch feet.
+  4. Keep breathing.
+- Stop if: You feel dizzy or faint; You lose your balance and need to grab the chair
+
+#### Stand on one foot holding a counter (one-foot-stand)
+- Tagalog line: Tumayo sa isang paa
+- Group: balance; posture: standing-with-support; level 2; 20 seconds
+- Avoid tags: hold
+- Steps:
+  1. Hold a counter with both hands.
+  2. Lift one foot a little off the floor.
+  3. Stay for up to 20 seconds, then switch.
+  4. Use one hand only when you feel steady.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles)
+
+#### Weight shift side to side (weight-shift)
+- Tagalog line: Ilipat ang bigat sa gilid
+- Group: balance; posture: standing-with-support; level 1; 45 seconds
+- Avoid tags: none
+- Steps:
+  1. Stand holding a counter, feet hip-width apart.
+  2. Slowly shift your weight onto your right foot.
+  3. Slowly shift to your left foot.
+  4. Keep your hips level.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles)
+
+#### Heel-to-toe steps along a counter (heel-toe-steps)
+- Tagalog line: Hakbang na sunod-sunod
+- Group: balance; posture: standing-with-support; level 2; 60 seconds
+- Avoid tags: none
+- Steps:
+  1. Stand at the end of a counter, one hand on it.
+  2. Step forward, placing your heel just in front of the other toes.
+  3. Walk along the counter like this.
+  4. Turn around and come back.
+- Stop if: You feel dizzy or faint; You lose your balance
+
+#### Seated reach to the side (seated-side-reach)
+- Tagalog line: Abutin ang gilid
+- Group: balance; posture: seated; level 1; 6 repetitions
+- Avoid tags: none
+- Steps:
+  1. Sit tall in a sturdy chair, feet flat.
+  2. Reach one arm out to the side, a small way.
+  3. Return to the middle. Switch sides.
+  4. Keep your hips on the seat.
+- Stop if: You feel dizzy or faint; Sharp pain (not just tired muscles)
+
+#### Ankle circles (ankle-circles)
+- Tagalog line: Paikutin ang bukung-bukong
+- Group: stretch; posture: seated; level 1; 60 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit in a chair and lift one foot a little.
+  2. Draw slow circles with your toes, 5 each way.
+  3. Switch feet.
+- Stop if: Sharp pain (not just tired muscles); Cramping that does not ease
+
+#### Seated hamstring stretch (hamstring-stretch)
+- Tagalog line: Iunat ang likod ng hita
+- Group: stretch; posture: seated; level 1; 60 seconds
+- Avoid tags: forward-bend, hold
+- Steps:
+  1. Sit at the front edge of a chair.
+  2. Straighten one leg, heel on the floor, toes up.
+  3. Sit tall and lean forward a little from the hip until you feel a gentle pull.
+  4. Stay for 20 seconds, breathing normally. Switch legs.
+- Stop if: Pain (a gentle pull is fine); You feel dizzy or faint
+
+#### Shoulder rolls (shoulder-rolls)
+- Tagalog line: Paikutin ang balikat
+- Group: stretch; posture: seated; level 1; 45 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit tall with arms relaxed.
+  2. Roll your shoulders up, back and down in a slow circle, 5 times.
+  3. Roll them the other way, 5 times.
+- Stop if: Shoulder pain
+
+#### Gentle neck turns (neck-turns)
+- Tagalog line: Dahan-dahang paglingon
+- Group: stretch; posture: seated; level 1; 45 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit tall and look straight ahead.
+  2. Slowly turn your head to the right as far as is comfortable.
+  3. Come back to the middle, then turn left.
+  4. Do not tip your head back.
+- Stop if: You feel dizzy or faint; Pain or tingling in your arms
+
+#### Hand and wrist stretch (hand-wrist-stretch)
+- Tagalog line: Iunat ang kamay at pulso
+- Group: stretch; posture: seated; level 1; 45 seconds
+- Avoid tags: none
+- Steps:
+  1. Hold one arm out in front, palm up.
+  2. With the other hand, gently bend the fingers down toward the floor.
+  3. Stay 10 seconds. Switch hands.
+  4. Open and close your fists 10 times.
+- Stop if: Pain or numbness
+
+#### Calf stretch at a wall (calf-stretch)
+- Tagalog line: Iunat ang binti sa dingding
+- Group: stretch; posture: standing-with-support; level 1; 60 seconds
+- Avoid tags: hold
+- Steps:
+  1. Stand facing a wall, hands on it.
+  2. Step one foot back, heel down.
+  3. Bend the front knee a little until you feel a gentle pull in the back leg.
+  4. Stay for 20 seconds. Switch.
+- Stop if: Sharp pain (not just tired muscles); You feel dizzy or faint
+
+#### Seated chest opener (chest-opener)
+- Tagalog line: Buksan ang dibdib
+- Group: stretch; posture: seated; level 1; 45 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit tall at the front of the chair.
+  2. Hold the chair back behind you, or rest your hands on your hips.
+  3. Gently lift your chest and breathe in.
+  4. Breathe out and relax.
+- Stop if: Shoulder pain; You feel dizzy or faint
+
+#### Easy 5-minute walk (walk-5)
+- Tagalog line: Maglakad ng 5 minuto
+- Group: walk; posture: standing-with-support; level 1; 300 seconds
+- Avoid tags: none
+- Steps:
+  1. Choose a flat, even place, indoors or in the shade.
+  2. Walk at a pace where you can still talk.
+  3. Wear shoes that fit and grip.
+  4. Stop and sit if you need a rest.
+- Stop if: You feel dizzy or faint; Chest pain or pressure; You cannot talk while you do it; Sharp pain (not just tired muscles)
+
+#### Easy 10-minute walk (walk-10)
+- Tagalog line: Maglakad ng 10 minuto
+- Group: walk; posture: standing-with-support; level 2; 600 seconds
+- Avoid tags: none
+- Steps:
+  1. Choose a flat, even place.
+  2. Walk at a pace where you can still talk.
+  3. Bring water if it is warm.
+  4. Stop and sit if you need a rest.
+- Stop if: You feel dizzy or faint; Chest pain or pressure; You cannot talk while you do it; Sharp pain (not just tired muscles)
+
+#### Indoor walk back and forth (indoor-walk)
+- Tagalog line: Lakad sa loob ng bahay
+- Group: walk; posture: standing-with-support; level 1; 300 seconds
+- Avoid tags: none
+- Steps:
+  1. Pick a clear path at home with a wall or furniture to touch.
+  2. Walk to the end and back.
+  3. Keep a steady, easy pace.
+  4. Sit down if you feel tired.
+- Stop if: You feel dizzy or faint; Chest pain or pressure; You cannot talk while you do it; Sharp pain (not just tired muscles)
+
+#### Slow breathing (slow-breathing)
+- Tagalog line: Mabagal na paghinga
+- Group: breathe; posture: seated; level 1; 120 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit comfortably with your back supported.
+  2. Breathe in through your nose for about 4 counts.
+  3. Breathe out gently through your mouth for about 6 counts.
+  4. Keep going for 2 minutes. Never hold your breath.
+- Stop if: You feel dizzy or faint; Your chest feels tight
+
+#### Belly breathing (belly-breathing)
+- Tagalog line: Paghinga gamit ang tiyan
+- Group: breathe; posture: seated; level 1; 120 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit back and rest one hand on your belly.
+  2. Breathe in slowly so your belly rises.
+  3. Breathe out slowly so it falls.
+  4. Repeat for 2 minutes.
+- Stop if: You feel dizzy or faint
+
+#### Pursed-lip breathing (pursed-lip-breathing)
+- Tagalog line: Paghingang parang sisipol
+- Group: breathe; posture: seated; level 1; 120 seconds
+- Avoid tags: none
+- Steps:
+  1. Sit comfortably.
+  2. Breathe in through your nose for 2 counts.
+  3. Purse your lips like blowing out a candle and breathe out slowly for 4 counts.
+  4. Repeat for 2 minutes.
+- Stop if: You feel dizzy or faint; You feel worse
+
+
+## Videos (src/data/videos.json) - titles for wording review
+
+The six official health videos' titles, as shown in the app (the videos themselves are from their publishers on YouTube):
+
+1. Hands-only CPR
+2. BE FAST: signs of a stroke
+3. Heat exhaustion and heatstroke
+4. Diabetic emergency: what to do
+5. Five a day: eating more fruit and vegetables
+6. Lusog-Isip: looking after your mental health

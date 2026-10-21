@@ -57,3 +57,12 @@ Feeds checked with curl on 2026-10-17:
 - PAGASA: no RSS found (feed URLs return 404)
 - Tagbilaran City site: no feed (returns an HTML app)
 - YouTube channel feeds: channel ids not known, node left disabled with a placeholder
+
+## Move (senior exercise, session 8)
+
+Bantay-original move text and rules. The targets come from:
+
+- WHO, Guidelines on physical activity and sedentary behaviour (2020): https://www.who.int/publications/i/item/9789240015128 . Adults 65+: at least 150 minutes of moderate activity a week, muscle strengthening on 2 or more days, and balance work on 3 or more days.
+- CDC, Physical Activity Guidelines for Older Adults: https://www.cdc.gov/physical-activity-basics/guidelines/older-adults.html . Same weekly targets, plus a start slowly and build up message.
+
+The weekly ring in src/features/exercise/weekly.ts counts 150 minutes and 2 strength or balance days (the stricter 3 balance days in the WHO text are not tracked separately). The full rule list is in docs/session-8/CLINICAL-REVIEW.md, waiting for a clinician.

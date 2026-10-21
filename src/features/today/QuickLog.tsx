@@ -4,14 +4,16 @@ import { liveMedicines } from '../health/meds'
 import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, takeMedication, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import QuickWalk from '../sensors/QuickWalk'
+import MovePanel from '../exercise/MovePanel'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'dose' | 'mood'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood'
 const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', tone: 'vitals', aria: 'Log weight' },
   { id: 'walk', label: 'Walk', icon: 'walk', tone: undefined, aria: 'Log a walk' },
+  { id: 'move', label: 'Move', icon: 'move', tone: undefined, aria: 'Gentle exercise for today' },
   { id: 'dose', label: 'Dose', icon: 'pill', tone: 'medicine', aria: 'Log a medicine you took' },
   { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' }
 ]
@@ -44,7 +46,7 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick log: six buttons in a 3 x 2 grid (BP, Sugar, Weight, Walk, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
+/** Quick log: seven buttons, 4 + 3 centred (BP, Sugar, Weight, Walk, Move, Dose, Mood), icon above the label. Each opens a small sheet and ends with a toast. */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
@@ -116,6 +118,11 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       {open === 'walk' && (
         <Sheet title="Walk" onClose={close} focusFirst={false}>
           <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />
+        </Sheet>
+      )}
+      {open === 'move' && (
+        <Sheet title="Move" onClose={close} focusFirst={false}>
+          <MovePanel notify={(m) => { close(); notify(m) }} />
         </Sheet>
       )}
       {open === 'dose' && (

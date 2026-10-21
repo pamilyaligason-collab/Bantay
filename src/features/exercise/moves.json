@@ -1,0 +1,646 @@
+[
+  {
+    "id": "sit-to-stand",
+    "name": "Sit to stand from a chair",
+    "tl": "Tumayo mula sa upuan",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 8,
+    "steps": [
+      "Sit near the front of a sturdy chair, feet flat, hip-width apart.",
+      "Lean forward a little and push through your feet to stand.",
+      "Stand tall for a moment, then sit down slowly.",
+      "Use your hands on the chair arms or your knees if you need to."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [
+      "deep-knee"
+    ],
+    "level": 1
+  },
+  {
+    "id": "chair-stand-slow",
+    "name": "Slow chair stand",
+    "tl": "Dahan-dahang tayo",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 6,
+    "steps": [
+      "Sit at the front of a sturdy chair.",
+      "Stand up slowly.",
+      "Sit back down, taking 3 slow counts to lower."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [
+      "deep-knee"
+    ],
+    "level": 2
+  },
+  {
+    "id": "heel-raises",
+    "name": "Heel raises holding a counter",
+    "tl": "Itaas ang takong",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 10,
+    "steps": [
+      "Stand behind a chair or at a counter, both hands on it.",
+      "Rise up onto your toes slowly.",
+      "Lower your heels slowly.",
+      "Keep your knees soft, not locked."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "Your calf cramps and does not ease"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "toe-raises",
+    "name": "Toe raises holding a counter",
+    "tl": "Itaas ang daliri ng paa",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 10,
+    "steps": [
+      "Stand with both hands on a counter or chair back.",
+      "Lift the front of your feet, heels stay down.",
+      "Lower slowly."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "seated-march",
+    "name": "Seated march",
+    "tl": "Pagmartsa habang nakaupo",
+    "group": "strength",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit tall near the front of a chair.",
+      "Lift one knee, then lower it.",
+      "Switch legs, like slow walking in place.",
+      "Breathe normally."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "You cannot talk while you do it"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "wall-push-up",
+    "name": "Wall push-up",
+    "tl": "Push-up sa dingding",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 8,
+    "steps": [
+      "Face a wall, an arm's length away, hands on the wall at shoulder height.",
+      "Bend your elbows to bring your chest toward the wall.",
+      "Push back to straight arms, slowly.",
+      "Keep your back straight."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Shoulder pain",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [
+      
+    ],
+    "level": 1
+  },
+  {
+    "id": "seated-knee-straighten",
+    "name": "Seated knee straightening",
+    "tl": "Itaas ang tuhod habang nakaupo",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 10,
+    "steps": [
+      "Sit tall in a chair.",
+      "Slowly straighten one knee until your leg is level.",
+      "Lower it slowly. Do the other leg.",
+      "Breathe out as you lift."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Knee pain that gets worse"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "seated-leg-hold",
+    "name": "Seated leg lift with a hold",
+    "tl": "Itaas at hawakan ang binti",
+    "group": "strength",
+    "posture": "seated",
+    "durationSec": 45,
+    "steps": [
+      "Sit tall in a chair.",
+      "Straighten one knee and hold it level for 5 slow counts.",
+      "Lower and switch legs.",
+      "Keep breathing; do not hold your breath."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 2
+  },
+  {
+    "id": "arm-raises",
+    "name": "Seated arm raises",
+    "tl": "Itaas ang mga braso",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 10,
+    "steps": [
+      "Sit tall, arms by your sides. Hold a small water bottle if you like.",
+      "Lift both arms to the front, up to shoulder height.",
+      "Lower slowly.",
+      "Breathe out as you lift."
+    ],
+    "stopIf": [
+      "Shoulder pain",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "bottle-curl",
+    "name": "Bottle curls",
+    "tl": "Pagbuhat ng bote",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 10,
+    "steps": [
+      "Sit tall holding a small water bottle in each hand.",
+      "Bend your elbows to bring the bottles to your shoulders.",
+      "Lower slowly."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "side-leg-lift",
+    "name": "Standing leg out to the side",
+    "tl": "Ilabas ang binti sa gilid",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 8,
+    "steps": [
+      "Stand tall holding a counter or chair back.",
+      "Slowly lift one leg out to the side, a small way.",
+      "Lower it. Do the other leg.",
+      "Keep your toes pointing forward."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 2
+  },
+  {
+    "id": "hip-bridge",
+    "name": "Hip bridge on the bed",
+    "tl": "Itaas ang balakang",
+    "group": "strength",
+    "posture": "floor",
+    "reps": 8,
+    "steps": [
+      "Lie on your back, knees bent, feet flat.",
+      "Press your feet down and lift your hips a little.",
+      "Lower slowly.",
+      "Breathe out as you lift."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint",
+      "Back pain"
+    ],
+    "avoidIf": [
+      "floor"
+    ],
+    "level": 2
+  },
+  {
+    "id": "march-in-place",
+    "name": "March in place near a chair",
+    "tl": "Martsa sa lugar",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 60,
+    "steps": [
+      "Stand tall next to a sturdy chair, one hand on it.",
+      "Lift one knee, then the other, at an easy pace.",
+      "Swing your free arm.",
+      "Slow down if you get out of breath."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "You cannot talk while you do it"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "tandem-stand",
+    "name": "Foot in front of foot, holding a chair",
+    "tl": "Isang paa sa harap ng isa",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 30,
+    "steps": [
+      "Stand next to a sturdy chair and hold it.",
+      "Place one foot directly in front of the other, heel touching toes.",
+      "Stay for up to 30 seconds. Switch feet.",
+      "Keep breathing."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You lose your balance and need to grab the chair"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1
+  },
+  {
+    "id": "one-foot-stand",
+    "name": "Stand on one foot holding a counter",
+    "tl": "Tumayo sa isang paa",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 20,
+    "steps": [
+      "Hold a counter with both hands.",
+      "Lift one foot a little off the floor.",
+      "Stay for up to 20 seconds, then switch.",
+      "Use one hand only when you feel steady."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 2
+  },
+  {
+    "id": "weight-shift",
+    "name": "Weight shift side to side",
+    "tl": "Ilipat ang bigat sa gilid",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 45,
+    "steps": [
+      "Stand holding a counter, feet hip-width apart.",
+      "Slowly shift your weight onto your right foot.",
+      "Slowly shift to your left foot.",
+      "Keep your hips level."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "heel-toe-steps",
+    "name": "Heel-to-toe steps along a counter",
+    "tl": "Hakbang na sunod-sunod",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 60,
+    "steps": [
+      "Stand at the end of a counter, one hand on it.",
+      "Step forward, placing your heel just in front of the other toes.",
+      "Walk along the counter like this.",
+      "Turn around and come back."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You lose your balance"
+    ],
+    "avoidIf": [],
+    "level": 2
+  },
+  {
+    "id": "seated-side-reach",
+    "name": "Seated reach to the side",
+    "tl": "Abutin ang gilid",
+    "group": "balance",
+    "posture": "seated",
+    "reps": 6,
+    "steps": [
+      "Sit tall in a sturdy chair, feet flat.",
+      "Reach one arm out to the side, a small way.",
+      "Return to the middle. Switch sides.",
+      "Keep your hips on the seat."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "ankle-circles",
+    "name": "Ankle circles",
+    "tl": "Paikutin ang bukung-bukong",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit in a chair and lift one foot a little.",
+      "Draw slow circles with your toes, 5 each way.",
+      "Switch feet."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Cramping that does not ease"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "hamstring-stretch",
+    "name": "Seated hamstring stretch",
+    "tl": "Iunat ang likod ng hita",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit at the front edge of a chair.",
+      "Straighten one leg, heel on the floor, toes up.",
+      "Sit tall and lean forward a little from the hip until you feel a gentle pull.",
+      "Stay for 20 seconds, breathing normally. Switch legs."
+    ],
+    "stopIf": [
+      "Pain (a gentle pull is fine)",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [
+      "forward-bend",
+      "hold"
+    ],
+    "level": 1
+  },
+  {
+    "id": "shoulder-rolls",
+    "name": "Shoulder rolls",
+    "tl": "Paikutin ang balikat",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 45,
+    "steps": [
+      "Sit tall with arms relaxed.",
+      "Roll your shoulders up, back and down in a slow circle, 5 times.",
+      "Roll them the other way, 5 times."
+    ],
+    "stopIf": [
+      "Shoulder pain"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "neck-turns",
+    "name": "Gentle neck turns",
+    "tl": "Dahan-dahang paglingon",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 45,
+    "steps": [
+      "Sit tall and look straight ahead.",
+      "Slowly turn your head to the right as far as is comfortable.",
+      "Come back to the middle, then turn left.",
+      "Do not tip your head back."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Pain or tingling in your arms"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "hand-wrist-stretch",
+    "name": "Hand and wrist stretch",
+    "tl": "Iunat ang kamay at pulso",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 45,
+    "steps": [
+      "Hold one arm out in front, palm up.",
+      "With the other hand, gently bend the fingers down toward the floor.",
+      "Stay 10 seconds. Switch hands.",
+      "Open and close your fists 10 times."
+    ],
+    "stopIf": [
+      "Pain or numbness"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "calf-stretch",
+    "name": "Calf stretch at a wall",
+    "tl": "Iunat ang binti sa dingding",
+    "group": "stretch",
+    "posture": "standing-with-support",
+    "durationSec": 60,
+    "steps": [
+      "Stand facing a wall, hands on it.",
+      "Step one foot back, heel down.",
+      "Bend the front knee a little until you feel a gentle pull in the back leg.",
+      "Stay for 20 seconds. Switch."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1
+  },
+  {
+    "id": "chest-opener",
+    "name": "Seated chest opener",
+    "tl": "Buksan ang dibdib",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 45,
+    "steps": [
+      "Sit tall at the front of the chair.",
+      "Hold the chair back behind you, or rest your hands on your hips.",
+      "Gently lift your chest and breathe in.",
+      "Breathe out and relax."
+    ],
+    "stopIf": [
+      "Shoulder pain",
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "walk-5",
+    "name": "Easy 5-minute walk",
+    "tl": "Maglakad ng 5 minuto",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 300,
+    "steps": [
+      "Choose a flat, even place, indoors or in the shade.",
+      "Walk at a pace where you can still talk.",
+      "Wear shoes that fit and grip.",
+      "Stop and sit if you need a rest."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "You cannot talk while you do it",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "walk-10",
+    "name": "Easy 10-minute walk",
+    "tl": "Maglakad ng 10 minuto",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 600,
+    "steps": [
+      "Choose a flat, even place.",
+      "Walk at a pace where you can still talk.",
+      "Bring water if it is warm.",
+      "Stop and sit if you need a rest."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "You cannot talk while you do it",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 2
+  },
+  {
+    "id": "indoor-walk",
+    "name": "Indoor walk back and forth",
+    "tl": "Lakad sa loob ng bahay",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 300,
+    "steps": [
+      "Pick a clear path at home with a wall or furniture to touch.",
+      "Walk to the end and back.",
+      "Keep a steady, easy pace.",
+      "Sit down if you feel tired."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "You cannot talk while you do it",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "slow-breathing",
+    "name": "Slow breathing",
+    "tl": "Mabagal na paghinga",
+    "group": "breathe",
+    "posture": "seated",
+    "durationSec": 120,
+    "steps": [
+      "Sit comfortably with your back supported.",
+      "Breathe in through your nose for about 4 counts.",
+      "Breathe out gently through your mouth for about 6 counts.",
+      "Keep going for 2 minutes. Never hold your breath."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Your chest feels tight"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "belly-breathing",
+    "name": "Belly breathing",
+    "tl": "Paghinga gamit ang tiyan",
+    "group": "breathe",
+    "posture": "seated",
+    "durationSec": 120,
+    "steps": [
+      "Sit back and rest one hand on your belly.",
+      "Breathe in slowly so your belly rises.",
+      "Breathe out slowly so it falls.",
+      "Repeat for 2 minutes."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "pursed-lip-breathing",
+    "name": "Pursed-lip breathing",
+    "tl": "Paghingang parang sisipol",
+    "group": "breathe",
+    "posture": "seated",
+    "durationSec": 120,
+    "steps": [
+      "Sit comfortably.",
+      "Breathe in through your nose for 2 counts.",
+      "Purse your lips like blowing out a candle and breathe out slowly for 4 counts.",
+      "Repeat for 2 minutes."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You feel worse"
+    ],
+    "avoidIf": [],
+    "level": 1
+  }
+]
