@@ -143,7 +143,7 @@ export default function WebShell() {
       <a className="wa-skip" href="#wa-main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <header className="wa-top">
         <button className="wa-ib wa-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="menu" /></button>
-        <a className="wa-brand" href={deskHref('home')}><Icon name="shield" /><span>Bantay Admin</span></a>
+        <a className="wa-brand" href={deskHref('home')} aria-label="Bantay Admin, dashboard"><Icon name="shield" /><span>Bantay Admin</span></a>
         <Search />
         <a className="wa-ib" href={deskHref('members')} aria-label={`${pins} PIN reset requests`}><Icon name="key" />{pins > 0 && <b>{pins}</b>}</a>
         <button className="wa-ib" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
