@@ -43,6 +43,7 @@
 
 .ptr { position: absolute; top: 0; left: 0; right: 0; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); pointer-events: none; transform: translate3d(0, -36px, 0); opacity: 0; }
 .ptr[data-on="true"] { transition: transform 200ms ease, opacity 200ms ease; }
+@media (prefers-reduced-motion: reduce) { .ptr[data-on="true"] { transition: none; } }
 
 
 /* D-71 frosted glass frame: tab bar, top bar once content scrolls under it, sheets, toast. Content cards stay solid.

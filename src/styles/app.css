@@ -49,6 +49,7 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 .pill { min-height: 36px; border: 0; border-radius: 18px; padding: 0 14px; font-size: 15px; font-weight: 600; }
 .chev { color: var(--ink2); flex: none; }
 .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
+@media (prefers-reduced-motion: reduce) { .sw span { transition: none !important; } }
 .sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left var(--dur-base) var(--ease-out); }
 
 .tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
