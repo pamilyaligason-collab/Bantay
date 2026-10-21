@@ -17,7 +17,7 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
   const file = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    history.pushState({ bantayAsk: 1 }, '')
+    if (!history.state?.bantayAsk) history.pushState({ bantayAsk: 1 }, '') // StrictMode runs effects twice in dev: one entry only
     window.addEventListener('popstate', onClose)
     return () => window.removeEventListener('popstate', onClose)
   }, [onClose])
