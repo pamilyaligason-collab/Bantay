@@ -5,7 +5,7 @@ import { emitConfirmed } from '../../records/papers'
 import type { PageProps } from './types'
 import { Empty, PageHead, Tag, useConfirm, useToast } from './ui'
 import { useDeskPeople } from './people'
-import { EditFields, fmt, say } from './Records'
+import { EditFields, fmt, say } from './recordsUi'
 import { defaultChecked, isLow, queueKey, reopenDocument, restore, type Change, type QItem, type QTable, type Status } from './recordsApi'
 import './records.css'
 

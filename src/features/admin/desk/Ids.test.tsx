@@ -40,6 +40,13 @@ describe('Ids', () => {
     expect(h.from).not.toHaveBeenCalledWith('person_identifiers')
   })
 
+  it('embedded: no heading and no person picker, rows still masked', async () => {
+    render(<Ids id="p1" embedded />)
+    await screen.findByText('•••• 4321')
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    expect(screen.queryByLabelText('Person')).toBeNull()
+  })
+
   it('Show reveals one number at a time', async () => {
     const { container } = await load()
     fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))
