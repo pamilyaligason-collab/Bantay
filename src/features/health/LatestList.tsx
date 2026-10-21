@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { latestByTest, latestVsNormal, rangeState, type Range, type Reading } from './ranges'
+import { latestByTest, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
-import { byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
+import { byVitalOrder, isVital, NORMAL, positionOf, weekAverages } from './vitals'
 import { Icon } from '../shell/Icon'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
@@ -38,23 +38,20 @@ function NormalRows() {
   )
 }
 
-/** Vitals (blood pressure, sugar, pulse, weight) with a Latest | Average | Normal toggle, or Labs with a plain-language line each.
- *  Each row opens the metric detail; the Previous switch (Latest only) adds a hollow marker and the "Before" line. */
-export function LatestList({ readings, thresholds, ready, kind = 'vitals' }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; kind?: 'vitals' | 'labs' }) {
+/** Vitals (blood pressure, sugar, pulse, weight) with a Latest | Average | Normal toggle, Each row opens the metric detail; the Previous switch (Latest only) adds a hollow marker and the "Before" line. */
+export function LatestList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
   const [showPrev, setShowPrev] = useState(false)
   const [mode, setMode] = useState<VitalsMode>('latest')
-  const vitals = kind === 'vitals'
-  const shown = mode === 'latest' || !vitals ? 'latest' : mode
-  const pool = readings.filter((r) => isVital(r.test) === vitals)
+  const shown = mode
+  const pool = readings.filter((r) => isVital(r.test))
   const raw = shown === 'average' ? weekAverages(pool, new Date()) : latestByTest(pool)
-  const rows = vitals ? byVitalOrder(raw) : raw
+  const rows = byVitalOrder(raw)
   const any = shown === 'latest' && rows.some((r) => previousReading(pool, r.test))
-  if (!vitals && rows.length === 0) return null
-  if (vitals && ready && pool.length === 0 && mode !== 'normal') return null
+  if (ready && pool.length === 0 && mode !== 'normal') return null
   return (
-    <section aria-labelledby={`lvn-${kind}`}>
+    <section aria-labelledby="lvn-vitals">
       <div className="hv-lvn-h">
-        <h2 className="hd" id={`lvn-${kind}`}>{vitals ? 'Vitals' : 'Labs'}</h2>
+        <h2 className="hd" id="lvn-vitals">Vitals</h2>
         {any && (
           <button type="button" className="hv-sw" role="switch" aria-checked={showPrev} onClick={() => setShowPrev((p) => !p)}>
             <span className="hv-sw-t" aria-hidden="true" />
@@ -62,19 +59,16 @@ export function LatestList({ readings, thresholds, ready, kind = 'vitals' }: { r
           </button>
         )}
       </div>
-      {vitals && (
-        <div className="seg hv-modes" role="group" aria-label="Show vitals as">
-          {MODES.map((m) => <button key={m.id} type="button" aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>{m.label}</button>)}
-        </div>
-      )}
-      {vitals && <p className="sub hv-modeline" data-testid="mode-line">{MODE_LINE[mode]}</p>}
+      <div className="seg hv-modes" role="group" aria-label="Show vitals as">
+        {MODES.map((m) => <button key={m.id} type="button" aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>{m.label}</button>)}
+      </div>
+      <p className="sub hv-modeline" data-testid="mode-line">{MODE_LINE[mode]}</p>
       {shown === 'normal' ? <NormalRows /> : (
         <div className="grp">
           {rows.length === 0 && <div className="row"><span className="grow">No readings in the last 7 days<span className="sub">Log one to see the average.</span></span></div>}
           {rows.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
-            const v = latestVsNormal(r, fam)
-            const pos = vitals ? positionOf(r, fam) : v.headline
+            const pos = positionOf(r, fam)
             const st = rangeState(pos)
             const hist = pool.filter((x) => x.test === r.test)
             const spark = sparkPath(hist)
@@ -101,7 +95,6 @@ export function LatestList({ readings, thresholds, ready, kind = 'vitals' }: { r
                     </span>
                   )}
                   {shown === 'latest' && showPrev && (prev ? <span className="sub hv-before">{beforeLine(r, prev, fam)}</span> : <span className="sub hv-before">Before: no earlier result</span>)}
-                  {!vitals && <span className="sub hv-before">{labFlagLine(pos, metricLabel(r.test))}{v.lab.text ? ` Lab range ${v.lab.text}.` : v.guide ? ` General guide ${v.guide.text}.` : ''}</span>}
                 </span>
                 <span className="hv-val">
                   <strong>{formatNumber(r.value)}</strong> <small>{r.unit}</small>

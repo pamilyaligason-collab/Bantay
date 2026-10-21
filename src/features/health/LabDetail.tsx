@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { db } from '../../db'
 import { formatNumber } from '../../lib/labFormat'
 import { labInfo, labVerdict, lastThree } from './labsLogic'
-import { shortDate } from './model'
+import { metricLabel, shortDate } from './model'
+import { articleHref } from './library/medline'
 import type { Range, Reading } from './ranges'
 import { Icon } from '../shell/Icon'
 
@@ -24,7 +25,8 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
     <>
       <section aria-labelledby="ld-what" data-testid="lab-measures">
         <h2 className="hd" id="ld-what">What this test measures</h2>
-        <div className="grp"><div className="row"><span className="grow">{info.measures}</span></div></div>
+        <div className="grp"><div className="row"><span className="grow">{info.measures}</span></div>
+          {info.known && <div className="row"><a href={articleHref('s', metricLabel(code))} style={{ color: 'var(--act)', fontWeight: 600 }}>Read more</a></div>}</div>
       </section>
       {last.length > 0 && (
         <section aria-labelledby="ld-last" data-testid="lab-last3">

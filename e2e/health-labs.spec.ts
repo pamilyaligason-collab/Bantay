@@ -15,7 +15,8 @@ const seed = (page: Page) =>
       r('ldl', 162, 'mg/dL', 3), r('ldl', 171, 'mg/dL', 90), r('ldl', 150, 'mg/dL', 180),
       r('creatinine', 0.9, 'mg/dL', 3, { labLow: 0.6, labHigh: 1.3 }),
       r('hemoglobin', 11.2, 'g/dL', 3, { labLow: 12, labHigh: 17.5 }),
-      r('uric_acid', 5.1, 'mg/dL', 3)
+      r('uric_acid', 5.1, 'mg/dL', 3),
+      r('triglycerides', 4.2, 'mmol/L', 3)
     ]) tx.objectStore('readings').put(x)
     await new Promise((res) => (tx.oncomplete = res))
     db.close()
@@ -47,6 +48,10 @@ for (const scheme of ['light', 'dark'] as const) {
     const none = list.locator('[data-group="none"] [data-test="uric_acid"]')
     await expect(none).toContainText('No range on the paper')
     await expect(none.locator('.lr-track')).toHaveCount(0)
+    // a unit that cannot be compared (triglycerides in mmol/L) draws no number line
+    const tg = list.locator('[data-group="none"] [data-test="triglycerides"]')
+    await expect(tg).toContainText('No range on the paper')
+    await expect(tg.locator('.lr-track')).toHaveCount(0)
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)
     if (process.env.LAB_SHOTS) await list.screenshot({ path: `${process.env.LAB_SHOTS}/labs-${scheme}.png` })

@@ -94,7 +94,7 @@
 .lr-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
 .lr-name { font-size: 17px; font-weight: 700; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
 .lr-val { font-family: "Fraunces", serif; font-size: 24px; font-weight: 600; line-height: 1.1; white-space: nowrap; }
-.lr-val small { font-family: inherit; font-size: 14px; font-weight: 500; color: var(--ink2); }
+.lr-val small { font-family: inherit; font-size: 16px; font-weight: 500; color: var(--ink2); }
 .lr-verdict { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 12px 4px 8px; min-height: 32px; box-sizing: border-box; border-radius: 999px; font-size: 15px; font-weight: 700; background: var(--card2); color: var(--ink); }
 .lr-verdict.within { background: var(--soft); }
 .lr-verdict.above, .lr-verdict.below { background: var(--warn-bg); }
@@ -104,6 +104,6 @@
 .lr-you { position: absolute; top: 6px; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; box-sizing: border-box; border: 3px solid var(--card); background: var(--ok); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 .lr-you.above, .lr-you.below { background: var(--warn); }
 .lr-you.none { background: var(--ink2); }
-.lr-you b { font-style: normal; position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: 700; white-space: nowrap; }
-.lr-tick { position: absolute; top: 18px; transform: translateX(-50%); font-size: 14px; font-style: normal; color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lr-you b { font-style: normal; position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; white-space: nowrap; }
+.lr-tick { position: absolute; top: 18px; transform: translateX(-50%); font-size: 16px; font-style: normal; color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lr-more { display: flex; align-items: center; justify-content: flex-end; min-height: 28px; font-size: 15px; font-weight: 600; color: var(--act); }

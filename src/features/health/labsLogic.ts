@@ -1,5 +1,5 @@
 import { barLayout, effectiveRange, metricLabel, readingPosition } from './model'
-import type { Position, Range, Reading } from './ranges'
+import { toCanonicalReading, type Position, type Range, type Reading } from './ranges'
 import type { IconName } from '../shell/Icon'
 
 /** Pure logic for the lab results list and detail page (session 8). No React, no storage. Unknown is null, never 0. */
@@ -25,9 +25,19 @@ export function labBand(value: number, range: Range | null): LabBand | null {
   return { band: l.band, you: l.now, edge: l.edge, lowAt: range?.low != null ? l.band.from : null, highAt: range?.high != null ? l.band.to : null }
 }
 
-export interface LabRow { reading: Reading; range: Range | null; pos: Position }
-/** One lab value judged against the effective range (family, lab, guide, general); unit rules are readingPosition's. */
-export const labRow = (r: Reading, family?: Range | null): LabRow => ({ reading: r, range: effectiveRange(r, family).range, pos: readingPosition(r, family) })
+/** The value and unit the effective range is written in: the lab's own and the general range use the reading as is; guide and family limits use the guide's unit (as readingPosition does). Null when it cannot be compared. */
+export function rangeValue(r: Reading, family?: Range | null): { value: number; unit: string } | null {
+  const from = effectiveRange(r, family).from
+  const c = from === 'lab' || from === 'general' ? r : toCanonicalReading(r)
+  return c ? { value: c.value, unit: c.unit ?? '' } : null
+}
+
+export interface LabRow { reading: Reading; range: Range | null; pos: Position; rv: { value: number; unit: string } | null }
+/** One lab value judged against the effective range (family, lab, guide, general). An unknown position has no range, so no band is drawn. */
+export function labRow(r: Reading, family?: Range | null): LabRow {
+  const pos = readingPosition(r, family)
+  return { reading: r, range: pos === 'none' ? null : effectiveRange(r, family).range, pos, rv: pos === 'none' ? null : rangeValue(r, family) }
+}
 
 export interface LabGroups { ask: LabRow[]; usual: LabRow[]; noRange: LabRow[] }
 /** "Ask about" (out of range) first, then "In the usual range", then those with no range on the paper. */
@@ -47,6 +57,8 @@ export function moveWords(latest: number, prev: number, range: Range | null): st
   const a = distance(latest, range)
   const b = distance(prev, range)
   if (a === 0 && b === 0) return 'in the usual range both times'
+  const side = (v: number) => (range.low != null && v < range.low ? -1 : range.high != null && v > range.high ? 1 : 0)
+  if (side(latest) * side(prev) < 0) return 'now on the other side of the usual range'
   if (a === b) return 'no change from the one before'
   return a < b ? 'toward the usual range' : 'away from the usual range'
 }
@@ -59,7 +71,9 @@ export function lastThree(readings: Reading[], test: string, family?: Range | nu
   const same = all.filter((r) => (r.unit ?? '').trim().toLowerCase() === unit)
   return same.slice(0, 3).map((r, i) => {
     const prev = same[i + 1]
-    return { takenAt: r.takenAt, value: r.value, unit: r.unit ?? '', pos: readingPosition(r, family), move: prev ? moveWords(r.value, prev.value, effectiveRange(r, family).range) : '' }
+    const a = rangeValue(r, family)
+    const b = prev ? rangeValue(prev, family) : null
+    return { takenAt: r.takenAt, value: r.value, unit: r.unit ?? '', pos: readingPosition(r, family), move: a && b ? moveWords(a.value, b.value, effectiveRange(r, family).range) : '' }
   })
 }
 

@@ -11,9 +11,9 @@ const rangeWords = (r: Range, unit?: string) => {
 }
 
 function LabCard({ row }: { row: LabRow }) {
-  const { reading: r, range, pos } = row
+  const { reading: r, range, pos, rv } = row
   const v = labVerdict(pos)
-  const b = range ? labBand(r.value, range) : null
+  const b = range && rv ? labBand(rv.value, range) : null
   return (
     <a className="grp lr-card" href={`#health/metric/${r.test}`} data-test={r.test}>
       <span className="lr-top">
@@ -29,7 +29,7 @@ function LabCard({ row }: { row: LabRow }) {
             {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{formatNumber(range.low)}</em>}
             {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{formatNumber(range.high)}</em>}
           </span>
-          <span className="hv-sr">Usual range {rangeWords(range, r.unit)}.</span>
+          <span className="hv-sr">Usual range {rangeWords(range, rv?.unit)}.</span>
         </>
       )}
       <span className="lr-more">See details<Icon name="chev" size={20} /></span>

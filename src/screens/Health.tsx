@@ -112,7 +112,7 @@ function Overview() {
         <Icon name="chev" size={20} />
       </a>
       {personId && <MedicinesSummary personId={personId} />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} kind="vitals" />}
+      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
       {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {personId && <HealthLinks personId={personId} />}
     </>
