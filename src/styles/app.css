@@ -17,11 +17,11 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
   font-family: var(--f-ui);
   font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
 }
-.bt button { cursor: pointer; font: inherit; transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out); }
-.bt button:active { transform: scale(0.98); }
+:where(.bt) button { cursor: pointer; font: inherit; transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-press) var(--ease-out); }
+:where(.bt) button:active { transform: scale(0.98); }
 @media (hover: hover) { .bt .btn:hover, .bt .btn2:hover, .bt .pill:hover, .bt .key:hover { filter: brightness(1.06); } .bt .seg button:not([aria-pressed="true"]):hover { background: var(--fill); } }
 .bt button:focus-visible, .bt a:focus-visible, .bt input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .bt button { transition: none; } .bt button:active { transform: none; } }
+@media (prefers-reduced-motion: reduce) { :where(.bt) button { transition: none; } :where(.bt) button:active { transform: none; } }
 
 .scroll, .tabs { z-index: 1; }
 .topbar { z-index: 2; }
@@ -49,6 +49,7 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 .pill { min-height: 36px; border: 0; border-radius: 18px; padding: 0 14px; font-size: 15px; font-weight: 600; }
 .chev { color: var(--ink2); flex: none; }
 .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
+@media (prefers-reduced-motion: reduce) { .sw span { transition: none !important; } }
 .sw span { position: absolute; top: 2px; width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: left var(--dur-base) var(--ease-out); }
 
 .tabs { position: absolute; left: 12px; right: 12px; bottom: 14px; border-radius: 30px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }

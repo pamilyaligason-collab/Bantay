@@ -15,10 +15,13 @@ export function toWx(fc: Forecast, offline = false): Wx {
     words: conditionWords(code),
     at: fc.fetchedAt,
     code,
-    hourly: hasT ? { time: fc.hourly.map((h) => h.time), prob: fc.hourly.map((h) => h.prob) } : undefined,
+    hourly: hasT ? { time: fc.hourly.map((h) => h.time), prob: fc.hourly.map((h) => h.prob), code: fc.hourly.map((h) => h.code) } : undefined,
+    high: fc.daily[0]?.max ?? null,
+    low: fc.daily[0]?.min ?? null,
     utcOffset: fc.utcOffset,
     tz: fc.tz,
     humidity: fc.current.humidity,
+    feels: fc.current.feels,
     uvMax: fc.daily[0]?.uvMax ?? null,
     offline
   }

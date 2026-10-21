@@ -1,5 +1,6 @@
 import { rollCall, useCheckIns, useFamilyPeople } from '../family/roster'
 import { useOthers } from './useOthers'
+import { Icon } from '../shell/Icon'
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
@@ -15,7 +16,7 @@ export default function GreetingBand({ onOk }: { onOk: () => void }) {
   if (done) {
     return (
       <section className="td-greet td-checked" aria-label="Check in">
-        <span className="td-tick" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+        <span className="td-tick" aria-hidden="true"><Icon name="check" size={26} /></span>
         <div className="td-grow">
           <b>You checked in <span className="td-nowrap">{mine.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span></b>
           <span className="td-sub td-checked-n" role="status">{total > 0 ? `${ok} of ${total} others OK today` : 'Your family can see it'}</span>

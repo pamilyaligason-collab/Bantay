@@ -1,9 +1,11 @@
-import { Icon, type IconName } from '../shell/Icon'
+import { Icon, type IconName, type IconTone } from '../shell/Icon'
+import { SubHeader } from '../shell/SubHeader'
 import { groupInbox, iconOf, type InboxIcon, type InboxItem } from './build'
 import type { Inbox as InboxState } from './useInbox'
 import './inbox.css'
 
-const ICON: Record<InboxIcon, IconName> = { alert: 'shield', dose: 'cross', weather: 'bolt', family: 'users', record: 'check', update: 'dl' }
+const ICON: Record<InboxIcon, IconName> = { alert: 'warn', dose: 'pill', weather: 'cloud', family: 'shield', record: 'shield', update: 'shield' }
+const TONE: Record<InboxIcon, IconTone> = { alert: 'alert', dose: 'medicine', weather: 'weather', family: 'safety', record: 'safety', update: 'safety' }
 
 /** Notifications (mockup v6 notif): one tappable row per thing that needs a look. */
 export function Inbox({ inbox, now }: { inbox: InboxState; now?: Date }) {
@@ -15,7 +17,7 @@ export function Inbox({ inbox, now }: { inbox: InboxState; now?: Date }) {
       <nav className="sh-card sh-list" aria-label={`${label} notifications`}>
         {list.map((i) => (
           <a key={i.id} className={`sh-navrow in-row${seen.has(i.id) ? '' : ' unread'}`} href={i.href} data-icon={iconOf(i)}>
-            <Icon name={ICON[iconOf(i)]} />
+            <Icon name={ICON[iconOf(i)]} tone={TONE[iconOf(i)]} boxed size={20} />
             <div className="sh-grow"><b>{i.title}</b><div className="sh-sub">{i.sub}</div></div>
             {!seen.has(i.id) && <span className="in-dot" role="img" aria-label="New" />}
             <Icon name="chev" />
@@ -26,17 +28,13 @@ export function Inbox({ inbox, now }: { inbox: InboxState; now?: Date }) {
   )
   return (
     <div className="sh sh-me">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href="#today" aria-label="Back to Today"><Icon name="back" /></a>
-        <h1 className="sh-h2 sh-grow">Notifications</h1>
-        {inbox.unread > 0 && <button type="button" className="in-read" onClick={inbox.markAllRead}>Mark all read</button>}
-      </div>
+      <SubHeader title="Notifications" backHref="#today" backLabel="Back to Today" trailing={inbox.unread > 0 ? <button type="button" className="in-read" onClick={inbox.markAllRead}>Mark all read</button> : undefined} />
       {inbox.items.length === 0 ? (
         <div className="sh-card"><b>No notifications yet</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>Warnings, medicine reminders and updates show here.</p></div>
       ) : (
         <>{group('Today', today)}{group('Earlier', earlier)}</>
       )}
-      <p className="sh-sub" style={{ margin: 0 }}>Notifications never show readings, medicines or results. Open Bantay to see more.</p>
+      <p className="sh-sub" style={{ margin: 0 }}>Phone notifications never show readings, medicines or results. Open Bantay to see more.</p>
     </div>
   )
 }

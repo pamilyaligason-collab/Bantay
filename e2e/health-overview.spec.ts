@@ -9,6 +9,7 @@ const SHOTS = process.env.M7A_SHOTS
 const seed = (page: Page, phase: 1 | 2) =>
   page.evaluate(async ([nowMs, phase]) => {
     const d = (n: number) => new Date(nowMs - n * 86_400_000).toISOString()
+    const today = Math.min(0.2, (nowMs - new Date(nowMs).setHours(0, 0, 0, 0)) / 86_400_000 / 2) // still today just after midnight
     const open = (name: string) => new Promise<IDBDatabase>((res, rej) => { const r = indexedDB.open(name); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
     const put = async (name: string, rows: Record<string, unknown[]>) => {
       const db = await open(name)
@@ -21,7 +22,7 @@ const seed = (page: Page, phase: 1 | 2) =>
     if (phase === 1) await put('bantay-health', {
       people: [{ id: 'p1', name: 'Maria Sample' }],
       readings: [
-        r('bp_systolic', 124, 'mmHg', 0.2), r('bp_diastolic', 79, 'mmHg', 0.2), r('bp_systolic', 136, 'mmHg', 5), r('bp_diastolic', 88, 'mmHg', 5), r('bp_systolic', 129, 'mmHg', 20),
+        r('bp_systolic', 124, 'mmHg', today), r('bp_diastolic', 79, 'mmHg', today), r('bp_systolic', 136, 'mmHg', 5), r('bp_diastolic', 88, 'mmHg', 5), r('bp_systolic', 129, 'mmHg', 20),
         r('fasting_glucose', 104, 'mg/dL', 2), r('fasting_glucose', 96, 'mg/dL', 12), r('weight', 61.5, 'kg', 3), r('heart_rate', 70, 'bpm', 0.1), r('ldl', 162, 'mg/dL', 30)
       ]
     })
@@ -71,6 +72,58 @@ test('My KPIs show the latest reading and time; the Vitals toggle switches Lates
   await expect(normal).toContainText('Normal is under 120 over 80')
   await page.getByRole('button', { name: 'Latest' }).click()
   await expect(row).toContainText('124')
+})
+
+for (const width of [390, 360]) {
+  test(`KPI tiles keep every child inside the tile at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 })
+    await page.reload()
+    await expect(page.getByTestId('kpis')).toBeVisible()
+    const over = await page.locator('.kp-tile').evaluateAll((tiles) => tiles.flatMap((t) => { const r = t.getBoundingClientRect(); return [...t.querySelectorAll('*')].filter((c) => { const b = c.getBoundingClientRect(); return b.width > 0 && (b.right > r.right + 0.5 || b.left < r.left - 0.5) }).map((c) => c.className.toString() || c.tagName) }))
+    expect(over).toEqual([])
+  })
+}
+
+test('Latest / Average / Normal switch fits on one line at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.reload()
+  const btns = page.locator('.hv-modes button')
+  await expect(btns).toHaveCount(3)
+  const boxes = await btns.evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return { h: Math.round(r.height), w: Math.round(r.width), lines: Math.round(r.height / parseFloat(getComputedStyle(b).lineHeight || '20')) } }))
+  expect(new Set(boxes.map((b) => b.h)).size).toBe(1)
+  expect(boxes.every((b) => b.h <= 48)).toBe(true)
+  expect(Math.max(...boxes.map((b) => b.w)) - Math.min(...boxes.map((b) => b.w))).toBeLessThanOrEqual(1)
+})
+
+test('a whole vital row is the link, 44px tall, with one tab stop', async ({ page }) => {
+  const row = page.locator('.hv-row[data-test="bp_systolic"]')
+  await row.scrollIntoViewIfNeeded()
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+  expect(await row.locator('a, button, [tabindex]').count()).toBe(1)
+  const b = (await row.boundingBox())!
+  await page.mouse.click(b.x + b.width - 6, b.y + 6) // far from the name
+  await expect(page).toHaveURL(/#health\/metric\/bp_systolic$/)
+})
+
+test('refill rows give the text the full row width at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 844 })
+  await page.goto('/#health/refill')
+  await expect(page.getByTestId('refill-soon')).toBeVisible()
+  const rows = page.locator('.rf-row')
+  await expect(rows.first()).toBeVisible()
+  const ratios = await rows.evaluateAll((rs) => rs.map((r) => r.querySelector('.grow')!.getBoundingClientRect().width / r.getBoundingClientRect().width))
+  expect(ratios.length).toBeGreaterThan(0)
+  expect(ratios.every((x) => x > 0.5)).toBe(true)
+})
+
+test('a lab result opens as a dated list: no period, time-of-day or monthly average controls', async ({ page }) => {
+  await page.goto('/#health/metric/ldl')
+  await expect(page.getByTestId('recent')).toContainText('162')
+  await expect(page.getByRole('group', { name: 'Period' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Time of day' })).toHaveCount(0)
+  await expect(page.getByText('Monthly averages')).toHaveCount(0)
+  await page.goto('/#health/metric/bp_systolic')
+  await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
 })
 
 test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {

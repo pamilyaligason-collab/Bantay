@@ -3,6 +3,9 @@
 import Dexie, { type Table } from 'dexie'
 
 export type Kind = 'id_card' | 'insurance_card'
+/** Papers scanned from the Ask sheet (labs, prescriptions, anything else). They are read by the server, never shown on the cards screen. */
+export type ScanKind = 'lab' | 'prescription' | 'other'
+export type DocKind = Kind | ScanKind
 export type Side = 'front' | 'back'
 export const CARD_TYPES = ['philsys', 'senior', 'pwd', 'drivers', 'passport', 'umid', 'voters', 'postal', 'philhealth', 'hmo', 'other'] as const
 export type CardType = (typeof CARD_TYPES)[number]
@@ -10,7 +13,7 @@ export type CardType = (typeof CARD_TYPES)[number]
 export interface CardRow {
   path: string // storage_path '<person_id>/<uuid>.<ext>'
   personId: string
-  kind: Kind
+  kind: DocKind
   cardType: CardType
   side: Side
   blob: Blob
@@ -33,10 +36,13 @@ export interface QueueRow {
   docNew: boolean
   path: string
   personId: string
-  kind: Kind
+  kind: DocKind
   cardType: CardType
   title: string | null
-  side: Side
+  side: Side | null // null for scanned pages
+  page?: number // 1-based source_files.page_no; set only for scanned pages
+  pages?: number // pages in the whole document; set only for scanned pages (when the last one is up, the server is asked to read them)
+  docDate?: string | null // documents.doc_date (YYYY-MM-DD), chosen by the person
   name: string
   mime: string
   size: number

@@ -3,6 +3,7 @@ import { useCheckIns } from '../family/roster'
 import { familyGlance } from './familyLineLogic'
 import { useOthers } from './useOthers'
 import { useSeenDaily } from './seen'
+import { Icon } from '../shell/Icon'
 
 /** One row under My week: "Family: 2 of 3 others OK today" (the others, not me) and the one thing that needs attention. Opens Family, where the full list lives. */
 export default function FamilyLine() {
@@ -18,7 +19,7 @@ export default function FamilyLine() {
         <b>Family: {g.ok} of {g.total} others OK today</b>
         <span className={`td-sub${g.attention ? ' td-attn' : ''}`}>{g.note}</span>
       </span>
-      <span className="td-link" aria-hidden="true">Family ›</span>
+      <span className="td-link" aria-hidden="true">Family<Icon name="chev" size={20} /></span>
     </a>
   )
 }
