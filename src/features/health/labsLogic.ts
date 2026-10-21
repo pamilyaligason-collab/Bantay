@@ -32,11 +32,13 @@ export function rangeValue(r: Reading, family?: Range | null): { value: number; 
   return c ? { value: c.value, unit: c.unit ?? '' } : null
 }
 
-export interface LabRow { reading: Reading; range: Range | null; pos: Position; rv: { value: number; unit: string } | null }
+/** unitGap: a range exists but in a unit this reading cannot be converted to (e.g. lipids in mmol/L vs a mg/dL guide). */
+export interface LabRow { reading: Reading; range: Range | null; pos: Position; rv: { value: number; unit: string } | null; unitGap: boolean }
 /** One lab value judged against the effective range (family, lab, guide, general). An unknown position has no range, so no band is drawn. */
 export function labRow(r: Reading, family?: Range | null): LabRow {
   const pos = readingPosition(r, family)
-  return { reading: r, range: pos === 'none' ? null : effectiveRange(r, family).range, pos, rv: pos === 'none' ? null : rangeValue(r, family) }
+  const range = effectiveRange(r, family).range
+  return { reading: r, range: pos === 'none' ? null : range, pos, rv: pos === 'none' ? null : rangeValue(r, family), unitGap: pos === 'none' && !!range }
 }
 
 export interface LabGroups { ask: LabRow[]; usual: LabRow[]; noRange: LabRow[] }

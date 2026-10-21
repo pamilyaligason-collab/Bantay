@@ -50,7 +50,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(none.locator('.lr-track')).toHaveCount(0)
     // a unit that cannot be compared (triglycerides in mmol/L) draws no number line
     const tg = list.locator('[data-group="none"] [data-test="triglycerides"]')
-    await expect(tg).toContainText('No range on the paper')
+    await expect(tg).toContainText('Not compared: different unit')
     await expect(tg.locator('.lr-track')).toHaveCount(0)
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)

@@ -11,7 +11,7 @@ const rangeWords = (r: Range, unit?: string) => {
 }
 
 function LabCard({ row }: { row: LabRow }) {
-  const { reading: r, range, pos, rv } = row
+  const { reading: r, range, pos, rv, unitGap } = row
   const v = labVerdict(pos)
   const b = range && rv ? labBand(rv.value, range) : null
   return (
@@ -20,7 +20,7 @@ function LabCard({ row }: { row: LabRow }) {
         <span className="lr-name">{metricLabel(r.test)}</span>
         <span className="lr-val">{formatNumber(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
       </span>
-      {v ? <span className={`lr-verdict ${pos}`}><Icon name={v.icon} size={20} />{v.word}</span> : <span className="lr-verdict none">No range on the paper</span>}
+      {v ? <span className={`lr-verdict ${pos}`}><Icon name={v.icon} size={20} />{v.word}</span> : <span className="lr-verdict none">{unitGap ? 'Not compared: different unit. Ask your doctor' : 'No range on the paper'}</span>}
       {b && range && (
         <>
           <span className="lr-track" aria-hidden="true">
@@ -42,7 +42,7 @@ export function LabsList({ readings, thresholds, ready }: { readings: Reading[];
   const rows = latestByTest(readings.filter((r) => !isVital(r.test))).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
   if (!ready || rows.length === 0) return null
   const g = groupLabs(rows)
-  const groups: [string, string, LabRow[]][] = [['Ask about', 'ask', g.ask], ['In the usual range', 'usual', g.usual], ['No range on the paper', 'none', g.noRange]]
+  const groups: [string, string, LabRow[]][] = [['Ask about', 'ask', g.ask], ['In the usual range', 'usual', g.usual], ['Not compared', 'none', g.noRange]]
   return (
     <section aria-labelledby="lvn-labs" data-testid="labs-list">
       <h2 className="hd" id="lvn-labs">Labs</h2>

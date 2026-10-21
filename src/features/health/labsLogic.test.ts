@@ -45,6 +45,8 @@ describe('labRow and groupLabs', () => {
     expect(labRow(r('ldl', 162)).pos).toBe('above')
     expect(labRow(r('ldl', 80)).pos).toBe('within')
     expect(labRow(r('mystery', 5)).pos).toBe('none')
+    expect(labRow(r('mystery', 5)).unitGap).toBe(false) // no range anywhere
+    expect(labRow({ ...r('ldl', 4.2), unit: 'mmol/L' }).unitGap).toBe(true) // a mg/dL guide exists, mmol/L is not converted
   })
   it('lists out-of-range first, then in range, then no range', () => {
     const g = groupLabs([r('ldl', 80), r('mystery', 5), r('triglycerides', 400), r('x', 1, { labLow: 4, labHigh: 10 })].map((x) => labRow(x)))
