@@ -1,32 +1,22 @@
 import { useState } from 'react'
 import { SubHeader } from '../../shell/SubHeader'
-import { embedUrl, forTopic, TOPICS, type Video } from './videosLogic'
+import { forTopic, TOPICS, type Video } from './videosLogic'
+import { LiteVideo } from '../../media/LiteVideo'
 import '../health.css'
 import '../m7a.css'
-import { Icon } from '../../shell/Icon'
 
-function Card({ v, playing, onPlay }: { v: Video; playing: boolean; onPlay: () => void }) {
-  const url = playing ? embedUrl(v) : null
+function Card({ v }: { v: Video }) {
   return (
     <li className="card vd-card">
-      {url ? (
-        <iframe className="vd-frame" src={url} title={v.title} allow="encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" loading="lazy" />
-      ) : playing ? (
-        <p className="sub vd-soon" role="status">Coming soon: this video is not set up yet.</p>
-      ) : (
-        <button type="button" className="vd-play" onClick={onPlay} aria-label={`Play ${v.title}`}>
-          <Icon name="play" size={28} active />
-        </button>
-      )}
-      <span className="vd-t"><b>{v.title}</b><span className="sub">{v.topic} · {v.minutes} min · {v.source}</span></span>
+      {v.placeholder ? <p className="sub vd-soon" role="status">Coming soon: this video is not set up yet.</p> : <LiteVideo id={v.id} title={v.title} />}
+      <span className="vd-t">{v.placeholder && <b>{v.title}</b>}<span className="sub">{v.topic}{v.minutes != null ? ` · ${v.minutes} min` : ''} · {v.source}</span></span>
     </li>
   )
 }
 
-/** #health/videos: a fixed, checked playlist. The player (YouTube, no-cookie address) loads only after a tap. */
+/** #health/videos: a fixed, checked playlist. Nothing loads from YouTube until a video is tapped (LiteVideo, no-cookie address). */
 export default function Videos() {
   const [topic, setTopic] = useState('All')
-  const [playing, setPlaying] = useState<string | null>(null)
   const list = forTopic(topic)
   return (
     <>
@@ -35,7 +25,7 @@ export default function Videos() {
         {TOPICS.map((t) => <button key={t} type="button" aria-pressed={topic === t} onClick={() => setTopic(t)}>{t}</button>)}
       </div>
       <ul className="vd-list">
-        {list.map((v) => <Card key={v.id} v={v} playing={playing === v.id} onPlay={() => setPlaying(v.id)} />)}
+        {list.map((v) => <Card key={v.id} v={v} />)}
       </ul>
       <p className="sub">Videos play inside the app (YouTube, no cookies until you tap) from a fixed, checked list. No search, no suggestions.</p>
     </>

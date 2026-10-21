@@ -118,25 +118,23 @@ describe('Health library', () => {
 })
 
 describe('Videos entry points', () => {
-  it('are hidden while every id is a placeholder', async () => {
+  it('show now that the playlist has real ids', async () => {
     go('#health')
     render(<Health />)
-    await screen.findByRole('link', { name: /^Health library/ })
-    expect(screen.queryByRole('link', { name: /^Videos/ })).toBeNull()
+    expect((await screen.findByRole('link', { name: /^Videos/ })).getAttribute('href')).toBe('#health/videos')
   })
 })
 
 describe('Videos', () => {
-  it('shows the fixed list; a tap never loads a player for a placeholder id', async () => {
+  it('shows the fixed list; nothing loads until a tap, then the no-cookie player', async () => {
     go('#health/videos')
     render(<Health />)
-    expect(await screen.findByText('How to take your blood pressure at home')).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Play Hands-only CPR' })).toBeTruthy()
     expect(document.querySelector('iframe')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Play How to take your blood pressure at home' }))
-    expect(document.querySelector('iframe')).toBeNull()
-    expect(screen.getByText(/Coming soon/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Play Hands-only CPR' }))
+    expect(document.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/M4ACYp75mjU/)
     fireEvent.click(screen.getByRole('button', { name: 'Diabetes' }))
-    expect(screen.queryByText('How to take your blood pressure at home')).toBeNull()
+    expect(screen.queryByText(/American Heart Association/)).toBeNull()
   })
 })
 

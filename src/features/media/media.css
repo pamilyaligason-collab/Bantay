@@ -1,0 +1,15 @@
+.lv { display: grid; gap: 8px; width: 100%; }
+.lv-poster { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; aspect-ratio: 16 / 9; padding: 16px; border: 0; border-radius: 16px; text-align: center; font: inherit; box-sizing: border-box; }
+.lv-play { cursor: pointer; background: linear-gradient(135deg, var(--green2), var(--green)); color: var(--on-green); }
+.lv-play b { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.lv-play:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.lv-btn { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--on-green); color: var(--green); }
+.lv-off { background: var(--card2); color: var(--ink); border: 1px dashed var(--line); }
+.lv-off b { font-size: 17px; }
+.lv-frame { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 16px; }
+.lv-yt { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--link); font-weight: 600; text-decoration: underline; }
+.lv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ad { margin: 0; display: grid; gap: 8px; }
+.ad-video { width: 100%; border-radius: 16px; background: var(--card2); }
+.ad-toggle { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; justify-self: start; padding: 0 16px; border: 0; border-radius: 12px; background: var(--btn); color: var(--btn-fg); font: inherit; font-weight: 600; cursor: pointer; }
+.ad-toggle:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
