@@ -1,4 +1,4 @@
--- Undo 0019_scan_extract.sql. Safe to run twice. Rows already marked 'reading' go back to 'new' so the old check holds.
+-- Undo 0020_scan_extract.sql. Safe to run twice. Rows already marked 'reading' go back to 'new' so the old check holds.
 drop function if exists public.records_scan_due(int, interval, interval);
 drop function if exists public.records_scan_claim(uuid, interval, int);
 alter table public.documents drop constraint if exists documents_page_count_check;

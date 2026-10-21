@@ -1,5 +1,5 @@
 -- Family Bantay: phone scans of health papers are read on the server (session 7, lane L6). Needs 0008 (records, source_files,
--- documents) and 0013 (records_stamp with auto-confirm). Written only; Lloyd applies it. Safe to run twice. Undo: 0019_scan_extract.down.sql.
+-- documents) and 0013 (records_stamp with auto-confirm). Written only; Lloyd applies it. Safe to run twice. Undo: 0020_scan_extract.down.sql.
 --
 -- Rules
 -- * The app uploads a scan (N JPEG pages, or one PDF) to the private 'records' bucket as <person_id>/<document_id>/p<NN>.jpg or

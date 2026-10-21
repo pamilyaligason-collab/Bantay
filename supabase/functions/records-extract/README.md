@@ -5,7 +5,7 @@ drafts, the same rows the laptop import writes (`scripts/import/load.mjs`). Conf
 rest on confirm: a confirmed lab value becomes a reading (`lab_result_to_reading`, 0008), a confirmed prescription becomes
 medicines (`rx_to_medications`, 0014). **Nothing from a phone scan is confirmed by the server**, whatever the confidence.
 
-Needs migration `0019_scan_extract.sql` (after 0018). Rehearsal: `supabase/tests/scan_extract_rehearsal.sql`.
+Needs migration `0020_scan_extract.sql` (after 0019, the records dedupe from the PC session). Rehearsal: `supabase/tests/scan_extract_rehearsal.sql`.
 
 ## Contract with the app (lane L5)
 
@@ -45,7 +45,7 @@ heic; jpeg is safest for the model). `ingest_error` codes: `too_many_pages`, `to
 
 RLS: unchanged. An editor of the person (self, writer carer, admin) can already insert a draft document, its source_files and
 the storage objects (0008). The function checks the caller with the caller's own token (a read-only carer cannot see drafts,
-so gets 404), then works with the service role. 0019 adds `source_files.page_no`, `ingest_error`, `ingest_tries`,
+so gets 404), then works with the service role. 0020 adds `source_files.page_no`, `ingest_error`, `ingest_tries`,
 status `reading`, `documents.page_count`, and two service-role-only functions: `records_scan_claim` and `records_scan_due`.
 
 ## What it sends where
@@ -70,7 +70,7 @@ go as a file (no local text layer: scanner PDFs are pictures). Logs hold documen
 ## Deploy (Lloyd)
 
 ```sh
-supabase db push                       # or run supabase/migrations/0019_scan_extract.sql in the SQL editor
+supabase db push                       # or run supabase/migrations/0020_scan_extract.sql in the SQL editor
 supabase secrets set OPENROUTER_API_KEY=... RECORDS_EXTRACT_CRON_SECRET=...
 supabase functions deploy records-extract --no-verify-jwt
 ```
@@ -78,7 +78,7 @@ supabase functions deploy records-extract --no-verify-jwt
 Then in the SQL editor: `select vault.create_secret('<same secret>', 'records_extract_cron_secret');` and run
 `ops/sql/records_extract_cron.sql` (pg_cron + pg_net, every 10 minutes, like dose-watch).
 
-Undo: `select cron.unschedule('records-extract');`, `supabase functions delete records-extract`, `0019_scan_extract.down.sql`.
+Undo: `select cron.unschedule('records-extract');`, `supabase functions delete records-extract`, `0020_scan_extract.down.sql`.
 
 ## Tests
 

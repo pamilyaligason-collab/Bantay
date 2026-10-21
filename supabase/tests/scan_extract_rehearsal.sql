@@ -1,4 +1,4 @@
--- Rehearsal for 0019_scan_extract.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002, 0003, 0008, 0010 and 0013.
+-- Rehearsal for 0020_scan_extract.sql on a THROWAWAY Postgres (never the live project), with the real helpers from 0001, 0002, 0003, 0008, 0010 and 0013.
 -- Run (WSL Postgres or any local Postgres 15+):
 --   su postgres -c 'dropdb --if-exists bantay_scan; createdb bantay_scan; psql -X -q -v ON_ERROR_STOP=1 -d bantay_scan -f scan_extract_rehearsal.sql'
 -- Actors: A admin (own person PA); B member (own person PB); C read-only carer of PB. The function is the service role:
@@ -41,14 +41,14 @@ insert into public.people (id, auth_user_id, display_name, created_by) values
 insert into public.carers values ('00000000-0000-0000-0000-00000000000c', '10000000-0000-0000-0000-0000000000b1', false);
 \ir ../migrations/0010_people_profile.sql
 \ir ../migrations/0013_records_autoconfirm.sql
--- an ID card from before 0019: front and back on one document, both page 1 after the migration, never read
+-- an ID card from before 0020: front and back on one document, both page 1 after the migration, never read
 insert into public.documents (id, person_id, kind, card_type, status) values ('30000000-0000-0000-0000-0000000000c1', '10000000-0000-0000-0000-0000000000b1', 'id_card', 'philsys', 'draft');
 insert into public.source_files (person_id, storage_path, side, document_id, name, mime) values
  ('10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/c1.jpg', 'front', '30000000-0000-0000-0000-0000000000c1', 'card-front.jpg', 'image/jpeg'),
  ('10000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1/c2.jpg', 'back', '30000000-0000-0000-0000-0000000000c1', 'card-back.jpg', 'image/jpeg');
-\ir ../migrations/0019_scan_extract.sql
--- 0019 must be safe to run twice
-\ir ../migrations/0019_scan_extract.sql
+\ir ../migrations/0020_scan_extract.sql
+-- 0020 must be safe to run twice
+\ir ../migrations/0020_scan_extract.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
@@ -141,8 +141,8 @@ reset role;
 -- ===== down, then up again =====
 -- down drops page order, so multi-page scans would collide on page 1: rehearse it with the scans removed
 delete from public.source_files where document_id <> '30000000-0000-0000-0000-0000000000c1';
-\ir ../migrations/0019_scan_extract.down.sql
+\ir ../migrations/0020_scan_extract.down.sql
 select pg_temp.ok(to_regprocedure('public.records_scan_due(int,interval,interval)') is null and not exists (select 1 from information_schema.columns where table_name = 'source_files' and column_name = 'page_no'), 'down removes the functions and columns');
-\ir ../migrations/0019_scan_extract.sql
+\ir ../migrations/0020_scan_extract.sql
 select pg_temp.ok((select bool_and(page_no = 1) from public.source_files), 'up again after down works');
 \echo ALL PASS
