@@ -9,6 +9,7 @@
 .up-num { font-variant-numeric: tabular-nums; }
 .up-bar { height: 10px; border-radius: 5px; background: var(--card2); overflow: hidden; }
 .up-bar > i { display: block; height: 100%; background: var(--green2); border-radius: 5px; transition: width .2s; }
+@media (prefers-reduced-motion: reduce) { .up-bar > i { transition: none; } }
 .up-tile { align-self: center; width: 56px; height: 56px; border-radius: 50%; background: var(--green2); color: var(--on-green); display: grid; place-items: center; }
 .up-cardrow { display: flex; align-items: center; gap: 12px; background: var(--soft); box-shadow: none; border-radius: 24px; padding: 14px 16px; margin: 0 0 12px; }
 .up-cardrow .sh-ic { flex: none; }
