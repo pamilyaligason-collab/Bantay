@@ -142,7 +142,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
         <div className="wx-k">{name} · {offline ? `as of ${asOf}, offline` : `updated ${asOf}`}</div>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
-        <span className="wx-sub">Feels like {deg(fl.value)}{fl.label ? ` · ${fl.label}` : ''} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
+        <span className="wx-sub">Feels like {deg(fl.value)} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
       </section>
 
       <section aria-label="Details" className="wx-tiles">
