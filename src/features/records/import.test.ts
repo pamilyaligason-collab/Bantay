@@ -33,7 +33,7 @@ describe('request builder', () => {
   it('caps output and turns reasoning down', () => {
     const b = buildRequest(o)
     expect(b.max_tokens).toBe(MAX_TOKENS)
-    expect(b.reasoning).toEqual({ effort: 'minimal' })
+    expect(b.reasoning).toEqual({ enabled: false })
   })
   it('reports usage counts only, nulls stay null', async () => {
     const j = { model: 'vendor/paid-model', usage: { prompt_tokens: 900, completion_tokens: 120, cost: 0.0004, completion_tokens_details: { reasoning_tokens: 0 } }, choices: [{ message: { content: '{"patient":"SECRET NAME"}' } }] }
@@ -42,6 +42,10 @@ describe('request builder', () => {
     expect(onUsage).toHaveBeenCalledWith({ model: 'vendor/paid-model', prompt_tokens: 900, completion_tokens: 120, reasoning_tokens: 0, cost: 0.0004 })
     expect(JSON.stringify(onUsage.mock.calls)).not.toContain('SECRET')
     expect(usageCounts({ choices: [] })).toEqual({ model: null, prompt_tokens: null, completion_tokens: null, reasoning_tokens: null, cost: null })
+  })
+  it('a cut-off answer is named, not reported as non-JSON', async () => {
+    const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ finish_reason: 'length', message: { content: '{"tests":[{"name":"Chol' } }] }) })
+    await expect(sendToOpenRouter(f, buildRequest(o), 'k', () => {})).rejects.toThrow(/cut off/)
   })
   it('refuses free models', () => {
     expect(() => buildRequest({ ...o, model: 'vendor/model:free' })).toThrow(/paid/)

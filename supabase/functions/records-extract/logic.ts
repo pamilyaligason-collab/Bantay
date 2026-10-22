@@ -38,8 +38,8 @@ export function pagePart(p: PagePart, filename = 'document') {
     : { type: 'image_url', image_url: { url: `data:${p.mime};base64,${p.base64}` } }
 }
 
-/** Same cap as lib.mjs MAX_TOKENS: the largest real extraction (~40-test lab, about 3,100 tokens) + 30% headroom. */
-export const MAX_TOKENS = 4096
+/** Same cap as lib.mjs MAX_TOKENS (8192: 2x the largest real draft, room for multi-page documents). */
+export const MAX_TOKENS = 8192
 
 /** Health data: zero data retention, no providers that collect data, never a free tier. Pages in order after the prompt. */
 export function buildRequest({ model, fallbackModel, pages, prompt = PROMPT }: { model: string; fallbackModel: string; pages: PagePart[]; prompt?: string }) {
@@ -50,7 +50,7 @@ export function buildRequest({ model, fallbackModel, pages, prompt = PROMPT }: {
     models: [model, fallbackModel],
     provider: { zdr: true, data_collection: 'deny' },
     max_tokens: MAX_TOKENS,
-    reasoning: { effort: 'minimal' },
+    reasoning: { enabled: false },
     response_format: { type: 'json_object' },
     messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, ...pages.map((p, i) => pagePart(p, pages.length > 1 ? `page-${i + 1}` : 'document'))] }]
   }
@@ -86,8 +86,9 @@ export async function sendToOpenRouter(fetchImpl: FetchLike, body: unknown, key:
     body: JSON.stringify(body)
   })
   if (!r.ok) throw new HttpError(r.status)
-  const j = await r.json() as { choices: { message: { content: string } }[] }
+  const j = await r.json() as { choices: { finish_reason?: string; message: { content: string } }[] }
   onUsage(usageCounts(j))
+  if (j.choices?.[0]?.finish_reason === 'length') throw new Error('truncated')
   const c = j.choices[0].message.content
   try { return JSON.parse(c) } catch { throw new Error('not_json') }
 }

@@ -76,7 +76,6 @@ export const PROMPT =
   'allergies and conditions only when the document states them outright (a printed diagnosis or allergy line); otherwise empty lists. ' +
   'Dates as YYYY-MM-DD, timestamps ISO 8601. Use null for anything not printed. Copy exactly as printed; never interpret, convert or correct. Set unclear true for handwriting you cannot read with confidence.'
 
-/** Strip paid-model URL details and never echo the request body (it holds the document). */
 /** Counts, model id and cost from an OpenRouter response. Numbers and the model id only: never text, names or values (B-7). Unknown stays null. */
 export function usageCounts(j) {
   const u = j?.usage ?? {}
@@ -90,6 +89,7 @@ export function usageCounts(j) {
   }
 }
 
+/** Strip paid-model URL details and never echo the request body (it holds the document). */
 export async function sendToOpenRouter(fetchImpl, body, key, log = console.error, onUsage = () => {}) {
   const r = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -102,6 +102,7 @@ export async function sendToOpenRouter(fetchImpl, body, key, log = console.error
   }
   const j = await r.json()
   onUsage(usageCounts(j))
+  if (j.choices?.[0]?.finish_reason === 'length') throw new Error('OpenRouter answer cut off at max_tokens') // billed but unusable: say so, not 'non-JSON'
   const c = j.choices[0].message.content
   try { return JSON.parse(c) } catch { throw new Error('OpenRouter returned non-JSON') } // never echo model output (health values)
 }
@@ -119,8 +120,8 @@ export function assertAllowed(argv, env) {
   if (!env.OPENROUTER_MODEL) throw new Error('OPENROUTER_MODEL is not set')
 }
 
-/** Largest real extraction is a ~40-test lab (about 3,100 tokens of JSON); +30% headroom, rounded. Caps a runaway or looping answer. */
-export const MAX_TOKENS = 4096
+/** Largest real draft is 16.9 KB pretty-printed (about 2,900-3,850 tokens); a 10-page edge document can run longer. 8192 leaves 2x headroom and still caps a runaway or looping answer. */
+export const MAX_TOKENS = 8192
 
 /** Health data: zero data retention, no providers that collect data, never a free tier. */
 export function buildRequest({ model, fallbackModel, mime, base64, filename = 'document', text, prompt = PROMPT }) {
@@ -136,7 +137,7 @@ export function buildRequest({ model, fallbackModel, mime, base64, filename = 'd
     models: [model, fallbackModel],
     provider: { zdr: true, data_collection: 'deny' },
     max_tokens: MAX_TOKENS,
-    reasoning: { effort: 'minimal' }, // extraction is reading, not thinking: reasoning tokens are billed as output
+    reasoning: { enabled: false }, // extraction is reading, not thinking: reasoning tokens are billed as output. 'effort' would switch thinking ON for Anthropic models
     response_format: { type: 'json_object' },
     messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, part] }]
   }

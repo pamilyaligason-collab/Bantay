@@ -141,9 +141,9 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   const ready = pending(manifest, hasDraft, hasFile, assignedTo(buildMatcher(peopleMap)))
   const todo = ready.slice(0, limit)
   const n = { todo: todo.length, unassigned: all.length - ready.length, done_text: 0, done_vision: 0, unsupported: 0, failed: 0 }
-  const stats = { text_layer_errors: 0, prompt_tokens: 0, completion_tokens: 0, reasoning_tokens: 0, cost: 0 }
+  const stats = { text_layer_errors: 0, prompt_tokens: 0, completion_tokens: 0, reasoning_tokens: null, cost: null } // null until a response reports it: unknown is never 0
   const onUsage = (u) => { // counts and cost only (B-7); a null stays out of the sum
-    for (const k of ['prompt_tokens', 'completion_tokens', 'reasoning_tokens', 'cost']) stats[k] += u[k] ?? 0
+    for (const k of ['prompt_tokens', 'completion_tokens', 'reasoning_tokens', 'cost']) if (u[k] != null) stats[k] = (stats[k] ?? 0) + u[k]
     console.error(JSON.stringify({ usage: u }))
   }
   for (const e of todo) {

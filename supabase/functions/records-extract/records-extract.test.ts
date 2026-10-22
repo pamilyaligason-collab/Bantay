@@ -130,7 +130,7 @@ describe('cost guard', () => {
     const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }] })
     expect(b.max_tokens).toBe(MAX_TOKENS)
     expect(MAX_TOKENS).toBe(PC_MAX_TOKENS)
-    expect(b.reasoning).toEqual({ effort: 'minimal' })
+    expect(b.reasoning).toEqual({ enabled: false })
   })
   it('usage counts match the laptop path and carry no text', async () => {
     const j = { model: 'm/x', usage: { prompt_tokens: 10, completion_tokens: 5, cost: 0.1 }, choices: [{ message: { content: '{"name":"SECRET"}' } }] }
@@ -195,6 +195,10 @@ describe('OpenRouter calls', () => {
     n = 0
     await expect(withRetry(async () => { n++; throw new HttpError(401) }, { sleepFn })).rejects.toThrow()
     expect(n).toBe(1)
+  })
+  it('a cut-off answer becomes truncated', async () => {
+    const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ finish_reason: 'length', message: { content: '{"tests":[' } }] }) })
+    expect(errorCode(await sendToOpenRouter(f, {}, 'k').catch((x) => x))).toBe('truncated')
   })
   it('never echoes model output: non-JSON content becomes not_json', async () => {
     const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'Cholesterol 5.2 TEST PERSON' } }] }) })
