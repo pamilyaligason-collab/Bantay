@@ -139,7 +139,6 @@ Move steps, cautions and counts are written in Bantay's own words (rules still w
 | knee-rolls | NHS inform | Knee rolls | https://www.youtube.com/watch?v=QxsmVexWs_4 |
 | pelvic-tilt | NHS inform | Pelvic tilts | https://www.youtube.com/watch?v=xbyk3ebdwRI |
 | back-leg-raise | National Institute on Aging | Back Leg Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=B54sRn3f8S0 |
-| tai-chi-sway | Mayo Clinic | Mayo Clinic Minute: Tai chi keeps seniors on their feet | https://www.youtube.com/watch?v=9vljJ0u-avg |
 | chair-dip | National Institute on Aging | Chair Dip Strength Exercise for Older Adults | https://www.youtube.com/watch?v=LVRcXDEdC5U |
 | overhead-press | National Institute on Aging | Overhead Arm Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=VPiawRHRpmY |
 | thigh-squeeze | NHS inform | Static quad strengthening | https://www.youtube.com/watch?v=shSiZn5x9R8 |
@@ -159,4 +158,6 @@ Playlist additions on Health > Videos (src/data/videos.json), same check:
 | y_blTU65X3U | NHS inform | Falls: level 2 exercises | https://www.youtube.com/watch?v=y_blTU65X3U |
 | IYTZwBzjNC0 | NHS inform | Steps for Stress: a breathing exercise | https://www.youtube.com/watch?v=IYTZwBzjNC0 |
 
-Moves not listed above have no video: they are Bantay-original, and no official embeddable video that matched them was found.
+Moves not listed above have no video: 31 of the 57 moves, of which 10 are new in session 9 (shoulder-blade-squeeze, seated-hip-opener, side-step, feet-together-stand, clock-reach, seated-hamstring-curl, seated-figure-four, breathing-walk, mindful-walk, pursed-lip-walk). No official embeddable video that matched them was found. Video ids prove the video exists and can be embedded; the match to the move is by title and has not been watched through. tai-chi-sway had a Mayo Clinic news clip and it was removed because it does not demonstrate the move. Playlist lengths (minutes) are not recorded (null).
+
+Osteoporosis twist exclusion: Giangregorio LM et al., Too Fit To Fracture: exercise recommendations for individuals with osteoporosis or osteoporotic vertebral fracture, Osteoporosis International 2014;25:821-835, https://doi.org/10.1007/s00198-013-2523-2 (linked only; cited from memory, not fetched in session 9).

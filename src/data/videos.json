@@ -1,5 +1,5 @@
 {
-  "_note": "Official videos, ids checked against YouTube oEmbed (2026-10-21; Move entries 2026-10-22). minutes is null where the length is not recorded. An entry with placeholder: true never loads a player.",
+  "_note": "Official videos, ids checked against YouTube oEmbed (2026-10-21; Move entries 2026-10-22). minutes is null: no source records the length (oEmbed does not return it). An entry with placeholder: true never loads a player.",
   "videos": [
     { "id": "M4ACYp75mjU", "placeholder": false, "title": "Hands-only CPR", "topic": "Safety", "source": "American Heart Association", "minutes": null },
     { "id": "C8EO3SM0Y_w", "placeholder": false, "title": "BE FAST: signs of a stroke", "topic": "Safety", "source": "American Heart Association", "minutes": null },
@@ -7,11 +7,11 @@
     { "id": "gDBzUF4E1IU", "placeholder": false, "title": "Diabetic emergency: what to do", "topic": "Diabetes", "source": "British Red Cross", "minutes": null },
     { "id": "b-uX6N4RZjg", "placeholder": false, "title": "Five a day: eating more fruit and vegetables", "topic": "Food", "source": "NHS", "minutes": null },
     { "id": "AQimPkd7g5I", "placeholder": false, "title": "Lusog-Isip: looking after your mental health", "topic": "Mind", "source": "DOH Philippines", "minutes": null },
-    { "id": "G1lwVhnnkoU", "placeholder": false, "title": "10-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 10 },
-    { "id": "Ev6yE55kYGw", "placeholder": false, "title": "15-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 15 },
-    { "id": "KcdkySvCRCc", "placeholder": false, "title": "6 flexibility exercises for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 18 },
-    { "id": "-Ru_cJhrNOA", "placeholder": false, "title": "Falls: level 1 balance and strength exercises", "topic": "Move", "source": "NHS inform", "minutes": 6 },
-    { "id": "y_blTU65X3U", "placeholder": false, "title": "Falls: level 2 exercises", "topic": "Move", "source": "NHS inform", "minutes": 7 },
-    { "id": "IYTZwBzjNC0", "placeholder": false, "title": "Steps for Stress: a breathing exercise", "topic": "Mind", "source": "NHS inform", "minutes": 4 }
+    { "id": "G1lwVhnnkoU", "placeholder": false, "title": "10-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": null },
+    { "id": "Ev6yE55kYGw", "placeholder": false, "title": "15-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": null },
+    { "id": "KcdkySvCRCc", "placeholder": false, "title": "6 flexibility exercises for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": null },
+    { "id": "-Ru_cJhrNOA", "placeholder": false, "title": "Falls: level 1 balance and strength exercises", "topic": "Move", "source": "NHS inform", "minutes": null },
+    { "id": "y_blTU65X3U", "placeholder": false, "title": "Falls: level 2 exercises", "topic": "Move", "source": "NHS inform", "minutes": null },
+    { "id": "IYTZwBzjNC0", "placeholder": false, "title": "Steps for Stress: a breathing exercise", "topic": "Mind", "source": "NHS inform", "minutes": null }
   ]
 }

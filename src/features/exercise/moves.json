@@ -957,12 +957,7 @@
       "You feel unsteady and have nothing to hold"
     ],
     "avoidIf": [],
-    "level": 1,
-    "video": {
-      "id": "9vljJ0u-avg",
-      "channel": "Mayo Clinic",
-      "title": "Mayo Clinic Minute: Tai chi keeps seniors on their feet"
-    }
+    "level": 1
   },
   {
     "id": "side-step",
@@ -1071,9 +1066,7 @@
       "Shoulder pain",
       "Chest pain or pressure"
     ],
-    "avoidIf": [
-      "hold"
-    ],
+    "avoidIf": [],
     "level": 1,
     "video": {
       "id": "VPiawRHRpmY",

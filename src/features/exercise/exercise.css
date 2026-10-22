@@ -16,7 +16,7 @@
 .mv-card-t b { font-size: 17px; overflow-wrap: anywhere; }
 .mv-card-t small { font-size: 14px; color: var(--muted); }
 .mv-card > .sh-ic:last-child { color: var(--muted); flex: none; }
-.mv-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 44px; border: 0; background: none; font-size: 16px; font-weight: 600; padding: 0 6px; color: var(--act); }
+.mv-back { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; min-height: 48px; border: 0; background: none; font-size: 16px; font-weight: 600; padding: 0 6px; color: var(--act); }
 .mv-head { display: flex; gap: 12px; align-items: center; }
 .mv-head h3 { margin: 0; font-family: var(--f-display); font-size: 20px; font-weight: 600; }
 .mv-steps { margin: 0; padding-left: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 18px; line-height: 1.4; }
