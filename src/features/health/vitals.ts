@@ -1,6 +1,7 @@
 import { formatNumber } from '../../lib/labFormat'
 import { hoursMinutes, localDay, readingPosition, bodyNodes, type Activity, type NodeView } from './model'
 import { GUIDE, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
+import { verdictFor } from './verdict'
 
 /** Vitals vs labs, 7-day averages and the "Normal" explanations for the Health overview. Pure. */
 export const VITAL_TESTS = ['bp_systolic', 'bp_diastolic', 'fasting_glucose', 'glucose', 'heart_rate', 'weight', 'spo2', 'temperature']
@@ -59,10 +60,10 @@ export function averageNodes(readings: Reading[], acts: Activity[], now: Date, f
       const hr = avgs.find((r) => r.test === 'heart_rate')
       if (!hr) return { ...n, value: '--', note: 'No data yet', empty: true }
       const st = positionOf(hr, familyOf(hr))
-      return { ...n, value: formatNumber(Math.round(hr.value)), state: st, note: st === 'within' ? 'In range' : st === 'above' ? 'A bit high' : st === 'below' ? 'A bit low' : NOTE, empty: false }
+      return { ...n, value: formatNumber(Math.round(hr.value)), state: st, note: verdictFor('vital', st)?.word ?? NOTE, empty: false }
     }
     if (n.empty && (n.id === 'bp' || n.id === 'sugar' || n.id === 'weight')) return { ...n, note: 'No data yet' }
-    const note = n.note === 'In range' || n.note === 'A bit high' || n.note === 'A bit low' ? n.note : NOTE
+    const note = n.state !== 'none' && n.note ? n.note : NOTE
     return { ...n, note }
   }).map((n) => (n.id === 'bp' && !n.empty ? { ...n, value: n.value.split('/').map((x) => (/^\d+$/.test(x) ? x : formatNumber(Math.round(Number(x))))).join('/') } : n))
 }

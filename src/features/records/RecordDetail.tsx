@@ -32,7 +32,7 @@ export function RecordDetail({ bundle, who, onBack }: { bundle: DocBundle; who: 
           {bundle.labs.map((l) => {
             const val = l.value_num ?? l.value_text
             const v = l.value_num != null ? latestVsNormal({ personId: doc.person_id, takenAt: l.collected_at ?? doc.doc_date ?? '', test: l.test_code ?? l.name_raw, value: l.value_num, unit: l.unit_raw ?? undefined, labLow: l.ref_low, labHigh: l.ref_high }) : null
-            const st = v ? rangeState(v.headline) : null
+            const st = v ? rangeState(v.headline, 'lab') : null
             return (
               <div className="row" key={l.id} style={{ alignItems: 'flex-start' }}>
                 <span className="grow">

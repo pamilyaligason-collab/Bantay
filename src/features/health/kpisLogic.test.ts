@@ -68,7 +68,7 @@ describe('units and wording', () => {
     const bp = (s: number, d: number) => computeKpis({ personId: 'p1', readings: [r('bp_systolic', s, 0, 7, 30, 'mmHg'), r('bp_diastolic', d, 0, 7, 30, 'mmHg')], now: NOW, ...none })[0]!
     expect(bp(124, 76).state?.word).toBe('A little raised')
     expect(bp(138, 86).state?.word).toBe('High')
-    expect(bp(118, 76).state?.word).toBe('Within range')
+    expect(bp(118, 76).state?.word).toBe('In range')
     expect(computeKpis({ personId: 'p1', readings: [r('fasting_glucose', 65, 0, 7, 30, 'mg/dL')], now: NOW, ...none })[0]!.state?.word).toBe('Low')
   })
   it('vitals list in reading order: top before bottom, and BP averages are whole numbers', () => {
@@ -95,7 +95,7 @@ describe('7-day averages and the Normal list', () => {
     const bp = n.find((x) => x.id === 'bp')!
     expect(bp.value).toBe('134/86')
     expect(bp.state).toBe('above')
-    expect(bp.note).toBe('A bit high')
+    expect(bp.note).toBe('High')
     expect(n.find((x) => x.id === 'pulse')).toMatchObject({ value: '91', state: 'within' })
     expect(n.find((x) => x.id === 'sleep')!.empty).toBe(true)
   })

@@ -17,11 +17,11 @@ describe('vitalCards', () => {
   it('joins blood pressure into one card and judges it by the worse number', () => {
     const v = vitalCards([r('bp_systolic', 132, 'mmHg'), r('bp_diastolic', 76, 'mmHg')], NOW)
     expect(v).toHaveLength(1)
-    expect(v[0]).toMatchObject({ key: 'bp', value: '132/76', pos: 'above', word: 'A bit high', icon: 'up' })
+    expect(v[0]).toMatchObject({ key: 'bp', value: '132/76', pos: 'above', word: 'High', icon: 'up' })
   })
-  it('says Usual for an in-range reading and never "Usual" when there is no range', () => {
+  it('says In range for an in-range reading and never "In range" when there is no range', () => {
     const v = vitalCards([r('heart_rate', 72, 'bpm'), r('weight', 58.2, 'kg')], NOW)
-    expect(v.find((x) => x.key === 'heart_rate')).toMatchObject({ word: 'Usual', pos: 'within' })
+    expect(v.find((x) => x.key === 'heart_rate')).toMatchObject({ word: 'In range', pos: 'within' })
     expect(v.find((x) => x.key === 'weight')).toMatchObject({ word: 'No range to compare', pos: 'none', icon: 'info' })
   })
   it('ignores readings older than 30 days, non-numbers, and labs', () => {
@@ -40,7 +40,7 @@ describe('adherence', () => {
     expect(a.cells.map((c) => c.state)).toEqual(['taken', 'taken', 'taken', 'taken', 'taken', 'missed', 'pending'])
     expect(a.cells[6]!.label).toBe('Wed')
     expect(a.cells[5]!.label).toBe('Tue')
-    expect(a).toMatchObject({ taken: 5, due: 6 }) // today's open dose is not counted as due yet
+    expect(a).toMatchObject({ taken: 5, due: 7 }) // the shared counter: today's 8:00 dose is past its 2 hours at noon, so it is due and not taken
     expect(a.missed).toEqual([{ day: '2026-10-20', label: 'Tue', names: ['Losartan'] }])
   })
   it('counts today as taken once it is taken', () => {
@@ -74,7 +74,7 @@ describe('bringUp', () => {
   it('numbers flagged vitals, labs, missed doses, then saved questions; no repeats; capped', () => {
     const rep = buildReport({ readings: [r('bp_systolic', 140, 'mmHg'), r('bp_diastolic', 90, 'mmHg'), r('ldl', 162, 'mg/dL')], meds: [med], takes: [take(6), take(5)], questions: ['Can I stop the aspirin?', 'Can I stop the aspirin?', '  '], personId: 'p1', now: NOW })
     expect(rep.bring).toHaveLength(4)
-    expect(rep.bring[0]).toMatch(/blood pressure was a bit high/i)
+    expect(rep.bring[0]).toMatch(/blood pressure was high/i)
     expect(rep.bring[1]).toMatch(/^LDL cholesterol was high/i)
     expect(rep.bring[2]).toMatch(/doses were missed this week \(Losartan\)/)
     expect(rep.bring[3]).toBe('Can I stop the aspirin?')

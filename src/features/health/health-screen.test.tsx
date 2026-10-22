@@ -33,7 +33,7 @@ describe('Health overview', () => {
   it('shows the headline, the body map values and a tappable latest list', async () => {
     render(<Health />)
     await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Blood pressure needs a look this week'))
-    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 A bit high/ })
+    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 High/ })
     expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
     expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy() // unknown stays unknown
     fireEvent.click(document.querySelector('[data-test="bp_systolic"]')!)
@@ -115,7 +115,7 @@ describe('Health overview', () => {
     render(<Health />)
     await screen.findByRole('link', { name: /^BP 130\/84/ })
     const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
-    expect(within(row).getByText('High')).toBeTruthy()
+    expect(within(row).getByText('A little raised')).toBeTruthy()
     expect(row.querySelector('.hv-state.above')?.textContent).toContain('Above range')
     expect(row.querySelector('svg.hv-spark')).toBeTruthy()
     expect(within(row).queryByText(/Lab range|General guide/)).toBeNull()

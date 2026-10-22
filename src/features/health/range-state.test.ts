@@ -21,8 +21,9 @@ describe('general ranges and range state', () => {
   })
   it('No range is its own state, not Within range', () => {
     expect(rangeState('none')).toMatchObject({ kind: 'none', word: 'No range' })
-    expect(rangeState('within').word).toBe('Within range')
-    expect(rangeState('above')).toMatchObject({ kind: 'high', word: 'High' })
+    expect(rangeState('within').word).toBe('In range')
+    expect(rangeState('above', 'lab')).toMatchObject({ kind: 'high', word: 'High' })
+    expect(rangeState('above')).toMatchObject({ kind: 'high', word: 'A bit high' })
     expect(rangeState('below')).toMatchObject({ kind: 'low', word: 'Low' })
   })
 })
