@@ -43,7 +43,13 @@ describe('adherence', () => {
     expect(a).toMatchObject({ taken: 5, due: 7 }) // the shared counter: today's 8:00 dose is past its 2 hours at noon, so it is due and not taken
     expect(a.missed).toEqual([{ day: '2026-10-20', label: 'Tue', names: ['Losartan'] }])
   })
-  it('counts today as taken once it is taken', () => {
+  it('a late take shows a taken cell but is not "on time", and the total says so', () => {
+    const late: MedTaken = { ...take(0), takenAt: new Date(2026, 9, 21, 11, 30).toISOString() }
+    const a = adherence([med], [late], 'p1', NOW)
+    expect(a.cells[6]!.state).toBe('taken')
+    expect(a.taken).toBe(0) // total is "Doses on time" (same rule as Today), not the number of green cells
+  })
+  it("counts today as taken once it is taken", () => {
     const a = adherence([med], [take(0)], 'p1', NOW)
     expect(a.cells[6]!.state).toBe('taken')
   })

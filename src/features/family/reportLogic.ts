@@ -52,7 +52,7 @@ export interface DayCell { day: string; label: string; state: CellState; taken: 
 export interface Adherence { cells: DayCell[]; taken: number; due: number; missed: { day: string; label: string; names: string[] }[] }
 
 /** Seven local days ending today. A day with no scheduled doses is "none". A past day with a dose not taken (or skipped) is "missed". Today's open doses are "pending", not missed. */
-export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], personId: string, now: Date): Adherence {
+export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped' | 'personId'>[], personId: string, now: Date): Adherence {
   const today = dayKey(now)
   const cells: DayCell[] = []
   const missed: Adherence['missed'] = []
@@ -66,7 +66,7 @@ export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'ta
     cells.push({ day, label: WD[d.getDay()]!, state, taken, due: doses.length })
     if (state === 'missed') missed.push({ day, label: WD[d.getDay()]!, names: [...new Set(open.map((x) => x.name))] })
   }
-  const n = countDoses({ meds, takes: takes as MedTaken[], personId, now, days: lastDays(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
+  const n = countDoses({ meds, takes, personId, now, days: lastDays(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
   return { cells, taken: n.done, due: n.want, missed }
 }
 

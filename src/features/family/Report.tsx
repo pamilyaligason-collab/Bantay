@@ -37,7 +37,7 @@ function Body({ r, first }: { r: ReportData; first: string }) {
         <section aria-labelledby="rp-meds" data-testid="rp-meds">
           <h2 className="hd" id="rp-meds">Medicines, last 7 days</h2>
           <div className="card">
-            <div className="rp-tot"><span className="sub">Doses taken</span><b>{a.due > 0 ? `${a.taken} of ${a.due} doses` : 'No doses due yet'}</b></div>
+            <div className="rp-tot"><span className="sub">Doses on time</span><b>{a.due > 0 ? `${a.taken} of ${a.due} doses` : 'No doses due yet'}</b></div>
             <ul className="rp-cells" aria-label="Doses by day">
               {a.cells.map((c) => (
                 <li key={c.day} className={`rp-cell ${c.state}`} data-state={c.state} aria-label={`${c.label}: ${CELL_WORD[c.state]}`}>
