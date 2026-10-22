@@ -750,3 +750,11 @@ Status: NOT reviewed. All wording below was written by Bantay. Nothing here is a
 
 11. No photo or AI estimation of food. No barcode lookup (Open Food Facts was optional and skipped). No third-party calls from the app.
 12. Usage analytics record only the fixed event names meal_logged, water_logged and salt_goal_set. A food name is never logged (rule B-7).
+
+## Session 9, W2-HEALTH: the Health nudge card
+
+These are friendly habit goals, not clinical thresholds. No reading is judged here (the verdict words still come from the shared range code).
+
+13. Weekly goals on the card: blood pressure on 3 different days, sugar on 3 different days (only if the person has a sugar reading), meals logged on 4 days, all scheduled doses taken within 2 hours, and 150 minutes of movement. Basis: WHO Guidelines on physical activity and sedentary behaviour (2020), 150 minutes a week for adults and older adults; AHA "Monitoring Your Blood Pressure at Home" (daily morning and evening readings are advised for the week before a doctor visit, not as a permanent rule). REVIEW: 3 days a week for BP and sugar is an app-chosen starter habit; confirm it is not read as "enough" for someone whose doctor asked for more.
+14. Wording: a goal with nothing yet says "Not yet this week", never "0". A running streak shows only when it is 1 day or more. No red, no "missed" or "failed" wording. A met goal says "Done this week".
+15. The card only offers a button to log for yourself or for someone you may log for; otherwise it shows the rings read-only.

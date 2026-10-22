@@ -23,8 +23,8 @@
 
 /* Vitals toggle */
 .hv-modes, .vd-topics { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
-.hv-modes { margin: 4px 0 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.hv-modes button { white-space: nowrap; padding: 0 4px; min-width: 0; }
+.seg.hv-modes { margin: 4px 0 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.seg.hv-modes button { white-space: nowrap; padding: 0 4px; min-width: 0; }
 .hv-modeline { margin: 0 4px 8px; }
 .hv-norm { font-size: 15px; }
 

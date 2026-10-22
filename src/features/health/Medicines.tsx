@@ -84,7 +84,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </div>
       )}
       {empty && (
-        <div className="grp"><div className="row"><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Family > Records.' : 'Nothing has been added for them yet.'}</span></span></div></div>
+        <div className="grp"><div className="row"><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Health > Papers.' : 'Nothing has been added for them yet.'}</span></span></div></div>
       )}
 
       {doses.length > 0 && (
