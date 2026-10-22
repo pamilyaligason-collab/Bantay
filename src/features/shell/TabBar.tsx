@@ -37,7 +37,7 @@ export function TabBar({ active }: { active: Tab | null }) {
           </button>
         </Fragment>
       ))}
-      {loaded && !seen && !sheet && <p className="sh-hint" role="status">Scan papers here too</p>}
+      {loaded && !seen && !sheet && active === 'today' && <p className="sh-hint" role="status">Scan papers here too</p>}
       {sheet && <AskSheet onClose={onClose} onDone={onDone} />}
     </nav>
   )

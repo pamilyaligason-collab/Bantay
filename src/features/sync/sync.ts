@@ -20,6 +20,9 @@ export const MAX_TRIES = 5
 export const PAGE = 1000
 export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
 const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
+/** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
+const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals'])
+const NO_TABLE = /^(PGRST205|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
 export const backoffMinutes = (fails: number) => (fails <= 0 ? 0 : Math.min(2 ** (fails - 1), 30))
@@ -34,7 +37,7 @@ export const LAST_PULL_KEY = 'sync.lastPull'
 const cursorKey = (t: string) => `sync.cursor.${t}`
 
 class SyncError extends Error {
-  constructor(public kind: 'net' | 'transient' | 'auth' | 'perm', public code = '') { super(kind) }
+  constructor(public kind: 'net' | 'transient' | 'auth' | 'perm' | 'soft', public code = '') { super(kind) }
 }
 
 // ---- status store (module level, read by <SyncStatus/> through useSyncExternalStore)
@@ -83,7 +86,7 @@ async function deadLetter(row: OutboxRow, code: string) {
 }
 
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
-  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes, appointments: vdb.appointments, prescriptions: vdb.followUps } as Record<string, Table<{ id?: number }, number>>)[t]
+  ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes, appointments: vdb.appointments, prescriptions: vdb.followUps, food_entries: ldb.food, water_entries: ldb.water } as Record<string, Table<{ id?: number }, number>>)[t]
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
   const { url, key } = env()
@@ -127,6 +130,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
+  if (WAIT_FOR_TABLE.has(row.table) && (NO_TABLE.test(code) || res.status === 404)) { failed.row = row; throw new SyncError('soft', code) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
   if (row.table === 'usage_events' && (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES)) return void (await db.outbox.delete(row.id!)) // tracking is never worth a banner: drop silently
@@ -136,15 +140,17 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
 
 async function push(token: string): Promise<SyncError | null> {
   let last: SyncError | null = null
+  const waiting = new Set<string>() // tables the server does not have yet: left queued for this run, the other rows go on
   for (let pass = 0; pass < MAX_TRIES; pass++) {
     const failed: { row?: OutboxRow } = {}
     last = null
     await drain(async (row) => {
       try { await sendRow(row, token, failed) } catch (e) { last = e as SyncError; throw e }
-    }, (r) => isSyncable(r.table))
+    }, (r) => isSyncable(r.table) && !waiting.has(r.table))
     const err = last as SyncError | null
     // Network, 401 and 5xx are not the row's fault: give back the try that drain counted.
     if (err && err.kind !== 'perm' && failed.row) await db.outbox.update(failed.row.id!, { tries: failed.row.tries })
+    if (err?.kind === 'soft') { waiting.add(failed.row!.table); last = null; continue }
     if (!err || err.kind !== 'perm') return err
   }
   return last // a permanent error that is still pending after MAX_TRIES passes cannot happen (it is dead-lettered); defensive
@@ -225,6 +231,7 @@ async function pull(token: string) {
   await syncOwnProfile()
   await pullSafety(url!, key!, token)
   await pullAlerts(url!, key!, token)
+  await pullGoals(url!, key!, token)
 }
 
 async function getJson(u: string, key: string, token: string): Promise<Record<string, unknown>[]> {
@@ -299,6 +306,26 @@ async function pullAlerts(url: string, key: string, token: string) {
   }
   if (!Array.isArray(rows)) return
   await db.kv.put({ key: ALERTS_KEY, value: rows.map(toAlert).filter((a): a is Alert => a !== null) })
+}
+
+// Salt and water goals (0024): one small row per person the member may see. A goal edited here and not yet sent wins over the server copy.
+// Optional like alerts: a missing table or a server error leaves the local goals as they were.
+async function pullGoals(url: string, key: string, token: string) {
+  let rows: Record<string, unknown>[]
+  try {
+    rows = await getJson(`${url}/rest/v1/nutrition_goals?select=*`, key, token)
+  } catch (e) {
+    if (e instanceof SyncError && (e.kind === 'net' || e.kind === 'auth')) throw e
+    return
+  }
+  if (!Array.isArray(rows)) return
+  const queued = new Set((await db.outbox.where('table').equals('nutrition_goals').toArray()).map((r) => (r.payload as { personId?: string }).personId))
+  for (const r of rows) {
+    const sodiumMg = pt(r.sodium_mg)
+    const waterMl = pt(r.water_ml)
+    if (typeof r.person_id !== 'string' || queued.has(r.person_id) || sodiumMg == null || waterMl == null) continue
+    await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
+  }
 }
 
 // ---- run

@@ -5,7 +5,8 @@ import {
   IconHome, IconInfoCircle, IconKey, IconLungs, IconMap, IconMapPin, IconMedicalCross, IconMessage, IconMessageCircle, IconMicrophone,
   IconMoodSmile, IconPhone, IconPhoto, IconPill, IconPlayerPlay, IconPlus, IconFlood, IconRotateClockwise, IconScale, IconScan, IconSend,
   IconSettings, IconShieldCheck, IconSos, IconSun, IconTemperature, IconTornado, IconTrash, IconUpload, IconUsers, IconWalk, IconWifiOff,
-  IconWind, IconX, IconStretching, IconPlayerPause, IconSearch, IconMenu2, IconMoon, IconDeviceDesktop,
+  IconWind, IconX, IconStretching, IconToolsKitchen2, IconSalt, IconGlassFull, IconPlayerPause, IconSearch, IconMenu2, IconMoon, IconDeviceDesktop,
+  IconFlame, IconBone, IconPaw, IconBug, IconCandy, IconVaccine, IconMoodSick, IconFall, IconHeartHandshake, IconLock,
   IconHomeFilled, IconMessageCircleFilled, IconShieldCheckFilled, IconBellFilled, IconPhoneFilled, IconSettingsFilled, IconMedicalCrossFilled,
   IconBoltFilled, IconPillFilled, IconCameraFilled, IconCalendarFilled, IconFlaskFilled, IconMessageFilled, IconMapPinFilled, IconAlertTriangleFilled,
   IconInfoCircleFilled, IconSunFilled, IconCloudFilled, IconDropletFilled, IconGaugeFilled, IconMoodSmileFilled, IconEyeFilled, IconClockFilled,
@@ -26,7 +27,8 @@ const ICONS = {
   flood: IconFlood, drop: IconDroplet, scale: IconScale, gauge: IconGauge, walk: IconWalk, smile: IconMoodSmile, more: IconDots,
   out: IconExternalLink, off: IconWifiOff, clock: IconClock, fp: IconFingerprint, send: IconSend, mic: IconMicrophone, plus: IconPlus,
   close: IconX, trash: IconTrash, key: IconKey, sos: IconSos, aid: IconFirstAidKit, bag: IconBackpack, lungs: IconLungs, brain: IconBrain,
-  eye: IconEye, search: IconSearch, menu: IconMenu2, moon: IconMoon, screen: IconDeviceDesktop, tooth: IconDental, play: IconPlayerPlay, pause: IconPlayerPause, move: IconStretching, kidney: IconKidney, stomach: IconStomach, quake: IconQuake, typhoon: IconTyphoon
+  eye: IconEye, search: IconSearch, menu: IconMenu2, moon: IconMoon, screen: IconDeviceDesktop, tooth: IconDental, play: IconPlayerPlay, pause: IconPlayerPause, move: IconStretching, meal: IconToolsKitchen2, salt: IconSalt, glass: IconGlassFull, kidney: IconKidney, stomach: IconStomach, quake: IconQuake, typhoon: IconTyphoon,
+  flame: IconFlame, bone: IconBone, paw: IconPaw, bug: IconBug, candy: IconCandy, vaccine: IconVaccine, sick: IconMoodSick, fall: IconFall, cpr: IconHeartHandshake, lock: IconLock
 } satisfies Record<string, ComponentType<CustomIconProps>>
 export type IconName = keyof typeof ICONS
 

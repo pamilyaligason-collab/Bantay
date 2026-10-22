@@ -50,3 +50,12 @@ Looked at and not used:
 | Servier Medical Art, https://smart.servier.com (site licence CC BY 4.0) | The site only offers PNG and PowerPoint files, no SVG. The SVG-like copies on Wikimedia Commons are CC BY-SA 3.0, which this lane skips. No Servier art ships, so no Servier credit is shown. |
 | Files tagged CC BY-SA or non-commercial on Commons (for example the OpenStax muscle plates, Wapcaplet heart, Jordi March kidney and urinary diagrams) | Share-alike or non-commercial terms. Skipped as instructed. |
 | Wikiman 1m80.svg, Patrick J. Lynch brain diagram | CC BY 2.5. Allowed, but a public domain brain diagram fitted better. |
+
+## Food data (session 8, W3 nutrition)
+
+| Item | Used | Licence | URL |
+| --- | --- | --- | --- |
+| USDA FoodData Central (nutrient values behind `src/features/nutrition/foods.json`, built from `scripts/nutrition/recipes.json`) | Yes, food and salt logging | CC0 1.0 public domain (USDA ARS). No credit is required; "USDA FoodData Central" is credited on Health > Food and salt and in docs/SOURCES.md. Values are hand-entered estimates until `--verify` is run with an API key (see SOURCES.md). | https://fdc.nal.usda.gov/ |
+| Tabler icons `IconToolsKitchen2`, `IconSalt`, `IconGlassFull` (Meal, salt and water icons) | Yes, via `<Icon name>` | MIT, as the rest of Tabler | https://tabler.io/icons |
+
+Looked at and not used: Philippine Food Composition Tables (FNRI PhilFCT, not open for reuse here) and SparkyFitness (non-commercial, source-available: no code or data copied).

@@ -4,6 +4,9 @@ import FmAvatar from './FmAvatar'
 import { checkInLabel, nudgeFor, rollCall, useCheckInsLoaded, useFamilyPeople } from './roster'
 import './family.css'
 import { Icon } from '../shell/Icon'
+import LearningHub from './LearningHub'
+import Memories from './Memories'
+import { useFlagLines } from './reportData'
 
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
@@ -16,6 +19,7 @@ export default function People() {
     const t = setTimeout(() => setNote(''), 4000)
     return () => clearTimeout(t)
   }, [note])
+  const flags = useFlagLines(people)
   const rc = rollCall(people, last)
   const imOk = async () => {
     const r = await checkIn()
@@ -42,11 +46,12 @@ export default function People() {
             const nudge = known ? nudgeFor(p, c.ok) : null
             return (
               <li key={p.id} className={nudge ? 'fm-has-nudge' : undefined}>
-                <button type="button" className="fm-person" onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}. Open page`}>
+                <button type="button" className="fm-person" onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page`}>
                   <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={44} status={known && c.ok ? 'ok' : 'none'} />
                   <span className="grow">
                     <b>{p.name}{p.isMe ? ' (you)' : ''}</b>
                     {known && !nudge && <span className={`sub${c.ok ? '' : ' fm-warn'}`}>{c.text}</span>}
+                    {flags[p.id] && <span className="fm-flag" data-testid="flag-line"><Icon name={flags[p.id] === 'All up to date' ? 'check' : 'warn'} size={16} />{flags[p.id]}</span>}
                   </span>
                   <span className="fm-chev"><Icon name="chev" size={20} /></span>
                 </button>
@@ -56,6 +61,8 @@ export default function People() {
           })}
         </ul>
       )}
+      <LearningHub />
+      <Memories />
       {note && <div className="toast" role="status">{note}</div>}
     </>
   )

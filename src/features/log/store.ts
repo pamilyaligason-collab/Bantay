@@ -26,15 +26,34 @@ export interface Medication {
 export type ActivitySource = 'manual' | 'health-connect' | 'healthkit'
 export interface Activity { id?: number; personId: string; kind: string; minutes: number | null; steps: number | null; startedAt: string; source: ActivitySource }
 
+export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+/** A meal item, kept as a snapshot: the nutrients are already multiplied by the portion (public.food_entries, 0024). Unknown is null, never 0. */
+export interface FoodEntry {
+  id?: number; clientId: string; personId: string; eatenAt: string; meal: Meal; foodKey: string | null; name: string; portion: number
+  servingLabel: string | null; kcal: number | null; sodiumMg: number | null; potassiumMg: number | null; proteinG: number | null
+}
+/** One glass of water (public.water_entries, 0024). */
+export interface WaterEntry { id?: number; clientId: string; personId: string; drunkAt: string; ml: number }
+/** A person's daily limits (public.nutrition_goals, 0024). Keyed by person, not by client id. */
+export interface NutritionGoal { personId: string; sodiumMg: number; waterMl: number; updatedAt?: string }
+
 class LogDB extends Dexie {
   meds!: Table<MedTaken, number>
   activity!: Table<Activity, number>
   medications!: Table<Medication, number>
+  food!: Table<FoodEntry, number>
+  water!: Table<WaterEntry, number>
+  goals!: Table<NutritionGoal, string>
   constructor() {
     super('bantay-log')
     this.version(1).stores({ meds: '++id, personId, takenAt', activity: '++id, personId, startedAt, source' })
     // v2: the live medicine schedule, and an index on a dose's medication. Existing meds and activity rows are kept as they are.
     this.version(2).stores({ meds: '++id, personId, takenAt, medicationId', activity: '++id, personId, startedAt, source', medications: '++id, &clientId, personId' }).upgrade(() => undefined)
+    // v3 (session 8, nutrition): only adds tables. Meals and water are keyed by client id like the family plan rows; goals by person.
+    this.version(3).stores({
+      meds: '++id, personId, takenAt, medicationId', activity: '++id, personId, startedAt, source', medications: '++id, &clientId, personId',
+      food: '++id, &clientId, personId, eatenAt', water: '++id, &clientId, personId, drunkAt', goals: 'personId'
+    })
   }
 }
 export const ldb = new LogDB()
