@@ -17,7 +17,7 @@ import './nutrition.css'
 const NO_DRAFTS: Record<string, number> = {}
 const DAY = 86_400_000
 
-/** Health > Food and salt (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
+/** Health > Food and nutrients (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
 export default function NutritionScreen() {
   const { ready, people, ownId, personId, setPersonId, readings, canMark } = useHealthPerson()
   const now = useMemo(() => new Date(), [])

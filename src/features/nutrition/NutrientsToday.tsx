@@ -105,6 +105,7 @@ export default function NutrientsToday({ personId, entries, sodiumMg, potassiumL
           ))}
         </ul>
       )}
+      {supplements.some((s) => s.nutrient && s.perDose != null) && <p className="nu-sub">The strength on a medicine may be the salt, not the mineral itself (calcium carbonate 500 mg holds about 200 mg of calcium), so a bar can read high. Check the label.</p>}
       {supplements.some((s) => s.nutrient && s.perDose == null) && <p className="nu-sub">A supplement with no amount (for example 500 mg) on the medicine list is not counted in a bar.</p>}
       {supplements.some((s) => !s.nutrient) && <p className="nu-sub">Fish oil and multivitamins are listed but not counted in a bar.</p>}
 

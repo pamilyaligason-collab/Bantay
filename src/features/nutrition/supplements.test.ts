@@ -47,4 +47,8 @@ describe('supplement list from the medicine list', () => {
     expect('ironMg' in t).toBe(false)
     expect(Object.keys(t).sort()).toEqual(['calciumMg', 'vitdUg'])
   })
+  it('a combination supplement is listed once per nutrient; only the first takes the strength', () => {
+    const items = supplementItems([med({ name: 'Caltrate', genericName: 'Calcium + Vitamin D3', strength: '600 mg' })], takes)
+    expect(items.map((x) => [x.label, x.perDose])).toEqual([['Calcium', 600], ['Vitamin D', null]])
+  })
 })

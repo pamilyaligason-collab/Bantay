@@ -34,20 +34,22 @@ export function amountIn(text: string | undefined, kind: SupplementKind): number
 const perTake = (dose: string | undefined): number => { const m = /^(\d+(?:\.\d+)?)\s*(tab|cap|pill|softgel|piece|pc)/i.exec(dose?.trim() ?? ''); return m ? Number(m[1]) : 1 }
 
 /** Which supplement a medicine is, or null. Matches the name or the generic name. */
-export const supplementKind = (m: Pick<Medication, 'name' | 'genericName'>): SupplementKind | null => {
+const kindsOf = (m: Pick<Medication, 'name' | 'genericName'>): SupplementKind[] => {
   const hay = `${m.name} ${m.genericName ?? ''}`.toLowerCase()
-  return SUPPLEMENTS.find((s) => s.words.some((w) => hay.includes(w))) ?? null
+  return SUPPLEMENTS.filter((s) => s.words.some((w) => hay.includes(w)))
 }
+export const supplementKind = (m: Pick<Medication, 'name' | 'genericName'>): SupplementKind | null => kindsOf(m)[0] ?? null
 
 /** The supplements among these (live) medicines, with the doses marked taken today. `takes` rows come from the dose log; a row matches by medication id, else by name. Skipped rows are not takes. */
 export function supplementItems(meds: Medication[], takes: { name: string; medicationId?: string; skipped?: boolean }[]): SuppItem[] {
   const out: SuppItem[] = []
   for (const m of meds) {
-    const kind = supplementKind(m)
-    if (!kind) continue
+    // A combination (Calcium + Vitamin D3) is listed once per nutrient; one strength cannot be split between them, so only the first takes the amount and the rest stay null.
+    kindsOf(m).forEach((kind, i) => {
     const taken = takes.filter((t) => !t.skipped && (t.medicationId && m.serverId ? t.medicationId === m.serverId : t.name.trim().toLowerCase() === m.name.trim().toLowerCase())).length
-    const per = amountIn(m.strength, kind) ?? amountIn(m.name, kind)
-    out.push({ id: m.serverId ?? m.clientId ?? m.name, label: kind.label, name: m.name, nutrient: kind.nutrient, perDose: per == null ? null : per * perTake(m.dose), taken })
+    const per = i > 0 ? null : (amountIn(m.strength, kind) ?? amountIn(m.name, kind))
+    out.push({ id: `${m.serverId ?? m.clientId ?? m.name}:${kind.id}`, label: kind.label, name: m.name, nutrient: kind.nutrient, perDose: per == null ? null : per * perTake(m.dose), taken })
+    })
   }
   return out
 }

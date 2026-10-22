@@ -4,7 +4,7 @@ import { skipOnboarding } from './helpers'
 
 // Runs in the "auth" project (build WITH test Supabase env). Signed in as a made-up member; PostgREST is mocked (the nutrition tables answer
 // "not found" like a project where 0024 is not applied yet, so this also proves the app works with local rows only). All data is invented.
-// Food and salt: Today Meal pill -> Plate sheet -> save -> Salt today card; water; Health > Food and salt. 390x844, light and dark, axe 0.
+// Food and nutrients: Today Meal pill -> Plate sheet -> save -> Salt today card; water; Health > Food and salt. 390x844, light and dark, axe 0.
 const API = 'https://bantay-test.supabase.test'
 const UID = '55555555-5555-4555-8555-555555555555'
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -167,7 +167,7 @@ for (const scheme of ['light', 'dark'] as const) {
       ])
       await page.reload()
       await page.evaluate(() => { location.hash = '#health' })
-      const link = page.getByRole('link', { name: /Food and salt/ })
+      const link = page.getByRole('link', { name: /Food and nutrients/ })
       await expect(link).toBeVisible()
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(56)
       expect(await serious(page)).toEqual([])

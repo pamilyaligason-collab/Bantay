@@ -68,6 +68,7 @@ describe('segments: food first, supplements after, null is not 0', () => {
     expect(get('calciumMg')).toMatchObject({ food: 300, supp: 500 })
     expect(get('sodiumMg').supp).toBeNull()
     expect(get('vitdUg')).toMatchObject({ food: null, supp: null })
+    expect(nutrientRows(totals, targetsFor({ ...base, age: 60, sex: 'female' }).targets, { vitdUg: 0 }, {}).find((r) => r.def.id === 'vitdUg')!.supp).toBeNull()
   })
 })
 

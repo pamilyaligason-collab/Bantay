@@ -99,6 +99,9 @@ export function segments(r: Pick<NutrientRow, 'food' | 'supp' | 'target'>): Segm
 }
 
 /** The rows of the nutrients view: today's totals, supplement amounts and targets joined. */
+/** A supplement listed but not taken (0) with no food number is still no number, not a 0. */
+const suppOf = (supp: number | null, food: number | null) => (supp === 0 && food == null ? null : supp)
+
 export function nutrientRows(totals: Record<NutrientField, number | null>, targets: Targets, supp: Partial<Record<NutrientField, number | null>>, unknown: Partial<Record<NutrientField, number>>): NutrientRow[] {
-  return BAR_NUTRIENTS.map((def) => ({ def, food: totals[def.id] ?? null, supp: def.supp ? (supp[def.id] ?? null) : null, target: targets[def.id] ?? null, unknown: unknown[def.id] ?? 0 }))
+  return BAR_NUTRIENTS.map((def) => ({ def, food: totals[def.id] ?? null, supp: def.supp ? suppOf(supp[def.id] ?? null, totals[def.id] ?? null) : null, target: targets[def.id] ?? null, unknown: unknown[def.id] ?? 0 }))
 }
