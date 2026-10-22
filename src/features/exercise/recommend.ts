@@ -4,7 +4,7 @@ import type { Range } from '../health/ranges'
 
 /** Bantay-original senior exercise picks. Rules are listed in docs/session-8/CLINICAL-REVIEW.md and wait for a clinician's review.
  *  Sources: WHO 2020 physical activity guidelines, CDC older adults (docs/SOURCES.md). */
-export type Group = 'balance' | 'strength' | 'stretch' | 'walk' | 'breathe'
+export type Group = 'mobility' | 'balance' | 'strength' | 'stretch' | 'walk' | 'breathe'
 export type Posture = 'seated' | 'standing-with-support' | 'floor'
 export interface Move {
   id: string; name: string
@@ -13,11 +13,13 @@ export interface Move {
   group: Group; posture: Posture
   durationSec?: number; reps?: number
   steps: string[]; stopIf: string[]
-  /** Tags: hold (isometric hold), deep-knee, forward-bend, impact, floor. */
+  /** Tags: hold (isometric hold), deep-knee, forward-bend, twist, impact, floor. */
   avoidIf: string[]
   level: 1 | 2 | 3
   /** Later: the id of an AnimatedDemo clip. No demo asset ships yet. */
   demo?: string
+  /** An official demo video (checked with YouTube oEmbed, listed in docs/SOURCES.md). Loads only when tapped. */
+  video?: { id: string; channel: string; title: string }
 }
 export const MOVES = movesJson as Move[]
 export const moveById = (id: string) => MOVES.find((m) => m.id === id)
@@ -59,6 +61,8 @@ export interface Recommendation {
   /** A reason to rest today instead of exercising. */
   rest: { why: 'bp' | 'sugar'; text: string } | null
   picks: Move[]
+  /** Every move this person may do today (same safety rules as the picks), best first. The Move screen filters it by group and posture. */
+  available: Move[]
   /** Short reminders to show above the picks. */
   notes: string[]
   /** Heart or bone condition and no "my doctor said OK" yet: only walking and seated moves. */
@@ -77,15 +81,15 @@ export const bpHigh = (bp?: { sys: number; dia: number } | null, fam?: Recommend
 export const sugarLow = (v?: number | null, fam?: RecommendInput['family']) =>
   num(v) && readingPosition({ personId: '', takenAt: '', test: 'fasting_glucose', value: v }, fam?.sugar) === 'below'
 
-const ORDER_OLDER: Group[] = ['balance', 'strength', 'walk', 'stretch', 'breathe']
-const ORDER_YOUNGER: Group[] = ['strength', 'walk', 'balance', 'stretch', 'breathe']
+const ORDER_OLDER: Group[] = ['balance', 'strength', 'mobility', 'walk', 'stretch', 'breathe']
+const ORDER_YOUNGER: Group[] = ['strength', 'walk', 'balance', 'mobility', 'stretch', 'breathe']
 const POSTURE_RANK: Record<Posture, number> = { seated: 0, 'standing-with-support': 1, floor: 2 }
 
 export function recommend(i: RecommendInput): Recommendation {
   const conds = matchConditions(i.conditions ?? [])
   const has = (c: Condition) => conds.includes(c)
   const restricted = (has('heart') || has('osteoporosis')) && !i.doctorOk
-  const base: Recommendation = { gate: !i.gateOk, rest: null, picks: [], notes: [], restricted }
+  const base: Recommendation = { gate: !i.gateOk, rest: null, picks: [], available: [], notes: [], restricted }
   if (base.gate) return base
 
   if (has('hypertension') && bpHigh(i.latestBp, i.family)) return { ...base, rest: { why: 'bp', text: 'Rest today. Check your blood pressure first and tell your doctor if it stays high.' } }
@@ -98,7 +102,7 @@ export function recommend(i: RecommendInput): Recommendation {
   const avoid = new Set<string>()
   if (has('hypertension')) avoid.add('hold')
   if (has('arthritis')) { avoid.add('deep-knee'); avoid.add('impact') }
-  if (has('osteoporosis')) { avoid.add('forward-bend'); avoid.add('floor'); avoid.add('impact') }
+  if (has('osteoporosis')) { avoid.add('forward-bend'); avoid.add('twist'); avoid.add('floor'); avoid.add('impact') }
 
   const notes: string[] = []
   if (has('hypertension')) notes.push('Keep breathing. Do not hold your breath or clench.')
@@ -132,5 +136,5 @@ export function recommend(i: RecommendInput): Recommendation {
     if (picks.length === 3) break
     picks.push(m)
   }
-  return { ...base, picks, notes }
+  return { ...base, picks, available: [...pool].sort(rank), notes }
 }

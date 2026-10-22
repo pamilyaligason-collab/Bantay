@@ -36,3 +36,15 @@
 
 .mv-page .mv-card, .mv-page .mv-week { background: var(--card); box-shadow: var(--shadow); }
 .mv-page .mv-ring::before { background: var(--card); }
+
+/* Move v2: plan headings, category chips, minutes stepper. */
+.mv-h { margin: 6px 0 0; font-family: var(--f-display); font-size: 20px; font-weight: 600; }
+.mv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mv-chips button { min-height: 48px; padding: 0 16px; border: 2px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.mv-chips button[aria-pressed='true'] { background: var(--green); border-color: var(--green); color: var(--on-green); }
+.mv-chips button:focus-visible, .mv-mins button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.mv-mins { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.mv-mins output { min-width: 120px; text-align: center; font-size: 18px; }
+.mv-mins output b { font-size: 24px; font-family: var(--f-display); }
+.mv-mins button { width: 56px; height: 56px; border: 2px solid var(--green2); border-radius: 50%; background: none; color: var(--ink); font: inherit; font-size: 28px; font-weight: 700; cursor: pointer; }
+.mv-mins button:disabled { opacity: .4; }

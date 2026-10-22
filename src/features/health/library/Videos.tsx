@@ -8,7 +8,7 @@ import '../m7a.css'
 function Card({ v }: { v: Video }) {
   return (
     <li className="card vd-card">
-      {v.placeholder ? <p className="sub vd-soon" role="status">Coming soon: this video is not set up yet.</p> : <LiteVideo id={v.id} title={v.title} />}
+      {v.placeholder ? <p className="sub vd-soon" role="status">Coming soon: this video is not set up yet.</p> : <LiteVideo id={v.id} title={v.title} minutes={v.minutes} />}
       <span className="vd-t"><b>{v.title}</b><span className="sub">{v.topic}{v.minutes != null ? ` · ${v.minutes} min` : ''} · {v.source}</span></span>
     </li>
   )

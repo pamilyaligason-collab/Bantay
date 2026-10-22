@@ -114,3 +114,49 @@ Bantay's own words throughout. Nothing below is copied or bundled; each source i
 - Bagoong has no plain FDC entry (only branded products), and instant noodles, canned sardines and galunggong are brand or species dependent: those values are estimates to check against a pack or jar label.
 - NOT used: Philippine Food Composition Tables (FNRI PhilFCT) values. SparkyFitness is non-commercial and source-available: no code or data was copied from it.
 - Salt limit: WHO, Salt reduction fact sheet, adults under 2000 mg sodium (5 g salt) a day: https://www.who.int/news-room/fact-sheets/detail/salt-reduction . Linked only (WHO content is CC BY-NC-SA, none of its text is bundled). Salt (g) = sodium (mg) x 2.5 / 1000.
+
+## Move: mobility and exercise videos (session 9, W1-MOVE)
+
+Move steps, cautions and counts are written in Bantay's own words (rules still wait for clinician review, docs/session-8/CLINICAL-REVIEW.md). Videos are only embedded, never downloaded or re-hosted: official channels (National Institute on Aging, NHS inform, Mayo Clinic), shown through the click-to-load player (youtube-nocookie.com) with the still picture from i.ytimg.com before the tap. Every id below returned HTTP 200 from https://www.youtube.com/oembed?url=<watch url>&format=json on 2026-10-22, and the channel and title are the ones oEmbed reported. Ids that did not return 200 were dropped.
+
+| Move id | Channel | Title (as oEmbed reports) | URL |
+|---|---|---|---|
+| sit-to-stand | NHS inform | Sit to stand | https://www.youtube.com/watch?v=29WFLqHgYZ0 |
+| heel-raises | National Institute on Aging | Toe Stand Strength Exercise for Older Adults | https://www.youtube.com/watch?v=04zZLGcrN5Y |
+| wall-push-up | National Institute on Aging | Wall Pushups Strength Exercise for Older Adults | https://www.youtube.com/watch?v=751E9kAdkwg |
+| side-leg-lift | National Institute on Aging | Side Leg Raise - Strength Training Exercise for Older Adults | https://www.youtube.com/watch?v=045sWtKt5D4 |
+| hip-bridge | NHS inform | Bridging | https://www.youtube.com/watch?v=EeTfT5zpt_s |
+| one-foot-stand | National Institute on Aging | Stand on One Foot Balance Exercise for Older Adults | https://www.youtube.com/watch?v=QT5d4tTXW6U |
+| heel-toe-steps | National Institute on Aging | Heel-to-Toe Walk Balance Exercise for Older Adults | https://www.youtube.com/watch?v=z_GKdFf3qv4 |
+| ankle-circles | National Institute on Aging | Ankle Stretch for Older Adults | https://www.youtube.com/watch?v=87BeiyTFZyU |
+| hamstring-stretch | National Institute on Aging | Back Of Leg Stretch for Older Adults | https://www.youtube.com/watch?v=guOj99WPZnw |
+| calf-stretch | NHS inform | Standing calf stretch | https://www.youtube.com/watch?v=uuVyVuSbXrA |
+| neck-side-tilt | Mayo Clinic | Deskercise - Neck and Shoulder Stretches | https://www.youtube.com/watch?v=5lbe9oZbpDs |
+| ankle-alphabet | National Institute on Aging | Ankle Stretch for Older Adults | https://www.youtube.com/watch?v=87BeiyTFZyU |
+| seated-knee-extension | NHS inform | Seated knee extension stretch | https://www.youtube.com/watch?v=XvueUfN-LVw |
+| seated-spine-twist | Mayo Clinic | Deskercise - Lower Back and Torso Stretches | https://www.youtube.com/watch?v=5M-b1c2spPE |
+| seated-back-arch | National Institute on Aging | Back Stretch for Older Adults | https://www.youtube.com/watch?v=FpIfMyfpCk0 |
+| knee-rolls | NHS inform | Knee rolls | https://www.youtube.com/watch?v=QxsmVexWs_4 |
+| pelvic-tilt | NHS inform | Pelvic tilts | https://www.youtube.com/watch?v=xbyk3ebdwRI |
+| back-leg-raise | National Institute on Aging | Back Leg Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=B54sRn3f8S0 |
+| tai-chi-sway | Mayo Clinic | Mayo Clinic Minute: Tai chi keeps seniors on their feet | https://www.youtube.com/watch?v=9vljJ0u-avg |
+| chair-dip | National Institute on Aging | Chair Dip Strength Exercise for Older Adults | https://www.youtube.com/watch?v=LVRcXDEdC5U |
+| overhead-press | National Institute on Aging | Overhead Arm Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=VPiawRHRpmY |
+| thigh-squeeze | NHS inform | Static quad strengthening | https://www.youtube.com/watch?v=shSiZn5x9R8 |
+| supported-leg-raise | NHS inform | Supported leg raise | https://www.youtube.com/watch?v=o4ScRYNv7pY |
+| sideways-hip-lift | NHS inform | Sideways hip lift | https://www.youtube.com/watch?v=S79T0-2GyKM |
+| shoulder-arm-stretch | National Institute on Aging | Shoulder and Arm Stretch for Older Adults | https://www.youtube.com/watch?v=CW0h60-PS4Y |
+| knee-hug | NHS inform | Single knee hug | https://www.youtube.com/watch?v=I6sP_tzzb_4 |
+
+Playlist additions on Health > Videos (src/data/videos.json), same check:
+
+| Video id | Channel | Title | URL |
+|---|---|---|---|
+| G1lwVhnnkoU | National Institute on Aging | 10-minute workout for older adults | https://www.youtube.com/watch?v=G1lwVhnnkoU |
+| Ev6yE55kYGw | National Institute on Aging | 15-minute workout for older adults | https://www.youtube.com/watch?v=Ev6yE55kYGw |
+| KcdkySvCRCc | National Institute on Aging | 6 flexibility exercises for older adults | https://www.youtube.com/watch?v=KcdkySvCRCc |
+| -Ru_cJhrNOA | NHS inform | Falls: level 1 balance and strength exercises | https://www.youtube.com/watch?v=-Ru_cJhrNOA |
+| y_blTU65X3U | NHS inform | Falls: level 2 exercises | https://www.youtube.com/watch?v=y_blTU65X3U |
+| IYTZwBzjNC0 | NHS inform | Steps for Stress: a breathing exercise | https://www.youtube.com/watch?v=IYTZwBzjNC0 |
+
+Moves not listed above have no video: they are Bantay-original, and no official embeddable video that matched them was found.

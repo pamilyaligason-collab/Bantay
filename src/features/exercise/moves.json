@@ -20,7 +20,12 @@
     "avoidIf": [
       "deep-knee"
     ],
-    "level": 1
+    "level": 1,
+    "video": {
+      "id": "29WFLqHgYZ0",
+      "channel": "NHS inform",
+      "title": "Sit to stand"
+    }
   },
   {
     "id": "chair-stand-slow",
@@ -63,7 +68,12 @@
       "Your calf cramps and does not ease"
     ],
     "avoidIf": [],
-    "level": 1
+    "level": 1,
+    "video": {
+      "id": "04zZLGcrN5Y",
+      "channel": "National Institute on Aging",
+      "title": "Toe Stand Strength Exercise for Older Adults"
+    }
   },
   {
     "id": "toe-raises",
@@ -123,10 +133,13 @@
       "Shoulder pain",
       "You feel dizzy or faint"
     ],
-    "avoidIf": [
-      
-    ],
-    "level": 1
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "751E9kAdkwg",
+      "channel": "National Institute on Aging",
+      "title": "Wall Pushups Strength Exercise for Older Adults"
+    }
   },
   {
     "id": "seated-knee-straighten",
@@ -227,7 +240,12 @@
       "Sharp pain (not just tired muscles)"
     ],
     "avoidIf": [],
-    "level": 2
+    "level": 2,
+    "video": {
+      "id": "045sWtKt5D4",
+      "channel": "National Institute on Aging",
+      "title": "Side Leg Raise - Strength Training Exercise for Older Adults"
+    }
   },
   {
     "id": "hip-bridge",
@@ -250,7 +268,12 @@
     "avoidIf": [
       "floor"
     ],
-    "level": 2
+    "level": 2,
+    "video": {
+      "id": "EeTfT5zpt_s",
+      "channel": "NHS inform",
+      "title": "Bridging"
+    }
   },
   {
     "id": "march-in-place",
@@ -315,7 +338,12 @@
     "avoidIf": [
       "hold"
     ],
-    "level": 2
+    "level": 2,
+    "video": {
+      "id": "QT5d4tTXW6U",
+      "channel": "National Institute on Aging",
+      "title": "Stand on One Foot Balance Exercise for Older Adults"
+    }
   },
   {
     "id": "weight-shift",
@@ -355,7 +383,12 @@
       "You lose your balance"
     ],
     "avoidIf": [],
-    "level": 2
+    "level": 2,
+    "video": {
+      "id": "z_GKdFf3qv4",
+      "channel": "National Institute on Aging",
+      "title": "Heel-to-Toe Walk Balance Exercise for Older Adults"
+    }
   },
   {
     "id": "seated-side-reach",
@@ -394,7 +427,12 @@
       "Cramping that does not ease"
     ],
     "avoidIf": [],
-    "level": 1
+    "level": 1,
+    "video": {
+      "id": "87BeiyTFZyU",
+      "channel": "National Institute on Aging",
+      "title": "Ankle Stretch for Older Adults"
+    }
   },
   {
     "id": "hamstring-stretch",
@@ -417,7 +455,12 @@
       "forward-bend",
       "hold"
     ],
-    "level": 1
+    "level": 1,
+    "video": {
+      "id": "guOj99WPZnw",
+      "channel": "National Institute on Aging",
+      "title": "Back Of Leg Stretch for Older Adults"
+    }
   },
   {
     "id": "shoulder-rolls",
@@ -496,7 +539,12 @@
     "avoidIf": [
       "hold"
     ],
-    "level": 1
+    "level": 1,
+    "video": {
+      "id": "uuVyVuSbXrA",
+      "channel": "NHS inform",
+      "title": "Standing calf stretch"
+    }
   },
   {
     "id": "chest-opener",
@@ -639,6 +687,630 @@
     "stopIf": [
       "You feel dizzy or faint",
       "You feel worse"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "neck-side-tilt",
+    "name": "Neck side tilt",
+    "tl": "Ikiling ang leeg",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 5,
+    "steps": [
+      "Sit tall with your shoulders loose and relaxed.",
+      "Slowly tip your right ear toward your right shoulder. Do not lift the shoulder.",
+      "Stop where you feel a gentle stretch and breathe out once.",
+      "Come back to the middle, then do the other side."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Tingling, numbness or pain that shoots down an arm or leg",
+      "Pain that gets worse as you tilt"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "5lbe9oZbpDs",
+      "channel": "Mayo Clinic",
+      "title": "Deskercise - Neck and Shoulder Stretches"
+    }
+  },
+  {
+    "id": "shoulder-blade-squeeze",
+    "name": "Shoulder blade squeeze",
+    "tl": "Pisilin ang balikat",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 10,
+    "steps": [
+      "Sit tall with your arms loose by your sides.",
+      "Gently draw your shoulder blades back and together, as if holding a pencil between them.",
+      "Squeeze for a slow count of 2 while you breathe out, then let go."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Tingling, numbness or pain that shoots down an arm or leg"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "ankle-alphabet",
+    "name": "Ankle alphabet",
+    "tl": "Isulat ang ABC gamit ang paa",
+    "group": "mobility",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit back in a chair and lift one foot off the floor.",
+      "Use your big toe like a pen and draw the letters of the alphabet in the air. Small and slow is fine.",
+      "Rest your foot, then do the other foot."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Your calf cramps and does not ease",
+      "A swollen, hot or red calf. Tell your doctor"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "87BeiyTFZyU",
+      "channel": "National Institute on Aging",
+      "title": "Ankle Stretch for Older Adults"
+    }
+  },
+  {
+    "id": "seated-knee-extension",
+    "name": "Seated knee straighten and hold",
+    "tl": "Ituwid ang tuhod",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 8,
+    "steps": [
+      "Sit at the front of a chair with your back tall.",
+      "Slowly straighten one knee until your leg is level. Keep your breathing easy.",
+      "Lower it with control. Do all on one leg, then the other."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Your knee clicks and hurts"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "XvueUfN-LVw",
+      "channel": "NHS inform",
+      "title": "Seated knee extension stretch"
+    }
+  },
+  {
+    "id": "seated-spine-twist",
+    "name": "Seated gentle twist",
+    "tl": "Dahan-dahang pag-ikot",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 5,
+    "steps": [
+      "Sit tall near the front of the chair, feet flat.",
+      "Cross your arms over your chest, or hold the chair back with one hand.",
+      "Turn your chest slowly to the right as far as is comfortable, breathing out as you turn.",
+      "Come back to the middle and turn to the left. Do not force it."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint",
+      "Pain in your back that gets worse as you turn"
+    ],
+    "avoidIf": [
+      "twist"
+    ],
+    "level": 1,
+    "video": {
+      "id": "5M-b1c2spPE",
+      "channel": "Mayo Clinic",
+      "title": "Deskercise - Lower Back and Torso Stretches"
+    }
+  },
+  {
+    "id": "seated-back-arch",
+    "name": "Seated back arch and rounding",
+    "tl": "Pagbaluktot ng likod",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 6,
+    "steps": [
+      "Sit tall with your hands on your knees.",
+      "Breathe in and gently lift your chest, easing your back into a small arch.",
+      "Breathe out and let your back round softly, chin tucked a little.",
+      "Keep both movements small and slow."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint",
+      "Tingling, numbness or pain that shoots down an arm or leg"
+    ],
+    "avoidIf": [
+      "forward-bend"
+    ],
+    "level": 1,
+    "video": {
+      "id": "FpIfMyfpCk0",
+      "channel": "National Institute on Aging",
+      "title": "Back Stretch for Older Adults"
+    }
+  },
+  {
+    "id": "knee-rolls",
+    "name": "Lying knee rolls",
+    "tl": "Ipagulong ang tuhod",
+    "group": "mobility",
+    "posture": "floor",
+    "reps": 8,
+    "steps": [
+      "Lie on your back on a firm bed or mat with knees bent, feet flat.",
+      "Keeping your shoulders down, slowly let both knees fall gently to the right.",
+      "Bring them back to the middle, then let them fall to the left.",
+      "Go only as far as feels easy."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Pain in your lower back"
+    ],
+    "avoidIf": [
+      "floor",
+      "twist"
+    ],
+    "level": 1,
+    "video": {
+      "id": "QxsmVexWs_4",
+      "channel": "NHS inform",
+      "title": "Knee rolls"
+    }
+  },
+  {
+    "id": "pelvic-tilt",
+    "name": "Pelvic tilt",
+    "tl": "Ikiling ang balakang",
+    "group": "mobility",
+    "posture": "floor",
+    "reps": 8,
+    "steps": [
+      "Lie on your back with knees bent, feet flat, arms by your sides.",
+      "Breathe out and gently flatten the small of your back onto the bed or mat.",
+      "Hold for 2 counts while breathing normally, then relax."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Back pain that shoots into your leg"
+    ],
+    "avoidIf": [
+      "floor"
+    ],
+    "level": 1,
+    "video": {
+      "id": "xbyk3ebdwRI",
+      "channel": "NHS inform",
+      "title": "Pelvic tilts"
+    }
+  },
+  {
+    "id": "seated-hip-opener",
+    "name": "Seated knee out to the side",
+    "tl": "Ibuka ang tuhod",
+    "group": "mobility",
+    "posture": "seated",
+    "reps": 6,
+    "steps": [
+      "Sit tall near the front of the chair.",
+      "Slowly open one knee out to the side like opening a book, keeping your foot on the floor.",
+      "Bring it back to the middle, then do the other knee."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Pinching pain deep in the hip"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "back-leg-raise",
+    "name": "Standing leg back, holding a chair",
+    "tl": "Itaas ang paa sa likod",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "reps": 8,
+    "steps": [
+      "Stand behind a sturdy chair or counter and hold it with both hands.",
+      "Slowly lift one leg straight back without bending your knee or leaning forward.",
+      "Lower it slowly and switch legs."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "You feel unsteady and have nothing to hold"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "B54sRn3f8S0",
+      "channel": "National Institute on Aging",
+      "title": "Back Leg Raise Strength Exercise for Older Adults"
+    }
+  },
+  {
+    "id": "tai-chi-sway",
+    "name": "Slow sway (tai chi style)",
+    "tl": "Dahan-dahang pag-ugoy",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 120,
+    "steps": [
+      "Stand with your feet shoulder-width apart, one hand on a chair or counter.",
+      "Slowly shift your weight to the right foot, then to the left, like a gentle sway.",
+      "Let your arms float. Breathe slowly and keep your knees soft."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "You feel unsteady and have nothing to hold"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "9vljJ0u-avg",
+      "channel": "Mayo Clinic",
+      "title": "Mayo Clinic Minute: Tai chi keeps seniors on their feet"
+    }
+  },
+  {
+    "id": "side-step",
+    "name": "Side steps along the counter",
+    "tl": "Hakbang patagilid",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "reps": 10,
+    "steps": [
+      "Stand sideways beside a kitchen counter, one hand resting on it.",
+      "Step your feet to the side, one at a time, toward the end of the counter.",
+      "Step back the other way. Keep your toes pointing forward."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You feel unsteady and have nothing to hold",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "feet-together-stand",
+    "name": "Feet together stand",
+    "tl": "Magkadikit ang paa",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "durationSec": 30,
+    "steps": [
+      "Stand beside a counter with your fingertips on it.",
+      "Bring your feet together and stand tall. Breathe normally.",
+      "Try for 10 seconds, then rest. Work up slowly."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You feel unsteady and have nothing to hold",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1
+  },
+  {
+    "id": "clock-reach",
+    "name": "Clock reach",
+    "tl": "Abutin ang oras",
+    "group": "balance",
+    "posture": "standing-with-support",
+    "reps": 6,
+    "steps": [
+      "Stand beside a sturdy chair, one hand on the back of it.",
+      "Imagine a clock in front of you. Slowly reach your free arm to 12, then 3, with your knees soft.",
+      "Return to the middle, then switch hands."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "You feel unsteady and have nothing to hold",
+      "Sharp pain (not just tired muscles)"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "chair-dip",
+    "name": "Chair dip",
+    "tl": "Pagtulak sa upuan",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 6,
+    "steps": [
+      "Sit in a sturdy chair that cannot slide, hands on the seat beside your hips.",
+      "Lean forward a little, then press into your hands to lift your hips off the seat slightly.",
+      "Lower slowly, breathing out as you lift."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint",
+      "Shoulder pain"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 2,
+    "video": {
+      "id": "LVRcXDEdC5U",
+      "channel": "National Institute on Aging",
+      "title": "Chair Dip Strength Exercise for Older Adults"
+    }
+  },
+  {
+    "id": "overhead-press",
+    "name": "Seated overhead press",
+    "tl": "Itaas ang kamay",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 8,
+    "steps": [
+      "Sit tall holding a light water bottle in each hand at shoulder height.",
+      "Breathe out and lift both arms overhead until they are almost straight.",
+      "Lower slowly while breathing in."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "Shoulder pain",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1,
+    "video": {
+      "id": "VPiawRHRpmY",
+      "channel": "National Institute on Aging",
+      "title": "Overhead Arm Raise Strength Exercise for Older Adults"
+    }
+  },
+  {
+    "id": "thigh-squeeze",
+    "name": "Thigh squeeze",
+    "tl": "Pisilin ang hita",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 8,
+    "steps": [
+      "Sit tall with your leg out straight on a footstool or the floor.",
+      "Tighten the muscle on top of your thigh and press the back of the knee down. Count to 3 slowly.",
+      "Relax fully. Switch legs."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "You feel dizzy or faint",
+      "Your knee swells"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1,
+    "video": {
+      "id": "shSiZn5x9R8",
+      "channel": "NHS inform",
+      "title": "Static quad strengthening"
+    }
+  },
+  {
+    "id": "supported-leg-raise",
+    "name": "Leg raise to the front, holding a chair",
+    "tl": "Itaas ang paa sa harap",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 8,
+    "steps": [
+      "Stand holding a sturdy chair or counter with both hands.",
+      "Slowly lift one knee in front of you to a comfortable height.",
+      "Lower it with control. Do all on one side, then the other."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "You feel unsteady and have nothing to hold"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "o4ScRYNv7pY",
+      "channel": "NHS inform",
+      "title": "Supported leg raise"
+    }
+  },
+  {
+    "id": "sideways-hip-lift",
+    "name": "Sideways leg lift, holding a chair",
+    "tl": "Itaas ang paa sa gilid",
+    "group": "strength",
+    "posture": "standing-with-support",
+    "reps": 8,
+    "steps": [
+      "Stand tall holding a chair or counter. Keep your toes pointing forward.",
+      "Slowly lift one leg out to the side, keeping your body upright.",
+      "Lower it slowly. Switch legs."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "You feel unsteady and have nothing to hold"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "S79T0-2GyKM",
+      "channel": "NHS inform",
+      "title": "Sideways hip lift"
+    }
+  },
+  {
+    "id": "seated-hamstring-curl",
+    "name": "Seated heel pull-back",
+    "tl": "Hilahin ang takong",
+    "group": "strength",
+    "posture": "seated",
+    "reps": 8,
+    "steps": [
+      "Sit tall at the front of a chair.",
+      "Slide one foot back under the chair, then press the toes down and squeeze the back of the thigh.",
+      "Slide it back out. Do all on one side, then the other."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Your thigh cramps and does not ease"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "shoulder-arm-stretch",
+    "name": "Shoulder and arm stretch",
+    "tl": "Iunat ang balikat at braso",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit tall. Bring your right arm across your chest.",
+      "Use your left hand to hold it gently at the elbow. Hold the stretch for a slow breath out.",
+      "Let go and switch arms. Do not pull hard."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Tingling, numbness or pain that shoots down an arm or leg",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [],
+    "level": 1,
+    "video": {
+      "id": "CW0h60-PS4Y",
+      "channel": "National Institute on Aging",
+      "title": "Shoulder and Arm Stretch for Older Adults"
+    }
+  },
+  {
+    "id": "knee-hug",
+    "name": "Single knee hug",
+    "tl": "Yakapin ang tuhod",
+    "group": "stretch",
+    "posture": "floor",
+    "reps": 6,
+    "steps": [
+      "Lie on your back on a firm bed or mat with knees bent.",
+      "Use both hands behind one thigh to draw it gently toward your chest.",
+      "Hold for a slow breath out, then lower the foot and switch legs."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Pain in the hip or knee"
+    ],
+    "avoidIf": [
+      "floor",
+      "forward-bend"
+    ],
+    "level": 1,
+    "video": {
+      "id": "I6sP_tzzb_4",
+      "channel": "NHS inform",
+      "title": "Single knee hug"
+    }
+  },
+  {
+    "id": "seated-figure-four",
+    "name": "Seated hip stretch",
+    "tl": "Iunat ang balakang",
+    "group": "stretch",
+    "posture": "seated",
+    "durationSec": 60,
+    "steps": [
+      "Sit tall at the front of a sturdy chair.",
+      "Rest your right ankle across your left knee, keeping the right foot flexed.",
+      "Sit tall and breathe slowly. You should feel a stretch in the outer hip only.",
+      "Hold for 15 to 20 seconds, then switch sides."
+    ],
+    "stopIf": [
+      "Sharp pain (not just tired muscles)",
+      "Knee pain",
+      "You cannot do it without leaning over"
+    ],
+    "avoidIf": [
+      "hold"
+    ],
+    "level": 1
+  },
+  {
+    "id": "breathing-walk",
+    "name": "Breathing walk",
+    "tl": "Paglakad nang may paghinga",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 300,
+    "steps": [
+      "Walk at an easy pace on level ground, or up and down a hallway.",
+      "Breathe in through your nose for 3 steps.",
+      "Breathe out slowly for 4 steps, lips a little pursed.",
+      "Keep that rhythm. Slow down if you cannot count it comfortably."
+    ],
+    "stopIf": [
+      "You are short of breath and it does not settle",
+      "You feel dizzy or faint",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "mindful-walk",
+    "name": "Slow mindful walk",
+    "tl": "Dahan-dahang paglakad",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 300,
+    "steps": [
+      "Walk slowly in a safe, clear space, indoors or in the garden.",
+      "Feel each heel land, then the whole foot, then your toes.",
+      "Let your breath be easy. Notice three things you can see or hear."
+    ],
+    "stopIf": [
+      "You feel dizzy or faint",
+      "Sharp pain (not just tired muscles)",
+      "Chest pain or pressure"
+    ],
+    "avoidIf": [],
+    "level": 1
+  },
+  {
+    "id": "pursed-lip-walk",
+    "name": "Pursed-lip walk",
+    "tl": "Lakad na may pursed-lip na paghinga",
+    "group": "walk",
+    "posture": "standing-with-support",
+    "durationSec": 180,
+    "steps": [
+      "Stand tall, then start walking slowly.",
+      "Breathe in through your nose for 2 steps.",
+      "Breathe out through pursed lips, as if blowing out a candle, for 4 steps.",
+      "Rest on a chair any time you need it."
+    ],
+    "stopIf": [
+      "You are short of breath and it does not settle",
+      "You feel dizzy or faint",
+      "Chest pain or pressure",
+      "Your lips or fingertips look blue"
     ],
     "avoidIf": [],
     "level": 1
