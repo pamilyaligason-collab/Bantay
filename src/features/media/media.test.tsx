@@ -10,12 +10,23 @@ afterEach(() => { HTMLMediaElement.prototype.play = realPlay; HTMLMediaElement.p
 const setOnline = (v: boolean) => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(v)
 
 describe('LiteVideo', () => {
-  it('loads no iframe or image before the tap, and links to YouTube', () => {
+  it('before the tap: no iframe, only the still picture (ytimg), title, length and a link to YouTube', () => {
     setOnline(true)
-    const { container } = render(<LiteVideo id="M4ACYp75mjU" title="Hands-only CPR" />)
+    const { container } = render(<LiteVideo id="M4ACYp75mjU" title="Hands-only CPR" minutes={5} />)
     expect(container.querySelector('iframe')).toBeNull()
-    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('img')!.getAttribute('src')).toBe('https://i.ytimg.com/vi/M4ACYp75mjU/hqdefault.jpg')
+    expect(container.querySelector('img')!.getAttribute('referrerpolicy')).toBe('no-referrer')
+    expect(screen.getByText('5 min')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Play Hands-only CPR, 5 minutes' })).toBeTruthy()
     expect(screen.getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=M4ACYp75mjU')
+  })
+  it('a picture that fails to load falls back to the drawn poster; unknown length shows no minutes', () => {
+    setOnline(true)
+    const { container } = render(<LiteVideo id="M4ACYp75mjU" title="Hands-only CPR" minutes={null} />)
+    expect(screen.queryByText(/ min$/)).toBeNull()
+    fireEvent.error(container.querySelector('img')!)
+    expect(container.querySelector('img')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Play Hands-only CPR' })).toBeTruthy()
   })
   it('a tap mounts the youtube-nocookie player for that id, with start and referrer policy', () => {
     setOnline(true)

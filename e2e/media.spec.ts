@@ -2,14 +2,14 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
-// Learn media: Health > Videos. Nothing may be requested from YouTube or ytimg before a tap. Synthetic data only.
+// Learn media: Health > Videos. Before a tap only the still picture (i.ytimg.com) may load; no YouTube page or player request. Synthetic data only.
 // The Today "Video of the day" card is not mounted on Today (Lloyd's Today order, e2e/today.spec.ts), so it is covered by src/features/media/media.test.tsx.
 test.use({ viewport: { width: 390, height: 844 } })
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`Health > Videos: no YouTube request before the tap, then the no-cookie player (${scheme}, axe)`, async ({ page }) => {
     const hits: string[] = []
-    page.on('request', (r) => { if (/youtube|ytimg|ggpht/.test(new URL(r.url()).hostname)) hits.push(r.url()) })
+    page.on('request', (r) => { if (/youtube|ggpht/.test(new URL(r.url()).hostname)) hits.push(r.url()) })
     await page.route(/youtube-nocookie\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>player stub</p>' }))
     await page.emulateMedia({ colorScheme: scheme })
     await skipOnboarding(page)
