@@ -1,10 +1,24 @@
 /* Files, IDs and History (lane LC). Prefix dk- shared; fl- for page-only rules. */
 .fl-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .fl-name { text-align: left; font-weight: 600; white-space: nowrap; }
-.fl-file { max-width: 240px; overflow-wrap: anywhere; }
+.fl-file { min-width: 160px; max-width: 240px; overflow-wrap: break-word; }
 .fl-num { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
 .fl-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 .fl-fields { max-width: 280px; overflow-wrap: anywhere; }
 .fl-note { margin: 0; color: var(--muted); font-size: 13px; }
 .dk-field select.dk-in, .dk-field input.dk-in { width: 100%; }
 .fl { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Tables become one card per row under 768px; cells carry data-label. */
+@media (max-width: 767px) {
+  .dk-table.dk-cardtab thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .dk-table.dk-cardtab, .dk-table.dk-cardtab tbody { display: block; }
+  .dk-table.dk-cardtab tr { display: grid; gap: 4px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  .dk-table.dk-cardtab tbody tr:first-child { border-top: 0; }
+  .dk-table.dk-cardtab td, .dk-table.dk-cardtab tbody th { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; height: auto; min-height: 0; padding: 0; border: 0; white-space: normal; }
+  .dk-table.dk-cardtab td[data-label]::before { content: attr(data-label); flex: 0 0 84px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .dk-table.dk-cardtab td:empty { display: none; }
+  .dk-table.dk-cardtab .num { text-align: left; }
+  .fl-file { max-width: none; }
+  .fl-fields { max-width: none; }
+}

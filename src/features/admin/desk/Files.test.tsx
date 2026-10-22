@@ -51,7 +51,7 @@ describe('Files', () => {
     expect(screen.getAllByRole('button', { name: /^Retry / })).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: 'Retry bad.jpg' }))
     expect(h.state.updates).toHaveLength(0)
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Read again' }))
     await waitFor(() => expect(h.state.updates).toEqual([{ ingest_status: 'new', ingest_tries: 0, ingest_error: null }]))
     expect(await screen.findByText('Queued to read again.')).toBeTruthy()
   })

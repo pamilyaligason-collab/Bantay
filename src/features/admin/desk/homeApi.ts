@@ -3,6 +3,7 @@ import { supabase } from '../../auth/client'
 import { adminMembers, listPinRequests, rpc, type PinRequest, type UsageRow } from '../api'
 import { loadDuplicates } from './recordsApi'
 import { memberState, type Row as MemberRow } from './Members'
+import { fieldWord } from './logsApi'
 import { deskHref } from './types'
 import type { Tone } from './ui'
 
@@ -70,7 +71,9 @@ export function ago(iso: string | null | undefined, now = Date.now()): string {
 // ---------- Confirm queue ----------
 export type QueueRow = { person_id: string; kind: string; drafts: number }
 export const KIND_WORDS: Record<string, string> = { lab_results: 'labs', prescription_items: 'prescription lines', documents: 'papers', imaging_reports: 'imaging', vaccinations: 'vaccinations' }
-export const kindWord = (k: string) => KIND_WORDS[k] ?? k.replace(/_/g, ' ')
+const KIND_ONE: Record<string, string> = { lab_results: 'lab', prescription_items: 'prescription line', documents: 'paper', imaging_reports: 'imaging', vaccinations: 'vaccination' }
+/** 'labs' for many, 'lab' for exactly one (n omitted = plural). */
+export const kindWord = (k: string, n = 2) => (n === 1 ? KIND_ONE[k] : KIND_WORDS[k]) ?? k.replace(/_/g, ' ')
 const counted = (r: QueueRow) => Number.isFinite(Number(r.drafts)) && Number(r.drafts) > 0
 
 export function queueSummary(rows: QueueRow[]) {
@@ -103,13 +106,32 @@ export function needsYou(i: { pins: PinRequest[]; personOf: (userId: string) => 
 export type AuditLite = { id: number; at: string; actor: string | null; tbl: string; person_id: string | null; action: string; fields: string[] | null }
 export const ACTION_WORDS = STATUS_LABEL // one word list for audit actions (shared.tsx)
 export const actionTone = (a: string): Tone => (a === 'confirm' ? 'ok' : a === 'reject' || a === 'delete' || a === 'reveal' ? 'bad' : 'plain')
-export const fieldsText = (f: string[] | null | undefined) => { const x = (f ?? []).filter(Boolean); return x.length ? x.slice(0, 3).join(', ') + (x.length > 3 ? ` +${x.length - 3}` : '') : '' }
+export const fieldsText = (f: string[] | null | undefined) => { const x = (f ?? []).filter(Boolean).map(fieldWord); return x.length ? x.slice(0, 3).join(', ') + (x.length > 3 ? ` +${x.length - 3}` : '') : '' }
+
+// ---------- Week-over-week ----------
+/** 'vs last week' text for a KPI. Unknown (null) on either side shows nothing, never 0. */
+export function weekDelta(now: number | null | undefined, before: number | null | undefined): string | null {
+  if (now == null || before == null || !Number.isFinite(now) || !Number.isFinite(before)) return null
+  const d = now - before
+  return d === 0 ? 'Same as last week' : `${d > 0 ? '+' : '-'}${Math.abs(d)} vs last week`
+}
+/** Who used the app in the last 7 Manila days and in the 7 before. Rows with an unreadable time are skipped. */
+export function activeByWeek(rows: { user_id: string; at: string }[], today: string) {
+  const cut = addDays(today, -6), start = addDays(today, -13)
+  const cur = new Set<string>(), prev = new Set<string>()
+  for (const r of rows) {
+    const t = Date.parse(r.at); if (Number.isNaN(t)) continue
+    const d = manilaDay(t)
+    if (d >= cut && d <= today) cur.add(r.user_id); else if (d >= start && d < cut) prev.add(r.user_id)
+  }
+  return { cur, prev }
+}
 
 // ---------- Loaders ----------
 async function guard<T>(f: () => PromiseLike<Res<T>>): Promise<Res<T>> { if (!supabase) return NO; try { return await f() } catch { return bad } }
 const head = async (q: PromiseLike<{ count: number | null; error: unknown }>): Promise<Res<number>> => { const r = await q; return r.error || r.count == null ? bad : { ok: true, data: r.count } }
 
-export type PeopleState = { total: number; active: number | null; locked: { name: string; personId: string | null }[]; personOf: Record<string, string> }
+export type PeopleState = { total: number; active: number | null; liveIds: string[]; locked: { name: string; personId: string | null }[]; personOf: Record<string, string> }
 /** Members who can sign in (not disabled), how many used the app in 7 days, who is locked out. Usage failing leaves `active` null. */
 export const loadPeopleState = (): Promise<Res<PeopleState>> => guard(async () => {
   const [m, u] = await Promise.all([adminMembers<{ members: MemberRow[] }>({ action: 'list' }), rpc<UsageRow[]>('admin_usage_summary', { days: 30 })])
@@ -118,6 +140,7 @@ export const loadPeopleState = (): Promise<Res<PeopleState>> => guard(async () =
   const seen = u.ok ? new Set(u.data.filter((x) => x.active_7).map((x) => x.user_id)) : null
   return { ok: true, data: {
     total: live.length,
+    liveIds: live.map((x) => x.userId),
     active: seen ? live.filter((x) => seen.has(x.userId)).length : null,
     locked: live.filter((x) => memberState(x).locked).map((x) => ({ name: x.displayName, personId: x.personId })),
     personOf: Object.fromEntries(m.data.members.filter((x) => x.personId).map((x) => [x.userId, x.personId as string]))
@@ -167,6 +190,19 @@ export const loadConfirmedWeeks = (weeks = 8, now: Date = new Date()) => guard<{
   }
   const v = await Promise.all(ws.map(one))
   return v.some((x) => x === null) ? bad : { ok: true, data: { days: ws, values: v as number[] } }
+})
+
+/** Who opened the app in the last 14 days (user_id and time only), paged like loadUsageSeries. Failing leaves the delta off. */
+export const loadActiveWeeks = (now: Date = new Date()) => guard<{ cur: string[]; prev: string[] }>(async () => {
+  const today = manilaDay(now), since = dayStartIso(addDays(today, -13)), rows: { user_id: string; at: string }[] = []
+  for (let p = 0; p < 20; p++) {
+    const { data, error } = await supabase!.from('usage_events').select('user_id, at').eq('kind', 'screen').gte('at', since).order('at').range(p * 1000, p * 1000 + 999)
+    if (error) return bad
+    rows.push(...((data ?? []) as { user_id: string; at: string }[]))
+    if ((data?.length ?? 0) < 1000) break
+  }
+  const w = activeByWeek(rows, today)
+  return { ok: true, data: { cur: [...w.cur], prev: [...w.prev] } }
 })
 
 export const loadRecent = () => guard<AuditLite[]>(async () => {

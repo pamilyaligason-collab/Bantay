@@ -14,7 +14,27 @@ const h = vi.hoisted(() => {
 })
 vi.mock('../../auth/client', () => ({ supabase: h.sb }))
 
-import { canRetry, dedupeCounts, editPatch, errorWords, FILE_COLS, last4Of, listAudit, listFiles, maskNumber, noAuditTable, numberPatch, PAGE, RETRY_PATCH, retryFile, isExpired } from './logsApi'
+import { canRetry, dedupeCounts, editPatch, errorWords, FILE_COLS, last4Of, listAudit, listFiles, maskNumber, noAuditTable, numberPatch, PAGE, RETRY_PATCH, retryFile, isExpired, daysLeft, expiresSoon, fieldWord } from './logsApi'
+
+describe('expiry days and field words', () => {
+  it('daysLeft is null for unknown, negative when past', () => {
+    expect(daysLeft(null, '2026-10-22')).toBeNull()
+    expect(daysLeft('soon', '2026-10-22')).toBeNull()
+    expect(daysLeft('2026-11-01', '2026-10-22')).toBe(10)
+    expect(daysLeft('2026-10-20', '2026-10-22')).toBe(-2)
+  })
+  it('expiresSoon covers today to 60 days, not expired and not unknown', () => {
+    expect(expiresSoon('2026-10-22', '2026-10-22')).toBe(true)
+    expect(expiresSoon('2026-12-21', '2026-10-22')).toBe(true)
+    expect(expiresSoon('2026-12-22', '2026-10-22')).toBe(false)
+    expect(expiresSoon('2026-10-21', '2026-10-22')).toBe(false)
+    expect(expiresSoon(null, '2026-10-22')).toBe(false)
+  })
+  it('fieldWord maps known columns and cleans unknown ones', () => {
+    expect(fieldWord('value_num')).toBe('Value')
+    expect(fieldWord('some_new_col')).toBe('some new col')
+  })
+})
 
 const names = () => h.calls.map((c) => c.fn)
 beforeEach(() => { h.calls.length = 0; h.result.data = []; h.result.error = null })

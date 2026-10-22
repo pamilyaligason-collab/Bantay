@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import { when } from '../shared'
+import { dateTime, statusLabel } from '../shared'
 import { useDeskPeople } from './people'
 import { canRetry, errorWords, FILTERS, listFiles, openFile, retryFile, type FileFilter, type FileRow } from './logsApi'
 import type { PageProps } from './types'
-import { Empty, Filters, PageHead, Tag, useConfirm, useToast, type Tone } from './ui'
+import { Empty, Filters, PageHead, Skeleton, Tag, useConfirm, useToast, type Tone } from './ui'
 import './files.css'
 
 const TONE: Record<string, Tone> = { failed: 'bad', reading: 'warn', new: 'warn', queued: 'warn', extracted: 'warn', done: 'ok' }
-const kindWords = (k: string | null | undefined) => (k ? k.replace(/_/g, ' ') : 'Unknown')
+const kindWords = (k: string | null | undefined) => (k ? statusLabel(k) : 'Unknown')
 
 export default function Files(_: PageProps) {
   const { people, nameOf } = useDeskPeople()
@@ -30,7 +30,7 @@ export default function Files(_: PageProps) {
     const res = await retryFile(r.id)
     toast.show(res.ok ? 'Queued to read again.' : 'Could not queue it. Try again.')
     if (res.ok) setTick((t) => t + 1)
-  })
+  }, { title: 'Read this file again?', verb: 'Read again' })
   const open = async (r: FileRow) => { if (!(await openFile(r))) toast.show('Could not open that file.') }
 
   return (
@@ -45,23 +45,24 @@ export default function Files(_: PageProps) {
         </select>
       </Filters>
       {error && <Empty>Could not load files. Check the connection and try again.</Empty>}
+      {!error && !rows && <Skeleton rows={6} />}
       {!error && rows && !rows.length && <Empty>No files match.</Empty>}
       {!error && !!rows?.length && (
         <div className="dk-scrollx">
-          <table className="dk-table">
+          <table className="dk-table dk-cardtab">
             <caption className="fl-sr">Source files</caption>
             <thead><tr>{['Person', 'File', 'Kind', 'Page', 'Status', 'Problem', 'Tries', 'Added', 'Actions'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id}>
                   <th scope="row" className="fl-name">{r.person_id ? nameOf(r.person_id) : 'Not assigned'}</th>
-                  <td className="fl-file">{r.name}</td>
-                  <td>{kindWords(r.documents?.kind)}</td>
-                  <td className="num">{r.page_no ?? ''}{r.documents?.page_count ? ` of ${r.documents.page_count}` : ''}</td>
-                  <td><Tag tone={TONE[r.ingest_status] ?? 'plain'}>{r.ingest_status}</Tag></td>
-                  <td>{errorWords(r.ingest_error)}</td>
-                  <td className="num">{r.ingest_tries ?? ''}</td>
-                  <td>{when(r.created_at)}</td>
+                  <td className="fl-file" data-label="File">{r.name}</td>
+                  <td data-label="Kind">{kindWords(r.documents?.kind)}</td>
+                  <td className="num" data-label="Page">{r.page_no ?? ''}{r.documents?.page_count ? ` of ${r.documents.page_count}` : ''}</td>
+                  <td data-label="Status"><Tag tone={TONE[r.ingest_status] ?? 'plain'}>{statusLabel(r.ingest_status)}</Tag></td>
+                  <td data-label="Problem">{errorWords(r.ingest_error)}</td>
+                  <td className="num" data-label="Tries">{r.ingest_tries ?? ''}</td>
+                  <td data-label="Added">{dateTime(r.created_at)}</td>
                   <td>
                     <div className="dk-acts">
                       {(r.storage_path || r.drive_file_id) && <button className="dk-b" onClick={() => open(r)} aria-label={`Open ${r.name}`}>Open</button>}

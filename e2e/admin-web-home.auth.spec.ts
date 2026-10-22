@@ -81,9 +81,9 @@ for (const size of SIZES) {
     expect(await violations(page)).toEqual([])
     if (size.width !== 820) await page.screenshot({ path: `test-results/admin-home-${size.width}.png`, fullPage: true })
 
-    // whole row opens the queue
+    // whole row opens that person's queue
     await page.getByRole('region', { name: 'Confirm queue by person' }).getByRole('row', { name: /Test Person/ }).click()
-    await expect(page).toHaveURL(/#\/queue$/)
+    await expect(page).toHaveURL(/#\/queue\/p2$/)
   })
 }
 
@@ -139,5 +139,19 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(ratio).toBeGreaterThanOrEqual(4.5)
     expect((await page.locator('.bad-solid').boundingBox())!.height).toBeGreaterThanOrEqual(48)
     await page.screenshot({ path: `docs/session-9/shots/adm-a/confirm-danger-390-${scheme}.png` })
+  })
+}
+
+// Screenshots for the review (SHOTS=1 npx playwright ...): 1440x900 and 390x844, light and dark.
+const SHOT_SIZES = [{ width: 1440, height: 900 }, { width: 390, height: 844 }]
+for (const size of process.env.SHOTS ? SHOT_SIZES : []) for (const scheme of ['light', 'dark'] as const) {
+  test(`shots home ${size.width} ${scheme}`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await page.emulateMedia({ colorScheme: scheme })
+    await mock(page)
+    await skipOnboarding(page)
+    await page.goto('/admin#/home')
+    await expect(page.getByRole('region', { name: 'Recent changes' }).getByText('System')).toBeVisible()
+    await page.screenshot({ path: `docs/session-9/shots/adm-be/home-${size.width}-${scheme}.png`, fullPage: true })
   })
 }

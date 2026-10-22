@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react'
-import { when as fullTime } from '../shared'
+import { dateTime as fullTime, statusLabel } from '../shared'
 import { deskHref, type PageProps } from './types'
 import { Empty, PageHead, Panel, Skeleton, Tag, useConfirm, useToast } from './ui'
 import { useDeskPeople } from './people'
@@ -92,7 +92,7 @@ export default function Calendar({ id, sub }: PageProps) {
       confirm.ask(`This changes the reminder times on phones for ${it.title} (${nameOf(it.personId)}). Continue?`, async () => {
         const r = await updateMedTimes(it.rowId, it.schedule, times)
         if (await done(r, 'Medicine times saved', () => restoreMedSchedule(it.rowId, it.schedule))) after(back)
-      })
+      }, { title: 'Change reminder times?', verb: 'Change times' })
     }
   }
   const remove = (form: Form, back: string | null) => {
@@ -101,7 +101,7 @@ export default function Calendar({ id, sub }: PageProps) {
     const table = form.t === 'event' ? 'family_events' : 'family_tasks'
     confirm.ask(`Delete "${it.title}"? It also disappears from phones.`, async () => {
       if (await done(await setDeleted(table, it.rowId, true), 'Deleted', () => setDeleted(table, it.rowId, false))) after(back)
-    })
+    }, { title: `Delete this ${form.t}?`, verb: 'Delete', danger: true })
   }
 
   const open = (day: string) => setPanel({ type: 'day', day })
@@ -220,12 +220,22 @@ function Month({ anchor, today, items, onOpen }: { anchor: string; today: string
       <div className="cal-grid">
         {grid.map((d) => {
           const list = by.get(d) ?? []
+          // Medicine times fold into one "Meds" line so real events are not pushed behind "+n more".
+          const doses = list.filter((i) => i.kind === 'dose'), others = list.filter((i) => i.kind !== 'dose')
+          const shownN = doses.length ? 2 : 3
           const label = `${dayLabel(d, today)}, ${Number(d.slice(8))} ${MONTHS[Number(d.slice(5, 7)) - 1]}. ${list.length ? `${list.length} ${list.length === 1 ? 'item' : 'items'}` : 'Nothing scheduled'}`
           return (
             <div key={d} className={`cal-cell${monthOf(d) !== monthOf(anchor) ? ' out' : ''}${d === today ? ' today' : ''}`} onClick={() => onOpen(d)}>
               <button className="cal-day" data-day={d} tabIndex={d === anchor ? 0 : -1} aria-label={label} aria-current={d === today ? 'date' : undefined} onClick={(e) => { e.stopPropagation(); onOpen(d) }}>{Number(d.slice(8))}</button>
-              <ul className="cal-chips">{list.slice(0, 3).map((i) => <Chip key={i.id} i={i} />)}</ul>
-              {list.length > 3 && <span className="cal-more">+{list.length - 3} more</span>}
+              <ul className="cal-chips">
+                {others.slice(0, shownN).map((i) => <Chip key={i.id} i={i} />)}
+                {doses.length > 0 && (
+                  <li className="cal-chip" style={{ '--k': colour('dose') } as React.CSSProperties} title={`Medicine times: ${doses.length}`}>
+                    <span className="wa-sr">Medicine times: </span><span className="cal-chip-t">Meds <b>{doses.length}</b></span>
+                  </li>
+                )}
+              </ul>
+              {others.length > shownN && <span className="cal-more">+{others.length - shownN} more</span>}
             </div>
           )
         })}
@@ -294,7 +304,7 @@ function DayList({ items, nameOf, onTick, onEdit, onStatus }: { items: AgendaIte
             <strong className={i.done ? 'done' : ''}>{i.title}</strong>
             <span className="cal-who" title={hint(i)}>{timeText(i)} &middot; {who(i, nameOf)}</span>
             {i.overdue && <Tag tone="warn">Overdue</Tag>}
-            {i.kind === 'appointment' && i.status !== 'planned' && <Tag tone={i.status === 'done' ? 'ok' : 'bad'}>{i.status}</Tag>}
+            {i.kind === 'appointment' && i.status !== 'planned' && <Tag tone={i.status === 'done' ? 'ok' : 'bad'}>{statusLabel(i.status)}</Tag>}
           </div>
           <div className="dk-acts">
             {i.kind === 'task' && <label className="cal-check"><input type="checkbox" checked={!!i.done} onChange={() => onTick(i)} /> Done</label>}
