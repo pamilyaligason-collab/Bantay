@@ -51,6 +51,7 @@ ${pairs};`
 
 /** Replace the text between the markers of `migration` with `seed`. Throws if a marker is missing. */
 export function spliceSeed(migration, seed) {
+  migration = migration.replaceAll('\r\n', '\n') // a Windows checkout may have CRLF
   const a = migration.indexOf(BEGIN)
   const b = migration.indexOf(END)
   if (a < 0 || b < a) throw new Error('0025_knowledge.sql lost its BEGIN/END GENERATED SEED markers')
@@ -63,7 +64,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const topics = JSON.parse(readFileSync(join(here, 'topics.json'), 'utf8'))
   const bad = validate(topics)
   if (bad.length) { console.error(bad.join('\n')); process.exit(1) }
-  const current = readFileSync(migPath, 'utf8')
+  const current = readFileSync(migPath, 'utf8').replaceAll('\r\n', '\n')
   const next = spliceSeed(current, seedSql(topics))
   if (process.argv[2] === '--check') {
     if (next !== current) { console.error('0025_knowledge.sql is out of date: run node scripts/knowledge/build.mjs'); process.exit(1) }

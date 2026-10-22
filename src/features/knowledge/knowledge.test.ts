@@ -58,7 +58,7 @@ describe('knowledge build', () => {
     expect(() => spliceSeed('no markers', 'x')).toThrow(/markers/)
   })
   it('the committed migration is what topics.json produces', () => {
-    expect(spliceSeed(migration, seedSql(topics))).toBe(migration)
+    expect(spliceSeed(migration, seedSql(topics))).toBe(migration.replaceAll('\r\n', '\n'))
   })
 })
 
