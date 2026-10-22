@@ -18,7 +18,7 @@ describe('request', () => {
     expect(u.origin + u.pathname).toBe('https://api.open-meteo.com/v1/forecast')
     expect(u.searchParams.get('current')!.split(',')).toEqual(['temperature_2m', 'relative_humidity_2m', 'apparent_temperature', 'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'uv_index'])
     expect(u.searchParams.get('hourly')!.split(',')).toEqual(['temperature_2m', 'precipitation_probability', 'weather_code'])
-    expect(u.searchParams.get('daily')!.split(',')).toEqual(['weather_code', 'temperature_2m_min', 'temperature_2m_max', 'precipitation_probability_max', 'uv_index_max'])
+    expect(u.searchParams.get('daily')!.split(',')).toEqual(['weather_code', 'temperature_2m_min', 'temperature_2m_max', 'precipitation_probability_max', 'uv_index_max', 'sunrise', 'sunset'])
   })
   it('asks for 7 days in the place time zone, not Manila', () => {
     expect(u.searchParams.get('forecast_days')).toBe('7')
