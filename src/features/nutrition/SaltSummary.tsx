@@ -42,6 +42,12 @@ export function SaltSummary({ entries, goalMg, headingId, children }: { entries:
           </ol>
         </div>
       )}
+      {t.count > 0 && (
+        <p className="nu-keys" data-testid="day-keys">
+          <span>Energy <b>{t.kcal == null ? '–' : `${fmt(t.kcal)} kcal`}</b></span><span>Protein <b>{t.proteinG == null ? '–' : `${t.proteinG} g`}</b></span>
+          <span>Carbs <b>{t.carbsG == null ? '–' : `${t.carbsG} g`}</b></span><span>Fibre <b>{t.fiberG == null ? '–' : `${t.fiberG} g`}</b></span>
+        </p>
+      )}
       {t.kcal != null && <p className="nu-sub" data-testid="kcal">About {fmt(t.kcal)} kcal eaten today. For information only, there is no calorie goal.</p>}
       {children}
     </>
@@ -54,8 +60,8 @@ const useNow = () => {
   return now
 }
 
-/** Today's "Salt today" card: this phone's member. Shows once signed in; links to Health > Food and salt. */
-export default function SaltTodayCard({ onMeal }: { onMeal(): void }) {
+/** Today's "Meals today" card: this phone's member. Salt is part of the meals (no separate salt log). Shows once signed in; links to Health > Food and nutrients. */
+export default function MealsTodayCard({ onMeal }: { onMeal(): void }) {
   const personId = useSelfPersonId() ?? ''
   const now = useNow()
   const food = useFood(personId, 2)
@@ -64,13 +70,13 @@ export default function SaltTodayCard({ onMeal }: { onMeal(): void }) {
   const today = useMemo(() => onDay(food, now), [food, now])
   if (!personId) return null
   return (
-    <section className="card nu-card nu" aria-labelledby="t-salt" data-reveal>
+    <section className="card nu-card nu" aria-labelledby="t-meals" data-reveal>
       <div className="td-row between">
-        <h2 id="t-salt" className="td-sech">Salt today</h2>
-        <a className="td-link" href="#health/nutrition">See the week</a>
+        <h2 id="t-meals" className="td-sech">Meals today</h2>
+        <a className="td-link" href="#health/nutrition">See nutrients</a>
       </div>
-      <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="t-salt">
-        <div className="nu-act"><button type="button" className="nu-ghost" onClick={onMeal}><Icon name="meal" size={20} />Log a meal</button></div>
+      <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="t-meals">
+        <div className="nu-act"><button type="button" className="nu-big-btn" onClick={onMeal}><Icon name="meal" size={22} />Log a meal</button></div>
       </SaltSummary>
       <WaterPanel rows={water} goalMl={goal.waterMl} now={now} />
     </section>

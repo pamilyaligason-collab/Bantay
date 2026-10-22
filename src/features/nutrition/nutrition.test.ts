@@ -49,7 +49,7 @@ describe('logging', () => {
     expect('id' in payload).toBe(false)
     expect(payload.client_id).toBe(rows[0]!.clientId)
     expect(toRow('food_entries', payload, payload.client_id as string)).toMatchObject({ person_id: 'p-me', meal: 'lunch', food_key: 'chicken_adobo', portion: 1.5, deleted_at: null, client_id: rows[0]!.clientId })
-    expect(Object.keys(toRow('food_entries', payload)).sort()).toEqual(['deleted_at', 'eaten_at', 'food_key', 'kcal', 'meal', 'name', 'person_id', 'portion', 'potassium_mg', 'protein_g', 'serving_label', 'sodium_mg'])
+    expect(Object.keys(toRow('food_entries', payload)).sort()).toEqual(['b12_ug', 'calcium_mg', 'carbs_g', 'deleted_at', 'eaten_at', 'fat_g', 'fiber_g', 'food_key', 'iron_mg', 'kcal', 'magnesium_mg', 'meal', 'name', 'person_id', 'portion', 'potassium_mg', 'protein_g', 'sat_fat_g', 'serving_label', 'sodium_mg', 'sugars_g', 'vitd_ug'])
   })
 
   it('signed out writes nothing and says so', async () => {
@@ -92,10 +92,10 @@ describe('logging', () => {
 
   it('a goal is saved locally and queued as an upsert on person_id', async () => {
     expect(await saveGoal('p-me', { sodiumMg: 1500 })).toBe('ok')
-    expect(await ldb.goals.get('p-me')).toEqual({ personId: 'p-me', sodiumMg: 1500, waterMl: 1500 })
+    expect(await ldb.goals.get('p-me')).toEqual({ personId: 'p-me', sodiumMg: 1500, waterMl: 1500, potassiumMg: null, sex: null })
     const [r] = await outbox()
     expect(r!.table).toBe('nutrition_goals')
-    expect(toRow('nutrition_goals', r!.payload, 'ignored')).toEqual({ person_id: 'p-me', sodium_mg: 1500, water_ml: 1500 })
+    expect(toRow('nutrition_goals', r!.payload, 'ignored')).toEqual({ person_id: 'p-me', sodium_mg: 1500, water_ml: 1500, potassium_mg: null, sex: null })
   })
 })
 

@@ -114,3 +114,13 @@ Bantay's own words throughout. Nothing below is copied or bundled; each source i
 - Bagoong has no plain FDC entry (only branded products), and instant noodles, canned sardines and galunggong are brand or species dependent: those values are estimates to check against a pack or jar label.
 - NOT used: Philippine Food Composition Tables (FNRI PhilFCT) values. SparkyFitness is non-commercial and source-available: no code or data was copied from it.
 - Salt limit: WHO, Salt reduction fact sheet, adults under 2000 mg sodium (5 g salt) a day: https://www.who.int/news-room/fact-sheets/detail/salt-reduction . Linked only (WHO content is CC BY-NC-SA, none of its text is bundled). Salt (g) = sodium (mg) x 2.5 / 1000.
+
+## Nutrients and daily targets (session 9, W1 nutrition)
+- More nutrients per food (carbohydrate, total fat, saturated fat, fibre, sugars, calcium, iron, magnesium, vitamin D, vitamin B12) come from the same USDA SR Legacy CSV, written by `node scripts/nutrition/build-foods.mjs --verify-csv <dir> --write`. A value SR Legacy does not list is null, and a dish with a null ingredient value is null for that nutrient (never 0).
+- Daily targets by age and sex (src/features/nutrition/targets.ts), adults 19+ only, public domain:
+  - NIH Office of Dietary Supplements, Health Professional fact sheets: Calcium https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/ , Iron .../Iron-HealthProfessional/ , Magnesium .../Magnesium-HealthProfessional/ , Potassium .../Potassium-HealthProfessional/ (AI 2019: 2600 mg women, 3400 mg men), Vitamin D .../VitaminD-HealthProfessional/ (15 mcg to 70, 20 mcg from 71; 1 mcg = 40 IU), Vitamin B12 .../VitaminB12-HealthProfessional/ (2.4 mcg).
+  - National Academies Dietary Reference Intakes summary tables, https://www.ncbi.nlm.nih.gov/books/NBK56068/ : protein RDA 46 g (women) and 56 g (men), carbohydrate RDA 130 g, fibre AI 25/38 g under 51 and 21/30 g from 51.
+  - WHO sodium (under 2000 mg, https://www.who.int/news-room/fact-sheets/detail/salt-reduction) and saturated fat (under 10% of energy, https://www.who.int/news-room/fact-sheets/detail/healthy-diet; 22 g on a 2000 kcal reference diet).
+  - FDA "high" salt tag: 20% of the 2300 mg Daily Value, 460 mg a serving, https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label
+- Condition adjustment, only where cited: a doctor-set potassium limit (nullable, default none) replaces the potassium target. Nothing else is adjusted for a condition.
+- Supplements are read from the person's own medicine list (names: calcium, vitamin D, B12, iron, fish oil, multivitamin). Amounts are what the list says, not verified against a label; no advice to start or stop one.
