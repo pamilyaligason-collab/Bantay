@@ -1029,3 +1029,17 @@ Status: NOT reviewed. All wording below was written by Bantay. Nothing here is a
 
 11. No photo or AI estimation of food. No barcode lookup (Open Food Facts was optional and skipped). No third-party calls from the app.
 12. Usage analytics record only the fixed event names meal_logged, water_logged and salt_goal_set. A food name is never logged (rule B-7).
+
+
+## Ask edge function (session 9, W2-JACK): emergency gate and post-check
+
+Code: `supabase/functions/ask/gate.ts`, `logic.ts`. NOT reviewed by a clinician or a native speaker. The gate leans towards matching: a false alarm costs a phone call.
+
+1. Phrase lists (English, Tagalog, Taglish, a few Cebuano) for: chest pain or pressure, heart attack; trouble breathing, choking, blue lips; stroke signs (face droop, slurred speech, sudden one-sided weakness or numbness, worst headache); unconscious or fainted; heavy bleeding, vomiting or coughing blood; seizure; self-harm; overdose or poisoning; throat or tongue swelling. Based on the NHS heart attack, stroke and "when to call 999" pages and Red Cross first aid. REVIEW: add or remove phrases; have a Tagalog and a Bisaya speaker check the spelling variants (for example "dughan", "ginhawa", "nawad-an og malay", "mihuguan").
+2. Blood pressure: 180 or more over 120 or more, together with a symptom word (headache, vision change, numbness, weakness, dizziness, chest, speech, vomiting, nosebleed), returns the 911 card. Source: AHA hypertensive crisis page, https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings/hypertensive-crisis-when-you-should-call-911-for-high-blood-pressure (not re-fetched this session). A reading that high with no symptom goes to the model and the knowledge base. REVIEW: should it also show "call your doctor today"?
+3. Sugar: a value from 20 to 69 mg/dL, or above 300 up to 900, written near a sugar word, together with a symptom word (shaky, sweating, confused, drowsy, weak, thirsty, vomiting), returns the 911 card. Below 70 is ADA level 1 hypoglycaemia (ADA Standards of Care, glycemic goals; not re-fetched this session). The 300 line is an app rule with no single public source. REVIEW: confirm 70 and 300, and whether "911" (not "treat with quick sugar first") is right for a low with symptoms in someone awake; the KB topic low-blood-sugar says to give quick sugar if awake.
+4. Self-harm card: NCMH crisis hotline 1553 (free) and 911, https://ncmh.gov.ph. REVIEW: confirm the number and that the wording is gentle enough.
+5. Cards (English and Tagalog): "This may be an emergency. Call 911 now, or go to the nearest hospital. Do not wait, and do not drive yourself. ..." REVIEW wording.
+6. Post-check: a dose number the person never logged or wrote becomes "Please ask your doctor or pharmacist about the dose."; "you have / this is / may X ka" plus a listed condition word becomes "I cannot say what condition this is. Please ask your doctor." REVIEW the condition word list.
+7. Disclaimer on every health reply: "Not medical advice; ask your doctor." (Tagalog: "Hindi ito payo medikal; magtanong sa doktor.")
+8. Model prompt rules 10 and 11 (answer only from the vetted reference and the person's records; "I am not sure. Please ask your doctor."; at most 4 short sentences; end with who to ask). REVIEW.
