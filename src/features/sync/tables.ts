@@ -37,11 +37,11 @@ export const TABLES: Record<string, TableSpec> = {
   },
   // Food, water and salt goals (0024). Entries are full-row upserts on client_id with a soft delete, like the plan rows. The goal is one row per person.
   food_entries: {
-    fields: ['personId', 'eatenAt', 'meal', 'foodKey', 'name', 'portion', 'servingLabel', 'kcal', 'sodiumMg', 'potassiumMg', 'proteinG', 'deletedAt'],
+    fields: ['personId', 'eatenAt', 'meal', 'foodKey', 'name', 'portion', 'servingLabel', 'kcal', 'sodiumMg', 'potassiumMg', 'proteinG', 'carbsG', 'fatG', 'satFatG', 'fiberG', 'sugarsG', 'calciumMg', 'ironMg', 'magnesiumMg', 'vitdUg', 'b12Ug', 'deletedAt'],
     onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at'
   },
   water_entries: { fields: ['personId', 'drunkAt', 'ml', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
-  nutrition_goals: { fields: ['personId', 'sodiumMg', 'waterMl'], onConflict: 'person_id', resolution: 'merge-duplicates', noClientId: true },
+  nutrition_goals: { fields: ['personId', 'sodiumMg', 'waterMl', 'potassiumMg', 'sex'], onConflict: 'person_id', resolution: 'merge-duplicates', noClientId: true },
   // A device's push subscription is keyed by its endpoint; resubscribing updates the keys.
   push_subscriptions: { fields: ['endpoint', 'p256dh', 'auth', 'expirationTime'], onConflict: 'endpoint', resolution: 'merge-duplicates', noClientId: true },
   usage_events: { fields: ['kind', 'name', 'appVersion', 'clientAt'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
@@ -94,7 +94,7 @@ export function toRow(table: string, payload: unknown, clientId?: string): Obj {
 }
 
 /** Server row -> local store row. Nulls are dropped except where "unknown" is a real value in the local type. */
-const KEEP_NULL = new Set(['labLow', 'labHigh', 'minutes', 'steps', 'kcal', 'sodiumMg', 'potassiumMg', 'proteinG', 'foodKey', 'servingLabel'])
+const KEEP_NULL = new Set(['labLow', 'labHigh', 'minutes', 'steps', 'kcal', 'sodiumMg', 'potassiumMg', 'proteinG', 'foodKey', 'servingLabel', 'carbsG', 'fatG', 'satFatG', 'fiberG', 'sugarsG', 'calciumMg', 'ironMg', 'magnesiumMg', 'vitdUg', 'b12Ug'])
 export function fromRow(table: string, row: Obj): Obj {
   const out: Obj = { clientId: row.client_id }
   const spec = TABLES[table]

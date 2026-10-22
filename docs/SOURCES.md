@@ -130,3 +130,13 @@ Migration 0025_knowledge.sql holds 44 short topic summaries (`knowledge_topics`)
 - Not verified word for word: the FAST wording on the NHS stroke page did not load as plain text for the link check (FAST is the NHS and Stroke Association standard), and the NCMH line 1553 in `low-mood` is the same "LISTED, re-check" entry as in the hotline table above. A clinician should review the whole file before it goes live; `reviewed_at` is the date the links were checked, not a medical sign-off.
 - Tagalog titles and synonyms were written by the build agent and need a native-speaker read.
 - Brand names appear only as search words (Norvasc, Lipitor, Glucophage, Lasix and similar) so a family can find the generic card.
+
+## Nutrients and daily targets (session 9, W1 nutrition)
+- More nutrients per food (carbohydrate, total fat, saturated fat, fibre, sugars, calcium, iron, magnesium, vitamin D, vitamin B12) come from the same USDA SR Legacy CSV, written by `node scripts/nutrition/build-foods.mjs --verify-csv <dir> --write`. A value SR Legacy does not list is null, and a dish with a null ingredient value is null for that nutrient (never 0).
+- Daily targets by age and sex (src/features/nutrition/targets.ts), adults 19+ only, public domain:
+  - NIH Office of Dietary Supplements, Health Professional fact sheets: Calcium https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/ , Iron .../Iron-HealthProfessional/ , Magnesium .../Magnesium-HealthProfessional/ , Potassium .../Potassium-HealthProfessional/ (AI 2019: 2600 mg women, 3400 mg men), Vitamin D .../VitaminD-HealthProfessional/ (15 mcg to 70, 20 mcg from 71; 1 mcg = 40 IU), Vitamin B12 .../VitaminB12-HealthProfessional/ (2.4 mcg).
+  - National Academies Dietary Reference Intakes summary tables, https://www.ncbi.nlm.nih.gov/books/NBK56068/ : protein RDA 46 g (women) and 56 g (men), carbohydrate RDA 130 g, fibre AI 25/38 g under 51 and 21/30 g from 51.
+  - WHO sodium (under 2000 mg, https://www.who.int/news-room/fact-sheets/detail/salt-reduction) and saturated fat (under 10% of energy, https://www.who.int/news-room/fact-sheets/detail/healthy-diet; 22 g on a 2000 kcal reference diet).
+  - FDA "high" salt tag: 20% of the 2300 mg Daily Value, 460 mg a serving, https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label
+- Condition adjustment, only where cited: a doctor-set potassium limit (nullable, default none) replaces the potassium target. Nothing else is adjusted for a condition.
+- Supplements are read from the person's own medicine list (names: calcium, vitamin D, B12, iron, fish oil, multivitamin). Amounts are what the list says, not verified against a label; no advice to start or stop one.

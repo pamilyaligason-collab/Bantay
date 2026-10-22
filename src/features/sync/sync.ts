@@ -324,7 +324,8 @@ async function pullGoals(url: string, key: string, token: string) {
     const sodiumMg = pt(r.sodium_mg)
     const waterMl = pt(r.water_ml)
     if (typeof r.person_id !== 'string' || queued.has(r.person_id) || sodiumMg == null || waterMl == null) continue
-    await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
+    // potassium_mg and sex come with migration 0026; a project without it just has no such keys (null)
+    await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, potassiumMg: pt(r.potassium_mg), sex: r.sex === 'female' || r.sex === 'male' ? r.sex : null, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
   }
 }
 
