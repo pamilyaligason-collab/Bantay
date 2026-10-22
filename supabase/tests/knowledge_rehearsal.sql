@@ -20,13 +20,13 @@ alter default privileges in schema public grant execute on functions to anon, au
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
--- first slug returned for a question, as the caller; null when nothing matches
-create function pg_temp.top(q text) returns text language sql as $$ select slug from public.search_knowledge(q) limit 1 $$;
-grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text), pg_temp.top(text) to authenticated, anon, service_role;
 
 \ir ../migrations/0025_knowledge.sql
 -- 0025 must be safe to run twice (and re-seeding must not duplicate rows)
 \ir ../migrations/0025_knowledge.sql
+-- first slug returned for a question, as the caller; null when nothing matches. Created after the migration: SQL-language bodies are checked when the function is created.
+create function pg_temp.top(q text) returns text language sql as $$ select slug from public.search_knowledge(q) limit 1 $$;
+grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text), pg_temp.top(text) to authenticated, anon, service_role;
 
 -- === checks ===
 begin;
@@ -62,6 +62,9 @@ select pg_temp.ok(pg_temp.top('nahihilo ako paggising') = 'dizziness', 'Taglish 
 select pg_temp.ok(pg_temp.top('stroke') = 'stroke-fast', 'stroke finds the FAST card first');
 select pg_temp.ok(pg_temp.top('face drooping, slurred speech') = 'stroke-fast', 'English words in the text find the FAST card');
 select pg_temp.ok(pg_temp.top('metformin') = 'med-metformin', 'a medicine name finds its card');
+select pg_temp.ok(pg_temp.top('gliclazide') in ('type-2-diabetes', 'low-blood-sugar'), 'gliclazide (in the repo medicine list) finds a card');
+select pg_temp.ok(pg_temp.top('metoprolol') = 'bp-medicines', 'metoprolol (in the repo medicine list) finds the blood pressure medicines card');
+select pg_temp.ok((select bool_and(rank > 0) from public.search_knowledge('-salt', 10)), 'a negated word never returns rank-0 filler topics');
 select pg_temp.ok(pg_temp.top('Lasix') = 'med-furosemide', 'a brand name finds the generic card');
 select pg_temp.ok(pg_temp.top('hypertension') = 'high-blood-pressure', 'English hypertension finds high blood pressure');
 select pg_temp.ok(pg_temp.top('bagoong at patis') = 'low-salt-eating', 'Tagalog food words find low-salt eating');

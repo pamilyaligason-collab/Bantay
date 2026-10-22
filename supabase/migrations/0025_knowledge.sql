@@ -61,7 +61,7 @@ language sql stable security invoker set search_path = '' as $$
     from public.knowledge_topics t
     cross join args
     left join hits h on h.topic_slug = t.slug
-   where h.n is not null or t.fts @@ args.tq
+   where h.n is not null or (t.fts @@ args.tq and ts_rank(t.fts, args.tq) > 0)
    order by 8 desc, t.slug
    limit greatest(1, least(coalesce(max_rows, 5), 10))
 $$;
@@ -152,6 +152,8 @@ insert into public.knowledge_synonyms (term, topic_slug) values
   ('gamot sa altapresyon', 'bp-medicines'),
   ('antihypertensive', 'bp-medicines'),
   ('losartan', 'bp-medicines'),
+  ('metoprolol', 'bp-medicines'),
+  ('beta blocker', 'bp-medicines'),
   ('norvasc', 'bp-medicines'),
   ('cozaar', 'bp-medicines'),
   ('bp pills', 'bp-medicines'),
@@ -247,6 +249,7 @@ insert into public.knowledge_synonyms (term, topic_slug) values
   ('type 2', 'type-2-diabetes'),
   ('dm2', 'type-2-diabetes'),
   ('may diabetes', 'type-2-diabetes'),
+  ('gliclazide', 'type-2-diabetes'),
   ('glucose', 'blood-sugar-reading'),
   ('blood glucose', 'blood-sugar-reading'),
   ('blood sugar', 'blood-sugar-reading'),
@@ -275,6 +278,7 @@ insert into public.knowledge_synonyms (term, topic_slug) values
   ('malamig na pawis', 'low-blood-sugar'),
   ('hypoglycaemia', 'low-blood-sugar'),
   ('sugar drop', 'low-blood-sugar'),
+  ('gliclazide', 'low-blood-sugar'),
   ('cholesterol', 'cholesterol'),
   ('kolesterol', 'cholesterol'),
   ('mataas ang kolesterol', 'cholesterol'),

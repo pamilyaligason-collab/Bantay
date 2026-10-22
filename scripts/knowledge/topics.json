@@ -37,7 +37,7 @@
     "source_name": "MedlinePlus",
     "source_url": "https://medlineplus.gov/bloodpressuremedicines.html",
     "reviewed_at": "2026-10-22",
-    "synonyms": ["gamot sa presyon", "gamot sa altapresyon", "antihypertensive", "losartan", "norvasc", "cozaar", "bp pills", "bp meds", "maintenance", "maintenance na gamot", "missed dose", "nakalimutang inumin"]
+    "synonyms": ["gamot sa presyon", "gamot sa altapresyon", "antihypertensive", "losartan", "metoprolol", "beta blocker", "norvasc", "cozaar", "bp pills", "bp meds", "maintenance", "maintenance na gamot", "missed dose", "nakalimutang inumin"]
   },
   {
     "slug": "low-salt-eating",
@@ -117,7 +117,7 @@
     "source_name": "NHS",
     "source_url": "https://www.nhs.uk/conditions/type-2-diabetes/",
     "reviewed_at": "2026-10-22",
-    "synonyms": ["diabetes", "diabetic", "asukal", "mataas ang asukal", "sugar", "high sugar", "type 2", "dm2", "may diabetes"]
+    "synonyms": ["diabetes", "diabetic", "asukal", "mataas ang asukal", "sugar", "high sugar", "type 2", "dm2", "may diabetes", "gliclazide"]
   },
   {
     "slug": "blood-sugar-reading",
@@ -147,7 +147,7 @@
     "source_name": "NHS",
     "source_url": "https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/",
     "reviewed_at": "2026-10-22",
-    "synonyms": ["hypoglycemia", "hypo", "low sugar", "mababang asukal", "bumaba ang asukal", "nanginginig", "nanginginig at pawis", "malamig na pawis", "hypoglycaemia", "sugar drop"]
+    "synonyms": ["hypoglycemia", "hypo", "low sugar", "mababang asukal", "bumaba ang asukal", "nanginginig", "nanginginig at pawis", "malamig na pawis", "hypoglycaemia", "sugar drop", "gliclazide"]
   },
   {
     "slug": "cholesterol",
