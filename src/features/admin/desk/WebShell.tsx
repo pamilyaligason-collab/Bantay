@@ -116,6 +116,17 @@ function ThemeButton() {
   return <button className="wa-ib" onClick={next} aria-label={`${THEME_LABEL[t]}. Change theme`} title={THEME_LABEL[t]}><Icon name={THEME_ICON[t]} /></button>
 }
 
+/** Branded placeholder while the role check runs; admin-main also passes it as the sign-in check fallback. */
+export function ShellSkeleton() {
+  return (
+    <div className="wa wa-skel" aria-busy="true" role="status" aria-label="Loading">
+      <header className="wa-top"><span className="wa-brand"><Icon name="shield" /><span>Bantay Admin</span></span></header>
+      <div className="wa-side" aria-hidden="true" />
+      <main className="wa-main"><div className="wa-skel-row" aria-hidden="true"><i /><i /><i /><i /></div></main>
+    </div>
+  )
+}
+
 export default function WebShell() {
   const [admin, setAdmin] = useState<'checking' | 'yes' | 'no'>('checking')
   const [name, setName] = useState('')
@@ -152,7 +163,7 @@ export default function WebShell() {
   }, [])
   const toggle = () => setCollapsed((c) => { try { localStorage.setItem(NAV_KEY, c ? '0' : '1') } catch { /* private mode: not remembered */ } return !c })
 
-  if (admin === 'checking') return <div className="wa-gate" aria-busy="true">Loading…</div>
+  if (admin === 'checking') return <ShellSkeleton />
   if (admin === 'no') return (
     <div className="wa-gate"><h1>Admins only</h1><p>This page is for the family admin.</p><a className="dk-b go" href="/">Open Family Bantay</a></div>
   )
@@ -162,11 +173,11 @@ export default function WebShell() {
       <a className="wa-skip" href="#wa-main" onClick={(e) => { e.preventDefault(); main.current?.focus() }}>Skip to content</a>
       <header className="wa-top">
         <button className="wa-ib wa-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}><Icon name="menu" /></button>
-        <a className="wa-brand" href={deskHref('home')} aria-label="Bantay Admin, dashboard"><Icon name="shield" /><span>Bantay Admin</span></a>
+        <a className="wa-brand wa-hide-sm" href={deskHref('home')} aria-label="Bantay Admin, dashboard"><Icon name="shield" /><span>Bantay Admin</span></a>
         <Search />
         <a className="wa-ib" href={deskHref('members')} aria-label={`${pins} PIN reset requests`}><Icon name="key" />{pins > 0 && <b>{pins}</b>}</a>
-        <ThemeButton />
-        <button className="wa-ib" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
+        <span className="wa-hide-sm"><ThemeButton /></span>
+        <button className="wa-ib wa-hide-sm" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
         <details className="wa-me">
           <summary aria-label={`Account: ${name || 'Admin'}`}><span className="wa-av" aria-hidden="true">{(name || 'A').slice(0, 1).toUpperCase()}</span><span className="wa-name">{name || 'Admin'}</span></summary>
           <div className="wa-pop"><a href="/">Open the family app</a><a href="/#admin">Phone admin tools</a><button onClick={() => void signOut().then(() => location.assign('/'))}>Sign out</button></div>
