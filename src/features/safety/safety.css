@@ -1,7 +1,7 @@
 .sf { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .sf > * { min-width: 0; }
 .sf-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.sf-chips .pill { min-height: 44px; }
+.sf-chips .pill { min-height: 48px; }
 .sf-chip { background: var(--fill); font-size: 15px; padding: 4px 10px; border-radius: 8px; }
 .sf-chip.warn { background: var(--warn-bg); color: var(--warn); font-weight: 600; }
 .sf-lbl { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -18,11 +18,11 @@
 .sf h3 { font-size: 15px; margin: 10px 0 6px; color: var(--ink2); }
 .sf-frame { width: 100%; height: 360px; border: 0; border-radius: 12px; background: var(--fill); display: block; }
 .sf a { color: var(--act); }
-.sf-act { color: var(--act); background: transparent; border: 0; padding: 0; min-height: 44px; text-align: right; font-size: 15px; font-weight: 600; max-width: 45%; }
-.sf-go { min-height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 22px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 600; }
+.sf-act { color: var(--act); background: transparent; border: 0; padding: 0; min-height: 48px; text-align: right; font-size: 15px; font-weight: 600; max-width: 45%; }
+.sf-go { min-height: 48px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 22px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 600; }
 .sf-edit { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; }
 .sf-edit label { display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--ink2); }
-.sf-edit input { min-height: 44px; font: inherit; font-size: 17px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); min-width: 0; }
+.sf-edit input { min-height: 48px; font: inherit; font-size: 17px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); min-width: 0; }
 .sf-edit .err { color: var(--warn); font-weight: 600; margin: 0; }
 .sf-hz { justify-content: space-between; flex-wrap: wrap; row-gap: 2px; }
 .sf-hz > :last-child { margin-left: auto; text-align: right; }
@@ -41,14 +41,14 @@
 .sf-pair > a { flex: 1 1 0; min-width: 0; min-height: 52px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; text-align: center; }
 .sf-pair > a.btn { min-height: 64px; font-size: 19px; }
 .zp { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
-button.sf-chip { border: 0; color: var(--ink); min-height: 44px; padding: 0 14px; border-radius: 22px; font-weight: 600; }
+button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px; border-radius: 22px; font-weight: 600; }
 
 /* v6 Safety header and top buttons */
 /* .hdr.sf-hdr: two classes, so the column .hdr in app.css cannot win the cascade (P0). */
 .hdr.sf-hdr { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
 .hdr.sf-hdr h1 { font-size: 30px; }
 .sf-hdr .zp { min-width: 0; }
-.sf-hdr .zp .sf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; border-radius: 22px; padding: 0 14px; }
+.sf-hdr .zp .sf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; border-radius: 22px; padding: 0 14px; }
 .sf-hdr .zp .sf-chip::before { content: ""; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--pin) center/contain no-repeat; mask: var(--pin) center/contain no-repeat; }
 .sf-hdr { --pin: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6z%27/%3E%3C/svg%3E"); }
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
@@ -75,7 +75,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-dial { display: flex; gap: 8px; align-items: stretch; }
 .sf-call { flex: 1 1 0; min-width: 0; min-height: 64px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-decoration: none; text-align: left; padding: 0 18px; font-size: 18px; color: var(--btn-fg) !important; }
 .sf-call b { font-size: 22px; white-space: nowrap; }
-.sf-i { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1px solid var(--sep); background: var(--cell); color: var(--act); font: italic 700 18px Georgia, serif; }
+.sf-i { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 1px solid var(--sep); background: var(--cell); color: var(--act); font: italic 700 18px Georgia, serif; }
 .sf-sheet-bg { position: fixed; inset: 0; z-index: 50; background: rgba(15, 23, 18, .45); display: flex; align-items: flex-end; justify-content: center; }
 .sf-sheet { width: 100%; max-width: 520px; box-sizing: border-box; color: var(--ink); border-radius: 22px 22px 0 0; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 12px; }
 .sf-sheet-h { margin: 0; font-size: 20px; }
@@ -99,10 +99,10 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-dt b { font-size: 17px; line-height: 1.25; overflow-wrap: break-word; word-break: normal; }
 .sf-dt .sub { font-size: 15px; overflow-wrap: break-word; word-break: normal; }
 .sf-chk { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 8px; font-size: 13px; font-weight: 700; line-height: 18px; vertical-align: 1px; background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--amber) 55%, var(--line)); }
-.sf-callbtn { min-height: 44px; min-width: 68px; box-sizing: border-box; padding: 0 14px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 700; font-size: 16px; white-space: nowrap; }
+.sf-callbtn { min-height: 48px; min-width: 68px; box-sizing: border-box; padding: 0 14px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 700; font-size: 16px; white-space: nowrap; }
 .sf-callbtn .sh-ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sf-callbtn:focus-visible, .sf-addbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.sf-addbtn { grid-column: 3; min-height: 44px; min-width: 68px; width: auto; padding: 0 16px; white-space: nowrap; flex: none; }
+.sf-addbtn { grid-column: 3; min-height: 48px; min-width: 68px; width: auto; padding: 0 16px; white-space: nowrap; flex: none; }
 .sf-dial-edit { grid-column: 1 / -1; }
 .sf-dial-edit .sf-edit { padding: 8px 0 0; }
 .sf-dialrow-add { border-style: dashed; }

@@ -15,7 +15,7 @@
 
 /* top bar */
 .sh-top { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 12px; flex: none; }
-.sh-me-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
+.sh-me-btn { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
 .sh-me-btn img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
 .sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .sh-top-date { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -35,7 +35,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-top[data-compact="true"] .sh-top-date, .sh-top[data-compact="true"] .sync-status { display: none; }
 .sh-top[data-compact="true"] .sh-top-greet { font-size: 17px; }
 @media (prefers-reduced-motion: reduce) { .sh-top { transition: none; } }
-.sh-iconbtn { width: 44px; height: 44px; border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.sh-iconbtn { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 .sh-iconbtn:active { transform: scale(.98); }
 @media (prefers-reduced-motion: reduce) { .sh-iconbtn { transition: none; } .sh-iconbtn:active { transform: none; } }
 @media (hover: hover) { .sh-iconbtn:hover { background: var(--card2); } }
@@ -147,7 +147,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .ask-row .sub { display: block; font-size: 15px; }
 .ask-row:focus-visible, .ask-cancel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .ask-cancel { min-height: 48px; }
-.ask-pdf { display: flex; align-items: center; min-height: 44px; padding: 0 14px; font-size: 15px; color: var(--ink); text-decoration: underline; }
+.ask-pdf { display: flex; align-items: center; min-height: 48px; padding: 0 14px; font-size: 15px; color: var(--ink); text-decoration: underline; }
 .ask-pdf:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }
