@@ -60,7 +60,7 @@ export default function MetricScreen({ code }: { code: string }) {
           <div className="row">
             <span className="grow">
               No readings for this yet
-              <span className="sub">Log one from Today, or confirm imported results in Family &gt; Records.</span>
+              <span className="sub">Log one from Today, or confirm imported results in Health &gt; Papers.</span>
             </span>
           </div>
           {spec && canMark && personId && <div className="row"><button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button></div>}

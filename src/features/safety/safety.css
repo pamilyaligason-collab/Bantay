@@ -98,7 +98,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-dt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sf-dt b { font-size: 17px; line-height: 1.25; overflow-wrap: break-word; word-break: normal; }
 .sf-dt .sub { font-size: 15px; overflow-wrap: break-word; word-break: normal; }
-.sf-chk { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 8px; font-size: 12px; font-weight: 700; line-height: 18px; vertical-align: 1px; background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--amber) 55%, var(--line)); }
+.sf-chk { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 8px; font-size: 13px; font-weight: 700; line-height: 18px; vertical-align: 1px; background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--amber) 55%, var(--line)); }
 .sf-callbtn { min-height: 44px; min-width: 68px; box-sizing: border-box; padding: 0 14px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--btn); color: var(--btn-fg) !important; text-decoration: none; font-weight: 700; font-size: 16px; white-space: nowrap; }
 .sf-callbtn .sh-ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sf-callbtn:focus-visible, .sf-addbtn:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
