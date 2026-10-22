@@ -114,3 +114,19 @@ Bantay's own words throughout. Nothing below is copied or bundled; each source i
 - Bagoong has no plain FDC entry (only branded products), and instant noodles, canned sardines and galunggong are brand or species dependent: those values are estimates to check against a pack or jar label.
 - NOT used: Philippine Food Composition Tables (FNRI PhilFCT) values. SparkyFitness is non-commercial and source-available: no code or data was copied from it.
 - Salt limit: WHO, Salt reduction fact sheet, adults under 2000 mg sodium (5 g salt) a day: https://www.who.int/news-room/fact-sheets/detail/salt-reduction . Linked only (WHO content is CC BY-NC-SA, none of its text is bundled). Salt (g) = sodium (mg) x 2.5 / 1000.
+
+## Jack's health knowledge base (session 9, lane JACK-C)
+
+Migration 0025_knowledge.sql holds 44 short topic summaries (`knowledge_topics`) and the words people type, including Tagalog and Taglish (`knowledge_synonyms`). The reviewed file is scripts/knowledge/topics.json; `node scripts/knowledge/build.mjs` writes the seed into the migration and `--check` proves they match. Every summary is written in Bantay's own plain words (nothing copied or machine-translated from a source) and carries the public page it points to. Pages were reached (HTTP 200) on 2026-10-22. No runtime model call is involved.
+
+| Source | What we do | Licence (checked 2026-10-22) |
+| --- | --- | --- |
+| MedlinePlus (NLM), medlineplus.gov | Own-words summary plus a link. | Site says MedlinePlus pages are public domain ("not copyrighted") unless marked; some content (the drug pages come from ASHP) is copyrighted and licensed for MedlinePlus only. We copy none of it, only link. https://medlineplus.gov/about/using/usingcontent/ |
+| NHS website, www.nhs.uk | Own-words summary plus a link. | Open Government Licence v3.0 except where a page says otherwise (https://www.nhs.uk/our-policies/terms-and-conditions/). We copy no text; the licence would allow it with the OGL credit. |
+| WHO, www.who.int | Own-words summary plus a link. Two numbers (under 2,000 mg sodium, under 5 g salt, 1 g salt = 400 mg sodium) restated from the fact sheet. | CC BY-NC-SA 3.0 IGO, non-commercial. Only the facts are restated, no text or images are bundled. |
+| DILG (Philippines), calabarzon.dilg.gov.ph | 911 as the national emergency number (already CONFIRMED above). | Government page, linked only. |
+
+- Numbers in the summaries: blood pressure 140/90 clinic and 135/85 home (NHS, "High blood pressure", checked 2026-10-22), WHO sodium limit as above, adults 150 minutes a week (NHS older adults activity page, from the NHS physical activity guidelines), 7 to 9 hours of sleep (general adult guidance on the NHS sleep page; re-check wording), slow breathing about 4 in and 6 out (a common relaxation pattern; the NHS stress page recommends breathing exercises, not these counts). The other summaries are qualitative.
+- Not verified word for word: the FAST wording on the NHS stroke page did not load as plain text for the link check (FAST is the NHS and Stroke Association standard), and the NCMH line 1553 in `low-mood` is the same "LISTED, re-check" entry as in the hotline table above. A clinician should review the whole file before it goes live; `reviewed_at` is the date the links were checked, not a medical sign-off.
+- Tagalog titles and synonyms were written by the build agent and need a native-speaker read.
+- Brand names appear only as search words (Norvasc, Lipitor, Glucophage, Lasix and similar) so a family can find the generic card.
