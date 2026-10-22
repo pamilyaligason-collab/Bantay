@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { GUIDE } from '../features/health/ranges'
-import { formatLabValue, providerName } from '../lib/labFormat'
+import { formatLabValue, plainDate, providerName } from '../lib/labFormat'
 import { testLabel, useHealthData } from '../features/records/useHealthData'
 import { useConfirmedDocs, useConfirmedMedicines, useQueue } from '../features/records/useRecordsServer'
 import { ConfirmFlow, firstName, KIND } from '../features/records/ConfirmSheet'
@@ -158,7 +158,7 @@ export default function Records() {
             <div className="grp" data-testid="timeline">
               {dates.map((d) => (
                 <div className="row" key={d} style={{ alignItems: 'flex-start' }}>
-                  <span className="sub" style={{ width: 92, flex: 'none' }}>{d}</span>
+                  <span className="sub" style={{ width: 104, flex: 'none' }}>{plainDate(d)}</span>
                   <span className="grow">
                     {day(d).consults.map((c) => (
                       <span key={`c${c.id}`}>

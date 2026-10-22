@@ -42,3 +42,11 @@ export function providerName(s: string | null | undefined): string {
   if (!t || /[a-z]/.test(t)) return t
   return t.toLowerCase().replace(/[a-z0-9]+/g, (w) => (KEEP.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1)))
 }
+
+/** "2026-10-22" -> "22 Oct 2026". Anything that is not a plain date comes back unchanged (e.g. "Undated"). */
+export function plainDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (!m) return iso
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1]
+  return month ? `${Number(m[3])} ${month} ${m[1]}` : iso // fixed order: ICU's en-PH puts the month first
+}

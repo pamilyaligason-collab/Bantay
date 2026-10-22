@@ -6,6 +6,7 @@ import { getMember, signOut, type Member } from '../features/auth/session'
 import { Icon } from '../features/shell/Icon'
 import { SubHeader } from '../features/shell/SubHeader'
 import { applyTheme, THEME_KEY, type ThemePref } from '../features/shell/theme'
+import { applyTextSize, isTextSize, TEXT_SIZE_KEY, TEXT_SIZES, type TextSize } from '../features/shell/textSize'
 import { Capacitor } from '@capacitor/core'
 import { useKv } from '../features/shell/useKv'
 import { isLang, LANG_KEY, LANGS, setLang, type Lang } from '../lib/i18n'
@@ -67,6 +68,7 @@ export default function Me() {
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
+  const [textSize, setTextSize] = useKv<TextSize>(TEXT_SIZE_KEY, 'normal')
   const [lang, setLangKv] = useKv<Lang>(LANG_KEY, 'en')
   const photo = useOwnAvatar()
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -85,6 +87,7 @@ export default function Me() {
   }, [])
 
   const pickTheme = (t: ThemePref) => { setTheme(t); applyTheme(t) }
+  const pickText = (t: TextSize) => { setTextSize(t); applyTextSize(t) }
   const pickLang = (l: Lang) => { setLangKv(l); void setLang(l) }
   const turnOnPasskey = async () => {
     setBusy(true)
@@ -106,6 +109,10 @@ export default function Me() {
           <div className="sh-sub">This phone · fingerprint {passkey ? 'on' : 'off'}</div>
         </div>
         {member?.personId && <button type="button" className="sh-edit" onClick={() => setDetailsOpen(true)} aria-haspopup="dialog">Edit</button>}
+      </div>
+
+      <div className="sh-card sh-list">
+        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I&apos;m OK, Call family, SOS</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
       </div>
 
       <div className="sh-sech"><b>Family can see my</b></div>
@@ -131,15 +138,20 @@ export default function Me() {
       </div>
 
       <div className="sh-card sh-list">
-        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I&apos;m OK, Call family, SOS</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
         <div><div className="sh-grow"><b>Quiet hours</b><div className="sh-sub">10 PM to 6 AM, alerts still ring</div></div><Switch label="Quiet hours" on={quiet} onChange={setQuiet} /></div>
-        <div>
+        <div className="sh-stack">
+          <div className="sh-grow"><b>Text size</b><div className="sh-sub">Makes words and buttons bigger</div></div>
+          <div className="sh-seg" role="group" aria-label="Text size">
+            {TEXT_SIZES.map((t) => <button key={t.id} type="button" aria-pressed={(isTextSize(textSize) ? textSize : 'normal') === t.id} onClick={() => pickText(t.id)}>{t.label}</button>)}
+          </div>
+        </div>
+        <div className="sh-stack">
           <div className="sh-grow"><b>Theme</b></div>
           <div className="sh-seg" role="group" aria-label="Theme">
             {THEMES.map((t) => <button key={t.id} type="button" aria-pressed={theme === t.id} onClick={() => pickTheme(t.id)}>{t.label}</button>)}
           </div>
         </div>
-        <div>
+        <div className="sh-stack">
           <div className="sh-grow"><b>Language</b><div className="sh-sub">Reminders and safety lines on this phone{Capacitor.isNativePlatform() ? '' : '. Reminders are on the Android app.'}</div></div>
           <div className="sh-seg" role="group" aria-label="Language">
             {LANGS.map((l) => <button key={l.id} type="button" aria-pressed={(isLang(lang) ? lang : 'en') === l.id} onClick={() => pickLang(l.id)}>{l.label}</button>)}
@@ -155,7 +167,7 @@ export default function Me() {
       <div className="sh-me-sensors"><SensorSettings /></div>
 
       <div className="sh-card sh-list">
-        <UpdateRow />
+        {member?.role === 'admin' && <UpdateRow />}
         {member?.role === 'admin' && (
           <a className="sh-navrow" href="#admin">
             <Icon name="gear" boxed size={20} />
