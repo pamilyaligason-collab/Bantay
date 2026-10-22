@@ -21,6 +21,7 @@ export interface Wx {
   humidity?: number | null
   feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null
+  sunrise?: string | null; sunset?: string | null // today's, place-local; the weather scene's time of day
   offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
 }
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'

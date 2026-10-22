@@ -5,7 +5,8 @@ import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { Icon } from '../shell/Icon'
 import { clockIn, kindOf } from '../weather/forecast'
-import { heatIndexC } from '../weather/heatIndex'
+import { condOf, feelsLike, isHot, todOf } from '../weather/scene'
+import WeatherScene from '../weather/WeatherScene'
 import { weatherWarning } from '../weather/warning'
 import { rainOutlook, rainWords, skyOf, weatherAction, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
@@ -43,9 +44,10 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   const action = weatherAction(wx, now, warn)
   const href = action ? WEATHER_ACTION_HREF : WEATHER_HREF
   const cond = `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
-  // Same number as the Weather screen (forecast apparent temperature); heat index only when the forecast has none.
-  const fl = wx.feels ?? heatIndexC(wx.temp, wx.humidity)
-  const feels = fl != null && Math.round(fl) > Math.round(wx.temp) ? `Feels like ${deg(fl)}` : null
+  // The same single "Feels like" and danger label as the Weather screen (scene.ts feelsLike): heat index when it applies, else the forecast's apparent temperature.
+  const fl = feelsLike(wx.temp, wx.humidity, wx.feels)
+  const feels = fl.value != null && Math.round(fl.value) > Math.round(wx.temp) ? [`Feels like ${deg(fl.value)}`, fl.label].filter(Boolean).join(' · ') : null
+  const scene = <WeatherScene tod={todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={condOf(wx.code)} hot={isHot(wx.temp, wx.humidity)} />
   const box = action && <span className="td-act-box"><Icon name="therm" size={22} /><b>{action}</b></span>
 
   if (expanded) {
@@ -54,9 +56,10 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
     const range = [feels, wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ')
     return (
       <section aria-label="Weather" className="td-wxs">
-        <a className="td-wxh" href={href}>
+        <a className="td-wxh wxs-host" href={href}>
+          {scene}
           <span className="td-k">Weather · {placeNameOf(place)}{clock && ` · as of ${clock}`}</span>
-          <span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><Icon name={kindOf(wx.code ?? null)} size={64} stroke={1.5} /></span>
+          <span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span></span>
           <b className="td-wxh-c">{cond}</b>
           {range && <span className="td-wxh-s">{range}</span>}
           {box}
@@ -74,7 +77,8 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   const rain = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, wxLocal(wx, now), sky === 'rain' || sky === 'storm') : undefined
   return (
     <section aria-label="Weather">
-      <a className="card td-wx" href={href}>
+      <a className="card td-wx wxs-host" href={href}>
+        {scene}
         <span className="td-wx-row">
           <span className="td-wx-t">{deg(wx.temp)}</span>
           <span className="td-grow">

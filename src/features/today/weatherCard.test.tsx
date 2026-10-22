@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy · Dampas')).toBeTruthy()
-    expect(screen.getByText(/^Feels like 3\d°$/)).toBeTruthy()
+    expect(screen.getByText(/^Feels like 3\d° · Extreme caution$/)).toBeTruthy()
     expect(container.querySelector('.td-link svg')).toBeTruthy()
     expect(container.textContent).not.toContain('›')
     expect(container.querySelector('.td-wxh')).toBeNull()
@@ -46,10 +46,23 @@ describe('Today weather card', () => {
     expect(container.querySelector('.td-act-box svg')).toBeTruthy()
     expect(container.querySelector('.td-act-box')!.textContent).toMatch(/^Stay indoors/)
   })
-  it('feels like is the forecast apparent temperature, the same number the Weather screen shows', () => {
-    m.wx = { ...base, temp: 33, humidity: 70, feels: 42 } // heat index alone would say 43
+  it('one feels like and one danger label: the heat index (same as the action line and the Weather screen), not the forecast apparent temperature', () => {
+    m.wx = { ...base, temp: 33, humidity: 70, feels: 42 }
     render(<WeatherCard />)
-    expect(screen.getByText('Feels like 42°')).toBeTruthy()
+    expect(screen.getByText('Feels like 43° · Danger')).toBeTruthy()
+  })
+  it('no heat index (no humidity): the forecast apparent temperature, no label', () => {
+    m.wx = { ...base, temp: 33, humidity: null, feels: 38 }
+    render(<WeatherCard />)
+    expect(screen.getByText('Feels like 38°')).toBeTruthy()
+  })
+  it('draws the scene for the weather code and time of day', () => {
+    m.wx = { ...base, code: 63, sunrise: '2000-01-01T05:50', sunset: '2000-01-01T17:45' }
+    const { container } = render(<WeatherCard />)
+    const s = container.querySelector('.wxs')!
+    expect(s.getAttribute('data-cond')).toBe('rain')
+    expect(['night', 'dawn', 'day', 'dusk']).toContain(s.getAttribute('data-tod'))
+    expect(s.getAttribute('aria-hidden')).toBe('true')
   })
   it('no feels like without humidity', () => {
     m.wx = { ...base, temp: 34, humidity: null }
@@ -71,7 +84,7 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText(/^Weather · Dampas · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Feels like 4\d° · High 34° · Low 26°$/)).toBeTruthy()
+    expect(screen.getByText(/^Feels like 4\d° · Danger · High 34° · Low 26°$/)).toBeTruthy()
     expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
     expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
     expect(screen.getAllByRole('link')).toHaveLength(1)
