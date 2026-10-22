@@ -77,7 +77,20 @@ export const PROMPT =
   'Dates as YYYY-MM-DD, timestamps ISO 8601. Use null for anything not printed. Copy exactly as printed; never interpret, convert or correct. Set unclear true for handwriting you cannot read with confidence.'
 
 /** Strip paid-model URL details and never echo the request body (it holds the document). */
-export async function sendToOpenRouter(fetchImpl, body, key, log = console.error) {
+/** Counts, model id and cost from an OpenRouter response. Numbers and the model id only: never text, names or values (B-7). Unknown stays null. */
+export function usageCounts(j) {
+  const u = j?.usage ?? {}
+  const n = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  return {
+    model: typeof j?.model === 'string' ? j.model.slice(0, 80) : null,
+    prompt_tokens: n(u.prompt_tokens),
+    completion_tokens: n(u.completion_tokens),
+    reasoning_tokens: n(u.completion_tokens_details?.reasoning_tokens),
+    cost: n(u.cost)
+  }
+}
+
+export async function sendToOpenRouter(fetchImpl, body, key, log = console.error, onUsage = () => {}) {
   const r = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${String(key ?? '').trim()}`, 'Content-Type': 'application/json' },
@@ -87,7 +100,9 @@ export async function sendToOpenRouter(fetchImpl, body, key, log = console.error
     log(`OpenRouter failed: ${r.status}`)
     throw Object.assign(new Error(`OpenRouter failed: ${r.status}`), { status: r.status })
   }
-  const c = (await r.json()).choices[0].message.content
+  const j = await r.json()
+  onUsage(usageCounts(j))
+  const c = j.choices[0].message.content
   try { return JSON.parse(c) } catch { throw new Error('OpenRouter returned non-JSON') } // never echo model output (health values)
 }
 
@@ -104,6 +119,9 @@ export function assertAllowed(argv, env) {
   if (!env.OPENROUTER_MODEL) throw new Error('OPENROUTER_MODEL is not set')
 }
 
+/** Largest real extraction is a ~40-test lab (about 3,100 tokens of JSON); +30% headroom, rounded. Caps a runaway or looping answer. */
+export const MAX_TOKENS = 4096
+
 /** Health data: zero data retention, no providers that collect data, never a free tier. */
 export function buildRequest({ model, fallbackModel, mime, base64, filename = 'document', text, prompt = PROMPT }) {
   for (const m of [model, fallbackModel]) if (!m || /:free$/i.test(m)) throw new Error('A paid model is required (no :free tier)')
@@ -117,6 +135,8 @@ export function buildRequest({ model, fallbackModel, mime, base64, filename = 'd
     model,
     models: [model, fallbackModel],
     provider: { zdr: true, data_collection: 'deny' },
+    max_tokens: MAX_TOKENS,
+    reasoning: { effort: 'minimal' }, // extraction is reading, not thinking: reasoning tokens are billed as output
     response_format: { type: 'json_object' },
     messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, part] }]
   }

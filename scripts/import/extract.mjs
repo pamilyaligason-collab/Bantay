@@ -100,7 +100,7 @@ export const assignedTo = (matcher) => (e) =>
   matchPerson(matcher, { segments: [...new Set([...(e.path ? e.path.split('/').slice(0, -1) : []), e.person_folder].filter(Boolean))], printed: null }).id != null
 
 /** One file -> draft object, or {failed:true,...} for types we cannot read. Throws on API failure. */
-export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, stats = { text_layer_errors: 0 } }) {
+export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, stats = { text_layer_errors: 0 }, onUsage = () => {} }) {
   const mime = e.stored_mime ?? e.mime
   const isPdf = mime === 'application/pdf'
   if (!isPdf && !mime.startsWith('image/')) return { failed: true, reason: 'unsupported_mime' }
@@ -123,7 +123,7 @@ export async function extractOne(e, buf, { env, fetchImpl = fetch, retry = {}, s
     filename: 'document',
     text
   })
-  const parsed = await withRetry(() => sendToOpenRouter(fetchImpl, body, env.OPENROUTER_API_KEY, () => {}), retry)
+  const parsed = await withRetry(() => sendToOpenRouter(fetchImpl, body, env.OPENROUTER_API_KEY, () => {}, onUsage), retry)
   return { source_file_id: e.drive_file_id, via: text == null ? 'vision' : 'text', ...(identity ? normalizeIdentity(parsed) : normalizeDraft(parsed)) }
 }
 
@@ -141,10 +141,14 @@ async function main(argv = process.argv.slice(2), env = process.env) {
   const ready = pending(manifest, hasDraft, hasFile, assignedTo(buildMatcher(peopleMap)))
   const todo = ready.slice(0, limit)
   const n = { todo: todo.length, unassigned: all.length - ready.length, done_text: 0, done_vision: 0, unsupported: 0, failed: 0 }
-  const stats = { text_layer_errors: 0 }
+  const stats = { text_layer_errors: 0, prompt_tokens: 0, completion_tokens: 0, reasoning_tokens: 0, cost: 0 }
+  const onUsage = (u) => { // counts and cost only (B-7); a null stays out of the sum
+    for (const k of ['prompt_tokens', 'completion_tokens', 'reasoning_tokens', 'cost']) stats[k] += u[k] ?? 0
+    console.error(JSON.stringify({ usage: u }))
+  }
   for (const e of todo) {
     try {
-      const d = await extractOne(e, readFileSync(`import/files/${fileKey(e.drive_file_id)}`), { env, stats })
+      const d = await extractOne(e, readFileSync(`import/files/${fileKey(e.drive_file_id)}`), { env, stats, onUsage })
       writeFileSync(`import/drafts/${fileKey(e.drive_file_id)}.json`, JSON.stringify(d, null, 2))
       if (d.failed) n.unsupported++
       else n[d.via === 'text' ? 'done_text' : 'done_vision']++

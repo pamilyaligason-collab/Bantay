@@ -3,12 +3,12 @@
 // scripts it was taken from (lib.mjs, extract.mjs, normalize.mjs, load.mjs). All names and values are made up.
 import { describe, expect, it, vi } from 'vitest'
 import { normalizeDraft as pcNormalizeDraft } from '../../../scripts/import/extract.mjs'
-import { buildRequest as pcBuildRequest, PROMPT as PC_PROMPT } from '../../../scripts/import/lib.mjs'
+import { buildRequest as pcBuildRequest, MAX_TOKENS as PC_MAX_TOKENS, PROMPT as PC_PROMPT, usageCounts as pcUsageCounts } from '../../../scripts/import/lib.mjs'
 import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs'
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
   buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, normalizeDraft,
-  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, uuid5, withRetry
+  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, usageCounts, MAX_TOKENS, TABLES, toBase64, uuid5, withRetry
 } from './logic.ts'
 
 const catalog = loadCatalog() as CatalogRow[]
@@ -122,6 +122,23 @@ describe('mapDraft', () => {
   it('a bad date or timestamp stays null, never guessed', async () => {
     const m = await run({ draft: normalizeDraft({ ...RAW, doc_date: '2026-02-30', collected_at: 'yesterday' }) })
     expect(m.document).toMatchObject({ doc_date: null, collected_at: null })
+  })
+})
+
+describe('cost guard', () => {
+  it('caps output, turns reasoning down, and matches the laptop path', () => {
+    const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }] })
+    expect(b.max_tokens).toBe(MAX_TOKENS)
+    expect(MAX_TOKENS).toBe(PC_MAX_TOKENS)
+    expect(b.reasoning).toEqual({ effort: 'minimal' })
+  })
+  it('usage counts match the laptop path and carry no text', async () => {
+    const j = { model: 'm/x', usage: { prompt_tokens: 10, completion_tokens: 5, cost: 0.1 }, choices: [{ message: { content: '{"name":"SECRET"}' } }] }
+    expect(usageCounts(j)).toEqual(pcUsageCounts(j))
+    const seen: unknown[] = []
+    await sendToOpenRouter((async () => ({ ok: true, status: 200, json: async () => j })) as never, {}, 'k', (u) => seen.push(u))
+    expect(seen).toEqual([{ model: 'm/x', prompt_tokens: 10, completion_tokens: 5, reasoning_tokens: null, cost: 0.1 }])
+    expect(JSON.stringify(seen)).not.toContain('SECRET')
   })
 })
 

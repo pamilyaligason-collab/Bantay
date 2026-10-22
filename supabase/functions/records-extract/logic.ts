@@ -38,6 +38,9 @@ export function pagePart(p: PagePart, filename = 'document') {
     : { type: 'image_url', image_url: { url: `data:${p.mime};base64,${p.base64}` } }
 }
 
+/** Same cap as lib.mjs MAX_TOKENS: the largest real extraction (~40-test lab, about 3,100 tokens) + 30% headroom. */
+export const MAX_TOKENS = 4096
+
 /** Health data: zero data retention, no providers that collect data, never a free tier. Pages in order after the prompt. */
 export function buildRequest({ model, fallbackModel, pages, prompt = PROMPT }: { model: string; fallbackModel: string; pages: PagePart[]; prompt?: string }) {
   for (const m of [model, fallbackModel]) if (!m || /:free$/i.test(m)) throw new Error('A paid model is required (no :free tier)')
@@ -46,6 +49,8 @@ export function buildRequest({ model, fallbackModel, pages, prompt = PROMPT }: {
     model,
     models: [model, fallbackModel],
     provider: { zdr: true, data_collection: 'deny' },
+    max_tokens: MAX_TOKENS,
+    reasoning: { effort: 'minimal' },
     response_format: { type: 'json_object' },
     messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, ...pages.map((p, i) => pagePart(p, pages.length > 1 ? `page-${i + 1}` : 'document'))] }]
   }
@@ -57,15 +62,33 @@ export class HttpError extends Error {
 
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>
 
+export interface Usage { model: string | null; prompt_tokens: number | null; completion_tokens: number | null; reasoning_tokens: number | null; cost: number | null }
+
+/** Counts, model id and cost from an OpenRouter response (same as lib.mjs usageCounts). Never text, names or values (B-7). Unknown stays null. */
+export function usageCounts(j: unknown): Usage {
+  const r = (j ?? {}) as { model?: unknown; usage?: { prompt_tokens?: unknown; completion_tokens?: unknown; cost?: unknown; completion_tokens_details?: { reasoning_tokens?: unknown } } }
+  const u = r.usage ?? {}
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  return {
+    model: typeof r.model === 'string' ? r.model.slice(0, 80) : null,
+    prompt_tokens: n(u.prompt_tokens),
+    completion_tokens: n(u.completion_tokens),
+    reasoning_tokens: n(u.completion_tokens_details?.reasoning_tokens),
+    cost: n(u.cost)
+  }
+}
+
 /** Never echo the request body (it holds the document) or the model output (health values). */
-export async function sendToOpenRouter(fetchImpl: FetchLike, body: unknown, key: string): Promise<unknown> {
+export async function sendToOpenRouter(fetchImpl: FetchLike, body: unknown, key: string, onUsage: (u: Usage) => void = () => {}): Promise<unknown> {
   const r = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${String(key ?? '').trim()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
   if (!r.ok) throw new HttpError(r.status)
-  const c = (await r.json() as { choices: { message: { content: string } }[] }).choices[0].message.content
+  const j = await r.json() as { choices: { message: { content: string } }[] }
+  onUsage(usageCounts(j))
+  const c = j.choices[0].message.content
   try { return JSON.parse(c) } catch { throw new Error('not_json') }
 }
 
