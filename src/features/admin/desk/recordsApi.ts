@@ -1,6 +1,8 @@
 import { supabase } from '../../auth/client'
 import { confirmRows, rejectRows, EDITABLE, type Res, type Table } from '../../records/api'
 import { LOW_CONFIDENCE } from '../../records/ConfirmSheet'
+import { position } from '../../health/ranges'
+import { verdictFor } from '../../health/verdict'
 
 // Admin dashboard reads/writes for Records, Queue and Duplicates. RLS lets the admin see every person; nothing here deletes.
 // Codes only on failure (messages can carry row values).
@@ -335,4 +337,14 @@ export const labValue = (r: Row) => {
 export const labRange = (r: Row) => {
   const lo = num(r.ref_low), hi = num(r.ref_high)
   return lo != null && hi != null ? `${lo} to ${hi}` : lo != null ? `${lo} or more` : hi != null ? `${hi} or less` : ((r.ref_text as string | null) ?? '')
+}
+
+/** High/Low word for a lab row: the printed flag first (as Records always did), else the value against the printed range. Unknown value or no range gives null, never "Normal". */
+export function labTag(r: Row): { word: string; tone: 'warn' | 'plain' } | null {
+  const f = FLAGS[r.flag as string]
+  if (f) return f
+  const n = num(r.value_num)
+  if (n == null) return null
+  const v = verdictFor('lab', position(n, { low: num(r.ref_low), high: num(r.ref_high) }))
+  return v && v.icon !== 'check' ? { word: v.word, tone: 'warn' } : null
 }

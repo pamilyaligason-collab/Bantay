@@ -142,7 +142,7 @@ describe('Confirm queue', () => {
     render(<Queue id={null} />)
     await screen.findByRole('heading', { name: 'Test Person' })
     fireEvent.click(screen.getByRole('button', { name: 'Fix LDL Test' }))
-    fireEvent.change(screen.getByLabelText('value num'), { target: { value: '96,5' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '96,5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save fix' }))
     await waitFor(() => expect(writes.some((w) => w.t === 'lab_results' && w.patch.value_num === 96.5)).toBe(true))
     const w = writes.find((x) => x.patch.value_num === 96.5)!
@@ -154,7 +154,7 @@ describe('Confirm queue', () => {
     render(<Queue id={null} />)
     await screen.findByRole('heading', { name: 'Test Person' })
     fireEvent.click(screen.getByRole('button', { name: 'Fix LDL Test' }))
-    fireEvent.change(screen.getByLabelText('value num'), { target: { value: 'abc' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'abc' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save fix' }))
     expect((await screen.findByRole('alert')).textContent).toContain('must be a number')
     expect(writes).toEqual([])
@@ -164,6 +164,27 @@ describe('Confirm queue', () => {
     tables.documents = []; tables.lab_results = []; tables.prescription_items = []; tables.prescriptions = []
     render(<Queue id={null} />)
     expect(await screen.findByText('Nothing to confirm.')).toBeTruthy()
+  })
+})
+
+describe('Queue load error', () => {
+  it('says it could not load, with Retry, and never "Nothing to confirm"', async () => {
+    h.sb = null // not connected: the load fails
+    render(<Queue id={null} />)
+    expect((await screen.findByRole('alert')).textContent).toMatch(/./)
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+    expect(screen.queryByText('Nothing to confirm.')).toBeNull()
+    h.sb = fakeSb(tables, writes)
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect((await screen.findAllByRole('table')).length).toBe(2)
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+  })
+  it('shows the range and a High/Low tag for a lab value', async () => {
+    tables.lab_results[0] = { ...tables.lab_results[0], ref_low: 0, ref_high: 90 }
+    render(<Queue id={null} />)
+    await screen.findByRole('heading', { name: 'Test Person' })
+    expect(screen.getByText('Range 0 to 90')).toBeTruthy()
+    expect(screen.getByText('High')).toBeTruthy()
   })
 })
 
@@ -187,6 +208,6 @@ describe('Queue select all', () => {
     const all = await screen.findByRole('checkbox', { name: /Select all/ })
     fireEvent.click(all) // partly ticked by default -> all
     fireEvent.click(all) // -> none
-    expect(screen.getByRole('button', { name: 'Confirm 0 checked' })).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('button', { name: /^Confirm \d+ checked$/ })).toBeNull() // the sticky bar only shows while something is ticked
   })
 })

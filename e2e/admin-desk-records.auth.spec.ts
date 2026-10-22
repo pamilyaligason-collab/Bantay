@@ -174,7 +174,7 @@ test('records: row opens the panel, Confirm then Undo', async ({ page }) => {
   await page.goto('/admin#/records')
   await page.getByRole('button', { name: 'LDL Test' }).click()
   const panel = page.getByRole('dialog')
-  await expect(panel.getByLabel('value num')).toHaveValue('95')
+  await expect(panel.getByLabel('Value', { exact: true })).toHaveValue('95')
   await panel.getByRole('button', { name: 'Confirm' }).click()
   await expect(page.getByText('Confirmed.')).toBeVisible()
   expect(patches.find((p) => p.table === 'lab_results')).toMatchObject({ body: { status: 'confirmed' }, ids: ['l1'] })
@@ -263,3 +263,64 @@ test('records: tab badges, person select routes, bulk confirm sends the ticked i
   expect(st.lab_results.map((r) => r.status)).toEqual(['draft', 'draft', 'draft'])
 })
 
+
+// ---- Lane ADM-C: error states, split view, tabs ----
+const failTable = (page: Page, table: string) => page.route(`${API}/rest/v1/${table}*`, (route) => route.fulfill({ status: 500, headers: { ...cors, 'content-type': 'application/json' }, body: '{"message":"x"}' }))
+
+for (const [path, table, empty] of [['queue', 'documents', 'Nothing to confirm.'], ['duplicates', 'documents', 'No duplicate papers.'], ['records/p1/lab', 'lab_results', 'No laboratory for these filters']] as const) {
+  test(`${path}: a load error shows Retry, not "${empty}"`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await mock(page, state(), [])
+    await skipOnboarding(page)
+    await failTable(page, table)
+    await page.goto(`/admin#/${path}`)
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+    await expect(page.getByText(empty, { exact: false })).toHaveCount(0)
+  })
+}
+
+test('queue: source paper beside the values at 1440, below at 1024; sticky Confirm', async ({ page }) => {
+  await mock(page, state(), [])
+  await skipOnboarding(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/admin#/queue')
+  const src = page.getByRole('complementary', { name: 'Source paper' })
+  await expect(src.getByRole('img', { name: 'Source page page1.jpg' })).toHaveCount(1)
+  const t = (await page.locator('.rc-qt').first().boundingBox())!, s = (await src.boundingBox())!
+  expect(s.x).toBeGreaterThanOrEqual(t.x + t.width - 1) // beside, not under
+  await expect(page.getByText('Range 0 to 100')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Confirm 4 checked' })).toBeInViewport()
+  await page.screenshot({ path: 'docs/session-9/shots/adm-c/queue-1440-light.png', fullPage: true })
+  await page.setViewportSize({ width: 1024, height: 800 })
+  const t2 = (await page.locator('.rc-qt').first().boundingBox())!, s2 = (await src.boundingBox())!
+  expect(s2.y).toBeGreaterThan(t2.y + t2.height - 1) // stacked below
+})
+
+test('records: nine tabs scroll with a More button at 1024', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 800 })
+  await mock(page, state(), [])
+  await skipOnboarding(page)
+  await page.goto('/admin#/records/p1/lab')
+  const more = page.getByRole('button', { name: 'Show more kinds of record' })
+  await expect(more).toBeVisible()
+  await more.click()
+  await expect(page.getByRole('link', { name: /^Visits/ })).toBeInViewport()
+})
+
+test('shots: queue, records and duplicates, light and dark, 1440 and 390', async ({ page }) => {
+  test.setTimeout(240_000)
+  await mock(page, state(), [])
+  await skipOnboarding(page)
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    for (const s of [{ w: 1440, h: 900 }, { w: 390, h: 844 }]) {
+      await page.setViewportSize({ width: s.w, height: s.h })
+      for (const [name, path, ready] of [['queue', 'queue', 'Source paper'], ['records', 'records/p1/lab', 'LDL Test'], ['duplicates', 'duplicates', 'Keep copy 1 in group 1']] as const) {
+        await page.goto(`/admin#/${path}`)
+        await expect(page.getByText(ready, { exact: false }).or(page.getByRole('button', { name: ready })).first()).toBeVisible()
+        await page.waitForTimeout(400)
+        await page.screenshot({ path: `docs/session-9/shots/adm-c/${name}-${s.w}-${scheme}.png`, fullPage: true })
+      }
+    }
+  }
+})
