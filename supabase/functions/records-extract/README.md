@@ -83,3 +83,7 @@ Undo: `select cron.unschedule('records-extract');`, `supabase functions delete r
 ## Tests
 
 `npx vitest run supabase/functions/records-extract` (pure logic in `logic.ts`, fake port, no network).
+
+## Device reading mode (Scan & Capture)
+
+The app can send one photo of a BP monitor, glucose meter, scale, thermometer or oximeter: body `{mode:"reading", mime:"image/jpeg|png|webp", image_base64}` (a request over 2 KB is routed here), the member JWT in Authorization. Nothing is stored. Reply `{ok:true, reading:{kind,systolic,diastolic,pulse,value,unit,confidence}}`; any number that is unreadable, out of range, in an unknown unit or read with confidence under 0.5 is null. Same OpenRouter settings as a paper plus `max_tokens: 200` and reasoning off. The log line holds no kind and no values. No new secret, no deploy step beyond redeploying the function.

@@ -33,7 +33,7 @@ function png(w: number, h: number) {
 const photo = (name: string) => ({ name, mimeType: 'image/png', buffer: png(300, 400) })
 
 type Srv = { calls: string[]; docs: Record<string, unknown>[]; files: Record<string, unknown>[]; uploads: string[]; invokes: unknown[] }
-async function mock(page: Page): Promise<Srv> {
+async function mock(page: Page, reply: { status: number; reading?: unknown } = { status: 200, reading: null }): Promise<Srv> {
   const s: Srv = { calls: [], docs: [], files: [], uploads: [], invokes: [] }
   await page.addInitScript(() => {
     localStorage.setItem('bantay.onboarded', '1')
@@ -56,7 +56,12 @@ async function mock(page: Page): Promise<Srv> {
       s.calls.push('upload'); s.uploads.push(path)
       return json(route, { Key: 'records/' + path })
     }
-    if (p.startsWith('/functions/v1/records-extract')) { s.calls.push('invoke'); s.invokes.push(req.postDataJSON()); return json(route, { ok: true }) }
+    if (p.startsWith('/functions/v1/records-extract')) {
+      const body = req.postDataJSON()
+      s.calls.push('invoke'); s.invokes.push(body)
+      if (body?.mode === 'reading') return reply.status === 200 ? json(route, { ok: true, reading: reply.reading }) : json(route, { ok: false, error: 'read_failed' }, reply.status)
+      return json(route, { ok: true })
+    }
     return json(route, {}, 404)
   })
   return s
@@ -65,10 +70,11 @@ async function mock(page: Page): Promise<Srv> {
 test('photo, crop, two pages, form, Save: pages queue, upload in order, the server is asked to read', async ({ page }) => {
   const s = await mock(page)
   await page.goto('/docs-harness.html#scan')
-  await expect(page.getByRole('heading', { level: 1, name: 'Scan a paper' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Scan & Capture' })).toBeVisible()
 
   // page 1
   await page.getByTestId('scan-camera').setInputFiles(photo('one.png'))
+  await page.getByRole('button', { name: 'Paper' }).click() // what is in the photo?
   await expect(page.getByTestId('corner-0')).toBeVisible()
   const crop = await page.locator('.sc-crop').boundingBox()
   const c0 = await page.getByTestId('corner-0').boundingBox()
@@ -129,6 +135,7 @@ test('offline: Save keeps the pages queued and nothing is sent', async ({ page, 
   const s = await mock(page)
   await page.goto('/docs-harness.html#scan')
   await page.getByTestId('scan-file').setInputFiles(photo('one.png'))
+  await page.getByRole('button', { name: 'Paper' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
   await expect(page.getByRole('button', { name: 'Me' })).toBeVisible() // the family list came while there was signal
@@ -143,3 +150,61 @@ test('offline: Save keeps the pages queued and nothing is sent', async ({ page, 
   expect(queued[0]).toMatchObject({ page: 1, pages: 1, kind: 'lab' })
   expect(s.calls).toEqual([])
 })
+
+// Never open a database that is not there yet: that would create an empty one and break the app's own open.
+const readings = (page: Page) => page.evaluate(async () => {
+  if (!(await indexedDB.databases()).some((d) => d.name === 'bantay-health')) return []
+  return new Promise<{ test: string; value: number; unit: string }[]>((res) => {
+    const r = indexedDB.open('bantay-health')
+    r.onsuccess = () => {
+      if (!r.result.objectStoreNames.contains('readings')) return res([])
+      const q = r.result.transaction('readings').objectStore('readings').getAll()
+      q.onsuccess = () => { r.result.close(); res(q.result) }
+    }
+  })
+})
+const shot = (page: Page, name: string) => page.screenshot({ path: process.env.SCAN_SHOTS ? `${process.env.SCAN_SHOTS}/${name}.png` : undefined })
+
+for (const scheme of ['light', 'dark'] as const) {
+  test.describe(`device reading, ${scheme}`, () => {
+    test.use({ colorScheme: scheme })
+
+    test('photo, Device reading, numbers shown to confirm, edit one, Save writes readings and no document', async ({ page }) => {
+      const s = await mock(page, { status: 200, reading: { kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.9 } })
+      await page.goto('/docs-harness.html#scan')
+      await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
+      await expect(page.getByRole('heading', { name: 'What is in the photo?' })).toBeVisible()
+      await shot(page, `choose-${scheme}`)
+      await page.getByRole('button', { name: /Device reading/ }).click()
+      await expect(page.getByTestId('reading-confirm')).toBeVisible()
+      await expect(page.getByLabel('Top')).toHaveValue('128')
+      await expect(page.getByLabel('Bottom')).toHaveValue('82')
+      await expect(page.getByLabel('Pulse')).toHaveValue('71')
+      expect(s.invokes[0]).toMatchObject({ mode: 'reading', mime: 'image/jpeg' })
+      expect(typeof (s.invokes[0] as { image_base64: string }).image_base64).toBe('string')
+      expect((await page.getByLabel('Top').boundingBox())!.height).toBeGreaterThanOrEqual(48)
+      await page.getByLabel('Top').fill('132') // nothing is saved until the person confirms
+      expect(await readings(page)).toHaveLength(0)
+      await shot(page, `confirm-${scheme}`)
+      await page.getByRole('button', { name: 'Save reading' }).click()
+      await expect(page.getByText('Reading saved.')).toBeVisible()
+      expect((await readings(page)).map((r) => [r.test, r.value, r.unit])).toEqual([['bp_systolic', 132, 'mmHg'], ['bp_diastolic', 82, 'mmHg'], ['heart_rate', 71, 'bpm']])
+      expect(s.docs).toHaveLength(0)
+      expect(s.uploads).toHaveLength(0)
+    })
+
+    test('the server could not read it: fields are empty (not 0) and the person types the numbers', async ({ page }) => {
+      await mock(page, { status: 502 })
+      await page.goto('/docs-harness.html#scan')
+      await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
+      await page.getByRole('button', { name: /Device reading/ }).click()
+      await expect(page.getByTestId('reading-confirm')).toBeVisible()
+      await expect(page.getByLabel('Top')).toHaveValue('')
+      await expect(page.getByText(/Could not read the photo/)).toBeVisible()
+      await page.getByRole('button', { name: 'Save reading' }).click()
+      await expect(page.getByRole('alert')).toContainText('Type the top and the bottom number')
+      await shot(page, `empty-${scheme}`)
+      expect(await readings(page)).toHaveLength(0)
+    })
+  })
+}

@@ -5,6 +5,8 @@
 //    ops/sql/records_extract_cron.sql). Picks up scans the app never announced (no signal after the upload).
 // Deploy with --no-verify-jwt: the JWT (app) or the secret (cron) is checked here. Answers 202 at once and reads in the
 // background (EdgeRuntime.waitUntil); the app follows source_files.ingest_status (reading -> queued | failed).
+//  * the app with a photo of a home device: body {mode:'reading', mime, image_base64} (over 2 KB, so told apart by size), the member's JWT.
+//    Nothing is stored; the reply is {ok, reading:{kind,systolic,diastolic,pulse,value,unit,confidence}} for the person to confirm.
 // Every row written is a draft: nothing from a phone scan is ever confirmed by the server.
 // Function secrets (set by Lloyd): OPENROUTER_API_KEY, RECORDS_EXTRACT_CRON_SECRET, ALLOWED_ORIGIN; optional OPENROUTER_MODEL,
 // OPENROUTER_FALLBACK_MODEL. SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
@@ -13,7 +15,7 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.1
 import { corsHeaders, json } from '../_shared/http.ts'
 import {
   type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, type DocRow, type Env, extractDocument, type PageRow, parseBody, type Port, runSweep,
-  sendToOpenRouter, summary, SWEEP_LIMIT, withRetry
+  parseReadingBody, readDevice, sendToOpenRouter, summary, SWEEP_LIMIT, withRetry
 } from './logic.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
@@ -95,7 +97,23 @@ Deno.serve(async (req) => {
   if (!key || [cfg.model, cfg.fallbackModel].some((m) => /:free$/i.test(m))) return json({ ok: false, error: 'not_configured' }, 500, cors)
 
   try {
-    const what = parseBody(await req.text())
+    const raw = await req.text()
+    if (raw.length > 2048) { // only a device-reading photo is this big
+      const image = parseReadingBody(raw)
+      if (!image) return json({ ok: false, error: 'bad_input' }, 400, cors)
+      const asker = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { ...opts, global: { headers: { Authorization: req.headers.get('authorization') ?? '' } } })
+      const { data: who } = await asker.auth.getUser()
+      if (!who.user) return json({ ok: false, error: 'unauthorized' }, 401, cors)
+      try {
+        const result = await readDevice((body) => withRetry(() => sendToOpenRouter(fetch, body, key), { tries: 2, baseMs: 1000 }), image, cfg)
+        console.log(JSON.stringify({ fn: 'records-extract', mode: 'reading', ok: true })) // B-7: no kind, no values
+        return json({ ok: true, reading: result }, 200, cors)
+      } catch {
+        console.error('records-extract reading failed')
+        return json({ ok: false, error: 'read_failed' }, 502, cors)
+      }
+    }
+    const what = parseBody(raw)
     if (!what) return json({ ok: false, error: 'bad_input' }, 400, cors)
     const sb = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), opts)
     const port = makePort(sb, key)

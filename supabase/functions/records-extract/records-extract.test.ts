@@ -7,7 +7,8 @@ import { buildRequest as pcBuildRequest, PROMPT as PC_PROMPT } from '../../../sc
 import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs'
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
-  buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, normalizeDraft,
+  buildReadingRequest, buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, MAX_READING_BASE64,
+  normalizeDraft, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
   normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, uuid5, withRetry
 } from './logic.ts'
 
@@ -186,6 +187,83 @@ describe('OpenRouter calls', () => {
     expect(String(e.message)).not.toMatch(/Cholesterol|TEST/)
     expect(errorCode(new Error('Cholesterol 5.2'))).toBe('failed')
     expect(errorCode(new HttpError(402))).toBe('openrouter_402')
+  })
+})
+
+// ---------- device reading mode (a photo of a BP monitor or glucose meter) ----------
+describe('reading mode', () => {
+  const img = { mime: 'image/jpeg', base64: 'QUJDREVGR0hJSktMTU5PUA==' }
+  it('request: one image, prompt asks for the five kinds, zdr, small token cap, reasoning off, never a free model', () => {
+    const b = buildReadingRequest({ ...env, image: img })
+    const c = b.messages[0].content as { type: string; text?: string; image_url?: { url: string } }[]
+    expect(c.map((x) => x.type)).toEqual(['text', 'image_url'])
+    expect(c[0].text).toBe(READING_PROMPT)
+    expect(c[0].text).toMatch(/bp\|glucose\|weight\|temp\|spo2/)
+    expect(c[1].image_url!.url).toBe(`data:image/jpeg;base64,${img.base64}`)
+    expect(b.provider).toEqual({ zdr: true, data_collection: 'deny' })
+    expect(b.response_format).toEqual({ type: 'json_object' })
+    expect(b.max_tokens).toBe(READING_MAX_TOKENS)
+    expect(b.max_tokens).toBeLessThanOrEqual(300)
+    expect(b.reasoning).toEqual({ enabled: false })
+    expect(b.models).toEqual([env.model, env.fallbackModel])
+    expect(() => buildReadingRequest({ ...env, model: 'x/y:free', image: img })).toThrow()
+    expect(() => buildReadingRequest({ ...env, image: { mime: 'application/pdf', base64: 'AA' } })).toThrow() // a photo only
+  })
+
+  it('schema: a clear BP photo keeps the contract keys only', () => {
+    const r = normalizeReading({ kind: 'bp', systolic: 128, diastolic: '82', pulse: 71, value: 5, unit: 'mmHg', confidence: 0.9, extra: 'dropped' })
+    expect(r).toEqual({ kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.9 })
+    expect(Object.keys(r).sort()).toEqual(['confidence', 'diastolic', 'kind', 'pulse', 'systolic', 'unit', 'value'])
+  })
+  it('null handling: unknown stays null, never 0, never guessed', () => {
+    expect(normalizeReading(null)).toEqual({ kind: null, systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: null })
+    expect(normalizeReading({ kind: 'bp', systolic: null, diastolic: 80, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null, unit: null }) // half a pair is no pair
+    expect(normalizeReading({ kind: 'bp', systolic: 0, diastolic: 0, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null })
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 130, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null }) // bottom above top
+    expect(normalizeReading({ kind: 'glucose', value: '', unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: true, unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: 'about 100', unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'robot', value: 5 }).kind).toBeNull()
+  })
+  it('low confidence empties every number; unknown confidence keeps what was read (the person always confirms)', () => {
+    expect(normalizeReading({ kind: 'bp', systolic: 128, diastolic: 82, pulse: 70, confidence: 0.3 })).toEqual({ kind: 'bp', systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: 0.3 })
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.49 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.5 }).value).toBe(100)
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL' })).toMatchObject({ value: 100, confidence: null })
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 7 }).confidence).toBeNull()
+  })
+  it('units are validated per kind and out-of-range numbers are dropped', () => {
+    expect(normalizeReading({ kind: 'glucose', value: 5.6, unit: 'MMOL/L', confidence: 1 })).toMatchObject({ value: 5.6, unit: 'mmol/L' })
+    expect(normalizeReading({ kind: 'glucose', value: 5.6, unit: 'mg/dL', confidence: 1 }).value).toBeNull() // 5.6 mg/dL is not a glucose
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mmHg', confidence: 1 })).toMatchObject({ value: null, unit: null })
+    expect(normalizeReading({ kind: 'glucose', value: 100, confidence: 1 }).value).toBeNull() // no unit, no value
+    expect(normalizeReading({ kind: 'weight', value: 62.4, unit: 'kgs', confidence: 1 })).toMatchObject({ value: 62.4, unit: 'kg' })
+    expect(normalizeReading({ kind: 'weight', value: 137, unit: 'lbs', confidence: 1 })).toMatchObject({ value: 137, unit: 'lb' })
+    expect(normalizeReading({ kind: 'temp', value: 36.8, unit: '°C', confidence: 1 })).toMatchObject({ value: 36.8, unit: 'C' })
+    expect(normalizeReading({ kind: 'temp', value: 368, unit: 'C', confidence: 1 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'spo2', value: 97, unit: '%', pulse: 72, confidence: 1 })).toMatchObject({ value: 97, unit: '%', pulse: 72 })
+    expect(normalizeReading({ kind: 'spo2', value: 140, unit: '%', confidence: 1 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'bp', systolic: 400, diastolic: 80, confidence: 1 }).systolic).toBeNull()
+  })
+
+  it('parseReadingBody accepts one small photo and nothing else', () => {
+    const ok = JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: img.base64 })
+    expect(parseReadingBody(ok)).toEqual(img)
+    for (const bad of [
+      '', 'not json', '[]', JSON.stringify({ mode: 'sweep', mime: 'image/jpeg', image_base64: img.base64 }),
+      JSON.stringify({ mode: 'reading', mime: 'application/pdf', image_base64: img.base64 }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'not base64!' }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'QQ==' }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'A'.repeat(MAX_READING_BASE64 + 1) })
+    ]) expect(parseReadingBody(bad)).toBeNull()
+  })
+
+  it('readDevice: sends the request body to the model and returns only the normalised numbers', async () => {
+    let sent: unknown
+    const r = await readDevice(async (b) => { sent = b; return { kind: 'bp', systolic: 141, diastolic: 90, pulse: 77, confidence: 0.8, note: 'ignored' } }, img, env)
+    expect(sent).toEqual(buildReadingRequest({ ...env, image: img }))
+    expect(r).toEqual({ kind: 'bp', systolic: 141, diastolic: 90, pulse: 77, value: null, unit: 'mmHg', confidence: 0.8 })
+    await expect(readDevice(async () => { throw new HttpError(500) }, img, env)).rejects.toThrow()
   })
 })
 
