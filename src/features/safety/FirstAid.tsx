@@ -1,3 +1,4 @@
+import { Group } from './Group'
 import { useEffect } from 'react'
 import data from './firstaid.json'
 import { Icon, type IconName } from '../shell/Icon'
@@ -22,8 +23,7 @@ const ICON: Record<string, IconName> = { burns: 'flame', fracture: 'bone', 'dog-
 /** Act early: the grid is sized by urgency, the high-urgency topics take the full row. */
 export function ActEarly() {
   return (
-    <section aria-labelledby="sf-act-h" className="sf-act-sec">
-      <h2 id="sf-act-h" className="hd">Act early</h2>
+    <Group id="sf-act-h" tone="aid" title="First aid: act early" sub="Tap a problem for steps you can follow now.">
       <p className="sf-act-note"><Icon name="phone" size={22} tone="alert" /><span><b>Call 911 first</b> if someone cannot breathe, cannot speak, or will not wake up.</span></p>
       <nav className="sf-tiles" aria-label="Act early">
         {TOPICS.map((t) => (
@@ -34,7 +34,7 @@ export function ActEarly() {
           </a>
         ))}
       </nav>
-    </section>
+    </Group>
   )
 }
 

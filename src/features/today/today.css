@@ -225,3 +225,10 @@
 
 .td-due { margin: 10px 4px 0; font-size: 15px; font-weight: 600; }
 .td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Late dose: past its slot but still inside the on-time window. Warm brown keeps light text above 4.5:1 in both themes. */
+.td-slide.dose.late { background: color-mix(in srgb, var(--warn) 40%, #000); }
+.td-slide.dose.late .td-k { color: #F5C468; }
+/* Simple mode: no tab bar, no coach mark; SOS sits in the page. */
+.bt[data-simple] .tabbar, .bt[data-simple] .sh-hint { display: none; }
+.td-simple .sos-wrap { margin-top: 4px; }

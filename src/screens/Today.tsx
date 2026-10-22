@@ -34,6 +34,12 @@ export default function Today() {
   useEffect(() => () => clearTimeout(timer.current), [])
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => (loaded && !simple ? wireMotion(root.current) : undefined), [loaded, simple]) // [data-reveal] sections; none on SOS, 911 or the I'm OK confirmation
+  useEffect(() => { // Simple mode hides the tab bar and its coach mark (CSS on .bt[data-simple]) so SOS is never under them
+    const bt = document.querySelector('.bt')
+    if (!loaded || !simple || !bt) return
+    bt.setAttribute('data-simple', '')
+    return () => bt.removeAttribute('data-simple')
+  }, [loaded, simple])
   const onOk = useCallback(() => { void checkIn().then((r) => notify(r === 'ok' ? 'Family sees: I am OK' : FAIL_TEXT[r])) }, [notify])
   const next = useNext()
   const calm = next.item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place

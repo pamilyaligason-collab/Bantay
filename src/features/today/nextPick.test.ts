@@ -70,7 +70,11 @@ describe('pickNext', () => {
   })
   it('the card kicker says Next up (the heading is visually hidden), the calm pick is only a signal', () => {
     expect(pickNext({ ...none, due }, at(9, 30)).kicker).toBe('Next up · medicine')
-    expect(pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30)).kicker).toBe('Next up · not taken yet')
+    expect(pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30)).kicker).toBe('Late · not taken yet')
+    const late = pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30))
+    expect(late.late).toBe(true)
+    expect(late.note).toBe('Taking it by 12:00 PM still counts as on time.') // slot 10:00 + the 2 h of doseCount's ON_TIME_MIN
+    expect(pickNext({ ...none, due }, at(9, 30)).late).toBe(false)
     expect(pickNext(none).kind).toBe('calm')
   })
   it('when line: time, minutes away, dose text; parts that are missing are left out', () => {
@@ -81,7 +85,7 @@ describe('pickNext', () => {
     expect(whenLine(bare[0]!, at(17, 55))).toBe('8:00 PM · in 2 h 5 min')
   })
   it('names who is also waiting in a note', () => {
-    expect(pickNext({ ...none, due: nextDoses([me, ma], meds, [], at(9, 30)) }, at(9, 30)).note).toBe('Also waiting: Ma.')
+    expect(pickNext({ ...none, due: nextDoses([me, ma], meds, [], at(9, 30)) }, at(9, 30)).note).toContain('Also waiting: Ma.')
   })
   it('joinNames', () => { expect(joinNames(['A', 'B', 'C'])).toBe('A, B and C') })
 })

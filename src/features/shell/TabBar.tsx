@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useState, type CSSProperties } from 'react'
+import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { AskSheet } from './AskSheet'
 import { useKv } from './useKv'
 import { Icon, type IconName } from './Icon'
@@ -19,6 +19,12 @@ export function TabBar({ active }: { active: Tab | null }) {
   const open = () => { setSheet(true); if (!seen) setSeen(true) }
   const onClose = useCallback(() => { if (history.state?.bantayAsk) history.back(); else setSheet(false) }, [])
   const onDone = useCallback(() => setSheet(false), [])
+  const hint = loaded && !seen && !sheet && active === 'today'
+  useEffect(() => { // the coach mark shows once: it counts as seen after 8 seconds, so it never sits on the page again
+    if (!hint) return
+    const t = setTimeout(() => setSeen(true), 8000)
+    return () => clearTimeout(t)
+  }, [hint, setSeen])
   const at = ITEMS.findIndex((t) => t.id === active)
   const pill = { '--slot': at < 2 ? at : at + 1, '--pill': at < 0 ? 0 : 1 } as CSSProperties // skip the Ask slot
   return (
@@ -37,7 +43,7 @@ export function TabBar({ active }: { active: Tab | null }) {
           </button>
         </Fragment>
       ))}
-      {loaded && !seen && !sheet && active === 'today' && <p className="sh-hint" role="status">Scan papers here too</p>}
+      {hint && <p className="sh-hint" role="status">Scan papers here too</p>}
       {sheet && <AskSheet onClose={onClose} onDone={onDone} />}
     </nav>
   )

@@ -24,7 +24,7 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
   return (
     <section aria-labelledby="t-next">
       <h2 id="t-next" className="td-vh">Next up</h2>
-      <article className={`td-slide ${item.kind}`} aria-label={item.title}>
+      <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
         <div className="td-k">{item.kicker}</div>
         <h3>{item.title}</h3>
         <p>{item.body}</p>

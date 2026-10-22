@@ -30,7 +30,7 @@ describe('Today simple mode', () => {
     await screen.findByTestId('quicklog')
     for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'famline', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
-    expect(screen.queryByRole('link', { name: 'SOS' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
   })
   it('full page order: Next up, weather, quick log, My week, family line, plan, then More', async () => {
     const { container } = render(<Today />)
@@ -80,7 +80,7 @@ describe('Today simple mode', () => {
     await screen.findByRole('button', { name: 'Taken' })
     expect(screen.getByText('Losartan')).toBeTruthy()
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
+    expect(screen.getByRole('button', { name: /^SOS/ })).toBeTruthy() // the real hold-to-send button, not a link
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
     for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'famline']) expect(screen.queryByTestId(id)).toBeNull()
   })
