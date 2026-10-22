@@ -51,3 +51,33 @@ Screenshots stay out of git (59 MB); they live in the worktree folders named abo
 - Every migration: rehearsal on WSL Postgres, then Lloyd says "apply".
 - Every wave: tsc, vitest, e2e, review pass, then a PR; Lloyd says "merge".
 - Privacy notice gains one line: the assistant processes data abroad (RA 10173).
+
+## Revision 1 (Lloyd 2026-10-22): "proceed and carry out all recommended improvements", plus new asks
+
+Approved: all waves above. This chat is the orchestrator. New asks folded in:
+
+Today
+- Weather card: dynamic graphics by condition and time of day (no flat green). -> W1-WEATHER
+- Meal logging redesign; Salt today merged into the meal flow (no separate salt card). -> W1-NUTRI
+- Move: more options, especially mobility; embedded official videos where graphics are hard. -> W1-MOVE
+- Family card on Today becomes self-care: breathing exercise to relax or sleep. -> W2-FAMILY
+
+Health
+- Interactive, engaging nudge card instead of "no reading this week" and "0" KPIs. -> W2-HEALTH
+- Move more comprehensive. -> W1-MOVE
+- Food: macros and nutrients for age and condition, food vs supplement view. -> W1-NUTRI
+
+Ask
+- "Scan a paper" becomes "Scan & Capture": also reads a photo of a BP monitor or glucometer into a reading. -> W2-ASK
+
+Family
+- Hide today's check-in once logged; members as status bubbles (emoji); tap opens messages with text, voice note and file attach (video -> link to Messenger). -> W2-FAMILY (migration 0027 messages + private bucket)
+- Video previews for all videos. -> W1-MOVE (shared LiteVideo)
+- Admin: "View as member" toggle. -> W2-ADM-VIEW (read-only, Fable review)
+
+Safety
+- Subtle grouped backgrounds: emergency vs first aid vs sources. -> W2-SAFETY
+
+Wave 1 lanes (8): APP-A, APP-B, ADM-A, JACK-A, JACK-C, W1-NUTRI (absorbs FOOD-1/FOOD-2, migration 0026), W1-WEATHER (absorbs the heat-number fix), W1-MOVE.
+Wave 2 lanes: APP-C + W2-HEALTH, APP-D, W2-FAMILY, W2-ASK, W2-SAFETY, ADM-B..E, W2-ADM-VIEW, JACK-B, JACK-D.
+Wave 3: Tagalog labels, on-device OCR if needed.
