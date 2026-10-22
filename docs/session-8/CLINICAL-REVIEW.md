@@ -1029,3 +1029,20 @@ Status: NOT reviewed. All wording below was written by Bantay. Nothing here is a
 
 11. No photo or AI estimation of food. No barcode lookup (Open Food Facts was optional and skipped). No third-party calls from the app.
 12. Usage analytics record only the fixed event names meal_logged, water_logged and salt_goal_set. A food name is never logged (rule B-7).
+
+
+## Session 9 W2-FAMILY: Self-care breathing and family status bubbles - for clinician review
+
+Status: NOT reviewed. Wording written by Bantay. Code: `src/features/today/breathLogic.ts` (patterns, safety line, sources), `SelfCare.tsx`; `src/features/family/messagesLogic.ts` (`bubbleStatus`). Sources were cited from memory and could not be fetched in this session: REVIEW each link.
+
+### Breathing (Today > Take a breath)
+
+1. Relax: in 4 s, out 6 s (6 breaths a minute). Line on screen: "A slow breath out, about six breaths a minute, helps the body settle." Source: Russo MA, Santarelli DM, O'Rourke D. The physiology of slow breathing. Breathe 2017;13(4):298-309, https://doi.org/10.1183/20734735.009817. REVIEW: confirm it supports the wording; the app makes no blood pressure claim.
+2. Sleep: in 4, hold 7, out 8 (the "4-7-8" breath). Line on screen: "The 4-7-8 breath is a popular wind-down habit. It is not a treatment, and studies of it are small." Source: Dr Andrew Weil's description (https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/breathing-three-exercises/). It is a popular technique, not a proven sleep treatment; the wording says so. REVIEW: the 7 s hold for someone with high blood pressure or a heart condition.
+3. Calm: box breathing 4-4-4-4. Source: Harvard Health, "Relaxation techniques: breath control helps quell errant stress response", https://www.health.harvard.edu/mind-and-mood/relaxation-techniques-breath-control-helps-quell-errant-stress-response.
+4. Safety line shown under the picker: "Stop and breathe normally if you feel dizzy or short of breath. Chest pain is an emergency: use SOS." REVIEW: is a hold of 4 to 7 seconds acceptable for older adults with hypertension, or should holds be shorter or removed?
+5. Lengths 1, 3 and 5 minutes, rounded to whole breaths. The mood after (1 to 5) is optional and stays on the phone only; no advice is given from it.
+
+### Family bubbles (Family > People)
+
+6. A bubble shows one of three statuses from data already on the phone: "Needs a look" (the neutral "N to check" flag from the member report, no numbers), "OK today" (checked in today) and "No news" (neither). "No news" does not say the person is fine or unwell. A flag wins over a check-in. REVIEW: wording only.
