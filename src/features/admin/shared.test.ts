@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dateTime, day, label } from './shared'
+import { dateTime, day, statusLabel } from './shared'
 
 describe('admin shared formatters', () => {
   it('day is "17 Oct 2026" and unknown is a dash', () => {
@@ -13,9 +13,9 @@ describe('admin shared formatters', () => {
     expect(dateTime(undefined)).toBe('-')
   })
   it('label maps raw words and tidies unknown ones', () => {
-    expect(label('confirmed')).toBe('Confirmed')
-    expect(label('insert')).toBe('Added')
-    expect(label('needs_review')).toBe('Needs review')
-    expect(label(null)).toBe('-')
+    expect(statusLabel('confirmed')).toBe('Confirmed')
+    expect(statusLabel('insert')).toBe('Add')
+    expect(statusLabel('needs_review')).toBe('Needs review')
+    expect(statusLabel(null)).toBe('-')
   })
 })

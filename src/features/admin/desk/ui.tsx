@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDialog } from '../../docs/useDialog'
 import { Icon } from '../../shell/Icon'
+import './records.css'
 
 // Shared dashboard pieces. Pages build on these so every page looks and behaves the same.
 
@@ -65,7 +66,7 @@ export function ConfirmDialog({ text, title, verb = 'Confirm', danger, busy = fa
 /** Sticky bar for bulk actions. Shows only while `count` > 0; put the action buttons inside. */
 export function BulkBar({ count, noun = 'selected', children }: { count: number; noun?: string; children: ReactNode }) {
   if (count < 1) return null
-  return <div className="dk-bulk" role="region" aria-label="Bulk actions"><b>{count} {noun}</b><div className="dk-acts">{children}</div></div>
+  return <div className="rc-bulk" role="region" aria-label="Bulk actions"><b>{count} {noun}</b><div className="dk-acts">{children}</div></div>
 }
 
 /** Status line with an optional Undo, e.g. after confirm/reject. Undo restores the previous status. */

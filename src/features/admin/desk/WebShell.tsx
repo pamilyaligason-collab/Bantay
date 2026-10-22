@@ -104,7 +104,7 @@ const THEME_ICON: Record<ThemePref, IconName> = { system: 'screen', light: 'sun'
 const THEME_LABEL: Record<ThemePref, string> = { system: 'Theme: same as this computer', light: 'Theme: light', dark: 'Theme: dark' }
 
 /** Light / dark / system, saved where the app keeps it (same browser = same choice). */
-function ThemeButton() {
+function ThemeButton({ item }: { item?: boolean }) {
   useSavedTheme()
   const [t, setT] = useState<ThemePref>('system')
   useEffect(() => { void db.kv.get(THEME_KEY).then((r) => setT(r?.value === 'light' || r?.value === 'dark' ? r.value : 'system'), () => undefined) }, [])
@@ -113,6 +113,7 @@ function ThemeButton() {
     setT(n); applyTheme(n)
     void db.kv.put({ key: THEME_KEY, value: n }).catch(() => undefined) // not saved in a private window; still applied now
   }
+  if (item) return <button className="wa-theme" onClick={next}><Icon name={THEME_ICON[t]} size={20} />&nbsp;{THEME_LABEL[t]}</button> // phone: the top-bar button is hidden, so the account menu carries it
   return <button className="wa-ib" onClick={next} aria-label={`${THEME_LABEL[t]}. Change theme`} title={THEME_LABEL[t]}><Icon name={THEME_ICON[t]} /></button>
 }
 
@@ -180,7 +181,8 @@ export default function WebShell() {
         <button className="wa-ib wa-hide-sm" aria-label="Keyboard shortcuts" onClick={() => setHelp(true)}><Icon name="info" /></button>
         <details className="wa-me">
           <summary aria-label={`Account: ${name || 'Admin'}`}><span className="wa-av" aria-hidden="true">{(name || 'A').slice(0, 1).toUpperCase()}</span><span className="wa-name">{name || 'Admin'}</span></summary>
-          <div className="wa-pop"><a href="/">Open the family app</a><a href="/#admin">Phone admin tools</a><button onClick={() => void signOut().then(() => location.assign('/'))}>Sign out</button></div>
+          <div className="wa-pop"><ThemeButton item />
+          <a href="/">Open the family app</a><a href="/#admin">Phone admin tools</a><button onClick={() => void signOut().then(() => location.assign('/'))}>Sign out</button></div>
         </details>
       </header>
       <nav className="wa-side" aria-label="Admin pages">

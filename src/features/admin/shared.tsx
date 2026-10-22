@@ -12,13 +12,13 @@ export const dateTime = (iso: string | null | undefined) => {
   const d = dt(iso); if (!d) return '-'
   return `${d.toLocaleDateString('en-GB', { ...MANILA, day: 'numeric', month: 'short', ...(sameYear(d) ? {} : { year: 'numeric' }) })}, ${d.toLocaleTimeString('en-PH', { ...MANILA, hour: 'numeric', minute: '2-digit' })}`
 }
-/** One plain-words label for raw status and audit-action values. */
+/** One plain-words label for raw status values (nouns) and audit actions (verbs, as Home shows them). */
 export const STATUS_LABEL: Record<string, string> = {
   confirmed: 'Confirmed', draft: 'Draft', rejected: 'Rejected', failed: 'Failed', reading: 'Reading', new: 'New', done: 'Done', archived: 'Archived',
-  insert: 'Added', update: 'Changed', delete: 'Removed', archive: 'Archived', restore: 'Restored', confirm: 'Confirmed', reject: 'Rejected',
+  insert: 'Add', update: 'Update', delete: 'Delete', archive: 'Archive', restore: 'Restore', confirm: 'Confirm', reject: 'Reject', reveal: 'Reveal',
 }
 /** Unknown values get a capital letter and spaces for underscores; null is a dash. */
-export const label = (raw: string | null | undefined) => (raw ? STATUS_LABEL[raw.toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1).replaceAll('_', ' ') : '-')
+export const statusLabel = (raw: string | null | undefined) => (raw ? STATUS_LABEL[raw.toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1).replaceAll('_', ' ') : '-')
 export const why = (e: string) =>
   e === 'not_connected' ? NOT_CONNECTED
   : e === 'not_admin' ? 'Only an admin can do this.'
