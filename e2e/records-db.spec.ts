@@ -105,7 +105,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Lab results, Test Clinic' }).click()
     await expect(page.getByRole('heading', { name: 'Lab results' })).toBeFocused()
     await expect(page.getByTestId('rd-results')).toContainText('Above range') // 180 vs the lab range up to 100
-    await expect(page.getByTestId('rd-results')).toContainText('Within range')
+    await expect(page.getByTestId('rd-results')).toContainText('In range')
     await expect(page.getByText("by you, 2026-10-18")).toBeVisible()
     await page.screenshot({ path: `test-results/records-detail-${scheme}.png` })
     expect(await serious(page)).toEqual([])

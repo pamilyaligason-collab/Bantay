@@ -4,6 +4,7 @@ import { latestByTest, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 import { byVitalOrder, isVital, NORMAL, positionOf, weekAverages } from './vitals'
 import { Icon } from '../shell/Icon'
+import { kindOf } from './verdict'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 export type VitalsMode = 'latest' | 'average' | 'normal'
@@ -69,7 +70,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
           {rows.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
             const pos = positionOf(r, fam)
-            const st = rangeState(pos)
+            const st = rangeState(pos, kindOf(r.test), r.test === 'bp_systolic' ? { top: r.value, bottom: rows.find((x) => x.test === 'bp_diastolic')?.value } : undefined)
             const hist = pool.filter((x) => x.test === r.test)
             const spark = sparkPath(hist)
             const prev = previousReading(pool, r.test)

@@ -1,5 +1,6 @@
 import { barLayout, effectiveRange, metricLabel, readingPosition } from './model'
 import { toCanonicalReading, type Position, type Range, type Reading } from './ranges'
+import { verdictFor } from './verdict'
 import type { IconName } from '../shell/Icon'
 
 /** Pure logic for the lab results list and detail page (session 8). No React, no storage. Unknown is null, never 0. */
@@ -7,7 +8,8 @@ import type { IconName } from '../shell/Icon'
 export interface LabVerdict { word: string; icon: IconName; pos: Position }
 /** A plain word plus an icon, never colour alone. No range gives no verdict (null), never "In range". */
 export function labVerdict(pos: Position): LabVerdict | null {
-  return pos === 'above' ? { word: 'High', icon: 'up', pos } : pos === 'below' ? { word: 'Low', icon: 'down', pos } : pos === 'within' ? { word: 'In range', icon: 'check', pos } : null
+  const v = verdictFor('lab', pos)
+  return v ? { ...v, pos } : null
 }
 
 export interface LabBand {
