@@ -219,7 +219,7 @@ for (const size of SIZES) {
     await page.getByRole('button', { name: 'Archive Test Child' }).click()
     await expect(page.getByText(/Archive Test Child\? They disappear from every family phone/)).toBeVisible()
     expect(arch.rpc).toEqual([])
-    await page.getByRole('button', { name: 'Confirm' }).click()
+    await page.getByRole('button', { name: 'Archive', exact: true }).click()
     await expect.poll(() => arch.rpc).toEqual([{ p_person: 'p3', p_archived: true }])
     const banner = page.locator('.mp-archived')
     await expect(banner).toContainText('Archived on 20 Oct 2026. Hidden from family phones.')

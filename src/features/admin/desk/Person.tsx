@@ -11,13 +11,14 @@ import Ids from './Ids'
 import { useDeskPeople, type DeskPerson } from './people'
 import Records from './Records'
 import { deskHref, type PageProps } from './types'
-import { Empty, PageHead, Skeleton, Tag, useConfirm, useToast, type Tone } from './ui'
+import { Empty, PageHead, Skeleton, Tag, useConfirm, useToast, type ConfirmOpts, type Tone } from './ui'
+import ViewAs from './ViewAs'
 import './members.css'
 
 // ---------- shared by the Members list and the member page ----------
 /** admin-members `list` after E1 adds lockedUntil and fails; both are absent from an older deploy. */
 export type Row = Member & { lockedUntil?: string | null; fails?: number; archivedAt?: string | null }
-export type Ask = (text: string, run: () => Promise<void>) => void
+export type Ask = (text: string, run: () => Promise<void>, opts?: ConfirmOpts) => void
 
 export const LOCK_AT = 5 // wrong PINs that start the lock (HANDLE_LIMIT in supabase/functions/_shared/login.ts)
 const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Manila' })
@@ -229,14 +230,46 @@ export const ageOf = (birthdate: string | null | undefined, now = new Date()): n
 
 type Say = (t: string) => void
 
+/** Avatar with "Choose photo", in the summary card (the profile form no longer repeats the avatar). */
+function PhotoButton({ id, name, photoPath, size, say, saved }: { id: string; name: string; photoPath: string | null; size: number; say: Say; saved: () => void }) {
+  const [rev, setRev] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const file = useRef<HTMLInputElement>(null)
+  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
+    const pic = e.target.files?.[0]
+    e.target.value = ''
+    if (!pic) return
+    setErr(''); setBusy(true)
+    const jpeg = await toAvatarJpeg(pic)
+    if (!jpeg) { setBusy(false); return setErr('That file is not a picture Bantay can read.') }
+    const up = await uploadAvatar(id, jpeg)
+    if (!up.ok) { setBusy(false); return setErr(why(up.error)) }
+    let ok = false
+    if (!supabase) setErr(NOT_CONNECTED)
+    else {
+      const { data, error } = await supabase.from('people').update({ photo_path: up.data }).eq('id', id).select('id')
+      if (error) setErr(why('failed')); else if (!data || data.length === 0) setErr('You cannot change this person.'); else ok = true
+    }
+    setBusy(false)
+    if (ok) { setRev((n) => n + 1); say('Photo saved.'); saved() }
+  }
+  return (
+    <div className="mb-photo">
+      <Avatar name={name} photoPath={photoPath} size={size} rev={rev} />
+      <button type="button" className="dk-b" disabled={busy} onClick={() => file.current?.click()}>Choose photo</button>
+      <input ref={file} type="file" accept="image/*" hidden aria-label="Photo file" onChange={pick} />
+      {err && <p className="mb-err" role="alert">{err}</p>}
+    </div>
+  )
+}
+
 /** Rendered only after the details arrive, so its starting values are the real ones (no remount, no flicker). */
-function ProfileForm({ id, name, photoPath, detail, say, saved, onDirty }: { id: string; name: string; photoPath: string | null; detail: Detail; say: Say; saved: () => void; onDirty: (d: boolean) => void }) {
+function ProfileForm({ id, name, detail, say, saved, onDirty }: { id: string; name: string; detail: Detail; say: Say; saved: () => void; onDirty: (d: boolean) => void }) {
   const [base, setBase] = useState(() => formOf(name, detail))
   const [f, setF] = useState(base)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const [rev, setRev] = useState(0)
-  const file = useRef<HTMLInputElement>(null)
   const set = (k: keyof FormState) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value })
   const dirty = (Object.keys(f) as (keyof FormState)[]).some((k) => f[k] !== base[k])
   useEffect(() => { onDirty(dirty) }, [dirty]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -258,27 +291,8 @@ function ProfileForm({ id, name, photoPath, detail, say, saved, onDirty }: { id:
     setBusy(false)
     if (ok) { setBase(f); say('Profile saved.'); saved() }
   }
-  const pick = async (e: ChangeEvent<HTMLInputElement>) => {
-    const pic = e.target.files?.[0]
-    e.target.value = ''
-    if (!pic) return
-    setErr(''); setBusy(true)
-    const jpeg = await toAvatarJpeg(pic)
-    if (!jpeg) { setBusy(false); return setErr('That file is not a picture Bantay can read.') }
-    const up = await uploadAvatar(id, jpeg)
-    if (!up.ok) { setBusy(false); return setErr(why(up.error)) }
-    const ok = await update({ photo_path: up.data })
-    setBusy(false)
-    if (ok) { setRev((n) => n + 1); say('Photo saved.'); saved() }
-  }
-
   return (
     <form className="dk-form" aria-label="Profile" onSubmit={save}>
-      <div className="mb-who dk-wide">
-        <Avatar name={name} photoPath={photoPath} size={72} rev={rev} />
-        <button type="button" className="dk-b" disabled={busy} onClick={() => file.current?.click()}>Choose photo</button>
-        <input ref={file} type="file" accept="image/*" hidden aria-label="Photo file" onChange={pick} />
-      </div>
       <label className="dk-field">Name<input className="dk-in" value={f.name} maxLength={80} autoComplete="off" onChange={set('name')} /></label>
       <label className="dk-field">Phone<input className="dk-in" type="tel" value={f.phone} maxLength={30} autoComplete="off" onChange={set('phone')} /></label>
       <label className="dk-field">Birthday<input className="dk-in" type="date" value={f.birthdate} min="1900-01-01" max={new Date().toISOString().slice(0, 10)} onChange={set('birthdate')} /></label>
@@ -348,7 +362,7 @@ function ArchiveCard({ p, ask, reload, toast }: { p: DeskPerson; ask: Ask; reloa
   return (
     <div className="dk-card mp-danger"><div className="dk-card-h"><h2>Archive</h2></div><div className="dk-card-b mb-stack">
       <p className="dk-sub">Archiving hides {p.display_name} on every family phone. Their records stay and you can reactivate any time.</p>
-      <div><button className="dk-b bad" onClick={() => ask(`Archive ${p.display_name}? They disappear from every family phone: lists, reminders and alerts. Their records stay. You can reactivate any time.`, () => setArchived(p, true, reload, toast))}>Archive {p.display_name}</button></div>
+      <div><button className="dk-b bad" onClick={() => ask(`Archive ${p.display_name}? They disappear from every family phone: lists, reminders and alerts. Their records stay. You can reactivate any time.`, () => setArchived(p, true, reload, toast), { title: `Archive ${p.display_name}?`, verb: 'Archive', danger: true })}>Archive {p.display_name}</button></div>
     </div></div>
   )
 }
@@ -439,6 +453,9 @@ export default function MemberPage({ id, sub }: PageProps) {
   const toast = useToast()
   const dirty = useRef(false)
   const tab = tabOf(sub)
+  const viewing = sub === 'view-as'
+  // a button jump asks first when the profile has unsaved edits (links are held by the click guard below)
+  const go = (to: string) => { if (dirty.current) confirm.ask('Leave without saving? Your changes to this profile will be lost.', async () => { dirty.current = false; location.hash = to }); else location.hash = to }
 
   useEffect(() => {
     if (!id) return
@@ -485,7 +502,7 @@ export default function MemberPage({ id, sub }: PageProps) {
   return (
     <div className="mb-page">
       <PageHead title={p.display_name} crumbs={[['Members', deskHref('members')]]}>
-        {m && memberState(m).locked && <Tag tone="warn">Locked</Tag>}
+        {m && <button className="dk-b" aria-pressed={viewing} onClick={() => go(deskHref('members', id, viewing ? null : 'view-as'))}>{viewing ? 'Back to member page' : `View as ${p.display_name}`}</button>}
       </PageHead>
       {p.archived_at && (
         <div className="mp-archived" role="status">
@@ -493,6 +510,7 @@ export default function MemberPage({ id, sub }: PageProps) {
           <button className="dk-b" onClick={() => void setArchived(p, false, roster.reload, toast)}>Reactivate</button>
         </div>
       )}
+      {viewing && m ? <ViewAs key={m.userId} userId={m.userId} personId={p.id} name={p.display_name} /> : <>
       <nav className="dk-tabs" aria-label="Member sections">
         {TABS.map(([k, label]) => (
           <a key={k} href={deskHref('members', id, k)} aria-current={k === tab ? 'page' : undefined}>
@@ -503,7 +521,7 @@ export default function MemberPage({ id, sub }: PageProps) {
       <div className={`dk-grid mp-top${wide ? ' mp-wide' : ''}`}>
         <section className={`dk-card mp-sum ${wide ? 'dk-s12' : 'dk-s4'}`} aria-label="Summary">
           <div className="dk-card-b mb-stack">
-            <div className="mb-who"><Avatar name={p.display_name} photoPath={p.photo_path} size={wide ? 44 : 64} /><div><strong>{p.display_name}</strong><div className="dk-sub">{roleOf(line)}</div></div></div>
+            <div className="mb-who"><PhotoButton id={id} name={p.display_name} photoPath={p.photo_path} size={wide ? 44 : 64} say={say} saved={() => roster.reload()} /><div><strong>{p.display_name}</strong><div className="dk-sub">{roleOf(line)}</div></div></div>
             <dl className="mp-dl">
               <div><dt>Sign-in</dt><dd>{signInOf(line)}</dd></div>
               <div><dt>State</dt><dd><Tag tone={st.tone}>{st.text}</Tag></dd></div>
@@ -521,13 +539,13 @@ export default function MemberPage({ id, sub }: PageProps) {
           {tab === 'profile' && (
             <div className="dk-card" role="tabpanel" aria-label="Profile"><div className="dk-card-h"><h2>Profile</h2></div><div className="dk-card-b">
               {detail === undefined ? <Skeleton rows={6} /> : detail === null ? <Empty>The profile could not be loaded. Reload the page to try again.</Empty> : (
-                <ProfileForm key={id} id={id} name={p.display_name} photoPath={p.photo_path} detail={detail} say={say} onDirty={(d) => { dirty.current = d }} saved={() => roster.reload()} />
+                <ProfileForm key={id} id={id} name={p.display_name} detail={detail} say={say} onDirty={(d) => { dirty.current = d }} saved={() => roster.reload()} />
               )}
             </div></div>
           )}
           {tab === 'account' && <Account l={line} me={roster.me} reload={roster.reload} ask={confirm.ask} toast={toast} />}
           {tab === 'carers' && (
-            <div className="dk-card" role="tabpanel" aria-label="Carers"><div className="dk-card-b">
+            <div className="dk-card" role="tabpanel" aria-label="Carers"><div className="dk-card-h"><h2>Carers</h2></div><div className="dk-card-b">
               <Carers personId={id} people={roster.people} me={roster.me} ask={confirm.ask} say={say} onChange={roster.reload} />
             </div></div>
           )}
@@ -536,6 +554,7 @@ export default function MemberPage({ id, sub }: PageProps) {
           {tab === 'history' && <History id={null} person={id} embedded />}
         </div>
       </div>
+      </>}
       {confirm.node}
       {toast.node}
     </div>
