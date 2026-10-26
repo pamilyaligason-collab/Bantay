@@ -4,7 +4,9 @@ import { SAFETY_IDS, TEMPLATES, type TemplateId } from '../notify/templates'
 // B-7: a broadcast is one fixed safety template id. The body is exactly {t}. There is no free-text path.
 // The send itself runs in the Supabase Edge Function supabase/functions/broadcast (admin check, web push).
 export const BROADCAST_IDS: readonly TemplateId[] = SAFETY_IDS
-export const templateLabel = (id: TemplateId) => TEMPLATES[id].title
+/** D-78: the broadcast function also writes an in-app alert row for each person (S1), and Web Push only reaches browser users. Never promise a push on the Android app. */
+export const BROADCAST_REACH = 'In the app for everyone; browser users also get a notification'
+export const templateLabel =(id: TemplateId) => TEMPLATES[id].title
 
 export type BroadcastResult = { ok: true } | { ok: false; error: string }
 

@@ -8,7 +8,7 @@ import { type Entry, OVERRIDES_KEY, type Overrides, parseEdit } from '../safety/
 import { putKv } from '../safety/store'
 import { Icon } from '../shell/Icon'
 import { adminMembers, connected, type Carer, type ImportRow, linkCarer, listCarers, listPinRequests, markRequestDone, type Member, newsLastAt, type PinRequest, rpc, type Res, unlinkCarer, type UsageRow } from './api'
-import { BROADCAST_IDS, sendBroadcast, templateLabel } from './broadcast'
+import { BROADCAST_IDS, BROADCAST_REACH, sendBroadcast, templateLabel } from './broadcast'
 import { pinError } from './pin'
 import Avatar from './Avatar'
 import MemberPage from './MemberPage'
@@ -280,11 +280,11 @@ function Broadcast({ ask, say }: { ask: Ask; say: (s: string) => void }) {
   return (
     <Section id="ad-broadcast" title="Safety broadcast">
       <div className="ad-pad">
-        <span className="sub">Sends one of the fixed safety messages to every family phone. You cannot type your own text.</span>
+        <span className="sub">Sends one of the fixed safety messages. {BROADCAST_REACH}. You cannot type your own text.</span>
         <Field label="Message"><select className="ad-in" value={id} onChange={(e) => setId(e.target.value as TemplateId)}>
           {BROADCAST_IDS.map((t) => <option key={t} value={t}>{templateLabel(t)}</option>)}
         </select></Field>
-        <button className="ad-b go" onClick={() => ask(`Send "${templateLabel(id)}" to every family phone now?`, async () => {
+        <button className="ad-b go" onClick={() => ask(`Send "${templateLabel(id)}" now? ${BROADCAST_REACH}.`, async () => {
           const r = await sendBroadcast(id)
           if (!r.ok) throw new Error(r.error)
           say('Broadcast sent.')

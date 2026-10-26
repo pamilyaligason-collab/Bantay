@@ -13,6 +13,7 @@
 // B-7: logs hold document ids and counts only. Never page bytes, model output, names or values.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
+import { heartbeat } from '../_shared/heartbeat.ts'
 import {
   type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, type DocRow, type Env, extractDocument, type PageRow, parseBody, type Port, runSweep,
   parseReadingBody, readDevice, sendToOpenRouter, summary, SWEEP_LIMIT, takeReadingSlot, type ReadingUsagePort, type Usage, withRetry
@@ -146,7 +147,7 @@ Deno.serve(async (req) => {
       const secret = env('RECORDS_EXTRACT_CRON_SECRET')
       if (secret.length < 32) return json({ ok: false, error: 'not_configured' }, 500, cors)
       if (!same(req.headers.get('x-records-extract-secret') ?? '', secret)) return json({ ok: false, error: 'unauthorized' }, 401, cors)
-      await background(runSweep(port, cfg, SWEEP_LIMIT).then((rs) => console.log(JSON.stringify({ fn: 'records-extract', mode: 'sweep', ...summary(rs) }))).catch(() => console.error('records-extract sweep failed')))
+      await background(runSweep(port, cfg, SWEEP_LIMIT).then(async (rs) => { const s = summary(rs); console.log(JSON.stringify({ fn: 'records-extract', mode: 'sweep', ...s })); await heartbeat(sb, 'records-extract', true, s) }).catch(async () => { console.error('records-extract sweep failed'); await heartbeat(sb, 'records-extract', false) }))
       return json({ ok: true, status: 'sweeping' }, 202, cors)
     }
 
