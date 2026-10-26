@@ -19,9 +19,10 @@ describe('chip colour follows the word, and a doctor target moves it', () => {
     expect(chip('above', 118, 84)).toEqual(['Above target', 'above'])
     expect(chip('above', 134, 84)).toEqual(['Above target', 'above']) // the diastolic row now gets the pair, so it says the same word
   })
-  it('looser target on 135/80 is In range (as in the add sheet); Low never moves', () => {
-    expect(verdictFor('bp', 'within', { top: 135, bottom: 80 })!.word).toBe('In range')
+  it('a doctor target only makes it stricter: 135/80 stays High even when the target says within; a stricter target lifts In range to Above target', () => {
+    expect(verdictFor('bp', 'within', { top: 135, bottom: 80 })!.word).toBe('High')
     expect(verdictFor('bp', 'within', { top: 88, bottom: 58 })!.word).toBe('Low')
+    expect(verdictFor('bp', 'above', { top: 115, bottom: 70 })!.word).toBe('Above target')
   })
 })
 
@@ -61,7 +62,7 @@ describe('the one blood pressure table (hand-computed)', () => {
     [134, 84, 'Above target'], [133, 83, 'Above target'], [138, 86, 'High'], [129, 79, 'A little raised'], [119, 79, 'In range'], [88, 58, 'Low'],
     [135, 70, 'High'], [120, 79, 'A little raised'], [130, 70, 'Above target'], [118, 84, 'Above target'], [118, 85, 'High'], [89, 70, 'Low'], [100, 59, 'Low'], [90, 60, 'In range'], [180, 120, 'High']
   ]
-  for (const [t, b, word] of cases) it(`${t}/${b} is ${word}`, () => expect(verdictFor('bp', 'above', { top: t, bottom: b })!.word).toBe(word))
+  for (const [t, b, word] of cases) it(`${t}/${b} is ${word}`, () => expect(verdictFor('bp', 'within', { top: t, bottom: b })!.word).toBe(word))
   it('a lone number is judged on its own; nothing typed is no verdict, never In range', () => {
     expect(bpLevel(132, null)).toBe('above')
     expect(bpLevel(null, 86)).toBe('high')

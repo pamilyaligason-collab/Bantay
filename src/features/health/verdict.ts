@@ -45,9 +45,8 @@ export function verdictFor(kind: VerdictKind, pos: Position, bp?: { top?: number
   if (pos === 'none') return null
   const lv = kind === 'bp' ? bpLevel(bp?.top, bp?.bottom) : null
   if (lv) {
-    // a position of 'within' with a worse table level can only come from a looser doctor target (the guide's own high is 119/79): read In range, as the add-reading preview does. Low is never overridden.
-    // shortcut: a STRICTER doctor target cannot be told from the guide's own 'above' here, so the table word stands; owner decision in needs.
-    if (pos === 'within' && lv !== 'low') return BP_WORDS.in
+    // the table decides from the PAIR; a doctor target (pos) can only make it stricter: a target 'above' lifts In range to Above target, never the other way round. Low is never overridden.
+    if (lv === 'in' && pos === 'above') return BP_WORDS.above
     return BP_WORDS[lv]
   }
   return WORDS[kind][pos]

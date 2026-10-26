@@ -1,6 +1,6 @@
 import { positionOf } from './vitals'
 import { GUIDE, type Position, type Range, type Reading } from './ranges'
-import { verdictFor, bpLevel, BP_WORDS } from './verdict'
+import { verdictFor, BP_WORDS } from './verdict'
 import { PLAUSIBLE as P } from './plausible'
 
 /** The add-reading sheet: what a typed reading means, in colour and one plain line, before it is saved. Pure. */
@@ -49,9 +49,9 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
     if (s < spec.min || s > spec.max || d < 20 || d > 200) return { state: 'invalid', word: '', line: 'Check the numbers: they look too small or too big.' }
     if (d >= s) return { state: 'invalid', word: '', line: 'The top number is higher than the bottom one. Check them.' }
     if (crisisOf('bp', { top: s, bottom: d })) return { state: 'above', word: verdictFor('bp', 'above', { top: s, bottom: d })!.word, line: 'Very high. Check for warning signs now.' }
-    const lv = bpLevel(s, d)!
-    // a doctor's own target (family threshold) replaces the home words when both numbers are inside it
-    if (family && lv !== 'low' && positionOf(R('bp_systolic', s, 'mmHg'), family) === 'within' && positionOf(R('bp_diastolic', d, 'mmHg')) === 'within') return { state: 'within', word: BP_WORDS.in.word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
+    // the one BP table decides from the pair; a doctor's target (family threshold) can only make it stricter
+    const fam = family ? positionOf(R('bp_systolic', s, 'mmHg'), family) : 'none'
+    const lv = verdictFor('bp', fam === 'none' ? 'within' : fam, { top: s, bottom: d })!.level!
     const word = BP_WORDS[lv].word
     if (lv === 'low') return { state: 'below', word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
     if (lv === 'in') return { state: 'within', word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }

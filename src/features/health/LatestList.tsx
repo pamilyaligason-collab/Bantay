@@ -86,7 +86,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
                     <span className="hv-bar" aria-hidden="true">
                       <i className="hv-band" style={{ left: `${layout.band.from}%`, width: `${layout.band.to - layout.band.from}%` }} />
                       {layout.prev != null && <i className="hv-dot prev" style={{ left: `${layout.prev}%` }} />}
-                      <i className={`hv-dot now ${pos}${layout.edge ? ' edge' : ''}`} style={{ left: `${layout.now}%` }} />
+                      <i className={`hv-dot now ${cls}${layout.edge ? ' edge' : ''}`} style={{ left: `${layout.now}%` }} />
                       {layout.edge && <i className={`hv-arrow ${layout.edge}`} />}
                     </span>
                   )}
