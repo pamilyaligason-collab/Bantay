@@ -90,9 +90,11 @@ const SYMPTOM_SUGAR = /\b(?:shak\w*|trembl\w*|sweat\w*|sweating|cold sweat|confu
 
 function bpEmergency(t: string): boolean {
   if (!SYMPTOM_BP.test(t)) return false
-  for (const m of t.matchAll(/\b(\d{2,3})\s*(?:\/|over|\bsa\b|\bby\b)\s*(\d{2,3})\b/g)) {
+  // a slash needs no label; 'sa', 'over', 'by' need presyon/bp/blood pressure within 20 characters before the numbers
+  for (const m of t.matchAll(/\b(\d{2,3})\s*(\/|over|\bsa\b|\bby\b)\s*(\d{2,3})\b/g)) {
+    if (m[2] !== '/' && !/\b(?:presyon|bp|blood pressure)\b/.test(t.slice(Math.max(0, (m.index ?? 0) - 20), m.index ?? 0))) continue
     const s = Number(m[1])
-    const d = Number(m[2])
+    const d = Number(m[3])
     if (s >= 70 && s <= 300 && d >= 30 && d <= 200 && s > d && (s >= 180 || d >= 120)) return true
   }
   return false

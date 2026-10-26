@@ -6,7 +6,7 @@
 // B-7: the log line holds counts, latency, model id and cost. Never a message, a reply, a record value, a name or a snippet.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
-import { assembleOwn, makeMedline, type Reader } from './context.ts'
+import { assembleOwn, makeMedline, medsQuery, type Reader } from './context.ts'
 import { DEFAULT_FALLBACK, DEFAULT_MODEL, handleAsk, parseCompletion, type Knowledge, type Port } from './logic.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
@@ -24,7 +24,7 @@ function makePort(req: Request, key: string): Port {
       return (data as { id: string } | null)?.id ?? null
     },
     async meds(pid) {
-      const { data, error } = await sb.from('medications').select('name,generic_name,strength,dose').eq('person_id', pid).eq('status', 'confirmed').eq('med_status', 'active').limit(20)
+      const { data, error } = await medsQuery(sb, pid)
       if (error) throw new Error('read')
       return data ?? []
     },
@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
     const out = await handleAsk(makePort(req, key), { model, fallback }, await req.text())
     const m = out.meta
     console.log(JSON.stringify({ fn: 'ask', status: m.status, emergency: m.emergency ?? null, lang: m.lang ?? null, model: m.model ?? null, fallback: m.fallback ?? false, ms: m.latencyMs ?? null, hits: m.hits ?? 0, tokens_in: m.usage?.tokensIn ?? null, tokens_out: m.usage?.tokensOut ?? null, cost: m.usage?.cost ?? null }))
-    return json(out.body, out.status, cors)
+    // Proves the gate path never reached a model (scripts/jack-gate-live.mjs). meta.model is set only after a model call.
+    return json(out.body, out.status, { ...cors, 'x-bantay-model-called': m.model ? '1' : '0', 'Access-Control-Expose-Headers': 'x-bantay-model-called' })
   } catch {
     console.error('ask failed')
     return json({ error: 'unavailable' }, 503, cors)

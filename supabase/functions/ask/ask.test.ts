@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
-import { assembleOwn, connectUrl, makeMedline, parseTopic, type Reader } from './context.ts'
+import { assembleOwn, connectUrl, makeMedline, medsQuery, parseTopic, type Reader } from './context.ts'
 import { detectLanguage, emergencyGate } from './gate.ts'
 import { DAILY_CAP, handleAsk, parseBody, parseCompletion, postCheck, tokensOf, type Env, type ModelReply, type OwnData, type Port } from './logic.ts'
 
@@ -37,11 +37,17 @@ describe('emergency gate', () => {
     ['I want to die', 'selfharm'], ['magpakamatay na lang ako', 'selfharm'], ['ayaw ko nang mabuhay', 'selfharm'], ['thinking of suicide', 'selfharm'],
     ['nakainom ng lason ang bata', 'poison'], ['I took too many pills', 'poison'],
     ['my throat is closing after the shrimp', 'allergy'], ['namamaga ang lalamunan ni ate', 'allergy'],
-    ['BP is 190/110 and I have a bad headache', 'bp'], ['presyon 185/100 at malabo ang mata', 'bp'], ['bp 150/125 dizzy', 'bp'],
+    ['BP is 190/110 and I have a bad headache', 'bp'], ['presyon 185/100 at malabo ang mata', 'bp'], ['bp 150/125 dizzy', 'bp'], ['presyon 180 sa 120 nahihilo', 'bp'], ['blood pressure 185 over 100 and headache', 'bp'],
     ['my sugar is 55 and I am shaking', 'sugar'], ['asukal 350, nauuhaw at nanghihina', 'sugar'], ['glucose 62 sweating', 'sugar']
   ]
   it.each(yes)('flags: %s', (text, kind) => {
     expect(emergencyGate(text)?.kind).toBe(kind)
+  })
+  it('every phrase in scripts/jack-gate-live.mjs (30: en, tl, taglish/ceb) trips the gate', async () => {
+    const path = '../../../scripts/jack-gate-live.mjs'
+    const { PHRASES } = (await import(/* @vite-ignore */ path)) as { PHRASES: string[] }
+    expect(PHRASES).toHaveLength(30)
+    expect(PHRASES.filter((p) => !emergencyGate(p))).toEqual([])
   })
   it('has at least 40 positive phrases in English, Tagalog and Taglish', () => expect(yes.length).toBeGreaterThanOrEqual(40))
 
@@ -49,7 +55,7 @@ describe('emergency gate', () => {
     'what is a normal blood pressure', 'I took my amlodipine this morning', 'my sugar is 110 after breakfast', 'BP 190/110 but I feel fine', 'my sugar is 55', // no symptom
     'no chest pain today', 'walang sakit sa dibdib', 'without chest pain or shortness of breath', 'ano ang stroke', 'what is a heart attack', 'how to prevent stroke',
     'paano maiwasan ang atake sa puso', 'how do I relax and breathe slowly', 'ilang beses uminom ng gamot sa isang araw', 'masakit ang ulo ko', 'can I eat bagoong',
-    'sugar 120, feeling weak', 'BP 130/85 headache', 'what time should I take metformin', 'salamat po'
+    'sugar 120, feeling weak', 'BP 130/85 headache', 'my sugar is 190 sa 120 and I feel dizzy', 'what time should I take metformin', 'salamat po'
   ]
   it.each(no)('lets through: %s', (text) => {
     expect(emergencyGate(text)).toBeNull()
@@ -204,6 +210,23 @@ describe('post-check', () => {
   })
   it('strips emdashes', () => {
     expect(run('Rest — then drink water.').text).toBe('Rest, then drink water.')
+  })
+})
+
+describe('meds reader', () => {
+  it('filters out tombstoned medicines (deleted_at is null) as well as inactive ones', async () => {
+    const rows = [{ name: 'Metformin', deleted_at: null, med_status: 'active' }, { name: 'Gone', deleted_at: '2026-10-01', med_status: 'active' }]
+    const calls: string[] = []
+    let kept = rows
+    const q: Record<string, unknown> = {}
+    q.select = () => q
+    q.eq = (c: string, v: string) => { calls.push(`eq ${c}=${v}`); return q }
+    q.is = (c: string, v: null) => { calls.push(`is ${c}=${v}`); kept = kept.filter((r) => (r as Record<string, unknown>)[c] === v); return q }
+    q.limit = () => Promise.resolve({ data: kept, error: null })
+    const out = await medsQuery({ from: () => q }, 'p1')
+    expect(calls).toContain('is deleted_at=null')
+    expect(calls).toContain('eq med_status=active')
+    expect(out.data.map((r: { name: string }) => r.name)).toEqual(['Metformin'])
   })
 })
 

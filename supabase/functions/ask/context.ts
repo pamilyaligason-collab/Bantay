@@ -23,6 +23,10 @@ export interface Reader {
   allergies(personId: string): Promise<string[]>
 }
 
+/** Active confirmed medicines; tombstones (deleted_at) are excluded so a deleted medicine never reaches the prompt or MedlinePlus. */
+export const medsQuery = (sb: { from(t: string): any }, pid: string) => // eslint-disable-line @typescript-eslint/no-explicit-any
+  sb.from('medications').select('name,generic_name,strength,dose').eq('person_id', pid).eq('status', 'confirmed').eq('med_status', 'active').is('deleted_at', null).limit(20)
+
 const clean = (s: unknown, max = 60) => (typeof s === 'string' ? s.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '')
 const has = (q: string, term: string) => { const t = normalize(term); return t.length >= 3 && (' ' + q + ' ').includes(' ' + t + ' ') }
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null) // unknown stays null, never 0 (B-5)

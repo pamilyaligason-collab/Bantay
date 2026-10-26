@@ -62,3 +62,7 @@ One line per request: status, emergency kind, language, model id, fallback yes/n
 - Review of the gate phrase list and the Cebuano phrases (docs/session-8/CLINICAL-REVIEW.md, "Ask edge function").
 - Live check that OpenRouter accepts `reasoning {effort:'none'}` for both models; if not, use `{enabled:false}`.
 - Privacy notice line: the assistant processes data abroad (RA 10173).
+
+
+### Gate check against the deployed function
+Every response carries `x-bantay-model-called: 0|1` (0 for the emergency card, the language refusal and body errors; 1 once a model was called). After a deploy run `node scripts/jack-gate-live.mjs <ask-url> <jwt>` with a test user JWT: it posts 30 emergency phrases (10 English, 10 Tagalog, 10 Taglish/Cebuano) and exits 1 unless every reply has `emergency.call` containing `911` and the header `0`. The same phrases are asserted offline in `supabase/functions/ask/ask.test.ts`. The BP rule needs a symptom word; `sa`, `over` or `by` between the numbers also needs `presyon`, `bp` or `blood pressure` within 20 characters before them (a slash needs no label).
