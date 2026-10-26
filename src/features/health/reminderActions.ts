@@ -2,18 +2,22 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
 import { ldb, logDose } from '../log/store'
 import { selfIdOrCached } from '../sync/profile'
+import { ALARM_CHANNEL } from '../phonecheck/keys'
 import { dayOf, remindable, toClock } from './meds'
 
-/** Lock-screen actions on a dose reminder: Taken / Snooze 15 min / Open. "Taken" logs the doses due at that time without opening the app; "Snooze" rings once more in 15 minutes.
+/** Lock-screen actions on a dose alarm: I took it / In 10 min / Skip today. "I took it" and "Skip today" log the doses due at that time without opening the app and cancel the rest of that slot's repeats;
+ *  "In 10 min" keeps the +10 / +20 repeats already planned (they ring within 10 minutes) and, on the third reminder, rings once more in 10 minutes.
  *  The notification text is set in reminders.ts; this file only adds the buttons and what they do. Native only (the web has no lock screen). */
 export const DOSE_ACTION_TYPE = 'DOSE_REMINDER'
-export const SNOOZE_MIN = 15
+export const REPEAT_MIN = 10
+export const SNOOZE_MIN = REPEAT_MIN
+export const SNOOZE_BASE = 1_900_000_000 // ids from here up are one-off "In 10 min" rings; planned alarms stay below 1.8e9
 const WRITABLE_KEY = 'carers.writable' // the cache written by useCanMark.loadWritable
 
 export const REMINDER_ACTIONS = [
-  { id: 'taken', title: 'Taken' },
-  { id: 'snooze', title: `Snooze ${SNOOZE_MIN} min` },
-  { id: 'open', title: 'Open', foreground: true }
+  { id: 'taken', title: 'I took it' },
+  { id: 'snooze', title: `In ${SNOOZE_MIN} min` },
+  { id: 'skip', title: 'Skip today' }
 ]
 
 export async function registerReminderActions(): Promise<void> {
@@ -22,9 +26,9 @@ export async function registerReminderActions(): Promise<void> {
 
 export interface ReminderEvent {
   actionId?: string
-  notification?: { id?: number; title?: string; body?: string; extra?: { kind?: string; at?: number; slot?: string; people?: string[] } }
+  notification?: { id?: number; title?: string; body?: string; extra?: { kind?: string; at?: number; slot?: string; people?: string[]; rep?: number; day?: string; sib?: number[] } }
 }
-export type ReminderOutcome = 'logged' | 'nothing-due' | 'snoozed' | 'open' | 'ignored'
+export type ReminderOutcome = 'logged' | 'skipped' | 'nothing-due' | 'snoozed' | 'open' | 'ignored'
 
 /** The people the Taken button may log for: this user and the people they are a writer carer of (the cached list the Health screens use; read-only carers' people are never in it). */
 export async function markablePeople(selfId?: string | null): Promise<string[]> {
@@ -35,7 +39,7 @@ export async function markablePeople(selfId?: string | null): Promise<string[]> 
 }
 
 /** Log the doses due at the slot for exactly `who` (those of them this user may write for), skipping any already logged today. Returns how many were logged. */
-export async function markDue(at: number, who: string[], now = new Date()): Promise<number> {
+export async function markDue(at: number, who: string[], now = new Date(), skipped = false): Promise<number> {
   const slot = toClock(at)
   const today = dayOf(now)
   const allowed = new Set(await markablePeople())
@@ -47,35 +51,50 @@ export async function markDue(at: number, who: string[], now = new Date()): Prom
     for (const m of remindable(meds, p, today)) {
       const times = Array.isArray((m.schedule as { times?: unknown })?.times) ? ((m.schedule as { times: string[] }).times) : Array.isArray(m.schedule) ? (m.schedule as string[]) : []
       if (!times.includes(slot)) continue
-      if (done.some((t) => t.personId === p && !t.skipped && (m.serverId ? t.medicationId === m.serverId : t.name === m.name))) continue
-      await logDose(m, slot, { at: now })
+      if (done.some((t) => t.personId === p && (skipped || !t.skipped) && (m.serverId ? t.medicationId === m.serverId : t.name === m.name))) continue
+      await logDose(m, slot, { at: now, ...(skipped ? { skipped: true } : {}) })
       n++
     }
   }
   return n
 }
 
+/** The rest of this slot's repeats (the ones after the one that rang) must not ring once the dose is answered. Never throws. */
+async function cancelRest(extra: NonNullable<ReminderEvent['notification']>['extra'], ownId?: number): Promise<void> {
+  const rep = typeof extra?.rep === 'number' ? extra.rep : -1
+  const ids = (Array.isArray(extra?.sib) ? extra!.sib!.filter((x): x is number => typeof x === 'number') : []).filter((_, i) => i > rep)
+  if (ownId != null && ownId >= SNOOZE_BASE) ids.push(ownId)
+  if (!ids.length) return
+  try { await LocalNotifications.cancel({ notifications: ids.map((id) => ({ id })) }) } catch { /* the next plan (on open) drops them */ }
+}
+
 /** What a tap on a reminder button does. Anything that is not a dose reminder is ignored. */
 export async function handleReminderAction(ev: ReminderEvent, now = new Date()): Promise<ReminderOutcome> {
   const n = ev?.notification
   if (n?.extra?.kind !== 'dose') return 'ignored'
-  if (ev.actionId === 'taken') {
+  const clear = async () => { try { if (n.id != null) await LocalNotifications.removeDeliveredNotifications({ notifications: [{ id: n.id, title: n.title ?? '', body: n.body ?? '' }] }) } catch { /* already gone */ } }
+  if (ev.actionId === 'taken' || ev.actionId === 'skip') {
+    const skip = ev.actionId === 'skip'
     const at = n.extra.at
     const who = Array.isArray(n.extra.people) ? n.extra.people : [] // an older reminder without people logs nothing rather than guess
-    const logged = typeof at === 'number' ? await markDue(at, who, now) : 0
-    try { if (n.id != null) await LocalNotifications.removeDeliveredNotifications({ notifications: [{ id: n.id, title: n.title ?? '', body: n.body ?? '' }] }) } catch { /* already gone */ }
-    return logged > 0 ? 'logged' : 'nothing-due'
+    const logged = typeof at === 'number' ? await markDue(at, who, now, skip) : 0
+    if (logged > 0) await cancelRest(n.extra, n.id) // nothing was logged: the dose is still open, so the repeats keep ringing
+    await clear()
+    return logged > 0 ? (skip ? 'skipped' : 'logged') : 'nothing-due'
   }
   if (ev.actionId === 'snooze') {
+    await clear()
+    // repeats +10 / +20 are already planned: only the third reminder (or an old alarm without a repeat number) needs one more ring
+    if (typeof n.extra.rep === 'number' && n.extra.rep < 2) return 'snoozed'
     const when = new Date(now.getTime() + SNOOZE_MIN * 60_000)
     try {
       await LocalNotifications.schedule({
         notifications: [{
-          id: 1_900_000_000 + ((n.id ?? 0) % 100_000_000), title: n.title ?? '', body: n.body ?? '', extra: n.extra,
+          id: SNOOZE_BASE + ((n.id ?? 0) % 100_000_000), title: n.title ?? '', body: n.body ?? '', extra: n.extra, channelId: ALARM_CHANNEL,
           actionTypeId: DOSE_ACTION_TYPE, schedule: { at: when, allowWhileIdle: true }
         }]
       })
-    } catch { /* the next daily reminder still comes */ }
+    } catch { /* the next daily alarm still comes */ }
     return 'snoozed'
   }
   return 'open'

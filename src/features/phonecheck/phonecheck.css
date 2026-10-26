@@ -1,0 +1,17 @@
+/* Phone check (lane S3): the fix card, the "set again" toast, the "remind me later" card. Tokens only, so light and dark follow the app (tokens.css). */
+.pc-card { display: grid; gap: 12px; padding: 16px; border-radius: 24px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); }
+.pc-head { display: flex; align-items: flex-start; gap: 12px; }
+.pc-grow { flex: 1; min-width: 0; }
+.pc-x { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--red); color: #fff; font-weight: 800; font-size: 14px; }
+.pc-why { font-size: 13px; color: var(--ink); margin-top: 2px; }
+.pc-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.pc-btn, .pc-btn2 { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap, 48px); padding: 0 18px; border-radius: 999px; border: 0; font: inherit; font-weight: 600; }
+.pc-btn { width: 100%; min-height: 52px; font-size: 16px; background: var(--green); color: var(--on-green); }
+.pc-btn2 { background: var(--card2); color: var(--ink); font-size: 13px; }
+.pc-btn:disabled { opacity: .55; }
+.pc-link { align-self: center; background: none; border: 0; padding: 12px; font: inherit; font-weight: 600; color: var(--link); min-height: var(--tap, 48px); }
+.pc-msg { margin: 0; font-size: 13px; color: var(--muted); }
+.pc-toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 16px; right: 16px; text-align: center; z-index: 20; padding: 12px 18px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--ink); background: var(--card); box-shadow: var(--shadow); }
+.pc-later { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 20px; background: var(--warn-bg); color: var(--ink); font-size: 14px; }
+.pc-later > span { flex: 1; min-width: 0; }
+.pc-card button:focus-visible, .pc-later button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
