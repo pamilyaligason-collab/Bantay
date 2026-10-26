@@ -46,7 +46,7 @@ async function mock(page: Page, reply: { status: number; reading?: unknown } = {
     const url = new URL(req.url())
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     const p = url.pathname
-    if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id') ? [{ id: 'p-self', display_name: 'Test Person' }] : dependent ? [{ id: 'p-dep', display_name: 'Test Dependent' }] : [])
+    if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id')?.startsWith('eq.') ? [{ id: 'p-self', display_name: 'Test Person' }] : dependent ? [{ id: 'p-dep', display_name: 'Test Dependent' }] : [])
     if (p.startsWith('/rest/v1/carers')) return json(route, dependent ? [{ person_id: 'p-dep' }] : [])
     if (p.startsWith('/rest/v1/documents') && req.method() === 'POST') { s.calls.push('documents'); s.docs.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
     if (p.startsWith('/rest/v1/source_files') && req.method() === 'POST') { s.calls.push('source_files'); s.files.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
@@ -159,14 +159,14 @@ test('two people: a paper is not filed under anyone until a person is picked', a
   await page.getByRole('button', { name: 'Paper' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
   await page.getByRole('button', { name: 'Continue' }).click()
-  const chip = (n: string) => page.getByRole('group', { name: 'Whose paper' }).getByRole('button', { name: n })
-  await expect(chip('Test Dependent')).toBeVisible() // the fresh family list arrived
+  const chip = (n: string) => page.getByRole('group', { name: 'Whose paper' }).getByRole('button', { name: n, exact: true })
+  await expect(chip('Test')).toBeVisible() // the fresh family list arrived
   await expect(chip('Me')).toHaveAttribute('aria-pressed', 'false')
-  await expect(chip('Test Dependent')).toHaveAttribute('aria-pressed', 'false')
+  await expect(chip('Test')).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByRole('status').filter({ hasText: 'Pick whose paper this is' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled()
-  await chip('Test Dependent').click()
-  await expect(chip('Test Dependent')).toHaveAttribute('aria-pressed', 'true')
+  await chip('Test').click()
+  await expect(chip('Test')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Pick whose paper this is')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled()
   await page.getByRole('button', { name: 'Save' }).click()
@@ -181,7 +181,7 @@ test('two people: a device reading shows no numbers to save until a person is pi
   await page.getByRole('button', { name: /Device reading/ }).click()
   await expect(page.getByText('Pick whose reading this is')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByTestId('reading-confirm')).toHaveCount(0)
-  await page.getByRole('group', { name: 'Whose reading' }).getByRole('button', { name: 'Test Dependent' }).click()
+  await page.getByRole('group', { name: 'Whose reading' }).getByRole('button', { name: 'Test', exact: true }).click()
   await expect(page.getByTestId('reading-confirm')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Save reading' })).toBeEnabled()
 })
