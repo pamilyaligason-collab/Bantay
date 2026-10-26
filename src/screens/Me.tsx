@@ -10,6 +10,11 @@ import { applyTextSize, isTextSize, TEXT_SIZE_KEY, TEXT_SIZES, type TextSize } f
 import { Capacitor } from '@capacitor/core'
 import { useKv } from '../features/shell/useKv'
 import { isLang, LANG_KEY, LANGS, setLang, type Lang } from '../lib/i18n'
+import { AlarmHealthRow } from '../features/phonecheck/AlarmHealthRow'
+import { KEY_PHONE_CHECK } from '../features/phonecheck/keys'
+import { useKvValue } from '../features/phonecheck/useKvValue'
+import { ConsentNotice } from '../features/privacy/ConsentNotice'
+import { callPermission, requestCallPermission, type CallPermission } from '../features/sos/call'
 import SosContactsPicker from '../features/sos/SosContactsPicker'
 import { normalizeContacts, type SosContact } from '../features/sos/contacts'
 import DetailsSheet from '../features/setup/DetailsSheet'
@@ -57,6 +62,24 @@ function SosSheet({ onClose, selfId, onSaved }: { onClose: () => void; selfId: s
   )
 }
 
+/** "Hold for help can call for you": the one place besides setup that asks for the Phone permission (never the SOS flow). Android app only.
+ *  Hidden when Android already took the permission back and the Alarms rows below say so (AlarmHealthRow), so the same warning never shows twice. */
+function CallRow() {
+  const [perm, setPerm] = useState<CallPermission>('unavailable')
+  const check = useKvValue<{ call_ok?: boolean | null }>(KEY_PHONE_CHECK)
+  useEffect(() => { let live = true; void callPermission().then((p) => { if (live) setPerm(p) }); return () => { live = false } }, [])
+  if (perm === 'unavailable' || (perm === 'denied' && check?.call_ok === false)) return null
+  return (
+    <div>
+      <div className="sh-grow">
+        <b>Hold for help can call for you</b>
+        <div className="sh-sub">{perm === 'granted' ? 'On. Hold for help calls your first contact for you. 911 always opens the dial screen.' : 'Off. Hold for help opens the dial screen and you press call.'}</div>
+      </div>
+      {perm === 'denied' && <button type="button" className="sh-pill sh-ghost sh-small" onClick={() => void requestCallPermission().then(setPerm)}>Allow</button>}
+    </div>
+  )
+}
+
 export default function Me() {
   const [member, setMember] = useState<Member | null>(null)
   const [who, setWho] = useState('')
@@ -101,6 +124,7 @@ export default function Me() {
   return (
     <div className="sh sh-me">
       <SubHeader title="Me" backHref="#today" backLabel="Back to Today" />
+      <ConsentNotice />
 
       <div className="sh-card sh-row">
         <span className="sh-av sh-av-lg">{photo ? <img src={photo} alt="" /> : (who || '?').charAt(0).toUpperCase()}</span>
@@ -112,7 +136,7 @@ export default function Me() {
       </div>
 
       <div className="sh-card sh-list">
-        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I&apos;m OK, Call family, SOS</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
+        <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I took it, How are you?, Hold for help, Call 911</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
       </div>
 
       <div className="sh-sech"><b>Family can see my</b></div>
@@ -132,9 +156,16 @@ export default function Me() {
         </a>
         <a className="sh-navrow" href="#notif">
           <Icon name="bell" boxed size={20} />
-          <span className="sh-grow"><b>Notifications</b><span className="sh-sub sh-blk">Inbox, and what each one says</span></span>
+          <span className="sh-grow"><b>Alerts</b><span className="sh-sub sh-blk">Alert list and history</span></span>
           <Icon name="chev" />
         </a>
+        <a className="sh-navrow" href="#privacy">
+          <Icon name="file" boxed size={20} />
+          <span className="sh-grow"><b>Privacy</b><span className="sh-sub sh-blk">Agreement, AI, my data</span></span>
+          <Icon name="chev" />
+        </a>
+        <CallRow />
+        <AlarmHealthRow />
       </div>
 
       <div className="sh-card sh-list">
@@ -171,7 +202,7 @@ export default function Me() {
         {member?.role === 'admin' && (
           <a className="sh-navrow" href="#admin">
             <Icon name="gear" boxed size={20} />
-            <span className="sh-grow"><b>Admin</b><span className="sh-sub sh-blk">Admins only</span></span>
+            <span className="sh-grow"><b>Family admin tools</b><span className="sh-sub sh-blk">Admins only</span></span>
             <Icon name="chev" />
           </a>
         )}
