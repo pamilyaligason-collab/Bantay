@@ -52,7 +52,7 @@ export default function People() {
               const st = bubbleStatus({ checkedIn: known && c.ok, flag: flags[p.id] ?? null })
               return (
                 <li key={p.id}>
-                  <button type="button" className="fm-bubble" data-k={known ? st.key : 'quiet'} onClick={() => setTalk(p.id)} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages`}>
+                  <button type="button" className="fm-bubble" data-k={known ? st.key : 'quiet'} onClick={() => setTalk(p.id)} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages`}>
                     <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={64} />
                     {known && <span className="fm-emo" aria-hidden="true" data-testid="bubble-emoji">{st.emoji}</span>}
                     <b>{p.isMe ? 'You' : p.name.trim().split(/\s+/)[0]}</b>

@@ -63,6 +63,8 @@ export const TABLES: Record<string, TableSpec> = {
   // Doctor visits (0008): read-only here, nothing on this phone writes them. Follow-ups come from prescriptions.follow_up_on.
   appointments: { fields: ['personId', 'startsAt', 'dueOn', 'provider', 'facility', 'purpose', 'apptStatus', 'sourcePrescriptionId', 'status'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at' },
   prescriptions: { fields: ['personId', 'rxDate', 'prescriber', 'followUpOn', 'status'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at', serverId: true },
+  // Family messages (0027): text only, queued offline and sent once (sender is stamped by the server). No pull: the thread is read online. Voice and files stay online-only.
+  family_messages: { fields: ['kind', 'body'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }

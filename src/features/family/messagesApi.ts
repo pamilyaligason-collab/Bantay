@@ -1,9 +1,10 @@
+import { db, enqueue } from '../../db'
 import { supabase } from '../auth/client'
 import { isNotSetUp } from './memoriesLogic'
 import { shortName } from './messagesLogic'
 
 /** Online calls for family messages (migration 0027): one family thread. Never throws; never logs text, names or paths (B-7). */
-export interface Msg { id: string; mine: boolean; senderPersonId: string | null; kind: 'text' | 'voice' | 'photo' | 'file'; body: string | null; name: string | null; durationS: number | null; createdAt: string; url: string | null }
+export interface Msg { id: string; clientId: string | null; queued?: boolean; mine: boolean; senderPersonId: string | null; kind: 'text' | 'voice' | 'photo' | 'file'; body: string | null; name: string | null; durationS: number | null; createdAt: string; url: string | null }
 export type Res<T> = { ok: true; data: T } | { ok: false; error: 'unavailable' | 'not_set_up' | 'offline' | 'failed' }
 
 const fail = (e: { code?: string; message?: string; statusCode?: string | number } | null | undefined): Res<never> =>
@@ -16,25 +17,39 @@ export async function listMessages(limit = 80): Promise<Res<Msg[]>> {
   if (!supabase) return NO
   try {
     const me = (await supabase.auth.getSession()).data.session?.user.id ?? null
-    const r = await supabase.from('family_messages').select('id,sender_id,sender_person_id,kind,body,attachment_path,attachment_name,duration_s,created_at').is('deleted_at', null).order('created_at', { ascending: false }).limit(limit)
+    const r = await supabase.from('family_messages').select('id,client_id,sender_id,sender_person_id,kind,body,attachment_path,attachment_name,duration_s,created_at').is('deleted_at', null).order('created_at', { ascending: false }).limit(limit)
     if (r.error) return fail(r.error)
     const rows = (r.data ?? []).reverse()
     const paths = rows.map((x) => x.attachment_path as string | null).filter((p): p is string => !!p)
     const signed = paths.length ? await supabase.storage.from(BUCKET).createSignedUrls(paths, 600) : { data: [], error: null }
     if (signed.error && isNotSetUp(signed.error)) return fail(signed.error)
     const url = new Map((signed.data ?? []).map((s) => [s.path, s.signedUrl] as const))
-    return { ok: true, data: rows.map((x) => ({ id: x.id as string, mine: !!me && x.sender_id === me, senderPersonId: (x.sender_person_id as string | null) ?? null, kind: x.kind as Msg['kind'], body: (x.body as string | null) ?? null, name: (x.attachment_name as string | null) ?? null, durationS: (x.duration_s as number | null) ?? null, createdAt: x.created_at as string, url: x.attachment_path ? url.get(x.attachment_path as string) ?? null : null })) }
+    return { ok: true, data: rows.map((x) => ({ id: x.id as string, clientId: (x.client_id as string | null) ?? null, mine: !!me && x.sender_id === me, senderPersonId: (x.sender_person_id as string | null) ?? null, kind: x.kind as Msg['kind'], body: (x.body as string | null) ?? null, name: (x.attachment_name as string | null) ?? null, durationS: (x.duration_s as number | null) ?? null, createdAt: x.created_at as string, url: x.attachment_path ? url.get(x.attachment_path as string) ?? null : null })) }
   } catch (e) { return fail(e as { code?: string }) }
 }
 
+/** Text goes through the outbox: queued on the phone, sent when there is signal. Needs a Supabase client, not a connection. */
 export async function sendText(body: string): Promise<Res<null>> {
   if (!supabase) return NO
   const text = body.trim().slice(0, 2000)
   if (!text) return { ok: false, error: 'failed' }
   try {
-    const r = await supabase.from('family_messages').insert({ client_id: crypto.randomUUID(), kind: 'text', body: text })
-    return r.error ? fail(r.error) : { ok: true, data: null }
-  } catch (e) { return fail(e as { code?: string }) }
+    await enqueue('family_messages', 'insert', { client_id: crypto.randomUUID(), kind: 'text', body: text })
+    void import('../sync/sync').then((m) => m.syncNow(true)).catch(() => undefined) // lazy: sync is not needed to render the thread
+    return { ok: true, data: null }
+  } catch { return { ok: false, error: 'failed' } }
+}
+
+/** Texts still waiting in the outbox, oldest first, that the thread has not returned yet (`sent` = client ids it returned). Shown with a Queued tag. */
+export async function listQueued(sent: ReadonlySet<string>): Promise<Msg[]> {
+  try {
+    const rows = await db.outbox.where('table').equals('family_messages').sortBy('id')
+    return rows.flatMap((r) => {
+      const p = r.payload as { client_id?: string; body?: string } | null
+      return p?.client_id && typeof p.body === 'string' && !sent.has(p.client_id)
+        ? [{ id: p.client_id, clientId: p.client_id, queued: true, mine: true, senderPersonId: null, kind: 'text' as const, body: p.body, name: null, durationS: null, createdAt: new Date(r.createdAt).toISOString(), url: null }] : []
+    })
+  } catch { return [] }
 }
 
 /** Upload one attachment (already stripped / recorded), then its row. If the row fails the object is removed again. */

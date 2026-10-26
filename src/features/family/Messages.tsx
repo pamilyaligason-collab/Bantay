@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
-import { listMessages, removeMessage, sendAttachment, sendText, type Msg } from './messagesApi'
+import { listMessages, listQueued, removeMessage, sendAttachment, sendText, type Msg } from './messagesApi'
 import { BODY_MAX, classifyFile, messengerHref, mmss, pickRecorderMime, stamp, VOICE_MAX_S, shortName } from './messagesLogic'
 import { stripToJpeg } from './memoriesLogic'
 import type { FamilyPerson } from './roster'
@@ -22,6 +22,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
   const [note, setNote] = useState('')
   const [rec, setRec] = useState<{ secs: number } | null>(null)
   const [voice, setVoice] = useState<{ blob: Blob; secs: number; ext: 'webm' | 'm4a' | 'ogg'; mime: string; url: string } | null>(null)
+  const [queued, setQueued] = useState<Msg[]>([])
   const [gone, setGone] = useState<Msg | null>(null)
   const file = useRef<HTMLInputElement>(null)
   const end = useRef<HTMLDivElement>(null)
@@ -31,6 +32,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
   const load = useCallback(async () => {
     const r = await listMessages()
     setView(r.ok ? { kind: 'ready', msgs: r.data } : { kind: r.error })
+    setQueued(await listQueued(new Set(r.ok ? r.data.flatMap((m) => (m.clientId ? [m.clientId] : [])) : [])))
   }, [])
   useEffect(() => {
     void load()
@@ -41,7 +43,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
   useEffect(() => () => { mr.current?.cancel() }, [])
   useEffect(() => () => { if (voice) URL.revokeObjectURL(voice.url) }, [voice])
 
-  const failWord = (e: 'unavailable' | 'not_set_up' | 'offline' | 'failed') => (e === 'offline' ? 'You are offline. Try again when you are connected.' : e === 'not_set_up' ? WORDS.not_set_up : 'It did not send. Try again.')
+  const failWord = (e: 'unavailable' | 'not_set_up' | 'offline' | 'failed') => (e === 'offline' ? 'Needs signal. Try again when you are connected.' : e === 'not_set_up' ? WORDS.not_set_up : 'It did not send. Try again.')
   const done = async (p: Promise<{ ok: true; data: null } | { ok: false; error: 'unavailable' | 'not_set_up' | 'offline' | 'failed' }>) => {
     setBusy(true); setNote('')
     const r = await p
@@ -106,17 +108,17 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
 
       {view.kind === 'loading' && <p className="sub" role="status">Loading</p>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <p role="status" data-testid="msg-state"><b>{WORDS[view.kind]}</b></p>}
-      {view.kind === 'ready' && (
+      {(view.kind === 'ready' || queued.length > 0) && (
         <ul className="msg-list" aria-label="Family messages" data-testid="msg-list">
-          {view.msgs.length === 0 && <li className="sub msg-empty">No messages yet. Say hello.</li>}
-          {view.msgs.map((m) => (
+          {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <li className="sub msg-empty">No messages yet. Say hello.</li>}
+          {[...(view.kind === 'ready' ? view.msgs : []), ...queued].map((m) => (
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>
-              <span className="msg-by">{nameOf(m)}<time> {stamp(m.createdAt) ?? ''}</time></span>
+              <span className="msg-by">{nameOf(m)}<time> {stamp(m.createdAt) ?? ''}</time>{m.queued && <b className="msg-q" data-testid="msg-queued"> Queued</b>}</span>
               {m.kind === 'text' && <p>{m.body}</p>}
               {m.kind === 'voice' && (m.url ? <audio controls preload="none" src={m.url} aria-label={`Voice note from ${nameOf(m)}, ${m.durationS ? mmss(m.durationS) : ''}`} /> : <p className="sub">Voice note</p>)}
               {m.kind === 'photo' && (m.url ? <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt={`Photo from ${nameOf(m)}`} loading="lazy" /></a> : <p className="sub">Photo</p>)}
               {m.kind === 'file' && (m.url ? <a className="msg-file" href={m.url} target="_blank" rel="noreferrer" download={shortName(m.name)}><Icon name="pdf" size={22} />{shortName(m.name)}</a> : <p className="sub">{shortName(m.name)}</p>)}
-              {m.mine && <button type="button" className="msg-del" onClick={() => setGone(m)} aria-label="Delete this message"><Icon name="trash" size={18} /></button>}
+              {m.mine && !m.queued && <button type="button" className="msg-del" onClick={() => setGone(m)} aria-label="Delete this message"><Icon name="trash" size={18} /></button>}
             </li>
           ))}
           <div ref={end} />
@@ -156,7 +158,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
           <button type="button" className="btn msg-send" onClick={() => void send()} disabled={busy || !text.trim()}><Icon name="send" size={20} />Send</button>
         </div>
         <input ref={file} type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden data-testid="msg-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
-        <p className="sub msg-fine">Voice notes up to 1 minute. Files up to 10 MB. For video, use Messenger.</p>
+        <p className="sub msg-fine">Texts wait on your phone until there is signal. Voice notes (up to 1 minute) and files (up to 10 MB) need signal. For video, use Messenger.</p>
       </div>
     </Sheet>
   )

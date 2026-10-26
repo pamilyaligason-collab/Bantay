@@ -10,9 +10,9 @@ afterEach(() => { cleanup(); vi.useRealTimers() })
 describe('SelfCare', () => {
   it('starts a breath, counts down, ends with an optional mood saved on this phone', async () => {
     render(<SelfCare />)
-    fireEvent.click(await screen.findByRole('button', { name: /Sleep/ }))
-    expect(screen.getByText(/4-7-8 breath is a popular/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Weil/ }).getAttribute('href')).toMatch(/^https:\/\//)
+    fireEvent.click(await screen.findByRole('button', { name: /Calm/ }))
+    expect(screen.getByText(/Equal counts in, hold, out and rest/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Harvard/ }).getAttribute('href')).toMatch(/^https:\/\//)
     fireEvent.click(screen.getByRole('button', { name: '1 min' }))
     vi.useFakeTimers()
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -23,7 +23,14 @@ describe('SelfCare', () => {
     expect(screen.getByText('Well done. How do you feel now?')).toBeTruthy()
     vi.useRealTimers()
     fireEvent.click(screen.getByRole('button', { name: '4 Good' }))
-    await waitFor(async () => expect(((await db.kv.get('selfcare.log'))?.value as { mood: number }[])[0]).toMatchObject({ mood: 4, pattern: 'sleep' }))
+    await waitFor(async () => expect(((await db.kv.get('selfcare.log'))?.value as { mood: number }[])[0]).toMatchObject({ mood: 4, pattern: 'calm' }))
+  })
+
+  it('offers Relax and Calm only: 4-7-8 is hidden behind the clinician flag', async () => {
+    render(<SelfCare />)
+    await screen.findByRole('button', { name: /Relax/ })
+    expect(screen.getByRole('button', { name: /Calm/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Sleep/ })).toBeNull()
   })
 
   it('End early goes back without a log entry', async () => {

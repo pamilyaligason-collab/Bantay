@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
-import { addEntry, circleScale, MINUTES, momentAt, MOODS, PATTERNS, PHASE_WORD, SAFETY, totalSecs, type Pattern, type Phase, type SelfCareEntry } from './breathLogic'
+import { addEntry, circleScale, MINUTES, momentAt, MOODS, SHOWN_PATTERNS, PHASE_WORD, SAFETY, totalSecs, type Pattern, type Phase, type SelfCareEntry } from './breathLogic'
 import './selfcare.css'
 
 type Stage = { s: 'pick' } | { s: 'run' } | { s: 'mood' } | { s: 'thanks'; mood: number | null }
@@ -13,7 +13,7 @@ const buzz = () => { try { navigator.vibrate?.(15) } catch { /* no vibration on 
 export default function SelfCare() {
   const [log, setLog] = useKv<SelfCareEntry[]>('selfcare.log', [])
   const [buzzOn, setBuzzOn] = useKv<boolean>('selfcare.buzz', true)
-  const [pat, setPat] = useState<Pattern>(PATTERNS[0]!)
+  const [pat, setPat] = useState<Pattern>(SHOWN_PATTERNS[0]!)
   const [mins, setMins] = useState<number>(3)
   const [stage, setStage] = useState<Stage>({ s: 'pick' })
   const [elapsed, setElapsed] = useState(0)
@@ -55,7 +55,7 @@ export default function SelfCare() {
         <>
           <p className="sc-lead">{pat.why}</p>
           <div className="sc-row" role="group" aria-label="Kind of breathing">
-            {PATTERNS.map((p) => (
+            {SHOWN_PATTERNS.map((p) => (
               <button key={p.id} type="button" className="sc-chip" aria-pressed={p.id === pat.id} onClick={() => setPat(p)}><b>{p.name}</b><span>{p.tag}</span></button>
             ))}
           </div>

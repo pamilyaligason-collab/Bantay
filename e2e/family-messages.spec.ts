@@ -26,7 +26,7 @@ const seed = (page: Page, db: string, store: string, rows: unknown[]) =>
     throw new Error(`could not seed ${d as string}`)
   }, [db, store, rows] as const)
 const brief = (v: { id: string; nodes: { target: unknown; any?: { message: string }[] }[] }) => `${v.id}: ${v.nodes.map((n) => `${String(n.target)} ${n.any?.[0]?.message ?? ''}`).join(' | ')}`
-const axe = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).disableRules(['label-content-name-mismatch']).analyze()).violations.map(brief)
+const axe = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations.map(brief)
 const noSideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)
 
 test.use({ viewport: { width: 390, height: 844 } })
@@ -42,8 +42,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(card.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
       await card.scrollIntoViewIfNeeded()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-selfcare-${scheme}.png` })
-      await card.getByRole('button', { name: /Sleep/ }).click()
-      await expect(card.getByRole('link', { name: /Weil/ })).toBeVisible()
+      await card.getByRole('button', { name: /Calm/ }).click()
+      await expect(card.getByRole('link', { name: /Harvard/ })).toBeVisible()
       await card.getByRole('button', { name: '1 min' }).click()
       await card.getByRole('button', { name: 'Start' }).click()
       await expect(card.getByRole('status')).toHaveText('Breathe in')

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const api = vi.hoisted(() => ({
-  listMessages: vi.fn(), sendText: vi.fn(), sendAttachment: vi.fn(), removeMessage: vi.fn()
+  listMessages: vi.fn(), listQueued: vi.fn(), sendText: vi.fn(), sendAttachment: vi.fn(), removeMessage: vi.fn()
 }))
 vi.mock('./messagesApi', () => api)
 
@@ -17,6 +17,7 @@ const show = () => render(<Messages who={ben} people={[ben]} nudge={null} onClos
 
 beforeEach(() => {
   api.listMessages.mockResolvedValue({ ok: true, data: msgs })
+  api.listQueued.mockResolvedValue([])
   api.sendText.mockResolvedValue({ ok: true, data: null })
   api.sendAttachment.mockResolvedValue({ ok: true, data: null })
   api.removeMessage.mockResolvedValue({ ok: true, data: null })
@@ -41,6 +42,16 @@ describe('Messages', () => {
     fireEvent.click(send)
     await waitFor(() => expect(api.sendText).toHaveBeenCalledWith('Opo, kumain na'))
     await waitFor(() => expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe(''))
+  })
+  it('a text waiting in the outbox shows with a Queued tag and no delete, even when the thread cannot load (offline)', async () => {
+    api.listMessages.mockResolvedValue({ ok: false, error: 'offline' })
+    api.listQueued.mockResolvedValue([{ id: 'c1', clientId: 'c1', queued: true, mine: true, senderPersonId: null, kind: 'text', body: 'Wait lang', name: null, durationS: null, createdAt: new Date().toISOString(), url: null }])
+    show()
+    const list = await screen.findByTestId('msg-list')
+    expect(within(list).getByText('Wait lang')).toBeTruthy()
+    expect(within(list).getByTestId('msg-queued').textContent).toMatch(/Queued/)
+    expect(within(list).queryByRole('button', { name: 'Delete this message' })).toBeNull()
+    expect(screen.getByTestId('msg-state').textContent).toBe('Messages show when you are online')
   })
   it('refuses a file over 10 MB or of a strange type without uploading', async () => {
     show()

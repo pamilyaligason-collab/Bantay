@@ -9,12 +9,6 @@
 -- * No message text, file names or paths in any log (B-7). Unknown stays null (B-5): body, attachment and duration are null when not given.
 -- Safe to run twice.
 
-create or replace function public.is_family_member() returns boolean
-  language sql stable security definer set search_path = '' as
-  $$ select exists (select 1 from public.app_roles where user_id = auth.uid() and not disabled) $$;
-revoke execute on function public.is_family_member() from public, anon;
-grant execute on function public.is_family_member() to authenticated;
-
 create table if not exists public.family_messages (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null unique,                                   -- send retry is idempotent

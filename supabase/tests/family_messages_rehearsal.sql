@@ -40,6 +40,7 @@ insert into public.people (id, auth_user_id, display_name, created_by) values
  ('70000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000b', 'Bee', '00000000-0000-0000-0000-00000000000b'),
  ('70000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000c', 'Cee', '00000000-0000-0000-0000-00000000000c');
 
+\ir ../migrations/0023_family_memories.sql
 \ir ../migrations/0027_family_messages.sql
 -- 0027 must be safe to run twice
 \ir ../migrations/0027_family_messages.sql

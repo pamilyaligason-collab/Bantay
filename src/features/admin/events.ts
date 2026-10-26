@@ -10,7 +10,7 @@ export const EVENT_NAMES = {
   action: ['alerts_on', 'alerts_off', 'sensors_on', 'sensors_off', 'import_started', 'import_done', 'reading_added', 'dose_logged', 'sos_sent',
     // session 6 (docs/session-6/PART-2.md section 4): habit targets H1-H8
     'dose_skipped', 'med_added', 'med_edited', 'med_paused', 'med_deleted', 'reminder_opened', 'checkin_done',
-    'card_seen_my_week', 'card_seen_family_line', 'weather_opened', 'weather_opened_action', 'records_confirmed',
+    'card_seen_my_week', 'weather_opened', 'weather_opened_action', 'records_confirmed',
     // session 8 nutrition: fixed names only, never a food name (B-7)
     'meal_logged', 'water_logged', 'salt_goal_set'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']

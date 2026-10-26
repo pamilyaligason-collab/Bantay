@@ -14,7 +14,11 @@ export const PATTERNS: Pattern[] = [
     why: 'Equal counts in, hold, out and rest. An easy rhythm to follow when you feel tense.',
     source: 'Harvard Health, Relaxation techniques: breath control helps quell errant stress response', sourceUrl: 'https://www.health.harvard.edu/mind-and-mood/relaxation-techniques-breath-control-helps-quell-errant-stress-response' }
 ]
-export const MINUTES = [1, 3, 5] as const
+// shortcut: 4-7-8 stays hidden (a 7 s hold for hypertensive seniors needs a clinician), flip to true after the clinician gate (session 10 Task 17).
+export const SLEEP_478_ENABLED = false
+/** The patterns the card offers. */
+export const SHOWN_PATTERNS = PATTERNS.filter((p) => p.id !== 'sleep' || SLEEP_478_ENABLED)
+export const MINUTES =[1, 3, 5] as const
 export const PHASE_WORD: Record<Phase, string> = { in: 'Breathe in', hold: 'Hold gently', out: 'Breathe out', rest: 'Rest' }
 export const SAFETY = 'Stop and breathe normally if you feel dizzy or short of breath. Chest pain is an emergency: use SOS.'
 
