@@ -65,6 +65,9 @@ function useUserId(): string | undefined {
   return id
 }
 
+/** A dose row that MissedDoseCard can show: its slot is today (Manila) or has no day. Older ones stay in the alert list. A dose marked on this phone closes its card and marks the row seen, which drops it from the count. */
+export const showsAsCard = (ref: string | null, now: Date = new Date()) => { const { day } = doseRef(ref); return day == null || day === dayOf(now) }
+
 const newestPerPerson = (rows: AlertRow[]) => rows.filter((r, i) => !!r.personId && rows.findIndex((x) => x.personId === r.personId) === i)
 
 function Head({ person, title, sub }: { person: FamilyPerson | undefined; title: string; sub: string }) {
@@ -87,7 +90,7 @@ function MissedDoseCard({ row, person }: { row: AlertRow; person: FamilyPerson |
   const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today).filter((d) => d.slot === slot && d.state === 'pending') : null
   const resolved = open != null && meds.length > 0 && open.length === 0
   useEffect(() => { if (resolved) void markSeen(row.id).catch(() => undefined) }, [resolved, row.id])
-  if (resolved || (day != null && day !== today)) return null // an older one stays in the alert list, not here
+  if (resolved || !showsAsCard(row.ref, now)) return null // an older one stays in the alert list, not here
   const names = [...new Set((open ?? []).map((d) => d.name))]
   const ago = slotAgo(day ?? today, slot, now)
   const what = slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${clock12(slot)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
@@ -113,7 +116,7 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
   const [answering, setAnswering] = useState<ReviewAsk | null>(null)
   const self = people.find((p) => p.id === selfId)
   const who = (id: string | null) => people.find((p) => p.id === id)
-  const doses = rows.filter((r) => r.kind === 'dose_missed' && r.personId)
+  const doses = rows.filter((r) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref))
   const phones = newestPerPerson(rows.filter((r) => r.kind === 'phone_health'))
   const moods = newestPerPerson(rows.filter((r) => r.kind === 'mood_unwell'))
   const count = doses.length + asks.length + phones.length + moods.length

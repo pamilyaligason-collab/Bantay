@@ -168,7 +168,7 @@ export interface Report { due: number; claimed: number; rows: number; review: nu
  *  Missed doses: claims each slot BEFORE writing, so a repeat or overlapping run writes nothing twice; then one `dose_missed` row per writer carer (ref person:day:slot).
  *  Review: a medicine whose "Still taking it?" is more than a day old gets a `review_open` row, once per medicine per Manila day.
  *  Digest: in the first half hour of 20:00 Manila, a `digest` row for each person who still has an open dose today, once per day (Q15).
- *  A write that fails gives its claim back and is counted in `failed`; the run does the rest, then throws, so the heartbeat goes red and the next run tries again. */
+ *  A write that fails gives its claim back and is counted in `failed`; the run does the rest, then returns the report (never throws), so the caller reports failed > 0 on the heartbeat and the next run tries again. */
 export async function runDoseWatch(port: Port, nowMs: number, opts: { afterMin?: number } = {}): Promise<Report> {
   const r: Report = { due: 0, claimed: 0, rows: 0, review: 0, digest: 0, failed: 0 }
   const meds = await port.medications()
@@ -205,6 +205,5 @@ export async function runDoseWatch(port: Port, nowMs: number, opts: { afterMin?:
     if (await row('review_open', m.person_id, `${m.id}:${today}`)) r.review++
   }
   if (inDigestWindow(nowMs)) for (const personId of openToday(meds, taken, nowMs)) if (await row('digest', personId, `${personId}:${today}`)) r.digest++
-  if (r.failed) throw new Error('write')
-  return r
+  return r // failed > 0 does not throw: index.ts keeps running flushWebPush, sweepPhoneHealth, doseDue and prune, and turns the heartbeat red from report.failed
 }

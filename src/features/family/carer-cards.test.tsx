@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ldb, type Medication } from '../log/store'
@@ -203,7 +203,7 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     await ldb.medications.add({ ...REVIEW, schedule: { v: 1, times: ['13:00'], review: true, review_since: today } })
     await ldb.medications.add({ ...REVIEW, personId: 'p3', name: 'Losartan', serverId: 'm8', clientId: 'c8', schedule: { v: 1, times: ['13:00'], review: true, review_since: '2026-10-01' } })
     const { container } = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
-    await new Promise((r) => setTimeout(r, 50))
+    await act(async () => { await Promise.resolve() }) // the count is read from the rows on the first render; one flush settles the hooks
     expect(container.firstChild).toBeNull()
   })
   it('a phone row opens Phones and marks the row seen; a not-feeling-well row offers Call and Message', async () => {
@@ -239,8 +239,23 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
   it('a missed dose from an earlier day is left to the alert list', async () => {
     h.rows = [row('md', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-20:09:00' })]
     const { container } = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
-    await new Promise((r) => setTimeout(r, 50))
+    await act(async () => { await Promise.resolve() }) // the count is read from the rows on the first render; one flush settles the hooks
     expect(container.querySelector('[data-kind="dose_missed"]')).toBeNull()
+    expect(screen.queryByText('Needs you now')).toBeNull() // no card, so no header and no count
+  })
+  it('the Needs you now count is the cards that show: a yesterday row alone makes no header; with one today row the count is 1', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    await ldb.medications.add({ personId: 'p2', name: 'Losartan', strength: '50 mg', serverId: 'm1', clientId: 'c1', medStatus: 'active', schedule: { v: 1, times: ['09:00'] } })
+    h.rows = [row('old', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-25:09:00' })]
+    const first = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    await act(async () => { await Promise.resolve() }) // the count is read from the rows on the first render; one flush settles the hooks
+    expect(screen.queryByText('Needs you now')).toBeNull()
+    first.unmount()
+    h.rows = [row('old', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-25:09:00' }), row('md', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-26:09:00' })]
+    render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa missed a medicine')).toBeTruthy()
+    expect(screen.getByText('1 thing')).toBeTruthy()
   })
 })
 

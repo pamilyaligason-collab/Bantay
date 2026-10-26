@@ -108,7 +108,7 @@ describe('text and recipients (B-7)', () => {
     expect(firstName('Maria Lourdes')).toBe('Maria')
     expect([...firstName('Ate ' + '😀'.repeat(2) + 'é'.repeat(40))].length).toBeLessThanOrEqual(24)
     const n = buildNotification(doseWatchPayload('Maria Santos'))!
-    expect(n.body).toMatch(/^Maria has not marked a medicine/) // the number of minutes is the phone template's wording, not tested here (the window is 30 min since S4)
+    expect(n.body).toBe('Maria has not marked a medicine (2 h).') // the exact string of templates.ts: any stale number in the copy fails here (S1 rewrites both together)
     expect(n.cls).toBe('carer')
   })
   it('the payload holds only t and the first name, never a medicine', () => {
@@ -164,14 +164,22 @@ describe('runDoseWatch', () => {
     await runDoseWatch(f.port, NOW + 60 * 60_000)
     expect(f.rows.filter((r) => r.kind === 'dose_missed')).toHaveLength(2) // w1, w2, once
   })
-  it('a failed write gives the claim back, finishes the run, then throws; the next run writes the row', async () => {
+  it('a failed write gives the claim back and the run still returns its report (failed 1, no throw); the next run writes the row', async () => {
     const over = { failWrites: true }
     const f = fakePort(over)
-    await expect(runDoseWatch(f.port, NOW)).rejects.toThrow('write')
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 1, claimed: 0, rows: 0, failed: 1 })
     expect(f.claimed.size).toBe(0)
     over.failWrites = false
     expect(await runDoseWatch(f.port, NOW)).toMatchObject({ rows: 1, failed: 0 })
     expect(f.rows).toHaveLength(2)
+  })
+  it('one failing write does not stop the others: the other slot is still written, failed counts only the bad one', async () => {
+    const f = fakePort({ meds: [med(), med({ id: 'm2', person_id: 'p2' })], carers: [{ carer_id: 'w1', person_id: 'p1', can_write: true }, { carer_id: 'w2', person_id: 'p2', can_write: true }] })
+    const real = f.port.carerRow
+    f.port.carerRow = async (k, p, ids, t, ref) => { if (p === 'p1') throw new Error('write'); return real(k, p, ids, t, ref) }
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 2, claimed: 1, rows: 1, failed: 1 })
+    expect(f.rows.map((r) => r.personId)).toEqual(['p2'])
+    expect([...f.claimed]).toEqual(['p2|2026-10-20|08:00'])
   })
   it('writes nothing when the dose was marked', async () => {
     const quiet = fakePort({ taken: [took()] })
