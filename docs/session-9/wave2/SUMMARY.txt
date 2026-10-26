@@ -1,0 +1,8 @@
+W2-JACK: done d9ad15c pass_with_issues majors=1
+W2-TODAY-SAFETY: done f48045e pass_with_issues majors=2
+W2-HEALTH: done b4ca1cc pass_with_issues majors=3
+W2-ASK: done 9c07e92 pass_with_issues majors=2
+ADM-C: partial baaf403 pass_with_issues majors=1
+W2-FAMILY: done e8c9601 pass_with_issues majors=2
+ADM-BE: done 62020b6 pass_with_issues majors=2
+ADM-D-VIEW: done 0e53626be5eda2994483155af80cc48263e1cae6 pass_with_issues majors=0
