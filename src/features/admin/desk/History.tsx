@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { when } from '../shared'
+import { STATUS_LABEL, when } from '../shared'
 import { useDeskPeople } from './people'
 import { ACTIONS, dedupeCounts, listAudit, listDedupe, noAuditTable, PAGE, TABLE_WORDS, tableWords, type AuditRow, type DedupeRow } from './logsApi'
 import type { PageProps } from './types'
@@ -66,7 +66,7 @@ function Audit({ person }: { person?: string }) {
         <label className="fl-sr" htmlFor="hi-action">Action</label>
         <select id="hi-action" className="dk-in" value={f.action} onChange={(e) => set('action', e.target.value)}>
           <option value="">All actions</option>
-          {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          {ACTIONS.map((a) => <option key={a} value={a}>{a === 'view' ? STATUS_LABEL.view : a}</option>)}
         </select>
         <label className="fl-sr" htmlFor="hi-from">From date</label>
         <input id="hi-from" className="dk-in" type="date" value={f.from} max={f.to || undefined} onChange={(e) => set('from', e.target.value)} />

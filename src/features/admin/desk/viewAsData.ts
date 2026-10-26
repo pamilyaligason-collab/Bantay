@@ -6,33 +6,34 @@ import { listCarers, type Carer } from '../api'
 // and never writes health data. Real visibility is decided by RLS (people_read 0022, readings_read 0001); this file mirrors it.
 
 export type ViewPerson = { id: string; display_name: string; auth_user_id: string | null; created_by: string | null; archived_at: string | null; photo_path: string | null }
-/** self: their own login row. writer/carer: a carers link. creator: made the person but has no carers row (people_read shows the row, the records policies do not). */
-export type Relation = 'self' | 'writer' | 'carer' | 'creator'
+/** self: their own login row. writer/carer: a carers link. creator: made the person but has no carers row (people_read shows the row, the records policies do not). admin: an admin member sees everyone through is_admin() (people_admin_read 0021, records_editor 0008). */
+export type Relation = 'self' | 'writer' | 'carer' | 'creator' | 'admin'
 export type Visible = { person: ViewPerson; relation: Relation; records: boolean }
 
 /**
  * Mirrors people_read (self always; creator or carer only while not archived) and readings_read / the records policies (self or any carers link).
- * shortcut: the admin role adds nothing here, because the phone never applies is_admin to a member's lists; revisit if a policy starts to.
+ * An admin member (isAdmin) sees every person and every record, because RLS policies OR together and is_admin() opens them all.
  */
-export function visibleTo(userId: string, people: ViewPerson[], carers: Pick<Carer, 'carer_id' | 'person_id' | 'can_write'>[]): { shown: Visible[]; hidden: ViewPerson[] } {
+export function visibleTo(userId: string, people: ViewPerson[], carers: Pick<Carer, 'carer_id' | 'person_id' | 'can_write'>[], isAdmin = false): { shown: Visible[]; hidden: ViewPerson[] } {
   const link = new Map(carers.filter((c) => c.carer_id === userId).map((c) => [c.person_id, c]))
   const shown: Visible[] = []
   const hidden: ViewPerson[] = []
   for (const p of people) {
     const c = link.get(p.id)
     if (p.auth_user_id === userId) shown.push({ person: p, relation: 'self', records: true })
+    else if (isAdmin) shown.push({ person: p, relation: c ? (c.can_write ? 'writer' : 'carer') : 'admin', records: true })
     else if (p.archived_at) hidden.push(p)
     else if (c) shown.push({ person: p, relation: c.can_write ? 'writer' : 'carer', records: true })
     else if (p.created_by === userId) shown.push({ person: p, relation: 'creator', records: false })
     else hidden.push(p)
   }
-  const rank: Record<Relation, number> = { self: 0, writer: 1, carer: 2, creator: 3 }
+  const rank: Record<Relation, number> = { self: 0, writer: 1, carer: 2, admin: 3, creator: 4 }
   shown.sort((a, b) => rank[a.relation] - rank[b.relation] || a.person.display_name.localeCompare(b.person.display_name))
   hidden.sort((a, b) => a.display_name.localeCompare(b.display_name))
   return { shown, hidden }
 }
 
-export const RELATION_TEXT: Record<Relation, string> = { self: 'You', writer: 'Carer, can edit', carer: 'Carer, read only', creator: 'Added by them, no records access' }
+export const RELATION_TEXT: Record<Relation, string> = { self: 'You', writer: 'Carer, can edit', carer: 'Carer, read only', creator: 'Added by them, no records access', admin: 'Admin, sees everyone' }
 
 export type PvMed = { name: string; dose: string | null; strength: string | null; schedule: string[]; as_needed: boolean }
 export type PvReading = { test: string; value: number | null; unit: string | null; taken_at: string }
@@ -73,13 +74,14 @@ export async function loadRoster(): Promise<{ people: ViewPerson[]; carers: Care
 
 type MedRow = PvMed & { med_status: string; status: string; deleted_at: string | null }
 /** Reads for one person, all SELECT. A part that fails is null so the screen says "could not load" for it instead of showing 0. */
-export async function loadPreview(personId: string): Promise<Preview> {
+export async function loadPreview(personId: string, relation: Relation = 'self'): Promise<Preview> {
   if (!supabase) return { meds: null, readings: null, docs: null }
   const s = supabase
   const [meds, readings, docs] = await Promise.all([
     rows(s.from('medications').select('name, dose, strength, schedule, as_needed, med_status, status, deleted_at').eq('person_id', personId).eq('status', 'confirmed').eq('med_status', 'active').is('deleted_at', null).order('name') as unknown as Q<MedRow>),
     rows(s.from('readings').select('test, value, unit, taken_at').eq('person_id', personId).order('taken_at', { ascending: false }).limit(300) as unknown as Q<PvReading>),
-    rows(s.from('documents').select('id, kind, title, doc_date').eq('person_id', personId).eq('status', 'confirmed').order('doc_date', { ascending: false }).limit(20) as unknown as Q<PvDoc>)
+    // documents_read (0008) hides ID and insurance cards from a read-only carer; mirror that.
+    rows((relation === 'carer' ? s.from('documents').select('id, kind, title, doc_date').eq('person_id', personId).eq('status', 'confirmed').not('kind', 'in', '(id_card,insurance_card)') : s.from('documents').select('id, kind, title, doc_date').eq('person_id', personId).eq('status', 'confirmed')).order('doc_date', { ascending: false }).limit(20) as unknown as Q<PvDoc>)
   ])
   return {
     meds: meds ? meds.map((m) => ({ name: m.name, dose: m.dose, strength: m.strength, schedule: Array.isArray(m.schedule) ? m.schedule : [], as_needed: !!m.as_needed })) : null,

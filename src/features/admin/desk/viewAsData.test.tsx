@@ -1,6 +1,7 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+﻿import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PHONE_ACTIONS, ViewAsPreview } from './ViewAs'
+import { STATUS_LABEL } from '../shared'
 import { auditArgs, latestReadings, visibleTo, type ViewPerson } from './viewAsData'
 
 afterEach(cleanup)
@@ -39,6 +40,16 @@ describe('visibleTo mirrors people_read and the records policies', () => {
   })
 })
 
+describe('visibleTo for an admin member', () => {
+  it('sees everyone, archived included, with carer links keeping their relation', () => {
+    const v = visibleTo(M, PEOPLE, CARERS, true)
+    expect(v.hidden).toEqual([])
+    expect(v.shown.map((x) => [x.person.id, x.relation, x.records])).toEqual([
+      ['p-self', 'self', true], ['p-old', 'writer', true], ['p-kid', 'writer', true], ['p-mum', 'carer', true], ['p-dad', 'admin', true], ['p-made', 'admin', true]
+    ])
+  })
+})
+
 describe('latestReadings', () => {
   it('keeps the newest per test and drops unknown values (never 0)', () => {
     const r = latestReadings([
@@ -51,6 +62,7 @@ describe('latestReadings', () => {
 })
 
 describe('audit event shape', () => {
+  it('labels the view action for History', () => { expect(STATUS_LABEL.view).toBe('Viewed as member') })
   it('carries the person id and nothing else', () => {
     expect(auditArgs('p-self')).toEqual({ p_person: 'p-self' })
   })

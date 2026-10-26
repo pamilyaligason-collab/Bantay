@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../auth/client'
 import { adminMembers } from '../api'
 import Avatar from '../Avatar'
@@ -105,6 +105,13 @@ function MembersList() {
   const [sheet, setSheet] = useState<Sheet | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
+  const more = useRef<HTMLDetailsElement>(null)
+  // The phone "More" menu closes on Escape and on a click outside it.
+  useEffect(() => {
+    const shut = (e: Event) => { const d = more.current; if (d?.open && (e.type === 'keydown' ? (e as KeyboardEvent).key === 'Escape' : !d.contains(e.target as Node))) d.open = false }
+    document.addEventListener('keydown', shut); document.addEventListener('pointerdown', shut)
+    return () => { document.removeEventListener('keydown', shut); document.removeEventListener('pointerdown', shut) }
+  }, [])
 
   const shown = useMemo(() => attentionFirst(filterLines(roster.lines, f, hasCarers, q)), [roster.lines, f, hasCarers, q]) // eslint-disable-line react-hooks/exhaustive-deps
   const sort = useSort<Line>(shown, (l, key) => {
@@ -125,8 +132,8 @@ function MembersList() {
     <div className="mb-page">
       <PageHead title="Members" sub="Everyone in the family, with or without a phone. Open a row for the profile, sign-in, carers and records.">
         {phone ? (
-          <details className="mb-more"><summary className="dk-b">More</summary>
-            <div className="mb-more-m">
+          <details className="mb-more" ref={more}><summary className="dk-b">More</summary>
+            <div className="mb-more-m" onClick={() => { if (more.current) more.current.open = false }}>
               <button className="dk-b" onClick={() => setSheet('invite')}>Invite by email</button>
               <button className="dk-b" onClick={() => setSheet('dep')}>Add dependent</button>
             </div>

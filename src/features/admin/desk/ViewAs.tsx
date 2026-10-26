@@ -75,7 +75,7 @@ export function ViewAsPreview({ name, shown, hidden, selected, onSelect, preview
 }
 
 /** Loads the roster, works out what `userId` can see, records the view once, and loads one person's data at a time. */
-export default function ViewAs({ userId, personId, name }: { userId: string; personId: string; name: string }) {
+export default function ViewAs({ userId, personId, name, isAdmin = false }: { userId: string; personId: string; name: string; isAdmin?: boolean }) {
   const [data, setData] = useState<ReturnType<typeof visibleTo> | null | undefined>(undefined) // undefined loading, null failed
   const [sel, setSel] = useState<string | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -88,11 +88,11 @@ export default function ViewAs({ userId, personId, name }: { userId: string; per
     void loadRoster().then((r) => {
       if (!alive) return
       if (!r) return setData(null)
-      const v = visibleTo(userId, r.people, r.carers)
+      const v = visibleTo(userId, r.people, r.carers, isAdmin)
       setData(v); setSel(v.shown[0]?.person.id ?? null)
     })
     return () => { alive = false }
-  }, [userId])
+  }, [userId, isAdmin])
 
   // One audit row per open, for the person being viewed as. StrictMode runs effects twice: the ref keeps it to one.
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function ViewAs({ userId, personId, name }: { userId: string; per
     setPreview(null)
     if (!sel || !cur?.records) return
     let alive = true
-    void loadPreview(sel).then((p) => { if (alive) setPreview(p) })
+    void loadPreview(sel, cur.relation).then((p) => { if (alive) setPreview(p) })
     return () => { alive = false }
   }, [sel]) // eslint-disable-line react-hooks/exhaustive-deps
 

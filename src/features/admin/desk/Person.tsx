@@ -510,7 +510,7 @@ export default function MemberPage({ id, sub }: PageProps) {
           <button className="dk-b" onClick={() => void setArchived(p, false, roster.reload, toast)}>Reactivate</button>
         </div>
       )}
-      {viewing && m ? <ViewAs key={m.userId} userId={m.userId} personId={p.id} name={p.display_name} /> : <>
+      {viewing && m ? <ViewAs key={m.userId} userId={m.userId} personId={p.id} name={p.display_name} isAdmin={m.role === 'admin'} /> : <>
       <nav className="dk-tabs" aria-label="Member sections">
         {TABS.map(([k, label]) => (
           <a key={k} href={deskHref('members', id, k)} aria-current={k === tab ? 'page' : undefined}>
