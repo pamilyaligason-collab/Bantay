@@ -195,7 +195,7 @@ export default function WebShell() {
             {g.pages.map((p) => (
               <a key={p} className="wa-nav" href={deskHref(p)} aria-current={p === at.page ? 'page' : undefined} title={DESK_LABELS[p]}>
                 <Icon name={ICONS[p]} active={p === at.page} size={20} /><span>{DESK_LABELS[p]}</span>
-                {!!counts[p] && <b className={`wa-cnt ${p === 'files' || p === 'system' ? 'bad' : 'warn'}`} aria-label={`${counts[p]} waiting`}>{counts[p]}</b>}
+                {!!counts[p] && <b className={`wa-cnt ${p === 'files' || p === 'system' ? 'bad' : 'warn'}`} aria-label={p === 'system' ? `${counts[p]} jobs failing` : `${counts[p]} waiting`}>{counts[p]}</b>}
               </a>
             ))}
           </div>

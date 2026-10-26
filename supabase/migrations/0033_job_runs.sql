@@ -68,7 +68,7 @@ create or replace function public.log_client_error(p_where text, p_hash text, p_
     if (select count(*) from public.client_errors where user_id = v_uid and day = v_day) >= 50 then return; end if;
     insert into public.client_errors (user_id, app_version, where_, message_hash, count, day)
       values (v_uid, v_ver, p_where, p_hash, 1, v_day)
-      on conflict (user_id, where_, message_hash, day) do update set count = public.client_errors.count + 1;
+      on conflict (user_id, where_, message_hash, day) do update set count = least(public.client_errors.count + 1, 1000); -- ceiling: a repeated key cannot inflate the count
   end $$;
 revoke execute on function public.log_client_error(text, text, text) from public, anon, authenticated, service_role;
 grant execute on function public.log_client_error(text, text, text) to authenticated;
