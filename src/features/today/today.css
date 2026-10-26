@@ -238,3 +238,5 @@
 .td-simple .sos-btn { width: 150px; height: 150px; }
 .td-simple .sos-btn span { font-size: 36px; }
 .td-simple .sos-sub { display: none; }
+/* Short phones (360x640): a smaller SOS circle so the "Cannot hold?" button and the dose card also fit the first screen. */
+@media (max-height: 700px) { .td-simple .sos-btn { width: 112px; height: 112px; } .td-simple .sos-btn span { font-size: 30px; } }

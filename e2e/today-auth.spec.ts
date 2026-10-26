@@ -152,6 +152,13 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
     expect(box).not.toBeNull()
     expect(box!.y).toBeGreaterThanOrEqual(0)
     expect(box!.y + box!.height).toBeLessThanOrEqual(h)
+    await expect(page.locator('.bt[data-simple]')).toBeAttached()
+    await expect(page.locator('.bt[data-simple] .tabbar')).toBeAttached()
     await expect(page.locator('.bt[data-simple] .tabbar')).toBeHidden()
+    for (const el of [page.getByRole('button', { name: 'Cannot hold? Use a button instead' }), page.getByRole('button', { name: 'Taken' })]) {
+      const b = await el.boundingBox()
+      expect(b).not.toBeNull()
+      expect(b!.y + b!.height).toBeLessThanOrEqual(h)
+    }
   })
 }
