@@ -11,7 +11,7 @@ vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds
 vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
 vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review }: { expanded?: boolean; review?: number }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} /> }))
 vi.mock('../features/today/MyWeek', () => stub('myweek'))
-vi.mock('../features/today/FamilyLine', () => stub('famline'))
+vi.mock('../features/today/SelfCare', () => stub('selfcare'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/NextUp', () => stub('nextup'))
 vi.mock('../features/today/PlanToday', () => stub('plan'))
@@ -28,7 +28,7 @@ describe('Today simple mode', () => {
   it('off: the full page', async () => {
     render(<Today />)
     await screen.findByTestId('quicklog')
-    for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'famline', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
+    for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('link', { name: 'SOS' })).toBeNull()
   })
@@ -36,7 +36,7 @@ describe('Today simple mode', () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['alertband', 'nextup', 'weather', 'quicklog', 'myweek', 'famline', 'plan', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['alertband', 'nextup', 'weather', 'quicklog', 'myweek', 'selfcare', 'plan', 'alerts', 'nearby', 'week'])
   })
   it('a dose due: Next up comes first and the weather card stays compact', async () => {
     render(<Today />)
@@ -82,7 +82,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'famline']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on: the warning band and a storm within 500 km are not lost', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

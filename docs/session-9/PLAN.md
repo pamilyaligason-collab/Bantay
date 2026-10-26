@@ -81,3 +81,10 @@ Safety
 Wave 1 lanes (8): APP-A, APP-B, ADM-A, JACK-A, JACK-C, W1-NUTRI (absorbs FOOD-1/FOOD-2, migration 0026), W1-WEATHER (absorbs the heat-number fix), W1-MOVE.
 Wave 2 lanes: APP-C + W2-HEALTH, APP-D, W2-FAMILY, W2-ASK, W2-SAFETY, ADM-B..E, W2-ADM-VIEW, JACK-B, JACK-D.
 Wave 3: Tagalog labels, on-device OCR if needed.
+
+## W2-FAMILY build notes (2026-10-22)
+
+- Today: the family line is replaced by the Self-care card (`SelfCare.tsx`); the I'm OK band hides itself once I have checked in today, and so does the check-in card on Family.
+- Family: People shows round bubbles with a status emoji (checked in, needs a look, no news). Tapping a bubble opens the message sheet. Roll call list and per-pair nudge moved into the sheet.
+- Messages (migration 0027): ONE family group thread, chosen over a thread per pair because roles are "any active family member" and a pair thread needs a person-to-login map that does not exist. Online only with an 8 s refresh while open (no realtime or outbox yet), same as Memories. Voice notes max 60 s, files and photos max 10 MB, photos re-encoded without EXIF. Video: no Messenger handle is stored for anyone, so the button opens Messenger itself ("Use Messenger for video"). No read receipts or unread badge yet.
+- Haptics: the app has no native haptics helper, so the breath uses `navigator.vibrate` (skipped where missing), with a switch.

@@ -80,7 +80,7 @@ test.beforeEach(async ({ page }) => {
   await mock(page)
 })
 
-test('signed in: Next up for me and Ma, weather action, My week tiles, family line, and Taken logs the dose', async ({ page }) => {
+test('signed in: Next up for me and Ma, weather action, My week tiles, self-care card, and Taken logs the dose', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Next up' })).toHaveCount(0) // nothing next: no empty card
@@ -94,7 +94,7 @@ test('signed in: Next up for me and Ma, weather action, My week tiles, family li
   await expect(week.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
   await expect(week.getByRole('link', { name: /Steps a day/ })).toContainText('goal 6,000')
   await expect(week.getByRole('link', { name: /Doses on time/ })).toHaveAttribute('href', '#health')
-  await expect(page.getByRole('link', { name: /Family: 1 of 2 others OK today/ })).toHaveAttribute('href', '#family')
+  await expect(page.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
   await page.getByRole('button', { name: 'Taken' }).click()
   await expect(page.getByRole('status').filter({ hasText: /taken/ })).toBeVisible()
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)

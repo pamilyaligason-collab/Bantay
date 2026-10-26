@@ -112,7 +112,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(wide).toBe(false)
     })
 
-    test('People: roll call, member page, and the phone health switches moved to Me', async ({ page }) => {
+    test('People: status bubbles, messages, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
       await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
       await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible() // a known row first: the status lines wait for the check-ins to load
@@ -122,6 +122,9 @@ for (const scheme of ['light', 'dark'] as const) {
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
       await page.getByRole('button', { name: /Papa Ben/ }).click()
+      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-messages-${scheme}.png` })
+      await page.getByRole('button', { name: "Papa's page" }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')
       await expect(page.getByRole('link', { name: 'Call Papa' })).toHaveAttribute('href', 'tel:+639171234567')

@@ -1,11 +1,9 @@
 import { rollCall, useCheckIns, useFamilyPeople } from '../family/roster'
 import { useOthers } from './useOthers'
-import { Icon } from '../shell/Icon'
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
 
-/** Top of Today: the big I'm OK button. Once this person has checked in today it becomes a calm confirmation:
- *  when, how many of the family are OK, and a link to see who. Both numbers come from the same live queries as People. */
+/** The big I'm OK button. Once this person has checked in today the whole card is hidden (nothing left to ask). The count comes from the same live queries as People. */
 export default function GreetingBand({ onOk }: { onOk: () => void }) {
   const { selfId } = useFamilyPeople()
   const last = useCheckIns()
@@ -13,18 +11,7 @@ export default function GreetingBand({ onOk }: { onOk: () => void }) {
   const { ok, total } = rollCall(others, last) // the others only, the same count as the family line
   const mine = selfId && last[selfId] ? new Date(last[selfId]!) : null
   const done = mine && !Number.isNaN(mine.getTime()) && sameDay(mine, new Date())
-  if (done) {
-    return (
-      <section className="td-greet td-checked" aria-label="Check in">
-        <span className="td-tick" aria-hidden="true"><Icon name="check" size={26} /></span>
-        <div className="td-grow">
-          <b>You checked in <span className="td-nowrap">{mine.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span></b>
-          <span className="td-sub td-checked-n" role="status">{total > 0 ? `${ok} of ${total} others OK today` : 'Your family can see it'}</span>
-        </div>
-        <a className="td-link" href="#family">See who</a>
-      </section>
-    )
-  }
+  if (done) return null // already checked in today: nothing to ask. Family sees the check-in on the Family tab
   return (
     <section className="td-greet" aria-label="Check in">
       <button type="button" className="td-okbtn" onClick={onOk}>I&apos;m OK</button>

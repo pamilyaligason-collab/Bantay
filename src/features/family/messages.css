@@ -1,0 +1,41 @@
+/* Family bubbles and the message thread (session 9). Tokens only, so dark follows. */
+.fm-bubbles { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 8px; }
+.bt .fm-bubble { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; min-height: 120px; padding: 6px 4px; border: 0; background: none; color: var(--ink); font-size: 16px; text-align: center; }
+.fm-bubble .fm-av { box-shadow: 0 0 0 3px var(--bub, var(--line)); }
+.fm-bubble[data-k="ok"] { --bub: var(--ok); }
+.fm-bubble[data-k="look"] { --bub: var(--amber); }
+.fm-bubble b { font-weight: 700; overflow-wrap: anywhere; line-height: 1.2; }
+.fm-bubble .fm-emo { position: absolute; top: 0; right: calc(50% - 46px); width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--card); box-shadow: var(--shadow); font-size: 18px; }
+.fm-bubble .sub { font-size: 14px; }
+
+.fm-key { margin: 4px 4px 0; font-size: 14px; }
+.msg-lead { margin: 0; }
+.msg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.msg-actions .pill { text-decoration: none; }
+.msg-nudge { display: flex; }
+.msg-list { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 10px; max-height: 38dvh; overflow-y: auto; background: var(--card2); border-radius: 18px; }
+.msg-empty { text-align: center; padding: 12px 0; }
+.msg { position: relative; max-width: 86%; padding: 8px 12px; border-radius: 18px; background: var(--card); color: var(--ink); box-shadow: var(--shadow); display: grid; gap: 4px; align-self: flex-start; min-width: 0; }
+.msg.me { align-self: flex-end; background: var(--soft); padding-right: 40px; }
+.msg p { margin: 0; font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }
+.msg-by { font-size: 13px; font-weight: 700; color: var(--muted); }
+.msg-by time { font-weight: 500; }
+.msg-q { font-weight: 700; color: var(--muted); border: 1px dashed currentColor; border-radius: 8px; padding: 0 6px; margin-left: 4px; }
+.msg audio { width: 100%; max-width: 240px; min-height: 40px; }
+.msg img { max-width: 100%; max-height: 220px; border-radius: 12px; display: block; }
+.msg-file { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); color: var(--link); font-weight: 600; overflow-wrap: anywhere; }
+.bt .msg-del { position: absolute; top: 0; right: 0; width: var(--tap); height: var(--tap); border: 0; background: none; color: var(--muted); display: grid; place-items: center; }
+.msg-confirm { display: grid; gap: 8px; padding: 12px; border-radius: 18px; background: var(--warn-bg); color: var(--ink); }
+.msg-confirm p { margin: 0; font-weight: 600; }
+.bt .msg-danger { background: var(--danger-bg); color: #fff; }
+.msg-rec { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.msg-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--danger-bg); animation: msgpulse 1s infinite; }
+@keyframes msgpulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .msg-dot { animation: none; } }
+.msg-compose { display: grid; gap: 8px; }
+.msg-compose textarea { min-height: 56px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--card2); color: var(--ink); font: inherit; font-size: 17px; width: 100%; box-sizing: border-box; resize: vertical; }
+.msg-tools { display: flex; gap: 8px; align-items: center; }
+.bt .msg-ic { width: var(--tap); height: var(--tap); flex: none; border: 0; border-radius: 50%; background: var(--card2); color: var(--ink); display: grid; place-items: center; }
+.msg-send { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.msg-fine { margin: 0; font-size: 14px; }
+.msg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
