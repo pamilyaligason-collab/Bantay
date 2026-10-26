@@ -175,6 +175,18 @@ test('Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid', asyn
   await expect(page.getByRole('link', { name: 'Medical ID' })).toHaveAttribute('href', '#medid')
 })
 
+test('Safety groups: five headings in order, each holding its own tiles', async ({ page }) => {
+  await page.goto('/#safety')
+  const heads = ['Emergency', 'First aid: act early', 'Alerts and official sources', 'Hotlines', 'Be ready']
+  await expect(page.locator('section.sf-grp > header h2')).toHaveText(heads)
+  const own = async (h: string) => page.locator('section.sf-grp').filter({ has: page.getByRole('heading', { name: h, exact: true }) })
+  const tileNames = async (h: string) => (await (await own(h)).locator('a.sf-tile .sf-tile-t').allTextContents())
+  expect(await tileNames('Alerts and official sources')).toEqual(['Warnings', 'Weather', 'Storm tracker', 'Rescue map', 'Hazards at my location'])
+  expect(await tileNames('Hotlines')).toEqual(['Quick dial', 'Past SOS'])
+  expect(await tileNames('Be ready')).toEqual(['Go-bag', 'Safety cards'])
+  await expect((await own('Emergency')).getByRole('link', { name: 'Call 911' })).toBeVisible()
+})
+
 test('SOS: the confirm button opens the flow, finds the place, builds the text and the safe text', async ({ page, context }) => {
   await context.grantPermissions(['geolocation'])
   await context.setGeolocation({ latitude: 9.65, longitude: 123.88 })

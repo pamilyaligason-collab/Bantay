@@ -30,7 +30,7 @@ describe('Today simple mode', () => {
     await screen.findByTestId('quicklog')
     for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
-    expect(screen.queryByRole('link', { name: 'SOS' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
   })
   it('full page order: Next up, weather, quick log, My week, family line, plan, then More', async () => {
     const { container } = render(<Today />)
@@ -60,6 +60,17 @@ describe('Today simple mode', () => {
     expect(screen.queryByRole('button', { name: 'Taken' })).toBeNull()
     expect(screen.queryByText('All clear')).toBeNull()
   })
+  it('on: .bt gets data-simple (CSS hides the tab bar and coach mark); off again on exit', async () => {
+    const bt = document.body.appendChild(document.createElement('div'))
+    bt.className = 'bt'
+    await db.kv.put({ key: 'mode.simple', value: true })
+    const { unmount } = render(<Today />)
+    await screen.findAllByRole('button', { name: /^Exit/ })
+    expect(bt.hasAttribute('data-simple')).toBe(true)
+    unmount()
+    expect(bt.hasAttribute('data-simple')).toBe(false)
+    bt.remove()
+  })
   it('on: Exit (top) and Exit simple mode (bottom) both turn it off through the same switch as Me', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     const { unmount } = render(<Today />)
@@ -80,7 +91,7 @@ describe('Today simple mode', () => {
     await screen.findByRole('button', { name: 'Taken' })
     expect(screen.getByText('Losartan')).toBeTruthy()
     expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'SOS' }).getAttribute('href')).toBe('#safety')
+    expect(screen.getByRole('button', { name: /^SOS/ })).toBeTruthy() // the real hold-to-send button, not a link
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
     for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
   })

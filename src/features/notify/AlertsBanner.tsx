@@ -1,6 +1,9 @@
+import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import { ASK_KEY, enableAlerts, ensureSubscribed, kvGet, markAsked, reAskDue, vapidKey } from './alerts'
+
+export const NATIVE_NOTICE = 'Family alerts do not reach the Android app yet. Keep the browser app for missed-dose and storm alerts.'
 
 type Mode = 'off' | 'unsubscribed'
 
@@ -8,8 +11,9 @@ type Mode = 'off' | 'unsubscribed'
 export default function AlertsBanner() {
   const [mode, setMode] = useState<Mode | null>(null)
   const [blocked, setBlocked] = useState(false)
+  const native = Capacitor.isNativePlatform()
   useEffect(() => {
-    if (typeof Notification === 'undefined') return
+    if (native || typeof Notification === 'undefined') return
     ;(async () => {
       const granted = Notification.permission === 'granted'
       const need: Mode | null = !granted ? 'off' : vapidKey() && !(await db.kv.get('push.sub')) ? 'unsubscribed' : null
@@ -17,7 +21,9 @@ export default function AlertsBanner() {
       await markAsked()
       setMode(need)
     })()
-  }, [])
+  }, [native])
+  // D-78 interim: the Android app has no push, so say so plainly instead of offering alerts it cannot deliver.
+  if (native) return <div className="grp" role="region" aria-label="Family alerts" style={{ padding: 16 }}><span className="sub">{NATIVE_NOTICE}</span></div>
   if (!mode) return null
   const off = mode === 'off'
   return (

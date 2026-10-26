@@ -1,6 +1,7 @@
 import { clock } from '../health/model'
 import { dayOf, matchDoses, slotsFor, type MedSlot } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
+import { ON_TIME_MIN } from '../health/doseCount'
 import type { HeroCard } from './heroCards'
 
 /** Next up: ONE item. Medicine due soon or just missed (mine or someone I care for) > plan item due today > storm within 500 km > all clear.
@@ -18,7 +19,7 @@ export interface DuePerson extends DoseTarget {
   slots: MedSlot[]
 }
 export type NextKind = 'dose' | 'plan' | 'storm' | 'calm'
-export interface NextItem { key: string; kind: NextKind; kicker: string; title: string; body: string; note?: string; who?: DuePerson; href?: string; linkLabel?: string }
+export interface NextItem { key: string; kind: NextKind; kicker: string; title: string; body: string; note?: string; who?: DuePerson; href?: string; linkLabel?: string; late?: boolean }
 
 type Take = Pick<MedTaken, 'personId' | 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>
 
@@ -53,13 +54,18 @@ export function whenLine(d: DuePerson, now: Date): string {
   return [clock(d.at), diff > 0 ? `in ${span(diff)}` : diff < 0 ? `${span(-diff)} ago` : 'now', dose].filter(Boolean).join(' · ')
 }
 
+/** A dose past its slot: it still counts as on time until ON_TIME_MIN after the slot (the same 2 hours the adherence counter uses). */
+export const lateNote = (d: DuePerson) => `Taking it by ${clock((d.at + ON_TIME_MIN) % DAY_MIN)} still counts as on time.`
+
 export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }, now: Date = new Date()): NextItem {
   const d = i.due[0]
   if (d) {
     const names = [...new Set(d.slots.map((s) => s.name))]
     const others = [...new Set(i.due.slice(1).map((o) => o.name))]
     const title = d.isMe ? joinNames(names) : `${d.name}: ${joinNames(names)}`
-    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: d.status === 'missed' ? 'Next up · not taken yet' : 'Next up · medicine', title, body: whenLine(d, now), note: others.length ? `Also waiting: ${joinNames(others)}.` : undefined, who: d }
+    const late = d.status === 'missed'
+    const note = [late ? lateNote(d) : '', others.length ? `Also waiting: ${joinNames(others)}.` : ''].filter(Boolean).join(' ')
+    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: late ? 'Late · not taken yet' : 'Next up · medicine', title, body: whenLine(d, now), note: note || undefined, who: d, late }
   }
   const p = i.plan
   if (p) return { key: p.key, kind: 'plan', kicker: p.kicker, title: p.title, body: p.body, href: '#family/plan', linkLabel: 'Open plan' }

@@ -119,7 +119,6 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-ids-t { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sf-ids-t b { font-size: 17px; }
 .sf-ids-t span { font-size: 14px; color: var(--ink2); overflow-wrap: anywhere; }
-.sf-act-sec { display: flex; flex-direction: column; gap: 10px; }
 .sf-act-note { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 18px; background: var(--red-soft); color: var(--ink); font-size: 16px; line-height: 1.35; }
 .sf-tile.sf-wide { grid-column: 1 / -1; min-height: 88px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: center; }
 .sf-wide > .sh-icbox { grid-row: span 2; margin: 0; }
@@ -135,3 +134,15 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .fa-links { list-style: none; padding: 0 !important; }
 .sf .fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
 .fa-foot { margin: 0 4px; font-size: 14px; }
+
+/* Safety sections (W2): each group has its own tint from tokens; text stays var(--ink) on the tint, tiles stay on var(--card). */
+.sf-grp { --tint: var(--card2); --edge: var(--muted); display: flex; flex-direction: column; gap: 12px; padding: 14px 8px; border-radius: 24px; background: var(--tint); border: 1px solid color-mix(in srgb, var(--edge) 28%, transparent); border-left: 4px solid var(--edge); }
+.sf-grp-emergency { --tint: color-mix(in srgb, var(--red) 12%, var(--card)); --edge: var(--red); }
+.sf-grp-aid { --tint: color-mix(in srgb, var(--ok) 12%, var(--card)); --edge: var(--ok); }
+.sf-grp-alerts { --tint: color-mix(in srgb, var(--c-weather) 12%, var(--card)); --edge: var(--c-weather); }
+.sf-grp-hotlines { --tint: color-mix(in srgb, var(--amber) 16%, var(--card)); --edge: var(--warn); }
+.sf-grp-ready { --tint: var(--card2); --edge: var(--green2); }
+.sf-grp-h { padding: 0 6px; }
+.sf-grp-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+.sf-grp-h p { margin: 2px 0 0; font-size: 16px; color: var(--ink); opacity: .85; }
+.sf-grp .sf-act-note { background: var(--card); }
