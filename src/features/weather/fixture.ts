@@ -14,12 +14,13 @@ export interface FixtureOpts {
 }
 
 const local = (ms: number) => new Date(ms).toISOString().slice(0, 16)
+const DAYS = 10
 
 export function openMeteoFixture(o: FixtureOpts = {}) {
   const off = o.offsetS ?? 8 * 3600
   const nowL = (o.now ?? new Date()).getTime() + off * 1000
   const dayStart = Math.floor(nowL / 86400_000) * 86400_000
-  const times = Array.from({ length: 24 * 7 }, (_, i) => dayStart + i * 3600_000)
+  const times = Array.from({ length: 24 * DAYS }, (_, i) => dayStart + i * 3600_000)
   const prob = o.hourlyProb ?? ((h: number) => (h >= 14 && h <= 17 ? 80 : 10))
   return {
     latitude: 9.65, longitude: 123.88, timezone: o.tz ?? 'Asia/Manila', utc_offset_seconds: off,
@@ -31,14 +32,14 @@ export function openMeteoFixture(o: FixtureOpts = {}) {
       weather_code: times.map((_, i) => (prob(i % 24) >= 60 ? 63 : 2))
     },
     daily: {
-      time: Array.from({ length: 7 }, (_, i) => local(dayStart + i * 86400_000).slice(0, 10)),
-      weather_code: [2, 63, 63, 2, 0, 2, 63],
-      temperature_2m_min: [26, 25, 25, 26, 26, 26, 25],
-      temperature_2m_max: [34, 32, 31, 33, 34, 33, 31],
-      precipitation_probability_max: [30, 88, 70, 20, 10, 25, 60],
-      uv_index_max: [o.uvMax ?? 10, 9, 8, 9, 10, 9, 7],
-      sunrise: Array.from({ length: 7 }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T05:50`),
-      sunset: Array.from({ length: 7 }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T17:45`)
+      time: Array.from({ length: DAYS }, (_, i) => local(dayStart + i * 86400_000).slice(0, 10)),
+      weather_code: [2, 63, 63, 2, 0, 2, 63, 2, 95, 3],
+      temperature_2m_min: [26, 25, 25, 26, 26, 26, 25, 25, 25, 25],
+      temperature_2m_max: [34, 32, 31, 33, 34, 33, 31, 32, 30, 31],
+      precipitation_probability_max: [30, 88, 70, 20, 10, 25, 60, 40, 75, 20],
+      uv_index_max: [o.uvMax ?? 10, 9, 8, 9, 10, 9, 7, 8, 6, 8],
+      sunrise: Array.from({ length: DAYS }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T05:50`),
+      sunset: Array.from({ length: DAYS }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T17:45`)
     }
   }
 }

@@ -1,0 +1,16 @@
+/* S7w: rain card (hourly chance bars), storm track, season */
+.wx-rain { display: grid; gap: 12px; }
+.wx-rain .wx-sub { display: inline-flex; align-items: center; gap: 4px; }
+.wx-bars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; align-items: end; height: 120px; }
+.wx-bars li { display: grid; grid-template-rows: 1fr auto auto; justify-items: center; height: 100%; font-size: 12px; color: var(--muted); }
+.wx-bars li i { align-self: end; width: 100%; max-width: 20px; border-radius: 6px 6px 2px 2px; background: var(--accent); opacity: .85; }
+.wx-bars li[data-level="none"] i, .wx-bars li[data-level="unknown"] i { opacity: .25; }
+.wx-bars li b { color: var(--ink); font-size: 12px; }
+.wx-storm { display: grid; gap: 10px; }
+.wx-sun { display: flex; justify-content: space-between; gap: 8px; }
+.wx-season { display: grid; gap: 8px; }
+.wx-rain .wx-sech { flex-wrap: wrap; }
+.wx-rain { min-width: 0; }
+.wx-bars li { min-width: 0; white-space: nowrap; }
+.wx-bars li:not(:nth-child(3n+1)) b, .wx-bars li:not(:nth-child(3n+1)) span { font-size: 0; }
+.wx-rain .pill, .wx-storm .pill { box-sizing: border-box; max-width: 100%; white-space: normal; text-align: center; }

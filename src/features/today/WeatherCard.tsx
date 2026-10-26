@@ -30,6 +30,23 @@ function slots(wx: Wx, now: Date) {
   return [0, 3, 6].map((k) => from + k).filter((i) => i < h.time.length).map((i) => ({ time: hourLabel(h.time[i]!), kind: kindOf(h.code?.[i] ?? null), pct: h.prob[i] }))
 }
 
+/** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
+export function WeatherStrip() {
+  const place = usePlace()
+  const wx = useWeather(place?.weather ?? null)
+  if (!wx || wx.temp == null || !place) return null
+  const rain = wx.rainPct == null ? null : `Rain chance ${Math.round(wx.rainPct)}%`
+  return (
+    <a className="card td-wx" href={WEATHER_HREF} aria-label="Weather">
+      <span className="td-wx-row">
+        <span className="td-wx-t">{deg(wx.temp)}</span>
+        <span className="td-grow"><b>{wx.words[0]!.toUpperCase()}{wx.words.slice(1)} · {placeNameOf(place)}</b>{rain && <span className="td-sub">{rain}</span>}</span>
+        <span className="td-link"><Icon name="chev" size={20} /></span>
+      </span>
+    </a>
+  )
+}
+
 /** Today's one weather card from the cached forecast. Compact: one row (temperature, condition and place, feels like, rain line) with the action line in an amber box below.
  *  `expanded` (Today has no Next up item) is the dark green hero from the Weather screen filling that slot: big temperature, sky icon, range, the action box, the next three
  *  slots, and a quiet medicines row when `review` > 0. Nothing is drawn until a temperature is known (never a made-up 0). */
