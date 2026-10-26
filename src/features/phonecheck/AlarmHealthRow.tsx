@@ -11,12 +11,11 @@ import { useKvValue } from './useKvValue'
 
 const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }) }
 
-/** The text under the row title: what was checked, how many alarms are set, how many had to be set again (mockup `today-alarmfix`: "Alarms checked 8:40, 3 of 3 set (1 set again)"). */
+/** The text under the row title: what was checked, how many alarms are set (mockup `today-alarmfix`: "Alarms checked 8:40, 3 set for the next 7 days"; they are all set again on every open, so no count of that is shown). */
 export function healthLine(h: AlarmHealth | undefined): string {
   if (!h) return 'Not checked yet'
   if (!h.ok) return `Alarms checked ${when(h.at)}. Bantay could not set them; tap Check now.`
-  const again = h.rearmed > 0 ? ` (${h.rearmed} set again)` : ''
-  return `Alarms checked ${when(h.at)}, ${h.set} set${h.days ? ` for the next ${h.days} days` : ''}${again}`
+  return `Alarms checked ${when(h.at)}, ${h.set} set${h.days ? ` for the next ${h.days} days` : ''}`
 }
 
 /** Me > "Alarms" row (owner of Me.tsx is S6c, which mounts this one line). Android app only: the browser app has no phone alarms. Shows the last self-check, "Check now", a test alarm,
