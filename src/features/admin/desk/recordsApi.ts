@@ -1,6 +1,7 @@
 import { supabase } from '../../auth/client'
 import { confirmRows, rejectRows, EDITABLE, type Res, type Table } from '../../records/api'
 import { LOW_CONFIDENCE } from '../../records/ConfirmSheet'
+import { nameMismatch } from '../../records/papers'
 import { position } from '../../health/ranges'
 import { verdictFor } from '../../health/verdict'
 
@@ -98,6 +99,26 @@ export async function setStatusFor(table: string, ids: string[], status: 'confir
   if (!r.ok) return r
   return r.data.length ? { ok: true, data: { changed: r.data.length, ids: r.data.map((x) => x.id) } } : { ok: false, error: 'forbidden' }
 }
+
+/**
+ * S11 (hazard K1): the papers among `docIds` whose printed name does not fit the person they are filed under, so the desk can ask before it
+ * confirms them. Admins can read person_aliases, so the person's other names count. select('*') because printed_name only exists from 0030.
+ * shortcut: an unreadable paper list returns no warnings (nothing to compare), and an unreadable alias list means fewer aliases (more warnings, never fewer); no server guard this phase.
+ */
+export async function nameWarnings(docIds: string[], nameOf: (personId: string) => string): Promise<{ id: string; printed: string; person: string }[]> {
+  const ids = [...new Set(docIds)]
+  if (!ids.length) return []
+  const docs = await run<{ id: string; person_id: string; printed_name?: string | null }[]>((s) => s.from('documents').select('*').in('id', ids))
+  if (!docs.ok) return []
+  const withName = docs.data.filter((d) => d.printed_name && d.printed_name.trim())
+  if (!withName.length) return []
+  const al = await run<{ alias: string; person_id: string }[]>((s) => s.from('person_aliases').select('alias,person_id').in('person_id', [...new Set(withName.map((d) => d.person_id))]))
+  const aliasesOf = (pid: string) => (al.ok ? al.data.filter((a) => a.person_id === pid).map((a) => a.alias) : [])
+  return withName.filter((d) => nameMismatch(d.printed_name, nameOf(d.person_id), aliasesOf(d.person_id))).map((d) => ({ id: d.id, printed: d.printed_name!.trim(), person: nameOf(d.person_id) }))
+}
+/** The question the desk asks before confirming papers that carry another name. */
+export const nameWarningText = (w: { printed: string; person: string }[]) =>
+  `${w.length === 1 ? 'Name on paper' : 'Names on papers'}: ${w.map((x) => `${x.printed} (filed under ${x.person})`).join('; ')}. ${w.length === 1 ? 'This paper' : 'These papers'} may belong to someone else. Confirm anyway?`
 
 /** Put rows back to the status they had (Undo). The server stamps/clears confirmed_by. */
 export async function restore(changes: Change[]): Promise<Res<null>> {

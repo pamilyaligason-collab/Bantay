@@ -320,15 +320,32 @@ describe('ConfirmFlow name on paper (S11, hazard K1)', () => {
     tables.documents = [{ ...doc, printed_name: 'Rosa Dela Cruz' }]
     await open()
     expect(screen.getByTestId('printed-name').textContent).toBe('Name on paper: Rosa Dela Cruz')
-    expect(screen.getByTestId('name-mismatch').textContent).toContain('Rosa Dela Cruz, not Test Person')
+    expect(screen.getByTestId('name-mismatch').textContent).toContain('Rosa Dela Cruz, which does not clearly match Test Person')
     const all = screen.getByRole('button', { name: /Confirm all checked/ }) as HTMLButtonElement
     const one = screen.getByRole('button', { name: 'Confirm Test l1' }) as HTMLButtonElement
     expect([all.disabled, one.disabled]).toEqual([true, true])
     fireEvent.click(screen.getByRole('checkbox', { name: /I checked/ }))
     expect([all.disabled, one.disabled]).toEqual([false, false])
   })
+  it('a relative who shares the surname still warns: another initial, and a surname alone', async () => {
+    await hdb.people.put({ id: 'p1', name: 'Juan Dela Cruz' })
+    for (const printed of ['R. Dela Cruz', 'DELA CRUZ', 'Rosa J. Dela Cruz']) {
+      tables.documents = [{ ...doc, printed_name: printed }]
+      render(<ConfirmFlow people={[{ id: 'p1', name: 'Juan Dela Cruz' }]} onClose={() => {}} onChanged={() => {}} />)
+      fireEvent.click(await screen.findByRole('button', { name: /Lab results, 2026-09-01/ }))
+      await screen.findByRole('button', { name: /Confirm all checked/ })
+      expect(screen.getByTestId('name-mismatch').textContent).toContain(`This paper says ${printed}, which does not clearly match Juan Dela Cruz`)
+      expect((screen.getByRole('button', { name: /Confirm all checked/ }) as HTMLButtonElement).disabled).toBe(true)
+      cleanup()
+    }
+    tables.documents = [{ ...doc, printed_name: 'J. Dela Cruz' }]
+    render(<ConfirmFlow people={[{ id: 'p1', name: 'Juan Dela Cruz' }]} onClose={() => {}} onChanged={() => {}} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Lab results, 2026-09-01/ }))
+    await screen.findByRole('button', { name: /Confirm all checked/ })
+    expect(screen.queryByTestId('name-mismatch')).toBeNull()
+  })
   it('a matching or unread name shows no warning', async () => {
-    tables.documents = [{ ...doc, printed_name: 'PERSON TEST' }]
+    tables.documents = [{ ...doc, printed_name: 'TEST PERSON' }]
     await open()
     expect(screen.queryByTestId('name-mismatch')).toBeNull()
     cleanup()

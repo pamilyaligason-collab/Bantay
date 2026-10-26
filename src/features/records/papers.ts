@@ -26,16 +26,21 @@ export function emitConfirmed(docId: string, seen: Set<string>): boolean {
   return true
 }
 
-const nameKey = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/[.,]/g, '').replace(/\s+/g, ' ').trim()
-const toks = (s: string) => new Set(nameKey(s).split(' ').filter((t) => t.length > 1 && t !== 'me')) // initials never identify anyone; "Me (Jun)" is Jun
+// person names only; the server nameKey (records-extract/logic.ts) is for test and drug names and is not shared on purpose
+const TITLES = new Set(['me', 'mr', 'mrs', 'ms', 'dr', 'sr', 'jr', 'engr'])
+const words = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/[.,]/g, '').split(/\s+/).filter((t) => t && !TITLES.has(t)) // "Me (Jun)" is Jun
+/** The given-name word: the first word of "Given M. Surname", the first word after the comma in "SURNAME, GIVEN M.". */
+const given = (s: string) => words(s.includes(',') ? s.slice(s.indexOf(',') + 1) : s)[0]
 /**
- * S11 (hazard K1): true when the name printed on a paper does not fit the person (or one of their aliases) it was filed under.
- * A fit = same words in any order, or all words of one name inside the other ("Juan Cruz" / "Juan Dela Cruz"). An unread name is
- * unknown, not a mismatch.
+ * S11 (hazard K1): true when the name printed on a paper cannot be shown to be the person (or one of their aliases) it was filed
+ * under. A printed name fits only through its given-name word: it is the person's (or an alias's) first word, or a lone initial
+ * that is that word's first letter ("J. Dela Cruz", "DELA CRUZ, J." for Juan). A middle initial never counts ("Rosa J. Dela Cruz"),
+ * and a surname-only print ("Dela Cruz") fits no one, because a relative shares it: it is unclear and needs the acknowledgement.
+ * An unread name is unknown, not a mismatch.
  */
 export function nameMismatch(printed: string | null | undefined, person: string | undefined, aliases: string[] = []): boolean {
-  const p = toks(printed ?? '')
-  if (p.size === 0) return false
-  const fits = (n: string) => { const t = toks(n); return t.size > 0 && ([...t].every((x) => p.has(x)) || [...p].every((x) => t.has(x))) }
+  if (!words(printed ?? '').length) return false
+  const x = given(printed ?? '')
+  const fits = (n: string) => { const g = given(n); return !!g && !!x && (x === g || (x.length === 1 && x === g[0])) }
   return ![person ?? '', ...aliases].some(fits)
 }

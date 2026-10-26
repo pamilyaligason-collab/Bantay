@@ -223,6 +223,20 @@ describe('Records detail', () => {
     await waitFor(() => expect(tables.documents[0].status).toBe('draft'))
   })
 
+  it('S11: confirming a row of a paper printed with another name asks first and writes nothing until "Confirm anyway"', async () => {
+    tables.lab_results = tables.lab_results.filter((r) => r.id === 'l1'); tables.prescriptions = []
+    tables.documents[0].printed_name = 'Rosa Dela Cruz'
+    render(<Records id={null} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'LDL Test' }))
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Confirm' }))
+    const warn = await screen.findByRole('alertdialog')
+    expect(warn.textContent).toContain('Name on paper: Rosa Dela Cruz (filed under Test Person)')
+    expect(writes.filter((w) => w.patch.status)).toEqual([])
+    fireEvent.click(within(warn).getByRole('button', { name: 'Confirm anyway' }))
+    await screen.findByText('Confirmed.')
+    expect(writes.find((w) => w.t === 'lab_results')).toMatchObject({ patch: { status: 'confirmed' }, ids: ['l1'] })
+  })
+
   it('Reject offers Undo too, and a medicine (not on the phone list) is a plain update', async () => {
     tables.medications = [{ id: 'm1', person_id: 'p1', name: 'Test Medicine', status: 'draft', deleted_at: null }, { id: 'm2', person_id: 'p1', name: 'Gone Medicine', status: 'draft', deleted_at: '2026-01-01' }]
     render(<Records id={null} sub="meds" />)
