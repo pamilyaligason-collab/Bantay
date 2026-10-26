@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SosButton from './SosButton'
 import { HOLD_MS } from './hold'
-import { mapLink, smsNumber, smsUri, sosBody } from './sms'
+import { mapLink, smsNumber, smsUris, sosBody } from './sms'
 
 afterEach(() => { cleanup(); vi.useRealTimers() })
 
@@ -46,24 +46,29 @@ describe('hold to send', () => {
   })
 })
 
-describe('SMS body and link', () => {
+describe('SMS body and links', () => {
   const base = { name: 'Mama', lat: 9.65, lon: 123.88, time: '8:21 AM', gps: true }
-  it('builds the agreed body with a maps link and the time', () => {
-    expect(sosBody(base)).toBe('SOS from Mama. I need help. My location: https://maps.google.com/?q=9.65,123.88 (8:21 AM)')
+  it('builds the agreed body with a maps link, the coordinates and the time', () => {
+    expect(sosBody(base)).toBe('Mama needs help. 8:21 AM. Location: https://maps.google.com/?q=9.65,123.88 (9.65000, 123.88000). Sent from Bantay.')
     expect(mapLink(1, 2)).toBe('https://maps.google.com/?q=1,2')
   })
-  it('says so when the place is only the home zone, and copes with no name', () => {
+  it('keeps the no-GPS branch: says so when the place is only the home zone, and copes with no name', () => {
     const b = sosBody({ ...base, name: ' ', gps: false })
-    expect(b).toContain('SOS from a Bantay family member.')
-    expect(b).toContain('could not find my location')
+    expect(b).toBe('A Bantay family member needs help. 8:21 AM. My phone could not find my location. My home area: https://maps.google.com/?q=9.65,123.88 (9.65000, 123.88000). Sent from Bantay.')
   })
-  it('joins numbers with commas, encodes the body, drops unusable numbers', () => {
-    const u = smsUri([{ name: 'A', phone: '0917 123-4567' }, { name: 'B', phone: '+63 918 765 4321' }, { name: 'C', phone: '12' }], 'Hi there & you')
-    expect(u).toBe('sms:09171234567,+639187654321?body=Hi%20there%20%26%20you')
+  it('unknown place stays unknown: no map link and no 0,0', () => {
+    expect(sosBody({ ...base, lat: null, lon: null, gps: false })).toBe('Mama needs help. 8:21 AM. My phone could not find my location. Sent from Bantay.')
+  })
+  it('one composer per contact, digits only, body encoded, unusable numbers left out', () => {
+    const u = smsUris([{ name: 'A', phone: '0917 123-4567' }, { name: 'B', phone: '+63 918 765 4321' }, { name: 'C', phone: '12' }], 'Hi there & you')
+    expect(u).toEqual([
+      { name: 'A', uri: 'sms:09171234567?body=Hi%20there%20%26%20you' },
+      { name: 'B', uri: 'sms:+639187654321?body=Hi%20there%20%26%20you' }])
+    expect(u.every((x) => !x.uri.includes(','))).toBe(true) // never a two-recipient sms: link
     expect(smsNumber(' +63 (917) 1')).toBe('+639171')
   })
-  it('is null with no contacts so the screen can ask for some', () => {
-    expect(smsUri([], 'x')).toBeNull()
-    expect(smsUri([{ name: 'A', phone: '' }], 'x')).toBeNull()
+  it('is empty with no contacts so the screen can ask for some', () => {
+    expect(smsUris([], 'x')).toEqual([])
+    expect(smsUris([{ name: 'A', phone: '' }], 'x')).toEqual([])
   })
 })
