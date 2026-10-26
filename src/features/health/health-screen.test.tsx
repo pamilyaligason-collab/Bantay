@@ -169,7 +169,7 @@ describe('Medicines screen', () => {
     expect((await db.outbox.toArray()).filter((o) => o.table === 'meds_taken')).toHaveLength(2)
   })
 
-  it('a review line offers Yes, Change and Stopped; Yes clears it, Stopped moves it to Past', async () => {
+  it('a review line offers Yes, Dose changed and I stopped it; Yes clears it, I stopped it asks first and then moves it to Past', async () => {
     const review = { v: 1, times: ['08:00'], review: true, review_since: '2026-10-20' }
     await ldb.medications.bulkAdd([med({ name: 'Amlodipine', startedOn: '2025-11-14', schedule: review }), med({ name: 'Losartan', schedule: review })])
     render(<Health />)
@@ -179,7 +179,10 @@ describe('Medicines screen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Yes, still taking Amlodipine' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Yes, still taking Amlodipine' })).toBeNull())
     expect(((await ldb.medications.where('clientId').equals('c-Amlodipine').first())?.schedule as { review?: boolean }).review).toBeUndefined()
-    fireEvent.click(screen.getByRole('button', { name: 'Losartan stopped' }))
+    fireEvent.click(screen.getByRole('button', { name: 'I stopped Losartan' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Stop reminders for Losartan?' }) // one tap cannot silence a medicine by accident
+    expect(((await ldb.medications.where('clientId').equals('c-Losartan').first())?.medStatus ?? 'active')).toBe('active')
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Stop reminders' }))
     await waitFor(() => expect(within(screen.getByTestId('meds-past')).getByText('Losartan')).toBeTruthy())
     const stopped = await ldb.medications.where('clientId').equals('c-Losartan').first()
     expect([stopped?.medStatus, stopped?.stoppedOn]).toEqual(['stopped', new Date().toLocaleDateString('en-CA')])
@@ -193,7 +196,7 @@ describe('Medicines screen', () => {
     render(<Health />)
     expect(await screen.findByText('Set a time')).toBeTruthy()
     expect(screen.getByText('Check the name')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Change Atorvastatin' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dose changed, Atorvastatin' }))
     expect(await screen.findByRole('dialog', { name: 'Edit medicine' })).toBeTruthy()
   })
 

@@ -87,3 +87,50 @@
 /* neutral flag line on the roll call (no numbers) and the report button */
 .fm-flag { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
 .bt .fm-report { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 18px; font-size: 17px; font-weight: 700; text-decoration: none; }
+
+/* S4: the red SOS banner (Today and Family). White on a fixed deep red in light and dark: --red misses 4.5:1 with white in dark mode. */
+.fm-sos { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 22px; background: #A82E24; color: #fff; }
+.fm-sos-top { display: flex; align-items: flex-start; gap: 12px; }
+.fm-sos-top .grow { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fm-sos-top b { font-size: 18px; overflow-wrap: anywhere; }
+.fm-sos-top span { font-size: 15px; opacity: .95; }
+.fm-sos-ic { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .18); flex: none; }
+.fm-sos-acts { display: flex; gap: 10px; }
+.fm-sos-acts .pill { flex: 1; text-decoration: none; }
+.fm-sos .fm-sos-call { background: #F6F1E7; color: #1F3D2B; }
+.fm-sos .fm-sos-glass { background: rgba(255, 255, 255, .2); color: #fff; }
+.fm-sos .fm-sos-911 { width: 100%; }
+.fm-sos-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; opacity: .95; }
+.fm-sos .fm-sos-done { min-height: 44px; min-width: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font: inherit; font-size: 15px; font-weight: 700; text-decoration: underline; flex: none; }
+.fm-sos a:focus-visible, .fm-sos button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+/* S4: "Needs you now" carer cards (family-home) */
+.fm-sech { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; }
+.fm-need { display: flex; flex-direction: column; gap: 10px; border-inline-start: 4px solid var(--amber); }
+.fm-need[data-kind="dose_missed"], .fm-need[data-kind="mood_unwell"] { border-inline-start-color: var(--red); }
+.fm-need-top { display: flex; align-items: center; gap: 12px; }
+.fm-need-top .grow { min-width: 0; overflow-wrap: anywhere; }
+.fm-need-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-need .fm-need-act { min-height: 44px; padding: 0 20px; text-decoration: none; }
+.fm-need-note { margin: 0 4px; }
+.fm-need .in-actions { display: flex; flex-wrap: wrap; gap: 8px; } /* the missed-dose actions (inbox) sit in a row, like the mockup */
+.fm-need .in-act { flex: 1 1 40%; width: auto; min-height: 44px; padding: 0 14px; text-align: center; text-decoration: none; }
+
+/* S4: Answer for Papa */
+.fa-q { margin: 0; }
+.fa-opts { display: grid; gap: 8px; }
+.bt .fa-opt { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 52px; padding: 10px 14px; border: 2px solid transparent; border-radius: 16px; background: var(--card2); color: var(--ink); font: inherit; font-size: 16px; text-align: left; }
+.bt .fa-opt[data-on="true"] { border-color: var(--green2); background: var(--soft); }
+.fa-opt:focus-visible { outline: 2px solid var(--act, var(--green2)); outline-offset: 2px; }
+
+/* S4: Family > Phones */
+.fp { display: flex; flex-direction: column; gap: 14px; }
+.fp-list { list-style: none; margin: 0; padding: 4px 16px; }
+.fp-list > li { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 0; }
+.fp-list > li + li { border-top: 1px solid var(--line); }
+.fp-list .grow { min-width: 0; overflow-wrap: anywhere; }
+.fp-bad { color: var(--red); font-weight: 600; }
+.fp-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); flex: none; }
+.fp .fp-amber { min-height: 44px; padding: 0 14px; background: var(--warn-bg); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--warn); flex: none; }
+.fp .fp-act { min-height: 44px; padding: 0 14px; flex: none; }
+.fp-fix { display: flex; flex-direction: column; gap: 8px; }
