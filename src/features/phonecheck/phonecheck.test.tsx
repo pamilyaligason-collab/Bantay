@@ -102,6 +102,13 @@ describe('AlarmFixedToast (today-alarmfix)', () => {
     await new Promise((r) => setTimeout(r, 60))
     expect(b.container.innerHTML).toBe('')
   })
+  it('a missing call permission alone is not an alarm problem: no small card', async () => {
+    await db.kv.put({ key: KEY_PHONE_LATER, value: { at: 'x' } })
+    await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: 'x', ...XIAOMI, battery_ok: true, call_ok: false } })
+    const { container } = render(<AlarmFixedToast />)
+    await new Promise((r) => setTimeout(r, 60))
+    expect(container.innerHTML).toBe('')
+  })
 })
 
 describe('AlarmHealthRow (Me)', () => {
