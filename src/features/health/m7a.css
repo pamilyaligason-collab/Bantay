@@ -10,10 +10,11 @@
 .kp-v { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; }
 .kp-v b { font-size: 26px; line-height: 1.1; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .kp-v small { font-size: 13px; color: var(--ink2); }
+.kp-v .kp-none { font-size: 18px; font-weight: 600; color: var(--ink2); }
 .kp-w { font-size: 14px; color: var(--ink2); }
 .kp-f { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 6px; min-width: 0; margin-top: 6px; min-height: 26px; }
-.kp-sub { min-width: 0; overflow-wrap: anywhere; font-size: 13px; color: var(--ink2); }
-.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--card2); color: var(--ink); max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+.kp-sub { min-width: 0; overflow-wrap: anywhere; font-size: 14px; color: var(--ink2); }
+.kp-chip { padding: 3px 10px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--card2); color: var(--ink); max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
 .kp-chip.within { background: var(--soft); }
 .kp-chip.high, .kp-chip.low { background: var(--warn-bg); }
 .kp-spark { width: 64px; height: 24px; flex: none; }
@@ -48,7 +49,7 @@
 .mc-line { stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .mc-dot { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
 .mc-dot.last { fill: var(--ink); }
-.mc-t { font-size: 10px; fill: var(--ink2); }
+.mc-t { font-size: 13px; fill: var(--ink2); }
 .mc-part { margin-top: 8px; }
 .mc-add { margin: 12px 0 4px; }
 .ar-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }

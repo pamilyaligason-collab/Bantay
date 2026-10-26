@@ -37,12 +37,13 @@ export function MetricChart(s: ChartSpec) {
   const vals = s.pts.map((p) => p.value)
   const band = s.band && (s.band.low != null || s.band.high != null) ? `, normal ${s.band.low != null ? formatNumber(s.band.low) : 'up'}${s.band.low != null && s.band.high != null ? ' to ' : ' to '}${s.band.high != null ? formatNumber(s.band.high) : 'and above'}` : ''
   const d = g.points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('')
-  const ticks = [g.hi, (g.hi + g.lo) / 2, g.lo]
+  const whole = s.unit === 'mmHg' // blood pressure is read in whole numbers
+  const ticks = [g.hi, (g.hi + g.lo) / 2, g.lo].map((t) => (whole ? Math.round(t) : t))
   return (
     <svg className="mc" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${s.label}, ${s.pts.length} readings from ${formatNumber(Math.min(...vals))} to ${formatNumber(Math.max(...vals))}${trend(s.pts)}${band}`} data-testid="metric-chart">
       {ticks.map((t) => <line key={t} x1={L} x2={W - R} y1={g.y(t)} y2={g.y(t)} className="mc-grid" />)}
       {g.bandRect && <rect className="mc-band" x={L} width={W - L - R} y={g.bandRect.y1} height={Math.max(2, g.bandRect.y2 - g.bandRect.y1)} />}
-      {ticks.map((t) => <text key={`t${t}`} x={L - 5} y={g.y(t) + 4} className="mc-t" textAnchor="end">{formatNumber(Math.round(t * 10) / 10)}</text>)}
+      {ticks.map((t) => <text key={`t${t}`} x={L - 5} y={g.y(t) + 4} className="mc-t" textAnchor="end">{formatNumber(whole ? t : Math.round(t * 10) / 10)}</text>)}
       <text x={L} y={H - 6} className="mc-t">{s.days} days ago</text>
       <text x={W - R} y={H - 6} className="mc-t" textAnchor="end">today</text>
       {g.points.length > 1 && <path d={d} className="mc-line" fill="none" />}

@@ -11,6 +11,9 @@ import MetricScreen from '../features/health/MetricScreen'
 import { insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
 import { Kpis } from '../features/health/Kpis'
+import { NudgeCard } from '../features/health/NudgeCard'
+import AddReadingSheet from '../features/health/AddReadingSheet'
+import { entrySpec } from '../features/health/readingPreview'
 import { HealthLinks } from '../features/health/HealthLinks'
 import Library from '../features/health/library/Library'
 import Article from '../features/health/library/Article'
@@ -58,7 +61,10 @@ export default function Health() {
 }
 
 function Overview() {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds } = useHealthData()
+  const { ready, people, member, ownId, personId, setPersonId, readings, thresholds, reload } = useHealthData()
+  const writable = useWritableIds(member?.userId)
+  const [adding, setAdding] = useState<'bp' | 'fasting_glucose' | null>(null)
+  const [saved, setSaved] = useState('')
   const acts = useActivity(personId)
   // Default person: the signed-in user; with nobody signed in, the first person who has readings (not just the first name). A tap on a chip wins.
   const picked = useRef(false)
@@ -97,6 +103,8 @@ function Overview() {
           {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
         </div>
       )}
+      {ready && personId && <NudgeCard personId={personId} readings={readings} canLog={canMarkFor(personId, ownId, writable)} onAdd={setAdding} />}
+      {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
       {personId && <Kpis personId={personId} readings={readings} />}
       {ready && !blank && nodes.every((n) => n.empty) ? (
         <div className="card hv-novitals" data-testid="no-vitals">
@@ -107,7 +115,7 @@ function Overview() {
       ) : (
         <>
           <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
-          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My KPIs.</p>}
+          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My numbers.</p>}
         </>
       )}
       <a className="card hv-explore" href="#health/body">
@@ -129,6 +137,10 @@ function Overview() {
       {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
       {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {personId && <HealthLinks personId={personId} />}
+      {adding && personId && (() => {
+        const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
+        return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={thresholds.find((t) => t.key === `${personId}:${spec.code}`)} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
+      })()}
     </>
   )
 }

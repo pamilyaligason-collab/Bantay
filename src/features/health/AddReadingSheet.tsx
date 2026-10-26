@@ -53,13 +53,14 @@ export default function AddReadingSheet({ spec, personId, forName, family, onClo
         <p className="sub">For {forName}</p>
         {bp ? (
           <div className="ar-three">
-            <div><label htmlFor="ar-top">Top</label><input id="ar-top" inputMode="numeric" autoComplete="off" value={top} onChange={(e) => setTop(e.target.value)} /><small>mmHg</small></div>
+            <div><label htmlFor="ar-top">Top</label><input id="ar-top" inputMode="numeric" autoComplete="off" aria-describedby="ar-hint" value={top} onChange={(e) => setTop(e.target.value)} /><small>mmHg</small></div>
             <div><label htmlFor="ar-bot">Bottom</label><input id="ar-bot" inputMode="numeric" autoComplete="off" value={bottom} onChange={(e) => setBottom(e.target.value)} /><small>mmHg</small></div>
             <div><label htmlFor="ar-pul">Pulse</label><input id="ar-pul" inputMode="numeric" autoComplete="off" value={pulse} onChange={(e) => setPulse(e.target.value)} /><small>bpm, optional</small></div>
           </div>
         ) : (
           <div className="ar-one"><label htmlFor="ar-val">{spec.label[0]!.toUpperCase() + spec.label.slice(1)} ({spec.unit})</label><input id="ar-val" inputMode="decimal" autoComplete="off" value={value} onChange={(e) => setValue(e.target.value)} /></div>
         )}
+        {bp && <p className="sub" id="ar-hint">Example: 120 on top, 80 on the bottom.</p>}
         <div role="group" aria-label="When" className="md-chips">
           {CHIPS.map((c) => <button key={c.id} type="button" className="wz-chip" aria-pressed={chip === c.id} onClick={() => setChip(c.id)}>{c.label}</button>)}
         </div>
