@@ -23,7 +23,7 @@ function Spark({ values }: { values: (number | null)[] }) {
   )
 }
 
-function Tile({ k }: { k: Kpi }) {
+export function Tile({ k }: { k: Kpi }) {
   return (
     <a className="kp-tile" href={k.href} data-kpi={k.code}>
       <span className="kp-l">{k.label}</span>

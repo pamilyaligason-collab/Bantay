@@ -115,7 +115,7 @@ function Overview() {
       ) : (
         <>
           <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
-          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My KPIs.</p>}
+          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My numbers.</p>}
         </>
       )}
       <a className="card hv-explore" href="#health/body">

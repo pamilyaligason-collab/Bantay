@@ -1,4 +1,5 @@
-import { computeMyWeek, lastDays } from '../today/myWeekLogic'
+import { lastDays } from '../today/myWeekLogic'
+import { countDoses } from './doseCount'
 import type { Activity, FoodEntry, MedTaken, Medication, WaterEntry } from '../log/store'
 import { dayOf } from './meds'
 import type { Reading } from './ranges'
@@ -63,9 +64,8 @@ export function computeNudge(i: { personId: string; readings: Reading[]; takes: 
   }
   const goals: Goal[] = [goal({ id: 'bp', label: 'Blood pressure', n: daysOf(mine, BP), target: BP_DAYS, unitWord: 'days', cta: { label: 'Add BP', sheet: 'bp' }, step: 'Take your BP now - it takes about 1 minute' })]
   if (mine.some((r) => SUGAR.includes(r.test))) goals.push(goal({ id: 'sugar', label: 'Sugar', n: daysOf(mine, SUGAR), target: SUGAR_DAYS, unitWord: 'days', cta: { label: 'Add sugar', sheet: 'fasting_glucose' }, step: 'Check your sugar - about 2 minutes' }))
-  const doses = computeMyWeek({ personId: i.personId, readings: mine, activity: [], meds: i.meds, takes: i.takes, now: i.now }).find((t) => t.code === 'doses')
-  const m = doses ? /^(\d+) of (\d+)$/.exec(doses.value) : null
-  if (m && Number(m[2]) > 0) goals.push(goal({ id: 'meds', label: 'Medicines', n: Number(m[1]), target: Number(m[2]), unitWord: 'doses', cta: { label: 'Open medicines', href: '#health/meds' }, step: "Mark today's medicines - 30 seconds" }))
+  const doses = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days })
+  if (doses.want > 0) goals.push(goal({ id: 'meds', label: 'Medicines', n: doses.done, target: doses.want, unitWord: 'doses', cta: { label: 'Open medicines', href: '#health/meds' }, step: "Mark today's medicines - 30 seconds" }))
   const mealDays = new Set(i.food.filter((f) => f.personId === i.personId && valid(f.eatenAt) && days.includes(dayOf(f.eatenAt))).map((f) => dayOf(f.eatenAt))).size
   goals.push(goal({ id: 'meals', label: 'Meals', n: mealDays, target: MEAL_DAYS, unitWord: 'days', cta: { label: 'Log a meal', href: '#health/nutrition' }, step: 'Log what you ate - 1 minute' }))
   const mins = i.activity.filter((a) => a.personId === i.personId && valid(a.startedAt) && days.includes(dayOf(a.startedAt)) && typeof a.minutes === 'number' && Number.isFinite(a.minutes) && a.minutes > 0).reduce((s, a) => s + (a.minutes ?? 0), 0)
