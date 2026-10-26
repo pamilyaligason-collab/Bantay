@@ -8,3 +8,4 @@
 .in-actions .in-act { width: auto; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; }
 .in-confirm { flex-basis: 100%; display: grid; gap: 8px; padding: 10px 0 0; }
 .in-confirm .in-actions { padding-left: 0; }
+.sh-list > .in-item > .in-row { display: flex; align-items: center; gap: 12px; min-width: 0; } /* the row used to be the flex child of .sh-list itself; the wrapper takes that role so the dot and the chevron keep their place */

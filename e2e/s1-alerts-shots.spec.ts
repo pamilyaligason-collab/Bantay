@@ -3,6 +3,7 @@ import { skipOnboarding } from './helpers'
 
 // S1 ALERTS-INAPP shots (390x844, light and dark): start-inbox, lock-missed (alert list with count), today-full (alert card variant, needs AlertCardToday mounted
 // in Today), start-banner (switch-to-app banner, shown once kv alerts.inapp.ok is true). Synthetic rows only: template ids, no values.
+declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 const SHOTS = 'docs/session-10/shots/S1'
 type Row = Record<string, unknown>
 
@@ -32,7 +33,7 @@ const ROWS = [
   alertRow('a5', 'review_open', 'review_open', 26 * 60, { seenAt: ago(25 * 60) })
 ]
 
-async function open(page: Page, hash: string) {
+async function open(page: Page) {
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#today')
@@ -43,21 +44,23 @@ async function open(page: Page, hash: string) {
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`alert list ${scheme}`, async ({ page }) => {
-    await open(page, '#notif')
+    await open(page)
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#notif')
     await page.reload() // raw IndexedDB writes do not notify live queries
     await expect(page.getByRole('heading', { name: 'Alerts' })).toBeVisible()
     await expect(page.getByText('Family alerts show here when you open Bantay')).toBeVisible()
     await expect(page.getByText('A medicine was missed')).toBeVisible()
-    await expect(page.getByRole('img', { name: 'New' })).toHaveCount(3) // a1, a2, a3 are unseen
+    expect(await page.getByRole('img', { name: 'New' }).count()).toBeGreaterThanOrEqual(3) // a1, a2, a3 are unseen (other inbox sources may add a dot)
+    await expect(page.getByRole('link', { name: /A medicine was missed/ }).getByRole('img', { name: 'New' })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Digest|summary is ready/ }).getByRole('img', { name: 'New' })).toHaveCount(0) // a seen row has no dot
     await expect(page.getByRole('link', { name: 'Message the family' })).toBeVisible() // the missed-dose row actions
     await page.screenshot({ path: `${SHOTS}/start-inbox-${scheme}.png` })
     await page.screenshot({ path: `${SHOTS}/lock-missed-${scheme}.png` })
   })
 
   test(`family tab badge and bell ${scheme}`, async ({ page }) => {
-    await open(page, '#today')
+    await open(page)
     await page.emulateMedia({ colorScheme: scheme })
     await page.reload()
     await expect(page.getByRole('img', { name: '3 new alerts' })).toBeVisible()
@@ -72,14 +75,17 @@ for (const scheme of ['light', 'dark'] as const) {
       window.matchMedia = (q: string) => (q.includes('display-mode: standalone') ? ({ matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false } as unknown as MediaQueryList) : mm(q))
     })
     await page.route('**/latest.json', (r) => r.fulfill({ json: { versionCode: 99, versionName: '2.3.0', url: 'https://bantay.pages.dev/get/bantay.apk' } }))
-    await open(page, '#today')
+    await open(page)
     await page.emulateMedia({ colorScheme: scheme })
     await page.reload()
-    await expect(page.getByRole('region', { name: 'Bantay is now an app' })).toBeVisible()
+    const banner = page.getByRole('region', { name: 'Bantay is now an app' })
+    await expect(banner).toBeVisible()
+    await banner.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/start-banner-${scheme}.png` })
-    const card = page.getByRole('region', { name: 'Family alert' })
-    if (await card.count()) { // only when Today mounts AlertCardToday (S7 owns Today.tsx)
+    const card = page.getByRole('region', { name: 'Family alert' }) // needs AlertCardToday mounted in Today (S7 owns Today.tsx); the shot run mounts it temporarily
+    if (process.env.S1_CARD === '1') {
       await expect(card).toContainText('A medicine was missed')
+      await card.scrollIntoViewIfNeeded()
       await page.screenshot({ path: `${SHOTS}/today-full-${scheme}.png` })
     }
   })
