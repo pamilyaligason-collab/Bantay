@@ -153,7 +153,7 @@ function Trend({ points }: { points: { day: string; top: number }[] }) {
   return (
     <svg viewBox="0 0 320 90" className="bc-trend" role="img" aria-label={label}>
       <line x1="0" x2="320" y1={y(130)} y2={y(130)} stroke="var(--line)" strokeDasharray="4 4" />
-      <text x="4" y={y(130) - 5} textAnchor="start" fontSize="13" fill="var(--muted)">130</text>
+      <text x="316" y={y(130) - 5} textAnchor="end" fontSize="13" fill="var(--muted)">130</text>
       {points.length > 1 && <polyline fill="none" stroke="var(--green2)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={points.map((p, i) => `${x(i)},${y(p.top)}`).join(' ')} />}
       {points.map((p, i) => <circle key={p.day} cx={x(i)} cy={y(p.top)} r={i === points.length - 1 ? 5 : 3} fill="var(--green2)" />)}
       <g fontSize="13" fill="var(--muted)" textAnchor="middle">{points.map((p, i) => <text key={p.day} x={x(i)} y="86">{new Date(`${p.day}T12:00:00`).toLocaleDateString('en-PH', { weekday: 'short' })}</text>)}</g>

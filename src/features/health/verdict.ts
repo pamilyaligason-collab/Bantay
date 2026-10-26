@@ -44,6 +44,11 @@ export function kindOf(test: string, isVital = true): VerdictKind {
 export function verdictFor(kind: VerdictKind, pos: Position, bp?: { top?: number | null; bottom?: number | null }): Verdict | null {
   if (pos === 'none') return null
   const lv = kind === 'bp' ? bpLevel(bp?.top, bp?.bottom) : null
-  if (lv) return BP_WORDS[lv]
+  if (lv) {
+    // a position of 'within' with a worse table level can only come from a looser doctor target (the guide's own high is 119/79): read In range, as the add-reading preview does. Low is never overridden.
+    // shortcut: a STRICTER doctor target cannot be told from the guide's own 'above' here, so the table word stands; owner decision in needs.
+    if (pos === 'within' && lv !== 'low') return BP_WORDS.in
+    return BP_WORDS[lv]
+  }
   return WORDS[kind][pos]
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { GUIDE, latestVsNormal, rangeState, toCanonicalReading } from './ranges'
+import { CHIP, GUIDE, latestVsNormal, rangeState, toCanonicalReading } from './ranges'
 import { PersonChips } from '../records/PersonChips'
 import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
@@ -89,7 +89,7 @@ export default function MetricScreen({ code }: { code: string }) {
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), code === 'bp_systolic' && latest ? { top: latest.value, bottom: readings.filter((x) => x.test === 'bp_diastolic' && Math.abs(Date.parse(x.takenAt) - Date.parse(latest.takenAt)) <= 30 * 60_000)[0]?.value } : undefined); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
+              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), bpCode && latest ? (() => { const mate = readings.filter((x) => x.test === (code === 'bp_systolic' ? 'bp_diastolic' : 'bp_systolic') && Math.abs(Date.parse(x.takenAt) - Date.parse(latest.takenAt)) <= 30 * 60_000)[0]?.value; return code === 'bp_systolic' ? { top: latest.value, bottom: mate } : { top: mate, bottom: latest.value } })() : undefined); return <span className={`hv-state ${CHIP[st.kind]}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
           </div>
 

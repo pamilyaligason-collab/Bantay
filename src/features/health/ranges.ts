@@ -118,3 +118,6 @@ export function rangeState(headline: Position, kind: VerdictKind = 'vital', bp?:
     : pos === 'within' ? { kind: 'within', word: v!.word, hidden: '' }
     : { kind: 'none', word: 'No range', hidden: '' }
 }
+
+/** The chip colour class for a RangeState, so the colour always agrees with the word (never the raw guide position). */
+export const CHIP: Record<RangeState['kind'], Position> = { within: 'within', high: 'above', low: 'below', none: 'none' }

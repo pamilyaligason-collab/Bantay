@@ -22,7 +22,7 @@ export default function AddReadingSheet({ spec, personId, forName, family, onClo
   const [other, setOther] = useState(localInput(new Date()))
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  const [crisis, setCrisis] = useState<Crisis | null>(null)
+  const [crisis, setCrisis] = useState<{ kind: Crisis; fresh: boolean } | null>(null)
   const bp = spec.kind === 'bp'
   const p = previewReading(spec, { top, bottom, value }, family)
   const typed = bp ? top !== '' || bottom !== '' : value !== ''
@@ -47,12 +47,12 @@ export default function AddReadingSheet({ spec, personId, forName, family, onClo
       onSaved(`${spec.label[0]!.toUpperCase()}${spec.label.slice(1)} saved.`)
       // a dangerous reading is saved first (the family row never waits on this screen), then the sheet shows what to do instead of closing
       const c = crisisOf(spec.kind === 'bp' ? 'bp' : spec.code, bp ? { top: Number(top), bottom: Number(bottom) } : { value: Number(value), unit: spec.unit })
-      if (c) { setCrisis(c); setBusy(false); return }
+      if (c) { setCrisis({ kind: c, fresh: Date.now() - Date.parse(takenAt) < 2 * 3_600_000 }); setBusy(false); return } // same 2 hours as the 0035 trigger
       onClose()
     } catch { setErr('Could not save on this phone. Try again.'); setBusy(false) }
   }
 
-  if (crisis) return <Sheet title={`Add ${spec.label}`} onClose={onClose}><CrisisCard kind={crisis} onClose={onClose} /></Sheet>
+  if (crisis) return <Sheet title={`Add ${spec.label}`} onClose={onClose}><CrisisCard kind={crisis.kind} fresh={crisis.fresh} onClose={onClose} /></Sheet>
   return (
     <Sheet title={`Add ${spec.label}`} onClose={onClose}>
       <div className="fm-form md-form">

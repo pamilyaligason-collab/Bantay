@@ -76,6 +76,10 @@ describe('crisis card', () => {
     expect(screen.queryByRole('link', { name: 'Call 911' })).toBeNull()
     expect(document.body.textContent).not.toMatch(/notif|lock screen|I'm OK/i)
   })
+  it('a reading older than 2 hours (outside the 0035 alert) does not promise the family line', () => {
+    render(<CrisisCard kind="bp" fresh={false} onClose={() => undefined} />)
+    expect(screen.queryByText('Your family will see this in Bantay.')).toBeNull()
+  })
   it('low sugar: the rule of 15 with the 911 line for someone who is confused', () => {
     render(<CrisisCard kind="low_sugar" onClose={() => undefined} />)
     expect(screen.getByText(/15 g of fast sugar/)).toBeTruthy()

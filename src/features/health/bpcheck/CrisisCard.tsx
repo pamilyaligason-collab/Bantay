@@ -8,7 +8,8 @@ import './bpcheck.css'
 const FAMILY = 'Your family will see this in Bantay.'
 const Call911 = () => <a className="pill primary bc-911" href="tel:911">Call 911</a>
 
-export default function CrisisCard({ kind, doctor, onClose }: { kind: Crisis; doctor?: string; onClose: () => void }) {
+/** fresh: false when the reading is older than the 2 hours the server alert covers (0035): the family line is then left out rather than promised. */
+export default function CrisisCard({ kind, doctor, fresh = true, onClose }: { kind: Crisis; doctor?: string; fresh?: boolean; onClose: () => void }) {
   const dr = doctor?.trim() || 'your doctor'
   const [ans, setAns] = useState<'yes' | 'no' | null>(null)
   const done = <button type="button" className="pill ghost bc-close" onClick={onClose}>Close</button>
@@ -16,7 +17,7 @@ export default function CrisisCard({ kind, doctor, onClose }: { kind: Crisis; do
     <div className="bc-crisis" role="alert" data-testid="crisis-card" data-kind={kind}>
       <h3 className="bc-ct">{title}</h3>
       {children}
-      <p className="sub bc-fam">{FAMILY}</p>
+      {fresh && <p className="sub bc-fam">{FAMILY}</p>}
     </div>
   )
 
