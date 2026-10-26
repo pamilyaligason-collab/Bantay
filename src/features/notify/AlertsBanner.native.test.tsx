@@ -8,11 +8,12 @@ import AlertsBanner, { NATIVE_NOTICE } from './AlertsBanner'
 
 afterEach(cleanup)
 
-describe('AlertsBanner on the Android app (D-78 interim)', () => {
-  it('says family alerts do not reach the app yet and never offers a push toggle', () => {
+describe('AlertsBanner on the Android app (D-78)', () => {
+  it('says family alerts show in Bantay when it is open, never promises a push, and never offers a push toggle', () => {
     native.v = true
     render(<AlertsBanner />)
-    expect(NATIVE_NOTICE).toBe('Family alerts do not reach the Android app yet. Keep the browser app for missed-dose and storm alerts.')
+    expect(NATIVE_NOTICE).toBe('Family alerts show here when you open Bantay.')
+    expect(NATIVE_NOTICE).not.toMatch(/notif|push|lock screen|will be (told|notified)/i)
     expect(screen.getByText(NATIVE_NOTICE)).toBeTruthy()
     expect(screen.queryByRole('button')).toBeNull()
   })

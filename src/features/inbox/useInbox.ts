@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listPinRequests } from '../admin/api'
 import { useQueue } from '../records/useRecordsServer'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
@@ -8,6 +8,9 @@ import { SKIP_KEY } from '../today/heroCards'
 import { useMyTakes } from '../today/useMyTakes'
 import { useMedicationRows } from '../health/useMedicationRows'
 import { useSelf } from '../sos/useSelf'
+import { useFamilyPeople } from '../family/roster'
+import { useAlertRows } from '../notify/useAlerts'
+import { markAllSeen, markSeen } from '../notify/store'
 import { buildInbox, countUnread } from './build'
 
 const NO_ALERTS: Alert[] = []
@@ -26,6 +29,9 @@ export function useInbox(isAdmin: boolean) {
   const taken = useMyTakes()
   const self = useSelf()
   const medications = useMedicationRows(self.personId, true) // undefined while loading: the inbox then waits on the old path instead of showing nothing as if there were no medicines
+  const familyAlerts = useAlertRows()
+  const { people } = useFamilyPeople()
+  const nameOf = useCallback((id: string | null) => (id ? people.find((p) => p.id === id)?.name ?? null : null), [people])
   const [pins, setPins] = useState<{ id: number; handle: string }[]>([])
   const [now, setNow] = useState(() => new Date())
 
@@ -54,10 +60,13 @@ export function useInbox(isAdmin: boolean) {
     skipped: skip.day === now.toDateString() ? skip.names : NO_NAMES,
     updateVersion: decision.kind === 'none' ? null : decision.latest.versionName,
     pins: isAdmin ? pins : [],
-    toCheck: isAdmin ? queue.count : 0
-  }), [now, alerts, profile, taken, medications, self.personId, skip, decision, pins, queue.count, isAdmin])
+    toCheck: isAdmin ? queue.count : 0,
+    familyAlerts, nameOf
+  }), [now, alerts, profile, taken, medications, self.personId, skip, decision, pins, queue.count, isAdmin, familyAlerts, nameOf])
   const unread = countUnread(items, seen)
-  const markAllRead = () => void putKv(SEEN_KEY, items.map((i) => i.id)).catch(() => undefined)
-  return { items, unread, seen, markAllRead }
+  const markAllRead = () => { void putKv(SEEN_KEY, items.filter((i) => i.kind !== 'family').map((i) => i.id)).catch(() => undefined); void markAllSeen().catch(() => undefined) }
+  /** Opening a family row marks it seen (local first, then the server's seen_at). */
+  const openRow = (rowId: string) => void markSeen(rowId).catch(() => undefined)
+  return { items, unread, seen, markAllRead, openRow }
 }
 export type Inbox = ReturnType<typeof useInbox>

@@ -3,17 +3,54 @@ import { rankAlerts, type Alert } from '../safety/alerts'
 import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
 import type { AlertKind } from '../safety/alerts'
+import type { AlertRow } from '../notify/store'
+import { renderTemplate, TEMPLATES, type NotifyKind, type TemplateId } from '../notify/templates'
 
-export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update'
-/** `at` (ms) is when the thing happened, when the source says (an alert's issue time). Without it the thing is current, so it counts as Today. */
-export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string; at?: number; alertKind?: AlertKind }
+export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update' | 'family'
+/** `at` (ms) is when the thing happened, when the source says (an alert's issue time). Without it the thing is current, so it counts as Today.
+ *  A `family` item is a carer_alerts row (D-78): `row` is it, `seen` comes from the row (not the kv list), `tone` is the template's. */
+export interface InboxItem { id: string; kind: InboxKind; title: string; sub: string; href: string; at?: number; alertKind?: AlertKind; row?: AlertRow; seen?: boolean; tone?: 'urgent' | 'normal' }
 
 const WEATHER_KINDS: AlertKind[] = ['tcws', 'rainfall', 'thunderstorm', 'heat', 'air']
 /** The icon family of an item: dose, weather, family (PIN asks), record, or the generic alert and update. */
 export type InboxIcon = 'dose' | 'weather' | 'family' | 'record' | 'alert' | 'update'
-export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind'>): InboxIcon =>
+export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind' | 'row'>): InboxIcon =>
+  i.kind === 'family' ? familyIcon(i.row?.kind) :
   i.kind === 'dose' ? 'dose' : i.kind === 'pin' ? 'family' : i.kind === 'records' ? 'record' : i.kind === 'update' ? 'update'
     : i.alertKind && WEATHER_KINDS.includes(i.alertKind) ? 'weather' : 'alert'
+
+const familyIcon = (k: NotifyKind | undefined): InboxIcon =>
+  k === 'dose_missed' || k === 'review_open' ? 'dose' : k === 'hazard' ? 'weather' : k === 'sos' || k === 'sos_cancel' || k === 'reading_high' || k === 'mood_unwell' ? 'alert' : 'family'
+
+const KIND_LABEL: Record<NotifyKind, string> = {
+  dose_missed: 'Missed dose', review_open: 'Question', phone_health: 'Phone', reading_high: 'Reading', mood_unwell: 'Mood', hazard: 'Alert', sos: 'SOS', sos_cancel: 'SOS',
+  digest: 'Summary', pin_approve: 'PIN', pin_changed: 'PIN', system: 'Admin'
+}
+const TITLE_WORDS = new Set(['lola', 'lolo', 'tita', 'tito', 'ate', 'kuya', 'ma.', 'mama', 'papa', 'nanay', 'tatay'])
+/** A short name for "<name>" in a row: the first word, or the first two when it is a title (Ate Joy). null when there is nothing usable. */
+export function shortName(full: string | null | undefined): string | null {
+  const w = (full ?? '').trim().split(/\s+/).filter(Boolean)
+  if (!w.length) return null
+  return (w[0] && TITLE_WORDS.has(w[0].toLowerCase()) && w.length > 1 ? w.slice(0, 2) : w.slice(0, 1)).join(' ')
+}
+const manilaClock = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(ms)
+
+/** One inbox row per unexpired carer_alerts row. Template ids carry no values, so the title is the fixed copy with the person's name filled in from this phone. */
+export function familyItems(rows: AlertRow[], nameOf: (personId: string | null) => string | null, now: Date): InboxItem[] {
+  const t = now.getTime()
+  return rows.filter((r) => Date.parse(r.expiresAt) > t).sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).map((r) => {
+    const at = Date.parse(r.createdAt)
+    const id = r.template as TemplateId
+    const known = Object.hasOwn(TEMPLATES, id)
+    const who = shortName(nameOf(r.personId))
+    const text = renderTemplate(r.template, { name: who })
+    const named = known && (TEMPLATES[id].title + TEMPLATES[id].body).includes('<name>')
+    return {
+      id: `ca:${r.id}`, kind: 'family' as const, title: text.title, sub: [KIND_LABEL[r.kind], !named && who ? who : null, manilaClock(at)].filter(Boolean).join(' · '),
+      href: `#${known ? TEMPLATES[id].tab : 'today'}`, at, row: r, seen: r.seenAt != null, tone: text.tone
+    }
+  })
+}
 
 /** Today (this local calendar day, or no time given) and Earlier, each keeping the order they came in. */
 export function groupInbox(items: InboxItem[], now: Date): { today: InboxItem[]; earlier: InboxItem[] } {
@@ -37,6 +74,9 @@ export interface InboxSources {
   /** Admins only: open "Forgot PIN" requests and records waiting to be checked. Pass [] and 0 for everyone else. */
   pins: { id: number; handle: string }[]
   toCheck: number
+  /** The family's carer_alerts rows (D-78) and a name lookup from this phone's people. Omitted: no family rows. */
+  familyAlerts?: AlertRow[]
+  nameOf?: (personId: string | null) => string | null
 }
 
 export const MAX_ALERTS = 5
@@ -57,7 +97,7 @@ export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' |
 
 /** Everything the inbox shows, in a fixed order: warnings, medicines, admin work, app update. Ids change when the thing changes, so "read" never hides something new. */
 export function buildInbox(s: InboxSources): InboxItem[] {
-  const out: InboxItem[] = []
+  const out: InboxItem[] = familyItems(s.familyAlerts ?? [], s.nameOf ?? (() => null), s.now)
   for (const a of rankAlerts(s.alerts, null).slice(0, MAX_ALERTS)) {
     out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety', alertKind: a.kind, ...(Number.isNaN(Date.parse(a.issuedAt)) ? {} : { at: Date.parse(a.issuedAt) }) })
   }
@@ -75,5 +115,5 @@ export function buildInbox(s: InboxSources): InboxItem[] {
 
 export const countUnread = (items: InboxItem[], seen: unknown) => {
   const set = new Set(Array.isArray(seen) ? seen : [])
-  return items.filter((i) => !set.has(i.id)).length
+  return items.filter((i) => (i.seen === undefined ? !set.has(i.id) : !i.seen)).length // a family row is seen when the server row says so
 }

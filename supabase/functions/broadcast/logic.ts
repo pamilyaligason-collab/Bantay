@@ -16,3 +16,10 @@ export function parseBody(body: unknown): SafetyId | null {
 export function goneEndpoints(results: { endpoint: string; status: number | null }[]): string[] {
   return results.filter((r) => r.status === 404 || r.status === 410).map((r) => r.endpoint)
 }
+
+/** The broadcast ids that become in-app `hazard` rows (D-78: APK users see an admin broadcast in the app). family_sos is excluded on purpose:
+ *  an SOS row is never raised by a broadcast (it would show as a real SOS banner). */
+export const HAZARD_IDS: readonly SafetyId[] = ['storm_warning', 'flood_watch', 'heat_alert']
+export const isHazardId = (t: SafetyId) => (HAZARD_IDS as readonly string[]).includes(t)
+/** Dedupe ref for one broadcast: the template and a 10 minute bucket, so a double click is one row but a later broadcast is a new one. */
+export const hazardRef = (t: SafetyId, nowMs: number) => `bc:${t}:${Math.floor(nowMs / 600_000)}`

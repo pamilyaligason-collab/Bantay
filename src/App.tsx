@@ -7,6 +7,7 @@ import Safety from './screens/Safety'
 import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
+import { watchAlertsForSession } from './features/notify/alertsLive'
 import { watchDoseReminders } from './features/health/reminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
 import { webAdminUrl } from './features/admin/desk/types'
@@ -75,6 +76,7 @@ export default function App() {
   const prev = useRef(idx)
   useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
+  useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : SCREENS[tab].label

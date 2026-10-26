@@ -1,23 +1,59 @@
 // B-7: notifications never carry health values. Every notification is one of these fixed templates,
 // picked by id. There is no free-text path: buildNotification rejects any payload but exactly {t: id}.
-export type Cls = 'safety' | 'health' | 'carer' // carer: a family member's missed dose, sent by dose-watch; own rules in push.ts
+// Dependency-free on purpose: the service worker bundles this file, and supabase/functions/_shared/templates.ts is a byte-identical
+// copy for the Edge Functions (templates.test.ts keeps the two equal).
+export type Cls = 'safety' | 'health' | 'carer' // carer: a family member's alert (missed dose, SOS, reading...), own rules in push.ts
 export type Tab = 'today' | 'health' | 'records' | 'family' | 'safety'
-type Tpl = { cls: Cls; title: string; body: string; tab: Tab }
+export type Tone = 'urgent' | 'normal'
+type Tpl = { cls: Cls; title: string; body: string; tab: Tab; tone: Tone }
 
 export const TEMPLATES = {
-  storm_warning: { cls: 'safety', title: 'Storm warning near you', body: 'Open Bantay to see what to do.', tab: 'safety' },
-  flood_watch: { cls: 'safety', title: 'Flooding possible near you', body: 'Open Bantay to see what to do.', tab: 'safety' },
-  heat_alert: { cls: 'safety', title: 'Dangerous heat today', body: 'Open Bantay for ways to stay safe.', tab: 'safety' },
-  family_sos: { cls: 'safety', title: 'Someone in your family needs help', body: 'Open Bantay now.', tab: 'family' },
-  dose_due: { cls: 'health', title: 'Medicine time', body: 'Open Bantay to log it.', tab: 'health' },
-  dose_missed: { cls: 'health', title: 'A medicine was missed', body: 'Open Bantay to catch up.', tab: 'health' },
-  bp_check: { cls: 'health', title: 'Time for a check', body: 'Open Bantay to add a reading.', tab: 'health' }
+  storm_warning: { cls: 'safety', title: 'Storm warning near you', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
+  flood_watch: { cls: 'safety', title: 'Flooding possible near you', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
+  heat_alert: { cls: 'safety', title: 'Dangerous heat today', body: 'Open Bantay for ways to stay safe.', tab: 'safety', tone: 'urgent' },
+  family_sos: { cls: 'safety', title: 'Someone in your family needs help', body: 'Open Bantay now.', tab: 'family', tone: 'urgent' },
+  dose_due: { cls: 'health', title: 'Medicine time', body: 'Open Bantay to log it.', tab: 'health', tone: 'normal' },
+  dose_missed: { cls: 'health', title: 'A medicine was missed', body: 'Open Bantay to catch up.', tab: 'health', tone: 'urgent' },
+  bp_check: { cls: 'health', title: 'Time for a check', body: 'Open Bantay to add a reading.', tab: 'health', tone: 'normal' },
+  // Phase 2 (D-78): family alert rows. `<name>` is filled by the in-app renderer from the local people table; a push says "Someone".
+  sos_cancel: { cls: 'safety', title: 'The SOS was cancelled', body: '<name> said they are fine; open Bantay to see.', tab: 'family', tone: 'normal' },
+  review_open: { cls: 'carer', title: 'A medicine needs an answer', body: 'Open Bantay to answer.', tab: 'health', tone: 'normal' },
+  phone_health: { cls: 'carer', title: 'A phone may miss alarms', body: 'Open Bantay to see which phone.', tab: 'family', tone: 'normal' },
+  reading_high: { cls: 'carer', title: 'Please check on <name>', body: 'Open Bantay to see more.', tab: 'health', tone: 'urgent' },
+  mood_unwell: { cls: 'carer', title: '<name> is not feeling well', body: 'Open Bantay to see more.', tab: 'family', tone: 'urgent' },
+  digest: { cls: 'carer', title: "Today's family summary is ready", body: 'Open Bantay to read it.', tab: 'family', tone: 'normal' },
+  pin_approve: { cls: 'carer', title: 'Someone asks you to approve a PIN reset', body: 'Open Bantay to approve or ignore it.', tab: 'family', tone: 'urgent' },
+  pin_changed: { cls: 'safety', title: 'Your PIN was changed', body: 'If this was not you, tell your family.', tab: 'today', tone: 'urgent' },
+  sos_late: { cls: 'safety', title: '<name> used SOS at HH:MM; it reached Bantay later', body: 'Open Bantay to see.', tab: 'family', tone: 'normal' },
+  system: { cls: 'carer', title: 'Bantay needs your attention (admin)', body: 'Open Bantay to see what happened.', tab: 'today', tone: 'urgent' }
 } as const satisfies Record<string, Tpl>
 
 export type TemplateId = keyof typeof TEMPLATES
 const ids = Object.keys(TEMPLATES) as TemplateId[]
 export const HEALTH_IDS = ids.filter((i) => TEMPLATES[i].cls === 'health')
-export const SAFETY_IDS = ids.filter((i) => TEMPLATES[i].cls === 'safety')
+/** The ids an admin may broadcast to everyone (supabase/functions/broadcast/logic.ts keeps its own copy, a test keeps them equal). */
+export const SAFETY_IDS: TemplateId[] = ['storm_warning', 'flood_watch', 'heat_alert', 'family_sos']
+
+/** The single enum of carer_alerts.kind. Whitelists that must stay equal (ML-28): the 0030 CHECK, this list, ALERT_KIND below, the S8 System health list. */
+export const NOTIFY_KINDS = ['dose_missed', 'review_open', 'phone_health', 'reading_high', 'mood_unwell', 'hazard', 'sos', 'sos_cancel', 'digest', 'pin_approve', 'pin_changed', 'system'] as const
+export type NotifyKind = (typeof NOTIFY_KINDS)[number]
+/** Template id to the alert kind of its carer_alerts row. dose_due and bp_check are local reminders, never rows. */
+export const ALERT_KIND = {
+  storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
+  dose_missed: 'dose_missed', review_open: 'review_open', phone_health: 'phone_health', reading_high: 'reading_high', mood_unwell: 'mood_unwell',
+  digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system'
+} as const satisfies Partial<Record<TemplateId, NotifyKind>>
+
+/** Title and body with `<name>` filled (or "Someone" / "someone" when the name is unknown) and the SOS time ("at HH:MM") filled or dropped. Never throws on an unknown id. */
+export function renderTemplate(id: string, o: { name?: string | null; time?: string | null } = {}): { title: string; body: string; tone: Tone } {
+  const t: Tpl | undefined = Object.hasOwn(TEMPLATES, id) ? TEMPLATES[id as TemplateId] : undefined
+  if (!t) return { title: 'Bantay', body: 'Open Bantay to see what is new.', tone: 'normal' }
+  const name = o.name?.trim()
+  const fill = (s: string) => s
+    .replace(/^<name>/, name || 'Someone').replace(/<name>/g, name || 'someone')
+    .replace(/ at HH:MM/, o.time ? ` at ${o.time}` : '')
+  return { title: fill(t.title), body: fill(t.body), tone: t.tone }
+}
 
 export interface Built {
   id: TemplateId | 'fallback'
@@ -46,7 +82,8 @@ export function buildNotification(payload: unknown): Built | null {
   if (t === 'dose_watch') return doseWatch(payload)
   if (Object.keys(payload).length !== 1 || typeof t !== 'string' || !Object.hasOwn(TEMPLATES, t)) return null
   const tpl: Tpl = TEMPLATES[t as TemplateId]
-  return { id: t as TemplateId, tag: t, cls: tpl.cls, title: tpl.title, body: tpl.body, data: { tab: tpl.tab } }
+  const r = renderTemplate(t)
+  return { id: t as TemplateId, tag: t, cls: tpl.cls, title: r.title, body: r.body, data: { tab: tpl.tab } }
 }
 
 /** Shown when a push arrives that is not a known template. Neutral, uncapped, no data. */

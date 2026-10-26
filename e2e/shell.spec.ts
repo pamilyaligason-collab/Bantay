@@ -73,8 +73,8 @@ test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await page.goto('/#today')
   await page.getByRole('link', { name: /Notifications/ }).click()
   await expect(page).toHaveURL(/#notif$/)
-  await expect(page.getByText('No notifications yet')).toBeVisible()
-  await expect(page.getByText('Phone notifications never show readings, medicines or results. Open Bantay to see more.')).toBeVisible()
+  await expect(page.getByText('No alerts yet')).toBeVisible()
+  await expect(page.getByText('Alerts never show readings or results. Open Bantay to see more.')).toBeVisible()
 })
 
 test('Me: sharing is off, no tab is active, Family no longer shows phone settings', async ({ page }) => {
