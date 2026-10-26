@@ -72,8 +72,8 @@
 .sc-body { display: grid; gap: 8px; }
 .sc-doses { margin: 0; font-weight: 600; }
 .sc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.sc-list li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); }
-.sc-when { font-size: 13px; color: var(--muted); }
+.sc-list li { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); }
+.sc-when { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .sc-t em { font-style: normal; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 1199px) {

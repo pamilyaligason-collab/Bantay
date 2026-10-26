@@ -1,9 +1,11 @@
 /* Dashboard home. Tokens only. */
 .hm-fail { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); }
 .hm-chart { padding: 8px 16px 12px; }
-.hm-chart svg { width: 100%; height: auto; display: block; }
+.hm-chart svg { display: block; max-width: 100%; }
 .hm-grid { stroke: var(--line); stroke-width: 1; }
-.hm-axis { fill: var(--muted); font-size: 11px; font-family: var(--f-ui); }
+.hm-delta { display: block; margin-top: 2px; font-weight: 600; color: var(--ink); }
+@media (max-width: 767px) { .dk-grid > .dk-s3 { grid-column: span 6; } }
+.hm-axis { fill: var(--muted); font-size: 12px; font-family: var(--f-ui); }
 .hm-line { fill: none; stroke: var(--green2); stroke-width: 2.5; stroke-linejoin: round; }
 .hm-dot { fill: var(--green2); }
 .hm-bar { fill: var(--green2); }

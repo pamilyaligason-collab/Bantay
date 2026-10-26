@@ -47,6 +47,23 @@ describe('Ids', () => {
     expect(screen.queryByLabelText('Person')).toBeNull()
   })
 
+  it('no person chosen and nobody in the family: an empty state, not a skeleton forever', async () => {
+    people.length = 0
+    try {
+      render(<Ids id={null} />)
+      expect(await screen.findByText(/No members yet/)).toBeTruthy()
+    } finally { people.push({ id: 'p1', display_name: 'Test Person', auth_user_id: null, photo_path: null }) }
+  })
+
+  it('cardtab tables keep table semantics when CSS makes them blocks', async () => {
+    const { container } = await load()
+    const t = container.querySelector('table.dk-cardtab') as HTMLElement
+    expect(t.getAttribute('role')).toBe('table')
+    for (const tr of t.querySelectorAll('tr')) expect(tr.getAttribute('role')).toBe('row')
+    for (const td of t.querySelectorAll('td')) expect(td.getAttribute('role')).toBe('cell')
+    for (const th of t.querySelectorAll('thead th')) expect(th.getAttribute('role')).toBe('columnheader')
+  })
+
   it('Show reveals one number at a time', async () => {
     const { container } = await load()
     fireEvent.click(screen.getByRole('button', { name: 'Show number for SSS ending 4321' }))

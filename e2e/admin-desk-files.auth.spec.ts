@@ -18,6 +18,7 @@ const file = (id: string, status: string, o: Record<string, unknown> = {}) => ({
 const FILES = [file('scan-a', 'failed', { ingest_error: 'too_many_tries', ingest_tries: 3 }), file('scan-b', 'done'), file('scan-c', 'reading')]
 const IDS = [
   { id: 'i1', source: 'id', label: 'sss', plan: null, last4: '4321', issued_on: '2024-01-01', expires_on: '2000-01-01', status: 'draft', source_file_id: null, confidence: 0.9 },
+  { id: 'i3', source: 'id', label: 'passport', plan: null, last4: '7788', issued_on: '2020-01-01', expires_on: new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10), status: 'confirmed', source_file_id: null, confidence: null },
   { id: 'i2', source: 'insurance', label: 'Test Carrier', plan: 'Gold', last4: null, issued_on: null, expires_on: null, status: 'confirmed', source_file_id: null, confidence: null }
 ]
 const AUDIT = [
@@ -94,8 +95,8 @@ for (const size of SIZES) {
   })
   test(`history page ${size.width}x${size.height}`, async ({ page }) => {
     await open(page, '/admin#/history', [], size)
-    await expect(page.getByText('value_num, unit_raw')).toBeVisible()
-    await expect(page.getByRole('cell', { name: 'System' })).toBeVisible()
+    await expect(page.getByText('Value, Unit')).toBeVisible()
+    await expect(page.getByRole('cell', { name: /System/ })).toBeVisible()
     await checkLayout(page)
     await page.getByRole('button', { name: /Duplicate clean-up/ }).click()
     await expect(page.getByText('abcdef12')).toBeVisible()
@@ -109,7 +110,7 @@ test('files: Retry asks first, then resets the scan', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^Retry / })).toHaveCount(1) // only the failed row
   await page.getByRole('button', { name: 'Retry scan-a.jpg' }).click()
   expect(hits).toHaveLength(0)
-  await page.getByRole('button', { name: 'Confirm' }).click()
+  await page.getByRole('button', { name: 'Read again' }).click()
   await expect(page.getByText('Queued to read again.')).toBeVisible()
   expect(hits).toContainEqual({ table: 'source_files', method: 'PATCH', body: { ingest_status: 'new', ingest_tries: 0, ingest_error: null } })
 })
@@ -130,4 +131,28 @@ test('ids: masked by default, Show reveals for 30 s then hides', async ({ page }
   await page.clock.fastForward(2_000)
   await expect(page.getByText(FULL)).toHaveCount(0)
   await expect(page.getByText('•••• 4321')).toBeVisible()
+})
+
+// Screenshots for the review (SHOTS=1 npx playwright ...): 1440x900 and 390x844, light and dark.
+const SHOT_SIZES = [{ width: 1440, height: 900 }, { width: 390, height: 844 }]
+for (const size of process.env.SHOTS ? SHOT_SIZES : []) for (const scheme of ['light', 'dark'] as const) {
+  test(`shots files ${size.width} ${scheme}`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await page.emulateMedia({ colorScheme: scheme })
+    await mock(page, [])
+    await skipOnboarding(page)
+    for (const p of ['files', 'ids', 'history']) {
+      await page.goto(`/admin#/${p}`)
+      await page.waitForTimeout(1200)
+      await page.screenshot({ path: `docs/session-9/shots/adm-be/${p}-${size.width}-${scheme}.png`, fullPage: true })
+    }
+  })
+}
+
+test('ids: with no person, lists IDs ending within 60 days across people', async ({ page }) => {
+  await open(page, '/admin#/ids')
+  await expect(page.getByRole('cell', { name: /Passport/ })).toBeVisible()
+  await expect(page.getByText('In 20 days')).toBeVisible()
+  await expect(page.getByRole('cell', { name: /7788/ })).toBeVisible()
+  await expect(page.getByText('Choose a person to see their IDs and insurance.')).toHaveCount(0)
 })
