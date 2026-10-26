@@ -25,3 +25,17 @@ export function emitConfirmed(docId: string, seen: Set<string>): boolean {
   void track('action', 'records_confirmed')
   return true
 }
+
+const nameKey = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/[.,]/g, '').replace(/\s+/g, ' ').trim()
+const toks = (s: string) => new Set(nameKey(s).split(' ').filter((t) => t.length > 1 && t !== 'me')) // initials never identify anyone; "Me (Jun)" is Jun
+/**
+ * S11 (hazard K1): true when the name printed on a paper does not fit the person (or one of their aliases) it was filed under.
+ * A fit = same words in any order, or all words of one name inside the other ("Juan Cruz" / "Juan Dela Cruz"). An unread name is
+ * unknown, not a mismatch.
+ */
+export function nameMismatch(printed: string | null | undefined, person: string | undefined, aliases: string[] = []): boolean {
+  const p = toks(printed ?? '')
+  if (p.size === 0) return false
+  const fits = (n: string) => { const t = toks(n); return t.size > 0 && ([...t].every((x) => p.has(x)) || [...p].every((x) => t.has(x))) }
+  return ![person ?? '', ...aliases].some(fits)
+}

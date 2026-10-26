@@ -309,3 +309,32 @@ describe('ConfirmFlow', () => {
     expect(onClose).toHaveBeenCalled()
   })
 })
+
+describe('ConfirmFlow name on paper (S11, hazard K1)', () => {
+  const open = async () => {
+    render(<ConfirmFlow people={[{ id: 'p1', name: 'Test Person' }]} onClose={() => {}} onChanged={() => {}} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Lab results, 2026-09-01/ }))
+    await screen.findByRole('button', { name: /Confirm all checked/ })
+  }
+  it('another name shows the paper name and a red warning, and blocks every Confirm until acknowledged', async () => {
+    tables.documents = [{ ...doc, printed_name: 'Rosa Dela Cruz' }]
+    await open()
+    expect(screen.getByTestId('printed-name').textContent).toBe('Name on paper: Rosa Dela Cruz')
+    expect(screen.getByTestId('name-mismatch').textContent).toContain('Rosa Dela Cruz, not Test Person')
+    const all = screen.getByRole('button', { name: /Confirm all checked/ }) as HTMLButtonElement
+    const one = screen.getByRole('button', { name: 'Confirm Test l1' }) as HTMLButtonElement
+    expect([all.disabled, one.disabled]).toEqual([true, true])
+    fireEvent.click(screen.getByRole('checkbox', { name: /I checked/ }))
+    expect([all.disabled, one.disabled]).toEqual([false, false])
+  })
+  it('a matching or unread name shows no warning', async () => {
+    tables.documents = [{ ...doc, printed_name: 'PERSON TEST' }]
+    await open()
+    expect(screen.queryByTestId('name-mismatch')).toBeNull()
+    cleanup()
+    tables.documents = [{ ...doc, printed_name: null }]
+    await open()
+    expect(screen.queryByTestId('name-mismatch')).toBeNull()
+    expect((screen.getByRole('button', { name: /Confirm all checked/ }) as HTMLButtonElement).disabled).toBe(false)
+  })
+})

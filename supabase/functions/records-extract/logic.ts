@@ -287,7 +287,8 @@ export async function mapDraft({ documentId, personId, createdBy, kind, draft: d
   const document: Row = {
     kind: kind === 'other' || !KINDS.includes(kind) ? d.doc_kind ?? 'other' : kind,
     doc_date: date(d.doc_date), collected_at: ts(d.collected_at), released_at: ts(d.released_at), facility: str(d.facility),
-    confidence: conf(d.confidence)
+    confidence: conf(d.confidence),
+    printed_name: str(d.patient_name_as_printed)?.slice(0, 120) ?? null // S11 (hazard K1): the confirm sheet compares it with the person
   }
 
   const panels = new Map<unknown, string>()
