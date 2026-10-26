@@ -1,6 +1,8 @@
 // Live emergency-gate check for Jack. Usage: node scripts/jack-gate-live.mjs <ask-url> <jwt>
-// Posts 30 emergency phrases; exits 1 unless every reply carries emergency.call including '911' and the header x-bantay-model-called: 0.
+// Posts 30 emergency phrases; exits 1 unless every reply carries emergency.call including '911' (the function sends an array like ['911'] or ['1553','911']) and the header x-bantay-model-called: 0.
 // The gate runs before the daily cap and the model, so this costs no model call. The JWT is read from argv and never printed.
+import { pathToFileURL } from 'node:url'
+
 export const PHRASES = [
   // English
   'I have chest pain and my left arm is numb', 'I cant breathe', 'her face is drooping on one side and her speech is slurred', 'he is unconscious and not waking up',
@@ -16,7 +18,7 @@ export const PHRASES = [
 
 async function main() {
   const [url, jwt] = process.argv.slice(2)
-  if (!url || !jwt) { console.error('usage: node scripts/jack-gate-live.mjs <ask-url> <jwt>'); process.exit(2) }
+  if (!url || !jwt) { console.error('usage: node scripts/jack-gate-live.mjs <ask-url> <jwt>'); process.exitCode = 2; return }
   let bad = 0
   for (const text of PHRASES) {
     let why = ''
@@ -32,7 +34,9 @@ async function main() {
     if (why) { bad++; console.log(`FAIL ${why}: ${text}`) }
   }
   console.log(`${PHRASES.length - bad}/${PHRASES.length} passed`)
-  process.exit(bad ? 1 : 0)
+  // exitCode, not process.exit(): exiting with fetch keep-alive sockets open aborts libuv on Windows Node 24 (exit 127)
+  process.exitCode = bad ? 1 : 0
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` || process.argv[1]?.endsWith('jack-gate-live.mjs')) await main()
+// Run only when started directly (pathToFileURL handles Windows drive paths); the test imports PHRASES without running it.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main()

@@ -38,6 +38,7 @@ describe('emergency gate', () => {
     ['nakainom ng lason ang bata', 'poison'], ['I took too many pills', 'poison'],
     ['my throat is closing after the shrimp', 'allergy'], ['namamaga ang lalamunan ni ate', 'allergy'],
     ['BP is 190/110 and I have a bad headache', 'bp'], ['presyon 185/100 at malabo ang mata', 'bp'], ['bp 150/125 dizzy', 'bp'], ['presyon 180 sa 120 nahihilo', 'bp'], ['blood pressure 185 over 100 and headache', 'bp'],
+    ['180/120', 'bp'], ['presyon 190/110', 'bp'], ['over 200 by 120', 'bp'], ['185 over 125 and severe headache', 'bp'], ['my bp reading this morning was 185 over 125 and I am dizzy', 'bp'], ['presyon ni lola kanina 190 sa 120, nahihilo', 'bp'], ['BP 190/110 but I feel fine', 'bp'], ['I feel dizzy and my pressure was 150/125', 'bp'],
     ['my sugar is 55 and I am shaking', 'sugar'], ['asukal 350, nauuhaw at nanghihina', 'sugar'], ['glucose 62 sweating', 'sugar']
   ]
   it.each(yes)('flags: %s', (text, kind) => {
@@ -52,10 +53,11 @@ describe('emergency gate', () => {
   it('has at least 40 positive phrases in English, Tagalog and Taglish', () => expect(yes.length).toBeGreaterThanOrEqual(40))
 
   const no = [
-    'what is a normal blood pressure', 'I took my amlodipine this morning', 'my sugar is 110 after breakfast', 'BP 190/110 but I feel fine', 'my sugar is 55', // no symptom
+    'what is a normal blood pressure', 'I took my amlodipine this morning', 'my sugar is 110 after breakfast', 'my sugar is 55', // no symptom
     'no chest pain today', 'walang sakit sa dibdib', 'without chest pain or shortness of breath', 'ano ang stroke', 'what is a heart attack', 'how to prevent stroke',
     'paano maiwasan ang atake sa puso', 'how do I relax and breathe slowly', 'ilang beses uminom ng gamot sa isang araw', 'masakit ang ulo ko', 'can I eat bagoong',
-    'sugar 120, feeling weak', 'BP 130/85 headache', 'my sugar is 190 sa 120 and I feel dizzy', 'what time should I take metformin', 'salamat po'
+    'sugar 120, feeling weak', 'BP 130/85 headache', 'my sugar is 190 sa 120 and I feel dizzy', 'what time should I take metformin', 'salamat po',
+    'my appointment is on 12/20 and I feel dizzy', 'the rice costs 150 by 120 pesos', 'I paid 200/100 for the room', 'petsa 18/12', 'my room is 190 sa 110 cm', 'BP 170/110', 'bp 120/80 and a headache'
   ]
   it.each(no)('lets through: %s', (text) => {
     expect(emergencyGate(text)).toBeNull()

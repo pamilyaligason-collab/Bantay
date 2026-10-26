@@ -89,13 +89,19 @@ const SYMPTOM_BP = /\b(?:headache|sakit ng ulo|masakit ang ulo|blurred|blurry|ma
 const SYMPTOM_SUGAR = /\b(?:shak\w*|trembl\w*|sweat\w*|sweating|cold sweat|confus\w*|dizz\w*|drows\w*|sleepy|weak\w*|faint\w*|hungry|blurred|blurry|vomit\w*|nausea|thirst\w*|nanginginig|nanghihina|nahihilo|hilo|pawis|pinagpapawisan|antok|inaantok|nalilito|malabo|nauuhaw|nagsusuka|mahina|hapo|gutom)\b/
 
 function bpEmergency(t: string): boolean {
-  if (!SYMPTOM_BP.test(t)) return false
-  // a slash needs no label; 'sa', 'over', 'by' need presyon/bp/blood pressure within 20 characters before the numbers
+  // 180/120 or more (both numbers) is an emergency on its own, so a real crisis is never missed for want of a word. Lower readings that could be
+  // something else (180/110, 150/125) need presyon/bp/blood pressure within 20 characters before the numbers, or a symptom word.
+  // Words between the numbers ('over', 'sa', 'by') count alone only as "over X by Y" or "X over Y".
+  const hasSymptom = SYMPTOM_BP.test(t)
   for (const m of t.matchAll(/\b(\d{2,3})\s*(\/|over|\bsa\b|\bby\b)\s*(\d{2,3})\b/g)) {
-    if (m[2] !== '/' && !/\b(?:presyon|bp|blood pressure)\b/.test(t.slice(Math.max(0, (m.index ?? 0) - 20), m.index ?? 0))) continue
+    const i = m.index ?? 0
     const s = Number(m[1])
     const d = Number(m[3])
-    if (s >= 70 && s <= 300 && d >= 30 && d <= 200 && s > d && (s >= 180 || d >= 120)) return true
+    if (!(s >= 70 && s <= 300 && d >= 30 && d <= 200 && s > d && (s >= 180 || d >= 120))) continue
+    const labelled = /\b(?:presyon|bp|blood pressure)\b/.test(t.slice(Math.max(0, i - 20), i))
+    // a slash plus a symptom is enough; a word between the numbers ("190 sa 120") also needs a BP label somewhere, so a sugar or a count does not trip it
+    if (labelled || (hasSymptom && (m[2] === '/' || /\b(?:presyon|bp|blood pressure)\b/.test(t)))) return true
+    if (s >= 180 && d >= 120 && (m[2] === '/' || m[2] === 'over' || /\bover\s*$/.test(t.slice(Math.max(0, i - 6), i)))) return true
   }
   return false
 }
