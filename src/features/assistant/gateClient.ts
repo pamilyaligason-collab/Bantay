@@ -1,5 +1,7 @@
 // Local emergency gate for Jack: the SAME rules as the server (supabase/functions/ask/gate.ts, imported, never copied, so the two cannot drift).
 // It runs on the phone before takeMessage and before any request, so it works offline and at the daily limit. The text is never sent or stored.
+import { emergencyGate, detectLanguage } from '../../../supabase/functions/ask/gate'
+
 export interface Emergency { kind: string; call: string[]; text: string }
 
 const TITLE: Record<string, string> = {
@@ -19,10 +21,9 @@ const SELF = {
   tl: 'Pasensya na at pinagdadaanan mo ito. Tumawag po sa NCMH crisis hotline 1553 (libre) ngayon, o sa 911 kung nasa panganib ka. Manatili sa piling ng taong pinagkakatiwalaan mo.'
 }
 
-/** The emergency in the person's words, or null. Never throws: if the gate cannot load (very old browser), the server gate still runs. */
+/** The emergency in the person's words, or null. Imported statically (not lazily) so the gate is in the main bundle and works with no signal; never throws. */
 export async function localGate(text: string): Promise<Emergency | null> {
   try {
-    const { emergencyGate, detectLanguage } = await import('../../../supabase/functions/ask/gate')
     const hit = emergencyGate(text)
     if (!hit) return null
     const lang = detectLanguage(text)
