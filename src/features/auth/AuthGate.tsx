@@ -16,7 +16,7 @@ const mark = (uid: string) => { try { localStorage.setItem(doneKey(uid), '1') } 
  * (dev, unit tests, or the e2e build made with BANTAY_ALLOW_NO_AUTH=1). A production build without them shows an alert.
  * Offline with a stored session still opens the app: the RPC is retried on the next online start.
  */
-export function AuthGate({ children }: { children: ReactNode }) {
+export function AuthGate({ children, fallback = null }: { children: ReactNode; fallback?: ReactNode }) {
   const [state, setState] = useState<'loading' | 'out' | 'in'>(supabase ? 'loading' : 'in')
   // APK only: 'lock' = fingerprint before the app opens (stored session), 'offer' = "use your fingerprint next time?" after a fresh sign-in.
   const [gate, setGate] = useState<{ kind: 'lock' | 'offer'; personId: string } | null>(null)
@@ -65,7 +65,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (import.meta.env.PROD && !__ALLOW_NO_AUTH__) return <p role="alert">Sign-in is not configured.</p>
     return <>{children}</>
   }
-  if (state === 'loading') return null
+  if (state === 'loading') return <>{fallback}</>
   if (state === 'out') return <SignIn />
   if (gate?.kind === 'lock') {
     const name = loadFamily().find((m) => m.personId === gate.personId)?.displayName.split(' ')[0] ?? ''

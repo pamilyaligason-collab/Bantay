@@ -97,3 +97,47 @@ test('dashboard home in dark mode (1280x800)', async ({ page }) => {
   await expect(page.getByRole('img', { name: /Screens opened per day/ })).toBeVisible()
   expect(await violations(page)).toEqual([])
 })
+
+test('phone: theme is reachable in the account menu and changes the theme', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mock(page)
+  await skipOnboarding(page)
+  await page.goto('/admin#/home')
+  await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Change theme/ })).toBeHidden() // top-bar button is hidden on phone
+  await page.locator('details.wa-me summary').click()
+  const item = page.locator('.wa-pop .wa-theme')
+  await expect(item).toBeVisible()
+  expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(48)
+  await item.click() // system -> light
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await item.click() // light -> dark
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.screenshot({ path: 'docs/session-9/shots/adm-a/menu-390-dark.png' })
+})
+
+// Danger ConfirmDialog styling (no page uses danger yet): the same markup the component renders, styled by the real CSS. Checks white-on-red contrast >= 4.5 in both themes.
+for (const scheme of ['light', 'dark'] as const) {
+  test(`danger confirm button keeps AA contrast (${scheme}, 390x844)`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ colorScheme: scheme })
+    await mock(page)
+    await skipOnboarding(page)
+    await page.goto('/admin#/home')
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible()
+    await page.evaluate(() => {
+      const d = document.createElement('div')
+      d.className = 'dk-scrim'
+      d.innerHTML = '<div class="dk-confirm" role="alertdialog"><h2 class="h2">Archive record</h2><p>Archive this record? It leaves the lists but can be restored.</p><div class="dk-acts"><button class="dk-b">Cancel</button><button class="dk-b bad-solid">Archive</button></div></div>'
+      document.body.append(d)
+    })
+    const ratio = await page.locator('.bad-solid').evaluate((el) => {
+      const lum = (c: string) => { const [r, g, b] = c.match(/\d+(\.\d+)?/g)!.slice(0, 3).map((v) => { const x = Number(v) / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
+      const cs = getComputedStyle(el); const a = lum(cs.backgroundColor) + 0.05; const b = lum(cs.color) + 0.05
+      return Math.max(a, b) / Math.min(a, b)
+    })
+    expect(ratio).toBeGreaterThanOrEqual(4.5)
+    expect((await page.locator('.bad-solid').boundingBox())!.height).toBeGreaterThanOrEqual(48)
+    await page.screenshot({ path: `docs/session-9/shots/adm-a/confirm-danger-390-${scheme}.png` })
+  })
+}

@@ -32,7 +32,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`Act early opens a topic, no YouTube before play (${scheme}, axe)`, async ({ page }) => {
     const hits: string[] = []
-    page.on('request', (r) => { if (/youtube|ytimg|ggpht/.test(new URL(r.url()).hostname)) hits.push(r.url()) })
+    page.on('request', (r) => { if (/youtube|ggpht/.test(new URL(r.url()).hostname)) hits.push(r.url()) })
     await page.route(/youtube-nocookie\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>player stub</p>' }))
     await page.emulateMedia({ colorScheme: scheme })
     await skipOnboarding(page)

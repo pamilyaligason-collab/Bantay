@@ -1,7 +1,10 @@
 import { formatNumber } from '../../lib/labFormat'
 import { groupLabs, labInfo, labRow, labVerdict, type LabRow } from '../health/labsLogic'
+import { countDoses } from '../health/doseCount'
+import { lastDays } from '../today/myWeekLogic'
 import { matchDoses, slotsFor, type DoseState } from '../health/meds'
 import { metricLabel, plainName, readingPosition, shortDate } from '../health/model'
+import { verdictFor, kindOf } from '../health/verdict'
 import { latestByTest, type Position, type Range, type Reading } from '../health/ranges'
 import { byVitalOrder, isVital } from '../health/vitals'
 import type { Medication, MedTaken } from '../log/store'
@@ -24,9 +27,7 @@ export function canViewReport(i: { signedIn: boolean; personId: string; ownId: s
 
 // ---- vitals with plain verdicts ---------------------------------------------------------------------------------
 export interface VitalCard { key: string; label: string; value: string; unit: string; word: string; pos: Position; icon: 'check' | 'up' | 'down' | 'info'; on: string }
-const VERDICT: Record<Position, { word: string; icon: VitalCard['icon'] }> = {
-  above: { word: 'A bit high', icon: 'up' }, below: { word: 'A bit low', icon: 'down' }, within: { word: 'Usual', icon: 'check' }, none: { word: 'No range to compare', icon: 'info' }
-}
+const NO_RANGE = { word: 'No range to compare', icon: 'info' as const }
 const worst = (a: Position, b: Position): Position => (a === 'above' || a === 'below' ? a : b === 'above' || b === 'below' ? b : a === 'none' || b === 'none' ? 'none' : 'within')
 
 /** Newest reading per vital in the last 30 days; blood pressure joins top and bottom into one card judged by the worse of the two. */
@@ -36,8 +37,8 @@ export function vitalCards(readings: Reading[], now: Date, familyOf: FamilyOf = 
   const out: VitalCard[] = []
   const sys = latest.find((r) => r.test === 'bp_systolic')
   const dia = latest.find((r) => r.test === 'bp_diastolic')
-  const card = (r: Reading, value: string, pos: Position, key = r.test, label = metricLabel(r.test)): VitalCard => ({ key, label, value, unit: r.unit ?? '', ...VERDICT[pos], pos, on: shortDate(r.takenAt) })
-  if (sys && dia) out.push(card(sys, `${formatNumber(sys.value)}/${formatNumber(dia.value)}`, worst(readingPosition(sys, familyOf(sys)), readingPosition(dia, familyOf(dia))), 'bp', 'Blood pressure'))
+  const card = (r: Reading, value: string, pos: Position, key = r.test, label = metricLabel(r.test), bp?: { top: number; bottom: number }): VitalCard => ({ key, label, value, unit: r.unit ?? '', ...(verdictFor(kindOf(r.test), pos, bp) ?? NO_RANGE), pos, on: shortDate(r.takenAt) })
+  if (sys && dia) out.push(card(sys, `${formatNumber(sys.value)}/${formatNumber(dia.value)}`, worst(readingPosition(sys, familyOf(sys)), readingPosition(dia, familyOf(dia))), 'bp', 'Blood pressure', { top: sys.value, bottom: dia.value }))
   for (const r of latest) {
     if (sys && dia && (r.test === 'bp_systolic' || r.test === 'bp_diastolic')) continue
     out.push(card(r, formatNumber(r.value), readingPosition(r, familyOf(r))))
@@ -51,7 +52,7 @@ export interface DayCell { day: string; label: string; state: CellState; taken: 
 export interface Adherence { cells: DayCell[]; taken: number; due: number; missed: { day: string; label: string; names: string[] }[] }
 
 /** Seven local days ending today. A day with no scheduled doses is "none". A past day with a dose not taken (or skipped) is "missed". Today's open doses are "pending", not missed. */
-export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], personId: string, now: Date): Adherence {
+export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped' | 'personId'>[], personId: string, now: Date): Adherence {
   const today = dayKey(now)
   const cells: DayCell[] = []
   const missed: Adherence['missed'] = []
@@ -65,8 +66,8 @@ export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'ta
     cells.push({ day, label: WD[d.getDay()]!, state, taken, due: doses.length })
     if (state === 'missed') missed.push({ day, label: WD[d.getDay()]!, names: [...new Set(open.map((x) => x.name))] })
   }
-  const counted = cells.filter((c) => c.state !== 'pending') // today's open doses are not due yet
-  return { cells, taken: counted.reduce((s, c) => s + c.taken, 0), due: counted.reduce((s, c) => s + c.due, 0), missed }
+  const n = countDoses({ meds, takes, personId, now, days: lastDays(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
+  return { cells, taken: n.done, due: n.want, missed }
 }
 
 // ---- flagged labs ---------------------------------------------------------------------------------------------

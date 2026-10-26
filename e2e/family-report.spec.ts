@@ -75,8 +75,8 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()
     await expect(page.getByTestId('rp-vitals')).toContainText('150/95')
-    await expect(page.getByTestId('rp-vitals')).toContainText('A bit high')
-    await expect(page.getByTestId('rp-vitals')).toContainText('Usual') // pulse
+    await expect(page.getByTestId('rp-vitals')).toContainText('High')
+    await expect(page.getByTestId('rp-vitals')).toContainText('In range') // pulse
     await expect(page.getByTestId('rp-meds').locator('.rp-cell')).toHaveCount(7)
     await expect(page.getByTestId('rp-meds').locator('.rp-cell.missed').first()).toBeVisible()
     await expect(page.getByTestId('rp-meds')).toContainText('Missed: Losartan')

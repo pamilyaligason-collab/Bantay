@@ -3,13 +3,13 @@
 // scripts it was taken from (lib.mjs, extract.mjs, normalize.mjs, load.mjs). All names and values are made up.
 import { describe, expect, it, vi } from 'vitest'
 import { normalizeDraft as pcNormalizeDraft } from '../../../scripts/import/extract.mjs'
-import { buildRequest as pcBuildRequest, PROMPT as PC_PROMPT } from '../../../scripts/import/lib.mjs'
+import { buildRequest as pcBuildRequest, MAX_TOKENS as PC_MAX_TOKENS, PROMPT as PC_PROMPT, usageCounts as pcUsageCounts } from '../../../scripts/import/lib.mjs'
 import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs'
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
   buildReadingRequest, buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, MAX_READING_BASE64,
-  normalizeDraft, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
-  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, uuid5, withRetry
+  MAX_TOKENS, normalizeDraft, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
+  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, usageCounts, uuid5, withRetry
 } from './logic.ts'
 
 const catalog = loadCatalog() as CatalogRow[]
@@ -126,6 +126,23 @@ describe('mapDraft', () => {
   })
 })
 
+describe('cost guard', () => {
+  it('caps output, turns reasoning down, and matches the laptop path', () => {
+    const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }] })
+    expect(b.max_tokens).toBe(MAX_TOKENS)
+    expect(MAX_TOKENS).toBe(PC_MAX_TOKENS)
+    expect(b.reasoning).toEqual({ enabled: false })
+  })
+  it('usage counts match the laptop path and carry no text', async () => {
+    const j = { model: 'm/x', usage: { prompt_tokens: 10, completion_tokens: 5, cost: 0.1 }, choices: [{ message: { content: '{"name":"SECRET"}' } }] }
+    expect(usageCounts(j)).toEqual(pcUsageCounts(j))
+    const seen: unknown[] = []
+    await sendToOpenRouter((async () => ({ ok: true, status: 200, json: async () => j })) as never, {}, 'k', (u) => seen.push(u))
+    expect(seen).toEqual([{ model: 'm/x', prompt_tokens: 10, completion_tokens: 5, reasoning_tokens: null, cost: 0.1 }])
+    expect(JSON.stringify(seen)).not.toContain('SECRET')
+  })
+})
+
 describe('buildRequest for scans', () => {
   it('sends every page in order after the prompt, keeps zdr and refuses free models', () => {
     const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }, { mime: 'image/jpeg', base64: 'BB' }] })
@@ -179,6 +196,10 @@ describe('OpenRouter calls', () => {
     n = 0
     await expect(withRetry(async () => { n++; throw new HttpError(401) }, { sleepFn })).rejects.toThrow()
     expect(n).toBe(1)
+  })
+  it('a cut-off answer becomes truncated', async () => {
+    const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ finish_reason: 'length', message: { content: '{"tests":[' } }] }) })
+    expect(errorCode(await sendToOpenRouter(f, {}, 'k').catch((x) => x))).toBe('truncated')
   })
   it('never echoes model output: non-JSON content becomes not_json', async () => {
     const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'Cholesterol 5.2 TEST PERSON' } }] }) })

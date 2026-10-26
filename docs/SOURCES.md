@@ -114,3 +114,76 @@ Bantay's own words throughout. Nothing below is copied or bundled; each source i
 - Bagoong has no plain FDC entry (only branded products), and instant noodles, canned sardines and galunggong are brand or species dependent: those values are estimates to check against a pack or jar label.
 - NOT used: Philippine Food Composition Tables (FNRI PhilFCT) values. SparkyFitness is non-commercial and source-available: no code or data was copied from it.
 - Salt limit: WHO, Salt reduction fact sheet, adults under 2000 mg sodium (5 g salt) a day: https://www.who.int/news-room/fact-sheets/detail/salt-reduction . Linked only (WHO content is CC BY-NC-SA, none of its text is bundled). Salt (g) = sodium (mg) x 2.5 / 1000.
+
+## Jack's health knowledge base (session 9, lane JACK-C)
+
+Migration 0025_knowledge.sql holds 44 short topic summaries (`knowledge_topics`) and the words people type, including Tagalog and Taglish (`knowledge_synonyms`). The reviewed file is scripts/knowledge/topics.json; `node scripts/knowledge/build.mjs` writes the seed into the migration and `--check` proves they match. Every summary is written in Bantay's own plain words (nothing copied or machine-translated from a source) and carries the public page it points to. Pages were reached (HTTP 200) on 2026-10-22. No runtime model call is involved.
+
+| Source | What we do | Licence (checked 2026-10-22) |
+| --- | --- | --- |
+| MedlinePlus (NLM), medlineplus.gov | Own-words summary plus a link. | Site says MedlinePlus pages are public domain ("not copyrighted") unless marked; some content (the drug pages come from ASHP) is copyrighted and licensed for MedlinePlus only. We copy none of it, only link. https://medlineplus.gov/about/using/usingcontent/ |
+| NHS website, www.nhs.uk | Own-words summary plus a link. | Open Government Licence v3.0 except where a page says otherwise (https://www.nhs.uk/our-policies/terms-and-conditions/). We copy no text; the licence would allow it with the OGL credit. |
+| WHO, www.who.int | Own-words summary plus a link. Two numbers (under 2,000 mg sodium, under 5 g salt, 1 g salt = 400 mg sodium) restated from the fact sheet. | CC BY-NC-SA 3.0 IGO, non-commercial. Only the facts are restated, no text or images are bundled. |
+| DILG (Philippines), calabarzon.dilg.gov.ph | 911 as the national emergency number (already CONFIRMED above). | Government page, linked only. |
+
+- Numbers in the summaries: blood pressure 140/90 clinic and 135/85 home (NHS, "High blood pressure", checked 2026-10-22), WHO sodium limit as above, adults 150 minutes a week (NHS older adults activity page, from the NHS physical activity guidelines), 7 to 9 hours of sleep (general adult guidance on the NHS sleep page; re-check wording), slow breathing about 4 in and 6 out (a common relaxation pattern; the NHS stress page recommends breathing exercises, not these counts). The other summaries are qualitative.
+- Not verified word for word: the FAST wording on the NHS stroke page did not load as plain text for the link check (FAST is the NHS and Stroke Association standard), and the NCMH line 1553 in `low-mood` is the same "LISTED, re-check" entry as in the hotline table above. A clinician should review the whole file before it goes live; `reviewed_at` is the date the links were checked, not a medical sign-off.
+- Tagalog titles and synonyms were written by the build agent and need a native-speaker read.
+- Brand names appear only as search words (Norvasc, Lipitor, Glucophage, Lasix and similar) so a family can find the generic card.
+
+## Nutrients and daily targets (session 9, W1 nutrition)
+- More nutrients per food (carbohydrate, total fat, saturated fat, fibre, sugars, calcium, iron, magnesium, vitamin D, vitamin B12) come from the same USDA SR Legacy CSV, written by `node scripts/nutrition/build-foods.mjs --verify-csv <dir> --write`. A value SR Legacy does not list is null, and a dish with a null ingredient value is null for that nutrient (never 0).
+- Daily targets by age and sex (src/features/nutrition/targets.ts), adults 19+ only, public domain:
+  - NIH Office of Dietary Supplements, Health Professional fact sheets: Calcium https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/ , Iron .../Iron-HealthProfessional/ , Magnesium .../Magnesium-HealthProfessional/ , Potassium .../Potassium-HealthProfessional/ (AI 2019: 2600 mg women, 3400 mg men), Vitamin D .../VitaminD-HealthProfessional/ (15 mcg to 70, 20 mcg from 71; 1 mcg = 40 IU), Vitamin B12 .../VitaminB12-HealthProfessional/ (2.4 mcg).
+  - National Academies Dietary Reference Intakes summary tables, https://www.ncbi.nlm.nih.gov/books/NBK56068/ : protein RDA 46 g (women) and 56 g (men), carbohydrate RDA 130 g, fibre AI 25/38 g under 51 and 21/30 g from 51.
+  - WHO sodium (under 2000 mg, https://www.who.int/news-room/fact-sheets/detail/salt-reduction) and saturated fat (under 10% of energy, https://www.who.int/news-room/fact-sheets/detail/healthy-diet; 22 g on a 2000 kcal reference diet).
+  - FDA "high" salt tag: 20% of the 2300 mg Daily Value, 460 mg a serving, https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label
+- Condition adjustment, only where cited: a doctor-set potassium limit (nullable, default none) replaces the potassium target. Nothing else is adjusted for a condition.
+- Supplements are read from the person's own medicine list (names: calcium, vitamin D, B12, iron, fish oil, multivitamin). Amounts are what the list says, not verified against a label; no advice to start or stop one.
+
+## Move: mobility and exercise videos (session 9, W1-MOVE)
+
+Move steps, cautions and counts are written in Bantay's own words (rules still wait for clinician review, docs/session-8/CLINICAL-REVIEW.md). Videos are only embedded, never downloaded or re-hosted: official channels (National Institute on Aging, NHS inform, Mayo Clinic), shown through the click-to-load player (youtube-nocookie.com) with the still picture from i.ytimg.com before the tap. Every id below returned HTTP 200 from https://www.youtube.com/oembed?url=<watch url>&format=json on 2026-10-22, and the channel and title are the ones oEmbed reported. Ids that did not return 200 were dropped.
+
+| Move id | Channel | Title (as oEmbed reports) | URL |
+|---|---|---|---|
+| sit-to-stand | NHS inform | Sit to stand | https://www.youtube.com/watch?v=29WFLqHgYZ0 |
+| heel-raises | National Institute on Aging | Toe Stand Strength Exercise for Older Adults | https://www.youtube.com/watch?v=04zZLGcrN5Y |
+| wall-push-up | National Institute on Aging | Wall Pushups Strength Exercise for Older Adults | https://www.youtube.com/watch?v=751E9kAdkwg |
+| side-leg-lift | National Institute on Aging | Side Leg Raise - Strength Training Exercise for Older Adults | https://www.youtube.com/watch?v=045sWtKt5D4 |
+| hip-bridge | NHS inform | Bridging | https://www.youtube.com/watch?v=EeTfT5zpt_s |
+| one-foot-stand | National Institute on Aging | Stand on One Foot Balance Exercise for Older Adults | https://www.youtube.com/watch?v=QT5d4tTXW6U |
+| heel-toe-steps | National Institute on Aging | Heel-to-Toe Walk Balance Exercise for Older Adults | https://www.youtube.com/watch?v=z_GKdFf3qv4 |
+| ankle-circles | National Institute on Aging | Ankle Stretch for Older Adults | https://www.youtube.com/watch?v=87BeiyTFZyU |
+| hamstring-stretch | National Institute on Aging | Back Of Leg Stretch for Older Adults | https://www.youtube.com/watch?v=guOj99WPZnw |
+| calf-stretch | NHS inform | Standing calf stretch | https://www.youtube.com/watch?v=uuVyVuSbXrA |
+| neck-side-tilt | Mayo Clinic | Deskercise - Neck and Shoulder Stretches | https://www.youtube.com/watch?v=5lbe9oZbpDs |
+| ankle-alphabet | National Institute on Aging | Ankle Stretch for Older Adults | https://www.youtube.com/watch?v=87BeiyTFZyU |
+| seated-knee-extension | NHS inform | Seated knee extension stretch | https://www.youtube.com/watch?v=XvueUfN-LVw |
+| seated-spine-twist | Mayo Clinic | Deskercise - Lower Back and Torso Stretches | https://www.youtube.com/watch?v=5M-b1c2spPE |
+| seated-back-arch | National Institute on Aging | Back Stretch for Older Adults | https://www.youtube.com/watch?v=FpIfMyfpCk0 |
+| knee-rolls | NHS inform | Knee rolls | https://www.youtube.com/watch?v=QxsmVexWs_4 |
+| pelvic-tilt | NHS inform | Pelvic tilts | https://www.youtube.com/watch?v=xbyk3ebdwRI |
+| back-leg-raise | National Institute on Aging | Back Leg Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=B54sRn3f8S0 |
+| chair-dip | National Institute on Aging | Chair Dip Strength Exercise for Older Adults | https://www.youtube.com/watch?v=LVRcXDEdC5U |
+| overhead-press | National Institute on Aging | Overhead Arm Raise Strength Exercise for Older Adults | https://www.youtube.com/watch?v=VPiawRHRpmY |
+| thigh-squeeze | NHS inform | Static quad strengthening | https://www.youtube.com/watch?v=shSiZn5x9R8 |
+| supported-leg-raise | NHS inform | Supported leg raise | https://www.youtube.com/watch?v=o4ScRYNv7pY |
+| sideways-hip-lift | NHS inform | Sideways hip lift | https://www.youtube.com/watch?v=S79T0-2GyKM |
+| shoulder-arm-stretch | National Institute on Aging | Shoulder and Arm Stretch for Older Adults | https://www.youtube.com/watch?v=CW0h60-PS4Y |
+| knee-hug | NHS inform | Single knee hug | https://www.youtube.com/watch?v=I6sP_tzzb_4 |
+
+Playlist additions on Health > Videos (src/data/videos.json), same check:
+
+| Video id | Channel | Title | URL |
+|---|---|---|---|
+| G1lwVhnnkoU | National Institute on Aging | 10-minute workout for older adults | https://www.youtube.com/watch?v=G1lwVhnnkoU |
+| Ev6yE55kYGw | National Institute on Aging | 15-minute workout for older adults | https://www.youtube.com/watch?v=Ev6yE55kYGw |
+| KcdkySvCRCc | National Institute on Aging | 6 flexibility exercises for older adults | https://www.youtube.com/watch?v=KcdkySvCRCc |
+| -Ru_cJhrNOA | NHS inform | Falls: level 1 balance and strength exercises | https://www.youtube.com/watch?v=-Ru_cJhrNOA |
+| y_blTU65X3U | NHS inform | Falls: level 2 exercises | https://www.youtube.com/watch?v=y_blTU65X3U |
+| IYTZwBzjNC0 | NHS inform | Steps for Stress: a breathing exercise | https://www.youtube.com/watch?v=IYTZwBzjNC0 |
+
+Moves not listed above have no video: 31 of the 57 moves, of which 10 are new in session 9 (shoulder-blade-squeeze, seated-hip-opener, side-step, feet-together-stand, clock-reach, seated-hamstring-curl, seated-figure-four, breathing-walk, mindful-walk, pursed-lip-walk). No official embeddable video that matched them was found. Video ids prove the video exists and can be embedded; the match to the move is by title and has not been watched through. tai-chi-sway had a Mayo Clinic news clip and it was removed because it does not demonstrate the move. Playlist lengths (minutes) are not recorded (null).
+
+Osteoporosis twist exclusion: Giangregorio LM et al., Too Fit To Fracture: exercise recommendations for individuals with osteoporosis or osteoporotic vertebral fracture, Osteoporosis International 2014;25:821-835, https://doi.org/10.1007/s00198-013-2523-2 (linked only; cited from memory, not fetched in session 9).

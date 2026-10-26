@@ -22,8 +22,8 @@
 .hv-avgnote { margin: 0 4px 8px; }
 
 /* Vitals toggle */
-.hv-modes, .vd-topics { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
-.hv-modes { margin: 4px 0 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.seg.hv-modes, .vd-topics { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); }
+.seg.hv-modes { margin: 4px 0 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .hv-modes button { white-space: nowrap; padding: 0 4px; min-width: 0; }
 .hv-modeline { margin: 0 4px 8px; }
 .hv-norm { font-size: 15px; }
@@ -101,8 +101,8 @@
 .ar-h { font-size: 24px; margin: 0; }
 .ar-body { margin: 0; line-height: 1.45; }
 .ar-more { align-self: flex-start; min-height: 44px; }
-.seg.vd-topics { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-top: 12px; }
-.seg.vd-topics button { flex: 0 0 auto; padding: 0 16px; }
+.seg.vd-topics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.seg.vd-topics button { flex: 0 0 auto; min-height: 48px; padding: 0 16px; }
 .vd-card .lv-play b { display: none; }
 .vd-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
 .vd-card { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }

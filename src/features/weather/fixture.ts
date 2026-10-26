@@ -9,6 +9,8 @@ export interface FixtureOpts {
   /** rain chance for a local hour of the day (0-23) */
   hourlyProb?: (hourOfDay: number) => number
   uvMax?: number
+  /** WMO weather code for now (default 2, partly cloudy) */
+  code?: number
 }
 
 const local = (ms: number) => new Date(ms).toISOString().slice(0, 16)
@@ -21,7 +23,7 @@ export function openMeteoFixture(o: FixtureOpts = {}) {
   const prob = o.hourlyProb ?? ((h: number) => (h >= 14 && h <= 17 ? 80 : 10))
   return {
     latitude: 9.65, longitude: 123.88, timezone: o.tz ?? 'Asia/Manila', utc_offset_seconds: off,
-    current: { time: local(Math.floor(nowL / 3600_000) * 3600_000), temperature_2m: o.temp ?? 33, relative_humidity_2m: o.humidity ?? 68, apparent_temperature: o.feels ?? 42, weather_code: 2, wind_speed_10m: 9, wind_gusts_10m: 18, uv_index: 9 },
+    current: { time: local(Math.floor(nowL / 3600_000) * 3600_000), temperature_2m: o.temp ?? 33, relative_humidity_2m: o.humidity ?? 68, apparent_temperature: o.feels ?? 42, weather_code: o.code ?? 2, wind_speed_10m: 9, wind_gusts_10m: 18, uv_index: 9 },
     hourly: {
       time: times.map(local),
       temperature_2m: times.map((_, i) => 27 + Math.round(7 * Math.max(0, Math.sin(((i % 24) - 6) / 12 * Math.PI)))),
@@ -34,7 +36,9 @@ export function openMeteoFixture(o: FixtureOpts = {}) {
       temperature_2m_min: [26, 25, 25, 26, 26, 26, 25],
       temperature_2m_max: [34, 32, 31, 33, 34, 33, 31],
       precipitation_probability_max: [30, 88, 70, 20, 10, 25, 60],
-      uv_index_max: [o.uvMax ?? 10, 9, 8, 9, 10, 9, 7]
+      uv_index_max: [o.uvMax ?? 10, 9, 8, 9, 10, 9, 7],
+      sunrise: Array.from({ length: 7 }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T05:50`),
+      sunset: Array.from({ length: 7 }, (_, i) => `${local(dayStart + i * 86400_000).slice(0, 10)}T17:45`)
     }
   }
 }

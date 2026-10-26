@@ -18,6 +18,7 @@ import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { useSavedTheme } from './features/shell/theme'
+import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
 import { loadLang } from './lib/i18n'
@@ -40,6 +41,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const inbox = useInbox(isAdmin)
   useSavedTheme()
+  useSavedTextSize()
   useUpdateCheckOnOpen()
   useEffect(() => {
     const check = () => void getMember().then((m) => setIsAdmin(m?.role === 'admin'))

@@ -112,9 +112,11 @@ describe('goal band', () => {
     expect(fillPct(null, 2000)).toBe(0)
   })
   it('goalOf falls back to 2000 mg and 1500 ml', () => {
-    expect(goalOf(undefined)).toEqual({ sodiumMg: 2000, waterMl: 1500 })
-    expect(goalOf({ sodiumMg: 1500, waterMl: 2000 })).toEqual({ sodiumMg: 1500, waterMl: 2000 })
-    expect(goalOf({ sodiumMg: 0, waterMl: NaN })).toEqual({ sodiumMg: 2000, waterMl: 1500 })
+    expect(goalOf(undefined)).toEqual({ sodiumMg: 2000, waterMl: 1500, potassiumMg: null, sex: null })
+    expect(goalOf({ sodiumMg: 1500, waterMl: 2000 })).toEqual({ sodiumMg: 1500, waterMl: 2000, potassiumMg: null, sex: null })
+    expect(goalOf({ sodiumMg: 0, waterMl: NaN })).toEqual({ sodiumMg: 2000, waterMl: 1500, potassiumMg: null, sex: null })
+    expect(goalOf({ sodiumMg: 2000, waterMl: 1500, potassiumMg: 2500, sex: 'female' })).toMatchObject({ potassiumMg: 2500, sex: 'female' })
+    expect(goalOf({ sodiumMg: 2000, waterMl: 1500, potassiumMg: 0, sex: null }).potassiumMg).toBeNull() // 0 is not a limit
   })
 })
 
