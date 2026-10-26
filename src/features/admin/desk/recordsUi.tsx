@@ -77,16 +77,23 @@ export function Preview({ docId }: { docId: string }) {
   const [files, setFiles] = useState<PageFile[] | null>(null)
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [bad, setBad] = useState(false)
+  const signRef = useRef<(f: PageFile) => void>(() => {})
+  const retried = useRef(new Set<string>())
   useEffect(() => {
     let live = true
+    retried.current = new Set()
     setFiles(null); setUrls({}); setBad(false)
-    void filesOf(docId).then(async (r) => {
+    const sign = (f: PageFile) => { if (f.storage_path) void signedUrl(f.storage_path).then((u) => live && u.ok && setUrls((x) => ({ ...x, [f.id]: u.data }))) }
+    let timer: ReturnType<typeof setInterval> | undefined
+    void filesOf(docId).then((r) => {
       if (!live) return
       if (!r.ok) return setBad(true)
       setFiles(r.data)
-      for (const f of r.data) if (f.storage_path) void signedUrl(f.storage_path).then((u) => live && u.ok && setUrls((x) => ({ ...x, [f.id]: u.data })))
+      signRef.current = sign
+      r.data.forEach(sign)
+      timer = setInterval(() => r.data.forEach(sign), 50_000) // links last 60 s; renew while the paper is on screen
     })
-    return () => { live = false }
+    return () => { live = false; clearInterval(timer) }
   }, [docId])
   if (bad) return <p className="rc-err" role="alert">Could not load the source pages.</p>
   if (!files) return <p className="dk-sub">Loading the source page...</p>
@@ -98,7 +105,7 @@ export function Preview({ docId }: { docId: string }) {
         const u = urls[f.id]
         return (
           <figure key={f.id} className="rc-page">
-            {u && f.mime.startsWith('image/') && <img src={u} alt={`Source page ${f.name}`} />}
+            {u && f.mime.startsWith('image/') && <img src={u} alt={`Source page ${f.name}`} onError={() => { if (!retried.current.has(f.id)) { retried.current.add(f.id); signRef.current(f) } }} />}
             {u && f.mime === 'application/pdf' && <iframe src={u} title={`Source page ${f.name}`} />}
             {f.storage_path && !u && <p className="dk-sub">Loading {f.name}...</p>}
             {d && !f.storage_path && <a className="dk-b" href={d} target="_blank" rel="noreferrer">Open {f.name} in Drive</a>}

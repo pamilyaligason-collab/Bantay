@@ -58,7 +58,8 @@ function useOtherDrafts() {
 
 const paperName = (d: DocBundle['doc']) => [KIND[d.kind] ?? 'Document', d.title, d.facility, d.doc_date].filter(Boolean).join(', ')
 
-export default function Queue(_: PageProps) {
+export default function Queue({ id }: PageProps) {
+  const person = id && id !== 'all' ? id : undefined // #/queue/<personId> shows one person's papers
   const { nameOf } = useDeskPeople()
   const [papers, setPapers] = useState<DocBundle[] | null>(null)
   const [err, setErr] = useState('')
@@ -75,7 +76,7 @@ export default function Queue(_: PageProps) {
   const conf = useConfirm()
 
   const load = async () => {
-    const r = await listDrafts()
+    const r = await listDrafts(person)
     if (!r.ok) { setErr(say(r.error)); return } // keep any list already on screen; never turn an error into "Nothing to confirm"
     setErr(''); setPapers(r.data)
     setChecked((prev) => {
@@ -89,7 +90,7 @@ export default function Queue(_: PageProps) {
       return next
     })
   }
-  useEffect(() => { void load() }, [])
+  useEffect(() => { setPapers(null); void load() }, [person])
 
   const flat = (papers ?? []).flatMap(itemsOf)
   const byPerson = new Map<string, DocBundle[]>()
@@ -229,11 +230,11 @@ export default function Queue(_: PageProps) {
                 </div>
                 {its.length === 0 ? <p className="dk-sub">No rows were read from this paper.</p> : (
                   <div className="dk-scrollx">
-                    <table className="dk-table rc-qt">
+                    <table className="dk-table dk-cardtab rc-qt" role="table">
                       <caption className="rc-sr">{paperName(b.doc)}</caption>
                       <colgroup><col className="rc-c1" /><col className="rc-c2" /><col className="rc-c3" /><col className="rc-c4" /><col /></colgroup>
-                      <thead><tr><th scope="col">Include</th><th scope="col">Item</th><th scope="col">Value</th><th scope="col">Check</th><th scope="col">Actions</th></tr></thead>
-                      <tbody>
+                      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Include</th><th role="columnheader" scope="col">Item</th><th role="columnheader" scope="col">Value</th><th role="columnheader" scope="col">Check</th><th role="columnheader" scope="col">Actions</th></tr></thead>
+                      <tbody role="rowgroup">
                         {its.map((i) => {
                           idx++
                           const n = idx
@@ -241,23 +242,23 @@ export default function Queue(_: PageProps) {
                           const unclear = i.table === 'prescription_items' && !!i.row.unclear
                           return (
                             <Fragment key={i.row.id}>
-                              <tr data-qi={n} data-row={i.row.id} tabIndex={n === Math.max(cursor, 0) ? 0 : -1} className="rc-qrow" onFocus={() => { setCursor(n); setViewDoc(b.doc.id) }}>
-                                <td className="rc-ck"><input type="checkbox" className="rc-check" checked={checked.has(i.row.id)} disabled={unclear} onChange={(e) => toggle(i.row.id, e.target.checked)} aria-label={unclear ? `${name} is unclear: confirm it on its own` : `Include ${name}`} /></td>
-                                <td>{name}</td>
-                                <td className="rc-num"><ValueCell i={i} /></td>
-                                <td>
+                              <tr role="row" data-qi={n} data-row={i.row.id} tabIndex={n === Math.max(cursor, 0) ? 0 : -1} className="rc-qrow" onFocus={() => { setCursor(n); setViewDoc(b.doc.id) }}>
+                                <td role="cell" className="rc-ck" data-label="Include"><input type="checkbox" className="rc-check" checked={checked.has(i.row.id)} disabled={unclear} onChange={(e) => toggle(i.row.id, e.target.checked)} aria-label={unclear ? `${name} is unclear: confirm it on its own` : `Include ${name}`} /></td>
+                                <td role="cell" data-label="Item">{name}</td>
+                                <td role="cell" className="rc-num" data-label="Value"><ValueCell i={i} /></td>
+                                <td role="cell" data-label="Check">
                                   {unclear && <Tag tone="warn">Unclear</Tag>}{' '}
                                   {isLow(i.row.confidence) && <Tag tone="warn">Low confidence</Tag>}
                                   {i.row.confidence != null && <span className="dk-sub"> {Math.round(Number(i.row.confidence) * 100)}%</span>}
                                 </td>
-                                <td>
+                                <td role="cell" data-label="Actions">
                                   <div className="dk-acts">
                                     {unclear && <button className="dk-b go" disabled={busy} aria-label={`Confirm ${name}`} onClick={() => void apply([i], 'confirmed')}>Confirm</button>}
                                     <button className="dk-b" aria-label={`Fix ${name}`} aria-expanded={fixing === i.row.id} onClick={() => setFixing(fixing === i.row.id ? null : i.row.id)}>Fix</button>
                                   </div>
                                 </td>
                               </tr>
-                              {fixing === i.row.id && <tr><td colSpan={5}><EditFields table={i.table} row={i.row} onSave={(p) => fixRow(i, p)} onCancel={() => setFixing(null)} /></td></tr>}
+                              {fixing === i.row.id && <tr role="row"><td role="cell" colSpan={5}><EditFields table={i.table} row={i.row} onSave={(p) => fixRow(i, p)} onCancel={() => setFixing(null)} /></td></tr>}
                             </Fragment>
                           )
                         })}

@@ -32,7 +32,7 @@ function fakeSb(tables: Record<string, R[]>, writes: W[]) {
 }
 
 import {
-  applyKeep, CAP, countsFor, defaultChecked, groupDuplicates, listKind, KINDS, loadDuplicates, planKeep, queueKey, REFUSED, restore, rxDiff, searchRows, setStatusFor, resolveTab, TABS, toChanges, labValue, labRange, labNumber, isAbnormal, docOf, type KRow,
+  applyKeep, CAP, countsFor, defaultChecked, groupDuplicates, listKind, KINDS, loadDuplicates, planKeep, queueKey, REFUSED, restore, rxDiff, searchRows, setStatusFor, resolveTab, TABS, toChanges, labValue, labRange, labNumber, isAbnormal, labTag, docOf, type KRow,
   type DocLite, type FileLite, type Kids, type QItem, type RxLine
 } from './recordsApi'
 
@@ -208,6 +208,16 @@ describe('tabs and lab cells', () => {
     expect(labRange({ id: 'x', ref_low: null, ref_high: 5 })).toBe('5 or less')
     expect(labRange({ id: 'x', ref_low: null, ref_high: null, ref_text: 'negative' })).toBe('negative')
     expect([isAbnormal('H'), isAbnormal('L'), isAbnormal('A'), isAbnormal('N'), isAbnormal(null)]).toEqual([true, true, true, false, false])
+  })
+  it('labTag: printed flag first, then value against range; unknown or no range is null, never Normal', () => {
+    expect(labTag({ id: 'x', flag: 'H', value_num: 50, ref_low: 0, ref_high: 100 })).toEqual({ word: 'High', tone: 'warn' }) // flag wins
+    expect(labTag({ id: 'x', value_num: 120, ref_low: 0, ref_high: 100 })?.word).toBe('High')
+    expect(labTag({ id: 'x', value_num: -1, ref_low: 0, ref_high: 100 })?.word).toBe('Low')
+    expect(labTag({ id: 'x', value_num: 5, ref_low: 10, ref_high: null })?.word).toBe('Low')
+    expect(labTag({ id: 'x', value_num: 50, ref_low: 0, ref_high: 100 })).toBeNull() // in range: no tag
+    expect(labTag({ id: 'x', value_num: null, ref_low: 0, ref_high: 100 })).toBeNull() // unknown value
+    expect(labTag({ id: 'x', value_num: '', ref_low: 0, ref_high: 100 })).toBeNull()
+    expect(labTag({ id: 'x', value_num: 999, ref_low: null, ref_high: null })).toBeNull() // no range
   })
   it('toChanges groups by table and previous status; docOf skips papers', () => {
     const r = (id: string, _table: string, status: 'draft' | 'confirmed', document_id?: string) => ({ id, _table, status, document_id }) as KRow

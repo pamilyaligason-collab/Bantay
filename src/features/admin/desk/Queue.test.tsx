@@ -188,6 +188,49 @@ describe('Queue load error', () => {
   })
 })
 
+describe('Queue per person and source link', () => {
+  it("#/queue/<personId> shows only that person's papers", async () => {
+    tables.people.push({ id: 'p2', display_name: 'Other Person' })
+    tables.documents.push({ id: 'd3', person_id: 'p2', kind: 'lab', status: 'draft', doc_date: '2026-09-02', facility: 'Test Clinic', title: null })
+    tables.lab_results.push({ id: 'l9', document_id: 'd3', person_id: 'p2', name_raw: 'Other Test', value_num: 1, confidence: 0.9, status: 'draft' })
+    render(<Queue id="p2" />)
+    expect(await screen.findByRole('heading', { name: 'Other Person' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Test Person' })).toBeNull()
+    expect(screen.getAllByRole('table')).toHaveLength(1)
+    expect(screen.getByLabelText('Include Other Test')).toBeTruthy()
+  })
+  it('the 60 s signed link is renewed once after the image fails, not in a loop', async () => {
+    tables.source_files = [{ id: 'f1', document_id: 'd1', name: 'page1.jpg', mime: 'image/jpeg', drive_file_id: null, storage_path: 'p1/a.jpg', page_no: 1, sha256: 'b'.repeat(64) }]
+    let signs = 0
+    const sb = h.sb as { storage: unknown }
+    sb.storage = { from: () => ({ createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://files.test/${p}?n=${++signs}` }, error: null }) }) }
+    render(<Queue id={null} />)
+    const img = await screen.findByRole('img', { name: 'Source page page1.jpg' })
+    expect(signs).toBe(1)
+    fireEvent.error(img)
+    await waitFor(() => expect(signs).toBe(2))
+    fireEvent.error(screen.getByRole('img', { name: 'Source page page1.jpg' }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(signs).toBe(2) // only one retry per page
+  })
+  it('the signed link is renewed every 50 s while the paper is shown', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      tables.source_files = [{ id: 'f1', document_id: 'd1', name: 'page1.jpg', mime: 'image/jpeg', drive_file_id: null, storage_path: 'p1/a.jpg', page_no: 1, sha256: 'b'.repeat(64) }]
+      let signs = 0
+      const sb = h.sb as { storage: unknown }
+      sb.storage = { from: () => ({ createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://files.test/${p}?n=${++signs}` }, error: null }) }) }
+      render(<Queue id={null} />)
+      await screen.findByRole('img', { name: 'Source page page1.jpg' })
+      expect(signs).toBe(1)
+      await vi.advanceTimersByTimeAsync(50_000)
+      expect(signs).toBe(2)
+      await vi.advanceTimersByTimeAsync(50_000)
+      expect(signs).toBe(3)
+    } finally { vi.useRealTimers() }
+  })
+})
+
 describe('Queue select all', () => {
   it('ticks every clear row and empty paper, leaves unclear lines out and says so before confirming', async () => {
     tables.documents.push({ id: 'd3', person_id: 'p1', kind: 'other', status: 'draft', doc_date: '2026-07-01', facility: 'Test Clinic', title: 'Empty paper' })

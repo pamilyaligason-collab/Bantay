@@ -21,7 +21,7 @@ const state = (): Record<string, Row[]> => ({
     { id: 'b', person_id: 'p1', kind: 'prescription', status: 'draft', doc_date: '2026-08-01', facility: 'Test Clinic', title: null, created_at: '2026-10-02T00:00:00Z' }
   ],
   lab_results: [
-    { id: 'l1', document_id: 'd1', person_id: 'p1', name_raw: 'LDL Test', value_num: 95, unit_raw: 'mg/dL', flag: 'H', ref_low: 0, ref_high: 100, confidence: 0.95, status: 'draft', collected_at: '2026-09-01T00:00:00Z' },
+    { id: 'l1', document_id: 'd1', person_id: 'p1', name_raw: 'LDL Test', value_num: 105, unit_raw: 'mg/dL', flag: 'H', ref_low: 0, ref_high: 100, confidence: 0.95, status: 'draft', collected_at: '2026-09-01T00:00:00Z' },
     { id: 'l2', document_id: 'd1', person_id: 'p1', name_raw: 'Glucose Test', value_num: 180, unit_raw: 'mg/dL', confidence: 0.6, status: 'draft', collected_at: '2026-09-01T00:00:00Z' },
     { id: 'l3', document_id: 'd1', person_id: 'p1', name_raw: 'HDL Test', value_num: 50, unit_raw: 'mg/dL', confidence: 0.9, status: 'draft', collected_at: '2026-09-01T00:00:00Z' }
   ],
@@ -114,6 +114,7 @@ async function checkPage(page: Page, label: string) {
 
 for (const s of SIZES) {
   test(`records, queue and duplicates at ${s.w}x${s.h}: no sideways scroll, targets, axe`, async ({ page }) => {
+    test.setTimeout(120_000) // four axe passes take 25-30 s on a loaded machine; the default 30 s was the limit
     await page.setViewportSize({ width: s.w, height: s.h })
     await mock(page, state(), [])
     await skipOnboarding(page)
@@ -174,7 +175,7 @@ test('records: row opens the panel, Confirm then Undo', async ({ page }) => {
   await page.goto('/admin#/records')
   await page.getByRole('button', { name: 'LDL Test' }).click()
   const panel = page.getByRole('dialog')
-  await expect(panel.getByLabel('Value', { exact: true })).toHaveValue('95')
+  await expect(panel.getByLabel('Value', { exact: true })).toHaveValue('105')
   await panel.getByRole('button', { name: 'Confirm' }).click()
   await expect(page.getByText('Confirmed.')).toBeVisible()
   expect(patches.find((p) => p.table === 'lab_results')).toMatchObject({ body: { status: 'confirmed' }, ids: ['l1'] })
@@ -294,6 +295,31 @@ test('queue: source paper beside the values at 1440, below at 1024; sticky Confi
   await page.setViewportSize({ width: 1024, height: 800 })
   const t2 = (await page.locator('.rc-qt').first().boundingBox())!, s2 = (await src.boundingBox())!
   expect(s2.y).toBeGreaterThan(t2.y + t2.height - 1) // stacked below
+})
+
+test('queue at 390: rows are cards and Fix is on screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mock(page, state(), [])
+  await skipOnboarding(page)
+  await page.goto('/admin#/queue')
+  const fix = page.getByRole('button', { name: 'Fix LDL Test' })
+  await expect(fix).toBeInViewport()
+  const bb = (await fix.boundingBox())!
+  expect(bb.x + bb.width).toBeLessThanOrEqual(391)
+  expect(await page.locator('.rc-qt').first().evaluate((t) => getComputedStyle(t).display)).toBe('block')
+  expect(await page.locator('.rc-qt thead').first().evaluate((t) => t.getBoundingClientRect().width)).toBeLessThanOrEqual(1)
+  await expect(page.getByRole('table', { name: /Lab paper/ })).toHaveCount(1) // table semantics survive display:block
+  const v = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations
+  expect(v.map((x) => `${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
+})
+
+test('queue: #/queue/<personId> shows that person only', async ({ page }) => {
+  await mock(page, state(), [])
+  await skipOnboarding(page)
+  await page.goto('/admin#/queue/p1')
+  await expect(page.getByRole('heading', { name: 'Test Person' })).toBeVisible()
+  await page.goto('/admin#/queue/nobody')
+  await expect(page.getByText('Nothing to confirm.')).toBeVisible()
 })
 
 test('records: nine tabs scroll with a More button at 1024', async ({ page }) => {

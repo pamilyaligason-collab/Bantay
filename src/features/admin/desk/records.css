@@ -69,3 +69,15 @@
 .rc-tabsw[data-more] .dk-tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 96px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 96px), transparent); }
 .rc-more { position: absolute; right: 0; top: 0; min-height: 44px; }
 @media (prefers-reduced-motion: no-preference) { .dk-tabs { scroll-behavior: smooth; } }
+/* Queue under 768 px: each row is a card, so Fix is always on screen (same shape as the shared dk-cardtab). Self-contained so it works without files.css. */
+@media (max-width: 767.98px) {
+  .dk-table.dk-cardtab.rc-qt { table-layout: auto; }
+  .dk-table.dk-cardtab.rc-qt colgroup { display: none; }
+  .dk-table.dk-cardtab.rc-qt thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .dk-table.dk-cardtab.rc-qt, .dk-table.dk-cardtab.rc-qt tbody { display: block; }
+  .dk-table.dk-cardtab.rc-qt tr { display: grid; gap: 4px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  .dk-table.dk-cardtab.rc-qt tbody tr:first-child { border-top: 0; }
+  .dk-table.dk-cardtab.rc-qt td { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: auto; height: auto; min-height: 0; padding: 0; border: 0; white-space: normal; }
+  .dk-table.dk-cardtab.rc-qt td[data-label]::before { content: attr(data-label); flex: 0 0 84px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .dk-table.dk-cardtab.rc-qt .rc-ck .rc-check { margin: 0; }
+}
