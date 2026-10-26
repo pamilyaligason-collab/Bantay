@@ -1,0 +1,36 @@
+/* S9 guided blood pressure check and crisis card. App tokens only (light and dark come from them). */
+.bc { display: flex; flex-direction: column; gap: 12px; }
+.bc-eye { margin: 0; }
+.bc-steps-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.bc-steps-bar i { height: 6px; border-radius: 3px; background: var(--line); }
+.bc-steps-bar i.on { background: var(--green2); }
+.bc-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); text-decoration: none; }
+.bc-link { min-height: 44px; }
+.bc-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.bc-chip { padding: 3px 10px; border-radius: 999px; font-size: 14px; font-weight: 600; background: var(--card2); }
+.bc-ring { align-self: center; display: grid; place-items: center; width: 132px; height: 132px; border-radius: 50%; border: 8px solid var(--soft); text-align: center; }
+.bc-ring b { display: block; font-size: 30px; }
+.bc-tips { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; }
+.bc-reading { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bc-reading small { display: block; color: var(--ink2); font-size: 14px; }
+.bc-reading b { font-size: 24px; }
+.bc-big { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.bc-big .num { font-size: 48px; font-weight: 700; line-height: 1.05; }
+.bc-wk { font-size: 22px; }
+.bc-trend { width: 100%; height: 90px; }
+.bc-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.bc-row > * { flex: 1; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
+.bc-done { min-height: 52px; }
+/* the five words: colour never carries the meaning alone (icon + word) */
+.bc-lvl { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 15px; font-weight: 700; background: var(--card2); color: var(--ink); }
+.bc-lvl.in { background: var(--soft); }
+.bc-lvl.raised, .bc-lvl.above, .bc-lvl.low { background: var(--warn-bg); }
+.bc-lvl.high { background: var(--red-soft); }
+.bc-crisis { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 18px; background: var(--red-soft); color: var(--ink); }
+.bc-ct { margin: 0; font-size: 22px; }
+.bc-crisis p { margin: 0; font-size: 17px; }
+.bc-crisis .bc-fam { font-size: 15px; color: var(--ink2); }
+.bc-crisis .bc-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; font-size: 17px; }
+.bc-911 { background: var(--danger-bg); color: #fff; text-decoration: none; font-size: 20px; min-height: 56px; }
+.bc-close { min-height: 56px; }
+.bc-verds .bc-vrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; }
