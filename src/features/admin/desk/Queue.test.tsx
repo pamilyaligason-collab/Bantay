@@ -99,6 +99,42 @@ describe('Confirm queue', () => {
     expect(screen.queryByRole('alertdialog')).toBeNull()
   })
 
+  it('S11: a paper printed with another name asks "Name on paper" before it is confirmed; an alias or a matching name does not', async () => {
+    tables.documents[0].printed_name = 'Rosa Dela Cruz'
+    render(<Queue id={null} />)
+    await screen.findByRole('heading', { name: 'Test Person' })
+    fireEvent.click(screen.getByLabelText('Include Test Drug A')) // 1 row left: no generic dialog, only the name warning
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm 1 checked' }))
+    const dlg = await screen.findByRole('alertdialog')
+    expect(dlg.textContent).toContain('Name on paper: Rosa Dela Cruz (filed under Test Person)')
+    expect(statusWrites()).toEqual([])
+    fireEvent.click(within(dlg).getByRole('button', { name: 'Confirm anyway' }))
+    await waitFor(() => expect(statusWrites()).toContainEqual(['lab_results', 'confirmed', ['l1']]))
+  })
+
+  it('S11: bulk confirm shows the generic question, then the name warning, and cancelling the warning writes nothing', async () => {
+    tables.documents[0].printed_name = 'Rosa Dela Cruz'
+    render(<Queue id={null} />)
+    await screen.findByRole('heading', { name: 'Test Person' })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm 2 checked' }))
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
+    const warn = await screen.findByText(/Name on paper: Rosa Dela Cruz/)
+    expect(warn).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(statusWrites()).toEqual([])
+  })
+
+  it('S11: an alias in person_aliases clears the warning', async () => {
+    tables.documents[0].printed_name = 'Rosa Dela Cruz'
+    tables.person_aliases = [{ alias: 'rosa dela cruz', person_id: 'p1' }]
+    render(<Queue id={null} />)
+    await screen.findByRole('heading', { name: 'Test Person' })
+    fireEvent.click(screen.getByLabelText('Include Test Drug A'))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm 1 checked' }))
+    await waitFor(() => expect(statusWrites()).toContainEqual(['lab_results', 'confirmed', ['l1']]))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+
   it('Reject paper asks first and rejects every draft row of that paper only', async () => {
     render(<Queue id={null} />)
     await screen.findByRole('heading', { name: 'Test Person' })

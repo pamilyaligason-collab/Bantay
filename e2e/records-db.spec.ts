@@ -75,7 +75,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const sheet = page.getByRole('dialog')
     await sheet.getByRole('button', { name: /Lab results, 2026-09-01/ }).click()
     await expect(sheet.getByTestId('printed-name')).toHaveText('Name on paper: Rosa Dela Cruz')
-    await expect(sheet.getByTestId('name-mismatch')).toContainText('This paper says Rosa Dela Cruz, not Me (Jun)')
+    await expect(sheet.getByTestId('name-mismatch')).toContainText('This paper says Rosa Dela Cruz, which does not clearly match Me (Jun)')
     await page.screenshot({ path: `test-results/records-name-${scheme}.png` })
     const all = sheet.getByRole('button', { name: /Confirm all checked/ })
     const one = sheet.getByRole('button', { name: 'Confirm Glucose Test' })

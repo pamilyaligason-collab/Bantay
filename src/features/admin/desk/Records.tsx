@@ -7,7 +7,7 @@ import Ids from './Ids'
 import { EditFields, fmt, label, LoadError, Preview, say, TabScroller } from './recordsUi'
 import {
   CAP, countKinds, docOf, docStatuses, isAbnormal, KINDS, labNumber, labRange, labTag, labValue, listItems, listKind, parentDoc, reopenDocument,
-  resolveTab, restore, searchRows, setStatusFor, sourceNames, TABS, toChanges,
+  nameWarnings, nameWarningText, resolveTab, restore, searchRows, setStatusFor, sourceNames, TABS, toChanges,
   type Change, type Filter, type Kind, type KindKey, type KRow, type Status, type TabKey
 } from './recordsApi'
 import './records.css'
@@ -185,9 +185,13 @@ export default function Records({ id, sub, embedded }: PageProps) {
   const pickedRows = everyRow.filter((r) => picked.has(rk(r)))
 
   /** Confirm or reject rows (one from the panel, or the ticked ones). Closes the paper when its last draft goes, and Undo reverses both. */
-  const apply = async (rows: KRow[], next: 'confirmed' | 'rejected') => {
+  const apply = async (rows: KRow[], next: 'confirmed' | 'rejected', acked = false): Promise<void> => {
     const todo = rows.filter((r) => r.status !== next)
     if (!todo.length) return
+    if (next === 'confirmed' && !acked) { // S11: a paper with another name on it is confirmed only after the admin says so
+      const w = await nameWarnings(todo.map(docOf).filter((x): x is string => !!x), (pid) => nameOf(pid))
+      if (w.length) { setTimeout(() => confirm.ask(nameWarningText(w), () => apply(rows, next, true), { verb: 'Confirm anyway' }), 0); return } // after the first dialog has closed itself
+    }
     setBusy(true)
     try {
       const docs = [...new Set(todo.map(docOf).filter((x): x is string => !!x))]
