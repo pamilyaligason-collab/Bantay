@@ -1,6 +1,8 @@
 // Scan & Capture, device reading: the numbers read off the photo, shown big. The person confirms or edits them BEFORE anything is saved.
 // R2 hazard: a number the model was not sure of (confidence under 0.9, or none) must be tapped (or edited) before Save works.
 import { useRef, useState } from 'react'
+import '../health/health.css' // .hv-state (the verdict pill); the Scan screen can open before any Health screen has loaded it
+import '../health/m7a.css' // .ar-prev (the verdict line box)
 import { deviceSpec, previewReading } from '../health/readingPreview'
 import { logReading } from '../log/store'
 import { buildReadings, KIND_LABEL, KIND_ORDER, toTyped, UNIT_WORD, UNITS, type ReadingDraft, type ReadingKind } from './reading'
@@ -76,7 +78,7 @@ export default function ReadingConfirm({ draft, failed, limited = false, personI
           {confirmBtn('value', KIND_LABEL[kind].toLowerCase())}
         </div>
       )}
-      {pv && pv.state !== 'invalid' && (
+      {pv && pv.state !== 'invalid' && pv.state !== 'none' && ( // 'none' lines say "Saved..." and nothing is saved yet
         <div className="ar-prev" data-testid="reading-verdict" data-state={pv.state} role="status">
           {pv.word && <span className={`hv-state ${pv.state}`}>{pv.word}</span>}
           <span>{pv.line}</span>

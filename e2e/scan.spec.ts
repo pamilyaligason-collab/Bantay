@@ -59,7 +59,7 @@ async function mock(page: Page, reply: { status: number; reading?: unknown } = {
     if (p.startsWith('/functions/v1/records-extract')) {
       const body = req.postDataJSON()
       s.calls.push('invoke'); s.invokes.push(body)
-      if (body?.mode === 'reading') return reply.status === 200 ? json(route, { ok: true, reading: reply.reading }) : json(route, { ok: false, error: 'read_failed' }, reply.status)
+      if (body?.mode === 'reading') return reply.status === 200 ? json(route, { ok: true, reading: reply.reading }) : json(route, { ok: false, error: reply.status === 429 ? 'rate_limited' : 'read_failed' }, reply.status)
       return json(route, { ok: true })
     }
     return json(route, {}, 404)
@@ -170,22 +170,29 @@ for (const scheme of ['light', 'dark'] as const) {
     test.use({ colorScheme: scheme })
 
     test('photo, Device reading, numbers shown to confirm, edit one, Save writes readings and no document', async ({ page }) => {
-      const s = await mock(page, { status: 200, reading: { kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.9 } })
+      const s = await mock(page, { status: 200, reading: { kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.7 } }) // under 0.9: each number must be tapped
       await page.goto('/docs-harness.html#scan')
       await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
       await expect(page.getByRole('heading', { name: 'What is in the photo?' })).toBeVisible()
       await shot(page, `choose-${scheme}`)
       await page.getByRole('button', { name: /Device reading/ }).click()
-      await expect(page.getByTestId('reading-confirm')).toBeVisible()
-      await expect(page.getByLabel('Top')).toHaveValue('128')
-      await expect(page.getByLabel('Bottom')).toHaveValue('82')
-      await expect(page.getByLabel('Pulse')).toHaveValue('71')
+      await expect(page.getByTestId('reading-confirm')).toBeVisible({ timeout: 20_000 }) // the photo is decoded and sent first
+      await expect(page.getByLabel('Top', { exact: true })).toHaveValue('128')
+      await expect(page.getByLabel('Bottom', { exact: true })).toHaveValue('82')
+      await expect(page.getByLabel('Pulse', { exact: true })).toHaveValue('71')
       expect(s.invokes[0]).toMatchObject({ mode: 'reading', mime: 'image/jpeg' })
       expect(typeof (s.invokes[0] as { image_base64: string }).image_base64).toBe('string')
-      expect((await page.getByLabel('Top').boundingBox())!.height).toBeGreaterThanOrEqual(48)
-      await page.getByLabel('Top').fill('132') // nothing is saved until the person confirms
-      expect(await readings(page)).toHaveLength(0)
+      expect((await page.getByLabel('Top', { exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(48)
+      await expect(page.getByTestId('reading-verdict')).toHaveAttribute('data-state', 'above')
+      await expect(page.getByRole('button', { name: /^Confirm / })).toHaveCount(3)
+      await expect(page.getByRole('button', { name: 'Save reading' })).toBeDisabled()
       await shot(page, `confirm-${scheme}`)
+      await page.getByLabel('Top', { exact: true }).fill('132') // editing a number confirms it; the other two are tapped
+      await page.getByTestId('tap-diastolic').click()
+      await expect(page.getByRole('button', { name: 'Save reading' })).toBeDisabled() // pulse still waits
+      await page.getByTestId('tap-pulse').click()
+      await expect(page.getByRole('button', { name: 'Save reading' })).toBeEnabled()
+      expect(await readings(page)).toHaveLength(0) // nothing is saved until the person confirms
       await page.getByRole('button', { name: 'Save reading' }).click()
       await expect(page.getByText('Reading saved.')).toBeVisible()
       expect((await readings(page)).map((r) => [r.test, r.value, r.unit])).toEqual([['bp_systolic', 132, 'mmHg'], ['bp_diastolic', 82, 'mmHg'], ['heart_rate', 71, 'bpm']])
@@ -193,14 +200,25 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(s.uploads).toHaveLength(0)
     })
 
+    test('over the daily limit (429): the limit note shows, fields are empty, nothing is saved', async ({ page }) => {
+      await mock(page, { status: 429 })
+      await page.goto('/docs-harness.html#scan')
+      await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
+      await page.getByRole('button', { name: /Device reading/ }).click()
+      await expect(page.getByText(/Too many photo reads today/)).toBeVisible({ timeout: 20_000 })
+      await expect(page.getByLabel('Top', { exact: true })).toHaveValue('')
+      await shot(page, `limit-${scheme}`)
+      expect(await readings(page)).toHaveLength(0)
+    })
+
     test('the server could not read it: fields are empty (not 0) and the person types the numbers', async ({ page }) => {
       await mock(page, { status: 502 })
       await page.goto('/docs-harness.html#scan')
       await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
       await page.getByRole('button', { name: /Device reading/ }).click()
-      await expect(page.getByTestId('reading-confirm')).toBeVisible()
-      await expect(page.getByLabel('Top')).toHaveValue('')
-      await expect(page.getByText(/Could not read the photo/)).toBeVisible()
+      await expect(page.getByTestId('reading-confirm')).toBeVisible({ timeout: 20_000 }) // the photo is decoded and sent first
+      await expect(page.getByLabel('Top', { exact: true })).toHaveValue('')
+      await expect(page.getByText(/Could not read the photo/)).toBeVisible({ timeout: 20_000 })
       await page.getByRole('button', { name: 'Save reading' }).click()
       await expect(page.getByRole('alert')).toContainText('Type the top and the bottom number')
       await shot(page, `empty-${scheme}`)

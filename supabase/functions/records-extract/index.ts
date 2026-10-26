@@ -15,7 +15,7 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.1
 import { corsHeaders, json } from '../_shared/http.ts'
 import {
   type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, type DocRow, type Env, extractDocument, type PageRow, parseBody, type Port, runSweep,
-  parseReadingBody, READING_DAILY_CAP, readDevice, readingSlotTaken, sendToOpenRouter, summary, SWEEP_LIMIT, type Usage, withRetry
+  parseReadingBody, readDevice, sendToOpenRouter, summary, SWEEP_LIMIT, takeReadingSlot, type ReadingUsagePort, type Usage, withRetry
 } from './logic.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
@@ -87,6 +87,25 @@ function makePort(sb: SupabaseClient, key: string): Port {
   }
 }
 
+function usagePort(sb: SupabaseClient): ReadingUsagePort {
+  return {
+    async count(userId, day) {
+      const { data, error } = await sb.from('assistant_usage').select('count').eq('user_id', userId).eq('day', day).maybeSingle()
+      if (error) throw new Error('read')
+      return data ? Number(data.count) : null
+    },
+    async ensure(userId, day) {
+      const { error } = await sb.from('assistant_usage').upsert({ user_id: userId, day, count: 0 }, { onConflict: 'user_id,day', ignoreDuplicates: true })
+      if (error) throw new Error('write')
+    },
+    async bump(userId, day, expected) {
+      const { data, error } = await sb.from('assistant_usage').update({ count: expected + 1 }).eq('user_id', userId).eq('day', day).eq('count', expected).select('count')
+      if (error) throw new Error('write')
+      return (data?.length ?? 0) === 1
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   const cors = corsHeaders(Deno.env.get('ALLOWED_ORIGIN'), req.headers.get('origin'))
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
@@ -104,10 +123,10 @@ Deno.serve(async (req) => {
       const asker = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { ...opts, global: { headers: { Authorization: req.headers.get('authorization') ?? '' } } })
       const { data: who } = await asker.auth.getUser()
       if (!who.user) return json({ ok: false, error: 'unauthorized' }, 401, cors)
-      // a daily slot per member, taken before the model is called (assistant_take has no key column yet: the count is shared with Ask)
-      const { data: slot, error: slotErr } = await asker.rpc('assistant_take', { p_limit: READING_DAILY_CAP })
-      if (slotErr) return json({ ok: false, error: 'server_error' }, 500, cors)
-      if (!readingSlotTaken(slot)) return json({ ok: false, error: 'rate_limited' }, 429, cors)
+      // a daily slot per member, taken before the model is called; own counter (not the Ask chat's), see readingUsageDay
+      let taken: boolean
+      try { taken = await takeReadingSlot(usagePort(createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), opts)), who.user.id, new Date()) } catch { return json({ ok: false, error: 'server_error' }, 500, cors) }
+      if (!taken) return json({ ok: false, error: 'rate_limited' }, 429, cors)
       const used: { u: Usage | null } = { u: null }
       try {
         const result = await readDevice((body) => withRetry(() => sendToOpenRouter(fetch, body, key, (u) => { used.u = u }), { tries: 2, baseMs: 1000 }), image, cfg)

@@ -8,7 +8,7 @@ import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
   buildReadingRequest, buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, MAX_READING_BASE64,
-  MAX_TOKENS, normalizeDraft, READING_DAILY_CAP, READING_UNITS, readingSlotTaken, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
+  MAX_TOKENS, normalizeDraft, READING_DAILY_CAP, READING_UNITS, readingUsageDay, takeReadingSlot, type ReadingUsagePort, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
   normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, usageCounts, uuid5, withRetry
 } from './logic.ts'
 
@@ -275,10 +275,56 @@ describe('reading mode', () => {
     expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max + 1, confidence: 1 }).pulse).toBeNull()
     expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max, confidence: 1 }).pulse).toBe(P.pulse.max)
   })
-  it('the daily slot: only an explicit allowed row passes; error shapes and empties say no', () => {
+  // a fake assistant_usage table; askTake is assistant_take (the Ask chat) on today's Manila date, as in 0005
+  const table = () => {
+    const rows = new Map<string, number>()
+    const port: ReadingUsagePort = {
+      count: async (u, d) => rows.get(`${u}|${d}`) ?? null,
+      ensure: async (u, d) => { if (!rows.has(`${u}|${d}`)) rows.set(`${u}|${d}`, 0) },
+      bump: async (u, d, e) => { if (rows.get(`${u}|${d}`) !== e) return false; rows.set(`${u}|${d}`, e + 1); return true }
+    }
+    const askTake = (u: string, now: Date, limit: number) => {
+      const d = new Date(now.getTime() + 8 * 3600_000).toISOString().slice(0, 10)
+      const n = rows.get(`${u}|${d}`) ?? 0
+      if (n >= limit) return false
+      rows.set(`${u}|${d}`, n + 1); return true
+    }
+    return { rows, port, askTake }
+  }
+  const noon = new Date('2026-10-26T04:00:00Z') // 12:00 in Manila
+  it('the photo-read day is Manila today, 100 years on (own row, never the chat row)', () => {
     expect(READING_DAILY_CAP).toBe(20)
-    expect(readingSlotTaken([{ allowed: true, used: 3 }])).toBe(true)
-    for (const bad of [[{ allowed: false, used: 20 }], [], null, undefined, 'x', [{ used: 1 }], [{ allowed: 'true' }]]) expect(readingSlotTaken(bad)).toBe(false)
+    expect(readingUsageDay(noon)).toBe('2126-10-26')
+    expect(readingUsageDay(new Date('2026-10-26T16:30:00Z'))).toBe('2126-10-27') // 00:30 next day in Manila
+    expect(readingUsageDay(new Date('2026-12-31T20:00:00Z'))).toBe('2127-01-01')
+  })
+  it('20 photo reads pass, the 21st is refused, and the Ask chat still has all 30 messages', async () => {
+    const t = table()
+    for (let i = 0; i < 20; i++) expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(false)
+    expect(t.rows.get('u1|2126-10-26')).toBe(20)
+    for (let i = 0; i < 30; i++) expect(t.askTake('u1', noon, 30)).toBe(true)
+    expect(t.askTake('u1', noon, 30)).toBe(false)
+  })
+  it('30 Ask chat messages do not use up the photo reads', async () => {
+    const t = table()
+    for (let i = 0; i < 30; i++) expect(t.askTake('u1', noon, 30)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(true)
+    expect(t.rows.get('u1|2026-10-26')).toBe(30)
+  })
+  it('another member and the next day start fresh', async () => {
+    const t = table()
+    for (let i = 0; i < 20; i++) await takeReadingSlot(t.port, 'u1', noon)
+    expect(await takeReadingSlot(t.port, 'u2', noon)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', new Date('2026-10-27T04:00:00Z'))).toBe(true)
+  })
+  it('parallel calls never go past the cap; a failing read or write throws instead of passing', async () => {
+    const t = table()
+    const r = await Promise.all(Array.from({ length: 30 }, () => takeReadingSlot(t.port, 'u1', noon, 20)))
+    expect(r.filter(Boolean).length).toBeLessThanOrEqual(20)
+    expect(t.rows.get('u1|2126-10-26')).toBeLessThanOrEqual(20)
+    await expect(takeReadingSlot({ ...t.port, count: async () => { throw new Error('read') } }, 'u1', noon)).rejects.toThrow()
+    await expect(takeReadingSlot({ ...t.port, ensure: async () => { throw new Error('write') } }, 'u1', noon)).rejects.toThrow()
   })
   it('parseReadingBody accepts one small photo and nothing else', () => {
     const ok = JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: img.base64 })

@@ -455,10 +455,33 @@ export function normalizeReading(p: unknown): ReadingResult {
 }
 
 export const READING_DAILY_CAP = 20
-/** The assistant_take reply (one row {allowed, used}) -> may this member read a photo today? Anything unclear says no. */
-export function readingSlotTaken(data: unknown): boolean {
-  const row = (Array.isArray(data) ? data[0] : data) as { allowed?: unknown } | null | undefined
-  return row?.allowed === true
+/**
+ * The photo-read counter lives in assistant_usage but on its own row: the Ask chat (assistant_take) counts on the row for today's Manila date,
+ * this counts on the same date 100 years on, so 20 photo reads never use up Jack's chat messages and the reverse. No new SQL (assistant_take has no key column).
+ * shortcut: the row sits in a made-up far-future day; when a key column is added to assistant_usage, move it there.
+ */
+export function readingUsageDay(now: Date): string {
+  const manila = new Date(now.getTime() + 8 * 3600_000).toISOString().slice(0, 10)
+  return `${Number(manila.slice(0, 4)) + 100}${manila.slice(4)}`
+}
+export interface ReadingUsagePort {
+  /** Today's count, or null when there is no row yet. Throws when the read fails. */
+  count(userId: string, day: string): Promise<number | null>
+  /** Create the row at 0 if missing. */
+  ensure(userId: string, day: string): Promise<void>
+  /** count = expected + 1 only while count is still expected (compare and set); true when this call won. */
+  bump(userId: string, day: string, expected: number): Promise<boolean>
+}
+/** Take one photo-read slot for today. Never goes past the cap even under parallel calls; a failed read or write throws (the caller says server_error). */
+export async function takeReadingSlot(port: ReadingUsagePort, userId: string, now: Date, cap = READING_DAILY_CAP): Promise<boolean> {
+  const day = readingUsageDay(now)
+  await port.ensure(userId, day)
+  for (let i = 0; i < 5; i++) {
+    const n = (await port.count(userId, day)) ?? 0
+    if (n >= cap) return false
+    if (await port.bump(userId, day, n)) return true
+  }
+  return false // five lost races in a row: say no rather than go past the cap
 }
 
 /** Request body {mode:'reading', mime, image_base64} -> the image, or null for anything else (wrong mode, not an image, too big). */

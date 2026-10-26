@@ -92,6 +92,10 @@ describe('ReadingConfirm', () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalled())
     expect((await hdb.readings.toArray()).map((r) => [r.test, r.value, r.unit])).toEqual([['glucose', 100.9, 'mg/dL']])
   })
+  it('a device with no range to compare (temperature) shows no "Saved" line before anything is saved', () => {
+    show({ ...EMPTY_DRAFT, kind: 'temp', value: 37, unit: 'C', confidence: 0.9 })
+    expect(screen.queryByTestId('reading-verdict')).toBeNull()
+  })
   it('changing the device kind switches the fields', () => {
     show(bp)
     fireEvent.click(screen.getByRole('button', { name: 'Weight' }))
