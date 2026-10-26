@@ -12,7 +12,9 @@ export const EVENT_NAMES = {
     'dose_skipped', 'med_added', 'med_edited', 'med_paused', 'med_deleted', 'reminder_opened', 'checkin_done',
     'card_seen_my_week', 'weather_opened', 'weather_opened_action', 'records_confirmed',
     // session 8 nutrition: fixed names only, never a food name (B-7)
-    'meal_logged', 'water_logged', 'salt_goal_set'],
+    'meal_logged', 'water_logged', 'salt_goal_set',
+    // session 10 S3: phone check result, fixed names only
+    'phone_check_pass', 'phone_check_fail'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const
 export type EventKind = keyof typeof EVENT_NAMES
