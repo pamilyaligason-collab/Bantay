@@ -58,7 +58,7 @@ describe('emergency gate', () => {
 
   const no = [
     'what is a normal blood pressure', 'I took my amlodipine this morning', 'my sugar is 110 after breakfast', 'my sugar is 55', // no symptom
-    'no chest pain today', 'walang sakit sa dibdib', 'without chest pain or shortness of breath', 'ano ang stroke', 'what is a heart attack', 'how to prevent stroke',
+    'no chest pain today', 'walang sakit sa dibdib', 'without any chest pain', 'denies having chest pain', 'ano ang stroke', 'what is a heart attack', 'how to prevent stroke',
     'paano maiwasan ang atake sa puso', 'how do I relax and breathe slowly', 'ilang beses uminom ng gamot sa isang araw', 'masakit ang ulo ko', 'can I eat bagoong',
     'sugar 120, feeling weak', 'BP 130/85 headache', 'what time should I take metformin', 'salamat po',
     'my appointment is on 12/20 and I feel dizzy', 'the rice costs 150 by 120 pesos', 'I paid 200/100 for the room', 'petsa 18/12', 'my room is 190 sa 110 cm', 'BP 170/110', 'bp 120/80 and a headache',
@@ -66,6 +66,23 @@ describe('emergency gate', () => {
   ]
   it.each(no)('lets through: %s', (text) => {
     expect(emergencyGate(text)).toBeNull()
+  })
+  // release review B1: an earlier "no" / "wala" must not hide a later emergency
+  it.each([
+    ['I have no medicine left and I want to die', 'selfharm'],
+    ['there is no one home and dad collapsed', 'unconscious'],
+    ['walang tao sa bahay, hindi makahinga si lolo', 'breathing'],
+    ['wala si mama dito, nahimatay si lola', 'unconscious'],
+    ['I took no medicine today and now chest pain', 'chest'],
+    ['no fever and chest pain since morning', 'chest'],
+    ['no sugar today, chest pain', 'chest'],
+    ['never had chest pain before, now chest pain', 'chest'],
+    ['he never wakes up this late, now unconscious', 'unconscious'],
+    ['my father has no energy and face drooping', 'stroke'],
+    ['walang gamot kanina tapos masakit ang dibdib', 'chest'],
+    ['without chest pain or shortness of breath', 'breathing'], // breathing is never negated: an accepted false alarm
+  ])('an earlier negation does not hide: %s', (text, kind) => {
+    expect(emergencyGate(text)?.kind).toBe(kind)
   })
   it('a negation does not hide a different symptom after but', () => {
     expect(emergencyGate('no chest pain but I cant breathe')?.kind).toBe('breathing')

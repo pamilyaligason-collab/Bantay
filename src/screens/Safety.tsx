@@ -52,7 +52,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
         <h1>Safety</h1>
         <ZonePicker loc={l} />
       </div>
-      <Group id="sf-g-emerg" tone="emergency" title="Emergency" sub="Hold SOS to alert your family, or call for help now.">
+      <Group id="sf-g-emerg" tone="emergency" title="Emergency" sub="Hold SOS so your family sees it in Bantay, or call for help now.">
       <SosButton onSend={() => setSos(true)} />
       <div className="sf-pair">
         {abroad

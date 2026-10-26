@@ -83,7 +83,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
         clearInterval(tick); stopTracks(); setRec(null); mr.current = null
         if (cancelled || !chunks.length) return
         const blob = new Blob(chunks, { type: pick.mime.split(';')[0] })
-        setVoice({ blob, secs: Math.min(VOICE_MAX_S, Math.max(1, (Date.now() - t0) / 1000)), ext: pick.ext, mime: blob.type, url: URL.createObjectURL(blob) })
+        setVoice({ blob, secs: Math.min(VOICE_MAX_S, Math.max(1, (Date.now() - t0) / 1000)), ext: pick.ext, mime: blob.type || pick.mime.split(';')[0], url: URL.createObjectURL(blob) })
       }
       mr.current = { stop: () => r.state !== 'inactive' && r.stop(), cancel: () => { cancelled = true; if (r.state !== 'inactive') r.stop(); else stopTracks() } }
       r.start()

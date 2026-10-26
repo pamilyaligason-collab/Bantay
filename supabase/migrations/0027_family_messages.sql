@@ -8,6 +8,7 @@
 -- * Objects are never public; the app reads them through short-lived signed links. Path: <sender auth uid>/<uuid>.<ext>.
 -- * No message text, file names or paths in any log (B-7). Unknown stays null (B-5): body, attachment and duration are null when not given.
 -- Safe to run twice.
+begin;
 
 create table if not exists public.family_messages (
   id uuid primary key default gen_random_uuid(),
@@ -78,3 +79,5 @@ drop policy if exists family_messages_objects_delete on storage.objects;
 create policy family_messages_objects_delete on storage.objects for delete to authenticated
   using (bucket_id = 'family-messages' and public.family_messages_object_owner(name));
 -- no update policy: an object is replaced by deleting and uploading again
+
+commit;

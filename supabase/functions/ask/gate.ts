@@ -26,7 +26,10 @@ export function normalize(text: string): string {
     .trim()
 }
 
-const NEG = /\b(?:no|without|denies|never|walang|wala|ni walang|negative for)\s+(?:(?!but\b|however\b|pero\b|kaso\b)\w+\s+){0,6}$/
+// Negation is short-range and stops at clause words, so "no medicine left and I want to die" still fires (release review B1).
+const NEG = /\b(?:no|without|denies|never|walang|wala|negative for)\s+(?:(?!(?:but|however|pero|kaso|and|at|tapos|saka|then|now|ngayon|kanina|si|my|ko|ako|he|she|siya)\b)\w+\s+){0,2}$/
+// Only these kinds can be cancelled by a negation; self-harm, collapse, breathing, bleeding, seizure and poison always fire.
+const NEGATABLE = new Set<EmergencyKind>(['chest', 'stroke', 'allergy'])
 
 interface Rule { kind: EmergencyKind; re: RegExp; guard?: 'bare' }
 
@@ -121,12 +124,14 @@ export function emergencyGate(text: string): GateHit | null {
   const t = normalize(text)
   if (!t) return null
   const educational = EDU.test(t) && !NOW.test(t)
+  // clause breaks (, . ; ! ?) become " and " so a negation never reaches across them
+  const tc = normalize(String(text ?? '').replace(/[,.;!?]+/g, ' and '))
   for (const rule of RULES) {
     if (rule.guard === 'bare' && educational) continue
     rule.re.lastIndex = 0
-    for (const m of t.matchAll(rule.re)) {
-      const before = t.slice(Math.max(0, (m.index ?? 0) - 60), m.index ?? 0)
-      if (NEG.test(before)) continue
+    for (const m of tc.matchAll(rule.re)) {
+      const before = tc.slice(Math.max(0, (m.index ?? 0) - 60), m.index ?? 0)
+      if (NEGATABLE.has(rule.kind) && NEG.test(before)) continue
       return { kind: rule.kind }
     }
   }
