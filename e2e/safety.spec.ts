@@ -187,7 +187,7 @@ test('Safety groups: five headings in order, each holding its own tiles', async 
   await expect((await own('Emergency')).getByRole('link', { name: 'Call 911' })).toBeVisible()
 })
 
-test('SOS: the confirm button opens the flow, finds the place, builds the text and the safe text', async ({ page, context }) => {
+test('SOS: the confirm button opens the flow, finds the place, shows the steps, one text button per contact, and cancel', async ({ page, context }) => {
   await context.grantPermissions(['geolocation'])
   await context.setGeolocation({ latitude: 9.65, longitude: 123.88 })
   await page.addInitScript(() => {
@@ -205,22 +205,21 @@ test('SOS: the confirm button opens the flow, finds the place, builds the text a
   await page.reload()
   await page.getByRole('button', { name: 'Cannot hold? Use a button instead' }).click()
   await page.getByRole('button', { name: 'Yes, send SOS' }).click()
-  await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
-  const text = page.getByRole('link', { name: /Open the text to Papa and Joy/ })
-  await expect(text).toBeVisible()
-  const href = (await text.getAttribute('href'))!
-  expect(href).toMatch(/^sms:09171234567,\+639187654321\?body=/)
-  expect(decodeURIComponent(href)).toMatch(/I need help\. My location: https:\/\/maps\.google\.com\/\?q=9\.65,123\.88 \(/)
+  await expect(page.getByRole('button', { name: /Call 911/ })).toBeVisible()
+  await expect(page.getByTestId('sos-status')).toContainText('Text to family ready, tap Send')
+  // one composer per contact (Q38): the first opens by itself when the app is back from the call, the second is a button
+  await expect(page.getByRole('button', { name: /Text Joy/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Text Papa|Open text again/ })).toBeVisible()
   await page.getByRole('link', { name: /9\.65000, 123\.88000/ }).waitFor()
-  await expect(page.getByRole('button', { name: "I'm safe now" })).toBeEnabled()
+  await expect(page.getByRole('button', { name: /Cancel, I don.t need help/ })).toBeEnabled()
 })
 
 test('SOS with no contacts still offers 911 and asks for contacts', async ({ page }) => {
   await page.goto('/#safety')
   await page.getByRole('button', { name: 'Cannot hold? Use a button instead' }).click()
   await page.getByRole('button', { name: 'Yes, send SOS' }).click()
-  await expect(page.getByRole('link', { name: 'Call 911' })).toBeVisible()
-  await expect(page.getByText('Nobody will get a text yet')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Call 911/ })).toBeVisible()
+  await expect(page.getByText('Who gets the call and the text')).toBeVisible()
 })
 
 test('Medical ID and Go-bag screens open from Safety and go back', async ({ page }) => {
