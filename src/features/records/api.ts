@@ -24,7 +24,7 @@ export const EDITABLE: Record<Table, readonly string[]> = {
 }
 
 export interface SourceFile { id: string; name: string; mime: string; drive_file_id: string | null; storage_path?: string | null; side?: string | null }
-export interface Doc extends Row { person_id: string; kind: string; doc_date: string | null; facility: string | null; title: string | null; status: string; confirmed_by: string | null; confirmed_at: string | null }
+export interface Doc extends Row { person_id: string; kind: string; doc_date: string | null; facility: string | null; title: string | null; printed_name?: string | null; status: string; confirmed_by: string | null; confirmed_at: string | null }
 export interface Lab extends Row { name_raw: string; value_num: number | null; value_text: string | null; unit_raw: string | null; test_code: string | null; flag: string | null; ref_low: number | null; ref_high: number | null; ref_text: string | null; collected_at: string | null; confidence: number | null; value_canonical: number | null }
 export interface RxItem extends Row { prescription_id: string; line_no: number; drug_raw: string | null; strength: string | null; dose: string | null; frequency: string | null; duration: string | null; unclear: boolean; confidence: number | null }
 export interface Vaccination extends Row { vaccine: string; dose_no: number | null; given_on: string | null; confidence: number | null }

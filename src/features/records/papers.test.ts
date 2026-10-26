@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const calls = vi.hoisted(() => [] as string[][])
 vi.mock('../admin/events', () => ({ track: async (k: string, n: string) => { calls.push([k, n]); return true } }))
-import { confirmClearLabel, showConfirmAll, confirmAllLabel, emitConfirmed, progressPct, progressText } from './papers'
+import { nameMismatch, confirmClearLabel, showConfirmAll, confirmAllLabel, emitConfirmed, progressPct, progressText } from './papers'
 
 beforeEach(() => { calls.length = 0 })
 
@@ -38,5 +38,18 @@ describe('second confirm button', () => {
     expect(confirmClearLabel(4, true)).toBe('Confirm 4 clear lines')
     expect(confirmClearLabel(1, true)).toBe('Confirm 1 clear line')
     expect(confirmClearLabel(4, false)).toBe('Confirm all 4 from this paper')
+  })
+})
+
+describe('nameMismatch (S11)', () => {
+  it('flags another person, accepts reordered, partial and alias names, and treats an unread name as unknown', () => {
+    expect(nameMismatch('Rosa Dela Cruz', 'Me (Jun)')).toBe(true)
+    expect(nameMismatch('Rosa Dela Cruz', 'Juan Dela Cruz')).toBe(true)
+    expect(nameMismatch('CRUZ, JUAN DELA', 'Juan Dela Cruz')).toBe(false)
+    expect(nameMismatch('Juan D. Cruz', 'Juan Dela Cruz')).toBe(false)
+    expect(nameMismatch('Jun Reyes', 'Me (Jun)')).toBe(false)
+    expect(nameMismatch('Rosa Dela Cruz', 'Me (Jun)', ['Rosa Dela Cruz'])).toBe(false)
+    expect(nameMismatch(null, 'Me (Jun)')).toBe(false)
+    expect(nameMismatch('  ', 'Me (Jun)')).toBe(false)
   })
 })

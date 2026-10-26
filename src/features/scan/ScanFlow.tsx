@@ -113,7 +113,8 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
     })()
     return () => { live = false }
   }, [client])
-  const who = people.some((p) => p.id === forId) ? forId : (people[0]?.id ?? '')
+  // with more than one person nobody is pre-picked: a paper filed under the wrong person is a safety problem (hazard K1)
+  const who = people.some((p) => p.id === forId) ? forId : people.length === 1 ? people[0]!.id : ''
 
   const addPages = (blobs: Blob[]) => {
     const made = blobs.map((blob) => { const url = makeUrl(blob); urls.current.push(url); return { id: crypto.randomUUID(), blob, url } })
@@ -248,6 +249,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
                 {people.map((x) => <button key={x.id} type="button" className="dc-chip" aria-pressed={x.id === who} onClick={() => setForId(x.id)}>{short(x, people)}</button>)}
               </div>
               {people.length === 0 && <p className="sub">Open Bantay once with signal so it can list your family here.</p>}
+              {!who && people.length > 1 && <p className="sub" role="status">Pick whose reading this is.</p>}
               {who && <ReadingConfirm draft={draft} failed={failed} limited={limited} personId={who} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
             </>)}
 
@@ -303,6 +305,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
               {people.map((x) => <button key={x.id} type="button" className="dc-chip" aria-pressed={x.id === who} onClick={() => setForId(x.id)}>{short(x, people)}</button>)}
             </div>
             {people.length === 0 && <p className="sub">Open Bantay once with signal so it can list your family here.</p>}
+            {!who && people.length > 1 && <p className="sub" role="status">Pick whose paper this is.</p>}
             <div className="dc-chips" role="group" aria-label="What kind of paper">
               <span className="sub">Kind</span>
               {KINDS.map((k) => <button key={k.id} type="button" className="dc-chip" aria-pressed={k.id === kind} onClick={() => setKind(k.id)}>{k.label}</button>)}

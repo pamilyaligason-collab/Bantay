@@ -7,7 +7,7 @@ import {
 } from './api'
 import type { Person } from './store'
 import { usePeople } from './useRecordsServer'
-import { confirmClearLabel, showConfirmAll, emitConfirmed, progressPct, progressText } from './papers'
+import { confirmClearLabel, nameMismatch, showConfirmAll, emitConfirmed, progressPct, progressText } from './papers'
 import './records.css'
 
 // D-36 / D-47: nothing counts until a person confirms it. The sheet lists draft documents, then draft rows to confirm, fix or reject.
@@ -87,8 +87,8 @@ export function OriginalLink({ file }: { file: SourceFile }) {
   )
 }
 
-function Line({ item, catalog, busy, checked, onCheck, onConfirm, onReject, onFix }: {
-  item: Item; catalog: CatalogTest[]; busy: boolean; checked: boolean; onCheck(v: boolean): void; onConfirm(): void; onReject(): void
+function Line({ item, catalog, busy, blocked, checked, onCheck, onConfirm, onReject, onFix }: {
+  item: Item; catalog: CatalogTest[]; busy: boolean; blocked: boolean; checked: boolean; onCheck(v: boolean): void; onConfirm(): void; onReject(): void
   onFix(patch: Record<string, unknown>): Promise<boolean>
 }) {
   const { table, row } = item
@@ -154,7 +154,7 @@ function Line({ item, catalog, busy, checked, onCheck, onConfirm, onReject, onFi
       ) : (
         <div className="rx-acts">
           <button className="rx-btn" onClick={open} aria-label={`Fix ${name}`}>Fix</button>
-          <button className="rx-btn go" disabled={busy} onClick={onConfirm} aria-label={`${unclear(item) ? 'Confirm line' : 'Confirm'} ${name}`}>{unclear(item) ? 'Confirm line' : 'Confirm'}</button>
+          <button className="rx-btn go" disabled={busy || blocked} onClick={onConfirm} aria-label={`${unclear(item) ? 'Confirm line' : 'Confirm'} ${name}`}>{unclear(item) ? 'Confirm line' : 'Confirm'}</button>
           <button className="rx-btn no" disabled={busy} onClick={onReject} aria-label={`Reject ${name}`}>Reject</button>
         </div>
       )}
@@ -174,6 +174,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [loadErr, setLoadErr] = useState(false)
+  const [acked, setAcked] = useState<string | null>(null) // document id whose name mismatch was acknowledged
   const head = useRef<HTMLHeadingElement>(null)
   const opener = useRef<Element | null>(document.activeElement)
   const counted = useRef(new Set<string>()) // documents already reported as records_confirmed
@@ -210,7 +211,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
   }, [openId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function actDoc(kind: 'confirm' | 'reject') {
-    if (!open) return
+    if (!open || (kind === 'confirm' && blocked)) return
     setBusy(true)
     const r = kind === 'confirm' ? await confirmRows('documents', [open.doc.id]) : await rejectRows('documents', [open.doc.id])
     setBusy(false)
@@ -221,6 +222,9 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
     setMsg(kind === 'confirm' ? 'Document confirmed' : 'Document rejected')
     onChanged()
   }
+  const mismatch = !!open && nameMismatch(open.doc.printed_name, people.find((p) => p.id === open.doc.person_id)?.name)
+  const blocked = mismatch && acked !== open?.doc.id // S11: a paper with another person's name cannot be confirmed until someone says it is right
+  const fullName = (pid: string) => people.find((p) => p.id === pid)?.name ?? 'this person'
   const who = (pid: string) => firstName(people.find((p) => p.id === pid)?.name)
   const items = open ? itemsOf(open) : []
   const isOn = (i: Item) => checked[i.row.id] ?? defaultChecked(i)
@@ -235,7 +239,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
   }
 
   async function act(kind: 'confirm' | 'reject', picked: Item[]) {
-    if (!open || picked.length === 0) return
+    if (!open || picked.length === 0 || (kind === 'confirm' && blocked)) return
     setBusy(true)
     let done = 0
     let failed = false
@@ -284,6 +288,16 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
       </div>
       <h2 id="cs-h" ref={head} tabIndex={-1}>{open ? label(open) : 'To check'}</h2>
       {open && <p className="sub" style={{ margin: 0 }}>{[who(open.doc.person_id), open.doc.facility].filter(Boolean).join(' · ')}</p>}
+      {open?.doc.printed_name && <p className="sub" style={{ margin: 0 }} data-testid="printed-name">Name on paper: {open.doc.printed_name}</p>}
+      {mismatch && open && (
+        <div className="rx-warn" role="alert" data-testid="name-mismatch" style={{ border: '2px solid #b3261e', borderRadius: 12, padding: 12, color: '#b3261e', background: 'rgba(179,38,30,.08)' }}>
+          <p style={{ margin: 0, fontWeight: 600 }}>This paper says {open.doc.printed_name}, not {fullName(open.doc.person_id)}. It may belong to someone else.</p>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 44, marginTop: 8 }}>
+            <input type="checkbox" checked={acked === open.doc.id} onChange={(e) => setAcked(e.target.checked ? open.doc.id : null)} />
+            I checked: this paper is for {fullName(open.doc.person_id)}
+          </label>
+        </div>
+      )}
       <p className="rx-status" role="status" aria-live="polite">{msg}</p>
 
       {!open && total != null && total > 0 && (
@@ -316,22 +330,22 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
           {items.length === 0 ? (
             <>
               <div className="grp"><div className="row"><span className="grow sub">This document has no values to check. Look at the original, then confirm or reject it.</span></div></div>
-              <button className="btn" disabled={busy} onClick={() => void actDoc('confirm')}>Confirm document</button>
+              <button className="btn" disabled={busy || blocked} onClick={() => void actDoc('confirm')}>Confirm document</button>
               <button className="btn2" disabled={busy} onClick={() => void actDoc('reject')}>Reject document</button>
             </>
           ) : (
             <div className="grp">
               {items.map((i) => (
-                <Line key={i.row.id} item={i} catalog={catalog} busy={busy} checked={isOn(i)} onCheck={(v) => setChecked({ ...checked, [i.row.id]: v })}
+                <Line key={i.row.id} item={i} catalog={catalog} busy={busy} blocked={blocked} checked={isOn(i)} onCheck={(v) => setChecked({ ...checked, [i.row.id]: v })}
                   onConfirm={() => void act('confirm', [i])} onReject={() => void act('reject', [i])} onFix={(p) => fix(i, p)} />
               ))}
             </div>
           )}
           {items.length > 0 && (
             <>
-              <button className="btn" disabled={busy || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
+              <button className="btn" disabled={busy || blocked || batch.length === 0} onClick={() => void act('confirm', batch)}>Confirm all checked ({batch.length})</button>
               {showConfirmAll(everything.length, batch.length) && (
-                <button className="btn2" disabled={busy} onClick={() => void act('confirm', everything)}>{confirmClearLabel(everything.length, items.some(unclear))}</button>
+                <button className="btn2" disabled={busy || blocked} onClick={() => void act('confirm', everything)}>{confirmClearLabel(everything.length, items.some(unclear))}</button>
               )}
               {items.some(unclear) && <p className="sub" style={{ margin: 0 }}>Unclear lines are confirmed one at a time.</p>}
             </>
