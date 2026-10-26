@@ -290,7 +290,7 @@ export function ConfirmFlow({ people: initialPeople, personId, checkedDocs = 0, 
       {open && <p className="sub" style={{ margin: 0 }}>{[who(open.doc.person_id), open.doc.facility].filter(Boolean).join(' · ')}</p>}
       {open?.doc.printed_name && <p className="sub" style={{ margin: 0 }} data-testid="printed-name">Name on paper: {open.doc.printed_name}</p>}
       {mismatch && open && (
-        <div className="rx-warn" role="alert" data-testid="name-mismatch" style={{ border: '2px solid #b3261e', borderRadius: 12, padding: 12, color: '#b3261e', background: 'rgba(179,38,30,.08)' }}>
+        <div className="rx-warn" role="alert" data-testid="name-mismatch" style={{ border: '2px solid var(--red)', borderRadius: 12, padding: 12, color: 'var(--red)', background: 'var(--red-soft)' }}>
           <p style={{ margin: 0, fontWeight: 600 }}>This paper says {open.doc.printed_name}, not {fullName(open.doc.person_id)}. It may belong to someone else.</p>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', minHeight: 44, marginTop: 8 }}>
             <input type="checkbox" checked={acked === open.doc.id} onChange={(e) => setAcked(e.target.checked ? open.doc.id : null)} />

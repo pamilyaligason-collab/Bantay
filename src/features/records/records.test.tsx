@@ -327,6 +327,23 @@ describe('ConfirmFlow name on paper (S11, hazard K1)', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /I checked/ }))
     expect([all.disabled, one.disabled]).toEqual([false, false])
   })
+  it('a relative who shares the surname still warns: another initial, and a surname alone', async () => {
+    await hdb.people.put({ id: 'p1', name: 'Juan Dela Cruz' })
+    for (const printed of ['R. Dela Cruz', 'DELA CRUZ']) {
+      tables.documents = [{ ...doc, printed_name: printed }]
+      render(<ConfirmFlow people={[{ id: 'p1', name: 'Juan Dela Cruz' }]} onClose={() => {}} onChanged={() => {}} />)
+      fireEvent.click(await screen.findByRole('button', { name: /Lab results, 2026-09-01/ }))
+      await screen.findByRole('button', { name: /Confirm all checked/ })
+      expect(screen.getByTestId('name-mismatch').textContent).toContain(`This paper says ${printed}, not Juan Dela Cruz`)
+      expect((screen.getByRole('button', { name: /Confirm all checked/ }) as HTMLButtonElement).disabled).toBe(true)
+      cleanup()
+    }
+    tables.documents = [{ ...doc, printed_name: 'J. Dela Cruz' }]
+    render(<ConfirmFlow people={[{ id: 'p1', name: 'Juan Dela Cruz' }]} onClose={() => {}} onChanged={() => {}} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Lab results, 2026-09-01/ }))
+    await screen.findByRole('button', { name: /Confirm all checked/ })
+    expect(screen.queryByTestId('name-mismatch')).toBeNull()
+  })
   it('a matching or unread name shows no warning', async () => {
     tables.documents = [{ ...doc, printed_name: 'PERSON TEST' }]
     await open()

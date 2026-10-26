@@ -26,16 +26,17 @@ export function emitConfirmed(docId: string, seen: Set<string>): boolean {
   return true
 }
 
-const nameKey = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/[.,]/g, '').replace(/\s+/g, ' ').trim()
-const toks = (s: string) => new Set(nameKey(s).split(' ').filter((t) => t.length > 1 && t !== 'me')) // initials never identify anyone; "Me (Jun)" is Jun
+// person names only; the server nameKey (records-extract/logic.ts) is for test and drug names and is not shared on purpose
+const words = (s: string) => s.toLowerCase().replace(/[()]/g, ' ').replace(/[.,]/g, '').split(/\s+/).filter((t) => t && t !== 'me') // "Me (Jun)" is Jun
 /**
- * S11 (hazard K1): true when the name printed on a paper does not fit the person (or one of their aliases) it was filed under.
- * A fit = same words in any order, or all words of one name inside the other ("Juan Cruz" / "Juan Dela Cruz"). An unread name is
- * unknown, not a mismatch.
+ * S11 (hazard K1): true when the name printed on a paper cannot be shown to be the person (or one of their aliases) it was filed
+ * under. A printed name fits only through the given name: the person's first word (or an alias's) appears in it, or one of its
+ * initials is that word's first letter ("J. Dela Cruz" for Juan). A surname-only print ("Dela Cruz", "DELA CRUZ, R.") fits no one,
+ * because a relative shares it: it is unclear and needs the acknowledgement. An unread name is unknown, not a mismatch.
  */
 export function nameMismatch(printed: string | null | undefined, person: string | undefined, aliases: string[] = []): boolean {
-  const p = toks(printed ?? '')
-  if (p.size === 0) return false
-  const fits = (n: string) => { const t = toks(n); return t.size > 0 && ([...t].every((x) => p.has(x)) || [...p].every((x) => t.has(x))) }
+  const p = words(printed ?? '')
+  if (p.length === 0) return false
+  const fits = (n: string) => { const g = words(n)[0]; return !!g && p.some((x) => x === g || (x.length === 1 && x === g[0])) }
   return ![person ?? '', ...aliases].some(fits)
 }

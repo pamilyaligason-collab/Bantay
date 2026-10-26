@@ -52,4 +52,17 @@ describe('nameMismatch (S11)', () => {
     expect(nameMismatch(null, 'Me (Jun)')).toBe(false)
     expect(nameMismatch('  ', 'Me (Jun)')).toBe(false)
   })
+  it('a family sharing a surname: another given name, an initial of another name and a surname alone are all flagged', () => {
+    const juan = 'Juan Dela Cruz'
+    expect(nameMismatch('R. Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('DELA CRUZ, R.', juan)).toBe(true)
+    expect(nameMismatch('Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('DELA CRUZ', 'Rosa Dela Cruz')).toBe(true)
+    expect(nameMismatch('Rosa Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('Juan Cruz', juan)).toBe(false)
+    expect(nameMismatch('J. Dela Cruz', juan)).toBe(false)
+    expect(nameMismatch('DELA CRUZ, R.', 'Rosa Dela Cruz')).toBe(false)
+    expect(nameMismatch('Dela Cruz', juan, ['Dela Cruz'])).toBe(false) // an alias that is itself a surname is the carer's own word for the person
+    expect(nameMismatch('Mama Rosa', juan, ['Mama'])).toBe(false)
+  })
 })
