@@ -35,6 +35,33 @@ describe('SOS outbox specs', () => {
     expect(Date.parse(String(b.sent_at))).toBeGreaterThanOrEqual(t0)
     expect(await db.outbox.count()).toBe(0)
   })
+  it('a retried sos_events send carries a fresh sent_at, not the first one (disclosed: not saved on the row)', async () => {
+    await enqueue('sos_events', 'insert', { id: 'e2', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' })
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-26T10:00:00.000Z'))
+    const stamps: string[] = []
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit = {}) => {
+      stamps.push(String(JSON.parse(String(init.body)).sent_at))
+      vi.setSystemTime(new Date('2026-10-26T10:07:00.000Z')) // the phone is back online seven minutes later
+      return new Response(null, { status: stamps.length === 1 ? 503 : 201 })
+    })
+    try {
+      startSync({ url: URL, key: 'pk', getToken: async () => 'tok1' })()
+      await syncNow()
+      await syncNow(true) // ignore the backoff window
+    } finally { vi.useRealTimers() }
+    expect(stamps[0]).toBe('2026-10-26T10:00:00.000Z')
+    expect(stamps[1]).toBe('2026-10-26T10:07:00.000Z')
+    expect((await db.outbox.toArray()).every((r) => !('sentAt' in (r.payload as object)))).toBe(true)
+  })
+  it('an SOS pushed before 0031 is applied stays queued (404 PGRST205), never dead-lettered', async () => {
+    await enqueue('sos_events', 'insert', { id: 'e3', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' })
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify({ code: 'PGRST205' }), { status: 404 }))
+    startSync({ url: URL, key: 'pk', getToken: async () => 'tok1' })()
+    await syncNow()
+    expect(await db.outbox.count()).toBe(1)
+    expect(await db.kv.get('sync.dead')).toBeUndefined()
+  })
   it('sos_events_update is a PATCH of sos_events by id with only the granted columns', async () => {
     await enqueue('sos_events_update', 'update', { id: 'e1', cancelledAt: '2026-10-26T10:05:00.000Z', personId: 'x', at: 'y' })
     const calls: { url: string; method?: string; body: Record<string, unknown> }[] = []
