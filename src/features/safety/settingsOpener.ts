@@ -1,8 +1,11 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
 export type OpenTarget = 'earthquake' | 'wea'
+/** Fix screens of the phone check (S3, 2.3.0 shells; an older shell rejects them and the callers fall back). */
+export type FixTarget = 'autostart' | 'appdetails' | 'notifications'
 type Plugin = {
-  open(o: { target: OpenTarget }): Promise<{ opened: string }>
+  open(o: { target: OpenTarget | FixTarget }): Promise<{ opened: string }>
+  deviceInfo(): Promise<{ manufacturer: string; sdk: number }>
   batteryStatus(): Promise<{ ignoring: boolean }>
   openBattery(): Promise<void>
   requestBatteryExemption(): Promise<void>
@@ -58,4 +61,18 @@ export async function nativeStatus(): Promise<NativeStatus | null> {
     const r = await SettingsOpener.status()
     return { notificationsEnabled: r.notificationsEnabled === true, canScheduleExactAlarms: r.canScheduleExactAlarms === true, ignoringBatteryOptimizations: r.ignoringBatteryOptimizations === true }
   } catch { return null }
+}
+
+/** The phone maker (lower case, e.g. "xiaomi") for the OEM fix steps. null on web, on a shell without the method, or when unknown (never a guess). */
+export async function deviceMaker(): Promise<string | null> {
+  if (!isNativeAndroid()) return null
+  try {
+    const m = (await SettingsOpener.deviceInfo()).manufacturer
+    return typeof m === 'string' && m.trim() ? m.trim().toLowerCase() : null
+  } catch { return null }
+}
+
+/** Opens a fix screen of the phone check. `opened` is the screen reached ("oem-*" = a phone-maker screen, "app-settings", "battery-list", "settings"); null when nothing opened. Never rejects. */
+export async function openFix(t: FixTarget): Promise<{ opened: string | null }> {
+  try { return { opened: (await SettingsOpener.open({ target: t })).opened ?? null } } catch { return { opened: null } }
 }
