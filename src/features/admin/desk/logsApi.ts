@@ -109,7 +109,7 @@ export const replaceNumber = (source: IdSource, id: string, value: string) => (v
 export const PAGE = 100
 export type AuditRow = { id: number; at: string; actor: string | null; tbl: string; row_id: string | null; person_id: string | null; action: string; fields: string[] | null }
 export type AuditFilter = { person: string; table: string; action: string; from: string; to: string; page: number }
-export const ACTIONS = ['insert', 'update', 'confirm', 'reject', 'delete', 'reveal'] as const
+export const ACTIONS = ['insert', 'update', 'confirm', 'reject', 'delete', 'reveal', 'view'] as const
 export const TABLE_WORDS: Record<string, string> = {
   people: 'Profile', carers: 'Carers', person_identifiers: 'ID', insurance_policies: 'Insurance', documents: 'Paper', lab_results: 'Lab result',
   prescription_items: 'Prescription line', medications: 'Medicine', vaccinations: 'Vaccination', imaging_reports: 'Imaging', conditions: 'Condition', allergies: 'Allergy'

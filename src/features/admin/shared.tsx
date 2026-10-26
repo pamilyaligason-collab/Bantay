@@ -15,7 +15,7 @@ export const dateTime = (iso: string | null | undefined) => {
 /** One plain-words label for raw status values (nouns) and audit actions (verbs, as Home shows them). */
 export const STATUS_LABEL: Record<string, string> = {
   confirmed: 'Confirmed', draft: 'Draft', rejected: 'Rejected', failed: 'Failed', reading: 'Reading', new: 'New', done: 'Done', archived: 'Archived',
-  insert: 'Add', update: 'Update', delete: 'Delete', archive: 'Archive', restore: 'Restore', confirm: 'Confirm', reject: 'Reject', reveal: 'Reveal',
+  insert: 'Add', update: 'Update', delete: 'Delete', archive: 'Archive', restore: 'Restore', confirm: 'Confirm', reject: 'Reject', reveal: 'Reveal', view: 'Viewed as member',
 }
 /** Unknown values get a capital letter and spaces for underscores; null is a dash. */
 export const statusLabel = (raw: string | null | undefined) => (raw ? STATUS_LABEL[raw.toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1).replaceAll('_', ' ') : '-')
