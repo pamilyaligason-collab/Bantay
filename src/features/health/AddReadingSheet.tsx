@@ -3,7 +3,8 @@ import '../family/family.css'
 import '../setup/setup.css'
 import Sheet from '../family/Sheet'
 import { logReading } from '../log/store'
-import { chipTime, previewReading, type EntrySpec } from './readingPreview'
+import { chipTime, crisisOf, previewReading, type Crisis, type EntrySpec } from './readingPreview'
+import CrisisCard from './bpcheck/CrisisCard'
 import type { Range } from './ranges'
 import './m7a.css'
 
@@ -21,6 +22,7 @@ export default function AddReadingSheet({ spec, personId, forName, family, onClo
   const [other, setOther] = useState(localInput(new Date()))
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [crisis, setCrisis] = useState<Crisis | null>(null)
   const bp = spec.kind === 'bp'
   const p = previewReading(spec, { top, bottom, value }, family)
   const typed = bp ? top !== '' || bottom !== '' : value !== ''
@@ -43,10 +45,14 @@ export default function AddReadingSheet({ spec, personId, forName, family, onClo
         await logReading({ personId, takenAt, test: spec.code, value: Number(value), unit: spec.unit })
       }
       onSaved(`${spec.label[0]!.toUpperCase()}${spec.label.slice(1)} saved.`)
+      // a dangerous reading is saved first (the family row never waits on this screen), then the sheet shows what to do instead of closing
+      const c = crisisOf(spec.kind === 'bp' ? 'bp' : spec.code, bp ? { top: Number(top), bottom: Number(bottom) } : { value: Number(value), unit: spec.unit })
+      if (c) { setCrisis(c); setBusy(false); return }
       onClose()
     } catch { setErr('Could not save on this phone. Try again.'); setBusy(false) }
   }
 
+  if (crisis) return <Sheet title={`Add ${spec.label}`} onClose={onClose}><CrisisCard kind={crisis} onClose={onClose} /></Sheet>
   return (
     <Sheet title={`Add ${spec.label}`} onClose={onClose}>
       <div className="fm-form md-form">

@@ -33,7 +33,7 @@ describe('Health overview', () => {
   it('shows the headline, the body map values and a tappable latest list', async () => {
     render(<Health />)
     await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Blood pressure needs a look this week'))
-    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 High/ })
+    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 Above target/ })
     expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
     expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy() // unknown stays unknown
     fireEvent.click(document.querySelector('[data-test="bp_systolic"]')!)

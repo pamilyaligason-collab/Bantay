@@ -111,8 +111,10 @@ export type RangeState = { kind: 'none' | 'within' | 'high' | 'low'; word: strin
 /** What the status chip says. No range is its own state, never "Within range": a missing range must not look normal. */
 export function rangeState(headline: Position, kind: VerdictKind = 'vital', bp?: { top?: number | null; bottom?: number | null }): RangeState {
   const v = verdictFor(kind, headline, bp)
-  return headline === 'above' ? { kind: 'high', word: v!.word, hidden: 'Above range' }
-    : headline === 'below' ? { kind: 'low', word: v!.word, hidden: 'Below range' }
-    : headline === 'within' ? { kind: 'within', word: v!.word, hidden: '' }
+  const lv = v?.level // the one BP table can say Low or In range where the plain guide position cannot
+  const pos: Position = lv === 'low' ? 'below' : lv === 'in' ? 'within' : lv ? 'above' : headline
+  return pos === 'above' ? { kind: 'high', word: v!.word, hidden: 'Above range' }
+    : pos === 'below' ? { kind: 'low', word: v!.word, hidden: 'Below range' }
+    : pos === 'within' ? { kind: 'within', word: v!.word, hidden: '' }
     : { kind: 'none', word: 'No range', hidden: '' }
 }

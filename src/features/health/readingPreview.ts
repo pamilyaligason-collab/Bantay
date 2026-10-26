@@ -1,6 +1,6 @@
 import { positionOf } from './vitals'
 import { GUIDE, type Position, type Range, type Reading } from './ranges'
-import { verdictFor, RAISED_WORD } from './verdict'
+import { verdictFor, bpLevel, BP_WORDS } from './verdict'
 import { PLAUSIBLE as P } from './plausible'
 
 /** The add-reading sheet: what a typed reading means, in colour and one plain line, before it is saved. Pure. */
@@ -24,6 +24,19 @@ export const entrySpec = (code: string): EntrySpec | null => SPECS[code === 'bp_
 
 export const deviceSpec = (code: string): EntrySpec | null => entrySpec(code) ?? DEVICE[code] ?? null
 
+/** The readings that open the crisis card (same lines as the 0035 family alert, so the person and the family hear about the same readings): top 180 or more OR bottom 120 or more; sugar under 70 or over 300 mg/dL; oxygen under 90. Pass only numbers that passed the plausibility check. Needs clinician sign-off. */
+export type Crisis = 'bp' | 'low_sugar' | 'high_sugar' | 'low_spo2'
+export function crisisOf(code: string, v: { top?: number | null; bottom?: number | null; value?: number | null; unit?: string }): Crisis | null {
+  const ok = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+  if (code === 'bp' || code === 'bp_systolic' || code === 'bp_diastolic') return (ok(v.top) && v.top >= 180) || (ok(v.bottom) && v.bottom >= 120) ? 'bp' : null
+  if (!ok(v.value)) return null
+  if (code === 'glucose' || code === 'fasting_glucose') {
+    const mg = v.unit && /^mmol/i.test(v.unit) ? v.value * 18 : v.value // same x18 as the 0035 trigger
+    return mg < 70 ? 'low_sugar' : mg > 300 ? 'high_sugar' : null
+  }
+  return code === 'spo2' && v.value < 90 ? 'low_spo2' : null
+}
+
 export interface Preview { state: Position | 'invalid'; word: string; line: string }
 const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
 const R = (test: string, value: number, unit: string): Reading => ({ personId: '', takenAt: '', test, value, unit })
@@ -35,20 +48,26 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
     if (!Number.isFinite(s) || !Number.isFinite(d)) return { state: 'invalid', word: '', line: 'Type the top and the bottom number.' }
     if (s < spec.min || s > spec.max || d < 20 || d > 200) return { state: 'invalid', word: '', line: 'Check the numbers: they look too small or too big.' }
     if (d >= s) return { state: 'invalid', word: '', line: 'The top number is higher than the bottom one. Check them.' }
-    if (s >= 180 || d >= 120) return { state: 'above', word: 'High', line: 'Very high. If you have a headache, chest pain or blurred vision, get help now. Otherwise rest and measure again.' }
-    if (s < 90 || d < 60) return { state: 'below', word: verdictFor('bp', 'below')!.word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
-    const ps = [positionOf(R('bp_systolic', s, 'mmHg'), family), positionOf(R('bp_diastolic', d, 'mmHg'))]
-    if (!ps.includes('above')) return { state: 'within', word: verdictFor('bp', 'within')!.word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
-    // 120 to 129 on top with the bottom under 80 is "a little raised" (the same band the Normal list and the KPI chip use); 130/80 or more is high
-    return s < 130 && d < 80
-      ? { state: 'above', word: RAISED_WORD, line: 'A little above the general guide. Rest for 5 minutes and measure again. Keep an eye on it.' }
-      : { state: 'above', word: verdictFor('bp', 'above')!.word, line: 'Above the general guide. Rest for 5 minutes and measure again. If it stays high, tell your doctor.' }
+    if (crisisOf('bp', { top: s, bottom: d })) return { state: 'above', word: verdictFor('bp', 'above', { top: s, bottom: d })!.word, line: 'Very high. Check for warning signs now.' }
+    const lv = bpLevel(s, d)!
+    // a doctor's own target (family threshold) replaces the home words when both numbers are inside it
+    if (family && lv !== 'low' && positionOf(R('bp_systolic', s, 'mmHg'), family) === 'within' && positionOf(R('bp_diastolic', d, 'mmHg')) === 'within') return { state: 'within', word: BP_WORDS.in.word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
+    const word = BP_WORDS[lv].word
+    if (lv === 'low') return { state: 'below', word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
+    if (lv === 'in') return { state: 'within', word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
+    if (lv === 'raised') return { state: 'above', word, line: 'A little above the general guide. Rest for 5 minutes and measure again. Keep an eye on it.' }
+    if (lv === 'above') return { state: 'above', word, line: 'Above the home target of under 130/80. Rest for 5 minutes and measure again. If it stays there, tell your doctor.' }
+    return { state: 'above', word, line: 'High. Rest for 5 minutes and measure again. If it stays high, tell your doctor.' }
   }
   const x = num(v.value ?? '')
   if (!Number.isFinite(x)) return { state: 'invalid', word: '', line: `Type your ${spec.label}.` }
   if (x < spec.min || x > spec.max) return { state: 'invalid', word: '', line: 'Check the number: it looks too small or too big.' }
   if (spec.code === 'weight') return { state: 'none', word: '', line: 'Saved with the date, so you can see the weeks, not one day.' }
   const pos = positionOf(R(spec.code, x, spec.unit), family)
+  const crisis = crisisOf(spec.code, { value: x })
+  if (crisis === 'low_sugar') return { state: 'below', word: 'Low', line: 'Low sugar. Take 15 g of fast sugar now, then check again in 15 minutes.' }
+  if (crisis === 'high_sugar') return { state: 'above', word: verdictFor('vital', 'above')!.word, line: 'Very high sugar. Drink water and call your doctor today.' }
+  if (crisis === 'low_spo2') return { state: 'below', word: 'Low', line: 'Oxygen is low. Sit up, breathe slowly and check again in a minute.' }
   const g = GUIDE[spec.code] // the range text comes from the same guide that colours the reading
   const rt = g ? ` Usual: ${g.text}${g.unit === 'bpm' ? ' bpm' : ''}.` : ''
   return pos === 'within' ? { state: pos, word: verdictFor('vital', 'within')!.word, line: `In the usual range.${rt}` }
