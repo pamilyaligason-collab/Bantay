@@ -12,13 +12,13 @@ vi.mock('../health/reminders', () => ({ syncDoseReminders: fx.sync }))
 vi.mock('./report', () => ({ reportPhoneHealth: fx.report }))
 
 import { db } from '../../db'
-import { AlarmFixedToast, toastText } from './AlarmFixedToast'
+import { AlarmFixedToast, TOAST_TEXT } from './AlarmFixedToast'
 import { AlarmHealthRow, healthLine } from './AlarmHealthRow'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, KEY_PHONE_LATER, KEY_TOAST_SEEN } from './keys'
 import { PhoneCheckCard } from './PhoneCheckCard'
 
 const XIAOMI = { notif_ok: true, exact_ok: true, battery_ok: false, alarms_ok: true, call_ok: true, oem: 'xiaomi' }
-const HEALTH = { at: '2026-10-20T00:40:00.000Z', set: 7, rearmed: 1, ok: true, days: 7 }
+const HEALTH = { at: '2026-10-20T00:40:00.000Z', set: 7, rearmed: 7, ok: true, days: 7, recovered: true }
 
 beforeEach(async () => { m.android = true; vi.clearAllMocks(); fx.applyFix.mockResolvedValue('prompted'); fx.probe.mockResolvedValue(XIAOMI); fx.sync.mockResolvedValue('unchanged'); fx.test.mockResolvedValue('scheduled'); await db.kv.clear() })
 afterEach(cleanup)
@@ -63,17 +63,13 @@ describe('PhoneCheckCard (start-done-fix)', () => {
 })
 
 describe('AlarmFixedToast (today-alarmfix)', () => {
-  it('toast wording is singular and plural', () => {
-    expect(toastText(1)).toBe('1 medicine alarm was missing and has been set again.')
-    expect(toastText(3)).toBe('3 medicine alarms were missing and have been set again.')
-  })
-  it('says so once when an alarm was set again, and nothing when all were set', async () => {
-    await db.kv.put({ key: KEY_ALARM_HEALTH, value: { ...HEALTH, rearmed: 0 } })
+  it('says so once when alarms were set again after a failed plan, and nothing on a normal re-arm', async () => {
+    await db.kv.put({ key: KEY_ALARM_HEALTH, value: { ...HEALTH, recovered: undefined } })
     const { container } = render(<AlarmFixedToast />)
     await new Promise((r) => setTimeout(r, 60))
     expect(container.innerHTML).toBe('')
     await db.kv.put({ key: KEY_ALARM_HEALTH, value: HEALTH })
-    expect((await screen.findByRole('status')).textContent).toBe('1 medicine alarm was missing and has been set again.')
+    expect((await screen.findByRole('status')).textContent).toBe(TOAST_TEXT)
     expect((await db.kv.get(KEY_TOAST_SEEN))?.value).toBe(HEALTH.at)
     cleanup()
     render(<AlarmFixedToast />) // the same self-check is not announced again
@@ -106,13 +102,19 @@ describe('AlarmFixedToast (today-alarmfix)', () => {
     await new Promise((r) => setTimeout(r, 60))
     expect(b.container.innerHTML).toBe('')
   })
+  it('a missing call permission alone is not an alarm problem: no small card', async () => {
+    await db.kv.put({ key: KEY_PHONE_LATER, value: { at: 'x' } })
+    await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: 'x', ...XIAOMI, battery_ok: true, call_ok: false } })
+    const { container } = render(<AlarmFixedToast />)
+    await new Promise((r) => setTimeout(r, 60))
+    expect(container.innerHTML).toBe('')
+  })
 })
 
 describe('AlarmHealthRow (Me)', () => {
   it('healthLine reads like the mockup', () => {
     expect(healthLine(undefined)).toBe('Not checked yet')
-    expect(healthLine(HEALTH)).toMatch(/^Alarms checked .*, 7 set for the next 7 days \(1 set again\)$/)
-    expect(healthLine({ ...HEALTH, rearmed: 0 })).not.toContain('set again')
+    expect(healthLine(HEALTH)).toMatch(/^Alarms checked .*, 7 set for the next 7 days$/)
     expect(healthLine({ ...HEALTH, ok: false })).toContain('could not set them')
   })
   it('is not shown in the browser app', async () => {

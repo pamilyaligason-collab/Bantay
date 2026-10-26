@@ -3,7 +3,7 @@ import { db } from '../../db'
 import { ldb, logDose } from '../log/store'
 import { selfIdOrCached } from '../sync/profile'
 import { ALARM_CHANNEL } from '../phonecheck/keys'
-import { dayOf, remindable, toClock } from './meds'
+import { dayOf, remindable, reminderId, toClock } from './meds'
 
 /** Lock-screen actions on a dose alarm: I took it / In 10 min / Skip today. "I took it" and "Skip today" log the doses due at that time without opening the app and cancel the rest of that slot's repeats;
  *  "In 10 min" keeps the +10 / +20 repeats already planned (they ring within 10 minutes) and, on the third reminder, rings once more in 10 minutes.
@@ -12,6 +12,8 @@ export const DOSE_ACTION_TYPE = 'DOSE_REMINDER'
 export const REPEAT_MIN = 10
 export const SNOOZE_MIN = REPEAT_MIN
 export const SNOOZE_BASE = 1_900_000_000 // ids from here up are one-off "In 10 min" rings; planned alarms stay below 1.8e9
+export const SNOOZE_TOP = 1_999_999_999 // exclusive; the test alarm sits at this id
+const snoozeId = (n: { at?: number; day?: string }, id: number) => SNOOZE_BASE + (reminderId(typeof n.at === 'number' && n.day ? `${n.day}|${n.at}` : String(id), 'snooze') % 99_000_000) // per slot, so two slots never share a snooze id
 const WRITABLE_KEY = 'carers.writable' // the cache written by useCanMark.loadWritable
 
 export const REMINDER_ACTIONS = [
@@ -90,7 +92,7 @@ export async function handleReminderAction(ev: ReminderEvent, now = new Date()):
     try {
       await LocalNotifications.schedule({
         notifications: [{
-          id: SNOOZE_BASE + ((n.id ?? 0) % 100_000_000), title: n.title ?? '', body: n.body ?? '', extra: n.extra, channelId: ALARM_CHANNEL,
+          id: snoozeId(n.extra, n.id ?? 0), title: n.title ?? '', body: n.body ?? '', extra: n.extra, channelId: ALARM_CHANNEL,
           actionTypeId: DOSE_ACTION_TYPE, schedule: { at: when, allowWhileIdle: true }
         }]
       })

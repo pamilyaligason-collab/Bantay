@@ -19,11 +19,11 @@ import { track } from '../admin/events'
 import { resetShellVersionForTests } from './appInfo'
 import { resetAlarmChannelForTests } from './channel'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK } from './keys'
-import { probe, probeProblems, scheduleTestAlarm } from './probe'
+import { probe, probeProblems, resetProbeVerdictForTests, scheduleTestAlarm } from './probe'
 
 beforeEach(async () => {
   m.android = true; m.version = '2.3.0'; m.status = { notificationsEnabled: true, canScheduleExactAlarms: true, ignoringBatteryOptimizations: true }; m.maker = 'xiaomi'; m.call = true; m.perm = 'granted'
-  resetShellVersionForTests(); resetAlarmChannelForTests()
+  resetShellVersionForTests(); resetAlarmChannelForTests(); resetProbeVerdictForTests()
   await db.kv.clear()
   vi.clearAllMocks()
   LN.checkPermissions.mockImplementation(async () => ({ display: m.perm }))
@@ -55,6 +55,11 @@ describe('probe', () => {
     expect(r).toMatchObject({ notif_ok: true, exact_ok: true, battery_ok: true, alarms_ok: true, call_ok: true })
     expect(probeProblems(r)).toEqual([])
     expect(track).toHaveBeenCalledWith('action', 'phone_check_pass')
+    await probe(); await probe()
+    expect(track).toHaveBeenCalledTimes(1) // an unchanged answer is not another usage event on every open
+    m.status = { notificationsEnabled: false, canScheduleExactAlarms: true, ignoringBatteryOptimizations: true }
+    await probe()
+    expect(track).toHaveBeenLastCalledWith('action', 'phone_check_fail')
   })
   it('an old shell (below 2.3.0) never says alarms_ok, even when a health record says false: it is null, not false', async () => {
     m.version = '2.2.0'; m.call = null; m.maker = null

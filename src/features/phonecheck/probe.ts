@@ -10,6 +10,8 @@ import { ALARM_CHANNEL, KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } fr
 /** null = unknown (never false): web, an old shell, a plugin that could not answer. */
 export interface ProbeResult { notif_ok: boolean | null; exact_ok: boolean | null; battery_ok: boolean | null; alarms_ok: boolean | null; call_ok: boolean | null; oem: string | null }
 
+let lastVerdict = ''
+export const resetProbeVerdictForTests = () => { lastVerdict = '' }
 export const BLANK_PROBE: ProbeResult = { notif_ok: null, exact_ok: null, battery_ok: null, alarms_ok: null, call_ok: null, oem: null }
 
 /** Ask the phone what it will let Bantay do. Never throws, never prompts, changes nothing; stores the answer in kv `phone.check`. */
@@ -29,7 +31,8 @@ export async function probe(): Promise<ProbeResult> {
     r = { notif_ok: notif, exact_ok: exact, battery_ok: st ? st.ignoringBatteryOptimizations : null, alarms_ok: alarms, call_ok: call, oem }
   }
   try { await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: new Date().toISOString(), ...r } }) } catch { /* the answer is still returned */ }
-  void track('action', probeProblems(r).length ? 'phone_check_fail' : 'phone_check_pass') // names on the allowlist only (events.ts); fixed names, no values
+  const verdict = probeProblems(r).length ? 'phone_check_fail' : 'phone_check_pass'
+  if (lastVerdict !== verdict) { lastVerdict = verdict; void track('action', verdict) } // names on the allowlist only (events.ts); one event per change, not per open
   return r
 }
 
@@ -47,7 +50,7 @@ export function probeProblems(r: ProbeResult): Problem[] {
 }
 
 export type TestAlarm = 'web' | 'no-permission' | 'scheduled' | 'failed'
-const TEST_ID = 1_950_000_001
+const TEST_ID = 1_999_999_999 // top of the id space, outside the snooze range
 /** One test alarm a few seconds from now on the alarm channel, so the person hears what a dose alarm sounds like. Native only. */
 export async function scheduleTestAlarm(seconds = 5, now = new Date()): Promise<TestAlarm> {
   if (!isNativeAndroid()) return 'web'

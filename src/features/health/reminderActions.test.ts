@@ -8,7 +8,7 @@ vi.mock('../admin/events', () => ({ track: vi.fn() }))
 
 import { db } from '../../db'
 import { ldb, type Medication } from '../log/store'
-import { DOSE_ACTION_TYPE, handleReminderAction, markDue, REMINDER_ACTIONS, registerReminderActions } from './reminderActions'
+import { DOSE_ACTION_TYPE, handleReminderAction, markDue, REMINDER_ACTIONS, registerReminderActions, SNOOZE_BASE, SNOOZE_TOP } from './reminderActions'
 
 const NOW = new Date(2026, 9, 20, 8, 5)
 const add = (o: Partial<Medication> & { name: string }) => ldb.medications.add({ personId: 'me', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, serverId: `s-${o.name}`, ...o })
@@ -92,6 +92,19 @@ describe('reminder actions', () => {
     expect(await handleReminderAction(ev('snooze', 480, ['me'], 1), NOW)).toBe('snoozed')
     expect(LN.schedule).not.toHaveBeenCalled()
     expect(LN.removeDeliveredNotifications).toHaveBeenCalledTimes(2)
+  })
+  it('two different slots get different snooze ids, even when their alarm ids differ by a multiple of 1e8, and none reaches the test alarm id', async () => {
+    const ids: number[] = []
+    for (const at of [480, 481, 720, 1200]) {
+      LN.schedule.mockClear()
+      const e = ev('snooze', at, ['me'], 2)
+      e.notification.id = 1_500_000_000 // the same alarm id: only the slot differs
+      e.notification.extra = { ...e.notification.extra, at }
+      await handleReminderAction(e, NOW)
+      ids.push(LN.schedule.mock.calls[0]![0].notifications[0].id)
+    }
+    expect(new Set(ids).size).toBe(4)
+    for (const id of ids) { expect(id).toBeGreaterThanOrEqual(SNOOZE_BASE); expect(id).toBeLessThan(SNOOZE_TOP) }
   })
   it('In 10 min on the third alarm (or an old alarm without a repeat number) rings once more in 10 minutes, same text, loud channel, buttons kept', async () => {
     for (const rep of [2, null]) {

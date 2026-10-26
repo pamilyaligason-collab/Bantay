@@ -7,10 +7,10 @@ import { probeProblems, type ProbeResult } from './probe'
 import { useKvValue } from './useKvValue'
 import './phonecheck.css'
 
-export const toastText = (n: number) => `${n} medicine alarm${n === 1 ? ' was' : 's were'} missing and ${n === 1 ? 'has' : 'have'} been set again.`
+export const TOAST_TEXT = 'Your medicine alarms are set again.'
 
 /** Mounted at the top of Today (S7). Two quiet things, both only on the Android app:
- *  - `today-alarmfix`: when the check on opening Bantay found a medicine alarm missing and set it again, a short message says so once. If every alarm was set, nothing shows.
+ *  - `today-alarmfix`: after alarms that could not be set (permission or a phone switch) were set again, a short message says so once. A normal re-arm on opening Bantay shows nothing.
  *  - after "Remind me later" on the phone check: a small card stays until the problem is fixed. */
 export function AlarmFixedToast() {
   const health = useKvValue<AlarmHealth>(KEY_ALARM_HEALTH)
@@ -20,7 +20,7 @@ export function AlarmFixedToast() {
   const [open, setOpen] = useState(false)
   const android = isNativeAndroid()
   useEffect(() => {
-    if (!android || !health || !(health.rearmed > 0) || shown === health.at) return
+    if (!android || !health || !health.recovered || shown === health.at) return
     let cancelled = false
     void (async () => {
       const seen = (await db.kv.get(KEY_TOAST_SEEN).catch(() => undefined))?.value
@@ -36,10 +36,10 @@ export function AlarmFixedToast() {
     return () => clearTimeout(t)
   }, [shown])
   if (!android) return null
-  const problems = check ? probeProblems(check) : []
+  const problems = check ? probeProblems(check).filter((p) => p !== 'call') : [] // the call permission is not an alarm problem
   return (
     <>
-      {shown && health && <div className="pc-toast" role="status">{toastText(health.rearmed)}</div>}
+      {shown && health && <div className="pc-toast" role="status">{TOAST_TEXT}</div>}
       {later && problems.length > 0 && check && (open
         ? <PhoneCheckCard result={check} onFixed={() => setOpen(false)} />
         : <div className="pc-later" role="group" aria-label="Phone check"><span>Your phone may miss medicine alarms.</span><button type="button" className="pc-btn2" onClick={() => setOpen(true)}>Fix it</button></div>)}

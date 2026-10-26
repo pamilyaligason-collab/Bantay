@@ -5,7 +5,6 @@ import { liveQuery } from 'dexie'
 import { db } from '../../db'
 import { track } from '../admin/events'
 import { ldb } from '../log/store'
-import { manilaDay, shellVersionNow } from '../phonecheck/appInfo'
 import { ensureAlarmChannel } from '../phonecheck/channel'
 import { ALARM_CHANNEL, KEY_ALARM_HEALTH, type AlarmHealth } from '../phonecheck/keys'
 import { reportPhoneHealth } from '../phonecheck/report'
@@ -14,7 +13,7 @@ import { selfIdOrCached } from '../sync/profile'
 import { MEDS_CURSOR } from './useMedicationRows'
 import { dayOf, remindable, parseSchedule, reminderId, toClock, toMinutes } from './meds'
 import { clock, medSlots } from './model'
-import { DOSE_ACTION_TYPE, REPEAT_MIN, SNOOZE_BASE, handleReminderAction, markablePeople, registerReminderActions } from './reminderActions'
+import { DOSE_ACTION_TYPE, REPEAT_MIN, SNOOZE_BASE, SNOOZE_TOP, handleReminderAction, markablePeople, registerReminderActions } from './reminderActions'
 import { LANG_KEY, loadLang, t, type Lang } from '../../lib/i18n'
 
 /** Local dose alarms for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids, default none). Native only (web: nothing).
@@ -22,8 +21,7 @@ import { LANG_KEY, loadLang, t, type Lang } from '../../lib/i18n'
  *
  *  How (Session 10, D-78): every dose slot gets ONE-SHOT alarms (`schedule.at`, `allowWhileIdle`) for the next 7 days, each ringing at +0, +10 and +20 minutes on the loud channel
  *  `alarms_v1`. The old repeating `on:` schedule is gone: a repeating alarm that Android drops is never re-armed, a one-shot is re-planned on every open.
- *  Self-heal: on every app open, return to the front and medication/dose change, the plan is compared with `LocalNotifications.getPending()`; a missing alarm is armed again
- *  and counted in kv `alarms.health` (shown in Me and as the "set again" toast). Logging a dose cancels the rest of that slot's repeats. The alarms ring on the phone itself, no data needed.
+ *  Self-heal: on every app open, return to the front and medication/dose change, every wanted alarm is scheduled again (getPending cannot see what Android dropped); the count is kept in kv `alarms.health`. Logging a dose cancels the rest of that slot's repeats. The alarms ring on the phone itself, no data needed.
  *  Ids are deterministic (hash of the medicines due, the time, the day and the repeat), at least 100000 and below 1.8e9 (snoozes live at 1.9e9 and up), probed apart so two never collide.
  *  Text carries no medicine name or health value (B-7). Copy rule: the alarm "rings loudly", never "even on silent"; "your family will see this in Bantay", never "will be told". */
 export const REMINDER_ID_BASE = 31000 // the old range; kept so legacy callers and cancel-on-upgrade still read well
@@ -34,7 +32,6 @@ export const PENDING_CAP = 450 // Android keeps at most 500 alarms per app on ma
 export const CARER_AFTER_MIN = 30 // dose-watch's DOSE_WATCH_AFTER_MIN default: the family sees a missed dose this long after the slot
 const ID_SPAN = 1_700_000_000
 const KEY_IDS = 'health.doseReminderIds'
-const KEY_SIG = 'health.doseReminderSig'
 export const REMIND_FOR = 'remind.for'
 
 export type ReminderResult = 'web' | 'no-permission' | 'unchanged' | 'scheduled' | 'failed'
@@ -95,7 +92,7 @@ export function reminderIds(planned: Pick<Planned, 'at' | 'key'>[]): number[] {
 /** How many days to plan so the pending alarms stay under the cap: 7, else 3, else 1. */
 export function horizonDays(slots: number): number { return slots * REPEATS * HORIZON_DAYS <= PENDING_CAP ? HORIZON_DAYS : slots * REPEATS * 3 <= PENDING_CAP ? 3 : 1 }
 
-/** Slots of today whose every due dose is already answered (taken or skipped): the rest of their repeats must not ring. Keys are `${day}|${at}`. */
+/** Slots of today whose every due dose this user can log is already answered (taken or skipped): the rest of their repeats must not ring. Keys are `${day}|${at}`. */
 export async function answeredSlots(planned: Planned[], now: Date): Promise<Set<string>> {
   const today = dayOf(now)
   const rows = await ldb.meds.filter((r) => dayOf(r.takenAt) === today).toArray()
@@ -103,7 +100,8 @@ export async function answeredSlots(planned: Planned[], now: Date): Promise<Set<
   if (!rows.length) return out
   for (const p of planned) {
     const slot = toClock(p.at)
-    if (p.due.length && p.due.every((d) => rows.some((r) => r.slot === slot && r.personId === d.personId && (d.medicationId ? r.medicationId === d.medicationId : r.name === d.name)))) out.add(`${today}|${p.at}`)
+    const mine = p.people.length ? p.due.filter((d) => p.people.includes(d.personId)) : p.due // a person this user may not log for never keeps the slot open
+    if (mine.length && mine.every((d) => rows.some((r) => r.slot === slot && r.personId === d.personId && (d.medicationId ? r.medicationId === d.medicationId : r.name === d.name)))) out.add(`${today}|${p.at}`)
   }
   return out
 }
@@ -165,47 +163,46 @@ function bindTap() {
 }
 
 const inLegacyRange = (id: number) => id >= REMINDER_ID_BASE && id < REMINDER_ID_BASE + 100
-const isSnooze = (id: number) => id >= SNOOZE_BASE && id < 2_000_000_000
+const isSnooze = (id: number) => id >= SNOOZE_BASE && id < SNOOZE_TOP
 
-/** `medicines` is the deprecated profile text list, used only while this phone has no medications rows yet. */
-export async function syncDoseReminders(medicines?: unknown, opts: { selfId?: string | null; now?: Date } = {}): Promise<ReminderResult> {
+let chain: Promise<unknown> = Promise.resolve()
+/** `medicines` is the deprecated profile text list, used only while this phone has no medications rows yet. Runs one at a time: open, resume and a data change can all ask at once. */
+export function syncDoseReminders(medicines?: unknown, opts: { selfId?: string | null; now?: Date } = {}): Promise<ReminderResult> {
+  const next = chain.then(() => syncOnce(medicines, opts))
+  chain = next.catch(() => undefined)
+  return next
+}
+
+/** Self-heal by re-arming, not by detection: `getPending()` reads the plugin's own saved list, not AlarmManager, so it cannot see an alarm Android dropped (a force-stop or a battery cleaner).
+ *  So every call cancels the ids it armed before and schedules the whole wanted plan again (same ids, so it is idempotent). `rearmed` counts the slot-days that were armed before and are armed again. */
+async function syncOnce(medicines: unknown, opts: { selfId?: string | null; now?: Date }): Promise<ReminderResult> {
   if (!Capacitor.isNativePlatform()) return 'web'
   bindTap() // idempotent: a cold start from a notification tap must still emit reminder_opened, whatever path below returns
   const now = opts.now ?? new Date()
   try {
     const selfId = opts.selfId !== undefined ? opts.selfId : await selfIdOrCached().catch(() => null)
     const planned = await plannedReminders(medicines, selfId, now)
-    const lang = await loadLang() // the reminder text is in the saved language; a change of language reschedules
-    const sig = `${(await shellVersionNow()) ?? 'x'}|${manilaDay(now)}|${lang}|alarms3` // a new app version, a new day or a new language re-plans everything
+    const lang = await loadLang() // the reminder text is in the saved language
+    const prior = (await db.kv.get(KEY_ALARM_HEALTH).catch(() => undefined))?.value as AlarmHealth | undefined
     if ((await LocalNotifications.checkPermissions()).display !== 'granted') { await saveHealth({ at: now.toISOString(), set: 0, rearmed: 0, ok: false, days: 0 }); return 'no-permission' }
     await ensureAlarmChannel()
     const answered = await answeredSlots(planned, now)
     const alarms = buildAlarms(planned, now, answered)
-    const want = new Map(alarms.map((a) => [a.id, a]))
-    const [oldIds, oldSig] = await Promise.all([db.kv.get(KEY_IDS), db.kv.get(KEY_SIG)])
-    const had = Array.isArray(oldIds?.value) ? (oldIds!.value as number[]) : []
-    const hadSet = new Set(had)
-    let pending: PendingLocalNotificationSchema[] | null
-    try { pending = (await LocalNotifications.getPending()).notifications ?? [] } catch { pending = null } // unknown: plan everything again, report nothing as lost
-    const pendIds = new Set((pending ?? []).map((p) => p.id))
-    const full = oldSig?.value !== sig || pending === null
-    // what should be pending and was armed before, but is gone: Android (or a cleaner app) dropped it
-    const lost = pending ? alarms.filter((a) => hadSet.has(a.id) && !pendIds.has(a.id)) : []
-    const snoozeDone = (pending ?? []).filter((p) => isSnooze(p.id) && snoozeAnswered(p, answered)).map((p) => p.id) // an extra ring for a slot already answered
-    const cancel = full
-      ? unique([...had, ...(pending ?? []).filter((p) => inLegacyRange(p.id)).map((p) => p.id), ...snoozeDone])
-      : unique([...(pending ?? []).filter((p) => (hadSet.has(p.id) || inLegacyRange(p.id)) && !want.has(p.id)).map((p) => p.id), ...snoozeDone])
-    const toSchedule = full ? alarms : alarms.filter((a) => !pendIds.has(a.id))
+    const had = (await db.kv.get(KEY_IDS))?.value
+    const hadSet = new Set(Array.isArray(had) ? (had as number[]) : [])
+    let pending: PendingLocalNotificationSchema[] = []
+    try { pending = (await LocalNotifications.getPending()).notifications ?? [] } catch { /* only used to find old repeating alarms and snoozes; the plan below does not depend on it */ }
+    const snoozeDone = pending.filter((p) => isSnooze(p.id) && snoozeAnswered(p, answered)).map((p) => p.id) // an extra ring for a slot already answered
+    const cancel = unique([...hadSet, ...pending.filter((p) => inLegacyRange(p.id)).map((p) => p.id), ...snoozeDone])
     if (cancel.length) await LocalNotifications.cancel({ notifications: cancel.map((id) => ({ id })) })
-    if (toSchedule.length) {
+    if (alarms.length) {
       await registerReminderActions()
-      await LocalNotifications.schedule({ notifications: toSchedule.map((a) => toNotification(a, lang)) })
+      await LocalNotifications.schedule({ notifications: alarms.map((a) => toNotification(a, lang)) })
     }
     await db.kv.put({ key: KEY_IDS, value: alarms.map((a) => a.id) })
-    await db.kv.put({ key: KEY_SIG, value: sig })
     const groups = (xs: Alarm[]) => new Set(xs.map((a) => `${a.day}|${a.at}`)).size
-    await saveHealth({ at: now.toISOString(), set: groups(alarms), rearmed: groups(lost), ok: true, days: horizonDays(planned.length) })
-    return cancel.length || toSchedule.length ? 'scheduled' : 'unchanged'
+    await saveHealth({ at: now.toISOString(), set: groups(alarms), rearmed: groups(alarms.filter((a) => hadSet.has(a.id))), ok: true, days: horizonDays(planned.length), ...(prior?.ok === false ? { recovered: true } : {}) })
+    return cancel.length || alarms.length ? 'scheduled' : 'unchanged'
   } catch {
     await saveHealth({ at: now.toISOString(), set: 0, rearmed: 0, ok: false, days: 0 }).catch(() => undefined)
     return 'failed' // the screen still works; the next change tries again

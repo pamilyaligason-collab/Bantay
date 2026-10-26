@@ -41,7 +41,7 @@ create or replace function public.phone_health_carer(p_user uuid) returns boolea
   language sql stable security definer set search_path = '' as
   $$ select exists (select 1 from public.people p join public.carers c on c.person_id = p.id
                     where p.auth_user_id = p_user and c.carer_id = auth.uid()) $$;
-revoke execute on function public.phone_health_carer(uuid) from public, anon, authenticated;
+revoke execute on function public.phone_health_carer(uuid) from public, anon, authenticated, service_role; -- service_role bypasses RLS and does not call it (ML-21)
 grant execute on function public.phone_health_carer(uuid) to authenticated;
 
 alter table public.phone_health enable row level security;

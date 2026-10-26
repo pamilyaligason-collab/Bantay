@@ -6,4 +6,4 @@ export const KEY_PHONE_LATER = 'phonecheck.later' // { at } "Remind me later": a
 export const KEY_PHONE_SENT = 'phonecheck.sent' // { sig, at } last phone_health row queued, so an unchanged phone sends one row per 12 h
 export const KEY_TOAST_SEEN = 'alarms.toastSeen' // the alarms.health.at the "set again" toast was last shown for
 
-export interface AlarmHealth { at: string; set: number; rearmed: number; ok: boolean; days?: number }
+export interface AlarmHealth { at: string; set: number; rearmed: number; ok: boolean; days?: number; /** set on the first good plan after a failed one */ recovered?: boolean }

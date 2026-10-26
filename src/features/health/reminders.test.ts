@@ -94,28 +94,47 @@ describe('syncDoseReminders', () => {
     expect(alarmText(1425, 2, 'en').body).toBe('Third reminder; your family will see this in Bantay at 12:15 AM.') // 23:45 + 30 min wraps past midnight
     for (const r of [0, 1, 2] as const) for (const l of ['en', 'fil'] as const) expect(JSON.stringify(alarmText(540, r, l))).not.toMatch(/silent|will be (told|notified)|lock screen/i)
   })
-  it('getPending mismatch: an alarm Android dropped is armed again and counted as set again', async () => {
+  it('every open arms the whole plan again, so an alarm Android dropped (invisible to getPending) rings again', async () => {
     await evening()
     await sync()
     const all = lastSched()
-    LN.schedule.mockClear()
-    expect(await sync()).toBe('unchanged') // everything is pending: nothing to do
-    expect(LN.schedule).not.toHaveBeenCalled()
-    expect((await health()).rearmed).toBe(0)
-    // Android loses today's +10 and tomorrow's +0
-    store.delete(all[1]!.id); store.delete(all[3]!.id)
+    expect(all).toHaveLength(21)
+    // Android drops alarms from AlarmManager; the plugin's saved list (getPending) still shows them, so detection is impossible and every open re-arms
+    LN.schedule.mockClear(); LN.cancel.mockClear()
     expect(await sync()).toBe('scheduled')
-    expect(lastSched().map((x) => x.id).sort()).toEqual([all[1]!.id, all[3]!.id].sort())
-    expect(await health()).toMatchObject({ ok: true, rearmed: 2, set: 7, days: 7 }) // two different slot-days; 7 slot-days in the plan
+    expect(lastSched().map((x) => x.id).sort()).toEqual(all.map((x) => x.id).sort()) // every id scheduled again, the same ids
+    expect(LN.cancel.mock.calls[0]![0].notifications.map((x: { id: number }) => x.id).sort()).toEqual(all.map((x) => x.id).sort()) // cancelled first: idempotent
+    expect(await health()).toMatchObject({ ok: true, rearmed: 7, set: 7, days: 7 }) // 7 slot-days were armed and are armed again
     expect(store.size).toBe(21)
   })
-  it('losing the +10 and +20 of one slot-day counts as ONE alarm set again', async () => {
+  it('the first plan re-arms nothing; a plan after a failed one is marked recovered', async () => {
     await evening()
     await sync()
-    const all = lastSched()
-    store.delete(all[1]!.id); store.delete(all[2]!.id)
+    expect((await health()).rearmed).toBe(0)
+    expect((await health()).recovered).toBeUndefined()
+    m.perm = 'denied'
     await sync()
-    expect((await health()).rearmed).toBe(1)
+    expect((await health()).ok).toBe(false)
+    m.perm = 'granted'
+    await sync()
+    expect(await health()).toMatchObject({ ok: true, recovered: true })
+    await sync()
+    expect((await health()).recovered).toBeUndefined()
+  })
+  it('two syncs at once run one after the other (no interleaved cancel and schedule)', async () => {
+    await evening()
+    await Promise.all([sync(), sync()])
+    expect(store.size).toBe(21)
+    expect((await health()).rearmed).toBe(7)
+  })
+  it('a slot with a dose for a person this user may not log keeps its repeats once the user logs their own', async () => {
+    await add({ name: 'Mine', schedule: { v: 1, times: ['20:00'] } })
+    await hdb.people.add({ id: 'ma' } as never)
+    await db.kv.put({ key: REMIND_FOR, value: ['ma'] })
+    await add({ name: 'Hers', personId: 'ma', schedule: { v: 1, times: ['20:00'] } })
+    await ldb.meds.add({ personId: 'me', name: 'Mine', takenAt: new Date(2026, 9, 20, 20, 6).toISOString(), medicationId: 's-Mine', slot: '20:00' })
+    await sync(new Date(2026, 9, 20, 20, 7))
+    expect(store.size).toBe(18) // today's slot is answered by the user (Hers is not theirs to log); the six later days stay
   })
   it('a dose logged cancels the remaining +10 and +20 of that slot (and only those)', async () => {
     await evening()
@@ -126,9 +145,10 @@ describe('syncDoseReminders', () => {
     await ldb.meds.add({ personId: 'me', name: 'Drug E', takenAt: new Date(2026, 9, 20, 20, 6).toISOString(), medicationId: 's-Drug E', slot: '20:00' })
     expect(await sync(new Date(2026, 9, 20, 20, 7))).toBe('scheduled')
     expect(LN.cancel).toHaveBeenCalledTimes(1)
-    expect(LN.cancel.mock.calls[0]![0].notifications.map((x: { id: number }) => x.id).sort()).toEqual(todays.sort())
+    const cancelled = LN.cancel.mock.calls[0]![0].notifications.map((x: { id: number }) => x.id)
+    for (const id of todays) { expect(cancelled).toContain(id); expect(store.has(id)).toBe(false) } // today's +10 and +20 are cancelled and not armed again
     expect(store.size).toBe(18) // the six later days stay
-    expect((await health()).rearmed).toBe(0) // cancelled on purpose is not lost
+    expect((await health()).rearmed).toBe(6) // the six later days were armed before and are armed again; today's cancelled repeats are not
   })
   it('a skipped dose counts as answered too', async () => {
     await evening()
@@ -164,19 +184,19 @@ describe('syncDoseReminders', () => {
     await sync()
     expect(store.has(31005)).toBe(false)
   })
-  it('a pending list that cannot be read plans everything again and reports nothing as lost', async () => {
+  it('a pending list that cannot be read still plans everything', async () => {
     await evening()
     await sync()
     LN.getPending.mockRejectedValueOnce(new Error('boom'))
     expect(await sync()).toBe('scheduled')
-    expect((await health()).rearmed).toBe(0)
+    expect(store.size).toBe(21)
   })
   it('does not touch notifications it did not arm (other ids stay)', async () => {
     await evening()
-    store.set(1_950_000_001, { id: 1_950_000_001 } as Sched) // the test alarm
+    store.set(1_999_999_999, { id: 1_999_999_999 } as Sched) // the test alarm
     store.set(5000, { id: 5000 } as Sched)
     await sync(); await sync(new Date(2026, 9, 21, 9, 0))
-    expect(store.has(1_950_000_001) && store.has(5000)).toBe(true)
+    expect(store.has(1_999_999_999) && store.has(5000)).toBe(true)
   })
   it('no medicines: nothing scheduled and nothing cancelled; health says ok with 0 set', async () => {
     expect(await syncDoseReminders(undefined, { selfId: 'me', now: NOW })).toBe('unchanged')
@@ -287,7 +307,7 @@ describe('reminders from medications', () => {
     await sync()
     resetReminderTapForTests() // a new process
     LN.addListener.mockClear()
-    expect(await sync()).toBe('unchanged')
+    expect(await sync()).toBe('scheduled') // every open re-arms
     const handler = LN.addListener.mock.calls.find((c) => c[0] === 'localNotificationActionPerformed')?.[1]
     expect(handler).toBeTypeOf('function')
     handler({ notification: { extra: { kind: 'dose' } } })
@@ -316,7 +336,7 @@ describe('reminder language (M7b)', () => {
     expect(await sync()).toBe('scheduled')
     expect(lastSched()[0]).toMatchObject({ title: 'Oras na ng gamot', body: '8:00 PM na. Pakibuksan ang Bantay para makita ang dapat inumin.' })
     expect(JSON.stringify(lastSched())).not.toMatch(/Drug/)
-    expect(await sync()).toBe('unchanged')
+    expect(await sync()).toBe('scheduled') // every open re-arms
     await db.kv.put({ key: 'lang', value: 'en' })
     expect(await sync()).toBe('scheduled')
   })

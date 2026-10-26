@@ -54,6 +54,7 @@ select pg_temp.ok((select count(*) = 14 from information_schema.columns where ta
                    and column_name in ('user_id','platform','app_version','alarms_ok','notif_ok','exact_ok','battery_ok','call_ok','oem','last_open_at','alarms_checked_at','alarms_set','alarms_rearmed','updated_at')), 'all 14 contract columns exist, including call_ok');
 select pg_temp.ok(not has_function_privilege('anon', 'public.phone_health_carer(uuid)', 'execute') and not has_function_privilege('anon', 'public.phone_health_stamp()', 'execute')
                   and not has_function_privilege('authenticated', 'public.phone_health_stamp()', 'execute') and has_function_privilege('authenticated', 'public.phone_health_carer(uuid)', 'execute'), 'function grants are stated: anon none, authenticated only the carer helper');
+select pg_temp.ok(not has_function_privilege('service_role', 'public.phone_health_carer(uuid)', 'execute'), 'service_role cannot execute the carer helper (ML-21)');
 select pg_temp.ok(not has_table_privilege('anon', 'public.phone_health', 'select') and not has_table_privilege('authenticated', 'public.phone_health', 'delete'), 'anon has no grant, nobody can delete over REST');
 
 -- ===== B writes their own row =====
