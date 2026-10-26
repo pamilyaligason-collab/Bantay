@@ -90,6 +90,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
   const [date, setDate] = useState('')
   const [draft, setDraft] = useState<ReadingDraft>(EMPTY_DRAFT)
   const [failed, setFailed] = useState(false)
+  const [limited, setLimited] = useState(false)
   const [reading, setReading] = useState(false)
   const cam = useRef<HTMLInputElement>(null)
   const pick = useRef<HTMLInputElement>(null)
@@ -164,9 +165,11 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
       const r = await readDevicePhoto(client, await toBlob(src))
       setDraft(r.draft)
       setFailed(r.failed)
+      setLimited(r.limited === true)
     } catch {
       setDraft(EMPTY_DRAFT)
       setFailed(true)
+      setLimited(false)
     }
     setReading(false)
   }
@@ -245,7 +248,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
                 {people.map((x) => <button key={x.id} type="button" className="dc-chip" aria-pressed={x.id === who} onClick={() => setForId(x.id)}>{short(x, people)}</button>)}
               </div>
               {people.length === 0 && <p className="sub">Open Bantay once with signal so it can list your family here.</p>}
-              {who && <ReadingConfirm draft={draft} failed={failed} personId={who} forName={short(people.find((x) => x.id === who)!, people)} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
+              {who && <ReadingConfirm draft={draft} failed={failed} limited={limited} personId={who} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
             </>)}
 
         {stage === 'saved' && (

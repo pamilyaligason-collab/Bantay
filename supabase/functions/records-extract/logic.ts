@@ -421,7 +421,7 @@ const reading = (v: unknown, lo: number, hi: number): number | null => {
   const n = typeof v === 'number' ? v : /^[+-]?\d+(\.\d+)?$/.test(String(v).trim()) ? Number(String(v).trim()) : NaN
   return Number.isFinite(n) && n >= lo && n <= hi ? n : null
 }
-const READING_UNITS: Record<ReadingKind, Record<string, [number, number]>> = {
+export const READING_UNITS: Record<ReadingKind, Record<string, [number, number]>> = {
   bp: { mmHg: [40, 300] },
   glucose: { 'mg/dL': [20, 800], 'mmol/L': [1.1, 44.4] },
   weight: { kg: [2, 400], lb: [4.4, 880] },
@@ -437,7 +437,7 @@ export function normalizeReading(p: unknown): ReadingResult {
   const c = q.confidence == null || q.confidence === '' ? NaN : Number(q.confidence)
   const confidence = Number.isFinite(c) && c >= 0 && c <= 1 ? c : null
   const out: ReadingResult = { ...EMPTY_READING, kind, confidence }
-  if (!kind || (confidence != null && confidence < MIN_READING_CONFIDENCE)) return out
+  if (!kind || confidence == null || confidence < MIN_READING_CONFIDENCE) return out // confidence missing counts as low
   if (kind === 'bp') {
     const s = reading(q.systolic, 40, 300)
     const d = reading(q.diastolic, 20, 200)
@@ -452,6 +452,13 @@ export function normalizeReading(p: unknown): ReadingResult {
   const v = reading(q.value, range[0], range[1])
   if (v != null) { out.value = v; out.unit = unit }
   return out
+}
+
+export const READING_DAILY_CAP = 20
+/** The assistant_take reply (one row {allowed, used}) -> may this member read a photo today? Anything unclear says no. */
+export function readingSlotTaken(data: unknown): boolean {
+  const row = (Array.isArray(data) ? data[0] : data) as { allowed?: unknown } | null | undefined
+  return row?.allowed === true
 }
 
 /** Request body {mode:'reading', mime, image_base64} -> the image, or null for anything else (wrong mode, not an image, too big). */

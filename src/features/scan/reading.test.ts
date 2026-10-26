@@ -41,7 +41,7 @@ describe('buildReadings', () => {
   it('weight lb, temperature F and oxygen', () => {
     expect(buildReadings('weight', { ...T, value: '137', unit: 'lb' })).toEqual({ ok: true, readings: [{ test: 'weight', value: 62.1, unit: 'kg' }] })
     expect(buildReadings('weight', { ...T, value: '62.4', unit: 'kg' })).toMatchObject({ ok: true, readings: [{ value: 62.4 }] })
-    expect(buildReadings('temp', { ...T, value: '98.6', unit: 'F' })).toEqual({ ok: true, readings: [{ test: 'body_temp', value: 37, unit: 'C' }] })
+    expect(buildReadings('temp', { ...T, value: '98.6', unit: 'F' })).toEqual({ ok: true, readings: [{ test: 'temperature', value: 37, unit: 'C' }] })
     expect(buildReadings('temp', { ...T, value: '368', unit: 'C' })).toMatchObject({ ok: false })
     expect(buildReadings('spo2', { ...T, value: '97', unit: '%' })).toEqual({ ok: true, readings: [{ test: 'spo2', value: 97, unit: '%' }] })
     expect(buildReadings('spo2', { ...T, value: '140', unit: '%' })).toMatchObject({ ok: false })
@@ -60,6 +60,8 @@ describe('readDevicePhoto', () => {
   it('offline, no client or a server error gives an empty draft and failed', async () => {
     expect(await readDevicePhoto(null, photo)).toEqual({ failed: true, draft: EMPTY_DRAFT })
     expect(await readDevicePhoto(client(async () => ({ data: null, error: { message: 'x' } })), photo)).toEqual({ failed: true, draft: EMPTY_DRAFT })
+    expect(await readDevicePhoto(client(async () => ({ data: null, error: { context: { status: 429 } } })), photo)).toEqual({ failed: true, limited: true, draft: EMPTY_DRAFT })
+    expect(await readDevicePhoto(client(async () => ({ data: { ok: false, error: 'rate_limited' }, error: null })), photo)).toMatchObject({ failed: true, limited: true })
     expect(await readDevicePhoto(client(async () => { throw new Error('offline') }), photo)).toEqual({ failed: true, draft: EMPTY_DRAFT })
   })
 })

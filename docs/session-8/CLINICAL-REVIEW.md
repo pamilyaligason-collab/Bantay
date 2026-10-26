@@ -1029,3 +1029,7 @@ Status: NOT reviewed. All wording below was written by Bantay. Nothing here is a
 
 11. No photo or AI estimation of food. No barcode lookup (Open Food Facts was optional and skipped). No third-party calls from the app.
 12. Usage analytics record only the fixed event names meal_logged, water_logged and salt_goal_set. A food name is never logged (rule B-7).
+
+## Device reading plausibility bounds (session 10, F4)
+
+The photo reader drops a number outside `src/features/health/plausible.ts` (blood pressure top 40-300, sugar 20-800 mg/dL, weight 2-400 kg, pulse 20-250, temperature 30-45 C, oxygen 50-100 percent). These are plausibility bounds (could this be a real reading?), not clinical rules: they judge nothing about health. Temperature and oxygen have no guide range, so no colour is shown for them. Needs clinician sign-off only if they ever drive a verdict.

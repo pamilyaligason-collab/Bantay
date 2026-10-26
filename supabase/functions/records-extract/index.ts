@@ -15,7 +15,7 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.1
 import { corsHeaders, json } from '../_shared/http.ts'
 import {
   type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, type DocRow, type Env, extractDocument, type PageRow, parseBody, type Port, runSweep,
-  parseReadingBody, readDevice, sendToOpenRouter, summary, SWEEP_LIMIT, withRetry
+  parseReadingBody, READING_DAILY_CAP, readDevice, readingSlotTaken, sendToOpenRouter, summary, SWEEP_LIMIT, type Usage, withRetry
 } from './logic.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
@@ -104,12 +104,17 @@ Deno.serve(async (req) => {
       const asker = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { ...opts, global: { headers: { Authorization: req.headers.get('authorization') ?? '' } } })
       const { data: who } = await asker.auth.getUser()
       if (!who.user) return json({ ok: false, error: 'unauthorized' }, 401, cors)
+      // a daily slot per member, taken before the model is called (assistant_take has no key column yet: the count is shared with Ask)
+      const { data: slot, error: slotErr } = await asker.rpc('assistant_take', { p_limit: READING_DAILY_CAP })
+      if (slotErr) return json({ ok: false, error: 'server_error' }, 500, cors)
+      if (!readingSlotTaken(slot)) return json({ ok: false, error: 'rate_limited' }, 429, cors)
+      const used: { u: Usage | null } = { u: null }
       try {
-        const result = await readDevice((body) => withRetry(() => sendToOpenRouter(fetch, body, key), { tries: 2, baseMs: 1000 }), image, cfg)
-        console.log(JSON.stringify({ fn: 'records-extract', mode: 'reading', ok: true })) // B-7: no kind, no values
+        const result = await readDevice((body) => withRetry(() => sendToOpenRouter(fetch, body, key, (u) => { used.u = u }), { tries: 2, baseMs: 1000 }), image, cfg)
+        console.log(JSON.stringify({ fn: 'records-extract', mode: 'reading', ok: true, in_tokens: used.u?.prompt_tokens ?? null, out_tokens: used.u?.completion_tokens ?? null })) // B-7: counts only, no kind, no values
         return json({ ok: true, reading: result }, 200, cors)
       } catch {
-        console.error('records-extract reading failed')
+        console.error(JSON.stringify({ fn: 'records-extract', mode: 'reading', ok: false, in_tokens: used.u?.prompt_tokens ?? null, out_tokens: used.u?.completion_tokens ?? null }))
         return json({ ok: false, error: 'read_failed' }, 502, cors)
       }
     }

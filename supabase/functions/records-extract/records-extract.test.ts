@@ -8,10 +8,11 @@ import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
   buildReadingRequest, buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, MAX_READING_BASE64,
-  MAX_TOKENS, normalizeDraft, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
+  MAX_TOKENS, normalizeDraft, READING_DAILY_CAP, READING_UNITS, readingSlotTaken, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
   normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, usageCounts, uuid5, withRetry
 } from './logic.ts'
 
+import { PLAUSIBLE as P } from '../../../src/features/health/plausible.ts'
 const catalog = loadCatalog() as CatalogRow[]
 const env = { model: 'test/paid-model', fallbackModel: 'test/paid-fallback' }
 const DOC = '20000000-0000-4000-8000-000000000001'
@@ -246,11 +247,11 @@ describe('reading mode', () => {
     expect(normalizeReading({ kind: 'glucose', value: 'about 100', unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
     expect(normalizeReading({ kind: 'robot', value: 5 }).kind).toBeNull()
   })
-  it('low confidence empties every number; unknown confidence keeps what was read (the person always confirms)', () => {
+  it('low confidence empties every number; missing confidence empties them too', () => {
     expect(normalizeReading({ kind: 'bp', systolic: 128, diastolic: 82, pulse: 70, confidence: 0.3 })).toEqual({ kind: 'bp', systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: 0.3 })
     expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.49 }).value).toBeNull()
     expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.5 }).value).toBe(100)
-    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL' })).toMatchObject({ value: 100, confidence: null })
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL' })).toMatchObject({ value: null, unit: null, confidence: null })
     expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 7 }).confidence).toBeNull()
   })
   it('units are validated per kind and out-of-range numbers are dropped', () => {
@@ -267,6 +268,18 @@ describe('reading mode', () => {
     expect(normalizeReading({ kind: 'bp', systolic: 400, diastolic: 80, confidence: 1 }).systolic).toBeNull()
   })
 
+  it('the plausibility bounds equal the app list (src/features/health/plausible.ts)', () => {
+    const b = READING_UNITS
+    expect([b.bp.mmHg, b.glucose['mg/dL'], b.weight.kg, b.temp.C, b.spo2['%']]).toEqual(
+      [[P.bp.min, P.bp.max], [P.glucose.min, P.glucose.max], [P.weight.min, P.weight.max], [P.temperature.min, P.temperature.max], [P.spo2.min, P.spo2.max]])
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max + 1, confidence: 1 }).pulse).toBeNull()
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max, confidence: 1 }).pulse).toBe(P.pulse.max)
+  })
+  it('the daily slot: only an explicit allowed row passes; error shapes and empties say no', () => {
+    expect(READING_DAILY_CAP).toBe(20)
+    expect(readingSlotTaken([{ allowed: true, used: 3 }])).toBe(true)
+    for (const bad of [[{ allowed: false, used: 20 }], [], null, undefined, 'x', [{ used: 1 }], [{ allowed: 'true' }]]) expect(readingSlotTaken(bad)).toBe(false)
+  })
   it('parseReadingBody accepts one small photo and nothing else', () => {
     const ok = JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: img.base64 })
     expect(parseReadingBody(ok)).toEqual(img)

@@ -2,6 +2,7 @@
 // checked again here before anything is saved. Unknown is null, never 0. Pure; the screen is ReadingConfirm.tsx.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { toCanonicalReading, type Reading } from '../health/ranges'
+import { PLAUSIBLE as P } from '../health/plausible'
 
 export type ReadingKind = 'bp' | 'glucose' | 'weight' | 'temp' | 'spo2'
 export const KIND_LABEL: Record<ReadingKind, string> = { bp: 'Blood pressure', glucose: 'Blood sugar', weight: 'Weight', temp: 'Temperature', spo2: 'Oxygen' }
@@ -31,11 +32,11 @@ export function parseDraft(r: unknown): ReadingDraft {
 }
 
 const RANGE: Record<ReadingKind, Record<string, [number, number]>> = {
-  bp: { mmHg: [40, 300] },
-  glucose: { 'mg/dL': [20, 800], 'mmol/L': [1.1, 44.4] },
-  weight: { kg: [2, 400], lb: [4.4, 880] },
-  temp: { C: [30, 45], F: [86, 113] },
-  spo2: { '%': [50, 100] }
+  bp: { mmHg: [P.bp.min, P.bp.max] },
+  glucose: { 'mg/dL': [P.glucose.min, P.glucose.max], 'mmol/L': [1.1, 44.4] },
+  weight: { kg: [P.weight.min, P.weight.max], lb: [4.4, 880] },
+  temp: { C: [P.temperature.min, P.temperature.max], F: [86, 113] },
+  spo2: { '%': [P.spo2.min, P.spo2.max] }
 }
 const round1 = (x: number) => Math.round(x * 10) / 10
 
@@ -55,7 +56,7 @@ export function buildReadings(kind: ReadingKind, t: Typed): Built {
     const out: Pick<Reading, 'test' | 'value' | 'unit'>[] = [{ test: 'bp_systolic', value: s, unit: 'mmHg' }, { test: 'bp_diastolic', value: d, unit: 'mmHg' }]
     if (t.pulse.trim() !== '') {
       const p = num(t.pulse)
-      if (!Number.isFinite(p) || p < 20 || p > 250) return { ok: false, error: 'Check the pulse: it looks too small or too big.' }
+      if (!Number.isFinite(p) || p < P.pulse.min || p > P.pulse.max) return { ok: false, error: 'Check the pulse: it looks too small or too big.' }
       out.push({ test: 'heart_rate', value: p, unit: 'bpm' })
     }
     return { ok: true, readings: out }
@@ -71,7 +72,7 @@ export function buildReadings(kind: ReadingKind, t: Typed): Built {
     return c ? { ok: true, readings: [{ test: 'glucose', value: c.value, unit: 'mg/dL' }] } : { ok: false, error: 'Pick the unit shown on the device.' }
   }
   if (kind === 'weight') return { ok: true, readings: [{ test: 'weight', value: t.unit === 'lb' ? round1(v * 0.45359237) : v, unit: 'kg' }] }
-  if (kind === 'temp') return { ok: true, readings: [{ test: 'body_temp', value: t.unit === 'F' ? round1(((v - 32) * 5) / 9) : v, unit: 'C' }] }
+  if (kind === 'temp') return { ok: true, readings: [{ test: 'temperature', value: t.unit === 'F' ? round1(((v - 32) * 5) / 9) : v, unit: 'C' }] }
   return { ok: true, readings: [{ test: 'spo2', value: v, unit: '%' }] }
 }
 
@@ -89,11 +90,14 @@ const b64 = (b: Blob) => new Promise<string>((res, rej) => {
 })
 
 /** Ask the server to read the photo. Any failure (offline, no signal, server error) gives an empty draft and `failed: true`: the person types the numbers instead. */
-export async function readDevicePhoto(client: SupabaseClient | null, photo: Blob): Promise<{ draft: ReadingDraft; failed: boolean }> {
+export async function readDevicePhoto(client: SupabaseClient | null, photo: Blob): Promise<{ draft: ReadingDraft; failed: boolean; limited?: true }> {
   if (!client) return { draft: EMPTY_DRAFT, failed: true }
   try {
     const { data, error } = await client.functions.invoke('records-extract', { body: { mode: 'reading', mime: 'image/jpeg', image_base64: await b64(photo) } })
-    if (error || !data?.ok) return { draft: EMPTY_DRAFT, failed: true }
+    if (error || !data?.ok) {
+      const status = (error as { context?: { status?: number } } | null)?.context?.status
+      return { draft: EMPTY_DRAFT, failed: true, ...(status === 429 || data?.error === 'rate_limited' ? { limited: true as const } : {}) }
+    }
     return { draft: parseDraft(data.reading), failed: false }
   } catch {
     return { draft: EMPTY_DRAFT, failed: true }
