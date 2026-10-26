@@ -27,17 +27,18 @@ test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.addInitScript((f) => localStorage.setItem('bantay.family', JSON.stringify(f)), FAMILY)
   await page.goto('/')
-  await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
 })
 
-test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 3), plan, then More; no news, video or full family list', async ({ page }) => {
+test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
   const heading = (name: string) => page.getByRole('heading', { name })
   await expect(heading('Next up')).toHaveCount(0) // calm: no empty card
   await expect(heading("Today's plan")).toBeVisible()
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
   for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
-  await expect(row.getByRole('button')).toHaveCount(9)
+  await expect(row.getByRole('button')).toHaveCount(6)
+  await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined)))) // the reveal motion is done: measure settled boxes
   const boxes = []
   for (const b of await row.getByRole('button').all()) {
     const box = (await b.boundingBox())!
@@ -46,24 +47,24 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
     boxes.push(box)
   }
   const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
-  for (const r of [0, 3, 6]) expect(near(boxes.slice(r, r + 3).map((b) => b.y))).toBe(true) // three rows of three
-  for (const c of [0, 1, 2]) expect(near([boxes[c]!.x, boxes[c + 3]!.x, boxes[c + 6]!.x])).toBe(true) // columns line up
+  for (const r of [0, 3]) expect(near(boxes.slice(r, r + 3).map((b) => b.y))).toBe(true) // two rows of three
+  for (const c of [0, 1, 2]) expect(near([boxes[c]!.x, boxes[c + 3]!.x])).toBe(true) // columns line up
   expect(boxes[3]!.y - boxes[0]!.y).toBeGreaterThan(60)
-  expect(boxes[6]!.y - boxes[3]!.y).toBeGreaterThan(60)
   expect(near(boxes.map((b) => b.width))).toBe(true) // equal tiles
   const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
   const quick = await y(row)
   const plan = await y(heading("Today's plan"))
-  const ok = await y(page.getByRole('button', { name: "I'm OK" }))
   const week = await y(page.getByRole('link', { name: /Your week/ }))
-  expect([quick, plan, ok, week]).toEqual([...[quick, plan, ok, week]].sort((p, q) => p - q))
+  expect([quick, plan, week]).toEqual([...[quick, plan, week]].sort((p, q) => p - q))
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 })
 
-test('I am OK signed out says to sign in and does not claim a check-in', async ({ page }) => {
-  await page.getByRole('button', { name: "I'm OK" }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Sign in first' })).toBeVisible()
-  await expect(page.getByRole('button', { name: "I'm OK" })).toBeVisible()
+test('How are you? signed out says to sign in and does not claim the family will see it', async ({ page }) => {
+  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // folded into How are you?
+  await page.getByRole('button', { name: 'Log how you feel' }).click()
+  await page.getByRole('button', { name: 'Unwell' }).click()
+  await expect(page.getByRole('alert').filter({ hasText: 'Sign in first' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toHaveCount(0)
 })
 
 test('Nothing next: no Next up card and no All clear card, and the quick-log Dose and Mood buttons open their sheets', async ({ page }) => {
@@ -71,7 +72,8 @@ test('Nothing next: no Next up card and no All clear card, and the quick-log Dos
   await page.getByRole('button', { name: 'Log how you feel' }).click()
   await expect(page.getByRole('dialog', { name: 'How are you feeling?' })).toBeVisible()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Log a medicine you took' }).click()
+  await page.getByRole('button', { name: 'More things to log' }).click()
+  await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Dose taken' }).click()
   await expect(page.getByRole('dialog', { name: 'Which medicine did you take?' })).toBeVisible()
 })
 

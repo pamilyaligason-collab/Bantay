@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import AlertsBanner from '../features/notify/AlertsBanner'
-import { FAIL_TEXT, checkIn } from '../features/today/actions'
+import { AlertCardToday } from '../features/notify/AlertCardToday'
+import { AlarmFixedToast } from '../features/phonecheck/AlarmFixedToast'
 import AlertBand from '../features/today/AlertBand'
 import SelfCare from '../features/today/SelfCare'
-import GreetingBand from '../features/today/GreetingBand'
 import MyWeek from '../features/today/MyWeek'
 import WeatherCard from '../features/today/WeatherCard'
 import NearbyList from '../features/today/NearbyList'
@@ -19,7 +19,7 @@ import { UpdateCard } from '../features/update/UpdateCard'
 import { wireMotion } from '../features/look'
 import '../features/today/today.css'
 
-/** Today: warning band (only when one is active), Next up + medicines to check (none when nothing is next: the weather card expands instead), weather, quick log, My week, self-care breathing, today's plan, then More (I'm OK, alerts setup, banners, notices, week line).
+/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in), My week, self-care breathing, today's plan, then More (alerts setup, banners, notices, week line).
  *  News and the video live elsewhere (Safety, Health).
  *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
@@ -40,24 +40,24 @@ export default function Today() {
     bt.setAttribute('data-simple', '')
     return () => bt.removeAttribute('data-simple')
   }, [loaded, simple])
-  const onOk = useCallback(() => { void checkIn().then((r) => notify(r === 'ok' ? 'Family sees: I am OK' : FAIL_TEXT[r])) }, [notify])
   const next = useNext()
   const calm = next.item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
   const h1 = <h1 className="td-h1">Today</h1>
   if (!loaded) return h1 // one read of the Simple mode switch, so the full page never flashes first
-  if (simple) return <>{h1}<SimpleToday onOk={onOk} onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
+  if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
     <div ref={root} className="td-root">
       {h1}
+      <AlarmFixedToast />
       <AlertBand />
-      {!calm && <NextUp item={next.item} review={next.review} notify={notify} />}
       <WeatherCard expanded={calm} review={next.review} />
+      <AlertCardToday />
+      {!calm && <NextUp item={next.item} review={next.review} notify={notify} />}
       <QuickLog notify={notify} />
       <MyWeek />
       <SelfCare />
       <PlanToday />
-      {/* More: I'm OK, alerts setup, update and install banners, other notices, the week line. D-50: the update card never sits above a warning. */}
-      <GreetingBand onOk={onOk} />
+      {/* More: alerts setup, update and install banners, other notices, the week line. D-50: the update card never sits above a warning. */}
       <AlertsBanner />
       <UpdateCard />
       <PwaBanner />

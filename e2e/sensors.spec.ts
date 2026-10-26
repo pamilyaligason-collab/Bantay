@@ -6,7 +6,8 @@ test.describe('movement on Today (web, no step counter)', () => {
   test.beforeEach(async ({ page }) => {
     await skipOnboarding(page)
     await page.goto('/')
-    await page.getByRole('button', { name: 'Log a walk' }).click() // the Walk button in the quick-log row opens a sheet
+    await page.getByRole('button', { name: 'More things to log' }).click() // Walk is behind More in the quick-log row
+    await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Walk' }).click()
     await expect(page.getByRole('heading', { name: 'Did you walk today?' })).toBeVisible()
   })
 

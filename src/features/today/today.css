@@ -99,9 +99,6 @@
 @media (prefers-reduced-motion: reduce) { .td-sky { animation: none !important; } }
 
 /* greeting band: the big I'm OK */
-.td-greet { display: flex; flex-direction: column; gap: 6px; }
-.bt .td-okbtn { width: 100%; min-height: 72px; border: 0; border-radius: 28px; background: var(--green); color: var(--on-green); font-family: var(--f-display); font-size: 28px; font-weight: 600; box-shadow: var(--shadow); }
-.td-greet-n { margin: 0; text-align: center; }
 
 /* one rhythm between sections */
 .td-root { display: flex; flex-direction: column; gap: 16px; }
@@ -229,14 +226,22 @@
 .bt { --late-bg: color-mix(in srgb, var(--warn) 40%, #000); --late-ink: #F5C468; } /* late dose card: warm brown, light text above 4.5:1 in both themes */
 .td-slide.dose.late { background: var(--late-bg); }
 .td-slide.dose.late .td-k { color: var(--late-ink); }
+/* How are you? faces: the quick-log sheet and the Simple mode screen (simple-mood). Green for Great and OK, amber for Not great, rose for Unwell; text stays above 4.5:1. */
+.bt .td-face { display: flex; align-items: center; justify-content: center; min-height: 84px; border: 0; border-radius: 24px; font: inherit; font-size: 20px; font-weight: 700; color: var(--ink); box-shadow: var(--shadow); }
+.bt .td-face.good { background: var(--green); color: var(--on-green); }
+.bt .td-face.mid { background: var(--warn-bg); color: var(--ink); }
+.bt .td-face.bad { background: color-mix(in srgb, var(--danger-bg) 24%, var(--card)); color: var(--ink); }
+.bt .td-face.big { min-height: 96px; font-size: 26px; }
+.bt .td-face:disabled { opacity: .55; }
+.td-simple-h { font-family: var(--f-display); font-weight: 600; font-size: 34px; margin: 8px 4px 0; }
+.td-simple-p { font-size: 20px; margin: 0 4px; }
+.td-simple-sub { margin: 0 4px; text-align: center; font-size: 16px; }
+.td-simple .sos-simple-btn { min-height: 76px; }
+.td-simple .sos-911-btn { min-height: 56px; border-radius: 28px; }
 /* Simple mode: no tab bar, no coach mark; SOS sits in the page. */
 .bt[data-simple] .tabbar, .bt[data-simple] .sh-hint { display: none; }
-.td-simple .sos-wrap { margin-top: 4px; }
-/* Simple mode fits Hold for help and the dose card in the first screen (390x844, 360x640): 72px buttons, 56px weather strip, a smaller SOS circle. */
+/* Simple mode fits Hold for help and the dose card in the first screen (390x844, 360x640): 72px buttons, 56px weather strip, Hold for help and Call 911 below it. */
 .td-simple .td-wx { min-height: 56px; }
 .td-simple .td-exit { min-height: 44px; }
-.td-simple .sos-btn { width: 150px; height: 150px; }
-.td-simple .sos-btn span { font-size: 36px; }
-.td-simple .sos-sub { display: none; }
-/* Short phones (360x640): a smaller SOS circle so the "Cannot hold?" button and the dose card also fit the first screen. */
-@media (max-height: 700px) { .td-simple .sos-btn { width: 112px; height: 112px; } .td-simple .sos-btn span { font-size: 30px; } }
+/* Short phones (360x640): Hold for help shrinks so it and the dose card stay in the first screen. */
+@media (max-height: 700px) { .td-simple .sos-simple-btn { min-height: 64px; } .td-simple .td-slide h2 { font-size: 28px; } }
