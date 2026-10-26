@@ -242,4 +242,20 @@ describe('sign-out while a poll is in flight (audit S1 major)', () => {
     expect(await unseenCount()).toBe(0)
     stop()
   })
+  it('a sign-out inside the IndexedDB (kv) await after the answer arrives still drops the rows', async () => {
+    let release!: () => void
+    const wait = new Promise<void>((r) => { release = r })
+    let inKv = false
+    const real = db.kv.get.bind(db.kv)
+    const spy = vi.spyOn(db.kv, 'get').mockImplementation(((k: string) => { inKv = true; return wait.then(() => real(k)) }) as never)
+    h.state.rows = [srv('a1')]
+    const stop = watchAlertsForSession()
+    await until(() => inKv) // the answer is in; the poll is parked on the kv read
+    h.state.authCb!('SIGNED_OUT', null)
+    release()
+    await settle()
+    spy.mockRestore()
+    expect(await adb.alerts.count()).toBe(0)
+    stop()
+  })
 })

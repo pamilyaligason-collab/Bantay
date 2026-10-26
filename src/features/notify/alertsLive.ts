@@ -27,6 +27,7 @@ export function pollAlerts(): Promise<number> {
       if (error || !data || mine !== epoch) return 0
       // the table answered for this user: in-app family alerts work here, so the switch-to-app banner may show (Q1). Before 0030 is applied this never runs.
       await db.kv.get(INAPP_OK_KEY).then((k) => (k?.value === true ? undefined : db.kv.put({ key: INAPP_OK_KEY, value: true }))).catch(() => undefined)
+      if (mine !== epoch) return 0 // the kv await above is an IndexedDB window: a sign-out/switch inside it must not store the last person's rows
       const rows = (data as Partial<ServerAlert>[]).flatMap((r) => fromServer(r) ?? [])
       const fresh = await upsertAlerts(rows)
       // a seen mark made offline: tell the server now (best effort; the next poll tries again)

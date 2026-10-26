@@ -10,7 +10,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import webpush from 'npm:web-push@3.6.7'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
-import { firstName, manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
     async release(personId, day, slot) {
       await sb.from('dose_watch_sent').delete().eq('person_id', personId).eq('day', day).eq('slot', slot)
     },
-    async push(sub, payload) { return send(sub as SubRow, payload, true) },
+    // ML-24: over budget, no send (null reads as a network miss, so the claim is released and the next run retries)
+    async push(sub, payload) { return overBudget() ? null : send(sub as SubRow, payload, true) },
     async removeSub(endpoint) { await removeSub(endpoint) },
     // One carer_alerts row per carer. A row with the same (kind, ref, carer) already exists: ignored (unique violation 23505), never an error.
     async carerRow(kind, personId, carerUserIds, template, ref) {
@@ -122,18 +123,12 @@ Deno.serve(async (req) => {
     const rows = (data ?? []) as AlertPushRow[]
     if (!rows.length) return { pushed: 0 }
     const subs = await subsOf([...new Set(rows.map((r) => r.carer_user_id))])
-    const personIds = [...new Set(rows.filter((r) => r.template === 'dose_missed' && r.person_id).map((r) => r.person_id!))]
-    const names = new Map<string, string | null>()
-    if (personIds.length) {
-      const { data: ps } = await sb.from('people').select('id,display_name').in('id', personIds)
-      for (const p of (ps ?? []) as { id: string; display_name: string | null }[]) names.set(p.id, p.display_name)
-    }
     let pushed = 0
     const offered: string[] = []
     rowLoop: for (const r of rows) {
       if (overBudget()) break // left unpushed: the next run continues
       const known = Object.hasOwn(TEMPLATES, r.template)
-      const payload = r.template === 'dose_missed' && r.person_id ? { t: 'dose_watch', n: firstName(names.get(r.person_id)) } : known ? { t: r.template } : null
+      const payload = known ? { t: r.template } : null // B-7: the template id and nothing else (no name on a lock screen)
       if (payload) {
         const urgent = known && TEMPLATES[r.template as keyof typeof TEMPLATES].tone === 'urgent'
         for (const sub of subs.filter((s) => s.user_id === r.carer_user_id)) {

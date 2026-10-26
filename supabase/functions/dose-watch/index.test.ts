@@ -136,11 +136,12 @@ describe("mode 'flush'", () => {
     expect(h.rpcs).toEqual([]) // no dose-watch run, no prune
     expect(h.heartbeat).not.toHaveBeenCalled()
   })
-  it('a missed dose carries the first name only (the existing dose_watch payload); an unknown template is not pushed but is marked', async () => {
+  it('a missed dose carries the template id only, never a name (B-7); an unknown template is not pushed but is marked', async () => {
     h.tables.carer_alerts!.push(alert('d1', 'c1', 'dose_missed', { kind: 'dose_missed' }), alert('x1', 'c1', 'from_the_future'))
     h.tables.push_subscriptions!.push(sub('c1'))
     await call({ mode: 'flush' })
-    expect(h.sent.map((s) => s.payload)).toEqual([{ t: 'dose_watch', n: 'Lola Rosa' }])
+    expect(h.sent.map((s) => s.payload)).toEqual([{ t: 'dose_missed' }])
+    expect(JSON.stringify(h.sent)).not.toContain('Lola')
     expect(buildNotification(h.sent[0]!.payload)).not.toBeNull()
     expect(h.tables.carer_alerts!.every((r) => r.pushed_at)).toBe(true)
   })
