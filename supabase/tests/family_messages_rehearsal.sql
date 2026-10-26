@@ -93,6 +93,7 @@ reset role;
 -- ===== the sender soft-deletes; family stops seeing it; the sender and an admin still can =====
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
 select pg_temp.ok(pg_temp.n($$update public.family_messages set deleted_at = now() where kind = 'text'$$) = 1, 'the sender soft-deletes their message');
+select pg_temp.ok(pg_temp.fails($$update public.family_messages set deleted_at = null where kind = 'text'$$), 'a deleted message cannot be undeleted');
 delete from storage.objects where bucket_id = 'family-messages';
 select pg_temp.ok((select count(*) from storage.objects where bucket_id = 'family-messages') = 0, 'the sender removes the object');
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';

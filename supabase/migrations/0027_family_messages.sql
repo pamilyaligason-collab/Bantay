@@ -51,7 +51,7 @@ create policy family_messages_insert on public.family_messages for insert to aut
 drop policy if exists family_messages_update on public.family_messages;
 create policy family_messages_update on public.family_messages for update to authenticated
   using (public.is_family_member() and (sender_id = auth.uid() or public.is_admin()))
-  with check (public.is_family_member() and (sender_id = auth.uid() or public.is_admin()));
+  with check (public.is_family_member() and (sender_id = auth.uid() or public.is_admin()) and deleted_at is not null); -- the only update is a soft delete; never undelete
 
 -- ---------- private bucket ----------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
