@@ -3,7 +3,7 @@
 // Deploy with --no-verify-jwt; the secret is the gate.
 // Normal run: runDoseWatch (S4 logic.ts) -> flushWebPush -> phone-health sweep -> dose_due push -> prune -> heartbeat.
 // mode 'flush': only flushWebPush, so PWA users get a push for a new carer_alerts row at once. APK users see the row when they open Bantay (D-78).
-// Payloads are template ids only (B-7): {t}, or {t:'dose_watch', n:<first name>} for a missed dose. pushed_at means "offered"; the in-app row is the record.
+// Payloads are template ids only (B-7): {t}, or {t:'dose_watch'} (carer class, optional n = a count of missed doses, never a name) for a carer's missed dose. pushed_at means "offered"; the in-app row is the record.
 // Function secrets (set by Lloyd): DOSE_WATCH_CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT. Optional: DOSE_WATCH_AFTER_MIN (default 30).
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
@@ -46,7 +46,7 @@ const BUDGET_MS = 100_000 // measured from the start of the request; no send sta
 const DOSE_DUE_WINDOW_MS = 15 * 60_000 // one cron tick; the notification tag makes a repeat replace, not double
 
 interface SubRow { user_id: string; endpoint: string; p256dh: string | null; auth: string | null }
-interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; template: string }
+interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; kind: string; template: string }
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return reply(405, { ok: false, error: 'bad_input' })
@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
     },
     // ML-24: over budget, no send (null reads as a network miss, so the claim is released and the next run retries)
     async push(sub, payload) { return overBudget() ? null : send(sub as SubRow, payload, true) },
+    overBudget,
     async removeSub(endpoint) { await removeSub(endpoint) },
     // One carer_alerts row per carer. A row with the same (kind, ref, carer) already exists: ignored (unique violation 23505), never an error.
     async carerRow(kind, personId, carerUserIds, template, ref) {
@@ -118,7 +119,7 @@ Deno.serve(async (req) => {
 
   /** Web Push for rows not yet offered (browser/PWA users only). Sets pushed_at either way. Returns the number of pushes accepted. */
   async function flushWebPush(now: Date): Promise<{ pushed: number }> {
-    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
+    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,kind,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
     if (error) throw new Error('read')
     const rows = (data ?? []) as AlertPushRow[]
     if (!rows.length) return { pushed: 0 }
@@ -128,9 +129,11 @@ Deno.serve(async (req) => {
     rowLoop: for (const r of rows) {
       if (overBudget()) break // left unpushed: the next run continues
       const known = Object.hasOwn(TEMPLATES, r.template)
-      const payload = known ? { t: r.template } : null // B-7: the template id and nothing else (no name on a lock screen)
+      // B-7: the template id and nothing else (no name on a lock screen). A carer's missed dose is the carer-class 'dose_watch' (carer cap, carer quiet hours), not the user's own 'dose_missed' nudge.
+      const carerDose = r.kind === 'dose_missed'
+      const payload = carerDose ? { t: 'dose_watch' } : known ? { t: r.template } : null
       if (payload) {
-        const urgent = known && TEMPLATES[r.template as keyof typeof TEMPLATES].tone === 'urgent'
+        const urgent = carerDose || TEMPLATES[r.template as keyof typeof TEMPLATES].tone === 'urgent'
         for (const sub of subs.filter((s) => s.user_id === r.carer_user_id)) {
           if (overBudget()) break rowLoop // this row is not marked: the next run offers it again (the notification tag makes a repeat replace)
           const status = await send(sub, payload, urgent)

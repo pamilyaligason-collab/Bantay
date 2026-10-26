@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildNotification } from '../../../src/features/notify/templates'
 import {
-  type Carer, doseWatchPayload, doseWatchText, dueSlots, firstName, type MedRow, type Port, recipients, runDoseWatch, scheduleTimes, type Sub, type TakenRow
+  type Carer, doseWatchPayload, dueSlots, type MedRow, type Port, recipients, runDoseWatch, scheduleTimes, type Sub, type TakenRow
 } from './logic.ts'
 
 const NOW = Date.parse('2026-10-20T10:05:00+08:00')
@@ -72,25 +72,14 @@ describe('dueSlots', () => {
 })
 
 describe('text and recipients (B-7)', () => {
-  it('first name only, generic wording, and the phone shows exactly that text', () => {
-    expect(firstName('Maria Santos')).toBe('Maria')
-    expect(firstName('  ')).toBe('Someone')
-    expect(firstName('J0hn <b>')).toBe('Jhn')
-    expect(firstName('Lola Rosa Santos')).toBe('Lola Rosa')
-    expect(firstName('Dr. Cruz')).toBe('Dr. Cruz')
-    expect(firstName('Lola')).toBe('Lola')
-    expect(firstName('Niño Reyes')).toBe('Niño')
-    expect(firstName('Maria Lourdes')).toBe('Maria')
-    expect([...firstName('Ate ' + '😀'.repeat(2) + 'é'.repeat(40))].length).toBeLessThanOrEqual(24)
-    expect(doseWatchText('Maria')).toBe('Maria has not marked a medicine (2 h).')
-    const n = buildNotification(doseWatchPayload('Maria Santos'))!
-    expect(n.body).toBe('Maria has not marked a medicine (2 h).')
+  it('the payload is the carer template id; n is a count, never a name; the phone shows a no-name carer line', () => {
+    expect(doseWatchPayload()).toEqual({ t: 'dose_watch' })
+    expect(doseWatchPayload(1)).toEqual({ t: 'dose_watch' })
+    expect(doseWatchPayload(3)).toEqual({ t: 'dose_watch', n: 3 })
+    const n = buildNotification(doseWatchPayload())!
+    expect(n.body).toBe('A medicine was missed by someone you look after.')
     expect(n.cls).toBe('carer')
-  })
-  it('the payload holds only t and the first name, never a medicine', () => {
-    const p = doseWatchPayload('Maria Santos')
-    expect(Object.keys(p).sort()).toEqual(['n', 't'])
-    expect(JSON.stringify(p)).not.toMatch(/metformin|mg|\d/i)
+    expect(buildNotification(doseWatchPayload(3))!.body).toBe('3 medicines were missed by someone you look after.')
   })
   it('only writer carers, never the person themselves', () => {
     const carers: Carer[] = [
@@ -130,7 +119,8 @@ describe('runDoseWatch', () => {
     const r = await runDoseWatch(f.port, NOW)
     expect(r).toEqual({ due: 1, claimed: 1, sent: 2, removed: 0, released: 0 })
     expect(f.pushes.map((p) => p.sub.user_id)).toEqual(['w1', 'w2'])
-    expect(f.pushes[0]!.payload).toEqual({ t: 'dose_watch', n: 'Maria' })
+    expect(f.pushes[0]!.payload).toEqual({ t: 'dose_watch' }) // no name, no count of a person (B-7)
+    expect(JSON.stringify(f.pushes)).not.toContain('Maria')
   })
   it('is idempotent: the next 15-minute run and a run an hour later send nothing more', async () => {
     const f = fakePort()
@@ -148,6 +138,20 @@ describe('runDoseWatch', () => {
     const f2 = fakePort({ status: null })
     await runDoseWatch(f2.port, NOW)
     expect(await runDoseWatch(f2.port, NOW)).toMatchObject({ released: 1 }) // retried once per run
+  })
+  it('out of budget: stops the loop, releases the unsent claim, and the next run sends it', async () => {
+    const meds = [med(), med({ id: 'm2', schedule: { v: 1, times: ['07:00'] } })] // two open slots for p1
+    const f = fakePort({ meds, status: null })
+    let over = false
+    f.port.overBudget = () => over
+    const push = f.port.push
+    f.port.push = async (s, p) => { over = true; return push(s, p) } // the first send runs out the clock
+    const r = await runDoseWatch(f.port, NOW)
+    expect(r).toMatchObject({ sent: 0, released: 1, claimed: 0 })
+    expect(f.pushes).toHaveLength(1) // the second slot was never claimed or tried
+    const next = fakePort({ meds, status: 201 })
+    next.port.claim = f.port.claim
+    expect((await runDoseWatch(next.port, NOW)).sent).toBe(4) // both slots, both writer carers
   })
   it('sends nothing when the dose was marked, and drops a gone subscription', async () => {
     const quiet = fakePort({ taken: [took()] })

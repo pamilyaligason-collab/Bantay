@@ -66,14 +66,14 @@ export interface Built {
   silent?: boolean
 }
 
-/** The one payload with a second field: carers' "<first name> has not marked a medicine (2 h)." Sent by the dose-watch function.
- *  Only a first name (or a title and name) rides along (letters, at most 24); the tag is per person so two alerts both show; never a medicine or a value (B-7). */
-const NAME = /^\p{L}[\p{L}.'’-]*( [\p{L}.'’-]+)?$/u // a first name, or a title and a name ("Lola Rosa"): letters (incl. ñ), one space, dot
+/** The carer-class missed-dose push (D-78, B-7): {t:'dose_watch'} or {t:'dose_watch', n: count}. n is a COUNT of missed doses (integer 1 to 99), never a name or a medicine.
+ *  One tag, so a second alert replaces the first instead of stacking. Sent by the dose-watch function to the people who look after someone, never to that person. */
 function doseWatch(payload: object): Built | null {
-  const keys = Object.keys(payload).sort()
+  const keys = Object.keys(payload).sort().join()
   const n = (payload as { n?: unknown }).n
-  if (keys.length !== 2 || keys[0] !== 'n' || keys[1] !== 't' || typeof n !== 'string' || [...n].length > 24 || !NAME.test(n)) return null
-  return { id: 'dose_missed', tag: `dose_watch:${n}`, cls: 'carer', title: 'Medicine not marked', body: `${n} has not marked a medicine (2 h).`, data: { tab: 'health' } }
+  if (keys !== 't' && !(keys === 'n,t' && Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 99)) return null
+  const many = keys === 'n,t' && (n as number) > 1
+  return { id: 'dose_missed', tag: 'dose_watch', cls: 'carer', title: many ? 'Medicines were missed' : 'A medicine was missed', body: many ? `${n} medicines were missed by someone you look after.` : 'A medicine was missed by someone you look after.', data: { tab: 'health' } }
 }
 
 export function buildNotification(payload: unknown): Built | null {

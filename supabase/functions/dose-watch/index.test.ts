@@ -136,13 +136,14 @@ describe("mode 'flush'", () => {
     expect(h.rpcs).toEqual([]) // no dose-watch run, no prune
     expect(h.heartbeat).not.toHaveBeenCalled()
   })
-  it('a missed dose carries the template id only, never a name (B-7); an unknown template is not pushed but is marked', async () => {
+  it('a carer missed-dose row pushes the carer-class dose_watch, never the user-class dose_missed and never a name (B-7); an unknown template is not pushed but is marked', async () => {
     h.tables.carer_alerts!.push(alert('d1', 'c1', 'dose_missed', { kind: 'dose_missed' }), alert('x1', 'c1', 'from_the_future'))
     h.tables.push_subscriptions!.push(sub('c1'))
     await call({ mode: 'flush' })
-    expect(h.sent.map((s) => s.payload)).toEqual([{ t: 'dose_missed' }])
+    expect(h.sent.map((s) => s.payload)).toEqual([{ t: 'dose_watch' }])
+    expect(h.sent[0]!.opts).toMatchObject({ urgency: 'high' })
     expect(JSON.stringify(h.sent)).not.toContain('Lola')
-    expect(buildNotification(h.sent[0]!.payload)).not.toBeNull()
+    expect(buildNotification(h.sent[0]!.payload)).toMatchObject({ cls: 'carer', tag: 'dose_watch' })
     expect(h.tables.carer_alerts!.every((r) => r.pushed_at)).toBe(true)
   })
   it('a gone subscription (410) is removed; a network error or a 500 is not removed; the row is still marked offered', async () => {

@@ -89,20 +89,8 @@ export function dueSlots(meds: MedRow[], taken: TakenRow[], nowMs: number): DueS
   return [...out.values()].sort((a, b) => (a.day + a.slot + a.personId).localeCompare(b.day + b.slot + b.personId))
 }
 
-const TITLES = new Set(['lola', 'lolo', 'tita', 'tito', 'ate', 'kuya', 'ma.', 'mama', 'papa', 'nanay', 'tatay', 'mrs', 'mrs.', 'mr', 'mr.', 'dr', 'dr.'])
-/** Name for the push: the first word, or the first two when the first is a title (Lola Rosa, Dr. Cruz). Letters (incl. ñ), dot, hyphen, apostrophe,
- *  one space; at most 24 characters (by code point); "Someone" when nothing usable. */
-export function firstName(displayName: string | null | undefined): string {
-  const words = (displayName ?? '').trim().split(/\s+/).map((w) => w.replace(/[^\p{L}.'’-]/gu, '')).filter(Boolean)
-  const take = words[0] && TITLES.has(words[0].toLowerCase()) && words.length > 1 ? words.slice(0, 2) : words.slice(0, 1)
-  const clean = [...take.join(' ')].slice(0, 24).join('').trim()
-  return /^\p{L}/u.test(clean) ? clean : 'Someone'
-}
-
-/** Web push body: exactly the keys the phone's buildNotification accepts for this alert. */
-export const doseWatchPayload = (displayName: string | null | undefined) => ({ t: 'dose_watch' as const, n: firstName(displayName) })
-/** The text the phone shows (kept here so the wording is tested next to the sender). */
-export const doseWatchText = (name: string) => `${name} has not marked a medicine (2 h).`
+/** Web push body for a carer's missed-dose alert (B-7, D-78): the carer-class template id and nothing else. `n` is a COUNT of missed doses when known, never a name. */
+export const doseWatchPayload = (n?: number) => (n && n > 1 ? { t: 'dose_watch' as const, n } : { t: 'dose_watch' as const })
 
 export interface Carer {
   carer_id: string
@@ -129,7 +117,9 @@ export interface Port {
   claim(personId: string, day: string, slot: string): Promise<boolean>
   /** Give the claim back (delete the row) so the next run can try again. */
   release(personId: string, day: string, slot: string): Promise<void>
-  push(sub: Sub, payload: { t: 'dose_watch'; n: string }): Promise<number | null> // HTTP status, null on a network error
+  push(sub: Sub, payload: { t: 'dose_watch'; n?: number }): Promise<number | null> // HTTP status, null on a network error or when over the run budget
+  /** True once the run is out of time: runDoseWatch stops and gives back the claim of the slot it was on. */
+  overBudget?(): boolean
   removeSub(endpoint: string): Promise<void>
 }
 
@@ -144,21 +134,27 @@ export async function runDoseWatch(port: Port, nowMs: number): Promise<Report> {
   const slots = dueSlots(meds, taken, nowMs)
   r.due = slots.length
   for (const s of slots) {
+    if (port.overBudget?.()) break // out of time: the unclaimed slots are picked up by the next run
     if (!(await port.claim(s.personId, s.day, s.slot))) continue
     r.claimed++
     const p = await port.person(s.personId)
     if (!p) continue
     const to = recipients(s.personId, await port.carers(s.personId), p.auth_user_id)
     if (!to.length) continue
-    const payload = doseWatchPayload(p.display_name)
+    const payload = doseWatchPayload()
     const subs = await port.subs(to)
     let netErrors = 0
+    let sentHere = 0
+    let stop = false
     for (const sub of subs) {
       const status = await port.push(sub, payload)
-      if (status != null && status >= 200 && status < 300) r.sent++
+      if (status == null && port.overBudget?.()) { stop = true; break }
+      if (status != null && status >= 200 && status < 300) { r.sent++; sentHere++ }
       else if (status === 404 || status === 410) { await port.removeSub(sub.endpoint); r.removed++ }
       else if (status == null) netErrors++
     }
+    // out of time before anyone got it: give the claim back so the next run sends it, then stop
+    if (stop) { if (sentHere === 0) { await port.release(s.personId, s.day, s.slot); r.released++; r.claimed-- } break }
     // advisory push: claimed first, so a lost one is not sent again... unless EVERY send failed on the network, then the next run retries once
     if (subs.length > 0 && netErrors === subs.length) { await port.release(s.personId, s.day, s.slot); r.released++; r.claimed-- }
   }
