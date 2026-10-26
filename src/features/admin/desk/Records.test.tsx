@@ -204,9 +204,9 @@ describe('Records detail', () => {
     const panel = await screen.findByRole('dialog')
     expect(await within(panel).findByAltText('Source page page1.jpg')).toHaveProperty('src', 'https://files.test/p1/a.jpg')
     expect(within(panel).getByRole('link', { name: 'Open old.pdf in Drive' }).getAttribute('href')).toBe('https://drive.google.com/file/d/abc123/view')
-    expect(within(panel).getByLabelText('value num')).toBeTruthy() // EDITABLE
+    expect(within(panel).getByLabelText('Value')).toBeTruthy() // EDITABLE
     expect(within(panel).queryByLabelText('status')).toBeNull() // read-only column is not an input
-    expect(within(panel).getByText('confidence')).toBeTruthy()
+    expect(within(panel).getByText('Read confidence')).toBeTruthy()
   })
 
   it('Confirm writes the status, settles the paper and Undo puts the old status back', async () => {
@@ -240,7 +240,7 @@ describe('Records detail', () => {
     render(<Records id={null} />)
     fireEvent.click(await screen.findByRole('button', { name: 'LDL Test' }))
     const panel = await screen.findByRole('dialog')
-    fireEvent.change(within(panel).getByLabelText('unit raw'), { target: { value: 'mmol/L' } })
+    fireEvent.change(within(panel).getByLabelText('Unit'), { target: { value: 'mmol/L' } })
     fireEvent.click(within(panel).getByRole('button', { name: 'Save fix' }))
     await screen.findByText('Saved.')
     const w = writes.find((x) => x.patch.unit_raw === 'mmol/L')!
@@ -256,7 +256,7 @@ describe('buildEditPatch', () => {
     expect(buildEditPatch('lab_results', row, { value_num: '7,5', unit_raw: 'mg', ref_low: '0' })).toEqual({ patch: { value_num: 7.5, ref_low: 0 } })
   })
   it('rejects a bad number and ignores columns that are not editable', () => {
-    expect(buildEditPatch('lab_results', row, { value_num: 'x' })).toEqual({ error: 'value num must be a number' })
+    expect(buildEditPatch('lab_results', row, { value_num: 'x' })).toEqual({ error: 'Value must be a number' })
     expect(buildEditPatch('lab_results', row, { status: 'confirmed', unit_raw: 'mg', value_num: '5' })).toEqual({ patch: {} })
   })
 })

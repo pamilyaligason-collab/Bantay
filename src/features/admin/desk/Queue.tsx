@@ -5,10 +5,10 @@ import { confirmRows, listDrafts, rejectRows, settleDocument, updateRow, type Do
 import { KIND } from '../../records/ConfirmSheet'
 import { emitConfirmed } from '../../records/papers'
 import type { PageProps } from './types'
-import { Empty, PageHead, Tag, useConfirm, useToast } from './ui'
+import { BulkBar, Empty, PageHead, Tag, useConfirm, useToast } from './ui'
 import { useDeskPeople } from './people'
-import { EditFields, fmt, say } from './recordsUi'
-import { defaultChecked, isLow, queueKey, reopenDocument, restore, type Change, type QItem, type QTable, type Status } from './recordsApi'
+import { EditFields, fmt, LoadError, Preview, say } from './recordsUi'
+import { defaultChecked, isLow, labRange, labTag, labValue, queueKey, reopenDocument, restore, type Change, type QItem, type QTable, type Status } from './recordsApi'
 import './records.css'
 
 const TITLE: Record<QTable, (r: QItem['row']) => string> = {
@@ -19,10 +19,16 @@ const TITLE: Record<QTable, (r: QItem['row']) => string> = {
 }
 const detail = (i: QItem): string => {
   const r = i.row as Record<string, unknown>
-  if (i.table === 'lab_results') return [r.value_num ?? r.value_text, r.unit_raw, r.flag ? `flag ${r.flag}` : ''].filter((x) => x != null && x !== '').join(' ') || 'Not read'
+  if (i.table === 'lab_results') return labValue(i.row) || 'Not read'
   if (i.table === 'prescription_items') return [r.strength, r.dose, r.frequency, r.duration].filter(Boolean).join(' · ')
   if (i.table === 'vaccinations') return [r.dose_no ? `Dose ${r.dose_no}` : '', fmt(r.given_on)].filter(Boolean).join(' · ')
   return String(r.impression ?? '')
+}
+/** Value cell: for a lab, the value, its printed range and a High/Low tag (same words as Records). */
+const ValueCell = ({ i }: { i: QItem }) => {
+  if (i.table !== 'lab_results') return <>{detail(i)}</>
+  const t = labTag(i.row), range = labRange(i.row)
+  return <span className="rc-val"><b>{detail(i)}</b>{range && <span className="dk-sub">Range {range}</span>}{t && <Tag tone={t.tone}>{t.word}</Tag>}</span>
 }
 const itemsOf = (b: DocBundle): QItem[] => [
   ...b.labs.map((row) => ({ table: 'lab_results' as const, row })), ...b.items.map((row) => ({ table: 'prescription_items' as const, row })),
@@ -52,7 +58,8 @@ function useOtherDrafts() {
 
 const paperName = (d: DocBundle['doc']) => [KIND[d.kind] ?? 'Document', d.title, d.facility, d.doc_date].filter(Boolean).join(', ')
 
-export default function Queue(_: PageProps) {
+export default function Queue({ id }: PageProps) {
+  const person = id && id !== 'all' ? id : undefined // #/queue/<personId> shows one person's papers
   const { nameOf } = useDeskPeople()
   const [papers, setPapers] = useState<DocBundle[] | null>(null)
   const [err, setErr] = useState('')
@@ -60,6 +67,7 @@ export default function Queue(_: PageProps) {
   const [docsOn, setDocsOn] = useState<Set<string>>(new Set()) // papers with no rows, ticked for the bulk confirm
   const others = useOtherDrafts()
   const [cursor, setCursor] = useState(-1)
+  const [viewDoc, setViewDoc] = useState<string | null>(null) // the paper shown beside the values
   const [fixing, setFixing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const seenRows = useRef(new Set<string>()) // rows already offered: new ones get the default tick, old ones keep the admin's choice
@@ -68,8 +76,8 @@ export default function Queue(_: PageProps) {
   const conf = useConfirm()
 
   const load = async () => {
-    const r = await listDrafts()
-    if (!r.ok) { setErr(say(r.error)); return setPapers([]) }
+    const r = await listDrafts(person)
+    if (!r.ok) { setErr(say(r.error)); return } // keep any list already on screen; never turn an error into "Nothing to confirm"
     setErr(''); setPapers(r.data)
     setChecked((prev) => {
       const next = new Set<string>()
@@ -82,7 +90,7 @@ export default function Queue(_: PageProps) {
       return next
     })
   }
-  useEffect(() => { void load() }, [])
+  useEffect(() => { setPapers(null); void load() }, [person])
 
   const flat = (papers ?? []).flatMap(itemsOf)
   const byPerson = new Map<string, DocBundle[]>()
@@ -185,12 +193,11 @@ export default function Queue(_: PageProps) {
     return true
   }
 
+  const shownDoc = (papers ?? []).find((b) => b.doc.id === viewDoc) ?? (papers ?? [])[0]
   let idx = -1
   return (
     <>
-      <PageHead title="Confirm queue" sub={papers ? `${flat.length} draft ${flat.length === 1 ? 'row' : 'rows'} in ${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}` : 'Loading...'}>
-        <button className="dk-b go" disabled={busy || bulkCount === 0} onClick={confirmChecked}>Confirm {bulkCount} checked</button>
-      </PageHead>
+      <PageHead title="Confirm queue" sub={papers ? `${flat.length} draft ${flat.length === 1 ? 'row' : 'rows'} in ${papers.length} ${papers.length === 1 ? 'paper' : 'papers'}` : err ? undefined : 'Loading...'} />
       {papers && <p className="dk-sub" data-testid="q-totals">Lab results {totals.lab_results} · Prescription lines {totals.prescription_items} · Vaccinations {totals.vaccinations} · Imaging {totals.imaging_reports}. Keys: j and k move, x ticks, c confirms the ticked rows.</p>}
       {papers && papers.length > 0 && (
         <div className="rc-selectall">
@@ -202,14 +209,17 @@ export default function Queue(_: PageProps) {
         </div>
       )}
       {others.length > 0 && <p className="dk-sub" data-testid="q-others">Also waiting, confirmed on their own pages: {others.map((o, k) => { const m = OTHER.find((x) => x.table === o.table)!; return <Fragment key={o.table}>{k ? ', ' : ''}<a href={m.href}>{o.count} {m.label[o.count === 1 ? 0 : 1]}</a></Fragment> })}.</p>}
-      {err && <p className="rc-err" role="alert">{err}</p>}
-      {papers === null ? <Empty>Loading...</Empty> : papers.length === 0 ? <Empty>Nothing to confirm.</Empty> : [...byPerson].map(([pid, bs]) => (
+      {err && <LoadError onRetry={() => void load()}>{err}</LoadError>}
+      {papers === null ? (err ? null : <Empty>Loading...</Empty>) : papers.length === 0 ? <Empty>Nothing to confirm.</Empty> : (
+      <div className="rc-split">
+      <div className="rc-splitl">
+      {[...byPerson].map(([pid, bs]) => (
         <section key={pid} className="rc-person" aria-label={nameOf(pid)}>
           <h2 className="h2">{nameOf(pid)}</h2>
           {bs.map((b) => {
             const its = itemsOf(b)
             return (
-              <div key={b.doc.id} className="rc-paper">
+              <div key={b.doc.id} className="rc-paper" data-current={shownDoc?.doc.id === b.doc.id || undefined} onClick={() => setViewDoc(b.doc.id)}>
                 <div className="dk-head">
                   <h3 className="dk-grow rc-h3">{paperName(b.doc)}</h3>
                   <div className="dk-acts">
@@ -220,10 +230,11 @@ export default function Queue(_: PageProps) {
                 </div>
                 {its.length === 0 ? <p className="dk-sub">No rows were read from this paper.</p> : (
                   <div className="dk-scrollx">
-                    <table className="dk-table">
-                      <caption className="rc-cap">{paperName(b.doc)}</caption>
-                      <thead><tr><th scope="col">Include</th><th scope="col">Item</th><th scope="col">Value</th><th scope="col">Check</th><th scope="col">Actions</th></tr></thead>
-                      <tbody>
+                    <table className="dk-table dk-cardtab rc-qt" role="table">
+                      <caption className="rc-sr">{paperName(b.doc)}</caption>
+                      <colgroup><col className="rc-c1" /><col className="rc-c2" /><col className="rc-c3" /><col className="rc-c4" /><col /></colgroup>
+                      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Include</th><th role="columnheader" scope="col">Item</th><th role="columnheader" scope="col">Value</th><th role="columnheader" scope="col">Check</th><th role="columnheader" scope="col">Actions</th></tr></thead>
+                      <tbody role="rowgroup">
                         {its.map((i) => {
                           idx++
                           const n = idx
@@ -231,23 +242,23 @@ export default function Queue(_: PageProps) {
                           const unclear = i.table === 'prescription_items' && !!i.row.unclear
                           return (
                             <Fragment key={i.row.id}>
-                              <tr data-qi={n} data-row={i.row.id} tabIndex={n === Math.max(cursor, 0) ? 0 : -1} className="rc-qrow" onFocus={() => setCursor(n)}>
-                                <td><input type="checkbox" className="rc-check" checked={checked.has(i.row.id)} disabled={unclear} onChange={(e) => toggle(i.row.id, e.target.checked)} aria-label={unclear ? `${name} is unclear: confirm it on its own` : `Include ${name}`} /></td>
-                                <td>{name}</td>
-                                <td>{detail(i)}</td>
-                                <td>
+                              <tr role="row" data-qi={n} data-row={i.row.id} tabIndex={n === Math.max(cursor, 0) ? 0 : -1} className="rc-qrow" onFocus={() => { setCursor(n); setViewDoc(b.doc.id) }}>
+                                <td role="cell" className="rc-ck" data-label="Include"><input type="checkbox" className="rc-check" checked={checked.has(i.row.id)} disabled={unclear} onChange={(e) => toggle(i.row.id, e.target.checked)} aria-label={unclear ? `${name} is unclear: confirm it on its own` : `Include ${name}`} /></td>
+                                <td role="cell" data-label="Item">{name}</td>
+                                <td role="cell" className="rc-num" data-label="Value"><ValueCell i={i} /></td>
+                                <td role="cell" data-label="Check">
                                   {unclear && <Tag tone="warn">Unclear</Tag>}{' '}
                                   {isLow(i.row.confidence) && <Tag tone="warn">Low confidence</Tag>}
                                   {i.row.confidence != null && <span className="dk-sub"> {Math.round(Number(i.row.confidence) * 100)}%</span>}
                                 </td>
-                                <td>
+                                <td role="cell" data-label="Actions">
                                   <div className="dk-acts">
                                     {unclear && <button className="dk-b go" disabled={busy} aria-label={`Confirm ${name}`} onClick={() => void apply([i], 'confirmed')}>Confirm</button>}
                                     <button className="dk-b" aria-label={`Fix ${name}`} aria-expanded={fixing === i.row.id} onClick={() => setFixing(fixing === i.row.id ? null : i.row.id)}>Fix</button>
                                   </div>
                                 </td>
                               </tr>
-                              {fixing === i.row.id && <tr><td colSpan={5}><EditFields table={i.table} row={i.row} onSave={(p) => fixRow(i, p)} onCancel={() => setFixing(null)} /></td></tr>}
+                              {fixing === i.row.id && <tr role="row"><td role="cell" colSpan={5}><EditFields table={i.table} row={i.row} onSave={(p) => fixRow(i, p)} onCancel={() => setFixing(null)} /></td></tr>}
                             </Fragment>
                           )
                         })}
@@ -260,6 +271,20 @@ export default function Queue(_: PageProps) {
           })}
         </section>
       ))}
+      </div>
+      {shownDoc && (
+        <aside className="rc-src" aria-label="Source paper">
+          <h2 className="h2">Source paper</h2>
+          <p className="dk-sub">{paperName(shownDoc.doc)}</p>
+          <Preview docId={shownDoc.doc.id} />
+        </aside>
+      )}
+      </div>
+      )}
+      <BulkBar count={bulkCount} noun="checked">
+        <button className="dk-b go" disabled={busy} onClick={confirmChecked}>Confirm {bulkCount} checked</button>
+        <button className="dk-b" onClick={() => selectAll(false)}>Clear</button>
+      </BulkBar>
       {conf.node}
       {toast.node}
     </>

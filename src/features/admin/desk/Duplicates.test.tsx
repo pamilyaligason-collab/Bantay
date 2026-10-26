@@ -99,4 +99,11 @@ describe('Duplicates', () => {
     render(<Duplicates id={null} />)
     expect(await screen.findByText('No duplicate papers.')).toBeTruthy()
   })
+
+  it('a load error shows Retry, not "No duplicate papers"', async () => {
+    h.sb = null
+    render(<Duplicates id={null} />)
+    expect(await screen.findByRole('button', { name: 'Retry' })).toBeTruthy()
+    expect(screen.queryByText('No duplicate papers.')).toBeNull()
+  })
 })
