@@ -19,7 +19,8 @@ export function TabBar({ active }: { active: Tab | null }) {
   const open = () => { setSheet(true); if (!seen) setSeen(true) }
   const onClose = useCallback(() => { if (history.state?.bantayAsk) history.back(); else setSheet(false) }, [])
   const onDone = useCallback(() => setSheet(false), [])
-  const hint = loaded && !seen && !sheet && active === 'today'
+  const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode hides the tab bar, so the hint is never seen there and must not count as seen
+  const hint = loaded && simpleLoaded && !simple && !seen && !sheet && active === 'today'
   useEffect(() => { // the coach mark shows once: it counts as seen after 8 seconds, so it never sits on the page again
     if (!hint) return
     const t = setTimeout(() => setSeen(true), 8000)

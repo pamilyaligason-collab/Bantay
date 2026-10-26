@@ -15,7 +15,7 @@ import { useStorm } from './useStorm'
 import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
 
-/** Simple mode (Me switch `mode.simple`): the next dose with a big Taken button, then I'm OK, Call family and the real SOS button (hold 3 seconds), plus the weather action line when one applies.
+/** Simple mode (Me switch `mode.simple`): the next dose with a big Taken button, then the real SOS button (hold 3 seconds, kept in the first screen on a 360x640 phone), I'm OK and Call family, plus the weather action line when one applies.
  *  Call family rings the first SOS contact; with none saved it opens Safety to add one.
  *  With nothing next the card gives way to the expanded weather card (as on the full page). Exit simple mode sits at the top and the bottom. */
 export default function SimpleToday({ onOk, onExit, notify }: { onOk: () => void; onExit: () => void; notify: (msg: string) => void }) {
@@ -55,11 +55,11 @@ export default function SimpleToday({ onOk, onExit, notify }: { onOk: () => void
           {action && <p className="td-wxline td-wxline-big">{action}</p>}
         </>
       )}
+      <SosButton onSend={() => setSos(true)} />
       <div className="td-big-btns">
         <button type="button" className="td-bigbtn ok" onClick={onOk}>I&apos;m OK</button>
         <a className="td-bigbtn call" href={phone ? `tel:${phone}` : '#safety'}>{phone ? 'Call family' : 'Add a family number'}</a>
       </div>
-      <SosButton onSend={() => setSos(true)} />
       <button type="button" className="td-exit bottom" onClick={onExit}>Exit simple mode</button>
     </div>
   )

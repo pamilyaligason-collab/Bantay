@@ -10,6 +10,7 @@ const step3 = () => screen.getByText(/^3\./)
 beforeEach(async () => {
   await db.outbox.clear()
   await db.kv.clear()
+  await db.kv.put({ key: 'alerts.inapp.ok', value: true })
   vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Linux; Android 15) Chrome/141')
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => LATEST }))
   window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener() {}, removeEventListener() {} }) as unknown as typeof window.matchMedia
@@ -17,6 +18,15 @@ beforeEach(async () => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('PwaBanner render', () => {
+  it('hidden until in-app alerts exist (kv alerts.inapp.ok)', async () => {
+    await db.kv.delete('alerts.inapp.ok')
+    render(<PwaBanner />)
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByRole('button', { name: 'Later' })).toBeNull()
+    await db.kv.put({ key: 'alerts.inapp.ok', value: true })
+    expect(await screen.findByRole('button', { name: 'Later' })).toBeTruthy()
+  })
   it('nothing waiting: all saved, step 3 enabled', async () => {
     render(<PwaBanner />)
     await screen.findByText('2. All saved to the family account')

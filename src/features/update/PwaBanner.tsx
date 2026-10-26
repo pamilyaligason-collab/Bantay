@@ -5,6 +5,8 @@ import { db } from '../../db'
 import { syncCounts } from '../sync/sync'
 
 const LATER_KEY = 'update.pwaLaterAt'
+/** Interim (D-78): hidden until in-app family alerts exist; S1 sets this kv true in Phase 2, so the banner never promises alerts the app cannot show yet. */
+const INAPP_KEY = 'alerts.inapp.ok'
 const DAY = 24 * 3600_000
 export const GET_URL = 'https://bantay.pages.dev/get/'
 
@@ -42,10 +44,12 @@ export function PwaBanner() {
   const [waiting, setWaiting] = useState<number | null>(null)
   const [dead, setDead] = useState(0)
   const [ready, setReady] = useState(false)
+  const [inapp, setInapp] = useState(false)
   useEffect(() => { let live = true; void appIsReady().then((ok) => { if (live) setReady(ok) }); return () => { live = false } }, [])
   useEffect(() => {
-    const sub = liveQuery(async () => ({ later: (await db.kv.get(LATER_KEY))?.value, c: await syncCounts() })).subscribe({
-      next: ({ later, c }) => {
+    const sub = liveQuery(async () => ({ later: (await db.kv.get(LATER_KEY))?.value, ok: (await db.kv.get(INAPP_KEY))?.value, c: await syncCounts() })).subscribe({
+      next: ({ later, ok, c }) => {
+        setInapp(ok === true)
         setLaterAt(typeof later === 'number' ? later : null)
         setWaiting(c.waiting + c.dead) // dead rows never reached the server; 'unknown' rows are not counted
         setDead(c.dead)
@@ -60,7 +64,7 @@ export function PwaBanner() {
     native: Capacitor.isNativePlatform(),
     laterAt
   })
-  if (!show || !ready) return null
+  if (!show || !ready || !inapp) return null
   const s = bannerSteps(waiting, dead)
   return (
     <section aria-label="Bantay is now an app" style={{ display: 'grid', gap: 12 }}>

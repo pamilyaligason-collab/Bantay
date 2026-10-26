@@ -60,6 +60,17 @@ describe('Today simple mode', () => {
     expect(screen.queryByRole('button', { name: 'Taken' })).toBeNull()
     expect(screen.queryByText('All clear')).toBeNull()
   })
+  it('on: .bt gets data-simple (CSS hides the tab bar and coach mark); off again on exit', async () => {
+    const bt = document.body.appendChild(document.createElement('div'))
+    bt.className = 'bt'
+    await db.kv.put({ key: 'mode.simple', value: true })
+    const { unmount } = render(<Today />)
+    await screen.findAllByRole('button', { name: /^Exit/ })
+    expect(bt.hasAttribute('data-simple')).toBe(true)
+    unmount()
+    expect(bt.hasAttribute('data-simple')).toBe(false)
+    bt.remove()
+  })
   it('on: Exit (top) and Exit simple mode (bottom) both turn it off through the same switch as Me', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     const { unmount } = render(<Today />)

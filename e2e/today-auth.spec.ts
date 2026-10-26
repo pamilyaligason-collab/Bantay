@@ -137,3 +137,21 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `${SHOTS}/simple-${scheme}.png`, fullPage: false })
   })
 }
+
+// F2: Simple mode keeps Hold for help above the fold with a dose card showing, on a normal and a small phone.
+for (const [w, h] of [[390, 844], [360, 640]] as const) {
+  test(`simple mode: SOS button inside the viewport before scroll at ${w}x${h}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await page.goto('/')
+    await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible() // the app has created its database
+    await seedWeek(page)
+    await seed(page, 'bantay', 'kv', [{ key: 'mode.simple', value: true }])
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Taken' })).toBeVisible()
+    const box = await page.getByRole('button', { name: /^SOS/ }).boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.y).toBeGreaterThanOrEqual(0)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(h)
+    await expect(page.locator('.bt[data-simple] .tabbar')).toBeHidden()
+  })
+}
