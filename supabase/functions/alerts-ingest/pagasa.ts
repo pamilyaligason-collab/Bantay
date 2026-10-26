@@ -176,6 +176,7 @@ export function gfaRows(caps: Cap[], now: number): AlertRow[] {
     if (!last) continue
     // replaced or cancelled with nothing left for this zone, or a Final advisory: write the row already expired so the old one stops showing
     const over = !live || live.responseType === 'AllClear'
+    const final = live?.responseType === 'AllClear' // else a newer advisory just dropped the zone
     if (live && !over && live.expires <= now) continue // lapsed on its own: the stored row has expired already
     if (!live && last.expires <= now) continue
     const names = areasFor(last, zone)
@@ -185,7 +186,7 @@ export function gfaRows(caps: Cap[], now: number): AlertRow[] {
       kind: 'rainfall',
       level: over ? null : last.severity || null,
       title: over ? `Flood advisory ended for ${zone.name}` : `General Flood Advisory for ${zone.name}`,
-      what: over ? `PAGASA's final flood advisory no longer lists ${names.join(', ')}.` : clip(head, 400) || last.headline,
+      what: over ? `PAGASA's ${final ? 'final' : 'latest'} flood advisory no longer lists ${names.join(', ')}.` : clip(head, 400) || last.headline,
       where_text: `${names.join(', ')} (near ${zone.name})`,
       when_text: phTime(last.sent),
       do_now: over ? 'Follow your local DRRMO and the PAGASA bulletin.' : FLOOD_DO_NOW,
@@ -203,10 +204,12 @@ export function gfaRows(caps: Cap[], now: number): AlertRow[] {
   return rows
 }
 
-/** Parse the index plus its CAP texts (index first). null = the index is not the feed. A single unreadable CAP is dropped. */
+/** Parse the index plus its CAP texts (index first). null = the source fails this run (stale, old rows kept): the index is not the feed, any fetched CAP
+ *  cannot be read, or a wind CAP has no readable signal. Unknown is never "lifted": a lift needs a parsed newer bulletin that no longer lists the zone. */
 export function parsePagasa(payloads: unknown[], now: number): AlertRow[] | null {
   if (parseFeed(payloads[0]) === null) return null
   const caps = payloads.slice(1).map(parseCap).filter((c): c is Cap => c !== null)
+  if (caps.length !== payloads.length - 1 || caps.some((c) => c.type === 'wcp' && c.signal === null)) return null
   return [...tcwsRows(caps, now), ...gfaRows(caps, now)]
 }
 

@@ -69,6 +69,21 @@ describe('tier 1: wind signals', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ level: null, title: 'Wind signal lifted for Dampas, Tagbilaran City: Typhoon Rosal (CHAMPI)', expires_at: new Date(now).toISOString() })
   })
+  describe('unknown is never lifted', () => {
+    const noSig = (c: string) => c.replace(/Signal Level<\/valueName><value>\d/, 'Signal Level</valueName><value>').replace('Signal #1', 'Signal')
+    const later = (c: string) => c.replace('2026-10-24T04:50:38', '2026-10-24T06:50:38')
+    it('(a) a newest wind CAP with no readable signal fails the source, no lifted row', () => {
+      expect(parsePagasa([feed, inArea(wcp, 'Bohol'), noSig(later(wcp))], NOW)).toBeNull()
+    })
+    it('(b) an unreadable Signal #1 file fails the source instead of lifting its zones', () => {
+      expect(parsePagasa([feed, 'not a cap', sig2(wcp)], NOW)).toBeNull()
+    })
+    it('(c) a genuine lift: a parsed newer bulletin without the zone writes one lifted row', () => {
+      const rows = parsePagasa([feed, inArea(wcp, 'Bohol'), later(wcp)], NOW)!
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toMatchObject({ level: null, title: 'Wind signal lifted for Dampas, Tagbilaran City: Typhoon Rosal (CHAMPI)' })
+    })
+  })
   it('an expired bulletin with nothing newer writes nothing', () => expect(run([inArea(wcp, 'Bohol')], at('2026-10-24T17:00:00+08:00'))).toEqual([]))
   it('notices: live signals only, the ref carries the signal', () => {
     expect(tier1(run([inArea(wcp, 'Bohol')]), NOW)).toEqual([{ ref: 'pagasa-tcws-rosal-champi-dampas:s1', template: 'storm_warning' }])

@@ -73,4 +73,4 @@ Extra function secret (optional): `DOSE_WATCH_CRON_SECRET`, the same value dose-
 next dose-watch run (15 minutes). Redeploy `alerts-ingest` after setting it. `alerts-ingest` also bundles `_shared/heartbeat.ts`: redeploy it whenever that file changes.
 
 Safety screens: storm mode (`StormCard`, on the Safety tab and mounted on Today by S7), Warnings (source line "From PAGASA public alerts ..., GDACS and Open-Meteo, checked
-every 10 minutes ... PAGASA bulletin: open"), the hub's Phone alerts tile (count from the phone check, only while something needs fixing) and the Phone warnings guide.
+every 10 minutes ..."), the hub's Phone alerts tile (count from the phone check, only while something needs fixing) and the Phone warnings guide.
