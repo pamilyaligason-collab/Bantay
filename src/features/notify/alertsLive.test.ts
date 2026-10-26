@@ -9,13 +9,14 @@ const h = vi.hoisted(() => {
     channels: [] as string[], removed: 0, subscribed: 0,
     selects: 0, rows: [] as unknown[], updates: [] as { patch: unknown; ids: unknown }[],
     appHandler: null as null | ((s: { isActive: boolean }) => void), appRemoved: 0,
+    gate: null as null | Promise<void>,
     uid: 'u1' as string | null, authCb: null as null | ((e: string, s: { user: { id: string } } | null) => void)
   }
   const builder = () => {
     const b: Record<string, unknown> = {}
     b.select = () => { state.selects++; return b }
     b.gt = () => b; b.order = () => b; b.limit = () => b
-    b.then = (ok: (v: unknown) => unknown) => Promise.resolve({ data: state.rows, error: null }).then(ok)
+    b.then = (ok: (v: unknown) => unknown) => (state.gate ?? Promise.resolve()).then(() => ({ data: state.rows, error: null })).then(ok)
     b.update = (patch: unknown) => {
       const u: Record<string, unknown> = {}
       const done = (ids: unknown) => { state.updates.push({ patch, ids }); return Promise.resolve({ error: null }) }
@@ -55,7 +56,7 @@ const settle = () => new Promise((r) => setTimeout(r, 150))
 const until = async (cond: () => boolean) => { for (let i = 0; i < 400 && !cond(); i++) await new Promise((r) => setTimeout(r, 25)); expect(cond()).toBe(true) }
 
 beforeEach(async () => {
-  Object.assign(h.state, { native: false, handler: null, channels: [], removed: 0, subscribed: 0, selects: 0, rows: [], updates: [], appHandler: null, appRemoved: 0, uid: 'u1', authCb: null })
+  Object.assign(h.state, { native: false, handler: null, channels: [], removed: 0, subscribed: 0, selects: 0, rows: [], updates: [], appHandler: null, appRemoved: 0, gate: null, uid: 'u1', authCb: null })
   await adb.alerts.clear()
   await db.kv.delete('alerts.inapp.ok')
   localStorage.clear()
@@ -219,6 +220,26 @@ describe('watchAlertsForSession (App.tsx hook)', () => {
     await settle()
     expect(await adb.alerts.get('old')).toBeUndefined()
     expect(h.state.channels).toEqual(['carer_alerts:u1'])
+    stop()
+  })
+})
+
+describe('sign-out while a poll is in flight (audit S1 major)', () => {
+  it('the late answer for the signed-out person is dropped; the next person starts with an empty store', async () => {
+    let release!: () => void
+    h.state.gate = new Promise<void>((r) => { release = r })
+    h.state.rows = [srv('a1')]
+    const stop = watchAlertsForSession()
+    await until(() => h.state.selects === 1) // user 1's poll is waiting on the network
+    h.state.authCb!('SIGNED_OUT', null)
+    h.state.gate = null
+    release()
+    await settle()
+    expect(await adb.alerts.count()).toBe(0)
+    h.state.rows = []
+    h.state.authCb!('SIGNED_IN', { user: { id: 'u2' } })
+    await settle()
+    expect(await unseenCount()).toBe(0)
     stop()
   })
 })

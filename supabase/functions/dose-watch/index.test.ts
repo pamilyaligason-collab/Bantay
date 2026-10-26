@@ -11,6 +11,8 @@ const h = vi.hoisted(() => ({
   failWith: new Map<string, number | undefined>(), // endpoint -> status code (undefined = network error)
   heartbeat: vi.fn(),
   rpcs: [] as string[],
+  failUpdate: new Set<string>(), // tables whose update answers an error
+  afterSend: null as null | (() => void),
   serve: null as null | ((req: Request) => Promise<Response>)
 }))
 
@@ -50,6 +52,7 @@ function builder(name: string) {
         return { data: null, error: null }
       }
       const hit = (rows ?? all).filter((r) => preds.every((p) => p(r)))
+      if (op === 'update' && h.failUpdate.has(name)) return { data: null, error: { message: 'write failed' } }
       if (op === 'update') { for (const r of hit) Object.assign(r, patch); return { data: null, error: null } }
       if (op === 'delete') { h.tables[name] = all.filter((r) => !hit.includes(r)); return { data: null, error: null } }
       const out = hit.slice(0, lim)
@@ -74,6 +77,7 @@ vi.mock('npm:web-push@3.6.7', () => ({
     sendNotification: async (sub: { endpoint: string }, payload: string, opts: Record<string, unknown>) => {
       if (h.failWith.has(sub.endpoint)) { const e = new Error('push') as Error & { statusCode?: number }; e.statusCode = h.failWith.get(sub.endpoint); throw e }
       h.sent.push({ endpoint: sub.endpoint, payload: JSON.parse(payload), opts })
+      h.afterSend?.()
     }
   }
 }))
@@ -96,7 +100,7 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   Object.assign(h, { tables: { carer_alerts: [], push_subscriptions: [], people: [{ id: 'p1', display_name: 'Lola Rosa Cruz', auth_user_id: 'u-p1', archived_at: null }], carers: [{ carer_id: 'c1', person_id: 'p1', can_write: true }, { carer_id: 'c2', person_id: 'p1', can_write: false }], medications: [], meds_taken: [], phone_health: [] }, claimed: new Set(), sent: [], rpcs: [], serve: null })
-  h.failWith.clear(); h.heartbeat.mockReset()
+  h.failWith.clear(); h.failUpdate.clear(); h.afterSend = null; h.heartbeat.mockReset()
   ;(globalThis as { Deno?: unknown }).Deno = { env: { get: (k: string) => ENV[k] }, serve: (fn: (r: Request) => Promise<Response>) => { h.serve = fn } }
   vi.resetModules()
   await import('./index.ts')
@@ -154,6 +158,26 @@ describe("mode 'flush'", () => {
     h.tables.push_subscriptions!.push(sub('c1'))
     expect((await call({ mode: 'flush' })).json.pushed).toBe(0)
     expect(h.sent).toEqual([])
+  })
+})
+
+describe('flush budget and write check (audit S1 minors)', () => {
+  it('the 100 s budget runs from the start of the request and is checked before every send: nothing more starts, and the unfinished row stays unmarked', async () => {
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'), alert('a2', 'c1', 'storm_warning', { kind: 'hazard', created_at: '2026-10-26T09:40:00+08:00' }))
+    h.tables.push_subscriptions!.push(sub('c1', 1), sub('c1', 2))
+    h.afterSend = () => { vi.setSystemTime(new Date(NOW.getTime() + 101_000)) } // the first send "took" the rest of the budget
+    const r = await call({ mode: 'flush' })
+    expect(r.json.pushed).toBe(1)
+    expect(h.sent).toHaveLength(1)
+    expect(h.tables.carer_alerts!.every((x) => x.pushed_at == null)).toBe(true) // a1 had one send left: offered again next run, the tag makes it a replace
+  })
+  it('a failed pushed_at write is a failed run, not ok (else every run would resend for 12 h)', async () => {
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_subscriptions!.push(sub('c1'))
+    h.failUpdate.add('carer_alerts')
+    expect((await call({ mode: 'flush' })).status).toBe(500)
+    const r = await call({})
+    expect(r.json).toMatchObject({ ok: false, flush_failed: true })
   })
 })
 

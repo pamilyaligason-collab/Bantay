@@ -33,11 +33,14 @@ Deno.serve(async (req) => {
   // notify_family does not exist: that is logged as zero rows, never a failure of the web push below.
   let rows = 0
   if (isHazardId(t)) {
+    const ref = hazardRef(t, Date.now())
     const { data: people } = await service.from('people').select('id').not('auth_user_id', 'is', null).is('archived_at', null)
     for (const p of (people ?? []) as { id: string }[]) {
-      const { data: n } = await service.rpc('notify_family', { p_person: p.id, p_kind: 'hazard', p_template: t, p_ref: hazardRef(t, Date.now()), p_scope: 'self' })
+      const { data: n } = await service.rpc('notify_family', { p_person: p.id, p_kind: 'hazard', p_template: t, p_ref: ref, p_scope: 'self' })
       rows += typeof n === 'number' ? n : 0
     }
+    // The direct push below already reaches every subscription; mark the rows offered so dose-watch's flush does not push the same alert again within 15 minutes.
+    if (rows) await service.from('carer_alerts').update({ pushed_at: new Date().toISOString() }).eq('kind', 'hazard').eq('ref', ref).is('pushed_at', null)
   }
   const { data: subs, error } = await service.from('push_subscriptions').select('endpoint,p256dh,auth')
   if (error) return reply(500, { ok: false, error: 'failed' })
