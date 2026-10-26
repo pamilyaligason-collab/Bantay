@@ -74,7 +74,7 @@ test('signed out shows sign-in; wrong PIN gives the generic error; right PIN lan
   await page.getByLabel('Name').fill('Lola')
   await pin.fill('000001')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
+  await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left.')
   await expect(page.locator('h1')).toHaveText('Sign in')
   await expect(pin).toHaveValue('') // PIN is cleared after a miss
 
@@ -135,13 +135,13 @@ test.describe('quick login (D-24)', () => {
     await who(page, 'Lola Rosa')
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await keys(page, '000001')
-    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
+    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left.')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     expect(seen.pins).toEqual(['000001', '480193'])
   })
 
-  test('five wrong PINs show the locked screen, which offers Ask an admin and the 911 link', async ({ page }) => {
+  test('five wrong PINs show the one-minute wait screen with the 911 button and Forgot PIN?, no admin', async ({ page }) => {
     const seen = fresh()
     await mock(page, seen)
     await trust(page)
@@ -149,13 +149,13 @@ test.describe('quick login (D-24)', () => {
     await page.goto('/')
     await who(page, 'Lola Rosa')
     for (let i = 0; i < 5; i++) { await keys(page, '000001'); await expect.poll(() => seen.pins.length).toBe(i + 1) }
-    await expect(page.getByRole('heading', { name: 'PIN locked' })).toBeVisible()
-    await expect(page.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Emergency call 911' })).toHaveAttribute('href', 'tel:911')
+    await expect(page.getByRole('heading', { name: 'Take a short break' })).toBeVisible()
+    await expect(page.getByText(/Try your PIN again in (0:[0-5]\d|1:00)/)).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
+    await expect(page.locator('body')).not.toContainText(/admin/i)
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-    await page.getByRole('button', { name: 'Ask an admin' }).click()
-    await expect(page.getByRole('heading', { name: 'Ask an admin' })).toBeVisible()
-    await expect(page.getByLabel('Admins')).toContainText('Ate Maria')
+    await page.getByRole('button', { name: 'Forgot PIN?' }).click()
+    await expect(page.getByRole('heading', { name: 'Forgot your PIN?' })).toBeVisible()
   })
 
   test('fresh phone: first names come from the server (D-41); a right PIN signs in; nothing is cached before sign-in', async ({ page }) => {
@@ -169,7 +169,7 @@ test.describe('quick login (D-24)', () => {
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await who(page, 'Lola R.')
     await keys(page, '000001')
-    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left before a 15-minute lock.')
+    await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left.')
     await keys(page, '480193')
     await expect(page.locator('h1')).toHaveText('Today')
     expect(seen.pins).toEqual(['000001', '480193'])
@@ -189,19 +189,21 @@ test.describe('quick login (D-24)', () => {
     await expect(page.locator('h1')).toHaveText('Today')
   })
 
-  test('locked screen: An admin unlocked me returns to the PIN pad', async ({ page }) => {
-    const seen = fresh()
-    await mock(page, seen)
+  test('Forgot PIN? from the PIN pad: family approval asks for a new PIN twice', async ({ page }) => {
+    await mock(page, fresh())
     await trust(page)
     await skipOnboarding(page)
     await page.goto('/')
     await who(page, 'Lola Rosa')
-    for (let i = 0; i < 5; i++) { await keys(page, '000001'); await expect.poll(() => seen.pins.length).toBe(i + 1) }
-    await expect(page.getByRole('heading', { name: 'PIN locked' })).toBeVisible()
-    await page.getByRole('button', { name: 'An admin unlocked me' }).click()
-    await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
-    await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await page.getByRole('button', { name: 'Forgot PIN?' }).click()
+    await expect(page.getByRole('heading', { name: 'Forgot your PIN?' })).toBeVisible()
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
+    await page.getByRole('button', { name: /Ask a family member to approve/ }).click()
+    await expect(page.getByRole('heading', { name: 'Choose a new PIN' })).toBeVisible()
+    await keys(page, '246810')
+    await expect(page.getByRole('heading', { name: 'Type it again' })).toBeVisible()
+    await keys(page, '246811')
+    await expect(page.getByRole('alert')).toHaveText('Those two did not match. Start again.')
   })
 
   test('trusted phone: Google member goes to Google', async ({ page }) => {
@@ -328,7 +330,7 @@ test.describe('quick login (D-24)', () => {
       await page.addInitScript(() => localStorage.setItem('bantay.lastPerson', 'p-lola'))
       await page.goto('/')
       await expect(page.getByAltText('Jack Jack, the Bantay dog')).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Lola Rosa' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Hi Lola' })).toBeVisible()
       await expect(page.locator('body')).not.toContainText('Ate Maria')
       await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
       const wide = await page.evaluate(() => { const r = document.scrollingElement as Element; return r.scrollWidth > r.clientWidth || Array.from(document.querySelectorAll('*')).some((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollWidth > el.clientWidth) })

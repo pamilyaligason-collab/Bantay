@@ -32,3 +32,10 @@ label.wz-field { flex-direction: column; align-items: stretch; }
 .wz-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); border-color: var(--btn); }
 .wz-other { display: flex; gap: 8px; align-items: center; }
 .wz-other input { flex: 1; font: inherit; min-height: 44px; border: 1px solid var(--sep); border-radius: 10px; padding: 0 12px; background: var(--cell); color: var(--ink); min-width: 0; box-sizing: border-box; }
+
+/* Approve a PIN reset (start-approve-req): a sheet over the family member's own app. */
+.ap-back { position: fixed; inset: 0; z-index: 70; background: rgba(10,15,10,.4); display: flex; align-items: flex-end; }
+.ap-sheet { width: 100%; box-sizing: border-box; border-radius: 28px 28px 0 0; padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; max-height: 90%; overflow-y: auto; outline: none; }
+.ap-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--sep); align-self: center; }
+.ap-who { display: flex; align-items: center; gap: 12px; }
+.ap-who .h2 { margin: 0; font-size: 20px; }

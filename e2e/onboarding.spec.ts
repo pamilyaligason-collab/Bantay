@@ -32,43 +32,80 @@ const kvSet = (page: Page, key: string, value: unknown) =>
 
 const STEPS = ['Your photo', 'About me', 'Your medicines', 'Reminders and alerts', 'Where you are', "Your phone's warnings", 'SOS text contacts', 'Sharing']
 
-test.describe('setup wizard', () => {
-  test.use({ permissions: ['geolocation'], geolocation: { latitude: 10.3157, longitude: 123.8854 } })
-  test('walks every step with Skip and Finish, then the app', async ({ page }) => {
+/** Setup lives on the checklist now (Me shows the full card, Today only nudges). Opens the wizard overlay at one step. */
+const openStep = async (page: Page, title: string) => {
+  await skipOnboarding(page)
+  await page.goto('/#me')
+  const card = page.getByRole('region', { name: /left to set up/ })
+  await card.getByRole('button', { name: 'See all' }).click()
+  await card.getByRole('button', { name: title, exact: true }).click()
+  await expect(page.locator('.wz-ov h1')).toHaveText(title)
+}
+
+test.describe('start-done: the one screen after joining (3 of 3)', () => {
+  test('first launch shows "You\'re in", the consent notice and two off switches, then Today', async ({ page }) => {
     await page.goto('/')
-    for (const [i, title] of STEPS.entries()) {
-      await expect(page.locator('h1')).toHaveText(title)
-      await expect(page.getByText(`Step ${i + 1} of ${STEPS.length}`)).toBeVisible()
-      if (i < STEPS.length - 1) await page.getByRole('button', { name: 'Skip' }).click()
-    }
-    await page.getByRole('button', { name: 'Finish' }).click()
+    await expect(page.locator('h1')).toHaveText("You're in")
+    await expect(page.getByText('Step 3 of 3 · then Today')).toBeVisible()
+    await expect(page.getByText(/By using Bantay you agree to share your health records with your family/)).toBeVisible()
+    await expect(page.getByRole('checkbox')).toHaveCount(0) // a notice, never a question
+    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'false')
+    await expect(page.getByRole('switch', { name: 'Simple mode' })).toHaveAttribute('aria-checked', 'false')
+    await expect(page.locator('body')).not.toContainText(/admin/i)
+    await page.getByRole('button', { name: 'Open Today' }).click()
     await expect(page.locator('h1')).toHaveText('Today')
     expect(await kv(page, 'onboarded')).toBe(true)
     await page.reload()
     await expect(page.locator('h1')).toHaveText('Today')
   })
 
-  test('Back and the step dots move between steps', async ({ page }) => {
+  test('Bigger text is saved from the switch', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('button', { name: 'Back' })).toBeDisabled()
-    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
-    await expect(page.locator('h1')).toHaveText('Reminders and alerts')
-    await page.getByRole('button', { name: 'Back' }).click()
-    await expect(page.locator('h1')).toHaveText('Your medicines')
+    await page.getByRole('switch', { name: 'Bigger text' }).click()
+    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'true')
+    await expect.poll(() => kv(page, 'look.textsize')).toBe('large')
   })
 
-  test('a step whose flag is already set is skipped', async ({ page }) => {
+  test('no phone tick on the web: unknown is never "all good"', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText('Your photo')
+    await expect(page.locator('h1')).toHaveText("You're in")
+    await expect(page.getByText('Alarms, phone and text apps')).toHaveCount(0)
+  })
+})
+
+test.describe('setup steps from the checklist', () => {
+  test.use({ permissions: ['geolocation'], geolocation: { latitude: 10.3157, longitude: 123.8854 } })
+  test('walks every step with Skip and Finish, then closes', async ({ page }) => {
+    await openStep(page, STEPS[0]!)
+    for (const [i, title] of STEPS.entries()) {
+      await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      await expect(page.getByText(`Step ${i + 1} of ${STEPS.length}`)).toBeVisible()
+      if (i < STEPS.length - 1) await page.getByRole('button', { name: 'Skip' }).click()
+    }
+    await page.getByRole('button', { name: 'Finish' }).click()
+    await expect(page.locator('.wz-ov')).toHaveCount(0)
+  })
+
+  test('Back and the step dots move between steps', async ({ page }) => {
+    await openStep(page, STEPS[0]!)
+    await expect(page.getByRole('button', { name: 'Back' })).toBeDisabled()
+    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await expect(page.locator('.wz-ov h1')).toHaveText('Reminders and alerts')
+    await page.getByRole('button', { name: 'Back' }).click()
+    await expect(page.locator('.wz-ov h1')).toHaveText('Your medicines')
+  })
+
+  test('a step whose flag is already set leaves the list', async ({ page }) => {
+    await skipOnboarding(page)
+    await page.goto('/#me')
+    await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length} things left`)
     await kvSet(page, 'profile.photo', 'data:image/jpeg;base64,AA==')
     await page.reload()
-    await expect(page.locator('h1')).toHaveText('About me')
-    await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
+    await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left`)
   })
 
   test('about me: pick suggestions, add your own, None is exclusive', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Step 2: About me' }).click()
+    await openStep(page, 'About me')
     await page.getByRole('button', { name: 'O+' }).click()
     await page.getByRole('button', { name: 'Penicillin' }).click()
     await page.getByRole('button', { name: 'Peanuts' }).click()
@@ -87,16 +124,21 @@ test.describe('setup wizard', () => {
   })
 
   test('notifications step: rows are off and the test reminder waits for permission', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await openStep(page, 'Reminders and alerts')
     await expect(page.getByText('Not on yet')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Send a test reminder' })).toBeDisabled()
     await expect(page.getByText('reminders come from the family server')).toBeVisible()
   })
 
+  test('SOS contacts step: two contact slots, no calling prompt on the web', async ({ page }) => {
+    await openStep(page, 'SOS text contacts')
+    await expect(page.getByLabel('Contact 1 name')).toBeVisible()
+    await expect(page.getByLabel('Contact 2 phone number')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Allow calling' })).toHaveCount(0) // the calling permission is asked only in the Android app
+  })
+
   test('location step has no prefilled barangay, and saves the one typed', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Step 5: Where you are' }).click()
+    await openStep(page, 'Where you are')
     await expect(page.getByText('Updates when you open Bantay')).toBeVisible()
     await page.getByRole('button', { name: 'Choose my barangay instead' }).click()
     await expect(page.getByLabel('Latitude')).toHaveValue('')
@@ -107,26 +149,32 @@ test.describe('setup wizard', () => {
     await page.getByRole('button', { name: 'Save my barangay' }).click()
     expect(await kv(page, 'loc.home')).toMatchObject({ name: 'Test Barangay', lat: 10.5, lon: 123.5 })
     await page.reload()
-    await page.getByRole('button', { name: /: Your phone's warnings$/ }).waitFor()
-    await expect(page.getByRole('button', { name: /: Where you are$/ })).toHaveCount(0)
+    const card = page.getByRole('region', { name: /left to set up/ })
+    await expect(card).toContainText(`${STEPS.length - 1} things left`)
+    await card.getByRole('button', { name: 'See all' }).click()
+    await expect(card.getByRole('button', { name: 'Where you are', exact: true })).toHaveCount(0)
+    await expect(card.getByRole('button', { name: "Your phone's warnings", exact: true })).toBeVisible()
   })
 })
 
 test.describe('notifications already allowed', () => {
   test.use({ permissions: ['notifications'] })
-  test('the notifications step is skipped', async ({ page }) => {
+  test('the notifications step leaves the list', async ({ page }) => {
     // Headless Chromium grants the permission but still reports Notification.permission as "denied", which the web plugin reads.
     await page.addInitScript(() => Object.defineProperty(Notification, 'permission', { get: () => 'granted' }))
-    await page.goto('/')
-    await expect(page.getByText(`Step 1 of ${STEPS.length - 1}`)).toBeVisible()
-    await expect(page.getByRole('button', { name: /Reminders and alerts/ })).toHaveCount(0)
+    await skipOnboarding(page)
+    await page.goto('/#me')
+    const card = page.getByRole('region', { name: /left to set up/ })
+    await expect(card).toContainText(`${STEPS.length - 1} things left`)
+    await card.getByRole('button', { name: 'See all' }).click()
+    await expect(card.getByRole('button', { name: 'Reminders and alerts', exact: true })).toHaveCount(0)
   })
 })
 
 test.describe('Me checklist', () => {
   test('lists the same count as the wizard and each item opens its own step', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me') // round 3: the checklist lives on Me, Today only nudges
+    await page.goto('/#me')
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length} things left`)
     await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
@@ -148,8 +196,7 @@ test.describe('Me checklist', () => {
 test.describe('iPhone in Safari', () => {
   test.use({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1' })
   test('notifications step shows Add to Home Screen, and no Health Connect step', async ({ page }) => {
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Step 4: Reminders and alerts' }).click()
+    await openStep(page, 'Reminders and alerts')
     await expect(page.getByText('Add Bantay to your Home Screen first')).toBeVisible()
     await expect(page.getByRole('button', { name: /Phone health data/ })).toHaveCount(0)
   })
@@ -168,7 +215,7 @@ test('a deep link skips onboarding', async ({ page }) => {
 
 test.describe('375px', () => {
   test.use({ viewport: { width: 375, height: 812 } })
-  test('onboarding has no sideways scroll', async ({ page }) => {
+  test('start-done has no sideways scroll', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('h1')).toBeVisible()
     const root = await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)

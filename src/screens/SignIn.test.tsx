@@ -3,14 +3,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
-  abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null), reset: vi.fn(async () => 'sent' as const),
+  abandon: vi.fn(), pk: vi.fn(), pin: vi.fn(async () => null as string | null),
   names: vi.fn(async () => ({ kind: 'error' }) as { kind: string; names?: { first_name: string; initial: string; handle: string }[] })
 }))
 vi.mock('../features/auth/client', () => ({ supabase: {} }))
 vi.mock('../features/look', () => ({ Sky: () => null }))
-vi.mock('../features/auth/pinLogin', () => ({
-  signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin, requestPinReset: h.reset, fetchFamilyNames: h.names,
-  SIGN_IN_ERROR: 'Handle or PIN is not right', NO_SIGNAL: 'No signal. Try again when you have data.'
+vi.mock('../features/auth/pinLogin', async (orig) => ({
+  ...(await orig<object>()), signInWithGoogle: vi.fn(async () => null), signInWithPin: h.pin, fetchFamilyNames: h.names
 }))
 vi.mock('../features/auth/family', async () => ({ ...(await vi.importActual<typeof import('../features/auth/family')>('../features/auth/family')), signInWithPasskey: h.pk, abandonPasskeyWait: h.abandon }))
 
@@ -79,7 +78,7 @@ describe('SignIn: fingerprint first (D-27)', () => {
       await new Promise((r) => setTimeout(r, 30))
       expect(h.pk).toHaveBeenCalledTimes(1)
       // Only a deliberate tap asks again.
-      tap(/Use fingerprint or face/)
+      tap(/Fingerprint/)
       expect(h.pk).toHaveBeenCalledTimes(2)
     })
   }
@@ -124,23 +123,24 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben'])
     expect(screen.queryByRole('combobox')).toBeNull()
     choose('Kuya Ben')
-    expect(screen.getByRole('heading', { name: 'Kuya Ben' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Hi Kuya' })).toBeTruthy()
     expect(pad()).not.toBeNull()
     expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // the picked person's card has no mascot unless returning
   })
 
-  it('an admin in the cached family shows an Admin sub-line in the welcome list', () => {
+  it('no admin label anywhere in the welcome list (D-76: nobody is the only one who can help)', () => {
     localStorage.setItem('bantay.family', JSON.stringify([...FAMILY, { personId: 'p-ate', displayName: 'Ate Maria', handle: null, provider: 'google' }]))
     render(<SignIn />)
     const rows = within(screen.getByLabelText('Who are you?')).getAllByRole('button')
-    expect(rows.map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben', 'AMAte MariaAdmin'])
+    expect(rows.map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben', 'AMAte Maria'])
+    expect(document.body.textContent).not.toMatch(/admin/i)
   })
 
   it('remembered person: only that person, mascot, PIN pad at once, no dropdown, no other names', () => {
     localStorage.setItem('bantay.lastPerson', 'p-kuya')
     render(<SignIn />)
     expect(screen.getByAltText('Jack Jack, the Bantay dog')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Kuya Ben' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Hi Kuya' })).toBeTruthy()
     expect(pad()).not.toBeNull()
     expect(screen.queryByLabelText('Who are you?')).toBeNull()
     expect(document.body.textContent).not.toContain('Lola')
@@ -164,7 +164,7 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     tap(/Not you\? Switch person/)
     expect(screen.getByLabelText('Who are you?')).toBeTruthy()
     expect(screen.getAllByAltText('Jack Jack, the Bantay dog')).toHaveLength(1) // the welcome Jack, not the returning avatar
-    expect(screen.queryByRole('heading', { name: 'Kuya Ben' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Hi Kuya' })).toBeNull()
   })
 
   it('a remembered person who left the family list falls back to the welcome list', () => {
@@ -229,7 +229,7 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
   const key = (n: string) => screen.getByRole('button', { name: n })
   const enter = async (digits: string) => { for (const d of digits) fireEvent.click(key(d)) }
   beforeEach(async () => {
-    localStorage.clear(); h.pin.mockReset(); h.reset.mockClear(); await db.kv.clear()
+    localStorage.clear(); h.pin.mockReset(); await db.kv.clear()
     localStorage.setItem('bantay.family', JSON.stringify([...FAMILY, { personId: 'p-ate', displayName: 'Ate Maria', handle: null, provider: 'google' }]))
     localStorage.setItem('bantay.lastPerson', 'p-kuya')
   })
@@ -239,23 +239,28 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
     await enter('111222')
-    expect((await screen.findByRole('alert')).textContent).toBe('That PIN did not work. 4 tries left before a 15-minute lock.')
+    expect((await screen.findByRole('alert')).textContent).toBe('That PIN did not work. 4 tries left.')
     expect((await db.kv.get('pin.fail.ben'))?.value).toMatchObject({ n: 1 })
   })
 
-  it('five failures show the locked screen and stop calling the server', async () => {
+  it('five failures show the one-minute wait screen with a countdown and stop calling the server', async () => {
     h.pin.mockResolvedValue('Handle or PIN is not right')
     render(<SignIn />)
-    for (let i = 0; i < 5; i++) { await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1), { timeout: 5000 }) }
-    expect(await screen.findByRole('heading', { name: 'PIN locked' }, { timeout: 12_000 })).toBeTruthy()
-    expect(screen.getByText(/Locked until \d\d:\d\d, or ask an admin/)).toBeTruthy()
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect((key('1') as HTMLButtonElement).disabled).toBe(false)) // the pad is busy until the last try is counted
+      await enter('111222'); await waitFor(() => expect(h.pin).toHaveBeenCalledTimes(i + 1), { timeout: 5000 })
+    }
+    expect(await screen.findByRole('heading', { name: 'Take a short break' }, { timeout: 12_000 })).toBeTruthy()
+    expect(screen.getByText(/Try your PIN again in (0:[0-5]\d|1:00)/)).toBeTruthy()
     expect(pad()).toBeNull()
+    expect(screen.getByRole('button', { name: 'Forgot PIN?' })).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/admin/i)
   })
 
-  it('a locked person stays locked after reopening the app', async () => {
+  it('a waiting person stays waiting after reopening the app', async () => {
     await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() } })
     render(<SignIn />)
-    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Take a short break' })).toBeTruthy()
   })
 
   it('no signal is not counted as a wrong PIN', async () => {
@@ -274,47 +279,41 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     await waitFor(async () => expect(await db.kv.get('pin.fail.ben')).toBeUndefined())
   })
 
-  it('An admin unlocked me clears the phone-side lock and shows the PIN pad', async () => {
-    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() } })
+  it('the wait ends by itself after a minute and keeps the count, so one more miss waits again', async () => {
+    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() - 60_000 + 2500 } })
     render(<SignIn />)
-    fireEvent.click(await screen.findByRole('button', { name: 'An admin unlocked me' }))
-    await waitFor(() => expect(pad()).not.toBeNull())
-    expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
-  })
-
-  it('the lock clears by itself when the lock time passes', async () => {
-    await db.kv.put({ key: 'pin.fail.ben', value: { n: 5, lastAt: Date.now() - 15 * 60_000 + 5000 } })
-    render(<SignIn />)
-    expect(await screen.findByRole('heading', { name: 'PIN locked' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Take a short break' })).toBeTruthy()
     await waitFor(() => expect(pad()).not.toBeNull(), { timeout: 12_000 })
-    expect(await db.kv.get('pin.fail.ben')).toBeUndefined()
+    expect(await db.kv.get('pin.fail.ben')).toMatchObject({ value: { n: 5 } })
+    h.pin.mockResolvedValue('Handle or PIN is not right')
+    await enter('111222')
+    expect(await screen.findByRole('heading', { name: 'Take a short break' }, { timeout: 8000 })).toBeTruthy()
   })
 
-  it('Forgot PIN opens Ask an admin, names the admins (no Call buttons) and sends the request for that handle', async () => {
+  it('Forgot PIN? opens the three-way screen with no admin anywhere; Family approval asks for a new PIN first', async () => {
     render(<SignIn />)
-    tap(/Forgot PIN\? Ask an admin/)
-    expect(await screen.findByRole('heading', { name: 'Ask an admin' })).toBeTruthy()
-    expect(screen.getByLabelText('Admins').textContent).toContain('Ate Maria')
-    expect(screen.getByText('Ask Ate or an admin in person or by message. Or send a request:')).toBeTruthy()
-    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['tel:911']) // only the emergency link, no Call buttons
-    tap(/Send a request/)
-    await waitFor(() => expect(h.reset).toHaveBeenCalledWith('ben'))
-    expect((await screen.findByText(/Request sent/))).toBeTruthy()
+    tap(/^Forgot PIN\?$/)
+    expect(await screen.findByRole('heading', { name: 'Forgot your PIN?' })).toBeTruthy()
+    expect(screen.queryByText(/fingerprint/i)).toBeNull() // no Keystore-bound route yet (Q33)
+    expect(document.body.textContent).not.toMatch(/admin/i)
+    expect(screen.getByRole('button', { name: /Sign in with Google/ })).toBeTruthy()
+    tap(/Ask a family member to approve/)
+    expect(await screen.findByRole('heading', { name: 'Choose a new PIN' })).toBeTruthy()
   })
 
-  it('Emergency call 911 is on every sign-in screen', () => {
+  it('Call 911 is on every sign-in screen', () => {
     render(<SignIn />)
-    expect(screen.getByRole('link', { name: 'Emergency call 911' }).getAttribute('href')).toBe('tel:911')
+    expect(screen.getByRole('link', { name: 'Call 911' }).getAttribute('href')).toBe('tel:911')
   })
 })
 
-describe('SignIn: Google for admins', () => {
+describe('SignIn: Google', () => {
   beforeEach(() => { localStorage.clear() })
   afterEach(() => cleanup())
   it('shows the Chrome waiting screen while Google sign-in is pending', async () => {
     vi.mocked(signInWithGoogle).mockReturnValue(new Promise(() => {}))
     render(<SignIn />)
-    fireEvent.click(screen.getByRole('button', { name: /Admin\? Continue with Google/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Continue with Google/ }))
     expect(await screen.findByText(/Finishing sign-in in Chrome/)).toBeTruthy()
     expect(screen.getByRole('button', { name: "I'm back" })).toBeTruthy()
   })

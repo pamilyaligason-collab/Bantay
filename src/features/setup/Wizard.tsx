@@ -6,6 +6,7 @@ import { hdb } from '../records/store'
 import { isNativeAndroid, requestBatteryExemption } from '../safety/settingsOpener'
 import { currentPersonId } from '../sensors/health'
 import SensorSettings from '../sensors/SensorSettings'
+import { callPermission, requestCallPermission, type CallPermission } from '../sos/call'
 import SosContactsPicker from '../sos/SosContactsPicker'
 import { saveAbout, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
@@ -166,7 +167,23 @@ function Location() {
   )
 }
 
-const Sos = () => <div className="wz-body"><SosContactsPicker /></div>
+/** The one place setup asks for CALL_PHONE (never the SOS flow itself). Hidden on the web, an old app or when it is already allowed. */
+function CallAsk() {
+  const [state, setState] = useState<CallPermission>('unavailable')
+  const refresh = useCallback(() => { void callPermission().then(setState) }, [])
+  useEffect(refresh, [refresh])
+  useOnResume(refresh)
+  if (state !== 'denied') return null
+  return (
+    <div className="grp wz-body" style={{ padding: 16 }}>
+      <b>Let Hold for help call for you</b>
+      <span className="sub">Android asks once. Without it, Hold for help opens the phone app with the number ready and you press call.</span>
+      <button type="button" className="btn2" onClick={() => void requestCallPermission().then(setState)}>Allow calling</button>
+    </div>
+  )
+}
+
+const Sos = () => <div className="wz-body"><SosContactsPicker /><CallAsk /></div>
 
 const BODY: Record<StepId, () => ReactNode> = {
   photo: () => <Photo />,
