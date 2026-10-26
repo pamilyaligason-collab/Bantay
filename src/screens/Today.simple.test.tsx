@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
-const { stub, storm, meds } = vi.hoisted(() => ({ meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
+const { stub, storm, meds, feel } = vi.hoisted(() => ({ feel: { r: 'told' as string, calls: [] as string[] }, meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => <div data-testid="alertcard" /> }))
@@ -18,6 +18,7 @@ vi.mock('../features/today/NextUp', () => stub('nextup'))
 vi.mock('../features/today/PlanToday', () => stub('plan'))
 vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
+vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
@@ -124,5 +125,17 @@ describe('Today simple mode', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'I took it' }))
     expect((await screen.findByRole('heading', { name: 'Well done' })).textContent).toBe('Well done')
     expect(screen.getByText('Your family will see it in Bantay.')).toBeTruthy()
+  })
+  it('on: a simple-mood face calls logFeeling and shows the told or untold toast', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    expect(await screen.findByText('Saved. Your family will see it in Bantay.')).toBeTruthy()
+    feel.r = 'untold'
+    fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
+    expect(await screen.findByText('Your family has not seen this. Tap Unwell again when you are online, or call them.')).toBeTruthy()
+    expect(feel.calls).toEqual(['great', 'unwell'])
   })
 })

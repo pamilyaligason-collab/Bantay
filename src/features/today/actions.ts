@@ -69,5 +69,5 @@ export const FAIL_TEXT: Record<Exclude<LogResult, 'ok'>, string> = {
   failed: 'Could not save on this phone. Try again.'
 }
 
-/** The toast after a face. Unwell saved here but not raised on the server is never reported as told (D-78: the family sees it in Bantay, no push). */
-export const feelingToast = (r: Awaited<ReturnType<typeof logFeeling>>) => r === 'told' ? 'Saved. Your family will see it in Bantay.' : r === 'untold' ? 'Saved on this phone. Your family has not seen it yet.' : FAIL_TEXT[r]
+/** The toast after a face. Unwell saved here but not raised on the server is never reported as told (D-78: the family sees it in Bantay, no push). The outbox only replays table upserts (no RPC kind), so the person is told to tap again. */
+export const feelingToast = (r: Awaited<ReturnType<typeof logFeeling>>) => r === 'told' ? 'Saved. Your family will see it in Bantay.' : r === 'untold' ? 'Your family has not seen this. Tap Unwell again when you are online, or call them.' : FAIL_TEXT[r]

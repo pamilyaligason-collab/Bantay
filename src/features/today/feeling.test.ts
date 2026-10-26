@@ -6,7 +6,7 @@ vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.self }))
 vi.mock('../auth/client', () => ({ supabase: { rpc: (...a: unknown[]) => h.rpc(...a) } }))
 vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('../log/store', () => ({ logActivity: async (a: { kind: string }) => { if (a.kind === 'check-in') h.checkins++; else h.moods.push(a.kind) } }))
-import { FEELINGS, logFeeling } from './actions'
+import { FEELINGS, feelingToast, logFeeling } from './actions'
 
 beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ error: null }); h.moods = []; h.checkins = 0 })
 
@@ -30,6 +30,16 @@ describe('logFeeling (How are you?)', () => {
     expect(await logFeeling('unwell')).toBe('untold')
     h.rpc.mockRejectedValue(new Error('offline'))
     expect(await logFeeling('unwell')).toBe('untold')
+  })
+  it('the untold toast says the family has not seen it and to tap again or call; told says the family will see it', () => {
+    expect(feelingToast('untold')).toBe('Your family has not seen this. Tap Unwell again when you are online, or call them.')
+    expect(feelingToast('told')).toBe('Saved. Your family will see it in Bantay.')
+  })
+  it('an offline Unwell queues nothing in the outbox (no hidden retry), so the toast must not promise one', async () => {
+    h.rpc.mockRejectedValue(new Error('offline'))
+    await logFeeling('unwell')
+    const { db } = await import('../../db')
+    expect(await db.outbox.count()).toBe(0)
   })
   it('signed out: nothing is written and no alert is raised', async () => {
     h.self = null

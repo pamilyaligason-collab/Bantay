@@ -19,7 +19,7 @@ import WeatherCard from './WeatherCard'
 const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgreat: 'mid', unwell: 'bad' }
 
 /** Simple mode (Me switch `mode.simple`): the next dose with a big I took it button, then Hold for help (3 seconds) and Call 911, How are you? and Call <family contact>, plus the weather action line when one applies.
- *  Three screens: the home above, simple-mood (four big faces, Not now) and simple-taken (Well done). Everything above the fold on 390x844.
+ *  Three screens: the home above, simple-mood (four big faces, Not now) and simple-taken (Well done). The home may scroll; Call <family> can sit below the fold on 390x844.
  *  Call family rings the first SOS contact; with none saved it opens Safety to add one.
  *  With nothing next the card gives way to the expanded weather card (as on the full page). Exit simple mode sits at the top and the bottom. */
 export default function SimpleToday({ onExit, notify }: { onExit: () => void; notify: (msg: string) => void }) {
