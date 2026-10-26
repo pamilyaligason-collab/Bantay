@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const tok = vi.hoisted(() => ({ value: null as string | null }))
 vi.mock('../auth/session', () => ({ getAccessToken: async () => tok.value }))
 
-import { ask } from './client'
+import { ask, assistantUrl } from './client'
 
 const res = (status: number, body: unknown = {}) => vi.fn(async (..._a: unknown[]) => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch & ReturnType<typeof vi.fn>
 
@@ -22,5 +22,13 @@ describe('ask', () => {
     const g = res(429)
     await ask([], 'today', 'https://x.test', g)
     expect((g.mock.calls[0]![1] as RequestInit).headers).not.toHaveProperty('Authorization')
+  })
+  it('picks the provider from VITE_ASSISTANT_PROVIDER, n8n by default', () => {
+    const env = { VITE_ASSISTANT_URL: 'https://n8n.test/hook', VITE_SUPABASE_URL: 'https://x.supabase.co/' }
+    expect(assistantUrl(env)).toBe('https://n8n.test/hook')
+    expect(assistantUrl({ ...env, VITE_ASSISTANT_PROVIDER: 'n8n' })).toBe('https://n8n.test/hook')
+    expect(assistantUrl({ ...env, VITE_ASSISTANT_PROVIDER: 'edge' })).toBe('https://x.supabase.co/functions/v1/ask')
+    expect(assistantUrl({ VITE_ASSISTANT_PROVIDER: 'edge' })).toBeUndefined()
+    expect(assistantUrl({})).toBeUndefined()
   })
 })
