@@ -1,5 +1,6 @@
 import { supabase } from '../auth/client'
 import { getAccessToken } from '../auth/session'
+import { version } from '../admin/events'
 
 // Client error counter (session 10 S8, D-78: no third-party SDK). window.onerror and unhandledrejection upsert ONE hashed row per error per
 // day through the log_client_error RPC (0033). PRIVACY (B-7): no stack, no URL, no message text, no values. Only a place name
@@ -12,10 +13,6 @@ const MAX_LEN = 200
 const IGNORE = /^(script error\.?|resizeobserver loop|non-error promise rejection)/i // browser noise, no action possible
 
 const manilaDay = () => new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10)
-const version = (): string => {
-  const v = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
-  return /^[0-9a-z.+-]{1,20}$/.test(v) ? v : 'dev'
-}
 
 /** Lower-case, digits to '#', spaces squeezed, cut to 200 characters. */
 export const normalizeMessage = (m: string) => m.toLowerCase().replace(/\d+/g, '#').replace(/\s+/g, ' ').trim().slice(0, MAX_LEN)

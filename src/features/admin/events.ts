@@ -18,7 +18,7 @@ export const EVENT_NAMES = {
 export type EventKind = keyof typeof EVENT_NAMES
 
 const BUILD_YEAR = 2026 // a device clock before this year is wrong
-const version = (): string => {
+export const version = (): string => {
   const v = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
   return /^[0-9a-z.+-]{1,20}$/.test(v) ? v : 'dev'
 }

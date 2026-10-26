@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
       const secret = env('RECORDS_EXTRACT_CRON_SECRET')
       if (secret.length < 32) return json({ ok: false, error: 'not_configured' }, 500, cors)
       if (!same(req.headers.get('x-records-extract-secret') ?? '', secret)) return json({ ok: false, error: 'unauthorized' }, 401, cors)
-      await background(runSweep(port, cfg, SWEEP_LIMIT).then(async (rs) => { const s = summary(rs); console.log(JSON.stringify({ fn: 'records-extract', mode: 'sweep', ...s })); await heartbeat(sb, 'records-extract', true, s) }).catch(async () => { console.error('records-extract sweep failed'); await heartbeat(sb, 'records-extract', false) }))
+      await background(runSweep(port, cfg, SWEEP_LIMIT).then(async (rs) => { const s = summary(rs); console.log(JSON.stringify({ fn: 'records-extract', mode: 'sweep', ...s })); await heartbeat(sb, 'records-extract', s.failed * 2 <= s.documents, s) }).catch(async () => { console.error('records-extract sweep failed'); await heartbeat(sb, 'records-extract', false) }))
       return json({ ok: true, status: 'sweeping' }, 202, cors)
     }
 
