@@ -4,7 +4,7 @@
 
 export interface AlertRow {
   id: string
-  kind: 'quake' | 'tsunami' | 'volcano' | 'gdacs' | 'air'
+  kind: 'quake' | 'tsunami' | 'volcano' | 'gdacs' | 'air' | 'tcws' | 'rainfall'
   level: string | null
   title: string
   what: string
@@ -106,8 +106,8 @@ export function parseUsgs(payload: unknown, now: number): AlertRow[] | null {
 }
 
 // ---- GDACS RSS (no DOM in Deno: plain tag extraction)
-const unesc = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, '&')
-const tag = (block: string, name: string): string | null => {
+export const unesc = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&amp;/g, '&')
+export const tag = (block: string, name: string): string | null => {
   const m = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`))
   const v = m ? unesc(m[1].replace(/^<!\[CDATA\[|\]\]>$/g, '').trim()) : null
   return v ? v : null

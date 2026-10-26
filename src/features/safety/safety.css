@@ -146,3 +146,27 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-grp-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
 .sf-grp-h p { margin: 2px 0 0; font-size: 16px; color: var(--ink); opacity: .85; }
 .sf-grp .sf-act-note { background: var(--card); }
+
+/* S5: storm mode card (StormCard) and the phone alerts page */
+.sf-stormcard { display: grid; gap: 12px; }
+.sf-storm { background: var(--btn); color: var(--btn-fg); border-radius: 20px; padding: 18px; display: grid; gap: 10px; }
+.sf-storm-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.sf-storm-eyebrow { font-size: 14px; opacity: .85; }
+.sf-storm-h { margin: 2px 0 0; font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.sf-signal { flex: none; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; font-size: 28px; font-weight: 800; background: var(--btn-fg); color: var(--btn); }
+.sf-storm-p { margin: 0; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.sf-storm-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.sf-storm-a { min-height: 48px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 24px; background: var(--btn-fg); color: var(--btn) !important; font-weight: 700; text-decoration: none; }
+.sf-storm-cr { margin: 0; font-size: 13px; opacity: .8; }
+.sf-checkin { background: var(--cell); border-radius: 20px; padding: 16px; box-shadow: var(--shadow); display: grid; gap: 10px; }
+.sf-h2 { margin: 0; font-size: 20px; color: var(--ink); }
+.sf-faces { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sf-face { min-height: 52px; border: 0; border-radius: 16px; background: var(--fill); color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; }
+.sf-face:focus-visible, .sf-link:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.sf-link { min-height: 48px; display: inline-flex; align-items: center; color: var(--ink); font-weight: 600; }
+.sf-do { margin: 0; padding: 0 0 0 20px; display: grid; gap: 8px; font-size: 17px; color: var(--ink); }
+.sf-do a { color: var(--ink); }
+.sf-pcard { background: var(--cell); border-radius: 20px; padding: 6px 16px; box-shadow: var(--shadow); }
+.sf-prow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line, var(--sep)); }
+.sf-prow:last-child { border-bottom: 0; }
+.sf-prow-t { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
