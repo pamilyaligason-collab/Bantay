@@ -139,7 +139,7 @@ function Overview() {
       {personId && <HealthLinks personId={personId} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
-        return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={thresholds.find((t) => t.key === `${personId}:${spec.code}`)} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
+        return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={thresholds.find((t) => t.key === `${personId}:${spec.code}`)} familyBottom={spec.kind === 'bp' ? thresholds.find((t) => t.key === `${personId}:bp_diastolic`) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
       })()}
     </>
   )

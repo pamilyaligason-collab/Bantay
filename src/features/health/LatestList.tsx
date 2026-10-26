@@ -70,7 +70,9 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
           {rows.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
             const pos = positionOf(r, fam)
-            const st = rangeState(pos, kindOf(r.test), r.test === 'bp_systolic' ? { top: r.value, bottom: rows.find((x) => x.test === 'bp_diastolic')?.value } : r.test === 'bp_diastolic' ? { top: rows.find((x) => x.test === 'bp_systolic')?.value, bottom: r.value } : undefined)
+            const famOf = (test: string) => thresholds.find((t) => t.key === `${r.personId}:${test}`) // the pair's doctor targets, so both rows read the same word
+            const doctor = { top: famOf('bp_systolic'), bottom: famOf('bp_diastolic') }
+            const st = rangeState(pos, kindOf(r.test), r.test === 'bp_systolic' ? { top: r.value, bottom: rows.find((x) => x.test === 'bp_diastolic')?.value, doctor } : r.test === 'bp_diastolic' ? { top: rows.find((x) => x.test === 'bp_systolic')?.value, bottom: r.value, doctor } : undefined)
             const cls = CHIP[st.kind]
             const hist = pool.filter((x) => x.test === r.test)
             const spark = sparkPath(hist)

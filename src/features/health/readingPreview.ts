@@ -41,7 +41,7 @@ export interface Preview { state: Position | 'invalid'; word: string; line: stri
 const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
 const R = (test: string, value: number, unit: string): Reading => ({ personId: '', takenAt: '', test, value, unit })
 
-export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: string; pulse?: string; value?: string }, family?: Range | null): Preview {
+export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: string; pulse?: string; value?: string }, family?: Range | null, familyBottom?: Range | null): Preview {
   if (spec.kind === 'bp') {
     const s = num(v.top ?? '')
     const d = num(v.bottom ?? '')
@@ -50,8 +50,7 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
     if (d >= s) return { state: 'invalid', word: '', line: 'The top number is higher than the bottom one. Check them.' }
     if (crisisOf('bp', { top: s, bottom: d })) return { state: 'above', word: verdictFor('bp', 'above', { top: s, bottom: d })!.word, line: 'Very high. Check for warning signs now.' }
     // the one BP table decides from the pair; a doctor's target (family threshold) can only make it stricter
-    const fam = family ? positionOf(R('bp_systolic', s, 'mmHg'), family) : 'none'
-    const lv = verdictFor('bp', fam === 'none' ? 'within' : fam, { top: s, bottom: d })!.level!
+    const lv = verdictFor('bp', 'within', { top: s, bottom: d, doctor: { top: family, bottom: familyBottom } })!.level!
     const word = BP_WORDS[lv].word
     if (lv === 'low') return { state: 'below', word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
     if (lv === 'in') return { state: 'within', word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }

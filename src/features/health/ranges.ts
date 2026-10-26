@@ -1,5 +1,5 @@
 import guide from '../../data/guide-ranges.json'
-import { verdictFor, type VerdictKind } from './verdict'
+import { verdictFor, type BpArg, type VerdictKind } from './verdict'
 
 export interface Range {
   low: number | null
@@ -109,7 +109,7 @@ export function latestByTest(readings: Reading[]): Reading[] {
 
 export type RangeState = { kind: 'none' | 'within' | 'high' | 'low'; word: string; hidden: string }
 /** What the status chip says. No range is its own state, never "Within range": a missing range must not look normal. */
-export function rangeState(headline: Position, kind: VerdictKind = 'vital', bp?: { top?: number | null; bottom?: number | null }): RangeState {
+export function rangeState(headline: Position, kind: VerdictKind = 'vital', bp?: BpArg): RangeState {
   const v = verdictFor(kind, headline, bp)
   const lv = v?.level // the one BP table can say Low or In range where the plain guide position cannot
   const pos: Position = lv === 'low' ? 'below' : lv === 'in' ? 'within' : lv ? 'above' : headline
