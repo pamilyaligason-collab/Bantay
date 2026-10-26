@@ -103,3 +103,21 @@ How it behaves:
 3. Nothing to change in the app: supabase-js 2.118 has passkeys on by default (the old `experimental.passkey` flag is ignored, so it is not set).
 Until step 1 is done the "Turn on fingerprint or face sign-in" button reports "Not available on this phone yet" and nothing breaks. Passkeys work only on the real origin (HTTPS, matching RP ID), not on localhost or a preview URL.
 Known limit: the passkey sign-in is the browser's own picker, so it signs in whoever owns the passkey the person chooses, which may differ from the face tapped. Removing a passkey on the server is not exposed in the app yet; "Forget this phone" only forgets it locally.
+
+## Session 10 phase 2 (S6b): PIN reset by family approval, invite names, erasure
+
+Apply `supabase/migrations/0034_pin_reset_erasure.sql` after 0033 (needs 0009, 0021, 0029, 0030). Undo: the `.down.sql`. Rehearsal: `supabase/tests/pin_reset_erasure_rehearsal.sql` (ALL PASS).
+The admin reset (`request_pin_reset`, 0009) is retired: its execute is revoked from everyone. `admin_requests` stays for history. The app must call `pin-login` instead (see below) before 0034 is applied.
+
+**Reset protocol (`pin-login`, anonymous, same CORS and `--no-verify-jwt` as sign-in).**
+1. `{action:'reset_start', handle, method:'family'|'google', google_token?}` returns `{ok, id, secret, code}`. The reply has the same shape for a known, unknown, disabled, malformed or Google-only handle (unknown ones store nothing). Limits: 3 per hour per handle (unknown handles counted too) and 10 per hour per address; both trips return the same 429 `rate_limited`. `secret` is 128 random bits, shown once, stored only as an HMAC (`PIN_PEPPER`). `code` is 4 digits, shown on the requester's own screen.
+2. `family`: one `carer_alerts` row of kind `pin_approve` per active member except the requester (`ref` = request id). A member who opens Bantay sees the approve sheet and types the code the requester reads out: `approve_pin_reset(id, code)`. Only an active member holding that request's `pin_approve` row can approve; anyone else gets false and costs the request nothing. First approval wins. 5 wrong codes burn the request. Web push for PWA members goes out now if the function has `DOSE_WATCH_CRON_SECRET`; otherwise the next 15-minute dose-watch run sends it.
+   `google`: approved at once only when `google_token` (a Supabase access token) belongs to the same auth user and carries a Google identity; otherwise the request stays unapproved until it expires.
+3. `{action:'reset_complete', id, secret, new_pin}`: checks the secret, then used, expired, approved (distinct errors `bad_secret`, `used`, `expired`, `not_approved`, `weak_pin`), claims the request atomically, sets the derived password, ends the user's sessions, clears the PIN lock, writes `audit_log` action `pin_reset` and a `pin_changed` alert for the owner. One open request per user: a new `reset_start` burns older ones.
+The fingerprint route is not built (Q33).
+
+**Invite names.** `family-names?invite=<token>` checks the token against the function secret `FAMILY_INVITE_TOKEN` (16+ characters, constant-time) and returns the same names as the no-token mode (D-65, unchanged). A wrong token is 403. Link form: `https://bantay.pages.dev/#join/<token>`.
+
+**Consent, export, erasure.** `people.consent_at`, `consent_version`, `consent_by` (always the caller). `export_my_data()` (5 per hour) returns the caller's own rows as JSON. `request_erasure()` starts a 7-day undo window and returns `cancel_until`; `cancel_erasure()` works only before it. The `erase` function (cron `ops/sql/erasure_cron.sql`, daily 03:10 Manila, header `x-erase-secret`) removes the person's storage objects (records, avatars, family-messages) and then, in one transaction, every row with their `person_id`, their messages, push subscriptions, phone health, SOS acks and alerts. `audit_log` is kept. The people row stays, blanked (`display_name` = "Former member", `erased_at` set). Drive copies are the family folder owner's to remove (D-46). The login itself is not disabled.
+
+Secrets: `ERASE_CRON_SECRET` (32+ chars; also in Vault as `erase_cron_secret`), `FAMILY_INVITE_TOKEN`, optional `DOSE_WATCH_CRON_SECRET` on `pin-login`. Redeploy `pin-login`, `family-names` and `erase` when any of them changes.

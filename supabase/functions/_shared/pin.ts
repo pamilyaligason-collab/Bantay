@@ -51,3 +51,29 @@ export function randomSecret(): string {
 export function syntheticEmail(): string {
   return `m-${crypto.randomUUID()}@${SYNTHETIC_DOMAIN}`
 }
+
+/** PIN reset (C5): 128 random bits shown once; only a keyed hash is stored. */
+export function resetSecret(): string {
+  return b64url(crypto.getRandomValues(new Uint8Array(16)))
+}
+
+/** hex(HMAC-SHA256(PIN_PEPPER, 'reset:' + id + ':' + secret)) */
+export async function hashResetSecret(pepper: string, id: string, secret: string): Promise<string> {
+  return Array.from(await hmac(pepper, `reset:${id}:${secret}`), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/** 4 digits, uniform (rejection sampling), for the on-screen approval code. */
+export function resetCode(): string {
+  const lim = 4294960000 // largest multiple of 10000 below 2^32
+  const a = new Uint32Array(1)
+  do crypto.getRandomValues(a); while (a[0]! >= lim)
+  return String(a[0]! % 10000).padStart(4, '0')
+}
+
+/** Constant-time string compare (length leaks, content does not). */
+export function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let d = 0
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return d === 0
+}
