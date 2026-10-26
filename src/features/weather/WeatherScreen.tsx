@@ -10,6 +10,8 @@ import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
 import { HEAT_BANDS, heatBand, heatIndexC } from './heatIndex'
+import { condOf, feelsLike, isHot, todOf } from './scene'
+import WeatherScene from './WeatherScene'
 import LiveMapToggle from './LiveMapToggle'
 import { weatherWarning } from './warning'
 import './weather.css'
@@ -101,6 +103,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
   const c = fc.current
   const hi = heatIndexC(c.temp, c.humidity)
   const band = heatBand(hi)
+  const fl = feelsLike(c.temp, c.humidity, c.feels)
   const next6 = hoursFrom(fc, 6, now)
   const rain6 = next6.length ? Math.max(...next6.map((h) => h.prob ?? 0)) : null
   const warn = useMemo(() => weatherWarning(alerts, point), [alerts, point])
@@ -134,11 +137,12 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
         </div>
       )}
 
-      <section aria-label="Now" className="card wx-hero">
+      <section aria-label="Now" className="card wx-hero wxs-host">
+        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
         <div className="wx-k">{name} · {offline ? `as of ${asOf}, offline` : `updated ${asOf}`}</div>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
-        <span className="wx-sub">Feels like {deg(c.feels)} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
+        <span className="wx-sub">Feels like {deg(fl.value)} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
       </section>
 
       <section aria-label="Details" className="wx-tiles">

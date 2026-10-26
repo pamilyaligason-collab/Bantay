@@ -81,7 +81,7 @@ function makePort(sb: SupabaseClient, key: string): Port {
         .eq('document_id', id).eq('ingest_status', 'reading')
       if (error) throw new Error('write')
     },
-    read: (body) => withRetry(() => sendToOpenRouter(fetch, body, key))
+    read: (body) => withRetry(() => sendToOpenRouter(fetch, body, key, (u) => console.log(JSON.stringify({ fn: 'records-extract', usage: u }))))
   }
 }
 

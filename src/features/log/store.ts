@@ -31,11 +31,18 @@ export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export interface FoodEntry {
   id?: number; clientId: string; personId: string; eatenAt: string; meal: Meal; foodKey: string | null; name: string; portion: number
   servingLabel: string | null; kcal: number | null; sodiumMg: number | null; potassiumMg: number | null; proteinG: number | null
+  /** Session 9 (0026). Optional: rows from before it have none, which reads as unknown (null), never 0. */
+  carbsG?: number | null; fatG?: number | null; satFatG?: number | null; fiberG?: number | null; sugarsG?: number | null
+  calciumMg?: number | null; ironMg?: number | null; magnesiumMg?: number | null; vitdUg?: number | null; b12Ug?: number | null
 }
 /** One glass of water (public.water_entries, 0024). */
 export interface WaterEntry { id?: number; clientId: string; personId: string; drunkAt: string; ml: number }
 /** A person's daily limits (public.nutrition_goals, 0024). Keyed by person, not by client id. */
-export interface NutritionGoal { personId: string; sodiumMg: number; waterMl: number; updatedAt?: string }
+export interface NutritionGoal {
+  personId: string; sodiumMg: number; waterMl: number; updatedAt?: string
+  /** 0026: a doctor-set potassium LIMIT (null = none), and the sex that picks the NIH reference intake (null = not set). */
+  potassiumMg?: number | null; sex?: 'female' | 'male' | null
+}
 
 class LogDB extends Dexie {
   meds!: Table<MedTaken, number>

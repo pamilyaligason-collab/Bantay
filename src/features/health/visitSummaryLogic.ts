@@ -1,6 +1,8 @@
 import { formatNumber } from '../../lib/labFormat'
 import type { MedTaken, Medication } from '../log/store'
-import { dayOf, isLive, matchDoses, parseSchedule, slotsFor } from './meds'
+import { countDoses, ON_TIME_MIN } from './doseCount'
+import { isLive, parseSchedule } from './meds'
+import { lastDays } from '../today/myWeekLogic'
 import { readingPosition } from './model'
 import { toCanonicalReading, type Reading } from './ranges'
 import { clock12 } from './medActions'
@@ -8,7 +10,7 @@ import { clock12 } from './medActions'
 /** One page for the doctor, built on this phone from what it already holds: 30 days of blood pressure and sugar, the medicines being taken, and how many doses were on time.
  *  Pure. The image and the share live in summaryImage.ts. Not a medical record and not advice. */
 export const SUMMARY_DAYS = 30
-export const ON_TIME_MIN = 120
+export { ON_TIME_MIN }
 const DAY = 86_400_000
 const isNum = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
 const avg = (v: number[]) => v.reduce((s, n) => s + n, 0) / v.length
@@ -38,32 +40,10 @@ function ageOf(birthdate: string | null | undefined, now: Date): string | null {
   return a >= 0 && a < 130 ? `${a} years` : null
 }
 
-/** Doses taken within 2 hours of their time over the last 30 days. A medicine counts from its first day (started on, else its first take, else today); today counts a slot once its 2 hours have passed. */
+/** Doses taken within 2 hours of their time over the last 30 days, from the one shared counter (doseCount.ts). */
 export function adherence(meds: Medication[], takes: MedTaken[], personId: string, now: Date): { done: number; want: number; pct: number } | null {
-  const today = dayOf(now)
-  const nowMin = now.getHours() * 60 + now.getMinutes()
-  const mine = takes.filter((t) => t.personId === personId && !t.skipped)
-  const first = new Map<string, string>()
-  for (const m of meds) {
-    if (m.personId !== personId) continue
-    const key = m.serverId ?? m.clientId ?? String(m.id ?? m.name)
-    const taken = mine.filter((t) => (m.serverId && t.medicationId === m.serverId) || (!t.medicationId && t.name.trim().toLowerCase() === m.name.trim().toLowerCase())).map((t) => dayOf(t.takenAt)).sort()[0]
-    first.set(key, m.startedOn?.slice(0, 10) ?? taken ?? today)
-  }
-  let want = 0
-  let done = 0
-  for (let i = SUMMARY_DAYS - 1; i >= 0; i--) {
-    const d = dayOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 12))
-    const slots = slotsFor(meds, personId, d).filter((s) => d >= (first.get(s.key) ?? today))
-    for (const s of matchDoses(slots, mine, d)) {
-      if (s.state === 'taken') {
-        const hit = mine.some((t) => dayOf(t.takenAt) === d && (s.medicationId ? t.medicationId === s.medicationId && t.slot === s.slot : t.name.trim().toLowerCase() === s.name.trim().toLowerCase()) && Math.abs(new Date(t.takenAt).getHours() * 60 + new Date(t.takenAt).getMinutes() - s.at) <= ON_TIME_MIN)
-        want++
-        if (hit) done++
-      } else if (d !== today || s.at + ON_TIME_MIN <= nowMin) want++
-    }
-  }
-  return want ? { done, want, pct: Math.round((done / want) * 100) } : null
+  const n = countDoses({ meds, takes, personId, now, days: lastDays(now, SUMMARY_DAYS) })
+  return n.want ? { done: n.done, want: n.want, pct: n.pct! } : null
 }
 
 const doseLine = (m: Medication) => {

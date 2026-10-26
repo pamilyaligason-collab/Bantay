@@ -57,12 +57,63 @@
 .nu-tile .nu-est { font-size: 13px; font-weight: 600; color: var(--muted); }
 .nu-empty { font-size: 16px; color: var(--muted); padding: 8px 2px; }
 .nu-plate { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px 16px; background: var(--card); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
-.nu-picked { list-style: none; margin: 0; padding: 0 0 2px; display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; } /* one scrolling row keeps the tiles in view */
-.nu-picked li { flex: none; }
-.bt .nu-pick { min-height: 44px; border: 0; border-radius: 999px; background: var(--soft); color: var(--ink); font: inherit; font-size: 16px; padding: 0 12px 0 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .nu-total { font-size: 16px; }
+/* log a meal (session 9): meal chip, picture tiles, per-dish portion stepper, live plate summary */
+.nu-mealbar { display: flex; flex-direction: column; gap: 8px; }
+.bt .nu-mealchip { min-height: 56px; width: 100%; border: 2px solid var(--green2); border-radius: 18px; background: var(--card); color: var(--ink); font: inherit; font-size: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px; cursor: pointer; }
+.nu-mealchip small { font-size: 15px; color: var(--muted); }
+.nu-change { font-size: 16px; font-weight: 700; color: var(--link); }
+.bt .nu-tile { gap: 2px; padding: 10px 12px; }
+.nu-pic { font-size: 30px; line-height: 1; margin-bottom: 2px; }
+.nu-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.nu-tags small { font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+.nu-tags .nu-high { background: var(--warn-bg); box-shadow: none; }
+.nu-saltbox .nu-lab { color: var(--ink); }
+.nu-saltbox { background: var(--warn-bg); border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.bt .nu-saltbox .nu-chip { background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+.nu-ownform { display: flex; flex-direction: column; gap: 8px; }
+.nu-picked { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 148px; overflow-y: auto; scrollbar-width: thin; }
+.nu-pickrow { display: flex; align-items: center; gap: 8px; min-height: 52px; border-top: 1px solid var(--line); }
+.nu-pickrow:first-child { border-top: 0; }
+.nu-pickname { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.nu-step { display: inline-flex; align-items: center; gap: 2px; background: var(--card2); border-radius: 999px; }
+.bt .nu-step button, .bt .nu-x { width: 48px; height: 48px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 24px; font-weight: 700; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.bt .nu-step button:disabled { opacity: .35; }
+.nu-step b { min-width: 34px; text-align: center; font-size: 18px; }
+.bt .nu-x { background: var(--soft); width: 44px; height: 44px; }
+.nu-live { display: flex; flex-direction: column; gap: 6px; }
+.nu-keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 15px; color: var(--muted); }
+.nu-keys b { color: var(--ink); font-weight: 700; }
+.nu button:focus-visible, .nu-mealchip:focus-visible, .nu-step button:focus-visible, .nu-x:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 .nu button:focus-visible, .nu a:focus-visible, .nu-search:focus-visible, .nu-plate button:focus-visible, .nu-tiles button:focus-visible, .nu-seg button:focus-visible, .nu-chips button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .nu-bar > i { transition: transform .3s ease-out; } .bt .nu-tile { transition: background .15s; } }
 @media (prefers-reduced-motion: reduce) { .nu-bar > i, .bt .nu-tile { transition: none; } }
 
+
+/* today's nutrients (session 9): a bar per nutrient, food and supplements as two segments. Meaning is never colour alone: the supplement segment is hatched and every row says its numbers in words. */
+.nu-nlist, .nu-info { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.nu-nrow { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--line); }
+.nu-nrow:first-child { border-top: 0; }
+.nu-nhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 17px; }
+.nu-nhead small { font-size: 15px; color: var(--muted); }
+.nu-nval { font-weight: 700; }
+.nu-nsub { margin: 0; }
+.nu-nbar { display: flex; height: 16px; border-radius: 8px; background: var(--card2); box-shadow: inset 0 0 0 1.5px var(--line); overflow: hidden; }
+.nu-nbar i, .nu-legend i { display: block; height: 100%; }
+.nu-nbar i.food, .nu-legend i.food { background: var(--ok); }
+.nu-nbar.near i.food { background: var(--amber-ink); }
+.nu-nbar.over i.food { background: var(--red); }
+.nu-nbar i.supp, .nu-legend i.supp { background: repeating-linear-gradient(135deg, var(--green2) 0 4px, var(--card) 4px 8px); box-shadow: inset 0 0 0 1.5px var(--green2); }
+.nu-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 15px; color: var(--muted); margin: 0; }
+.nu-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.nu-legend i { width: 20px; height: 14px; border-radius: 4px; }
+.nu-info li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 16px; }
+.nu-info li:first-child { border-top: 0; }
+.nu-info small { color: var(--muted); }
+.nu-setup { display: flex; flex-direction: column; gap: 8px; background: var(--card2); border-radius: 18px; padding: 12px 14px; }
+.nu-kform { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.nu-kform .nu-search { flex: 1; min-width: 120px; width: auto; }
+.nu-src summary { min-height: 48px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+.nu-src ul { margin: 0; padding-left: 20px; overflow-wrap: anywhere; font-size: 15px; }
+@media (prefers-reduced-motion: no-preference) { .nu-nbar i { transition: width .3s ease-out; } }

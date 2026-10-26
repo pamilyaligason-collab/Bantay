@@ -1,3 +1,4 @@
+import { STATUS_LABEL } from '../shared'
 import { supabase } from '../../auth/client'
 import { adminMembers, listPinRequests, rpc, type PinRequest, type UsageRow } from '../api'
 import { loadDuplicates } from './recordsApi'
@@ -100,7 +101,7 @@ export function needsYou(i: { pins: PinRequest[]; personOf: (userId: string) => 
 
 // ---------- Recent changes ----------
 export type AuditLite = { id: number; at: string; actor: string | null; tbl: string; person_id: string | null; action: string; fields: string[] | null }
-export const ACTION_WORDS: Record<string, string> = { insert: 'Add', update: 'Update', confirm: 'Confirm', reject: 'Reject', delete: 'Delete', reveal: 'Reveal' }
+export const ACTION_WORDS = STATUS_LABEL // one word list for audit actions (shared.tsx)
 export const actionTone = (a: string): Tone => (a === 'confirm' ? 'ok' : a === 'reject' || a === 'delete' || a === 'reveal' ? 'bad' : 'plain')
 export const fieldsText = (f: string[] | null | undefined) => { const x = (f ?? []).filter(Boolean); return x.length ? x.slice(0, 3).join(', ') + (x.length > 3 ? ` +${x.length - 3}` : '') : '' }
 

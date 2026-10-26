@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDialog } from '../../docs/useDialog'
+import { Icon } from '../../shell/Icon'
+import './records.css'
 
 // Shared dashboard pieces. Pages build on these so every page looks and behaves the same.
 
@@ -37,25 +39,34 @@ export function Panel({ title, onClose, children }: { title: string; onClose: ()
 export const Empty = ({ children }: { children: ReactNode }) => <p className="dk-empty">{children}</p>
 
 /** Confirm step for every destructive or bulk action. Returns the dialog node and `ask(text, run)`. */
+export type ConfirmOpts = { title?: string; verb?: string; danger?: boolean }
 export function useConfirm() {
-  const [pending, setPending] = useState<{ text: string; run: () => Promise<void> } | null>(null)
+  const [pending, setPending] = useState<({ text: string; run: () => Promise<void> } & ConfirmOpts) | null>(null)
   const [busy, setBusy] = useState(false)
   const close = () => { if (!busy) setPending(null) }
   const go = async () => { if (!pending) return; setBusy(true); try { await pending.run() } finally { setBusy(false); setPending(null) } }
-  const node = pending && <ConfirmBox text={pending.text} busy={busy} onCancel={close} onGo={go} />
-  return { node, ask: (text: string, run: () => Promise<void>) => setPending({ text, run }) }
+  const node = pending && <ConfirmDialog {...pending} busy={busy} onCancel={close} onGo={go} />
+  return { node, ask: (text: string, run: () => Promise<void>, opts?: ConfirmOpts) => setPending({ text, run, ...opts }) }
 }
 
-function ConfirmBox({ text, busy, onCancel, onGo }: { text: string; busy: boolean; onCancel: () => void; onGo: () => void }) {
+/** Shared confirm dialog. `title` adds a heading, `verb` names the action button, `danger` makes it red (Archive, Reject, Delete). */
+export function ConfirmDialog({ text, title, verb = 'Confirm', danger, busy = false, onCancel, onGo }: ConfirmOpts & { text: string; busy?: boolean; onCancel: () => void; onGo: () => void }) {
   const { ref, onKeyDown } = useDialog(onCancel)
   return (
     <div className="dk-scrim">
-      <div className="dk-confirm" role="alertdialog" aria-modal="true" aria-describedby="dk-confirm-text" ref={ref} onKeyDown={onKeyDown}>
+      <div className="dk-confirm" role="alertdialog" aria-modal="true" aria-labelledby={title ? 'dk-confirm-title' : undefined} aria-describedby="dk-confirm-text" ref={ref} onKeyDown={onKeyDown}>
+        {title && <h2 id="dk-confirm-title" className="h2">{title}</h2>}
         <p id="dk-confirm-text">{text}</p>
-        <div className="dk-acts"><button className="dk-b" onClick={onCancel} disabled={busy} data-autofocus>Cancel</button><button className="dk-b go" onClick={onGo} disabled={busy}>Confirm</button></div>
+        <div className="dk-acts"><button className="dk-b" onClick={onCancel} disabled={busy} data-autofocus>Cancel</button><button className={`dk-b ${danger ? 'bad-solid' : 'go'}`} onClick={onGo} disabled={busy}>{verb}</button></div>
       </div>
     </div>
   )
+}
+
+/** Sticky bar for bulk actions. Shows only while `count` > 0; put the action buttons inside. */
+export function BulkBar({ count, noun = 'selected', children }: { count: number; noun?: string; children: ReactNode }) {
+  if (count < 1) return null
+  return <div className="rc-bulk" role="region" aria-label="Bulk actions"><b>{count} {noun}</b><div className="dk-acts">{children}</div></div>
 }
 
 /** Status line with an optional Undo, e.g. after confirm/reject. Undo restores the previous status. */
@@ -104,7 +115,7 @@ export function SortTh({ k, label, sort }: { k: string; label: string; sort: { b
   const on = sort.by?.key === k
   return (
     <th scope="col" aria-sort={on ? (sort.by!.dir === 1 ? 'ascending' : 'descending') : 'none'}>
-      <button className="dk-sort" onClick={() => sort.toggle(k)}>{label}<span aria-hidden="true">{on ? (sort.by!.dir === 1 ? ' ▲' : ' ▼') : ''}</span></button>
+      <button className="dk-sort" onClick={() => sort.toggle(k)}>{label}<span className={`dk-sort-i${on ? ` on${sort.by!.dir === -1 ? ' desc' : ''}` : ''}`} aria-hidden="true"><Icon name="chev" size={14} /></span></button>
     </th>
   )
 }

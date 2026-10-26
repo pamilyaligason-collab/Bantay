@@ -130,7 +130,7 @@ function Overview() {
       </a>
       <a className="card hv-explore" href="#health/nutrition">
         <Icon name="salt" tone="vitals" boxed />
-        <span className="grow">Food and salt<small>Salt eaten today and this week, next to blood pressure</small></span>
+        <span className="grow">Food and nutrients<small>Meals, salt and nutrients, next to blood pressure</small></span>
         <Icon name="chev" size={20} />
       </a>
       {personId && <MedicinesSummary personId={personId} />}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLabValue, formatNumber, labName, providerName } from './labFormat'
+import { formatLabValue, formatNumber, labName, plainDate, providerName } from './labFormat'
 
 describe('formatLabValue', () => {
   it('rounds to at most 2 decimals and keeps integers', () => {
@@ -43,5 +43,13 @@ describe('providerName', () => {
     expect(providerName('BOHOL DOCTORS HOSPITAL')).toBe('Bohol Doctors Hospital')
     expect(providerName('Dr Test')).toBe('Dr Test')
     expect(providerName(null)).toBe('')
+  })
+})
+
+describe('plainDate', () => {
+  it('writes an ISO day in plain words and leaves other text alone', () => {
+    expect(plainDate('2026-10-22')).toBe('22 Oct 2026')
+    expect(plainDate('2026-10-22T08:00:00Z')).toBe('22 Oct 2026')
+    expect(plainDate('Undated')).toBe('Undated')
   })
 })

@@ -81,10 +81,13 @@ export const undoWater = (now = new Date()) =>
   })
 
 /** Save a person's salt and water limits. Anyone who may write for the person (self, writer carer) can call this; the server decides. */
-export async function saveGoal(personId: string, patch: { sodiumMg?: number; waterMl?: number }): Promise<LogResult> {
+export async function saveGoal(personId: string, patch: { sodiumMg?: number; waterMl?: number; potassiumMg?: number | null; sex?: 'female' | 'male' | null }): Promise<LogResult> {
   try {
     const cur = await ldb.goals.get(personId)
-    const goal = { personId, sodiumMg: patch.sodiumMg ?? cur?.sodiumMg ?? 2000, waterMl: patch.waterMl ?? cur?.waterMl ?? 1500 }
+    const goal = {
+      personId, sodiumMg: patch.sodiumMg ?? cur?.sodiumMg ?? 2000, waterMl: patch.waterMl ?? cur?.waterMl ?? 1500,
+      potassiumMg: patch.potassiumMg !== undefined ? patch.potassiumMg : cur?.potassiumMg ?? null, sex: patch.sex !== undefined ? patch.sex : cur?.sex ?? null
+    }
     await ldb.goals.put(goal)
     await enqueue('nutrition_goals', 'upsert', goal)
     void track('action', 'salt_goal_set')
