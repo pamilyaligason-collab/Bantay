@@ -96,6 +96,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     payload = { ...payload, client_id: crypto.randomUUID() }
     await db.outbox.update(row.id!, { payload })
   }
+  if (row.table === 'sos_events') payload = { ...payload, sentAt: new Date().toISOString() } // the server marks the row late when sentAt is long after at (same phone clock); not saved, so a retry carries its own send time
   const spec = TABLES[row.table]
   let res: Response
   try {

@@ -65,6 +65,22 @@ export const TABLES: Record<string, TableSpec> = {
   prescriptions: { fields: ['personId', 'rxDate', 'prescriber', 'followUpOn', 'status'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at', serverId: true },
   // Family messages (0027): text only, queued offline and sent once (sender is stamped by the server). No pull: the thread is read online. Voice and files stay online-only.
   family_messages: { fields: ['kind', 'body'], onConflict: 'client_id', resolution: 'ignore-duplicates' },
+  // Session 10 safety wave (contracts.md). Phone health: one row per user, upserted by user_id (0032).
+  phone_health: {
+    fields: ['userId', 'platform', 'appVersion', 'alarmsOk', 'notifOk', 'exactOk', 'batteryOk', 'callOk', 'oem', 'lastOpenAt', 'alarmsCheckedAt', 'alarmsSet', 'alarmsRearmed', 'updatedAt'],
+    onConflict: 'user_id', resolution: 'merge-duplicates', noClientId: true
+  },
+  // SOS (0031): the id is client-made (no client_id); sendRow stamps sentAt on every send so the server can mark a late row. user_id comes from auth.uid().
+  sos_events: {
+    fields: ['id', 'personId', 'at', 'sentAt', 'lat', 'lon', 'gps', 'callTo', 'smsOpened'],
+    onConflict: 'id', resolution: 'ignore-duplicates', noClientId: true
+  },
+  // The only later edits an SOS row takes (column grant): PATCH by id.
+  sos_events_update: {
+    fields: ['smsOpened', 'callTo', 'cancelledAt'],
+    onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'sos_events', idField: 'id' }
+  },
+  sos_acks: { fields: ['eventId', 'seenAt'], onConflict: 'event_id,user_id', resolution: 'ignore-duplicates', noClientId: true },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }

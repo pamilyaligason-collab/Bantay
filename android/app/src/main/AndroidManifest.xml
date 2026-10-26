@@ -67,6 +67,8 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- SOS: CallPlugin places the call with ACTION_CALL (Q32 auto-dial). Runtime permission, asked in setup and Me only, never inside the SOS flow; 911 is never auto-dialled. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <!-- Location: WebView navigator.geolocation needs these; Capacitor's BridgeWebChromeClient asks at runtime. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
