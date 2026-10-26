@@ -57,6 +57,7 @@ const violations = async (page: Page) => (await new AxeBuilder({ page }).withTag
 const SIZES = [{ width: 1280, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]
 for (const size of SIZES) {
   test(`calendar month, week and agenda (${size.width}x${size.height})`, async ({ page }) => {
+    test.setTimeout(90_000) // six axe passes plus three views: 20-30 s on a busy machine, over the 30 s default
     const min = size.width >= 1280 ? 40 : 44
     await page.setViewportSize(size)
     await mock(page)

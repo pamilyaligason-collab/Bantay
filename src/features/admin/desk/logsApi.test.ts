@@ -73,6 +73,9 @@ describe('no number columns in a table select', () => {
     expect(isExpired(null)).toBe(false)
     expect(isExpired('2000-01-01')).toBe(true)
     expect(isExpired('2999-01-01')).toBe(false)
+    // 17:00 UTC on 2026-10-21 is already 2026-10-22 in Manila: an ID dated 10-21 has expired.
+    expect(isExpired('2026-10-21', new Date('2026-10-21T17:00:00Z'))).toBe(true)
+    expect(isExpired('2026-10-22', new Date('2026-10-21T17:00:00Z'))).toBe(false)
   })
 })
 

@@ -52,27 +52,28 @@ function Expiring() {
   const [rows, setRows] = useState<Awaited<ReturnType<typeof listExpiringIds>> | null>(null)
   const ids = (people ?? []).map((p) => p.id).join(',')
   useEffect(() => {
-    if (!ids) return
+    if (!ids) { if (people) setRows({ ok: true, data: [] }); return }
     let live = true
     void listExpiringIds(ids.split(','), todayManila()).then((r) => live && setRows(r))
     return () => { live = false }
-  }, [ids])
+  }, [ids, people])
   if (!people || !rows) return <Skeleton rows={4} />
+  if (!people.length) return <Empty>No members yet. IDs show here once someone is added.</Empty>
   if (!rows.ok) return <Empty>Could not load. Choose a person above, or try again later.</Empty>
   if (!rows.data.length) return <Empty>No IDs or insurance end within 60 days. Choose a person to see all of theirs.</Empty>
   return (
     <div className="dk-scrollx">
-      <table className="dk-table dk-cardtab">
+      <table role="table" className="dk-table dk-cardtab">
         <caption className="fl-sr">IDs and insurance ending within 60 days</caption>
-        <thead><tr>{['Person', 'Type', 'Last 4', 'Expires', 'Days left'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
-        <tbody>
+        <thead role="rowgroup"><tr role="row">{['Person', 'Type', 'Last 4', 'Expires', 'Days left'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+        <tbody role="rowgroup">
           {rows.data.map((r) => (
-            <tr key={`${r.source}:${r.id}`}>
-              <th scope="row" className="fl-name"><a href={deskHref('ids', r.person_id)}>{nameOf(r.person_id)}</a></th>
-              <td data-label="Type">{kind(r)}</td>
-              <td data-label="Last 4" className="fl-num">{r.last4 ?? ''}</td>
-              <td data-label="Expires">{day(r.expires_on)}</td>
-              <td data-label="Days left">{r.days < 0 ? <Tag tone="bad">Expired</Tag> : <Tag tone="warn">{soonText(r.days)}</Tag>}</td>
+            <tr role="row" key={`${r.source}:${r.id}`}>
+              <th role="rowheader" scope="row" className="fl-name"><a href={deskHref('ids', r.person_id)}>{nameOf(r.person_id)}</a></th>
+              <td role="cell" data-label="Type">{kind(r)}</td>
+              <td role="cell" data-label="Last 4" className="fl-num">{r.last4 ?? ''}</td>
+              <td role="cell" data-label="Expires">{day(r.expires_on)}</td>
+              <td role="cell" data-label="Days left">{r.days < 0 ? <Tag tone="bad">Expired</Tag> : <Tag tone="warn">{soonText(r.days)}</Tag>}</td>
             </tr>
           ))}
         </tbody>
@@ -131,17 +132,17 @@ export default function Ids({ id, embedded }: PageProps) {
       {id && !error && rows && !rows.length && <Empty>No IDs or insurance on file.</Empty>}
       {id && !error && !!rows?.length && (
         <div className="dk-scrollx">
-          <table className="dk-table dk-cardtab">
+          <table role="table" className="dk-table dk-cardtab">
             <caption className="fl-sr">IDs and insurance</caption>
-            <thead><tr>{['Type', 'Plan', 'Number', 'Issued', 'Expires', 'Status', 'Source', 'Actions'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
-            <tbody>
+            <thead role="rowgroup"><tr role="row">{['Type', 'Plan', 'Number', 'Issued', 'Expires', 'Status', 'Source', 'Actions'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+            <tbody role="rowgroup">
               {rows.map((r) => {
                 const on = reveal.shown?.key === key(r)
                 return (
-                  <tr key={key(r)}>
-                    <th scope="row" className="fl-name">{kind(r)}<span className="fl-note">{r.source === 'id' ? ' ID' : ' insurance'}</span></th>
-                    <td data-label="Plan">{r.plan ?? ''}</td>
-                    <td data-label="Number">
+                  <tr role="row" key={key(r)}>
+                    <th role="rowheader" scope="row" className="fl-name">{kind(r)}<span className="fl-note">{r.source === 'id' ? ' ID' : ' insurance'}</span></th>
+                    <td role="cell" data-label="Plan">{r.plan ?? ''}</td>
+                    <td role="cell" data-label="Number">
                       <div className="dk-acts">
                         <span className="fl-num">{on ? reveal.shown?.value : maskNumber(r.last4)}</span>
                         {on
@@ -149,11 +150,11 @@ export default function Ids({ id, embedded }: PageProps) {
                           : <button className="dk-b" onClick={() => showNumber(r)} aria-label={`Show number for ${nm(r)}`}>Show</button>}
                       </div>
                     </td>
-                    <td data-label="Issued">{r.issued_on ? day(r.issued_on) : ''}</td>
-                    <td data-label="Expires">{r.expires_on ? day(r.expires_on) : ''}{isExpired(r.expires_on) ? <> <Tag tone="bad">Expired</Tag></> : expiresSoon(r.expires_on, todayManila()) && <> <Tag tone="warn">{soonText(daysLeft(r.expires_on, todayManila()))}</Tag></>}</td>
-                    <td data-label="Status"><Tag tone={statusTone(r.status)}>{statusLabel(r.status)}</Tag></td>
-                    <td data-label="Source">{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${nm(r)}`}>Open page</button> : ''}</td>
-                    <td data-label="Actions">
+                    <td role="cell" data-label="Issued">{r.issued_on ? day(r.issued_on) : ''}</td>
+                    <td role="cell" data-label="Expires">{r.expires_on ? day(r.expires_on) : ''}{isExpired(r.expires_on) ? <> <Tag tone="bad">Expired</Tag></> : expiresSoon(r.expires_on, todayManila()) && <> <Tag tone="warn">{soonText(daysLeft(r.expires_on, todayManila()))}</Tag></>}</td>
+                    <td role="cell" data-label="Status"><Tag tone={statusTone(r.status)}>{statusLabel(r.status)}</Tag></td>
+                    <td role="cell" data-label="Source">{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${nm(r)}`}>Open page</button> : ''}</td>
+                    <td role="cell" data-label="Actions">
                       <div className="dk-acts">
                         <button className="dk-b" onClick={() => setEdit(r)} aria-label={`Edit ${nm(r)}`}>Edit</button>
                         {r.status !== 'confirmed' && <button className="dk-b go" onClick={() => setStatus(r, 'confirmed')} aria-label={`Confirm ${nm(r)}`}>Confirm</button>}

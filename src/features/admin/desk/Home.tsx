@@ -151,15 +151,15 @@ export default function Home(_: PageProps) {
 
         <Card id="hm-recent" title="Recent changes" cls="dk-s12" link={['All history', deskHref('history')]} src={recent}>
           {recent.data && recent.data.length === 0 ? <div className="dk-card-b"><Empty>No changes recorded yet.</Empty></div> : recent.data && (
-            <div className="dk-scrollx"><table className="dk-table dk-cardtab">
-              <thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Person</th><th scope="col">Fields</th></tr></thead>
-              <tbody>{recent.data.map((r) => (
-                <tr key={r.id}>
-                  <td data-label="When"><time dateTime={r.at} title={dateTime(r.at)}>{ago(r.at, now)}</time></td>
-                  <td data-label="Who">{who(r.actor)}</td>
-                  <td data-label="What"><Tag tone={actionTone(r.action)}>{statusLabel(r.action)}</Tag> {tableWords(r.tbl)}</td>
-                  <td data-label="Person">{r.person_id ? people.nameOf(r.person_id) : ''}</td>
-                  <td data-label="Fields" className="hm-fields">{fieldsText(r.fields)}</td>
+            <div className="dk-scrollx"><table role="table" className="dk-table dk-cardtab">
+              <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">When</th><th role="columnheader" scope="col">Who</th><th role="columnheader" scope="col">What</th><th role="columnheader" scope="col">Person</th><th role="columnheader" scope="col">Fields</th></tr></thead>
+              <tbody role="rowgroup">{recent.data.map((r) => (
+                <tr role="row" key={r.id}>
+                  <td role="cell" data-label="When"><time dateTime={r.at} title={dateTime(r.at)}>{ago(r.at, now)}</time></td>
+                  <td role="cell" data-label="Who">{who(r.actor)}</td>
+                  <td role="cell" data-label="What"><Tag tone={actionTone(r.action)}>{statusLabel(r.action)}</Tag> {tableWords(r.tbl)}</td>
+                  <td role="cell" data-label="Person">{r.person_id ? people.nameOf(r.person_id) : ''}</td>
+                  <td role="cell" data-label="Fields" className="hm-fields">{fieldsText(r.fields)}</td>
                 </tr>
               ))}</tbody>
             </table></div>

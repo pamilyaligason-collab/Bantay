@@ -154,15 +154,15 @@ export const loadQueue = () => guard<QueueRow[]>(async () => {
 
 export const loadFailedScans = () => guard(() => head(supabase!.from('source_files').select('id', { count: 'exact', head: true }).eq('ingest_status', 'failed')))
 
-/** person_identifiers: id, person_id, id_type, expires_on only (never the number). insurance_policies: id, person_id, valid_to only. */
+/** Same rule as listExpiringIds (logsApi): today to 60 days ahead, rejected skipped; already expired is the list's separate flag. Never the number. */
 export const loadExpiring = (now: Date = new Date()) => guard<number>(async () => {
   const today = manilaDay(now), last = addDays(today, 60)
   const [a, b] = await Promise.all([
-    supabase!.from('person_identifiers').select('id, person_id, id_type, expires_on').gte('expires_on', today).lte('expires_on', last),
-    supabase!.from('insurance_policies').select('id, person_id, valid_to').gte('valid_to', today).lte('valid_to', last)
+    supabase!.from('person_identifiers').select('id, person_id, id_type, expires_on, status').gte('expires_on', today).lte('expires_on', last),
+    supabase!.from('insurance_policies').select('id, person_id, valid_to, status').gte('valid_to', today).lte('valid_to', last)
   ])
   if (a.error || b.error) return bad
-  return { ok: true, data: expiringCount([...(a.data ?? []).map((r) => r.expires_on as string | null), ...(b.data ?? []).map((r) => r.valid_to as string | null)], today) }
+  return { ok: true, data: expiringCount([...(a.data ?? []).filter((r) => r.status !== 'rejected').map((r) => r.expires_on as string | null), ...(b.data ?? []).filter((r) => r.status !== 'rejected').map((r) => r.valid_to as string | null)], today) }
 })
 
 export const loadDupeCount = () => guard<number>(async () => { const r = await loadDuplicates(); return r.ok ? { ok: true, data: r.data.groups.length } : bad })
@@ -195,12 +195,14 @@ export const loadConfirmedWeeks = (weeks = 8, now: Date = new Date()) => guard<{
 /** Who opened the app in the last 14 days (user_id and time only), paged like loadUsageSeries. Failing leaves the delta off. */
 export const loadActiveWeeks = (now: Date = new Date()) => guard<{ cur: string[]; prev: string[] }>(async () => {
   const today = manilaDay(now), since = dayStartIso(addDays(today, -13)), rows: { user_id: string; at: string }[] = []
-  for (let p = 0; p < 20; p++) {
+  let done = false
+  for (let p = 0; p < 20 && !done; p++) {
     const { data, error } = await supabase!.from('usage_events').select('user_id, at').eq('kind', 'screen').gte('at', since).order('at').range(p * 1000, p * 1000 + 999)
     if (error) return bad
     rows.push(...((data ?? []) as { user_id: string; at: string }[]))
-    if ((data?.length ?? 0) < 1000) break
+    done = (data?.length ?? 0) < 1000
   }
+  if (!done) return bad // hit the 20k cap: the newest rows are missing, so the delta is unknown, not low
   const w = activeByWeek(rows, today)
   return { ok: true, data: { cur: [...w.cur], prev: [...w.prev] } }
 })

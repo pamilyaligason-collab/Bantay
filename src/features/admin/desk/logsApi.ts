@@ -1,5 +1,6 @@
 import { supabase } from '../../auth/client'
 import { driveUrl, signedUrl } from '../../records/api'
+import { todayManila } from './scheduleApi'
 
 // Online calls behind Files, IDs and History. Never throws; never logs values. ID numbers come only from the admin RPCs, never from a table select.
 export type Res<T> = { ok: true; data: T } | { ok: false; error: string; code?: string }
@@ -76,7 +77,7 @@ export type Ident = {
 export const maskNumber = (last4: string | null | undefined) => (last4 ? `•••• ${last4}` : '••••••••')
 /** Mirror of the server rule, for tests: null under 8 characters. */
 export const last4Of = (n: string | null | undefined) => (n && n.length >= 8 ? n.slice(-4) : null)
-export const isExpired = (d: string | null | undefined, now = new Date()) => !!d && d < now.toISOString().slice(0, 10)
+export const isExpired = (d: string | null | undefined, now = new Date()) => !!d && d < todayManila(now)
 /** Whole days from `today` to `date` (both 'YYYY-MM-DD'); negative when past. Unknown or malformed is null, never 0. */
 export function daysLeft(date: string | null | undefined, today: string): number | null {
   const ok = (x: string | null | undefined): x is string => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}/.test(x)

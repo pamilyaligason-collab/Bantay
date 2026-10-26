@@ -78,18 +78,18 @@ function Audit({ person }: { person?: string }) {
       {state === 'ok' && rows && !shown.length && <Empty>No changes match.</Empty>}
       {state === 'ok' && !!shown.length && (
         <div className="dk-scrollx" tabIndex={0} role="region" aria-label="Changes, newest first">
-          <table className="dk-table dk-cardtab">
+          <table role="table" className="dk-table dk-cardtab">
             <caption className="fl-sr">Changes, newest first</caption>
-            <thead><tr>{['When', 'Who', 'Action', 'Table', ...(person ? [] : ['Person']), 'Fields'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
-            <tbody>
+            <thead role="rowgroup"><tr role="row">{['When', 'Who', 'Action', 'Table', ...(person ? [] : ['Person']), 'Fields'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+            <tbody role="rowgroup">
               {shown.map((r) => (
-                <tr key={r.id}>
-                  <th scope="row" className="fl-name">{dateTime(r.at)}</th>
-                  <td data-label="Who">{actor(r.actor)}</td>
-                  <td data-label="Action"><Tag tone={ACTION_TONE[r.action] ?? 'plain'}>{statusLabel(r.action)}</Tag></td>
-                  <td data-label="Table">{tableWords(r.tbl)}</td>
-                  {!person && <td data-label="Person">{r.person_id ? nameOf(r.person_id) : ''}</td>}
-                  <td data-label="Fields" className="fl-fields">{(r.fields ?? []).map(fieldWord).join(', ')}</td>
+                <tr role="row" key={r.id}>
+                  <th role="rowheader" scope="row" className="fl-name">{dateTime(r.at)}</th>
+                  <td role="cell" data-label="Who">{actor(r.actor)}</td>
+                  <td role="cell" data-label="Action"><Tag tone={ACTION_TONE[r.action] ?? 'plain'}>{statusLabel(r.action)}</Tag></td>
+                  <td role="cell" data-label="Table">{tableWords(r.tbl)}</td>
+                  {!person && <td role="cell" data-label="Person">{r.person_id ? nameOf(r.person_id) : ''}</td>}
+                  <td role="cell" data-label="Fields" className="fl-fields">{(r.fields ?? []).map(fieldWord).join(', ')}</td>
                 </tr>
               ))}
             </tbody>
@@ -135,7 +135,7 @@ function Dedupe() {
       <div className="dk-scrollx" tabIndex={0} role="region" aria-label="Clean-up rows, newest first">
         <table className="dk-table">
           <caption className="fl-sr">Clean-up rows, newest first</caption>
-          <thead><tr>{['When', 'Table', 'Row', 'Old status'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
+          <thead><tr>{['When', 'Table', 'Row', 'Old status'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>
             {(rows ?? []).slice(0, 100).map((r) => (
               <tr key={r.id}><th scope="row" className="fl-name">{dateTime(r.at)}</th><td>{tableWords(r.tbl)}</td><td className="fl-num">{short(r.row_id)}</td><td>{r.old_status ?? 'none'}</td></tr>

@@ -47,6 +47,22 @@ describe('Calendar', () => {
     expect(screen.getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('month cell folds medicine times into one "Meds N" chip and keeps 2 other items before "+n more"', async () => {
+    const med = (id: string, times: string[]) => ({ id, person_id: 'p1', name: `Medicine ${id}`, strength: null, schedule: { v: 1, times }, as_needed: false, med_status: 'active', deleted_at: null, status: 'confirmed' })
+    h.state.tables.medications = [med('m1', ['08:00']), med('m2', ['08:00', '20:00'])] // 3 doses a day, shown for the first 14 days of the grid (from 23 Feb)
+    h.state.tables.family_events = [1, 2, 3].map((n) => ({ id: `e${n}`, title: `Event ${n}`, starts_at: `2026-03-02T0${n}:00:00Z`, ends_at: null, all_day: false, person_id: 'p1' }))
+    h.state.tables.family_tasks = []
+    render(<Calendar id="2026-03-18" sub="month" />)
+    await screen.findByText('Event 1')
+    const cell = screen.getByRole('button', { name: /^Mon 2 Mar, 2 March/ }).closest('.cal-cell') as HTMLElement
+    expect(within(cell).getByText('Meds').parentElement?.textContent).toBe('Medicine times: Meds 3') // 3 doses, one chip
+    expect(within(cell).queryByText(/Medicine m[12]/)).toBeNull()
+    expect(within(cell).getByText('Event 1')).toBeTruthy()
+    expect(within(cell).getByText('Event 2')).toBeTruthy()
+    expect(within(cell).queryByText('Event 3')).toBeNull()
+    expect(within(cell).getByText('+1 more')).toBeTruthy()
+  })
+
   it('opens the day panel with actions, and filters by kind', async () => {
     render(<Calendar id="2026-03-18" sub="week" />)
     await screen.findByRole('region', { name: 'Wed 18 Mar' })
