@@ -27,3 +27,13 @@
 .sc-thumb { width: 44px; height: 58px; flex: none; object-fit: cover; border-radius: 6px; background: var(--fill); border: .5px solid var(--sep); }
 .sc .dc-field input { min-height: 48px; }
 .sc .dc-chip:focus-visible, .sc .dc-btn:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
+/* device reading: big numbers to confirm */
+.sc-rd { display: flex; flex-direction: column; gap: 12px; }
+.sc-big3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sc-big3 > div, .sc-big1 { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sc-rd label { font-size: 16px; color: var(--ink2); }
+.sc-rd input { width: 100%; min-height: var(--tap, 48px); box-sizing: border-box; font-size: 36px; font-weight: 700; text-align: center; padding: 6px 4px; border-radius: 12px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); font-family: inherit; }
+.sc-rd input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sc-rd small { font-size: 15px; color: var(--ink2); text-align: center; }
+.sc-actions .row .sub { display: block; margin: 0; }

@@ -48,7 +48,7 @@ describe('Ask choice sheet', () => {
     ask()
     const dlg = await screen.findByRole('dialog', { name: 'What would you like to do?' })
     expect(dlg.getAttribute('aria-modal')).toBe('true')
-    for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a photo/]) expect(screen.getByRole('button', { name: n })).toBeTruthy()
+    for (const n of [/Talk to Jack Jack/, /Scan & Capture/, /Upload a photo/]) expect(screen.getByRole('button', { name: n })).toBeTruthy()
     fireEvent.keyDown(dlg, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
@@ -69,7 +69,7 @@ describe('Ask choice sheet', () => {
     render(<TabBar active="today" />)
     ask()
     const before = history.length
-    fireEvent.click(await screen.findByRole('button', { name: /Scan a paper/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Scan & Capture/ }))
     await waitFor(() => expect(location.hash).toBe('#scan'))
     expect(history.state?.bantayScan).toBe(1)
     expect(history.length).toBe(before) // our pushed entry was popped, scan took its place: no dead entry

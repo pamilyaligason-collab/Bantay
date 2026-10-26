@@ -303,10 +303,10 @@ export default function Assistant() {
               {CHIPS.map((c) => (
                 <button key={c.label} type="button" className="as-chip" disabled={busy && c.send} onClick={() => (c.send ? void send(c.text) : (setText(c.text), input.current?.focus()))}>{c.label}</button>
               ))}
-              <button type="button" className="as-chip" onClick={scan}>Scan a paper</button>
+              <button type="button" className="as-chip" onClick={scan}>Scan & Capture</button>
             </div>}
             <form className="as-form" onSubmit={(e) => { e.preventDefault(); void send() }}>
-              <button type="button" className="as-mic as-cam" aria-label="Scan a paper" onClick={scan}><Icon name="camera" /></button>
+              <button type="button" className="as-mic as-cam" aria-label="Scan & Capture" onClick={scan}><Icon name="camera" /></button>
               <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
               {Mic.current && (
                 <button type="button" className="as-mic" aria-label={listening ? 'Stop listening' : 'Speak'} aria-pressed={listening} onClick={listen}>

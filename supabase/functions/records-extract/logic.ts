@@ -385,6 +385,123 @@ export function errorCode(e: unknown): string {
   return /^[a-z0-9_]{1,40}$/.test(m) ? m : 'failed'
 }
 
+// ---------- device reading (a photo of a BP monitor, glucose meter, scale, thermometer or oximeter) ----------
+// Not a document: nothing is stored, the image goes to the model and the numbers come straight back for the person to confirm.
+export const READING_KINDS = ['bp', 'glucose', 'weight', 'temp', 'spo2'] as const
+export type ReadingKind = (typeof READING_KINDS)[number]
+export const READING_MAX_TOKENS = 200
+export const MAX_READING_BASE64 = 4 * 1024 * 1024 // chars; the app sends one JPEG of at most 2000 px
+export const MIN_READING_CONFIDENCE = 0.5
+export const READING_PROMPT =
+  'This is a photo of a home health device display (blood pressure monitor, glucose meter, scale, thermometer or pulse oximeter). Return only JSON: ' +
+  '{"kind":"bp|glucose|weight|temp|spo2","systolic","diastolic","pulse","value","unit","confidence":0..1}. ' +
+  'bp: systolic (top number), diastolic (bottom number), pulse if shown, unit "mmHg". glucose: value and unit "mg/dL" or "mmol/L". weight: value and unit "kg" or "lb". ' +
+  'temp: value and unit "C" or "F". spo2: value (percent) and unit "%", pulse if shown. Numbers only as shown on the display, never estimated or corrected. ' +
+  'Use null for anything you cannot read with confidence. If this is not one of these devices, return {"kind":null}.'
+
+export interface ReadingResult {
+  kind: ReadingKind | null
+  systolic: number | null
+  diastolic: number | null
+  pulse: number | null
+  value: number | null
+  unit: string | null
+  confidence: number | null
+}
+const EMPTY_READING: ReadingResult = { kind: null, systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: null }
+
+/** Same OpenRouter settings as a paper (paid model, zero data retention, no data collection, JSON only) with a small token cap and no reasoning. */
+export function buildReadingRequest({ model, fallbackModel, image }: { model: string; fallbackModel: string; image: PagePart }) {
+  if (!String(image.mime).startsWith('image/')) throw new Error('unsupported_mime')
+  return { ...buildRequest({ model, fallbackModel, pages: [image], prompt: READING_PROMPT }), max_tokens: READING_MAX_TOKENS, reasoning: { enabled: false } }
+}
+
+const reading = (v: unknown, lo: number, hi: number): number | null => {
+  if (v == null || v === '' || typeof v === 'boolean') return null // unknown is null, never 0
+  const n = typeof v === 'number' ? v : /^[+-]?\d+(\.\d+)?$/.test(String(v).trim()) ? Number(String(v).trim()) : NaN
+  return Number.isFinite(n) && n >= lo && n <= hi ? n : null
+}
+export const READING_UNITS: Record<ReadingKind, Record<string, [number, number]>> = {
+  bp: { mmHg: [40, 300] },
+  glucose: { 'mg/dL': [20, 800], 'mmol/L': [1.1, 44.4] },
+  weight: { kg: [2, 400], lb: [4.4, 880] },
+  temp: { C: [30, 45], F: [86, 113] },
+  spo2: { '%': [50, 100] }
+}
+const UNIT_ALIAS: Record<string, string> = { mmhg: 'mmHg', 'mg/dl': 'mg/dL', 'mmol/l': 'mmol/L', kg: 'kg', kgs: 'kg', lb: 'lb', lbs: 'lb', c: 'C', '°c': 'C', f: 'F', '°f': 'F', '%': '%' }
+
+/** Keep only the contract shape. Anything out of range, with an unknown unit, or read with low confidence becomes null: a reading is never guessed. */
+export function normalizeReading(p: unknown): ReadingResult {
+  const q = (p && typeof p === 'object' && !Array.isArray(p) ? p : {}) as Record<string, unknown>
+  const kind = (READING_KINDS as readonly unknown[]).includes(q.kind) ? (q.kind as ReadingKind) : null
+  const c = q.confidence == null || q.confidence === '' ? NaN : Number(q.confidence)
+  const confidence = Number.isFinite(c) && c >= 0 && c <= 1 ? c : null
+  const out: ReadingResult = { ...EMPTY_READING, kind, confidence }
+  if (!kind || confidence == null || confidence < MIN_READING_CONFIDENCE) return out // confidence missing counts as low
+  if (kind === 'bp') {
+    const s = reading(q.systolic, 40, 300)
+    const d = reading(q.diastolic, 20, 200)
+    if (s != null && d != null && d < s) { out.systolic = s; out.diastolic = d; out.unit = 'mmHg' }
+    out.pulse = reading(q.pulse, 20, 250)
+    return out
+  }
+  if (kind === 'spo2') out.pulse = reading(q.pulse, 20, 250)
+  const unit = UNIT_ALIAS[String(q.unit ?? '').trim().toLowerCase()]
+  const range = unit ? READING_UNITS[kind][unit] : undefined
+  if (!unit || !range) return out
+  const v = reading(q.value, range[0], range[1])
+  if (v != null) { out.value = v; out.unit = unit }
+  return out
+}
+
+export const READING_DAILY_CAP = 20
+/**
+ * The photo-read counter lives in assistant_usage but on its own row: the Ask chat (assistant_take) counts on the row for today's Manila date,
+ * this counts on the same date 100 years on, so 20 photo reads never use up Jack's chat messages and the reverse. No new SQL (assistant_take has no key column).
+ * shortcut: the row sits in a made-up far-future day; when a key column is added to assistant_usage, move it there.
+ */
+export function readingUsageDay(now: Date): string {
+  const manila = new Date(now.getTime() + 8 * 3600_000).toISOString().slice(0, 10)
+  return `${Number(manila.slice(0, 4)) + 100}${manila.slice(4)}`
+}
+export interface ReadingUsagePort {
+  /** Today's count, or null when there is no row yet. Throws when the read fails. */
+  count(userId: string, day: string): Promise<number | null>
+  /** Create the row at 0 if missing. */
+  ensure(userId: string, day: string): Promise<void>
+  /** count = expected + 1 only while count is still expected (compare and set); true when this call won. */
+  bump(userId: string, day: string, expected: number): Promise<boolean>
+}
+/** Take one photo-read slot for today. Never goes past the cap even under parallel calls; a failed read or write throws (the caller says server_error). */
+export async function takeReadingSlot(port: ReadingUsagePort, userId: string, now: Date, cap = READING_DAILY_CAP): Promise<boolean> {
+  const day = readingUsageDay(now)
+  await port.ensure(userId, day)
+  for (let i = 0; i < 5; i++) {
+    const n = (await port.count(userId, day)) ?? 0
+    if (n >= cap) return false
+    if (await port.bump(userId, day, n)) return true
+  }
+  return false // five lost races in a row: say no rather than go past the cap
+}
+
+/** Request body {mode:'reading', mime, image_base64} -> the image, or null for anything else (wrong mode, not an image, too big). */
+export function parseReadingBody(raw: string): PagePart | null {
+  if (raw.length > MAX_READING_BASE64 + 256) return null
+  let b: unknown
+  try { b = JSON.parse(raw) } catch { return null }
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return null
+  const o = b as Record<string, unknown>
+  if (o.mode !== 'reading' || typeof o.mime !== 'string' || !/^image\/(jpeg|png|webp)$/.test(o.mime)) return null
+  const data = o.image_base64
+  if (typeof data !== 'string' || data.length < 16 || data.length > MAX_READING_BASE64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) return null
+  return { mime: o.mime, base64: data }
+}
+
+/** Photo -> numbers. Never logs; the caller logs a status only. */
+export async function readDevice(read: (body: unknown) => Promise<unknown>, image: PagePart, env: { model: string; fallbackModel: string }): Promise<ReadingResult> {
+  return normalizeReading(await read(buildReadingRequest({ model: env.model, fallbackModel: env.fallbackModel, image })))
+}
+
 // ---------- the run ----------
 export interface DocRow { id: string; person_id: string; kind: string; status: string; created_by: string | null }
 export interface Port {

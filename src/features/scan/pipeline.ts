@@ -8,7 +8,7 @@ export const canvasOf = (w: number, h: number) => {
   return c
 }
 
-const toBlob = (c: HTMLCanvasElement) =>
+export const toBlob = (c: HTMLCanvasElement) =>
   new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('no jpeg'))), 'image/jpeg', JPEG_QUALITY))
 
 /** A photo as a canvas whose long side is at most 2000 px. Camera orientation is applied. Throws when the browser cannot open it. */

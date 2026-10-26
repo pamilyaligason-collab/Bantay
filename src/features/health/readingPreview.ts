@@ -1,20 +1,28 @@
 import { positionOf } from './vitals'
 import { GUIDE, type Position, type Range, type Reading } from './ranges'
 import { verdictFor, RAISED_WORD } from './verdict'
+import { PLAUSIBLE as P } from './plausible'
 
 /** The add-reading sheet: what a typed reading means, in colour and one plain line, before it is saved. Pure. */
 export type EntryKind = 'bp' | 'single'
 export interface EntrySpec { kind: EntryKind; code: string; label: string; unit: string; min: number; max: number }
 
 const SPECS: Record<string, EntrySpec> = {
-  bp: { kind: 'bp', code: 'bp_systolic', label: 'blood pressure', unit: 'mmHg', min: 40, max: 300 },
-  fasting_glucose: { kind: 'single', code: 'fasting_glucose', label: 'fasting sugar', unit: 'mg/dL', min: 20, max: 800 },
-  glucose: { kind: 'single', code: 'glucose', label: 'blood sugar', unit: 'mg/dL', min: 20, max: 800 },
-  weight: { kind: 'single', code: 'weight', label: 'weight', unit: 'kg', min: 2, max: 400 },
-  heart_rate: { kind: 'single', code: 'heart_rate', label: 'pulse', unit: 'bpm', min: 20, max: 250 }
+  bp: { kind: 'bp', code: 'bp_systolic', label: 'blood pressure', unit: 'mmHg', min: P.bp.min, max: P.bp.max },
+  fasting_glucose: { kind: 'single', code: 'fasting_glucose', label: 'fasting sugar', unit: 'mg/dL', min: P.glucose.min, max: P.glucose.max },
+  glucose: { kind: 'single', code: 'glucose', label: 'blood sugar', unit: 'mg/dL', min: P.glucose.min, max: P.glucose.max },
+  weight: { kind: 'single', code: 'weight', label: 'weight', unit: 'kg', min: P.weight.min, max: P.weight.max },
+  heart_rate: { kind: 'single', code: 'heart_rate', label: 'pulse', unit: 'bpm', min: P.pulse.min, max: P.pulse.max }
+}
+/** Device-only vitals (no add-sheet entry): the same preview; no colour when no guide range exists. */
+const DEVICE: Record<string, EntrySpec> = {
+  temperature: { kind: 'single', code: 'temperature', label: 'temperature', unit: 'C', min: P.temperature.min, max: P.temperature.max },
+  spo2: { kind: 'single', code: 'spo2', label: 'oxygen', unit: '%', min: P.spo2.min, max: P.spo2.max }
 }
 /** null for steps, sleep, mood and unknown codes: they are not typed in here. */
 export const entrySpec = (code: string): EntrySpec | null => SPECS[code === 'bp_systolic' || code === 'bp_diastolic' ? 'bp' : code] ?? null
+
+export const deviceSpec = (code: string): EntrySpec | null => entrySpec(code) ?? DEVICE[code] ?? null
 
 export interface Preview { state: Position | 'invalid'; word: string; line: string }
 const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
