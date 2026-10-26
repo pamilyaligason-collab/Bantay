@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from 'react'
 import { db } from '../../db'
 import { track } from '../admin/events'
 
-export type SeenCard = 'card_seen_my_week' | 'card_seen_family_line'
+export type SeenCard = 'card_seen_my_week'
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 
 /** Records `name` once per day, the first time the element is in view. `on` false (nothing drawn yet) waits. No IntersectionObserver (tests, old webviews): nothing is sent. */

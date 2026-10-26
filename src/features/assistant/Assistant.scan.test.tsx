@@ -19,7 +19,7 @@ describe('Assistant: scan a paper', () => {
     render(<Assistant />)
     openSheet()
     const field = await screen.findByLabelText('Your question')
-    const cam = screen.getAllByRole('button', { name: 'Scan a paper' }).find((b) => b.classList.contains('as-cam'))!
+    const cam = screen.getAllByRole('button', { name: 'Scan & Capture' }).find((b) => b.classList.contains('as-cam'))!
     expect(cam.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy() // the button comes before the field
     fireEvent.click(cam)
     expect(location.hash).toBe('#scan')
@@ -29,11 +29,11 @@ describe('Assistant: scan a paper', () => {
     window.removeEventListener('hashchange', on)
   })
 
-  it('the "Scan a paper" chip opens it too', async () => {
+  it('the "Scan & Capture" chip opens it too', async () => {
     render(<Assistant />)
     openSheet()
     await screen.findByLabelText('Your question')
-    fireEvent.click(screen.getAllByRole('button', { name: 'Scan a paper' }).find((b) => b.classList.contains('as-chip'))!)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Scan & Capture' }).find((b) => b.classList.contains('as-chip'))!)
     expect(location.hash).toBe('#scan')
   })
 })

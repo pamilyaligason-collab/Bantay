@@ -44,7 +44,6 @@ export default function Carers({ personId, people, me, ask, say, onChange }: Pro
 
   return (
     <section className="mb-sec" aria-label="Carers">
-      <h3>Carers</h3>
       {err && <p className="mb-err" role="alert">{err}</p>}
       {rows === null ? <p className="dk-sub">Loading carers.</p> : rows.length === 0 ? <p className="dk-sub">No carers linked yet. Pick a member below to give them read-only access.</p> : (
         <ul className="mb-list">
@@ -52,7 +51,7 @@ export default function Carers({ personId, people, me, ask, say, onChange }: Pro
             <li key={c.carer_id} className="mb-carer">
               <span className="dk-grow">{nameOfUser(c.carer_id)}</span>
               <Tag tone={c.can_write ? 'ok' : 'plain'}>{c.can_write ? 'Can edit' : 'Read only'}</Tag>
-              <button className="dk-b bad" onClick={() => remove(c)} aria-label={`Remove ${nameOfUser(c.carer_id)} as carer`}>Remove</button>
+              <button className="dk-b ghost" onClick={() => remove(c)} aria-label={`Remove ${nameOfUser(c.carer_id)} as carer`}>Remove</button>
             </li>
           ))}
         </ul>

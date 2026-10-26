@@ -20,7 +20,8 @@ const outPath = join(root, 'src', 'features', 'nutrition', 'foods.json')
 const recipes = JSON.parse(readFileSync(recipesPath, 'utf8'))
 const text = () => '[\n' + buildFoods(recipes).map((f) => ' ' + JSON.stringify(f)).join(',\n') + '\n]\n' // one food per line
 
-const NUM = { kcal: 1008, sodium_mg: 1093, potassium_mg: 1092, protein_g: 1003 } // FDC nutrient ids
+const NUM = { kcal: 1008, sodium_mg: 1093, potassium_mg: 1092, protein_g: 1003 } // FDC nutrient ids; these four decide verified
+const EXTRA = { carbs_g: 1005, fat_g: 1004, sat_fat_g: 1258, fiber_g: 1079, sugars_g: 2000, calcium_mg: 1087, iron_mg: 1089, magnesium_mg: 1090, vitd_ug: 1114, b12_ug: 1178 } // session 9; SR Legacy lacks some for many foods, then null
 /** Compare one ingredient with the nutrients `got` from FDC; prints OK/DIFF and returns true when it differs (or a value is missing). */
 function report(k, ing, description, got) {
   const diffs = Object.entries(NUM).filter(([f]) => got[f] == null || ing[f] == null || Math.abs(got[f] - ing[f]) > Math.max(1, Math.abs(ing[f]) * 0.03)).map(([f]) => `${f} ${ing[f]} vs ${got[f] ?? 'missing'}`)
@@ -35,7 +36,7 @@ if (arg === '--verify-csv') {
   const want = new Map(Object.entries(recipes.ingredients).filter(([, i]) => i.fdc != null).map(([k, i]) => [String(i.fdc), k]))
   const desc = {}
   for (const l of readFileSync(join(dir, 'food.csv'), 'utf8').split('\n')) { const m = l.match(/^"(\d+)","[^"]*","(.*?)","/); if (m && want.has(m[1])) desc[m[1]] = m[2] }
-  const byNutrient = Object.fromEntries(Object.entries(NUM).map(([f, id]) => [String(id), f]))
+  const byNutrient = Object.fromEntries(Object.entries({ ...NUM, ...EXTRA }).map(([f, id]) => [String(id), f]))
   const got = {} // fdc id -> { field: per-100 g amount }
   for await (const l of createInterface({ input: createReadStream(join(dir, 'food_nutrient.csv')) })) {
     const c = l.split(',') // id,fdc_id,nutrient_id,amount,... (all quoted numbers, no embedded commas)
@@ -50,7 +51,7 @@ if (arg === '--verify-csv') {
     if (d == null) { bad++; console.log(`MISS ${k}: fdc ${ing.fdc} is not in food.csv`); continue }
     const g = got[ing.fdc] ?? {}
     if (report(k, ing, d, g)) bad++
-    if (write && Object.keys(NUM).every((f) => g[f] != null)) Object.assign(ing, g, { fdcName: d, verified: true })
+    if (write && Object.keys(NUM).every((f) => g[f] != null)) Object.assign(ing, Object.fromEntries(Object.keys(EXTRA).map((f) => [f, g[f] ?? null])), g, { fdcName: d, verified: true }) // an extra the CSV lacks stays null
   }
   if (write) { // rewrite only the ingredient lines so the file keeps its one-line-per-ingredient layout
     let raw = readFileSync(recipesPath, 'utf8')

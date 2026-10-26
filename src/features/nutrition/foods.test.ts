@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildFoods, FIELDS, perServing, type Recipes } from '../../../scripts/nutrition/recipeMath.mjs'
+import { ALL_FIELDS, buildFoods, EXTRA_FIELDS, FIELDS, perServing, type Recipes } from '../../../scripts/nutrition/recipeMath.mjs'
 import recipes from '../../../scripts/nutrition/recipes.json'
 import recipesRaw from '../../../scripts/nutrition/recipes.json?raw'
 import foodsRaw from './foods.json?raw'
@@ -17,11 +17,11 @@ describe('foods.json schema', () => {
     for (const f of FOODS) {
       expect(f.key, f.key).toMatch(/^[a-z0-9_]{1,40}$/)
       for (const s of [f.name, f.tl, f.serving_label, f.src]) expect(typeof s === 'string' && s.trim().length > 0, f.key).toBe(true)
-      for (const n of [f.kcal, f.sodium_mg, f.potassium_mg, f.protein_g]) expect(n === null || (typeof n === 'number' && Number.isFinite(n) && n >= 0), f.key).toBe(true)
+      for (const n of [f.kcal, f.sodium_mg, f.potassium_mg, f.protein_g, ...EXTRA_FIELDS.map((k) => (f as unknown as Record<string, number | null>)[k])]) expect(n === null || (typeof n === 'number' && Number.isFinite(n) && n >= 0), f.key).toBe(true)
       expect(f.kcal, f.key).toBeLessThan(1500)
       expect(f.sodium_mg, f.key).toBeLessThan(4000)
       expect(f.estimate === undefined || f.estimate === true, f.key).toBe(true)
-      expect(Object.keys(f).every((k) => ['key', 'name', 'tl', 'serving_label', 'kcal', 'sodium_mg', 'potassium_mg', 'protein_g', 'src', 'estimate'].includes(k)), f.key).toBe(true)
+      expect(Object.keys(f).every((k) => ['key', 'name', 'tl', 'serving_label', 'src', 'estimate', ...ALL_FIELDS].includes(k)), f.key).toBe(true)
     }
   })
   it('credits USDA SR Legacy and nothing else (no PhilFCT / FNRI values)', () => {
@@ -60,7 +60,9 @@ describe('recipe maths is reproducible from scripts/nutrition/recipes.json', () 
   })
   it('an unknown ingredient value makes the dish value null, never 0; bad grams and unknown keys throw', () => {
     const ing = { a: { kcal: 100, sodium_mg: null, potassium_mg: 5, protein_g: 1 }, b: { kcal: 50, sodium_mg: 10, potassium_mg: 5, protein_g: 1 } }
-    expect(perServing([['a', 100], ['b', 100]], ing)).toEqual({ kcal: 150, sodium_mg: null, potassium_mg: 10, protein_g: 2 })
+    expect(perServing([['a', 100], ['b', 100]], ing)).toMatchObject({ kcal: 150, sodium_mg: null, potassium_mg: 10, protein_g: 2 })
+    // a nutrient an ingredient does not list at all (the session 9 extras) is unknown too
+    expect(perServing([['a', 100]], ing).vitd_ug).toBeNull()
     expect(() => perServing([['zz', 10]], ing)).toThrow(/unknown ingredient/)
     expect(() => perServing([['a', 0]], ing)).toThrow(/bad grams/)
   })

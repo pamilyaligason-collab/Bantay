@@ -2,7 +2,27 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../auth/client', () => ({ supabase: null }))
 
-import { ago, bucketByDay, expiringCount, fieldsText, lastDays, lastWeeks, manilaDay, needsYou, queueSummary, summarize, toneIf } from './homeApi'
+import { activeByWeek, ago, bucketByDay, expiringCount, fieldsText, kindWord, lastDays, lastWeeks, manilaDay, needsYou, queueSummary, summarize, toneIf, weekDelta } from './homeApi'
+
+describe('week-over-week and wording', () => {
+  it('weekDelta is null when either side is unknown, never 0', () => {
+    expect(weekDelta(null, 3)).toBeNull()
+    expect(weekDelta(3, undefined)).toBeNull()
+    expect(weekDelta(4, 3)).toBe('+1 vs last week')
+    expect(weekDelta(2, 5)).toBe('-3 vs last week')
+    expect(weekDelta(2, 2)).toBe('Same as last week')
+  })
+  it('kindWord is singular for exactly one', () => {
+    expect(kindWord('documents', 1)).toBe('paper')
+    expect(kindWord('documents', 3)).toBe('papers')
+    expect(kindWord('documents')).toBe('papers')
+  })
+  it('activeByWeek splits 14 Manila days into two weeks and skips bad times', () => {
+    const w = activeByWeek([{ user_id: 'a', at: '2026-10-20T01:00:00Z' }, { user_id: 'b', at: '2026-10-10T01:00:00Z' }, { user_id: 'c', at: 'nope' }, { user_id: 'd', at: '2026-09-01T01:00:00Z' }], '2026-10-22')
+    expect([...w.cur]).toEqual(['a'])
+    expect([...w.prev]).toEqual(['b'])
+  })
+})
 
 describe('Manila days', () => {
   it('puts 17:00 UTC on the next Manila day', () => {

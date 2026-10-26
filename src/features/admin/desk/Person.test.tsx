@@ -242,7 +242,7 @@ describe('Archive and sign-in', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Archive Test Child' }))
     expect(await screen.findByText(/disappear from every family phone: lists, reminders and alerts\. Their records stay\. You can reactivate any time\./)).toBeTruthy()
     expect(archiveCalls()).toEqual([])
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }))
     await waitFor(() => expect(archiveCalls()).toEqual([{ p_person: 'p4', p_archived: true }]))
     fireEvent.click(await screen.findByRole('button', { name: 'Undo' }))
     await waitFor(() => expect(archiveCalls()).toContainEqual({ p_person: 'p4', p_archived: false }))
@@ -251,7 +251,7 @@ describe('Archive and sign-in', () => {
   it('a member can be archived too', async () => {
     await page('p2', 'account')
     fireEvent.click(await screen.findByRole('button', { name: 'Archive Test Person' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive' }))
     await waitFor(() => expect(archiveCalls()).toEqual([{ p_person: 'p2', p_archived: true }]))
   })
 

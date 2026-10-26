@@ -18,6 +18,7 @@ import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { useSavedTheme } from './features/shell/theme'
+import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
 import { loadLang } from './lib/i18n'
@@ -40,6 +41,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false)
   const inbox = useInbox(isAdmin)
   useSavedTheme()
+  useSavedTextSize()
   useUpdateCheckOnOpen()
   useEffect(() => {
     const check = () => void getMember().then((m) => setIsAdmin(m?.role === 'admin'))
@@ -75,7 +77,7 @@ export default function App() {
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
-  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan a paper' : view === 'weather' ? 'Weather' : SCREENS[tab].label
+  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current

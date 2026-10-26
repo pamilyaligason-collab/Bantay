@@ -11,7 +11,7 @@ export default function SosButton({ onSend }: { onSend: () => void }) {
   const release = () => { if (holding) setHint(true); cancel() }
   return (
     <div className="sos-wrap">
-      <button type="button" className={`sos-btn${holding ? ' holding' : ''}`} aria-label={`SOS. ${holding ? 'Keep holding' : 'Hold 3 seconds'}. Press and hold 3 seconds to alert your family. Or use the button below.`}
+      <button type="button" className={`sos-btn${holding ? ' holding' : ''}`} aria-label={`SOS. ${holding ? 'Keep holding' : 'Hold 3 seconds'}. Press and hold 3 seconds so your family sees it in Bantay. Or use the button below.`}
         onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); setHint(false); start() }}
         onPointerUp={release} onPointerCancel={release} onContextMenu={(e) => e.preventDefault()}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setConfirm(true) } }}>

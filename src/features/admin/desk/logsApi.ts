@@ -1,5 +1,6 @@
 import { supabase } from '../../auth/client'
 import { driveUrl, signedUrl } from '../../records/api'
+import { todayManila } from './scheduleApi'
 
 // Online calls behind Files, IDs and History. Never throws; never logs values. ID numbers come only from the admin RPCs, never from a table select.
 export type Res<T> = { ok: true; data: T } | { ok: false; error: string; code?: string }
@@ -76,9 +77,29 @@ export type Ident = {
 export const maskNumber = (last4: string | null | undefined) => (last4 ? `•••• ${last4}` : '••••••••')
 /** Mirror of the server rule, for tests: null under 8 characters. */
 export const last4Of = (n: string | null | undefined) => (n && n.length >= 8 ? n.slice(-4) : null)
-export const isExpired = (d: string | null | undefined, now = new Date()) => !!d && d < now.toISOString().slice(0, 10)
+export const isExpired = (d: string | null | undefined, now = new Date()) => !!d && d < todayManila(now)
+/** Whole days from `today` to `date` (both 'YYYY-MM-DD'); negative when past. Unknown or malformed is null, never 0. */
+export function daysLeft(date: string | null | undefined, today: string): number | null {
+  const ok = (x: string | null | undefined): x is string => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}/.test(x)
+  if (!ok(date) || !ok(today)) return null
+  return Math.round((Date.parse(`${date.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today.slice(0, 10)}T00:00:00Z`)) / 86_400_000)
+}
+export const SOON_DAYS = 60
+/** True when the item ends within the next 60 days (today included). Already expired is not "soon". */
+export const expiresSoon = (date: string | null | undefined, today: string) => { const n = daysLeft(date, today); return n !== null && n >= 0 && n <= SOON_DAYS }
 
 export const listIdentifiers = (person: string) => run<Ident[]>((s) => s.rpc('admin_identifiers', { p_person: person }))
+/** Every person's IDs and policies that ended or end within 60 days, soonest first. Rejected ones are skipped. Uses the same per-person RPC as the Ids page, so only the last 4 ever arrive. */
+export async function listExpiringIds(personIds: string[], today: string): Promise<Res<(Ident & { person_id: string; days: number })[]>> {
+  const all = await Promise.all(personIds.map(async (p) => ({ p, r: await listIdentifiers(p) })))
+  if (all.some((x) => !x.r.ok)) return { ok: false, error: 'failed' }
+  const out: (Ident & { person_id: string; days: number })[] = []
+  for (const { p, r } of all) for (const i of r.ok ? r.data : []) {
+    const days = daysLeft(i.expires_on, today)
+    if (days !== null && days <= SOON_DAYS && i.status !== 'rejected') out.push({ ...i, person_id: p, days })
+  }
+  return { ok: true, data: out.sort((a, b) => a.days - b.days) }
+}
 /** The one place a full number is fetched. The caller shows it for 30 s and drops it. */
 export const revealNumber = async (source: IdSource, id: string): Promise<Res<string>> => {
   const r = await run<unknown>((s) => s.rpc('admin_reveal_identifier', { p_source: source, p_id: id }))
@@ -109,11 +130,18 @@ export const replaceNumber = (source: IdSource, id: string, value: string) => (v
 export const PAGE = 100
 export type AuditRow = { id: number; at: string; actor: string | null; tbl: string; row_id: string | null; person_id: string | null; action: string; fields: string[] | null }
 export type AuditFilter = { person: string; table: string; action: string; from: string; to: string; page: number }
-export const ACTIONS = ['insert', 'update', 'confirm', 'reject', 'delete', 'reveal'] as const
+export const ACTIONS = ['insert', 'update', 'confirm', 'reject', 'delete', 'reveal', 'view'] as const
 export const TABLE_WORDS: Record<string, string> = {
   people: 'Profile', carers: 'Carers', person_identifiers: 'ID', insurance_policies: 'Insurance', documents: 'Paper', lab_results: 'Lab result',
-  prescription_items: 'Prescription line', medications: 'Medicine', vaccinations: 'Vaccination', imaging_reports: 'Imaging', conditions: 'Condition', allergies: 'Allergy'
+  prescription_items: 'Prescription line', medications: 'Medicine', vaccinations: 'Vaccination', imaging_reports: 'Imaging', conditions: 'Condition', allergies: 'Allergy',
+  family_tasks: 'Family task', family_events: 'Family event'
 }
+/** Column names to plain words for History and Home (field names only; values are never logged). Unknown names lose their underscores. */
+export const FIELD_LABELS: Record<string, string> = {
+  id_number: 'ID number', member_no: 'Member number', id_type: 'ID type', expires_on: 'Expires', issued_on: 'Issued', valid_from: 'Valid from', valid_to: 'Valid to',
+  value_num: 'Value', unit_raw: 'Unit', status: 'Status', display_name: 'Name', phone: 'Phone', address: 'Address', title: 'Title', plan: 'Plan', carrier: 'Carrier'
+}
+export const fieldWord = (f: string) => FIELD_LABELS[f] ?? f.replace(/_/g, ' ')
 export const tableWords = (t: string) => TABLE_WORDS[t] ?? t.replace(/_/g, ' ')
 const dayStart = (d: string) => new Date(`${d}T00:00:00`).toISOString()
 const nextDay = (d: string) => { const x = new Date(`${d}T00:00:00`); x.setDate(x.getDate() + 1); return x.toISOString() }

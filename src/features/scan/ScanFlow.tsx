@@ -1,4 +1,4 @@
-// "Scan a paper": photograph each page, tidy the corners, say whose paper it is, then queue it (src/features/docs/api.ts addScan).
+// "Scan & Capture": photograph each page of a paper, or a device display (BP monitor, glucose meter) to log a reading, tidy the corners, say whose paper it is, then queue it (src/features/docs/api.ts addScan).
 // The Android app uses Google's scanner screen when this build has it; the browser uses the camera and the crop screen below.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
@@ -11,11 +11,13 @@ import { SubHeader } from '../shell/SubHeader'
 import { convex, defaultQuad, type Mode, type Quad } from './crop'
 import { scannerKind, scanNative } from './nativeScan'
 import { closeScan, takePendingFile } from './open'
-import { cropToJpeg, decodePhoto, rotateCanvas } from './pipeline'
+import { cropToJpeg, decodePhoto, rotateCanvas, toBlob } from './pipeline'
+import ReadingConfirm from './ReadingConfirm'
+import { EMPTY_DRAFT, readDevicePhoto, type ReadingDraft } from './reading'
 import './scan.css'
 
 type Page = { id: string; blob: Blob; url: string }
-type Stage = 'start' | 'crop' | 'pages' | 'form'
+type Stage = 'start' | 'what' | 'crop' | 'pages' | 'form' | 'reading' | 'saved'
 const KINDS: { id: ScanChoice; label: string }[] = [
   { id: 'lab', label: 'Lab result' },
   { id: 'prescription', label: 'Prescription' },
@@ -86,6 +88,10 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
   const [forId, setForId] = useState('')
   const [kind, setKind] = useState<ScanChoice>('lab')
   const [date, setDate] = useState('')
+  const [draft, setDraft] = useState<ReadingDraft>(EMPTY_DRAFT)
+  const [failed, setFailed] = useState(false)
+  const [limited, setLimited] = useState(false)
+  const [reading, setReading] = useState(false)
   const cam = useRef<HTMLInputElement>(null)
   const pick = useRef<HTMLInputElement>(null)
   const urls = useRef<string[]>([])
@@ -140,7 +146,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
       if (!file.type.startsWith('image/')) throw new Error('type')
       setSrc(await decodePhoto(file))
       setQuad(defaultQuad())
-      setStage('crop')
+      setStage(pages.length ? 'crop' : 'what') // the first photo asks what it is; later pages are always paper
     } catch {
       setErr('That photo could not be opened. Take another, or choose a JPEG or PNG.')
     }
@@ -149,6 +155,24 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
 
   useEffect(() => { const f = takePendingFile(); if (f) void openFile(f) }, []) // eslint-disable-line react-hooks/exhaustive-deps -- once, on arrival from the Ask sheet
 
+  /** A device display: the whole photo goes to be read, nothing is cropped or stored as a paper. */
+  const readDevice = async () => {
+    if (!src) return
+    setErr('')
+    setReading(true)
+    setStage('reading')
+    try {
+      const r = await readDevicePhoto(client, await toBlob(src))
+      setDraft(r.draft)
+      setFailed(r.failed)
+      setLimited(r.limited === true)
+    } catch {
+      setDraft(EMPTY_DRAFT)
+      setFailed(true)
+      setLimited(false)
+    }
+    setReading(false)
+  }
   const rotate = () => { if (src) { setSrc(rotateCanvas(src)); setQuad(defaultQuad()) } }
   const retake = () => { setSrc(null); setStage(pages.length ? 'pages' : 'start'); openCamera() }
   /** Flatten the corners into a page. `again`: open the camera for the next one straight away. */
@@ -187,13 +211,13 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
 
   return (
     <>
-      <SubHeader title="Scan a paper" backHref="#health/papers" backLabel="Back" className="sc-hdr" />
+      <SubHeader title="Scan & Capture" backHref="#health/papers" backLabel="Back" className="sc-hdr" />
       <input ref={cam} type="file" accept="image/*" capture="environment" hidden data-testid="scan-camera" onChange={onPhoto} />
       <input ref={pick} type="file" accept="image/*" hidden data-testid="scan-file" onChange={onPhoto} />
       <div className="sc">
         {stage === 'start' && (
           <>
-            <p className="sub">Lay the paper flat in good light. Bantay keeps the pages on this phone, then reads them when you have signal.</p>
+            <p className="sub">Lay a paper flat in good light, or take a photo of your BP monitor or glucose meter. Papers stay on this phone until you have signal.</p>
             <div className="grp sc-actions">
               <button type="button" className="row" disabled={busy} onClick={() => void scan()}>
                 <Icon name={native ? 'scan' : 'camera'} /><b className="grow">{native ? 'Open the scanner' : 'Take a photo of page 1'}</b><Icon name="chev" />
@@ -202,6 +226,35 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
                 <Icon name="photo" /><b className="grow">Choose a photo</b><Icon name="chev" />
               </button>
             </div>
+          </>
+        )}
+
+        {stage === 'what' && src && (
+          <>
+            <h2 className="hd sc-h2">What is in the photo?</h2>
+            <div className="grp sc-actions">
+              <button type="button" className="row" onClick={() => setStage('crop')}><Icon name="scan" /><b className="grow">Paper</b><Icon name="chev" /></button>
+              <button type="button" className="row" onClick={() => void readDevice()}><Icon name="camera" /><span className="grow"><b>Device reading</b><span className="sub">BP monitor, glucose meter, scale</span></span><Icon name="chev" /></button>
+            </div>
+            <div className="sc-tools"><button type="button" className="dc-btn" onClick={retake}><Icon name="camera" size={18} /> Retake</button></div>
+          </>
+        )}
+
+        {stage === 'reading' && (reading
+          ? <p className="sub" role="status">Reading the numbers...</p>
+          : <>
+              <div className="dc-chips" role="group" aria-label="Whose reading">
+                <span className="sub">For</span>
+                {people.map((x) => <button key={x.id} type="button" className="dc-chip" aria-pressed={x.id === who} onClick={() => setForId(x.id)}>{short(x, people)}</button>)}
+              </div>
+              {people.length === 0 && <p className="sub">Open Bantay once with signal so it can list your family here.</p>}
+              {who && <ReadingConfirm draft={draft} failed={failed} limited={limited} personId={who} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
+            </>)}
+
+        {stage === 'saved' && (
+          <>
+            <p className="sub" role="status">Reading saved.</p>
+            <div className="sc-tools"><button type="button" className="dc-btn dc-primary" onClick={closeScan}>Done</button></div>
           </>
         )}
 

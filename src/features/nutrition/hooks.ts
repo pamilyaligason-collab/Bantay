@@ -1,7 +1,11 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { ldb, type FoodEntry, type NutritionGoal, type WaterEntry } from '../log/store'
+import { liveMedicines } from '../health/meds'
+import { useMedications } from '../health/useMedications'
+import { useTakenToday } from '../health/useActivity'
 import { goalOf } from './logic'
+import { supplementItems, type SuppItem } from './supplements'
 
 const NO_FOOD: FoodEntry[] = []
 const NO_WATER: WaterEntry[] = []
@@ -31,7 +35,7 @@ export function useWater(personId: string, days = 2): WaterEntry[] {
 }
 
 /** The person's limits (the defaults until one is saved), live. */
-export function useGoal(personId: string): { sodiumMg: number; waterMl: number } {
+export function useGoal(personId: string): ReturnType<typeof goalOf> {
   const [g, setG] = useState<NutritionGoal | undefined>()
   useEffect(() => {
     if (!personId) return setG(undefined)
@@ -39,4 +43,11 @@ export function useGoal(personId: string): { sodiumMg: number; waterMl: number }
     return () => sub.unsubscribe()
   }, [personId])
   return useMemo(() => goalOf(g), [g])
+}
+
+/** The supplements among this person's live medicines, with today's takes (see supplements.ts). */
+export function useSupplements(personId: string): SuppItem[] {
+  const meds = useMedications(personId)
+  const takes = useTakenToday(personId) as { name: string; medicationId?: string }[]
+  return useMemo(() => supplementItems(liveMedicines(meds, personId), takes), [meds, takes, personId])
 }

@@ -32,17 +32,17 @@ afterEach(cleanup)
 describe('History', () => {
   it('shows who, plain table words and field names; System when no actor', async () => {
     render(<History id={null} />)
-    expect(await screen.findByText('value_num, unit_raw')).toBeTruthy()
+    expect(await screen.findByText('Value, Unit')).toBeTruthy()
     expect(screen.getAllByText('Test Person', { selector: 'td' }).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Lab result').length).toBeGreaterThan(0)
     expect(screen.getByText('System')).toBeTruthy()
-    expect(screen.getByText('id_number')).toBeTruthy() // a column name, never a value
+    expect(screen.getByText('ID number')).toBeTruthy() // a column name, never a value
   })
 
   it('pages with Older and filters reset to the first page', async () => {
     h.state.audit = { data: Array.from({ length: 101 }, (_, i) => row(i + 1)), error: null }
     render(<History id={null} />)
-    await screen.findAllByText('value_num, unit_raw')
+    await screen.findAllByText('Value, Unit')
     expect(screen.getAllByRole('row')).toHaveLength(101) // header + 100: the 101st only proves "Older" exists
     fireEvent.click(screen.getByRole('button', { name: 'Older' }))
     await waitFor(() => expect(h.state.ranges).toContainEqual([100, 200]))
@@ -65,7 +65,7 @@ describe('History', () => {
   })
   it('with a person prop the query is fixed to that person and the pickers are hidden', async () => {
     render(<History id={null} person="p9" embedded />)
-    await screen.findByText('value_num, unit_raw')
+    await screen.findByText('Value, Unit')
     expect(h.state.eqs).toContainEqual(['person_id', 'p9'])
     expect(screen.queryByLabelText('Person')).toBeNull()
     expect(screen.queryByRole('columnheader', { name: 'Person' })).toBeNull()

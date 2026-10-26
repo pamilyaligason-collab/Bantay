@@ -1,0 +1,47 @@
+/* Weather scene: layers behind the weather text. Colours that matter for reading live in scene.ts (SKY, SCRIM) and are contrast-tested. */
+.wxs-host { position: relative; overflow: hidden; isolation: isolate; color: #fff; }
+.wxs-host > *:not(.wxs) { position: relative; z-index: 1; }
+.wxs-host .td-sub, .wxs-host .wx-k, .wxs-host .wx-sub, .wxs-host .td-k, .wxs-host .td-link { color: #fff; opacity: 1; }
+.wxs-host .td-wx-t, .wxs-host .wx-temp, .wxs-host .td-wxh-t { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
+
+.wxs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(to bottom, var(--wxs-a), var(--wxs-b)); }
+.wxs > * { position: absolute; }
+.wxs-scrim { inset: 0; background: rgba(5, 12, 28, var(--wxs-scrim)); } /* alpha from scene.ts SCRIM, same in light and dark */
+
+/* sun and moon sit top right, clear of the text */
+.wxs-sun { top: 8%; right: 9%; width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle, #FFF4C8 0 45%, #FFD66B 70%, rgba(255, 214, 107, 0) 72%); box-shadow: 0 0 40px 18px rgba(255, 214, 107, .45); animation: wxs-pulse 7s ease-in-out infinite alternate; }
+[data-tod="dawn"] > .wxs-sun, [data-tod="dusk"] > .wxs-sun { top: 36%; background: radial-gradient(circle, #FFE3B8 0 45%, #FF9F5B 70%, rgba(255, 159, 91, 0) 72%); box-shadow: 0 0 46px 22px rgba(255, 140, 80, .5); }
+.wxs-moon { top: 10%; right: 11%; width: 40px; height: 40px; border-radius: 50%; background: #F1F3FA; box-shadow: inset -9px -3px 0 0 #C7CDE0, 0 0 30px 10px rgba(200, 215, 255, .3); }
+.wxs-stars i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: wxs-twinkle 4s ease-in-out infinite alternate; }
+
+.wxs-cloud { position: absolute; left: -40%; height: auto; fill: #fff; animation: wxs-drift linear infinite; }
+[data-tod="night"] .wxs-cloud { fill: #9FB0D4; }
+[data-tod="dawn"] .wxs-cloud, [data-tod="dusk"] .wxs-cloud { fill: #FFD9C2; }
+[data-cond="rain"] .wxs-cloud, [data-cond="drizzle"] .wxs-cloud { fill: #C5CEDA; }
+[data-cond="storm"] .wxs-cloud { fill: #7C8598; }
+.wxs-haze { inset: 0; background: #8895A6; opacity: .5; }
+[data-tod="night"] > .wxs-haze { background: #1B2236; opacity: .55; }
+[data-cond="storm"] > .wxs-haze { background: #2A3040; opacity: .72; }
+
+.wxs-fog { inset: 0; }
+.wxs-fog i { position: absolute; left: -30%; width: 160%; height: 26%; border-radius: 50%; background: rgba(235, 240, 245, .55); filter: blur(14px); animation: wxs-fog 22s ease-in-out infinite alternate; }
+.wxs-fog i:nth-child(1) { top: 12%; } .wxs-fog i:nth-child(2) { top: 42%; animation-duration: 30s; animation-direction: alternate-reverse; } .wxs-fog i:nth-child(3) { top: 70%; animation-duration: 26s; }
+
+.wxs-rain { inset: 0; }
+.wxs-rain i { position: absolute; top: -18px; width: 2px; height: 16px; border-radius: 1px; background: linear-gradient(to bottom, rgba(220, 235, 255, 0), rgba(220, 235, 255, .85)); transform: rotate(12deg); animation: wxs-fall .9s linear infinite; }
+.wxs-flash { inset: 0; background: #fff; opacity: 0; animation: wxs-flash 7s steps(1, end) infinite; } /* one flash every 7 s, well under 3 per second */
+.wxs-heat { inset: 0; background: radial-gradient(ellipse 90% 70% at 50% 110%, rgba(255, 120, 30, .5), rgba(255, 120, 30, 0) 70%); animation: wxs-pulse 5s ease-in-out infinite alternate; }
+
+@keyframes wxs-drift { from { transform: translateX(0); } to { transform: translateX(260%); } }
+@keyframes wxs-fog { from { transform: translateX(-6%); } to { transform: translateX(6%); } }
+@keyframes wxs-fall { from { transform: translateY(0) rotate(12deg); } to { transform: translateY(210px) rotate(12deg); } }
+@keyframes wxs-twinkle { from { opacity: .35; } to { opacity: 1; } }
+@keyframes wxs-pulse { from { opacity: .8; } to { opacity: 1; } }
+@keyframes wxs-flash { 0%, 100% { opacity: 0; } 90% { opacity: .55; } 92% { opacity: 0; } 94% { opacity: .35; } 96% { opacity: 0; } }
+
+/* reduced motion: a still picture. Clouds hold position, rain and the lightning flash are left out. */
+@media (prefers-reduced-motion: reduce) {
+  .wxs *, .wxs { animation: none !important; }
+  .wxs-cloud { left: 8%; } .wxs-cloud:nth-of-type(2n) { left: 52%; }
+  .wxs-rain, .wxs-flash { display: none; }
+}

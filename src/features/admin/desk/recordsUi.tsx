@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { EDITABLE, type Table } from '../../records/api'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { driveUrl, EDITABLE, signedUrl, type Table } from '../../records/api'
 import { NOT_CONNECTED } from '../shared'
-import type { Row } from './recordsApi'
+import { filesOf, type PageFile, type Row } from './recordsApi'
 
 // Shared by Records and Queue: error words and the edit form for the EDITABLE columns.
 export const say = (e: string) =>
@@ -9,7 +9,17 @@ export const say = (e: string) =>
 
 const NUMERIC = new Set(['value_num', 'value_canonical', 'ref_low', 'ref_high', 'dose_no'])
 const isDate = (k: string) => /_(on|date)$/.test(k) || k === 'doc_date'
-export const label = (k: string) => k.replace(/_/g, ' ')
+/** Plain names for the database columns (audit R1). Anything not listed falls back to the column name with spaces. */
+export const FIELD_LABELS: Record<string, string> = {
+  name_raw: 'Test', value_num: 'Value', value_text: 'Value (text)', unit_raw: 'Unit', value_canonical: 'Value in standard unit', test_code: 'Test code',
+  collected_at: 'Collected on', flag: 'Flag', ref_low: 'Range low', ref_high: 'Range high', ref_text: 'Range (text)',
+  drug_raw: 'Medicine', generic_name: 'Generic name', brand: 'Brand', strength: 'Strength', form: 'Form', dose: 'Dose', frequency: 'How often', duration: 'Duration', quantity: 'Quantity', instructions: 'Instructions',
+  vaccine: 'Vaccine', dose_no: 'Dose number', given_on: 'Given on', facility: 'Facility', lot: 'Lot number',
+  modality: 'Scan type', body_region: 'Body part', findings: 'Findings', impression: 'Impression', reported_at: 'Reported on',
+  doc_date: 'Paper date', title: 'Title', rx_date: 'Prescription date', prescriber: 'Doctor', follow_up_on: 'Follow-up on',
+  document_id: 'Paper', prescription_id: 'Prescription', person_id: 'Person', line_no: 'Line', created_at: 'Added on', confirmed_at: 'Confirmed on', confirmed_by: 'Confirmed by', unclear: 'Unclear handwriting', confidence: 'Read confidence'
+}
+export const label = (k: string) => FIELD_LABELS[k] ?? k.replace(/_/g, ' ')
 export const fmt = (v: unknown): string => (v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : /^\d{4}-\d{2}-\d{2}T/.test(String(v)) ? String(v).slice(0, 10) : String(v))
 
 /** Changed editable fields only. Empty becomes null (unknown stays null, never 0); a bad number is an error. */
@@ -54,5 +64,76 @@ export function EditFields({ table, row, onSave, onCancel }: { table: string; ro
       {err && <p className="rc-err" role="alert">{err}</p>}
       <div className="dk-acts"><button className="dk-b go" type="submit" disabled={busy}>Save fix</button>{onCancel && <button className="dk-b" type="button" onClick={onCancel}>Cancel</button>}</div>
     </form>
+  )
+}
+
+/** A load that failed: say so with a Retry. Never show "nothing here" for an error (audit Q1). */
+export function LoadError({ children, onRetry }: { children: ReactNode; onRetry(): void }) {
+  return <div className="rc-lerr" role="alert"><p className="rc-err">{children}</p><button className="dk-b" onClick={onRetry}>Retry</button></div>
+}
+
+/** Page images or PDF of the paper, from the private bucket (60 s links) or Drive. */
+export function Preview({ docId }: { docId: string }) {
+  const [files, setFiles] = useState<PageFile[] | null>(null)
+  const [urls, setUrls] = useState<Record<string, string>>({})
+  const [bad, setBad] = useState(false)
+  const signRef = useRef<(f: PageFile) => void>(() => {})
+  const retried = useRef(new Set<string>())
+  useEffect(() => {
+    let live = true
+    retried.current = new Set()
+    setFiles(null); setUrls({}); setBad(false)
+    const sign = (f: PageFile) => { if (f.storage_path) void signedUrl(f.storage_path).then((u) => live && u.ok && setUrls((x) => ({ ...x, [f.id]: u.data }))) }
+    let timer: ReturnType<typeof setInterval> | undefined
+    void filesOf(docId).then((r) => {
+      if (!live) return
+      if (!r.ok) return setBad(true)
+      setFiles(r.data)
+      signRef.current = sign
+      r.data.forEach(sign)
+      timer = setInterval(() => r.data.forEach(sign), 50_000) // links last 60 s; renew while the paper is on screen
+    })
+    return () => { live = false; clearInterval(timer) }
+  }, [docId])
+  if (bad) return <p className="rc-err" role="alert">Could not load the source pages.</p>
+  if (!files) return <p className="dk-sub">Loading the source page...</p>
+  if (files.length === 0) return <p className="dk-sub">No source page on file.</p>
+  return (
+    <div className="rc-pages">
+      {files.map((f) => {
+        const d = f.drive_file_id ? driveUrl(f.drive_file_id) : null
+        const u = urls[f.id]
+        return (
+          <figure key={f.id} className="rc-page">
+            {u && f.mime.startsWith('image/') && <img src={u} alt={`Source page ${f.name}`} onError={() => { if (!retried.current.has(f.id)) { retried.current.add(f.id); signRef.current(f) } }} />}
+            {u && f.mime === 'application/pdf' && <iframe src={u} title={`Source page ${f.name}`} />}
+            {f.storage_path && !u && <p className="dk-sub">Loading {f.name}...</p>}
+            {d && !f.storage_path && <a className="dk-b" href={d} target="_blank" rel="noreferrer">Open {f.name} in Drive</a>}
+          </figure>
+        )
+      })}
+    </div>
+  )
+}
+
+/** Tab strip that scrolls sideways. A fade and a "More" button show when tabs are cut off (audit P4); `nav` renders links, otherwise a tablist. */
+export function TabScroller({ nav, label: aria, children }: { nav: boolean; label: string; children: ReactNode }) {
+  const el = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const t = el.current
+    if (!t) return
+    const measure = () => setMore(t.scrollLeft + t.clientWidth < t.scrollWidth - 4)
+    measure()
+    t.addEventListener('scroll', measure, { passive: true })
+    window.addEventListener('resize', measure)
+    return () => { t.removeEventListener('scroll', measure); window.removeEventListener('resize', measure) }
+  }, [children])
+  const props = { ref: el, className: 'dk-tabs' } as const
+  return (
+    <div className="rc-tabsw" data-more={more || undefined}>
+      {nav ? <nav {...props} aria-label={aria}>{children}</nav> : <div {...props} role="tablist" aria-label={aria}>{children}</div>}
+      {more && <button className="dk-b rc-more" aria-label="Show more kinds of record" onClick={() => el.current?.scrollBy({ left: 240, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })}>More &rsaquo;</button>}
+    </div>
   )
 }

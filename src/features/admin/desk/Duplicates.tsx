@@ -3,6 +3,7 @@ import { KIND } from '../../records/ConfirmSheet'
 import { NOT_CONNECTED } from '../shared'
 import type { PageProps } from './types'
 import { Empty, PageHead, Tag, useConfirm, useToast } from './ui'
+import { LoadError } from './recordsUi'
 import { useDeskPeople } from './people'
 import { applyKeep, countsFor, loadDuplicates, planKeep, restore, rxDiff, type DupGroup, type Kids } from './recordsApi'
 import './records.css'
@@ -19,7 +20,7 @@ export default function Duplicates(_: PageProps) {
 
   const load = async () => {
     const r = await loadDuplicates()
-    if (r.ok) { setErr(''); setData(r.data) } else { setErr(r.error === 'not_connected' ? NOT_CONNECTED : 'Could not load duplicates. Try again.'); setData({ groups: [], kids: { labs: [], vaccinations: [], imaging: [], items: [], prescriptions: [] } }) }
+    if (r.ok) { setErr(''); setData(r.data) } else setErr(r.error === 'not_connected' ? NOT_CONNECTED : 'Could not load duplicates. Try again.') // keep what is on screen; never say "no duplicates" after an error
   }
   useEffect(() => { void load() }, [])
 
@@ -41,9 +42,9 @@ export default function Duplicates(_: PageProps) {
 
   return (
     <>
-      <PageHead title="Duplicates" sub={data ? `${data.groups.length} ${data.groups.length === 1 ? 'group' : 'groups'} of papers that share a file` : 'Loading...'} />
-      {err && <p className="rc-err" role="alert">{err}</p>}
-      {data === null ? <Empty>Loading...</Empty> : data.groups.length === 0 ? <Empty>No duplicate papers.</Empty> : data.groups.map((g, gi) => {
+      <PageHead title="Duplicates" sub={data ? `${data.groups.length} ${data.groups.length === 1 ? 'group' : 'groups'} of papers that share a file` : err ? undefined : 'Loading...'} />
+      {err && <LoadError onRetry={() => void load()}>{err}</LoadError>}
+      {data === null ? (err ? null : <Empty>Loading...</Empty>) : data.groups.length === 0 ? <Empty>No duplicate papers.</Empty> : data.groups.map((g, gi) => {
         const diffs = g.docs.slice(1).flatMap((d, i) => rxDiff(data.kids.items.filter((l) => l.document_id === g.docs[0].id), data.kids.items.filter((l) => l.document_id === d.id)).map((x) => ({ ...x, other: i + 2 })))
         return (
           <section key={g.key} className="rc-group" aria-label={`Group ${gi + 1}`}>

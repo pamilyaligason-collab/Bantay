@@ -1,14 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { driveUrl, EDITABLE, settleDocument, signedUrl, updateRow, type Res, type Table } from '../../records/api'
+import { EDITABLE, settleDocument, updateRow, type Res, type Table } from '../../records/api'
 import { deskHref, type PageProps } from './types'
-import { Empty, Filters, PageHead, Panel, Skeleton, SortTh, statusTone, Tag, useConfirm, useSort, useToast } from './ui'
+import { BulkBar, Empty, Filters, PageHead, Panel, Skeleton, SortTh, statusTone, Tag, useConfirm, useSort, useToast } from './ui'
 import { useDeskPeople } from './people'
 import Ids from './Ids'
-import { EditFields, fmt, label, say } from './recordsUi'
+import { EditFields, fmt, label, LoadError, Preview, say, TabScroller } from './recordsUi'
 import {
-  CAP, countKinds, docOf, docStatuses, filesOf, FLAGS, isAbnormal, KINDS, labNumber, labRange, labValue, listItems, listKind, parentDoc, reopenDocument,
+  CAP, countKinds, docOf, docStatuses, isAbnormal, KINDS, labNumber, labRange, labTag, labValue, listItems, listKind, parentDoc, reopenDocument,
   resolveTab, restore, searchRows, setStatusFor, sourceNames, TABS, toChanges,
-  type Change, type Filter, type Kind, type KindKey, type KRow, type PageFile, type Status, type TabKey
+  type Change, type Filter, type Kind, type KindKey, type KRow, type Status, type TabKey
 } from './recordsApi'
 import './records.css'
 
@@ -24,42 +24,6 @@ const panelTitle = (r: KRow) => {
   return `${k.label}: ${primaryText(r, primaryKey(k))}`
 }
 
-/** Page images or PDF of the paper, from the private bucket (60 s links) or Drive. */
-function Preview({ docId }: { docId: string }) {
-  const [files, setFiles] = useState<PageFile[] | null>(null)
-  const [urls, setUrls] = useState<Record<string, string>>({})
-  const [bad, setBad] = useState(false)
-  useEffect(() => {
-    let live = true
-    void filesOf(docId).then(async (r) => {
-      if (!live) return
-      if (!r.ok) return setBad(true)
-      setFiles(r.data)
-      for (const f of r.data) if (f.storage_path) void signedUrl(f.storage_path).then((u) => live && u.ok && setUrls((x) => ({ ...x, [f.id]: u.data })))
-    })
-    return () => { live = false }
-  }, [docId])
-  if (bad) return <p className="rc-err" role="alert">Could not load the source pages.</p>
-  if (!files) return <p className="dk-sub">Loading the source page...</p>
-  if (files.length === 0) return <p className="dk-sub">No source page on file.</p>
-  return (
-    <div className="rc-pages">
-      {files.map((f) => {
-        const d = f.drive_file_id ? driveUrl(f.drive_file_id) : null
-        const u = urls[f.id]
-        return (
-          <figure key={f.id} className="rc-page">
-            {u && f.mime.startsWith('image/') && <img src={u} alt={`Source page ${f.name}`} />}
-            {u && f.mime === 'application/pdf' && <iframe src={u} title={`Source page ${f.name}`} />}
-            {f.storage_path && !u && <p className="dk-sub">Loading {f.name}...</p>}
-            {d && !f.storage_path && <a className="dk-b" href={d} target="_blank" rel="noreferrer">Open {f.name} in Drive</a>}
-          </figure>
-        )
-      })}
-    </div>
-  )
-}
-
 // ---- table columns ----
 type Col = { key: string; label: string; get(r: KRow): string | number | null; cell?(r: KRow): ReactNode; primary?: boolean }
 type Ctx = { nameOf(id: string | null | undefined): string; names: Map<string, string>; everyone: boolean }
@@ -73,7 +37,7 @@ function colsFor(kind: Kind, o: Ctx): Col[] {
       { key: 'name_raw', label: 'Test', primary: true, get: (r) => fmt(r.name_raw) || null },
       { key: 'value', label: 'Value', get: (r) => labNumber(r), cell: (r) => labValue(r) },
       { key: 'range', label: 'Range', get: (r) => labRange(r) || null },
-      { key: 'flag', label: 'Flag', get: (r) => (r.flag as string | null) ?? null, cell: (r) => { const f = FLAGS[r.flag as string]; return f ? <Tag tone={f.tone}>{f.word}</Tag> : null } },
+      { key: 'flag', label: 'Flag', get: (r) => labTag(r)?.word ?? null, cell: (r) => { const f = labTag(r); return f ? <Tag tone={f.tone}>{f.word}</Tag> : null } },
       ...who, status,
       { key: 'source', label: 'Source', get: (r) => o.names.get(r.document_id as string) ?? null }
     ]
@@ -324,19 +288,17 @@ export default function Records({ id, sub, embedded }: PageProps) {
         </>}
         {peopleErr && !embedded && <span className="rc-err" role="alert">Could not load people.</span>}
       </Filters>
-      {embedded
-        ? <div className="dk-tabs" role="tablist" aria-label="Kinds of record">{TABS.map((t) => <button key={t.key} role="tab" aria-selected={t.key === tab.key} onClick={() => setLocal(t.key)}>{t.label}{' '}{badge(t)}</button>)}</div>
-        : <nav className="dk-tabs" aria-label="Kinds of record">{TABS.map((t) => <a key={t.key} href={deskHref('records', person ?? 'all', t.key)} aria-current={t.key === tab.key ? 'page' : undefined}>{t.label}{' '}{badge(t)}</a>)}</nav>}
-      {pickedRows.length > 0 && (
-        <div className="rc-bulk" role="region" aria-label="Bulk actions">
-          <b>{pickedRows.length} selected</b>
-          <button className="dk-b go" disabled={busy} onClick={() => ask('confirmed')}>Confirm {pickedRows.length}</button>
-          <button className="dk-b bad" disabled={busy} onClick={() => ask('rejected')}>Reject {pickedRows.length}</button>
-          <button className="dk-b" onClick={() => setPicked(new Set())}>Clear</button>
-        </div>
-      )}
-      {err && <p className="rc-err" role="alert">{err}</p>}
-      <div role={embedded ? 'tabpanel' : undefined} aria-label={embedded ? tab.label : undefined}>{body}</div>
+      <TabScroller nav={!embedded} label="Kinds of record">
+        {embedded
+          ? TABS.map((t) => <button key={t.key} role="tab" aria-selected={t.key === tab.key} onClick={() => setLocal(t.key)}>{t.label}{' '}{badge(t)}</button>)
+          : TABS.map((t) => <a key={t.key} href={deskHref('records', person ?? 'all', t.key)} aria-current={t.key === tab.key ? 'page' : undefined}>{t.label}{' '}{badge(t)}</a>)}
+      </TabScroller>
+      <div role={embedded ? 'tabpanel' : undefined} aria-label={embedded ? tab.label : undefined}>{err ? <LoadError onRetry={reload}>{err}</LoadError> : body}</div>
+      <BulkBar count={pickedRows.length}>
+        <button className="dk-b go" disabled={busy} onClick={() => ask('confirmed')}>Confirm {pickedRows.length}</button>
+        <button className="dk-b bad" disabled={busy} onClick={() => ask('rejected')}>Reject {pickedRows.length}</button>
+        <button className="dk-b" onClick={() => setPicked(new Set())}>Clear</button>
+      </BulkBar>
       {sel && <Detail key={rk(sel)} row={sel} title={panelTitle(sel)} person={nameOf(sel.person_id as string)} busy={busy} onClose={() => setSel(null)} onDecide={(n) => void apply([sel], n)} onFix={(p) => fix(sel, p)} />}
       {confirm.node}
       {toast.node}

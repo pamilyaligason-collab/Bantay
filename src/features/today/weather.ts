@@ -23,6 +23,8 @@ export function toWx(fc: Forecast, offline = false): Wx {
     humidity: fc.current.humidity,
     feels: fc.current.feels,
     uvMax: fc.daily[0]?.uvMax ?? null,
+    sunrise: fc.daily[0]?.sunrise ?? null,
+    sunset: fc.daily[0]?.sunset ?? null,
     offline
   }
 }

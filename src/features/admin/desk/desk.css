@@ -39,9 +39,10 @@ kbd { font: 600 12px var(--f-ui); background: var(--card2); border: 1px solid va
 .wa-me { position: relative; }
 .wa-me summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; border-radius: 8px; cursor: pointer; }
 .wa-me summary::-webkit-details-marker { display: none; }
-.wa-av { width: 32px; height: 32px; border-radius: 50%; background: var(--soft); color: var(--green); display: grid; place-items: center; font-weight: 700; }
+.wa-av { width: 32px; height: 32px; border-radius: 50%; background: var(--on-green); color: var(--green); display: grid; place-items: center; font-weight: 700; }
 .wa-pop { position: absolute; right: 0; top: 50px; min-width: 220px; display: grid; padding: 6px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
 .wa-pop a, .wa-pop button { min-height: 40px; display: flex; align-items: center; padding: 0 10px; border: 0; background: none; border-radius: 6px; color: var(--ink); text-decoration: none; text-align: left; }
+.wa-pop .wa-theme { display: none; }
 .wa-pop a:hover, .wa-pop button:hover { background: var(--soft); }
 
 .wa-side { position: sticky; top: var(--wa-top); height: calc(100vh - var(--wa-top)); overflow-y: auto; background: var(--card); border-right: 1px solid var(--line); padding: 8px 0 12px; display: flex; flex-direction: column; }
@@ -81,6 +82,8 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
 .dk-b.go { background: var(--green); border-color: var(--green); color: var(--on-green); }
 .dk-b.go:hover { background: var(--green2); }
 .dk-b.bad { background: var(--card); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+.dk-b.bad-solid { background: #B3261E; border-color: #B3261E; color: #fff; } /* fixed: white on it is 6.9:1 in light and dark (dark --red is only 3.6:1) */
+.dk-b.bad-solid:hover { background: #8C1D18; }
 .dk-b:disabled { opacity: .55; cursor: default; }
 .dk-chip { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--ink); font-weight: 600; font-size: 13px; }
 .dk-chip[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); }
@@ -119,6 +122,10 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
 .dk-table tr.dk-click { cursor: pointer; }
 .dk-sort { all: unset; cursor: pointer; display: inline-flex; align-items: center; min-height: 40px; }
 .dk-sort:focus-visible { outline: 2px solid var(--focus); }
+.dk-sort-i { display: inline-grid; width: 14px; margin-left: 4px; opacity: 0; transform: rotate(-90deg); transition: transform var(--dur-base) var(--ease-out); }
+.dk-sort-i.on { opacity: 1; transform: rotate(-90deg); } .dk-sort-i.on.desc { transform: rotate(90deg); }
+.wa-skel-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding: 24px; }
+.wa-skel-row i { height: 96px; border-radius: 8px; background: var(--card2); }
 .dk-rowbtn { all: unset; cursor: pointer; font-weight: 600; min-height: 40px; display: inline-flex; align-items: center; }
 .dk-rowbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
@@ -131,7 +138,7 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
 .dk-skel { display: grid; gap: 8px; padding: 12px 16px; }
 .dk-skel i { height: 28px; border-radius: 6px; background: linear-gradient(90deg, var(--card2), var(--fill), var(--card2)); background-size: 200% 100%; animation: dk-shine 1.2s linear infinite; }
 @keyframes dk-shine { to { background-position: -200% 0; } }
-@media (prefers-reduced-motion: reduce) { .dk-skel i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .dk-skel i { animation: none; } .dk-sort-i { transition: none; } }
 
 /* Detail panel (right side), confirm dialog, toast */
 .dk-panel { position: fixed; top: var(--wa-top); right: 0; bottom: 0; width: 460px; max-width: 100%; background: var(--card); border-left: 1px solid var(--line); box-shadow: -8px 0 30px rgb(20 30 20 / .12); z-index: 30; display: flex; flex-direction: column; }
@@ -142,8 +149,9 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
 .dk-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
 .dk-form .dk-wide { grid-column: 1 / -1; }
 .dk-scrim { position: fixed; inset: 0; background: rgb(10 15 10 / .45); z-index: 40; display: grid; place-items: center; padding: 16px; }
-.dk-confirm { background: var(--card); border-radius: 12px; padding: 20px; max-width: 460px; width: 100%; box-shadow: var(--shadow); display: grid; gap: 14px; }
+.dk-confirm { background: var(--card); border-radius: 8px; padding: 20px; max-width: 460px; width: 100%; box-shadow: var(--shadow); display: grid; gap: 14px; }
 .dk-confirm p { margin: 0; }
+.dk-confirm .dk-b { min-height: 48px; }
 .dk-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 12px; }
 .dk-toast:not(:empty) { background: var(--ink); color: var(--ground); padding: 4px 4px 4px 16px; border-radius: 8px; font-weight: 600; box-shadow: var(--shadow); }
 .dk-toast .dk-b { background: none; border: 0; color: var(--amber); }
@@ -162,8 +170,10 @@ textarea.dk-in { padding: 8px 10px; min-height: 72px; resize: vertical; }
 @media (max-width: 767px) {
   .wa { grid-template-columns: minmax(0, 1fr); }
   .wa-burger { display: grid; }
-  .wa-brand span, .wa-name { display: none; }
+  .wa-brand span, .wa-name, .wa-hide-sm { display: none; }
+  .wa-pop .wa-theme { display: flex; gap: 8px; min-height: 48px; }
   .wa-search { max-width: none; }
+  .wa-skel-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wa-side { position: fixed; top: var(--wa-top); left: 0; bottom: 0; height: auto; width: 260px; z-index: 25; transform: translateX(-100%); transition: transform var(--dur-base) var(--ease-out); }
   .wa-menu .wa-side { transform: none; }
   .wa .wa-grp-l, .wa .wa-nav span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }

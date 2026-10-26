@@ -57,6 +57,7 @@ const violations = async (page: Page) => (await new AxeBuilder({ page }).withTag
 const SIZES = [{ width: 1280, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]
 for (const size of SIZES) {
   test(`calendar month, week and agenda (${size.width}x${size.height})`, async ({ page }) => {
+    test.setTimeout(90_000) // six axe passes plus three views: 20-30 s on a busy machine, over the 30 s default
     const min = size.width >= 1280 ? 40 : 44
     await page.setViewportSize(size)
     await mock(page)
@@ -137,3 +138,18 @@ test('add event sends the right insert and offers Undo', async ({ page }) => {
 })
 
 // The Schedule and reminders card is covered by ScheduleCard.test.tsx: Home (W1) mounts it, and on the W0 base Home is still a stub.
+
+// Screenshots for the review (SHOTS=1 npx playwright ...): 1440x900 and 390x844, light and dark.
+const SHOT_SIZES = [{ width: 1440, height: 900 }, { width: 390, height: 844 }]
+for (const size of process.env.SHOTS ? SHOT_SIZES : []) for (const scheme of ['light', 'dark'] as const) {
+  test(`shots calendar ${size.width} ${scheme}`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await page.emulateMedia({ colorScheme: scheme })
+    await mock(page)
+    await skipOnboarding(page)
+    await page.goto('/admin#/calendar')
+    await expect(page.getByRole('heading', { name: 'Calendar', level: 1 })).toBeVisible()
+    await page.waitForTimeout(1500)
+    await page.screenshot({ path: `docs/session-9/shots/adm-be/calendar-${size.width}-${scheme}.png`, fullPage: true })
+  })
+}

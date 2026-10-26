@@ -6,8 +6,8 @@ const base: RecommendInput = { age: 70, conditions: [], gateOk: true, doctorOk: 
 const rec = (o: Partial<RecommendInput> = {}) => recommend({ ...base, ...o })
 
 describe('moves content', () => {
-  it('has about 30 moves, unique ids, 3 to 5 steps and a stop-if each', () => {
-    expect(MOVES.length).toBeGreaterThanOrEqual(28)
+  it('has 55 or more moves, unique ids, 3 to 5 steps and a stop-if each', () => {
+    expect(MOVES.length).toBeGreaterThanOrEqual(55)
     expect(new Set(MOVES.map((m) => m.id)).size).toBe(MOVES.length)
     for (const m of MOVES) {
       expect(m.steps.length).toBeGreaterThanOrEqual(3)
@@ -16,6 +16,30 @@ describe('moves content', () => {
       expect(m.durationSec != null || m.reps != null).toBe(true)
       expect(m.tl.length).toBeGreaterThan(2)
     }
+  })
+})
+
+describe('mobility and videos', () => {
+  it('has a mobility group of 8 or more, and every video is a valid id with its channel and title', () => {
+    expect(MOVES.filter((m) => m.group === 'mobility').length).toBeGreaterThanOrEqual(8)
+    const withVideo = MOVES.filter((m) => m.video)
+    expect(withVideo.length).toBeGreaterThanOrEqual(25)
+    for (const m of withVideo) {
+      expect(m.video!.id).toMatch(/^[A-Za-z0-9_-]{11}$/)
+      expect(m.video!.channel.length).toBeGreaterThan(2)
+      expect(m.video!.title.length).toBeGreaterThan(2)
+    }
+  })
+  it('available lists every move allowed today and includes the picks; osteoporosis keeps twists out', () => {
+    const r = rec()
+    expect(r.available.length).toBeGreaterThan(20)
+    expect(r.picks.every((m) => r.available.includes(m))).toBe(true)
+    expect(r.available.every((m) => m.level === 1)).toBe(true)
+    const o = rec({ conditions: ['osteoporosis'], doctorOk: true, age: 55 })
+    expect(o.available.some((m) => m.avoidIf.includes('twist') || m.posture === 'floor')).toBe(false)
+  })
+  it('a gate or a rest day has nothing available', () => {
+    expect(rec({ gateOk: false }).available).toEqual([])
   })
 })
 

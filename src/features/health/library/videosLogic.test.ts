@@ -12,8 +12,8 @@ describe('videos playlist', () => {
     expect(playable({ ...real, placeholder: true })).toBe(false)
     expect(playable({ ...real, id: 'short' })).toBe(false)
   })
-  it('the six official videos are in and playable, with unknown length kept null', () => {
-    expect(VIDEOS).toHaveLength(6)
+  it('the twelve official videos are in and playable, with unknown length kept null', () => {
+    expect(VIDEOS).toHaveLength(12)
     expect(VIDEOS.every(playable)).toBe(true)
     expect(videosAvailable()).toBe(true)
     expect(VIDEOS.every((v) => v.minutes === null || (Number.isFinite(v.minutes) && v.minutes > 0))).toBe(true)

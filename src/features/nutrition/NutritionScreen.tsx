@@ -6,9 +6,10 @@ import { PersonChips } from '../records/PersonChips'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { FAIL_TEXT } from '../today/actions'
+import NutrientsToday from './NutrientsToday'
 import { removeFood, saveGoal } from './actions'
 import { useFood, useGoal, useWater } from './hooks'
-import { dailySodium, fmt, foodByKey, GOAL_NOTE, onDay, saltGrams, SODIUM_OPTIONS, WHO_SALT_URL, MEALS } from './logic'
+import { dailySodium, fmt, foodByKey, GOAL_NOTE, onDay, portionWord, saltGrams, SODIUM_OPTIONS, WHO_SALT_URL, MEALS } from './logic'
 import { SaltSummary } from './SaltSummary'
 import WaterPanel from './WaterPanel'
 import './nutrition.css'
@@ -16,7 +17,7 @@ import './nutrition.css'
 const NO_DRAFTS: Record<string, number> = {}
 const DAY = 86_400_000
 
-/** Health > Food and salt (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
+/** Health > Food and nutrients (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
 export default function NutritionScreen() {
   const { ready, people, ownId, personId, setPersonId, readings, canMark } = useHealthPerson()
   const now = useMemo(() => new Date(), [])
@@ -49,17 +50,19 @@ export default function NutritionScreen() {
 
   return (
     <>
-      <SubHeader title="Food and salt" backHref="#health" backLabel="Back to Health" />
+      <SubHeader title="Food and nutrients" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
       {ready && personId && (
         <div className="nu" style={{ marginTop: 12 }}>
           <section className="card nu-card" aria-labelledby="nu-salt">
-            <h2 id="nu-salt" className="td-sech">Salt today</h2>
+            <h2 id="nu-salt" className="td-sech">Salt and meals today</h2>
             <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="nu-salt" />
             <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={mine} />
             {mine && <div className="nu-act"><a className="nu-ghost" href="#today"><Icon name="meal" size={20} />Log a meal from Today</a></div>}
           </section>
+
+          <NutrientsToday personId={personId} entries={today} sodiumMg={goal.sodiumMg} potassiumLimit={goal.potassiumMg} sex={goal.sex} canEdit={canMark} name={name} />
 
           <section className="card nu-card" aria-labelledby="nu-limit">
             <h2 id="nu-limit" className="td-sech">Daily salt limit</h2>
@@ -100,7 +103,7 @@ export default function NutritionScreen() {
                   <li className="row" key={e.clientId}>
                     <span className="grow">
                       {foodByKey(e.foodKey)?.tl ?? e.name}
-                      <span className="sub">{MEALS.find((m) => m.id === e.meal)?.en} · {e.portion === 0.5 ? 'Small' : e.portion === 1.5 ? 'Large' : e.portion === 1 ? 'Normal' : `x${e.portion}`}{e.sodiumMg != null ? ` · ${fmt(e.sodiumMg)} mg sodium` : ' · no salt number'}</span>
+                      <span className="sub">{MEALS.find((m) => m.id === e.meal)?.en} · {portionWord(e.portion)}{e.sodiumMg != null ? ` · ${fmt(e.sodiumMg)} mg sodium` : ' · no salt number'}</span>
                     </span>
                     {canMark && <button type="button" className="nu-ghost" onClick={() => void remove(e.id)} aria-label={`Remove ${foodByKey(e.foodKey)?.tl ?? e.name}`}>Remove</button>}
                   </li>

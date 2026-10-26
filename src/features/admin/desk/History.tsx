@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { when } from '../shared'
+import { dateTime, statusLabel } from '../shared'
 import { useDeskPeople } from './people'
-import { ACTIONS, dedupeCounts, listAudit, listDedupe, noAuditTable, PAGE, TABLE_WORDS, tableWords, type AuditRow, type DedupeRow } from './logsApi'
+import { ACTIONS, dedupeCounts, fieldWord, listAudit, listDedupe, noAuditTable, PAGE, TABLE_WORDS, tableWords, type AuditRow, type DedupeRow } from './logsApi'
 import type { PageProps } from './types'
 import { Empty, Filters, PageHead, Tag, type Tone } from './ui'
 import './files.css'
@@ -66,7 +66,7 @@ function Audit({ person }: { person?: string }) {
         <label className="fl-sr" htmlFor="hi-action">Action</label>
         <select id="hi-action" className="dk-in" value={f.action} onChange={(e) => set('action', e.target.value)}>
           <option value="">All actions</option>
-          {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          {ACTIONS.map((a) => <option key={a} value={a}>{statusLabel(a)}</option>)}
         </select>
         <label className="fl-sr" htmlFor="hi-from">From date</label>
         <input id="hi-from" className="dk-in" type="date" value={f.from} max={f.to || undefined} onChange={(e) => set('from', e.target.value)} />
@@ -78,18 +78,18 @@ function Audit({ person }: { person?: string }) {
       {state === 'ok' && rows && !shown.length && <Empty>No changes match.</Empty>}
       {state === 'ok' && !!shown.length && (
         <div className="dk-scrollx" tabIndex={0} role="region" aria-label="Changes, newest first">
-          <table className="dk-table">
+          <table role="table" className="dk-table dk-cardtab">
             <caption className="fl-sr">Changes, newest first</caption>
-            <thead><tr>{['When', 'Who', 'Action', 'Table', ...(person ? [] : ['Person']), 'Fields'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
-            <tbody>
+            <thead role="rowgroup"><tr role="row">{['When', 'Who', 'Action', 'Table', ...(person ? [] : ['Person']), 'Fields'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+            <tbody role="rowgroup">
               {shown.map((r) => (
-                <tr key={r.id}>
-                  <th scope="row" className="fl-name">{when(r.at)}</th>
-                  <td>{actor(r.actor)}</td>
-                  <td><Tag tone={ACTION_TONE[r.action] ?? 'plain'}>{r.action}</Tag></td>
-                  <td>{tableWords(r.tbl)}</td>
-                  {!person && <td>{r.person_id ? nameOf(r.person_id) : ''}</td>}
-                  <td className="fl-fields">{(r.fields ?? []).join(', ')}</td>
+                <tr role="row" key={r.id}>
+                  <th role="rowheader" scope="row" className="fl-name">{dateTime(r.at)}</th>
+                  <td role="cell" data-label="Who">{actor(r.actor)}</td>
+                  <td role="cell" data-label="Action"><Tag tone={ACTION_TONE[r.action] ?? 'plain'}>{statusLabel(r.action)}</Tag></td>
+                  <td role="cell" data-label="Table">{tableWords(r.tbl)}</td>
+                  {!person && <td role="cell" data-label="Person">{r.person_id ? nameOf(r.person_id) : ''}</td>}
+                  <td role="cell" data-label="Fields" className="fl-fields">{(r.fields ?? []).map(fieldWord).join(', ')}</td>
                 </tr>
               ))}
             </tbody>
@@ -135,10 +135,10 @@ function Dedupe() {
       <div className="dk-scrollx" tabIndex={0} role="region" aria-label="Clean-up rows, newest first">
         <table className="dk-table">
           <caption className="fl-sr">Clean-up rows, newest first</caption>
-          <thead><tr>{['When', 'Table', 'Row', 'Old status'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
+          <thead><tr>{['When', 'Table', 'Row', 'Old status'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
           <tbody>
             {(rows ?? []).slice(0, 100).map((r) => (
-              <tr key={r.id}><th scope="row" className="fl-name">{when(r.at)}</th><td>{tableWords(r.tbl)}</td><td className="fl-num">{short(r.row_id)}</td><td>{r.old_status ?? 'none'}</td></tr>
+              <tr key={r.id}><th scope="row" className="fl-name">{dateTime(r.at)}</th><td>{tableWords(r.tbl)}</td><td className="fl-num">{short(r.row_id)}</td><td>{r.old_status ?? 'none'}</td></tr>
             ))}
           </tbody>
         </table>
