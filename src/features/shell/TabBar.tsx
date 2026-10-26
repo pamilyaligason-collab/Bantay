@@ -1,5 +1,7 @@
 import { Fragment, useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { AskSheet } from './AskSheet'
+import { useUnseenAlerts } from '../notify/useAlerts'
+import '../notify/notify.css'
 import { useKv } from './useKv'
 import { Icon, type IconName } from './Icon'
 import type { Tab } from './routes'
@@ -15,6 +17,7 @@ const ITEMS: { id: Tab; label: string; icon: IconName }[] = [
 /** Five slots, mockup order: Today, Health, raised Ask, Family, Safety. Ask opens the assistant until it becomes a tab (P6). */
 export function TabBar({ active }: { active: Tab | null }) {
   const [sheet, setSheet] = useState(false)
+  const unseen = useUnseenAlerts() // family alerts not yet seen: badge on Family (D-78)
   const [seen, setSeen, loaded] = useKv('askHintSeen', false)
   const open = () => { setSheet(true); if (!seen) setSeen(true) }
   const onClose = useCallback(() => { if (history.state?.bantayAsk) history.back(); else setSheet(false) }, [])
@@ -41,6 +44,7 @@ export function TabBar({ active }: { active: Tab | null }) {
           <button type="button" aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
             <Icon name={t.icon} />
             {t.label}
+            {t.id === 'family' && unseen > 0 && <span className="sh-tabbadge" role="img" aria-label={`${unseen} new alert${unseen === 1 ? '' : 's'}`} />}
           </button>
         </Fragment>
       ))}

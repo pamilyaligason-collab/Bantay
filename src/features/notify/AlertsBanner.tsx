@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import { ASK_KEY, enableAlerts, ensureSubscribed, kvGet, markAsked, reAskDue, vapidKey } from './alerts'
 
-export const NATIVE_NOTICE = 'Family alerts do not reach the Android app yet. Keep the browser app for missed-dose and storm alerts.'
+export const NATIVE_NOTICE = 'Family alerts show here when you open Bantay.'
 
 type Mode = 'off' | 'unsubscribed'
 
@@ -22,7 +22,7 @@ export default function AlertsBanner() {
       setMode(need)
     })()
   }, [native])
-  // D-78 interim: the Android app has no push, so say so plainly instead of offering alerts it cannot deliver.
+  // D-78: the Android app has no server push. Family alerts are rows seen in Bantay (bell, Family, Today); never a promise of a lock-screen alert.
   if (native) return <div className="grp" role="region" aria-label="Family alerts" style={{ padding: 16 }}><span className="sub">{NATIVE_NOTICE}</span></div>
   if (!mode) return null
   const off = mode === 'off'

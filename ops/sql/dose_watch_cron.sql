@@ -2,6 +2,9 @@
 -- Deploy with --no-verify-jwt; the secret is the gate. Set the function secrets: DOSE_WATCH_CRON_SECRET (32+ chars),
 -- VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (same values as broadcast).
 -- Store the same secret in vault first (SQL editor only):  select vault.create_secret('<secret>', 'dose_watch_cron_secret');
+-- Session 10 (D-78): the same function also delivers family alerts. The 0031 and 0035 triggers POST {"mode":"flush"} to it with this vault secret, so the secret
+-- MUST exist before 0031 and 0035 are applied. Optional function secret DOSE_WATCH_AFTER_MIN (default 30; 120 restores the old window).
+-- The schedule below is unchanged: re-run this file only if you want to; nothing in its body changed.
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 do $$ begin
