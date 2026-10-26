@@ -11,7 +11,7 @@ import { callFirstContact } from './call'
 import { normalizeContacts } from './contacts'
 import { addHistory, HISTORY_KEY, type SosEvent } from './history'
 import { sosPosition, type SosFix } from './locate'
-import { mapLink, SAFE_BODY, smsUris, sosBody } from './sms'
+import { mapLink, SAFE_BODY, smsUris, sosBody, usableNumber } from './sms'
 import SosContactsPicker from './SosContactsPicker'
 import { useAcks } from './useAcks'
 import { useSelf } from './useSelf'
@@ -47,7 +47,7 @@ function waitForeground(): { back: Promise<void>; stop: () => void } {
  *  The flow never asks for the call permission (setup and the Me row do). Bantay never sends the text: the person taps Send. */
 export default function SosScreen({ onClose }: { onClose: () => void }) {
   const [raw, setRaw, loaded] = useKv<unknown[]>(SOS_CONTACTS_KEY, NONE)
-  const contacts = normalizeContacts(raw, loadFamily()).filter((c) => c.phone.trim())
+  const contacts = normalizeContacts(raw, loadFamily()).filter((c) => usableNumber(c.phone))
   const { name, personId } = useSelf()
   const [phase, setPhase] = useState<Phase>('finding')
   const [active, setActive] = useState<{ id: string; at: string } | null>(null)
