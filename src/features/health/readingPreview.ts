@@ -1,19 +1,28 @@
 import { positionOf } from './vitals'
 import { GUIDE, type Position, type Range, type Reading } from './ranges'
+import { verdictFor, RAISED_WORD } from './verdict'
+import { PLAUSIBLE as P } from './plausible'
 
 /** The add-reading sheet: what a typed reading means, in colour and one plain line, before it is saved. Pure. */
 export type EntryKind = 'bp' | 'single'
 export interface EntrySpec { kind: EntryKind; code: string; label: string; unit: string; min: number; max: number }
 
 const SPECS: Record<string, EntrySpec> = {
-  bp: { kind: 'bp', code: 'bp_systolic', label: 'blood pressure', unit: 'mmHg', min: 40, max: 300 },
-  fasting_glucose: { kind: 'single', code: 'fasting_glucose', label: 'fasting sugar', unit: 'mg/dL', min: 20, max: 800 },
-  glucose: { kind: 'single', code: 'glucose', label: 'blood sugar', unit: 'mg/dL', min: 20, max: 800 },
-  weight: { kind: 'single', code: 'weight', label: 'weight', unit: 'kg', min: 2, max: 400 },
-  heart_rate: { kind: 'single', code: 'heart_rate', label: 'pulse', unit: 'bpm', min: 20, max: 250 }
+  bp: { kind: 'bp', code: 'bp_systolic', label: 'blood pressure', unit: 'mmHg', min: P.bp.min, max: P.bp.max },
+  fasting_glucose: { kind: 'single', code: 'fasting_glucose', label: 'fasting sugar', unit: 'mg/dL', min: P.glucose.min, max: P.glucose.max },
+  glucose: { kind: 'single', code: 'glucose', label: 'blood sugar', unit: 'mg/dL', min: P.glucose.min, max: P.glucose.max },
+  weight: { kind: 'single', code: 'weight', label: 'weight', unit: 'kg', min: P.weight.min, max: P.weight.max },
+  heart_rate: { kind: 'single', code: 'heart_rate', label: 'pulse', unit: 'bpm', min: P.pulse.min, max: P.pulse.max }
+}
+/** Device-only vitals (no add-sheet entry): the same preview; no colour when no guide range exists. */
+const DEVICE: Record<string, EntrySpec> = {
+  temperature: { kind: 'single', code: 'temperature', label: 'temperature', unit: 'C', min: P.temperature.min, max: P.temperature.max },
+  spo2: { kind: 'single', code: 'spo2', label: 'oxygen', unit: '%', min: P.spo2.min, max: P.spo2.max }
 }
 /** null for steps, sleep, mood and unknown codes: they are not typed in here. */
 export const entrySpec = (code: string): EntrySpec | null => SPECS[code === 'bp_systolic' || code === 'bp_diastolic' ? 'bp' : code] ?? null
+
+export const deviceSpec = (code: string): EntrySpec | null => entrySpec(code) ?? DEVICE[code] ?? null
 
 export interface Preview { state: Position | 'invalid'; word: string; line: string }
 const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
@@ -27,13 +36,13 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
     if (s < spec.min || s > spec.max || d < 20 || d > 200) return { state: 'invalid', word: '', line: 'Check the numbers: they look too small or too big.' }
     if (d >= s) return { state: 'invalid', word: '', line: 'The top number is higher than the bottom one. Check them.' }
     if (s >= 180 || d >= 120) return { state: 'above', word: 'High', line: 'Very high. If you have a headache, chest pain or blurred vision, get help now. Otherwise rest and measure again.' }
-    if (s < 90 || d < 60) return { state: 'below', word: 'A bit low', line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
+    if (s < 90 || d < 60) return { state: 'below', word: verdictFor('bp', 'below')!.word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
     const ps = [positionOf(R('bp_systolic', s, 'mmHg'), family), positionOf(R('bp_diastolic', d, 'mmHg'))]
-    if (!ps.includes('above')) return { state: 'within', word: 'In range', line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
+    if (!ps.includes('above')) return { state: 'within', word: verdictFor('bp', 'within')!.word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
     // 120 to 129 on top with the bottom under 80 is "a little raised" (the same band the Normal list and the KPI chip use); 130/80 or more is high
     return s < 130 && d < 80
-      ? { state: 'above', word: 'A little raised', line: 'A little above the general guide. Rest for 5 minutes and measure again. Keep an eye on it.' }
-      : { state: 'above', word: 'High', line: 'Above the general guide. Rest for 5 minutes and measure again. If it stays high, tell your doctor.' }
+      ? { state: 'above', word: RAISED_WORD, line: 'A little above the general guide. Rest for 5 minutes and measure again. Keep an eye on it.' }
+      : { state: 'above', word: verdictFor('bp', 'above')!.word, line: 'Above the general guide. Rest for 5 minutes and measure again. If it stays high, tell your doctor.' }
   }
   const x = num(v.value ?? '')
   if (!Number.isFinite(x)) return { state: 'invalid', word: '', line: `Type your ${spec.label}.` }
@@ -42,8 +51,8 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
   const pos = positionOf(R(spec.code, x, spec.unit), family)
   const g = GUIDE[spec.code] // the range text comes from the same guide that colours the reading
   const rt = g ? ` Usual: ${g.text}${g.unit === 'bpm' ? ' bpm' : ''}.` : ''
-  return pos === 'within' ? { state: pos, word: 'In range', line: `In the usual range.${rt}` }
-    : pos === 'above' ? { state: pos, word: 'A bit high', line: `Above the usual range.${rt} Tell your doctor if it keeps happening.` }
+  return pos === 'within' ? { state: pos, word: verdictFor('vital', 'within')!.word, line: `In the usual range.${rt}` }
+    : pos === 'above' ? { state: pos, word: verdictFor('vital', 'above')!.word, line: `Above the usual range.${rt} Tell your doctor if it keeps happening.` }
     : pos === 'below' ? { state: pos, word: 'Low', line: `Below the usual range.${rt} Tell your doctor if it keeps happening.` }
     : { state: 'none', word: '', line: 'Saved. There is no range to compare with.' }
 }

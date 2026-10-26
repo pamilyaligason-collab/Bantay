@@ -22,14 +22,14 @@ export default defineConfig({
       env: { BANTAY_ALLOW_NO_AUTH: '1', DOCS_HARNESS: '1' }, // the e2e build has no Supabase env on purpose (see vite.config.ts); DOCS_HARNESS adds the docs test page
       url: `http://localhost:${PORT}`,
       reuseExistingServer: false,
-      timeout: 180_000
+      timeout: 600_000 // two production builds take over 3 min on the dev PC
     },
     {
       command: `npx vite build --outDir dist-auth && npx vite preview --outDir dist-auth --port ${AUTH_PORT} --strictPort`,
       env: AUTH_ENV,
       url: `http://localhost:${AUTH_PORT}`,
       reuseExistingServer: false,
-      timeout: 180_000
+      timeout: 600_000 // two production builds take over 3 min on the dev PC
     }
   ]
 })

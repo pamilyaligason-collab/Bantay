@@ -83,3 +83,7 @@ Undo: `select cron.unschedule('records-extract');`, `supabase functions delete r
 ## Tests
 
 `npx vitest run supabase/functions/records-extract` (pure logic in `logic.ts`, fake port, no network).
+
+## Device reading mode (Scan & Capture)
+
+The app can send one photo of a BP monitor, glucose meter, scale, thermometer or oximeter: body `{mode:"reading", mime:"image/jpeg|png|webp", image_base64}` (a request over 2 KB is routed here), the member JWT in Authorization. Nothing is stored. Reply `{ok:true, reading:{kind,systolic,diastolic,pulse,value,unit,confidence}}`; any number that is unreadable, out of range (the same bounds as `src/features/health/plausible.ts`), in an unknown unit, or read with confidence under 0.5 or none is null. Same OpenRouter settings as a paper plus `max_tokens: 200` and reasoning off. A member gets 20 photo reads a day (Manila date): over that the reply is `429 {error:"rate_limited"}`, a failed counter read or write is `500 {error:"server_error"}`, an unreadable photo is `502 {error:"read_failed"}`. The counter is its own `assistant_usage` row on the day 100 years after today (`readingUsageDay`), written with the service role, so photo reads and the Ask chat's 30 messages never use each other up; no new SQL. The log line holds `in_tokens` and `out_tokens` only: no kind and no values. No new secret, no deploy step beyond redeploying the function.

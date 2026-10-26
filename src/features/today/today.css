@@ -76,15 +76,14 @@
 .td-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; flex: none; }
 
 /* simple mode: hero plus three big buttons, larger type (the tab bar stays) */
-.td-simple { display: flex; flex-direction: column; gap: 16px; font-size: 18px; }
+.td-simple { display: flex; flex-direction: column; gap: 12px; font-size: 18px; }
 .td-simple .td-slide { flex: 0 0 auto; }
 .td-simple .td-slide h2, .td-simple .td-slide h3 { font-size: 32px; }
 .td-simple .td-slide p { font-size: 20px; }
-.td-big-btns { display: grid; gap: 12px; }
-.bt .td-bigbtn { display: flex; align-items: center; justify-content: center; min-height: 84px; border-radius: 28px; border: 0; font: inherit; font-size: 26px; font-weight: 700; text-decoration: none; box-shadow: var(--shadow); box-sizing: border-box; }
+.td-big-btns { display: grid; gap: 10px; }
+.bt .td-bigbtn { display: flex; align-items: center; justify-content: center; min-height: 72px; border-radius: 28px; border: 0; font: inherit; font-size: 24px; font-weight: 700; text-decoration: none; box-shadow: var(--shadow); box-sizing: border-box; }
 .bt .td-bigbtn.ok { background: var(--green); color: var(--on-green); }
 .bt .td-bigbtn.call { background: var(--card); color: var(--ink); }
-.bt .td-bigbtn.sos { background: var(--danger-bg); color: #fff; }
 
 /* weather card mood: one decorative layer behind the text, from weather_code. Pure CSS, still when motion is reduced. */
 .td-slide { isolation: isolate; }
@@ -225,3 +224,19 @@
 
 .td-due { margin: 10px 4px 0; font-size: 15px; font-weight: 600; }
 .td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Late dose: past its slot but still inside the on-time window. Warm brown keeps light text above 4.5:1 in both themes. */
+.bt { --late-bg: color-mix(in srgb, var(--warn) 40%, #000); --late-ink: #F5C468; } /* late dose card: warm brown, light text above 4.5:1 in both themes */
+.td-slide.dose.late { background: var(--late-bg); }
+.td-slide.dose.late .td-k { color: var(--late-ink); }
+/* Simple mode: no tab bar, no coach mark; SOS sits in the page. */
+.bt[data-simple] .tabbar, .bt[data-simple] .sh-hint { display: none; }
+.td-simple .sos-wrap { margin-top: 4px; }
+/* Simple mode fits Hold for help and the dose card in the first screen (390x844, 360x640): 72px buttons, 56px weather strip, a smaller SOS circle. */
+.td-simple .td-wx { min-height: 56px; }
+.td-simple .td-exit { min-height: 44px; }
+.td-simple .sos-btn { width: 150px; height: 150px; }
+.td-simple .sos-btn span { font-size: 36px; }
+.td-simple .sos-sub { display: none; }
+/* Short phones (360x640): a smaller SOS circle so the "Cannot hold?" button and the dose card also fit the first screen. */
+@media (max-height: 700px) { .td-simple .sos-btn { width: 112px; height: 112px; } .td-simple .sos-btn span { font-size: 30px; } }

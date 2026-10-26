@@ -22,7 +22,8 @@ Build env (set at build time, never commit values):
 | `VITE_SUPABASE_URL` | Supabase project URL |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
 | `VITE_VAPID_PUBLIC_KEY` | Same value as the `VAPID_PUBLIC_KEY` function secret |
-| `VITE_ASSISTANT_URL` | n8n assistant webhook URL |
+| `VITE_ASSISTANT_PROVIDER` | Optional. `edge` sends Jack to the Supabase function `ask`; unset or `n8n` keeps the webhook |
+| `VITE_ASSISTANT_URL` | n8n assistant webhook URL (used unless provider is `edge`) |
 | `VITE_ASSISTANT_DAILY_CAP` | Optional. Messages per day, default 30 |
 | `VITE_KIWIX_URL` | Offline library URL |
 | `VITE_APP_VERSION` | Version label recorded with usage events |

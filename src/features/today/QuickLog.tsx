@@ -6,7 +6,7 @@ import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
 import PlateSheet from '../nutrition/PlateSheet'
-import SaltTodayCard from '../nutrition/SaltSummary'
+import MealsTodayCard from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
@@ -98,7 +98,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
           </button>
         ))}
       </div>
-      <SaltTodayCard onMeal={() => setOpen('meal')} />
+      <MealsTodayCard onMeal={() => setOpen('meal')} />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>

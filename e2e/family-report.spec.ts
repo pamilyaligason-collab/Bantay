@@ -59,11 +59,11 @@ test.beforeEach(async ({ page }) => {
 for (const scheme of ['light', 'dark'] as const) {
   test(`people list: neutral flag line with no health numbers (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    const row = page.getByLabel('Family roll call').locator('li', { hasText: 'Maria Sample' })
+    const row = page.getByLabel('Family roll call').locator('li', { hasText: 'Maria' })
     await expect(row.getByTestId('flag-line')).toHaveText(/^\d+ to check$/)
     const text = (await row.innerText()).replace(/\d+ to check/, '')
     expect(text).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/)
-    await expect(page.getByLabel('Family roll call').locator('li', { hasText: 'Pedro Sample' }).getByTestId('flag-line')).toHaveCount(0) // no data: no claim either way
+    await expect(page.getByLabel('Family roll call').locator('li', { hasText: 'Pedro' }).getByTestId('flag-line')).toHaveCount(0) // no data: no claim either way
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)
   })
@@ -71,12 +71,13 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await page.getByRole('button', { name: /Maria Sample/ }).click()
+    await page.getByRole('button', { name: "Maria's page" }).click()
     await page.getByRole('link', { name: 'Full report' }).click()
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()
     await expect(page.getByTestId('rp-vitals')).toContainText('150/95')
-    await expect(page.getByTestId('rp-vitals')).toContainText('A bit high')
-    await expect(page.getByTestId('rp-vitals')).toContainText('Usual') // pulse
+    await expect(page.getByTestId('rp-vitals')).toContainText('High')
+    await expect(page.getByTestId('rp-vitals')).toContainText('In range') // pulse
     await expect(page.getByTestId('rp-meds').locator('.rp-cell')).toHaveCount(7)
     await expect(page.getByTestId('rp-meds').locator('.rp-cell.missed').first()).toBeVisible()
     await expect(page.getByTestId('rp-meds')).toContainText('Missed: Losartan')

@@ -36,7 +36,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const dlg = page.getByRole('dialog', { name: 'What would you like to do?' })
       await expect(dlg).toBeVisible()
       await page.waitForTimeout(400) // slide-in
-      for (const n of [/Talk to Jack Jack/, /Scan a paper/, /Upload a photo/]) {
+      for (const n of [/Talk to Jack Jack/, /Scan & Capture/, /Upload a photo/]) {
         const b = (await dlg.getByRole('button', { name: n }).boundingBox())!
         expect(b.height).toBeGreaterThanOrEqual(76)
       }
@@ -80,7 +80,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await skipOnboarding(page)
       await page.goto('/#today')
       await page.getByRole('button', { name: 'Ask Bantay' }).click()
-      await page.getByRole('button', { name: /Scan a paper/ }).click()
+      await page.getByRole('button', { name: /Scan & Capture/ }).click()
       await expect(page).toHaveURL(/#scan$/)
       await page.goBack()
       await expect(page).toHaveURL(/#today$/)
@@ -110,13 +110,13 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('dialog', { name: 'Ask Bantay' })).toBeVisible()
     })
 
-    test('Scan a paper reaches the web crop flow', async ({ page }) => {
+    test('Scan & Capture reaches the web crop flow', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
       await page.getByRole('button', { name: 'Ask Bantay' }).click()
-      await page.getByRole('button', { name: /Scan a paper/ }).click()
+      await page.getByRole('button', { name: /Scan & Capture/ }).click()
       await expect(page).toHaveURL(/#scan$/)
-      await expect(page.getByRole('heading', { level: 1, name: 'Scan a paper' })).toBeVisible()
+      await expect(page.getByRole('heading', { level: 1, name: 'Scan & Capture' })).toBeVisible()
       await expect(page.getByRole('button', { name: /Take a photo of page 1/ })).toBeVisible()
     })
 
@@ -128,6 +128,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('ask-file')).toHaveCount(1)
       await page.getByTestId('ask-file').setInputFiles({ name: 'one.png', mimeType: 'image/png', buffer: png(300, 400) })
       await expect(page).toHaveURL(/#scan$/)
+      await page.getByRole('button', { name: 'Paper' }).click()
       await expect(page.getByTestId('corner-0')).toBeVisible()
     })
 

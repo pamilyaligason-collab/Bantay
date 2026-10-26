@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { day, statusLabel } from '../shared'
 import { useDeskPeople } from './people'
+import { todayManila } from './scheduleApi'
 import { deskHref, type PageProps } from './types'
 import {
-  ID_TYPES, isExpired, listIdentifiers, maskNumber, openSourceFile, replaceNumber, revealNumber, setIdStatus, updateIdentifier,
+  ID_TYPES, daysLeft, expiresSoon, isExpired, listExpiringIds, listIdentifiers, maskNumber, openSourceFile, replaceNumber, revealNumber, setIdStatus, updateIdentifier,
   type Ident, type IdSource
 } from './logsApi'
-import { Empty, Filters, PageHead, Panel, Tag, statusTone, useConfirm, useToast } from './ui'
+import { Empty, Filters, PageHead, Panel, Skeleton, Tag, statusTone, useConfirm, useToast } from './ui'
 import './files.css'
 
 const REVEAL_MS = 30_000
@@ -40,6 +42,44 @@ export function useReveal(personId: string | null, fetchNumber: typeof revealNum
     return true
   }
   return { shown, show, hide }
+}
+
+const soonText = (n: number | null) => (n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `In ${n} days`)
+
+/** No person chosen: every person's IDs and policies that ended or end within 60 days (the Home tile's list). */
+function Expiring() {
+  const { people, nameOf } = useDeskPeople()
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof listExpiringIds>> | null>(null)
+  const ids = (people ?? []).map((p) => p.id).join(',')
+  useEffect(() => {
+    if (!ids) { if (people) setRows({ ok: true, data: [] }); return }
+    let live = true
+    void listExpiringIds(ids.split(','), todayManila()).then((r) => live && setRows(r))
+    return () => { live = false }
+  }, [ids, people])
+  if (!people || !rows) return <Skeleton rows={4} />
+  if (!people.length) return <Empty>No members yet. IDs show here once someone is added.</Empty>
+  if (!rows.ok) return <Empty>Could not load. Choose a person above, or try again later.</Empty>
+  if (!rows.data.length) return <Empty>No IDs or insurance end within 60 days. Choose a person to see all of theirs.</Empty>
+  return (
+    <div className="dk-scrollx">
+      <table role="table" className="dk-table dk-cardtab">
+        <caption className="fl-sr">IDs and insurance ending within 60 days</caption>
+        <thead role="rowgroup"><tr role="row">{['Person', 'Type', 'Last 4', 'Expires', 'Days left'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+        <tbody role="rowgroup">
+          {rows.data.map((r) => (
+            <tr role="row" key={`${r.source}:${r.id}`}>
+              <th role="rowheader" scope="row" className="fl-name"><a href={deskHref('ids', r.person_id)}>{nameOf(r.person_id)}</a></th>
+              <td role="cell" data-label="Type">{kind(r)}</td>
+              <td role="cell" data-label="Last 4" className="fl-num">{r.last4 ?? ''}</td>
+              <td role="cell" data-label="Expires">{day(r.expires_on)}</td>
+              <td role="cell" data-label="Days left">{r.days < 0 ? <Tag tone="bad">Expired</Tag> : <Tag tone="warn">{soonText(r.days)}</Tag>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export default function Ids({ id, embedded }: PageProps) {
@@ -86,22 +126,23 @@ export default function Ids({ id, embedded }: PageProps) {
         </Filters>
       </>}
       <p className="fl-note">Numbers stay hidden. Show reveals one for 30 seconds and the dashboard logs that it was shown.</p>
-      {!id && <Empty>Choose a person to see their IDs and insurance.</Empty>}
+      {!id && !embedded && <Expiring />}
+      {!id && embedded && <Empty>Choose a person to see their IDs and insurance.</Empty>}
       {id && error && <Empty>Could not load. The admin update (0021) may not be applied yet.</Empty>}
       {id && !error && rows && !rows.length && <Empty>No IDs or insurance on file.</Empty>}
       {id && !error && !!rows?.length && (
         <div className="dk-scrollx">
-          <table className="dk-table">
+          <table role="table" className="dk-table dk-cardtab">
             <caption className="fl-sr">IDs and insurance</caption>
-            <thead><tr>{['Type', 'Plan', 'Number', 'Issued', 'Expires', 'Status', 'Source', 'Actions'].map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
-            <tbody>
+            <thead role="rowgroup"><tr role="row">{['Type', 'Plan', 'Number', 'Issued', 'Expires', 'Status', 'Source', 'Actions'].map((h) => <th role="columnheader" key={h} scope="col">{h}</th>)}</tr></thead>
+            <tbody role="rowgroup">
               {rows.map((r) => {
                 const on = reveal.shown?.key === key(r)
                 return (
-                  <tr key={key(r)}>
-                    <th scope="row" className="fl-name">{kind(r)}<span className="fl-note">{r.source === 'id' ? ' ID' : ' insurance'}</span></th>
-                    <td>{r.plan ?? ''}</td>
-                    <td>
+                  <tr role="row" key={key(r)}>
+                    <th role="rowheader" scope="row" className="fl-name">{kind(r)}<span className="fl-note">{r.source === 'id' ? ' ID' : ' insurance'}</span></th>
+                    <td role="cell" data-label="Plan">{r.plan ?? ''}</td>
+                    <td role="cell" data-label="Number">
                       <div className="dk-acts">
                         <span className="fl-num">{on ? reveal.shown?.value : maskNumber(r.last4)}</span>
                         {on
@@ -109,15 +150,15 @@ export default function Ids({ id, embedded }: PageProps) {
                           : <button className="dk-b" onClick={() => showNumber(r)} aria-label={`Show number for ${nm(r)}`}>Show</button>}
                       </div>
                     </td>
-                    <td>{r.issued_on ?? ''}</td>
-                    <td>{r.expires_on ?? ''}{isExpired(r.expires_on) && <> <Tag tone="bad">Expired</Tag></>}</td>
-                    <td><Tag tone={statusTone(r.status)}>{r.status}</Tag></td>
-                    <td>{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${nm(r)}`}>Open page</button> : ''}</td>
-                    <td>
+                    <td role="cell" data-label="Issued">{r.issued_on ? day(r.issued_on) : ''}</td>
+                    <td role="cell" data-label="Expires">{r.expires_on ? day(r.expires_on) : ''}{isExpired(r.expires_on) ? <> <Tag tone="bad">Expired</Tag></> : expiresSoon(r.expires_on, todayManila()) && <> <Tag tone="warn">{soonText(daysLeft(r.expires_on, todayManila()))}</Tag></>}</td>
+                    <td role="cell" data-label="Status"><Tag tone={statusTone(r.status)}>{statusLabel(r.status)}</Tag></td>
+                    <td role="cell" data-label="Source">{r.source_file_id ? <button className="dk-b" onClick={() => open(r)} aria-label={`Open source page for ${nm(r)}`}>Open page</button> : ''}</td>
+                    <td role="cell" data-label="Actions">
                       <div className="dk-acts">
                         <button className="dk-b" onClick={() => setEdit(r)} aria-label={`Edit ${nm(r)}`}>Edit</button>
                         {r.status !== 'confirmed' && <button className="dk-b go" onClick={() => setStatus(r, 'confirmed')} aria-label={`Confirm ${nm(r)}`}>Confirm</button>}
-                        {r.status !== 'rejected' && <button className="dk-b bad" onClick={() => confirm.ask(`Reject this ${kind(r)}? You can undo it right after.`, () => setStatus(r, 'rejected'))} aria-label={`Reject ${nm(r)}`}>Reject</button>}
+                        {r.status !== 'rejected' && <button className="dk-b bad" onClick={() => confirm.ask(`Reject this ${kind(r)}? You can undo it right after.`, () => setStatus(r, 'rejected'), { title: `Reject this ${kind(r)}?`, verb: 'Reject', danger: true })} aria-label={`Reject ${nm(r)}`}>Reject</button>}
                       </div>
                     </td>
                   </tr>

@@ -35,13 +35,8 @@ export function whenWords(iso: string, now: Date): string {
 }
 
 const latestOf = (rs: Reading[], test: string) => rs.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
-/** The chip word, in the same bands as the Normal text: 120 to 129 on top is "a little raised", not "High"; sugar is "a bit high" or "low". */
-function chip(kind: 'bp' | 'sugar' | 'other', pos: Position, top?: number, bottom?: number | null): RangeState {
-  const st = rangeState(pos)
-  if (pos === 'above' && kind === 'bp') return { ...st, word: top != null && top < 130 && (bottom == null || bottom < 80) ? 'A little raised' : 'High' }
-  if (pos === 'above' && kind === 'sugar') return { ...st, word: 'A bit high' }
-  return st
-}
+/** The chip word comes from the one verdict table (verdict.ts), in the same bands as the Normal text. */
+const chip = (kind: 'bp' | 'vital', pos: Position, top?: number, bottom?: number | null): RangeState => rangeState(pos, kind, { top, bottom })
 const worst = (ps: string[]) => ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none'
 
 export function computeKpis(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date }): Kpi[] {
@@ -61,7 +56,7 @@ export function computeKpis(i: { personId: string; readings: Reading[]; activity
     })
   }
   const sug = latestOf(mine, 'fasting_glucose')
-  if (sug) out.push({ code: 'fasting_glucose', href: '#health/metric/fasting_glucose', label: 'Fasting sugar', value: formatNumber(sug.value), unit: sug.unit ?? 'mg/dL', when: whenWords(sug.takenAt, i.now), sub: 'latest', state: chip('sugar', positionOf(sug)), spark: spark('fasting_glucose') })
+  if (sug) out.push({ code: 'fasting_glucose', href: '#health/metric/fasting_glucose', label: 'Fasting sugar', value: formatNumber(sug.value), unit: sug.unit ?? 'mg/dL', when: whenWords(sug.takenAt, i.now), sub: 'latest', state: chip('vital', positionOf(sug)), spark: spark('fasting_glucose') })
   const wt = latestOf(mine, 'weight')
   if (wt) out.push({ code: 'weight', href: '#health/metric/weight', label: 'Weight', value: formatNumber(wt.value), unit: wt.unit ?? 'kg', when: whenWords(wt.takenAt, i.now), sub: 'latest', spark: spark('weight') })
 
@@ -76,6 +71,6 @@ export function computeKpis(i: { personId: string; readings: Reading[]; activity
   const doses = week.find((t) => t.code === 'doses')
   if (doses) out.push({ code: 'doses', href: '#health/meds', label: 'Doses on time', value: doses.value, unit: '', when: 'last 7 days', sub: doses.sub, spark: doses.spark })
   const hr = latestOf(mine, 'heart_rate')
-  if (hr) out.push({ code: 'heart_rate', href: '#health/metric/heart_rate', label: 'Resting heart', value: formatNumber(hr.value), unit: hr.unit ?? 'bpm', when: whenWords(hr.takenAt, i.now), sub: 'latest', state: rangeState(positionOf(hr)), spark: spark('heart_rate') })
+  if (hr) out.push({ code: 'heart_rate', href: '#health/metric/heart_rate', label: 'Resting heart', value: formatNumber(hr.value), unit: hr.unit ?? 'bpm', when: whenWords(hr.takenAt, i.now), sub: 'latest', state: rangeState(positionOf(hr), 'vital'), spark: spark('heart_rate') })
   return out
 }

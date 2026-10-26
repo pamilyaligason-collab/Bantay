@@ -50,7 +50,7 @@ describe('track allowlist (B-7)', () => {
   })
   it('allows every session 6 habit event (PART-2 section 4) and the Ask screen', async () => {
     for (const n of ['dose_logged', 'dose_skipped', 'reading_added', 'sos_sent', 'checkin_done', 'med_added', 'med_edited', 'med_paused',
-      'med_deleted', 'reminder_opened', 'card_seen_my_week', 'card_seen_family_line', 'weather_opened', 'weather_opened_action', 'records_confirmed']) {
+      'med_deleted', 'reminder_opened', 'card_seen_my_week', 'weather_opened', 'weather_opened_action', 'records_confirmed']) {
       expect(await track('action', n), n).toBe(true)
     }
     expect(await track('screen', 'ask')).toBe(true)

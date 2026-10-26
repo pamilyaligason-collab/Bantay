@@ -2,6 +2,23 @@ import type { ReactNode } from 'react'
 
 export const NOT_CONNECTED = 'Not connected yet. Admin tools need the internet and the Bantay server.'
 export const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' }) : 'Never')
+const MANILA = { timeZone: 'Asia/Manila' } as const
+const dt = (iso: string | null | undefined) => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? d : null }
+const sameYear = (d: Date) => d.toLocaleDateString('en-PH', { ...MANILA, year: 'numeric' }) === new Date().toLocaleDateString('en-PH', { ...MANILA, year: 'numeric' })
+/** Tables: "17 Oct 2026". Unknown date is a dash, never today. */
+export const day = (iso: string | null | undefined) => { const d = dt(iso); return d ? d.toLocaleDateString('en-GB', { ...MANILA, day: 'numeric', month: 'short', year: 'numeric' }) : '-' }
+/** Logs: "17 Oct, 8:12 AM"; the year shows only when it is not this year. */
+export const dateTime = (iso: string | null | undefined) => {
+  const d = dt(iso); if (!d) return '-'
+  return `${d.toLocaleDateString('en-GB', { ...MANILA, day: 'numeric', month: 'short', ...(sameYear(d) ? {} : { year: 'numeric' }) })}, ${d.toLocaleTimeString('en-PH', { ...MANILA, hour: 'numeric', minute: '2-digit' })}`
+}
+/** One plain-words label for raw status values (nouns) and audit actions (verbs, as Home shows them). */
+export const STATUS_LABEL: Record<string, string> = {
+  confirmed: 'Confirmed', draft: 'Draft', rejected: 'Rejected', failed: 'Failed', reading: 'Reading', new: 'New', done: 'Done', archived: 'Archived',
+  insert: 'Add', update: 'Update', delete: 'Delete', archive: 'Archive', restore: 'Restore', confirm: 'Confirm', reject: 'Reject', reveal: 'Reveal', view: 'Viewed as member',
+}
+/** Unknown values get a capital letter and spaces for underscores; null is a dash. */
+export const statusLabel = (raw: string | null | undefined) => (raw ? STATUS_LABEL[raw.toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1).replaceAll('_', ' ') : '-')
 export const why = (e: string) =>
   e === 'not_connected' ? NOT_CONNECTED
   : e === 'not_admin' ? 'Only an admin can do this.'

@@ -10,6 +10,7 @@ import { pickLocalSet } from '../features/location/geo'
 import { useLocation, usePlaceFrom } from '../features/location/useLocation'
 import { ABROAD_SOURCE } from '../features/safety/dial'
 import ZonePicker from '../features/location/ZonePicker'
+import { Group } from '../features/safety/Group'
 import { Icon } from '../features/shell/Icon'
 import '../features/safety/safety.css'
 
@@ -51,6 +52,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
         <h1>Safety</h1>
         <ZonePicker loc={l} />
       </div>
+      <Group id="sf-g-emerg" tone="emergency" title="Emergency" sub="Hold SOS to alert your family, or call for help now.">
       <SosButton onSend={() => setSos(true)} />
       <div className="sf-pair">
         {abroad
@@ -59,6 +61,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
         <a href="#medid" className="btn2 sf-ico"><Icon name="cross" size={20} />Medical ID</a>
       </div>
       <IdsRow />
+      </Group>
       <ActEarly />
       {place && <SafetyHub place={place} />}
       <p className="sub" style={{ margin: '0 4px', fontSize: 13 }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from NDRRMC, PAGASA, PHIVOLCS, DOH, Red Cross, WHO and Ready.gov. Posters are drawn for Bantay. Maps by Ventusky, Windy, HazardHunterPH and PAGASA. <a href="#safety/sources">Sources</a></p>

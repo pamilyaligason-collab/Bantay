@@ -142,7 +142,7 @@ describe('Confirm queue', () => {
     render(<Queue id={null} />)
     await screen.findByRole('heading', { name: 'Test Person' })
     fireEvent.click(screen.getByRole('button', { name: 'Fix LDL Test' }))
-    fireEvent.change(screen.getByLabelText('value num'), { target: { value: '96,5' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: '96,5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save fix' }))
     await waitFor(() => expect(writes.some((w) => w.t === 'lab_results' && w.patch.value_num === 96.5)).toBe(true))
     const w = writes.find((x) => x.patch.value_num === 96.5)!
@@ -154,7 +154,7 @@ describe('Confirm queue', () => {
     render(<Queue id={null} />)
     await screen.findByRole('heading', { name: 'Test Person' })
     fireEvent.click(screen.getByRole('button', { name: 'Fix LDL Test' }))
-    fireEvent.change(screen.getByLabelText('value num'), { target: { value: 'abc' } })
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'abc' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save fix' }))
     expect((await screen.findByRole('alert')).textContent).toContain('must be a number')
     expect(writes).toEqual([])
@@ -164,6 +164,70 @@ describe('Confirm queue', () => {
     tables.documents = []; tables.lab_results = []; tables.prescription_items = []; tables.prescriptions = []
     render(<Queue id={null} />)
     expect(await screen.findByText('Nothing to confirm.')).toBeTruthy()
+  })
+})
+
+describe('Queue load error', () => {
+  it('says it could not load, with Retry, and never "Nothing to confirm"', async () => {
+    h.sb = null // not connected: the load fails
+    render(<Queue id={null} />)
+    expect((await screen.findByRole('alert')).textContent).toMatch(/./)
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy()
+    expect(screen.queryByText('Nothing to confirm.')).toBeNull()
+    h.sb = fakeSb(tables, writes)
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect((await screen.findAllByRole('table')).length).toBe(2)
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+  })
+  it('shows the range and a High/Low tag for a lab value', async () => {
+    tables.lab_results[0] = { ...tables.lab_results[0], ref_low: 0, ref_high: 90 }
+    render(<Queue id={null} />)
+    await screen.findByRole('heading', { name: 'Test Person' })
+    expect(screen.getByText('Range 0 to 90')).toBeTruthy()
+    expect(screen.getByText('High')).toBeTruthy()
+  })
+})
+
+describe('Queue per person and source link', () => {
+  it("#/queue/<personId> shows only that person's papers", async () => {
+    tables.people.push({ id: 'p2', display_name: 'Other Person' })
+    tables.documents.push({ id: 'd3', person_id: 'p2', kind: 'lab', status: 'draft', doc_date: '2026-09-02', facility: 'Test Clinic', title: null })
+    tables.lab_results.push({ id: 'l9', document_id: 'd3', person_id: 'p2', name_raw: 'Other Test', value_num: 1, confidence: 0.9, status: 'draft' })
+    render(<Queue id="p2" />)
+    expect(await screen.findByRole('heading', { name: 'Other Person' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Test Person' })).toBeNull()
+    expect(screen.getAllByRole('table')).toHaveLength(1)
+    expect(screen.getByLabelText('Include Other Test')).toBeTruthy()
+  })
+  it('the 60 s signed link is renewed once after the image fails, not in a loop', async () => {
+    tables.source_files = [{ id: 'f1', document_id: 'd1', name: 'page1.jpg', mime: 'image/jpeg', drive_file_id: null, storage_path: 'p1/a.jpg', page_no: 1, sha256: 'b'.repeat(64) }]
+    let signs = 0
+    const sb = h.sb as { storage: unknown }
+    sb.storage = { from: () => ({ createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://files.test/${p}?n=${++signs}` }, error: null }) }) }
+    render(<Queue id={null} />)
+    const img = await screen.findByRole('img', { name: 'Source page page1.jpg' })
+    expect(signs).toBe(1)
+    fireEvent.error(img)
+    await waitFor(() => expect(signs).toBe(2))
+    fireEvent.error(screen.getByRole('img', { name: 'Source page page1.jpg' }))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(signs).toBe(2) // only one retry per page
+  })
+  it('the signed link is renewed every 50 s while the paper is shown', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      tables.source_files = [{ id: 'f1', document_id: 'd1', name: 'page1.jpg', mime: 'image/jpeg', drive_file_id: null, storage_path: 'p1/a.jpg', page_no: 1, sha256: 'b'.repeat(64) }]
+      let signs = 0
+      const sb = h.sb as { storage: unknown }
+      sb.storage = { from: () => ({ createSignedUrl: async (p: string) => ({ data: { signedUrl: `https://files.test/${p}?n=${++signs}` }, error: null }) }) }
+      render(<Queue id={null} />)
+      await screen.findByRole('img', { name: 'Source page page1.jpg' })
+      expect(signs).toBe(1)
+      await vi.advanceTimersByTimeAsync(50_000)
+      expect(signs).toBe(2)
+      await vi.advanceTimersByTimeAsync(50_000)
+      expect(signs).toBe(3)
+    } finally { vi.useRealTimers() }
   })
 })
 
@@ -187,6 +251,6 @@ describe('Queue select all', () => {
     const all = await screen.findByRole('checkbox', { name: /Select all/ })
     fireEvent.click(all) // partly ticked by default -> all
     fireEvent.click(all) // -> none
-    expect(screen.getByRole('button', { name: 'Confirm 0 checked' })).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('button', { name: /^Confirm \d+ checked$/ })).toBeNull() // the sticky bar only shows while something is ticked
   })
 })

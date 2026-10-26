@@ -3,14 +3,16 @@
 // scripts it was taken from (lib.mjs, extract.mjs, normalize.mjs, load.mjs). All names and values are made up.
 import { describe, expect, it, vi } from 'vitest'
 import { normalizeDraft as pcNormalizeDraft } from '../../../scripts/import/extract.mjs'
-import { buildRequest as pcBuildRequest, PROMPT as PC_PROMPT } from '../../../scripts/import/lib.mjs'
+import { buildRequest as pcBuildRequest, MAX_TOKENS as PC_MAX_TOKENS, PROMPT as PC_PROMPT, usageCounts as pcUsageCounts } from '../../../scripts/import/lib.mjs'
 import { buildLoadSql, uuid5 as pcUuid5 } from '../../../scripts/import/load.mjs'
 import { loadCatalog, normalizeTest as pcNormalizeTest } from '../../../scripts/import/normalize.mjs'
 import {
-  buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, normalizeDraft,
-  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, uuid5, withRetry
+  buildReadingRequest, buildRequest, type CatalogRow, DEFAULT_FALLBACK_MODEL, DEFAULT_MODEL, errorCode, extractDocument, HttpError, mapDraft, MAX_PAGES, MAX_READING_BASE64,
+  MAX_TOKENS, normalizeDraft, READING_DAILY_CAP, READING_UNITS, readingUsageDay, takeReadingSlot, type ReadingUsagePort, normalizeReading, parseReadingBody, READING_MAX_TOKENS, READING_PROMPT, readDevice,
+  normalizeTest, orderPages, type PageRow, parseBody, type Port, PROMPT, runOne, runSweep, type Row, sendToOpenRouter, summary, TABLES, toBase64, usageCounts, uuid5, withRetry
 } from './logic.ts'
 
+import { PLAUSIBLE as P } from '../../../src/features/health/plausible.ts'
 const catalog = loadCatalog() as CatalogRow[]
 const env = { model: 'test/paid-model', fallbackModel: 'test/paid-fallback' }
 const DOC = '20000000-0000-4000-8000-000000000001'
@@ -125,6 +127,23 @@ describe('mapDraft', () => {
   })
 })
 
+describe('cost guard', () => {
+  it('caps output, turns reasoning down, and matches the laptop path', () => {
+    const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }] })
+    expect(b.max_tokens).toBe(MAX_TOKENS)
+    expect(MAX_TOKENS).toBe(PC_MAX_TOKENS)
+    expect(b.reasoning).toEqual({ enabled: false })
+  })
+  it('usage counts match the laptop path and carry no text', async () => {
+    const j = { model: 'm/x', usage: { prompt_tokens: 10, completion_tokens: 5, cost: 0.1 }, choices: [{ message: { content: '{"name":"SECRET"}' } }] }
+    expect(usageCounts(j)).toEqual(pcUsageCounts(j))
+    const seen: unknown[] = []
+    await sendToOpenRouter((async () => ({ ok: true, status: 200, json: async () => j })) as never, {}, 'k', (u) => seen.push(u))
+    expect(seen).toEqual([{ model: 'm/x', prompt_tokens: 10, completion_tokens: 5, reasoning_tokens: null, cost: 0.1 }])
+    expect(JSON.stringify(seen)).not.toContain('SECRET')
+  })
+})
+
 describe('buildRequest for scans', () => {
   it('sends every page in order after the prompt, keeps zdr and refuses free models', () => {
     const b = buildRequest({ ...env, pages: [{ mime: 'image/jpeg', base64: 'AA' }, { mime: 'image/jpeg', base64: 'BB' }] })
@@ -179,6 +198,10 @@ describe('OpenRouter calls', () => {
     await expect(withRetry(async () => { n++; throw new HttpError(401) }, { sleepFn })).rejects.toThrow()
     expect(n).toBe(1)
   })
+  it('a cut-off answer becomes truncated', async () => {
+    const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ finish_reason: 'length', message: { content: '{"tests":[' } }] }) })
+    expect(errorCode(await sendToOpenRouter(f, {}, 'k').catch((x) => x))).toBe('truncated')
+  })
   it('never echoes model output: non-JSON content becomes not_json', async () => {
     const f = async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: 'Cholesterol 5.2 TEST PERSON' } }] }) })
     const e = await sendToOpenRouter(f, {}, 'k').catch((x) => x)
@@ -186,6 +209,141 @@ describe('OpenRouter calls', () => {
     expect(String(e.message)).not.toMatch(/Cholesterol|TEST/)
     expect(errorCode(new Error('Cholesterol 5.2'))).toBe('failed')
     expect(errorCode(new HttpError(402))).toBe('openrouter_402')
+  })
+})
+
+// ---------- device reading mode (a photo of a BP monitor or glucose meter) ----------
+describe('reading mode', () => {
+  const img = { mime: 'image/jpeg', base64: 'QUJDREVGR0hJSktMTU5PUA==' }
+  it('request: one image, prompt asks for the five kinds, zdr, small token cap, reasoning off, never a free model', () => {
+    const b = buildReadingRequest({ ...env, image: img })
+    const c = b.messages[0].content as { type: string; text?: string; image_url?: { url: string } }[]
+    expect(c.map((x) => x.type)).toEqual(['text', 'image_url'])
+    expect(c[0].text).toBe(READING_PROMPT)
+    expect(c[0].text).toMatch(/bp\|glucose\|weight\|temp\|spo2/)
+    expect(c[1].image_url!.url).toBe(`data:image/jpeg;base64,${img.base64}`)
+    expect(b.provider).toEqual({ zdr: true, data_collection: 'deny' })
+    expect(b.response_format).toEqual({ type: 'json_object' })
+    expect(b.max_tokens).toBe(READING_MAX_TOKENS)
+    expect(b.max_tokens).toBeLessThanOrEqual(300)
+    expect(b.reasoning).toEqual({ enabled: false })
+    expect(b.models).toEqual([env.model, env.fallbackModel])
+    expect(() => buildReadingRequest({ ...env, model: 'x/y:free', image: img })).toThrow()
+    expect(() => buildReadingRequest({ ...env, image: { mime: 'application/pdf', base64: 'AA' } })).toThrow() // a photo only
+  })
+
+  it('schema: a clear BP photo keeps the contract keys only', () => {
+    const r = normalizeReading({ kind: 'bp', systolic: 128, diastolic: '82', pulse: 71, value: 5, unit: 'mmHg', confidence: 0.9, extra: 'dropped' })
+    expect(r).toEqual({ kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.9 })
+    expect(Object.keys(r).sort()).toEqual(['confidence', 'diastolic', 'kind', 'pulse', 'systolic', 'unit', 'value'])
+  })
+  it('null handling: unknown stays null, never 0, never guessed', () => {
+    expect(normalizeReading(null)).toEqual({ kind: null, systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: null })
+    expect(normalizeReading({ kind: 'bp', systolic: null, diastolic: 80, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null, unit: null }) // half a pair is no pair
+    expect(normalizeReading({ kind: 'bp', systolic: 0, diastolic: 0, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null })
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 130, confidence: 0.9 })).toMatchObject({ systolic: null, diastolic: null }) // bottom above top
+    expect(normalizeReading({ kind: 'glucose', value: '', unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: true, unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: 'about 100', unit: 'mg/dL', confidence: 0.9 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'robot', value: 5 }).kind).toBeNull()
+  })
+  it('low confidence empties every number; missing confidence empties them too', () => {
+    expect(normalizeReading({ kind: 'bp', systolic: 128, diastolic: 82, pulse: 70, confidence: 0.3 })).toEqual({ kind: 'bp', systolic: null, diastolic: null, pulse: null, value: null, unit: null, confidence: 0.3 })
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.49 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 0.5 }).value).toBe(100)
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL' })).toMatchObject({ value: null, unit: null, confidence: null })
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mg/dL', confidence: 7 }).confidence).toBeNull()
+  })
+  it('units are validated per kind and out-of-range numbers are dropped', () => {
+    expect(normalizeReading({ kind: 'glucose', value: 5.6, unit: 'MMOL/L', confidence: 1 })).toMatchObject({ value: 5.6, unit: 'mmol/L' })
+    expect(normalizeReading({ kind: 'glucose', value: 5.6, unit: 'mg/dL', confidence: 1 }).value).toBeNull() // 5.6 mg/dL is not a glucose
+    expect(normalizeReading({ kind: 'glucose', value: 100, unit: 'mmHg', confidence: 1 })).toMatchObject({ value: null, unit: null })
+    expect(normalizeReading({ kind: 'glucose', value: 100, confidence: 1 }).value).toBeNull() // no unit, no value
+    expect(normalizeReading({ kind: 'weight', value: 62.4, unit: 'kgs', confidence: 1 })).toMatchObject({ value: 62.4, unit: 'kg' })
+    expect(normalizeReading({ kind: 'weight', value: 137, unit: 'lbs', confidence: 1 })).toMatchObject({ value: 137, unit: 'lb' })
+    expect(normalizeReading({ kind: 'temp', value: 36.8, unit: '°C', confidence: 1 })).toMatchObject({ value: 36.8, unit: 'C' })
+    expect(normalizeReading({ kind: 'temp', value: 368, unit: 'C', confidence: 1 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'spo2', value: 97, unit: '%', pulse: 72, confidence: 1 })).toMatchObject({ value: 97, unit: '%', pulse: 72 })
+    expect(normalizeReading({ kind: 'spo2', value: 140, unit: '%', confidence: 1 }).value).toBeNull()
+    expect(normalizeReading({ kind: 'bp', systolic: 400, diastolic: 80, confidence: 1 }).systolic).toBeNull()
+  })
+
+  it('the plausibility bounds equal the app list (src/features/health/plausible.ts)', () => {
+    const b = READING_UNITS
+    expect([b.bp.mmHg, b.glucose['mg/dL'], b.weight.kg, b.temp.C, b.spo2['%']]).toEqual(
+      [[P.bp.min, P.bp.max], [P.glucose.min, P.glucose.max], [P.weight.min, P.weight.max], [P.temperature.min, P.temperature.max], [P.spo2.min, P.spo2.max]])
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max + 1, confidence: 1 }).pulse).toBeNull()
+    expect(normalizeReading({ kind: 'bp', systolic: 120, diastolic: 80, pulse: P.pulse.max, confidence: 1 }).pulse).toBe(P.pulse.max)
+  })
+  // a fake assistant_usage table; askTake is assistant_take (the Ask chat) on today's Manila date, as in 0005
+  const table = () => {
+    const rows = new Map<string, number>()
+    const port: ReadingUsagePort = {
+      count: async (u, d) => rows.get(`${u}|${d}`) ?? null,
+      ensure: async (u, d) => { if (!rows.has(`${u}|${d}`)) rows.set(`${u}|${d}`, 0) },
+      bump: async (u, d, e) => { if (rows.get(`${u}|${d}`) !== e) return false; rows.set(`${u}|${d}`, e + 1); return true }
+    }
+    const askTake = (u: string, now: Date, limit: number) => {
+      const d = new Date(now.getTime() + 8 * 3600_000).toISOString().slice(0, 10)
+      const n = rows.get(`${u}|${d}`) ?? 0
+      if (n >= limit) return false
+      rows.set(`${u}|${d}`, n + 1); return true
+    }
+    return { rows, port, askTake }
+  }
+  const noon = new Date('2026-10-26T04:00:00Z') // 12:00 in Manila
+  it('the photo-read day is Manila today, 100 years on (own row, never the chat row)', () => {
+    expect(READING_DAILY_CAP).toBe(20)
+    expect(readingUsageDay(noon)).toBe('2126-10-26')
+    expect(readingUsageDay(new Date('2026-10-26T16:30:00Z'))).toBe('2126-10-27') // 00:30 next day in Manila
+    expect(readingUsageDay(new Date('2026-12-31T20:00:00Z'))).toBe('2127-01-01')
+  })
+  it('20 photo reads pass, the 21st is refused, and the Ask chat still has all 30 messages', async () => {
+    const t = table()
+    for (let i = 0; i < 20; i++) expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(false)
+    expect(t.rows.get('u1|2126-10-26')).toBe(20)
+    for (let i = 0; i < 30; i++) expect(t.askTake('u1', noon, 30)).toBe(true)
+    expect(t.askTake('u1', noon, 30)).toBe(false)
+  })
+  it('30 Ask chat messages do not use up the photo reads', async () => {
+    const t = table()
+    for (let i = 0; i < 30; i++) expect(t.askTake('u1', noon, 30)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', noon)).toBe(true)
+    expect(t.rows.get('u1|2026-10-26')).toBe(30)
+  })
+  it('another member and the next day start fresh', async () => {
+    const t = table()
+    for (let i = 0; i < 20; i++) await takeReadingSlot(t.port, 'u1', noon)
+    expect(await takeReadingSlot(t.port, 'u2', noon)).toBe(true)
+    expect(await takeReadingSlot(t.port, 'u1', new Date('2026-10-27T04:00:00Z'))).toBe(true)
+  })
+  it('parallel calls never go past the cap; a failing read or write throws instead of passing', async () => {
+    const t = table()
+    const r = await Promise.all(Array.from({ length: 30 }, () => takeReadingSlot(t.port, 'u1', noon, 20)))
+    expect(r.filter(Boolean).length).toBeLessThanOrEqual(20)
+    expect(t.rows.get('u1|2126-10-26')).toBeLessThanOrEqual(20)
+    await expect(takeReadingSlot({ ...t.port, count: async () => { throw new Error('read') } }, 'u1', noon)).rejects.toThrow()
+    await expect(takeReadingSlot({ ...t.port, ensure: async () => { throw new Error('write') } }, 'u1', noon)).rejects.toThrow()
+  })
+  it('parseReadingBody accepts one small photo and nothing else', () => {
+    const ok = JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: img.base64 })
+    expect(parseReadingBody(ok)).toEqual(img)
+    for (const bad of [
+      '', 'not json', '[]', JSON.stringify({ mode: 'sweep', mime: 'image/jpeg', image_base64: img.base64 }),
+      JSON.stringify({ mode: 'reading', mime: 'application/pdf', image_base64: img.base64 }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'not base64!' }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'QQ==' }),
+      JSON.stringify({ mode: 'reading', mime: 'image/jpeg', image_base64: 'A'.repeat(MAX_READING_BASE64 + 1) })
+    ]) expect(parseReadingBody(bad)).toBeNull()
+  })
+
+  it('readDevice: sends the request body to the model and returns only the normalised numbers', async () => {
+    let sent: unknown
+    const r = await readDevice(async (b) => { sent = b; return { kind: 'bp', systolic: 141, diastolic: 90, pulse: 77, confidence: 0.8, note: 'ignored' } }, img, env)
+    expect(sent).toEqual(buildReadingRequest({ ...env, image: img }))
+    expect(r).toEqual({ kind: 'bp', systolic: 141, diastolic: 90, pulse: 77, value: null, unit: 'mmHg', confidence: 0.8 })
+    await expect(readDevice(async () => { throw new HttpError(500) }, img, env)).rejects.toThrow()
   })
 })
 

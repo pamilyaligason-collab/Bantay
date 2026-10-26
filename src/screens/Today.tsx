@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import AlertsBanner from '../features/notify/AlertsBanner'
 import { FAIL_TEXT, checkIn } from '../features/today/actions'
 import AlertBand from '../features/today/AlertBand'
-import FamilyLine from '../features/today/FamilyLine'
+import SelfCare from '../features/today/SelfCare'
 import GreetingBand from '../features/today/GreetingBand'
 import MyWeek from '../features/today/MyWeek'
 import WeatherCard from '../features/today/WeatherCard'
@@ -19,7 +19,7 @@ import { UpdateCard } from '../features/update/UpdateCard'
 import { wireMotion } from '../features/look'
 import '../features/today/today.css'
 
-/** Today: warning band (only when one is active), Next up + medicines to check (none when nothing is next: the weather card expands instead), weather, quick log, My week, family line, today's plan, then More (I'm OK, alerts setup, banners, notices, week line).
+/** Today: warning band (only when one is active), Next up + medicines to check (none when nothing is next: the weather card expands instead), weather, quick log, My week, self-care breathing, today's plan, then More (I'm OK, alerts setup, banners, notices, week line).
  *  News and the video live elsewhere (Safety, Health).
  *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
@@ -34,6 +34,12 @@ export default function Today() {
   useEffect(() => () => clearTimeout(timer.current), [])
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => (loaded && !simple ? wireMotion(root.current) : undefined), [loaded, simple]) // [data-reveal] sections; none on SOS, 911 or the I'm OK confirmation
+  useEffect(() => { // Simple mode hides the tab bar and its coach mark (CSS on .bt[data-simple]) so SOS is never under them
+    const bt = document.querySelector('.bt')
+    if (!loaded || !simple || !bt) return
+    bt.setAttribute('data-simple', '')
+    return () => bt.removeAttribute('data-simple')
+  }, [loaded, simple])
   const onOk = useCallback(() => { void checkIn().then((r) => notify(r === 'ok' ? 'Family sees: I am OK' : FAIL_TEXT[r])) }, [notify])
   const next = useNext()
   const calm = next.item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
@@ -48,7 +54,7 @@ export default function Today() {
       <WeatherCard expanded={calm} review={next.review} />
       <QuickLog notify={notify} />
       <MyWeek />
-      <FamilyLine />
+      <SelfCare />
       <PlanToday />
       {/* More: I'm OK, alerts setup, update and install banners, other notices, the week line. D-50: the update card never sits above a warning. */}
       <GreetingBand onOk={onOk} />

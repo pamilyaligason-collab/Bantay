@@ -21,7 +21,7 @@ export const PAGE = 1000
 export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
 const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 /** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
-const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals'])
+const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages'])
 const NO_TABLE = /^(PGRST205|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
@@ -324,7 +324,8 @@ async function pullGoals(url: string, key: string, token: string) {
     const sodiumMg = pt(r.sodium_mg)
     const waterMl = pt(r.water_ml)
     if (typeof r.person_id !== 'string' || queued.has(r.person_id) || sodiumMg == null || waterMl == null) continue
-    await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
+    // potassium_mg and sex come with migration 0026; a project without it just has no such keys (null)
+    await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, potassiumMg: pt(r.potassium_mg), sex: r.sex === 'female' || r.sex === 'male' ? r.sex : null, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
   }
 }
 

@@ -219,7 +219,7 @@ for (const size of SIZES) {
     await page.getByRole('button', { name: 'Archive Test Child' }).click()
     await expect(page.getByText(/Archive Test Child\? They disappear from every family phone/)).toBeVisible()
     expect(arch.rpc).toEqual([])
-    await page.getByRole('button', { name: 'Confirm' }).click()
+    await page.getByRole('button', { name: 'Archive', exact: true }).click()
     await expect.poll(() => arch.rpc).toEqual([{ p_person: 'p3', p_archived: true }])
     const banner = page.locator('.mp-archived')
     await expect(banner).toContainText('Archived on 20 Oct 2026. Hidden from family phones.')
@@ -256,3 +256,37 @@ for (const size of SIZES) {
     await expect(page.locator('.mp-archived')).toHaveCount(0)
   })
 }
+
+// Committed shots of the Members list and a member page (1440 and 390, light and dark), and the phone "More" menu closing.
+for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`members shots ${size.width} ${scheme}`, async ({ page }) => {
+      await page.setViewportSize(size)
+      await page.emulateMedia({ colorScheme: scheme })
+      await mock(page)
+      await skipOnboarding(page)
+      await page.goto('/admin#/members')
+      await expect(page.getByRole('table').getByRole('link', { name: /Test Person/ })).toBeVisible()
+      await page.screenshot({ path: `docs/session-9/shots/adm-view/members-${size.width}-${scheme}.png` })
+      await page.goto('/admin#/members/p2')
+      await expect(page.getByRole('heading', { level: 1, name: 'Test Person' })).toBeVisible()
+      await page.screenshot({ path: `docs/session-9/shots/adm-view/member-${size.width}-${scheme}.png` })
+    })
+  }
+}
+
+test('phone More menu closes on Escape and on an outside click', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mock(page)
+  await skipOnboarding(page)
+  await page.goto('/admin#/members')
+  const more = page.locator('details.mb-more')
+  await more.locator('summary').click()
+  await expect(more).toHaveJSProperty('open', true)
+  await page.keyboard.press('Escape')
+  await expect(more).toHaveJSProperty('open', false)
+  await more.locator('summary').click()
+  await expect(more).toHaveJSProperty('open', true)
+  await page.getByRole('heading', { level: 1, name: 'Members' }).click()
+  await expect(more).toHaveJSProperty('open', false)
+})

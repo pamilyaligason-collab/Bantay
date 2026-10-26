@@ -1,3 +1,4 @@
+import { Group } from './Group'
 import hotlines from '../../data/safety/hotlines.json'
 import places from '../../data/safety/places.json'
 import { ALL_IDS } from '../gobag/items'
@@ -94,17 +95,25 @@ export default function SafetyHub({ place }: { place: Place }) {
     ['#safety/cards', 'cards', 'Safety cards', `${CARDS.length} how-to guides`],
     ['#safety/sos', 'sos', 'Past SOS', last ? `Last one ${last}` : 'None sent']
   ]
+  const link = ([href, icon, title, status]: [string, string, string, string]) => (
+    <a key={href} href={href} className="sf-tile">
+      <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
+      <span className="sf-tile-t">{title}</span>
+      <span className="sf-tile-s">{status}</span>
+    </a>
+  )
+  const by = (hrefs: string[]) => tiles.filter((t) => hrefs.includes(t[0])).map(link)
   return (
     <>
-      <nav className="sf-tiles" aria-label="Safety topics">
-        {tiles.map(([href, icon, title, status]) => (
-          <a key={href} href={href} className="sf-tile">
-            <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
-            <span className="sf-tile-t">{title}</span>
-            <span className="sf-tile-s">{status}</span>
-          </a>
-        ))}
-      </nav>
+      <Group id="sf-g-alerts" tone="alerts" title="Alerts and official sources" sub="Live warnings, weather and maps from PAGASA, PHIVOLCS and NDRRMC.">
+        <nav className="sf-tiles" aria-label="Safety topics: alerts">{by(['#safety/warnings', '#weather', '#safety/storms', '#safety/map', '#safety/hazards'])}</nav>
+      </Group>
+      <Group id="sf-g-hot" tone="hotlines" title="Hotlines" sub="Numbers to call, and what you sent before.">
+        <nav className="sf-tiles" aria-label="Safety topics: hotlines">{by(['#safety/dial', '#safety/sos'])}</nav>
+      </Group>
+      <Group id="sf-g-ready" tone="ready" title="Be ready" sub="Prepare before something happens.">
+        <nav className="sf-tiles" aria-label="Safety topics: be ready">{by(['#gobag', '#safety/cards'])}</nav>
+      </Group>
     </>
   )
 }

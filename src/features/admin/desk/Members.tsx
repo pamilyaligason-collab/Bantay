@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../auth/client'
 import { adminMembers } from '../api'
 import Avatar from '../Avatar'
@@ -84,7 +84,20 @@ function AddDependent({ ask, done, close, say }: { ask: Ask; done: () => void; c
 type Sheet = 'add' | 'dep' | 'invite'
 const SHEET_TITLE: Record<Sheet, string> = { add: 'Add member', dep: 'Add dependent', invite: 'Invite by email' }
 
+/** Phone width (matches the 767px rules in members.css). False where matchMedia is missing (tests). */
+function usePhone() {
+  const q = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 767px)') : null)
+  const [on, setOn] = useState(() => q()?.matches ?? false)
+  useEffect(() => { const m = q(); if (!m) return; const f = () => setOn(m.matches); m.addEventListener('change', f); return () => m.removeEventListener('change', f) }, [])
+  return on
+}
+
+/** Needs-attention people first, then by name (audit M1). */
+export const attentionFirst = (lines: Line[], now = Date.now()): Line[] =>
+  [...lines].sort((a, b) => Number(needsAttention(b, now)) - Number(needsAttention(a, now)) || a.p.display_name.localeCompare(b.p.display_name))
+
 function MembersList() {
+  const phone = usePhone()
   const roster = useRoster()
   const [f, setF] = useState<MemberFilter>('all')
   const [hasCarers, setHasCarers] = useState(false)
@@ -92,8 +105,15 @@ function MembersList() {
   const [sheet, setSheet] = useState<Sheet | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
+  const more = useRef<HTMLDetailsElement>(null)
+  // The phone "More" menu closes on Escape and on a click outside it.
+  useEffect(() => {
+    const shut = (e: Event) => { const d = more.current; if (d?.open && (e.type === 'keydown' ? (e as KeyboardEvent).key === 'Escape' : !d.contains(e.target as Node))) d.open = false }
+    document.addEventListener('keydown', shut); document.addEventListener('pointerdown', shut)
+    return () => { document.removeEventListener('keydown', shut); document.removeEventListener('pointerdown', shut) }
+  }, [])
 
-  const shown = useMemo(() => filterLines(roster.lines, f, hasCarers, q), [roster.lines, f, hasCarers, q]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shown = useMemo(() => attentionFirst(filterLines(roster.lines, f, hasCarers, q)), [roster.lines, f, hasCarers, q]) // eslint-disable-line react-hooks/exhaustive-deps
   const sort = useSort<Line>(shown, (l, key) => {
     switch (key) {
       case 'name': return l.p.display_name
@@ -104,15 +124,24 @@ function MembersList() {
       case 'seen': return l.seen ? Date.parse(l.seen) : null
       default: return l.drafts
     }
-  }, { key: 'name', dir: 1 })
+  }) // no initial sort: attentionFirst above sets the order until a header is clicked
   const open = (id: string) => { location.hash = deskHref('members', id) }
   const counts = useMemo(() => ({ attention: roster.lines.filter((l) => needsAttention(l)).length, archived: roster.lines.filter((l) => archivedOf(l)).length }), [roster.lines])
 
   return (
     <div className="mb-page">
       <PageHead title="Members" sub="Everyone in the family, with or without a phone. Open a row for the profile, sign-in, carers and records.">
-        <button className="dk-b" onClick={() => setSheet('invite')}>Invite by email</button>
-        <button className="dk-b" onClick={() => setSheet('dep')}>Add dependent</button>
+        {phone ? (
+          <details className="mb-more" ref={more}><summary className="dk-b">More</summary>
+            <div className="mb-more-m" onClick={() => { if (more.current) more.current.open = false }}>
+              <button className="dk-b" onClick={() => setSheet('invite')}>Invite by email</button>
+              <button className="dk-b" onClick={() => setSheet('dep')}>Add dependent</button>
+            </div>
+          </details>
+        ) : <>
+          <button className="dk-b" onClick={() => setSheet('invite')}>Invite by email</button>
+          <button className="dk-b" onClick={() => setSheet('dep')}>Add dependent</button>
+        </>}
         <button className="dk-b go" onClick={() => setSheet('add')}>Add member</button>
       </PageHead>
       <Filters>
@@ -127,7 +156,7 @@ function MembersList() {
           {roster.err && <p className="mb-err" role="alert">Sign-in details could not be loaded ({roster.err}). Names and carers still show.</p>}
           {sort.sorted.length === 0 ? <Empty>{roster.lines.length === 0 ? 'No one yet. Add a member or a dependent with the buttons above.' : f === 'archived' && !q.trim() && !hasCarers ? 'No one is archived.' : 'No one matches. Clear the search or pick All.'}</Empty> : (
             <div className="dk-scrollx">
-              <table className="dk-table">
+              <table className="dk-table mb-tbl">
                 <caption className="mb-cap">Members</caption>
                 <thead><tr>
                   <SortTh k="name" label="Name" sort={sort} /><SortTh k="signin" label="Sign-in" sort={sort} /><SortTh k="role" label="Role" sort={sort} /><SortTh k="state" label="State" sort={sort} />
@@ -139,13 +168,13 @@ function MembersList() {
                     const gone = archivedOf(l)
                     return (
                       <tr key={l.p.id} className="dk-click" onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button')) open(l.p.id) }}>
-                        <th scope="row"><a className="mb-link" href={deskHref('members', l.p.id)}><Avatar name={l.p.display_name} photoPath={l.p.photo_path} size={28} />{l.p.display_name || 'No name'}</a></th>
-                        <td>{signInOf(l)}</td>
-                        <td>{roleOf(l)}</td>
-                        <td><Tag tone={st.tone}>{st.text}</Tag>{gone && <span className="dk-sub mb-when"> {dayText(gone)}</span>}</td>
-                        <td>{carersText(l)}</td>
-                        <td>{l.m ? <Ago iso={l.seen} /> : ''}</td>
-                        <td className="num">{l.drafts === null ? 'Unknown' : l.drafts}</td>
+                        <th scope="row"><a className="mb-link" href={deskHref('members', l.p.id)}><Avatar name={l.p.display_name} photoPath={l.p.photo_path} size={32} />{l.p.display_name || 'No name'}</a></th>
+                        <td data-l="Sign-in">{signInOf(l)}</td>
+                        <td data-l="Role">{roleOf(l)}</td>
+                        <td className="mb-st"><Tag tone={st.tone}>{st.text}</Tag>{gone && <span className="dk-sub mb-when"> {dayText(gone)}</span>}</td>
+                        <td data-l="Carers">{carersText(l)}</td>
+                        <td data-l="Last seen">{l.m ? <Ago iso={l.seen} /> : <span className="dk-sub">No sign-in</span>}</td>
+                        <td className="num" data-l="To confirm">{l.drafts === null ? 'Unknown' : l.drafts}</td>
                       </tr>
                     )
                   })}

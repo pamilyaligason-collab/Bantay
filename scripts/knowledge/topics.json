@@ -1,0 +1,442 @@
+[
+  {
+    "slug": "high-blood-pressure",
+    "title_en": "High blood pressure (hypertension)",
+    "title_tl": "Mataas na presyon (altapresyon)",
+    "summary": "High blood pressure means the blood pushes too hard on the walls of your blood vessels. It often has no signs, so the only way to know is to measure it. Left alone for years it can harm the heart, brain and kidneys. Taking the daily medicine, eating less salt and staying active all help.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/highbloodpressure.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["hypertension", "altapresyon", "mataas na presyon", "mataas na blood pressure", "mataas na bp", "bp", "high blood", "high bp", "hbp", "presyon", "blood pressure"]
+  },
+  {
+    "slug": "bp-reading",
+    "title_en": "How to read your blood pressure",
+    "title_tl": "Paano basahin ang presyon",
+    "summary": "A reading has two numbers: the top one is the pressure when the heart squeezes, the bottom one when it rests. Sit quietly for five minutes, feet flat, arm resting at heart level, and take it at the same time each day. The NHS counts 140/90 or higher at a clinic, or 135/85 or higher at home, as high. Write the numbers down and show your doctor; one high reading alone is not a diagnosis.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/high-blood-pressure/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["bp reading", "bp", "bp check", "sukat ng presyon", "pagsukat ng presyon", "top number", "bottom number", "systolic", "diastolic", "mmhg", "bp monitor"]
+  },
+  {
+    "slug": "low-blood-pressure",
+    "title_en": "Low blood pressure",
+    "title_tl": "Mababang presyon",
+    "summary": "Low blood pressure can make you dizzy, faint or tired, especially when you stand up fast. Causes include not drinking enough, hot weather, some medicines and heart problems. Sit or lie down, drink water, and tell your doctor if it keeps happening, because a blood pressure pill dose may need a change.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/lowbloodpressure.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["hypotension", "mababang presyon", "low bp", "low blood", "bumaba ang presyon", "orthostatic", "nahihilo pagtayo"]
+  },
+  {
+    "slug": "bp-medicines",
+    "title_en": "Blood pressure medicines",
+    "title_tl": "Gamot sa presyon",
+    "summary": "There are several kinds of blood pressure pills, such as ones that relax blood vessels or remove extra water and salt. Many people need more than one. Take them every day even when you feel well, do not stop on your own, and ask your doctor or pharmacist before adding any new medicine or supplement.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/bloodpressuremedicines.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["gamot sa presyon", "gamot sa altapresyon", "antihypertensive", "losartan", "metoprolol", "beta blocker", "norvasc", "cozaar", "bp pills", "bp meds", "maintenance", "maintenance na gamot", "missed dose", "nakalimutang inumin"]
+  },
+  {
+    "slug": "low-salt-eating",
+    "title_en": "Eating less salt",
+    "title_tl": "Pagkain ng mas kaunting asin",
+    "summary": "Most of our salt comes from food that is already seasoned, not from the salt shaker. Patis, toyo, bagoong, instant noodles, dried fish, canned goods and processed meat are the big ones. Taste before adding more, use vinegar, calamansi, garlic and herbs for flavour, and read labels for sodium.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/live-well/eat-well/food-types/salt-in-your-diet/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["asin", "maalat", "mababang asin", "low salt", "less salt", "salt", "patis", "toyo", "bagoong", "tuyo", "daing", "instant noodles", "pancit canton", "sodium", "salty food", "masarap pero maalat"]
+  },
+  {
+    "slug": "salt-limit",
+    "title_en": "How much salt is too much",
+    "title_tl": "Gaano karaming asin ang sobra",
+    "summary": "The World Health Organization advises adults to take in less than 2,000 mg of sodium a day, which is less than 5 g of salt, about one teaspoon. One gram of salt holds about 400 mg of sodium, so food labels that list sodium need that conversion. If your doctor gave you a lower limit for your heart or kidneys, use that one.",
+    "source_name": "WHO",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/sodium-reduction",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["salt limit", "sodium limit", "2 grams", "5 grams", "teaspoon", "kutsarita", "ilang asin", "daily salt", "sodium goal", "salt goal", "magkano asin"]
+  },
+  {
+    "slug": "dash-eating",
+    "title_en": "DASH eating plan",
+    "title_tl": "DASH na pagkain para sa presyon",
+    "summary": "DASH is an eating pattern shown to help lower blood pressure. It asks for lots of vegetables, fruit, whole grains, beans and low-fat dairy, with fish and poultry in small amounts and little salt, sugar and red meat. Make the change step by step, and check with your doctor if you have kidney disease.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/dasheatingplan.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["dash diet", "dash", "diet sa presyon", "healthy diet for bp", "gulay", "prutas", "heart healthy diet", "ano ang dapat kainin"]
+  },
+  {
+    "slug": "healthy-diet",
+    "title_en": "A healthy everyday diet",
+    "title_tl": "Masustansyang pagkain araw-araw",
+    "summary": "A healthy plate has plenty of vegetables, fruit, beans, nuts and whole grains, and keeps salt, sugar and fatty food small. Choose water over sweet drinks, boil, steam or grill rather than deep fry, and eat smaller portions of rice if your sugar is high. Small steady habits matter more than strict rules.",
+    "source_name": "WHO",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["healthy diet", "healthy eating", "masustansya", "nutrition", "balanced diet", "ano ang kakainin", "pagkain", "meal plan", "macro", "protein", "carbs", "kanin"]
+  },
+  {
+    "slug": "potassium",
+    "title_en": "Potassium in food",
+    "title_tl": "Potassium sa pagkain",
+    "summary": "Potassium is a mineral that helps nerves, muscles and the heart work, and it can help balance the effect of salt on blood pressure. It is found in bananas, beans, leafy greens, potatoes and many other fruits and vegetables. Some blood pressure medicines and kidney problems make potassium build up, so ask your doctor before using salt substitutes or supplements.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/potassium.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["potasyo", "saging", "banana", "salt substitute", "asin na pamalit", "high potassium", "hyperkalemia", "low potassium", "hypokalemia"]
+  },
+  {
+    "slug": "potassium-kidneys",
+    "title_en": "Potassium and your kidneys",
+    "title_tl": "Potassium at bato",
+    "summary": "Healthy kidneys clear extra potassium. When the kidneys are weak, potassium can climb too high and upset the heartbeat, so people with kidney disease are often told to limit certain foods and to avoid potassium-based salt substitutes. Follow the numbers on your own blood test and your doctor's or dietitian's advice, not general lists.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/chronickidneydisease.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["kidney", "bato", "sakit sa bato", "kidney disease", "ckd", "creatinine", "egfr", "dialysis", "diet sa bato", "hyperkalemia", "potassium limit"]
+  },
+  {
+    "slug": "kidney-health",
+    "title_en": "Looking after your kidneys",
+    "title_tl": "Pag-aalaga sa bato",
+    "summary": "High blood pressure and diabetes are the two biggest causes of kidney damage, so controlling them protects the kidneys. Early kidney disease often has no signs, so ask for a yearly urine and blood check. Avoid regular use of anti-inflammatory pain pills such as ibuprofen unless your doctor agrees.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/kidneydiseases.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["kidneys", "bato", "kidney failure", "ihi", "urine", "namamaga ang paa", "ibuprofen", "mefenamic", "nsaid", "painkiller", "pain reliever"]
+  },
+  {
+    "slug": "type-2-diabetes",
+    "title_en": "Type 2 diabetes",
+    "title_tl": "Diabetes (type 2)",
+    "summary": "In type 2 diabetes the body does not use insulin well, so sugar stays high in the blood. Common early signs are being very thirsty, passing urine often and feeling tired, though some people have none. Food choices, activity, weight, medicine and regular checks keep the sugar in range and protect the eyes, feet, kidneys and heart.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/type-2-diabetes/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["diabetes", "diabetic", "asukal", "mataas ang asukal", "sugar", "high sugar", "type 2", "dm2", "may diabetes", "gliclazide"]
+  },
+  {
+    "slug": "blood-sugar-reading",
+    "title_en": "Checking blood sugar",
+    "title_tl": "Pagsukat ng asukal sa dugo",
+    "summary": "A finger-prick meter shows your sugar right now. Your doctor will tell you when to test and what range to aim for, as it differs from person to person. Wash and dry your hands first, write each result down with the time and whether you had eaten, and bring the notebook to your visit.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/bloodglucose.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["glucose", "blood glucose", "blood sugar", "fbs", "rbs", "fasting sugar", "random sugar", "asukal sa dugo", "glucometer", "sukat ng asukal", "meter"]
+  },
+  {
+    "slug": "hba1c",
+    "title_en": "HbA1c (the 3-month sugar test)",
+    "title_tl": "HbA1c (pagsusuri ng asukal sa 3 buwan)",
+    "summary": "The A1c blood test shows your average blood sugar over about the last three months. It does not change from a single meal, so it shows how well the whole plan is working. Ask your doctor what A1c is right for you and how often to have it done, usually every three to six months.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/a1c.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["a1c", "hba1c", "glycated hemoglobin", "glycosylated", "3 month sugar", "average sugar", "lab ng asukal"]
+  },
+  {
+    "slug": "low-blood-sugar",
+    "title_en": "Low blood sugar (hypoglycaemia)",
+    "title_tl": "Mababang asukal sa dugo",
+    "summary": "Low sugar can cause shaking, sweating, hunger, a pounding heart, confusion or a sudden bad mood. If the person is awake and can swallow, give a quick sugar such as half a glass of juice or a few sweets, then recheck in 15 minutes and follow with a snack. If they are drowsy, cannot swallow or pass out, do not put food in their mouth: call 911.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/low-blood-sugar-hypoglycaemia/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["hypoglycemia", "hypo", "low sugar", "mababang asukal", "bumaba ang asukal", "nanginginig", "nanginginig at pawis", "malamig na pawis", "hypoglycaemia", "sugar drop", "gliclazide"]
+  },
+  {
+    "slug": "cholesterol",
+    "title_en": "Cholesterol",
+    "title_tl": "Kolesterol",
+    "summary": "Cholesterol is a fat in the blood. Too much LDL, the bad kind, slowly builds up in artery walls and raises the chance of heart attack and stroke. Less fried and fatty food, more vegetables, beans and fish, activity, and not smoking help, and some people also need a medicine. A blood test is the only way to know your level.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/cholesterol.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["cholesterol", "kolesterol", "mataas ang kolesterol", "ldl", "hdl", "triglycerides", "lipid", "lipid profile", "taba sa dugo", "mantika"]
+  },
+  {
+    "slug": "statins",
+    "title_en": "Statins (cholesterol pills)",
+    "title_tl": "Statin (gamot sa kolesterol)",
+    "summary": "Statins lower cholesterol and the chance of heart attack and stroke. Many people take them at night, every day, for years. Tell your doctor about unexplained muscle pain, weakness or dark urine, and about any new medicine. Grapefruit and large amounts of alcohol can interact, so ask your pharmacist.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/medicines/statins/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["statin", "statins", "simvastatin", "rosuvastatin", "pravastatin", "gamot sa kolesterol", "cholesterol pill", "sumasakit ang muscle", "muscle pain", "masakit ang kalamnan"]
+  },
+  {
+    "slug": "med-amlodipine",
+    "title_en": "Amlodipine",
+    "title_tl": "Amlodipine (gamot sa presyon)",
+    "summary": "Amlodipine relaxes the blood vessels so blood flows more easily, and is used for high blood pressure and some chest pain. It is usually taken once a day. Swollen ankles, flushing or a headache can happen, and you should not stop it suddenly. Tell your doctor if your ankles swell a lot or you feel faint.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a692044.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["amlodipine", "norvasc", "amlo", "calcium channel blocker", "namamaga ang paa", "swollen ankles"]
+  },
+  {
+    "slug": "med-atorvastatin",
+    "title_en": "Atorvastatin",
+    "title_tl": "Atorvastatin (gamot sa kolesterol)",
+    "summary": "Atorvastatin is a statin that lowers cholesterol and protects the heart and brain. Take it as your doctor directs, with a low-fat diet. Report unexplained muscle pain, weakness, yellow skin or dark urine. It is not a replacement for healthy eating and activity.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a600045.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["atorvastatin", "lipitor", "atorva", "statin", "gamot sa kolesterol"]
+  },
+  {
+    "slug": "med-metformin",
+    "title_en": "Metformin",
+    "title_tl": "Metformin (gamot sa diabetes)",
+    "summary": "Metformin lowers blood sugar and is often the first pill for type 2 diabetes. Taking it with meals eases stomach upset. Tell your doctor before any scan with contrast dye or surgery, and if you have kidney problems, repeated vomiting or diarrhoea, because it may need to be paused. Seek urgent help for unusual tiredness with fast breathing.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a696005.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["metformin", "glucophage", "gamot sa diabetes", "gamot sa asukal", "diabetes pill", "sugar pill"]
+  },
+  {
+    "slug": "med-aspirin",
+    "title_en": "Aspirin",
+    "title_tl": "Aspirin",
+    "summary": "Low-dose aspirin thins the blood a little and is sometimes prescribed to prevent a second heart attack or stroke. It can cause stomach bleeding, so do not start or stop it on your own for prevention; ask your doctor. Taking it with food helps the stomach. Tell any doctor or dentist you take it before a procedure.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a682878.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["aspirin", "aspilets", "blood thinner", "pampanipis ng dugo", "low dose aspirin", "ecotrin", "bleeding", "dumudugo"]
+  },
+  {
+    "slug": "med-furosemide",
+    "title_en": "Furosemide (water pill)",
+    "title_tl": "Furosemide (gamot na pampaihi)",
+    "summary": "Furosemide makes the kidneys pass extra water and salt, used for swelling and heart failure and sometimes blood pressure. Take it in the morning so you are not up at night. It can leave you dizzy, thirsty or low in potassium, so drink as your doctor advises and get blood tests as asked. Weigh yourself regularly and report fast weight gain.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a682858.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["furosemide", "lasix", "water pill", "diuretic", "pampaihi", "pampaalis ng tubig", "water retention", "edema", "namamaga"]
+  },
+  {
+    "slug": "med-hydrochlorothiazide",
+    "title_en": "Hydrochlorothiazide (water pill)",
+    "title_tl": "Hydrochlorothiazide (gamot na pampaihi)",
+    "summary": "Hydrochlorothiazide is a mild water pill used for high blood pressure and swelling. It helps the body lose extra salt and water. It can lower potassium and make you dizzy when standing, and it can raise blood sugar a little, so keep your blood test appointments and drink enough in hot weather.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a682571.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["hydrochlorothiazide", "hctz", "indapamide", "water pill", "diuretic", "pampaihi", "thiazide"]
+  },
+  {
+    "slug": "med-insulin",
+    "title_en": "Insulin",
+    "title_tl": "Insulin",
+    "summary": "Insulin lowers blood sugar and is given by injection or pen. Use the dose and timing your doctor set, rotate the injection spot, and keep unopened insulin cold but not frozen. Because it can cause low sugar, never skip a meal after a dose, and keep a quick sugar source with you.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginfo/meds/a682611.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["insulin", "turok", "injection", "pen", "humulin", "lantus", "novorapid", "tinurukan", "insulin dose"]
+  },
+  {
+    "slug": "dehydration",
+    "title_en": "Dehydration",
+    "title_tl": "Kulang sa tubig sa katawan",
+    "summary": "Dehydration means the body has lost more fluid than it took in. Older people feel thirst less, so watch for dark yellow urine, dry mouth, headache, dizziness and tiredness. Sip water through the day, more in hot weather or with diarrhoea or fever. If your doctor limits fluids because of the heart or kidneys, follow that limit.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/dehydration/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["dehydrated", "dehydration", "uhaw", "nauuhaw", "kulang sa tubig", "tubig", "water", "inom ng tubig", "dry mouth", "tuyong bibig", "dark urine", "madilim na ihi", "pagtatae", "diarrhea"]
+  },
+  {
+    "slug": "heat-illness",
+    "title_en": "Heat exhaustion and heatstroke",
+    "title_tl": "Matinding init sa katawan (heat stroke)",
+    "summary": "In hot weather watch for heavy sweating, headache, dizziness, cramps and feeling sick: move to shade, loosen clothes, cool the skin with a wet cloth and sip water. Heatstroke is an emergency: very hot dry skin, confusion, fits or passing out. Call 911, and cool the person while you wait. Older people, and those on water pills, are at higher risk.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/heat-exhaustion-heatstroke/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["heat stroke", "heatstroke", "heat exhaustion", "init", "mainit", "sobrang init", "tag-init", "el nino", "nahilo sa init", "pawis", "sunstroke", "hot weather"]
+  },
+  {
+    "slug": "falls",
+    "title_en": "Preventing falls",
+    "title_tl": "Pag-iwas sa pagkahulog",
+    "summary": "Most falls at home can be prevented. Keep floors dry and clear, add good light and grab bars, wear shoes that grip, and stand up slowly. Ask your doctor to review medicines that make you sleepy or dizzy, and have your eyes checked. After any fall with a head knock, strong pain or you cannot get up, get medical help.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/falls/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["fall", "falls", "nahulog", "natumba", "nadulas", "nadapa", "pagkahulog", "pagkatumba", "madulas", "slip", "fall prevention", "lola nahulog", "lolo nahulog"]
+  },
+  {
+    "slug": "balance",
+    "title_en": "Balance and strength exercises",
+    "title_tl": "Pagsasanay sa balanse at lakas",
+    "summary": "Balance gets worse with age unless it is practised. Simple things help: standing on one leg while holding a counter, walking heel to toe, sit-to-stand from a chair and slow tai chi style movements. Do them near something sturdy, a few times a week, and stop if you feel pain or dizziness.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/balanceproblems.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["balance", "balanse", "mobility", "stretching", "unat", "ehersisyo", "lakas ng binti", "leg strength", "tai chi", "sit to stand", "malakas ang tuhod", "unsteady", "pagsasanay"]
+  },
+  {
+    "slug": "dizziness",
+    "title_en": "Dizziness",
+    "title_tl": "Pagkahilo",
+    "summary": "Dizziness has many causes: standing up too fast, low blood pressure or sugar, not drinking enough, medicines, ear problems or tiredness. Sit or lie down at once, drink water and rise slowly. See a doctor if it keeps coming back. Sudden dizziness with weakness, a drooping face, slurred speech, chest pain or a very bad headache is an emergency: call 911.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/symptoms/dizziness/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["dizzy", "dizziness", "hilo", "nahihilo", "nahilo", "umiikot ang paligid", "vertigo", "lightheaded", "light headed", "parang mawawalan ng malay"]
+  },
+  {
+    "slug": "fainting",
+    "title_en": "Fainting",
+    "title_tl": "Pagkawala ng malay",
+    "summary": "Fainting is a short loss of awareness, often from a drop in blood pressure, heat, standing long, hunger or dehydration. Lay the person flat and raise their legs; they should wake within a minute or two. Call 911 if they do not wake quickly, hit their head, have chest pain, a very fast or slow heartbeat, or it happens while exercising.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/symptoms/fainting/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["faint", "fainted", "passed out", "nahimatay", "himatay", "nawalan ng malay", "syncope", "blackout", "nawalan ng ulirat", "hinimatay"]
+  },
+  {
+    "slug": "stroke-fast",
+    "title_en": "Stroke warning signs (FAST)",
+    "title_tl": "Senyales ng stroke (FAST)",
+    "summary": "Think FAST. Face: one side droops when they smile. Arms: one arm drifts down when both are raised. Speech: slurred, strange or lost. Time: call 911 at once, and note when it started. Other signs are sudden numbness, confusion, trouble seeing, a very bad headache or loss of balance. Do not give food, drink or pills while waiting.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/stroke/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["stroke", "fast", "face arm speech time", "nabingi", "bingi", "namanhid", "namamanhid", "bulol", "slurred speech", "nabulol", "kalahati ng mukha", "lumiko ang bibig", "droopy face", "mini stroke", "tia", "paralyzed", "paralisado", "emergency stroke"]
+  },
+  {
+    "slug": "heart-attack",
+    "title_en": "Heart attack warning signs",
+    "title_tl": "Senyales ng atake sa puso",
+    "summary": "A heart attack often feels like pressure, squeezing or heaviness in the middle of the chest that may spread to the arm, neck, jaw or back. Other signs are shortness of breath, cold sweat, nausea and feeling faint. Women and older people may have milder or different signs. Call 911 right away; do not drive yourself.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/heart-attack/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["heart attack", "atake sa puso", "inatake", "myocardial infarction", "sakit sa puso", "chest pain", "masakit ang dibdib", "dibdib", "nahihirapan huminga", "pawis na malamig", "cardiac arrest"]
+  },
+  {
+    "slug": "chest-pain",
+    "title_en": "Chest pain",
+    "title_tl": "Pananakit ng dibdib",
+    "summary": "Chest pain has many causes, from muscle strain and heartburn to the heart. Treat it as an emergency if it is squeezing or heavy, lasts more than a few minutes, spreads to the arm, jaw or back, or comes with breathlessness, sweating or feeling faint. Call 911. Pain that is sharp, brief and only when you press or twist is less likely to be the heart, but still tell your doctor.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/symptoms/chest-pain/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["chest pain", "sakit sa dibdib", "masakit ang dibdib", "angina", "heartburn", "kabag", "sikip ng dibdib", "chest tightness", "tightness", "hirap huminga", "hirap sa paghinga", "shortness of breath"]
+  },
+  {
+    "slug": "call-911",
+    "title_en": "When to call 911",
+    "title_tl": "Kailan tatawag sa 911",
+    "summary": "911 is the national emergency number in the Philippines. Call at once for: chest pain or pressure, signs of stroke (face, arm, speech), trouble breathing, passing out, a fit, heavy bleeding, a bad fall or head injury, confusion with a hot dry body, or a diabetic who cannot be woken. Give the address and landmark, say what happened, and stay on the line.",
+    "source_name": "DILG",
+    "source_url": "https://calabarzon.dilg.gov.ph/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["911", "emergency", "ambulance", "tumawag ng ambulansya", "kailan tatawag", "saklolo", "tulong", "emergency number", "hospital", "ospital", "dalhin sa ospital", "delikado"]
+  },
+  {
+    "slug": "sleep",
+    "title_en": "Sleep",
+    "title_tl": "Tulog",
+    "summary": "Most adults do best with seven to nine hours. Keep the same bedtime and wake time, get daylight in the morning, keep the room dark and cool, and avoid coffee, big meals and screens close to bedtime. A regular sleep routine helps blood pressure and mood. Loud snoring with gasping pauses should be checked by a doctor.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/every-mind-matters/mental-health-issues/sleep/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["sleep", "tulog", "natutulog", "pagtulog", "puyat", "inaantok", "antok", "sleep tips", "bedtime", "sleep apnea", "hilik", "humihilik", "snoring", "sleep routine"]
+  },
+  {
+    "slug": "insomnia",
+    "title_en": "Trouble sleeping (insomnia)",
+    "title_tl": "Hirap makatulog",
+    "summary": "Insomnia is trouble falling asleep, waking in the night or waking too early. Slow breathing, a warm shower, a fixed bedtime and getting out of bed if you cannot sleep after about twenty minutes can help. Limit daytime naps and caffeine. Sleeping pills are not for long use; talk to your doctor if poor sleep lasts for weeks.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/insomnia.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["insomnia", "hirap matulog", "hindi makatulog", "di makatulog", "gising sa gabi", "nagigising", "sleeplessness", "sleeping pills", "pampatulog", "relax to sleep", "breathing to sleep"]
+  },
+  {
+    "slug": "stress",
+    "title_en": "Stress and relaxing",
+    "title_tl": "Stress at pagpapahinga",
+    "summary": "Stress raises the heart rate and can push blood pressure up for a while. Slow breathing is a quick way to calm down: breathe in gently through the nose for about four counts, out through the mouth for about six, and repeat for a few minutes. A short walk, prayer or quiet time, a call with family and enough sleep all help.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/every-mind-matters/mental-health-issues/stress/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["stress", "stressed", "stressed out", "kaba", "kabado", "nerbyos", "nerbiyos", "pagod", "pagod ang isip", "breathing", "breathing exercise", "huminga", "relax", "pagpapahinga", "calm", "kalma", "panic", "nag-aalala"]
+  },
+  {
+    "slug": "low-mood",
+    "title_en": "Low mood and worry in older age",
+    "title_tl": "Lungkot at pag-aalala",
+    "summary": "Feeling sad, empty, worried or uninterested for more than two weeks is not just part of ageing, and it can be treated. Talk to someone you trust and tell your doctor. Regular activity, daylight, meals, contact with family and sleep all help. If someone talks about wanting to die or hurt themselves, stay with them and call the national mental health line 1553 or 911.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/depression.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["depression", "depressed", "lungkot", "malungkot", "anxiety", "anxious", "worry", "worried", "walang gana", "ayaw kumain", "mental health", "kalungkutan", "suicide", "ayaw nang mabuhay", "1553", "ncmh"]
+  },
+  {
+    "slug": "exercise-older",
+    "title_en": "Staying active as an older adult",
+    "title_tl": "Pananatiling aktibo sa katandaan",
+    "summary": "Older adults do best with some activity every day, plus a few days of muscle and balance work. Aim for about 150 minutes a week of moderate activity such as brisk walking, built up slowly. Warm up, drink water and stop if you feel chest pain, severe breathlessness or dizziness. Ask your doctor first if you have a heart condition.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-older-adults/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["exercise", "ehersisyo", "lakad", "paglalakad", "walking", "walk", "move", "galaw", "physical activity", "workout", "stretch", "yoga", "tai chi", "150 minutes", "active"]
+  },
+  {
+    "slug": "heart-failure",
+    "title_en": "Heart failure and swelling",
+    "title_tl": "Heart failure at pamamaga",
+    "summary": "In heart failure the heart pumps less well, so fluid collects in the legs, belly or lungs. Warning signs are fast weight gain over a few days, swollen ankles, breathlessness lying flat and getting tired easily. Weigh yourself each morning, keep salt low, take medicines as set and tell your doctor early if weight or swelling goes up.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/heart-failure/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["heart failure", "chf", "namamaga ang paa", "namamagang paa", "swelling", "edema", "pamamaga", "hirap huminga paghiga", "weight gain", "tumaba bigla", "tubig sa baga", "pagod agad"]
+  },
+  {
+    "slug": "atrial-fibrillation",
+    "title_en": "Irregular heartbeat (atrial fibrillation)",
+    "title_tl": "Hindi regular na tibok ng puso",
+    "summary": "Atrial fibrillation is an uneven, often fast heartbeat that can raise the risk of stroke. Signs include a fluttering or racing chest, breathlessness, dizziness and tiredness, though some people feel nothing. Tell your doctor if your pulse feels irregular. Blood thinners may be prescribed to lower stroke risk; take them exactly as told.",
+    "source_name": "NHS",
+    "source_url": "https://www.nhs.uk/conditions/atrial-fibrillation/",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["atrial fibrillation", "afib", "irregular heartbeat", "palpitations", "palpitasyon", "mabilis ang tibok", "mabilis na tibok ng puso", "kumakabog ang dibdib", "tibok ng puso", "heart rate", "pulse", "pulso"]
+  },
+  {
+    "slug": "supplements",
+    "title_en": "Vitamins and supplements",
+    "title_tl": "Bitamina at supplement",
+    "summary": "Food should come first, since it gives vitamins, minerals and fibre together. Supplements can help if a test or your doctor shows a gap, but more is not better, and some interact with medicines (for example potassium or herbal products with blood pressure pills or blood thinners). Tell your doctor and pharmacist everything you take.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/dietarysupplements.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["supplement", "supplements", "vitamins", "bitamina", "multivitamin", "herbal", "herbal medicine", "halamang gamot", "food vs pills", "raw vs supplement", "calcium", "magnesium", "fish oil", "tawa-tawa", "sambong", "lagundi"]
+  },
+  {
+    "slug": "vitamin-d",
+    "title_en": "Vitamin D and bones",
+    "title_tl": "Bitamina D at buto",
+    "summary": "Vitamin D helps the body use calcium to keep bones strong, which matters for preventing fractures after a fall. The skin makes it in sunlight, and small amounts come from oily fish and fortified foods. Ask your doctor before taking high-dose pills, and about bone density if you are an older woman or have had a fracture.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/vitamind.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["vitamin d", "bitamina d", "sunlight", "araw", "pagbilad sa araw", "buto", "bones", "osteoporosis", "manipis na buto", "calcium", "fracture", "bali"]
+  },
+  {
+    "slug": "medicine-safety",
+    "title_en": "Taking medicines safely",
+    "title_tl": "Ligtas na pag-inom ng gamot",
+    "summary": "Keep one up-to-date list of every medicine, vitamin and herbal product, and bring it to each visit. Use a weekly pill box, take doses at the same times, and never double up after a missed dose without asking the pharmacist. Check the label and expiry, store away from heat, and keep children away.",
+    "source_name": "MedlinePlus",
+    "source_url": "https://medlineplus.gov/druginformation.html",
+    "reviewed_at": "2026-10-22",
+    "synonyms": ["medicine", "medication", "gamot", "pill", "pills", "tableta", "pill box", "pillbox", "missed dose", "nakalimutan inumin", "double dose", "side effects", "side effect", "interaction", "expiry", "paalala sa gamot", "refill", "stock", "maintenance"]
+  }
+]

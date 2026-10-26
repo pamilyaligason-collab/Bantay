@@ -16,6 +16,7 @@ import {
 import { SubHeader } from '../shell/SubHeader'
 import { useActivity } from './useActivity'
 import { isVital } from './vitals'
+import { kindOf } from './verdict'
 
 const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
@@ -60,7 +61,7 @@ export default function MetricScreen({ code }: { code: string }) {
           <div className="row">
             <span className="grow">
               No readings for this yet
-              <span className="sub">Log one from Today, or confirm imported results in Family &gt; Records.</span>
+              <span className="sub">Log one from Today, or confirm imported results in Health &gt; Papers.</span>
             </span>
           </div>
           {spec && canMark && personId && <div className="row"><button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button></div>}
@@ -76,7 +77,7 @@ export default function MetricScreen({ code }: { code: string }) {
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
+              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), code === 'bp_systolic' && latest ? { top: latest.value, bottom: readings.filter((x) => x.test === 'bp_diastolic' && Math.abs(Date.parse(x.takenAt) - Date.parse(latest.takenAt)) <= 30 * 60_000)[0]?.value } : undefined); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
           </div>
 

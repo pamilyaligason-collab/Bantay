@@ -23,11 +23,11 @@ function Spark({ values }: { values: (number | null)[] }) {
   )
 }
 
-function Tile({ k }: { k: Kpi }) {
+export function Tile({ k }: { k: Kpi }) {
   return (
     <a className="kp-tile" href={k.href} data-kpi={k.code}>
       <span className="kp-l">{k.label}</span>
-      <span className="kp-v"><b>{k.value}</b>{k.unit && <small>{k.unit}</small>}</span>
+      <span className="kp-v">{/^0( |$)/.test(k.value) ? <b className="kp-none">Not yet</b> : <><b>{k.value}</b>{k.unit && <small>{k.unit}</small>}</>}</span>
       <span className="kp-w">{k.when}</span>
       <span className="kp-f">
         {k.state && k.state.kind !== 'none' ? <span className={`kp-chip ${k.state.kind}`}>{k.state.word}</span> : <span className="kp-sub">{k.sub}</span>}
@@ -52,7 +52,7 @@ export function Kpis({ personId, readings }: { personId: string; readings: Readi
   if (!kpis.length) return null
   return (
     <section aria-labelledby="kp-h" data-testid="kpis">
-      <div className="kp-hh"><h2 className="hd" id="kp-h">My KPIs</h2><span className="sub">latest reading</span></div>
+      <div className="kp-hh"><h2 className="hd" id="kp-h">My numbers</h2><span className="sub">latest reading</span></div>
       <div className="kp-grid">{kpis.map((k) => <Tile key={k.code} k={k} />)}</div>
     </section>
   )

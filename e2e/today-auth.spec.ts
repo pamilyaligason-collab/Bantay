@@ -80,7 +80,7 @@ test.beforeEach(async ({ page }) => {
   await mock(page)
 })
 
-test('signed in: Next up for me and Ma, weather action, My week tiles, family line, and Taken logs the dose', async ({ page }) => {
+test('signed in: Next up for me and Ma, weather action, My week tiles, self-care card, and Taken logs the dose', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Next up' })).toHaveCount(0) // nothing next: no empty card
@@ -94,7 +94,7 @@ test('signed in: Next up for me and Ma, weather action, My week tiles, family li
   await expect(week.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
   await expect(week.getByRole('link', { name: /Steps a day/ })).toContainText('goal 6,000')
   await expect(week.getByRole('link', { name: /Doses on time/ })).toHaveAttribute('href', '#health')
-  await expect(page.getByRole('link', { name: /Family: 1 of 2 others OK today/ })).toHaveAttribute('href', '#family')
+  await expect(page.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
   await page.getByRole('button', { name: 'Taken' }).click()
   await expect(page.getByRole('status').filter({ hasText: /taken/ })).toBeVisible()
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
@@ -135,5 +135,30 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('button', { name: 'Taken' })).toBeVisible()
     await page.waitForTimeout(500)
     await page.screenshot({ path: `${SHOTS}/simple-${scheme}.png`, fullPage: false })
+  })
+}
+
+// F2: Simple mode keeps Hold for help above the fold with a dose card showing, on a normal and a small phone.
+for (const [w, h] of [[390, 844], [360, 640]] as const) {
+  test(`simple mode: SOS button inside the viewport before scroll at ${w}x${h}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await page.goto('/')
+    await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible() // the app has created its database
+    await seedWeek(page)
+    await seed(page, 'bantay', 'kv', [{ key: 'mode.simple', value: true }])
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Taken' })).toBeVisible()
+    const box = await page.getByRole('button', { name: /^SOS/ }).boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.y).toBeGreaterThanOrEqual(0)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(h)
+    await expect(page.locator('.bt[data-simple]')).toBeAttached()
+    await expect(page.locator('.bt[data-simple] .tabbar')).toBeAttached()
+    await expect(page.locator('.bt[data-simple] .tabbar')).toBeHidden()
+    for (const el of [page.getByRole('button', { name: 'Cannot hold? Use a button instead' }), page.getByRole('button', { name: 'Taken' })]) {
+      const b = await el.boundingBox()
+      expect(b).not.toBeNull()
+      expect(b!.y + b!.height).toBeLessThanOrEqual(h)
+    }
   })
 }

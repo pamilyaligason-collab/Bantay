@@ -178,7 +178,7 @@ describe('Members page', () => {
     await screen.findByRole('link', { name: /Test Child/ })
     fireEvent.click(screen.getByRole('button', { name: 'To confirm' }))
     const first = screen.getAllByRole('row')[1]!
-    expect(within(first).getByRole('link').textContent).toContain('Test Admin') // 0 drafts first, ascending
+    expect(within(first).getAllByRole('cell').at(-1)!.textContent).toBe('0') // 0 drafts first, ascending (ties keep the needs-attention order)
     expect(screen.getByRole('columnheader', { name: /To confirm/ }).getAttribute('aria-sort')).toBe('ascending')
   })
 

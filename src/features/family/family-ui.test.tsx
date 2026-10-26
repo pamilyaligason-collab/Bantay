@@ -138,52 +138,60 @@ describe('Plan', () => {
 describe('People', () => {
   const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString() }
 
-  it('lists the family with the latest I\'m OK, else "No check-in today", and counts them', async () => {
+  it('shows the family as status bubbles with the latest I\'m OK, and hides the check-in card once I have checked in', async () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
     const roll = await screen.findByRole('list', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getByText(/^OK 7:40/)).toBeTruthy())
-    expect(within(roll).getByText('No check-in today')).toBeTruthy()
-    expect(screen.getByText('1 of 2 OK today')).toBeTruthy()
-    expect(within(roll).getByText('Lloyd Roc (you)')).toBeTruthy()
+    await waitFor(() => expect(within(roll).getByRole('button', { name: /^Lloyd Roc \(you\), OK 7:40/ })).toBeTruthy())
+    expect(within(roll).getByRole('button', { name: /^Kuya Ben, No check-in today/ })).toBeTruthy()
+    expect(within(roll).getByText('OK today')).toBeTruthy()
+    expect(within(roll).getByText('No news')).toBeTruthy()
+    expect(within(roll).getAllByTestId('bubble-emoji').map((e) => e.textContent).sort()).toEqual(['✅', '💤'])
+    expect(screen.queryByText("Today's check-in")).toBeNull() // already logged: no second ask
     expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
   })
 
-  it('I\'m OK writes a check-in activity row and shows it', async () => {
+  it('I\'m OK writes a check-in activity row, then the card goes away', async () => {
     location.hash = '#family'
     render(<Family />)
     await screen.findByRole('list', { name: 'Family roll call' })
+    expect(await screen.findByText('0 of 2 OK today')).toBeTruthy()
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    await waitFor(() => expect(screen.getByText('1 of 2 OK today')).toBeTruthy())
+    await waitFor(() => expect(screen.queryByText("Today's check-in")).toBeNull())
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
-  it('no phone: Kuya Ben shows one status line and no nudge', async () => {
+  it('no phone: opening Kuya Ben\'s messages shows no hello nudge', async () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
-    const roll = await screen.findByRole('list', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getAllByText('No check-in today')).toHaveLength(1))
-    expect(within(roll).queryByText('Not checked in today: send a hello')).toBeNull()
+    fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
+    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
+    expect(within(dlg).queryByText('Not checked in today: send a hello')).toBeNull()
+    expect(within(dlg).queryByRole('link', { name: /Call Kuya/ })).toBeNull()
   })
 
-  it('with a phone saved, the grey avatar shows only the hello link (no duplicate No check-in line)', async () => {
+  it('with a phone saved, the messages sheet has Call and the hello link', async () => {
     await db.profiles.put({ id: 'p2', photoPath: null, phone: '+63 917 123 4567', birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null })
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
-    const roll = await screen.findByRole('list', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getAllByText('Not checked in today: send a hello')).toHaveLength(1))
-    expect(within(roll).queryByText('No check-in today')).toBeNull()
-    expect(within(roll).getByRole('link', { name: 'Not checked in today: send a hello to Kuya' }).getAttribute('href')).toBe('sms:+639171234567')
+    fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
+    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
+    expect(within(dlg).getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
+    expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
+    expect(within(dlg).getByRole('link', { name: 'Use Messenger for video' }).getAttribute('href')).toBe('https://www.messenger.com/')
+    expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy() // no Supabase in tests: plain words, no crash
   })
 
-  it('tapping a person opens their page', async () => {
+  it('tapping a bubble opens messages; the person\'s page is one tap further', async () => {
     location.hash = '#family'
     render(<Family />)
     fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
+    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
+    fireEvent.click(within(dlg).getByRole('button', { name: "Kuya's page" }))
     expect(location.hash).toBe('#family/people/p2')
   })
 })

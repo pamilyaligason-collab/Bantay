@@ -1,13 +1,15 @@
 // The recipe maths for src/features/nutrition/foods.json. Pure, no I/O, so build-foods.mjs and the vitest file share it.
 // A serving's nutrient = sum over parts of (per-100 g value x grams / 100). Unknown (null) in any part makes that nutrient null for the dish, never 0.
 export const FIELDS = ['kcal', 'sodium_mg', 'potassium_mg', 'protein_g']
-
-const r1 = (n) => Math.round(n * 10) / 10
+/** Session 9: more nutrients from USDA SR Legacy (nutrient ids 1005, 1004, 1258, 1079, 2000, 1087, 1089, 1090, 1114, 1178). A missing value is null, never 0. */
+export const EXTRA_FIELDS = ['carbs_g', 'fat_g', 'sat_fat_g', 'fiber_g', 'sugars_g', 'calcium_mg', 'iron_mg', 'magnesium_mg', 'vitd_ug', 'b12_ug']
+export const ALL_FIELDS = [...FIELDS, ...EXTRA_FIELDS]
+const DECIMALS = { protein_g: 1, carbs_g: 1, fat_g: 1, sat_fat_g: 1, fiber_g: 1, sugars_g: 1, iron_mg: 1, vitd_ug: 1, b12_ug: 2 }
 
 /** One serving of `parts` ([[ingredientKey, grams], ...]) against `ingredients` (per 100 g). */
 export function perServing(parts, ingredients) {
   const out = {}
-  for (const f of FIELDS) {
+  for (const f of ALL_FIELDS) {
     let sum = 0
     let known = true
     for (const [k, g] of parts) {
@@ -18,7 +20,8 @@ export function perServing(parts, ingredients) {
       if (v == null || !Number.isFinite(v)) known = false
       else sum += (v * g) / 100
     }
-    out[f] = known ? (f === 'protein_g' ? r1(sum) : Math.round(sum)) : null
+    const d = 10 ** (DECIMALS[f] ?? 0)
+    out[f] = known ? Math.round(sum * d) / d : null
   }
   return out
 }

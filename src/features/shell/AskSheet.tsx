@@ -7,7 +7,7 @@ import { Icon, type IconName } from './Icon'
 
 const ROWS: { id: 'talk' | 'scan' | 'upload'; icon: IconName; title: string; sub: string }[] = [
   { id: 'talk', icon: 'chat', title: 'Talk to Jack Jack', sub: 'Ask a question or say what you took' },
-  { id: 'scan', icon: 'camera', title: 'Scan a paper', sub: 'Take a photo of a lab or prescription' },
+  { id: 'scan', icon: 'camera', title: 'Scan & Capture', sub: 'Papers, or a photo of your BP monitor or glucose meter' },
   { id: 'upload', icon: 'upload', title: 'Upload a photo', sub: 'Choose a photo you already have' }
 ]
 
