@@ -89,19 +89,17 @@ const SYMPTOM_BP = /\b(?:headache|sakit ng ulo|masakit ang ulo|blurred|blurry|ma
 const SYMPTOM_SUGAR = /\b(?:shak\w*|trembl\w*|sweat\w*|sweating|cold sweat|confus\w*|dizz\w*|drows\w*|sleepy|weak\w*|faint\w*|hungry|blurred|blurry|vomit\w*|nausea|thirst\w*|nanginginig|nanghihina|nahihilo|hilo|pawis|pinagpapawisan|antok|inaantok|nalilito|malabo|nauuhaw|nagsusuka|mahina|hapo|gutom)\b/
 
 function bpEmergency(t: string): boolean {
-  // 180/120 or more (both numbers) is an emergency on its own, so a real crisis is never missed for want of a word. Lower readings that could be
-  // something else (180/110, 150/125) need presyon/bp/blood pressure within 20 characters before the numbers, or a symptom word.
-  // Words between the numbers ('over', 'sa', 'by') count alone only as "over X by Y" or "X over Y".
-  const hasSymptom = SYMPTOM_BP.test(t)
-  for (const m of t.matchAll(/\b(\d{2,3})\s*(\/|over|\bsa\b|\bby\b)\s*(\d{2,3})\b/g)) {
-    const i = m.index ?? 0
+  // Orchestrator ruling: a false alarm is cheaper than a missed emergency. Two numbers shaped like a reading, joined by '/', a space, 'over',
+  // 'sa', 'by' or 'x' (normalize() has already turned '-' and ':' into spaces). 180/120 or more (both numbers) is an emergency on its own.
+  // Lower readings (systolic 180+ or diastolic 120+, not both) need a symptom word or presyon/bp/blood pressure anywhere in the message, so
+  // "sugar 190 sa 120 dizzy" may trip it (accepted). Plain numbers with neither stay quiet: dates, prices, sizes, times.
+  const cue = SYMPTOM_BP.test(t) || /\b(?:presyon|bp|blood pressure)\b/.test(t)
+  // lookahead for the second number so "100 190 125" still tries 190/125
+  for (const m of t.matchAll(/\b(\d{2,3})(?=(?:\s*(?:\/|\bover\b|\bsa\b|\bby\b|x)\s*|\s+)(\d{2,3})\b)/g)) {
     const s = Number(m[1])
-    const d = Number(m[3])
+    const d = Number(m[2])
     if (!(s >= 70 && s <= 300 && d >= 30 && d <= 200 && s > d && (s >= 180 || d >= 120))) continue
-    const labelled = /\b(?:presyon|bp|blood pressure)\b/.test(t.slice(Math.max(0, i - 20), i))
-    // a slash plus a symptom is enough; a word between the numbers ("190 sa 120") also needs a BP label somewhere, so a sugar or a count does not trip it
-    if (labelled || (hasSymptom && (m[2] === '/' || /\b(?:presyon|bp|blood pressure)\b/.test(t)))) return true
-    if (s >= 180 && d >= 120 && (m[2] === '/' || m[2] === 'over' || /\bover\s*$/.test(t.slice(Math.max(0, i - 6), i)))) return true
+    if ((s >= 180 && d >= 120) || cue) return true
   }
   return false
 }

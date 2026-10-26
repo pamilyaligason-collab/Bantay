@@ -39,6 +39,10 @@ describe('emergency gate', () => {
     ['my throat is closing after the shrimp', 'allergy'], ['namamaga ang lalamunan ni ate', 'allergy'],
     ['BP is 190/110 and I have a bad headache', 'bp'], ['presyon 185/100 at malabo ang mata', 'bp'], ['bp 150/125 dizzy', 'bp'], ['presyon 180 sa 120 nahihilo', 'bp'], ['blood pressure 185 over 100 and headache', 'bp'],
     ['180/120', 'bp'], ['presyon 190/110', 'bp'], ['over 200 by 120', 'bp'], ['185 over 125 and severe headache', 'bp'], ['my bp reading this morning was 185 over 125 and I am dizzy', 'bp'], ['presyon ni lola kanina 190 sa 120, nahihilo', 'bp'], ['BP 190/110 but I feel fine', 'bp'], ['I feel dizzy and my pressure was 150/125', 'bp'],
+    // fix round 3 ruling: 180/120+ alone with any separator ('/', '-', space, over, sa, by, x); lower needs a symptom or a label
+    ['si lola 200 sa 130 nahihilo', 'bp'], ['tatay 210 sa 130 hilo', 'bp'], ['lola 190 sa 125, masakit ang ulo', 'bp'], ['190 sa 120', 'bp'], ['200 by 130', 'bp'],
+    ['reading 190 sa 120', 'bp'], ['BP: 180-120 dizzy', 'bp'], ['bp 180-120', 'bp'], ['presyon 180 120 nahihilo', 'bp'], ['200x130', 'bp'], ['200 x 130', 'bp'], ['180-120', 'bp'],
+    ['my sugar is 190 sa 120 and I feel dizzy', 'bp'], ['bp 185 110', 'bp'], ['150 125 nahihilo', 'bp'], ['times 100 200 130', 'bp'],
     ['my sugar is 55 and I am shaking', 'sugar'], ['asukal 350, nauuhaw at nanghihina', 'sugar'], ['glucose 62 sweating', 'sugar']
   ]
   it.each(yes)('flags: %s', (text, kind) => {
@@ -56,8 +60,9 @@ describe('emergency gate', () => {
     'what is a normal blood pressure', 'I took my amlodipine this morning', 'my sugar is 110 after breakfast', 'my sugar is 55', // no symptom
     'no chest pain today', 'walang sakit sa dibdib', 'without chest pain or shortness of breath', 'ano ang stroke', 'what is a heart attack', 'how to prevent stroke',
     'paano maiwasan ang atake sa puso', 'how do I relax and breathe slowly', 'ilang beses uminom ng gamot sa isang araw', 'masakit ang ulo ko', 'can I eat bagoong',
-    'sugar 120, feeling weak', 'BP 130/85 headache', 'my sugar is 190 sa 120 and I feel dizzy', 'what time should I take metformin', 'salamat po',
-    'my appointment is on 12/20 and I feel dizzy', 'the rice costs 150 by 120 pesos', 'I paid 200/100 for the room', 'petsa 18/12', 'my room is 190 sa 110 cm', 'BP 170/110', 'bp 120/80 and a headache'
+    'sugar 120, feeling weak', 'BP 130/85 headache', 'what time should I take metformin', 'salamat po',
+    'my appointment is on 12/20 and I feel dizzy', 'the rice costs 150 by 120 pesos', 'I paid 200/100 for the room', 'petsa 18/12', 'my room is 190 sa 110 cm', 'BP 170/110', 'bp 120/80 and a headache',
+    '179/119', '180/119', '150/125', '185 sa 100', 'on 10/26', 'October 10/26 2026', '150 sa 200 pesos', '190 by 110 cm', 'meet at 10 30', 'bp 179/119 dizzy', 'presyon 170 110 nahihilo'
   ]
   it.each(no)('lets through: %s', (text) => {
     expect(emergencyGate(text)).toBeNull()
@@ -297,5 +302,43 @@ describe('parseCompletion', () => {
     expect(r.usage).toEqual({ tokensIn: 10, tokensOut: 5, cost: 0.001 })
     expect(() => parseCompletion({ choices: [{ message: { content: '' } }] })).toThrow()
     expect(parseCompletion({ choices: [{ message: { content: 'x' } }] }).usage.cost).toBeNull()
+  })
+})
+
+// index.ts wiring, no network: Deno.serve, supabase-js and fetch are stubbed, so the real handler sets x-bantay-model-called.
+vi.mock('npm:@supabase/supabase-js@2.118.0', () => {
+  const rows = { data: [], error: null }
+  const chain: unknown = new Proxy(() => chain, { get: (_t, k) => (k === 'then' ? (r: (v: unknown) => unknown) => r(rows) : k === 'maybeSingle' ? async () => ({ data: { id: 'p1' }, error: null }) : chain), apply: () => chain })
+  return {
+    createClient: () => ({
+      auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
+      rpc: async (fn: string) => (fn === 'assistant_take' ? { data: [{ allowed: true }], error: null } : rows),
+      from: () => chain
+    })
+  }
+})
+
+describe('index.ts x-bantay-model-called header', () => {
+  it('is 0 for the emergency card (no model fetch) and 1 once the model answered', async () => {
+    let handler: ((r: Request) => Promise<Response>) | null = null
+    const secrets: Record<string, string> = { OPENROUTER_CHAT_KEY: 'test', SUPABASE_URL: 'http://stub.test', SUPABASE_ANON_KEY: 'anon' }
+    vi.stubGlobal('Deno', { env: { get: (k: string) => secrets[k] }, serve: (h: typeof handler) => { handler = h } })
+    const f = vi.fn(async (url: string) => (String(url).includes('openrouter') ? new Response(JSON.stringify({ choices: [{ message: { content: 'Drink water and rest.' } }] })) : new Response('{}', { status: 404 })))
+    vi.stubGlobal('fetch', f)
+    try {
+      await import('./index.ts')
+      const post = (text: string) => handler!(new Request('http://stub.test/ask', { method: 'POST', body: body(text) }))
+      const openrouter = () => f.mock.calls.filter(([u]) => String(u).includes('openrouter')).length
+      const sos = await post('BP: 180-120 dizzy')
+      expect(sos.headers.get('x-bantay-model-called')).toBe('0')
+      expect(((await sos.json()) as { emergency: { kind: string } }).emergency.kind).toBe('bp')
+      expect(openrouter()).toBe(0)
+      const ans = await post('what should I eat for breakfast')
+      expect(ans.status).toBe(200)
+      expect(ans.headers.get('x-bantay-model-called')).toBe('1')
+      expect(openrouter()).toBe(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
