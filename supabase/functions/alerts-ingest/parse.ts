@@ -32,10 +32,11 @@ export const ZONES = [
 export type Zone = (typeof ZONES)[number]
 const H = 3_600_000
 
-// Quake relevance (shown if any rule matches, measured to the nearest zone): M3.5+ within 100 km of a zone (can be felt), M4.5+ within 300 km (central Visayas),
-// M6.5+ within 1000 km (large regional event). Anything with an unknown magnitude or position is skipped, never guessed.
-export const QUAKE_RULES = [{ minMag: 3.5, maxKm: 100 }, { minMag: 4.5, maxKm: 300 }, { minMag: 6.5, maxKm: 1000 }]
-export const GDACS_MAX_KM = 500
+// Quake relevance (D-88, shown if any rule matches, measured to the nearest zone): M3.5+ within 150 km (can be felt), M4.5+ within 500 km, M6.0+ within 1500 km,
+// M7.0+ within 3000 km (the largest quakes can be felt, or start a tsunami, far away). The USGS all_day feed is global, so these are the widest limits that still show a real reason to look.
+// Anything with an unknown magnitude or position is skipped, never guessed.
+export const QUAKE_RULES = [{ minMag: 3.5, maxKm: 150 }, { minMag: 4.5, maxKm: 500 }, { minMag: 6.0, maxKm: 1500 }, { minMag: 7.0, maxKm: 3000 }]
+export const GDACS_MAX_KM = 1000
 export const AIR_MIN_AQI = 101 // US AQI "unhealthy for sensitive groups" and above
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
@@ -61,7 +62,7 @@ export function phTime(ms: number): string {
   return new Date(ms + 8 * H).toISOString().slice(0, 16).replace('T', ' ') + ' PH time'
 }
 
-const QUAKE_DO_NOW = 'If you did not feel it, you do not need to do anything. If you feel shaking: drop, cover and hold on. After strong shaking near the coast, move to high ground now. Do not wait for a message.'
+const QUAKE_DO_NOW = 'If you feel shaking: drop, cover and hold on. When it stops, check for injuries and damage, and move to open ground if you are near the sea and the shaking was strong or long.'
 
 export function parseUsgs(payload: unknown, now: number): AlertRow[] | null {
   const features = (payload as { features?: unknown } | null)?.features

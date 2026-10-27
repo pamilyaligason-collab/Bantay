@@ -117,35 +117,45 @@ export function placeLabel(place: { source: string; zone: string }): string {
   return place.source === 'gps' ? `Near you · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
 }
 
-// shortcut: flat radii for everything but quakes, and a rough felt-radius by magnitude for quakes; upgrade when the ingest sends a shake model.
-const LOCAL_KM = 50 // an air reading or utility notice only matters close by
-const WIDE_KM = 150 // storms, floods, heat, tsunami and volcano ash reach further (same as ALERT_RADIUS_KM on Today)
+// shortcut: flat radii for everything but quakes, and a rough strong-shaking radius by magnitude for quakes; upgrade when the ingest sends a shake model.
+export const LOCAL_KM = 50 // an air reading or utility notice only matters close by
+const NEAR_KM = 150 // a storm, flood, tsunami or volcano this close is "near you"; further out it is "about N km away"
+/** D-88: storm, flood, tsunami, volcano and GDACS rows count as affecting the family out to the ingest's own limit (GDACS_MAX_KM in alerts-ingest). */
+export const WIDE_KM = 1000
 const LOCAL_KINDS = new Set<AlertKind>(['air', 'utility', 'local'])
-/** How far a quake of this size is often felt. Unknown size counts as 100 km. Errs wide: a quake row only exists because the ingest found it near enough to matter. */
+const TSUNAMI_MAG = 6.5
+const TSUNAMI_LINE = ' If you live near the sea, watch for a tsunami warning.'
+/** The magnitude written in a quake row, or null when none is readable (never guessed). */
+export function quakeMag(a: Pick<Alert, 'level' | 'what' | 'title'>): number | null {
+  const m = /(?:magnitude|M)\s*([0-9]+(?:\.[0-9]+)?)/i.exec(`${a.level ?? ''} ${a.title ?? ''} ${a.what ?? ''}`)
+  return m && Number.isFinite(Number(m[1])) ? Number(m[1]) : null
+}
+/** How far strong shaking from a quake of this size is often felt (D-87 table). Unknown size counts as 100 km. */
 export function quakeFeltKm(a: Pick<Alert, 'level' | 'what' | 'title'>): number {
-  const m = /(?:magnitude|M)\s*([0-9]+(?:\.[0-9]+)?)/i.exec(`${a.level ?? ''} ${a.title ?? ''} ${a.what ?? ''}`)
-  const mag = m ? Number(m[1]) : NaN
-  if (!Number.isFinite(mag)) return 100
+  const mag = quakeMag(a)
+  if (mag === null) return 100
   return mag >= 7 ? 800 : mag >= 6 ? 400 : mag >= 5 ? 200 : mag >= 4 ? 100 : 50
 }
-/** steps: show the do-now steps. A quake always shows them: people may have felt it even when it is "far". Bantay never says "no action needed". */
+/** steps: show the do-now steps. A quake always shows them (people may have felt it however far it is), and so does any hazard row inside the wide radius. Bantay never says "no action needed". */
 export interface Affects { affects: boolean; km: number | null; line: string; steps: boolean }
 
 /** Does this alert touch the family? `here` is where warnings are ranked from (the phone in the Philippines, else the zone); the two home zones always count too.
- *  An alert with no point covers the whole area. */
+ *  An alert with no point covers the whole area. Every quake the ingest kept counts (D-88): it is only on the list because it was big enough for its distance. */
 export function affectsUs(a: Alert, here: LatLon | null): Affects {
   if (a.lat == null || a.lon == null) return { affects: true, km: null, line: 'Covers your area. Follow the steps below.', steps: true }
   const p = { lat: a.lat, lon: a.lon }
   const quake = a.kind === 'quake'
-  const limit = quake ? quakeFeltKm(a) : LOCAL_KINDS.has(a.kind) ? LOCAL_KM : WIDE_KM
+  const local = LOCAL_KINDS.has(a.kind)
   const dHere = here ? distanceKm(here, p) : Infinity
   const zone = HOME_ZONES.map((z) => ({ z, d: distanceKm(z, p) })).sort((x, y) => x.d - y.d)[0]!
-  if (dHere <= limit) return { affects: true, km: Math.round(dHere), line: 'Near you. Follow the steps below.', steps: true }
-  if (zone.d <= limit) return { affects: true, km: Math.round(zone.d), line: `Near home (${zone.z.name.split(',')[0]}). Follow the steps below.`, steps: true }
   const km = Math.round(Math.min(dHere, zone.d))
-  return quake
-    ? { affects: false, km, line: 'Probably too far to feel strongly. If you felt shaking, follow the steps below.', steps: true }
-    : { affects: false, km, line: 'Far from you. Watch for updates.', steps: false }
+  const tail = quake && (quakeMag(a) ?? 0) >= TSUNAMI_MAG ? TSUNAMI_LINE : ''
+  const near = quake ? quakeFeltKm(a) : local ? LOCAL_KM : NEAR_KM
+  if (dHere <= near) return { affects: true, km: Math.round(dHere), line: 'Near you. Follow the steps below.' + tail, steps: true }
+  if (zone.d <= near) return { affects: true, km: Math.round(zone.d), line: `Near home (${zone.z.name.split(',')[0]}). Follow the steps below.` + tail, steps: true }
+  if (quake) return { affects: true, km, line: `About ${km} km away. You may feel it. If you feel shaking, follow the steps below.` + tail, steps: true }
+  if (!local && km <= WIDE_KM) return { affects: true, km, line: `About ${km} km away. Follow the steps below.`, steps: true }
+  return { affects: false, km, line: 'Far from you. Watch for updates.', steps: false }
 }
 
 /** GDACS writes statistics in a machine voice ("Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million."). Say it in plain words,

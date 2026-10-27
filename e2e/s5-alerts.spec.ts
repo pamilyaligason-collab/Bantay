@@ -92,9 +92,9 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 // Lane D: freshness, honest sources, does-it-affect-us. Compared with canvas board 4b (alert freshness) and mockups safety-warnings / safety-hub / today-full (band).
-const OLD_QUAKE = { // 0.8 degrees of latitude north of Dampas = 88.95 km; M3.0 is felt to 50 km only, so far
+const OLD_QUAKE = { // 0.8 degrees of latitude north of Dampas = 88.95 km; M3.0 is felt to 50 km only, so the line says 'About 89 km away' (D-88)
   id: 'usgs-far', kind: 'quake', level: 'Magnitude 3.0', title: 'M 3.0 - 89 km SSE of Pondaguitan', what: 'Magnitude 3.0 earthquake, about 89 km from Dampas, Tagbilaran City.', where: 'Pondaguitan, Philippines',
-  when: '2026-10-27 13:30 PH time', doNow: 'If you did not feel it, you do not need to do anything.', source: 'USGS', sourceUrl: null, issuedAt: hoursAgo(0.5), lat: 9.645705 + 0.8, lon: 123.877951,
+  when: '2026-10-27 13:30 PH time', doNow: 'If you feel shaking: drop, cover and hold on. When it stops, check for injuries and damage, and move to open ground if you are near the sea and the shaking was strong or long.', source: 'USGS', sourceUrl: null, issuedAt: hoursAgo(0.5), lat: 9.645705 + 0.8, lon: 123.877951,
   bulletin: 'Source: USGS.', checkedAt: hoursAgo(0.1)
 }
 const GDACS_RAW = {
@@ -112,7 +112,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText(/Population affected/)).toHaveCount(0)
     await expect(page.getByText(/They may be out of date/)).toHaveCount(0)
     const quake = page.getByRole('article', { name: /Pondaguitan/ })
-    await expect(quake.getByText(/Probably too far to feel strongly\. If you felt shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
+    await expect(quake.getByText(/About 89 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/warnings-fresh-${scheme}.png` })
   })
@@ -130,16 +130,37 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })
   })
 
-  test(`Today band keeps the steps for a far quake ${scheme}`, async ({ page }) => {
+  test(`Today band shows a quake beyond its felt radius, with the steps ${scheme}`, async ({ page }) => {
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
     const band = page.getByRole('region', { name: 'Active warning' })
-    await expect(band.getByText('Probably too far to feel strongly. If you felt shaking, follow the steps below.')).toBeVisible()
+    await expect(band.getByText('About 89 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeVisible()
     await expect(page.getByText(/no action needed/i)).toHaveCount(0)
     await expect(band.getByText(/\(89 km away\)/)).toBeVisible()
     await expect(band.getByText('Checked 6 min ago')).toBeVisible()
-    await expect(band.getByText(/If you did not feel it/)).toBeVisible()
+    await expect(band.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
     await band.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/today-band-far-${scheme}.png` })
+  })
+
+  test(`warnings list shows every ingested row with its distance line (D-88) ${scheme}`, async ({ page }) => {
+    // Hand-computed from Conel (6.2015121): 1 deg of latitude = 111.195 km. 0.8 deg = 89 km, 1.2591 deg = 140 km, 22.483 deg = 2500 km, 8.1 deg = 901 km, 0.54 deg = 60 km.
+    const base = { ...OLD_QUAKE, lon: 125.1878084, what: '', where: 'Test place', when: '2026-10-27 13:30 PH time' }
+    const rows = [
+      { ...base, id: 'q89', title: 'Quake A (M4.5, 89 km)', level: 'Magnitude 4.5', lat: 6.2015121 + 0.8 },
+      { ...base, id: 'q140', title: 'Quake B (M3.6, 140 km)', level: 'Magnitude 3.6', lat: 6.2015121 + 1.2591 },
+      { ...base, id: 'q2500', title: 'Quake C (M7.2, 2500 km)', level: 'Magnitude 7.2', lat: 6.2015121 - 22.483 },
+      { ...base, id: 't900', kind: 'tcws', title: 'Typhoon D (900 km)', level: 'Signal No. 1', lat: 6.2015121 - 8.1, doNow: 'Follow your local DRRMO.' },
+      { ...base, id: 'air60', kind: 'air', title: 'Air E (60 km)', level: 'US AQI 120', lat: 6.2015121 + 0.54, doNow: 'Limit time outdoors.' }
+    ]
+    await open(page, '#safety/warnings', scheme, [{ key: 'safety.alerts', value: rows }])
+    const card = (t: RegExp) => page.getByRole('article', { name: t })
+    await expect(card(/Quake A/).getByText(/Near home \(Conel\)\. Follow the steps below\. \(89 km\)/)).toBeVisible()
+    await expect(card(/Quake B/).getByText(/About 140 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(140 km\)/)).toBeVisible()
+    await expect(card(/Quake C/).getByText(/About 2500 km away\..*If you live near the sea, watch for a tsunami warning\. \(2500 km\)/)).toBeVisible()
+    await expect(card(/Typhoon D/).getByText(/About 901 km away\. Follow the steps below\. \(901 km\)/)).toBeVisible()
+    await expect(card(/Air E/).getByText(/Far from you\. Watch for updates\. \(60 km\)/)).toBeVisible()
+    await expect(page.getByText(/no action needed/i)).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   })
 
   test(`hazard card explains Intensity VIII in plain words ${scheme}`, async ({ page }) => {

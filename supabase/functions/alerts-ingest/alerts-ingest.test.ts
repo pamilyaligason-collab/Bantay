@@ -30,9 +30,12 @@ describe('parseUsgs', () => {
     expect(rows[0].bulletin).toContain('Depth: unknown.')
     expect(rows[0].what).toContain('about 15 km')
   })
-  it('never promises advance warning', () => {
-    for (const r of rows) expect(r.do_now).toMatch(/Do not wait for a message/)
-    for (const r of rows) expect(r.do_now.toLowerCase()).not.toContain('bantay')
+  it('tells people what to do if they feel shaking and never says they need to do nothing (D-87)', () => {
+    for (const r of rows) {
+      expect(r.do_now).toBe('If you feel shaking: drop, cover and hold on. When it stops, check for injuries and damage, and move to open ground if you are near the sea and the shaking was strong or long.')
+      expect(r.do_now).not.toMatch(/do not need to do anything|no action needed/i)
+      expect(r.do_now.toLowerCase()).not.toContain('bantay')
+    }
   })
   it('drops a quake older than 24 hours and rejects a bad payload', () => {
     expect(parseUsgs(JSON.parse(fx('usgs.json')), NOW + 25 * 3_600_000)).toEqual([])
@@ -59,6 +62,31 @@ describe('zones (D-27)', () => {
     expect(ids(quake('far', 4.0, 8.0, 128))).toEqual([])
     expect(ids(quake('mid', 4.6, 8.0, 125.1878084))).toEqual(['usgs-mid']) // 1.8 deg = 200 km from Conel, M4.6 rule 2
   })
+  // D-88 boundaries. One degree of latitude is 6371 * pi / 180 = 111.195 km, and a point due south of Conel on its own meridian is exactly that far, so
+  // km = degrees * 111.195. Dampas is further away than the limit in every case below, so Conel is the nearest zone.
+  const south = (deg: number) => [6.2015121 - deg, 125.1878084] as const
+  const rule = (name: string, mag: number, inside: number, outside: number) => it(`${name}: M${mag} kept at ${(inside * 111.195).toFixed(1)} km, dropped at ${(outside * 111.195).toFixed(1)} km, and a smaller quake at the same spot is dropped`, () => {
+    expect(ids(quake('in', mag, ...south(inside)))).toEqual(['usgs-in'])
+    expect(ids(quake('out', mag, ...south(outside)))).toEqual([])
+    expect(ids(quake('small', mag - 0.1, ...south(inside)))).toEqual([])
+  })
+  rule('M3.5 within 150 km', 3.5, 1.34, 1.36) // 149.0 km in, 151.2 km out
+  rule('M4.5 within 500 km', 4.5, 4.45, 4.55) // 494.8 km in, 505.9 km out
+  rule('M6.0 within 1500 km', 6.0, 13.45, 13.55) // 1495.5 km in, 1506.7 km out
+  rule('M7.0 within 3000 km', 7.0, 26.95, 27.05) // 2996.7 km in, 3007.8 km out
+  it('M4.4, M5.9 and M6.9 are dropped at the far end of the rule above them', () => {
+    expect(ids(quake('a', 4.4, ...south(4.45)))).toEqual([]) // M4.4 at 494.8 km: rule 1 stops at 150 km, rule 2 needs M4.5
+    expect(ids(quake('b', 5.9, ...south(13.45)))).toEqual([]) // M5.9 at 1495.5 km: rule 3 needs M6.0
+    expect(ids(quake('c', 6.9, ...south(26.95)))).toEqual([]) // M6.9 at 2996.7 km: rule 4 needs M7.0
+  })
+  it('the kept quake names the distance to the nearest zone', () => {
+    expect(parseUsgs({ features: [quake('m', 7.0, ...south(26.95))] }, NOW)![0].what).toBe('Magnitude 7.0 earthquake, about 2997 km from Conel, General Santos City.')
+  })
+  it('GDACS: an event 995.2 km (8.95 deg south of Conel) is kept and 1006.3 km (9.05 deg) is dropped', () => {
+    const item = (id: string, lat: number) => `<item><title>t${id}</title><description>d</description><link>https://x/${id}</link><gdacs:datemodified>Sat, 17 Oct 2026 06:00:00 GMT</gdacs:datemodified><gdacs:iscurrent>true</gdacs:iscurrent><gdacs:fromdate>Fri, 16 Oct 2026 00:00:00 GMT</gdacs:fromdate><geo:Point><geo:lat>${lat}</geo:lat><geo:long>125.1878084</geo:long></geo:Point><gdacs:eventtype>TC</gdacs:eventtype><gdacs:alertlevel>Green</gdacs:alertlevel><gdacs:eventid>${id}</gdacs:eventid><gdacs:country /></item>`
+    const xml = `<rss version="2.0"><channel>${item('in', 6.2015121 - 8.95)}${item('out', 6.2015121 - 9.05)}</channel></rss>`
+    expect(parseGdacs(xml, NOW)!.map((r) => r.id)).toEqual(['gdacs-TC-in'])
+  })
   it('air quality is one row per zone with distinct ids and the zone in where_text', () => {
     const rows = ZONES.flatMap((z) => parseAir({ current: { time: '2026-10-17T13:00', pm2_5: 40, us_aqi: 120 } }, NOW, z)!)
     expect(rows.map((r) => r.id)).toEqual(['air-dampas', 'air-conel'])
@@ -68,7 +96,7 @@ describe('zones (D-27)', () => {
 
 describe('parseGdacs', () => {
   const rows = parseGdacs(fx('gdacs.xml'), NOW)!
-  it('keeps current TC/FL/VO/TS events in the Philippines or within 500 km of home', () => {
+  it('keeps current TC/FL/VO/TS events in the Philippines or within 1000 km of home', () => {
     // Kept: typhoon (country text), volcano (country text), flood near Cebu (74 km, no country text).
     // Dropped: Pakistan quake (EQ is USGS's job), drought, Cook Islands cyclone (far), an ended flood.
     expect(rows.map((r) => r.id)).toEqual(['gdacs-TC-1001400', 'gdacs-VO-2000100', 'gdacs-FL-3000300'])
