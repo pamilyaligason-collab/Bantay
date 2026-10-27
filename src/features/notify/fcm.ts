@@ -20,6 +20,8 @@ const loadPlugin = async (): Promise<PushPlugin | null> => { try { return (await
 /** The shell has no push plugin (an APK older than 2.4.0 running the new web). */
 const pluginMissing = () => { try { return !Capacitor.isPluginAvailable('PushNotifications') } catch { return false } }
 const putKv = (key: string, value: unknown) => db.kv.put({ key, value }).catch(() => undefined)
+/** The plugin is here now (the app was updated): a 'noplugin' left from the old shell must not keep saying Update the app. */
+const clearNoPlugin = async () => { try { if ((await db.kv.get(KEY_PUSH_STATUS))?.value === 'noplugin') await db.kv.delete(KEY_PUSH_STATUS) } catch { /* kv unavailable */ } }
 
 /** Both channels, before register() (Android only creates a channel once; creating an existing one is a no-op). A failure is not fatal: Android then uses its default channel. */
 export async function createChannels(P: PushPlugin): Promise<void> {
@@ -63,6 +65,7 @@ async function startPush(isStopped: () => boolean, onStop: (fn: () => void) => v
   const P = await loadPlugin()
   if (!P || isStopped()) return
   if (pluginMissing()) { await putKv(KEY_PUSH_STATUS, 'noplugin'); return }
+  await clearNoPlugin()
   try {
     await createChannels(P)
     if (isStopped()) return
@@ -89,6 +92,7 @@ export async function refreshPushPermission(): Promise<'granted' | 'denied' | 'p
   const P = await loadPlugin()
   if (!P) return null
   if (pluginMissing()) { await putKv(KEY_PUSH_STATUS, 'noplugin'); return null }
+  await clearNoPlugin()
   try {
     const r = (await P.checkPermissions()).receive
     const v = r === 'granted' ? 'granted' : r === 'denied' ? 'denied' : 'prompt'

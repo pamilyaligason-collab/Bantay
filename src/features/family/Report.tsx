@@ -1,3 +1,4 @@
+import { givenName } from '../health/medName'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { useMemberReport, useReportAccess } from './reportData'
@@ -88,7 +89,7 @@ export default function Report({ id }: { id: string }) {
   const { people } = useFamilyPeople()
   const access = useReportAccess(id)
   const p = people.find((x) => x.id === id)
-  const first = p ? (p.name.trim().split(/\s+/)[0] ?? p.name) : 'this person'
+  const first = p ? givenName(p.name) : 'this person'
   const report = useMemberReport(access ? id : '')
   const back = `#family/people/${id}`
 

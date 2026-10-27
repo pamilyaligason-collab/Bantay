@@ -103,7 +103,7 @@ end $$;
 revoke execute on function public.join_claim_use(text) from public, anon, authenticated;
 grant execute on function public.join_claim_use(text) to service_role;
 
--- ---------- export_my_data: same body as 0034, minus invite_tokens (it holds link secrets, not the member's data) ----------
+-- ---------- export_my_data: same body as 0034, minus invite_tokens and push_tokens (link secrets and push keys, not the member's data) ----------
 create or replace function public.export_my_data() returns jsonb
   language plpgsql security definer set search_path = '' as $$
 declare me uuid := auth.uid(); pid uuid; out jsonb := '{}'::jsonb; r record; rows jsonb;
@@ -114,7 +114,7 @@ begin
   if pid is null then return out; end if;
   out := jsonb_build_object('person', (select to_jsonb(p) from public.people p where p.id = pid));
   for r in select t.tbl, string_agg(format('x.%I = %L::uuid', t.col, case when t.kind = 'person' then pid else me end), ' or ' order by t.col) as cond
-             from public.erasure_targets() t where t.tbl not in ('pin_reset_requests', 'pin_attempts', 'invite_tokens') group by t.tbl order by t.tbl loop
+             from public.erasure_targets() t where t.tbl not in ('pin_reset_requests', 'pin_attempts', 'invite_tokens', 'push_tokens') group by t.tbl order by t.tbl loop
     execute format('select coalesce(jsonb_agg(case when %L = ''push_subscriptions'' then to_jsonb(x) - ''p256dh'' - ''auth'' else to_jsonb(x) end), ''[]''::jsonb) from public.%I x where %s', r.tbl, r.tbl, r.cond) into rows;
     out := out || jsonb_build_object(r.tbl, rows);
   end loop;

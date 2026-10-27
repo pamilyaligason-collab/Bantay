@@ -12,7 +12,7 @@ describe('AlertsBanner on the Android app (D-78)', () => {
   it('says family alerts show in Bantay when it is open, never promises a push, and never offers a push toggle', () => {
     native.v = true
     render(<AlertsBanner />)
-    expect(NATIVE_NOTICE).toBe('Family alerts show here when you open Bantay.')
+    expect(NATIVE_NOTICE).toBe('Family alerts also show here.')
     expect(NATIVE_NOTICE).not.toMatch(/notif|push|lock screen|will be (told|notified)/i)
     expect(screen.getByText(NATIVE_NOTICE)).toBeTruthy()
     expect(screen.queryByRole('button')).toBeNull()

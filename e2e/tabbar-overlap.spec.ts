@@ -86,6 +86,34 @@ for (const width of [360, 390]) {
         return { fab: fab && { top: fab.top, bottom: fab.bottom, right: fab.right }, barTop: bar.top, bottom, sos: hit('.sos-simple-btn'), taken: hit('.td-taken'), vw: window.innerWidth }
       })
 
+    test('today: the SOS hold never sits under Jack at any scroll position', async ({ page }) => {
+      await page.setViewportSize({ width, height: 480 }) // stress size: on a 640 px phone the hold (top 244) starts above Jack (top 482) and never meets it; at 480 px Jack sits at 322 and the hold scrolls up through it
+      await skipOnboarding(page)
+      await page.goto('/#today')
+      await expect(page.locator('.sh-jackfab')).toBeVisible()
+      await expect(page.locator('.sos-simple-btn')).toBeVisible()
+      await page.waitForTimeout(500)
+      // Step the page from the top to the end: at some step the hold's top crosses Jack's height (the hold is mid-page), and it must never touch the button.
+      const r = await page.evaluate(async () => {
+        const main = document.querySelector('main.scroll') as HTMLElement
+        const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+        const btn = document.querySelector('.sos-simple-btn') as HTMLElement
+        let overlaps = 0; let crossed = false; let minTop = 1e9; let maxTop = -1e9
+        for (let y = 0; y <= main.scrollHeight; y += 20) {
+          main.scrollTop = y
+          await new Promise((x) => requestAnimationFrame(() => x(null)))
+          const b = btn.getBoundingClientRect()
+          minTop = Math.min(minTop, b.top); maxTop = Math.max(maxTop, b.top)
+          if (b.top < fab.bottom && b.bottom > fab.top) crossed = true
+          if (b.left < fab.right && b.right > fab.left && b.top < fab.bottom && b.bottom > fab.top) overlaps++
+        }
+        const b0 = btn.getBoundingClientRect()
+        return { overlaps, crossed, right: b0.right, fabLeft: fab.left, minTop, maxTop, fabTop: fab.top, fabBottom: fab.bottom, sh: main.scrollHeight, ch: main.clientHeight }
+      })
+      expect(r.crossed, `the hold passed the height of Jack while scrolling ${JSON.stringify(r)}`).toBe(true)
+      expect(r.overlaps, `hold right edge ${r.right} vs Jack left ${r.fabLeft}`).toBe(0)
+    })
+
     for (const tab of ['today', 'health', 'discover', 'discover/play', 'family', 'safety']) {
       test(`${tab}: Jack sits above the tab bar and below the last item of the page`, async ({ page }) => {
         await skipOnboarding(page)

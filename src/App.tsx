@@ -29,21 +29,13 @@ import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
 import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
+import { watchPushForSession } from './features/notify/fcm'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
 
-// Lanes A (sharing) and E (push) ship these files in the same release. import.meta.glob finds them when present and gives {} when not, so this
-// file builds at any merge step. shortcut: after A and E are merged, swap both for plain imports (lazy(() => import(...)) and a direct watchPushForSession call).
-const sharingFiles = import.meta.glob<{ default?: ComponentType; SharingScreen?: ComponentType }>('./features/sharing/SharingScreen.tsx')
-const SharingScreen = lazy(async () => {
-  const load = Object.values(sharingFiles)[0]
-  const m = load ? await load() : null
-  return { default: m?.default ?? m?.SharingScreen ?? (() => null) }
-})
-const pushFiles = import.meta.glob<{ watchPushForSession?: () => () => void }>('./features/notify/fcm.ts', { eager: true })
-const watchPushForSession = Object.values(pushFiles)[0]?.watchPushForSession
+const SharingScreen = lazy(() => import('./features/sharing/SharingScreen'))
 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
@@ -94,7 +86,7 @@ export default function App() {
   useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
-  useEffect(() => watchPushForSession?.(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
+  useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label

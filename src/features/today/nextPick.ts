@@ -1,4 +1,5 @@
 import { clock } from '../health/model'
+import { shortMedName } from '../health/medName'
 import { dayOf, matchDoses, slotsFor, type MedSlot } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
 import { ON_TIME_MIN } from '../health/doseCount'
@@ -42,9 +43,6 @@ export function nextDoses(people: DoseTarget[], meds: Medication[], takes: Take[
   }).sort((a, b) => a.rel - b.rel || Number(b.isMe) - Number(a.isMe))
 }
 
-/** Short medicine name for cards and toasts. Local stand-in for `shortMedName` (src/features/health/medName.ts, lane J): drop a bracketed part. Swap the import when J merges. */
-export const shortMed = (n: string) => n.replace(/\s*[([].*?[)\]]\s*/g, ' ').replace(/\s+/g, ' ').trim() || n
-
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
 
 /** "40 min" / "1 h 5 min" from a minute count. */
@@ -63,7 +61,7 @@ export const lateNote = (d: DuePerson) => `Taking it by ${clock((d.at + ON_TIME_
 export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }, now: Date = new Date()): NextItem {
   const d = i.due[0]
   if (d) {
-    const names = [...new Set(d.slots.map((s) => shortMed(s.name)))]
+    const names = [...new Set(d.slots.map((s) => shortMedName(s.name)))]
     const others = [...new Set(i.due.slice(1).map((o) => o.name))]
     const title = d.isMe ? joinNames(names) : `${d.name}: ${joinNames(names)}`
     const late = d.status === 'missed'

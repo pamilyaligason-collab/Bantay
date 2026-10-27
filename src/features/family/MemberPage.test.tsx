@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./roster', async (orig) => ({
   ...(await orig<typeof import('./roster')>()),
-  useFamilyPeople: () => ({ people: [{ id: 'p2', name: 'Lola Sample', isMe: false, phone: '0917 123 4567', birthdate: null, photoPath: null, thumb: null }], selfId: 'p1' }),
+  useFamilyPeople: () => ({ people: [{ id: 'p2', name: 'Lola Sample', isMe: false, phone: '0917 123 4567', birthdate: null, photoPath: null, thumb: null }, { id: 'p3', name: 'ROCO, Lloyd', isMe: false, phone: '0917 000 0000', birthdate: null, photoPath: null, thumb: null }], selfId: 'p1' }),
   useCheckIns: () => ({})
 }))
 const acc = vi.hoisted(() => ({ v: true as boolean | null }))
@@ -67,6 +67,11 @@ describe('MemberPage', () => {
     expect(card.querySelector('a')?.getAttribute('href')).toBe('#sharing')
     expect(screen.queryByTestId('member-today')).toBeNull()
     expect(document.body.textContent).not.toMatch(/has not said how they feel|No blood pressure saved yet/)
+  })
+  it('a "SURNAME, Given" name shows the given name on the buttons: Lloyd, not ROCO,', async () => {
+    render(<MemberPage id="p3" />)
+    expect(await screen.findByRole('button', { name: 'Message Lloyd' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Call Lloyd' })).toBeTruthy()
   })
   it('the Message button opens the Messages sheet for this person', async () => {
     render(<MemberPage id="p2" />)

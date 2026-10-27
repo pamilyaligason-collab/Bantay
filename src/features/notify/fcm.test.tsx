@@ -55,7 +55,7 @@ vi.mock('../auth/client', () => ({
 
 import { db } from '../../db'
 import { signOut } from '../auth/session'
-import { CHANNEL_ID, QUIET_CHANNEL_ID, claimToken, createChannels, forgetPushToken, KEY_PUSH_PERM, KEY_PUSH_STATUS, KEY_PUSH_TOKEN, tabFor, watchPushForSession } from './fcm'
+import { CHANNEL_ID, QUIET_CHANNEL_ID, claimToken, createChannels, forgetPushToken, KEY_PUSH_PERM, KEY_PUSH_STATUS, KEY_PUSH_TOKEN, refreshPushPermission, tabFor, watchPushForSession } from './fcm'
 import { PushPermissionRow } from './PushPermissionRow'
 
 beforeEach(async () => {
@@ -270,6 +270,12 @@ describe('PushPermissionRow', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
     expect(h.calls).not.toContain('register')
     stop()
+  })
+  it('a stale noplugin status is cleared once the plugin is present (app updated)', async () => {
+    await db.kv.put({ key: KEY_PUSH_STATUS, value: 'noplugin' })
+    h.perm = 'prompt'
+    await refreshPushPermission()
+    expect(await db.kv.get(KEY_PUSH_STATUS)).toBeUndefined()
   })
   it('sign-out forgets the status with the token', async () => {
     await db.kv.put({ key: KEY_PUSH_STATUS, value: 'ready' })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ALERT_RADIUS_KM } from '../today/heroCards'
-import { affectsUs, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
+import { affectsUs, quakeFeltKm, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -98,10 +98,23 @@ describe('freshness', () => {
 describe('affectsUs', () => {
   // Hand-computed: 0.8 degrees of latitude = 0.8 * pi/180 * 6371 km = 88.95 km, so a quake 0.8 deg north of Conel (6.2015121, 125.1878084) is 89 km away.
   const conel = { lat: 6.2015121, lon: 125.1878084 }
-  const q89 = a('q89', 'quake', { lat: conel.lat + 0.8, lon: conel.lon })
-  it('an 89 km quake is far from you and needs no action', () => {
+  const q89 = a('q89', 'quake', { level: 'Magnitude 4.5', lat: conel.lat + 0.8, lon: conel.lon })
+  it('an 89 km M4.5 quake is near home: M4 to 5 is felt to 100 km, and the steps show', () => {
     expect(Math.round(distanceKm(conel, { lat: q89.lat!, lon: q89.lon! }))).toBe(89)
-    expect(affectsUs(q89, conel)).toEqual({ affects: false, km: 89, line: 'Far from you; no action needed' })
+    expect(affectsUs(q89, conel)).toEqual({ affects: true, km: 89, line: 'Near you. Follow the steps below.', steps: true })
+  })
+  it('an 89 km M3.0 quake is probably too far to feel, and the steps still show', () => {
+    expect(affectsUs({ ...q89, level: 'Magnitude 3.0', title: 'M 3.0 quake', what: '' }, conel)).toEqual({ affects: false, km: 89, line: 'Probably too far to feel strongly. If you felt shaking, follow the steps below.', steps: true })
+  })
+  it('felt radius by magnitude: 50, 100, 200, 400, 800 km, unknown 100', () => {
+    const km = (level: string) => quakeFeltKm({ level, title: '', what: '' })
+    expect([km('Magnitude 3.9'), km('Magnitude 4.0'), km('Magnitude 5.9'), km('Magnitude 6.0'), km('Magnitude 6.9'), km('Magnitude 7.0'), km('Strong')]).toEqual([50, 100, 200, 400, 400, 800, 100])
+    expect(km('Magnitude 5.0')).toBe(200)
+  })
+  it('a typhoon 160 km away is far and has no steps; the line never says no action needed', () => {
+    const r = affectsUs({ ...q89, kind: 'tcws', lat: conel.lat + 1.44 }, conel) // 1.44 deg = 160 km
+    expect(r).toEqual({ affects: false, km: 160, line: 'Far from you. Watch for updates.', steps: false })
+    expect(JSON.stringify(r)).not.toMatch(/no action needed/i)
   })
   it('the same distance for a typhoon still counts (storms reach 150 km)', () => {
     const r = affectsUs({ ...q89, kind: 'tcws' }, conel)
@@ -115,7 +128,7 @@ describe('affectsUs', () => {
   })
   it('no position and no point: area-wide counts, a far point does not', () => {
     expect(affectsUs(a('w', 'heat'), null).affects).toBe(true)
-    expect(affectsUs(a('far', 'quake', { lat: 14.6, lon: 121 }), null).affects).toBe(false)
+    expect(affectsUs(a('far', 'quake', { lat: 14.6, lon: 121 }), null).affects).toBe(false) // unknown size counts as 100 km; Manila is about 900 km from both homes
   })
 })
 

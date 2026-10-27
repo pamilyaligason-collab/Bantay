@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, drain, enqueue } from '../../db'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
+import { vdb } from '../health/visitsStore'
 import { backoffMinutes, DEAD_KEY, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
@@ -394,6 +395,32 @@ describe('pull', () => {
     await syncNow()
     expect((await hdb.people.toArray()).map((p) => p.id).sort()).toEqual(['kept', 'me'])
     expect(await db.profiles.get('gone')).toBeUndefined()
+  })
+
+  it('Stop sharing: a person the server no longer sends loses every local record, medicine, dose and visit; kept people lose nothing', async () => {
+    await Promise.all([hdb.people.clear(), hdb.readings.clear(), hdb.consults.clear(), hdb.thresholds.clear(), ldb.meds.clear(), ldb.medications.clear(), ldb.activity.clear(), ldb.food.clear(), ldb.water.clear(), ldb.goals.clear(), vdb.appointments.clear(), vdb.followUps.clear()])
+    await hdb.people.bulkPut([{ id: 'me', name: 'Test Me' }, { id: 'gone', name: 'Test Child' }, { id: 'kept', name: 'Test Kept' }])
+    for (const id of ['gone', 'kept']) {
+      await hdb.readings.add({ personId: id, test: 'ldl', value: 1, unit: 'mg/dL', takenAt: '2026-10-01T00:00:00Z' } as never)
+      await hdb.consults.add({ personId: id, takenAt: '2026-10-01T00:00:00Z' } as never)
+      await hdb.thresholds.put({ key: `${id}:ldl` } as never)
+      await ldb.meds.add({ personId: id, name: 'Test med', takenAt: '2026-10-01T00:00:00Z' } as never)
+      await ldb.medications.add({ clientId: `m-${id}`, personId: id, name: 'Test med' } as never)
+      await ldb.activity.add({ personId: id, kind: 'walk', minutes: 5, steps: null, startedAt: '2026-10-01T00:00:00Z', source: 'manual' } as never)
+      await ldb.goals.put({ personId: id, sodiumMg: 1500, waterMl: 2000, potassiumMg: null, sex: null })
+      await vdb.appointments.add({ clientId: `a-${id}`, personId: id, startsAt: '2026-11-01T00:00:00Z' } as never)
+    }
+    who.id = 'me'
+    mockFetch((c) => (c.url.includes('/people?') ? json([{ id: 'kept', display_name: 'Test Kept' }]) : json([])))
+    startSync(cfg())()
+    await syncNow()
+    const left = async (id: string) => [
+      await hdb.readings.where('personId').equals(id).count(), await hdb.consults.where('personId').equals(id).count(), await hdb.thresholds.where('key').startsWith(`${id}:`).count(),
+      await ldb.meds.where('personId').equals(id).count(), await ldb.medications.where('personId').equals(id).count(), await ldb.activity.where('personId').equals(id).count(),
+      await ldb.goals.where('personId').equals(id).count(), await vdb.appointments.where('personId').equals(id).count()
+    ]
+    expect(await left('gone')).toEqual([0, 0, 0, 0, 0, 0, 0, 0])
+    expect(await left('kept')).toEqual([1, 1, 1, 1, 1, 1, 1, 1])
   })
 
   it('merges admin safety edits into the kv overrides and drops removed ones', async () => {
