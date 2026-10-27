@@ -1,0 +1,57 @@
+/* Discover > Learn (session 12, lane F2). Everything is prefixed lr-; colours come from the v6 tokens. */
+.lr { display: flex; flex-direction: column; gap: 14px; min-width: 0; font-size: 16px; line-height: 1.5; }
+.lr > * { flex-shrink: 0; min-width: 0; }
+.lr-grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lr-row { display: flex; align-items: center; gap: 12px; }
+.lr-row .lr-grow { display: flex; }
+.lr-tile { display: flex; align-items: center; gap: 14px; color: var(--ink); text-decoration: none; min-height: 72px; }
+.lr-lead { font-size: 17px; margin: 4px 4px -4px; }
+.lr-head { display: flex; flex-direction: column; gap: 4px; padding: 0 4px; }
+.lr-head .lr-for { margin: 0; }
+.lr-for { margin: -4px 4px 0; color: var(--ink2); font-size: 17px; }
+.lr-search { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; min-height: var(--tap, 48px); box-shadow: var(--shadow); color: var(--muted); }
+.lr-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--ink); min-height: var(--tap, 48px); outline-offset: 4px; }
+.lr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lr-chip { min-height: 44px; padding: 0 16px; font-size: 14px; }
+.lr-chip[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
+.lr-list { display: grid; padding-top: 6px; padding-bottom: 6px; }
+.lr-list > b { padding: 8px 0 4px; }
+.lr-line { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 52px; color: var(--ink); text-decoration: none; min-width: 0; }
+.lr-list > .lr-line:first-child, .lr-list > b + .lr-line { border-top: 0; }
+.lr-line .sub { font-size: 14px; }
+.lr .sh-pill { box-sizing: border-box; max-width: 100%; text-decoration: none; }
+.lr-stack { display: flex; flex-direction: column; gap: 8px; }
+.lr-dish { color: var(--ink); text-decoration: none; }
+.lr-big { font-size: 28px; font-family: var(--f-display, Georgia, serif); }
+.lr-bar { height: 10px; border-radius: 5px; background: var(--card2); overflow: hidden; }
+.lr-bar i { display: block; height: 100%; border-radius: 5px; background: var(--green2); }
+.lr-bar i.w { background: var(--amber); }
+.lr-sec { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
+.lr-sec p { margin: 0; }
+.lr-h { font-family: var(--f-display, Georgia, serif); font-size: 20px; font-weight: 600; }
+.lr-ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.lr-key, .lr-stop { display: flex; flex-direction: column; gap: 6px; border-radius: 20px; padding: 14px 16px; }
+.lr-key { background: var(--soft); }
+.lr-stop { background: var(--red-soft); }
+.lr-stop > b { color: var(--red); }
+.lr-steps { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
+.lr-lvl { display: flex; gap: 4px; }
+.lr-lvl i { width: 22px; height: 10px; border-radius: 5px; background: var(--card2); box-shadow: inset 0 0 0 1px var(--muted); }
+.lr-lvl i.f { background: var(--green2); box-shadow: none; }
+.lr-src { margin: 0 4px; font-size: 13px; color: var(--muted); }
+
+/* Cook mode: over the whole screen, above the tab bar and the Jack button, so nothing is tapped by mistake. */
+.lr-cook { position: fixed; inset: 0; z-index: 60; background: var(--ground); display: flex; flex-direction: column; gap: 16px; padding: calc(16px + var(--sat, 0px)) 16px calc(16px + var(--sab, 0px)); overflow-y: auto; }
+.lr-cook:focus { outline: none; }
+.lr-cook > * { flex-shrink: 0; min-width: 0; }
+.lr-cookstep { display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center; }
+.lr-cookstep p { margin: 0; font-family: var(--f-display, Georgia, serif); font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; }
+.lr-cookstep .sub { font-size: 17px; }
+.lr-prog { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
+.lr-prog i { display: block; height: 100%; background: var(--green2); transition: width var(--dur-base) var(--ease-out); }
+.lr-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lr-cook .sh-pill.sh-block { min-height: 64px; font-size: 18px; }
+.lr-timer { font-size: 18px; }
+.lr-exit { align-self: center; min-height: var(--tap, 48px); display: inline-flex; align-items: center; color: var(--muted); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .lr-prog i { transition: none; } }
+.lr a:focus-visible, .lr button:focus-visible, .lr-cook a:focus-visible, .lr-cook button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
