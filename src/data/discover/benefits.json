@@ -1,0 +1,11 @@
+{
+  "_note": "Your benefits shelf. Only these two. checked = the day the link was tried. The Official Gazette host answers 403 to scripted requests (curl), its home page too, so RA 9994 could not be confirmed by script; the URL is the law's own Official Gazette page.",
+  "benefits": [
+    { "id": "konsulta", "title": "PhilHealth Konsulta",
+      "body": "Free primary care check-ups, tests and some medicines at an accredited Konsulta provider.",
+      "source": "PhilHealth circular TS PC2024-0013", "url": "https://www.philhealth.gov.ph/circulars/2024/TS_PC2024-0013_v1.pdf", "checked": "2026-10-28", "status": "200 application/pdf" },
+    { "id": "senior", "title": "Senior citizen discount",
+      "body": "With a senior citizen ID: 20% discount and no VAT on medicines and medical services.",
+      "source": "Republic Act 9994, Expanded Senior Citizens Act", "url": "https://www.officialgazette.gov.ph/2010/02/15/republic-act-no-9994/", "checked": "2026-10-28", "status": "403 to curl (host blocks scripts)" }
+  ]
+}

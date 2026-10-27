@@ -14,11 +14,25 @@ describe('Discover tab', () => {
     expect(screen.getByRole('button', { name: 'Learn' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
   })
-  it('a sub nobody registered shows the short Coming in this update card', () => {
+  it('Watch and Listen are registered now, so they draw their own screens', () => {
     location.hash = '#discover/watch'
     render(<Discover />)
-    expect(screen.getByText('Coming in this update')).toBeTruthy()
+    expect(screen.queryByText('Coming in this update')).toBeNull()
+    expect(screen.getByTestId('watch')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Watch' }).getAttribute('aria-pressed')).toBe('true')
+  })
+  it("today's pick sits above the sub-nav on a sub page, not on a deeper page; one pill slides by --i", () => {
+    location.hash = '#discover/play'
+    const { container } = render(<Discover />)
+    const pick = screen.getByTestId('pick')
+    const nav = screen.getByRole('group', { name: 'Discover sections' })
+    expect(pick.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(nav.style.getPropertyValue('--i')).toBe('2')
+    expect(container.querySelectorAll('.dc-pill').length).toBe(1)
+    cleanup()
+    location.hash = '#discover/learn/recipes'
+    render(<Discover />)
+    expect(screen.queryByTestId('pick')).toBeNull()
   })
   it('tapping a sub-tab writes #discover/<sub>', () => {
     render(<Discover />)
@@ -35,7 +49,7 @@ describe('Discover tab', () => {
     location.hash = '#discover/watch'
     render(<Discover />)
     expect(screen.queryByText('News lane screen')).toBeNull()
-    expect(screen.getByText('Coming in this update')).toBeTruthy()
+    expect(screen.getByTestId('watch')).toBeTruthy()
   })
 })
 
