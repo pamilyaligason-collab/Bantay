@@ -16,3 +16,5 @@ export const subOf = (hash: string): DiscoverSub => (SUB_ROOT.exec(hash)?.[1] as
 
 // Batch 2 lanes add one side-effect import per sub below, e.g. `import './learn'` (F2), `import './play'` (F3), `import './listen'` and `import './watch'` (F4).
 import './learn'
+import './play'
+import './news'
