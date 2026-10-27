@@ -113,7 +113,7 @@ function Overview() {
           </div>
         </div>
       )}
-      {ready && !oneEmpty && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
+      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
       {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && noVitals && (
