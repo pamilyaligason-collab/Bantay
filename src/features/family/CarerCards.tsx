@@ -97,8 +97,8 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
   const pid = rows[0]?.personId ?? ''
   const meds = useMedications(pid)
   const takes = useTakenToday(pid, { includeSkipped: true }) as MyTake[]
-  const [ask, setAsk] = useState(false)
-  const [done, setDone] = useState(false)
+  const [ask, setAsk] = useState<string | null>(null) // row id being confirmed: one tap marks ONE slot only (ML-13)
+  const [doneIds, setDoneIds] = useState<string[]>([])
   const now = new Date()
   const today = dayOf(now)
   const lines = rows.map((row) => {
@@ -111,34 +111,45 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
   const shown = lines.filter((l) => !l.resolved)
   if (shown.length === 0) return null
   const name = shortName(person?.name) ?? 'Someone'
-  const open = shown.flatMap((l) => l.open ?? [])
-  const mark = async () => {
-    for (const d of open) { const med = meds.find((m) => m.serverId === d.medicationId && m.name === d.name) ?? meds.find((m) => m.name === d.name); if (med) await logDose(med, d.slot) }
-    setAsk(false); setDone(true)
+  const mark = async (l: (typeof shown)[number]) => {
+    for (const d of l.open ?? []) { const med = meds.find((m) => m.serverId === d.medicationId && m.name === d.name) ?? meds.find((m) => m.name === d.name); if (med) await logDose(med, d.slot) }
+    setAsk(null); setDoneIds((x) => [...x, l.row.id])
   }
   const what = (l: (typeof shown)[number]) => {
     const names = [...new Set((l.open ?? []).map((d) => shortMedName(d.name)))]
     const ago = slotAgo(l.day ?? today, l.slot, now)
     return l.slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${clock12(l.slot)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
   }
+  const first = shown[0]!
+  const confirm = (l: (typeof shown)[number]) => (
+    <div className="in-confirm" role="alertdialog" aria-label="Confirm">
+      <b>Did you see {name} take {(l.open?.length ?? 0) === 1 ? 'it' : 'them'}?</b>
+      <div className="in-actions">
+        <button type="button" className="btn in-act" onClick={() => void mark(l)}>Yes, I saw</button>
+        <button type="button" className="btn in-act" onClick={() => setAsk(null)}>Not sure</button>
+      </div>
+    </div>
+  )
   const call = person?.phone ? <a className="btn in-act" href={`tel:${person.phone}`}>Call {name}</a> : <a className="btn in-act" href={`#family/people/${pid}`}>Open {name}</a>
   return (
     <div className="card fm-need" data-kind="dose_missed">
-      <Head person={person} title={shown.length === 1 ? `${name} missed a medicine` : `${name} missed ${shown.length} doses`} sub={shown.length === 1 ? what(shown[0]!) : 'Marked taken here when someone saw it.'} />
-      {shown.length > 1 && <ul className="fm-need-lines">{shown.map((l) => <li key={l.row.id}>{what(l)}</li>)}</ul>}
+      <Head person={person} title={shown.length === 1 ? `${name} missed a medicine` : `${name} missed ${shown.length} doses`} sub={shown.length === 1 ? what(shown[0]!) : 'Mark each one when you see it taken.'} />
+      {shown.length > 1 && (
+        <ul className="fm-need-lines">
+          {shown.map((l) => (
+            <li key={l.row.id}>
+              {what(l)}
+              {doneIds.includes(l.row.id) ? <span className="sh-sub" role="status"> Marked as taken</span> : (l.open?.length ?? 0) > 0 && ask !== l.row.id && <button type="button" className="btn in-act" aria-label={`Mark taken: ${what(l)}`} onClick={() => setAsk(l.row.id)}>Mark taken</button>}
+              {ask === l.row.id && confirm(l)}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="in-actions" role="group" aria-label="What you can do">
         {call}
-        {done ? <span className="sh-sub" role="status">Marked as taken</span> : open.length > 0 && !ask && <button type="button" className="btn in-act" onClick={() => setAsk(true)}>Mark taken for {name}</button>}
+        {shown.length === 1 && (doneIds.includes(first.row.id) ? <span className="sh-sub" role="status">Marked as taken</span> : (first.open?.length ?? 0) > 0 && ask !== first.row.id && <button type="button" className="btn in-act" onClick={() => setAsk(first.row.id)}>Mark taken for {name}</button>)}
         <a className="btn in-act" href="#family">Message the family</a>
-        {ask && (
-          <div className="in-confirm" role="alertdialog" aria-label="Confirm">
-            <b>Did you see {name} take {open.length === 1 ? 'it' : 'them'}?</b>
-            <div className="in-actions">
-              <button type="button" className="btn in-act" onClick={() => void mark()}>Yes, I saw</button>
-              <button type="button" className="btn in-act" onClick={() => setAsk(false)}>Not sure</button>
-            </div>
-          </div>
-        )}
+        {shown.length === 1 && ask === first.row.id && confirm(first)}
       </div>
     </div>
   )

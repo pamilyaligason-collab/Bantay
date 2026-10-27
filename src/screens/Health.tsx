@@ -31,7 +31,7 @@ import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
 import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
-import { properName } from '../features/health/medName'
+import { givenName, properName } from '../features/health/medName'
 
 const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
@@ -93,7 +93,7 @@ function Overview() {
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }} data-testid="showing">Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
-      {ready && !(noVitals && !blank) && (
+      {ready && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
         <div className="hv-head" data-tone={head.tone}>
           <div className="grow">
             <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
@@ -106,7 +106,7 @@ function Overview() {
       {personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && noVitals ? (
         <div className="card hv-novitals" data-testid="no-vitals">
-          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${name.split(' ')[0]}` : ''}</h2>
+          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${givenName(name)}` : ''}</h2>
           <p className="sub">Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below.</p>
           <a className="hv-cta" href={cta.href}>{cta.label}</a>
         </div>

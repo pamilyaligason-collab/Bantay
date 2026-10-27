@@ -112,11 +112,12 @@ export default function People() {
                     {known && <span className="sub">{words}</span>}
                     {flags[p.id] && <span className="fm-flag" data-testid="flag-line">{flags[p.id]}</span>}
                   </button>
+                  {!p.isMe && <button type="button" className="fm-bubble-msg" onClick={() => setTalk(p.id)} aria-label={`Message ${givenName(p.name)}`}>Message</button>}
                 </li>
               )
             })}
           </ul>
-          <p className="sub fm-key">✅ OK today &nbsp; ⚠️ Needs a look. Tap a picture to open the person.</p>
+          <p className="sub fm-key">✅ OK today &nbsp; ⚠️ Needs a look. Tap a picture to open the person, or Message to talk.</p>
         </>
       )}
       <LearningHub />

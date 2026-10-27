@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { skipOnboarding } from './helpers'
@@ -7,6 +8,30 @@ import { skipOnboarding } from './helpers'
 const SHOTS = 'docs/session-12/shots/J'
 const NOW = new Date('2026-10-27T04:00:00Z') // 12:00 in Manila, a Tuesday
 type Row = Record<string, unknown>
+
+/** Committed shots are written only when SHOTS=1 (a normal gate run leaves the tree clean, ML-32); the clock is frozen in open(), fonts and animations are settled first. */
+const shot = async (page: Page, name: string) => {
+  if (process.env.SHOTS !== '1') return
+  await page.evaluate(() => document.fonts.ready)
+  // settled = two frames in a row are byte-identical (late paints such as the header avatar finish first), then that frame is the shot
+  const take = () => page.screenshot({ animations: 'disabled', caret: 'hide' })
+  let prev = await take()
+  for (let i = 0; i < 20; i++) { const next = await take(); if (next.equals(prev)) break; prev = next }
+  const file = `${SHOTS}/${name}.png`
+  // The header avatar edge antialiases differently from one browser start to the next (a few dozen pixels). A rerun keeps the committed file unless the picture really changed.
+  if (existsSync(file)) {
+    const diff = await page.evaluate(async ([a, b]) => {
+      const load = (b64: string) => new Promise<ImageData>((res, rej) => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'); c.width = i.width; c.height = i.height; const x = c.getContext('2d')!; x.drawImage(i, 0, 0); res(x.getImageData(0, 0, i.width, i.height)) }; i.onerror = rej; i.src = `data:image/png;base64,${b64}` })
+      const [p, q] = await Promise.all([load(a!), load(b!)])
+      if (p.width !== q.width || p.height !== q.height) return Infinity
+      let n = 0
+      for (let k = 0; k < p.data.length; k += 4) if (Math.abs(p.data[k]! - q.data[k]!) > 8 || Math.abs(p.data[k + 1]! - q.data[k + 1]!) > 8 || Math.abs(p.data[k + 2]! - q.data[k + 2]!) > 8) n++
+      return n
+    }, [readFileSync(file).toString('base64'), prev.toString('base64')] as const)
+    if (diff <= 200) return
+  }
+  writeFileSync(file, prev)
+}
 
 /** Wait until the app has created the database and the store (opening a missing one would make an empty database), then write the rows. */
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
@@ -50,16 +75,21 @@ async function open(page: Page, hash: string) {
 }
 
 /** Scroll the one scrolling root to its end; the last painted item's bottom and the top of whatever sits over the content (tab bar or the raised Ask bubble). */
-const endGap = (page: Page) => page.evaluate(async () => {
+const endGap = async (page: Page) => {
+  await expect(page.locator('main.scroll')).toBeVisible() // the screen has rendered
+  await expect(page.locator('nav[aria-label="Main"]')).toBeVisible()
+  return page.evaluate(async () => {
   const main = document.querySelector('main.scroll') as HTMLElement
-  main.scrollTop = main.scrollHeight
-  await new Promise((r) => setTimeout(r, 300))
+  // settled = the scroll height stops growing across two animation frames (late-rendering cards), then pin to the end
+  let last = -1
+  for (let i = 0; i < 60 && main.scrollHeight !== last; i++) { last = main.scrollHeight; await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))) }
   main.scrollTop = main.scrollHeight
   const items = Array.from(main.querySelectorAll<HTMLElement>('*')).filter((e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.position !== 'fixed' && cs.visibility !== 'hidden' })
   const bottom = Math.max(...items.map((e) => e.getBoundingClientRect().bottom))
   const over = Math.min(document.querySelector('nav[aria-label="Main"]')!.getBoundingClientRect().top, document.querySelector('.sh-tabs .sh-bub')?.getBoundingClientRect().top ?? Infinity)
   return { bottom, over, scrolls: main.scrollHeight > main.clientHeight }
-})
+  })
+}
 
 test.use({ viewport: { width: 390, height: 844 } })
 
@@ -98,7 +128,7 @@ for (const scheme of ['light', 'dark'] as const) {
       }
       await expect(page.getByRole('heading', { name: "Today's plan" })).toHaveCount(0) // S5
       await expect(page.getByText('Nothing planned for today')).toHaveCount(0)
-      await page.screenshot({ path: `${SHOTS}/today-${scheme}.png` })
+      await shot(page, `today-${scheme}`)
     })
 
     test(`S6, S7: Health with old readings only has one empty state, a proper-case name and folded labs (${scheme})`, async ({ page }) => {
@@ -113,7 +143,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(labs).not.toContainText('226.74')
       await expect(labs.locator('details.lr-fold').first()).toBeVisible()
       expect(await labs.locator('details[open]').count()).toBe(0) // folded until tapped
-      await page.screenshot({ path: `${SHOTS}/health-labs-${scheme}.png` })
+      await shot(page, `health-labs-${scheme}`)
     })
 
     test(`S9: People bubbles say the last check-in in words, with no sleep icon (${scheme})`, async ({ page }) => {
@@ -123,10 +153,16 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(roll).toContainText('Last OK 3 days ago')
       await expect(roll).toContainText('No check-in yet')
       await expect(roll).not.toContainText('💤')
+      await roll.getByRole('button', { name: 'Message Papa' }).click() // non-carers still reach Messages from the bubble (ML-13)
+      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toHaveCount(0)
       await roll.getByRole('button', { name: /Papa Ben/ }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')
-      await page.screenshot({ path: `${SHOTS}/family-${scheme}.png` })
+      await expect(roll).toContainText('Last OK 3 days ago') // the roll call is back (it reloads after the page change) before the shot
+      await expect(roll.getByRole('button', { name: 'Message Papa' })).toBeVisible()
+      await shot(page, `family-${scheme}`)
     })
   })
 }

@@ -235,6 +235,21 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     expect(screen.getByText('6 things')).toBeTruthy() // badge = rows
     expect(screen.getAllByRole('link', { name: 'Call Papa' })).toHaveLength(1)
   })
+  it('J r2: with several missed doses each line has its own Mark taken, and one tap records exactly one slot (ML-13)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    const slots = ['07:00', '08:00', '09:00']
+    await ldb.medications.add({ personId: 'p2', name: 'Losartan', strength: '50 mg', serverId: 'm1', clientId: 'c1', medStatus: 'active', schedule: { v: 1, times: slots } })
+    h.rows = slots.map((s) => row(`md${s}`, { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: `p2:2026-10-26:${s}` }))
+    render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa missed 3 doses')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Mark taken for Papa' })).toBeNull() // no all-in-one button
+    const btns = screen.getAllByRole('button', { name: /^Mark taken: / })
+    expect(btns).toHaveLength(3)
+    fireEvent.click(btns[1]!) // 08:00
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Yes, I saw' }))
+    await waitFor(async () => expect((await ldb.meds.toArray()).map((m) => m.slot)).toEqual(['08:00']))
+  })
   it('S8: three unanswered "Still taking it?" for one person are one card with three Answer buttons; two people are two cards', async () => {
     const old = { v: 1, times: ['13:00'], review: true, review_since: '2026-10-20' }
     h.writable = ['p2', 'p3']

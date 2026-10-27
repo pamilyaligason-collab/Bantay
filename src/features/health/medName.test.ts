@@ -13,6 +13,7 @@ describe('names (S6, S9; ML-35)', () => {
     expect(givenName('Dr. Ben Cruz')).toBe('Ben')
     expect(givenName('Ben Cruz, Jr.')).toBe('Ben')
     expect(givenName('Ben Cruz, MD')).toBe('Ben')
+    expect(givenName('Ma. Clara Santos')).toBe('Ma. Clara')
     expect(givenName('Papa')).toBe('Papa')
     expect(givenName('')).toBe('')
   })
@@ -28,6 +29,14 @@ describe('shortMedName', () => {
     ['PARACETAMOL (CHILD) 250MG/5ML SYRUP', 'Paracetamol syrup'],
     ['Amoxicillin 500 mg capsule x 21', 'Amoxicillin capsule'],
     ['Vitamin C (Ascorbic Acid) 500mg', 'Vitamin C'],
+    // J r2: a salt, schedule or form note in capitals is not a brand and never replaces the first word (hand-computed)
+    ['AMOXICILLIN (AS TRIHYDRATE) 500MG CAPSULE', 'Amoxicillin capsule'],
+    ['AMOXICILLIN (AS TRIHYDRATE) 500MG', 'Amoxicillin'],
+    ['Amlodipine (AS BESILATE) 5mg tablet', 'Amlodipine tablet'],
+    ['Metformin (BID)', 'Metformin'],
+    ['Amlodipine (TABLET) 5mg', 'Amlodipine'],
+    ['Vitamin B (B-COMPLEX)', 'Vitamin B'],
+    ['SALBUTAMOL (VENTOLIN NEBULE 2.5MG/2.5ML)', 'Ventolin nebule'],
     ['Metformin Hydrochloride Extended-Release Tablets 500 mg', 'Metformin hydrochloride'] // 23 chars; adding "extended-release" would make 40 > 28
   ]
   for (const [raw, want] of cases) it(`${raw} -> ${want}`, () => expect(shortMedName(raw)).toBe(want))
