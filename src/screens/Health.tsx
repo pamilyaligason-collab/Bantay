@@ -113,13 +113,12 @@ function Overview() {
           </div>
         </div>
       )}
-      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
+      {ready && !oneEmpty && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
       {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && noVitals && (
         <div className="hv-empty-wrap" data-testid="no-vitals">
-          <h2 className="hv-sr">{`No vitals yet${name ? ` for ${givenName(name)}` : ''}`}</h2>
-          <EmptyState icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : undefined} />
+          <EmptyState heading="h2" icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : undefined} />
         </div>
       )}
       {ready && !(noVitals && !blank) && (

@@ -83,7 +83,8 @@ describe('Plan', () => {
     const hint = await screen.findByText(/^Add a reminder for /)
     expect(hint.textContent).not.toMatch(/Lola/) // names a real family member, never a made-up one
     await waitFor(() => expect(screen.getByText(/^Add a reminder for /).textContent).toMatch(/^Add a reminder for (Kuya|Lloyd)'s check-up.$/))
-    expect(screen.getAllByRole('button', { name: 'Add' }).length).toBe(2) // the floating Add and the empty-state Add
+    expect(screen.getAllByRole('button', { name: 'Add' }).length).toBe(1) // the floating Add; the empty-state action has its own name
+    expect(screen.getByRole('button', { name: 'Add to the plan' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /^Later/ }))
     expect(screen.getByText('Nothing planned for later.')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: 'Add' })[0]!).toBeTruthy()
