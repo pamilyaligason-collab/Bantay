@@ -92,8 +92,8 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 // Lane D: freshness, honest sources, does-it-affect-us. Compared with canvas board 4b (alert freshness) and mockups safety-warnings / safety-hub / today-full (band).
-const OLD_QUAKE = { // 0.8 degrees of latitude north of Dampas = 88.95 km: far
-  id: 'usgs-far', kind: 'quake', level: 'Magnitude 4.5', title: 'M 4.5 - 89 km SSE of Pondaguitan', what: 'Magnitude 4.5 earthquake, about 89 km from Dampas, Tagbilaran City.', where: 'Pondaguitan, Philippines',
+const OLD_QUAKE = { // 0.8 degrees of latitude north of Dampas = 88.95 km; M3.0 is felt to 50 km only, so far
+  id: 'usgs-far', kind: 'quake', level: 'Magnitude 3.0', title: 'M 3.0 - 89 km SSE of Pondaguitan', what: 'Magnitude 3.0 earthquake, about 89 km from Dampas, Tagbilaran City.', where: 'Pondaguitan, Philippines',
   when: '2026-10-27 13:30 PH time', doNow: 'If you did not feel it, you do not need to do anything.', source: 'USGS', sourceUrl: null, issuedAt: hoursAgo(0.5), lat: 9.645705 + 0.8, lon: 123.877951,
   bulletin: 'Source: USGS.', checkedAt: hoursAgo(0.1)
 }
@@ -112,7 +112,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText(/Population affected/)).toHaveCount(0)
     await expect(page.getByText(/They may be out of date/)).toHaveCount(0)
     const quake = page.getByRole('article', { name: /Pondaguitan/ })
-    await expect(quake.getByText(/Far from you; no action needed \(89 km\)/)).toBeVisible()
+    await expect(quake.getByText(/Probably too far to feel strongly\. If you felt shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/warnings-fresh-${scheme}.png` })
   })
@@ -130,13 +130,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })
   })
 
-  test(`Today band says a far quake needs no action ${scheme}`, async ({ page }) => {
+  test(`Today band keeps the steps for a far quake ${scheme}`, async ({ page }) => {
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
     const band = page.getByRole('region', { name: 'Active warning' })
-    await expect(band.getByText('Far from you; no action needed')).toBeVisible()
+    await expect(band.getByText('Probably too far to feel strongly. If you felt shaking, follow the steps below.')).toBeVisible()
+    await expect(page.getByText(/no action needed/i)).toHaveCount(0)
     await expect(band.getByText(/\(89 km away\)/)).toBeVisible()
     await expect(band.getByText('Checked 6 min ago')).toBeVisible()
-    await expect(band.getByText(/If you did not feel it/)).toHaveCount(0)
+    await expect(band.getByText(/If you did not feel it/)).toBeVisible()
     await band.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/today-band-far-${scheme}.png` })
   })

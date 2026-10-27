@@ -1,5 +1,6 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { shortMedName } from './medName'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { MedReview, toCheck } from './MedReview'
@@ -32,8 +33,6 @@ function useDayTakes(personId: string, day: string): MedTaken[] {
 const timeOf = (iso: string) => { const d = new Date(iso); return clock12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`) }
 /** "Taken 8:12 AM", or "Taken 8:12 AM · marked by Joy" when someone else marked it (the server stamps their first name; nothing is shown for the owner). */
 const takenText = (t: MedTaken) => `Taken ${timeOf(t.takenAt)}${t.markedByName ? ` · marked by ${t.markedByName}` : ''}`
-// TODO(merge lane J): replace this stand-in with `import { shortMedName } from './medName'` (docs/session-12/contracts.md); until then the name is unchanged.
-const shortMedName = (name: string) => name
 const label = (m: Pick<Medication, 'name' | 'strength'>) => [m.name, m.strength].filter(Boolean).join(' ')
 const byName = (a: Medication, b: Medication) => a.name.localeCompare(b.name)
 

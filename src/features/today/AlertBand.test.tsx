@@ -21,12 +21,19 @@ afterEach(() => { cleanup(); vi.useRealTimers() })
 const show = async (rows: Alert[]) => { await db.kv.put({ key: ALERTS_KEY, value: rows }); render(<AlertBand />) }
 
 describe('AlertBand: does it affect us, and how fresh', () => {
-  it('an 89 km quake says far from you, no action, and hides the do-now steps', async () => {
+  it('an 89 km M4.6 quake is near (M4 to 5 is felt to 100 km) and keeps its steps', async () => {
     await show([quake()])
-    expect(await screen.findByText('Far from you; no action needed')).toBeTruthy()
+    expect(await screen.findByText('Near you. Follow the steps below.')).toBeTruthy()
     expect(screen.getByText(/\(89 km away\)/)).toBeTruthy()
-    expect(screen.queryByText('Drop, cover and hold on.')).toBeNull()
+    expect(screen.getByText('Drop, cover and hold on.')).toBeTruthy()
     expect(screen.getByText('Checked 5 min ago')).toBeTruthy()
+    expect(screen.queryByText(/no action needed/i)).toBeNull()
+  })
+  it('an 89 km M3.0 quake is probably too far to feel, still shows the steps, and never says no action needed', async () => {
+    await show([quake({ level: 'Magnitude 3.0', title: 'Magnitude 3.0 earthquake' })])
+    expect(await screen.findByText('Probably too far to feel strongly. If you felt shaking, follow the steps below.')).toBeTruthy()
+    expect(screen.getByText('Drop, cover and hold on.')).toBeTruthy()
+    expect(screen.queryByText(/no action needed/i)).toBeNull()
     expect(screen.queryByText(/may be out of date/)).toBeNull()
     expect(screen.getByRole('link', { name: 'See details' })).toBeTruthy()
   })

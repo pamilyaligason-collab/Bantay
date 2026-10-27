@@ -14,18 +14,12 @@ import { useFlagLines } from './reportData'
 import { CarerCards } from './CarerCards'
 import FamilyPhones from './FamilyPhones'
 import { IncomingSos } from './IncomingSos'
+import { AcceptCard } from '../sharing/AcceptCard'
 
-// SHIM (lane J): AcceptCard (lane A, src/features/sharing) and StormRollCall (lane I, ./StormRollCall) merge after this lane. The globs find them when they exist and render nothing until then.
-// The orchestrator replaces both with static imports at merge: import { AcceptCard } from '../sharing/api'; import { StormRollCall } from './StormRollCall'.
+// shortcut: StormRollCall (lane I) is not merged yet; the glob renders nothing until the file exists. Swap for a static import when I merges.
 type Mod = Record<string, unknown>
-const sharingMods = import.meta.glob('../sharing/{api,AcceptCard}.{ts,tsx}', { eager: true }) as Record<string, Mod>
 const stormMods = import.meta.glob('./StormRollCall.tsx', { eager: true }) as Record<string, Mod>
-const find = (mods: Record<string, Mod>, name: string): ComponentType | null => {
-  for (const m of Object.values(mods)) { const c = m[name] ?? m.default; if (typeof c === 'function') return c as ComponentType }
-  return null
-}
-const AcceptCard: ComponentType | null = find(sharingMods, 'AcceptCard')
-const StormRollCall: ComponentType | null = find(stormMods, 'StormRollCall')
+const StormRollCall: ComponentType | null = (() => { for (const m of Object.values(stormMods)) { const c = m.StormRollCall ?? m.default; if (typeof c === 'function') return c as ComponentType } return null })()
 
 /** The words under a picture: today's check-in ("OK 7:40 AM"), else when they were last OK ("Last OK yesterday", "Last OK 3 days ago", "Last OK 12 Oct"), else "No check-in yet". */
 export function lastCheckInWords(iso: string | undefined, now: Date = new Date()): string {
@@ -79,7 +73,7 @@ export default function People() {
 
   return (
     <>
-      {AcceptCard && <AcceptCard />}
+      <AcceptCard />
       <IncomingSos placement="family" />
       {storm && StormRollCall && <StormRollCall />}
       <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />

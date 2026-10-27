@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { supabase } from '../features/auth/client'
 import { clearLastPerson, enablePasskey, forgetPhone, hasPasskeyFlag, loadFamily, passkeySupported } from '../features/auth/family'
@@ -24,17 +24,11 @@ import SetupCard from '../features/today/SetupCard'
 import { UpdateRow, VersionRow } from '../features/update/UpdateRow'
 import { loadCarerOf } from '../features/family/reportData'
 import { useFamilyPeople } from '../features/family/roster'
+import DigestToggle from '../features/notify/DigestToggle'
+import { PushPermissionRow } from '../features/notify/PushPermissionRow'
 import '../features/shell/shell.css'
 
 // Me and settings (mockup data-id="me"). What the family can see is the server list at #sharing (lane A, D-80); the old local share.* switches are gone.
-// shortcut: DigestToggle (lane C) and PushPermissionRow (lane E) merge after this lane; the glob finds them then and shows nothing until they exist.
-const notifyMods = Object.entries(import.meta.glob('../features/notify/{DigestToggle,fcm,PushPermissionRow}.{ts,tsx}', { eager: true }) as Record<string, Record<string, unknown>>)
-const fromNotify = (file: string, name: string): ComponentType | null => {
-  const c = notifyMods.find(([path]) => path.includes(`/${file}.`))?.[1]?.[name]
-  return typeof c === 'function' ? (c as ComponentType) : null
-}
-const DigestToggle = fromNotify('DigestToggle', 'default')
-const PushPermissionRow = fromNotify('fcm', 'PushPermissionRow') ?? fromNotify('PushPermissionRow', 'PushPermissionRow') ?? fromNotify('PushPermissionRow', 'default')
 const THEMES: { id: ThemePref; label: string }[] = [{ id: 'system', label: 'System' }, { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }]
 
 function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
@@ -166,8 +160,8 @@ export default function Me() {
           <span className="sh-grow"><b>Alerts</b><span className="sh-sub sh-blk">Alert list and history</span></span>
           <Icon name="chev" />
         </a>
-        {DigestToggle && <DigestToggle />}
-        {PushPermissionRow && <PushPermissionRow />}
+        <DigestToggle />
+        <PushPermissionRow />
         <a className="sh-navrow" href="#privacy">
           <Icon name="file" boxed size={20} />
           <span className="sh-grow"><b>Privacy</b><span className="sh-sub sh-blk">Agreement, AI, my data</span></span>

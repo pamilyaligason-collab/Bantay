@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
@@ -93,7 +93,7 @@ describe('Today simple mode', () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     const { unmount } = render(<Today />)
     await screen.findAllByRole('button', { name: /^Exit/ })
-    expect(bt.hasAttribute('data-simple')).toBe(true)
+    await waitFor(() => expect(bt.hasAttribute('data-simple')).toBe(true))
     unmount()
     expect(bt.hasAttribute('data-simple')).toBe(false)
     bt.remove()

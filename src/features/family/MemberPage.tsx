@@ -5,7 +5,7 @@ import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import { ON_TIME_MIN } from '../health/doseCount'
 import { BP_WORDS, bpDoctorOf, bpPairLevel } from '../health/verdict'
 import { ldb, type MedTaken, type Medication } from '../log/store'
-import { shortMed } from '../today/nextPick'
+import { givenName, shortMedName } from '../health/medName'
 import { hdb } from '../records/store'
 import type { Reading } from '../health/ranges'
 import { ageOf, checkInLabel, dial, lastCheckIn, nudgeFor, useCheckIns, useFamilyPeople } from './roster'
@@ -39,7 +39,7 @@ export function todayView(i: { meds: Medication[]; takes: Pick<MedTaken, 'name' 
   const doses = matchDoses(slotsFor(i.meds, personId, day), i.takes, day).map((d): DoseLine => {
     const past = nowMin - d.at > ON_TIME_MIN // same 2 hours the adherence counter uses
     const word = d.state === 'taken' ? 'Taken' : d.state === 'skipped' ? 'Skipped' : past ? 'Missed' : d.at <= nowMin ? 'Due now' : 'Later'
-    return { key: `${d.key}|${d.slot}`, name: shortMed(d.name), time: clockOf(d.at), word, state: word === 'Taken' ? 'taken' : word === 'Missed' || word === 'Skipped' ? 'missed' : 'open' }
+    return { key: `${d.key}|${d.slot}`, name: shortMedName(d.name), time: clockOf(d.at), word, state: word === 'Taken' ? 'taken' : word === 'Missed' || word === 'Skipped' ? 'missed' : 'open' }
   })
   const m = i.activity.filter((a) => a.personId === personId && a.kind in MOOD_WORD).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0]
   const mine = i.readings.filter((r) => r.personId === personId && typeof r.value === 'number' && Number.isFinite(r.value))
@@ -106,7 +106,7 @@ export default function MemberPage({ id }: { id: string }) {
   const age = ageOf(p.birthdate)
   const num = dial(p.phone)
   const when = lastCheckIn(last[p.id])
-  const first = p.name.trim().split(/\s+/)[0] ?? p.name
+  const first = givenName(p.name)
 
   return (
     <>

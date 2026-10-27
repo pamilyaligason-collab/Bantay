@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { FAIL_TEXT } from './actions'
-import { joinNames, shortMed, type NextItem } from './nextPick'
+import { shortMedName } from '../health/medName'
+import { joinNames, type NextItem } from './nextPick'
 import { markDue, markTaken } from './useDueMeds'
 
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
@@ -22,7 +23,7 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
     const keep = w.slots.filter((x) => !off.includes(x.key))
     const ok = !skip && many ? (keep.length > 0 && (await markTaken(w.personId, keep.map((x) => x.key))) > 0) : await markDue(w, skip)
     setBusy(false)
-    const what = joinNames([...new Set((skip || !many ? w.slots : keep).map((x) => shortMed(x.name)))])
+    const what = joinNames([...new Set((skip || !many ? w.slots : keep).map((x) => shortMedName(x.name)))])
     if (ok) setPicking(false)
     notify(ok ? (skip ? `Skipped ${what}` : `Marked ${what} taken`) : FAIL_TEXT.failed)
   }
@@ -41,7 +42,7 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
             {w.slots.map((x) => (
               <label key={x.key} className="td-check">
                 <input type="checkbox" checked={!off.includes(x.key)} onChange={(e) => setOff(e.target.checked ? off.filter((k) => k !== x.key) : [...off, x.key])} />
-                <span>{shortMed(x.name)}{x.dose ? ` ${x.dose}` : ''}</span>
+                <span>{shortMedName(x.name)}{x.dose ? ` ${x.dose}` : ''}</span>
               </label>
             ))}
           </fieldset>

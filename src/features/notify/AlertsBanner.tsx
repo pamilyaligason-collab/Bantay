@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import { ASK_KEY, enableAlerts, ensureSubscribed, kvGet, markAsked, reAskDue, vapidKey } from './alerts'
 
-export const NATIVE_NOTICE = 'Family alerts show here when you open Bantay.'
+export const NATIVE_NOTICE = 'Family alerts also show here.'
 
 type Mode = 'off' | 'unsubscribed'
 

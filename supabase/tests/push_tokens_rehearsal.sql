@@ -111,6 +111,13 @@ insert into public.push_tokens (token, user_id) values ('tokenCAS000000000000000
 delete from auth.users where id = '00000000-0000-0000-0000-0000000000c1';
 select pg_temp.ok(not exists (select 1 from public.push_tokens where user_id = '00000000-0000-0000-0000-0000000000c1'), 'deleting the auth user removes the tokens');
 
+-- ===== export_my_data never carries a push key (0038 body, ML-07) =====
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b1';
+select public.push_token_claim('tokenEXP0000000000000001', '2.4.0');
+select pg_temp.ok(exists (select 1 from public.push_tokens where token = 'tokenEXP0000000000000001'), 'b1 holds a token to export');
+select pg_temp.ok((public.export_my_data() ? 'person') and not (public.export_my_data() ? 'push_tokens') and position('tokenEXP0000000000000001' in public.export_my_data()::text) = 0, 'export_my_data has no push_tokens key and the token text appears nowhere');
+reset role;
+
 -- ===== down and up again =====
 \ir ../migrations/0040_push_tokens.down.sql
 select pg_temp.ok(to_regclass('public.push_tokens') is null and to_regprocedure('public.push_token_claim(text,text)') is null and to_regprocedure('public.dose_watch_prune()') is not null, 'down removes the table and the claim, keeps dose_watch_prune (0030 body)');
