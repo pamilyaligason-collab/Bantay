@@ -20,7 +20,7 @@ export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind' | 'row'>): InboxI
     : i.alertKind && WEATHER_KINDS.includes(i.alertKind) ? 'weather' : 'alert'
 
 const familyIcon = (k: NotifyKind | undefined): InboxIcon =>
-  k === 'dose_missed' || k === 'review_open' ? 'dose' : k === 'hazard' ? 'weather' : k === 'sos' || k === 'sos_cancel' || k === 'reading_high' || k === 'mood_unwell' ? 'alert' : 'family'
+  k === 'dose_missed' || k === 'review_open' ? 'dose' : k === 'hazard' ? 'weather' : k === 'sos' || k === 'sos_cancel' || k === 'reading_high' || k === 'mood_unwell' || k === 'rollcall' ? 'alert' : 'family'
 
 const KIND_LABEL: Record<NotifyKind, string> = {
   dose_missed: 'Missed dose', review_open: 'Question', phone_health: 'Phone', reading_high: 'Reading', mood_unwell: 'Mood', hazard: 'Alert', sos: 'SOS', sos_cancel: 'SOS',

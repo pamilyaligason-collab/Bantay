@@ -36,7 +36,7 @@ export function Pillbox({ personId, meds, takes, canMark, now = new Date() }: { 
           </tbody>
         </table>
       )}
-      <p className="sh-sub">{'✓'} taken {'·'} {'–'} skipped {'·'} {'○'} still to take {'·'} {'·'} not logged</p>
+      <p className="sh-sub">{'✓'} taken, {'–'} skipped, {'○'} still to take, {'·'} not logged</p>
     </section>
   )
 }

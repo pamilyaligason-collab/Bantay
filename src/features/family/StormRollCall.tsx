@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { givenName } from '../health/medName'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { ensureStormTasks, fetchRollcall, STORM_TASKS, stormTaskId, tally, type RollRow } from '../safety/rollcall'
-import { liveSignals, stormRef } from '../safety/stormMode'
+import { liveSignals, stormKey, stormRef } from '../safety/stormMode'
 import { useKv } from '../safety/store'
 import FmAvatar from './FmAvatar'
 import { dial, useFamilyPeople } from './roster'
@@ -20,8 +20,10 @@ const POLL_MS = 30_000
  *  and the shared Do now list (4 family tasks per storm, made once). Hidden when no wind signal is live. Answers are read online; an unreadable list says so, never "nobody answered". */
 export function StormRollCall({ now }: { now?: number }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
-  const top = liveSignals(alerts, now)[0]
+  const signals = liveSignals(alerts, now)
+  const top = signals[0]
   const ref = top ? stormRef(top) : null
+  const refsKey = top ? signals.filter((a) => stormKey(a) === stormKey(top)).map(stormRef).join('|') : ''
   const { people } = useFamilyPeople()
   const [rows, setRows] = useState<RollRow[] | null>(null)
   const [tasks, setTasks] = useState<FamilyTask[]>([])
@@ -29,12 +31,12 @@ export function StormRollCall({ now }: { now?: number }) {
   useEffect(() => {
     if (!ref) return
     let live = true
-    const load = () => void fetchRollcall(ref).then((r) => { if (live && r) setRows(r) })
+    const load = () => void fetchRollcall(refsKey.split('|')).then((r) => { if (live && r) setRows(r) })
     load()
     const t = setInterval(load, POLL_MS)
     window.addEventListener('online', load)
     return () => { live = false; clearInterval(t); window.removeEventListener('online', load) }
-  }, [ref])
+  }, [ref, refsKey])
 
   useEffect(() => {
     if (!ref) return

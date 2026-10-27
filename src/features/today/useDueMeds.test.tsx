@@ -49,4 +49,20 @@ describe('useDueMeds', () => {
       expect(await ldb.meds.count()).toBe(1)
     } finally { vi.useRealTimers() }
   })
+  it('a medicine not synced yet (no server id) is also guarded, and a second unsynced medicine in the same slot is not blocked', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 23, 50))
+    try {
+      await ldb.medications.bulkAdd([
+        { personId: 'me', name: 'Unsynced A', medStatus: 'active', schedule: { v: 1, times: ['00:20'] } },
+        { personId: 'me', name: 'Unsynced B', medStatus: 'active', schedule: { v: 1, times: ['00:20'] } }
+      ])
+      const keys = async () => (await import('./nextPick')).nextDoses([{ personId: 'me', name: '', isMe: true }], await ldb.medications.toArray(), await ldb.meds.toArray(), new Date())[0]!.slots.map((x) => x.key)
+      const [a, b] = await keys()
+      expect(await markTaken('me', [a!])).toBe(1)
+      expect(await markTaken('me', [a!])).toBe(0) // same unsynced medicine again: no second row
+      expect(await markTaken('me', [b!])).toBe(1) // a different unsynced medicine in the same slot still logs
+      expect((await ldb.meds.toArray()).map((r) => r.name).sort()).toEqual(['Unsynced A', 'Unsynced B'])
+    } finally { vi.useRealTimers() }
+  })
 })

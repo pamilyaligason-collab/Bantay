@@ -20,12 +20,19 @@ export async function sendRollcall(personId: string, ref: string, status: RollSt
 }
 
 /** Everyone's answer for this storm (the family may read them all). null = could not read (offline, signed out): never shown as "nobody answered". */
-export async function fetchRollcall(ref: string): Promise<RollRow[] | null> {
+/** `refs`: every live signal row of the same storm (one per zone), so an answer stays when the top zone changes mid-storm. The newest answer per person wins. */
+export async function fetchRollcall(refs: string | string[]): Promise<RollRow[] | null> {
   try {
     if (!supabase) return null
-    const { data, error } = await supabase.from('rollcall').select('person_id,status,at').eq('storm_ref', ref)
+    const list = Array.isArray(refs) ? refs : [refs]
+    const { data, error } = await supabase.from('rollcall').select('person_id,status,at').in('storm_ref', list)
     if (error || !data) return null
-    return (data as { person_id: string; status: string; at: string }[])
+    const newest = new Map<string, { person_id: string; status: string; at: string }>()
+    for (const r of data as { person_id: string; status: string; at: string }[]) {
+      const cur = newest.get(r.person_id)
+      if (!cur || Date.parse(r.at) > Date.parse(cur.at)) newest.set(r.person_id, r)
+    }
+    return [...newest.values()]
       .filter((r) => r.status === 'ok' || r.status === 'need_help')
       .map((r) => ({ personId: r.person_id, status: r.status as RollStatus, at: r.at }))
   } catch {

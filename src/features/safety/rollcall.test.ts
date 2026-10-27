@@ -1,8 +1,11 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ rpc: vi.fn(), result: { error: null } as { error: unknown } }))
-vi.mock('../auth/client', () => ({ supabase: { rpc: (fn: string, args: unknown) => { h.rpc(fn, args); return Promise.resolve(h.result) } } }))
+const h = vi.hoisted(() => ({ rpc: vi.fn(), result: { error: null } as { error: unknown }, rows: [] as unknown[], inRefs: [] as string[] }))
+vi.mock('../auth/client', () => ({ supabase: {
+  rpc: (fn: string, args: unknown) => { h.rpc(fn, args); return Promise.resolve(h.result) },
+  from: () => ({ select: () => ({ in: (_c: string, refs: string[]) => { h.inRefs = refs; return Promise.resolve({ data: h.rows, error: null }) } }) })
+} }))
 vi.mock('../sync/sync', () => ({ syncNow: vi.fn(() => Promise.resolve()) }))
 import { db } from '../../db'
 import { ensureStormTasks, sendRollcall, STORM_TASKS, stormTaskId, tally } from './rollcall'
@@ -72,5 +75,24 @@ describe('ensureStormTasks (the server makes the 4 tasks; the phone only asks)',
     h.result = { error: null }
     expect(await ensureStormTasks('storm-4')).toBe(true)
     expect(h.rpc).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('roll call across zone rows of one storm', () => {
+  it('reads every zone ref and keeps the newest answer per person', async () => {
+    const { fetchRollcall } = await import('./rollcall')
+    h.rows = [
+      { person_id: 'ma', status: 'need_help', at: '2026-10-28T01:00:00Z', storm_ref: 'pagasa-tcws-pepito-dampas' },
+      { person_id: 'ma', status: 'ok', at: '2026-10-28T02:00:00Z', storm_ref: 'pagasa-tcws-pepito-conel' },
+      { person_id: 'pa', status: 'need_help', at: '2026-10-28T01:30:00Z', storm_ref: 'pagasa-tcws-pepito-dampas' }
+    ]
+    const rows = await fetchRollcall(['pagasa-tcws-pepito-conel', 'pagasa-tcws-pepito-dampas'])
+    expect(h.inRefs).toEqual(['pagasa-tcws-pepito-conel', 'pagasa-tcws-pepito-dampas'])
+    expect(rows!.map((r) => [r.personId, r.status]).sort()).toEqual([['ma', 'ok'], ['pa', 'need_help']])
+  })
+  it('stormKey groups the zone rows of one PAGASA storm', async () => {
+    const { stormKey } = await import('./stormMode')
+    expect(stormKey({ id: 'pagasa-tcws-pepito-dampas' })).toBe(stormKey({ id: 'pagasa-tcws-pepito-conel' }))
+    expect(stormKey({ id: 'pagasa-tcws-pepito-dampas' })).not.toBe(stormKey({ id: 'pagasa-tcws-quinta-dampas' }))
   })
 })

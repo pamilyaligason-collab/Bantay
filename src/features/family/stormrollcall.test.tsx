@@ -7,7 +7,7 @@ vi.mock('../auth/client', () => ({
   supabase: {
     rpc: (fn: string, args: unknown) => { h.rpc(fn, args); return Promise.resolve({ error: null }) },
     from: () => {
-      const q = { select: () => q, eq: () => Promise.resolve({ data: h.rows, error: null }), upsert: () => { h.writes(); return Promise.resolve({ error: null }) }, insert: () => { h.writes(); return Promise.resolve({ error: null }) } }
+      const q = { select: () => q, eq: () => Promise.resolve({ data: h.rows, error: null }), in: () => Promise.resolve({ data: h.rows, error: null }), upsert: () => { h.writes(); return Promise.resolve({ error: null }) }, insert: () => { h.writes(); return Promise.resolve({ error: null }) } }
       return q
     }
   }

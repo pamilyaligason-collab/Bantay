@@ -34,3 +34,6 @@ export const phoneAlertCount = (c: PhoneCheck | null): number => [alarmsHealth(c
 
 /** The storm a roll call and its shared checklist belong to: the id of the live signal (safety_alerts.id), so every phone on the same signal agrees. */
 export const stormRef = (a: Pick<Alert, 'id'>): string => a.id
+
+/** The storm part of a PAGASA signal id (`pagasa-tcws-<storm>-<zone>`): every zone row of one storm shares it. Other ids are their own key. */
+export const stormKey = (a: Pick<Alert, 'id'>): string => (a.id.startsWith('pagasa-tcws-') ? a.id.slice(0, a.id.lastIndexOf('-')) : a.id)
