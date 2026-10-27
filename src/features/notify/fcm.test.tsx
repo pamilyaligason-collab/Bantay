@@ -7,6 +7,7 @@ const h = vi.hoisted(() => {
   type Listener = (e: never) => void
   const s = {
     native: true,
+    plugin: true,
     calls: [] as string[],
     channels: [] as { id: string; importance: number }[],
     listeners: new Map<string, Listener>(),
@@ -26,7 +27,7 @@ const h = vi.hoisted(() => {
   return s
 })
 
-vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native, getPlatform: () => 'android' } }))
+vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native, getPlatform: () => 'android', isPluginAvailable: () => h.plugin } }))
 vi.mock('../safety/settingsOpener', () => ({ isNativeAndroid: () => h.native, openFix: async (t: string) => { h.calls.push(`openFix:${t}`); return { opened: h.opened } } }))
 vi.mock('../phonecheck/appInfo', () => ({ shellVersionNow: async () => '2.4.0' }))
 vi.mock('./alertsLive', () => ({ pollAlerts: async () => { h.polls++; return 0 } }))
@@ -54,11 +55,11 @@ vi.mock('../auth/client', () => ({
 
 import { db } from '../../db'
 import { signOut } from '../auth/session'
-import { CHANNEL_ID, QUIET_CHANNEL_ID, claimToken, createChannels, forgetPushToken, KEY_PUSH_PERM, KEY_PUSH_TOKEN, tabFor, watchPushForSession } from './fcm'
+import { CHANNEL_ID, QUIET_CHANNEL_ID, claimToken, createChannels, forgetPushToken, KEY_PUSH_PERM, KEY_PUSH_STATUS, KEY_PUSH_TOKEN, tabFor, watchPushForSession } from './fcm'
 import { PushPermissionRow } from './PushPermissionRow'
 
 beforeEach(async () => {
-  Object.assign(h, { native: true, calls: [], channels: [], removed: [], perm: 'prompt', permAfterAsk: 'granted', registerFails: false, uid: 'u1', rpcs: [], rpcError: false, deletes: [], events: [], polls: 0, opened: 'app-settings' })
+  Object.assign(h, { native: true, plugin: true, calls: [], channels: [], removed: [], perm: 'prompt', permAfterAsk: 'granted', registerFails: false, uid: 'u1', rpcs: [], rpcError: false, deletes: [], events: [], polls: 0, opened: 'app-settings' })
   h.listeners.clear()
   await db.kv.clear()
 })
@@ -218,12 +219,62 @@ describe('PushPermissionRow', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Open settings' }))
     expect(await screen.findByText(/Open Settings, then Apps, then Bantay, then Notifications/)).toBeTruthy()
   })
-  it('granted: no Open settings button, still the auto-start line', async () => {
+  it('granted but no token saved yet: does NOT say On; says what is missing and offers Try again', async () => {
     h.perm = 'granted'
     render(<PushPermissionRow />)
-    expect(await screen.findByText(/On\. Family alerts can reach you/)).toBeTruthy()
+    expect(await screen.findByText('Alerts are not set up on this phone yet.')).toBeTruthy()
+    expect(screen.queryByText(/On\. Family alerts/)).toBeNull()
     expect(screen.queryByRole('button', { name: 'Open settings' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     expect(screen.getByText(/auto-start/)).toBeTruthy()
+  })
+  it('granted and the token claim failed: not On', async () => {
+    h.perm = 'granted'; h.rpcError = true
+    await claimToken('tok-fail-aaaaaaaaaaaaaaaa')
+    expect((await db.kv.get(KEY_PUSH_STATUS))?.value).toBe('failed')
+    render(<PushPermissionRow />)
+    expect(await screen.findByText('Alerts are not set up on this phone yet.')).toBeTruthy()
+  })
+  it('granted but register() failed (no Play services): not On', async () => {
+    h.perm = 'granted'; h.registerFails = true
+    const stop = watchPushForSession()
+    await waitFor(async () => expect((await db.kv.get(KEY_PUSH_STATUS))?.value).toBe('failed'))
+    render(<PushPermissionRow />)
+    expect(await screen.findByText('Alerts are not set up on this phone yet.')).toBeTruthy()
+    stop()
+  })
+  it('granted AND register() gave a token AND push_token_claim succeeded: On, no button', async () => {
+    h.perm = 'granted'
+    const stop = watchPushForSession()
+    await started()
+    h.listeners.get('registration')!({ value: 'fcm-token-ABCDEFGHIJKLMNOP' } as never)
+    await waitFor(async () => expect((await db.kv.get(KEY_PUSH_STATUS))?.value).toBe('ready'))
+    render(<PushPermissionRow />)
+    expect(await screen.findByText(/On\. Family alerts can reach you/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open settings' })).toBeNull()
+    stop()
+  })
+  it('a ready status without the permission is not On (permission taken away later)', async () => {
+    await db.kv.put({ key: KEY_PUSH_STATUS, value: 'ready' })
+    h.perm = 'prompt'
+    render(<PushPermissionRow />)
+    expect(await screen.findByText('Alerts are not set up on this phone yet.')).toBeTruthy()
+  })
+  it('an old shell without the push plugin: says Update the app, no button, no register call', async () => {
+    h.plugin = false
+    const stop = watchPushForSession()
+    await waitFor(async () => expect((await db.kv.get(KEY_PUSH_STATUS))?.value).toBe('noplugin'))
+    render(<PushPermissionRow />)
+    expect(await screen.findByText('Update the app to get alerts when Bantay is closed.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    expect(h.calls).not.toContain('register')
+    stop()
+  })
+  it('sign-out forgets the status with the token', async () => {
+    await db.kv.put({ key: KEY_PUSH_STATUS, value: 'ready' })
+    await signOut()
+    expect(await db.kv.get(KEY_PUSH_STATUS)).toBeUndefined()
   })
   it('the web app shows nothing', () => {
     h.native = false

@@ -72,14 +72,23 @@ select public.push_token_claim('tokenCAP0000000000000006', '2.4.0');
 reset role;
 select pg_temp.ok((select count(*) from public.push_tokens where user_id = '00000000-0000-0000-0000-0000000000b1') = 3 and exists (select 1 from public.push_tokens where token = 'tokenCAP0000000000000006'), 'claim after 3 tokens: still 3, the new one kept');
 
+-- ===== rate limit (ML-08): 60 claims an hour per user, the 61st is refused with 53400. Uses a1 so the other users' quota is untouched =====
+set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.ok(pg_temp.state($q$do $b$ begin for i in 1..60 loop perform public.push_token_claim('tokenRATE000000000000-' || i, '2.4.0'); end loop; end $b$$q$) = 'ok', 'the first 60 claims in an hour are accepted');
+select pg_temp.ok(pg_temp.state($$select public.push_token_claim('tokenRATE000000000000-61', '2.4.0')$$) = '53400', 'the 61st claim in an hour is refused (53400)');
+reset role;
+
 -- ===== prune: stale 60 days or failed >= 5 go; invite_tokens only when the table exists =====
 delete from public.push_tokens;
 insert into public.push_tokens (token, user_id, updated_at, failed) values
   ('tokenOLD0000000000000001', '00000000-0000-0000-0000-0000000000b1', now() - interval '61 days', 0),
   ('tokenBAD0000000000000001', '00000000-0000-0000-0000-0000000000c1', now(), 5),
   ('tokenOK00000000000000001', '00000000-0000-0000-0000-0000000000c1', now() - interval '59 days', 4);
+insert into public.push_tokens (token, user_id, updated_at, last_ok_at) values
+  ('tokenLIVE000000000000001', '00000000-0000-0000-0000-0000000000b1', now() - interval '90 days', now() - interval '1 day'), -- gets pushes, never opens the app: kept
+  ('tokenDEAD000000000000001', '00000000-0000-0000-0000-0000000000b1', now() - interval '90 days', now() - interval '70 days');
 select public.dose_watch_prune();
-select pg_temp.ok((select count(*) from public.push_tokens) = 1 and exists (select 1 from public.push_tokens where token = 'tokenOK00000000000000001'), 'prune removes stale (61 d) and failed (5), keeps 59 d / 4 fails');
+select pg_temp.ok((select count(*) from public.push_tokens) = 2 and exists (select 1 from public.push_tokens where token = 'tokenOK00000000000000001') and exists (select 1 from public.push_tokens where token = 'tokenLIVE000000000000001'), 'prune removes stale (61 d, 90 d with an old last_ok_at) and failed (5), keeps 59 d / 4 fails and a token Google still accepts');
 select pg_temp.ok(to_regclass('public.invite_tokens') is null, 'prune ran with no invite_tokens table (before 0038)');
 create table public.invite_tokens (id int primary key, created_at timestamptz not null);
 insert into public.invite_tokens values (1, now() - interval '31 days'), (2, now() - interval '29 days');

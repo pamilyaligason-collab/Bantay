@@ -12,10 +12,13 @@ export const CHANNEL_ID = 'carer_alerts' // importance 5: rings and shows over o
 export const QUIET_CHANNEL_ID = 'carer_quiet' // importance 2: tone-normal alerts the server sends between 22:00 and 06:00 Manila
 export const KEY_PUSH_TOKEN = 'push.token' // kv: this phone's current FCM token (so sign-out can delete exactly it)
 export const KEY_PUSH_PERM = 'push.perm' // kv: last notification permission answer: 'granted' | 'denied' | 'prompt'
+export const KEY_PUSH_STATUS = 'push.status' // kv: 'ready' only after register() gave a token AND push_token_claim saved it in this install; 'failed' | 'noplugin' otherwise (the Me row reads it)
 
 type PushPlugin = typeof import('@capacitor/push-notifications').PushNotifications
 const isAndroidApp = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
 const loadPlugin = async (): Promise<PushPlugin | null> => { try { return (await import('@capacitor/push-notifications')).PushNotifications } catch { return null } }
+/** The shell has no push plugin (an APK older than 2.4.0 running the new web). */
+const pluginMissing = () => { try { return !Capacitor.isPluginAvailable('PushNotifications') } catch { return false } }
 const putKv = (key: string, value: unknown) => db.kv.put({ key, value }).catch(() => undefined)
 
 /** Both channels, before register() (Android only creates a channel once; creating an existing one is a no-op). A failure is not fatal: Android then uses its default channel. */
@@ -38,11 +41,15 @@ async function ensurePermission(P: PushPlugin): Promise<boolean> {
 /** Save the token for this signed-in user on the server (one phone, one owner: the server removes it from anyone else who left it here). The local copy is kept first so sign-out can find it. */
 export async function claimToken(token: string): Promise<boolean> {
   await putKv(KEY_PUSH_TOKEN, token)
-  if (!supabase) return false
-  try {
-    const { error } = await supabase.rpc('push_token_claim', { p_token: token, p_app_version: (await shellVersionNow()) ?? undefined })
-    return !error // offline or before 0040: the next registration event tries again
-  } catch { return false }
+  let ok = false
+  if (supabase) {
+    try {
+      const { error } = await supabase.rpc('push_token_claim', { p_token: token, p_app_version: (await shellVersionNow()) ?? undefined })
+      ok = !error // offline or before 0040: the next registration event tries again
+    } catch { /* ok stays false */ }
+  }
+  await putKv(KEY_PUSH_STATUS, ok ? 'ready' : 'failed')
+  return ok
 }
 
 /** What a tap on a notification opens: the tab of the template its data.t names (carer missed-dose 'dose_watch' opens Health). Unknown opens Today. */
@@ -55,12 +62,13 @@ export function tabFor(t: unknown): string {
 async function startPush(isStopped: () => boolean, onStop: (fn: () => void) => void): Promise<void> {
   const P = await loadPlugin()
   if (!P || isStopped()) return
+  if (pluginMissing()) { await putKv(KEY_PUSH_STATUS, 'noplugin'); return }
   try {
     await createChannels(P)
     if (isStopped()) return
     const handles = await Promise.all([
       P.addListener('registration', (t) => { void claimToken(t.value) }),
-      P.addListener('registrationError', () => undefined), // no google-services.json or Google Play services missing: alerts still reach the bell by polling
+      P.addListener('registrationError', () => { void putKv(KEY_PUSH_STATUS, 'failed') }), // no google-services.json or Google Play services missing: alerts still reach the bell by polling
       P.addListener('pushNotificationReceived', () => { void pollAlerts() }), // in the foreground Android shows nothing itself: refresh the bell now
       P.addListener('pushNotificationActionPerformed', (a) => { try { location.hash = `#${tabFor(a.notification?.data?.t)}` } catch { /* no window */ } void pollAlerts() })
     ])
@@ -68,7 +76,7 @@ async function startPush(isStopped: () => boolean, onStop: (fn: () => void) => v
     if (isStopped()) return
     if (!(await ensurePermission(P))) return
     await P.register()
-  } catch { /* old shell without the plugin, or no Firebase config: no push, the bell still polls */ }
+  } catch { await putKv(KEY_PUSH_STATUS, 'failed') /* no Firebase config: no push, the bell still polls */ }
 }
 
 let again: (() => void) | null = null
@@ -80,6 +88,7 @@ export async function refreshPushPermission(): Promise<'granted' | 'denied' | 'p
   if (!isAndroidApp()) return null
   const P = await loadPlugin()
   if (!P) return null
+  if (pluginMissing()) { await putKv(KEY_PUSH_STATUS, 'noplugin'); return null }
   try {
     const r = (await P.checkPermissions()).receive
     const v = r === 'granted' ? 'granted' : r === 'denied' ? 'denied' : 'prompt'
@@ -97,6 +106,7 @@ export async function forgetPushToken(): Promise<void> {
     if (typeof token === 'string' && supabase) await supabase.from('push_tokens').delete().eq('token', token)
   } catch { /* offline: see above */ }
   await db.kv.delete(KEY_PUSH_TOKEN).catch(() => undefined)
+  await db.kv.delete(KEY_PUSH_STATUS).catch(() => undefined)
   if (!isAndroidApp()) return
   try { await (await loadPlugin())?.unregister() } catch { /* nothing to unregister */ }
 }
@@ -114,6 +124,7 @@ export function watchPushForSession(): () => void {
   const apply = (next: string | null) => {
     if (next === uid) return
     stop()
+    if (uid !== null) void db.kv.delete(KEY_PUSH_STATUS).catch(() => undefined) // another person on this phone: their claim has not happened yet
     uid = next
     if (!next) return
     const mine = ++run

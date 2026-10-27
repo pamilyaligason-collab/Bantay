@@ -71,7 +71,7 @@ grant execute on function public.push_token_claim(text, text) to authenticated;
 
 -- Housekeeping the dose-watch function calls each run (final body of the release, ML-06). 0030 body, plus:
 --   invite_tokens older than 30 days (table is 0038; read through to_regclass so this runs before and after it)
---   push_tokens not refreshed for 60 days, or failed 5 times.
+--   push_tokens neither refreshed (app opened) nor accepted by Google (last_ok_at) for 60 days, or failed 5 times.
 create or replace function public.dose_watch_prune() returns integer
   language plpgsql security definer set search_path = '' as
   $$ declare n int; begin
@@ -81,7 +81,7 @@ create or replace function public.dose_watch_prune() returns integer
        if to_regclass('public.invite_tokens') is not null then
          execute 'delete from public.invite_tokens where created_at < now() - interval ''30 days''';
        end if;
-       delete from public.push_tokens where updated_at < now() - interval '60 days' or failed >= 5;
+       delete from public.push_tokens where greatest(updated_at, coalesce(last_ok_at, updated_at)) < now() - interval '60 days' or failed >= 5;
        return n;
      end $$;
 revoke execute on function public.dose_watch_prune() from public, anon, authenticated;

@@ -89,11 +89,11 @@ Deno.serve(async (req) => {
 
   // FCM (D-85). null until FIREBASE_SERVICE_ACCOUNT_B64 is set: the run is then web-push only, exactly as before.
   const fcmAccount = parseServiceAccount(Deno.env.get('FIREBASE_SERVICE_ACCOUNT_B64'))
-  /** Phone tokens of these users, skipping disabled accounts (ML-33). Before 0040 the table is missing: no tokens. */
-  const tokensOf = async (userIds: string[]): Promise<TokenRow[]> => {
+  /** Phone tokens of these users, skipping disabled accounts (ML-33). Before 0040 the table is missing: no tokens. Any other read error is null: web push still goes, and the rows are offered again (the FCM leg was not tried). */
+  const tokensOf = async (userIds: string[]): Promise<TokenRow[] | null> => {
     if (!userIds.length || !fcmAccount) return []
     const { data, error } = await sb.from('push_tokens').select('token,user_id,failed').in('user_id', userIds)
-    if (error) { if (missingTable(error)) return []; throw new Error('read') }
+    if (error) return missingTable(error) ? [] : null
     const rows = (data ?? []) as TokenRow[]
     if (!rows.length) return rows
     const off = await sb.from('app_roles').select('user_id').eq('disabled', true).in('user_id', userIds)
@@ -148,16 +148,18 @@ Deno.serve(async (req) => {
   /** Push for rows not yet offered: web push to browser/PWA subscriptions AND FCM to the Android app's tokens. pushed_at is set once per row ("offered").
    *  A row is left unmarked (offered again next run, for 12 h) only when an FCM send could not be tried or proved (no access token, network, 429, 5xx):
    *  a lost safety push would not come back, a repeat replaces itself by tag (ML-23). 404/410 deletes the token; 400/403 counts a failure (5 = pruned by 0040). */
-  async function flushPush(now: Date): Promise<{ webPushed: number; fcmPushed: number }> {
+  async function flushPush(now: Date): Promise<{ webPushed: number; fcmPushed: number; fcmRetried: number }> {
     const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,kind,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
     if (error) throw new Error('read')
     const rows = (data ?? []) as AlertPushRow[]
-    if (!rows.length) return { webPushed: 0, fcmPushed: 0 }
+    if (!rows.length) return { webPushed: 0, fcmPushed: 0, fcmRetried: 0 }
     const users = [...new Set(rows.map((r) => r.carer_user_id))]
     const subs = await subsOf(users)
-    const tokens = await tokensOf(users)
+    const tokenRows = await tokensOf(users)
+    const tokens = tokenRows ?? []
     let webPushed = 0
     let fcmPushed = 0
+    let fcmRetried = 0
     const offered: string[] = []
     const okTokens = new Set<string>()
     const badTokens = new Map<string, number>()
@@ -177,6 +179,7 @@ Deno.serve(async (req) => {
           else if (status === 404 || status === 410) await removeSub(sub.endpoint)
         }
         const msg = fcmAccount ? fcmMessageFor(r, now) : null
+        if (msg && !tokenRows) retry = true // tokens could not be read: try this row again next run
         if (msg) {
           for (const t of tokens.filter((x) => x.user_id === r.carer_user_id)) {
             if (overBudget()) break rowLoop
@@ -188,7 +191,8 @@ Deno.serve(async (req) => {
           }
         }
       }
-      if (!retry) offered.push(r.id)
+      if (retry) fcmRetried++
+      else offered.push(r.id)
     }
     // token bookkeeping is best effort: a failed write never blocks the pushed_at mark below
     if (okTokens.size) await sb.from('push_tokens').update({ last_ok_at: now.toISOString(), failed: 0 }).in('token', [...okTokens])
@@ -197,7 +201,7 @@ Deno.serve(async (req) => {
       const { error: we } = await sb.from('carer_alerts').update({ pushed_at: now.toISOString() }).in('id', offered)
       if (we) throw new Error('write') // unmarked rows would be pushed again for 12 h: report the run as failed
     }
-    return { webPushed, fcmPushed }
+    return { webPushed, fcmPushed, fcmRetried }
   }
 
   /** A phone whose alarms are known to fail (alarms_ok = false) or that has not been opened for 48 h: one row per phone per Manila day for its writer carers.
@@ -270,7 +274,7 @@ Deno.serve(async (req) => {
     const report = await (runDoseWatch as RunFn)(port, now.getTime(), { afterMin: Number.isFinite(afterMin) && afterMin > 0 ? afterMin : 30 })
     Object.assign(summary, report)
     if (report.failed > 0) ok = false // a carer row that could not be written turns the heartbeat red; the rest of the run still goes
-    await step('flush', async () => { const f = await flushPush(now); summary.fcmPushed = f.fcmPushed; return { pushed: f.webPushed, ...f } }) // fcmPushed also top level of the heartbeat summary (live check 6.4.1)
+    await step('flush', async () => { const f = await flushPush(now); summary.fcmPushed = f.fcmPushed; summary.fcmRetried = f.fcmRetried; if (f.fcmRetried > 0 && f.fcmPushed === 0) ok = false; return { pushed: f.webPushed, ...f } }) // fcmPushed also top level of the heartbeat summary (live check 6.4.1)
     await step('phone_health', () => sweepPhoneHealth(now))
     await step('dose_due', () => doseDue(now))
     await sb.rpc('dose_watch_prune')

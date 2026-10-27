@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   heartbeat: vi.fn(),
   rpcs: [] as string[],
   failUpdate: new Set<string>(), // tables whose update answers an error
+  failSelect: new Set<string>(), // tables whose read answers an error
   afterSend: null as null | (() => void),
   serve: null as null | ((req: Request) => Promise<Response>),
   fcm: [] as { token: string; msg: { notification: { title: string; body: string }; data: { t: string }; android: { priority: string; notification: { channel_id: string; tag: string } } } }[],
@@ -56,6 +57,7 @@ function builder(name: string) {
         return { data: null, error: null }
       }
       const hit = (rows ?? all).filter((r) => preds.every((p) => p(r)))
+      if (op === 'select' && h.failSelect.has(name)) return { data: null, error: { message: 'read failed' } }
       if (op === 'update' && h.failUpdate.has(name)) return { data: null, error: { message: 'write failed' } }
       if (op === 'update') { for (const r of hit) Object.assign(r, patch); return { data: null, error: null } }
       if (op === 'delete') { h.tables[name] = all.filter((r) => !hit.includes(r)); return { data: null, error: null } }
@@ -115,7 +117,7 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   Object.assign(h, { tables: { carer_alerts: [], push_subscriptions: [], people: [{ id: 'p1', display_name: 'Lola Rosa Cruz', auth_user_id: 'u-p1', archived_at: null }], carers: [{ carer_id: 'c1', person_id: 'p1', can_write: true }, { carer_id: 'c2', person_id: 'p1', can_write: false }], medications: [], meds_taken: [], phone_health: [] }, claimed: new Set(), sent: [], rpcs: [], serve: null })
-  h.failWith.clear(); h.failUpdate.clear(); h.afterSend = null; h.heartbeat.mockReset()
+  h.failWith.clear(); h.failUpdate.clear(); h.failSelect.clear(); h.afterSend = null; h.heartbeat.mockReset()
   h.fcm = []; h.fcmStatus.clear(); h.afterFcm = null; h.port = null; delete ENV.FIREBASE_SERVICE_ACCOUNT_B64
   ;(globalThis as { Deno?: unknown }).Deno = { env: { get: (k: string) => ENV[k] }, serve: (fn: (r: Request) => Promise<Response>) => { h.serve = fn } }
   vi.resetModules()
@@ -414,6 +416,26 @@ describe('FCM to the Android app (lane E, D-85)', () => {
     const r = await call({ mode: 'flush' })
     expect(r.status).toBe(200)
     expect(h.tables.carer_alerts![0]!.pushed_at).toBe(NOW.toISOString())
+  })
+  it('an unreadable push_tokens table does not block web push: web push still goes out and the row is left to try again', async () => {
+    on()
+    h.failSelect.add('push_tokens')
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_subscriptions!.push(sub('c1'))
+    const r = await call({ mode: 'flush' })
+    expect(r.status).toBe(200)
+    expect(r.json).toMatchObject({ ok: true, webPushed: 1, fcmPushed: 0, fcmRetried: 1 })
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBeNull() // the FCM leg was not tried: offered again next run
+  })
+  it('every FCM send needs a retry (auth broken): the heartbeat turns red with fcmRetried, so a dead FCM path is visible', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'))
+    h.fcmStatus.set(tok('c1').token, null)
+    await call({})
+    const [, , ok, summary] = h.heartbeat.mock.calls[0]!
+    expect(ok).toBe(false)
+    expect((summary as Record<string, unknown>).fcmRetried).toBe(1)
   })
   it('a normal run puts fcmPushed in the heartbeat summary (counts only)', async () => {
     on()
