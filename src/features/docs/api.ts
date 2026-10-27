@@ -115,9 +115,11 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
       for (const q of await ddb.queue.orderBy('seq').toArray()) {
         if (q.owner !== owner || dead.has(q.seq!)) continue // another user's picture: kept, never sent from here
         // Switched off after scanning (before the first page, or between pages): this page and every page still queued are skipped, so the server never reads them.
-        if (q.pages && !q.skipRead && !(await aiOn())) {
+        if (q.pages && !q.skipRead && !skipped.has(q.docId) && !(await aiOn())) {
           await ddb.queue.filter((r) => r.docId === q.docId && r.owner === q.owner).modify({ skipRead: true })
           skipped.add(q.docId)
+          // Pages already up are still 'new': skip them too (RLS lets the uploader). Best effort; 0036 makes the server leave a document with any skipped page unread anyway.
+          if (!q.docNew) { try { await client.from('source_files').update({ ingest_status: 'skipped' }).eq('document_id', q.docId).eq('ingest_status', 'new') } catch { /* offline: the server rule covers it */ } }
         }
         if (skipped.has(q.docId)) q.skipRead = true // the rows of this pass were read before the modify above
         const card = await ddb.cards.get(q.path)

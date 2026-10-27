@@ -52,7 +52,7 @@ R1, R2, R3 are Haiku read-only research lanes (PAGASA feeds, OEM settings intent
 
 ## Migrations (apply order and numbers; none is applied by a lane)
 
-`0030` (S1) -> `0031` (S2) -> `0032` (S3) -> `0033` (S8) -> `0034` (S6b) -> `0035` (S9). Rehearsed on WSL in that order; downs run strictly in reverse (0035 -> 0030). 0031 and 0035 call `notify_family` late-bound, so 0030 is applied first and dropped last. Every migration that adds or replaces a function restates its full grants: revoke from public, anon, authenticated (and service_role unless needed), then grant what it needs (ML-21). Every new table is added to the guarded Realtime block only where this file says so. `0028` is intentionally absent (the pending-migrations check skips it).
+`0030` (S1) -> `0031` (S2) -> `0032` (S3) -> `0033` (S8) -> `0034` (S6b) -> `0035` (S9), then `0036` (S6c scan skip: records_scan_due and records_scan_claim leave any document with a `skipped` page unread; applies after 0035, needs only 0020). Rehearsed on WSL in that order; downs run strictly in reverse (0035 -> 0030). 0031 and 0035 call `notify_family` late-bound, so 0030 is applied first and dropped last. Every migration that adds or replaces a function restates its full grants: revoke from public, anon, authenticated (and service_role unless needed), then grant what it needs (ML-21). Every new table is added to the guarded Realtime block only where this file says so. `0028` is intentionally absent (the pending-migrations check skips it).
 
 ## Shared data (tables, columns, policies)
 
