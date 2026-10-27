@@ -158,3 +158,34 @@ describe('Explore your body', () => {
     expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#health/library/c%3AHigh%20blood%20pressure')
   })
 })
+
+describe('Medicines dose rows: who marked it (D-83, 0039)', () => {
+  const at812 = () => { const d = new Date(); d.setHours(8, 12, 0, 0); return d.toISOString() }
+  const dose = (over: Record<string, unknown> = {}) => ({ personId: 'p1', name: 'Metformin', takenAt: at812(), medicationId: 's-Metformin', slot: '08:00', ...over }) as never
+  // The row shows "Not yet" until the live query hands over the dose, so wait on the settled text.
+  const row = async () => { const today = await screen.findByTestId('meds-today', {}, SLOW); return waitFor(() => within(today).getByText(/^Taken \d/), SLOW) }
+
+  beforeEach(async () => {
+    location.hash = '#health/meds'
+    await ldb.medications.clear()
+    await ldb.medications.bulkAdd([med({ name: 'Metformin' })])
+  })
+
+  it('a dose the person marked themself reads "Taken 8:12 AM" with nothing after it', async () => {
+    await ldb.meds.add(dose({ markedBy: 'u-me' })) // marked_by is set but the server sends no name when it is the owner
+    render(<Health />)
+    expect((await row()).textContent).toBe('Taken 8:12 AM')
+  })
+
+  it('a dose with no marker at all (an older row) reads "Taken 8:12 AM"', async () => {
+    await ldb.meds.add(dose())
+    render(<Health />)
+    expect((await row()).textContent).toBe('Taken 8:12 AM')
+  })
+
+  it('a dose another person marked reads "Taken 8:12 AM · marked by Joy"', async () => {
+    await ldb.meds.add(dose({ markedBy: 'u-joy', markedByName: 'Joy' }))
+    render(<Health />)
+    expect((await row()).textContent).toBe('Taken 8:12 AM · marked by Joy')
+  })
+})

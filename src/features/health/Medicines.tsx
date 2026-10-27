@@ -30,6 +30,10 @@ function useDayTakes(personId: string, day: string): MedTaken[] {
 }
 
 const timeOf = (iso: string) => { const d = new Date(iso); return clock12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`) }
+/** "Taken 8:12 AM", or "Taken 8:12 AM · marked by Joy" when someone else marked it (the server stamps their first name; nothing is shown for the owner). */
+const takenText = (t: MedTaken) => `Taken ${timeOf(t.takenAt)}${t.markedByName ? ` · marked by ${t.markedByName}` : ''}`
+// TODO(merge lane J): replace this stand-in with `import { shortMedName } from './medName'` (docs/session-12/contracts.md); until then the name is unchanged.
+const shortMedName = (name: string) => name
 const label = (m: Pick<Medication, 'name' | 'strength'>) => [m.name, m.strength].filter(Boolean).join(' ')
 const byName = (a: Medication, b: Medication) => a.name.localeCompare(b.name)
 
@@ -99,8 +103,8 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                 <div className="row md-dose" key={`${d.key}:${d.slot}`} data-med={d.name} data-state={d.state}>
                   <span className="md-tm">{clock12(d.slot)}</span>
                   <span className="grow md-main">
-                    <strong>{label({ name: d.name, strength: meds?.find((m) => (m.serverId ?? m.clientId ?? String(m.id)) === d.key)?.strength })}</strong>
-                    <span className="sub">{d.state === 'taken' ? (t ? `Taken ${timeOf(t.takenAt)}` : 'Taken') : d.state === 'skipped' ? 'Skipped' : 'Not yet'}</span>
+                    <strong>{label({ name: shortMedName(d.name), strength: meds?.find((m) => (m.serverId ?? m.clientId ?? String(m.id)) === d.key)?.strength })}</strong>
+                    <span className="sub">{d.state === 'taken' ? (t ? takenText(t) : 'Taken') : d.state === 'skipped' ? 'Skipped' : 'Not yet'}</span>
                   </span>
                   {t?.id != null && queued.has(t.id) && <QueuedBadge />}
                   {d.state === 'taken' && <span className="hv-done"><Icon name="check" size={18} /> Taken</span>}

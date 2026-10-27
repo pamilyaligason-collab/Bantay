@@ -30,11 +30,18 @@ Functions to deploy before the web merge, after the migrations (contracts.md dep
 - `DOSE_WATCH_AFTER_MIN` is read in `index.ts` and passed to `runDoseWatch` as a third argument `{afterMin}`; S4's `logic.ts` must accept it (its `WATCH_AFTER_MIN` is a constant today).
 - S4's `logic.ts` must call `port.carerRow('dose_missed', personId, carerIds, 'dose_missed', ref)` instead of pushing; the ref should end in `:<Manila day>:<HH:MM>` so the bell's "Mark taken" can find the slot.
 - The Privacy route in `App.tsx` waits for S6c's screen.
-- `marked_by` on a dose taken for someone else has no column in any contract; "Mark taken for her" logs a normal dose.
+- (Session 10, now done in session 12 lane C, migration 0039) `marked_by` on a dose taken for someone else: see "Marked by and the 8 PM summary" below.
 
 ## Deviations and notes (fix round 2)
 - Deviation, accepted by the orchestrator: kv `alerts.inapp.ok` is set by `pollAlerts` on the first successful `carer_alerts` read (contracts.md assigns it to `AlertsBanner` after the phone check). Before 0030 is applied the read errors, so it is never set.
 - `broadcast` marks its hazard rows offered only after the `push_subscriptions` read succeeds; a failed mark does not stop the safety push, and the reply carries `marked:false` (a repeat push replaces itself by tag).
+## Marked by and the 8 PM summary (session 12 lane C, D-83, migration 0039)
+- `meds_taken.marked_by` is stamped by a BEFORE INSERT trigger from `auth.uid()`; a value the phone sends is always overwritten, and no one can update it. A caller with no `auth.uid()` (the service role) keeps what it sends. `marked_by_name` is the marker's first name, stamped by the same trigger, empty when the person marked their own dose. Medicines shows "Taken 8:12 AM" or "Taken 8:12 AM · marked by Joy". Sync pulls both columns and never sends them.
+- `carer_prefs (user_id, digest_on, updated_at)`: own row only; dose-watch reads it with the service role through `Port.digestOff(userIds)` (lane E implements it in `index.ts`: `select user_id from carer_prefs where digest_on = false and user_id in (...)`, with the service role). The 8 PM switch in Me (`notify/DigestToggle.tsx`) shows only for someone who cares for another person.
+- The opt-out drops kind `digest` rows ONLY. Missed-dose, Unwell, SOS, review and every other alert ignore it (tested: carers J and B, B opted out gives 1 digest row and 2 missed-dose rows). If the opt-out read fails, that run skips the digest and counts a failure; the next run in the 30-minute window tries again. Copy in Me: "Turning this off never stops missed-medicine or Unwell alerts."
+- Vaccines: the prescription import turns a vaccine line into a `medications` row, which would raise "Still taking it?" and a missed dose. `isVaccine(med)` (`dose-watch/logic.ts`, whole words: vaccine, toxoid, pneumococcal, meningococcal, common brands) keeps them out of `dose_missed`, `review_open` and the 8 PM open-dose check. Go-live may also mark the imported vaccine rows stopped (PLAN 2.1.10).
+- Functions to deploy: `dose-watch` (bundles `logic.ts`).
+
 ## Deviations and notes (fix round 3)
 - A carer's missed-dose push is the carer-class template `dose_watch`, from the flush loop: `runDoseWatch` writes a `carer_alerts` row of kind `dose_missed` (S4) and the flush pushes `{t:'dose_watch'}`; `runDoseWatch` itself no longer pushes. The phone treats it as `cls: carer`: the carer cap (6 a day) and carer quiet hours, one tag `dose_watch` so alerts collapse. It reads "A medicine was missed by someone you look after." (no name).
 - The payload is `{t:'dose_watch'}` or `{t:'dose_watch', n}` where `n` is a COUNT of missed doses (integer 1 to 99, B-7); a name, a medicine or any other key makes `buildNotification` return null. `firstName` and `doseWatchText` are gone. `dose_missed` stays the user's own health nudge (2 a day, no quiet hours), untouched.
