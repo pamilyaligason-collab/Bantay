@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../auth/client', () => ({ supabase: {}, supabaseUrl: 'https://x.test', supabasePublishableKey: 'k' }))
@@ -89,5 +89,33 @@ describe('ForgotFlow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
     enter('246810'); enter('246810')
     expect((await screen.findByRole('alert')).textContent).toContain('Too many requests')
+  })
+
+  it('real delay wiring: first poll at 10 s, a 429 re-arms at 30 s, stops at 30 min, check again polls at once and restarts', async () => {
+    vi.useFakeTimers()
+    const complete = vi.fn(async () => ({ ok: false as const, why: 'not_approved' as const }))
+    complete.mockResolvedValueOnce({ ok: false as const, why: 'rate_limited' as const } as never)
+    const start = vi.fn(async () => ({ ok: true as const, start: START }))
+    render(<ForgotFlow member={MAMA} onBack={() => undefined} google={() => undefined} start={start} complete={complete} signIn={async () => null} />)
+    const tick = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    enter('246810'); enter('246810')
+    await tick(0)
+    expect(screen.getByText('4821')).toBeTruthy()
+    await tick(9_999); expect(complete).toHaveBeenCalledTimes(0)
+    await tick(1); expect(complete).toHaveBeenCalledTimes(1) // first poll at 10 s: rate_limited
+    await tick(29_999); expect(complete).toHaveBeenCalledTimes(1) // slow down: next at 30 s, not 10 s
+    await tick(1); expect(complete).toHaveBeenCalledTimes(2)
+    expect(screen.getByText('4821')).toBeTruthy() // 429 keeps waiting
+    expect(screen.queryByRole('alert')).toBeNull()
+    for (let i = 0; i < 64; i++) await tick(30_000) // 32 minutes of 30 s steps (effects re-arm between acts): past the 30 minute give-up
+    expect(screen.getByRole('button', { name: 'Still waiting - check again' })).toBeTruthy()
+    const n = complete.mock.calls.length
+    await tick(10 * 60_000); expect(complete.mock.calls.length).toBe(n) // stopped
+    fireEvent.click(screen.getByRole('button', { name: 'Still waiting - check again' }))
+    await tick(0); expect(complete.mock.calls.length).toBe(n + 1) // polls at once
+    expect(screen.queryByRole('button', { name: 'Still waiting - check again' })).toBeNull()
+    await tick(9_999); expect(complete.mock.calls.length).toBe(n + 1)
+    await tick(1); expect(complete.mock.calls.length).toBe(n + 2) // restarted at 10 s
   })
 })
