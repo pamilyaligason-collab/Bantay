@@ -2,13 +2,15 @@ import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { ldb, type MedTaken } from '../log/store'
 import { sparkPoints } from '../today/myWeekLogic'
-import type { Reading } from './ranges'
+import type { Range, Reading } from './ranges'
 import { computeKpis, type Kpi } from './kpisLogic'
 import { useActivity } from './useActivity'
 import { useMedications } from './useMedications'
+import { bpDoctorOf } from './verdict'
 import './m7a.css'
 
 const NO_TAKES: MedTaken[] = []
+const NO_TH: (Range & { key: string })[] = []
 
 function Spark({ values }: { values: (number | null)[] }) {
   const W = 64
@@ -38,7 +40,7 @@ export function Tile({ k }: { k: Kpi }) {
 }
 
 /** My KPIs: the latest reading per measure with its time. Nothing logged yet: not drawn. */
-export function Kpis({ personId, readings }: { personId: string; readings: Reading[] }) {
+export function Kpis({ personId, readings, thresholds = NO_TH }: { personId: string; readings: Reading[]; thresholds?: (Range & { key: string })[] }) {
   const activity = useActivity(personId, 14)
   const meds = useMedications(personId)
   const [takes, setTakes] = useState(NO_TAKES)
@@ -48,7 +50,7 @@ export function Kpis({ personId, readings }: { personId: string; readings: Readi
     const sub = liveQuery(() => ldb.meds.where('personId').equals(personId).filter((m) => m.takenAt >= since).toArray()).subscribe({ next: setTakes, error: () => setTakes(NO_TAKES) })
     return () => sub.unsubscribe()
   }, [personId])
-  const kpis = useMemo(() => computeKpis({ personId, readings, activity, meds, takes, now: new Date() }), [personId, readings, activity, meds, takes])
+  const kpis = useMemo(() => computeKpis({ personId, readings, activity, meds, takes, now: new Date(), doctor: bpDoctorOf(thresholds, personId) }), [personId, readings, activity, meds, takes, thresholds])
   if (!kpis.length) return null
   return (
     <section aria-labelledby="kp-h" data-testid="kpis">

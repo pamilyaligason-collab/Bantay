@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useActivity } from '../health/useActivity'
 import { useMedications } from '../health/useMedications'
 import type { Reading } from '../health/ranges'
+import { bpDoctorOf, type BpArg } from '../health/verdict'
 import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
 import { useSelfPersonId } from '../setup/useProfile'
@@ -16,14 +17,16 @@ const NO_TAKES: MedTaken[] = []
 function useWeekData(personId: string) {
   const [readings, setReadings] = useState(NO_READINGS)
   const [takes, setTakes] = useState(NO_TAKES)
+  const [doctor, setDoctor] = useState<BpArg['doctor']>()
   useEffect(() => {
-    if (!personId) { setReadings(NO_READINGS); setTakes(NO_TAKES); return }
+    if (!personId) { setReadings(NO_READINGS); setTakes(NO_TAKES); setDoctor(undefined); return }
     const since = new Date(Date.now() - (DAYS + 1) * 86_400_000).toISOString()
     const a = liveQuery(() => hdb.readings.where('personId').equals(personId).filter((r) => r.takenAt >= since).toArray()).subscribe({ next: setReadings, error: () => undefined })
     const b = liveQuery(() => ldb.meds.where('personId').equals(personId).filter((m) => m.takenAt >= since).toArray()).subscribe({ next: setTakes, error: () => undefined })
-    return () => { a.unsubscribe(); b.unsubscribe() }
+    const c = liveQuery(() => hdb.thresholds.toArray()).subscribe({ next: (ts) => setDoctor(bpDoctorOf(ts, personId)), error: () => undefined }) // the doctor's BP targets, so the chip matches Health
+    return () => { a.unsubscribe(); b.unsubscribe(); c.unsubscribe() }
   }, [personId])
-  return { readings, takes }
+  return { readings, takes, doctor }
 }
 
 /** A tiny 7-day line. Decorative: the tile's text says the same thing. */
@@ -57,10 +60,10 @@ function TileView({ t }: { t: Tile }) {
 /** Today's "My week": the signed-in person's last 7 days as tiles. No data for a tile: it is not drawn. No data at all: the card is not drawn. */
 export default function MyWeek() {
   const personId = useSelfPersonId() ?? ''
-  const { readings, takes } = useWeekData(personId)
+  const { readings, takes, doctor } = useWeekData(personId)
   const activity = useActivity(personId, DAYS + 1)
   const meds = useMedications(personId)
-  const tiles = useMemo(() => computeMyWeek({ personId, readings, activity, meds, takes, now: new Date() }), [personId, readings, activity, meds, takes])
+  const tiles = useMemo(() => computeMyWeek({ personId, readings, activity, meds, takes, now: new Date(), doctor }), [personId, readings, activity, meds, takes, doctor])
   const due = useMemo(() => nextReadingDue({ personId, readings, meds, now: new Date() }), [personId, readings, meds])
   const ref = useRef<HTMLElement>(null)
   useSeenDaily(ref, 'card_seen_my_week', tiles.length > 0 || !!due)

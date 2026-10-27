@@ -1,6 +1,6 @@
 import { formatNumber, labName } from '../../lib/labFormat'
 import { GUIDE, generalRange, position, rangeText, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
-import { verdictFor, type VerdictKind } from './verdict'
+import { verdictFor, type BpArg, type VerdictKind } from './verdict'
 
 /** Pure Health logic (v6, D-38): headline, previous value, body-map nodes, monthly averages, medicine times. No React, no storage. */
 
@@ -140,7 +140,7 @@ export type NodeId = 'sleep' | 'mood' | 'bp' | 'pulse' | 'sugar' | 'weight' | 's
 export interface Activity { kind: string; minutes: number | null; steps: number | null; startedAt: string }
 export interface NodeView { id: NodeId; label: string; value: string; note: string; state: Position; code: string; empty: boolean }
 export const MOOD_WORD: Record<string, string> = { 'mood-good': 'Good', 'mood-ok': 'OK', 'mood-low': 'Low' }
-const stateNote = (kind: VerdictKind, pos: Position, bp?: { top?: number | null; bottom?: number | null }) => verdictFor(kind, pos, bp)?.word ?? ''
+const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(kind, pos, bp)?.word ?? ''
 
 export const hoursMinutes = (min: number) => `${Math.floor(min / 60)}h ${String(Math.round(min % 60)).padStart(2, '0')}`
 const sameDay = (a: string, b: Date) => new Date(a).toDateString() === b.toDateString()
@@ -166,7 +166,7 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const sys = last('bp_systolic')
   const dia = last('bp_diastolic')
   const bpPos = worst([sys ? readingPosition(sys, familyOf(sys)) : 'none', dia ? readingPosition(dia, familyOf(dia)) : 'none'])
-  nodes.push({ id: 'bp', label: 'BP', value: sys && dia ? `${formatNumber(sys.value)}/${formatNumber(dia.value)}` : sys ? formatNumber(sys.value) : '--', note: sys ? stateNote('bp', bpPos, { top: sys.value, bottom: dia?.value }) || shortDate(sys.takenAt) : 'No data yet', state: bpPos, code: 'bp_systolic', empty: !sys })
+  nodes.push({ id: 'bp', label: 'BP', value: sys && dia ? `${formatNumber(sys.value)}/${formatNumber(dia.value)}` : sys ? formatNumber(sys.value) : '--', note: sys ? stateNote('bp', bpPos, { top: sys.value, bottom: dia?.value, doctor: { top: familyOf(sys), bottom: dia ? familyOf(dia) : null } }) || shortDate(sys.takenAt) : 'No data yet', state: bpPos, code: 'bp_systolic', empty: !sys })
 
   const hr = last('heart_rate')
   nodes.push({ id: 'pulse', label: 'Pulse', value: hr ? formatNumber(hr.value) : '--', note: hr ? shortDate(hr.takenAt) : 'No data yet', state: 'none', code: 'heart_rate', empty: !hr })

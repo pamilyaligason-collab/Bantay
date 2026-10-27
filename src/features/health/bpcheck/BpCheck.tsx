@@ -3,7 +3,7 @@ import Sheet from '../../family/Sheet'
 import { logReading } from '../../log/store'
 import { hdb } from '../../records/store'
 import { crisisOf, type Crisis } from '../readingPreview'
-import { BP_WORDS, bpLevel } from '../verdict'
+import { BP_WORDS, bpDoctorOf, bpPairLevel, type BpArg } from '../verdict'
 import { REST_SECONDS, averagePair, bpWeek, parsePair, type BpPair } from './bpLogic'
 import CrisisCard from './CrisisCard'
 import './bpcheck.css'
@@ -13,8 +13,10 @@ const clock = (d: Date) => d.toLocaleTimeString('en-PH', { hour: 'numeric', minu
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
 /** The verdict word on one line, in the colour and icon of the one BP table. */
-export function BpWord({ top, bottom }: { top: number; bottom: number }) {
-  const v = BP_WORDS[bpLevel(top, bottom) ?? 'in']
+export function BpWord({ top, bottom, doctor }: { top: number; bottom: number; doctor?: BpArg['doctor'] }) {
+  const lv = bpPairLevel(top, bottom, doctor)
+  if (!lv) return null // an unknown pair has no word; never read as In range
+  const v = BP_WORDS[lv]
   return <span className={`bc-lvl ${v.level}`} data-level={v.level}><span aria-hidden="true">{v.icon === 'check' ? '✓' : v.icon === 'down' ? '↓' : '↑'}</span> {v.word}</span>
 }
 
@@ -33,8 +35,15 @@ export default function BpCheck({ personId, forName, doctor, onClose, onSaved }:
   const [left, setLeft] = useState(REST_SECONDS)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [docTargets, setDocTargets] = useState<BpArg['doctor']>()
   const [week, setWeek] = useState<ReturnType<typeof bpWeek>>(null)
   const part = useMemo(() => (new Date().getHours() < 12 ? 'Morning' : 'Evening'), [])
+
+  useEffect(() => { // the doctor's targets for this person, so the word here matches every other screen
+    let live = true
+    hdb.thresholds.toArray().then((ts) => { if (live) setDocTargets(bpDoctorOf(ts, personId)) }).catch(() => {})
+    return () => { live = false }
+  }, [personId])
 
   useEffect(() => {
     if (step !== 'two') return
@@ -124,13 +133,13 @@ export default function BpCheck({ personId, forName, doctor, onClose, onSaved }:
             <div className="bc-card">
               <p className="sub bc-eye">Today, average of 2 readings</p>
               <div className="bc-big"><span className="num" data-testid="bp-avg">{avg.top}/{avg.bottom}</span><span className="sub">mmHg{avg.pulse != null ? ` · pulse ${avg.pulse}` : ''}</span></div>
-              <div className="bc-between"><BpWord top={avg.top} bottom={avg.bottom} /><span className="sub">Home target under 130/80</span></div>
+              <div className="bc-between"><BpWord top={avg.top} bottom={avg.bottom} doctor={docTargets} /><span className="sub">Home target under 130/80</span></div>
             </div>
             {wk && (
               <div className="bc-card">
                 <div className="bc-between"><b>7-day average</b><span className="sub">{wk.days} of 7 days</span></div>
                 <Trend points={wk.points} />
-                <div className="bc-between"><b className="num bc-wk" data-testid="bp-week">{wk.top}/{wk.bottom}</b><BpWord top={wk.top} bottom={wk.bottom} /></div>
+                <div className="bc-between"><b className="num bc-wk" data-testid="bp-week">{wk.top}/{wk.bottom}</b><BpWord top={wk.top} bottom={wk.bottom} doctor={docTargets} /></div>
                 <span className="sub">This is the number your doctor wants</span>
               </div>
             )}
@@ -153,7 +162,7 @@ function Trend({ points }: { points: { day: string; top: number }[] }) {
   return (
     <svg viewBox="0 0 320 90" className="bc-trend" role="img" aria-label={label}>
       <line x1="0" x2="320" y1={y(130)} y2={y(130)} stroke="var(--line)" strokeDasharray="4 4" />
-      <text x="4" y={y(130) - 5} textAnchor="start" fontSize="13" fill="var(--muted)">130</text>
+      <text x="316" y={y(130) - 5} textAnchor="end" fontSize="13" fill="var(--muted)">130</text>
       {points.length > 1 && <polyline fill="none" stroke="var(--green2)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={points.map((p, i) => `${x(i)},${y(p.top)}`).join(' ')} />}
       {points.map((p, i) => <circle key={p.day} cx={x(i)} cy={y(p.top)} r={i === points.length - 1 ? 5 : 3} fill="var(--green2)" />)}
       <g fontSize="13" fill="var(--muted)" textAnchor="middle">{points.map((p, i) => <text key={p.day} x={x(i)} y="86">{new Date(`${p.day}T12:00:00`).toLocaleDateString('en-PH', { weekday: 'short' })}</text>)}</g>

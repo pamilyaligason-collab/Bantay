@@ -23,7 +23,8 @@ const seed = (page: Page) =>
   }, Date.now())
 
 const axe = async (page: Page, scope: string) => (await new AxeBuilder({ page }).include(scope).analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
-const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` })
+// shots are rewritten only when SHOTS=1, so a plain gate run never dirties the committed PNGs
+const shot = async (page: Page, name: string, scheme: string) => { if (process.env.SHOTS === '1') await page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) }
 
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)

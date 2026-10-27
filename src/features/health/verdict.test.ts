@@ -4,13 +4,27 @@ import { bodyNodes } from './model'
 import { computeKpis } from './kpisLogic'
 import { labVerdict } from './labsLogic'
 import { entrySpec, previewReading } from './readingPreview'
-import { rangeState, type Reading } from './ranges'
+import { CHIP, rangeState, type Reading } from './ranges'
 import { bpLevel, kindOf, verdictFor } from './verdict'
 import { computeMyWeek } from '../today/myWeekLogic'
 
 const NOW = new Date('2026-10-20T12:00:00')
 const R = (test: string, value: number, unit = 'mmHg', takenAt = '2026-10-20T07:00:00', personId = 'p1'): Reading => ({ personId, test, value, unit, takenAt } as Reading)
 const bp = (s: number, d: number) => [R('bp_systolic', s), R('bp_diastolic', d)]
+
+describe('chip colour follows the word, and a doctor target moves it', () => {
+  it('88/58 reads Low in the below colour; 118/84 reads Above target in the above colour; 134/84 reads Above target on both rows', () => {
+    const chip = (pos: 'within' | 'above' | 'below', t: number, b: number) => { const s = rangeState(pos, 'bp', { top: t, bottom: b }); return [s.word, CHIP[s.kind]] }
+    expect(chip('within', 88, 58)).toEqual(['Low', 'below'])
+    expect(chip('above', 118, 84)).toEqual(['Above target', 'above'])
+    expect(chip('above', 134, 84)).toEqual(['Above target', 'above']) // the diastolic row now gets the pair, so it says the same word
+  })
+  it('a doctor target only makes it stricter: 135/80 stays High even when the target says within; a stricter target lifts In range to Above target', () => {
+    expect(verdictFor('bp', 'within', { top: 135, bottom: 80 })!.word).toBe('High')
+    expect(verdictFor('bp', 'within', { top: 88, bottom: 58 })!.word).toBe('Low')
+    expect(verdictFor('bp', 'above', { top: 115, bottom: 70 })!.word).toBe('Above target')
+  })
+})
 
 describe('one verdict table', () => {
   it('BP 148/92 says High on every surface', () => {
@@ -48,7 +62,7 @@ describe('the one blood pressure table (hand-computed)', () => {
     [134, 84, 'Above target'], [133, 83, 'Above target'], [138, 86, 'High'], [129, 79, 'A little raised'], [119, 79, 'In range'], [88, 58, 'Low'],
     [135, 70, 'High'], [120, 79, 'A little raised'], [130, 70, 'Above target'], [118, 84, 'Above target'], [118, 85, 'High'], [89, 70, 'Low'], [100, 59, 'Low'], [90, 60, 'In range'], [180, 120, 'High']
   ]
-  for (const [t, b, word] of cases) it(`${t}/${b} is ${word}`, () => expect(verdictFor('bp', 'above', { top: t, bottom: b })!.word).toBe(word))
+  for (const [t, b, word] of cases) it(`${t}/${b} is ${word}`, () => expect(verdictFor('bp', 'within', { top: t, bottom: b })!.word).toBe(word))
   it('a lone number is judged on its own; nothing typed is no verdict, never In range', () => {
     expect(bpLevel(132, null)).toBe('above')
     expect(bpLevel(null, 86)).toBe('high')

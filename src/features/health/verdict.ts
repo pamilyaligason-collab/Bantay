@@ -2,7 +2,7 @@ import type { Position } from './ranges'
 
 /** ONE table of verdict words, used by every surface (KPIs, My week, body map, Vitals, Labs, member report, reading preview).
  *  Position (above / within / below) comes from readingPosition in model.ts, which reads guide-ranges.json (AHA/ACC 2017 for BP, ADA Standards of Care for fasting glucose; sources are in that file).
- *  For blood pressure with numbers, this module's own BP table (bpLevel) decides the word; the position is only the fallback when no number is passed. */
+ *  For blood pressure with numbers, this module's own BP table (bpLevel) decides the word from the PAIR; the position is only the fallback when no number is passed. A doctor's target can only lift it (bpPairLevel). */
 export type VerdictKind = 'bp' | 'vital' | 'lab'
 export type BpLevel = 'in' | 'raised' | 'above' | 'high' | 'low'
 export interface Verdict { word: string; icon: 'check' | 'up' | 'down'; level?: BpLevel }
@@ -29,6 +29,21 @@ export function bpLevel(top?: number | null, bottom?: number | null): BpLevel | 
   if (t != null && t >= 120) return 'raised'
   return 'in'
 }
+/** A doctor's limit as stored (Range-like); only its 'high' is read. */
+export type DoctorLimit = { high?: number | null } | null
+export interface BpArg { top?: number | null; bottom?: number | null; doctor?: { top?: DoctorLimit; bottom?: DoctorLimit } }
+/** Both of one person's doctor BP targets (bp_systolic for the top, bp_diastolic for the bottom), from the family thresholds rows. Every BP surface passes this, never one row's own target. */
+export const bpDoctorOf = (thresholds: readonly ({ key: string } & NonNullable<DoctorLimit>)[], personId: string): NonNullable<BpArg['doctor']> =>
+  ({ top: thresholds.find((t) => t.key === `${personId}:bp_systolic`), bottom: thresholds.find((t) => t.key === `${personId}:bp_diastolic`) })
+/** THE pair word, used by every surface so the top row, the bottom row, the headline, the add preview and the guided check always agree.
+ *  Take the table word for the PAIR; if EITHER number is above its doctor 'high' target (bp_systolic and bp_diastolic family targets), lift In range and A little raised to Above target.
+ *  Never lowers or loosens a table word (High and Low stay). A doctor 'low' target is ignored this phase (no clinician sign-off on a floor; Low comes only from the table). */
+export function bpPairLevel(top?: number | null, bottom?: number | null, doctor?: BpArg['doctor']): BpLevel | null {
+  const lv = bpLevel(top, bottom)
+  if (lv !== 'in' && lv !== 'raised') return lv
+  const over = (n: number | null | undefined, l: DoctorLimit | undefined) => typeof n === 'number' && Number.isFinite(n) && l?.high != null && n > l.high
+  return over(top, doctor?.top) || over(bottom, doctor?.bottom) ? 'above' : lv
+}
 const WORDS: Record<VerdictKind, Record<Exclude<Position, 'none'>, Verdict>> = {
   bp: { above: { word: 'High', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } },
   vital: { above: { word: 'A bit high', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } },
@@ -41,9 +56,13 @@ export function kindOf(test: string, isVital = true): VerdictKind {
 }
 
 /** The word and icon for a position; null when there is no range (no verdict, never "In range"). For BP, pass BOTH the top and bottom numbers (one alone reads plain High) so 120 to 129 over under 80 reads "A little raised". */
-export function verdictFor(kind: VerdictKind, pos: Position, bp?: { top?: number | null; bottom?: number | null }): Verdict | null {
+export function verdictFor(kind: VerdictKind, pos: Position, bp?: BpArg): Verdict | null {
   if (pos === 'none') return null
-  const lv = kind === 'bp' ? bpLevel(bp?.top, bp?.bottom) : null
-  if (lv) return BP_WORDS[lv]
+  const lv = kind === 'bp' ? bpPairLevel(bp?.top, bp?.bottom, bp?.doctor) : null
+  if (lv) {
+    // the table decides from the PAIR; bpPairLevel lifts for a doctor target. A row's own position can still lift In range (callers that pass no doctor limits); never the other way round. Low is never overridden.
+    if (lv === 'in' && pos === 'above') return BP_WORDS.above
+    return BP_WORDS[lv]
+  }
   return WORDS[kind][pos]
 }

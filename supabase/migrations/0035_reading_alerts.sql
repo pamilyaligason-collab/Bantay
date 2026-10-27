@@ -26,8 +26,11 @@ begin
     if new.test = 'bp_systolic' and new.value >= 180 then v_kind := 'bp';
     elsif new.test = 'bp_diastolic' and new.value >= 120 then v_kind := 'bp';
     elsif new.test in ('glucose', 'fasting_glucose') then
-      v_mg := case when lower(coalesce(new.unit, '')) like 'mmol%' then new.value * 18 else new.value end;
-      if v_mg < 70 or v_mg > 300 then v_kind := 'glucose'; end if;
+      -- a null or unknown unit is skipped (the app also never judges a unit it cannot compare)
+      if lower(coalesce(new.unit, '')) in ('mg/dl', 'mmol/l') then
+        v_mg := case when lower(new.unit) = 'mmol/l' then new.value * 18 else new.value end;
+        if v_mg < 70 or v_mg > 300 then v_kind := 'glucose'; end if;
+      end if;
     elsif new.test = 'spo2' and new.value < 90 then v_kind := 'spo2';
     end if;
     if v_kind is null then

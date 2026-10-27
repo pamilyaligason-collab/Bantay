@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { latestByTest, rangeState, type Range, type Reading } from './ranges'
+import { CHIP, latestByTest, rangeState, type Range, type Reading } from './ranges'
 import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLabel, previousReading } from './model'
 import { byVitalOrder, isVital, NORMAL, positionOf, weekAverages } from './vitals'
 import { Icon } from '../shell/Icon'
@@ -70,7 +70,10 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
           {rows.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
             const pos = positionOf(r, fam)
-            const st = rangeState(pos, kindOf(r.test), r.test === 'bp_systolic' ? { top: r.value, bottom: rows.find((x) => x.test === 'bp_diastolic')?.value } : undefined)
+            const famOf = (test: string) => thresholds.find((t) => t.key === `${r.personId}:${test}`) // the pair's doctor targets, so both rows read the same word
+            const doctor = { top: famOf('bp_systolic'), bottom: famOf('bp_diastolic') }
+            const st = rangeState(pos, kindOf(r.test), r.test === 'bp_systolic' ? { top: r.value, bottom: rows.find((x) => x.test === 'bp_diastolic')?.value, doctor } : r.test === 'bp_diastolic' ? { top: rows.find((x) => x.test === 'bp_systolic')?.value, bottom: r.value, doctor } : undefined)
+            const cls = CHIP[st.kind]
             const hist = pool.filter((x) => x.test === r.test)
             const spark = sparkPath(hist)
             const prev = previousReading(pool, r.test)
@@ -80,12 +83,12 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
               <div className="row hv-row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
                 <span className="grow">
                   <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}<Icon name="chev" size={20} /></a>
-                  <span className={`hv-state ${pos}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>
+                  <span className={`hv-state ${cls}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>
                   {layout.band && (
                     <span className="hv-bar" aria-hidden="true">
                       <i className="hv-band" style={{ left: `${layout.band.from}%`, width: `${layout.band.to - layout.band.from}%` }} />
                       {layout.prev != null && <i className="hv-dot prev" style={{ left: `${layout.prev}%` }} />}
-                      <i className={`hv-dot now ${pos}${layout.edge ? ' edge' : ''}`} style={{ left: `${layout.now}%` }} />
+                      <i className={`hv-dot now ${cls}${layout.edge ? ' edge' : ''}`} style={{ left: `${layout.now}%` }} />
                       {layout.edge && <i className={`hv-arrow ${layout.edge}`} />}
                     </span>
                   )}

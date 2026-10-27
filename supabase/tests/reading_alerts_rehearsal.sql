@@ -97,7 +97,7 @@ delete from public.carer_alerts;
 select pg_temp.rd('glucose', 3.0, 'mmol/L');
 select pg_temp.ok(pg_temp.alerts() = 1, 'glucose 3.0 mmol/L is 54 mg/dL: one alert');
 delete from public.carer_alerts;
-select pg_temp.rd('glucose', 5.5, 'mmol/L'); select pg_temp.rd('fasting_glucose', 70, 'mg/dL'); select pg_temp.rd('glucose', 300, 'mg/dL'); select pg_temp.rd('fasting_glucose', 99, null);
+select pg_temp.rd('glucose', 5.5, 'mmol/L'); select pg_temp.rd('fasting_glucose', 70, 'mg/dL'); select pg_temp.rd('glucose', 300, 'mg/dL'); select pg_temp.rd('fasting_glucose', 99, null); select pg_temp.rd('glucose', 40, null); select pg_temp.rd('glucose', 40, 'furlongs');
 select pg_temp.ok(pg_temp.alerts() = 0, '5.5 mmol/L, 70, 300 and 99 mg/dL raise nothing');
 select pg_temp.rd('fasting_glucose', 69, 'mg/dL');
 select pg_temp.ok(pg_temp.alerts() = 1, '69 mg/dL: one alert');
