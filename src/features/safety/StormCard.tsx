@@ -23,7 +23,7 @@ export function StormCard({ now }: { now?: number }) {
   const n = signalOf(top)!
   const answer = async (f: (typeof FACES)[number]) => {
     const r = await logFeeling(f.feeling)
-    if (r === 'untold') return setSaved(feelingToast(r))
+    if (r === 'untold' || r === 'refused') return setSaved(feelingToast(r))
     if (r !== 'told') return setSaved(FAIL_TEXT[r])
     setSaved(f.feeling === 'unwell' ? 'Saved. Your family can see it in Bantay. If you need help now, hold SOS or call 911.' : 'Saved. Your family can see it in Bantay.')
   }

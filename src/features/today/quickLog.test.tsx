@@ -57,6 +57,6 @@ describe('QuickLog (today-log)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Log how you feel' }))
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     await waitFor(() => expect(notify).toHaveBeenCalled())
-    expect(notify.mock.calls[0]![0]).toMatch(/has not seen this/)
+    expect(notify.mock.calls[0]![0]).toMatch(/We will tell them when you are online/)
   })
 })
