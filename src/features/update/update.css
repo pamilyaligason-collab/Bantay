@@ -1,7 +1,6 @@
 /* Update sheet, card, full-screen gate. Tokens and .sh-* classes come from tokens.css / shell.css. */
 .up-c { text-align: center; }
 .up-m0 { margin: 0; }
-.up-jj { align-self: center; }
 .up-between { justify-content: space-between; }
 .up-soft { box-shadow: none; background: var(--card2); display: grid; gap: 8px; }
 .up-card { background: var(--card); }

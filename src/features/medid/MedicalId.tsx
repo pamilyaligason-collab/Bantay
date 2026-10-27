@@ -46,7 +46,7 @@ export default function MedicalId() {
       )}
       <div className="sh-card mid-tip">
         <b>Show on lock screen</b>
-        <p className="sh-sub">Anyone helping you can read your Medical ID without your PIN. On Android, open Settings, then Safety and emergency, then Medical information, and add the same details. Bantay cannot do this step for you.</p>
+        <p className="sh-sub">Anyone helping you can read your Medical ID without your PIN. On Android, open Settings, then Safety and emergency, then Medical information, and add the same details. Bantay cannot do this step for you. Bantay&apos;s own fingerprint screen already shows your allergies, conditions and who to call, without unlocking.</p>
       </div>
     </div>
   )

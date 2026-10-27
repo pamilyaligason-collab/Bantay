@@ -1,0 +1,52 @@
+/* S6c: Privacy screen (mockup start-privacy) and the fingerprint lock (start-finger). Tokens come from the app palette; light and dark both follow it. */
+.pv-quiet { background: var(--card2); box-shadow: none; align-items: flex-start; }
+.pv-tick { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: var(--on-green); }
+.pv-bad { color: var(--red, #b3261e); }
+.pv-danger { background: var(--red, #b3261e); color: #fff; }
+.pv-confirm { display: grid; gap: 10px; outline: 2px solid var(--red, #b3261e); }
+.pv-where { display: grid; gap: 6px; }
+.pv-where ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
+.pv-where li b { color: var(--ink); }
+.pv-link { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; color: var(--green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.pv-notice { margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--soft); color: var(--ink); font-size: 14px; }
+.pv-notice a { color: var(--green); font-weight: 600; }
+
+/* Lock screen */
+.lk { min-height: 100dvh; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: calc(var(--sat, 0px) + 20px) 16px calc(16px + env(safe-area-inset-bottom, 0px)); color: var(--ink);
+  background: radial-gradient(120% 60% at 50% 38%, color-mix(in srgb, var(--green2) 34%, transparent), transparent 70%), radial-gradient(90% 40% at 50% 100%, color-mix(in srgb, var(--amber) 14%, transparent), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--soft) 70%, var(--ground)), var(--ground)); }
+.lk-hello { display: flex; align-items: center; gap: 12px; }
+.lk-hello img { width: 56px; height: 56px; flex: none; object-fit: contain; }
+.lk-hello h1 { margin: 0; font-size: 28px; line-height: 1.15; font-weight: 600; font-family: var(--f-display, inherit); }
+.lk-eyebrow { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.lk-wx { display: flex; align-items: center; gap: 10px; background: color-mix(in srgb, var(--card) 80%, transparent); border-radius: 18px; padding: 10px 14px; }
+.lk-wx svg { color: var(--amber); flex: none; }
+.lk-wx .lk-sub { font-size: 13px; color: var(--muted); }
+.lk-fpwrap { position: relative; width: 260px; height: 260px; margin: auto auto 0; display: grid; place-items: center; }
+.lk-fpwrap i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--green2); opacity: .5; animation: lk-pulse 2.4s ease-out 3; }
+.lk-fpwrap i + i { animation-delay: 1.2s; }
+.lk-fp { position: relative; overflow: hidden; width: 184px; height: 184px; border-radius: 50%; border: 0; background: var(--green); color: var(--on-green); display: grid; place-items: center;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--green) 45%, transparent), 0 0 0 8px color-mix(in srgb, var(--green2) 25%, transparent); cursor: pointer; }
+.lk-fp svg { position: relative; z-index: 1; color: #CFE8D6; }
+.lk-scan { position: absolute; left: 14%; right: 14%; top: 22%; height: 3px; border-radius: 2px; z-index: 2; background: linear-gradient(90deg, transparent, var(--amber), transparent); box-shadow: 0 0 12px var(--amber); opacity: .85; animation: lk-scan 2.4s ease-in-out infinite alternate; }
+.lk-say { text-align: center; display: grid; gap: 4px; }
+.lk-say b { font-size: 20px; }
+.lk-say span { color: var(--muted); }
+.lk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: auto; }
+.lk-sos { display: grid; grid-template-columns: 1.25fr 1fr; gap: 10px; margin-top: auto; }
+.lk-btn { min-height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; border: 0; padding: 0 14px; font: inherit; font-size: 16px; font-weight: 600; text-decoration: none; cursor: pointer; background: var(--card2); color: var(--ink); }
+.lk-sos .lk-btn { min-height: 60px; font-size: 15px; font-weight: 700; }
+.lk-red { background: var(--red, #b3261e); color: #fff; }
+.lk-out { background: transparent; color: var(--red, #b3261e); box-shadow: inset 0 0 0 2px var(--red, #b3261e); }
+.lk-btn:focus-visible, .lk-fp:focus-visible { outline: 3px solid var(--focus, var(--ink)); outline-offset: 3px; }
+.lk-card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--shadow); display: grid; gap: 10px; }
+.lk-card dl { margin: 0; display: grid; gap: 10px; }
+.lk-card dt { font-size: 13px; color: var(--muted); }
+.lk-card dd { margin: 0; font-size: 18px; font-weight: 600; }
+.lk-card .lk-allergy { color: var(--red, #b3261e); }
+.lk-call { display: block; min-height: 48px; line-height: 48px; color: var(--ink); text-decoration: underline; }
+@keyframes lk-pulse { 0% { transform: scale(.7); opacity: .6; } 100% { transform: scale(1.1); opacity: 0; } }
+@keyframes lk-scan { 0% { top: 22%; } 100% { top: 72%; } }
+@media (prefers-reduced-motion: reduce) {
+  .lk-fpwrap i { animation: none; opacity: .25; }
+  .lk-scan { animation: none; top: 50%; opacity: .5; }
+}

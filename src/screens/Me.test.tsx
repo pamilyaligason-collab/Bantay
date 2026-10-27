@@ -1,13 +1,16 @@
 import 'fake-indexeddb/auto'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
+const call = vi.hoisted(() => ({ perm: vi.fn(), ask: vi.fn() }))
+vi.mock('../features/sos/call', () => ({ callPermission: call.perm, requestCallPermission: call.ask }))
 import Me from './Me'
 
 const FAMILY = ['Mama', 'Papa', 'Ate Joy', 'Lolo'].map((displayName, i) => ({ personId: `p${i}`, displayName, handle: null, provider: 'pin' }))
 
 beforeEach(async () => {
+  call.perm.mockReset().mockResolvedValue('unavailable'); call.ask.mockReset()
   await db.kv.clear()
   localStorage.setItem('bantay.family', JSON.stringify(FAMILY))
 })
@@ -88,5 +91,35 @@ describe('language toggle (M7b)', () => {
     render(<Me />)
     await screen.findByRole('switch', { name: 'Simple mode' })
     expect(screen.queryByRole('button', { name: 'Check for updates' })).toBeNull()
+  })
+})
+
+describe('Me rows (S6c, start-me)', () => {
+  it('links to Privacy and keeps the alert list row', async () => {
+    render(<Me />)
+    expect((await screen.findByRole('link', { name: /Privacy/ })).getAttribute('href')).toBe('#privacy')
+    expect(screen.getByRole('link', { name: /Alerts/ }).getAttribute('href')).toBe('#notif')
+  })
+  it('call row: hidden on the web, Allow asks once when denied, shows On when granted', async () => {
+    const { unmount } = render(<Me />)
+    await screen.findByRole('switch', { name: 'Simple mode' })
+    expect(screen.queryByText('Hold for help can call for you')).toBeNull()
+    unmount()
+    call.perm.mockResolvedValue('denied'); call.ask.mockResolvedValue('granted')
+    render(<Me />)
+    expect(await screen.findByText(/Off\. Hold for help opens the dial screen/)).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Allow' }))
+    expect(call.ask).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText(/^On\. Hold for help calls your first contact/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Allow' })).toBeNull()
+  })
+  it('call row steps aside when the Alarms rows already warn that Android took the permission back', async () => {
+    await db.kv.put({ key: 'phone.check', value: { at: 'x', call_ok: false } })
+    call.perm.mockResolvedValue('denied')
+    render(<Me />)
+    await screen.findByRole('switch', { name: 'Simple mode' })
+    await waitFor(() => expect(call.perm).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 80)) // let the permission read and the kv read both settle
+    expect(screen.queryByText('Hold for help can call for you')).toBeNull()
   })
 })

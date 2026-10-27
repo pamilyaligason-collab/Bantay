@@ -1,7 +1,8 @@
 import { getAccessToken } from '../auth/session'
+import { aiOn } from '../privacy/ai'
 import { buildRequest, parseReply, type Msg } from './tools'
 
-export type AskResult = ReturnType<typeof parseReply> | { error: 'unconfigured' | 'signin' | 'limit' | 'failed' }
+export type AskResult = ReturnType<typeof parseReply> | { error: 'off' | 'unconfigured' | 'signin' | 'limit' | 'failed' }
 
 type Env = { VITE_ASSISTANT_PROVIDER?: string; VITE_ASSISTANT_URL?: string; VITE_SUPABASE_URL?: string }
 
@@ -12,6 +13,7 @@ export function assistantUrl(env: Env = import.meta.env as Env): string | undefi
 }
 
 export async function ask(messages: Msg[], screen: string, url = assistantUrl(), f: typeof fetch = fetch): Promise<AskResult> {
+  if (!(await aiOn())) return { error: 'off' } // privacy.ai: no request leaves the phone
   if (!url) return { error: 'unconfigured' }
   const token = await getAccessToken()
   try {

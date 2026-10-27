@@ -21,6 +21,7 @@ import { startSos, SOS_CONTACTS_KEY } from '../sos/active'
 import { normalizeContacts } from '../sos/contacts'
 import { loadFamily } from '../auth/family'
 import { useKv } from '../shell/useKv'
+import { AI_OFF, aiOn } from '../privacy/ai'
 import './assistant.css'
 
 const CAP = Number(import.meta.env.VITE_ASSISTANT_DAILY_CAP) || DEFAULT_CAP
@@ -28,6 +29,7 @@ const API = { logReading, logMedTaken, logActivity }
 const TITLE: Record<DraftTool, string> = { log_reading: 'Log a reading', log_med_taken: 'Log a medicine taken', log_activity: 'Log an activity' }
 const LABEL: Record<string, string> = { person: 'Who', test: 'Test', value: 'Value', unit: 'Unit', takenAt: 'When', name: 'Medicine', kind: 'Activity', minutes: 'Minutes', steps: 'Steps', startedAt: 'When' }
 const ERR = {
+  off: AI_OFF,
   unconfigured: 'The assistant is not set up on this phone yet.',
   signin: 'Please sign in again, then ask me once more.',
   limit: 'You have used all of today\'s questions. Please try again tomorrow. For anything urgent, call your doctor, or 911.',
@@ -290,6 +292,7 @@ export default function Assistant() {
 
   // The model path: counts one message, asks, shows the reply. Anything typed while offline waits in `queued` and comes here when signal returns.
   const deliver = async (content: string) => {
+    if (!(await aiOn())) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) // privacy.ai: before the daily count is used; the local emergency gate runs before this
     if (!(await takeMessage(CAP))) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
     const next: Item[] = [...items.filter((m) => !m.queued), { role: 'user', content }]
     setItems(next)

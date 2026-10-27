@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { toCanonicalReading, type Reading } from '../health/ranges'
 import { PLAUSIBLE as P } from '../health/plausible'
+import { aiOn } from '../privacy/ai'
 
 export type ReadingKind = 'bp' | 'glucose' | 'weight' | 'temp' | 'spo2'
 export const KIND_LABEL: Record<ReadingKind, string> = { bp: 'Blood pressure', glucose: 'Blood sugar', weight: 'Weight', temp: 'Temperature', spo2: 'Oxygen' }
@@ -90,7 +91,8 @@ const b64 = (b: Blob) => new Promise<string>((res, rej) => {
 })
 
 /** Ask the server to read the photo. Any failure (offline, no signal, server error) gives an empty draft and `failed: true`: the person types the numbers instead. */
-export async function readDevicePhoto(client: SupabaseClient | null, photo: Blob): Promise<{ draft: ReadingDraft; failed: boolean; limited?: true }> {
+export async function readDevicePhoto(client: SupabaseClient | null, photo: Blob): Promise<{ draft: ReadingDraft; failed: boolean; limited?: true; off?: true }> {
+  if (!(await aiOn())) return { draft: EMPTY_DRAFT, failed: true, off: true } // privacy.ai: the photo never leaves the phone
   if (!client) return { draft: EMPTY_DRAFT, failed: true }
   try {
     const { data, error } = await client.functions.invoke('records-extract', { body: { mode: 'reading', mime: 'image/jpeg', image_base64: await b64(photo) } })

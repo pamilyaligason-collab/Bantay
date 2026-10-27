@@ -91,6 +91,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
   const [draft, setDraft] = useState<ReadingDraft>(EMPTY_DRAFT)
   const [failed, setFailed] = useState(false)
   const [limited, setLimited] = useState(false)
+  const [off, setOff] = useState(false)
   const [reading, setReading] = useState(false)
   const cam = useRef<HTMLInputElement>(null)
   const pick = useRef<HTMLInputElement>(null)
@@ -167,10 +168,12 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
       setDraft(r.draft)
       setFailed(r.failed)
       setLimited(r.limited === true)
+      setOff(r.off === true)
     } catch {
       setDraft(EMPTY_DRAFT)
       setFailed(true)
       setLimited(false)
+      setOff(false)
     }
     setReading(false)
   }
@@ -250,7 +253,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
               </div>
               {people.length === 0 && <p className="sub">Open Bantay once with signal so it can list your family here.</p>}
               {!who && people.length > 1 && <p className="sub" role="status">Pick whose reading this is.</p>}
-              {who && <ReadingConfirm draft={draft} failed={failed} limited={limited} personId={who} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
+              {who && <ReadingConfirm draft={draft} failed={failed} limited={limited} off={off} personId={who} onBack={() => setStage('what')} onSaved={() => setStage('saved')} />}
             </>)}
 
         {stage === 'saved' && (
