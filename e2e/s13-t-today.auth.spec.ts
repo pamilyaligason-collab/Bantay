@@ -48,6 +48,8 @@ async function start(page: Page, scheme: 'light' | 'dark', o: { code?: number; d
   if (o.since) await seed(page, 'bantay', 'kv', [{ key: 'today.myweek.since', value: o.since }])
   if (o.dose || o.since) await page.reload() // raw IndexedDB writes do not notify live queries
   await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  // The mocked server never takes the app's own writes, so the sync pill and the bell dot come and go with timing; they are not what this lane shows.
+  await page.addStyleTag({ content: '.sync-status, .sh-badge { display: none !important; }' })
   await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible() // the forecast answers after the first paint
   await expect(page.getByRole('heading', { name: 'Meals today' })).toBeVisible() // appears once sign-in finished: wait so a rerun draws the same page (ML-25, ML-32)
 }
