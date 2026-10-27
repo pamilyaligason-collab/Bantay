@@ -89,6 +89,7 @@ function Overview() {
   const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
   const noVitals = ready && nodes.every((n) => n.empty) // S6: readings but no vitals: ONE empty state (the no-vitals card), no headline or nudge above it. No readings at all keeps the figure + headline
   const canLog = canMarkFor(personId, ownId, writable)
+  const oneEmpty = blank && canLog // a blank person who can log sees only the figure's empty state and its one action
   const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
   return (
     <>
@@ -104,7 +105,7 @@ function Overview() {
           <Skeleton lines={4} />
         </section>
       )}
-      {ready && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
+      {ready && !oneEmpty && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
         <div className="hv-head" data-tone={head.tone}>
           <div className="grow">
             <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
@@ -117,6 +118,7 @@ function Overview() {
       {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && noVitals && (
         <div className="hv-empty-wrap" data-testid="no-vitals">
+          <h2 className="hv-sr">{`No vitals yet${name ? ` for ${givenName(name)}` : ''}`}</h2>
           <EmptyState icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : undefined} />
         </div>
       )}
@@ -126,10 +128,10 @@ function Overview() {
           {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My numbers.</p>}
         </>
       )}
-      {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
-      {ready && !blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {ready && <NudgeEntry />}
       {ready && personId && <MedicinesSummary personId={personId} />}
+      {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
+      {ready && !blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
       {ready && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listDrafts } from '../records/api'
-import { papersLine } from '../records/papers'
+import { papersLine, progressPct } from '../records/papers'
 import { useConfirmedDocs } from '../records/useRecordsServer'
 import { Icon, type IconName } from '../shell/Icon'
 import { prefersReducedMotion } from '../look/useReducedMotion'
@@ -10,8 +10,9 @@ import { useVisits } from './useVisits'
 import { refillLine, stockRows } from './stock'
 import { nextVisitLine } from './visitsLogic'
 import './health.css'
+import './m7a.css' // .hl-ring
 
-type Tile = { key: string; icon: IconName; label: string; sub: string; href?: string; to?: string }
+type Tile = { key: string; icon: IconName; label: string; sub: string; href?: string; to?: string; pct?: number }
 
 function Door({ t }: { t: Tile }) {
   const body = (
@@ -19,6 +20,7 @@ function Door({ t }: { t: Tile }) {
       <Icon name={t.icon} tone="vitals" boxed />
       <span className="hb-l">{t.label}</span>
       <span className="hb-s">{t.sub}</span>
+      {t.pct !== undefined && <span className="hl-ring" role="img" aria-label={`${t.pct} percent checked`} style={{ ['--p' as string]: `${t.pct}%` }} />}
     </>
   )
   if (t.href) return <a className="hb-tile press" href={t.href} data-browse={t.key}>{body}</a>
@@ -56,7 +58,7 @@ export function HealthLinks({ personId, jump }: { personId: string; jump: { read
     ...(jump.labs ? [{ key: 'labs', icon: 'flask', label: 'Labs', sub: 'Your lab results', to: 'lvn-labs' } as Tile] : []),
     { key: 'move', icon: 'move', label: 'Move', sub: 'Gentle exercise picks', href: '#health/move' },
     { key: 'food', icon: 'meal', label: 'Food', sub: 'Meals, salt and nutrients', href: '#health/nutrition' },
-    { key: 'papers', icon: 'file', label: 'Papers', sub: papersLine(papers.checked, papers.total), href: '#health/papers' },
+    { key: 'papers', icon: 'file', label: 'Papers', sub: papersLine(papers.checked, papers.total), href: '#health/papers', pct: papers.total > 0 ? progressPct(papers.checked, papers.total) : undefined },
     { key: 'visits', icon: 'calendar', label: 'Visits', sub: visit ? `${visit.text} · ${visit.sub}` : 'Next visit and what to bring', href: '#health/visits' },
     { key: 'library', icon: 'cross', label: 'Library', sub: 'Plain health summaries', href: '#health/library' },
     ...(videosAvailable() ? [{ key: 'videos', icon: 'play', label: 'Videos', sub: 'Short and checked', href: '#health/videos' } as Tile] : [])

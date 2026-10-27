@@ -117,7 +117,8 @@ describe('Health overview', () => {
     await hdb.readings.clear()
     render(<Health />)
     const empty = await screen.findByTestId('health-empty')
-    expect((await screen.findByTestId('insight')).textContent).toBe('No results yet')
+    expect(screen.queryByTestId('insight')).toBeNull() // one empty state, not a headline on top of it
+    expect(document.querySelectorAll('.empty-state')).toHaveLength(1)
     expect(within(empty).queryAllByRole('link')).toHaveLength(0)
     expect(within(empty).getAllByRole('button')).toHaveLength(1) // p1 is the signed-in person, so Add a reading is offered
     fireEvent.click(within(empty).getByRole('button', { name: 'Add a reading' }))
@@ -132,12 +133,12 @@ describe('Health overview', () => {
     await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 3.1, unit: 'mmol/L', takenAt: day(60) })
     render(<Health />)
     const card = await screen.findByTestId('no-vitals')
-    expect(within(card).getByText('No vitals yet for Loyd')).toBeTruthy()
+    expect(within(card).getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeTruthy()
     expect(screen.getByTestId('showing').textContent).toBe('Showing: Loyd Sevilla')
     expect(screen.queryByTestId('insight')).toBeNull()
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect(document.querySelector('.ad-av')).toBeNull()
-    expect(screen.getAllByText(/No vitals yet/)).toHaveLength(1) // exactly one empty message
+    expect(document.querySelectorAll('.empty-state')).toHaveLength(1) // exactly one empty state (the h2 is its screen-reader heading)
   })
 
   it('J r2: a lab out of range this week still shows its warning above the no-vitals card; a "SURNAME, Given" name says the given name', async () => {
@@ -146,7 +147,7 @@ describe('Health overview', () => {
     await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2) })
     render(<Health />)
     const card = await screen.findByTestId('no-vitals')
-    expect(within(card).getByText('No vitals yet for Loyd')).toBeTruthy()
+    expect(within(card).getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeTruthy()
     expect((await screen.findByTestId('insight')).textContent).toBe('LDL cholesterol needs a look this week')
     expect(screen.queryByTestId('nudge')).toBeNull()
   })

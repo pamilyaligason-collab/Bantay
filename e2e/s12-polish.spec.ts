@@ -134,10 +134,10 @@ for (const scheme of ['light', 'dark'] as const) {
     test(`S6, S7: Health with old readings only has one empty state, a proper-case name and folded labs (${scheme})`, async ({ page }) => {
       await open(page, 'health')
       await expect(page.getByTestId('no-vitals')).toBeVisible()
-      await expect(page.getByTestId('no-vitals').getByText('No vitals yet for Loyd')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeVisible()
       await expect(page.getByTestId('insight')).toHaveCount(0)
       await expect(page.getByTestId('nudge')).toHaveCount(0)
-      await expect(page.getByText(/No vitals yet/)).toHaveCount(1)
+      await expect(page.getByTestId('no-vitals').locator('.empty-state')).toHaveCount(1) // the h2 above it is its screen-reader heading
       const labs = page.getByTestId('labs-list')
       await labs.scrollIntoViewIfNeeded()
       await expect(labs).not.toContainText('226.74')
