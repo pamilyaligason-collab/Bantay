@@ -66,7 +66,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const done = page.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })
     await expect(done).toBeVisible()
     await expect(card).not.toHaveClass(/leaving/) // the morph holds first, the collapse comes after
-    await shot(page, 'dose-after', scheme)
+    await card.screenshot({ path: `${SHOTS}/dose-after-${scheme}.png`, animations: 'disabled' }) // the card only: the toast under it fades in on its own clock
     await expect(card).toHaveCount(0, { timeout: 3000 }) // collapsed and freed
     await page.waitForTimeout(100)
     await shot(page, 'dose-gone', scheme)
