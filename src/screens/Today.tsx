@@ -15,6 +15,9 @@ import PlanToday from '../features/today/PlanToday'
 import QuickLog from '../features/today/QuickLog'
 import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
+import SosHold from '../features/sos/SosHold'
+import SosScreen from '../features/sos/SosScreen'
+import { retryUnsentMood } from '../features/today/actions'
 import WeekLine from '../features/today/WeekLine'
 import { PwaBanner } from '../features/update/PwaBanner'
 import { UpdateCard } from '../features/update/UpdateCard'
@@ -42,10 +45,18 @@ export default function Today() {
     bt.setAttribute('data-simple', '')
     return () => bt.removeAttribute('data-simple')
   }, [loaded, simple])
+  const [sos, setSos] = useState(false)
+  useEffect(() => { // an Unwell saved offline is sent when Today opens and when the phone is back online (the server keeps one per day)
+    const go = () => { void retryUnsentMood().then((r) => { if (r === 'sent') notify('Your family has been told you are unwell.') }, () => undefined) }
+    go()
+    window.addEventListener('online', go)
+    return () => window.removeEventListener('online', go)
+  }, [notify])
   const next = useNext()
   const calm = next.item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
   const h1 = <h1 className="td-h1">Today</h1>
   if (!loaded) return h1 // one read of the Simple mode switch, so the full page never flashes first
+  if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as Simple mode and the Safety tab
   if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
     <div ref={root} className="td-root">
@@ -58,6 +69,8 @@ export default function Today() {
       <AlertCardToday />
       {!calm && <NextUp item={next.item} review={next.review} notify={notify} />}
       <QuickLog notify={notify} />
+      {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
+      <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>
       <MyWeek />
       <SelfCare />
       <PlanToday />

@@ -1,12 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ markDue: vi.fn(async () => true) }))
-vi.mock('./useDueMeds', () => ({ markDue: h.markDue }))
+const h = vi.hoisted(() => ({ markDue: vi.fn(async () => true), markTaken: vi.fn(async (_p: string, ids: string[]) => ids.length) }))
+vi.mock('./useDueMeds', () => ({ markDue: h.markDue, markTaken: h.markTaken }))
 import NextUp from './NextUp'
 import { pickNext, type DuePerson } from './nextPick'
 
-afterEach(() => { cleanup(); h.markDue.mockClear() })
+afterEach(() => { cleanup(); h.markDue.mockClear(); h.markTaken.mockClear() })
 const now = new Date(2026, 9, 19, 9)
 const ma: DuePerson = { personId: 'ma', name: 'Ma', isMe: false, at: 480, rel: 480, status: 'missed', slots: [{ name: 'Aspirin', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'ma', dose: '1 tablet' }] }
 const dose = (d = ma) => pickNext({ due: [d], plan: null, storm: null }, now)
@@ -38,6 +38,28 @@ describe('NextUp', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Marked Aspirin taken'))
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     await waitFor(() => expect(h.markDue).toHaveBeenLastCalledWith(ma, true))
+  })
+  it('2 medicines due together: Taken opens a checklist, all ticked; unticking one logs 1 row (markTaken with 1 id)', async () => {
+    const two: DuePerson = { ...ma, slots: [ma.slots[0]!, { name: 'Metformin (Glucophage)', slot: '08:00', at: 480, medicationId: 'm2', key: 'm2', personId: 'ma', dose: null }] }
+    const notify = vi.fn()
+    run(dose(two), 0, notify)
+    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    expect(h.markTaken).not.toHaveBeenCalled() // nothing is logged by the first tap
+    const boxes = screen.getAllByRole('checkbox') as HTMLInputElement[]
+    expect(boxes.map((b) => b.checked)).toEqual([true, true])
+    expect(screen.getByText('Metformin')).toBeTruthy() // the short name
+    fireEvent.click(boxes[0]!) // untick Aspirin
+    fireEvent.click(screen.getByRole('button', { name: 'Mark these taken' }))
+    await waitFor(() => expect(h.markTaken).toHaveBeenCalledWith('ma', ['m2']))
+    expect(h.markDue).not.toHaveBeenCalled()
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Marked Metformin taken'))
+  })
+  it('2 medicines, everything unticked: the button is off (never logs nothing as success)', () => {
+    const two: DuePerson = { ...ma, slots: [ma.slots[0]!, { ...ma.slots[0]!, name: 'Metformin', medicationId: 'm2', key: 'm2' }] }
+    run(dose(two))
+    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    for (const b of screen.getAllByRole('checkbox')) fireEvent.click(b)
+    expect((screen.getByRole('button', { name: 'Mark these taken' }) as HTMLButtonElement).disabled).toBe(true)
   })
   it('a plan item links to the plan', () => {
     run(pickNext({ due: [], plan: { key: 'p', kind: 'plan', kicker: 'Plan · today', title: 'Next: Pay bills', body: 'Due today', actions: [] }, storm: null }))

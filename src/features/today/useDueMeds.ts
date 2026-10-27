@@ -55,3 +55,18 @@ export async function markDue(d: DuePerson, skipped = false): Promise<boolean> {
     return false
   }
 }
+
+/** Marks only the chosen medicines taken (their `key`, or server id) among the doses due now for this person. Resolves to the rows logged (0 when none matched or storage failed).
+ *  Reads the same local tables the Next up card is drawn from, so the ticks and the rows agree. */
+export async function markTaken(personId: string, medIds: string[]): Promise<number> {
+  if (!medIds.length) return 0
+  try {
+    const [meds, takes] = await Promise.all([ldb.medications.toArray(), ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()])
+    const d = nextDoses([{ personId, name: '', isMe: false }], meds, takes, new Date())[0]
+    const pick = (d?.slots ?? []).filter((s) => medIds.includes(s.key) || (s.medicationId != null && medIds.includes(s.medicationId)))
+    for (const s of pick) await logDose({ personId, name: s.name, serverId: s.medicationId ?? undefined }, s.slot)
+    return pick.length
+  } catch {
+    return 0
+  }
+}

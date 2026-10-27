@@ -6,7 +6,7 @@ vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.self }))
 vi.mock('../auth/client', () => ({ supabase: { rpc: (...a: unknown[]) => h.rpc(...a) } }))
 vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('../log/store', () => ({ logActivity: async (a: { kind: string }) => { if (a.kind === 'check-in') h.checkins++; else h.moods.push(a.kind) } }))
-import { FEELINGS, feelingToast, logFeeling } from './actions'
+import { FEELINGS, feelingToast, logFeeling, retryUnsentMood } from './actions'
 
 beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ error: null }); h.moods = []; h.checkins = 0 })
 
@@ -32,14 +32,39 @@ describe('logFeeling (How are you?)', () => {
     expect(await logFeeling('unwell')).toBe('untold')
   })
   it('the untold toast says the family has not seen it and to tap again or call; told says the family will see it', () => {
-    expect(feelingToast('untold')).toBe('Your family has not seen this. Tap Unwell again when you are online, or call them.')
+    expect(feelingToast('untold')).toBe('Saved. We will tell them when you are online.')
     expect(feelingToast('told')).toBe('Saved. Your family will see it in Bantay.')
   })
-  it('an offline Unwell queues nothing in the outbox (no hidden retry), so the toast must not promise one', async () => {
-    h.rpc.mockRejectedValue(new Error('offline'))
-    await logFeeling('unwell')
+  it('an offline Unwell is kept in kv mood.unsent (not the outbox) and sent once on reconnect: exactly 1 raise_mood_alert call', async () => {
     const { db } = await import('../../db')
+    await db.kv.delete('mood.unsent')
+    const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    expect(await logFeeling('unwell')).toBe('untold')
+    expect(h.rpc).not.toHaveBeenCalled()
+    expect((await db.kv.get('mood.unsent'))?.value).toMatchObject({ personId: 'p1' })
     expect(await db.outbox.count()).toBe(0)
+    expect(await retryUnsentMood()).toBe('offline') // still offline: kept
+    expect(h.rpc).not.toHaveBeenCalled()
+    online.mockReturnValue(true)
+    expect(await retryUnsentMood()).toBe('sent')
+    expect(await retryUnsentMood()).toBe('none') // sent once, cleared
+    expect(h.rpc).toHaveBeenCalledTimes(1)
+    expect(h.rpc).toHaveBeenCalledWith('raise_mood_alert', { p_person: 'p1' })
+    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    online.mockRestore()
+  })
+  it('a refused retry keeps the unsent Unwell; one older than a day is dropped without a call', async () => {
+    const { db } = await import('../../db')
+    h.rpc.mockRejectedValueOnce(new Error('offline'))
+    await logFeeling('unwell')
+    h.rpc.mockClear()
+    h.rpc.mockResolvedValueOnce({ error: { code: '42501' } })
+    expect(await retryUnsentMood()).toBe('offline')
+    expect(await db.kv.get('mood.unsent')).toBeTruthy()
+    await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: Date.now() - 25 * 3_600_000 } })
+    h.rpc.mockClear()
+    expect(await retryUnsentMood()).toBe('none')
+    expect(h.rpc).not.toHaveBeenCalled()
   })
   it('signed out: nothing is written and no alert is raised', async () => {
     h.self = null
