@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ALERT_KINDS, dayRates, errorTotals, errorsByVersion, errorsNote, errorsTone, JOB_STALE_MIN, jobStatus, KNOWN_MIGRATIONS, lowestDay, phoneStatus, seenLine, seenRate, seenTone,
+  ALERT_KINDS, ALERTS_FEED_STALE_MIN, dayRates, errorTotals, errorsByVersion, errorsNote, errorsTone, JOB_STALE_MIN, JOBS, jobStatus, KNOWN_MIGRATIONS, lowestDay, phoneStatus, seenLine, seenRate, seenTone,
   sortPhones, unseenList, type AlertStats, type ErrRow, type PhoneRow
 } from './systemApi'
 
@@ -25,6 +25,29 @@ describe('job status (red when failed or older than 30 minutes)', () => {
     expect(jobStatus(null, NOW).tone).toBe('warn')
     expect(jobStatus(undefined, NOW).tone).toBe('warn')
     expect(jobStatus({ job: 'x', ran_at: 'not a time', ok: true }, NOW).tone).toBe('warn')
+  })
+})
+
+describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes old or failed)', () => {
+  const feed = JOBS.find((j) => j.job === 'alerts-ingest')!
+  const run = (m: number, ok = true) => ({ job: 'alerts-ingest', ran_at: min(m), ok })
+  it('uses 60 minutes for the feed and 30 for the other jobs', () => {
+    expect(ALERTS_FEED_STALE_MIN).toBe(60)
+    expect(feed.staleMin).toBe(60)
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest').map((j) => j.staleMin)).toEqual([30, 30])
+  })
+  it('59 and 60 minutes are fine, 61 is red', () => {
+    expect(jobStatus(run(59), NOW, feed.staleMin).tone).toBe('ok')
+    expect(jobStatus(run(60), NOW, feed.staleMin).tone).toBe('ok')
+    const stale = jobStatus(run(61), NOW, feed.staleMin)
+    expect(stale.tone).toBe('bad'); expect(stale.text).toMatch(/Stopped/)
+  })
+  it('a failed run is red even a minute ago; no row yet is amber, never red', () => {
+    expect(jobStatus(run(1, false), NOW, feed.staleMin).tone).toBe('bad')
+    expect(jobStatus(null, NOW, feed.staleMin).tone).toBe('warn')
+  })
+  it('the cron gap of 2026-10-17..27 would have been red', () => {
+    expect(jobStatus({ job: 'alerts-ingest', ran_at: '2026-10-17T01:00:00Z', ok: true }, NOW, feed.staleMin).tone).toBe('bad')
   })
 })
 

@@ -70,6 +70,9 @@ describe('System health page', () => {
     expect(within(card).getAllByText(/OK:/)).toHaveLength(3) // sr-only state word
     h.tables.job_runs = { data: [{ job: 'x', ran_at: iso(45), ok: true }] }
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    await waitFor(() => expect(within(card).getAllByText(/Problem:/)).toHaveLength(2)) // 45 min: the alerts feed (60 min rule) is still fine
+    h.tables.job_runs = { data: [{ job: 'x', ran_at: iso(75), ok: true }] }
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     await waitFor(() => expect(within(card).getAllByText(/Problem:/)).toHaveLength(3))
     expect(within(card).getAllByText(/Stopped, last ran/)).toHaveLength(3)
   })
