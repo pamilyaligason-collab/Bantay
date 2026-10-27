@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 
+// The auth build sets VITE_JOIN_STUB=1 (playwright.config.ts), so #join opens start-who with a stub claim port; the real build has no join port until S6b adds the action.
 // S6a ONBOARD shots, 390x844 light and dark: start-who, start-pin, start-done, start-pinpad, start-wrong, start-forgot, start-approve-wait.
 // (start-approve-req is a sheet over Today: its mount point is a Today hook owned by S7, covered by ApprovePinSheet.test.tsx until then.)
 // Filename ends in .auth.spec: only that project builds with Supabase env. All Supabase traffic is mocked, test values only.

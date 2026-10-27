@@ -17,14 +17,14 @@ beforeEach(() => {
     { personId: 'p-ben', displayName: 'Kuya Ben', handle: 'ben', provider: 'pin' }
   ]))
 })
-afterEach(() => { cleanup(); localStorage.clear() })
+afterEach(() => { cleanup(); localStorage.clear(); vi.useRealTimers() })
 
 const setup = (over: Partial<Parameters<typeof ForgotFlow>[0]> = {}) => {
   const start = vi.fn(async () => ({ ok: true as const, start: START }))
   const complete = vi.fn(async () => ({ ok: false as const, why: 'not_approved' as const }))
   const signIn = vi.fn(async () => null as string | null)
   const google = vi.fn()
-  render(<ForgotFlow member={MAMA} onBack={() => undefined} google={google} start={start} complete={complete} signIn={signIn} pollMs={20} {...over} />)
+  render(<ForgotFlow member={MAMA} onBack={() => undefined} google={google} start={start} complete={complete} signIn={signIn} delay={() => 20} {...over} />)
   return { start, complete, signIn, google }
 }
 

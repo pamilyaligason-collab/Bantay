@@ -17,7 +17,7 @@ const known = (r: ProbeResult) => [r.notif_ok, r.exact_ok, r.battery_ok, r.alarm
 
 /** `start-done` (3 of 3) and `start-done-fix`: replaces the old consent, phone check, text size and recap steps with one last screen.
  *  Consent is one quiet line, never a question: it is written when the person taps Open Today. The phone check runs by itself;
- *  when it passes there are two ticks and nothing else, when it fails the short fix card shows on top and Today still opens (Remind me later keeps a card on Today). */
+ *  when it passes there are two ticks and nothing else, when it fails the short fix card shows on top and Today still opens (the card's Remind me later is kept by S3's PhoneCheckCard in kv, so the Today card comes from S3 and S7, not from this screen). */
 export default function StartDone({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState('')
   const [finger, setFinger] = useState(false)

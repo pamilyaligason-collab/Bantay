@@ -18,8 +18,8 @@ export async function flushConsent(): Promise<boolean> {
     if (!supabase || (await db.kv.get(PENDING))?.value !== true) return false
     const m = await getMember()
     if (!m?.personId) return false
-    const { error } = await supabase.from('people').update({ consent_at: new Date().toISOString(), consent_version: CONSENT_VERSION, consent_by: m.userId }).eq('id', m.personId)
-    if (error) return false
+    const { data, error } = await supabase.from('people').update({ consent_at: new Date().toISOString(), consent_version: CONSENT_VERSION, consent_by: m.userId }).eq('id', m.personId).select('id')
+    if (error || !data?.length) return false // an update that matched no row (RLS) is not a success: the intent stays for the next start
     await db.kv.delete(PENDING)
     return true
   } catch { return false }

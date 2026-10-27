@@ -6,9 +6,10 @@ vi.mock('../auth/client', () => ({ supabase: {}, supabaseUrl: 'https://x.test', 
 vi.mock('../auth/pinLogin', async (orig) => ({ ...(await orig<object>()), fetchFamilyNames: h.names }))
 vi.mock('../auth/session', () => ({ getMember: vi.fn(async () => null) }))
 vi.mock('../auth/biometric', () => ({ unlockMode: vi.fn(async () => 'pin'), promptFingerprint: vi.fn(async () => false) }))
-import JoinFlow, { type JoinPort } from './JoinFlow'
+import JoinFlow, { defaultJoinPort, type JoinPort } from './JoinFlow'
 
 const NAMES = [{ first_name: 'Mama', initial: '', handle: 'mama' }, { first_name: 'Papa', initial: 'R', handle: 'papa' }]
+const okPort: JoinPort = async () => ({ ok: true })
 const key = (n: string) => screen.getByRole('button', { name: n })
 const enter = (digits: string) => { for (const d of digits) fireEvent.click(key(d)) }
 
@@ -17,7 +18,7 @@ afterEach(() => cleanup())
 
 describe('JoinFlow (start-who, start-pin)', () => {
   it('asks the server for the names on this invite and lists them', async () => {
-    render(<JoinFlow invite="abcd1234efgh" onBack={() => undefined} />)
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
     const list = await screen.findByLabelText('Who are you?')
     expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
     expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['MMama', 'PRPapa R.'])
@@ -48,22 +49,26 @@ describe('JoinFlow (start-who, start-pin)', () => {
     expect(port).not.toHaveBeenCalled()
   })
 
-  it('until the server can claim a name, the default port says so plainly and signs nobody in', async () => {
+  it('a refused claim shows its reason and signs nobody in', async () => {
     const signIn = vi.fn(async () => null as string | null)
-    render(<JoinFlow invite="abcd1234efgh" signIn={signIn} onBack={() => undefined} />)
+    render(<JoinFlow invite="abcd1234efgh" port={async () => ({ ok: false, why: 'taken' })} signIn={signIn} onBack={() => undefined} />)
     fireEvent.click(within(await screen.findByLabelText('Who are you?')).getByRole('button', { name: /Mama/ }))
     enter('135790'); enter('135790')
-    expect((await screen.findByRole('alert')).textContent).toContain('not ready on this phone yet')
+    expect((await screen.findByRole('alert')).textContent).toContain('already has a PIN')
     expect(signIn).not.toHaveBeenCalled()
+  })
+
+  it('there is no live port until pin-login has a join action (SignIn then ignores #join links)', () => {
+    expect(defaultJoinPort).toBeNull()
   })
 
   it('a bad invite (server error) says so and offers Try again; offline says No signal', async () => {
     h.names.mockResolvedValue({ kind: 'error' })
-    render(<JoinFlow invite="abcd1234efgh" onBack={() => undefined} />)
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
     expect(await screen.findByText(/invite link is not working/)).toBeTruthy()
     cleanup()
     h.names.mockResolvedValue({ kind: 'offline' })
-    render(<JoinFlow invite="abcd1234efgh" onBack={() => undefined} />)
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
     expect(await screen.findByText('No signal. Try again when you have data.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
   })

@@ -9,7 +9,7 @@ import { urlSignInError } from '../features/auth/urlError'
 import { onNativeSignInError } from '../features/auth/nativeOAuth'
 import { Icon } from '../features/shell/Icon'
 import ForgotFlow from '../features/setup/ForgotFlow'
-import JoinFlow from '../features/setup/JoinFlow'
+import JoinFlow, { defaultJoinPort, type JoinPort } from '../features/setup/JoinFlow'
 import PinPad from '../features/setup/PinPad'
 
 /** The two original ways in, for a new phone or someone not in the list. */
@@ -149,11 +149,11 @@ function GoogleWait({ onBack, onAgain }: { onBack: () => void; onAgain: () => vo
 /** Shown by AuthGate when nobody is signed in. On success supabase-js fires an auth change and AuthGate takes over.
  *  The family picker comes from the phone's own cache (localStorage). A fresh phone asks the family-names function for first names
  *  (D-41, nothing is cached from it); offline or on an error it falls back to the handle and PIN form.
- *  A family invite link (#join/<token>) opens the join screens instead (start-who, start-pin).
+ *  A family invite link (#join/<token>) opens the join screens instead (start-who, start-pin) once the server has a join action (joinPort); until then it is ignored.
  *  Wrong PINs are counted here (pinAttempts, kv pin.fail.<handle>): the server answers every failure the same way. */
-export default function SignIn() {
+export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: JoinPort | null } = {}) {
   const [family] = useState(loadFamily)
-  const [invite, setInvite] = useState(() => inviteFromHash(location.hash))
+  const [invite, setInvite] = useState(() => (joinPort ? inviteFromHash(location.hash) : null)) // no live join action yet: a #join link opens the ordinary sign-in
   const [fresh, setFresh] = useState<NamesResult | 'loading'>(family.length ? { kind: 'error' } : 'loading')
   const loadNames = () => { setFresh('loading'); void fetchFamilyNames().then(setFresh) }
   useEffect(() => { if (!family.length && !invite) loadNames() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -228,8 +228,8 @@ export default function SignIn() {
       <Sky state="clear" />
       <div className="topbar" />
       <main className="scroll">
-        {invite ? (
-          <JoinFlow invite={invite} onBack={leaveInvite} />
+        {invite && joinPort ? (
+          <JoinFlow invite={invite} port={joinPort} onBack={leaveInvite} />
         ) : (
           <>
             {welcome ? (

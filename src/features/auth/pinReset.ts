@@ -22,7 +22,7 @@ export type ResetEvent =
   | { t: 'cancel' }
 export type CompleteResult = { ok: true } | { ok: false; why: ResetFail | 'not_approved' }
 
-/** The reset client state machine. Only `not_approved` and `no_signal` keep waiting; every other answer ends the request, so a dead request never polls forever. */
+/** The reset client state machine. Only `not_approved`, `no_signal` and `rate_limited` (a poll that hit the limit is slowed down, never a failure) keep waiting; every other answer ends the request, so a dead request never polls forever. */
 export function resetStep(st: ResetState, ev: ResetEvent): ResetState {
   if (ev.t === 'cancel') return { s: 'idle' }
   if (ev.t === 'begin') return st.s === 'idle' || st.s === 'failed' ? { s: 'starting', pin: ev.pin } : st
@@ -30,9 +30,15 @@ export function resetStep(st: ResetState, ev: ResetEvent): ResetState {
   if (ev.t === 'start_failed') return st.s === 'starting' ? { s: 'failed', why: ev.why } : st
   if (st.s !== 'waiting') return st // a late poll after cancel or done changes nothing
   if (ev.result.ok) return { s: 'done' }
-  if (ev.result.why === 'not_approved' || ev.result.why === 'no_signal') return st
+  if (ev.result.why === 'not_approved' || ev.result.why === 'no_signal' || ev.result.why === 'rate_limited') return st
   return { s: 'failed', why: ev.result.why }
 }
+
+/** Poll cadence for reset_complete: every 10 s for the first minute, 20 s for the next two, then 30 s; a 429 jumps straight to 30 s.
+ *  The server gives reset_complete its own per-IP bucket of 120 per hour (contracts.md), which this stays well under (66 polls in the 30 minutes before it stops). */
+export const pollDelay = (attempt: number, slow: boolean): number => slow || attempt >= 12 ? 30_000 : attempt >= 6 ? 20_000 : 10_000
+/** After this long the poll stops and the screen offers "Still waiting - check again". */
+export const POLL_GIVE_UP_MS = 30 * 60_000
 
 export const RESET_COPY: Record<ResetFail, string> = {
   no_signal: 'No signal. Try again when you have data.',
@@ -67,7 +73,7 @@ export function failOf(r: NonNullable<Reply>): ResetFail | 'not_approved' {
   if (/not[_ ]?approved|pending|await/.test(code)) return 'not_approved'
   if (/expire/.test(code)) return 'expired'
   if (/used/.test(code)) return 'used'
-  if (/secret/.test(code)) return 'bad_secret'
+  if (/secret|credential/.test(code)) return 'bad_secret'
   if (/pin/.test(code)) return 'bad_pin'
   return 'server'
 }

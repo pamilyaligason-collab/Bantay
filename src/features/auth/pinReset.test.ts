@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const rpc = vi.hoisted(() => vi.fn())
 vi.mock('./client', () => ({ supabase: { rpc }, supabaseUrl: 'https://x.test', supabasePublishableKey: 'sb_publishable_test' }))
-import { approveReset, completeReset, failOf, resetStep, startReset, type ResetState, type ResetStart } from './pinReset'
+import { POLL_GIVE_UP_MS, approveReset, completeReset, failOf, pollDelay, resetStep, startReset, type ResetState, type ResetStart } from './pinReset'
 
 afterEach(() => { vi.unstubAllGlobals(); rpc.mockReset() })
 const reply = (status: number, body: unknown) => vi.stubGlobal('fetch', vi.fn(async () => ({ status, json: async () => body })))
@@ -23,14 +23,15 @@ describe('resetStep (the reset client state machine)', () => {
     st = resetStep(st, { t: 'begin', pin: '135790' })
     expect(st).toEqual({ s: 'starting', pin: '135790' })
   })
-  it('not approved yet and no signal keep waiting (same object, so the poll timer re-arms only after an answer)', () => {
+  it('not approved yet, no signal and a 429 keep waiting (same object, so the poll timer re-arms only after an answer)', () => {
+    expect(resetStep(waiting, { t: 'poll', result: { ok: false, why: 'rate_limited' } })).toBe(waiting) // slow down, never a failure
     expect(resetStep(waiting, { t: 'poll', result: { ok: false, why: 'not_approved' } })).toBe(waiting)
     expect(resetStep(waiting, { t: 'poll', result: { ok: false, why: 'no_signal' } })).toBe(waiting)
   })
   it('approved ends in done and drops the PIN', () => {
     expect(resetStep(waiting, { t: 'poll', result: { ok: true } })).toEqual({ s: 'done' })
   })
-  it.each(['expired', 'used', 'bad_secret', 'bad_pin', 'rate_limited', 'server'] as const)('%s ends the request (a dead request never polls forever)', (why) => {
+  it.each(['expired', 'used', 'bad_secret', 'bad_pin', 'server'] as const)('%s ends the request (a dead request never polls forever)', (why) => {
     expect(resetStep(waiting, { t: 'poll', result: { ok: false, why } })).toEqual({ s: 'failed', why })
   })
   it('cancel returns to idle; a late poll after cancel or done changes nothing', () => {
@@ -40,6 +41,18 @@ describe('resetStep (the reset client state machine)', () => {
   })
   it('begin while waiting is ignored (one open request per phone)', () => {
     expect(resetStep(waiting, { t: 'begin', pin: '111111' })).toBe(waiting)
+  })
+})
+
+describe('pollDelay (reset_complete has its own 120 per hour per IP bucket)', () => {
+  it('10 s for the first minute, 20 s for the next two, then 30 s', () => {
+    expect([0, 5, 6, 11, 12, 40].map((n) => pollDelay(n, false))).toEqual([10_000, 10_000, 20_000, 20_000, 30_000, 30_000])
+  })
+  it('a 429 jumps straight to 30 s', () => expect(pollDelay(0, true)).toBe(30_000))
+  it('the whole 30 minutes is 66 polls, under the 120 an hour bucket', () => {
+    let t = 0, n = 0
+    while (t + pollDelay(n, false) <= POLL_GIVE_UP_MS) { t += pollDelay(n, false); n++ }
+    expect(n).toBe(66)
   })
 })
 

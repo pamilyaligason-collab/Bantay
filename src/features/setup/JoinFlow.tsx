@@ -8,14 +8,14 @@ import { getMember } from '../auth/session'
 import { Icon } from '../shell/Icon'
 import SetPin from './SetPin'
 
-/** Claiming a name from an invite link and setting the first PIN needs a server action the contract does not define yet (see the lane report).
- *  Until pin-login offers it, the default port answers `not_ready` and the screen says so; tests and the server wiring pass a real one. */
-export type JoinResult = { ok: true } | { ok: false; why: 'not_ready' | 'no_signal' | 'bad_invite' | 'taken' }
+/** Claiming a name from an invite link and setting the first PIN needs a server action the contract does not define yet (reported in the S6a lane `needs`).
+ *  Until pin-login offers it there is NO live port: SignIn ignores a #join link and shows the ordinary sign-in, so joining works as before S6a
+ *  (an admin or the invite sets the PIN, the person signs in with it). The e2e build (VITE_JOIN_STUB=1, test builds only) uses a stub that always accepts. */
+export type JoinResult = { ok: true } | { ok: false; why: 'no_signal' | 'bad_invite' | 'taken' }
 export type JoinPort = (o: { invite: string; handle: string; pin: string }) => Promise<JoinResult>
-export const joinNotReady: JoinPort = async () => ({ ok: false, why: 'not_ready' })
+export const defaultJoinPort: JoinPort | null = import.meta.env.VITE_JOIN_STUB === '1' ? async () => ({ ok: true }) : null
 
 const JOIN_COPY = {
-  not_ready: 'Joining by link is not ready on this phone yet. Ask whoever sent you the link to add you.',
   no_signal: NO_SIGNAL,
   bad_invite: 'This invite link is not working. Ask for a new one.',
   taken: 'That name already has a PIN. Go back and use Forgot PIN, or pick another name.'
@@ -40,8 +40,8 @@ export async function fingerCapable(): Promise<boolean> {
 }
 
 /** `start-who` (1 of 3) then `start-pin` (2 of 3). The third step is `start-done`, which Onboarding shows once the person is signed in. */
-export default function JoinFlow({ invite, port = joinNotReady, signIn = signInWithPin, onBack }: {
-  invite: string; port?: JoinPort; signIn?: (handle: string, pin: string) => Promise<string | null>; onBack: () => void
+export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack }: {
+  invite: string; port: JoinPort; signIn?: (handle: string, pin: string) => Promise<string | null>; onBack: () => void
 }) {
   const [names, setNames] = useState<NamesResult | 'loading'>('loading')
   const [who, setWho] = useState<NameEntry | null>(null)

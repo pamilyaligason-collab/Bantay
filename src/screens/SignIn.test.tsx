@@ -333,3 +333,24 @@ describe('SignIn: photos from family_profiles', () => {
     expect(document.querySelector('.pickcard img.avatar.big')?.getAttribute('src')).toBe('data:image/jpeg;base64,AAAA')
   })
 })
+
+describe('SignIn: #join invite links', () => {
+  const NAMES = { kind: 'ok', names: [{ first_name: 'Mama', initial: '', handle: 'mama' }] }
+  beforeEach(() => { localStorage.clear(); h.names.mockReset(); h.names.mockResolvedValue(NAMES); history.replaceState(null, '', '/#join/abcd1234efgh') })
+  afterEach(() => { cleanup(); history.replaceState(null, '', '/') })
+
+  it('no join action on the server yet: the link opens the ordinary sign-in, so joining does not regress', async () => {
+    render(<SignIn />)
+    expect(await screen.findByRole('heading', { name: /Jack Jack/ })).toBeTruthy() // the fresh-phone picker, from family-names without the token
+    expect(h.names).toHaveBeenCalledWith()
+    expect(screen.queryByRole('heading', { name: 'Is this you?' })).toBeNull()
+    choose('Mama')
+    expect(pad()).not.toBeNull() // tap a name, type the PIN that was set for it
+  })
+
+  it('with a join port the same link opens start-who with the invite token', async () => {
+    render(<SignIn joinPort={async () => ({ ok: true })} />)
+    expect(await screen.findByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+    expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
+  })
+})
