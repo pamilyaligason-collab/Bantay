@@ -32,6 +32,9 @@ export function bpLevel(top?: number | null, bottom?: number | null): BpLevel | 
 /** A doctor's limit as stored (Range-like); only its 'high' is read. */
 export type DoctorLimit = { high?: number | null } | null
 export interface BpArg { top?: number | null; bottom?: number | null; doctor?: { top?: DoctorLimit; bottom?: DoctorLimit } }
+/** Both of one person's doctor BP targets (bp_systolic for the top, bp_diastolic for the bottom), from the family thresholds rows. Every BP surface passes this, never one row's own target. */
+export const bpDoctorOf = (thresholds: readonly ({ key: string } & NonNullable<DoctorLimit>)[], personId: string): NonNullable<BpArg['doctor']> =>
+  ({ top: thresholds.find((t) => t.key === `${personId}:bp_systolic`), bottom: thresholds.find((t) => t.key === `${personId}:bp_diastolic`) })
 /** THE pair word, used by every surface so the top row, the bottom row, the headline, the add preview and the guided check always agree.
  *  Take the table word for the PAIR; if EITHER number is above its doctor 'high' target (bp_systolic and bp_diastolic family targets), lift In range and A little raised to Above target.
  *  Never lowers or loosens a table word (High and Low stay). A doctor 'low' target is ignored this phase (no clinician sign-off on a floor; Low comes only from the table). */

@@ -6,6 +6,7 @@ import { logReading } from '../log/store'
 import { chipTime, crisisOf, previewReading, type Crisis, type EntrySpec } from './readingPreview'
 import CrisisCard from './bpcheck/CrisisCard'
 import type { Range } from './ranges'
+import type { BpArg } from './verdict'
 import './m7a.css'
 
 type Chip = 'now' | 'morning' | 'evening' | 'other'
@@ -13,7 +14,7 @@ const CHIPS: { id: Chip; label: string }[] = [{ id: 'now', label: 'Now' }, { id:
 const localInput = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
 /** Add one reading for a person: top/bottom/pulse for blood pressure or a single value, a time chip, and the colour and plain line before saving. Writes through logReading (local first, synced later). */
-export default function AddReadingSheet({ spec, personId, forName, family, familyBottom, onClose, onSaved }: { spec: EntrySpec; personId: string; forName: string; family?: Range | null; familyBottom?: Range | null; onClose: () => void; onSaved: (msg: string) => void }) {
+export default function AddReadingSheet({ spec, personId, forName, family, bpDoctor, onClose, onSaved }: { spec: EntrySpec; personId: string; forName: string; family?: Range | null; bpDoctor?: BpArg['doctor']; onClose: () => void; onSaved: (msg: string) => void }) {
   const [top, setTop] = useState('')
   const [bottom, setBottom] = useState('')
   const [pulse, setPulse] = useState('')
@@ -24,7 +25,7 @@ export default function AddReadingSheet({ spec, personId, forName, family, famil
   const [busy, setBusy] = useState(false)
   const [crisis, setCrisis] = useState<{ kind: Crisis; fresh: boolean } | null>(null)
   const bp = spec.kind === 'bp'
-  const p = previewReading(spec, { top, bottom, value }, family, familyBottom)
+  const p = previewReading(spec, { top, bottom, value }, family, bpDoctor)
   const typed = bp ? top !== '' || bottom !== '' : value !== ''
   const when = () => (chip === 'other' ? new Date(other) : chipTime(chip, new Date()))
 

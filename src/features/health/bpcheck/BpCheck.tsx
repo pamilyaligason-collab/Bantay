@@ -3,7 +3,7 @@ import Sheet from '../../family/Sheet'
 import { logReading } from '../../log/store'
 import { hdb } from '../../records/store'
 import { crisisOf, type Crisis } from '../readingPreview'
-import { BP_WORDS, bpPairLevel, type BpArg } from '../verdict'
+import { BP_WORDS, bpDoctorOf, bpPairLevel, type BpArg } from '../verdict'
 import { REST_SECONDS, averagePair, bpWeek, parsePair, type BpPair } from './bpLogic'
 import CrisisCard from './CrisisCard'
 import './bpcheck.css'
@@ -41,7 +41,7 @@ export default function BpCheck({ personId, forName, doctor, onClose, onSaved }:
 
   useEffect(() => { // the doctor's targets for this person, so the word here matches every other screen
     let live = true
-    hdb.thresholds.toArray().then((ts) => { if (live) setDocTargets({ top: ts.find((t) => t.key === `${personId}:bp_systolic`), bottom: ts.find((t) => t.key === `${personId}:bp_diastolic`) }) }).catch(() => {})
+    hdb.thresholds.toArray().then((ts) => { if (live) setDocTargets(bpDoctorOf(ts, personId)) }).catch(() => {})
     return () => { live = false }
   }, [personId])
 

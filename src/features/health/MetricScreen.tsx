@@ -19,7 +19,7 @@ import { isVital } from './vitals'
 import BpCheckButton from './bpcheck/BpCheckButton'
 import BpWords from './bpcheck/BpWords'
 import { BpWord } from './bpcheck/BpCheck'
-import { kindOf, type BpArg } from './verdict'
+import { bpDoctorOf, kindOf, type BpArg } from './verdict'
 
 const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
@@ -59,7 +59,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const labRange = (r: Parameters<typeof latestVsNormal>[0]) => latestVsNormal(r, family).lab.text
   const spec = entrySpec(code)
   const bpCode = code === 'bp_systolic' || code === 'bp_diastolic'
-  const bpDoctor = { top: thresholds.find((t) => t.key === `${personId}:bp_systolic`), bottom: thresholds.find((t) => t.key === `${personId}:bp_diastolic`) } // both doctor targets, so every row of the pair reads the same word
+  const bpDoctor = bpDoctorOf(thresholds, personId) // both doctor targets, so every row of the pair, the headline and the add preview read the same word on either BP route
   // blood pressure reads as one pair (top/bottom, one verdict word from the one table); a pair is a top and the bottom taken at the same minute
   const bottomFor = (at: string) => { // the bottom written with this top (same moment); else the nearest one under a minute away
     const ds = readings.filter((d) => d.test === 'bp_diastolic')
@@ -196,7 +196,7 @@ export default function MetricScreen({ code }: { code: string }) {
           </div>
         </>
       )}
-      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={family} familyBottom={bpCode ? bpDoctor.bottom : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
+      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={bpCode ? undefined : family} bpDoctor={bpCode ? bpDoctor : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
     </>
   )
 }

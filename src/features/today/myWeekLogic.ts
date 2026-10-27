@@ -5,6 +5,7 @@ import { readingPosition } from '../health/model'
 import { rangeState, toCanonicalReading, type RangeState } from '../health/ranges'
 import type { Position, Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
+import type { BpArg } from '../health/verdict'
 
 /** A step row; personId is absent on rows already filtered to one person. */
 export interface StepRow { kind: string; steps: number | null; startedAt: string; personId?: string }
@@ -53,7 +54,8 @@ const flat = (m: Map<string, number[]>) => [...m.values()].flat()
 const worst = (ps: Position[]): Position => (ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none')
 const reading = (test: string, value: number, unit: string): Reading => ({ personId: '', takenAt: '', test, value, unit })
 
-export function computeMyWeek(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date }): Tile[] {
+/** doctor: both of this person's BP targets (bpDoctorOf); the BP chip goes through the same pair word (bpPairLevel) as every other surface. */
+export function computeMyWeek(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date; doctor?: BpArg['doctor'] }): Tile[] {
   const days = lastDays(i.now)
   const mine = i.readings.filter((r) => r.personId === i.personId).map(toCanonicalReading).filter((r): r is Reading => !!r) // one unit per measure: glucose mmol/L -> mg/dL, an unknown unit is not averaged
   const tiles: Tile[] = []
@@ -66,7 +68,7 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
     const d = dia.size ? Math.round(avg(flat(dia))) : null
     tiles.push({
       code: 'bp_systolic', href: '#health/metric/bp_systolic', label: 'Blood pressure', value: d == null ? String(s) : `${s}/${d}`, unit: 'mmHg',
-      sub: `average of ${flat(sys).length} ${flat(sys).length === 1 ? 'reading' : 'readings'}`, state: rangeState(worst([readingPosition(reading('bp_systolic', s, 'mmHg')), d == null ? 'none' : readingPosition(reading('bp_diastolic', d, 'mmHg'))]), 'bp', { top: s, bottom: d }), spark: sparkOf(days, sys, (v) => Math.round(avg(v)))
+      sub: `average of ${flat(sys).length} ${flat(sys).length === 1 ? 'reading' : 'readings'}`, state: rangeState(worst([readingPosition(reading('bp_systolic', s, 'mmHg')), d == null ? 'none' : readingPosition(reading('bp_diastolic', d, 'mmHg'))]), 'bp', { top: s, bottom: d, doctor: i.doctor }), spark: sparkOf(days, sys, (v) => Math.round(avg(v)))
     })
   }
 

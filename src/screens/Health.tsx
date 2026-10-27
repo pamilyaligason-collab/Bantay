@@ -14,6 +14,7 @@ import { Kpis } from '../features/health/Kpis'
 import { NudgeCard } from '../features/health/NudgeCard'
 import AddReadingSheet from '../features/health/AddReadingSheet'
 import { entrySpec } from '../features/health/readingPreview'
+import { bpDoctorOf } from '../features/health/verdict'
 import { HealthLinks } from '../features/health/HealthLinks'
 import Library from '../features/health/library/Library'
 import Article from '../features/health/library/Article'
@@ -105,7 +106,7 @@ function Overview() {
       )}
       {ready && personId && <NudgeCard personId={personId} readings={readings} canLog={canMarkFor(personId, ownId, writable)} onAdd={setAdding} />}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
-      {personId && <Kpis personId={personId} readings={readings} />}
+      {personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && nodes.every((n) => n.empty) ? (
         <div className="card hv-novitals" data-testid="no-vitals">
           <h2 className="hv-nv-h">No vitals yet{name ? ` for ${name.split(' ')[0]}` : ''}</h2>
@@ -139,7 +140,7 @@ function Overview() {
       {personId && <HealthLinks personId={personId} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
-        return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={thresholds.find((t) => t.key === `${personId}:${spec.code}`)} familyBottom={spec.kind === 'bp' ? thresholds.find((t) => t.key === `${personId}:bp_diastolic`) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
+        return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
       })()}
     </>
   )

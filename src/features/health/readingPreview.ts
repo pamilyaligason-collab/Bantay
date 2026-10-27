@@ -1,6 +1,6 @@
 import { positionOf } from './vitals'
 import { GUIDE, type Position, type Range, type Reading } from './ranges'
-import { verdictFor, BP_WORDS } from './verdict'
+import { verdictFor, BP_WORDS, type BpArg } from './verdict'
 import { PLAUSIBLE as P } from './plausible'
 
 /** The add-reading sheet: what a typed reading means, in colour and one plain line, before it is saved. Pure. */
@@ -41,7 +41,8 @@ export interface Preview { state: Position | 'invalid'; word: string; line: stri
 const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
 const R = (test: string, value: number, unit: string): Reading => ({ personId: '', takenAt: '', test, value, unit })
 
-export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: string; pulse?: string; value?: string }, family?: Range | null, familyBottom?: Range | null): Preview {
+/** family: the doctor's target for a single-value spec. Blood pressure ignores it and reads only bpDoctor (both targets, bpDoctorOf), so a route's one-number target can never stand in for the top. */
+export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: string; pulse?: string; value?: string }, family?: Range | null, bpDoctor?: BpArg['doctor']): Preview {
   if (spec.kind === 'bp') {
     const s = num(v.top ?? '')
     const d = num(v.bottom ?? '')
@@ -49,8 +50,8 @@ export function previewReading(spec: EntrySpec, v: { top?: string; bottom?: stri
     if (s < spec.min || s > spec.max || d < 20 || d > 200) return { state: 'invalid', word: '', line: 'Check the numbers: they look too small or too big.' }
     if (d >= s) return { state: 'invalid', word: '', line: 'The top number is higher than the bottom one. Check them.' }
     if (crisisOf('bp', { top: s, bottom: d })) return { state: 'above', word: verdictFor('bp', 'above', { top: s, bottom: d })!.word, line: 'Very high. Check for warning signs now.' }
-    // the one BP table decides from the pair; a doctor's target (family threshold) can only make it stricter
-    const lv = verdictFor('bp', 'within', { top: s, bottom: d, doctor: { top: family, bottom: familyBottom } })!.level!
+    // the one BP table decides from the pair; the doctor's systolic and diastolic targets can only make it stricter
+    const lv = verdictFor('bp', 'within', { top: s, bottom: d, doctor: bpDoctor })!.level!
     const word = BP_WORDS[lv].word
     if (lv === 'low') return { state: 'below', word, line: 'Below the general guide. If you feel dizzy, sit down and tell your doctor.' }
     if (lv === 'in') return { state: 'within', word, line: `Top under ${GUIDE.bp_systolic!.high! + 1} and bottom under ${GUIDE.bp_diastolic!.high! + 1}. Keep it up.` }
