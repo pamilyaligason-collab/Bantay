@@ -72,7 +72,7 @@ export default function Today() {
       <StormCard />
       <WeatherCard expanded={calm} review={next.review} />
       <AlertCardToday />
-      {!calm && <NextUp key={item.key} item={item} review={next.review} notify={notify} hold={setHeld} />}
+      {!calm && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={next.review} notify={notify} hold={setHeld} />}
       <QuickLog notify={notify} />
       {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
       <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>

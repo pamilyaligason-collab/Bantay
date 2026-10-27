@@ -62,11 +62,14 @@ for (const scheme of ['light', 'dark'] as const) {
     const card = page.locator('.td-next')
     await expect(card.getByRole('heading', { name: /Losartan/ })).toBeVisible()
     await shot(page, 'dose-before', scheme)
+    await page.clock.install({ time: NOW }) // from here the app's timers run only when advanced, so the morph cannot race the shot
+    await page.clock.pauseAt(new Date(NOW.getTime() + 1000))
     await page.getByRole('button', { name: 'Taken', exact: true }).click()
     const done = page.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })
     await expect(done).toBeVisible()
     await expect(card).not.toHaveClass(/leaving/) // the morph holds first, the collapse comes after
     await card.screenshot({ path: `${SHOTS}/dose-after-${scheme}.png`, animations: 'disabled' }) // the card only: the toast under it fades in on its own clock
+    await page.clock.runFor(3000) // morph, collapse, release
     await expect(card).toHaveCount(0, { timeout: 3000 }) // collapsed and freed
     await page.waitForTimeout(100)
     await shot(page, 'dose-gone', scheme)

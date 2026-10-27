@@ -64,4 +64,21 @@ describe('Today after the dose card is released', () => {
     await takeThenFlip(calm)
     expect(document.querySelector('.td-next')).toBeNull()
   })
+  it('a partial take: same person and time, only the untaken medicine left, renders fresh with Taken enabled and Skip', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const two = (names: string[]): DuePerson => ({ personId: 'ma', name: 'Ma', isMe: false, at: 480, rel: 480, status: 'upcoming', slots: names.map((n) => ({ name: n, slot: '08:00', at: 480, medicationId: `m-${n}`, key: `k-${n}`, personId: 'ma', dose: null })) })
+    h.pick = dose(two(['Aspirin', 'Metformin']))
+    const { rerender } = render(<Today />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Taken' })) // 2 due: opens the picker
+    fireEvent.click(screen.getByRole('checkbox', { name: /Metformin/ })) // untick Metformin: only Aspirin is taken
+    fireEvent.click(screen.getByRole('button', { name: 'Mark these taken' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
+    h.pick = dose(two(['Metformin'])) // same key dose:ma:480, one slot left
+    rerender(<Today />)
+    await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
+    expect(document.querySelector('.td-next.leaving')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Ma: Metformin' })).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Taken' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy()
+  })
 })
