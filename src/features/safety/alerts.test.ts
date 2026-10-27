@@ -125,6 +125,14 @@ describe('affectsUs', () => {
     expect(affectsUs(a('n', 'quake', { level: 'Magnitude 7.2', lat: conel.lat + 0.27, lon: conel.lon }), conel).line).toBe('Near you. Follow the steps below.' + TSUNAMI)
     expect(quakeMag({ level: 'Strong', title: '', what: '' })).toBeNull()
   })
+  it('a far quake of unknown size gets the steps but no tsunami line (never a guessed magnitude)', () => {
+    const r = affectsUs(a('u', 'quake', { level: 'Strong', title: 'Earthquake', what: '', lat: conel.lat - 8.99, lon: conel.lon }), conel)
+    expect(r).toEqual({ affects: true, km: 1000, line: ABOUT(1000), steps: true })
+  })
+  it('a heat reading 900 km away does not affect the family (heat counts near you only)', () => {
+    const r = affectsUs({ ...q89, kind: 'heat', lat: conel.lat - 8.1 }, conel)
+    expect(r).toEqual({ affects: false, km: 901, line: 'Far from you. Watch for updates.', steps: false })
+  })
   it('felt radius by magnitude: 50, 100, 200, 400, 800 km, unknown 100', () => {
     const km = (level: string) => quakeFeltKm({ level, title: '', what: '' })
     expect([km('Magnitude 3.9'), km('Magnitude 4.0'), km('Magnitude 5.9'), km('Magnitude 6.0'), km('Magnitude 6.9'), km('Magnitude 7.0'), km('Strong')]).toEqual([50, 100, 200, 400, 400, 800, 100])

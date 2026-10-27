@@ -39,4 +39,14 @@ describe('useDueMeds', () => {
     expect(await markTaken('me', ['s2'])).toBe(0) // already taken: no double row
     expect(await ldb.meds.count()).toBe(1)
   })
+  it('a dose just after midnight tapped before midnight is logged once, not twice', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 23, 50)) // 23:50 local; the dose is 00:20 tomorrow
+    try {
+      await ldb.medications.bulkAdd([{ personId: 'me', name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['00:20'] }, serverId: 's9' }])
+      expect(await markTaken('me', ['s9'])).toBe(1)
+      expect(await markTaken('me', ['s9'])).toBe(0)
+      expect(await ldb.meds.count()).toBe(1)
+    } finally { vi.useRealTimers() }
+  })
 })

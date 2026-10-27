@@ -63,7 +63,10 @@ export async function markTaken(personId: string, medIds: string[]): Promise<num
   try {
     const [meds, takes] = await Promise.all([ldb.medications.toArray(), ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()])
     const d = nextDoses([{ personId, name: '', isMe: false }], meds, takes, new Date())[0]
-    const pick = (d?.slots ?? []).filter((s) => medIds.includes(s.key) || (s.medicationId != null && medIds.includes(s.medicationId)))
+    // A take is matched to its slot by calendar day, so a dose just after midnight taken before midnight still looks open: never log the same medicine and slot twice within 3 h.
+    // shortcut: no day on the take row; upgrade when meds_taken stores the dose day.
+    const recent = (s: { medicationId?: string | null; slot: string }) => takes.some((t) => t.personId === personId && t.medicationId === s.medicationId && t.slot === s.slot && Date.now() - Date.parse(t.takenAt) < 3 * 3600_000)
+    const pick = (d?.slots ?? []).filter((s) => (medIds.includes(s.key) || (s.medicationId != null && medIds.includes(s.medicationId))) && !recent(s))
     for (const s of pick) await logDose({ personId, name: s.name, serverId: s.medicationId ?? undefined }, s.slot)
     return pick.length
   } catch {

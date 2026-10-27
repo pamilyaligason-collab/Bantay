@@ -36,8 +36,8 @@ Run `ops/sql/alerts_cron.sql` (pg_cron plus pg_net, every 10 minutes). It stops 
 
 | Source | Kind in the app | What is kept | Lives for |
 | --- | --- | --- | --- |
-| USGS all-day quakes | `quake` (tier 1) | M3.5+ within 100 km of Dampas, M4.5+ within 300 km, M6.5+ within 1000 km | 24 h from the quake |
-| GDACS RSS | `gdacs` (tropical cyclone, flood), `volcano` (tier 1), `tsunami` (tier 1) | Current events in the Philippines or within 500 km of Dampas. Global context, not a PAGASA or PHIVOLCS warning | 48 h (72 h volcano, 12 h tsunami) from GDACS's last change |
+| USGS all-day quakes | `quake` (tier 1) | M3.5+ within 150 km of either home zone, M4.5+ within 500 km, M6.0+ within 1,500 km, M7.0+ within 3,000 km (D-88) | 24 h from the quake |
+| GDACS RSS | `gdacs` (tropical cyclone, flood), `volcano` (tier 1), `tsunami` (tier 1) | Current events in the Philippines or within 1,000 km of either home zone (D-88). Global context, not a PAGASA or PHIVOLCS warning | 48 h (72 h volcano, 12 h tsunami) from GDACS's last change |
 | Open-Meteo air quality | `air` (tier 2) | US AQI 101 and above, on an 11 km model grid. Model estimate, never shown above an official warning | 3 h |
 
 If a source fails (timeout, error, a page that is not the expected feed), its old rows stay and are marked `stale`. The card then says
@@ -96,9 +96,12 @@ The amber line is shown even when no row is marked stale: "Alerts last checked <
 With no saved alert at all the phone cannot tell a quiet day from a dead feed, so it says "Never checked" with the same amber line. (A feed-level "last
 synced" time written by `sync.ts` would remove that ambiguity; it is a one-line follow-up in that file.)
 
-**Does it affect us?** `affectsUs(alert, here)`: an alert with no point covers the whole area. A point alert is near when it is within 50 km (quake, air,
-utility, local notice) or 150 km (storm, flood, heat, tsunami, volcano, GDACS) of the phone's place or of either home zone. Otherwise the band says
-"Far from you; no action needed" and hides the do-now steps. Hand-computed check: 0.8 degrees of latitude is 88.95 km, so a M4.5 quake 89 km from Conel is far.
+**Does it affect us?** `affectsUs(alert, here)` (D-87, D-88): an alert with no point covers the whole area. Every quake the ingest kept affects the
+family and always shows the do-now steps: within its felt radius by magnitude (M<4 50 km, 4-5 100, 5-6 200, 6-7 400, 7+ 800, unknown 100) it says
+"Near you" or "Near home (zone)", beyond it "About N km away. You may feel it. If you feel shaking, follow the steps below."; M6.5+ adds the tsunami line.
+Storm, flood, tsunami, volcano and GDACS rows affect within 1,000 km; air, utility, local notices and heat within 50 km (heat 150 km). Anything else says
+"Far from you. Watch for updates." The app never says "no action needed". Hand-computed: 0.8 degrees of latitude is 88.95 km, so an M4.5 quake 89 km
+from Conel is near (felt to 100 km).
 
 **Source copy.** One constant, `SOURCES_LINE`, replaces every claim that the app pulls PAGASA, PHIVOLCS or NDRRMC warnings:
 "Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open."

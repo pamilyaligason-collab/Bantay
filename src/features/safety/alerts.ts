@@ -149,12 +149,14 @@ export function affectsUs(a: Alert, here: LatLon | null): Affects {
   const dHere = here ? distanceKm(here, p) : Infinity
   const zone = HOME_ZONES.map((z) => ({ z, d: distanceKm(z, p) })).sort((x, y) => x.d - y.d)[0]!
   const km = Math.round(Math.min(dHere, zone.d))
-  const tail = quake && (quakeMag(a) ?? 0) >= TSUNAMI_MAG ? TSUNAMI_LINE : ''
+  const mag = quake ? quakeMag(a) : null
+  const tail = mag !== null && mag >= TSUNAMI_MAG ? TSUNAMI_LINE : '' // unknown size: no tsunami line, never a guessed 0 (ML-05)
   const near = quake ? quakeFeltKm(a) : local ? LOCAL_KM : NEAR_KM
   if (dHere <= near) return { affects: true, km: Math.round(dHere), line: 'Near you. Follow the steps below.' + tail, steps: true }
   if (zone.d <= near) return { affects: true, km: Math.round(zone.d), line: `Near home (${zone.z.name.split(',')[0]}). Follow the steps below.` + tail, steps: true }
   if (quake) return { affects: true, km, line: `About ${km} km away. You may feel it. If you feel shaking, follow the steps below.` + tail, steps: true }
-  if (!local && km <= WIDE_KM) return { affects: true, km, line: `About ${km} km away. Follow the steps below.`, steps: true }
+  // heat is a city reading: it counts near you (NEAR_KM), never 1,000 km away
+  if (!local && a.kind !== 'heat' && km <= WIDE_KM) return { affects: true, km, line: `About ${km} km away. Follow the steps below.`, steps: true }
   return { affects: false, km, line: 'Far from you. Watch for updates.', steps: false }
 }
 
