@@ -6,6 +6,7 @@ import { useFamilyPeople } from './roster'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
 import { Icon } from '../shell/Icon'
+import { EmptyState } from '../look'
 import { usePlan } from './usePlan'
 import './family.css'
 import './plan.css'
@@ -75,13 +76,12 @@ export default function Plan() {
       )}
 
       {rows.length === 0 ? (
-        <div className="card fm-teach">
-          <b>{byDay ? `Nothing for ${midSentence(heading)}.` : EMPTY[view as 'later' | 'done']}</b>
+        <div className="fm-empty-wrap">
           {view === 'done'
-            ? <span className="sub">Ticked reminders and past events show up here.</span>
+            ? <EmptyState icon="check" title={EMPTY.done} body="Ticked reminders and past events show up here." />
             : byDay && view < today
-              ? <span className="sub">This day has passed. Overdue reminders show under Today.</span>
-              : <button type="button" className="fm-linkbtn" onClick={add}>{byDay ? emptyHint(people) : 'Add something to look forward to.'}</button>}
+              ? <EmptyState icon="calendar" title={`Nothing for ${midSentence(heading)}.`} body="This day has passed. Overdue reminders show under Today." />
+              : <EmptyState icon="calendar" title={byDay ? `Nothing for ${midSentence(heading)}.` : EMPTY.later} body={byDay ? emptyHint(people) : 'Add something to look forward to.'} action={{ label: 'Add', onClick: add }} />}
         </div>
       ) : (
         <ul className="card fm-list fm-rows" aria-label={heading}>
@@ -93,7 +93,7 @@ export default function Plan() {
                 {r.kind === 'task'
                   ? <button type="button" className="fm-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.task.title} onClick={() => void toggleTask(r.task)} />
                   : <Icon name={r.kind === 'event' ? 'calendar' : 'file'} tone={r.kind === 'event' ? 'family' : undefined} boxed size={18} />}
-                <button type="button" className="fm-item" onClick={() => openRow(r)}>
+                <button type="button" className="fm-item press" onClick={() => openRow(r)}>
                   <span className="grow"><b className={done ? 'done' : ''}>{title}</b><span className={`sub${r.overdue ? ' fm-warn' : ''}`}>{line(r)}</span></span>
                   {r.kind === 'event' && <span className="fm-tm">{timeLabel(r.event)}</span>}
                 </button>

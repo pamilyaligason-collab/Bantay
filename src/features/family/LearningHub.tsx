@@ -10,7 +10,7 @@ function Card({ c }: { c: HubCard }) {
   const kind = item.kind === 'video' ? 'Video' : item.read ?? 'Read'
   const head = (
     <>
-      <span className="hub-pic" aria-hidden="true"><Icon name={item.kind === 'video' ? 'play' : category.icon} size={size === 'feat' ? 48 : 26} /></span>
+      <span className="hub-pic" aria-hidden="true"><Icon name={item.kind === 'video' ? 'play' : category.icon} size={26} /></span>
       <span className="hub-txt">
         <span className="hub-kind"><Icon name={item.kind === 'video' ? 'play' : 'file'} size={16} />{kind}</span>
         <b>{item.title}</b>
@@ -22,10 +22,10 @@ function Card({ c }: { c: HubCard }) {
   return (
     <li className={`hub-card ${size}${open ? ' open' : ''}`} data-cat={category.id}>
       {item.kind === 'link' ? (
-        <a className="hub-main" href={item.url} target="_blank" rel="noopener noreferrer">{head}<span className="hub-sr"> (opens in new tab)</span></a>
+        <a className="hub-main press" href={item.url} target="_blank" rel="noopener noreferrer">{head}<span className="hub-sr"> (opens in new tab)</span></a>
       ) : (
         <>
-          <button type="button" className="hub-main" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{head}</button>
+          <button type="button" className="hub-main press" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{head}</button>
           {open && <div className="hub-video"><LiteVideo id={item.videoId!} title={item.title} /></div>}
         </>
       )}
