@@ -64,7 +64,15 @@ const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.g
 const at = (h: number, m = 0) => new Date(2026, 9, 27, h, m).toISOString()
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
 // Settled UI before a shot: fonts loaded and every finite reveal animation finished (the sky loops forever) (the weather card fades in).
-const settle = (page: Page) => expect.poll(() => page.evaluate(() => document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running'))).toBe(true)
+const settle = async (page: Page) => { // fonts loaded, finite animations done and the scroll position held still for two reads (smooth scroll)
+  let last = -1
+  await expect.poll(async () => {
+    const [y, ready] = await page.evaluate(() => [Math.round(window.scrollY), document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running')] as const)
+    const still = y === last
+    last = y
+    return still && ready
+  }, { intervals: [200] }).toBe(true)
+}
 const SLOT = hhmm(new Date(NOW.getTime() - 12 * 60_000)) // 9:00, twelve minutes ago
 
 type Meds = 'two' | 'one' | 'none'
