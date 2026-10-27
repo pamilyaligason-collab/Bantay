@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupLabs, labBand, labInfo, labRow, labVerdict, lastThree, moveWords } from './labsLogic'
+import { groupByPanel, groupLabs, labBand, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, panelOf } from './labsLogic'
 import type { Reading } from './ranges'
 
 const r = (test: string, value: number, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: '2026-10-01T08:00:00Z', test, value, unit: 'mg/dL', ...extra })
@@ -86,5 +86,30 @@ describe('labInfo', () => {
     expect(labInfo('hdl_cholesterol').known).toBe(true)
     expect(labInfo('mystery').known).toBe(false)
     expect(labInfo('mystery').measures).toMatch(/Your doctor/)
+  })
+})
+
+describe('labNum (S7: one decimal on the list)', () => {
+  it('226.74 -> 226.7, 3.10 -> 3.1, 12 -> 12, 0.72 stays, unknown is empty', () => {
+    expect(labNum(226.74)).toBe('226.7')
+    expect(labNum(3.1)).toBe('3.1')
+    expect(labNum(12)).toBe('12')
+    expect(labNum(0.72)).toBe('0.72')
+    expect(labNum(0.004)).toBe('0.004')
+    expect(labNum(null)).toBe('')
+    expect(labNum(Number.NaN)).toBe('')
+  })
+})
+
+describe('panels', () => {
+  it('maps tests to panels and groups in a fixed order with Other last', () => {
+    expect(panelOf('total_cholesterol')).toBe('Cholesterol')
+    expect(panelOf('HbA1c')).toBe('Sugar')
+    expect(panelOf('egfr')).toBe('Kidney')
+    expect(panelOf('hemoglobin')).toBe('Blood count')
+    expect(panelOf('alt')).toBe('Liver')
+    expect(panelOf('mystery')).toBe('Other')
+    const g = groupByPanel(['mystery', 'creatinine', 'ldl', 'hdl'].map((t) => labRow(r(t, 1))))
+    expect(g.map((x) => [x.panel, x.rows.map((y) => y.reading.test)])).toEqual([['Cholesterol', ['hdl', 'ldl']], ['Kidney', ['creatinine']], ['Other', ['mystery']]])
   })
 })

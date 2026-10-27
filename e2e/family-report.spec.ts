@@ -70,8 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByRole('button', { name: /Maria Sample/ }).click()
-    await page.getByRole('button', { name: "Maria's page" }).click()
+    await page.getByRole('button', { name: /Maria Sample/ }).click() // S9: a bubble opens the person's page
     await page.getByRole('link', { name: 'Full report' }).click()
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()

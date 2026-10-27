@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Avatar from '../features/admin/Avatar'
-import '../features/admin/admin.css'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
 import { LabsList } from '../features/health/LabsList'
@@ -33,7 +31,7 @@ import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
 import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
-import { useProfile } from '../features/setup/useProfile'
+import { givenName, properName } from '../features/health/medName'
 
 const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
@@ -79,14 +77,14 @@ function Overview() {
     return () => { live = false }
   }, [ready, ownId, readings.length, setPersonId])
   const pick = (id: string) => { picked.current = true; setPersonId(id) }
-  const profile = useProfile(personId)
   const latest = latestByTest(readings)
-  const name = people.find((p) => p.id === personId)?.name ?? ''
+  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
   const raw = insightHeadline(latest, new Date(), familyOf)
   const head = raw
   const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
+  const noVitals = ready && nodes.every((n) => n.empty) // S6: readings but no vitals: ONE empty state (the no-vitals card), no headline or nudge above it. No readings at all keeps the figure + headline
   const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
   return (
     <>
@@ -95,22 +93,21 @@ function Overview() {
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }} data-testid="showing">Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
-      {ready && (
+      {ready && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
         <div className="hv-head" data-tone={head.tone}>
           <div className="grow">
             <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
             <p className="sub hv-sub">{head.sub}</p>
           </div>
-          {name && <Avatar name={name} photoPath={profile?.photoPath} size={72} />}
         </div>
       )}
-      {ready && personId && <NudgeCard personId={personId} readings={readings} canLog={canMarkFor(personId, ownId, writable)} onAdd={setAdding} />}
+      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canMarkFor(personId, ownId, writable)} onAdd={setAdding} />}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
       {personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
-      {ready && !blank && nodes.every((n) => n.empty) ? (
+      {ready && !blank && noVitals ? (
         <div className="card hv-novitals" data-testid="no-vitals">
-          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${name.split(' ')[0]}` : ''}</h2>
-          <p className="sub">Blood pressure, sugar, weight and steps show here once they are logged.</p>
+          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${givenName(name)}` : ''}</h2>
+          <p className="sub">Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below.</p>
           <a className="hv-cta" href={cta.href}>{cta.label}</a>
         </div>
       ) : (

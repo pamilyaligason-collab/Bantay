@@ -220,7 +220,51 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Message' }))
     expect(onMessage).toHaveBeenCalledWith('p2')
     expect(h.markSeen).toHaveBeenCalledWith('mo')
-    expect(screen.getByText('Family alerts show here when you open Bantay. The browser app also gets notifications.')).toBeTruthy()
+    expect(screen.queryByText(/Family alerts show here/)).toBeNull() // S5: filler gone
+  })
+  it('S8: six missed doses for one person are ONE card with six lines, and the count is the six lines', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    const slots = ['04:00', '05:00', '06:00', '07:00', '08:00', '09:00']
+    await ldb.medications.add({ personId: 'p2', name: 'Losartan', strength: '50 mg', serverId: 'm1', clientId: 'c1', medStatus: 'active', schedule: { v: 1, times: slots } })
+    h.rows = slots.map((s) => row(`md${s}`, { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: `p2:2026-10-26:${s}` }))
+    const { container } = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa missed 6 doses')).toBeTruthy()
+    expect(container.querySelectorAll('[data-kind="dose_missed"]')).toHaveLength(1) // one card per person
+    expect(container.querySelectorAll('[data-kind="dose_missed"] .fm-need-lines li')).toHaveLength(6) // six lines
+    expect(screen.getByText('6 things')).toBeTruthy() // badge = rows
+    expect(screen.getAllByRole('link', { name: 'Call Papa' })).toHaveLength(1)
+  })
+  it('J r2: with several missed doses each line has its own Mark taken, and one tap records exactly one slot (ML-13)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    const slots = ['07:00', '08:00', '09:00']
+    await ldb.medications.add({ personId: 'p2', name: 'Losartan', strength: '50 mg', serverId: 'm1', clientId: 'c1', medStatus: 'active', schedule: { v: 1, times: slots } })
+    h.rows = slots.map((s) => row(`md${s}`, { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: `p2:2026-10-26:${s}` }))
+    render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa missed 3 doses')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Mark taken for Papa' })).toBeNull() // no all-in-one button
+    const btns = screen.getAllByRole('button', { name: /^Mark taken: / })
+    expect(btns).toHaveLength(3)
+    fireEvent.click(btns[1]!) // 08:00
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Yes, I saw' }))
+    await waitFor(async () => expect((await ldb.meds.toArray()).map((m) => m.slot)).toEqual(['08:00']))
+  })
+  it('S8: three unanswered "Still taking it?" for one person are one card with three Answer buttons; two people are two cards', async () => {
+    const old = { v: 1, times: ['13:00'], review: true, review_since: '2026-10-20' }
+    h.writable = ['p2', 'p3']
+    await ldb.medications.bulkAdd([
+      { ...REVIEW, schedule: old },
+      { ...REVIEW, name: 'Losartan', serverId: 'm2', clientId: 'c2', schedule: old },
+      { ...REVIEW, name: 'Amlodipine', serverId: 'm3', clientId: 'c3', schedule: old },
+      { ...REVIEW, personId: 'p3', name: 'Aspirin', serverId: 'm4', clientId: 'c4', schedule: old }
+    ])
+    const { container } = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa has 3 questions waiting')).toBeTruthy()
+    expect(container.querySelectorAll('[data-kind="review_open"]')).toHaveLength(2) // Papa and Mama
+    expect(screen.getByText('4 things')).toBeTruthy() // 3 + 1 rows
+    expect(screen.getAllByRole('button', { name: /^Answer for Papa: / })).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Answer for Mama' })).toBeTruthy() // a single ask keeps the plain button
   })
   it('a missed dose today: what, when, Call and Mark taken for her; it closes by itself once the dose is marked', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })

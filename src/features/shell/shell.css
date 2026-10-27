@@ -51,7 +51,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 :root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
 
-/* Scrolling content ends above the tab bar: one global rule, `.scroll` padding-bottom = var(--tabbar-clear) in app.css. */
+/* Scrolling content ends above the tab bar: one global rule, the `.scroll::after` spacer (height from var(--tabbar-clear)) in app.css. */
 
 /* Me screen + shared small parts */
 .sh { color: var(--ink); }
