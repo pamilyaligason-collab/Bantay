@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { loadFamily } from '../../auth/family'
+import { getMember } from '../../auth/session'
 import { Icon } from '../../shell/Icon'
+import { firstName } from '../../shell/TopBar'
 import { flip, hintPair, newMemory, notePlayed, pairsFound, PAIRS, praise, settle, solved } from './score'
 import './play.css'
 
@@ -8,7 +11,9 @@ export default function Memory({ onBack, seed = Date.now() }: { onBack: () => vo
   const [round, setRound] = useState(0)
   const [s, setS] = useState(() => newMemory(seed))
   const [hint, setHint] = useState<[number, number] | null>(null)
+  const [name, setName] = useState('')
   const counted = useRef(false)
+  useEffect(() => { let live = true; void getMember().then((m) => { const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''; if (live && n) setName(firstName(n)) }).catch(() => undefined); return () => { live = false } }, [])
   const done = solved(s)
   // two wrong cards turn back after a short pause
   useEffect(() => {
@@ -38,7 +43,7 @@ export default function Memory({ onBack, seed = Date.now() }: { onBack: () => vo
         })}
       </div>
       {done ? (
-        <div className="sh-card" role="status"><b className="sh-h2">{praise(s.flips)}</b></div>
+        <div className="sh-card" role="status"><b className="sh-h2">{praise(s.flips, name)}</b></div>
       ) : (
         <p className="fp-note" style={{ textAlign: 'center', margin: 0 }}>Tap two cards to turn them over.</p>
       )}

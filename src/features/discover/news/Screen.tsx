@@ -97,7 +97,7 @@ export function NewsList({ zone, now = Date.now() }: { zone: string | null; now?
           ? pinned.map((n) => <a key={n.id} href={n.url} target="_blank" rel="noopener noreferrer"><Icon name="cloud" /><span className="sh-grow"><b>{n.title}</b><span className="sh-sub" style={{ display: 'block' }}>{n.source}, {ago(n.published_at, now)}</span></span><Icon name="out" size={18} /></a>)
           : OFFICIAL_LINKS.map((l) => <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer"><Icon name="cloud" /><span className="sh-grow"><b>{l.name}</b><span className="sh-sub" style={{ display: 'block' }}>Official source</span></span><Icon name="out" size={18} /></a>)}
       </section>
-      <div className="fp-list">
+      <div className="fp-hls">
         {rest.map((n) => (
           <a key={n.id} className="fp-hl" href={n.url} target="_blank" rel="noopener noreferrer">
             <b>{n.title}</b>

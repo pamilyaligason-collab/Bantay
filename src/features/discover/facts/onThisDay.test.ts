@@ -52,3 +52,13 @@ describe('On this day', () => {
     expect(phFactOf('2026-10-28')).toBe(phFactOf('2026-10-28'))
   })
 })
+
+describe("Wikipedia link check", () => {
+  it("keeps wikipedia.org and its subdomains, drops look-alike hosts", () => {
+    const urls = (page: string) => pick([ev(1900, "x", page)], "2026-10-28")[0]!.url
+    expect(urls("https://en.wikipedia.org/wiki/A")).toBe("https://en.wikipedia.org/wiki/A")
+    expect(urls("https://wikipedia.org/wiki/A")).toBe("https://wikipedia.org/wiki/A")
+    expect(urls("https://evilwikipedia.org/wiki/A")).toBeNull()
+    expect(urls("https://en.wikipedia.org.evil.com/wiki/A")).toBeNull()
+  })
+})

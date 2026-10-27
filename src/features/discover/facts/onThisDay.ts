@@ -19,7 +19,7 @@ export function pick(raw: Raw[], day: string): OtdEvent[] {
   const ok = raw.flatMap((e) => {
     const url = e.pages?.[0]?.content_urls?.desktop?.page
     return typeof e.year === 'number' && typeof e.text === 'string' && e.text.length <= 200
-      ? [{ year: e.year, text: e.text, url: typeof url === 'string' && /^https:\/\/[a-z.]*wikipedia\.org\//.test(url) ? url : null }]
+      ? [{ year: e.year, text: e.text, url: typeof url === 'string' && /^https:\/\/(?:[a-z]+\.)?wikipedia\.org\//.test(url) ? url : null }]
       : []
   })
   return shuffle(ok, rng(seedOf(day))).slice(0, SHOW).sort((a, b) => a.year - b.year)

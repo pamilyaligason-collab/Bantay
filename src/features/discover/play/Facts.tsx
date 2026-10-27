@@ -18,7 +18,7 @@ export default function Facts({ onBack, now }: { onBack: () => void; now?: Date 
         <div><h2>Fun facts</h2><span className="fp-note">Discover, Play</span></div>
       </div>
       <section className="sh-card fp-fact" aria-label="On this day">
-        <span className="sh-sub">On this day, {today.toLocaleDateString('en-PH', { day: 'numeric', month: 'long' })}</span>
+        <span className="sh-sub">On this day · {today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</span>
         {otd === undefined ? <span className="fp-note" role="status">Loading</span>
           : !e ? <span className="fp-note" role="status">No signal yet. Today's events will show up when you are online.</span>
           : (

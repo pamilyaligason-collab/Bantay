@@ -26,7 +26,7 @@ export default function Trivia({ onBack, day = dayKey() }: { onBack: () => void;
           const right = pick !== null && i === q.right
           return (
             <button key={a} type="button" className={`fp-ans${right ? ' is-right' : ''}${pick === i && i !== q.right ? ' is-mine' : ''}`} disabled={pick !== null} onClick={() => setPick(i)}>
-              <b>{right ? <Icon name="check" size={18} /> : 'ABCD'[i]}</b><span>{a}</span>
+              <b>{right ? <Icon name="check" size={18} /> : pick === i ? <span style={{ display: 'grid', transform: 'rotate(45deg)' }}><Icon name="plus" size={18} /></span> : 'ABCD'[i]}</b><span>{a}</span>
               {pick === i && <span className="fp-note" style={{ marginLeft: 'auto' }}>Your answer</span>}
             </button>
           )
