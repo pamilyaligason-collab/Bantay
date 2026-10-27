@@ -262,11 +262,11 @@ describe('reminders from medications', () => {
     await sync()
     expect([...new Set(lastSched().map((x) => x.extra.slot))]).toEqual(['09:30'])
   })
-  it('pauses a medicine whose review is more than 3 days old (D5) and keeps a fresh one', async () => {
-    await add({ name: 'Old', schedule: { v: 1, times: ['07:00'], review: true, review_since: '2026-10-01' } })
+  it('keeps ringing for a medicine whose review is open, however old the question (S4: nothing goes quiet by itself)', async () => {
+    await add({ name: 'Old', schedule: { v: 1, times: ['07:00'], review: true, review_since: '2026-10-16' } }) // 4 days before the test clock
     await add({ name: 'Fresh', schedule: { v: 1, times: ['12:00'], review: true, review_since: '2026-10-19' } })
     await sync()
-    expect([...new Set(lastSched().map((x) => x.extra.slot))]).toEqual(['12:00'])
+    expect([...new Set(lastSched().map((x) => x.extra.slot))].sort()).toEqual(['07:00', '12:00'])
   })
   it('includes people listed in remind.for, and nobody else', async () => {
     await add({ name: 'Mine', schedule: { v: 1, times: ['08:00'] } })

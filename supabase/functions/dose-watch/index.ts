@@ -219,6 +219,7 @@ Deno.serve(async (req) => {
     const afterMin = Number(Deno.env.get('DOSE_WATCH_AFTER_MIN') ?? 30)
     const report = await (runDoseWatch as RunFn)(port, now.getTime(), { afterMin: Number.isFinite(afterMin) && afterMin > 0 ? afterMin : 30 })
     Object.assign(summary, report)
+    if (report.failed > 0) ok = false // a carer row that could not be written turns the heartbeat red; the rest of the run still goes
     await step('flush', () => flushWebPush(now))
     await step('phone_health', () => sweepPhoneHealth(now))
     await step('dose_due', () => doseDue(now))

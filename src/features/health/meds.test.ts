@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Medication } from '../log/store'
-import { dayOf, isLive, matchDoses, normaliseDrug, parseSchedule, pickSlot, remindable, reminderId, resolveMedication, reviewOverdue, slotsFor, toMinutes } from './meds'
+import { answeredBy, dayOf, isLive, matchDoses, normaliseDrug, parseSchedule, pickSlot, remindable, reminderId, resolveMedication, reviewAgeDays, reviewOverdue, slotsFor, toMinutes } from './meds'
 
 const med = (o: Partial<Medication> & { name: string }): Medication => ({ personId: 'p1', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, serverId: `s-${o.name}`, ...o })
 const DAY = '2026-10-20'
@@ -157,10 +157,32 @@ describe('pickSlot and remindable', () => {
     const rows = [med({ name: 'NotYet', startedOn: '2026-10-21' }), med({ name: 'Over', stoppedOn: '2026-10-19' }), med({ name: 'Live', startedOn: '2026-10-20', stoppedOn: '2026-10-20' })]
     expect(remindable(rows, 'p1', DAY).map((m) => m.name)).toEqual(['Live'])
   })
-  it('remindable drops paused, as-needed and overdue reviews', () => {
+  it('remindable drops paused and as-needed, but a review medicine keeps reminding however old the question is (S4)', () => {
     const overdue = med({ name: 'Old', schedule: { v: 1, times: ['08:00'], review: true, review_since: '2026-10-01' } })
     const fresh = med({ name: 'Fresh', schedule: { v: 1, times: ['08:00'], review: true, review_since: '2026-10-19' } })
-    expect(remindable([overdue, fresh, med({ name: 'P', medStatus: 'paused' }), med({ name: 'Prn', asNeeded: true })], 'p1', DAY).map((m) => m.name)).toEqual(['Fresh'])
+    expect(remindable([overdue, fresh, med({ name: 'P', medStatus: 'paused' }), med({ name: 'Prn', asNeeded: true })], 'p1', DAY).map((m) => m.name)).toEqual(['Old', 'Fresh'])
+  })
+  it('reviewAgeDays: 0 the day it was asked, counts days, null when not in review or undated', () => {
+    const r = (schedule: unknown) => ({ schedule })
+    expect(reviewAgeDays(r({ v: 1, review: true, review_since: '2026-10-20' }), '2026-10-20')).toBe(0)
+    expect(reviewAgeDays(r({ v: 1, review: true, review_since: '2026-10-16' }), '2026-10-20')).toBe(4)
+    expect(reviewAgeDays(r({ v: 1, review: true, review_since: '2026-10-16' }), new Date('2026-10-19T17:00:00Z'))).toBe(4) // 01:00 Manila on the 20th
+    expect(reviewAgeDays(r({ v: 1, review: false, review_since: '2026-10-16' }), DAY)).toBeNull()
+    expect(reviewAgeDays(r({ v: 1, review: true }), DAY)).toBeNull()
+    expect(reviewAgeDays(r(['08:00']), DAY)).toBeNull()
+    expect(reviewOverdue(r({ v: 1, review: true, review_since: '2026-10-17' }), '2026-10-20')).toBe(true) // 3 days: flagged, not silenced
+  })
+  it('answeredBy names who answered the review, for 7 days only, and never from a bad or future stamp', () => {
+    const now = new Date('2026-10-26T10:00:00Z')
+    const s = (by: unknown, at: unknown) => ({ schedule: { v: 1, times: ['08:00'], answered_by: by, answered_at: at } })
+    expect(answeredBy(s('Lloyd', '2026-10-25T10:00:00Z'), now)).toBe('Lloyd')
+    expect(answeredBy(s('Lloyd', '2026-10-19T09:59:00Z'), now)).toBeNull() // over 7 days
+    expect(answeredBy(s('Lloyd', 'soon'), now)).toBeNull()
+    expect(answeredBy(s('Lloyd', '2026-10-27T10:00:00Z'), now)).toBeNull() // a clock in the future
+    expect(answeredBy(s('  ', '2026-10-25T10:00:00Z'), now)).toBeNull()
+    expect(answeredBy(s(7, '2026-10-25T10:00:00Z'), now)).toBeNull()
+    expect(answeredBy({ schedule: ['08:00'] }, now)).toBeNull()
+    expect(answeredBy({ schedule: undefined }, now)).toBeNull()
   })
   it('dayOf is the local day', () => expect(dayOf(new Date(2026, 9, 20, 23, 59))).toBe('2026-10-20'))
 })

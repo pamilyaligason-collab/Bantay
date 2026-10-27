@@ -9,6 +9,9 @@ import './family.css'
 import LearningHub from './LearningHub'
 import Memories from './Memories'
 import { useFlagLines } from './reportData'
+import { CarerCards } from './CarerCards'
+import FamilyPhones from './FamilyPhones'
+import { IncomingSos } from './IncomingSos'
 
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
@@ -17,6 +20,7 @@ export default function People() {
   const last = loaded ?? {}
   const [note, setNote] = useState('')
   const [talk, setTalk] = useState<string | null>(null)
+  const [phones, setPhones] = useState(false) // Family > Phones, shown in place of the roll call
   useEffect(() => {
     if (!note) return
     const t = setTimeout(() => setNote(''), 4000)
@@ -29,8 +33,26 @@ export default function People() {
     setNote(r === 'ok' ? 'The family can see you are OK.' : FAIL_TEXT[r])
   }
 
+  const messageSheet = (() => {
+    const w = people.find((p) => p.id === talk)
+    if (!w) return null
+    const n = loaded !== null ? nudgeFor(w, checkInLabel(last[w.id]).ok) : null
+    return <Messages who={w} people={people} nudge={n ? { text: n.text, href: n.href } : null} onClose={() => setTalk(null)} onOpenPage={() => { location.hash = `family/people/${w.id}` }} />
+  })()
+
+  if (phones) {
+    return (
+      <>
+        <FamilyPhones people={people.filter((p) => !p.isMe)} onBack={() => setPhones(false)} onMessage={setTalk} />
+        {messageSheet}
+      </>
+    )
+  }
+
   return (
     <>
+      <IncomingSos placement="family" />
+      <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />
       {!(selfId && loaded && checkInLabel(loaded[selfId]).ok) && (
         <div className="card fm-checkin">
           <div className="grow">
@@ -68,12 +90,7 @@ export default function People() {
       )}
       <LearningHub />
       <Memories />
-      {(() => {
-        const w = people.find((p) => p.id === talk)
-        if (!w) return null
-        const n = loaded !== null ? nudgeFor(w, checkInLabel(last[w.id]).ok) : null
-        return <Messages who={w} people={people} nudge={n ? { text: n.text, href: n.href } : null} onClose={() => setTalk(null)} onOpenPage={() => { location.hash = `family/people/${w.id}` }} />
-      })()}
+      {messageSheet}
       {note && <div className="toast" role="status">{note}</div>}
     </>
   )

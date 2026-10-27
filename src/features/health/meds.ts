@@ -2,7 +2,7 @@ import type { MedTaken, Medication } from '../log/store'
 
 /** Pure helpers for the live medicine schedule (public.medications, PART-3 1.2 and 1.3). No React, no storage. */
 
-export const REVIEW_GRACE_DAYS = 3 // D5: an unanswered "Still taking it?" pauses the reminder this many days after review_since
+export const REVIEW_GRACE_DAYS = 3 // an unanswered "Still taking it?" is flagged as overdue this many days after review_since (it no longer pauses the reminder, S4)
 
 export interface ParsedSchedule {
   /** Valid 'HH:MM' clock strings, sorted, no duplicates. */
@@ -55,16 +55,26 @@ const MANILA = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year:
 /** Calendar day (YYYY-MM-DD) in Asia/Manila of an instant. */
 const manilaDay = (d: Date) => (Number.isNaN(d.getTime()) ? '' : MANILA.format(d))
 
-/** D5: the review has been open longer than 3 days. `today` is YYYY-MM-DD or a Date. */
-export function reviewOverdue(med: Pick<Medication, 'schedule'>, today: string | Date): boolean {
+/** Whole days a "Still taking it?" has been open (0 = asked today); null when the medicine is not in review or has no review_since. `today` is YYYY-MM-DD or a Date (Manila day). */
+export function reviewAgeDays(med: Pick<Medication, 'schedule'>, today: string | Date): number | null {
   const s = parseSchedule(med.schedule)
-  if (!s.review || !s.reviewSince) return false
-  const t = new Date(`${s.reviewSince}T00:00:00Z`)
-  if (Number.isNaN(t.getTime())) return false
-  t.setUTCDate(t.getUTCDate() + REVIEW_GRACE_DAYS)
-  const due = t.toISOString().slice(0, 10) // review_since is a calendar date: plain date arithmetic, no time zone shift
+  if (!s.review || !s.reviewSince) return null
   const day = typeof today === 'string' ? today.slice(0, 10) : manilaDay(today)
-  return !!day && due <= day // pauses ON review_since + 3 days
+  const a = Date.parse(`${s.reviewSince}T00:00:00Z`) // review_since is a calendar date: plain date arithmetic, no time zone shift
+  const b = Date.parse(`${day}T00:00:00Z`)
+  return Number.isNaN(a) || Number.isNaN(b) ? null : Math.floor((b - a) / 86_400_000)
+}
+
+/** The review has been open for 3 days or more. A flag for the screen ("still waiting"), never a reason to stop a reminder: a medicine in review keeps ringing until someone answers. */
+export const reviewOverdue = (med: Pick<Medication, 'schedule'>, today: string | Date): boolean => (reviewAgeDays(med, today) ?? -1) >= REVIEW_GRACE_DAYS
+
+/** Who answered the "Still taking it?" for the person (a carer's name), when that was in the last 7 days; else null. Read from schedule.answered_by / answered_at (MedReview.answerReview). */
+export function answeredBy(med: Pick<Medication, 'schedule'>, now: Date = new Date()): string | null {
+  const o = med.schedule
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null
+  const { answered_by: by, answered_at: at } = o as Record<string, unknown>
+  const t = typeof at === 'string' ? Date.parse(at) : NaN
+  return typeof by === 'string' && by.trim() && !Number.isNaN(t) && now.getTime() - t < 7 * 86_400_000 && t <= now.getTime() + 60_000 ? by.trim().slice(0, 40) : null
 }
 
 export interface MedSlot {
@@ -126,10 +136,10 @@ export function resolveMedication(meds: Medication[], personId: string, spoken: 
   return pick.length === 1 ? pick[0] : undefined
 }
 
-/** Active, timed medications that should remind: those whose review is not overdue (D5). */
+/** Active, timed medications that should remind. One in review keeps reminding until someone answers (S4: it used to fall silent after 3 days). */
 export const remindable = (meds: Medication[], personId: string, today: string | Date) =>
   meds.filter((m) => {
-    if (m.personId !== personId || !isLive(m) || m.asNeeded || reviewOverdue(m, today)) return false
+    if (m.personId !== personId || !isLive(m) || m.asNeeded) return false
     const day = typeof today === 'string' ? today.slice(0, 10) : dayOf(today)
     return !((m.startedOn && m.startedOn > day) || (m.stoppedOn && m.stoppedOn < day)) // same window as slotsFor
   })

@@ -1,9 +1,10 @@
 // @vitest-environment node
 // Fixed clock: NOW = 2026-10-20 10:05 Asia/Manila (02:05 UTC). All names and times are made up.
 import { describe, expect, it } from 'vitest'
+import { reviewAgeDays as appAge } from '../../../src/features/health/meds'
 import { buildNotification } from '../../../src/features/notify/templates'
 import {
-  type Carer, doseWatchPayload, dueSlots, type MedRow, type Port, recipients, runDoseWatch, scheduleTimes, type Sub, type TakenRow
+  type Carer, doseWatchPayload, dueSlots, inDigestWindow, type MedRow, openToday, type Port, recipients, reviewAgeDays, runDoseWatch, scheduleTimes, type TakenRow
 } from './logic.ts'
 
 const NOW = Date.parse('2026-10-20T10:05:00+08:00')
@@ -11,10 +12,12 @@ const med = (over: Partial<MedRow> = {}): MedRow => ({ id: 'm1', person_id: 'p1'
 const took = (over: Partial<TakenRow> = {}): TakenRow => ({ person_id: 'p1', medication_id: 'm1', slot: '08:00', taken_at: '2026-10-20T08:10:00+08:00', ...over })
 
 describe('dueSlots', () => {
-  it('a slot is missed exactly 2 h after its time, not before', () => {
-    expect(dueSlots([med()], [], Date.parse('2026-10-20T09:59:00+08:00'))).toEqual([])
-    expect(dueSlots([med()], [], Date.parse('2026-10-20T10:00:00+08:00'))).toEqual([{ personId: 'p1', day: '2026-10-20', slot: '08:00' }])
+  it('a slot is missed exactly 30 min after its time (Q34), not before; the cron can pass another window', () => {
+    expect(dueSlots([med()], [], Date.parse('2026-10-20T08:29:00+08:00'))).toEqual([])
+    expect(dueSlots([med()], [], Date.parse('2026-10-20T08:30:00+08:00'))).toEqual([{ personId: 'p1', day: '2026-10-20', slot: '08:00' }])
     expect(dueSlots([med()], [], NOW)).toHaveLength(1)
+    expect(dueSlots([med()], [], Date.parse('2026-10-20T09:59:00+08:00'), 120)).toEqual([])
+    expect(dueSlots([med()], [], Date.parse('2026-10-20T10:00:00+08:00'), 120)).toHaveLength(1)
   })
   it('a taken or a skipped row for that slot closes it', () => {
     expect(dueSlots([med()], [took()], NOW)).toEqual([])
@@ -33,11 +36,33 @@ describe('dueSlots', () => {
       expect(dueSlots([m], [], NOW)).toEqual([])
     }
   })
-  it('skips every medicine still in review (not yet confirmed), whatever the date', () => {
-    const s = (since: string) => ({ v: 1, times: ['08:00'], review: true, review_since: since })
-    expect(dueSlots([med({ schedule: s('2026-10-20') })], [], NOW)).toEqual([])
-    expect(dueSlots([med({ schedule: s('2026-10-01') })], [], NOW)).toEqual([])
+  it('watches a review medicine once its question is more than a day old (S4); on the day it was asked and with no date it is not watched', () => {
+    const s = (since?: string) => ({ v: 1, times: ['08:00'], review: true, ...(since ? { review_since: since } : {}) })
+    expect(dueSlots([med({ schedule: s('2026-10-20') })], [], NOW)).toEqual([]) // asked today
+    expect(dueSlots([med({ schedule: s('2026-10-19') })], [], NOW)).toHaveLength(1) // 1 day old
+    expect(dueSlots([med({ schedule: s('2026-10-01') })], [], NOW)).toHaveLength(1)
+    expect(dueSlots([med({ schedule: s() })], [], NOW)).toEqual([]) // unknown date is never 0 days or 99 days (ML-05)
     expect(dueSlots([med({ schedule: { v: 1, times: ['08:00'], review: false } })], [], NOW)).toHaveLength(1)
+  })
+  it('gives the same age as the app (health/meds.ts reviewAgeDays) for the same schedule and instant (ML-10)', () => {
+    const at = (s: string) => Date.parse(s)
+    for (const [schedule, now] of [
+      [{ review: true, review_since: '2026-10-20' }, at('2026-10-20T10:05:00+08:00')],
+      [{ review: true, review_since: '2026-10-16' }, at('2026-10-20T00:30:00+08:00')], // just after Manila midnight, still the 19th in UTC
+      [{ review: true, review_since: '2026-10-16' }, at('2026-10-20T23:59:00+08:00')],
+      [{ review: true, review_since: '2026-10-01' }, at('2026-11-02T08:00:00+08:00')],
+      [{ review: false, review_since: '2026-10-16' }, at('2026-10-20T10:05:00+08:00')],
+      [{ review: true }, at('2026-10-20T10:05:00+08:00')],
+      [{ review: true, review_since: '2026-13-45' }, at('2026-10-20T10:05:00+08:00')]
+    ] as const) expect(reviewAgeDays(schedule, now)).toBe(appAge({ schedule }, new Date(now)))
+  })
+  it('reviewAgeDays counts Manila days; null when not in review or the date is bad', () => {
+    expect(reviewAgeDays({ review: true, review_since: '2026-10-20' }, NOW)).toBe(0)
+    expect(reviewAgeDays({ review: true, review_since: '2026-10-16' }, NOW)).toBe(4)
+    expect(reviewAgeDays({ review: true, review_since: '2026-10-19' }, Date.parse('2026-10-19T23:30:00Z'))).toBe(1) // 07:30 Manila on the 20th
+    expect(reviewAgeDays({ review: false, review_since: '2026-10-01' }, NOW)).toBeNull()
+    expect(reviewAgeDays({ review: true, review_since: 'soon' }, NOW)).toBeNull()
+    expect(reviewAgeDays(['08:00'], NOW)).toBeNull()
   })
   it('skips needs_time, not started yet and already stopped medicines', () => {
     expect(dueSlots([med({ schedule: { v: 1, times: ['08:00'], needs_time: true } })], [], NOW)).toEqual([])
@@ -90,75 +115,119 @@ describe('text and recipients (B-7)', () => {
   })
 })
 
-function fakePort(over: { meds?: MedRow[]; taken?: TakenRow[]; status?: number | null } = {}) {
+interface Written { kind: string; personId: string; carer: string; template: string; ref: string }
+/** In-memory port. carerRow dedupes on (kind, ref, carer) like the unique index on carer_alerts; `failWrites` makes it throw. */
+function fakePort(over: { meds?: MedRow[]; taken?: TakenRow[]; failWrites?: boolean; carers?: Carer[] } = {}) {
   const claimed = new Set<string>()
-  const pushes: { sub: Sub; payload: unknown }[] = []
-  const removed: string[] = []
+  const rows: Written[] = []
   const port: Port = {
     medications: async () => over.meds ?? [med()],
     taken: async () => over.taken ?? [],
     person: async () => ({ display_name: 'Maria Santos', auth_user_id: 'self' }),
-    carers: async () => [{ carer_id: 'w1', person_id: 'p1', can_write: true }, { carer_id: 'w2', person_id: 'p1', can_write: true }],
-    subs: async (ids) => ids.map((u) => ({ user_id: u, endpoint: `https://push/${u}`, p256dh: 'k', auth: 'a' })),
+    carers: async () => over.carers ?? [{ carer_id: 'w1', person_id: 'p1', can_write: true }, { carer_id: 'w2', person_id: 'p1', can_write: true }],
     claim: async (p, d, s) => { const k = `${p}|${d}|${s}`; if (claimed.has(k)) return false; claimed.add(k); return true },
-    push: async (sub, payload) => { pushes.push({ sub, payload }); return over.status === undefined ? 201 : over.status },
     release: async (p, d, sl) => { claimed.delete(`${p}|${d}|${sl}`) },
-    removeSub: async (e) => { removed.push(e) }
+    carerRow: async (kind, personId, ids, template, ref) => {
+      if (over.failWrites) throw new Error('write')
+      for (const carer of ids) if (!rows.some((r) => r.kind === kind && r.ref === ref && r.carer === carer)) rows.push({ kind, personId, carer, template, ref })
+    }
   }
-  return { port, pushes, removed }
+  return { port, rows, claimed }
 }
+const review = (since: string | undefined, over: Partial<MedRow> = {}) => med({ schedule: { v: 1, times: ['08:00'], review: true, ...(since ? { review_since: since } : {}) }, ...over })
 
 describe('runDoseWatch', () => {
-  it('an archived person gets no claim and no push', async () => {
+  it('an archived person gets no claim and no row', async () => {
     const f = fakePort({ meds: [med({ people: { archived_at: '2026-10-20T00:00:00Z' } })] })
-    expect(await runDoseWatch(f.port, NOW)).toEqual({ due: 0, claimed: 0, sent: 0, removed: 0, released: 0 })
-    expect(f.pushes).toHaveLength(0)
+    expect(await runDoseWatch(f.port, NOW)).toEqual({ due: 0, claimed: 0, rows: 0, review: 0, digest: 0, failed: 0 })
+    expect(f.rows).toHaveLength(0)
   })
-  it('sends one push per writer carer device with the generic payload', async () => {
-    const f = fakePort()
-    const r = await runDoseWatch(f.port, NOW)
-    expect(r).toEqual({ due: 1, claimed: 1, sent: 2, removed: 0, released: 0 })
-    expect(f.pushes.map((p) => p.sub.user_id)).toEqual(['w1', 'w2'])
-    expect(f.pushes[0]!.payload).toEqual({ t: 'dose_watch' }) // no name, no count of a person (B-7)
-    expect(JSON.stringify(f.pushes)).not.toContain('Maria')
+  it('writes one dose_missed row per writer carer, never the person, ref person:day:slot, template dose_missed', async () => {
+    const f = fakePort({ carers: [{ carer_id: 'w1', person_id: 'p1', can_write: true }, { carer_id: 'r1', person_id: 'p1', can_write: false }, { carer_id: 'self', person_id: 'p1', can_write: true }] })
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 1, claimed: 1, rows: 1, failed: 0 })
+    expect(f.rows).toEqual([{ kind: 'dose_missed', personId: 'p1', carer: 'w1', template: 'dose_missed', ref: 'p1:2026-10-20:08:00' }])
   })
-  it('is idempotent: the next 15-minute run and a run an hour later send nothing more', async () => {
+  it('is idempotent: the next 15-minute run and a run an hour later add nothing', async () => {
     const f = fakePort()
     await runDoseWatch(f.port, NOW)
-    const again = await runDoseWatch(f.port, NOW + 15 * 60_000)
-    const hour = await runDoseWatch(f.port, NOW + 60 * 60_000)
-    expect(again.sent + hour.sent).toBe(0)
-    expect(f.pushes).toHaveLength(2)
+    await runDoseWatch(f.port, NOW + 15 * 60_000)
+    await runDoseWatch(f.port, NOW + 60 * 60_000)
+    expect(f.rows.filter((r) => r.kind === 'dose_missed')).toHaveLength(2) // w1, w2, once
   })
-  it('releases the claim when every send failed on the network, so the next run retries; not when only some did', async () => {
-    const f = fakePort({ status: null })
-    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ sent: 0, released: 1, claimed: 0 })
-    const again = fakePort({ status: 201 })
-    expect((await runDoseWatch(again.port, NOW)).sent).toBe(2)
-    const f2 = fakePort({ status: null })
-    await runDoseWatch(f2.port, NOW)
-    expect(await runDoseWatch(f2.port, NOW)).toMatchObject({ released: 1 }) // retried once per run
+  it('a failed write gives the claim back and the run still returns its report (failed 1, no throw); the next run writes the row', async () => {
+    const over = { failWrites: true }
+    const f = fakePort(over)
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 1, claimed: 0, rows: 0, failed: 1 })
+    expect(f.claimed.size).toBe(0)
+    over.failWrites = false
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ rows: 1, failed: 0 })
+    expect(f.rows).toHaveLength(2)
   })
-  it('out of budget: stops the loop, releases the unsent claim, and the next run sends it', async () => {
-    const meds = [med(), med({ id: 'm2', schedule: { v: 1, times: ['07:00'] } })] // two open slots for p1
-    const f = fakePort({ meds, status: null })
-    let over = false
-    f.port.overBudget = () => over
-    const push = f.port.push
-    f.port.push = async (s, p) => { over = true; return push(s, p) } // the first send runs out the clock
-    const r = await runDoseWatch(f.port, NOW)
-    expect(r).toMatchObject({ sent: 0, released: 1, claimed: 0 })
-    expect(f.pushes).toHaveLength(1) // the second slot was never claimed or tried
-    const next = fakePort({ meds, status: 201 })
-    next.port.claim = f.port.claim
-    expect((await runDoseWatch(next.port, NOW)).sent).toBe(4) // both slots, both writer carers
+  it('out of budget: stops before claiming another slot; the next run picks them up', async () => {
+    const f = fakePort()
+    f.port.overBudget = () => true
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 1, claimed: 0, rows: 0, failed: 0 })
+    expect(f.rows).toEqual([])
   })
-  it('sends nothing when the dose was marked, and drops a gone subscription', async () => {
+  it('one failing write does not stop the others: the other slot is still written, failed counts only the bad one', async () => {
+    const f = fakePort({ meds: [med(), med({ id: 'm2', person_id: 'p2' })], carers: [{ carer_id: 'w1', person_id: 'p1', can_write: true }, { carer_id: 'w2', person_id: 'p2', can_write: true }] })
+    const real = f.port.carerRow
+    f.port.carerRow = async (k, p, ids, t, ref) => { if (p === 'p1') throw new Error('write'); return real(k, p, ids, t, ref) }
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 2, claimed: 1, rows: 1, failed: 1 })
+    expect(f.rows.map((r) => r.personId)).toEqual(['p2'])
+    expect([...f.claimed]).toEqual(['p2|2026-10-20|08:00'])
+  })
+  it('writes nothing when the dose was marked', async () => {
     const quiet = fakePort({ taken: [took()] })
     expect((await runDoseWatch(quiet.port, NOW)).due).toBe(0)
-    expect(quiet.pushes).toHaveLength(0)
-    const gone = fakePort({ status: 410 })
-    expect(await runDoseWatch(gone.port, NOW)).toMatchObject({ sent: 0, removed: 2 })
-    expect(gone.removed).toEqual(['https://push/w1', 'https://push/w2'])
+    expect(quiet.rows).toHaveLength(0)
+  })
+  it('honours the window the cron passes', async () => {
+    const f = fakePort()
+    expect((await runDoseWatch(f.port, Date.parse('2026-10-20T08:40:00+08:00'))).rows).toBe(1)
+    const slow = fakePort()
+    expect((await runDoseWatch(slow.port, Date.parse('2026-10-20T08:40:00+08:00'), { afterMin: 120 })).due).toBe(0)
+  })
+  it('a review medicine older than a day makes a review_open row at the next run, once per medicine per day (S4)', async () => {
+    const f = fakePort({ meds: [review('2026-10-18')], taken: [took()] }) // the 08:00 dose was taken: only the review row is new
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ review: 1, failed: 0 })
+    expect(f.rows.map((r) => [r.kind, r.carer, r.template, r.ref])).toEqual([['review_open', 'w1', 'review_open', 'm1:2026-10-20'], ['review_open', 'w2', 'review_open', 'm1:2026-10-20']])
+    await runDoseWatch(f.port, NOW + 15 * 60_000)
+    expect(f.rows).toHaveLength(2) // same ref: nothing more today
+    await runDoseWatch(f.port, NOW + 24 * 3600_000)
+    expect(f.rows.filter((r) => r.kind === 'review_open')).toHaveLength(4) // a new Manila day, a new row
+  })
+  it('no review_open when asked today, with no date, answered, or for an archived person', async () => {
+    for (const m of [review('2026-10-20'), review(undefined), med(), review('2026-10-01', { people: { archived_at: '2026-10-19T00:00:00Z' } })]) {
+      const f = fakePort({ meds: [m], taken: [took()] })
+      await runDoseWatch(f.port, NOW)
+      expect(f.rows.filter((r) => r.kind === 'review_open')).toHaveLength(0)
+    }
+  })
+  it('a review medicine with no time on it still raises the question to the carers', async () => {
+    const f = fakePort({ meds: [med({ schedule: { v: 1, times: [], needs_time: true, review: true, review_since: '2026-10-10' } })] })
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 0, review: 1 })
+  })
+  it('digest: one row per carer for a person with an open dose, only in the first half hour of 20:00 Manila, once a day (Q15)', async () => {
+    const evening = (hhmm: string) => Date.parse(`2026-10-20T${hhmm}:00+08:00`)
+    const meds = [med(), med({ id: 'm2', person_id: 'p2' })]
+    const taken = [took(), took({ person_id: 'p2', medication_id: 'm2' })] // both took the 08:00 dose
+    const closed = fakePort({ meds, taken })
+    await runDoseWatch(closed.port, evening('20:10'))
+    expect(closed.rows).toHaveLength(0) // every compartment closed: no digest
+    const open = fakePort({ meds, taken: [took({ person_id: 'p2', medication_id: 'm2' })] })
+    await runDoseWatch(open.port, evening('19:59'))
+    await runDoseWatch(open.port, evening('20:30'))
+    expect(open.rows.filter((r) => r.kind === 'digest')).toHaveLength(0) // outside the window
+    expect(await runDoseWatch(open.port, evening('20:05'))).toMatchObject({ digest: 1 })
+    await runDoseWatch(open.port, evening('20:20'))
+    expect(open.rows.filter((r) => r.kind === 'digest').map((r) => [r.personId, r.carer, r.template, r.ref])).toEqual([['p1', 'w1', 'digest', 'p1:2026-10-20'], ['p1', 'w2', 'digest', 'p1:2026-10-20']])
+  })
+  it('openToday lists people whose passed dose is still open, not a dose still to come', () => {
+    expect(openToday([med(), med({ id: 'm3', person_id: 'p3', schedule: ['23:00'] })], [], NOW)).toEqual(['p1'])
+    expect(openToday([med()], [took()], NOW)).toEqual([])
+    expect(inDigestWindow(Date.parse('2026-10-20T20:29:00+08:00'))).toBe(true)
+    expect(inDigestWindow(Date.parse('2026-10-20T20:30:00+08:00'))).toBe(false)
+    expect(inDigestWindow(Date.parse('2026-10-20T12:05:00Z'))).toBe(true) // 20:05 Manila
   })
 })
