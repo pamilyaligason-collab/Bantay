@@ -26,11 +26,12 @@ describe("pickMeds ('Mama's medicines')", () => {
 
 describe('articleText', () => {
   it('returns text for a card and a recipe, null for an unknown id', () => {
-    expect(articleText('losartan')).toContain('Talk to your doctor first')
+    expect(articleText('losartan', { medcards: true })).toContain('Talk to your doctor first')
+    expect(articleText('losartan')).toBeNull() // flag off: an unsigned card is never read out
     expect(articleText('sinigang-isda')).toContain('240 milligrams of sodium')
     expect(articleText('nope')).toBeNull()
   })
-  it('every card and recipe has text', () => { for (const x of [...MEDCARDS, ...RECIPES]) expect(articleText(x.id)!.length).toBeGreaterThan(100) })
+  it('every card and recipe has text', () => { for (const x of [...MEDCARDS, ...RECIPES]) expect(articleText(x.id, { medcards: true })!.length).toBeGreaterThan(100) })
   it('ids are unique across cards and recipes', () => {
     const ids = [...MEDCARDS, ...RECIPES].map((x) => x.id)
     expect(new Set(ids).size).toBe(ids.length)

@@ -47,7 +47,7 @@ export default function Meds() {
         ))}
         {!list.length && <p className="sub">Nothing found. Ask your pharmacist.</p>}
       </div>
-      <p className="lr-src">Cards are written by Bantay in plain words. Always check with your doctor or pharmacist.</p>
+      <p className="lr-src">Cards are written by Bantay in plain words from DailyMed, openFDA and NIH Office of Dietary Supplements. Not copied from drug monographs. Always check with your doctor or pharmacist.</p>
     </div>
   )
 }

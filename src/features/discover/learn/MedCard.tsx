@@ -11,7 +11,7 @@ export default function MedCard({ id }: { id: string }) {
   return (
     <div className="lr" data-testid="medcard">
       <SubHeader title={c.name} backHref="#discover/learn/meds" backLabel="Back to the medicine list" />
-      <p className="lr-for">{c.forWhat}</p>
+      <div className="lr-head"><span className="eyebrow">Medicine</span><p className="lr-for">{c.forWhat}</p></div>
       <div className="lr-sec"><b className="lr-h">What it does</b><p>{c.what}</p></div>
       <CardBody c={c} />
     </div>

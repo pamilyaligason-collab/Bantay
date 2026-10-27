@@ -10,7 +10,7 @@ export default function SuppCard({ c }: { c: MedCardData }) {
   return (
     <div className="lr" data-testid="suppcard">
       <SubHeader title={c.name} backHref="#discover/learn/meds" backLabel="Back to the medicine list" />
-      <p className="lr-for">{c.kind === 'herbal' ? 'Herbal supplement' : 'Supplement'}. {c.forWhat}</p>
+      <div className="lr-head"><span className="eyebrow">{c.kind === 'herbal' ? 'Herbal supplement' : 'Supplement'}</span><p className="lr-for">{c.forWhat}</p></div>
       <div className="card lr-stack">
         <div className="lr-row"><b className="lr-grow">How good is the evidence?</b>
           <div className="lr-lvl" role="img" aria-label={`${lv.word} evidence`}>{[1, 2, 3].map((i) => <i key={i} className={i <= lv.n ? 'f' : ''} />)}</div>

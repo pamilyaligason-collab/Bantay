@@ -25,10 +25,10 @@ export function pickMeds(meds: Medication[]): Picked[] {
 
 const join = (parts: (string | string[])[]) => parts.flat().join(' ')
 
-/** Plain text of one card or recipe for read-aloud (F4's SpeakButton). Null for an unknown id. */
-export function articleText(id: string): string | null {
+/** Plain text of one card or recipe for read-aloud (F4's SpeakButton). Null for an unknown id. Medicine and supplement cards give null unless the caller passes `medcards: true` (the learn.medcards flag), so an unsigned card can never be read out by accident. */
+export function articleText(id: string, opts: { medcards?: boolean } = {}): string | null {
   const c = MEDCARDS.find((x) => x.id === id)
-  if (c) return join([`${c.name}. ${c.forWhat}.`, c.what, 'How to take it.', c.how, 'If you miss a dose.', c.missed, 'Common side effects.', c.side, 'Get help.', c.emergency, 'Do not mix with.', c.noMix, 'Talk to your doctor first.'])
+  if (c) return !opts.medcards ? null : join([`${c.name}. ${c.forWhat}.`, c.what, 'How to take it.', c.how, 'If you miss a dose.', c.missed, 'Common side effects.', c.side, 'Get help.', c.emergency, 'Do not mix with.', c.noMix, 'Talk to your doctor first.'])
   const r = RECIPES.find((x) => x.id === id)
   if (r) return join([`${r.name}. ${r.blurb}. About ${sodiumPerServing(r)} milligrams of sodium in one serving.`, 'Ingredients.', r.ingredients.map((i) => i[0] + '.'), 'Steps.', r.steps.map((s, i) => `Step ${i + 1}. ${stepText(s)}`)])
   return null

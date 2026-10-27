@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../../shell/Icon'
 import { recipe, stepMinutes, stepText } from './data'
@@ -57,13 +57,23 @@ export default function Cook({ id }: { id: string }) {
   const r = recipe(id)
   const [i, setI] = useState(0)
   const awake = useAwake()
+  const box = useRef<HTMLDivElement>(null)
+  // The overlay is modal: hide the app behind it from the tab order and screen readers, put focus inside, and let Escape leave.
+  useEffect(() => {
+    const app = document.getElementById('root')
+    app?.setAttribute('inert', '')
+    box.current?.focus()
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') location.hash = '#discover/learn/recipe/' + id }
+    document.addEventListener('keydown', esc)
+    return () => { app?.removeAttribute('inert'); document.removeEventListener('keydown', esc) }
+  }, [id])
   if (!r) return <div className="lr"><p className="card sub">We do not have that recipe.</p><a className="sh-pill sh-ghost" href="#discover/learn/recipes">Back to recipes</a></div>
   const step = r.steps[i]
   const mins = stepMinutes(step)
   const last = i === r.steps.length - 1
   // In a portal on <body>: the tab bar and Jack button sit inside the app frame's stacking context, a fixed child of it could not cover them.
   return createPortal(
-    <div className="lr-cook" role="dialog" aria-modal="true" aria-label={`Cook mode: ${r.name}`} data-testid="cook">
+    <div ref={box} tabIndex={-1} className="lr-cook" role="dialog" aria-modal="true" aria-label={`Cook mode: ${r.name}`} data-testid="cook">
       <div className="lr-row">
         <span className="lr-grow"><span className="eyebrow">{awake ? 'Cook mode, screen stays on' : 'Cook mode'}</span></span>
         <span className="chip" data-testid="cook-step">Step {i + 1} of {r.steps.length}</span>

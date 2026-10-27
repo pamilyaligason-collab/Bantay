@@ -11,7 +11,7 @@ export default function Recipe({ id }: { id: string }) {
   return (
     <div className="lr" data-testid="recipe">
       <SubHeader title={r.name} backHref="#discover/learn/recipes" backLabel="Back to recipes" />
-      <p className="lr-for">{r.blurb}. {r.servings} servings, {r.minutes} min.</p>
+      <div className="lr-head"><span className="eyebrow">Recipe, {r.servings} servings, {r.minutes} min</span><p className="lr-for">{r.blurb}</p></div>
       <a className="sh-pill sh-primary sh-block" href={'#discover/learn/cook/' + r.id}><Icon name="play" size={20} />Cook mode</a>
       <div className="card lr-stack" data-testid="salt">
         <b>Salt per serving</b>

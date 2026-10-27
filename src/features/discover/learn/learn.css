@@ -6,6 +6,8 @@
 .lr-row .lr-grow { display: flex; }
 .lr-tile { display: flex; align-items: center; gap: 14px; color: var(--ink); text-decoration: none; min-height: 72px; }
 .lr-lead { font-size: 17px; margin: 4px 4px -4px; }
+.lr-head { display: flex; flex-direction: column; gap: 4px; padding: 0 4px; }
+.lr-head .lr-for { margin: 0; }
 .lr-for { margin: -4px 4px 0; color: var(--ink2); font-size: 17px; }
 .lr-search { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; min-height: var(--tap, 48px); box-shadow: var(--shadow); color: var(--muted); }
 .lr-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--ink); min-height: var(--tap, 48px); outline-offset: 4px; }
@@ -17,6 +19,7 @@
 .lr-line { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 52px; color: var(--ink); text-decoration: none; min-width: 0; }
 .lr-list > .lr-line:first-child, .lr-list > b + .lr-line { border-top: 0; }
 .lr-line .sub { font-size: 14px; }
+.lr .sh-pill { box-sizing: border-box; max-width: 100%; text-decoration: none; }
 .lr-stack { display: flex; flex-direction: column; gap: 8px; }
 .lr-dish { color: var(--ink); text-decoration: none; }
 .lr-big { font-size: 28px; font-family: var(--f-display, Georgia, serif); }
@@ -39,6 +42,7 @@
 
 /* Cook mode: over the whole screen, above the tab bar and the Jack button, so nothing is tapped by mistake. */
 .lr-cook { position: fixed; inset: 0; z-index: 60; background: var(--ground); display: flex; flex-direction: column; gap: 16px; padding: calc(16px + var(--sat, 0px)) 16px calc(16px + var(--sab, 0px)); overflow-y: auto; }
+.lr-cook:focus { outline: none; }
 .lr-cook > * { flex-shrink: 0; min-width: 0; }
 .lr-cookstep { display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center; }
 .lr-cookstep p { margin: 0; font-family: var(--f-display, Georgia, serif); font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; }

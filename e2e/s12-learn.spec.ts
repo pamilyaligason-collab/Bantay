@@ -1,8 +1,21 @@
+import { writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 // Session 12 lane F2: Discover > Learn. Recipes and cook mode always show; medicine cards only when kv learn.medcards is on.
 test.use({ viewport: { width: 390, height: 844 } })
+
+const SHOTS = 'docs/session-12/shots/F2'
+const NOW = new Date('2026-10-27T04:00:00Z')
+/** Committed shots are written only when SHOTS=1 (a normal gate run leaves the tree clean, ML-32): fonts ready, animations off, two equal frames in a row. */
+const shot = async (page: Page, name: string, fullPage = true) => {
+  if (process.env.SHOTS !== '1') return
+  await page.evaluate(() => document.fonts.ready)
+  const take = () => page.screenshot({ animations: 'disabled', caret: 'hide', fullPage })
+  let prev = await take()
+  for (let i = 0; i < 20; i++) { const next = await take(); if (next.equals(prev)) break; prev = next }
+  writeFileSync(`${SHOTS}/${name}.png`, prev)
+}
 
 /** Put one kv row in the app's own database (wait until Dexie has made it, then reload so the screen reads it). */
 async function setKv(page: Page, key: string, value: unknown) {
@@ -79,7 +92,28 @@ test('Learn pages fit at 360 px without sideways scroll', async ({ page }) => {
   await setKv(page, 'learn.medcards', true)
   for (const h of ['learn', 'learn/meds', 'learn/med/calcium', 'learn/recipes', 'learn/recipe/pinakbet-light']) {
     await page.goto('/#discover/' + h)
-    await page.waitForTimeout(150)
+    await expect(page.locator('.lr').first()).toBeVisible() // the sub screen has rendered
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth > document.scrollingElement!.clientWidth), h).toBe(false)
   }
 })
+
+// Shots 390x844, light and dark, of the six mockup screens (learn-meds, learn-medcard, learn-suppcard, learn-recipes, learn-recipe, learn-cook).
+const SCREENS: [string, string, string][] = [
+  ['learn-meds', 'learn/meds', 'all'], ['learn-medcard', 'learn/med/losartan', 'medcard'], ['learn-suppcard', 'learn/med/malunggay', 'suppcard'],
+  ['learn-recipes', 'learn/recipes', 'recipe-card'], ['learn-recipe', 'learn/recipe/sinigang-isda', 'recipe'], ['learn-cook', 'learn/cook/sinigang-isda', 'cook']
+]
+for (const scheme of ['light', 'dark'] as const) {
+  test(`shots ${scheme}`, async ({ page }) => {
+    test.skip(process.env.SHOTS !== '1', 'shots only when SHOTS=1')
+    await page.clock.setFixedTime(NOW)
+    await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: scheme })
+    await page.goto('/#discover/learn')
+    await setKv(page, 'learn.medcards', true)
+    for (const [name, h, id] of SCREENS) {
+      await page.goto('/#discover/' + h)
+      await expect(page.getByTestId(id).first()).toBeVisible()
+      if (name === 'learn-cook') { await page.getByRole('button', { name: /Next/ }).click(); await page.getByRole('button', { name: /Next/ }).click() }
+      await shot(page, `${name}-${scheme}`, name !== 'learn-cook') // cook mode is a fixed overlay: the viewport is the whole screen
+    }
+  })
+}

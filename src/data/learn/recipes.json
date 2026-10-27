@@ -1,5 +1,5 @@
 {
-  "sources": "Original Filipino recipes written by Bantay. The plate idea follows Pinggang Pinoy (FNRI-DOST) and the DASH eating plan (NHLBI). Sodium is an estimate from USDA FoodData Central values (public domain), not a lab result. Each ingredient line carries its sodium in mg for the whole pot.",
+  "sources": "Original Filipino recipes written by Bantay. The plate idea follows Pinggang Pinoy (FNRI-DOST) and the DASH eating plan (NHLBI). Sodium is a rough estimate worked out by Bantay from typical food values, with USDA FoodData Central as the guide. It is not a lab result and a dietitian has not checked it. Brands differ a lot, so read the label. Each ingredient line carries its sodium in mg for the whole pot.",
   "recipes": [
     {
       "id": "sinigang-isda", "name": "Sinigang na isda, less patis", "blurb": "Tamarind soup with fish", "tags": ["lowsalt", "diabetes", "fish"], "minutes": 35, "servings": 4, "usualMg": 470,
