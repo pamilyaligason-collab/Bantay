@@ -44,9 +44,9 @@ export default function PlanToday() {
       )}
       <ul className="td-checklist">
         {rows.slice(0, SHOW).map((r) => (
-          <li key={r.key} className={r.task?.done ? 'done' : ''}>
+          <li key={r.key} className={`${r.task?.done ? 'done' : ''}${r.task ? ' press' : ''}`} onClick={r.task ? () => tick(r.task!) : undefined}>
             {r.task ? (
-              <button type="button" className="td-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.title} onClick={() => tick(r.task!)}>
+              <button type="button" className="td-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.title}>
                 <Icon name="check" size={16} stroke={3} />
               </button>
             ) : <span className="td-dot" aria-hidden="true" />}
