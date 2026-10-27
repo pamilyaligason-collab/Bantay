@@ -32,7 +32,7 @@ async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
 
 test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
-test('five tabs in order; Discover opens with its five sub-tabs and the Coming in this update card', async ({ page }) => {
+test('five tabs in order; Discover opens with its five sub-tabs; Watch is registered and draws its own screen', async ({ page }) => {
   await page.goto('/#today')
   const nav = page.getByRole('navigation', { name: 'Main' })
   await expect(nav.getByRole('button')).toHaveCount(5)
@@ -47,7 +47,7 @@ test('five tabs in order; Discover opens with its five sub-tabs and the Coming i
   await expect(page.getByTestId('learn-home')).toBeVisible() // Learn (lane F2) is the default sub
   await subs.getByRole('button', { name: 'Watch' }).click()
   await expect(page).toHaveURL(/#discover\/watch$/)
-  await expect(page.getByText('Coming in this update')).toBeVisible() // no lane has registered Watch yet
+  await expect(page.getByTestId('watch')).toBeVisible() // session 13 registered Watch
   await expect(subs.getByRole('button', { name: 'Watch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.sh-jackfab')).toBeVisible() // a sub-tab is still a tab page
   await expect(page.locator('.sh-top')).toHaveCount(1) // and keeps the top bar

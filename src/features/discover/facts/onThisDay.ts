@@ -11,7 +11,8 @@ const KEY = 'facts.otd'
 const SHOW = 3
 
 /** One Philippine fact for the day, from the bundled list (works offline). */
-export const phFactOf = (day: string): string => facts.facts[seedOf(day) % facts.facts.length]!
+export const phFactIndex = (day: string): number => seedOf(day) % facts.facts.length
+export const phFactOf = (day: string): string => facts.facts[phFactIndex(day)]!
 
 type Raw = { year?: unknown; text?: unknown; pages?: { content_urls?: { desktop?: { page?: unknown } } }[] }
 /** Three short events for the day, the same three all day (seeded by the day), oldest first. Keeps only the year, the text and a Wikipedia link. */

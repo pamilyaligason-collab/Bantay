@@ -30,7 +30,7 @@ export default function Meds() {
           <b className="lr-lead">Medicines on your family's lists</b>
           <div className="card lr-list" data-testid="mine">
             {mine.map(({ med, card }) => card
-              ? <a key={card.id} className="lr-line" href={'#discover/learn/med/' + card.id}><span className="lr-grow"><b>{med.name}{med.strength ? ' ' + med.strength : ''}</b><span className="sub">{card.forWhat}</span></span><Icon name="chev" /></a>
+              ? <a key={card.id} className="lr-line press" href={'#discover/learn/med/' + card.id}><span className="lr-grow"><b>{med.name}{med.strength ? ' ' + med.strength : ''}</b><span className="sub">{card.forWhat}</span></span><Icon name="chev" /></a>
               : <div key={'n' + med.id + med.name} className="lr-line"><span className="lr-grow"><b>{med.name}{med.strength ? ' ' + med.strength : ''}</b><span className="sub">No card yet. Ask your pharmacist.</span></span></div>)}
           </div>
         </>
@@ -41,7 +41,7 @@ export default function Meds() {
       </div>
       <div className="card lr-list" data-testid="all">
         {list.map((c) => (
-          <a key={c.id} className="lr-line" href={'#discover/learn/med/' + c.id}>
+          <a key={c.id} className="lr-line press" href={'#discover/learn/med/' + c.id}>
             <span className="lr-grow"><b>{c.name}</b><span className="sub">{c.kind === 'medicine' ? c.forWhat : (c.kind === 'herbal' ? 'Herbal' : 'Supplement') + ', evidence: ' + c.evidence}</span></span><Icon name="chev" />
           </a>
         ))}

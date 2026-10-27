@@ -24,7 +24,7 @@ export default function Recipes() {
       {list.map((r) => {
         const mg = sodiumPerServing(r)
         return (
-          <a key={r.id} className="card lr-stack lr-dish" href={'#discover/learn/recipe/' + r.id} data-testid="recipe-card">
+          <a key={r.id} className="card press lr-stack lr-dish" href={'#discover/learn/recipe/' + r.id} data-testid="recipe-card">
             <span className="lr-row"><span className="lr-grow"><b>{r.name}</b><span className="sub">{r.blurb}, {r.minutes} min</span></span><Icon name="chev" /></span>
             <span className="lr-row"><span className="sub lr-grow">Salt per serving</span><b>{mg} mg sodium</b></span>
             <SaltBar mg={mg} />
