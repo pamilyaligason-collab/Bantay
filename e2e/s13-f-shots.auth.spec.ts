@@ -59,7 +59,7 @@ async function shot(page: Page, name: string, scheme: string, anchor?: string) {
   if (anchor) await page.locator(anchor).evaluate((el) => { (el as HTMLElement).style.scrollMarginTop = '84px'; el.scrollIntoView({ block: 'start' }) })
   await page.mouse.move(0, 0)
   await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))))
-  await page.waitForTimeout(400) // shortcut: lets the springIn and pill transitions land; a pixel-stable shot needs a still page
+  await page.waitForTimeout(900) // shortcut: lets the springIn and pill transitions land; a pixel-stable shot needs a still page
   await page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled' })
 }
 
