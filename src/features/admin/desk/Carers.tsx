@@ -5,7 +5,7 @@ import type { DeskPerson } from './people'
 import { Tag } from './ui'
 
 /** The admin only ever adds read-only links (Lloyd 2026-10-21): can_write is false here, whoever is picked, and never for the admin themself. */
-export async function addReadOnly(carerId: string, personId: string, me: string | null): Promise<Res<null>> {
+export async function addReadOnly(carerId: string, personId: string, me: string | null): Promise<Res<string>> {
   if (!carerId || carerId === me) return { ok: false, error: 'bad_input' }
   return linkCarer(carerId, personId, false)
 }
@@ -31,10 +31,10 @@ export default function Carers({ personId, people, me, ask, say, onChange }: Pro
   const taken = new Set((rows ?? []).map((c) => c.carer_id))
   const options = people.filter((p) => p.auth_user_id && p.auth_user_id !== me && p.auth_user_id !== self && !taken.has(p.auth_user_id))
 
-  const add = () => ask(`Give ${nameOfUser(pick)} read-only access to this person's records?`, async () => {
+  const add = () => ask(`Offer ${nameOfUser(pick)} read-only access to this person's records? They must accept first.`, async () => {
     const r = await addReadOnly(pick, personId, me)
     if (!r.ok) return setErr(why(r.error))
-    say(`${nameOfUser(pick)} can now read this person's records.`); setPick(''); load(); onChange?.()
+    say(r.data === 'unchanged' ? `${nameOfUser(pick)} is already linked or has an offer waiting.` : `Offer sent to ${nameOfUser(pick)}. They see nothing until they accept.`); setPick(''); load(); onChange?.()
   })
   const remove = (c: Carer) => ask(`Remove ${nameOfUser(c.carer_id)} as a carer of this person?`, async () => {
     const r = await unlinkCarer(c.carer_id, personId)

@@ -17,16 +17,17 @@ beforeEach(async () => {
 afterEach(() => { cleanup(); localStorage.clear(); delete document.documentElement.dataset.theme })
 
 describe('Me', () => {
-  it('sharing toggles start off (D-34)', async () => {
+  it('has no local sharing switches; "Who can see my records" opens the server list at #sharing (D-80)', async () => {
     render(<Me />)
-    for (const n of ['Share readings', 'Share medicines', 'Share records', 'Share mood', 'Share live location'])
-      expect((await screen.findByRole('switch', { name: n })).getAttribute('aria-checked')).toBe('false')
+    expect((await screen.findByRole('link', { name: /Who can see my records/ })).getAttribute('href')).toBe('#sharing')
+    for (const n of ['Share readings', 'Share medicines', 'Share records', 'Share mood', 'Share live location']) expect(screen.queryByRole('switch', { name: n })).toBeNull()
+    expect(screen.queryByText('Family can see my')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/Admins can see everything/)
   })
-  it('a sharing toggle is stored under share.<key>', async () => {
+  it('no share.* key is written any more', async () => {
     render(<Me />)
-    await userEvent.click(await screen.findByRole('switch', { name: 'Share mood' }))
-    expect(screen.getByRole('switch', { name: 'Share mood' }).getAttribute('aria-checked')).toBe('true')
-    expect((await db.kv.get('share.mood'))?.value).toBe(true)
+    await screen.findByRole('switch', { name: 'Simple mode' })
+    expect((await db.kv.toArray()).filter((r) => r.key.startsWith('share.'))).toEqual([])
   })
   it('SOS contacts: two slots only, family pick fills name, phone is stored', async () => {
     render(<Me />)
@@ -79,8 +80,8 @@ describe('language toggle (M7b)', () => {
   it('Simple mode comes first; Text size is saved and applied', async () => {
     render(<Me />)
     const sw = await screen.findByRole('switch', { name: 'Simple mode' })
-    const share = await screen.findByRole('switch', { name: 'Share readings' })
-    expect(sw.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const quiet = await screen.findByRole('switch', { name: 'Quiet hours' })
+    expect(sw.compareDocumentPosition(quiet) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Large' }))
     expect(document.documentElement.dataset.text).toBe('large')
     expect((await db.kv.get('look.textsize'))?.value).toBe('large')

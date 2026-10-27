@@ -77,10 +77,11 @@ test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await expect(page.getByText('Alerts never show readings or results. Open Bantay to see more.')).toBeVisible()
 })
 
-test('Me: sharing is off, no tab is active, Family no longer shows phone settings', async ({ page }) => {
+test('Me: sharing is the server list (#sharing), no tab is active, Family no longer shows phone settings', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#me')
-  await expect(page.getByRole('switch', { name: 'Share readings' })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('link', { name: /Who can see my records/ })).toHaveAttribute('href', '#sharing')
+  await expect(page.getByRole('switch', { name: 'Share readings' })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Main' }).locator('[aria-current="page"]')).toHaveCount(0)
   await page.goto('/#family')
   await expect(page.getByText('This phone')).toHaveCount(0)
