@@ -59,6 +59,7 @@ async function shot(page: Page, name: string, scheme: string, anchor?: string) {
   if (anchor) await page.locator(anchor).evaluate((el) => { (el as HTMLElement).style.scrollMarginTop = '84px'; el.scrollIntoView({ block: 'start' }) })
   await page.mouse.move(0, 0)
   await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))))
+  await page.waitForTimeout(400) // shortcut: lets the springIn and pill transitions land; a pixel-stable shot needs a still page
   await page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled' })
 }
 
@@ -109,9 +110,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.mouse.move(x, y + 120, { steps: 6 })
       expect(await dlg.evaluate((e) => (e as HTMLElement).style.transform)).toBe('translateY(120px)') // 1:1, no lag
       await shot(page, 'sheet-drag', scheme)
-      await page.mouse.up() // slow release at 120 px of ~480: springs back
+      await page.waitForTimeout(150) // held still: no momentum left
+      await page.mouse.up() // 120 px of ~480, standing still: springs back
       await expect(dlg).toHaveJSProperty('style.transform', '')
       await expect(dlg).toBeVisible()
+      await page.waitForTimeout(350) // the spring-back (280 ms) has landed
       await page.mouse.move(x, zone.y + 16)
       await page.mouse.down()
       await page.mouse.move(x, zone.y + 16 + 300, { steps: 12 })
