@@ -6,7 +6,7 @@ There is no server push on the Android app. A family alert is a row in `public.c
 
 1. A writer inserts a row: `notify_family(person, kind, template, ref, scope)` (SECURITY DEFINER; callable only by triggers, wrappers and the service role), the dose-watch function (`carerRow`), `broadcast` (hazard rows), `pin-login`, S8 `heartbeat`. The one app-callable path is `raise_mood_alert(person)` (`mood_unwell`, once per person per Manila day).
 2. `(kind, ref, carer)` is unique where `ref` is not null: a duplicate is ignored, never an error.
-3. dose-watch `mode:'flush'` (cron secret in `x-dose-watch-secret`) sends Web Push `{t}` (or `{t:'dose_watch', n:<first name>}` for a missed dose) to the carer's `push_subscriptions` for rows with `pushed_at` null, then sets `pushed_at` either way ("offered"). Rows older than 12 h are not pushed.
+3. dose-watch `mode:'flush'` (cron secret in `x-dose-watch-secret`) sends Web Push `{t}` only (contracts B-7: a lock screen is public, so no name, not even for a missed dose) to the carer's `push_subscriptions` for rows with `pushed_at` null, then sets `pushed_at` either way ("offered"). Rows older than 12 h are not pushed.
 4. The app (`src/features/notify/alertsLive.ts`) subscribes to Realtime `postgres_changes` on `carer_alerts` for its own user while open, polls every 30 s, polls once on resume, ignores DELETE events, and keeps rows in the feature-local Dexie store (`notify/store.ts`, 30 days / 200 rows). Sign-out, or another person signing in on the phone, clears it.
 
 ## Copy
@@ -31,3 +31,12 @@ Functions to deploy after merge (ML-22): `dose-watch`, `broadcast` (bundle `_sha
 - S4's `logic.ts` must call `port.carerRow('dose_missed', personId, carerIds, 'dose_missed', ref)` instead of pushing; the ref should end in `:<Manila day>:<HH:MM>` so the bell's "Mark taken" can find the slot.
 - The Privacy route in `App.tsx` waits for S6c's screen.
 - `marked_by` on a dose taken for someone else has no column in any contract; "Mark taken for her" logs a normal dose.
+
+## Deviations and notes (fix round 2)
+- Deviation, accepted by the orchestrator: kv `alerts.inapp.ok` is set by `pollAlerts` on the first successful `carer_alerts` read (contracts.md assigns it to `AlertsBanner` after the phone check). Before 0030 is applied the read errors, so it is never set.
+- `broadcast` marks its hazard rows offered only after the `push_subscriptions` read succeeds; a failed mark does not stop the safety push, and the reply carries `marked:false` (a repeat push replaces itself by tag).
+## Deviations and notes (fix round 3)
+- A carer's missed-dose push is the carer-class template `dose_watch`, both from the flush loop (a `carer_alerts` row of kind `dose_missed` pushes `{t:'dose_watch'}`) and from `runDoseWatch`'s direct push. The phone treats it as `cls: carer`: the carer cap (6 a day) and carer quiet hours, one tag `dose_watch` so alerts collapse. It reads "A medicine was missed by someone you look after." (no name).
+- The payload is `{t:'dose_watch'}` or `{t:'dose_watch', n}` where `n` is a COUNT of missed doses (integer 1 to 99, B-7); a name, a medicine or any other key makes `buildNotification` return null. `firstName` and `doseWatchText` are gone. `dose_missed` stays the user's own health nudge (2 a day, no quiet hours), untouched.
+- ML-24: the flush loop and `runDoseWatch` pushes (`port.push`) both stop at the run budget. When `runDoseWatch` runs out of time (`port.overBudget()`), it stops the loop, gives back the claim of the slot it was on if no carer device got that push, and leaves later slots unclaimed so the next run sends them.
+- Functions to deploy: `dose-watch` and `broadcast` (both bundle `_shared/templates.ts`).

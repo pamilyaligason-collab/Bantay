@@ -32,16 +32,25 @@ Deno.serve(async (req) => {
   // D-78: the Android app has no push, so a hazard broadcast is also a row in every member's alert list (template id only, B-7). Before 0030 is applied
   // notify_family does not exist: that is logged as zero rows, never a failure of the web push below.
   let rows = 0
+  const hazardAt = Date.now() // one instant: the ref the rows were written with is the ref the mark looks for
   if (isHazardId(t)) {
+    const ref = hazardRef(t, hazardAt)
     const { data: people } = await service.from('people').select('id').not('auth_user_id', 'is', null).is('archived_at', null)
     for (const p of (people ?? []) as { id: string }[]) {
-      const { data: n } = await service.rpc('notify_family', { p_person: p.id, p_kind: 'hazard', p_template: t, p_ref: hazardRef(t, Date.now()), p_scope: 'self' })
+      const { data: n } = await service.rpc('notify_family', { p_person: p.id, p_kind: 'hazard', p_template: t, p_ref: ref, p_scope: 'self' })
       rows += typeof n === 'number' ? n : 0
     }
   }
   const { data: subs, error } = await service.from('push_subscriptions').select('endpoint,p256dh,auth')
-  if (error) return reply(500, { ok: false, error: 'failed' })
-  if (!subs || subs.length === 0) return reply(200, { ok: true, sent: 0, removed: 0, rows })
+  if (error) return reply(500, { ok: false, error: 'failed' }) // rows stay unmarked: dose-watch's flush still offers them
+  // The direct push below already reaches every subscription; mark the rows offered so dose-watch's flush does not push the same alert again within 15 minutes.
+  // A failed mark is not fatal (a repeat push replaces itself by tag; a missed safety push would not come back): it is reported as marked:false.
+  let marked = true
+  if (rows && isHazardId(t)) {
+    const { error: me } = await service.from('carer_alerts').update({ pushed_at: new Date().toISOString() }).eq('kind', 'hazard').eq('ref', hazardRef(t, hazardAt)).is('pushed_at', null)
+    marked = !me
+  }
+  if (!subs || subs.length === 0) return reply(200, { ok: true, sent: 0, removed: 0, rows, ...(marked ? {} : { marked: false }) })
 
   webpush.setVapidDetails(vapid[0]!, vapid[1]!, vapid[2]!)
   const payload = JSON.stringify({ t }) // B-7: the template id and nothing else
@@ -55,5 +64,5 @@ Deno.serve(async (req) => {
   }))
   const gone = goneEndpoints(results)
   if (gone.length) await service.from('push_subscriptions').delete().in('endpoint', gone)
-  return reply(200, { ok: true, sent: results.filter((r) => r.status === 201).length, removed: gone.length, rows })
+  return reply(200, { ok: true, sent: results.filter((r) => r.status === 201).length, removed: gone.length, rows, ...(marked ? {} : { marked: false }) })
 })

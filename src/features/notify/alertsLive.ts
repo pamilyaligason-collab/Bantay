@@ -14,17 +14,20 @@ const UID_KEY = 'bantay.alerts.uid'
 
 let inflight: Promise<number> | null = null
 let again = false
+let epoch = 0 // bumped whenever the signed-in person changes: a poll that began for the last person must not write its rows for the next one (ML-07)
 export const INAPP_OK_KEY = 'alerts.inapp.ok'
 /** One fetch of the unexpired rows into the store (RLS limits it to this user's rows). Returns the number of rows new to this phone; 0 offline or signed out. */
 export function pollAlerts(): Promise<number> {
   if (inflight) { again = true; return inflight } // asked while one is running (resume, tick): run once more after it, so the answer is never older than the ask
   inflight = (async () => {
     if (!supabase) return 0
+    const mine = epoch
     try {
       const { data, error } = await supabase.from('carer_alerts').select(ALERT_COLUMNS).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(200)
-      if (error || !data) return 0
+      if (error || !data || mine !== epoch) return 0
       // the table answered for this user: in-app family alerts work here, so the switch-to-app banner may show (Q1). Before 0030 is applied this never runs.
       await db.kv.get(INAPP_OK_KEY).then((k) => (k?.value === true ? undefined : db.kv.put({ key: INAPP_OK_KEY, value: true }))).catch(() => undefined)
+      if (mine !== epoch) return 0 // the kv await above is an IndexedDB window: a sign-out/switch inside it must not store the last person's rows
       const rows = (data as Partial<ServerAlert>[]).flatMap((r) => fromServer(r) ?? [])
       const fresh = await upsertAlerts(rows)
       // a seen mark made offline: tell the server now (best effort; the next poll tries again)
@@ -94,6 +97,7 @@ export function watchAlertsForSession(): () => void {
     stop?.(); stop = null
     const was = uid ?? (() => { try { return localStorage.getItem(UID_KEY) } catch { return null } })()
     uid = next
+    epoch++
     if (!next) { if (was) { void clearAlerts(); try { localStorage.removeItem(UID_KEY) } catch { /* private mode */ } } return }
     const begin = () => { try { localStorage.setItem(UID_KEY, next) } catch { /* private mode */ } stop = startAlertsLive(next) }
     if (was && was !== next) void clearAlerts().then(begin) // another person on this phone: start clean

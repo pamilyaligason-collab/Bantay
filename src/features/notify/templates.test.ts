@@ -37,31 +37,23 @@ describe('buildNotification (B-7)', () => {
   })
 })
 
-describe('dose_watch (carers, M7b)', () => {
-  it('builds the generic text from a first name only', () => {
-    const n = buildNotification({ t: 'dose_watch', n: 'Maria' })!
-    expect(n.body).toBe('Maria has not marked a medicine (2 h).')
+describe('dose_watch (carers, D-78)', () => {
+  it('is the carer-class missed-dose line with no name, one tag', () => {
+    const n = buildNotification({ t: 'dose_watch' })!
+    expect(n.body).toBe('A medicine was missed by someone you look after.')
     expect(n.cls).toBe('carer')
+    expect(n.tag).toBe('dose_watch')
     expect(n.data.tab).toBe('health')
   })
-  it('rejects anything else riding along or a name with digits or markup', () => {
-    expect(buildNotification({ t: 'dose_watch' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'Maria', med: 'Metformin 500 mg' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'BP 150/95' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: '<b>x</b>' })).toBeNull()
+  it('n is a count: 1 to 99, collapses under the same tag', () => {
+    const n = buildNotification({ t: 'dose_watch', n: 3 })!
+    expect(n.body).toBe('3 medicines were missed by someone you look after.')
+    expect(n.tag).toBe('dose_watch')
+    expect(buildNotification({ t: 'dose_watch', n: 1 })!.body).toBe('A medicine was missed by someone you look after.')
   })
-})
-
-describe('dose_watch names', () => {
-  it('accepts ñ, a title plus name with one space, and a dot; rejects two spaces, digits and long names', () => {
-    expect(buildNotification({ t: 'dose_watch', n: 'Niño' })).not.toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'Lola Rosa' })!.tag).toBe('dose_watch:Lola Rosa')
-    expect(buildNotification({ t: 'dose_watch', n: 'Ma. Cruz' })).not.toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'a  b' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'a b c' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'Maria2' })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'A'.repeat(25) })).toBeNull()
-    expect(buildNotification({ t: 'dose_watch', n: 'Maria' })!.cls).toBe('carer')
+  it('rejects a name, a medicine, a non-count or anything else riding along', () => {
+    for (const bad of [{ t: 'dose_watch', n: 'Maria' }, { t: 'dose_watch', n: '3' }, { t: 'dose_watch', n: 0 }, { t: 'dose_watch', n: 100 }, { t: 'dose_watch', n: 1.5 },
+      { t: 'dose_watch', n: 2, med: 'Metformin 500 mg' }, { t: 'dose_watch', med: 'x' }]) expect(buildNotification(bad)).toBeNull()
   })
 })
 

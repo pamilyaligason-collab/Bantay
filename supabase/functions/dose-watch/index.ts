@@ -3,14 +3,14 @@
 // Deploy with --no-verify-jwt; the secret is the gate.
 // Normal run: runDoseWatch (S4 logic.ts) -> flushWebPush -> phone-health sweep -> dose_due push -> prune -> heartbeat.
 // mode 'flush': only flushWebPush, so PWA users get a push for a new carer_alerts row at once. APK users see the row when they open Bantay (D-78).
-// Payloads are template ids only (B-7): {t}, or {t:'dose_watch', n:<first name>} for a missed dose. pushed_at means "offered"; the in-app row is the record.
+// Payloads are template ids only (B-7): {t}, or {t:'dose_watch'} (carer class, optional n = a count of missed doses, never a name) for a carer's missed dose. pushed_at means "offered"; the in-app row is the record.
 // Function secrets (set by Lloyd): DOSE_WATCH_CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT. Optional: DOSE_WATCH_AFTER_MIN (default 30).
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import webpush from 'npm:web-push@3.6.7'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
-import { firstName, manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -42,11 +42,11 @@ type RunFn = (port: Port, nowMs: number, opts?: { afterMin?: number }) => Promis
 const FLUSH_MAX = 100 // rows per run (ML-23: no more than one run can finish)
 const FLUSH_FRESH_MS = 12 * 3600_000 // an alert older than this is not pushed any more; the in-app row stays
 const SEND_TIMEOUT_MS = 8000
-const BUDGET_MS = 100_000 // stop starting sends after this; a send takes at most SEND_TIMEOUT_MS (ML-24, platform wall clock 150 s)
+const BUDGET_MS = 100_000 // measured from the start of the request; no send starts after this, and one send takes at most SEND_TIMEOUT_MS (ML-24, wall clock 150 s)
 const DOSE_DUE_WINDOW_MS = 15 * 60_000 // one cron tick; the notification tag makes a repeat replace, not double
 
 interface SubRow { user_id: string; endpoint: string; p256dh: string | null; auth: string | null }
-interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; template: string }
+interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; kind: string; template: string }
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return reply(405, { ok: false, error: 'bad_input' })
@@ -56,6 +56,8 @@ Deno.serve(async (req) => {
   const vapid = ['VAPID_SUBJECT', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY'].map((k) => Deno.env.get(k))
   if (vapid.some((v) => !v)) return reply(500, { ok: false, error: 'not_configured' })
   webpush.setVapidDetails(vapid[0]!, vapid[1]!, vapid[2]!)
+  const reqStart = Date.now()
+  const overBudget = () => Date.now() - reqStart > BUDGET_MS
   const body = await req.json().catch(() => null)
   const flushOnly = !!body && typeof body === 'object' && (body as { mode?: unknown }).mode === 'flush'
 
@@ -102,7 +104,9 @@ Deno.serve(async (req) => {
     async release(personId, day, slot) {
       await sb.from('dose_watch_sent').delete().eq('person_id', personId).eq('day', day).eq('slot', slot)
     },
-    async push(sub, payload) { return send(sub as SubRow, payload, true) },
+    // ML-24: over budget, no send (null reads as a network miss, so the claim is released and the next run retries)
+    async push(sub, payload) { return overBudget() ? null : send(sub as SubRow, payload, true) },
+    overBudget,
     async removeSub(endpoint) { await removeSub(endpoint) },
     // One carer_alerts row per carer. A row with the same (kind, ref, carer) already exists: ignored (unique violation 23505), never an error.
     async carerRow(kind, personId, carerUserIds, template, ref) {
@@ -115,27 +119,23 @@ Deno.serve(async (req) => {
 
   /** Web Push for rows not yet offered (browser/PWA users only). Sets pushed_at either way. Returns the number of pushes accepted. */
   async function flushWebPush(now: Date): Promise<{ pushed: number }> {
-    const started = Date.now()
-    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
+    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,kind,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
     if (error) throw new Error('read')
     const rows = (data ?? []) as AlertPushRow[]
     if (!rows.length) return { pushed: 0 }
     const subs = await subsOf([...new Set(rows.map((r) => r.carer_user_id))])
-    const personIds = [...new Set(rows.filter((r) => r.template === 'dose_missed' && r.person_id).map((r) => r.person_id!))]
-    const names = new Map<string, string | null>()
-    if (personIds.length) {
-      const { data: ps } = await sb.from('people').select('id,display_name').in('id', personIds)
-      for (const p of (ps ?? []) as { id: string; display_name: string | null }[]) names.set(p.id, p.display_name)
-    }
     let pushed = 0
     const offered: string[] = []
-    for (const r of rows) {
-      if (Date.now() - started > BUDGET_MS) break // left unpushed: the next run continues
+    rowLoop: for (const r of rows) {
+      if (overBudget()) break // left unpushed: the next run continues
       const known = Object.hasOwn(TEMPLATES, r.template)
-      const payload = r.template === 'dose_missed' && r.person_id ? { t: 'dose_watch', n: firstName(names.get(r.person_id)) } : known ? { t: r.template } : null
+      // B-7: the template id and nothing else (no name on a lock screen). A carer's missed dose is the carer-class 'dose_watch' (carer cap, carer quiet hours), not the user's own 'dose_missed' nudge.
+      const carerDose = r.kind === 'dose_missed'
+      const payload = carerDose ? { t: 'dose_watch' } : known ? { t: r.template } : null
       if (payload) {
-        const urgent = known && TEMPLATES[r.template as keyof typeof TEMPLATES].tone === 'urgent'
+        const urgent = carerDose || TEMPLATES[r.template as keyof typeof TEMPLATES].tone === 'urgent'
         for (const sub of subs.filter((s) => s.user_id === r.carer_user_id)) {
+          if (overBudget()) break rowLoop // this row is not marked: the next run offers it again (the notification tag makes a repeat replace)
           const status = await send(sub, payload, urgent)
           if (status != null && status >= 200 && status < 300) pushed++
           else if (status === 404 || status === 410) await removeSub(sub.endpoint)
@@ -143,7 +143,10 @@ Deno.serve(async (req) => {
       }
       offered.push(r.id)
     }
-    if (offered.length) await sb.from('carer_alerts').update({ pushed_at: now.toISOString() }).in('id', offered)
+    if (offered.length) {
+      const { error: we } = await sb.from('carer_alerts').update({ pushed_at: now.toISOString() }).in('id', offered)
+      if (we) throw new Error('write') // unmarked rows would be pushed again for 12 h: report the run as failed
+    }
     return { pushed }
   }
 
@@ -196,6 +199,7 @@ Deno.serve(async (req) => {
       const count = [...slots].filter((s) => s.startsWith(`${o.id}|`)).length
       if (!count) continue
       for (const sub of subs.filter((s) => s.user_id === o.auth_user_id)) {
+        if (overBudget()) return sent
         const status = await send(sub, { t: 'dose_due' }, false)
         if (status != null && status >= 200 && status < 300) sent++
         else if (status === 404 || status === 410) await removeSub(sub.endpoint)
