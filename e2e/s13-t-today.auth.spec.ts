@@ -53,7 +53,8 @@ async function start(page: Page, scheme: 'light' | 'dark', o: { code?: number; d
   await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible() // the forecast answers after the first paint
   await expect(page.getByRole('heading', { name: 'Meals today' })).toBeVisible() // appears once sign-in finished: wait so a rerun draws the same page (ML-25, ML-32)
 }
-const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled' })
+// The tab bar is masked: its glass blurs whatever scrolls under it and flickers a few pixels between runs (ML-32). tabbar-overlap.spec.ts covers the bar itself.
+const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled', mask: [page.locator('nav.tabbar')] })
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`dose card: Taken morphs in place, then the card collapses ${scheme}`, async ({ page }) => {
