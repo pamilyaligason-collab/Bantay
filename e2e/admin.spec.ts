@@ -3,10 +3,12 @@ import { skipOnboarding } from './helpers'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
-test('onboarding tells members what the admin can see', async ({ page }) => {
-  await page.goto('/')
+test('setup tells members what the admin can see', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#me')
+  await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
   await page.getByRole('button', { name: /: Sharing$/ }).click()
-  await expect(page.locator('h1')).toHaveText('Sharing')
+  await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Sharing')
   await expect(page.getByText('Your admin can see which screens you use, never your health values.')).toBeVisible()
 })
 

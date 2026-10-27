@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { skipOnboarding } from './helpers'
 
 const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36'
 
@@ -34,10 +35,12 @@ test.describe('android phone', () => {
 })
 
 test('the setup wizard has the phone warnings step, and it can be passed', async ({ page }) => {
-  await page.goto('/')
+  await skipOnboarding(page)
+  await page.goto('/#me')
+  await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
   await page.getByRole('button', { name: /: Your phone's warnings$/ }).click()
-  await expect(page.locator('h1')).toHaveText("Your phone's warnings")
+  await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText("Your phone's warnings")
   await expect(page.getByText('Phone warnings check')).toBeVisible()
   await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.locator('h1')).toHaveText('SOS text contacts')
+  await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('SOS text contacts')
 })
