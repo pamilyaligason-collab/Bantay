@@ -94,9 +94,10 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: 'My week' })).toBeVisible()
     await expect(page.getByText('Your week will show here')).toBeVisible()
     await page.getByRole('heading', { name: 'My week' }).scrollIntoViewIfNeeded()
-    await shot(page, 'today-myweek-empty', scheme)
+    await page.locator('section[aria-labelledby="t-myweek"]').screenshot({ path: `${SHOTS}/today-myweek-empty-${scheme}.png`, animations: 'disabled' }) // element shots: the scrolled top bar and tab bar glass flicker
     const more = page.getByRole('heading', { name: 'More', exact: true })
-    if (await more.count()) { await more.scrollIntoViewIfNeeded(); await shot(page, 'today-more', scheme) }
+    await expect(more).toBeVisible() // the alerts-off card is in the group on the web build
+    await page.locator('.td-more-g').screenshot({ path: `${SHOTS}/today-more-${scheme}.png`, animations: 'disabled' })
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
   })
 
