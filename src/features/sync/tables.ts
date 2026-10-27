@@ -30,7 +30,7 @@ export const TABLES: Record<string, TableSpec> = {
     fields: ['personId', 'takenAt', 'doctor', 'reason', 'medicines', 'nextVisit', 'sourceFileId', 'driveUrl', 'confirmedBy', 'confirmedAt'],
     onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
   },
-  meds_taken: { fields: ['personId', 'name', 'takenAt', 'medicationId', 'slot', 'skipped'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true },
+  meds_taken: { fields: ['personId', 'name', 'takenAt', 'medicationId', 'slot', 'skipped'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, pullOnly: ['markedBy', 'markedByName'] }, // 0039: the server stamps who marked it
   activity: {
     fields: ['personId', 'kind', 'minutes', 'steps', 'startedAt', 'source'],
     onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true

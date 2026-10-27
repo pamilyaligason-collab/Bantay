@@ -116,5 +116,6 @@ grant select, insert, update, delete on storage.objects to authenticated;
 \ir ../migrations/0035_reading_alerts.sql
 \ir ../migrations/0036_scan_skip.sql
 \ir ../migrations/0037_sharing.sql
+\ir ../migrations/0039_marked_by_digest.sql
 \ir ../migrations/0040_push_tokens.sql
 \echo REHEARSAL DONE

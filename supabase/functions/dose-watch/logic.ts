@@ -8,7 +8,8 @@ export const WATCH_MAX_LATE_MIN = 6 * 60 // not before the function existed: nev
 export interface MedRow {
   id: string
   person_id: string
-  name?: string | null // only for matching an old dose row that has no medication id; never logged or sent (B-7)
+  name?: string | null // only for matching an old dose row that has no medication id (and isVaccine); never logged or sent (B-7)
+  generic_name?: string | null // optional: isVaccine also reads it when the cron selects it
   med_status: string | null
   deleted_at: string | null
   as_needed: boolean | null
@@ -49,6 +50,12 @@ export function normaliseDrug(x: string | null | undefined): string | null {
   return s || null
 }
 
+/** A vaccine is a one-off shot, not a medicine to take on a clock: it never raises dose_missed, review_open or the digest. The prescription import turns a vaccine line
+ *  (for example "PNEUMOCOCCAL POLYSACCHARIDE VACCINE 0.5 ML") into a medication row, so this reads the name. Whole words only: "vaccine"/"vaccination"/"bakuna" ("Vaccinium", the cranberry and bilberry plant, is not one), "toxoid",
+ *  the pneumococcal and meningococcal families, and common brands. A normal medicine name never contains these words. */
+const VACCINE_WORDS = /(?<![\p{L}\p{N}])(vaccines?|vaccinations?|bakuna|toxoids?|pneumococcal|meningococcal|pneumovax|prevnar|prevenar|shingrix|zostavax|gardasil|twinrix|havrix|engerix|vaxigrip|fluarix|influvac|boostrix|adacel|tdap|dtap|mmr)(?![\p{L}\p{N}])/iu
+export const isVaccine = (m: Pick<MedRow, 'name' | 'generic_name'>) => VACCINE_WORDS.test(m.name ?? '') || VACCINE_WORDS.test(m.generic_name ?? '')
+
 /** Valid sorted unique HH:MM times from the v1 schedule object or the legacy array. Bad times are dropped, never guessed. */
 export function scheduleTimes(raw: unknown): string[] {
   const o = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>
@@ -79,7 +86,7 @@ function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: strin
   const out: OpenSlot[] = []
   const rows = taken.flatMap((t) => { const at = Date.parse(t.taken_at); return Number.isNaN(at) ? [] : [{ ...t, day: manilaDay(at), key: normaliseDrug(t.name) }] })
   for (const m of meds) {
-    if (m.people?.archived_at || m.deleted_at || (m.med_status ?? 'active') !== 'active' || m.as_needed) continue
+    if (m.people?.archived_at || m.deleted_at || (m.med_status ?? 'active') !== 'active' || m.as_needed || isVaccine(m)) continue
     if (needsTime(m.schedule) || !watched(m.schedule, nowMs)) continue
     const key = normaliseDrug(m.name)
     for (const day of days) {
@@ -145,6 +152,9 @@ export interface Port {
   release(personId: string, day: string, slot: string): Promise<void>
   /** One carer_alerts row per carer (service role); a row with the same (kind, ref, carer) already there is ignored. Throws when the write fails. */
   carerRow(kind: string, personId: string, carerUserIds: string[], template: string, ref: string): Promise<void>
+  /** Which of these users turned the 8 PM summary off (carer_prefs.digest_on = false, 0039). Applies to kind `digest` ONLY; every other alert ignores it.
+   *  Optional so index.ts keeps type-checking until lane E wires it; with no port method nobody is filtered. Throws when the read fails (the digest then waits for the next run). */
+  digestOff?(userIds: string[]): Promise<Set<string>>
   // Since D-78 the in-app row is the record and flushWebPush sends the browser push, so runDoseWatch no longer sends. These three stay on the type
   // only so index.ts's adapter (S1) keeps type-checking until it drops them.
   subs?(userIds: string[]): Promise<Sub[]>
@@ -187,14 +197,15 @@ export async function runDoseWatch(port: Port, nowMs: number, opts: { afterMin?:
   }
   const row = async (kind: 'review_open' | 'digest', personId: string, ref: string) => {
     try {
-      const carers = await to(personId)
+      let carers = await to(personId)
+      if (kind === 'digest' && carers.length && port.digestOff) { const off = await port.digestOff(carers); carers = carers.filter((c) => !off.has(c)) } // only the summary honours the opt-out
       if (!carers.length) return false
       await port.carerRow(kind, personId, carers, kind, ref)
       return true
     } catch { r.failed++; return false }
   }
   for (const m of meds) {
-    if (m.people?.archived_at || (reviewAgeDays(m.schedule, nowMs) ?? -1) < REVIEW_WATCH_AFTER_DAYS) continue
+    if (m.people?.archived_at || isVaccine(m) || (reviewAgeDays(m.schedule, nowMs) ?? -1) < REVIEW_WATCH_AFTER_DAYS) continue
     if (await row('review_open', m.person_id, `${m.id}:${today}`)) r.review++
   }
   if (inDigestWindow(nowMs)) for (const personId of openToday(meds, taken, nowMs)) if (await row('digest', personId, `${personId}:${today}`)) r.digest++
