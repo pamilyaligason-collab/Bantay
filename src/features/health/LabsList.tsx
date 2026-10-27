@@ -3,6 +3,7 @@ import { groupByPanel, groupLabs, labBand, labNum, labRow, labVerdict, type LabR
 import { metricLabel } from './model'
 import { isVital } from './vitals'
 import { Icon } from '../shell/Icon'
+import { EmptyState } from '../look/EmptyState'
 
 const rangeWords = (r: Range, unit?: string) => {
   const u = unit ? ` ${unit}` : ''
@@ -14,7 +15,7 @@ function LabCard({ row }: { row: LabRow }) {
   const v = labVerdict(pos)
   const b = range && rv ? labBand(rv.value, range) : null
   return (
-    <a className="grp lr-card" href={`#health/metric/${r.test}`} data-test={r.test}>
+    <a className="grp lr-card press" href={`#health/metric/${r.test}`} data-test={r.test}>
       <span className="lr-top">
         <span className="lr-name">{metricLabel(r.test)}</span>
         <span className="lr-val">{labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
@@ -41,7 +42,7 @@ function LabLine({ row }: { row: LabRow }) {
   const { reading: r, pos, unitGap } = row
   const v = labVerdict(pos)
   return (
-    <a className="lr-line" href={`#health/metric/${r.test}`} data-test={r.test}>
+    <a className="lr-line press" href={`#health/metric/${r.test}`} data-test={r.test}>
       <span className="lr-name">{metricLabel(r.test)}</span>
       <span className="lr-val">{labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
       <span className={`lr-vw ${pos}`}>{v ? <><Icon name={v.icon} size={16} />{v.word}</> : unitGap ? 'Different unit, not compared' : 'No range on the paper'}</span>
@@ -69,7 +70,7 @@ function Folded({ id, title, rows }: { id: string; title: string; rows: LabRow[]
 export function LabsList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
   const rows = latestByTest(readings.filter((r) => !isVital(r.test))).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
   if (!ready) return null
-  if (rows.length === 0) return <section aria-labelledby="lvn-labs" data-testid="labs-list"><h2 className="hd" id="lvn-labs">Labs</h2><div className="grp"><p className="sub" style={{ margin: 0, padding: 16 }}>No lab results yet. Scan a paper with Ask.</p></div></section>
+  if (rows.length === 0) return <section aria-labelledby="lvn-labs" data-testid="labs-list"><h2 className="hd" id="lvn-labs">Labs</h2><EmptyState icon="flask" title="No lab results yet" body="Scan a paper with Ask, or add one in Papers." action={{ label: 'Add a paper', onClick: () => { location.hash = '#health/papers' } }} /></section>
   const g = groupLabs(rows)
   return (
     <section aria-labelledby="lvn-labs" data-testid="labs-list">

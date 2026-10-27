@@ -22,10 +22,10 @@ import NutritionScreen from '../features/nutrition/NutritionScreen'
 import Refill from '../features/health/Refill'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
-import { averageNodes } from '../features/health/vitals'
+import { averageNodes, isVital } from '../features/health/vitals'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
-import { Icon } from '../features/shell/Icon'
+import { Skeleton, EmptyState } from '../features/look'
 import { SubHeader } from '../features/shell/SubHeader'
 import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
@@ -88,6 +88,7 @@ function Overview() {
   const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
   const noVitals = ready && nodes.every((n) => n.empty) // S6: readings but no vitals: ONE empty state (the no-vitals card), no headline or nudge above it. No readings at all keeps the figure + headline
+  const canLog = canMarkFor(personId, ownId, writable)
   const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
   return (
     <>
@@ -96,6 +97,13 @@ function Overview() {
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }} data-testid="showing">Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
+      {!ready && (
+        <section className="hv-load" aria-busy="true" aria-label="Health" data-testid="health-loading">
+          <span className="hv-sr">Loading</span>
+          <Skeleton lines={3} />
+          <Skeleton lines={4} />
+        </section>
+      )}
       {ready && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
         <div className="hv-head" data-tone={head.tone}>
           <div className="grow">
@@ -104,41 +112,25 @@ function Overview() {
           </div>
         </div>
       )}
-      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canMarkFor(personId, ownId, writable)} onAdd={setAdding} />}
+      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
-      {personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
-      {ready && !blank && noVitals ? (
-        <div className="card hv-novitals" data-testid="no-vitals">
-          <h2 className="hv-nv-h">No vitals yet{name ? ` for ${givenName(name)}` : ''}</h2>
-          <p className="sub">Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below.</p>
-          <a className="hv-cta" href={cta.href}>{cta.label}</a>
+      {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
+      {ready && !blank && noVitals && (
+        <div className="hv-empty-wrap" data-testid="no-vitals">
+          <EmptyState icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : undefined} />
         </div>
-      ) : (
+      )}
+      {ready && !(noVitals && !blank) && (
         <>
-          <BodyMap nodes={nodes} cta={blank ? cta : undefined} />
+          <BodyMap nodes={nodes} cta={blank ? cta : undefined} onAdd={blank && canLog ? () => setAdding('bp') : undefined} />
           {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My numbers.</p>}
         </>
       )}
-      <a className="card hv-explore" href="#health/body">
-        <Icon name="lungs" tone="vitals" boxed />
-        <span className="grow">Explore your body<small>See how each part works and when to see a doctor</small></span>
-        <Icon name="chev" size={20} />
-      </a>
-      <a className="card hv-explore" href="#health/move">
-        <Icon name="move" tone="vitals" boxed />
-        <span className="grow">Move<small>Gentle exercise picks for today and your week</small></span>
-        <Icon name="chev" size={20} />
-      </a>
-      <a className="card hv-explore" href="#health/nutrition">
-        <Icon name="salt" tone="vitals" boxed />
-        <span className="grow">Food and nutrients<small>Meals, salt and nutrients, next to blood pressure</small></span>
-        <Icon name="chev" size={20} />
-      </a>
-      <NudgeEntry />
-      {personId && <MedicinesSummary personId={personId} />}
-      {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
-      {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
-      {personId && <HealthLinks personId={personId} />}
+      {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
+      {ready && !blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
+      {ready && <NudgeEntry />}
+      {ready && personId && <MedicinesSummary personId={personId} />}
+      {ready && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
         return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null

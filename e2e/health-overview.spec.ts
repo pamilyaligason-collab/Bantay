@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId('insight')).toBeVisible() // the health database exists once the screen has read it
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Doctor visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
+  await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
   await seed(page, 2)
   await page.reload()
   await expect(page.getByTestId('kpis')).toBeVisible()
@@ -126,10 +126,10 @@ test('a lab result opens as a dated list: no period, time-of-day or monthly aver
   await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
 })
 
-test('the overview links to Learn, Refills, Doctor visits and Papers; labs have a plain flag', async ({ page }) => {
-  await expect(page.getByRole('link', { name: /^Health library/ })).toHaveAttribute('href', '#health/library')
+test('the Browse grid links to Library, Videos, Refills, Visits and Papers; labs have a plain flag', async ({ page }) => {
+  await expect(page.getByRole('link', { name: /^Library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveAttribute('href', '#health/videos')
-  await expect(page.getByRole('link', { name: /^Papers · / })).toHaveAttribute('href', '#health/papers')
+  await expect(page.getByRole('link', { name: /^Papers/ })).toHaveAttribute('href', '#health/papers')
   await expect(page.getByRole('link', { name: /^Refills/ })).toContainText('Metformin 500 mg: 7 days left')
   await expect(page.getByTestId('labs-list').locator('[data-test="ldl"]')).toContainText('High')
 })

@@ -168,7 +168,7 @@ for (const scheme of ['light', 'dark'] as const) {
       ])
       await page.reload()
       await page.evaluate(() => { location.hash = '#health' })
-      const link = page.getByRole('link', { name: /Food and nutrients/ })
+      const link = page.getByRole('link', { name: /^Food/ })
       await expect(link).toBeVisible()
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(56)
       expect(await serious(page)).toEqual([])
