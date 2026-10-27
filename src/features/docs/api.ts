@@ -69,6 +69,7 @@ export async function addScan(o: { pages: Blob[]; owner?: string; personId: stri
 
 /** Ask the server to read a scanned document. Failure is ignored: a sweep on the server picks up documents nobody asked about. */
 async function askToRead(client: SupabaseClient, documentId: string) {
+  if (!(await aiOn())) return // privacy.ai: the guard lives here so no caller can forget it
   try { await client.functions?.invoke('records-extract', { body: { document_id: documentId } }) } catch { /* the sweep will do it */ }
 }
 
@@ -113,8 +114,8 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
       again = false
       for (const q of await ddb.queue.orderBy('seq').toArray()) {
         if (q.owner !== owner || dead.has(q.seq!)) continue // another user's picture: kept, never sent from here
-        // Switched off after scanning but before the first page went up: the whole document is skipped (all pages the same, so the server never sees a mixed document).
-        if (q.docNew && q.pages && !q.skipRead && !(await aiOn())) {
+        // Switched off after scanning (before the first page, or between pages): this page and every page still queued are skipped, so the server never reads them.
+        if (q.pages && !q.skipRead && !(await aiOn())) {
           await ddb.queue.filter((r) => r.docId === q.docId && r.owner === q.owner).modify({ skipRead: true })
           skipped.add(q.docId)
         }

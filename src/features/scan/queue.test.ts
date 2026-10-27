@@ -84,6 +84,20 @@ describe('scan queue', () => {
     expect(f.invoke).not.toHaveBeenCalled()
   })
 
+  it('first page sent, privacy.ai switched off, flush resumes: the rest are skipped and records-extract is never called', async () => {
+    await addScan({ pages: [jpg('a'), jpg('b'), jpg('c')], owner: 'u1', personId: 'p1', kind: 'lab' })
+    let n = 0
+    const f = fake({ offline: () => ++n > 1 }) // page 1 goes, page 2 hits no signal
+    expect(await flushQueue(f.client, 'u1')).toBe(1)
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    n = -99
+    expect(await flushQueue(f.client, 'u1')).toBe(2)
+    expect(f.upserts.filter((u) => u.table === 'source_files').map((u) => u.row.ingest_status)).toEqual([undefined, 'skipped', 'skipped'])
+    await new Promise((r) => setTimeout(r, 30))
+    expect(f.invoke).not.toHaveBeenCalled()
+    expect(await ddb.queue.count()).toBe(0)
+  })
+
   it('privacy.ai on (default): no ingest_status is sent, so the row stays new and is read', async () => {
     await addScan({ pages: [jpg('a')], owner: 'u1', personId: 'p1', kind: 'lab' })
     const f = fake()

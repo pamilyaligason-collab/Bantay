@@ -5,10 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
 const h = vi.hoisted(() => ({
-  consent: vi.fn(), exp: vi.fn(), req: vi.fn(), cancel: vi.fn(), save: vi.fn(), viewers: vi.fn()
+  consent: vi.fn(), exp: vi.fn(), req: vi.fn(), cancel: vi.fn(), save: vi.fn()
 }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p1' }))
-vi.mock('./viewers', async (orig) => ({ ...(await orig<typeof import('./viewers')>()), loadViewers: h.viewers }))
 vi.mock('./consent', async (orig) => ({ ...(await orig<typeof import('./consent')>()), ensureConsent: h.consent }))
 vi.mock('./data', async (orig) => ({ ...(await orig<typeof import('./data')>()), exportMyData: h.exp, requestErasure: h.req, cancelErasure: h.cancel, saveJson: h.save }))
 import PrivacyScreen, { PROCESSORS } from './PrivacyScreen'
@@ -16,7 +15,6 @@ import PrivacyScreen, { PROCESSORS } from './PrivacyScreen'
 beforeEach(async () => {
   await db.kv.clear()
   h.consent.mockReset().mockResolvedValue({ at: new Date(2026, 9, 26, 9).toISOString(), backfilled: false })
-  h.viewers.mockReset().mockResolvedValue(null)
   h.exp.mockReset(); h.req.mockReset(); h.cancel.mockReset(); h.save.mockReset().mockReturnValue(true)
 })
 afterEach(cleanup)
@@ -31,18 +29,9 @@ describe('Privacy screen', () => {
     render(<PrivacyScreen />)
     expect(await screen.findByText('Agreement not recorded yet')).toBeTruthy()
   })
-  it('"Who can see my records" names the linked carers; unknown keeps the generic line; none says Only you', async () => {
-    h.viewers.mockResolvedValue(['Papa', 'Ate Joy'])
+  it('"Who can see my records" names nobody: no source of carer names a member can read', async () => {
     render(<PrivacyScreen />)
-    expect(await screen.findByText('Papa and Ate Joy. Admins can see everything.')).toBeTruthy()
-    cleanup()
-    h.viewers.mockResolvedValue([])
-    render(<PrivacyScreen />)
-    expect(await screen.findByText('Only you. Admins can see everything.')).toBeTruthy()
-    cleanup()
-    h.viewers.mockResolvedValue(null)
-    render(<PrivacyScreen />)
-    expect(await screen.findByText(/Pick what the family sees in Me/)).toBeTruthy()
+    expect(await screen.findByText('Pick what the family sees in Me. Admins can see everything.')).toBeTruthy()
   })
   it('the AI-off line promises only what is gated: Jack, photo reading and new scans', async () => {
     await db.kv.put({ key: 'privacy.ai', value: false })
