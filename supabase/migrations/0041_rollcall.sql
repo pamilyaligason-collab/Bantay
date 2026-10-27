@@ -6,6 +6,18 @@
 -- A check-in is never refused because the alert failed: the alert block swallows its own errors. Retention 30 days, inside sos_events_prune (ML-06).
 begin;
 
+-- Round-1 leftovers (a rehearsal or staging db that ran the first 0041): drop them so this body is the only one (no double alerts, no skipped cooldown).
+do $$ begin
+  if to_regclass('public.rollcall') is not null then
+    drop trigger if exists rollcall_alert on public.rollcall;
+    drop trigger if exists rollcall_stamp on public.rollcall;
+    drop policy if exists rollcall_insert on public.rollcall;
+    drop policy if exists rollcall_update on public.rollcall;
+  end if;
+end $$;
+drop function if exists public.rollcall_alert();
+drop function if exists public.rollcall_stamp();
+
 create table if not exists public.rollcall (
   id uuid primary key default gen_random_uuid(),
   person_id uuid not null references public.people (id) on delete cascade,
@@ -66,6 +78,11 @@ create or replace function public.rollcall_set(p_person uuid, p_storm_ref text, 
          begin
            update public.rollcall set help_alert_at = now() where id = rid;
            perform public.notify_family(p_person, 'rollcall', 'rollcall_help', rid::text || ':' || (extract(epoch from clock_timestamp()) * 1000000)::bigint::text, 'family');
+         exception when others then
+           raise warning 'rollcall alert: %', sqlerrm;
+         end;
+         -- the push flush is separate: if pg_net or the vault read fails, the alert row above still stands (dose-watch's cron sends it within 15 min)
+         begin
            if to_regproc('net.http_post') is not null and to_regclass('vault.decrypted_secrets') is not null then
              execute 'select decrypted_secret from vault.decrypted_secrets where name = ''dose_watch_cron_secret''' into secret;
              if secret is not null then
@@ -76,7 +93,7 @@ create or replace function public.rollcall_set(p_person uuid, p_storm_ref text, 
              end if;
            end if;
          exception when others then
-           raise warning 'rollcall alert: %', sqlerrm;
+           raise warning 'rollcall flush: %', sqlerrm;
          end;
        end if;
      end $$;

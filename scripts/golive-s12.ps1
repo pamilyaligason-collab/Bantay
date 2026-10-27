@@ -55,20 +55,20 @@ Step 6 'apply 0038_join_claim (per-member invite links)'; Apply 6 '0038' 'join_c
 Step 7 'apply 0039_marked_by_digest (who marked a dose, 8 PM summary switch)'; Apply 7 '0039' 'marked_by_digest'
 Step 8 'apply 0040_push_tokens (FCM tokens, final dose_watch_prune)'; Apply 8 '0040' 'push_tokens'
 
-Step 9a 'apply 0041_rollcall (storm roll call)'; Apply 9 '0041' 'rollcall'
-Step 9b 'apply 0042_kudos (kudos and recap messages)'; Apply 9 '0042' 'kudos'
+Step 9 'apply 0041_rollcall (storm roll call)'; Apply 9 '0041' 'rollcall'
+Step 10 'apply 0042_kudos (kudos and recap messages)'; Apply 10 '0042' 'kudos'
 
-Step 9 'verify (expect recorded=6, rollcall=1, share_offers=1, invite_tokens=1, carer_prefs=1, push_tokens=1, marked_by=1)'
-Q "select (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0042') as recorded, (select count(*) from pg_tables where schemaname='public' and tablename='rollcall') as rollcall, (select count(*) from pg_tables where schemaname='public' and tablename='share_offers') as share_offers, (select count(*) from pg_tables where schemaname='public' and tablename='invite_tokens') as invite_tokens, (select count(*) from pg_tables where schemaname='public' and tablename='carer_prefs') as carer_prefs, (select count(*) from pg_tables where schemaname='public' and tablename='push_tokens') as push_tokens, (select count(*) from information_schema.columns where table_schema='public' and table_name='meds_taken' and column_name='marked_by') as marked_by;"; Check 9
+Step 11 'verify (expect recorded=6, rollcall=1, rollcall_set=1, about_person=1, share_offers=1, invite_tokens=1, carer_prefs=1, push_tokens=1, marked_by=1)'
+Q "select (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0042') as recorded, (select count(*) from pg_tables where schemaname='public' and tablename='rollcall') as rollcall, (select count(*) from pg_proc where proname='rollcall_set') as rollcall_set, (select count(*) from information_schema.columns where table_schema='public' and table_name='family_messages' and column_name='about_person') as about_person, (select count(*) from pg_tables where schemaname='public' and tablename='share_offers') as share_offers, (select count(*) from pg_tables where schemaname='public' and tablename='invite_tokens') as invite_tokens, (select count(*) from pg_tables where schemaname='public' and tablename='carer_prefs') as carer_prefs, (select count(*) from pg_tables where schemaname='public' and tablename='push_tokens') as push_tokens, (select count(*) from information_schema.columns where table_schema='public' and table_name='meds_taken' and column_name='marked_by') as marked_by;"; Check 11
 
-Step 10 'deploy edge functions (dose-watch first: FCM + digest opt-out; alerts-ingest: D-88 radius and quake wording)'
-Deploy 10 'dose-watch'; Deploy 10 'broadcast' -Jwt; Deploy 10 'pin-login'; Deploy 10 'family-names'; Deploy 10 'alerts-ingest'
+Step 12 'deploy edge functions (dose-watch first: FCM + digest opt-out; alerts-ingest: D-88 radius and quake wording)'
+Deploy 12 'dose-watch'; Deploy 12 'broadcast' -Jwt; Deploy 12 'pin-login'; Deploy 12 'family-names'; Deploy 12 'alerts-ingest'
 
-Step 11 'archive the shared admin person row "pamilya ligason" from family lists (D-86; the login keeps working)'
-Q "update public.people set archived_at = now() where id = '9f5159e8-1136-4980-9949-61ecaeefe92f' and archived_at is null; select display_name, archived_at is not null as archived from public.people where id = '9f5159e8-1136-4980-9949-61ecaeefe92f';"; Check 11
+Step 13 'archive the shared admin person row "pamilya ligason" from family lists (D-86; the login keeps working)'
+Q "update public.people set archived_at = now() where id = '9f5159e8-1136-4980-9949-61ecaeefe92f' and archived_at is null; select display_name, archived_at is not null as archived from public.people where id = '9f5159e8-1136-4980-9949-61ecaeefe92f';"; Check 13
 
-Step 12 'post-checks (expect alerts-ingest and dose-watch rows within 15 min; carer_alerts kinds now allow share/rollcall/kudos)'
-Q "select job, ok, ran_at from public.job_runs order by ran_at desc limit 5; select pg_get_constraintdef(oid) from pg_constraint where conname like 'carer_alerts_kind%';"; Check 12
+Step 14 'post-checks (expect alerts-ingest and dose-watch rows within 15 min; carer_alerts kinds now allow share/rollcall/kudos)'
+Q "select job, ok, ran_at from public.job_runs order by ran_at desc limit 5; select pg_get_constraintdef(oid) from pg_constraint where conname like 'carer_alerts_kind%';"; Check 14
 
 Write-Host "`nApplied. Next, in order:" -ForegroundColor Green
 Write-Host "  1. Merge the PR on GitHub now (Cloudflare Pages deploys main); check bantay.pages.dev shows five tabs and 'Who can see my records'." -ForegroundColor Green
