@@ -64,10 +64,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await mock(page)
     })
 
-    test('Quick log is 3 x 3; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean', async ({ page }) => {
+    test('Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean', async ({ page }) => {
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.getByRole('button')).toHaveCount(9)
+      await expect(row.getByRole('button')).toHaveCount(6)
       for (const b of await row.getByRole('button').all()) {
         const box = (await b.boundingBox())!
         expect(box.height).toBeGreaterThanOrEqual(72)
@@ -82,7 +82,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, 'today-meals-empty', scheme)
       expect(await serious(page)).toEqual([])
 
-      await row.getByRole('button', { name: 'Log what you ate' }).click()
+      await row.getByRole('button', { name: 'More things to log' }).click()
+      await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Food' }).click()
       const sheet = page.getByRole('dialog', { name: 'Meal' })
       // the meal comes from the clock; one chip changes it
       const chip = sheet.getByRole('button', { name: /Change/ })

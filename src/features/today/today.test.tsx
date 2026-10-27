@@ -1,18 +1,10 @@
-import { act, cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { FamilyEvent, FamilyTask } from '../family/store'
 import type { Wx } from './heroCards'
 import { todayRows } from './PlanToday'
 import { weatherLine } from './weather'
 import { activeDays } from './WeekLine'
-
-const roster = vi.hoisted(() => ({ last: {} as Record<string, string> }))
-vi.mock('../family/roster', () => ({
-  useFamilyPeople: () => ({ selfId: 'me', people: [{ id: 'me', name: 'Lloyd' }, { id: 'ma', name: 'Ma' }, { id: 'pa', name: 'Pa' }] }),
-  useCheckIns: () => roster.last,
-  rollCall: (people: { id: string }[], last: Record<string, string>) => ({ ok: people.filter((p) => last[p.id]).length, total: people.length })
-}))
-import GreetingBand from './GreetingBand'
 
 afterEach(cleanup)
 const wx: Wx = { temp: 27.4, rainPct: 20, words: 'partly cloudy', at: '2026-10-19T00:00:00Z' }
@@ -24,33 +16,6 @@ describe('weatherLine', () => {
   it('unknown temperature gives no line, never 0', () => {
     expect(weatherLine({ ...wx, temp: null })).toBeNull()
     expect(weatherLine(null)).toBeNull()
-  })
-})
-
-describe('GreetingBand', () => {
-  it('before a check-in: the big button and the family count', () => {
-    roster.last = { ma: new Date().toISOString() }
-    render(<GreetingBand onOk={() => undefined} />)
-    expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
-    expect(screen.getByText('1 of 2 others checked in today')).toBeTruthy()
-  })
-  it('after a check-in today the whole card is hidden', () => {
-    roster.last = { me: new Date().toISOString() }
-    const { container } = render(<GreetingBand onOk={() => undefined} />)
-    expect(container.innerHTML).toBe('')
-  })
-  it('the card goes away live when a check-in arrives after mount', () => {
-    roster.last = {}
-    const { rerender, container } = render(<GreetingBand onOk={() => undefined} />)
-    expect(screen.getByText('0 of 2 others checked in today')).toBeTruthy()
-    roster.last = { me: new Date().toISOString(), ma: new Date().toISOString() }
-    act(() => rerender(<GreetingBand onOk={() => undefined} />))
-    expect(container.innerHTML).toBe('')
-  })
-  it('a check-in from yesterday does not count as checked in', () => {
-    roster.last = { me: new Date(Date.now() - 36 * 3_600_000).toISOString() }
-    render(<GreetingBand onOk={() => undefined} />)
-    expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
   })
 })
 

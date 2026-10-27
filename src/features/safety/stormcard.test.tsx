@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const log = vi.hoisted(() => ({ mood: vi.fn() }))
-vi.mock('../today/actions', () => ({ logMood: log.mood, FAIL_TEXT: { signedout: 'Sign in first, then try again.', failed: 'Could not save on this phone. Try again.' } }))
+vi.mock('../today/actions', () => ({ logFeeling: log.mood, feelingToast: () => 'Your family has not seen this. Tap Unwell again when you are online, or call them.', FAIL_TEXT: { signedout: 'Sign in first, then try again.', failed: 'Could not save on this phone. Try again.' } }))
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from './alerts'
 import { StormCard } from './StormCard'
@@ -16,7 +16,7 @@ const row = (over: Partial<Alert> = {}): Alert => ({
   source: 'PAGASA', sourceUrl: 'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin', issuedAt: '2026-10-23T20:50:38.000Z', lat: 9.645705, lon: 123.877951, bulletin: 'b', ...over
 })
 
-beforeEach(async () => { await db.kv.clear(); log.mood.mockReset(); log.mood.mockResolvedValue('ok') })
+beforeEach(async () => { await db.kv.clear(); log.mood.mockReset(); log.mood.mockResolvedValue('told') })
 afterEach(() => cleanup())
 
 describe('storm mode data', () => {
@@ -60,22 +60,22 @@ describe('StormCard', () => {
     render(<StormCard now={NOW} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Great' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Saved. Your family can see it in Bantay.'))
-    expect(log.mood).toHaveBeenLastCalledWith('good')
+    expect(log.mood).toHaveBeenLastCalledWith('great')
     fireEvent.click(screen.getByRole('button', { name: 'Not great' }))
-    await waitFor(() => expect(log.mood).toHaveBeenLastCalledWith('low'))
+    await waitFor(() => expect(log.mood).toHaveBeenLastCalledWith('notgreat'))
     expect(document.body.textContent).not.toMatch(/will be (told|notified)|lock screen/i)
   })
-  it('Unwell logs low and calls the hook Today passes in; a failed save says so and does not call it', async () => {
+  it('Unwell goes through logFeeling (which raises the family alert); an unsent alert and a failed save each say so', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [row()] })
-    const unwell = vi.fn()
-    render(<StormCard now={NOW} onUnwell={unwell} />)
+    render(<StormCard now={NOW} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Unwell' }))
-    await waitFor(() => expect(unwell).toHaveBeenCalledTimes(1))
-    expect(log.mood).toHaveBeenLastCalledWith('low')
-    expect(screen.getByRole('status').textContent).toContain('hold SOS or call 911')
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('hold SOS or call 911'))
+    expect(log.mood).toHaveBeenLastCalledWith('unwell')
+    log.mood.mockResolvedValue('untold')
+    fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Tap Unwell again'))
     log.mood.mockResolvedValue('signedout')
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Sign in first, then try again.'))
-    expect(unwell).toHaveBeenCalledTimes(1)
   })
 })

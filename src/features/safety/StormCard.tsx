@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { ALL_IDS } from '../gobag/items'
 import { EMPTY as BAG_EMPTY, KEY as BAG_KEY, readState } from '../gobag/state'
-import { FAIL_TEXT, logMood, type LogResult } from '../today/actions'
+import { FAIL_TEXT, feelingToast, type Feeling, logFeeling } from '../today/actions'
 import { ALERTS_KEY, type Alert } from './alerts'
 import { liveSignals, PAGASA_CREDIT, signalOf, stormTitle } from './stormMode'
 import { useKv } from './store'
 import './safety.css'
 
 const NONE: Alert[] = []
-const FACES: { label: string; mood: 'good' | 'ok' | 'low'; unwell?: boolean }[] = [
-  { label: 'Great', mood: 'good' }, { label: 'OK', mood: 'ok' }, { label: 'Not great', mood: 'low' }, { label: 'Unwell', mood: 'low', unwell: true }
+const FACES: { label: string; feeling: Feeling }[] = [
+  { label: 'Great', feeling: 'great' }, { label: 'OK', feeling: 'ok' }, { label: 'Not great', feeling: 'notgreat' }, { label: 'Unwell', feeling: 'unwell' }
 ]
 
 /** Storm mode (mockup safety-storm, S5; mounted on Today by S7): shows only while PAGASA has a wind signal for a home zone.
- *  The How are you? faces are the mood log. Unwell logs "low" here; the family alert for it is raised by Today (raise_mood_alert, S7), passed in as `onUnwell`. */
-export function StormCard({ onUnwell, now }: { onUnwell?: () => void; now?: number }) {
+ *  The How are you? faces go through logFeeling, the same as Today: Unwell also raises the family alert (raise_mood_alert) on every mount. */
+export function StormCard({ now }: { now?: number }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
   const bag = readState(useKv<unknown>(BAG_KEY, BAG_EMPTY))
   const [saved, setSaved] = useState<string | null>(null)
@@ -22,10 +22,10 @@ export function StormCard({ onUnwell, now }: { onUnwell?: () => void; now?: numb
   if (!top) return null
   const n = signalOf(top)!
   const answer = async (f: (typeof FACES)[number]) => {
-    const r: LogResult = await logMood(f.mood)
-    if (r !== 'ok') return setSaved(FAIL_TEXT[r])
-    if (f.unwell) onUnwell?.()
-    setSaved(f.unwell ? 'Saved. Your family can see it in Bantay. If you need help now, hold SOS or call 911.' : 'Saved. Your family can see it in Bantay.')
+    const r = await logFeeling(f.feeling)
+    if (r === 'untold') return setSaved(feelingToast(r))
+    if (r !== 'told') return setSaved(FAIL_TEXT[r])
+    setSaved(f.feeling === 'unwell' ? 'Saved. Your family can see it in Bantay. If you need help now, hold SOS or call 911.' : 'Saved. Your family can see it in Bantay.')
   }
   return (
     <section className="sf sf-stormcard" aria-label="Storm mode">

@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { liveMedicines } from '../health/meds'
-import { FAIL_TEXT, logBp, logMood, logSugar, logWeight, takeDose, takeMedication, type LogResult } from './actions'
+import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, takeDose, takeMedication, type Feeling, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
+import { useStorm } from './useStorm'
+import BpCheckButton from '../health/bpcheck/BpCheckButton'
+import { useSelfPersonId } from '../setup/useProfile'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
 import PlateSheet from '../nutrition/PlateSheet'
@@ -10,18 +13,18 @@ import MealsTodayCard from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more'
 const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
   { id: 'weight', label: 'Weight', icon: 'scale', tone: 'vitals', aria: 'Log weight' },
-  { id: 'walk', label: 'Walk', icon: 'walk', tone: undefined, aria: 'Log a walk' },
-  { id: 'move', label: 'Move', icon: 'move', tone: undefined, aria: 'Gentle exercise for today' },
-  { id: 'dose', label: 'Dose', icon: 'pill', tone: 'medicine', aria: 'Log a medicine you took' },
-  { id: 'mood', label: 'Mood', icon: 'smile', tone: undefined, aria: 'Log how you feel' },
-  { id: 'meal', label: 'Meal', icon: 'meal', tone: undefined, aria: 'Log what you ate' },
-  { id: 'water', label: 'Water', icon: 'glass', tone: undefined, aria: 'Log water you drank' }
+  { id: 'mood', label: 'How are you?', icon: 'smile', tone: undefined, aria: 'Log how you feel' },
+  { id: 'water', label: 'Water', icon: 'glass', tone: undefined, aria: 'Log water you drank' },
+  { id: 'more', label: 'More', icon: 'plus', tone: undefined, aria: 'More things to log' }
 ]
+/** Behind More: the four things that are not daily numbers. */
+const MORE: { id: Kind; label: string }[] = [{ id: 'dose', label: 'Dose taken' }, { id: 'meal', label: 'Food' }, { id: 'walk', label: 'Walk' }, { id: 'move', label: 'Move' }]
+const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgreat: 'mid', unwell: 'bad' }
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
 export const readNum = (s: string, min: number, max: number): number | null => {
@@ -51,7 +54,8 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick log: nine buttons in a 3 x 3 grid (BP, Sugar, Weight, Walk, Move, Dose, Mood, Meal, Water), icon above the label. Each opens a small sheet and ends with a toast. */
+/** Quick log: six big tiles in a 3 x 2 grid (BP, Sugar, Weight, How are you?, Water, More), icon above the label. Each opens a small sheet and ends with a toast.
+ *  More holds Dose taken, Food, Walk and Move. In a storm the mood tile reads "Is everyone safe?". */
 export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
   const [open, setOpen] = useState<Kind | null>(null)
   const [err, setErr] = useState('')
@@ -62,6 +66,8 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
+  const storm = useStorm()
+  const self = useSelfPersonId()
 
   const close = () => { setOpen(null); setErr(''); setA(''); setB('') }
   const run = async (p: Promise<LogResult>, done: string) => {
@@ -70,6 +76,13 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     const r = await p
     setBusy(false)
     if (r === 'ok') { close(); notify(done) } else setErr(FAIL_TEXT[r])
+  }
+  const face = async (f: Feeling) => {
+    if (busy) return
+    setBusy(true)
+    const r = await logFeeling(f)
+    setBusy(false)
+    if (r === 'told' || r === 'untold') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +107,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => (
           <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
-            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.label}</span>
+            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.id === 'mood' && storm ? 'Is everyone safe?' : p.label}</span>
           </button>
         ))}
       </div>
@@ -118,6 +131,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
             )}
             {err && <p className="td-err" role="alert">{err}</p>}
             <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
+            {open === 'bp' && self && <BpCheckButton personId={self} forName="You" onSaved={(m) => { close(); notify(m) }} className="td-pill light" />}
           </form>
         </Sheet>
       )}
@@ -157,12 +171,20 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
         </Sheet>
       )}
       {open === 'mood' && (
-        <Sheet title="How are you feeling?" onClose={close}>
+        <Sheet title="How are you feeling?" onClose={close} focusFirst={false}>
           <div className="td-form">
-            {([['good', 'Good'], ['ok', 'Okay'], ['low', 'Not so good']] as const).map(([m, label]) => (
-              <button key={m} type="button" className="td-opt" disabled={busy} onClick={() => void run(logMood(m), 'Saved how you feel')}>{label}</button>
+            {FEELINGS.map(([f, label]) => (
+              <button key={f} type="button" className={`td-face ${FACE_CLASS[f]}`} disabled={busy} onClick={() => void face(f)}>{label}</button>
             ))}
             {err && <p className="td-err" role="alert">{err}</p>}
+            <p className="td-sub">Your family will see it in Bantay.</p>
+          </div>
+        </Sheet>
+      )}
+      {open === 'more' && (
+        <Sheet title="More" onClose={close}>
+          <div className="td-form">
+            {MORE.map((m) => <button key={m.id} type="button" className="td-opt" onClick={() => setOpen(m.id)}>{m.label}</button>)}
           </div>
         </Sheet>
       )}
