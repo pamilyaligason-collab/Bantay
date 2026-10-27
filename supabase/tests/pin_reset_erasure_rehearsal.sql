@@ -218,6 +218,9 @@ insert into public.water_entries (person_id, drunk_at, ml) values ('10000000-000
 -- B acknowledged an SOS of C (sos_acks.user_id = B, and the event is C's, so only the user id reaches it)
 insert into public.sos_events (id, person_id, user_id, at) values ('e0000000-0000-0000-0000-0000000000c1', '10000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000c', now());
 insert into public.sos_acks (event_id, user_id) values ('e0000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000b');
+-- Google-like profile on B and C: GoTrue merges user_metadata key by key, so only the SQL scrub can empty it
+update auth.users set raw_user_meta_data = '{"full_name":"Bee B","name":"Bee B","avatar_url":"https://x/a.png","picture":"https://x/a.png","email":"b@gmail.com","display_name":"Bee"}',
+  raw_app_meta_data = '{"provider":"google","providers":["google"],"email":"b@gmail.com"}' where id in ('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c');
 insert into auth.identities (user_id, provider, identity_data) values ('00000000-0000-0000-0000-00000000000b', 'google', '{"name":"Bee"}'), ('00000000-0000-0000-0000-00000000000c', 'google', '{"name":"Cee"}');
 
 -- ===== the expected covered set, written by hand (a table added later must be classified here: the test fails until it is) =====
@@ -338,6 +341,8 @@ reset role;
 select pg_temp.ok(not exists (select 1 from auth.identities where user_id = '00000000-0000-0000-0000-00000000000b') and exists (select 1 from auth.identities where user_id = '00000000-0000-0000-0000-00000000000c'), 'B''s login identities are dropped, C''s stay');
 select pg_temp.ok(not has_function_privilege('authenticated', 'public.erasure_scrub_identities(uuid)', 'execute') and not has_function_privilege('anon', 'public.erasure_scrub_identities(uuid)', 'execute') and has_function_privilege('service_role', 'public.erasure_scrub_identities(uuid)', 'execute')
   and not has_function_privilege('authenticated', 'public.erasure_targets()', 'execute') and has_function_privilege('authenticated', 'public.is_self(uuid)', 'execute') and not has_function_privilege('anon', 'public.is_self(uuid)', 'execute'), 'grants: scrub and targets service role only; is_self authenticated only as in 0001');
+select pg_temp.ok((select raw_user_meta_data = '{}'::jsonb and raw_app_meta_data = '{"provider":"google","providers":["google"]}'::jsonb from auth.users where id = '00000000-0000-0000-0000-00000000000b'), 'B''s user metadata is empty after the scrub (full_name, name, avatar_url, picture, email, display_name gone); app_metadata keeps provider/providers and loses the email');
+select pg_temp.ok((select raw_user_meta_data ? 'full_name' and raw_app_meta_data ? 'email' from auth.users where id = '00000000-0000-0000-0000-00000000000c'), 'C''s metadata is untouched');
 update auth.users set email = 'erased-00000000-0000-0000-0000-00000000000b@members.bantay.invalid' where id = '00000000-0000-0000-0000-00000000000b';
 select pg_temp.ok(not exists (select 1 from public.erasure_due()), 'once the email is the erased value, nothing is due any more');
 select pg_temp.ok(not exists (select 1 from public.readings where person_id = '10000000-0000-0000-0000-0000000000b1')
@@ -367,5 +372,18 @@ select pg_temp.ok((select count(*) from public.carers where person_id = '1000000
 select pg_temp.ok(not exists (select 1 from public.invites where email = 'm-b@members.bantay.invalid') and exists (select 1 from public.invites where email = 'keep@example.com'), 'B''s invite row is gone, another stays');
 select pg_temp.ok((select done_at is not null from public.erasure_requests where user_id = '00000000-0000-0000-0000-00000000000b'), 'the request is marked done');
 select pg_temp.ok(pg_temp.fails($$select public.erase_user_data('00000000-0000-0000-0000-00000000000b')$$), 'a second erase run for the same user is refused');
+
+-- ===== erasure_due does not starve (ML-23): 6 due users, the first five keep failing, the sixth is still served in the second run =====
+insert into auth.users (id, email) select ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid, 'q' || n || '@example.com' from generate_series(1, 6) n;
+insert into public.people (id, auth_user_id, display_name, created_by)
+  select ('10000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid, ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid, 'Q' || n, ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid from generate_series(1, 6) n;
+insert into public.erasure_requests (user_id, requested_at, cancel_until)
+  select ('00000000-0000-0000-0000-0000000001' || lpad(n::text, 2, '0'))::uuid, now() - interval '9 days', now() - interval '2 days' + n * interval '1 minute' from generate_series(1, 6) n;
+create temp table run1 as select user_id from public.erasure_due();
+create temp table run2 as select row_number() over () as rn, user_id from (select user_id from public.erasure_due()) x;
+select pg_temp.ok((select count(*) from run1) = 5 and not exists (select 1 from run1 where user_id = '00000000-0000-0000-0000-000000000106'), 'run 1 hands out five users, oldest window first, not the sixth');
+select pg_temp.ok((select user_id from run2 where rn = 1) = '00000000-0000-0000-0000-000000000106', 'run 2 serves the never-tried sixth user first although the five earlier ones are still failing');
+select pg_temp.ok((select min(attempts) = 1 and max(attempts) = 2 from public.erasure_requests where user_id::text like '00000000-0000-0000-0000-0000000001%') and (select attempts from public.erasure_requests where user_id = '00000000-0000-0000-0000-000000000106') = 1, 'attempts counts the hand-outs: 1 or 2 for the first five, exactly 1 for the sixth');
+delete from public.erasure_requests where user_id::text like '00000000-0000-0000-0000-0000000001%';
 
 \echo ALL PASS

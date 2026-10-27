@@ -36,6 +36,8 @@ create table if not exists public.erasure_requests (
   cancel_until timestamptz not null default now() + interval '7 days',
   done_at timestamptz
 );
+-- attempts / last_try_at: erasure_due() stamps every row it hands out, so a user whose step keeps failing goes to the back of the queue (ML-23).
+alter table public.erasure_requests add column if not exists attempts int not null default 0, add column if not exists last_try_at timestamptz;
 alter table public.erasure_requests enable row level security;
 revoke all on public.erasure_requests from anon, authenticated;
 grant select, insert, update, delete on public.erasure_requests to service_role;
@@ -157,12 +159,15 @@ grant execute on function public.cancel_erasure() to authenticated;
 -- the erase function retries the ban, session revoke and email scrub; erased = true skips the data steps). Keep the domain equal to SYNTHETIC_DOMAIN (_shared/pin.ts).
 drop function if exists public.erasure_due();
 create function public.erasure_due() returns table (user_id uuid, person_id uuid, erased boolean)
-  language sql stable security definer set search_path = '' as
-  $$ select e.user_id, p.id, e.done_at is not null
-       from public.erasure_requests e join public.people p on p.auth_user_id = e.user_id join auth.users u on u.id = e.user_id
-      where (e.done_at is null and e.cancel_until <= now())
-         or (e.done_at is not null and u.email is distinct from ('erased-' || e.user_id::text || '@members.bantay.invalid'))
-      order by e.cancel_until limit 5 $$;
+  language sql volatile security definer set search_path = '' as
+  $$ with picked as (
+       select e.user_id, p.id as person_id, e.done_at is not null as erased, e.last_try_at, e.cancel_until
+         from public.erasure_requests e join public.people p on p.auth_user_id = e.user_id join auth.users u on u.id = e.user_id
+        where (e.done_at is null and e.cancel_until <= now())
+           or (e.done_at is not null and u.email is distinct from ('erased-' || e.user_id::text || '@members.bantay.invalid'))
+        order by e.last_try_at nulls first, e.cancel_until limit 5),
+     stamped as (update public.erasure_requests r set attempts = r.attempts + 1, last_try_at = now() from picked k where r.user_id = k.user_id returning r.user_id)
+     select k.user_id, k.person_id, k.erased from picked k order by k.last_try_at nulls first, k.cancel_until $$;
 revoke execute on function public.erasure_due() from public, anon, authenticated;
 grant execute on function public.erasure_due() to service_role;
 
@@ -214,12 +219,15 @@ end $$;
 revoke execute on function public.erase_user_data(uuid) from public, anon, authenticated;
 grant execute on function public.erase_user_data(uuid) to service_role;
 
--- Drops the login identities (Google subject, name, avatar) of an erased user. The Auth admin API cannot, so this runs here; refused until the erasure is done.
+-- Drops the login identities (Google subject, name, avatar) and empties the user metadata of an erased user. The Auth admin API cannot, so this runs here; refused until the erasure is done.
 create or replace function public.erasure_scrub_identities(p_user uuid) returns void
   language plpgsql security definer set search_path = '' as $$
 begin
   if not exists (select 1 from public.erasure_requests where user_id = p_user and done_at is not null) then raise exception 'erasure not done' using errcode = '42501'; end if;
   delete from auth.identities where user_id = p_user;
+  -- GoTrue merges user_metadata key by key, so the Auth API cannot clear it: empty the Google profile (full_name, avatar_url, picture, email, ...) here.
+  -- app_metadata keeps provider/providers (Supabase needs them); only a stray email key goes.
+  update auth.users set raw_user_meta_data = '{}'::jsonb, raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) - 'email' where id = p_user;
 end $$;
 revoke execute on function public.erasure_scrub_identities(uuid) from public, anon, authenticated;
 grant execute on function public.erasure_scrub_identities(uuid) to service_role;

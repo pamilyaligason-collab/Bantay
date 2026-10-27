@@ -31,7 +31,7 @@ export function makePort(admin: AdminLike): ErasePort {
       const { error } = await admin.rpc('erase_user_data', { p_user: userId })
       return !error
     },
-    // After the data is gone: no session, no sign-in by any method. The email goes last, because erasure_due() reads it as "auth step finished".
+    // After the data is gone: no session, no sign-in by any method (erasure_scrub_identities also empties the user metadata: the Auth API merges it key by key). The email goes last, because erasure_due() reads it as "auth step finished".
     async lockAuth(userId) {
       if ((await admin.rpc('revoke_sessions', { uid: userId })).error) return false
       if ((await admin.auth.admin.updateUserById(userId, { ban_duration: '876000h' })).error) return false // as admin-members does for a disable

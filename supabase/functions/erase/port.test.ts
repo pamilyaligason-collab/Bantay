@@ -23,7 +23,7 @@ describe('erase port with a mocked admin client', () => {
     expect(await runErase(makePort(m.admin))).toEqual({ due: 1, erased: 1, failed: 0 })
     expect(m.calls).toEqual(['erasure_due', 'erasure_paths', 'erase_user_data', 'revoke_sessions', 'ban', 'erasure_scrub_identities', 'scrub_email'])
     expect(m.attrs[0]).toEqual({ ban_duration: '876000h' })
-    expect(m.attrs[1]).toMatchObject({ email: `erased-${ID}@members.bantay.invalid`, user_metadata: {} })
+    expect(m.attrs[1]).toMatchObject({ email: `erased-${ID}@members.bantay.invalid` })
     expect(erasedEmail(ID)).toBe(`erased-${ID}@members.bantay.invalid`)
   })
   it.each(['revoke_sessions', 'ban', 'erasure_scrub_identities', 'scrub_email'])('a failing %s step is reported as failed and stops the later steps', async (step) => {
