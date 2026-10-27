@@ -82,7 +82,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     setBusy(true)
     const r = await logFeeling(f)
     setBusy(false)
-    if (r === 'told' || r === 'untold') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
+    if (r === 'told' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()

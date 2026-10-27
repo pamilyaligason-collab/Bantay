@@ -17,13 +17,14 @@ import Files from './Files'
 import Ids from './Ids'
 import History from './History'
 import System from './System'
+import Sharing from './Sharing'
 import { loadSystemBadge } from './systemApi'
 import './desk.css'
 
-const PAGES: Record<DeskPage, ComponentType<PageProps>> = { home: Home, members: Members, calendar: Calendar, queue: Queue, records: Records, duplicates: Duplicates, files: Files, ids: Ids, history: History, system: System }
-const ICONS: Record<DeskPage, IconName> = { home: 'home', members: 'users', calendar: 'calendar', queue: 'check', records: 'file', duplicates: 'pdf', files: 'scan', ids: 'key', history: 'clock', system: 'gauge' }
+const PAGES: Record<DeskPage, ComponentType<PageProps>> = { home: Home, members: Members, calendar: Calendar, queue: Queue, records: Records, duplicates: Duplicates, files: Files, ids: Ids, history: History, system: System, sharing: Sharing }
+const ICONS: Record<DeskPage, IconName> = { home: 'home', members: 'users', calendar: 'calendar', queue: 'check', records: 'file', duplicates: 'pdf', files: 'scan', ids: 'key', history: 'clock', system: 'gauge', sharing: 'lock' }
 /** g + key jumps to a page (help sheet lists them). */
-export const JUMPS: Record<string, DeskPage> = { h: 'home', m: 'members', c: 'calendar', q: 'queue', r: 'records', d: 'duplicates', f: 'files', i: 'ids', y: 'history', s: 'system' }
+export const JUMPS: Record<string, DeskPage> = { h: 'home', m: 'members', c: 'calendar', q: 'queue', r: 'records', d: 'duplicates', f: 'files', i: 'ids', y: 'history', s: 'system', w: 'sharing' }
 const NAV_KEY = 'admin.nav.collapsed'
 
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))

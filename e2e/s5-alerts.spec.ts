@@ -4,7 +4,10 @@ import { skipOnboarding } from './helpers'
 // S5 ALERTS-AUTO: storm mode (safety-storm), warnings list (safety-warnings), hub with the Phone alerts tile (safety-hub), phone warnings guide (safety-phonewarn).
 // 390x844, light and dark. Synthetic rows in the shape alerts-ingest writes for a PAGASA wind signal and flood advisory.
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
-const SHOTS = 'docs/session-10/shots/S5'
+// Session 12 lane D: shots move to docs/session-12/shots/D and the clock is fixed, so a rerun rewrites no committed PNG (ML-32). The session-10 S5 shots stay as they were.
+// Committed shots are written only on request (PW_SHOTS=docs/session-12/shots/D): pixels of the floating tab bar differ by a few bytes run to run, so a gate rerun must not rewrite them.
+const SHOTS = process.env.PW_SHOTS ?? 'test-results/shots-D'
+const NOW = Date.parse('2026-10-27T06:00:00Z') // 14:00 in Manila
 type Row = Record<string, unknown>
 
 async function putKv(page: Page, rows: Row[]) {
@@ -21,7 +24,7 @@ async function putKv(page: Page, rows: Row[]) {
     })
   }, rows)
 }
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString()
+const hoursAgo = (h: number) => new Date(NOW - h * 3_600_000).toISOString()
 const SIGNAL = {
   id: 'pagasa-tcws-rosal-champi-dampas', kind: 'tcws', level: 'Signal No. 2', title: 'Wind Signal No. 2 for Dampas, Tagbilaran City: Typhoon Rosal (CHAMPI)',
   what: 'Winds of 62-88 kph may be expected within 24 hours.', where: 'Bohol (near Dampas, Tagbilaran City)', when: '2026-10-26 10:00 PH time',
@@ -40,6 +43,8 @@ async function open(page: Page, hash: string, scheme: 'light' | 'dark', rows: Ro
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
+  await page.clock.setFixedTime(NOW)
+  await page.route(/open-meteo\.com/, (r) => r.abort()) // live forecasts would change the weather card, and so the shot, on every run (ML-32)
   await page.goto('/#today')
   await expect(page.locator('h1').first()).toBeVisible()
   await putKv(page, rows)
@@ -83,6 +88,88 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText('Medicine alarms')).toBeVisible()
     await expect(page.getByText('Needs fixing')).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/safety-phonewarn-${scheme}.png` })
+  })
+}
+
+// Lane D: freshness, honest sources, does-it-affect-us. Compared with canvas board 4b (alert freshness) and mockups safety-warnings / safety-hub / today-full (band).
+const OLD_QUAKE = { // 0.8 degrees of latitude north of Dampas = 88.95 km; M3.0 is felt to 50 km only, so the line says 'About 89 km away' (D-88)
+  id: 'usgs-far', kind: 'quake', level: 'Magnitude 3.0', title: 'M 3.0 - 89 km SSE of Pondaguitan', what: 'Magnitude 3.0 earthquake, about 89 km from Dampas, Tagbilaran City.', where: 'Pondaguitan, Philippines',
+  when: '2026-10-27 13:30 PH time', doNow: 'If you feel shaking: drop, cover and hold on. When it stops, check for injuries and damage, and move to open ground if you are near the sea and the shaking was strong or long.', source: 'USGS', sourceUrl: null, issuedAt: hoursAgo(0.5), lat: 9.645705 + 0.8, lon: 123.877951,
+  bulletin: 'Source: USGS.', checkedAt: hoursAgo(0.1)
+}
+const GDACS_RAW = {
+  id: 'gdacs-TC-1', kind: 'gdacs', level: 'Red', title: 'Red tropical cyclone CHAMPI-26', what: 'A Typhoon was active. Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million.',
+  where: 'CHAMPI-26, Philippines', when: '2026-10-27 08:00 PH time', doNow: 'Check the PAGASA bulletin and follow your local DRRMO.', source: 'GDACS', sourceUrl: null, issuedAt: hoursAgo(5), lat: null, lon: null,
+  bulletin: 'Source: GDACS.', checkedAt: hoursAgo(0.1)
+}
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`fresh alerts say how old they are ${scheme}`, async ({ page }) => {
+    await open(page, '#safety/warnings', scheme, [{ key: 'safety.alerts', value: [{ ...GDACS_RAW }, { ...OLD_QUAKE }] }])
+    const card = page.getByRole('article', { name: /CHAMPI-26/ })
+    await expect(card.getByText(/Checked 6 min ago/)).toBeVisible()
+    await expect(card.getByText(/About 291,000 people live where/)).toBeVisible()
+    await expect(page.getByText(/Population affected/)).toHaveCount(0)
+    await expect(page.getByText(/They may be out of date/)).toHaveCount(0)
+    const quake = page.getByRole('article', { name: /Pondaguitan/ })
+    await expect(quake.getByText(/About 89 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await page.screenshot({ path: `${SHOTS}/warnings-fresh-${scheme}.png` })
+  })
+
+  test(`old check shows the amber line even when no row is stale ${scheme}`, async ({ page }) => {
+    const old = { ...GDACS_RAW, checkedAt: hoursAgo(1.25), stale: false } // 75 minutes
+    await open(page, '#safety', scheme, [{ key: 'safety.alerts', value: [old] }])
+    const hub = page.getByRole('region', { name: 'Alerts and official sources' })
+    await expect(hub.getByText('Checked 1 h ago')).toBeVisible()
+    await expect(hub.getByText(/Alerts last checked .*They may be out of date\. Check PAGASA or listen to the radio\./)).toBeVisible()
+    await expect(hub.getByRole('link', { name: /Warnings/ })).toContainText('may be out of date')
+    await expect(hub.getByText(/Quakes: USGS\./)).toBeVisible()
+    await expect(page.getByText(/from PAGASA, PHIVOLCS and NDRRMC/)).toHaveCount(0)
+    await hub.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })
+  })
+
+  test(`Today band shows a quake beyond its felt radius, with the steps ${scheme}`, async ({ page }) => {
+    await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
+    const band = page.getByRole('region', { name: 'Active warning' })
+    await expect(band.getByText('About 89 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeVisible()
+    await expect(page.getByText(/no action needed/i)).toHaveCount(0)
+    await expect(band.getByText(/\(89 km away\)/)).toBeVisible()
+    await expect(band.getByText('Checked 6 min ago')).toBeVisible()
+    await expect(band.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
+    await band.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: `${SHOTS}/today-band-far-${scheme}.png` })
+  })
+
+  test(`warnings list shows every ingested row with its distance line (D-88) ${scheme}`, async ({ page }) => {
+    // Hand-computed from Conel (6.2015121): 1 deg of latitude = 111.195 km. 0.8 deg = 89 km, 1.2591 deg = 140 km, 22.483 deg = 2500 km, 8.1 deg = 901 km, 0.54 deg = 60 km.
+    const base = { ...OLD_QUAKE, lon: 125.1878084, what: '', where: 'Test place', when: '2026-10-27 13:30 PH time' }
+    const rows = [
+      { ...base, id: 'q89', title: 'Quake A (M4.5, 89 km)', level: 'Magnitude 4.5', lat: 6.2015121 + 0.8 },
+      { ...base, id: 'q140', title: 'Quake B (M3.6, 140 km)', level: 'Magnitude 3.6', lat: 6.2015121 + 1.2591 },
+      { ...base, id: 'q2500', title: 'Quake C (M7.2, 2500 km)', level: 'Magnitude 7.2', lat: 6.2015121 - 22.483 },
+      { ...base, id: 't900', kind: 'tcws', title: 'Typhoon D (900 km)', level: 'Signal No. 1', lat: 6.2015121 - 8.1, doNow: 'Follow your local DRRMO.' },
+      { ...base, id: 'air60', kind: 'air', title: 'Air E (60 km)', level: 'US AQI 120', lat: 6.2015121 + 0.54, doNow: 'Limit time outdoors.' }
+    ]
+    await open(page, '#safety/warnings', scheme, [{ key: 'safety.alerts', value: rows }])
+    const card = (t: RegExp) => page.getByRole('article', { name: t })
+    await expect(card(/Quake A/).getByText(/Near home \(Conel\)\. Follow the steps below\. \(89 km\)/)).toBeVisible()
+    await expect(card(/Quake B/).getByText(/About 140 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(140 km\)/)).toBeVisible()
+    await expect(card(/Quake C/).getByText(/About 2500 km away\..*If you live near the sea, watch for a tsunami warning\. \(2500 km\)/)).toBeVisible()
+    await expect(card(/Typhoon D/).getByText(/About 901 km away\. Follow the steps below\. \(901 km\)/)).toBeVisible()
+    await expect(card(/Air E/).getByText(/Far from you\. Watch for updates\. \(60 km\)/)).toBeVisible()
+    await expect(page.getByText(/no action needed/i)).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  })
+
+  test(`hazard card explains Intensity VIII in plain words ${scheme}`, async ({ page }) => {
+    await open(page, '#safety/hazards', scheme, [])
+    const card = page.getByRole('article', { name: 'Earthquake' })
+    await expect(card.getByText(/very destructive shaking \(Intensity VIII\)/)).toBeVisible()
+    await expect(card.getByText(/Drop, cover and hold on when it shakes/)).toBeVisible()
+    await card.scrollIntoViewIfNeeded()
+    await page.screenshot({ path: `${SHOTS}/hazard-quake-${scheme}.png` })
   })
 }
 

@@ -36,8 +36,8 @@ Run `ops/sql/alerts_cron.sql` (pg_cron plus pg_net, every 10 minutes). It stops 
 
 | Source | Kind in the app | What is kept | Lives for |
 | --- | --- | --- | --- |
-| USGS all-day quakes | `quake` (tier 1) | M3.5+ within 100 km of Dampas, M4.5+ within 300 km, M6.5+ within 1000 km | 24 h from the quake |
-| GDACS RSS | `gdacs` (tropical cyclone, flood), `volcano` (tier 1), `tsunami` (tier 1) | Current events in the Philippines or within 500 km of Dampas. Global context, not a PAGASA or PHIVOLCS warning | 48 h (72 h volcano, 12 h tsunami) from GDACS's last change |
+| USGS all-day quakes | `quake` (tier 1) | M3.5+ within 150 km of either home zone, M4.5+ within 500 km, M6.0+ within 1,500 km, M7.0+ within 3,000 km (D-88) | 24 h from the quake |
+| GDACS RSS | `gdacs` (tropical cyclone, flood), `volcano` (tier 1), `tsunami` (tier 1) | Current events in the Philippines or within 1,000 km of either home zone (D-88). Global context, not a PAGASA or PHIVOLCS warning | 48 h (72 h volcano, 12 h tsunami) from GDACS's last change |
 | Open-Meteo air quality | `air` (tier 2) | US AQI 101 and above, on an 11 km model grid. Model estimate, never shown above an official warning | 3 h |
 
 If a source fails (timeout, error, a page that is not the expected feed), its old rows stay and are marked `stale`. The card then says
@@ -74,3 +74,43 @@ next dose-watch run (15 minutes). Redeploy `alerts-ingest` after setting it. `al
 
 Safety screens: storm mode (`StormCard`, on the Safety tab and mounted on Today by S7), Warnings (source line "From PAGASA public alerts ..., GDACS and Open-Meteo, checked
 every 10 minutes ..."), the hub's Phone alerts tile (count from the phone check, only while something needs fixing) and the Phone warnings guide.
+
+## Freshness and honest copy (session 12, lane D)
+
+**The cron gap.** `alerts-ingest` had no cron job from 2026-10-17 (last fetch 22:16) until 2026-10-27 (job `*/10`, first run 17:00 Manila, applied from
+`ops/sql/alerts_cron.sql`). For ten days the phones showed the last rows as if they were current: no row was marked stale because nothing had failed, the job
+had simply never run. The fix has two parts: the cron job above, and the checks below so a silent stop is visible on the phone and on the admin desk.
+
+**On the phone.** Every alert has `checkedAt` (the row's `fetched_at`). `safety/alerts.ts` `freshness(checkedAt, now)` returns `{ageMin, tone}`:
+60 minutes or less is `ok`, over 60 is `amber`, over a day is `red`, and no time at all is `null` and `red` ("Never checked"), never "fresh".
+Where it shows:
+
+| Place | What it says |
+| --- | --- |
+| Each alert card (Safety > Warnings) | "Checked 5 min ago", and whether it affects the family |
+| Today alert band | the same, plus the amber line below |
+| Safety home, Alerts group | "Checked n min ago" from the newest row, and the amber line |
+| Safety hub Warnings tile | "None now · may be out of date" when the newest check is over an hour old |
+
+The amber line is shown even when no row is marked stale: "Alerts last checked <time>. They may be out of date. Check PAGASA or listen to the radio."
+With no saved alert at all the phone cannot tell a quiet day from a dead feed, so it says "Never checked" with the same amber line. (A feed-level "last
+synced" time written by `sync.ts` would remove that ambiguity; it is a one-line follow-up in that file.)
+
+**Does it affect us?** `affectsUs(alert, here)` (D-87, D-88): an alert with no point covers the whole area. Every quake the ingest kept affects the
+family and always shows the do-now steps: within its felt radius by magnitude (M<4 50 km, 4-5 100, 5-6 200, 6-7 400, 7+ 800, unknown 100) it says
+"Near you" or "Near home (zone)", beyond it "About N km away. You may feel it. If you feel shaking, follow the steps below."; M6.5+ adds the tsunami line.
+Storm, flood, tsunami, volcano and GDACS rows affect within 1,000 km; air, utility and local notices within 50 km; heat within 150 km. Anything else says
+"Far from you. Watch for updates." The app never says "no action needed". Hand-computed: 0.8 degrees of latitude is 88.95 km, so an M4.5 quake 89 km
+from Conel is near (felt to 100 km).
+
+**Source copy.** One constant, `SOURCES_LINE`, replaces every claim that the app pulls PAGASA, PHIVOLCS or NDRRMC warnings:
+"Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open."
+What the ingest really reads: USGS (quakes), GDACS (cyclone, flood, volcano, tsunami), the PAGASA public alert feed (wind signals, flood advisories) and
+Open-Meteo (air quality only, no weather). PHIVOLCS is not ingested (see "Not ingested") and neither are the PAGASA bulletin PDFs: the constant says PAGASA bulletins are links you can open, and PHIVOLCS is not mentioned as a source.
+The line names only what the ingest reads (ML-12). Other screens that still name PHIVOLCS or PAGASA as sources are outside lane D (SafetyPages, stormMode, heroCards) and are routed to the orchestrator.
+
+**GDACS in plain words.** GDACS statistics ("Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million.") are shown as
+"About 291,000 people live where the strongest winds or water are expected." A statistic line the app cannot read is dropped, never shown raw.
+
+**Admin desk.** System health > Scheduled jobs > "Official alerts feed" turns red when the newest `job_runs` row for `alerts-ingest` is older than 60 minutes
+or `ok = false` (30 minutes for the other jobs). The sidebar dot counts it. No `job_runs` row yet is amber (unknown), never red.

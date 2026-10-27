@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from 'react'
 import { PullIndicator, requestRefresh, Sky, springIn, usePullToRefresh, useSwipe } from './features/look'
+import Discover from './screens/Discover'
 import Family from './screens/Family'
 import Health from './screens/Health'
 import Me from './screens/Me'
@@ -19,20 +20,27 @@ import { canonicalHash, hasOwnHeader, parseHash, TABS, type Tab } from './featur
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
+import { JackFab } from './features/shell/JackFab'
+import { isDiscoverSubRoot } from './features/discover'
+import ApprovePinSheet from './features/setup/ApprovePinSheet'
 import { useSavedTheme } from './features/shell/theme'
 import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
 import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
+import { watchPushForSession } from './features/notify/fcm'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
 
+const SharingScreen = lazy(() => import('./features/sharing/SharingScreen'))
+
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
   health: { label: 'Health', Screen: Health },
+  discover: { label: 'Discover', Screen: Discover },
   family: { label: 'Family', Screen: Family },
   safety: { label: 'Safety', Screen: Safety }
 }
@@ -65,7 +73,7 @@ export default function App() {
 
   // Me, notifications and admin are full views with no active tab; swipe and pull-to-refresh belong to the four tabs.
   const view = route.view === 'admin' && !isAdmin ? null : route.view
-  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan')
+  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing')
   const tab: Tab = route.tab ?? 'today'
   const idx = TABS.indexOf(tab)
   const swiped = useRef(false)
@@ -78,9 +86,10 @@ export default function App() {
   useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
+  useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
-  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : SCREENS[tab].label
+  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current
@@ -99,14 +108,16 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      {isTabView && !hasOwnHeader(hash) && <TopBar unread={inbox.unread} />}
+      {isTabView && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
+      <JackFab tab={isTabView ? tab : null} hash={hash} />
       <Assistant />
+      <ApprovePinSheet />
       <RequiresUpdate />
       <UpdatedToast />
     </div>

@@ -75,9 +75,9 @@ export default function PrivacyScreen() {
       </div>
 
       <div className="sh-card sh-list">
-        <a className="sh-navrow" href="#me">
+        <a className="sh-navrow" href="#sharing">
           <Icon name="users" boxed size={20} />
-          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Pick what the family sees in Me. Admins can see everything.</span></span>
+          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Only you, the family admins, and the people you share with.</span></span>
           <Icon name="chev" />
         </a>
         <div>

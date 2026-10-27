@@ -3,7 +3,7 @@ import { DAMPAS } from '../location/geo'
 import hotlines from '../../data/safety/hotlines.json'
 import { CHECK_LABEL, coversHere, needsCheck, planDial, splitDial } from './dial'
 import type { Entry } from './entries'
-import { hazardsFor, hazardStatus, toneOf } from './hazardCards'
+import { hazardsFor, hazardStatus, quakeMeaning, toneOf } from './hazardCards'
 import { parseHash } from '../shell/routes'
 
 const e = (id: string, group: string, phone: string | null): Entry => ({ id, group, name: id, phone, status: 'CONFIRMED', source: 's', sourceUrl: null, date: 'd' })
@@ -27,9 +27,21 @@ describe('hazards', () => {
     const v = hazardsFor('dampas')!
     expect(v.cards.map((c) => [c.id, c.tone])).toEqual([['flood', 'none'], ['landslide', 'good'], ['surge', 'good'], ['quake', 'warn']])
     expect(v.rest.map((r) => r.label)).toContain('Severe wind')
-    expect(hazardStatus(v)).toBe('Earthquake: Prone, Intensity VIII')
+    expect(hazardStatus(v)).toBe('Earthquake: can have very destructive shaking')
+    const q = v.cards.find((c) => c.id === 'quake')!
+    expect(q.todo).toBe('In a big quake this place can have very destructive shaking (Intensity VIII). Old or weak buildings can be damaged. Know a safe spot in each room. Drop, cover and hold on when it shakes.')
+    expect(q.todo).not.toMatch(/Prone/)
     expect(hazardsFor('conel')).toBeNull()
     expect(hazardStatus(null)).toBe('Not checked for this place yet')
+  })
+})
+
+describe('quakeMeaning', () => {
+  it('reads the PHIVOLCS intensity, never guesses without one', () => {
+    expect(quakeMeaning('Prone, Intensity VII')!.status).toBe('can have destructive shaking')
+    expect(quakeMeaning('Prone, Intensity VI')!.status).toBe('can have very strong shaking') // VI must not be read as VII or V
+    expect(quakeMeaning('Prone')).toBeNull()
+    expect(quakeMeaning(null)).toBeNull()
   })
 })
 

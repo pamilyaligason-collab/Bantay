@@ -1,10 +1,15 @@
-import { HOME_ZONES, pickLocalSet } from '../location/geo'
+import { pickLocalSet } from '../location/geo'
+import { placeLabel } from '../safety/alerts'
 import type { usePlace } from '../location/useLocation'
 
-/** Short place name for weather text: the zone's name, or the area the phone is in; else 'where you are'. */
-export const placeNameOf = (place: ReturnType<typeof usePlace>): string => {
+type Place = ReturnType<typeof usePlace>
+
+/** The local rule: the zone's name, or the area the phone is in; else 'where you are'. */
+const localName = (place: Place): string => {
   if (!place) return 'where you are'
-  if (place.source === 'zone') return HOME_ZONES.find((z) => z.id === place.zone)?.name.split(',')[0] ?? 'your area'
   const set = place.source === 'gps' ? pickLocalSet(place.weather) : null
   return set?.where === 'area' ? set.area.name : 'where you are'
 }
+
+/** Short place name for weather text. A chosen zone gives the same string as the Safety header and AlertBand; a phone with GPS gives the local area it is in. */
+export const placeNameOf = (place: Place): string => (place?.source === 'zone' ? placeLabel(place) : localName(place))

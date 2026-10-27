@@ -29,9 +29,11 @@ describe('Privacy screen', () => {
     render(<PrivacyScreen />)
     expect(await screen.findByText('Agreement not recorded yet')).toBeTruthy()
   })
-  it('"Who can see my records" names nobody: no source of carer names a member can read', async () => {
+  it('"Who can see my records" opens the server list (#sharing) with the one privacy line, and names nobody', async () => {
     render(<PrivacyScreen />)
-    expect(await screen.findByText('Pick what the family sees in Me. Admins can see everything.')).toBeTruthy()
+    expect(await screen.findByText('Only you, the family admins, and the people you share with.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Who can see my records/ }).getAttribute('href')).toBe('#sharing')
+    expect(document.body.textContent).not.toMatch(/Admins can see everything/)
   })
   it('the AI-off line promises only what is gated: Jack, photo reading and new scans', async () => {
     await db.kv.put({ key: 'privacy.ai', value: false })

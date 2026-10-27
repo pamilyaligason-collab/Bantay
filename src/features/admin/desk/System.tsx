@@ -75,7 +75,7 @@ export default function System(_: PageProps) {
         </Card>
 
         <Card id="sy-jobs" title="Scheduled jobs" cls="dk-s6" src={join(jobs)}>
-          {jobs.data && <ul className="sy-list">{JOBS.map((j) => { const s = jobStatus(jobs.data![j.job], now); return <Line key={j.job} tone={s.tone} name={j.label} note={j.every} right={s.text} /> })}</ul>}
+          {jobs.data && <ul className="sy-list">{JOBS.map((j) => { const s = jobStatus(jobs.data![j.job], now, j.staleMin); return <Line key={j.job} tone={s.tone} name={j.label} note={j.every} right={s.text} /> })}</ul>}
         </Card>
 
         <Card id="sy-unseen" title="Alerts nobody opened, last 7 days" cls="dk-s4" src={join(kpis)}>

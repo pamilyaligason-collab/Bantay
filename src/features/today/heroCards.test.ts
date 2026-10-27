@@ -79,6 +79,23 @@ describe('zoneAlert', () => {
   })
 })
 
+describe('zoneAlert quakes (D-88)', () => {
+  // 1 degree of latitude = 111.195 km. Conel is 6.2015121 N.
+  const quake = (id: string, dLat: number, over: Partial<Alert> = {}) => alert({ id, kind: 'quake', level: 'Magnitude 4.6', lat: 6.2015121 + dLat, lon: 125.1878084, ...over })
+  const conel = { lat: 6.2015121, lon: 125.1878084 }
+  it('a quake 300 km away (2.7 deg) is no longer hidden by the old 150 km filter, and neither is one 2500 km away', () => {
+    expect(zoneAlert([quake('q300', 2.7)], conel)?.id).toBe('q300')
+    expect(zoneAlert([quake('q2500', -22.483, { level: 'Magnitude 7.2' })], conel)?.id).toBe('q2500')
+  })
+  it('a typhoon 1001 km away is still hidden, one 999 km away is shown (the hazard radius is 1000 km)', () => {
+    expect(zoneAlert([alert({ id: 't', lat: 6.2015121 - 8.984, lon: 125.1878084 })], conel)?.id).toBe('t')
+    expect(zoneAlert([alert({ id: 't', lat: 6.2015121 - 9.002, lon: 125.1878084 })], conel)).toBeNull()
+  })
+  it('within a tier the nearer quake leads', () => {
+    expect(zoneAlert([quake('far', 2.7), quake('near', 0.27)], conel)?.id).toBe('near')
+  })
+})
+
 describe('heroCards priority', () => {
   const dose = { name: 'Losartan', at: 480 }
   it('alert, then dose', () => {

@@ -229,9 +229,9 @@ export default function Assistant() {
     const b = opener.current
     return () => { window.removeEventListener('popstate', pop); b?.focus() }
   }, [open])
-  // The centre tab in the nav bar fires this; the sheet itself lives here.
+  // The floating Jack button fires this; the sheet itself lives here.
   useEffect(() => {
-    const on = () => { const a = document.activeElement as HTMLElement | null; opener.current = a === document.body ? document.querySelector<HTMLElement>('.tab-ask') : a; setOpen(true) }
+    const on = () => { const a = document.activeElement as HTMLElement | null; opener.current = a === document.body ? document.querySelector<HTMLElement>('.sh-jackfab') : a; setOpen(true) }
     window.addEventListener(ASK_EVENT, on)
     return () => window.removeEventListener(ASK_EVENT, on)
   }, [])
@@ -329,11 +329,11 @@ export default function Assistant() {
         <div className="as-back" style={kb ? { bottom: kb } : undefined} data-kb={kb > 0 ? 'open' : undefined} onClick={close}>
           <div ref={dlg} className="glass as-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title" onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
             <div className="as-head">
-              <h2 id="as-title">Ask Bantay</h2>
-              {items.length > 0 && <button type="button" className="btn2 as-clear" onClick={clearChat}>Clear chat</button>}
-              <button type="button" className="as-x" onClick={close} aria-label="Close">
-                <Icon name="close" size={20} />
+              <button type="button" className="as-x" onClick={close} aria-label="Back">
+                <Icon name="back" size={22} />
               </button>
+              <h2 id="as-title" style={{ flex: 1 }}>Ask Bantay</h2>
+              {items.length > 0 && <button type="button" className="btn2 as-clear" onClick={clearChat}>Clear chat</button>}
             </div>
             <p className="sub as-note">{CAUTION} For an emergency call 911.</p>
             <div className="as-list" ref={list} aria-live="polite" aria-relevant="additions" role="log" aria-label="Conversation">

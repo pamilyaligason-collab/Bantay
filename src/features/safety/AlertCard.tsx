@@ -1,8 +1,12 @@
-import { type Alert, diffBulletin, hazardOf, HOME, NOT_A_SIREN } from './alerts'
+import { useEffect, useState } from 'react'
+import { alertRef } from '../location/place'
+import { usePlace } from '../location/useLocation'
+import { ALERTS_KEY, type Alert, affectsUs, diffBulletin, freshness, freshText, hazardOf, HOME, newestChecked, NOT_A_SIREN, outdatedLine, plainWhat } from './alerts'
 import Lazy from './Lazy'
 import { Frame, ventuskyUrl } from './MapsPanel'
 import { CARDS, Poster } from './Practice'
 import { PAGASA_CREDIT } from './stormMode'
+import { useKv } from './store'
 import './safety.css'
 
 const NO_MAP = new Set<Alert['kind']>(['quake', 'tsunami', 'volcano', 'air'])
@@ -14,7 +18,34 @@ export function staleText(checkedAt: string | null | undefined): string {
   return `Last checked ${t.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' })}; source unreachable.`
 }
 
+/** Wall clock that moves every minute, so "Checked 5 min ago" does not freeze on a screen left open. */
+export function useNow(everyMs = 60_000): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), everyMs); return () => clearInterval(t) }, [everyMs])
+  return now
+}
+
+const NONE: Alert[] = []
+
+/** "Checked n min ago" plus, when the last check is over an hour old (or never), the amber line. Works from the saved list, so it shows even when no row is marked stale. */
+export function FreshLine({ checkedAt, className }: { checkedAt?: string | null; className?: string }) {
+  const saved = useKv<Alert[]>(ALERTS_KEY, NONE)
+  const now = useNow()
+  const at = checkedAt === undefined ? newestChecked(saved) : checkedAt
+  const f = freshness(at, now)
+  return (
+    <>
+      <p className={className ?? 'sub'} style={{ margin: '0 4px', fontSize: 14 }}>{freshText(f)}</p>
+      {f.tone !== 'ok' && <p className="sf-note" role="status">{outdatedLine(at)}</p>}
+    </>
+  )
+}
+
 export default function AlertCard({ alert: a }: { alert: Alert }) {
+  const place = usePlace()
+  const now = useNow()
+  const fresh = freshness(a.checkedAt, now)
+  const who = affectsUs(a, place ? alertRef(place) : null)
   const diff = diffBulletin(a.previousBulletin, a.bulletin)
   const card = CARDS.find((c) => c.id === hazardOf(a.kind))
   const centre = a.lat != null && a.lon != null ? { lat: a.lat, lon: a.lon } : HOME
@@ -24,9 +55,11 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
         {a.level && <span className="sf-chip warn">! {a.level}</span>}
         <span className="sf-chip">{a.source === 'PAGASA' ? PAGASA_CREDIT : a.source}</span>
       </div>
-      {a.stale && <p className="sf-note" role="status">{staleText(a.checkedAt)}</p>}
+      <p className="sub" style={{ margin: 0 }}>{freshText(fresh)} · {who.line}{who.km != null && ` (${who.km} km)`}</p>
+      {a.stale ? <p className="sf-note" role="status">{staleText(a.checkedAt)}</p>
+        : fresh.tone !== 'ok' && <p className="sf-note" role="status">{outdatedLine(a.checkedAt)}</p>}
       <div className="grp">
-        <div className="row sf-lbl"><span className="sub">What</span><span>{a.what}</span></div>
+        <div className="row sf-lbl"><span className="sub">What</span><span>{plainWhat(a) || a.title}</span></div>
         <div className="row sf-lbl"><span className="sub">Where</span><span>{a.where}</span></div>
         <div className="row sf-lbl"><span className="sub">When</span><span>{a.when}</span></div>
       </div>

@@ -15,6 +15,7 @@ import { dayOf, remindable, parseSchedule, reminderId, toClock, toMinutes } from
 import { clock, medSlots } from './model'
 import { DOSE_ACTION_TYPE, REPEAT_MIN, SNOOZE_BASE, SNOOZE_TOP, handleReminderAction, markablePeople, registerReminderActions } from './reminderActions'
 import { LANG_KEY, loadLang, t, type Lang } from '../../lib/i18n'
+import { syncBpReminders } from '../nudge/bpReminder'
 
 /** Local dose alarms for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids, default none). Native only (web: nothing).
  *  A medicine whose "Still taking it?" review is over 3 days old is left out (D5).
@@ -233,7 +234,7 @@ export function watchDoseReminders(): () => void {
   })
   let off: (() => void) | undefined
   let gone = false
-  const front = () => { void run().then(() => reportPhoneHealth()) } // on every open and return to the app: re-plan, re-arm what is missing, report
+  const front = () => { void run().then(() => reportPhoneHealth()); void syncBpReminders() } // on every open and return to the app: re-plan, re-arm what is missing, report; the BP reply reminder (nudge/bpReminder.ts) is re-armed too and does nothing until the person turns it on
   try {
     void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) front() })).then((h) => { if (gone) void h.remove(); else off = () => void h.remove() }).catch(() => undefined)
   } catch { /* no app plugin: the live query still keeps the plan current */ }

@@ -9,6 +9,8 @@ import SosHold from '../sos/SosHold'
 import SosScreen from '../sos/SosScreen'
 import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, type Feeling } from './actions'
 import { Icon } from '../shell/Icon'
+import BpCheck from '../health/bpcheck/BpCheck'
+import { useSelfPersonId } from '../setup/useProfile'
 import { weatherAction } from './heroCards'
 import { joinNames, pickNext } from './nextPick'
 import { markDue, useDueMeds } from './useDueMeds'
@@ -35,6 +37,8 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const [view, setView] = useState<'home' | 'mood' | 'taken'>('home')
   const [doneNames, setDoneNames] = useState('')
   const [err, setErr] = useState('')
+  const [bp, setBp] = useState(false)
+  const self = useSelfPersonId()
   const item = pickNext({ due, plan: null, storm }, tick)
   const w = item.who
   const calm = item.kind === 'calm'
@@ -52,7 +56,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     setBusy(true)
     const r = await logFeeling(f)
     setBusy(false)
-    if (r === 'told' || r === 'untold') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
+    if (r === 'told' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as the Safety tab
   if (view === 'mood') {
@@ -99,7 +103,12 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
         <button type="button" className="td-bigbtn ok" onClick={() => setView('mood')}>How are you?</button>
         <a className="td-bigbtn call" href={phone ? `tel:${phone}` : '#safety'}>{contact && phone ? `Call ${contact.name}` : 'Add a family number'}</a>
       </div>
+      <div className="td-big-btns">
+        <button type="button" className="td-bigbtn" onClick={() => setBp(true)} disabled={!self}>Check my blood pressure</button>
+        {calm && <a className="td-bigbtn" href="#health/meds">Medicines</a>}
+      </div>
       <button type="button" className="td-exit bottom" onClick={onExit}>Exit simple mode</button>
+      {bp && self && <BpCheck personId={self} forName="You" onClose={() => setBp(false)} onSaved={(m) => { setBp(false); notify(m) }} />}
     </div>
   )
 }

@@ -79,4 +79,46 @@ select pg_temp.ok((select count(*) from public.news_items) = 1, 'anon reads news
 select pg_temp.ok(pg_temp.fails($$select * from public.assistant_take(5)$$), 'anon cannot call assistant_take');
 select pg_temp.ok(pg_temp.fails($$select * from public.family_profiles()$$), 'anon cannot call family_profiles');
 reset role;
+-- Session 12 (R11): the rest of the live chain, applied AFTER the 0006-state asserts above (0028 was never applied live). Phase 3 lanes append theirs here.
+\ir ../migrations/0007_safety_alerts.sql
+create schema storage;
+create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id), name text, owner uuid default auth.uid());
+alter table storage.objects enable row level security;
+grant usage on schema storage to authenticated, anon;
+grant select, insert, update, delete on storage.objects to authenticated;
+\ir ../migrations/0008_records.sql
+\ir ../migrations/0009_pin_reset_requests.sql
+\ir ../migrations/0010_people_profile.sql
+\ir ../migrations/0011_family_profiles_photo.sql
+\ir ../migrations/0012_family_plan.sql
+\ir ../migrations/0013_records_autoconfirm.sql
+\ir ../migrations/0014_medications_live.sql
+\ir ../migrations/0015_usage_client_at.sql
+\ir ../migrations/0016_medications_softdelete.sql
+\ir ../migrations/0017_news_zone.sql
+\ir ../migrations/0018_dose_watch.sql
+\ir ../migrations/0019_records_dedupe.sql
+\ir ../migrations/0020_scan_extract.sql
+\ir ../migrations/0021_admin_audit.sql
+\ir ../migrations/0022_people_archive.sql
+\ir ../migrations/0023_family_memories.sql
+\ir ../migrations/0024_nutrition.sql
+\ir ../migrations/0025_knowledge.sql
+\ir ../migrations/0026_nutrition_v2.sql
+\ir ../migrations/0027_family_messages.sql
+\ir ../migrations/0029_admin_view_as.sql
+\ir ../migrations/0030_carer_alerts.sql
+\ir ../migrations/0031_sos.sql
+\ir ../migrations/0032_phone_health.sql
+\ir ../migrations/0033_job_runs.sql
+\ir ../migrations/0034_pin_reset_erasure.sql
+\ir ../migrations/0035_reading_alerts.sql
+\ir ../migrations/0036_scan_skip.sql
+\ir ../migrations/0037_sharing.sql
+\ir ../migrations/0038_join_claim.sql
+\ir ../migrations/0039_marked_by_digest.sql
+\ir ../migrations/0040_push_tokens.sql
+\ir ../migrations/0041_rollcall.sql
+\ir ../migrations/0042_kudos.sql
 \echo REHEARSAL DONE

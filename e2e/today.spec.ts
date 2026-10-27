@@ -33,29 +33,29 @@ test.beforeEach(async ({ page }) => {
 test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
   const heading = (name: string) => page.getByRole('heading', { name })
   await expect(heading('Next up')).toHaveCount(0) // calm: no empty card
-  await expect(heading("Today's plan")).toBeVisible()
+  await expect(heading("Today's plan")).toHaveCount(0) // S5: nothing planned, no card and no filler
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
   for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
   await expect(row.getByRole('button')).toHaveCount(6)
   await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined)))) // the reveal motion is done: measure settled boxes
-  const boxes = []
-  for (const b of await row.getByRole('button').all()) {
-    const box = (await b.boundingBox())!
+  // All six boxes are read in one page call (a late layout shift cannot land between two reads) and polled until Today has stopped moving.
+  const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
+  const measure = () => page.getByRole('group', { name: 'Quick log' }).evaluate((el) => [...el.querySelectorAll('button')].map((b) => { const r = b.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } }))
+  await expect.poll(async () => { const b = await measure(); return b.length === 6 && near(b.slice(0, 3).map((q) => q.y)) && near(b.slice(3).map((q) => q.y)) }).toBe(true) // two rows of three
+  const boxes = await measure()
+  for (const box of boxes) {
     expect(box.height).toBeGreaterThanOrEqual(72)
     expect(box.width).toBeGreaterThanOrEqual(48)
-    boxes.push(box)
   }
-  const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
   for (const r of [0, 3]) expect(near(boxes.slice(r, r + 3).map((b) => b.y))).toBe(true) // two rows of three
   for (const c of [0, 1, 2]) expect(near([boxes[c]!.x, boxes[c + 3]!.x])).toBe(true) // columns line up
   expect(boxes[3]!.y - boxes[0]!.y).toBeGreaterThan(60)
   expect(near(boxes.map((b) => b.width))).toBe(true) // equal tiles
   const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
   const quick = await y(row)
-  const plan = await y(heading("Today's plan"))
   const week = await y(page.getByRole('link', { name: /Your week/ }))
-  expect([quick, plan, week]).toEqual([...[quick, plan, week]].sort((p, q) => p - q))
+  expect(quick).toBeLessThan(week)
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 })
 

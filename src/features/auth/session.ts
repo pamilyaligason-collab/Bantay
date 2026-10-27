@@ -40,5 +40,6 @@ export async function signOut(): Promise<void> {
   void import('../records/useHealthData').then((m) => m.resetPersonChoice()).catch(() => {}) // next person starts on their own records
   await import('../assistant/history').then((m) => m.clearHistory()).catch(() => {}) // the next person on a shared phone must not see this chat
   await import('../sync/profile').then((m) => m.forgetSelf()).catch(() => {}) // before the session goes
+  await import('../notify/fcm').then((m) => m.forgetPushToken()).catch(() => {}) // lane E: delete this phone's push token BEFORE the session goes (ML-07)
   await supabase?.auth.signOut({ scope: 'local' })
 }

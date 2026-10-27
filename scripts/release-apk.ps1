@@ -24,6 +24,12 @@ $out = Join-Path $root 'release-out'
 
 if ($ApkPath -and -not $DryRun) { throw '-ApkPath is only for -DryRun' }
 if (-not $ApkPath) {
+# Push (D-85): an APK built without google-services.json cannot receive FCM and fails silently on the phone, so refuse before building (the GitHub workflow does the same).
+$gs = Join-Path $root 'android\app\google-services.json'
+if (-not (Test-Path $gs)) { throw "android\app\google-services.json is missing: download it from the Firebase console (docs/FIREBASE.md), then run again. An APK without it would build with no push." }
+$gsJson = Get-Content $gs -Raw | ConvertFrom-Json
+if (-not ($gsJson.client | Where-Object { $_.client_info.android_client_info.package_name -eq 'ph.bantay.family' })) { throw "android\app\google-services.json has no Android app ph.bantay.family (docs/FIREBASE.md step 1)." }
+Write-Host "[0/8] google-services.json found for ph.bantay.family"
 Write-Host "[1/8] npm ci"
 npm ci
 if ($LASTEXITCODE -ne 0) { throw "step 1 failed" }

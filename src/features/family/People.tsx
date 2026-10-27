@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { givenName } from '../health/medName'
 import { checkIn, FAIL_TEXT } from '../today/actions'
+import { StormRollCall } from './StormRollCall'
 import FmAvatar from './FmAvatar'
 import { bubbleStatus } from './messagesLogic'
 import Messages from './Messages'
@@ -12,6 +14,21 @@ import { useFlagLines } from './reportData'
 import { CarerCards } from './CarerCards'
 import FamilyPhones from './FamilyPhones'
 import { IncomingSos } from './IncomingSos'
+import { AcceptCard } from '../sharing/AcceptCard'
+
+
+/** The words under a picture: today's check-in ("OK 7:40 AM"), else when they were last OK ("Last OK yesterday", "Last OK 3 days ago", "Last OK 12 Oct"), else "No check-in yet". */
+export function lastCheckInWords(iso: string | undefined, now: Date = new Date()): string {
+  const t = iso ? new Date(iso) : null
+  if (!t || Number.isNaN(t.getTime())) return 'No check-in yet'
+  const today = checkInLabel(iso, now)
+  if (today.ok) return today.text
+  const day = (d: Date) => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)
+  const n = day(now) - day(t)
+  if (n < 1) return 'No check-in yet' // a time in the future is not a check-in
+  if (n === 1) return 'Last OK yesterday'
+  return n < 7 ? `Last OK ${n} days ago` : `Last OK ${t.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][t.getMonth()]}`
+}
 
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
@@ -51,7 +68,9 @@ export default function People() {
 
   return (
     <>
+      <AcceptCard />
       <IncomingSos placement="family" />
+      <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
       <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />
       {!(selfId && loaded && checkInLabel(loaded[selfId]).ok) && (
         <div className="card fm-checkin">
@@ -72,20 +91,22 @@ export default function People() {
               const c = checkInLabel(last[p.id])
               const known = loaded !== null // before the first read there is no status, never a wrong one
               const st = bubbleStatus({ checkedIn: known && c.ok, flag: flags[p.id] ?? null })
+              const words = st.key === 'quiet' ? lastCheckInWords(last[p.id]) : st.key === 'ok' ? c.text : st.word // S9: last check-in in words, not a sleep icon
               return (
                 <li key={p.id}>
-                  <button type="button" className="fm-bubble" data-k={known ? st.key : 'quiet'} onClick={() => setTalk(p.id)} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open messages`}>
+                  <button type="button" className="fm-bubble" data-k={known ? st.key : 'quiet'} onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.key === 'quiet' ? words : st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page`}>
                     <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={64} />
-                    {known && <span className="fm-emo" aria-hidden="true" data-testid="bubble-emoji">{st.emoji}</span>}
-                    <b>{p.isMe ? 'You' : p.name.trim().split(/\s+/)[0]}</b>
-                    {known && <span className="sub">{st.word}</span>}
+                    {known && st.key !== 'quiet' && <span className="fm-emo" aria-hidden="true" data-testid="bubble-emoji">{st.emoji}</span>}
+                    <b>{p.isMe ? 'You' : givenName(p.name)}</b>
+                    {known && <span className="sub">{words}</span>}
                     {flags[p.id] && <span className="fm-flag" data-testid="flag-line">{flags[p.id]}</span>}
                   </button>
+                  {!p.isMe && <button type="button" className="fm-bubble-msg" onClick={() => setTalk(p.id)} aria-label={`Message ${givenName(p.name)}`}>Message</button>}
                 </li>
               )
             })}
           </ul>
-          <p className="sub fm-key">✅ OK today &nbsp; ⚠️ Needs a look &nbsp; 💤 No news. Tap a picture to message.</p>
+          <p className="sub fm-key">✅ OK today &nbsp; ⚠️ Needs a look. Tap a picture to open the person, or Message to talk.</p>
         </>
       )}
       <LearningHub />

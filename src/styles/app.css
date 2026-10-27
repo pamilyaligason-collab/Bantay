@@ -3,7 +3,7 @@
 @font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-400.woff2) format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
 @font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-700.woff2) format("woff2"); font-weight: 700; font-display: swap; }
-:root { --tap: 48px; --text-scale: 1; --tabbar-h: 68px; --tabbar-gap: 10px; /* tab bar height and its gap above the bottom edge */ --sab: env(safe-area-inset-bottom, 0px); --tabbar-clear: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 24px); /* content bottom padding: bar + safe area + breathing room */ --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)); /* env() on new WebViews; Capacitor SystemBars injects --safe-area-inset-top on older ones */ --f-display: "Fraunces", Georgia, "Times New Roman", serif; --f-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+:root { --tap: 48px; --text-scale: 1; --tabbar-h: 68px; --tabbar-gap: 10px; /* tab bar height and its gap above the bottom edge */ --sab: env(safe-area-inset-bottom, 0px); --tabbar-clear: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 24px); /* spacer height under scrolling content (.scroll::after): bar + safe area + breathing room */ --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)); /* env() on new WebViews; Capacitor SystemBars injects --safe-area-inset-top on older ones */ --f-display: "Fraunces", Georgia, "Times New Roman", serif; --f-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 html, body, #root { margin: 0; height: 100%; }
 html, body { overscroll-behavior-y: none; }
 body { background: var(--ground); color: var(--ink); font-family: var(--f-ui); font-size: 16px; }
@@ -29,8 +29,11 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 /* The bottom 10px of the top bar overlaps the scroll area so content slides under the glass once it scrolls (D-71). */
 .topbar { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; transition: box-shadow var(--dur-base) var(--ease-out); }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
-.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 10px 16px var(--tabbar-clear); display: flex; flex-direction: column; gap: 22px; }
+.scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 10px 16px 0; display: flex; flex-direction: column; gap: 22px; }
 .scroll > * { min-width: 0; flex-shrink: 0; }
+/* S3: the room under the last item is a real flex item, not padding-bottom. Older Android WebViews drop the bottom padding of a scrolling flex column, so the tab bar covered the last tile. The gap above the spacer is 22px. */
+.scroll::after { content: ""; flex: none; height: max(0px, calc(var(--tabbar-clear) - 22px)); }
+@media print { .scroll::after { display: none; } }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
 .hdr h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
 .hdr span { font-size: 15px; color: var(--ink2); }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { reviewAgeDays as appAge } from '../../../src/features/health/meds'
 import { buildNotification } from '../../../src/features/notify/templates'
 import {
-  type Carer, doseWatchPayload, dueSlots, inDigestWindow, type MedRow, openToday, type Port, recipients, reviewAgeDays, runDoseWatch, scheduleTimes, type TakenRow
+  type Carer, doseWatchPayload, dueSlots, inDigestWindow, isVaccine, type MedRow, openToday, type Port, recipients, reviewAgeDays, runDoseWatch, scheduleTimes, type TakenRow
 } from './logic.ts'
 
 const NOW = Date.parse('2026-10-20T10:05:00+08:00')
@@ -229,5 +229,82 @@ describe('runDoseWatch', () => {
     expect(inDigestWindow(Date.parse('2026-10-20T20:29:00+08:00'))).toBe(true)
     expect(inDigestWindow(Date.parse('2026-10-20T20:30:00+08:00'))).toBe(false)
     expect(inDigestWindow(Date.parse('2026-10-20T12:05:00Z'))).toBe(true) // 20:05 Manila
+  })
+})
+
+// ---- session 12, lane C (D-83): the 8 PM summary opt-out and vaccines
+describe('digest opt-out (carer_prefs.digest_on)', () => {
+  const EVE = Date.parse('2026-10-20T20:05:00+08:00') // 20:05 Manila: inside the digest window; the 19:00 dose is 65 min late (due) and still open
+  const meds = [med({ schedule: { v: 1, times: ['19:00'] } })]
+  const carers: Carer[] = [{ carer_id: 'J', person_id: 'p1', can_write: true }, { carer_id: 'B', person_id: 'p1', can_write: true }]
+  const run = async (off: string[], over: { throws?: boolean } = {}) => {
+    const f = fakePort({ meds, carers })
+    f.port.digestOff = async (ids) => { if (over.throws) throw new Error('read'); return new Set(ids.filter((i) => off.includes(i))) }
+    const report = await runDoseWatch(f.port, EVE)
+    return { ...f, report }
+  }
+  it('carers J and B, B opted out: the digest goes to J only, the missed-dose alert still goes to both', async () => {
+    const f = await run(['B'])
+    expect(f.rows.filter((r) => r.kind === 'digest').map((r) => r.carer)).toEqual(['J']) // 1 digest row
+    expect(f.rows.filter((r) => r.kind === 'dose_missed').map((r) => r.carer).sort()).toEqual(['B', 'J']) // 2 dose_missed rows
+    expect(f.report).toMatchObject({ due: 1, rows: 1, digest: 1, failed: 0 })
+  })
+  it('nobody opted out: both carers get the digest', async () => {
+    const f = await run([])
+    expect(f.rows.filter((r) => r.kind === 'digest').map((r) => r.carer).sort()).toEqual(['B', 'J'])
+  })
+  it('both opted out: no digest at all (not counted), the missed-dose alerts are untouched', async () => {
+    const f = await run(['B', 'J'])
+    expect(f.rows.filter((r) => r.kind === 'digest')).toHaveLength(0)
+    expect(f.rows.filter((r) => r.kind === 'dose_missed')).toHaveLength(2)
+    expect(f.report.digest).toBe(0)
+  })
+  it('the opt-out is asked for the digest only, never for dose_missed or review_open', async () => {
+    const f = fakePort({ meds: [med({ schedule: { v: 1, times: ['19:00'], review: true, review_since: '2026-10-10' } })], carers })
+    const asked: string[][] = []
+    f.port.digestOff = async (ids) => { asked.push(ids); return new Set(ids) } // everyone is off
+    const report = await runDoseWatch(f.port, EVE)
+    expect(asked).toEqual([['B', 'J']]) // exactly one question, for the one digest
+    expect(f.rows.filter((r) => r.kind === 'review_open').map((r) => r.carer).sort()).toEqual(['B', 'J'])
+    expect(f.rows.filter((r) => r.kind === 'dose_missed')).toHaveLength(2)
+    expect(f.rows.filter((r) => r.kind === 'digest')).toHaveLength(0)
+    expect(report).toMatchObject({ review: 1, digest: 0, failed: 0 })
+  })
+  it('a failed opt-out read skips the digest, counts a failure for the heartbeat, and still writes the missed-dose rows', async () => {
+    const f = await run([], { throws: true })
+    expect(f.rows.filter((r) => r.kind === 'digest')).toHaveLength(0)
+    expect(f.rows.filter((r) => r.kind === 'dose_missed')).toHaveLength(2)
+    expect(f.report).toMatchObject({ digest: 0, failed: 1 })
+  })
+  it('a port without digestOff (not wired yet) filters nobody', async () => {
+    const f = fakePort({ meds, carers })
+    await runDoseWatch(f.port, EVE)
+    expect(f.rows.filter((r) => r.kind === 'digest')).toHaveLength(2)
+  })
+})
+
+describe('isVaccine: a one-off shot is never watched', () => {
+  it('reads real-looking vaccine names, and leaves ordinary medicines alone', () => {
+    for (const name of ['PNEUMOCOCCAL POLYSACCHARIDE VACCINE', 'Influenza Vaccine 0.5 mL', 'Tetanus Toxoid 0.5 mL', 'PREVNAR 13', 'Hepatitis B vaccination', 'Shingrix 0.5 mL IM', 'PNEUMOCOCCAL POLYSACCHARIDE VACCINE, POLYVALENT', 'Bakuna sa trangkaso', 'Influenza vaccines 2026']) {
+      expect(isVaccine({ name }), name).toBe(true)
+    }
+    for (const name of ['Losartan 50 mg', 'Metformin 500 mg tablet', 'Amlodipine 5 mg', 'Vitamin D3 1000 IU', 'Cefuroxime 500 mg', 'Omeprazole 20 mg capsule', 'Pneumonia relief syrup', 'Cranberry (Vaccinium macrocarpon) 500 mg', 'Bilberry Vaccinium myrtillus', 'Vaccinium extract 100 mg']) {
+      expect(isVaccine({ name }), name).toBe(false)
+    }
+    expect(isVaccine({ name: 'Pneumovax 23' })).toBe(true)
+    expect(isVaccine({ name: 'Brand X', generic_name: 'influenza vaccine' })).toBe(true)
+    expect(isVaccine({ name: null })).toBe(false)
+  })
+  const vax = { name: 'PNEUMOCOCCAL POLYSACCHARIDE VACCINE', schedule: { v: 1, times: ['08:00'], review: true, review_since: '2026-10-10' } }
+  it('a vaccine row raises no review_open and no dose_missed; the same row under an ordinary name does', async () => {
+    const f = fakePort({ meds: [med(vax)] })
+    expect(await runDoseWatch(f.port, NOW)).toEqual({ due: 0, claimed: 0, rows: 0, review: 0, digest: 0, failed: 0 })
+    expect(f.rows).toHaveLength(0)
+    const g = fakePort({ meds: [med({ ...vax, name: 'Losartan 50 mg' })] })
+    expect(await runDoseWatch(g.port, NOW)).toMatchObject({ due: 1, review: 1 })
+  })
+  it('a vaccine never makes a person count as having an open dose for the 8 PM summary, and dueSlots skips it', () => {
+    expect(openToday([med({ name: 'PNEUMOCOCCAL POLYSACCHARIDE VACCINE' })], [], NOW)).toEqual([])
+    expect(dueSlots([med({ name: 'PNEUMOCOCCAL POLYSACCHARIDE VACCINE' })], [], NOW)).toEqual([])
   })
 })

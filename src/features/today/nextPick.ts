@@ -1,4 +1,5 @@
 import { clock } from '../health/model'
+import { shortMedName } from '../health/medName'
 import { dayOf, matchDoses, slotsFor, type MedSlot } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
 import { ON_TIME_MIN } from '../health/doseCount'
@@ -60,7 +61,7 @@ export const lateNote = (d: DuePerson) => `Taking it by ${clock((d.at + ON_TIME_
 export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }, now: Date = new Date()): NextItem {
   const d = i.due[0]
   if (d) {
-    const names = [...new Set(d.slots.map((s) => s.name))]
+    const names = [...new Set(d.slots.map((s) => shortMedName(s.name)))]
     const others = [...new Set(i.due.slice(1).map((o) => o.name))]
     const title = d.isMe ? joinNames(names) : `${d.name}: ${joinNames(names)}`
     const late = d.status === 'missed'

@@ -9,6 +9,8 @@ export interface MedTaken {
   id?: number; personId: string; name: string; takenAt: string
   /** The medications row this dose belongs to (its server id) and the 'HH:MM' slot. Old rows have neither and match by name. */
   medicationId?: string; slot?: string; skipped?: boolean
+  /** Pull only (0039, set by the server): the user who marked the dose, and their first name when it was not the person themself. Never sent. */
+  markedBy?: string; markedByName?: string
 }
 export type MedStatus = 'active' | 'paused' | 'stopped'
 /** A row of public.medications (0014) kept locally. serverId is the server's id (meds_taken.medication_id points at it); clientId keys the sync. */

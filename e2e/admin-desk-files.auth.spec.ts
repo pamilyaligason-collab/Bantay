@@ -8,6 +8,8 @@ const UID = '33333333-3333-4333-8333-333333333333'
 const FULL = '9999-0000-7777-4321' // synthetic number the reveal RPC returns
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
+/** A local calendar day n days ahead (toISOString would give the UTC day, one day short after midnight in Manila). */
+const localDay = (n: number) => { const d = new Date(Date.now() + n * 86_400_000); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'admin-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' }
 
@@ -18,7 +20,7 @@ const file = (id: string, status: string, o: Record<string, unknown> = {}) => ({
 const FILES = [file('scan-a', 'failed', { ingest_error: 'too_many_tries', ingest_tries: 3 }), file('scan-b', 'done'), file('scan-c', 'reading')]
 const IDS = [
   { id: 'i1', source: 'id', label: 'sss', plan: null, last4: '4321', issued_on: '2024-01-01', expires_on: '2000-01-01', status: 'draft', source_file_id: null, confidence: 0.9 },
-  { id: 'i3', source: 'id', label: 'passport', plan: null, last4: '7788', issued_on: '2020-01-01', expires_on: new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10), status: 'confirmed', source_file_id: null, confidence: null },
+  { id: 'i3', source: 'id', label: 'passport', plan: null, last4: '7788', issued_on: '2020-01-01', expires_on: localDay(20), status: 'confirmed', source_file_id: null, confidence: null },
   { id: 'i2', source: 'insurance', label: 'Test Carrier', plan: 'Gold', last4: null, issued_on: null, expires_on: null, status: 'confirmed', source_file_id: null, confidence: null }
 ]
 const AUDIT = [

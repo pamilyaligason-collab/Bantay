@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
@@ -19,6 +19,7 @@ vi.mock('../features/today/PlanToday', () => stub('plan'))
 vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
+vi.mock('../features/setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../features/setup/useProfile')>()), useSelfPersonId: () => 'me' }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
@@ -34,6 +35,29 @@ describe('Today simple mode', () => {
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
     expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
+  })
+  it('off: Hold for help sits on Today (the same hold button as Simple mode), right under the quick log and above My week, so the Jack button at the bottom never covers it', async () => {
+    const { container } = render(<Today />)
+    await screen.findByTestId('quicklog')
+    const sos = screen.getByRole('button', { name: 'Hold to call and text your family' })
+    const order = [...container.querySelectorAll('[data-testid], .td-sos')].map((e) => e.getAttribute('data-testid') ?? 'sos')
+    expect(order.indexOf('sos')).toBe(order.indexOf('quicklog') + 1)
+    expect(order.indexOf('sos')).toBeLessThan(order.indexOf('myweek'))
+    expect(sos.closest('section')?.getAttribute('aria-label')).toBe('Emergency')
+  })
+  it('on, a dose due: a Check my blood pressure tile opens the guided check', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check my blood pressure' }))
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Medicines' })).toBeNull() // the dose card is the medicine entry
+  })
+  it('on, nothing due: Simple mode is not a dead end: a Medicines entry and the BP tile stay', async () => {
+    meds.due = false
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
+    expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
   it('full page order: weather, family alert card, Next up, quick log, My week, self-care, plan, then More; no OK card, How are you? is the check-in', async () => {
     const { container } = render(<Today />)
@@ -69,7 +93,7 @@ describe('Today simple mode', () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     const { unmount } = render(<Today />)
     await screen.findAllByRole('button', { name: /^Exit/ })
-    expect(bt.hasAttribute('data-simple')).toBe(true)
+    await waitFor(() => expect(bt.hasAttribute('data-simple')).toBe(true))
     unmount()
     expect(bt.hasAttribute('data-simple')).toBe(false)
     bt.remove()
@@ -135,7 +159,7 @@ describe('Today simple mode', () => {
     feel.r = 'untold'
     fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
-    expect(await screen.findByText('Your family has not seen this. Tap Unwell again when you are online, or call them.')).toBeTruthy()
+    expect(await screen.findByText('Saved. We will tell them when you are online.')).toBeTruthy()
     expect(feel.calls).toEqual(['great', 'unwell'])
   })
 })

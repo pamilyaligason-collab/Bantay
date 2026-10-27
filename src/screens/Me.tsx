@@ -24,30 +24,15 @@ import SetupCard from '../features/today/SetupCard'
 import { UpdateRow, VersionRow } from '../features/update/UpdateRow'
 import { loadCarerOf } from '../features/family/reportData'
 import { useFamilyPeople } from '../features/family/roster'
+import DigestToggle from '../features/notify/DigestToggle'
+import { PushPermissionRow } from '../features/notify/PushPermissionRow'
 import '../features/shell/shell.css'
 
-// Me and settings (mockup data-id="me"). Sharing defaults to OFF for everything (D-34); stored on this phone as kv share.<key>, synced in P5.
-const SHARE = [
-  { key: 'readings', label: 'Readings', sub: 'BP, sugar, weight' },
-  { key: 'medicines', label: 'Medicines', sub: '' },
-  { key: 'records', label: 'Records', sub: '' },
-  { key: 'mood', label: 'Mood', sub: '' },
-  { key: 'location', label: 'Live location', sub: 'Off shows your last known place' }
-] as const
+// Me and settings (mockup data-id="me"). What the family can see is the server list at #sharing (lane A, D-80); the old local share.* switches are gone.
 const THEMES: { id: ThemePref; label: string }[] = [{ id: 'system', label: 'System' }, { id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }]
 
 function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
   return <button type="button" className="sh-switch" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} />
-}
-
-function ShareRow({ k, label, sub }: { k: string; label: string; sub: string }) {
-  const [on, set] = useKv<boolean>(`share.${k}`, false)
-  return (
-    <div>
-      <div className="sh-grow"><b>{label}</b>{sub && <div className="sh-sub">{sub}</div>}</div>
-      <Switch label={`Share ${label.toLowerCase()}`} on={on} onChange={set} />
-    </div>
-  )
 }
 
 function SosSheet({ onClose, selfId, onSaved }: { onClose: () => void; selfId: string | null; onSaved: (c: SosContact[]) => void }) {
@@ -144,10 +129,6 @@ export default function Me() {
         <div><div className="sh-grow"><b>Simple mode</b><div className="sh-sub">Big buttons: I took it, How are you?, Hold for help, Call 911</div></div><Switch label="Simple mode" on={simple} onChange={setSimple} /></div>
       </div>
 
-      <div className="sh-sech"><b>Family can see my</b></div>
-      <div className="sh-card sh-list">{SHARE.map((s) => <ShareRow key={s.key} k={s.key} label={s.label} sub={s.sub} />)}</div>
-      <p className="sh-sub sh-note">Everything starts off. You choose what the family sees. Admins can see everything.</p>
-
       <div className="sh-card sh-list">
         {carerOf.filter((id) => id !== member?.personId).map((id) => {
           const p = roster.find((x) => x.id === id)
@@ -159,6 +140,11 @@ export default function Me() {
             </a>
           )
         })}
+        <a className="sh-navrow" href="#sharing">
+          <Icon name="lock" boxed size={20} />
+          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Pick who sees your records</span></span>
+          <Icon name="chev" />
+        </a>
         <button type="button" className="sh-navrow" onClick={() => setSosOpen(true)} aria-haspopup="dialog">
           <Icon name="phone" boxed size={20} />
           <span className="sh-grow"><b>Who gets your SOS text</b><span className="sh-sub sh-blk">{names || 'Nobody picked yet'}</span></span>
@@ -174,6 +160,8 @@ export default function Me() {
           <span className="sh-grow"><b>Alerts</b><span className="sh-sub sh-blk">Alert list and history</span></span>
           <Icon name="chev" />
         </a>
+        <DigestToggle />
+        <PushPermissionRow />
         <a className="sh-navrow" href="#privacy">
           <Icon name="file" boxed size={20} />
           <span className="sh-grow"><b>Privacy</b><span className="sh-sub sh-blk">Agreement, AI, my data</span></span>

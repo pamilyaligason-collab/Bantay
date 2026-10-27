@@ -1,25 +1,34 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
-import { NO_SIGNAL, fetchFamilyNames, signInWithPin, type NameEntry, type NamesResult } from '../auth/pinLogin'
+import { NO_SIGNAL, fetchFamilyNames, joinPort, signInWithPin, type InviteWhy, type JoinResult, type NameEntry, type NamesResult } from '../auth/pinLogin'
 import { enablePasskey, passkeySupported, setPasskeyFlag } from '../auth/family'
 import { promptFingerprint, unlockMode } from '../auth/biometric'
 import { getMember } from '../auth/session'
 import { Icon } from '../shell/Icon'
 import SetPin from './SetPin'
 
-/** Claiming a name from an invite link and setting the first PIN needs a server action the contract does not define yet (reported in the S6a lane `needs`).
- *  Until pin-login offers it there is NO live port: SignIn ignores a #join link and shows the ordinary sign-in, so joining works as before S6a
- *  (an admin or the invite sets the PIN, the person signs in with it). The e2e build (VITE_JOIN_STUB=1, test builds only) uses a stub that always accepts. */
-export type JoinResult = { ok: true } | { ok: false; why: 'no_signal' | 'bad_invite' | 'taken' }
+/** Claiming the name on a personal invite link and setting the first PIN: pin-login action join_claim (D-81), through joinPort in pinLogin.ts.
+ *  The e2e build (VITE_JOIN_STUB=1, test builds only) uses a stub that always accepts. */
+export type { JoinResult }
 export type JoinPort = (o: { invite: string; handle: string; pin: string }) => Promise<JoinResult>
-export const defaultJoinPort: JoinPort | null = import.meta.env.VITE_JOIN_STUB === '1' ? async () => ({ ok: true }) : null
+export const defaultJoinPort: JoinPort = import.meta.env.VITE_JOIN_STUB === '1' ? async () => ({ ok: true }) : joinPort
 
 const JOIN_COPY = {
   no_signal: NO_SIGNAL,
   bad_invite: 'This invite link is not working. Ask for a new one.',
-  taken: 'That name already has a PIN. Go back and use Forgot PIN, or pick another name.'
+  taken: 'This name already has a PIN. Go back to sign in and use Forgot PIN.',
+  bad_pin: 'Pick a PIN that is not all the same digit and not 123456.',
+  too_many: 'Too many tries from this phone. Wait an hour, then try again.'
 } as const
+
+/** What a refused link says (start-invite states). 'bad' is an unknown or mistyped link. */
+const LINK_COPY: Record<InviteWhy, string> = {
+  used: 'This link was already used, or a newer link replaced it. Ask whoever sent it for a new one.',
+  ended: 'This link ended. Links work for 7 days. Ask whoever sent it for a new one.',
+  tries: 'Too many tries on this link. Ask whoever sent it for a new one.',
+  bad: 'This invite link is not working. Ask whoever sent it for a new one.'
+}
 
 /** After the PIN is set and the session exists: the fingerprint choice, once. Off = the "use fingerprint next time?" offer never shows for this person. */
 export async function applyFingerChoice(want: boolean): Promise<void> {
@@ -69,7 +78,7 @@ export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack 
       <div className="si-c">
         <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} />
         <h1 className="pname">Is this you?</h1>
-        <p className="si-hint">I am Jack Jack. You are invited to Family Bantay. Tap your name.</p>
+        <p className="si-hint">I am Jack Jack. You are invited to Family Bantay. Tap your name to choose a PIN.</p>
       </div>
       {names === 'loading' ? <p className="si-hint" role="status">Looking for your family</p>
         : names.kind === 'ok' && names.names.length > 0 ? (
@@ -86,8 +95,8 @@ export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack 
           </ul>
         ) : (
           <>
-            <p className="si-hint" role="status">{names.kind === 'offline' ? NO_SIGNAL : 'This invite link is not working. Ask whoever sent it for a new one.'}</p>
-            <button type="button" className="btn2" onClick={load}>Try again</button>
+            <p className="si-hint" role="status">{names.kind === 'offline' ? NO_SIGNAL : names.kind === 'invite' ? LINK_COPY[names.why] : LINK_COPY.bad}</p>
+            {names.kind !== 'invite' && <button type="button" className="btn2" onClick={load}>Try again</button>}
           </>
         )}
       <p className="si-hint si-c">Not on the list? Tell whoever sent you the link.</p>

@@ -111,6 +111,31 @@ describe('Health overview', () => {
     expect(document.querySelector('[data-node]')).toBeNull()
   })
 
+  it('old readings only (no vitals this week): one no-vitals card, proper-case name, no headline, no nudge, no second avatar', async () => {
+    await hdb.people.put({ id: 'p1', name: 'loyd sevilla' })
+    await hdb.readings.clear()
+    await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 3.1, unit: 'mmol/L', takenAt: day(60) })
+    render(<Health />)
+    const card = await screen.findByTestId('no-vitals')
+    expect(within(card).getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeTruthy()
+    expect(screen.getByTestId('showing').textContent).toBe('Showing: Loyd Sevilla')
+    expect(screen.queryByTestId('insight')).toBeNull()
+    expect(screen.queryByTestId('nudge')).toBeNull()
+    expect(document.querySelector('.ad-av')).toBeNull()
+    expect(screen.getAllByText(/No vitals yet/)).toHaveLength(1) // exactly one empty message
+  })
+
+  it('J r2: a lab out of range this week still shows its warning above the no-vitals card; a "SURNAME, Given" name says the given name', async () => {
+    await hdb.people.put({ id: 'p1', name: 'SEVILLA, Loyd' })
+    await hdb.readings.clear()
+    await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2) })
+    render(<Health />)
+    const card = await screen.findByTestId('no-vitals')
+    expect(within(card).getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeTruthy()
+    expect((await screen.findByTestId('insight')).textContent).toBe('LDL cholesterol needs a look this week')
+    expect(screen.queryByTestId('nudge')).toBeNull()
+  })
+
   it('list rows keep the status and a sparkline; range text lives on the metric screen', async () => {
     render(<Health />)
     await screen.findByRole('link', { name: /^BP 130\/84/ })

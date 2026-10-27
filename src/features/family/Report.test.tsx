@@ -9,7 +9,7 @@ vi.mock('../auth/client', () => ({
   supabase: { from: () => { const q: any = { select: () => q, eq: () => q, then: (f: (v: unknown) => unknown) => Promise.resolve({ data: h.carers.map((person_id) => ({ person_id })), error: null }).then(f) }; return q } }
 }))
 vi.mock('./roster', () => ({
-  useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Ana Sample', isMe: true }, { id: 'p2', name: 'Lola Sample', isMe: false }], selfId: 'p1' })
+  useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Ana Sample', isMe: true }, { id: 'p2', name: 'Lola Sample', isMe: false }, { id: 'p3', name: 'ROCO, Lloyd', isMe: false }], selfId: 'p1' })
 }))
 import Report from './Report'
 import { hdb } from '../records/store'
@@ -37,6 +37,12 @@ describe('Report permission gate', () => {
     expect(await screen.findByTestId('report')).toBeTruthy()
     await waitFor(() => expect(screen.getByTestId('rp-vitals').textContent).toMatch(/150\/95/))
     expect(screen.getByRole('button', { name: /Print or save as PDF for the doctor/ })).toBeTruthy()
+  })
+  it('a "SURNAME, Given" name shows the given name in the title and the sentences: Lloyd, not ROCO,', async () => {
+    h.member = { ...h.member!, role: 'admin' }
+    render(<Report id="p3" />)
+    expect(await screen.findByText("Lloyd's report")).toBeTruthy()
+    expect(document.body.textContent).toContain('Lloyd has not said how they feel yet') // the full name stays only in the formal report line
   })
   it('opens for an admin and for the person themself', async () => {
     h.member = { ...h.member!, role: 'admin' }

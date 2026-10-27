@@ -32,7 +32,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('sheet opens with three 76px rows, axe clean, Escape closes', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       const dlg = page.getByRole('dialog', { name: 'What would you like to do?' })
       await expect(dlg).toBeVisible()
       await page.waitForTimeout(400) // slide-in
@@ -51,7 +51,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#today')
       const ask = page.getByRole('button', { name: 'Ask Bantay' })
       const dlg = page.getByRole('dialog', { name: 'What would you like to do?' })
-      await ask.click()
+      await ask.click({ button: 'right' })
       await expect(dlg).toBeVisible()
       await page.waitForTimeout(400)
       const box = (await page.locator('.ask-back').boundingBox())!
@@ -65,11 +65,11 @@ for (const scheme of ['light', 'dark'] as const) {
       // tap on the dim area above the sheet closes
       await page.mouse.click(195, 40)
       await expect(dlg).toHaveCount(0)
-      await ask.click()
+      await ask.click({ button: 'right' })
       await expect(dlg).toBeVisible()
       await dlg.getByRole('button', { name: 'Cancel' }).click()
       await expect(dlg).toHaveCount(0)
-      await ask.click()
+      await ask.click({ button: 'right' })
       await expect(dlg).toBeVisible()
       await page.goBack()
       await expect(dlg).toHaveCount(0)
@@ -79,7 +79,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('leaving via Scan leaves one Back press to return', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.getByRole('button', { name: /Scan & Capture/ }).click()
       await expect(page).toHaveURL(/#scan$/)
       await page.goBack()
@@ -89,23 +89,23 @@ for (const scheme of ['light', 'dark'] as const) {
     test('PDF line goes to Health > Papers', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
       await expect(page).toHaveURL(/#health\/papers/)
     })
 
-    test('one-time hint and camera badge pass axe', async ({ page }) => {
+    test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await expect(page.getByText('Scan papers here too')).toBeVisible()
-      const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').analyze()
+      await expect(page.getByText('Ask me anything')).toBeVisible()
+      const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').include('.sh-jackfab').include('.sh-hint').analyze()
       expect(res.violations).toEqual([])
     })
 
     test('Talk reaches the chat', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.getByRole('button', { name: /Talk to Jack Jack/ }).click()
       await expect(page.getByRole('dialog', { name: 'Ask Bantay' })).toBeVisible()
     })
@@ -113,7 +113,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Scan & Capture reaches the web crop flow', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.getByRole('button', { name: /Scan & Capture/ }).click()
       await expect(page).toHaveURL(/#scan$/)
       await expect(page.getByRole('heading', { level: 1, name: 'Scan & Capture' })).toBeVisible()
@@ -123,7 +123,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Upload a photo has a file input and a chosen photo lands in the crop step', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await expect(page.getByRole('button', { name: /Upload a photo/ })).toBeVisible()
       await expect(page.getByTestId('ask-file')).toHaveCount(1)
       await page.getByTestId('ask-file').setInputFiles({ name: 'one.png', mimeType: 'image/png', buffer: png(300, 400) })
@@ -132,20 +132,20 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('corner-0')).toBeVisible()
     })
 
-    test('the one-time hint shows, never covers the Ask button, and is gone after the first open', async ({ page }) => {
+    test('the one-time hint shows, never covers the Jack button, and is gone after the first open', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
-      const hint = page.getByText('Scan papers here too')
+      const hint = page.getByText('Ask me anything')
       await expect(hint).toBeVisible()
       const h = (await hint.boundingBox())!
       const a = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
-      expect(h.y + h.height).toBeLessThanOrEqual(a.y)
-      await page.getByRole('button', { name: 'Ask Bantay' }).click()
+      expect(h.x + h.width).toBeLessThanOrEqual(a.x) // the bubble sits left of the button
+      await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.keyboard.press('Escape')
       await expect(hint).toHaveCount(0)
       await page.reload()
       await page.waitForTimeout(300)
-      await expect(page.getByText('Scan papers here too')).toHaveCount(0)
+      await expect(page.getByText('Ask me anything')).toHaveCount(0)
     })
   })
 }

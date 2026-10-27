@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { FAIL_TEXT } from './actions'
+import { shortMedName } from '../health/medName'
 import { joinNames, type NextItem } from './nextPick'
-import { markDue } from './useDueMeds'
+import { markDue, markTaken } from './useDueMeds'
 
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
 
@@ -10,14 +11,20 @@ export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it 
  *  Today does not render it for a calm pick (it gives the space to the weather card). A panel under it counts medicines waiting for "Still taking it?". */
 export default function NextUp({ item, review, notify }: { item: NextItem; review: number; notify: (msg: string) => void }) {
   const [busy, setBusy] = useState(false)
+  const [picking, setPicking] = useState(false) // 2+ medicines due together: Taken asks which ones
+  const [off, setOff] = useState<string[]>([]) // unticked keys; everything starts ticked
+  const w = item.who
+  const many = (w?.slots.length ?? 0) > 1
 
   const act = async (skip: boolean) => {
-    const w = item.who
     if (!w || busy) return
+    if (!skip && many && !picking) { setOff([]); return setPicking(true) }
     setBusy(true)
-    const ok = await markDue(w, skip)
+    const keep = w.slots.filter((x) => !off.includes(x.key))
+    const ok = !skip && many ? (keep.length > 0 && (await markTaken(w.personId, keep.map((x) => x.key))) > 0) : await markDue(w, skip)
     setBusy(false)
-    const what = joinNames([...new Set(w.slots.map((x) => x.name))])
+    const what = joinNames([...new Set((skip || !many ? w.slots : keep).map((x) => shortMedName(x.name)))])
+    if (ok) setPicking(false)
     notify(ok ? (skip ? `Skipped ${what}` : `Marked ${what} taken`) : FAIL_TEXT.failed)
   }
 
@@ -29,10 +36,21 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
         <h3>{item.title}</h3>
         <p>{item.body}</p>
         {item.note && <p className="td-note">{item.note}</p>}
-        {item.who && (
+        {w && picking && (
+          <fieldset className="td-checks">
+            <legend>Which did you take?</legend>
+            {w.slots.map((x) => (
+              <label key={x.key} className="td-check">
+                <input type="checkbox" checked={!off.includes(x.key)} onChange={(e) => setOff(e.target.checked ? off.filter((k) => k !== x.key) : [...off, x.key])} />
+                <span>{shortMedName(x.name)}{x.dose ? ` ${x.dose}` : ''}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {w && (
           <div className="td-act">
-            <button type="button" className="td-pill light td-taken" disabled={busy} onClick={() => void act(false)}><Icon name="check" size={20} stroke={2.4} />Taken</button>
-            {item.who.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
+            <button type="button" className="td-pill light td-taken" disabled={busy || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} stroke={2.4} />{picking ? 'Mark these taken' : 'Taken'}</button>
+            {w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
           </div>
         )}
         {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}

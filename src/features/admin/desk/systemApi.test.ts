@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ALERT_KINDS, dayRates, errorTotals, errorsByVersion, errorsNote, errorsTone, JOB_STALE_MIN, jobStatus, KNOWN_MIGRATIONS, lowestDay, phoneStatus, seenLine, seenRate, seenTone,
+  ALERT_KINDS, ALERTS_FEED_STALE_MIN, dayRates, errorTotals, errorsByVersion, errorsNote, errorsTone, JOB_STALE_MIN, JOBS, jobStatus, KNOWN_MIGRATIONS, lowestDay, phoneStatus, seenLine, seenRate, seenTone,
   sortPhones, unseenList, type AlertStats, type ErrRow, type PhoneRow
 } from './systemApi'
 
@@ -25,6 +25,29 @@ describe('job status (red when failed or older than 30 minutes)', () => {
     expect(jobStatus(null, NOW).tone).toBe('warn')
     expect(jobStatus(undefined, NOW).tone).toBe('warn')
     expect(jobStatus({ job: 'x', ran_at: 'not a time', ok: true }, NOW).tone).toBe('warn')
+  })
+})
+
+describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes old or failed)', () => {
+  const feed = JOBS.find((j) => j.job === 'alerts-ingest')!
+  const run = (m: number, ok = true) => ({ job: 'alerts-ingest', ran_at: min(m), ok })
+  it('uses 60 minutes for the feed and 30 for the other jobs', () => {
+    expect(ALERTS_FEED_STALE_MIN).toBe(60)
+    expect(feed.staleMin).toBe(60)
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest').map((j) => j.staleMin)).toEqual([30, 30])
+  })
+  it('59 and 60 minutes are fine, 61 is red', () => {
+    expect(jobStatus(run(59), NOW, feed.staleMin).tone).toBe('ok')
+    expect(jobStatus(run(60), NOW, feed.staleMin).tone).toBe('ok')
+    const stale = jobStatus(run(61), NOW, feed.staleMin)
+    expect(stale.tone).toBe('bad'); expect(stale.text).toMatch(/Stopped/)
+  })
+  it('a failed run is red even a minute ago; no row yet is amber, never red', () => {
+    expect(jobStatus(run(1, false), NOW, feed.staleMin).tone).toBe('bad')
+    expect(jobStatus(null, NOW, feed.staleMin).tone).toBe('warn')
+  })
+  it('the cron gap of 2026-10-17..27 would have been red', () => {
+    expect(jobStatus({ job: 'alerts-ingest', ran_at: '2026-10-17T01:00:00Z', ok: true }, NOW, feed.staleMin).tone).toBe('bad')
   })
 })
 
@@ -116,7 +139,7 @@ describe('alert reach', () => {
     expect(unseenList(null)).toEqual([])
   })
   it('has a label for every carer_alerts.kind in the contract (ML-28)', () => {
-    expect(Object.keys(ALERT_KINDS).sort()).toEqual(['digest', 'dose_missed', 'hazard', 'mood_unwell', 'phone_health', 'pin_approve', 'pin_changed', 'reading_high', 'review_open', 'sos', 'sos_cancel', 'system'])
+    expect(Object.keys(ALERT_KINDS).sort()).toEqual(['digest', 'dose_missed', 'hazard', 'mood_unwell', 'phone_health', 'pin_approve', 'pin_changed', 'reading_high', 'review_open', 'rollcall', 'share', 'kudos', 'sos', 'sos_cancel', 'system'].sort())
   })
   it('per-day rates are sorted, a day with no due alerts is null, and the lowest day is found', () => {
     const r = dayRates(stats({ by_day: [{ day: '2026-10-24', total: 7, seen_1h: 5 }, { day: '2026-10-22', total: 10, seen_1h: 10 }, { day: '2026-10-23', total: 0, seen_1h: 0 }] }))
@@ -136,11 +159,11 @@ describe('alert reach', () => {
 
 describe('migrations.json', () => {
   const files = Object.keys(import.meta.glob('../../../../supabase/migrations/*.sql')).map((p) => p.split('/').pop()!).filter((f) => !f.endsWith('.down.sql')).map((f) => f.slice(0, 4))
-  it('is sorted, has no duplicates, skips 0028 and ends with the Phase 2 range 0030 to 0036', () => {
+  it('is sorted, has no duplicates, skips 0028 and ends with the range 0035 to 0042', () => {
     expect([...KNOWN_MIGRATIONS].sort()).toEqual(KNOWN_MIGRATIONS)
     expect(new Set(KNOWN_MIGRATIONS).size).toBe(KNOWN_MIGRATIONS.length)
     expect(KNOWN_MIGRATIONS).not.toContain('0028')
-    expect(KNOWN_MIGRATIONS.slice(-7)).toEqual(['0030', '0031', '0032', '0033', '0034', '0035', '0036'])
+    expect(KNOWN_MIGRATIONS.slice(-8)).toEqual(['0035', '0036', '0037', '0038', '0039', '0040', '0041', '0042'])
     expect(KNOWN_MIGRATIONS.every((v) => /^\d{4}$/.test(v))).toBe(true)
   })
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
@@ -148,7 +171,7 @@ describe('migrations.json', () => {
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v))).toEqual([])
   })
   it('has no gap except 0028 up to the last number', () => {
-    const all = Array.from({ length: 36 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
+    const all = Array.from({ length: 42 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
     expect(KNOWN_MIGRATIONS).toEqual(all)
   })
 })

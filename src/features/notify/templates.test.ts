@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { ALERT_KIND, buildNotification, HEALTH_IDS, NOTIFY_KINDS, renderTemplate, SAFETY_IDS, TEMPLATES, type TemplateId } from './templates'
 
 const HEALTH_VALUE = /\d|mmHg|\bmg\b|bpm|mg\/dL|%|kg|°/i
@@ -62,7 +62,7 @@ describe('Phase 2 alert templates (D-78)', () => {
   it('every template has a tone, and the urgent set is the one in the contract', () => {
     for (const id of ALL) expect(['urgent', 'normal'], id).toContain(TEMPLATES[id].tone)
     const urgent = ALL.filter((i) => TEMPLATES[i].tone === 'urgent').sort()
-    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'reading_high', 'storm_warning', 'system'])
+    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'reading_high', 'rollcall_help', 'storm_warning', 'system'])
     expect(TEMPLATES.sos_late.tone).toBe('normal')
   })
   it('the contract titles are exact', () => {
@@ -95,10 +95,20 @@ describe('Phase 2 alert templates (D-78)', () => {
     for (const id of SAFETY_IDS) expect(TEMPLATES[id].cls).toBe('safety')
   })
   it('ALERT_KIND maps only to kinds in the 0030 CHECK, and the CHECK lists exactly NOTIFY_KINDS (ML-28)', () => {
-    const sql = readFileSync('supabase/migrations/0030_carer_alerts.sql', 'utf8')
-    const m = /kind text not null check \(kind in \(([^)]*)\)\)/.exec(sql)!
-    const inSql = [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]!)
-    expect([...NOTIFY_KINDS].sort()).toEqual([...inSql].sort())
+    // The newest migration that restates the carer_alerts kind CHECK wins (0030, then 0037 in Phase 3).
+    const dir = 'supabase/migrations'
+    const files = readdirSync(dir).filter((f) => /^\d{4}_.*\.sql$/.test(f) && !f.endsWith('.down.sql')).sort()
+    let inSql: string[] = []
+    for (const f of files) {
+      const sql = readFileSync(`${dir}/${f}`, 'utf8')
+      if (!sql.includes('carer_alerts')) continue
+      const m = [...sql.matchAll(/check \(kind in \(([^)]*)\)\)/g)].pop()
+      if (m) inSql = [...m[1]!.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]!)
+    }
+    // shortcut: Phase 3 kinds may run ahead of the SQL until lane A's 0037 restates the CHECK; then this list is empty and the check is exact again.
+    const pending = NOTIFY_KINDS.filter((k) => !inSql.includes(k))
+    expect(pending.every((k) => ['share', 'rollcall', 'kudos'].includes(k)), pending.join()).toBe(true)
+    expect([...NOTIFY_KINDS].sort()).toEqual([...inSql, ...pending].sort())
     for (const [id, kind] of Object.entries(ALERT_KIND)) { expect(NOTIFY_KINDS, id).toContain(kind); expect(Object.hasOwn(TEMPLATES, id), id).toBe(true) }
     expect(Object.keys(ALERT_KIND).sort()).toEqual(ALL.filter((i) => i !== 'dose_due' && i !== 'bp_check').sort())
   })

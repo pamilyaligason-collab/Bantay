@@ -41,21 +41,17 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 @media (hover: hover) { .sh-iconbtn:hover { background: var(--card2); } }
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
-/* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Slots are Today, Health, Ask, Family, Safety, so --slot is 0, 1, 3 or 4. */
+/* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Five slots (Today, Health, Discover, Family, Safety), so --slot is the tab index 0..4. */
 .tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(var(--tabbar-gap) + var(--sab)); height: var(--tabbar-h); border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
 .tabbar.sh-tabs::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 22px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
 .sh-tabs button { position: relative; background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--ink); min-height: 56px; min-width: 0; }
-@media (hover: hover) { .sh-tabs button:not([aria-current="page"]):not(.sh-ask):hover { background: var(--fill); } }
+@media (hover: hover) { .sh-tabs button:not([aria-current="page"]):hover { background: var(--fill); } }
 .sh-tabs button[aria-current="page"] { color: var(--ink); background: none; }
 .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
 :root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
-.sh-tabs .sh-ask { margin-top: -22px; color: var(--ink); }
-.sh-tabs .sh-bub { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: var(--on-green); display: grid; place-items: center; box-shadow: 0 0 0 4px var(--ground), 0 0 0 6px var(--amber); }
-.sh-tabs .sh-bub .sh-ic { color: var(--on-green); }
-.sh-tabs .sh-ask:focus-visible .sh-bub { outline: 3px solid var(--ink); outline-offset: 3px; }
 
-/* Scrolling content ends above the tab bar: one global rule, `.scroll` padding-bottom = var(--tabbar-clear) in app.css. */
+/* Scrolling content ends above the tab bar: one global rule, the `.scroll::after` spacer (height from var(--tabbar-clear)) in app.css. */
 
 /* Me screen + shared small parts */
 .sh { color: var(--ink); }
@@ -134,11 +130,20 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 :root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }
 
-/* Ask choice sheet (S8 L2): three 76px rows over a dimmed screen; the camera badge and one-time hint sit on the Ask tab. */
-.sh-tabs .sh-bub { position: relative; }
-.sh-tabs .sh-cam { position: absolute; right: -4px; bottom: -2px; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); color: var(--ink); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--ground); }
-.sh-tabs .sh-cam .sh-ic { color: var(--ink); }
-.sh-hint { position: absolute; left: 50%; bottom: calc(100% + 38px); transform: translateX(-50%); margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+/* Floating Jack button (round 2): 56px circle, bottom right. Its bottom edge sits on --tabbar-clear and .bt[data-jack] .scroll::after adds the button's height
+   to the end spacer, so the last item (the Taken pill, the SOS hold) always ends above it. Tap opens Jack; press and hold opens the Ask choice sheet. */
+.sh-jackfab { position: absolute; right: 14px; bottom: var(--tabbar-clear); z-index: 6; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; background: var(--green); display: grid; place-items: center; box-shadow: 0 6px 20px rgba(20,30,20,.28), 0 0 0 3px var(--amber); touch-action: manipulation; -webkit-touch-callout: none; user-select: none; transition: transform var(--dur-press) var(--ease-out); }
+.sh-jackfab img { width: 48px; height: 48px; border-radius: 50%; background: var(--on-green); object-fit: cover; pointer-events: none; }
+.sh-jackfab:active { transform: scale(.94); }
+.sh-jackfab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.bt[data-jack] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 8px); } /* the spacer grows, not the padding: a webview that drops padding-bottom still clears Jack (S3) */
+/* The SOS hold scrolls past the Jack button's height too. Keep the hold centred (D-88): equal space on both sides of the button only, wide enough that its right edge
+   (56px + 14px margin + 6px air = 76px from the screen edge, less the page gutter) stays clear of Jack. The sentence under it keeps the full width. */
+.bt[data-jack] .sos-simple-btn { margin-inline: 62px; }
+.sh-hint { position: absolute; right: 78px; bottom: calc(var(--tabbar-clear) + 12px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .sh-jackfab { transition: none; } .sh-jackfab:active { transform: none; } }
+
+/* Ask choice sheet (S8 L2): three 76px rows over a dimmed screen. */
 .ask-back { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; }
 .ask-sheet { width: 100%; max-width: 520px; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 18px 16px calc(14px + env(safe-area-inset-bottom)); box-sizing: border-box; color: var(--ink); animation: ask-up var(--dur-sheet) var(--ease-sheet); }
 .ask-sheet h2 { margin: 0 0 4px; font-family: var(--f-display); font-size: 22px; }
@@ -151,3 +156,10 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .ask-pdf:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }
+
+/* Discover (F1): five sub-tabs in one row that wraps instead of scrolling sideways, and the empty-sub card. */
+.dc-subnav { display: flex; flex-wrap: wrap; gap: 2px; background: var(--card2); border-radius: 26px; padding: 3px; }
+.dc-subnav button { flex: 1 1 0; min-width: 0; border: 0; background: none; border-radius: 999px; min-height: var(--tap, 48px); padding: 0 4px; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); }
+.dc-subnav button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.dc-subnav button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.dc-soon { display: flex; flex-direction: column; gap: 6px; }

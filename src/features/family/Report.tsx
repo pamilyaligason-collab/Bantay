@@ -1,7 +1,9 @@
+import { givenName } from '../health/medName'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { useMemberReport, useReportAccess } from './reportData'
 import { type Report as ReportData } from './reportLogic'
+import { MemberToday } from './MemberPage'
 import { useFamilyPeople } from './roster'
 import './family.css'
 import './report.css'
@@ -87,7 +89,7 @@ export default function Report({ id }: { id: string }) {
   const { people } = useFamilyPeople()
   const access = useReportAccess(id)
   const p = people.find((x) => x.id === id)
-  const first = p ? (p.name.trim().split(/\s+/)[0] ?? p.name) : 'this person'
+  const first = p ? givenName(p.name) : 'this person'
   const report = useMemberReport(access ? id : '')
   const back = `#family/people/${id}`
 
@@ -96,7 +98,7 @@ export default function Report({ id }: { id: string }) {
     return (
       <>
         <SubHeader title="Report" backHref={back} backLabel="Back to member" />
-        <div className="card" data-testid="rp-denied" role="alert"><b>You do not have access to this report</b><p className="sub">Only {first}, the people who care for {first}, and the admins can open it.</p></div>
+        <div className="card" data-testid="rp-denied" role="alert"><b>You do not have access to this report</b><p className="sub">Only {first}, the family admins, and the people {first} shares with can open it.</p></div>
       </>
     )
   }
@@ -104,11 +106,12 @@ export default function Report({ id }: { id: string }) {
     <div className="rp" data-testid="report">
       <SubHeader title={p ? `${first}'s report` : 'Report'} backHref={back} backLabel="Back to member" />
       <h2 className="rp-print-title">{p ? `Health report for ${p.name}` : 'Health report'}</h2>
+      <MemberToday personId={id} first={first} />
       <Body r={report} first={first} />
       <div className="rp-actions no-print">
         <button type="button" className="btn" onClick={() => window.print()}><Icon name="dl" size={22} />Print or save as PDF for the doctor</button>
       </div>
-      <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the people who care for {first} and the admins can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
+      <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the family admins, and the people {first} shares with can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
     </div>
   )
 }

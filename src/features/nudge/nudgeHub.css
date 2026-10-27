@@ -1,0 +1,32 @@
+/* Health > Check-in and kudos: recap, pillbox, year in pixels, kudos, reminder. App tokens and the shell's sh-* classes; no new colours. */
+.nu-stack { display: grid; gap: 14px; margin: 12px 0 24px; }
+.nu-card { display: grid; gap: 12px; min-width: 0; }
+.nu-card .sh-h2 { margin: 0; }
+.nu-card .sh-sub { margin: 0; font-size: 16px; }
+.nu-stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.nu-stats li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 16px; background: var(--card2); min-width: 0; }
+.nu-stats b { font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.nu-stats span { font-size: 16px; color: var(--muted); }
+.nu-pill { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+.nu-pill th { font-size: 14px; font-weight: 600; color: var(--muted); text-align: center; }
+.nu-pill th[scope="row"] { width: 36px; text-align: left; }
+.nu-pill th[data-today] { color: var(--ink); }
+.nu-cell { height: 44px; text-align: center; border-radius: 12px; background: var(--card2); font-size: 20px; font-weight: 700; padding: 0; }
+.nu-cell.done { background: var(--soft); color: var(--ok); }
+.nu-cell.skipped { color: var(--warn); }
+.nu-cell.open { box-shadow: inset 0 0 0 2px var(--act); }
+.nu-cell.missed, .nu-cell.none { color: var(--muted); font-weight: 400; }
+.nu-cellbtn { width: 100%; height: 100%; min-height: 44px; border: 0; background: none; font: inherit; color: var(--act); border-radius: 12px; cursor: pointer; }
+.nu-cellbtn:focus-visible, .nu-time:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.nu-yr { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.nu-yrnav { display: inline-flex; align-items: center; gap: 8px; }
+.nu-grid { width: 100%; height: auto; display: block; }
+.nu-mo { font-size: 9px; fill: var(--muted); }
+.nu-none { fill: var(--line); }
+.nu-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 12px; }
+.nu-legend li { display: flex; align-items: center; gap: 8px; font-size: 16px; min-width: 0; }
+.nu-legend span { flex: 1; min-width: 0; }
+.nu-people .sh-grow { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.nu-row { display: flex; align-items: center; gap: 10px; }
+.nu-row .sh-grow { font-size: 17px; }
+.nu-time { min-height: var(--tap, 48px); padding: 0 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; }

@@ -20,11 +20,11 @@ export const iconOf = (i: Pick<InboxItem, 'kind' | 'alertKind' | 'row'>): InboxI
     : i.alertKind && WEATHER_KINDS.includes(i.alertKind) ? 'weather' : 'alert'
 
 const familyIcon = (k: NotifyKind | undefined): InboxIcon =>
-  k === 'dose_missed' || k === 'review_open' ? 'dose' : k === 'hazard' ? 'weather' : k === 'sos' || k === 'sos_cancel' || k === 'reading_high' || k === 'mood_unwell' ? 'alert' : 'family'
+  k === 'dose_missed' || k === 'review_open' ? 'dose' : k === 'hazard' ? 'weather' : k === 'sos' || k === 'sos_cancel' || k === 'reading_high' || k === 'mood_unwell' || k === 'rollcall' ? 'alert' : 'family'
 
 const KIND_LABEL: Record<NotifyKind, string> = {
   dose_missed: 'Missed dose', review_open: 'Question', phone_health: 'Phone', reading_high: 'Reading', mood_unwell: 'Mood', hazard: 'Alert', sos: 'SOS', sos_cancel: 'SOS',
-  digest: 'Summary', pin_approve: 'PIN', pin_changed: 'PIN', system: 'Admin'
+  digest: 'Summary', pin_approve: 'PIN', pin_changed: 'PIN', system: 'Admin', share: 'Sharing', rollcall: 'Storm check', kudos: 'Kudos'
 }
 const TITLE_WORDS = new Set(['lola', 'lolo', 'tita', 'tito', 'ate', 'kuya', 'ma.', 'mama', 'papa', 'nanay', 'tatay'])
 /** A short name for "<name>" in a row: the first word, or the first two when it is a title (Ate Joy). null when there is nothing usable. */

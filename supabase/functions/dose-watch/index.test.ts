@@ -1,7 +1,7 @@
 // @vitest-environment node
 // Drives the real index.ts handler with a faked Deno, a faked supabase client (in-memory tables) and a faked web-push. Fixed clock: 2026-10-26 10:05 Asia/Manila.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildNotification } from '../../../src/features/notify/templates'
+import { buildNotification, renderTemplate, TEMPLATES } from '../../../src/features/notify/templates'
 
 type Row = Record<string, unknown>
 const h = vi.hoisted(() => ({
@@ -12,8 +12,13 @@ const h = vi.hoisted(() => ({
   heartbeat: vi.fn(),
   rpcs: [] as string[],
   failUpdate: new Set<string>(), // tables whose update answers an error
+  failSelect: new Set<string>(), // tables whose read answers an error
   afterSend: null as null | (() => void),
-  serve: null as null | ((req: Request) => Promise<Response>)
+  serve: null as null | ((req: Request) => Promise<Response>),
+  fcm: [] as { token: string; msg: { notification: { title: string; body: string }; data: { t: string }; android: { priority: string; notification: { channel_id: string; tag: string } } } }[],
+  fcmStatus: new Map<string, number | null>(), // token -> status (null = no answer); default 200
+  afterFcm: null as null | (() => void),
+  port: null as null | { digestOff(ids: string[]): Promise<Set<string>> }
 }))
 
 function builder(name: string) {
@@ -52,6 +57,7 @@ function builder(name: string) {
         return { data: null, error: null }
       }
       const hit = (rows ?? all).filter((r) => preds.every((p) => p(r)))
+      if (op === 'select' && h.failSelect.has(name)) return { data: null, error: { message: 'read failed' } }
       if (op === 'update' && h.failUpdate.has(name)) return { data: null, error: { message: 'write failed' } }
       if (op === 'update') { for (const r of hit) Object.assign(r, patch); return { data: null, error: null } }
       if (op === 'delete') { h.tables[name] = all.filter((r) => !hit.includes(r)); return { data: null, error: null } }
@@ -82,6 +88,17 @@ vi.mock('npm:web-push@3.6.7', () => ({
   }
 }))
 vi.mock('../_shared/heartbeat.ts', () => ({ heartbeat: (...a: unknown[]) => h.heartbeat(...a) }))
+// FCM: the real message builders run; only the service account parse and the network send are faked (the JWT and HTTP are tested in _shared/fcm.test.ts).
+vi.mock('../_shared/fcm.ts', async (orig) => ({
+  ...(await orig<typeof import('../_shared/fcm.ts')>()),
+  parseServiceAccount: (b64?: string) => (b64 ? { client_email: 'sa@x', private_key: 'k', project_id: 'p' } : null),
+  sendFcm: async (_sa: unknown, token: string, msg: (typeof h.fcm)[number]['msg']) => { h.fcm.push({ token, msg }); h.afterFcm?.(); return h.fcmStatus.has(token) ? h.fcmStatus.get(token)! : 200 }
+}))
+// capture the port runDoseWatch receives, so the index.ts adapter (digestOff) is exercised through the real wiring
+vi.mock('./logic.ts', async (orig) => {
+  const real = await orig<typeof import('./logic.ts')>()
+  return { ...real, runDoseWatch: (port: never, ...a: never[]) => { h.port = port; return (real.runDoseWatch as (...x: unknown[]) => unknown)(port, ...a) } }
+})
 
 const SECRET = 's'.repeat(40)
 const ENV: Record<string, string> = { DOSE_WATCH_CRON_SECRET: SECRET, VAPID_SUBJECT: 'mailto:x@example.com', VAPID_PUBLIC_KEY: 'pub', VAPID_PRIVATE_KEY: 'priv', SUPABASE_URL: 'https://x.supabase.test', SUPABASE_SERVICE_ROLE_KEY: 'svc' }
@@ -100,7 +117,8 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   Object.assign(h, { tables: { carer_alerts: [], push_subscriptions: [], people: [{ id: 'p1', display_name: 'Lola Rosa Cruz', auth_user_id: 'u-p1', archived_at: null }], carers: [{ carer_id: 'c1', person_id: 'p1', can_write: true }, { carer_id: 'c2', person_id: 'p1', can_write: false }], medications: [], meds_taken: [], phone_health: [] }, claimed: new Set(), sent: [], rpcs: [], serve: null })
-  h.failWith.clear(); h.failUpdate.clear(); h.afterSend = null; h.heartbeat.mockReset()
+  h.failWith.clear(); h.failUpdate.clear(); h.failSelect.clear(); h.afterSend = null; h.heartbeat.mockReset()
+  h.fcm = []; h.fcmStatus.clear(); h.afterFcm = null; h.port = null; delete ENV.FIREBASE_SERVICE_ACCOUNT_B64
   ;(globalThis as { Deno?: unknown }).Deno = { env: { get: (k: string) => ENV[k] }, serve: (fn: (r: Request) => Promise<Response>) => { h.serve = fn } }
   vi.resetModules()
   await import('./index.ts')
@@ -274,5 +292,167 @@ describe('dose_due push (hazard M4)', () => {
     h.tables.phone_health!.push({ user_id: 'u-p1', platform: 'web', alarms_ok: null, last_open_at: null })
     await call({})
     expect(h.sent.filter((s) => (s.payload as { t: string }).t === 'dose_due')).toHaveLength(1)
+  })
+})
+
+describe('FCM to the Android app (lane E, D-85)', () => {
+  const tok = (user: string, n = 1, o: Row = {}) => ({ token: `${user}-token-${n}`.padEnd(24, 'x'), user_id: user, failed: 0, last_ok_at: null, ...o })
+  const on = () => { ENV.FIREBASE_SERVICE_ACCOUNT_B64 = 'b64' }
+  beforeEach(() => { h.tables.push_tokens = [] })
+
+  it('without the Firebase secret nothing is sent to FCM and the run is web push only, as before', async () => {
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'))
+    const r = await call({ mode: 'flush' })
+    expect(h.fcm).toEqual([])
+    expect(r.json).toMatchObject({ ok: true, pushed: 0, webPushed: 0, fcmPushed: 0 })
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBe(NOW.toISOString())
+  })
+  it('sends the template title and body to each of the carer own tokens and to nobody else; counts them, stamps last_ok_at, marks the row once', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1', 1), tok('c1', 2), tok('c2'))
+    h.tables.push_subscriptions!.push(sub('c1'))
+    const r = await call({ mode: 'flush' })
+    expect(r.json).toMatchObject({ ok: true, webPushed: 1, fcmPushed: 2, pushed: 1 })
+    expect(h.fcm.map((f) => f.token)).toEqual([tok('c1', 1).token, tok('c1', 2).token])
+    expect(h.fcm[0]!.msg).toEqual({
+      notification: { title: renderTemplate('family_sos').title, body: renderTemplate('family_sos').body },
+      data: { t: 'family_sos' },
+      android: { priority: 'high', notification: { channel_id: 'carer_alerts', tag: 'family_sos' } }
+    })
+    expect(h.tables.push_tokens!.filter((t) => t.last_ok_at).map((t) => t.token)).toEqual([tok('c1', 1).token, tok('c1', 2).token])
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBe(NOW.toISOString())
+    await call({ mode: 'flush' })
+    expect(h.fcm).toHaveLength(2) // a marked row is never sent again
+  })
+  it('never carries a name: every template, with the person and carers named in the database (B-7)', async () => {
+    on()
+    h.tables.push_tokens!.push(tok('c1'))
+    let i = 0
+    for (const id of Object.keys(TEMPLATES)) h.tables.carer_alerts!.push(alert(`t${i++}`, 'c1', id, { kind: id === 'dose_missed' ? 'dose_missed' : 'system', ref: `r${i}` }))
+    await call({ mode: 'flush' })
+    expect(h.fcm.length).toBeGreaterThan(20)
+    const all = JSON.stringify(h.fcm)
+    for (const n of ['Lola', 'Rosa', 'Cruz', 'u-p1']) expect(all).not.toContain(n)
+    expect(all).not.toMatch(/<name>/)
+    for (const f of h.fcm) {
+      const t = f.msg.data.t
+      const expected = t === 'dose_watch' ? buildNotification({ t })! : renderTemplate(t)
+      expect([f.msg.notification.title, f.msg.notification.body]).toEqual([expected.title, expected.body])
+    }
+  })
+  it('a carer missed-dose row sends the carer-class dose_watch message', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('d1', 'c1', 'dose_missed', { kind: 'dose_missed' }))
+    h.tables.push_tokens!.push(tok('c1'))
+    await call({ mode: 'flush' })
+    expect(h.fcm.map((f) => f.msg)).toEqual([{
+      notification: { title: 'A medicine was missed', body: 'A medicine was missed by someone you look after.' },
+      data: { t: 'dose_watch' },
+      android: { priority: 'high', notification: { channel_id: 'carer_alerts', tag: 'dose_watch' } }
+    }])
+  })
+  it('quiet hours: a tone-normal alert at 23:00 Manila uses carer_quiet; SOS at 23:00 stays carer_alerts', async () => {
+    on()
+    vi.setSystemTime(new Date('2026-10-26T23:00:00+08:00'))
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'digest', { kind: 'digest', created_at: '2026-10-26T22:55:00+08:00' }), alert('a2', 'c1', 'family_sos', { created_at: '2026-10-26T22:56:00+08:00' }))
+    h.tables.push_tokens!.push(tok('c1'))
+    await call({ mode: 'flush' })
+    expect(Object.fromEntries(h.fcm.map((f) => [f.msg.data.t, f.msg.android.notification.channel_id]))).toEqual({ digest: 'carer_quiet', family_sos: 'carer_alerts' })
+  })
+  it('404 and 410 (unregistered) delete the token row; other tokens of that carer still get the message', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1', 1), tok('c1', 2), tok('c1', 3))
+    h.fcmStatus.set(tok('c1', 1).token, 404); h.fcmStatus.set(tok('c1', 2).token, 410)
+    const r = await call({ mode: 'flush' })
+    expect(h.tables.push_tokens!.map((t) => t.token)).toEqual([tok('c1', 3).token])
+    expect(r.json.fcmPushed).toBe(1)
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBe(NOW.toISOString())
+  })
+  it('a 500 keeps the token and leaves the row unmarked for the next run; a 400 counts a failure and the row is marked', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'), alert('a2', 'c2', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'), tok('c2', 1, { failed: 4 }))
+    h.fcmStatus.set(tok('c1').token, 500)
+    h.fcmStatus.set(tok('c2', 1).token, 400)
+    await call({ mode: 'flush' })
+    expect(h.tables.push_tokens!.map((t) => [t.user_id, t.failed])).toEqual([['c1', 0], ['c2', 5]])
+    expect(Object.fromEntries(h.tables.carer_alerts!.map((r) => [r.id, r.pushed_at]))).toEqual({ a1: null, a2: NOW.toISOString() })
+    h.fcmStatus.set(tok('c1').token, 200)
+    await call({ mode: 'flush' }) // next run: the unmarked row goes out and is marked
+    expect(h.tables.carer_alerts!.find((r) => r.id === 'a1')!.pushed_at).toBe(NOW.toISOString())
+  })
+  it('no answer at all (null) also leaves the row unmarked', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'))
+    h.fcmStatus.set(tok('c1').token, null)
+    await call({ mode: 'flush' })
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBeNull()
+  })
+  it('a disabled carer gets no FCM (ML-33), an enabled one does', async () => {
+    on()
+    h.tables.app_roles = [{ user_id: 'c2', disabled: true }]
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'), alert('a2', 'c2', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'), tok('c2'))
+    await call({ mode: 'flush' })
+    expect(h.fcm.map((f) => f.token)).toEqual([tok('c1').token])
+  })
+  it('the 100 s budget stops FCM too: after it no send starts and the unfinished row stays unmarked', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1', 1), tok('c1', 2))
+    h.afterFcm = () => { vi.setSystemTime(new Date(NOW.getTime() + 101_000)) }
+    await call({ mode: 'flush' })
+    expect(h.fcm).toHaveLength(1)
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBeNull()
+  })
+  it('a missing push_tokens table (before 0040) is no tokens, not a failure', async () => {
+    on()
+    delete h.tables.push_tokens
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    const r = await call({ mode: 'flush' })
+    expect(r.status).toBe(200)
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBe(NOW.toISOString())
+  })
+  it('an unreadable push_tokens table does not block web push: web push still goes out and the row is left to try again', async () => {
+    on()
+    h.failSelect.add('push_tokens')
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_subscriptions!.push(sub('c1'))
+    const r = await call({ mode: 'flush' })
+    expect(r.status).toBe(200)
+    expect(r.json).toMatchObject({ ok: true, webPushed: 1, fcmPushed: 0, fcmRetried: 1 })
+    expect(h.tables.carer_alerts![0]!.pushed_at).toBeNull() // the FCM leg was not tried: offered again next run
+  })
+  it('every FCM send needs a retry (auth broken): the heartbeat turns red with fcmRetried, so a dead FCM path is visible', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'))
+    h.fcmStatus.set(tok('c1').token, null)
+    await call({})
+    const [, , ok, summary] = h.heartbeat.mock.calls[0]!
+    expect(ok).toBe(false)
+    expect((summary as Record<string, unknown>).fcmRetried).toBe(1)
+  })
+  it('a normal run puts fcmPushed in the heartbeat summary (counts only)', async () => {
+    on()
+    h.tables.carer_alerts!.push(alert('a1', 'c1', 'family_sos'))
+    h.tables.push_tokens!.push(tok('c1'))
+    await call({})
+    const [, job, ok, summary] = h.heartbeat.mock.calls[0]!
+    expect([job, ok]).toEqual(['dose-watch', true])
+    expect((summary as Record<string, unknown>).fcmPushed).toBe(1)
+    expect(JSON.stringify(summary)).not.toContain('token')
+  })
+  it('port.digestOff: the user ids with digest_on = false; a missing carer_prefs table (before 0039) is nobody', async () => {
+    await call({})
+    h.tables.carer_prefs = [{ user_id: 'c1', digest_on: false }, { user_id: 'c2', digest_on: true }]
+    expect([...(await h.port!.digestOff(['c1', 'c2', 'c3']))]).toEqual(['c1'])
+    expect([...(await h.port!.digestOff([]))]).toEqual([])
+    delete h.tables.carer_prefs
+    expect([...(await h.port!.digestOff(['c1']))]).toEqual([])
   })
 })

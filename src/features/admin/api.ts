@@ -61,19 +61,23 @@ export async function listCarers(): Promise<Res<Carer[]>> {
     return error ? fail(error) : { ok: true, data: (data ?? []) as Carer[] }
   } catch (e) { return fail(e) }
 }
-export async function linkCarer(carerId: string, personId: string, canWrite: boolean): Promise<Res<null>> {
+/** Offers a carer link through share_set (0037; no REST writes to carers any more). The carer must accept: 'pending' = offer sent, 'updated' = edit access of an existing link or offer changed, 'unchanged' = already linked or offered.
+ *  It never removes or downgrades the creator link of a person with no login (42501).
+ *  can_write only sticks for an admin on a person with no login; the server refuses anything else. */
+export async function linkCarer(carerId: string, personId: string, canWrite: boolean): Promise<Res<string>> {
   if (!supabase) return NO
   try {
-    const { error } = await supabase.from('carers').upsert({ carer_id: carerId, person_id: personId, can_write: canWrite }, { onConflict: 'carer_id,person_id', ignoreDuplicates: true }) // never rewrites an existing link
-    return error ? fail(error) : { ok: true, data: null }
+    const { data, error } = await supabase.rpc('share_set', { p_person: personId, p_carer: carerId, p_can_write: canWrite, p_on: true })
+    return error ? fail(error.code === '42501' || error.code === '22023' ? 'bad_input' : error) : { ok: true, data: String(data) }
   } catch (e) { return fail(e) }
 }
+/** Removes a link or cancels a pending offer. 'forbidden' when the server refuses (the creator of a no-login person is never unlinked) or finds nothing to remove. */
 export async function unlinkCarer(carerId: string, personId: string): Promise<Res<null>> {
   if (!supabase) return NO
   try {
-    const { data, error } = await supabase.from('carers').delete().eq('carer_id', carerId).eq('person_id', personId).select()
-    if (error) return fail(error)
-    return data && data.length > 0 ? { ok: true, data: null } : { ok: false, error: 'forbidden' } // RLS hides a row it will not delete
+    const { data, error } = await supabase.rpc('share_set', { p_person: personId, p_carer: carerId, p_can_write: false, p_on: false })
+    if (error) return fail(error.code === '42501' ? 'forbidden' : error)
+    return data === 'removed' ? { ok: true, data: null } : { ok: false, error: 'forbidden' }
   } catch (e) { return fail(e) }
 }
 

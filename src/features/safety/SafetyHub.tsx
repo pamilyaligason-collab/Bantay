@@ -8,7 +8,8 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, type Alert, rankAlerts } from './alerts'
+import { ALERTS_KEY, type Alert, freshness, newestChecked, rankAlerts, SOURCES_LINE } from './alerts'
+import { FreshLine, useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
 import { hazardsFor, hazardStatus } from './hazardCards'
@@ -81,6 +82,7 @@ export default function SafetyHub({ place }: { place: Place }) {
   const phoneFix = phoneAlertCount(useKv<PhoneCheck | null>(KEY_PHONE_CHECK, null))
 
   const warns = rankAlerts(alerts, alertRef(place)).length
+  const old = freshness(newestChecked(alerts), useNow()).tone !== 'ok' // over an hour since the last check, or never: say so on the tile too
   const storms = cyclones(alerts)
   const confirmed = dialCount(place, overrides)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
@@ -88,7 +90,7 @@ export default function SafetyHub({ place }: { place: Place }) {
   const last = sos[0] ? new Date(sos[0].at).toLocaleDateString('en-PH', { day: 'numeric', month: 'short' }) : null
 
   const tiles: [string, string, string, string][] = [
-    ['#safety/warnings', 'warn', 'Warnings', warns ? plural(warns, 'warning') + ' now' : 'None now'],
+    ['#safety/warnings', 'warn', 'Warnings', (warns ? plural(warns, 'warning') + ' now' : 'None now') + (old ? ' · may be out of date' : '')],
     ['#weather', 'weather', 'Weather', rainLine(wx)],
     ['#safety/storms', 'storm', 'Storm tracker', storms.length ? `${stormName(storms[0]!)}${storms.length > 1 ? ` and ${storms.length - 1} more` : ''}` : 'No storms now'],
     ['#safety/map', 'map', 'Rescue map', pins ? plural(pins, 'place') + ' on the map' : 'Shelters and help'],
@@ -110,7 +112,8 @@ export default function SafetyHub({ place }: { place: Place }) {
   const by = (hrefs: string[]) => tiles.filter((t) => hrefs.includes(t[0])).map(link)
   return (
     <>
-      <Group id="sf-g-alerts" tone="alerts" title="Alerts and official sources" sub="Live warnings, weather and maps from PAGASA, PHIVOLCS and NDRRMC.">
+      <Group id="sf-g-alerts" tone="alerts" title="Alerts and official sources" sub={SOURCES_LINE}>
+        <FreshLine checkedAt={newestChecked(alerts)} />
         <nav className="sf-tiles" aria-label="Safety topics: alerts">{by(['#safety/warnings', '#weather', '#safety/storms', '#safety/map', '#safety/hazards', '#safety/phonewarn'])}</nav>
       </Group>
       <Group id="sf-g-hot" tone="hotlines" title="Hotlines" sub="Numbers to call, and what you sent before.">

@@ -53,8 +53,7 @@ test('timeline, trend chart and latest vs normal from seeded data', async ({ pag
   await page.goto('/#health')
   const ldl = page.locator('[data-test="ldl"]')
   await expect(ldl).toContainText('95')
-  await expect(ldl).toContainText('In range') // session 8 labs list: plain verdict word + the paper's range on the card
-  await expect(ldl).toContainText('Usual range 0 to 130 mg/dL')
+  await expect(ldl).toContainText('In range') // labs list (lane J): an in-range result is one line with the verdict word; the paper's range is on the metric page below
   // the lab range, the general guide and the source now live on the metric page
   await page.goto('/#health/metric/ldl')
   await expect(page.getByText('Lab range: 0 to 130')).toBeVisible()

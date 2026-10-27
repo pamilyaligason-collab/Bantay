@@ -248,13 +248,23 @@ describe('confirm dialog and PIN field', () => {
   })
 })
 
-describe('unlinkCarer', () => {
-  const del = (data: unknown[]) => ({ delete: () => ({ eq: () => ({ eq: () => ({ select: async () => ({ data, error: null }) }) }) }) })
-  it('reports forbidden when no row was deleted, ok when one was', async () => {
+describe('linkCarer and unlinkCarer (0037: share_set, no REST writes)', () => {
+  it('unlinkCarer: removed is ok; refused or nothing to remove is forbidden', async () => {
     const { unlinkCarer } = await import('./api')
-    h.from.mockImplementation(() => del([]))
-    expect(await unlinkCarer('c', 'p')).toEqual({ ok: false, error: 'forbidden' })
-    h.from.mockImplementation(() => del([{}]))
+    h.rpc.mockImplementation(async () => ({ data: 'removed', error: null }))
     expect(await unlinkCarer('c', 'p')).toEqual({ ok: true, data: null })
+    expect(h.rpc).toHaveBeenLastCalledWith('share_set', { p_person: 'p', p_carer: 'c', p_can_write: false, p_on: false })
+    h.rpc.mockImplementation(async () => ({ data: 'unchanged', error: null }))
+    expect(await unlinkCarer('c', 'p')).toEqual({ ok: false, error: 'forbidden' })
+    h.rpc.mockImplementation(async () => ({ data: null, error: { code: '42501', message: 'not allowed' } }))
+    expect(await unlinkCarer('c', 'p')).toEqual({ ok: false, error: 'forbidden' })
+  })
+  it('linkCarer: returns the server word and maps a refusal to bad_input', async () => {
+    const { linkCarer } = await import('./api')
+    h.rpc.mockImplementation(async () => ({ data: 'pending', error: null }))
+    expect(await linkCarer('c', 'p', false)).toEqual({ ok: true, data: 'pending' })
+    expect(h.rpc).toHaveBeenLastCalledWith('share_set', { p_person: 'p', p_carer: 'c', p_can_write: false, p_on: true })
+    h.rpc.mockImplementation(async () => ({ data: null, error: { code: '22023', message: 'bad target' } }))
+    expect(await linkCarer('c', 'p', false)).toEqual({ ok: false, error: 'bad_input' })
   })
 })

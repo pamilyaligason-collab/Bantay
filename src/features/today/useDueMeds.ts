@@ -55,3 +55,28 @@ export async function markDue(d: DuePerson, skipped = false): Promise<boolean> {
     return false
   }
 }
+
+/** The one rule behind "never a second row": a take is matched to its slot by calendar day, so a dose just after midnight taken before midnight still looks open.
+ *  True when this person already logged this medicine and slot within 3 h of `now`. Used by markTaken and the pillbox. */
+// shortcut: no day on the take row; upgrade when meds_taken stores the dose day.
+export function recentlyTaken(takes: Pick<MedTaken, 'personId' | 'medicationId' | 'slot' | 'takenAt' | 'name'>[], personId: string, s: { medicationId?: string | null; slot: string; name?: string }, now = Date.now()): boolean {
+  // same medicine: by server id when both have one, else by name (a medicine not synced yet has no id; undefined and null both mean "none")
+  const same = (t: Pick<MedTaken, 'medicationId' | 'name'>) => (t.medicationId && s.medicationId ? t.medicationId === s.medicationId : (t.name ?? '').trim().toLowerCase() === (s.name ?? '').trim().toLowerCase())
+  return takes.some((t) => t.personId === personId && same(t) && t.slot === s.slot && now - Date.parse(t.takenAt) < 3 * 3600_000)
+}
+
+/** Marks only the chosen medicines taken (their `key`, or server id) among the doses due now for this person. Resolves to the rows logged (0 when none matched or storage failed).
+ *  Reads the same local tables the Next up card is drawn from, so the ticks and the rows agree. */
+export async function markTaken(personId: string, medIds: string[]): Promise<number> {
+  if (!medIds.length) return 0
+  try {
+    const [meds, takes] = await Promise.all([ldb.medications.toArray(), ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()])
+    const d = nextDoses([{ personId, name: '', isMe: false }], meds, takes, new Date())[0]
+    const recent = (s: { medicationId?: string | null; slot: string; name: string }) => recentlyTaken(takes, personId, s)
+    const pick = (d?.slots ?? []).filter((s) => (medIds.includes(s.key) || (s.medicationId != null && medIds.includes(s.medicationId))) && !recent(s))
+    for (const s of pick) await logDose({ personId, name: s.name, serverId: s.medicationId ?? undefined }, s.slot)
+    return pick.length
+  } catch {
+    return 0
+  }
+}

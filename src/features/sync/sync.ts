@@ -263,7 +263,17 @@ async function pullPeople(url: string, key: string, token: string) {
   // The server no longer sends archived (or unlinked) people: forget them here too. Only after a full successful pull, never my own row.
   const keep = new Set([...rows.map((r) => r.id as string), ...(selfId ? [selfId] : [])])
   const gone = (await hdb.people.toCollection().primaryKeys()).filter((id) => !keep.has(id))
-  if (gone.length) await Promise.all([hdb.people.bulkDelete(gone), db.profiles.bulkDelete(gone)])
+  if (gone.length) {
+    // After "Stop sharing" nothing of theirs may stay on this phone: records, medicines, doses, food, water, goals, visits too (ML-07).
+    const mine = (t: Table<{ personId: string }, number>) => t.where('personId').anyOf(gone).delete()
+    await Promise.all([
+      hdb.people.bulkDelete(gone), db.profiles.bulkDelete(gone),
+      mine(hdb.readings as never), mine(hdb.consults as never),
+      Promise.all(gone.map((id) => hdb.thresholds.where('key').startsWith(`${id}:`).delete())),
+      mine(ldb.meds as never), mine(ldb.medications as never), mine(ldb.activity as never), mine(ldb.food as never), mine(ldb.water as never), ldb.goals.bulkDelete(gone),
+      mine(vdb.appointments as never), mine(vdb.followUps as never)
+    ])
+  }
 }
 
 // Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.

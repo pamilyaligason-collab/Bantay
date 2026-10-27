@@ -63,7 +63,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await page.locator('.sc-circle').evaluate((e) => (e as HTMLElement).style.transform)).toBe('')
     })
 
-    test('Family: bubbles carry the status emoji; a bubble opens messages', async ({ page }) => {
+    test('Family: bubbles carry the status emoji; a bubble opens the person page', async ({ page }) => {
       await page.goto('/#family')
       await expect(page.locator('h1')).toHaveText('Family')
       const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString() }
@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       const roll = page.getByRole('list', { name: 'Family roll call' })
       await expect(roll.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
-      await expect(roll.getByTestId('bubble-emoji')).toHaveText(['✅', '💤', '✅'])
+      await expect(roll.getByTestId('bubble-emoji')).toHaveText(['✅', '✅'])
       for (const b of await roll.getByRole('button').all()) {
         const box = await b.boundingBox()
         expect(box!.height).toBeGreaterThanOrEqual(48)
@@ -83,15 +83,10 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await axe(page)).toEqual([])
       expect(await noSideways(page)).toBe(true)
 
+      // S9: a bubble opens the person's page. The Messages sheet is no longer reached from the bubble (its sheet tests live in Messages.test.tsx); lane K's member page owns the entry to it.
       await roll.getByRole('button', { name: /Lola Remy/ }).click()
-      const dlg = page.getByRole('dialog', { name: 'Message Lola' })
-      await expect(dlg).toBeVisible()
-      await expect(dlg.getByRole('link', { name: 'Use Messenger for video' })).toHaveAttribute('href', 'https://www.messenger.com/')
-      await expect(dlg.getByTestId('msg-state')).toHaveText('Messages need you to be signed in')
-      await expect(dlg.getByRole('button', { name: 'Record a voice note' })).toBeVisible()
-      await dlg.getByRole('button', { name: 'Record a voice note' }).click()
-      await expect(dlg.getByRole('alert')).toContainText(/Microphone|microphone|Voice notes/)
-      if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-messages-${scheme}.png` })
+      await expect(page).toHaveURL(/#family\/people\/p3$/)
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])
       expect(await noSideways(page)).toBe(true)
     })

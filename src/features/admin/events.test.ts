@@ -62,6 +62,9 @@ describe('track allowlist (B-7)', () => {
     for (const n of ['meal_logged', 'water_logged', 'salt_goal_set']) expect(await track('action', n), n).toBe(true)
     for (const n of ['chicken_adobo', 'Adobong manok', 'patis', 'instant_noodles']) expect(await track('action', n), n).toBe(false)
   })
+  it('tracks the Discover and Sharing screens', async () => {
+    for (const n of ['discover', 'sharing']) expect(await track('screen', n), n).toBe(true)
+  })
   it('every allowed name is letters and underscores only (matches the DB check)', () => {
     for (const names of Object.values(EVENT_NAMES)) for (const n of names) expect(n).toMatch(/^[a-z_]{1,40}$/)
   })
