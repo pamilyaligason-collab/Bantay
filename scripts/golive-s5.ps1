@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-s5.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 $Release = '4c554c7'   # Fable-reviewed: a4da38d (records, Safety hub) + design pass 1b16527 + review fixes; later work on this branch is not shipped by this script
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 function Run([string]$exe, [string[]]$a) {

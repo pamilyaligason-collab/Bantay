@@ -6,7 +6,7 @@
 $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\set-s10-p2-secrets.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 function Run([string[]]$a) { $ErrorActionPreference = 'Continue'; & npx -y $Sb @a 2>&1 | ForEach-Object { "  $_" } }
 function Check($n) { if ($LASTEXITCODE -ne 0) { throw "step $n failed (exit $LASTEXITCODE)" } }

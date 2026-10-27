@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)  # PS 5.1 shows CLI box tables as mojibake otherwise
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 $Ref = 'wuakimpssycbtnmoexuc'
 function Step($n, $t) { Write-Host "`n== Step $n. $t" -ForegroundColor Cyan }
 function Check($n) { if ($LASTEXITCODE -ne 0) { throw "step $n failed (exit $LASTEXITCODE)" } }
