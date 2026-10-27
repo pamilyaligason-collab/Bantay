@@ -17,6 +17,16 @@ export const createBody = (name: string, handle: string, pin: string) => ({ acti
 /** A person with no phone: the DB trigger adds the creator as writer carer. */
 export const dependentRow = (name: string, createdBy: string) => ({ display_name: name.trim(), created_by: createdBy })
 
+/** A PIN member who has never signed in has no PIN of their own yet: the admin can make them a personal invite link (D-81, migration 0038). */
+export const needsInvite = (l: Line): boolean => Boolean(l.m && l.m.provider !== 'google' && l.m.handle && !l.m.disabled && !l.m.lastSignInAt && !archivedOf(l))
+/** The link opens the app on the family's real address, whichever address the admin page is on. */
+export const INVITE_BASE = 'https://bantay.pages.dev/#join/'
+export const inviteError = (code?: string) =>
+  code === '22023' ? 'This person has signed in before, so they already have a PIN. Use Forgot PIN for them.'
+  : code === '53400' ? 'Too many links this hour. Try again later.'
+  : code === '42501' ? 'Only an admin can do this.'
+  : why('failed')
+
 export const FILTERS = [['all', 'All'], ['login', 'With sign-in'], ['dependents', 'Dependents'], ['attention', 'Needs attention'], ['archived', 'Archived']] as const
 export type MemberFilter = (typeof FILTERS)[number][0]
 
@@ -84,6 +94,20 @@ function AddDependent({ ask, done, close, say }: { ask: Ask; done: () => void; c
 type Sheet = 'add' | 'dep' | 'invite'
 const SHEET_TITLE: Record<Sheet, string> = { add: 'Add member', dep: 'Add dependent', invite: 'Invite by email' }
 
+/** Copy sheet for a personal invite link. The token is shown now and never again (only its hash is stored). */
+function LinkSheet({ name, link, onClose }: { name: string; link: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => { try { await navigator.clipboard.writeText(link); setCopied(true) } catch { /* the link stays on screen to copy by hand */ } }
+  return (
+    <>
+      <p>Send this link to {name} yourself, for example in Messenger. Anyone who has it can set the PIN, so send it only to them.</p>
+      <input className="dk-in" readOnly aria-label="Invite link" value={link} onFocus={(e) => e.currentTarget.select()} />
+      <p className="dk-sub">It works once and ends in 7 days. It is shown only now. Making a new link cancels this one.</p>
+      <div className="dk-acts"><button className="dk-b" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button><button className="dk-b go" onClick={onClose}>Done</button></div>
+    </>
+  )
+}
+
 /** Phone width (matches the 767px rules in members.css). False where matchMedia is missing (tests). */
 function usePhone() {
   const q = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 767px)') : null)
@@ -103,6 +127,7 @@ function MembersList() {
   const [hasCarers, setHasCarers] = useState(false)
   const [q, setQ] = useState('')
   const [sheet, setSheet] = useState<Sheet | null>(null)
+  const [link, setLink] = useState<{ name: string; url: string } | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
   const more = useRef<HTMLDetailsElement>(null)
@@ -126,6 +151,12 @@ function MembersList() {
     }
   }) // no initial sort: attentionFirst above sets the order until a header is clicked
   const open = (id: string) => { location.hash = deskHref('members', id) }
+  const makeInvite = (l: Line) => confirm.ask(`Make a new invite link for ${l.p.display_name}? Any older link for them stops working.`, async () => {
+    if (!supabase || !l.m) return toast.show(NOT_CONNECTED)
+    const { data, error } = await supabase.rpc('admin_create_invite', { p_user: l.m.userId })
+    if (error || typeof data !== 'string') return toast.show(inviteError((error as { code?: string } | null)?.code))
+    setLink({ name: l.p.display_name, url: INVITE_BASE + data })
+  })
   const counts = useMemo(() => ({ attention: roster.lines.filter((l) => needsAttention(l)).length, archived: roster.lines.filter((l) => archivedOf(l)).length }), [roster.lines])
 
   return (
@@ -171,7 +202,8 @@ function MembersList() {
                         <th scope="row"><a className="mb-link" href={deskHref('members', l.p.id)}><Avatar name={l.p.display_name} photoPath={l.p.photo_path} size={32} />{l.p.display_name || 'No name'}</a></th>
                         <td data-l="Sign-in">{signInOf(l)}</td>
                         <td data-l="Role">{roleOf(l)}</td>
-                        <td className="mb-st"><Tag tone={st.tone}>{st.text}</Tag>{gone && <span className="dk-sub mb-when"> {dayText(gone)}</span>}</td>
+                        <td className="mb-st"><Tag tone={st.tone}>{st.text}</Tag>{gone && <span className="dk-sub mb-when"> {dayText(gone)}</span>}
+                          {needsInvite(l) && <button className="dk-b" aria-label={`Invite link for ${l.p.display_name}`} onClick={() => makeInvite(l)}>Invite link</button>}</td>
                         <td data-l="Carers">{carersText(l)}</td>
                         <td data-l="Last seen">{l.m ? <Ago iso={l.seen} /> : <span className="dk-sub">No sign-in</span>}</td>
                         <td className="num" data-l="To confirm">{l.drafts === null ? 'Unknown' : l.drafts}</td>
@@ -191,6 +223,7 @@ function MembersList() {
           {sheet === 'invite' && <Invite ask={confirm.ask} close={() => setSheet(null)} say={(t) => toast.show(t)} />}
         </Panel>
       )}
+      {link && <Panel title="Invite link" onClose={() => setLink(null)}><LinkSheet name={link.name} link={link.url} onClose={() => setLink(null)} /></Panel>}
       {confirm.node}
       {toast.node}
     </div>
