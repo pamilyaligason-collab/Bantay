@@ -11,6 +11,7 @@ import { useLocation, usePlaceFrom } from '../features/location/useLocation'
 import { ABROAD_SOURCE } from '../features/safety/dial'
 import ZonePicker from '../features/location/ZonePicker'
 import { Group } from '../features/safety/Group'
+import { StormCard } from '../features/safety/StormCard'
 import { Icon } from '../features/shell/Icon'
 import '../features/safety/safety.css'
 
@@ -52,6 +53,7 @@ function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Re
         <h1>Safety</h1>
         <ZonePicker loc={l} />
       </div>
+      <StormCard />
       <Group id="sf-g-emerg" tone="emergency" title="Emergency" sub="Hold SOS so your family sees it in Bantay, or call for help now.">
       <SosButton onSend={() => setSos(true)} />
       <div className="sf-pair">

@@ -15,6 +15,8 @@ import { hazardsFor, hazardStatus } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
+import { KEY_PHONE_CHECK } from '../phonecheck/keys'
+import { type PhoneCheck, phoneAlertCount } from './stormMode'
 import { useKv } from './store'
 import { ddb } from '../docs/store'
 import { useEffect, useState } from 'react'
@@ -27,7 +29,7 @@ const NONE_S: SosEvent[] = []
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
 
 // Tile icon per topic, all safety tone.
-const ICONS: Record<string, IconName> = { warn: 'warn', weather: 'rain', storm: 'typhoon', map: 'pin', dial: 'phone', hazard: 'flood', bag: 'bag', cards: 'file', ids: 'fp', sos: 'sos' }
+const ICONS: Record<string, IconName> = { warn: 'warn', weather: 'rain', storm: 'typhoon', map: 'pin', dial: 'phone', hazard: 'flood', bag: 'bag', cards: 'file', ids: 'fp', sos: 'sos', phone: 'bell' }
 
 /** Numbers a person can call from Quick dial here: the one local set plus national, OFW and teleconsult sets that show for this place. */
 export function dialCount(place: Place, overrides: Overrides): number {
@@ -76,6 +78,7 @@ export default function SafetyHub({ place }: { place: Place }) {
   const bag = readState(useKv<unknown>(BAG_KEY, BAG_EMPTY))
   const sosRaw = useKv<SosEvent[]>(HISTORY_KEY, NONE_S)
   const wx = useWeather(place.weather)
+  const phoneFix = phoneAlertCount(useKv<PhoneCheck | null>(KEY_PHONE_CHECK, null))
 
   const warns = rankAlerts(alerts, alertRef(place)).length
   const storms = cyclones(alerts)
@@ -93,8 +96,10 @@ export default function SafetyHub({ place }: { place: Place }) {
     ['#safety/hazards', 'hazard', 'Hazards at my location', hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null)],
     ['#gobag', 'bag', 'Go-bag', `${bag.done.length} of ${ALL_IDS.length} packed`],
     ['#safety/cards', 'cards', 'Safety cards', `${CARDS.length} how-to guides`],
-    ['#safety/sos', 'sos', 'Past SOS', last ? `Last one ${last}` : 'None sent']
+    ['#safety/sos', 'sos', 'Past SOS', last ? `Last one ${last}` : 'None sent'],
+    ['#safety/phonewarn', 'phone', 'Phone alerts', phoneFix === 1 ? '1 needs fixing' : `${phoneFix} need fixing`]
   ]
+  if (phoneFix === 0) tiles.pop() // the tile shows only while a phone setting needs fixing (mockup safety-hub)
   const link = ([href, icon, title, status]: [string, string, string, string]) => (
     <a key={href} href={href} className="sf-tile">
       <Icon name={ICONS[icon] ?? 'shield'} tone="safety" boxed size={24} />
@@ -106,7 +111,7 @@ export default function SafetyHub({ place }: { place: Place }) {
   return (
     <>
       <Group id="sf-g-alerts" tone="alerts" title="Alerts and official sources" sub="Live warnings, weather and maps from PAGASA, PHIVOLCS and NDRRMC.">
-        <nav className="sf-tiles" aria-label="Safety topics: alerts">{by(['#safety/warnings', '#weather', '#safety/storms', '#safety/map', '#safety/hazards'])}</nav>
+        <nav className="sf-tiles" aria-label="Safety topics: alerts">{by(['#safety/warnings', '#weather', '#safety/storms', '#safety/map', '#safety/hazards', '#safety/phonewarn'])}</nav>
       </Group>
       <Group id="sf-g-hot" tone="hotlines" title="Hotlines" sub="Numbers to call, and what you sent before.">
         <nav className="sf-tiles" aria-label="Safety topics: hotlines">{by(['#safety/dial', '#safety/sos'])}</nav>

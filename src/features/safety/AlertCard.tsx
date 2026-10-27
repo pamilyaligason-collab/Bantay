@@ -2,6 +2,7 @@ import { type Alert, diffBulletin, hazardOf, HOME, NOT_A_SIREN } from './alerts'
 import Lazy from './Lazy'
 import { Frame, ventuskyUrl } from './MapsPanel'
 import { CARDS, Poster } from './Practice'
+import { PAGASA_CREDIT } from './stormMode'
 import './safety.css'
 
 const NO_MAP = new Set<Alert['kind']>(['quake', 'tsunami', 'volcano', 'air'])
@@ -21,7 +22,7 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
     <article className="sf" aria-label={a.title}>
       <div className="sf-chips">
         {a.level && <span className="sf-chip warn">! {a.level}</span>}
-        <span className="sf-chip">{a.source}</span>
+        <span className="sf-chip">{a.source === 'PAGASA' ? PAGASA_CREDIT : a.source}</span>
       </div>
       {a.stale && <p className="sf-note" role="status">{staleText(a.checkedAt)}</p>}
       <div className="grp">
