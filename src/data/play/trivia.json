@@ -1,0 +1,29 @@
+{
+  "source": "Bantay-written questions about Philippine food, places, animals and words. Nothing was copied from a quiz site.",
+  "questions": [
+    { "q": "Which fruit is called the king of fruits in Davao?", "a": ["Mango", "Mangosteen", "Durian", "Pomelo"], "right": 2, "why": "Davao is famous for durian, and Mindanao grows most of the country's. Mangosteen is called the queen of fruits." },
+    { "q": "Which bird is the national bird of the Philippines?", "a": ["Kingfisher", "Philippine eagle", "Hornbill", "Owl"], "right": 1, "why": "The Philippine eagle is one of the biggest eagles in the world." },
+    { "q": "Which city is called the Tuna Capital of the Philippines?", "a": ["Cebu", "Baguio", "General Santos", "Vigan"], "right": 2, "why": "Big tuna catches land at the General Santos fish port." },
+    { "q": "Which volcano is known for its almost perfect cone shape?", "a": ["Taal", "Mayon", "Pinatubo", "Apo"], "right": 1, "why": "Mayon is in Albay. Its smooth cone is on many postcards." },
+    { "q": "Which is the highest mountain in the Philippines?", "a": ["Mount Pulag", "Mount Mayon", "Mount Apo", "Mount Banahaw"], "right": 2, "why": "Mount Apo near Davao is the highest. Pulag is the highest in Luzon." },
+    { "q": "In which province can you meet the tiny tarsier?", "a": ["Bohol", "Batanes", "Ilocos Norte", "Quezon"], "right": 0, "why": "Bohol has a tarsier sanctuary. The tarsier is small enough to sit on your hand." },
+    { "q": "What is the national flower of the Philippines?", "a": ["Gumamela", "Sampaguita", "Santan", "Ilang-ilang"], "right": 1, "why": "Sampaguita smells sweet, and people make it into garlands." },
+    { "q": "Which tree is the national tree of the Philippines?", "a": ["Narra", "Acacia", "Coconut", "Mango"], "right": 0, "why": "Narra wood is strong and has a red color." },
+    { "q": "What does \"salamat\" mean?", "a": ["Hello", "Goodbye", "Please", "Thank you"], "right": 3, "why": "Salamat po is a polite way to say thank you." },
+    { "q": "What does \"kumusta\" mean?", "a": ["How are you?", "Where are you?", "Good night", "See you"], "right": 0, "why": "Kumusta comes from the Spanish words for how are you." },
+    { "q": "What does \"araw\" mean?", "a": ["Moon", "Rain", "Star", "Sun"], "right": 3, "why": "Araw means sun, and it also means day." },
+    { "q": "What does \"bahay\" mean?", "a": ["House", "Boat", "Tree", "Road"], "right": 0, "why": "Bahay kubo is the little hut made of bamboo and nipa." },
+    { "q": "About how many islands does the Philippines have?", "a": ["About 70", "About 700", "More than 7,000", "About 70,000"], "right": 2, "why": "There are more than 7,000 islands, and people live on about 2,000 of them." },
+    { "q": "What is the Filipino name for the whale shark?", "a": ["Pawikan", "Butanding", "Lumba-lumba", "Dugong"], "right": 1, "why": "Butanding is a gentle giant. It eats tiny sea animals. Pawikan is a sea turtle." },
+    { "q": "In which province are the Banaue Rice Terraces?", "a": ["Palawan", "Camiguin", "Batanes", "Ifugao"], "right": 3, "why": "The terraces in Ifugao were carved into the mountains about 2,000 years ago." },
+    { "q": "In which province is the Puerto Princesa Underground River?", "a": ["Palawan", "Bohol", "Cebu", "Leyte"], "right": 0, "why": "You ride a small boat into the cave. Bats live inside." },
+    { "q": "The first jeepneys were made from old what?", "a": ["Buses", "Army jeeps", "Tractors", "Trains"], "right": 1, "why": "After World War II, people turned army jeeps into colorful rides." },
+    { "q": "Which fruit gives sinigang its usual sour taste?", "a": ["Sampalok", "Banana", "Papaya", "Mango"], "right": 0, "why": "Sampalok is tamarind. Some cooks also use kalamansi or guava." },
+    { "q": "Which two things give adobo its taste?", "a": ["Milk and sugar", "Tomato and cheese", "Vinegar and soy sauce", "Coconut milk and ginger"], "right": 2, "why": "Vinegar and soy sauce, with garlic and bay leaves. The vinegar also helps it keep." },
+    { "q": "What does \"halo-halo\" mean?", "a": ["Mix-mix", "Cold ice", "Sweet beans", "Hello hello"], "right": 0, "why": "It is a cold dessert with ice, milk and sweet toppings all mixed together." },
+    { "q": "What color do the Chocolate Hills of Bohol turn in the dry season?", "a": ["Green", "Brown", "White", "Red"], "right": 1, "why": "The grass on the hills dries up and turns brown, like chocolate." },
+    { "q": "Which fruit is the national fruit of the Philippines?", "a": ["Banana", "Pineapple", "Papaya", "Mango"], "right": 3, "why": "Philippine mangoes are known for being very sweet." },
+    { "q": "General Santos sits on which bay?", "a": ["Manila Bay", "Sarangani Bay", "Subic Bay", "Davao Gulf"], "right": 1, "why": "Sarangani Bay is rich in fish, especially tuna." },
+    { "q": "What does \"puso\" mean?", "a": ["Heart", "Head", "Hand", "Hat"], "right": 0, "why": "Puso is the heart. It is also the name of rice cooked in a woven leaf pouch." }
+  ]
+}

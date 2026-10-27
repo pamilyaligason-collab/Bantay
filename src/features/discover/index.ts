@@ -21,3 +21,5 @@ export const isDiscoverSubRoot = (hash: string): boolean => SUB_ROOT.test(hash)
 export const subOf = (hash: string): DiscoverSub => (SUB_ROOT.exec(hash)?.[1] as DiscoverSub | undefined) ?? (/^#?discover\/(learn|listen|play|watch|news)\//.exec(hash)?.[1] as DiscoverSub | undefined) ?? 'learn'
 
 // Batch 2 lanes add one side-effect import per sub below, e.g. `import './learn'` (F2), `import './play'` (F3), `import './listen'` and `import './watch'` (F4).
+import './play'
+import './news'

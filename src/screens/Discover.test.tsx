@@ -32,7 +32,7 @@ describe('Discover tab', () => {
     expect(screen.getByText('News lane screen')).toBeTruthy()
     expect(screen.queryByText('Coming in this update')).toBeNull()
     cleanup()
-    location.hash = '#discover/play'
+    location.hash = '#discover/watch'
     render(<Discover />)
     expect(screen.queryByText('News lane screen')).toBeNull()
     expect(screen.getByText('Coming in this update')).toBeTruthy()
