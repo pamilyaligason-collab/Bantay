@@ -143,7 +143,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, '#safety/hazards', scheme, [])
     const card = page.getByRole('article', { name: 'Earthquake' })
     await expect(card.getByText(/very destructive shaking \(Intensity VIII\)/)).toBeVisible()
-    await expect(card.getByText(/drop, cover and hold on/)).toBeVisible()
+    await expect(card.getByText(/Drop, cover and hold on when it shakes/)).toBeVisible()
     await card.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/hazard-quake-${scheme}.png` })
   })

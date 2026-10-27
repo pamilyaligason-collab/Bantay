@@ -29,7 +29,7 @@ describe('hazards', () => {
     expect(v.rest.map((r) => r.label)).toContain('Severe wind')
     expect(hazardStatus(v)).toBe('Earthquake: can have very destructive shaking')
     const q = v.cards.find((c) => c.id === 'quake')!
-    expect(q.todo).toBe('In a big quake this place can have very destructive shaking (Intensity VIII). Old or weak buildings can be damaged. Pick a safe spot in each room. In a quake: drop, cover and hold on.')
+    expect(q.todo).toBe('In a big quake this place can have very destructive shaking (Intensity VIII). Old or weak buildings can be damaged. Know a safe spot in each room. Drop, cover and hold on when it shakes.')
     expect(q.todo).not.toMatch(/Prone/)
     expect(hazardsFor('conel')).toBeNull()
     expect(hazardStatus(null)).toBe('Not checked for this place yet')

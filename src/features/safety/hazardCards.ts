@@ -20,7 +20,7 @@ const PEIS: Record<string, string> = {
   I: 'barely felt', II: 'felt a little', III: 'weak shaking', IV: 'moderate shaking', V: 'strong shaking', VI: 'very strong shaking',
   VII: 'destructive shaking', VIII: 'very destructive shaking', IX: 'devastating shaking', X: 'completely devastating shaking'
 }
-const QUAKE_DO = 'Pick a safe spot in each room. In a quake: drop, cover and hold on.'
+const QUAKE_DO = 'Know a safe spot in each room. Drop, cover and hold on when it shakes.'
 
 /** The ground shaking reading in plain words: what it means and one thing to do. Null when there is no intensity in the reading (we never guess). */
 export function quakeMeaning(value: string | null): { status: string; text: string } | null {
