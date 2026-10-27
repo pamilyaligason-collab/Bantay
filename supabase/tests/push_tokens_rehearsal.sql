@@ -89,12 +89,15 @@ insert into public.push_tokens (token, user_id, updated_at, last_ok_at) values
   ('tokenDEAD000000000000001', '00000000-0000-0000-0000-0000000000b1', now() - interval '90 days', now() - interval '70 days');
 select public.dose_watch_prune();
 select pg_temp.ok((select count(*) from public.push_tokens) = 2 and exists (select 1 from public.push_tokens where token = 'tokenOK00000000000000001') and exists (select 1 from public.push_tokens where token = 'tokenLIVE000000000000001'), 'prune removes stale (61 d, 90 d with an old last_ok_at) and failed (5), keeps 59 d / 4 fails and a token Google still accepts');
-select pg_temp.ok(to_regclass('public.invite_tokens') is null, 'prune ran with no invite_tokens table (before 0038)');
-create table public.invite_tokens (id int primary key, created_at timestamptz not null);
-insert into public.invite_tokens values (1, now() - interval '31 days'), (2, now() - interval '29 days');
+-- s12 merge: the chain now loads 0038, so prune is exercised on the real invite_tokens table (the before-0038 path is covered on lane E's branch).
+select pg_temp.ok(to_regclass('public.invite_tokens') is not null, 'chain includes 0038: invite_tokens exists');
+delete from public.invite_tokens;
+insert into public.invite_tokens (id, user_id, token_hash, created_by, created_at) values
+  ('70000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000c1', 'hash-old', '00000000-0000-0000-0000-0000000000a1', now() - interval '31 days'),
+  ('70000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-0000000000d1', 'hash-new', '00000000-0000-0000-0000-0000000000a1', now() - interval '29 days');
 select public.dose_watch_prune();
-select pg_temp.ok((select count(*) from public.invite_tokens) = 1 and exists (select 1 from public.invite_tokens where id = 2), 'prune removes invite_tokens older than 30 days only');
-drop table public.invite_tokens;
+select pg_temp.ok((select count(*) from public.invite_tokens) = 1 and exists (select 1 from public.invite_tokens where token_hash = 'hash-new'), 'prune removes invite_tokens older than 30 days only');
+delete from public.invite_tokens;
 -- the 0030 duties are intact
 insert into public.dose_watch_sent (person_id, day, slot, sent_at) values ('10000000-0000-0000-0000-0000000000b1', '2026-10-01', '08:00', now() - interval '8 days');
 select public.dose_watch_prune() as pruned \gset
