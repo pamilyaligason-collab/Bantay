@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Icon } from '../shell/Icon'
 import { FAIL_TEXT } from './actions'
 import { shortMedName } from '../health/medName'
 import { joinNames, type NextItem } from './nextPick'
 import { markDue, markTaken } from './useDueMeds'
+import { COLLAPSE_MS, leaveMs, MORPH_MS, takenLabel } from './doneMorph'
+import { prefersReducedMotion } from '../look/useReducedMotion'
 
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
 
 /** Today's one "Next up" card: the dose due within 3 hours or missed in the last 2 (mine or someone I care for), else the plan, else a nearby storm.
  *  Today does not render it for a calm pick (it gives the space to the weather card). A panel under it counts medicines waiting for "Still taking it?". */
-export default function NextUp({ item, review, notify }: { item: NextItem; review: number; notify: (msg: string) => void }) {
+export default function NextUp({ item, review, notify, hold }: { item: NextItem; review: number; notify: (msg: string) => void; hold?: (it: NextItem | null) => void }) {
   const [busy, setBusy] = useState(false)
+  const [phase, setPhase] = useState<'idle' | 'done' | 'leave'>('idle') // done: the button reads "Taken h:mm"; leave: the card collapses
+  const [label, setLabel] = useState('')
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
   const [picking, setPicking] = useState(false) // 2+ medicines due together: Taken asks which ones
   const [off, setOff] = useState<string[]>([]) // unticked keys; everything starts ticked
   const w = item.who
@@ -20,16 +27,24 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
     if (!w || busy) return
     if (!skip && many && !picking) { setOff([]); return setPicking(true) }
     setBusy(true)
+    hold?.(item) // keep this card up while the write runs: the live data flips to the next pick the moment the take is saved
     const keep = w.slots.filter((x) => !off.includes(x.key))
     const ok = !skip && many ? (keep.length > 0 && (await markTaken(w.personId, keep.map((x) => x.key))) > 0) : await markDue(w, skip)
     setBusy(false)
     const what = joinNames([...new Set((skip || !many ? w.slots : keep).map((x) => shortMedName(x.name)))])
     if (ok) setPicking(false)
+    if (ok && !skip) { // only after the write succeeded: morph the button in place, then collapse the card
+      const reduced = prefersReducedMotion()
+      setLabel(takenLabel(new Date()))
+      setPhase('done')
+      timers.current.push(setTimeout(() => setPhase('leave'), MORPH_MS), setTimeout(() => hold?.(null), MORPH_MS + leaveMs(reduced)))
+    } else hold?.(null)
     notify(ok ? (skip ? `Skipped ${what}` : `Marked ${what} taken`) : FAIL_TEXT.failed)
   }
 
   return (
-    <section aria-labelledby="t-next">
+    <section aria-labelledby="t-next" className={`td-next${phase === 'leave' ? ' leaving' : ''}`} style={{ '--collapse-ms': `${COLLAPSE_MS}ms` } as CSSProperties}>
+      <div className="td-next-in">
       <h2 id="t-next" className="td-vh">Next up</h2>
       <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
         <div className="td-k">{item.kicker}</div>
@@ -49,13 +64,14 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
         )}
         {w && (
           <div className="td-act">
-            <button type="button" className="td-pill light td-taken" disabled={busy || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} stroke={2.4} />{picking ? 'Mark these taken' : 'Taken'}</button>
-            {w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
+            <button type="button" className={`td-pill light td-taken${phase !== 'idle' ? ' done' : ''}`} disabled={busy || phase !== 'idle' || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} stroke={2.4} />{phase !== 'idle' ? <span className="td-morph">{label}</span> : picking ? 'Mark these taken' : 'Taken'}</button>
+            {phase === 'idle' && w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
           </div>
         )}
         {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}
       </article>
       {review > 0 && <MedsCheck review={review} />}
+      </div>
     </section>
   )
 }

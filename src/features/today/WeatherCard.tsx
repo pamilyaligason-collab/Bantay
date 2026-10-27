@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import { TEXT_VEIL } from './wxVeil'
 import { usePlace } from '../location/useLocation'
 import { placeTimezone } from '../location/place'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
@@ -16,6 +17,7 @@ import { useWeather } from './weather'
 export const WEATHER_HREF = '#weather'
 export const WEATHER_ACTION_HREF = '#weather?from=action' // from=action counts weather_opened_action: only when an action line is on the card
 const NONE: Alert[] = []
+const VEIL = { '--wx-veil': TEXT_VEIL } as CSSProperties
 
 const deg = (n: number) => `${Math.round(n)}°`
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
@@ -73,7 +75,7 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
     const range = [feels, wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ')
     return (
       <section aria-label="Weather" className="td-wxs">
-        <a className="td-wxh wxs-host" href={href}>
+        <a className="td-wxh wxs-host" href={href} style={VEIL}>
           {scene}
           <span className="td-k">Weather · {placeNameOf(place)}{clock && ` · as of ${clock}`}</span>
           <span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span></span>
@@ -94,7 +96,7 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   const rain = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, wxLocal(wx, now), sky === 'rain' || sky === 'storm') : undefined
   return (
     <section aria-label="Weather">
-      <a className="card td-wx wxs-host" href={href}>
+      <a className="card td-wx wxs-host" href={href} style={VEIL}>
         {scene}
         <span className="td-wx-row">
           <span className="td-wx-t">{deg(wx.temp)}</span>

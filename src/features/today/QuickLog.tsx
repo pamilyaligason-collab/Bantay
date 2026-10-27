@@ -106,7 +106,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => (
-          <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
+          <button key={p.id} type="button" className="td-q press" aria-label={p.aria} onClick={() => setOpen(p.id)}>
             <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.id === 'mood' && storm ? 'Is everyone safe?' : p.label}</span>
           </button>
         ))}

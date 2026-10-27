@@ -258,3 +258,24 @@
 .td-check input { width: 26px; height: 26px; accent-color: currentColor; flex: none; }
 .td-sos { margin: 4px 0 8px; }
 .bt .td-bigbtn:not(.ok):not(.call) { background: var(--card); color: var(--ink); }
+
+/* Session 13: dose done-morph. The button reads "Taken h:mm", then the card collapses (opacity + height, 240 ms); reduced motion cross-fades in 150 ms. */
+.td-next { display: grid; grid-template-rows: 1fr; opacity: 1; }
+.td-next-in { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+.td-next.leaving { grid-template-rows: 0fr; opacity: 0; margin-bottom: -16px; pointer-events: none; transition: grid-template-rows var(--collapse-ms, 240ms) var(--ease-out), opacity var(--collapse-ms, 240ms) var(--ease-out), margin-bottom var(--collapse-ms, 240ms) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .td-next.leaving { grid-template-rows: 1fr; margin-bottom: 0; transition: opacity var(--dur-fast) var(--ease-out); } }
+.bt .td-taken.done:disabled { opacity: 1; }
+.td-morph { display: inline-block; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: no-preference) { .td-morph { animation: td-morph-in var(--dur-base) var(--ease-out); } }
+@keyframes td-morph-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* weather text legibility: one more solid veil under the text of both weather cards (alpha from wxVeil.ts), above the picture and its scrim, below the text */
+.bt .td-wx.wxs-host::after, .bt .td-wxh.wxs-host::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: rgba(5, 12, 28, var(--wx-veil, .2)); pointer-events: none; }
+
+/* More: the bottom group (alerts setup, updates, notices, week line) has its own heading; hidden with the group when nothing in it draws */
+.td-more-g { display: flex; flex-direction: column; gap: 16px; }
+.td-more-g:has(> h2:only-child) { display: none; }
+.td-more-g > * { margin-top: 0; margin-bottom: 0; }
+.td-more-h { margin: 0 2px; font-family: var(--f-ui); font-size: 17px; font-weight: 700; }
+.td-lrow.press { border-radius: 12px; }
+.td-plan li.press { cursor: pointer; border-radius: 12px; }

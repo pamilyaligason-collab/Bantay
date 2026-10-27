@@ -9,6 +9,10 @@ import { hdb } from '../records/store'
 import { useSelfPersonId } from '../setup/useProfile'
 import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeekLogic'
 import { useSeenDaily } from './seen'
+import { dayKey } from '../discover/play/score'
+import { EmptyState } from '../look'
+import { useKv } from '../shell/useKv'
+import { inFirstWeek } from './doneMorph'
 
 const NO_READINGS: Reading[] = []
 const NO_TAKES: MedTaken[] = []
@@ -45,7 +49,7 @@ export function Spark({ values }: { values: (number | null)[] }) {
 
 function TileView({ t }: { t: Tile }) {
   return (
-    <a className="td-tile" href={t.href}>
+    <a className="td-tile press" href={t.href}>
       <span className="td-tile-l">{t.label}</span>
       <span className="td-tile-v"><b>{t.value}</b>{t.unit && <span>{t.unit}</span>}</span>
       <span className="td-tile-s">{t.sub}</span>
@@ -67,7 +71,19 @@ export default function MyWeek() {
   const due = useMemo(() => nextReadingDue({ personId, readings, meds, now: new Date() }), [personId, readings, meds])
   const ref = useRef<HTMLElement>(null)
   useSeenDaily(ref, 'card_seen_my_week', tiles.length > 0 || !!due)
-  if (!tiles.length && !due) return null
+  // First week only: say what this card will show. After that, no data means no card (calm null).
+  const [since, setSince, sinceLoaded] = useKv<string>('today.myweek.since', '')
+  const empty = !tiles.length && !due
+  useEffect(() => { if (sinceLoaded && !since) setSince(dayKey()) }, [sinceLoaded, since, setSince])
+  if (empty) {
+    if (!sinceLoaded || !inFirstWeek(since || dayKey(), new Date())) return null
+    return (
+      <section aria-labelledby="t-myweek">
+        <h2 id="t-myweek" className="td-sech">My week</h2>
+        <EmptyState icon="heart" title="Your week will show here" body="Add a reading, a walk or a dose. Your last 7 days show up here." action={{ label: 'Add a reading', onClick: () => { location.hash = '#health' } }} />
+      </section>
+    )
+  }
   return (
     <section ref={ref} aria-labelledby="t-myweek">
       <h2 id="t-myweek" className="td-sech">My week</h2>

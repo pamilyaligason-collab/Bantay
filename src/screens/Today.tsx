@@ -21,7 +21,8 @@ import { retryToast, retryUnsentMood } from '../features/today/actions'
 import WeekLine from '../features/today/WeekLine'
 import { PwaBanner } from '../features/update/PwaBanner'
 import { UpdateCard } from '../features/update/UpdateCard'
-import { wireMotion } from '../features/look'
+import { Skeleton, wireMotion } from '../features/look'
+import type { NextItem } from '../features/today/nextPick'
 import '../features/today/today.css'
 
 /** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in), My week, self-care breathing, today's plan, then More (alerts setup, banners, notices, week line).
@@ -53,9 +54,13 @@ export default function Today() {
     return () => window.removeEventListener('online', go)
   }, [notify])
   const next = useNext()
-  const calm = next.item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
+  const [held, setHeld] = useState<NextItem | null>(null) // the dose card stays up while its take is saved and the done-morph plays (NextUp frees it)
+  const item = held ?? next.item
+  const calm = item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
   const h1 = <h1 className="td-h1">Today</h1>
-  if (!loaded) return h1 // one read of the Simple mode switch, so the full page never flashes first
+  if (!loaded) return ( // one read of the Simple mode switch, so the full page never flashes first
+    <section className="td-root" aria-busy="true">{h1}<span className="td-vh">Loading</span><Skeleton lines={4} /><Skeleton lines={2} /></section>
+  )
   if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as Simple mode and the Safety tab
   if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
@@ -67,7 +72,7 @@ export default function Today() {
       <StormCard />
       <WeatherCard expanded={calm} review={next.review} />
       <AlertCardToday />
-      {!calm && <NextUp item={next.item} review={next.review} notify={notify} />}
+      {!calm && <NextUp item={item} review={next.review} notify={notify} hold={setHeld} />}
       <QuickLog notify={notify} />
       {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
       <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>
@@ -75,11 +80,14 @@ export default function Today() {
       <SelfCare />
       <PlanToday />
       {/* More: alerts setup, update and install banners, other notices, the week line. D-50: the update card never sits above a warning. */}
-      <AlertsBanner />
-      <UpdateCard />
-      <PwaBanner />
-      <NearbyList />
-      <WeekLine />
+      <div className="td-more-g" role="group" aria-labelledby="t-more">
+        <h2 id="t-more" className="td-more-h">More</h2>
+        <AlertsBanner />
+        <UpdateCard />
+        <PwaBanner />
+        <NearbyList />
+        <WeekLine />
+      </div>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   )
