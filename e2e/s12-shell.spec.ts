@@ -44,9 +44,10 @@ test('five tabs in order; Discover opens with its five sub-tabs and the Coming i
   const subs = page.getByRole('group', { name: 'Discover sections' })
   await expect(subs.getByRole('button')).toHaveCount(5)
   expect(await subs.getByRole('button').allTextContents()).toEqual(['Learn', 'Listen', 'Play', 'Watch', 'News'])
-  await expect(page.getByText('Coming in this update')).toBeVisible()
+  await expect(page.getByTestId('learn-home')).toBeVisible() // Learn (lane F2) is the default sub
   await subs.getByRole('button', { name: 'Watch' }).click()
   await expect(page).toHaveURL(/#discover\/watch$/)
+  await expect(page.getByText('Coming in this update')).toBeVisible() // no lane has registered Watch yet
   await expect(subs.getByRole('button', { name: 'Watch' })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.locator('.sh-jackfab')).toBeVisible() // a sub-tab is still a tab page
   await expect(page.locator('.sh-top')).toHaveCount(1) // and keeps the top bar

@@ -1,0 +1,105 @@
+{
+  "sources": "Original Filipino recipes written by Bantay. The plate idea follows Pinggang Pinoy (FNRI-DOST) and the DASH eating plan (NHLBI). Sodium is an estimate from USDA FoodData Central values (public domain), not a lab result. Each ingredient line carries its sodium in mg for the whole pot.",
+  "recipes": [
+    {
+      "id": "sinigang-isda", "name": "Sinigang na isda, less patis", "blurb": "Tamarind soup with fish", "tags": ["lowsalt", "diabetes", "fish"], "minutes": 35, "servings": 4, "usualMg": 470,
+      "ingredients": [["500 g bangus or tilapia", 300, "Fresh, not salted or dried"], ["Sampalok (tamarind), 1 cup juice", 20, "Instead of a ready-made sinigang mix, which is salty"], ["1 labanos (radish)", 40], ["1 cup sitaw (string beans)", 10], ["2 kamatis and 1 onion", 15], ["1 bunch kangkong", 100], ["1 tsp patis, not 3", 470, "Add calamansi to keep the taste"]],
+      "steps": ["Boil 6 cups of water with the onion and tomato. Add the tamarind juice.", ["Add the radish and string beans. Cook 8 minutes.", 8], ["Add the fish. Simmer 6 minutes, then add 1 tsp patis.", 6], "Add the kangkong last. Taste before adding more salt."]
+    },
+    {
+      "id": "monggo", "name": "Ginisang monggo with malunggay", "blurb": "Mung beans with leaves", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 40, "servings": 4,
+      "ingredients": [["1 cup monggo (mung beans)", 10], ["2 cups malunggay leaves", 40, "Add at the end so they stay green"], ["100 g lean pork, cut small", 60, "Or skip it and use more beans"], ["Garlic, onion and 1 tomato", 15], ["1 tsp patis", 470, "Do not add more at the table"]],
+      "steps": [["Boil the monggo in 4 cups of water until soft, about 25 minutes.", 25], "Fry the garlic, onion, tomato and pork in a little oil until the pork is cooked.", "Add the cooked monggo and its water. Simmer 5 minutes.", "Add 1 tsp patis and the malunggay. Cook 2 minutes and serve."]
+    },
+    {
+      "id": "pinakbet-light", "name": "Pinakbet light", "blurb": "Mixed vegetables, little bagoong", "tags": ["lowsalt", "diabetes"], "minutes": 30, "servings": 4, "usualMg": 360,
+      "ingredients": [["1 cup kalabasa (squash), cubed", 10], ["1 cup sitaw, cut", 10], ["1 talong (eggplant)", 5], ["8 okra", 15], ["Half an ampalaya (bitter melon)", 5], ["2 kamatis, garlic and onion", 20], ["1 tsp bagoong", 450, "Usual recipes use 3 tsp or more"]],
+      "steps": ["Fry the garlic, onion and tomato in a little oil.", "Add 1 tsp bagoong and half a cup of water. Bring to a boil.", ["Add the kalabasa and sitaw. Cover and cook 8 minutes. Do not stir much.", 8], "Add the talong, okra and ampalaya. Cook 5 minutes more until just soft."]
+    },
+    {
+      "id": "tinola", "name": "Tinolang manok, less patis", "blurb": "Chicken ginger soup", "tags": ["lowsalt", "soft"], "minutes": 45, "servings": 4, "usualMg": 450,
+      "ingredients": [["400 g chicken, skin removed", 300], ["1 small green papaya (sayote also works)", 30], ["1 cup malunggay or sili leaves", 40], ["3 tbsp sliced ginger and 1 onion", 10], ["1 tsp patis", 470]],
+      "steps": ["Fry the ginger and onion in a little oil. Add the chicken and fry 3 minutes.", "Add 5 cups of water and the patis. Bring to a boil, then simmer.", ["Simmer 20 minutes. Add the papaya.", 20], ["Cook 8 minutes more until the papaya is soft.", 8], "Add the leaves, turn off the heat and serve."]
+    },
+    {
+      "id": "adobo-light", "name": "Chicken adobo, low salt", "blurb": "Vinegar and garlic chicken", "tags": ["lowsalt", "diabetes"], "minutes": 45, "servings": 4, "usualMg": 750,
+      "ingredients": [["500 g chicken, skin removed", 370], ["Quarter cup vinegar", 2], ["1 tbsp low sodium soy sauce", 575, "Half the usual amount"], ["8 cloves garlic, peppercorns, bay leaf", 5]],
+      "steps": ["Put the chicken, garlic, pepper, bay leaf, vinegar and soy sauce in a pot. Do not stir yet.", "Add half a cup of water. Bring to a boil.", ["Simmer, covered, for 25 minutes.", 25], ["Uncover and cook 8 more minutes until the sauce is thick.", 8], "Serve with a small scoop of brown rice and a plate of vegetables."]
+    },
+    {
+      "id": "ginataang-kalabasa", "name": "Ginataang kalabasa at sitaw", "blurb": "Squash and beans in light coconut milk", "tags": ["lowsalt", "soft"], "minutes": 30, "servings": 4,
+      "ingredients": [["2 cups kalabasa, cubed", 20], ["2 cups sitaw, cut", 20], ["1 cup light coconut milk", 30, "Light gata has less fat"], ["150 g fresh shrimp", 180, "Not dried or salted"], ["Garlic, onion and ginger", 10], ["1 tsp patis", 470]],
+      "steps": ["Fry the garlic, onion and ginger in a little oil.", ["Add the kalabasa, coconut milk and half a cup of water. Simmer 10 minutes.", 10], ["Add the sitaw. Cook 5 minutes.", 5], ["Add the shrimp and patis. Cook 3 minutes until pink.", 3]]
+    },
+    {
+      "id": "escabeche", "name": "Escabeche, sweet and sour fish", "blurb": "Fried fish in light vinegar sauce", "tags": ["lowsalt", "fish"], "minutes": 40, "servings": 4,
+      "ingredients": [["500 g tilapia or lapu-lapu, cut", 300], ["1 carrot and 1 red bell pepper", 30], ["Garlic, onion and ginger", 10], ["Quarter cup vinegar and 1 tsp sugar", 2, "Small sugar for taste only"], ["A pinch of salt, about one eighth of a teaspoon", 290]],
+      "steps": ["Pat the fish dry. Fry it in a little oil until golden. Set aside.", "Fry the garlic, onion and ginger. Add the carrot and bell pepper.", ["Add the vinegar, sugar, salt and half a cup of water. Simmer 5 minutes.", 5], "Pour the sauce over the fish. Serve warm."]
+    },
+    {
+      "id": "paksiw-isda", "name": "Paksiw na isda", "blurb": "Fish cooked in vinegar and ginger", "tags": ["lowsalt", "fish", "diabetes"], "minutes": 25, "servings": 4,
+      "ingredients": [["500 g bangus or galunggong", 320], ["Third cup vinegar", 2], ["Thumb of ginger and 4 cloves garlic", 5], ["Half an ampalaya and 2 siling haba", 15], ["Half a tsp patis", 235]],
+      "steps": ["Lay the ginger, garlic and ampalaya in a pot. Place the fish on top.", "Add the vinegar, half a cup of water, patis and the chili. Do not stir.", ["Bring to a boil, then simmer 15 minutes.", 15], "Serve with the sauce spooned over."]
+    },
+    {
+      "id": "pesang-isda", "name": "Pesang isda", "blurb": "Ginger fish soup with pechay", "tags": ["lowsalt", "fish", "soft"], "minutes": 25, "servings": 4,
+      "ingredients": [["500 g tilapia, cleaned", 260], ["4 tbsp sliced ginger", 5], ["1 bunch pechay", 80], ["1 tomato and 1 onion", 15], ["1 tsp patis", 470]],
+      "steps": ["Boil 5 cups of water with the ginger, onion and tomato.", ["Add the fish. Simmer 8 minutes.", 8], "Add the patis. Taste the soup first, it may be enough.", ["Add the pechay and cook 2 minutes.", 2]]
+    },
+    {
+      "id": "inihaw-bangus", "name": "Inihaw na bangus with tomato", "blurb": "Grilled milkfish with tomato and onion", "tags": ["lowsalt", "fish", "diabetes"], "minutes": 35, "servings": 4,
+      "ingredients": [["2 small bangus, cleaned and split", 450], ["3 tomatoes, chopped", 15], ["1 onion, chopped", 5], ["Calamansi juice and ginger", 5], ["Black pepper", 0]],
+      "steps": ["Mix the tomato, onion, ginger, calamansi juice and pepper.", "Stuff the mixture inside the fish. Wrap each fish in foil.", ["Grill or bake over medium heat, 12 minutes on each side.", 12], "Open the foil and serve with cucumber slices."]
+    },
+    {
+      "id": "ensaladang-talong", "name": "Ensaladang talong", "blurb": "Grilled eggplant salad", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 20, "servings": 4,
+      "ingredients": [["4 talong (eggplants)", 10], ["2 tomatoes", 10], ["1 red onion", 5], ["Vinegar and calamansi juice", 2], ["Half a tsp patis", 235]],
+      "steps": [["Grill the eggplants over a flame until the skin is black and soft, about 10 minutes.", 10], "Peel off the skin. Slice the flesh.", "Mix the tomato, onion, vinegar, calamansi and patis.", "Pour over the eggplant. Serve cool."]
+    },
+    {
+      "id": "ampalaya-itlog", "name": "Ginisang ampalaya with egg", "blurb": "Bitter melon with scrambled egg", "tags": ["lowsalt", "diabetes"], "minutes": 20, "servings": 4,
+      "ingredients": [["2 ampalaya, sliced thin", 10, "Soak in cold water 10 minutes to be less bitter"], ["3 eggs", 210], ["1 tomato", 5], ["Garlic and onion", 10], ["Half a tsp patis", 235]],
+      "steps": ["Fry the garlic, onion and tomato in a little oil.", ["Add the ampalaya. Cook 5 minutes, stirring.", 5], "Add the patis. Pour in the beaten eggs.", "Stir gently until the egg is set. Serve with a small portion of rice."]
+    },
+    {
+      "id": "nilaga-light", "name": "Nilagang baka, light", "blurb": "Beef and vegetable soup", "tags": ["lowsalt", "soft"], "minutes": 90, "servings": 4,
+      "ingredients": [["400 g lean beef shank", 260], ["2 potatoes", 20], ["Quarter of a cabbage", 30], ["1 bunch pechay", 80], ["1 corn on the cob", 5], ["Onion and peppercorns", 5], ["1 tsp patis", 470]],
+      "steps": [["Boil the beef with the onion and peppercorns in 8 cups of water. Simmer until tender, about 60 minutes. Skim the foam.", 60], ["Add the potato and corn. Cook 15 minutes.", 15], "Add the patis and cabbage. Cook 5 minutes.", "Add the pechay last. Turn off the heat and serve."]
+    },
+    {
+      "id": "lugaw-soft", "name": "Arroz caldo, soft and light", "blurb": "Chicken rice porridge", "tags": ["lowsalt", "soft"], "minutes": 45, "servings": 4, "usualMg": 410,
+      "ingredients": [["1 cup rice", 5], ["200 g chicken, skin removed", 150], ["4 tbsp ginger, cut thin", 5], ["Garlic and onion", 5], ["1 boiled egg, chopped", 70], ["1 tsp patis", 470, "Add calamansi at the table, not patis"]],
+      "steps": ["Fry the garlic, onion and ginger. Add the chicken and rice.", "Add 7 cups of water. Bring to a boil.", ["Simmer 30 minutes, stirring often, until very soft.", 30], "Add the patis. Top with the egg and a squeeze of calamansi."]
+    },
+    {
+      "id": "tokwa-gulay", "name": "Tokwa and pechay stir-fry", "blurb": "Tofu with vegetables", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 20, "servings": 4,
+      "ingredients": [["300 g firm tofu (tokwa), cubed", 20], ["2 bunches pechay", 160], ["1 carrot, sliced", 80], ["Garlic and onion", 10], ["1 tbsp low sodium soy sauce", 575]],
+      "steps": ["Pan-fry the tofu cubes in a little oil until light gold. Set aside.", "Fry the garlic and onion. Add the carrot and cook 3 minutes.", ["Add the pechay and soy sauce. Cook 3 minutes.", 3], "Return the tofu. Stir and serve."]
+    },
+    {
+      "id": "sopas-light", "name": "Sopas, light", "blurb": "Macaroni chicken soup", "tags": ["lowsalt", "soft"], "minutes": 35, "servings": 4,
+      "ingredients": [["1 cup elbow macaroni", 10], ["200 g chicken, skin removed", 150], ["1 carrot and half a cup of cabbage", 50], ["1 cup low fat milk", 110], ["Onion and celery", 40], ["Half a tsp patis", 235]],
+      "steps": ["Boil the chicken in 6 cups of water for 15 minutes. Shred it.", "Fry the onion and celery. Add the carrot and the chicken broth.", ["Add the macaroni and cook 10 minutes.", 10], "Add the chicken, cabbage, milk and patis. Warm gently and serve."]
+    },
+    {
+      "id": "kalabasa-soup", "name": "Kalabasa soup", "blurb": "Smooth squash soup", "tags": ["lowsalt", "soft", "diabetes"], "minutes": 30, "servings": 4,
+      "ingredients": [["500 g kalabasa (squash), cubed", 10], ["Onion and garlic", 10], ["Half a cup light coconut milk", 15], ["A pinch of salt, about one eighth of a teaspoon", 290], ["Black pepper", 0]],
+      "steps": ["Fry the onion and garlic in a little oil.", ["Add the kalabasa and 4 cups of water. Simmer until very soft, about 20 minutes.", 20], "Mash or blend until smooth.", "Stir in the coconut milk, salt and pepper. Warm and serve."]
+    },
+    {
+      "id": "steamed-fish", "name": "Steamed fish with ginger", "blurb": "Soft, mild fish", "tags": ["lowsalt", "fish", "soft", "diabetes"], "minutes": 25, "servings": 4,
+      "ingredients": [["500 g tilapia fillet", 260], ["Thumb of ginger and 2 spring onions", 10], ["Calamansi juice", 0], ["1 tsp low sodium soy sauce", 190]],
+      "steps": ["Lay half of the ginger in a heatproof plate. Put the fish on top.", "Pour the soy sauce and calamansi over the fish.", ["Steam over boiling water for 12 minutes.", 12], "Top with the rest of the ginger and the spring onion. Serve with steamed vegetables."]
+    },
+    {
+      "id": "ginisang-repolyo", "name": "Ginisang repolyo with chicken", "blurb": "Cabbage and carrots with chicken", "tags": ["lowsalt", "diabetes"], "minutes": 25, "servings": 4,
+      "ingredients": [["4 cups sliced cabbage", 60], ["200 g chicken breast, sliced thin", 150], ["1 carrot, in strips", 80], ["Garlic and onion", 10], ["1 tsp patis", 470]],
+      "steps": ["Fry the garlic and onion. Add the chicken and cook until white.", ["Add the carrot and cook 3 minutes.", 3], ["Add the cabbage and patis. Cook 4 minutes, still a little crunchy.", 4], "Serve with a small scoop of brown rice."]
+    },
+    {
+      "id": "ginisang-sayote", "name": "Ginisang sayote with shrimp", "blurb": "Chayote and shrimp", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 20, "servings": 4,
+      "ingredients": [["3 sayote (chayote), cut in strips", 15], ["150 g fresh shrimp, peeled", 180], ["1 tomato, garlic and onion", 15], ["1 tsp patis", 470]],
+      "steps": ["Fry the garlic, onion and tomato in a little oil.", "Add the shrimp and cook until pink, about 2 minutes.", ["Add the sayote, patis and a quarter cup of water. Cover and cook 8 minutes.", 8], "Taste. Add calamansi instead of more patis."]
+    }
+  ]
+}

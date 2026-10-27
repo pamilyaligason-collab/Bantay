@@ -129,7 +129,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`learn-home: Discover shell ${scheme}`, async ({ page }) => {
     await open(page, scheme, 390, 'discover')
     await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
-    await expect(page.getByText('Coming in this update')).toBeVisible()
+    await expect(page.getByTestId('learn-home')).toBeVisible()
     await page.waitForTimeout(600)
     await shot(page, 'learn-home', scheme)
   })
