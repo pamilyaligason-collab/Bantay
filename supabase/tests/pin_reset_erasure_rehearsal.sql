@@ -1,4 +1,4 @@
--- Rehearsal for 0034_pin_reset_erasure.sql on a THROWAWAY Postgres (never the live project), with the real migrations 0001, 0002, 0003, 0008, 0010, 0013, 0014, 0016, 0018, 0021, 0029, 0023, 0024, 0027, 0030, 0031.
+-- Rehearsal for 0034_pin_reset_erasure.sql on a THROWAWAY Postgres (never the live project), with the REAL full chain 0001..0033 (0028 does not exist), then 0034 twice, then 0035.
 -- Run (WSL Postgres, throwaway database):
 --   wsl -u postgres createdb bantay_pr ; wsl -u postgres psql -X -q -v ON_ERROR_STOP=1 -d bantay_pr -f supabase/tests/pin_reset_erasure_rehearsal.sql
 -- Actors: A admin; B the requester (PIN member, has data); C and D active members holding the pin_approve row; E disabled member holding a row;
@@ -13,6 +13,7 @@ end $$;
 create schema auth;
 create table auth.users (id uuid primary key, email text, raw_app_meta_data jsonb, raw_user_meta_data jsonb);
 create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null);
+create table auth.identities (id uuid primary key default gen_random_uuid(), user_id uuid not null, provider text, identity_data jsonb);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to authenticated, anon, supabase_auth_admin, service_role;
 grant execute on function auth.uid() to authenticated, anon, service_role;
@@ -29,6 +30,10 @@ insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values
 \ir ../migrations/0001_health.sql
 \ir ../migrations/0002_auth.sql
 \ir ../migrations/0003_sync.sql
+\ir ../migrations/0004_admin.sql
+\ir ../migrations/0005_news_assistant.sql
+\ir ../migrations/0006_family_profiles.sql
+\ir ../migrations/0007_safety_alerts.sql
 create schema storage;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id), name text, owner uuid default auth.uid());
@@ -45,17 +50,28 @@ insert into public.people (id, auth_user_id, display_name, created_by) values
  ('10000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000c', 'Cee', '00000000-0000-0000-0000-00000000000c');
 \ir ../migrations/0009_pin_reset_requests.sql
 \ir ../migrations/0010_people_profile.sql
+\ir ../migrations/0011_family_profiles_photo.sql
+\ir ../migrations/0012_family_plan.sql
 \ir ../migrations/0013_records_autoconfirm.sql
 \ir ../migrations/0014_medications_live.sql
+\ir ../migrations/0015_usage_client_at.sql
 \ir ../migrations/0016_medications_softdelete.sql
+\ir ../migrations/0017_news_zone.sql
 \ir ../migrations/0018_dose_watch.sql
+\ir ../migrations/0019_records_dedupe.sql
+\ir ../migrations/0020_scan_extract.sql
 \ir ../migrations/0021_admin_audit.sql
-\ir ../migrations/0029_admin_view_as.sql
+\ir ../migrations/0022_people_archive.sql
 \ir ../migrations/0023_family_memories.sql
 \ir ../migrations/0024_nutrition.sql
+\ir ../migrations/0025_knowledge.sql
+\ir ../migrations/0026_nutrition_v2.sql
 \ir ../migrations/0027_family_messages.sql
+\ir ../migrations/0029_admin_view_as.sql
 \ir ../migrations/0030_carer_alerts.sql
 \ir ../migrations/0031_sos.sql
+\ir ../migrations/0032_phone_health.sql
+\ir ../migrations/0033_job_runs.sql
 
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
@@ -64,6 +80,7 @@ grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text) to auth
 \ir ../migrations/0034_pin_reset_erasure.sql
 -- 0034 must be safe to run twice
 \ir ../migrations/0034_pin_reset_erasure.sql
+\ir ../migrations/0035_reading_alerts.sql
 
 -- ===== grants (ML-21) =====
 select pg_temp.ok(not has_function_privilege('anon', 'public.request_pin_reset(text)', 'execute') and not has_function_privilege('authenticated', 'public.request_pin_reset(text)', 'execute'), 'request_pin_reset is revoked from anon and authenticated (admin flow retired)');
@@ -171,6 +188,60 @@ insert into public.family_messages (client_id, sender_id, kind, body) values (ge
 insert into public.push_subscriptions (user_id, endpoint) values ('00000000-0000-0000-0000-00000000000b', 'https://push.example/b'), ('00000000-0000-0000-0000-00000000000c', 'https://push.example/c');
 insert into public.carer_alerts (person_id, carer_user_id, kind, template, ref) values ('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000d', 'dose_missed', 'dose_missed', 'dm1'), ('10000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000d', 'dose_missed', 'dose_missed', 'dm2');
 insert into public.food_entries (person_id, eaten_at, meal, name) values ('10000000-0000-0000-0000-0000000000b1', now(), 'lunch', 'rice');
+-- one row for B in EVERY other table the erase must reach (the expected list below is hand-written, not read from the discovery function)
+insert into public.usage_events (user_id, kind, name) values ('00000000-0000-0000-0000-00000000000b', 'screen', 'home'), ('00000000-0000-0000-0000-00000000000c', 'screen', 'home');
+insert into public.assistant_usage (user_id, day) values ('00000000-0000-0000-0000-00000000000b', current_date), ('00000000-0000-0000-0000-00000000000c', current_date);
+insert into public.client_errors (user_id, where_, message_hash, day) values ('00000000-0000-0000-0000-00000000000b', 'app', 'abc', current_date);
+insert into public.admin_requests (kind, handle, user_id) values ('pin_reset', 'bee', '00000000-0000-0000-0000-00000000000b');
+insert into public.phone_health (user_id) values ('00000000-0000-0000-0000-00000000000b');
+insert into public.pin_attempts (user_id) values ('00000000-0000-0000-0000-00000000000b');
+insert into public.family_photos (id, client_id, storage_path, uploaded_by) values ('f0000000-0000-0000-0000-0000000000b1', gen_random_uuid(), '00000000-0000-0000-0000-00000000000b/f0000000-0000-0000-0000-0000000000b1.jpg', '00000000-0000-0000-0000-00000000000b');
+insert into public.dose_watch_sent (person_id, day, slot) values ('10000000-0000-0000-0000-0000000000b1', current_date, '08:00');
+insert into public.family_events (client_id, title, starts_at, person_id) values ('ev-b1', 'Checkup', now(), '10000000-0000-0000-0000-0000000000b1');
+insert into public.allergies (person_id, substance) values ('10000000-0000-0000-0000-0000000000b1', 'peanut');
+insert into public.appointments (person_id, starts_at) values ('10000000-0000-0000-0000-0000000000b1', now());
+insert into public.conditions (person_id, name) values ('10000000-0000-0000-0000-0000000000b1', 'hypertension');
+insert into public.consults (person_id, taken_at) values ('10000000-0000-0000-0000-0000000000b1', now());
+insert into public.encounters (person_id, kind) values ('10000000-0000-0000-0000-0000000000b1', 'consult');
+insert into public.imaging_reports (person_id) values ('10000000-0000-0000-0000-0000000000b1');
+insert into public.insurance_policies (person_id) values ('10000000-0000-0000-0000-0000000000b1');
+insert into public.lab_panels (person_id, document_id, name) values ('10000000-0000-0000-0000-0000000000b1', 'd0000000-0000-0000-0000-0000000000b1', 'CBC');
+insert into public.lab_results (person_id, name_raw, value_num) values ('10000000-0000-0000-0000-0000000000b1', 'HGB', 13.5);
+insert into public.medication_changes (medication_id, person_id, field) select id, person_id, 'dose' from public.medications where person_id = '10000000-0000-0000-0000-0000000000b1';
+insert into public.nutrition_goals (person_id) values ('10000000-0000-0000-0000-0000000000b1');
+insert into public.person_aliases (person_id, alias) values ('10000000-0000-0000-0000-0000000000b1', 'bebe');
+insert into public.person_identifiers (person_id, id_type, id_number) values ('10000000-0000-0000-0000-0000000000b1', 'philhealth', '12-345');
+with rx as (insert into public.prescriptions (person_id) values ('10000000-0000-0000-0000-0000000000b1') returning id)
+  insert into public.prescription_items (person_id, prescription_id, line_no) select '10000000-0000-0000-0000-0000000000b1', id, 1 from rx;
+insert into public.vaccinations (person_id, vaccine) values ('10000000-0000-0000-0000-0000000000b1', 'flu');
+insert into public.water_entries (person_id, drunk_at, ml) values ('10000000-0000-0000-0000-0000000000b1', now(), 250);
+-- B acknowledged an SOS of C (sos_acks.user_id = B, and the event is C's, so only the user id reaches it)
+insert into public.sos_events (id, person_id, user_id, at) values ('e0000000-0000-0000-0000-0000000000c1', '10000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000c', now());
+insert into public.sos_acks (event_id, user_id) values ('e0000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-00000000000b');
+insert into auth.identities (user_id, provider, identity_data) values ('00000000-0000-0000-0000-00000000000b', 'google', '{"name":"Bee"}'), ('00000000-0000-0000-0000-00000000000c', 'google', '{"name":"Cee"}');
+
+-- ===== the expected covered set, written by hand (a table added later must be classified here: the test fails until it is) =====
+create temp table expected_targets (t text primary key) on commit preserve rows;
+insert into expected_targets select unnest(string_to_array(
+ 'activity.person_id admin_requests.user_id allergies.person_id appointments.person_id assistant_usage.user_id carer_alerts.carer_user_id carer_alerts.person_id carers.carer_id carers.person_id '
+ 'client_errors.user_id conditions.person_id consults.person_id documents.person_id dose_watch_sent.person_id encounters.person_id family_events.person_id family_messages.sender_id '
+ 'family_photos.uploaded_by food_entries.person_id imaging_reports.person_id insurance_policies.person_id lab_panels.person_id lab_results.person_id medication_changes.person_id '
+ 'medications.person_id meds_taken.person_id nutrition_goals.person_id person_aliases.person_id person_identifiers.person_id phone_health.user_id pin_attempts.user_id '
+ 'pin_reset_requests.user_id prescription_items.person_id prescriptions.person_id push_subscriptions.user_id readings.person_id sos_acks.user_id sos_events.person_id sos_events.user_id '
+ 'source_files.person_id usage_events.user_id vaccinations.person_id water_entries.person_id', ' '));
+grant select on expected_targets to service_role, authenticated;
+select pg_temp.ok((select count(*) from expected_targets) = 43, 'the hand-written list has 43 table.column entries');
+select pg_temp.ok(not exists (select tbl || '.' || col from public.erasure_targets() except select t from expected_targets)
+  and not exists (select t from expected_targets except select tbl || '.' || col from public.erasure_targets()), 'the discovery finds exactly the hand-written list (no table is missed, none is extra)');
+-- a helper: how many rows reference B (person key or user key) in one table.column of the hand-written list
+create function pg_temp.refs(tc text) returns bigint language plpgsql as $$
+declare n bigint; t text := split_part(tc, '.', 1); c text := split_part(tc, '.', 2);
+begin
+  execute format('select count(*) from public.%I where %I = $1', t, c) into n
+    using case when c = 'person_id' then '10000000-0000-0000-0000-0000000000b1'::uuid else '00000000-0000-0000-0000-00000000000b'::uuid end;
+  return n; end $$;
+grant execute on function pg_temp.refs(text) to service_role, authenticated;
+select pg_temp.ok(not exists (select 1 from expected_targets where pg_temp.refs(t) = 0), 'before the erase, B has at least one row in every one of the 43 table.column entries (the seed covers them all)');
 
 -- ===== export_my_data =====
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
@@ -179,7 +250,11 @@ select public.export_my_data() as ex \gset
 reset role;
 select pg_temp.ok((:'ex'::jsonb -> 'person' ->> 'display_name') = 'Bee' and jsonb_array_length(:'ex'::jsonb -> 'readings') = 2 and jsonb_array_length(:'ex'::jsonb -> 'meds_taken') = 1, 'export returns the caller own person and rows (2 readings, 1 dose), not C''s');
 select pg_temp.ok(not (:'ex'::text like '%Metformin%') and not (:'ex'::text like '%Cee%'), 'export holds nothing of another member');
-select pg_temp.ok((select count(*) from public.person_tables()) >= 15 and not exists (select 1 from public.person_tables() t where not (:'ex'::jsonb ? t)), 'export covers every table the erase reaches (same discovery function)');
+select pg_temp.ok(not exists (select 1 from (select distinct split_part(t, '.', 1) as tbl from expected_targets) x
+    where x.tbl not in ('pin_reset_requests', 'pin_attempts') and (not (:'ex'::jsonb ? x.tbl) or jsonb_array_length(:'ex'::jsonb -> x.tbl) = 0)),
+  'export carries a non-empty array for every table of the hand-written list (carers, phone_health, usage_events, assistant_usage, client_errors, admin_requests, family_photos included)');
+select pg_temp.ok(not (:'ex'::jsonb ? 'pin_reset_requests') and not (:'ex'::jsonb ? 'pin_attempts') and not (:'ex'::text like '%secret_hash%') and not (:'ex'::text like '%p256dh%'), 'export leaves out reset codes and lock rows, and strips push keys');
+select pg_temp.ok((:'ex'::jsonb -> 'family_photos' -> 0 ->> 'uploaded_by') = '00000000-0000-0000-0000-00000000000b' and jsonb_array_length(:'ex'::jsonb -> 'carers') = 2, 'export holds the family photo B uploaded and both carers rows (as carer and as cared-for)');
 select pg_temp.ok((:'ex'::jsonb ? 'food_entries') and jsonb_array_length(:'ex'::jsonb -> 'food_entries') = 1 and (:'ex'::jsonb ? 'sos_events') and (:'ex'::jsonb ? 'family_messages') and (:'ex'::jsonb ? 'carer_alerts'), 'export also carries nutrition, SOS, messages and alerts');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000f');
 set role authenticated;
@@ -194,6 +269,14 @@ reset role;
 set role anon;
 select pg_temp.ok(pg_temp.fails($$select public.export_my_data()$$), 'anon cannot export');
 reset role;
+
+-- an active member can still write his own readings
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+set role authenticated;
+insert into public.readings (person_id, taken_at, test, value) values ('10000000-0000-0000-0000-0000000000b1', now() - interval '2 days', 'bp_systolic', 130);
+reset role;
+select pg_temp.ok((select count(*) from public.readings where person_id = '10000000-0000-0000-0000-0000000000b1') = 3, 'before the erase, B can insert his own reading (is_self)');
+delete from public.readings where person_id = '10000000-0000-0000-0000-0000000000b1' and value = 130;
 
 -- ===== request_erasure / cancel_erasure =====
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000f');
@@ -228,8 +311,35 @@ select pg_temp.ok((select user_id from public.erasure_due()) = '00000000-0000-00
 select pg_temp.ok((select count(*) from public.erasure_paths('00000000-0000-0000-0000-00000000000b')) = 2 and exists (select 1 from public.erasure_paths('00000000-0000-0000-0000-00000000000b') where bucket = 'records' and path like '%f1.pdf') and exists (select 1 from public.erasure_paths('00000000-0000-0000-0000-00000000000b') where bucket = 'avatars'), 'erasure_paths lists B''s records object and avatar, not C''s');
 select count(*) as audit_before from public.audit_log \gset
 set role service_role;
+select pg_temp.ok(pg_temp.fails($$select public.erasure_scrub_identities('00000000-0000-0000-0000-00000000000b')$$), 'erasure_scrub_identities is refused before the erase is done');
 select public.erase_user_data('00000000-0000-0000-0000-00000000000b');
 reset role;
+select pg_temp.ok(not exists (select 1 from expected_targets where t <> 'family_photos.uploaded_by' and pg_temp.refs(t) > 0), 'after the erase, no row references B in any of the hand-written table.column entries');
+select pg_temp.ok(pg_temp.refs('family_photos.uploaded_by') = 0 and (select uploaded_by is null from public.family_photos where id = 'f0000000-0000-0000-0000-0000000000b1'), 'the family photo stays with the family, uploaded_by set null');
+select pg_temp.ok((select count(*) from public.usage_events where user_id = '00000000-0000-0000-0000-00000000000c') = 1 and (select count(*) from public.assistant_usage where user_id = '00000000-0000-0000-0000-00000000000c') = 1
+  and exists (select 1 from public.sos_events where id = 'e0000000-0000-0000-0000-0000000000c1'), 'C''s usage rows and SOS event are untouched');
+select pg_temp.ok(exists (select 1 from public.app_roles where user_id = '00000000-0000-0000-0000-00000000000b') and exists (select 1 from public.erasure_requests where user_id = '00000000-0000-0000-0000-00000000000b'), 'app_roles and the erasure marker are kept');
+-- the disabled login can no longer write: is_self() refuses a disabled user even with a live token
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
+set role authenticated;
+select pg_temp.ok(pg_temp.fails($$insert into public.readings (person_id, taken_at, test, value) values ('10000000-0000-0000-0000-0000000000b1', now(), 'bp_systolic', 140)$$), 'an erased (disabled) member cannot insert a reading: readings_insert is refused');
+select pg_temp.ok(not public.is_self('10000000-0000-0000-0000-0000000000b1'), 'is_self is false for a disabled member');
+reset role;
+select pg_temp.as_user('00000000-0000-0000-0000-00000000000c');
+set role authenticated;
+select pg_temp.ok(public.is_self('10000000-0000-0000-0000-0000000000c1'), 'is_self is still true for an active member');
+reset role;
+-- the auth side: the person is still due until the function has scrubbed the email (retry), and the identities go through the service-role function
+select pg_temp.ok((select erased from public.erasure_due() where user_id = '00000000-0000-0000-0000-00000000000b'), 'erasure_due keeps listing B with erased = true until the auth email is scrubbed (the retry path)');
+set role service_role;
+select public.erasure_scrub_identities('00000000-0000-0000-0000-00000000000b');
+select pg_temp.ok(pg_temp.fails($$select public.erasure_scrub_identities('00000000-0000-0000-0000-00000000000c')$$), 'erasure_scrub_identities is refused for a user with no finished erasure');
+reset role;
+select pg_temp.ok(not exists (select 1 from auth.identities where user_id = '00000000-0000-0000-0000-00000000000b') and exists (select 1 from auth.identities where user_id = '00000000-0000-0000-0000-00000000000c'), 'B''s login identities are dropped, C''s stay');
+select pg_temp.ok(not has_function_privilege('authenticated', 'public.erasure_scrub_identities(uuid)', 'execute') and not has_function_privilege('anon', 'public.erasure_scrub_identities(uuid)', 'execute') and has_function_privilege('service_role', 'public.erasure_scrub_identities(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.erasure_targets()', 'execute') and has_function_privilege('authenticated', 'public.is_self(uuid)', 'execute') and not has_function_privilege('anon', 'public.is_self(uuid)', 'execute'), 'grants: scrub and targets service role only; is_self authenticated only as in 0001');
+update auth.users set email = 'erased-00000000-0000-0000-0000-00000000000b@members.bantay.invalid' where id = '00000000-0000-0000-0000-00000000000b';
+select pg_temp.ok(not exists (select 1 from public.erasure_due()), 'once the email is the erased value, nothing is due any more');
 select pg_temp.ok(not exists (select 1 from public.readings where person_id = '10000000-0000-0000-0000-0000000000b1')
   and not exists (select 1 from public.meds_taken where person_id = '10000000-0000-0000-0000-0000000000b1')
   and not exists (select 1 from public.activity where person_id = '10000000-0000-0000-0000-0000000000b1')
@@ -255,7 +365,7 @@ select pg_temp.ok((select disabled from public.app_roles where user_id = '000000
 select pg_temp.ok(not exists (select 1 from public.carers where carer_id = '00000000-0000-0000-0000-00000000000b' or person_id = '10000000-0000-0000-0000-0000000000b1'), 'carers rows are gone both ways: B as carer and B as the cared-for');
 select pg_temp.ok((select count(*) from public.carers where person_id = '10000000-0000-0000-0000-0000000000c1' and carer_id = '00000000-0000-0000-0000-00000000000d') = 1 and (select disabled from public.app_roles where user_id = '00000000-0000-0000-0000-00000000000c') = false, 'other carers rows and C''s login are untouched');
 select pg_temp.ok(not exists (select 1 from public.invites where email = 'm-b@members.bantay.invalid') and exists (select 1 from public.invites where email = 'keep@example.com'), 'B''s invite row is gone, another stays');
-select pg_temp.ok((select done_at is not null from public.erasure_requests where user_id = '00000000-0000-0000-0000-00000000000b') and not exists (select 1 from public.erasure_due()), 'the request is marked done and no longer due');
+select pg_temp.ok((select done_at is not null from public.erasure_requests where user_id = '00000000-0000-0000-0000-00000000000b'), 'the request is marked done');
 select pg_temp.ok(pg_temp.fails($$select public.erase_user_data('00000000-0000-0000-0000-00000000000b')$$), 'a second erase run for the same user is refused');
 
 \echo ALL PASS

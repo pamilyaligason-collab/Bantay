@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { RESET_COMPLETE_IP_LIMIT, RESET_HANDLE_LIMIT, RESET_IP_LIMIT, resetComplete, resetStart, type ResetPort, type ResetRow } from './login.ts'
+import { RESET_COMPLETE_IP_LIMIT, RESET_ID_LIMIT, RESET_HANDLE_LIMIT, RESET_IP_LIMIT, resetComplete, resetStart, type ResetPort, type ResetRow } from './login.ts'
 import { derivePassword, hashResetSecret, limiterKey } from './pin.ts'
 
 const PEPPER = 'p'.repeat(32)
@@ -140,7 +140,9 @@ describe('reset_complete', () => {
   it('limits tries per request and per IP', async () => {
     const f = fake(); const b = await approved(f)
     let last = 0
-    for (let i = 0; i < 12; i++) last = (await done(f.port, { ...b, secret: 'y'.repeat(22) })).status
+    expect(RESET_ID_LIMIT).toBeGreaterThanOrEqual(66) // a 30-minute poll at 10 to 30 s is up to 66 calls and must fit
+    for (let i = 0; i < RESET_ID_LIMIT; i++) expect((await done(f.port, { ...b, secret: 'y'.repeat(22) })).status).toBe(403) // every try up to the limit is answered
+    last = (await done(f.port, { ...b, secret: 'y'.repeat(22) })).status
     expect(last).toBe(429)
   })
   it('reset_complete has its own per-IP bucket of 120 an hour, separate from reset_start', async () => {

@@ -88,37 +88,37 @@ grant execute on function public.approve_pin_reset(uuid, text) to authenticated;
 -- the admin flow is retired (D-76); admin_requests stays for history
 revoke execute on function public.request_pin_reset(text) from public, anon, authenticated, service_role;
 
--- ---------- export / erasure (scoped to the caller's own person) ----------
--- ONE table discovery for both export and erasure: every base table in public with a person_id column, except the three kept or handled on their own
--- (audit_log is kept; carer_alerts and carers are removed by user id as well). Never callable by clients.
-create or replace function public.person_tables() returns setof text
+-- ---------- export / erasure (scoped to the caller's own person and user id) ----------
+-- ONE discovery for both export and erasure: every base table in public with a person_id column (matched against the caller's own people row) and every
+-- table with a column that holds the caller's user id (user_id, uploaded_by, sender_id, carer_id, carer_user_id). Kept on purpose: audit_log, app_roles
+-- (the login is disabled, not deleted), erasure_requests (the marker). A new table with one of these columns is picked up by both automatically; the
+-- rehearsal pins the expected list by hand. Never callable by clients.
+create or replace function public.erasure_targets() returns table (tbl text, col text, kind text)
   language sql stable security definer set search_path = '' as
-  $$ select c.table_name::text from information_schema.columns c
+  $$ select c.table_name::text, c.column_name::text, case when c.column_name = 'person_id' then 'person' else 'user' end
+       from information_schema.columns c
        join information_schema.tables x on x.table_schema = c.table_schema and x.table_name = c.table_name and x.table_type = 'BASE TABLE'
-      where c.table_schema = 'public' and c.column_name = 'person_id' and c.table_name not in ('audit_log', 'carer_alerts', 'carers')
-      order by 1 $$;
-revoke execute on function public.person_tables() from public, anon, authenticated;
-grant execute on function public.person_tables() to service_role;
+      where c.table_schema = 'public' and c.column_name in ('person_id', 'user_id', 'uploaded_by', 'sender_id', 'carer_id', 'carer_user_id')
+        and c.table_name not in ('audit_log', 'app_roles', 'erasure_requests')
+      order by 1, 2 $$;
+revoke execute on function public.erasure_targets() from public, anon, authenticated;
+grant execute on function public.erasure_targets() to service_role;
 
+-- The export returns every table the erase reaches, except secrets that are not the member's data (reset codes, lock rows); push keys are stripped.
 create or replace function public.export_my_data() returns jsonb
   language plpgsql security definer set search_path = '' as $$
-declare me uuid := auth.uid(); pid uuid; out jsonb := '{}'::jsonb; t text; rows jsonb;
+declare me uuid := auth.uid(); pid uuid; out jsonb := '{}'::jsonb; r record; rows jsonb;
 begin
   if me is null then raise exception 'not signed in' using errcode = '28000'; end if;
   if public.pin_try(md5('export:' || me::text)::uuid, 5, interval '1 hour') > 5 then raise exception 'too many exports' using errcode = '53400'; end if;
   select id into pid from public.people where auth_user_id = me;
   if pid is null then return out; end if;
   out := jsonb_build_object('person', (select to_jsonb(p) from public.people p where p.id = pid));
-  for t in select * from public.person_tables() loop
-    execute format('select coalesce(jsonb_agg(to_jsonb(x)), ''[]''::jsonb) from public.%I x where x.person_id = $1', t) into rows using pid;
-    out := out || jsonb_build_object(t, rows);
+  for r in select t.tbl, string_agg(format('x.%I = %L::uuid', t.col, case when t.kind = 'person' then pid else me end), ' or ' order by t.col) as cond
+             from public.erasure_targets() t where t.tbl not in ('pin_reset_requests', 'pin_attempts') group by t.tbl order by t.tbl loop
+    execute format('select coalesce(jsonb_agg(case when %L = ''push_subscriptions'' then to_jsonb(x) - ''p256dh'' - ''auth'' else to_jsonb(x) end), ''[]''::jsonb) from public.%I x where %s', r.tbl, r.tbl, r.cond) into rows;
+    out := out || jsonb_build_object(r.tbl, rows);
   end loop;
-  -- rows keyed by the user, which erase_user_data also removes
-  out := out || jsonb_build_object(
-    'carer_alerts', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.carer_alerts x where x.carer_user_id = me or x.person_id = pid),
-    'family_messages', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.family_messages x where x.sender_id = me),
-    'push_subscriptions', (select coalesce(jsonb_agg(to_jsonb(x) - 'p256dh' - 'auth'), '[]'::jsonb) from public.push_subscriptions x where x.user_id = me),
-    'sos_acks', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.sos_acks x where x.user_id = me));
   return out;
 end $$;
 revoke execute on function public.export_my_data() from public, anon, authenticated, service_role;
@@ -153,10 +153,16 @@ revoke execute on function public.cancel_erasure() from public, anon, authentica
 grant execute on function public.cancel_erasure() to authenticated;
 
 -- ---------- erase function support (service role only) ----------
-create or replace function public.erasure_due() returns table (user_id uuid, person_id uuid)
+-- Due = past the undo window and not erased yet, OR erased but the auth step is unfinished (the email is not yet the synthetic erased-<id>@ value, so
+-- the erase function retries the ban, session revoke and email scrub; erased = true skips the data steps). Keep the domain equal to SYNTHETIC_DOMAIN (_shared/pin.ts).
+drop function if exists public.erasure_due();
+create function public.erasure_due() returns table (user_id uuid, person_id uuid, erased boolean)
   language sql stable security definer set search_path = '' as
-  $$ select e.user_id, p.id from public.erasure_requests e join public.people p on p.auth_user_id = e.user_id
-      where e.done_at is null and e.cancel_until <= now() order by e.cancel_until limit 5 $$;
+  $$ select e.user_id, p.id, e.done_at is not null
+       from public.erasure_requests e join public.people p on p.auth_user_id = e.user_id join auth.users u on u.id = e.user_id
+      where (e.done_at is null and e.cancel_until <= now())
+         or (e.done_at is not null and u.email is distinct from ('erased-' || e.user_id::text || '@members.bantay.invalid'))
+      order by e.cancel_until limit 5 $$;
 revoke execute on function public.erasure_due() from public, anon, authenticated;
 grant execute on function public.erasure_due() to service_role;
 
@@ -169,37 +175,34 @@ create or replace function public.erasure_paths(p_user uuid) returns table (buck
 revoke execute on function public.erasure_paths(uuid) from public, anon, authenticated;
 grant execute on function public.erasure_paths(uuid) to service_role;
 
--- Deletes the user's rows in one transaction; audit_log is kept. Tables come from person_tables() (a few passes settle foreign keys).
--- The people row stays, every personal column blanked. The login is disabled (app_roles.disabled) so sign-in fails at the existing gate; carers rows
--- are removed both ways. The auth.users email scrub needs the service role: see docs/AUTH.md.
+-- Deletes the user's rows in one transaction; audit_log is kept. Tables come from erasure_targets() (a few passes settle foreign keys): rows with the person's
+-- person_id and rows keyed by the user are deleted, uploaded_by is set null (family photos stay with the family). The people row stays, every personal column
+-- blanked. The login is disabled (app_roles.disabled), and is_self() refuses a disabled user, so an erased member cannot write health data even with a live token.
+-- The auth side (session revoke, ban, email scrub) is done right after by the erase function with the Auth admin API, then erasure_scrub_identities().
 create or replace function public.erase_user_data(p_user uuid) returns void
   language plpgsql security definer set search_path = '' as $$
-declare pid uuid; t text; pass int; pending text[]; r public.erasure_requests%rowtype;
+declare pid uuid; pass int; pending text[]; r public.erasure_requests%rowtype; tg record;
 begin
   select * into r from public.erasure_requests where user_id = p_user for update;
   if not found or r.done_at is not null or r.cancel_until > now() then raise exception 'erasure not due' using errcode = '42501'; end if;
   select id into pid from public.people where auth_user_id = p_user;
-  if pid is not null then
-    for pass in 1..4 loop
-      pending := '{}';
-      for t in select * from public.person_tables() loop
-        begin
-          execute format('delete from public.%I where person_id = $1', t) using pid;
-        exception when foreign_key_violation then pending := pending || t;
-        end;
-      end loop;
-      exit when cardinality(pending) = 0;
+  for pass in 1..4 loop
+    pending := '{}';
+    for tg in select * from public.erasure_targets() loop
+      begin
+        if tg.kind = 'person' then
+          if pid is not null then execute format('delete from public.%I where %I = $1', tg.tbl, tg.col) using pid; end if;
+        elsif tg.col = 'uploaded_by' then
+          execute format('update public.%I set %I = null where %I = $1', tg.tbl, tg.col, tg.col) using p_user;
+        else
+          execute format('delete from public.%I where %I = $1', tg.tbl, tg.col) using p_user;
+        end if;
+      exception when foreign_key_violation then pending := pending || (tg.tbl || '.' || tg.col);
+      end;
     end loop;
-    if cardinality(pending) > 0 then raise exception 'erasure blocked by foreign keys' using errcode = '23503'; end if;
-  end if;
-  delete from public.carer_alerts where carer_user_id = p_user or (pid is not null and person_id = pid);
-  delete from public.carers where carer_id = p_user or (pid is not null and person_id = pid);
-  delete from public.family_messages where sender_id = p_user;
-  delete from public.push_subscriptions where user_id = p_user;
-  if to_regclass('public.phone_health') is not null then delete from public.phone_health where user_id = p_user; end if;
-  delete from public.sos_acks where user_id = p_user;
-  delete from public.pin_reset_requests where user_id = p_user;
-  delete from public.pin_attempts where user_id = p_user;
+    exit when cardinality(pending) = 0;
+  end loop;
+  if cardinality(pending) > 0 then raise exception 'erasure blocked by foreign keys' using errcode = '23503'; end if;
   delete from public.invites where email = (select lower(u.email) from auth.users u where u.id = p_user);
   update public.app_roles set disabled = true where user_id = p_user;
   if pid is not null then
@@ -210,3 +213,22 @@ begin
 end $$;
 revoke execute on function public.erase_user_data(uuid) from public, anon, authenticated;
 grant execute on function public.erase_user_data(uuid) to service_role;
+
+-- Drops the login identities (Google subject, name, avatar) of an erased user. The Auth admin API cannot, so this runs here; refused until the erasure is done.
+create or replace function public.erasure_scrub_identities(p_user uuid) returns void
+  language plpgsql security definer set search_path = '' as $$
+begin
+  if not exists (select 1 from public.erasure_requests where user_id = p_user and done_at is not null) then raise exception 'erasure not done' using errcode = '42501'; end if;
+  delete from auth.identities where user_id = p_user;
+end $$;
+revoke execute on function public.erasure_scrub_identities(uuid) from public, anon, authenticated;
+grant execute on function public.erasure_scrub_identities(uuid) to service_role;
+
+-- A disabled member (disable or erase) is no longer "self": every own-data write policy goes through is_self, so a token that outlives the ban writes nothing.
+-- Same body as 0001 plus the disabled check; grants restated as 0001 had them (ML-21).
+create or replace function public.is_self(pid uuid) returns boolean
+  language sql stable security definer set search_path = '' as
+  $$ select exists (select 1 from public.people where id = pid and auth_user_id = auth.uid())
+        and not exists (select 1 from public.app_roles r where r.user_id = auth.uid() and r.disabled) $$;
+revoke execute on function public.is_self(uuid) from public, anon;
+grant execute on function public.is_self(uuid) to authenticated;

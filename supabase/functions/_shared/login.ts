@@ -46,7 +46,7 @@ export async function attemptLogin(body: unknown, ip: string, port: LoginPort): 
 export const RESET_HANDLE_LIMIT = 3 // reset_start per handle per hour
 export const RESET_IP_LIMIT = 10 // reset_start per IP per hour
 export const RESET_COMPLETE_IP_LIMIT = 120 // reset_complete per IP per hour, its own bucket (one household NAT can finish many resets; reset_start no longer starves it)
-export const RESET_ID_LIMIT = 10 // reset_complete tries per request per hour
+export const RESET_ID_LIMIT = 80 // reset_complete tries per request per hour: a 30-minute poll every 10 to 30 s is up to 66 calls and must fit; the secret is 128 random bits, so the cap is not what protects it
 const HOUR = '1 hour'
 
 export interface ResetRow { id: string; userId: string; secretHash: string; approvedAt: string | null; usedAt: string | null; expiresAt: string }
