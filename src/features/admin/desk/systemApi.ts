@@ -126,7 +126,8 @@ export type Kpis = { today: string; active_members: Pair; screens: Pair; doses_l
 /** Same list as the carer_alerts.kind check, NotifyKind and the templates.ts map (ML-28): add a kind to all four together. */
 export const ALERT_KINDS: Record<string, string> = {
   dose_missed: 'Missed doses', review_open: 'Medicine questions', phone_health: 'Phone warnings', reading_high: 'High readings', mood_unwell: 'Not feeling well',
-  hazard: 'Storm and hazard warnings', sos: 'SOS', sos_cancel: 'SOS cancelled', digest: 'Daily summaries', pin_approve: 'PIN approvals', pin_changed: 'PIN changes', system: 'System problems'
+  hazard: 'Storm and hazard warnings', sos: 'SOS', sos_cancel: 'SOS cancelled', digest: 'Daily summaries', pin_approve: 'PIN approvals', pin_changed: 'PIN changes', system: 'System problems',
+  share: 'Sharing offers', rollcall: 'Storm roll call', kudos: 'Kudos'
 }
 
 /** Share of alerts (at least an hour old) opened within an hour, in whole percent. Null when there is nothing to judge: unknown, never 0. */

@@ -116,7 +116,7 @@ describe('alert reach', () => {
     expect(unseenList(null)).toEqual([])
   })
   it('has a label for every carer_alerts.kind in the contract (ML-28)', () => {
-    expect(Object.keys(ALERT_KINDS).sort()).toEqual(['digest', 'dose_missed', 'hazard', 'mood_unwell', 'phone_health', 'pin_approve', 'pin_changed', 'reading_high', 'review_open', 'sos', 'sos_cancel', 'system'])
+    expect(Object.keys(ALERT_KINDS).sort()).toEqual(['digest', 'dose_missed', 'hazard', 'mood_unwell', 'phone_health', 'pin_approve', 'pin_changed', 'reading_high', 'review_open', 'rollcall', 'share', 'kudos', 'sos', 'sos_cancel', 'system'].sort())
   })
   it('per-day rates are sorted, a day with no due alerts is null, and the lowest day is found', () => {
     const r = dayRates(stats({ by_day: [{ day: '2026-10-24', total: 7, seen_1h: 5 }, { day: '2026-10-22', total: 10, seen_1h: 10 }, { day: '2026-10-23', total: 0, seen_1h: 0 }] }))

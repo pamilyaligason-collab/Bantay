@@ -25,7 +25,14 @@ export const TEMPLATES = {
   pin_approve: { cls: 'carer', title: 'Someone asks you to approve a PIN reset', body: 'Open Bantay to approve or ignore it.', tab: 'family', tone: 'urgent' },
   pin_changed: { cls: 'safety', title: 'Your PIN was changed', body: 'If this was not you, tell your family.', tab: 'today', tone: 'urgent' },
   sos_late: { cls: 'safety', title: '<name> used SOS at HH:MM; it reached Bantay later', body: 'Open Bantay to see.', tab: 'family', tone: 'normal' },
-  system: { cls: 'carer', title: 'Bantay needs your attention (admin)', body: 'Open Bantay to see what happened.', tab: 'today', tone: 'urgent' }
+  system: { cls: 'carer', title: 'Bantay needs your attention (admin)', body: 'Open Bantay to see what happened.', tab: 'today', tone: 'urgent' },
+  // Phase 3 (D-80, D-85): sharing offers, storm roll call, kudos. Same B-7 rule: no values, `<name>` only in the app.
+  share_offer: { cls: 'carer', title: '<name> wants to share their health records with you', body: 'Open Bantay to accept or say no.', tab: 'family', tone: 'normal' },
+  share_on: { cls: 'carer', title: '<name> can now see your records', body: 'Open Bantay to see who can see them.', tab: 'today', tone: 'normal' },
+  share_off: { cls: 'carer', title: 'A family member stopped sharing records with you', body: 'Open Bantay to see.', tab: 'family', tone: 'normal' },
+  rollcall_help: { cls: 'safety', title: 'Someone in your family needs help in the storm', body: 'Open Bantay now.', tab: 'family', tone: 'urgent' },
+  rollcall_ask: { cls: 'safety', title: 'Is everyone safe?', body: 'Open Bantay to tell your family you are safe.', tab: 'today', tone: 'normal' },
+  kudos: { cls: 'carer', title: 'Someone sent you a heart', body: 'Open Bantay to see it.', tab: 'health', tone: 'normal' }
 } as const satisfies Record<string, Tpl>
 
 export type TemplateId = keyof typeof TEMPLATES
@@ -35,13 +42,14 @@ export const HEALTH_IDS = ids.filter((i) => TEMPLATES[i].cls === 'health')
 export const SAFETY_IDS: TemplateId[] = ['storm_warning', 'flood_watch', 'heat_alert', 'family_sos']
 
 /** The single enum of carer_alerts.kind. Whitelists that must stay equal (ML-28): the 0030 CHECK, this list, ALERT_KIND below, the S8 System health list. */
-export const NOTIFY_KINDS = ['dose_missed', 'review_open', 'phone_health', 'reading_high', 'mood_unwell', 'hazard', 'sos', 'sos_cancel', 'digest', 'pin_approve', 'pin_changed', 'system'] as const
+export const NOTIFY_KINDS = ['dose_missed', 'review_open', 'phone_health', 'reading_high', 'mood_unwell', 'hazard', 'sos', 'sos_cancel', 'digest', 'pin_approve', 'pin_changed', 'system', 'share', 'rollcall', 'kudos'] as const
 export type NotifyKind = (typeof NOTIFY_KINDS)[number]
 /** Template id to the alert kind of its carer_alerts row. dose_due and bp_check are local reminders, never rows. */
 export const ALERT_KIND = {
   storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
   dose_missed: 'dose_missed', review_open: 'review_open', phone_health: 'phone_health', reading_high: 'reading_high', mood_unwell: 'mood_unwell',
-  digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system'
+  digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system',
+  share_offer: 'share', share_on: 'share', share_off: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'
 } as const satisfies Partial<Record<TemplateId, NotifyKind>>
 
 /** Title and body with `<name>` filled (or "Someone" / "someone" when the name is unknown) and the SOS time ("at HH:MM") filled or dropped. Never throws on an unknown id. */

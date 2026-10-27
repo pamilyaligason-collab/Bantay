@@ -1,7 +1,7 @@
-export type Tab = 'today' | 'health' | 'family' | 'safety'
+export type Tab = 'today' | 'health' | 'discover' | 'family' | 'safety'
 export type FamilySeg = 'plan' | 'people'
-export const TABS: Tab[] = ['today', 'health', 'family', 'safety']
-const VIEWS = new Set(['me', 'notif', 'admin', 'scan', 'privacy'])
+export const TABS: Tab[] = ['today', 'health', 'discover', 'family', 'safety']
+const VIEWS = new Set(['me', 'notif', 'admin', 'scan', 'privacy', 'sharing'])
 
 /** Old Records links (#records, #family/records) now open Health > Papers. Callers replace the hash with this when it differs. */
 export const canonicalHash = (h: string) => (h === '#records' || h === '#family/records' ? '#health/papers' : h)
@@ -16,6 +16,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k }
   if (k.startsWith('safety/')) return { tab: 'safety', view: 'safety' } // #safety/warnings, #safety/map ... drawn by Safety itself
   if (k.startsWith('medid/')) return { tab: 'safety', view: 'medid' }
+  if (k.startsWith('discover/')) return { tab: 'discover', view: k.split('/')[1] || null } // #discover/learn|listen|play|watch|news
   if (k.startsWith('health/')) return { tab: 'health', view: null } // #health/metric/<code>
   if (k.startsWith('admin/')) return { tab: null, view: 'admin' } // #admin/<page>/<id>: the wide admin dashboard
   if (VIEWS.has(k)) return { tab: null, view: k }
@@ -30,5 +31,5 @@ export function familyEntry(o: { alertActive: boolean; last: FamilySeg | null })
 /** Routes whose screen draws its own Back + title header, so the avatar/bell top bar stays off. Tab roots and #family/plan|people keep it. */
 export const hasOwnHeader = (h: string) => {
   const k = canonicalHash(h).replace(/^#/, '')
-  return k === 'privacy' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people)$/.test(k))
+  return k === 'privacy' || k === 'sharing' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people)$/.test(k))
 }

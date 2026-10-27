@@ -33,6 +33,7 @@ const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
   health: { label: 'Health', Screen: Health },
+  discover: { label: 'Discover', Screen: () => null }, // stub until lane F1 ships src/screens/Discover.tsx
   family: { label: 'Family', Screen: Family },
   safety: { label: 'Safety', Screen: Safety }
 }
@@ -65,7 +66,7 @@ export default function App() {
 
   // Me, notifications and admin are full views with no active tab; swipe and pull-to-refresh belong to the four tabs.
   const view = route.view === 'admin' && !isAdmin ? null : route.view
-  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan')
+  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing')
   const tab: Tab = route.tab ?? 'today'
   const idx = TABS.indexOf(tab)
   const swiped = useRef(false)
