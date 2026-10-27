@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { pickOfDay, pickView } from './pick'
 import { SEASONS, seasonFor } from './season'
-import { dayKey } from '../play/score'
+import { dayKey, triviaIndex } from '../play/score'
+import { phFactOf } from '../facts/onThisDay'
 
 const id = (d: Date) => seasonFor(d)?.id ?? null
 // Local-time constructors (month is 1-based here): 23:30 and 00:30 straddle every boundary (ML-38).
@@ -13,6 +14,23 @@ describe('pickOfDay', () => {
     expect(dayKey(at(10, 28, 23, 30))).toBe('2026-10-28')
     expect(dayKey(at(10, 29, 0, 30))).toBe('2026-10-29')
     expect(pickOfDay(dayKey(at(10, 28, 23, 30)))).toEqual(pickOfDay('2026-10-28'))
+  })
+  // Hand-computed: FNV-1a of the key mod the 76-item pool (20 recipes, 12 playable videos, 24 trivia, 20 facts, in that order).
+  it('pins the pick for known days (hand-computed)', () => {
+    expect(pickOfDay('2026-10-28')).toEqual({ kind: 'trivia', id: '16' }) // pool 44; Play asks 16 too: "The first jeepneys..."
+    expect(pickView(pickOfDay('2026-10-28')).title).toBe('The first jeepneys were made from old what?')
+    expect(pickOfDay('2026-10-27')).toEqual({ kind: 'fact', id: '13' }) // pool 57
+    expect(pickView(pickOfDay('2026-10-27')).title).toBe('Taal Volcano sits on an island inside a lake in Batangas.')
+    expect(pickOfDay('2026-10-22')).toEqual({ kind: 'recipe', id: 'pinakbet-light' }) // pool 2
+    expect(pickOfDay('2026-10-24')).toEqual({ kind: 'video', id: 'b-uX6N4RZjg' }) // pool 24
+  })
+  it('a trivia or fact pick is the question and fact Play shows that day, and its link opens it directly', () => {
+    for (let d = 1; d <= 31; d++) {
+      const day = `2026-12-${String(d).padStart(2, '0')}`
+      const p = pickOfDay(day)
+      if (p.kind === 'trivia') { expect(Number(p.id)).toBe(triviaIndex(day, 24)); expect(pickView(p).href).toBe('#discover/play/trivia') }
+      if (p.kind === 'fact') { expect(pickView(p).title).toBe(phFactOf(day)); expect(pickView(p).href).toBe('#discover/play/facts') }
+    }
   })
   it('a month of days reaches several kinds and every pick resolves to a card', () => {
     const kinds = new Set<string>()

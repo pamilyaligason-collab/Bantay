@@ -61,6 +61,28 @@ test('Learn: pick above the sub-nav, shelves, benefits open outside', async ({ p
   await expect(page.getByTestId('pick')).toHaveCount(0)
 })
 
+test('Today pick (trivia on 28 Oct) opens the same question Play asks, and back lands on the Play hub', async ({ page }) => {
+  await page.clock.setFixedTime(UNDAS)
+  await page.goto('/#discover/learn')
+  const q = 'The first jeepneys were made from old what?' // hand-computed: trivia #16 for 2026-10-28
+  await expect(page.getByTestId('pick')).toContainText(q)
+  await page.getByTestId('pick').click()
+  await expect(page.getByTestId('trivia')).toContainText(q)
+  await page.getByRole('button', { name: 'Back to Play' }).click()
+  await expect(page.getByTestId('play-hub')).toBeVisible()
+  await page.getByRole('button', { name: /Alam mo ba/ }).click()
+  await expect(page.getByTestId('trivia')).toContainText(q)
+})
+
+test('the season card sits above the sub-nav on every sub', async ({ page }) => {
+  await page.clock.setFixedTime(UNDAS)
+  for (const s of ['learn', 'listen', 'play', 'watch', 'news']) {
+    await page.goto('/#discover/' + s)
+    await expect(page.getByTestId('season')).toContainText('Undas')
+    expect((await page.getByTestId('season').boundingBox())!.y).toBeLessThan((await page.getByRole('group', { name: 'Discover sections' }).boundingBox())!.y)
+  }
+})
+
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
   await page.goto('/#discover/listen')
   const plays = page.getByRole('button', { name: /^Play / })

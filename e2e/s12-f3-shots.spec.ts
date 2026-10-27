@@ -24,6 +24,7 @@ const NOW = new Date(2026, 9, 26, 10, 20, 0)
 const ago = (min: number) => new Date(NOW.getTime() - min * 60_000).toISOString()
 /** Scroll the feature to the top of the 390x844 window, let every transition finish, then shoot the window (not the page): the app scrolls inside its own container. */
 async function shot(page: Page, name: string, scheme: string, anchor?: string) {
+  if (process.env.SHOTS !== '1') return // shots are written only on purpose (ML-32)
   if (anchor) await page.locator(anchor).evaluate((el) => { (el as HTMLElement).style.scrollMarginTop = '84px'; el.scrollIntoView({ block: 'start' }) })
   await page.mouse.move(0, 0)
   await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))))

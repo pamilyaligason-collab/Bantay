@@ -2,7 +2,8 @@ import recipes from '../../../data/learn/recipes.json'
 import trivia from '../../../data/play/trivia.json'
 import facts from '../../../data/play/ph-facts.json'
 import { playable, VIDEOS } from '../../health/library/videosLogic'
-import { seedOf } from '../play/score'
+import { seedOf, triviaIndex } from '../play/score'
+import { phFactIndex } from '../facts/onThisDay'
 
 export type PickKind = 'recipe' | 'trivia' | 'fact' | 'video'
 export interface Pick { kind: PickKind; id: string }
@@ -15,8 +16,14 @@ const POOL: Pick[] = [
   ...facts.facts.map((_, i) => ({ kind: 'fact' as const, id: String(i) }))
 ]
 
-/** One item per local day: `day` is dayKey() (YYYY-MM-DD, the phone's date). Same key, same item. */
-export const pickOfDay = (day: string): Pick => POOL[seedOf(day) % POOL.length]!
+/** One item per local day: `day` is dayKey() (YYYY-MM-DD, the phone's date). Same key, same item.
+ *  A trivia or fact pick is always the question/fact Play shows for that day (Play's own rule), so tapping it opens the same one. */
+export function pickOfDay(day: string): Pick {
+  const p = POOL[seedOf(day) % POOL.length]!
+  if (p.kind === 'trivia') return { kind: 'trivia', id: String(triviaIndex(day, trivia.questions.length)) }
+  if (p.kind === 'fact') return { kind: 'fact', id: String(phFactIndex(day)) }
+  return p
+}
 
 export interface PickView { eyebrow: string; title: string; sub: string; href: string; external: boolean }
 /** What the card shows for a pick. A video opens on YouTube outside the app; the rest open inside it. */
@@ -29,6 +36,6 @@ export function pickView(p: Pick): PickView {
     const v = VIDEOS.find((x) => x.id === p.id)!
     return { eyebrow: 'Video', title: v.title, sub: `${v.source}. Opens YouTube.`, href: 'https://www.youtube.com/watch?v=' + v.id, external: true }
   }
-  if (p.kind === 'trivia') return { eyebrow: 'Alam mo ba?', title: trivia.questions[Number(p.id)]!.q, sub: 'Tap to answer', href: '#discover/play', external: false }
-  return { eyebrow: 'Did you know?', title: facts.facts[Number(p.id)]!, sub: 'More fun facts in Play', href: '#discover/play', external: false }
+  if (p.kind === 'trivia') return { eyebrow: 'Alam mo ba?', title: trivia.questions[Number(p.id)]!.q, sub: 'Tap to answer', href: '#discover/play/trivia', external: false }
+  return { eyebrow: 'Did you know?', title: facts.facts[Number(p.id)]!, sub: 'More fun facts in Play', href: '#discover/play/facts', external: false }
 }

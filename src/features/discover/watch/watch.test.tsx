@@ -10,7 +10,8 @@ describe('Watch', () => {
   it('lists every playable video as an outside link, grouped by topic, and never embeds one', () => {
     const { container } = render(<Watch />)
     const links = screen.getAllByRole('link')
-    expect(links.length).toBe(VIDEOS.filter(playable).length)
+    expect(links.length).toBe(12) // counted by hand in src/data/videos.json: 12 entries, none a placeholder
+    expect(VIDEOS.filter(playable).length).toBe(12)
     for (const a of links) {
       expect(a.getAttribute('href')).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/)
       expect(a.getAttribute('target')).toBe('_blank')
