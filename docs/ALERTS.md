@@ -99,7 +99,7 @@ synced" time written by `sync.ts` would remove that ambiguity; it is a one-line 
 **Does it affect us?** `affectsUs(alert, here)` (D-87, D-88): an alert with no point covers the whole area. Every quake the ingest kept affects the
 family and always shows the do-now steps: within its felt radius by magnitude (M<4 50 km, 4-5 100, 5-6 200, 6-7 400, 7+ 800, unknown 100) it says
 "Near you" or "Near home (zone)", beyond it "About N km away. You may feel it. If you feel shaking, follow the steps below."; M6.5+ adds the tsunami line.
-Storm, flood, tsunami, volcano and GDACS rows affect within 1,000 km; air, utility, local notices and heat within 50 km (heat 150 km). Anything else says
+Storm, flood, tsunami, volcano and GDACS rows affect within 1,000 km; air, utility and local notices within 50 km; heat within 150 km. Anything else says
 "Far from you. Watch for updates." The app never says "no action needed". Hand-computed: 0.8 degrees of latitude is 88.95 km, so an M4.5 quake 89 km
 from Conel is near (felt to 100 km).
 
