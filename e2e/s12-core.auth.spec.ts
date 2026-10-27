@@ -73,7 +73,7 @@ async function open(page: Page, scheme: 'light' | 'dark', meds: Meds, rpc: strin
   await skipOnboarding(page)
   await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Mama' }, { personId: 'ma', displayName: 'Ate Joy' }])))
   await mock(page, rpc)
-  await page.emulateMedia({ colorScheme: scheme })
+  await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' }) // the sky and reveals loop or fade, so a shot would differ per run
   await page.clock.setFixedTime(NOW)
   await page.goto('/')
   await expect(page.getByRole('group', { name: 'Quick log' }).or(page.getByRole('button', { name: 'Exit simple mode' }))).toBeVisible() // the app has created its databases
