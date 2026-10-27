@@ -36,3 +36,18 @@
 /* Keyboard open: the container ends where the keyboard starts (visualViewport), so the composer sits right above it with no safe-area gap. */
 .as-back[data-kb="open"] .as-sheet { padding-bottom: 8px; height: min(86dvh, 720px, 100%); }
 .as-clear { margin-left: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
+
+/* 911 card (mockup ask-emergency) */
+.as-emerg { background: var(--danger-bg); color: #fff; border: 0; gap: 10px; padding: 16px; }
+.as-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .02em; color: #FFD9D2; }
+.as-foot { text-align: center; font-weight: 400; }
+.as-emerg-h { font-size: 22px; line-height: 1.2; }
+.as-911 { min-height: 52px; border: 0; border-radius: 14px; font-size: 18px; font-weight: 700; background: #fff; color: #7A2620; }
+.as-911-alt { background: rgba(255,243,239,.16); color: #FFF3EF; font-size: 16px; }
+/* Offline (mockup ask-offline) */
+.as-offline { display: flex; flex-direction: column; gap: 8px; }
+.as-off-banner { padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }
+.as-off-list { display: flex; flex-direction: column; border-radius: 14px; background: var(--cell); border: 0.5px solid var(--sep); overflow: hidden; }
+.as-off-list button { min-height: 52px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 14px; border: 0; border-bottom: 0.5px solid var(--sep); background: transparent; color: var(--ink); font-size: 16px; font-weight: 600; text-align: left; }
+.as-off-list button:last-child { border-bottom: 0; }
+.as-wait { align-self: flex-end; }
