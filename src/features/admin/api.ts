@@ -61,7 +61,8 @@ export async function listCarers(): Promise<Res<Carer[]>> {
     return error ? fail(error) : { ok: true, data: (data ?? []) as Carer[] }
   } catch (e) { return fail(e) }
 }
-/** Offers a carer link through share_set (0037; no REST writes to carers any more). The carer must accept: 'pending' = offer sent, 'unchanged' = already linked or offered.
+/** Offers a carer link through share_set (0037; no REST writes to carers any more). The carer must accept: 'pending' = offer sent, 'updated' = edit access of an existing link or offer changed, 'unchanged' = already linked or offered.
+ *  It never removes or downgrades the creator link of a person with no login (42501).
  *  can_write only sticks for an admin on a person with no login; the server refuses anything else. */
 export async function linkCarer(carerId: string, personId: string, canWrite: boolean): Promise<Res<string>> {
   if (!supabase) return NO

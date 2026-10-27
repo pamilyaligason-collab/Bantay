@@ -50,7 +50,9 @@ export default function Sharing(_: PageProps) {
     const r = await linkCarer(pick.viewer.auth_user_id!, pick.person.id, canCarer && carer)
     setBusy(false)
     if (!r.ok) { toast.show(why(r.error)); return }
-    toast.show(r.data === 'pending' ? `Offer sent to ${pick.viewer.display_name}. They see nothing until they accept.` : 'Saved.')
+    const who = pick.viewer.display_name
+    toast.show(r.data === 'pending' ? `Offer sent to ${who}. They see nothing until they accept.${pick.person.auth_user_id ? ` ${pick.person.display_name} is told and can cancel it.` : ''}`
+      : r.data === 'updated' ? (carer && canCarer ? `Saved. ${who} is now a carer.` : `Saved. ${who} now sees the records but is not a carer.`) : 'Nothing changed.')
     await load()
   }
   const stop = () => {
@@ -66,7 +68,7 @@ export default function Sharing(_: PageProps) {
 
   return (
     <>
-      <PageHead title="Who sees whom" sub="Rows are the records. Columns are the people who can see them. Records are private until shared. A filled box means shared, C means carer (gets missed-dose alerts), a dashed box means waiting for them to accept. Admins can see records to help." />
+      <PageHead title="Who sees whom" sub="Rows are the records. Columns are the people who can see them. Records are private until shared. A filled box means shared, C means carer (gets missed-dose alerts), a dashed box means waiting for them to accept. Admins can see records to help. Offering a viewer on a member who has a login tells that member, and they can cancel it." />
       {err && <p className="mb-err" role="alert">{err} <button className="dk-b" onClick={() => void load()}>Try again</button></p>}
       {rows === null || people === null ? (err ? null : <Empty>Loading...</Empty>) : active.length === 0 ? <Empty>No members yet.</Empty> : (
         <div className="sg-scroll">

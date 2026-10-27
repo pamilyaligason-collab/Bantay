@@ -8,7 +8,7 @@ const h = vi.hoisted(() => ({
 }))
 // No importActual: api.ts re-exports AcceptCard, which imports api (a cycle the mock factory cannot wait on). The copy strings are api.test.ts's job.
 vi.mock('./api', () => ({
-  myViewers: h.viewers, setShare: h.set, shareCandidates: h.cands, pendingOffers: h.offers, acceptShare: h.accept,
+  myViewers: h.viewers, setShare: h.set, shareCandidates: h.cands, pendingOffers: h.offers, answerShare: h.accept,
   shareCopy: (r: string) => ({ offline: 'No signal. Try again when you are online.', refused: 'You cannot change that.', limit: 'You changed sharing a lot. Try again in an hour.' })[r]
 }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'me-person' }))
@@ -37,13 +37,18 @@ describe('Who can see my records', () => {
     expect(screen.getByText('Waiting for Rhea to accept')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to Privacy' }).getAttribute('href')).toBe('#privacy')
   })
-  it('Recent changes come from the list: newest first, "An admin added", "asked" for a pending one', async () => {
+  it('has no Recent changes list (it could not show removals); it says admins can set who sees records and the member can stop it', async () => {
     render(<SharingScreen />)
     await screen.findByText('Ate Joy')
-    const log = screen.getByText('Recent changes').closest('div')!.nextElementSibling as HTMLElement
-    expect(log.textContent).toMatch(/You asked Rhea/)
-    expect(log.textContent).toMatch(/You shared with Ate Joy · 25 Oct/)
-    expect(log.textContent).toMatch(/An admin added Kuya Ben · 21 Oct/)
+    expect(screen.queryByText('Recent changes')).toBeNull()
+    expect(screen.getByText('The family admins can set who sees your records. You will be told, and you can stop it here.')).toBeTruthy()
+  })
+  it('an offer an admin made on my records shows as waiting and can be cancelled by me', async () => {
+    h.viewers.mockResolvedValue([V({ carerUserId: 'u7', displayName: 'Tito Ramon', pending: true, addedByAdmin: true })])
+    render(<SharingScreen />)
+    expect(await screen.findByText('An admin offered this. Waiting for Tito Ramon to accept')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel the offer to Tito Ramon' }))
+    expect(h.set).toHaveBeenCalledWith('me-person', 'u7', false)
   })
   it('Cancel on a pending offer calls share_set off for that carer and reloads', async () => {
     render(<SharingScreen />)
@@ -119,23 +124,25 @@ describe('AcceptCard', () => {
   })
   it('names the person from the family list, Accept answers true and the card goes', async () => {
     h.offers.mockResolvedValue([{ personId: 'pX', canWrite: false, addedAt: null }])
-    h.accept.mockResolvedValue(true)
+    h.accept.mockResolvedValue('ok')
     render(<AcceptCard />)
-    expect(await screen.findByText('Mama wants to share their health records with you')).toBeTruthy()
+    expect(await screen.findByText('Mama can share their health records with you')).toBeTruthy()
     expect(screen.getByText(/You see nothing until you tap Accept\./)).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Accept' }))
     expect(h.accept).toHaveBeenCalledWith('pX', true)
-    await waitFor(() => expect(screen.queryByText(/wants to share/)).toBeNull())
+    await waitFor(() => expect(screen.queryByText(/can share their health records/)).toBeNull())
   })
-  it('an unknown person is "Someone in your family"; Not now declines; a failed answer keeps the card and says so', async () => {
+  it('an unknown person is "Someone in your family"; No, thanks declines; a failed answer keeps the card and says why', async () => {
     h.offers.mockResolvedValue([{ personId: 'pZ', canWrite: true, addedAt: null }])
-    h.accept.mockResolvedValue(false)
+    h.accept.mockResolvedValueOnce('offline').mockResolvedValueOnce('limit')
     render(<AcceptCard />)
-    expect(await screen.findByText('Someone in your family wants to share their health records with you')).toBeTruthy()
+    expect(await screen.findByText('Someone in your family can share their health records with you')).toBeTruthy()
     expect(screen.getByText(/missed-dose alerts/)).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    await userEvent.click(screen.getByRole('button', { name: 'No, thanks' }))
     expect(h.accept).toHaveBeenCalledWith('pZ', false)
     expect((await screen.findByRole('alert')).textContent).toMatch(/No signal/)
-    expect(screen.getByText(/wants to share/)).toBeTruthy()
+    expect(screen.getByText(/can share their health records/)).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'No, thanks' }))
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/a lot/)) // a rate limit is not "no signal"
   })
 })

@@ -12,8 +12,6 @@
 .sg-check input { width: 24px; height: 24px; flex: none; accent-color: var(--green); margin-top: 2px; }
 .sg-check[aria-disabled="true"] { color: var(--muted); }
 .sg-info { display: flex; gap: 10px; align-items: flex-start; background: var(--soft); border-radius: 14px; padding: 12px 14px; font-size: 14px; }
-.sg-log { display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
-.sg-log b { color: var(--ink); }
 .sg-accept { display: grid; gap: 10px; }
 .sg-offer { display: grid; gap: 8px; outline: 2px solid var(--green2); }
 /* Admin desk grid (desk/Sharing.tsx) */

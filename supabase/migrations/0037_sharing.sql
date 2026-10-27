@@ -9,8 +9,10 @@
 -- * Nobody writes carers or share_offers over REST any more. share_set / share_accept (security definer, 30 changes an hour each) are the only app writers.
 --   link_creator() (0001) still links the creator of a no-login person, and the service role still can.
 -- * A member shares their own records (read only). Only an admin makes a carer who can edit (can_write), and only for a person with no login.
---   Admins can add and remove viewers for anyone (the carer still has to accept, and the person is told when access starts).
--- * The creator of a no-login person is never unlinked, so a dependent is never orphaned.
+--   Admins can add and remove viewers for anyone (D-80, D-82). The carer still has to accept. When an admin offers a viewer on a member who has a login, that
+--   member gets an alert at offer time (share_admin) and can cancel the offer or stop the link from "Who can see my records"; they are told again when access starts.
+-- * The creator link of a NO-LOGIN person is never changed to read only and never removed (0004 guard: is_person_creator and people.auth_user_id is null), so a
+--   dependent is never orphaned. Once a record has a login (claimed), that link is an ordinary one: the person themself and an admin may remove it.
 -- * Rows carry names nowhere new: alert rows hold a template id and a dedupe ref only (B-7).
 begin;
 
@@ -54,7 +56,7 @@ alter table public.audit_log drop constraint if exists audit_log_action_check;
 alter table public.audit_log add constraint audit_log_action_check
   check (action in ('insert', 'update', 'confirm', 'reject', 'delete', 'reveal', 'view', 'pin_reset', 'share_add', 'share_remove', 'share_accept', 'invite', 'join'));
 
--- Offer, change or stop a share. Returns 'pending' (new offer), 'removed', or 'unchanged'.
+-- Offer, change or stop a share. Returns 'pending' (new offer), 'updated' (can_write of an existing link or offer changed), 'removed', or 'unchanged'.
 -- Who may call: the person, an admin, or a writer carer of a person with no login (that last one adds viewers, never writers).
 -- 42501 not allowed; 22023 bad target; 53400 more than 30 changes in an hour.
 create or replace function public.share_set(p_person uuid, p_carer uuid, p_can_write boolean, p_on boolean) returns text
@@ -64,6 +66,7 @@ declare
   owner uuid;
   adm boolean;
   nologin boolean;
+  guarded boolean;
   cw boolean := coalesce(p_can_write, false);
   cur public.carers;
   ofr public.share_offers;
@@ -75,6 +78,7 @@ begin
   select pe.auth_user_id into owner from public.people pe where pe.id = p_person and pe.archived_at is null;
   if not found then raise exception 'bad target' using errcode = '22023'; end if;
   nologin := owner is null;
+  guarded := nologin and public.is_person_creator(p_person, p_carer); -- the writer link that keeps a dependent from being orphaned
   adm := public.is_admin();
   if not (adm or owner = me or (nologin and public.is_writer_of(p_person))) then raise exception 'not allowed' using errcode = '42501'; end if;
   if p_on and cw and not (adm and nologin) then raise exception 'not allowed' using errcode = '42501'; end if;
@@ -85,8 +89,10 @@ begin
     select * into cur from public.carers c where c.person_id = p_person and c.carer_id = p_carer;
     if found then
       if adm and cur.can_write is distinct from cw then  -- an accepted link stays accepted; only an admin changes edit access
+        if guarded and not cw then raise exception 'not allowed' using errcode = '42501'; end if; -- never leave a no-login person without a writer
         update public.carers c set can_write = cw where c.person_id = p_person and c.carer_id = p_carer;
         insert into public.audit_log (actor, tbl, person_id, action, fields) values (me, 'carers', p_person, 'share_add', array['can_write']);
+        return 'updated';
       end if;
       return 'unchanged';
     end if;
@@ -95,6 +101,7 @@ begin
       if adm and ofr.can_write is distinct from cw then
         update public.share_offers o set can_write = cw where o.person_id = p_person and o.carer_id = p_carer;
         insert into public.audit_log (actor, tbl, person_id, action, fields) values (me, 'carers', p_person, 'share_add', array['can_write']);
+        return 'updated';
       end if;
       return 'unchanged';
     end if;
@@ -103,10 +110,16 @@ begin
     insert into public.carer_alerts (person_id, carer_user_id, kind, template, ref)
       values (p_person, p_carer, 'share', 'share_offer', p_person::text || ':' || p_carer::text || ':' || floor(extract(epoch from now()) / 3600)::bigint::text)
       on conflict (kind, ref, carer_user_id) where ref is not null do nothing;
+    if owner is not null and owner <> me then  -- an admin offered a viewer on a member's records: tell the member now, not only after the carer accepts (no names, B-7)
+      insert into public.carer_alerts (person_id, carer_user_id, kind, template, ref)
+        values (p_person, owner, 'share', 'share_admin', p_person::text || ':' || p_carer::text || ':admin:' || floor(extract(epoch from now()) / 3600)::bigint::text)
+        on conflict (kind, ref, carer_user_id) where ref is not null do nothing;
+    end if;
     return 'pending';
   end if;
 
-  if p_carer = me or public.is_person_creator(p_person, p_carer) then raise exception 'not allowed' using errcode = '42501'; end if;
+  -- Only the no-login creator link is protected. The person themself and an admin may remove any other viewer, a claimed record's creator link included.
+  if guarded or (p_carer = me and not adm and owner is distinct from me) then raise exception 'not allowed' using errcode = '42501'; end if;
   delete from public.carers c where c.person_id = p_person and c.carer_id = p_carer;
   get diagnostics n = row_count;
   delete from public.share_offers o where o.person_id = p_person and o.carer_id = p_carer;

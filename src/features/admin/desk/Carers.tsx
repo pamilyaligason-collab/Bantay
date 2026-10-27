@@ -34,7 +34,7 @@ export default function Carers({ personId, people, me, ask, say, onChange }: Pro
   const add = () => ask(`Offer ${nameOfUser(pick)} read-only access to this person's records? They must accept first.`, async () => {
     const r = await addReadOnly(pick, personId, me)
     if (!r.ok) return setErr(why(r.error))
-    say(r.data === 'unchanged' ? `${nameOfUser(pick)} is already linked or has an offer waiting.` : `Offer sent to ${nameOfUser(pick)}. They see nothing until they accept.`); setPick(''); load(); onChange?.()
+    say(r.data === 'unchanged' ? `${nameOfUser(pick)} is already linked or has an offer waiting.` : r.data === 'updated' ? `Saved. ${nameOfUser(pick)} already had a link.` : `Offer sent to ${nameOfUser(pick)}. They see nothing until they accept.`); setPick(''); load(); onChange?.()
   })
   const remove = (c: Carer) => ask(`Remove ${nameOfUser(c.carer_id)} as a carer of this person?`, async () => {
     const r = await unlinkCarer(c.carer_id, personId)

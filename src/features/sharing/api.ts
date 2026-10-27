@@ -5,7 +5,8 @@ import { getMember } from '../auth/session'
 export interface Viewer { carerUserId: string; displayName: string; canWrite: boolean; pending: boolean; addedByAdmin: boolean; addedAt: string | null }
 export interface Candidate { carerUserId: string; personId: string; displayName: string }
 export interface Offer { personId: string; canWrite: boolean; addedAt: string | null }
-export type ShareResult = 'pending' | 'removed' | 'unchanged' | 'offline' | 'refused' | 'limit'
+/** 'updated' = the edit access (can_write) of an existing link or offer changed. */
+export type ShareResult = 'pending' | 'updated' | 'removed' | 'unchanged' | 'offline' | 'refused' | 'limit'
 
 /** The three plain-words errors the screens show. */
 export const SHARE_COPY = {
@@ -27,18 +28,22 @@ export async function setShare(personId: string, carerUserId: string, on: boolea
   try {
     const { data, error } = await supabase.rpc('share_set', { p_person: personId, p_carer: carerUserId, p_can_write: canWrite, p_on: on })
     if (error) return failureOf(error)
-    return data === 'pending' || data === 'removed' || data === 'unchanged' ? data : 'unchanged'
+    return data === 'pending' || data === 'updated' || data === 'removed' || data === 'unchanged' ? data : 'unchanged'
+  } catch { return 'offline' }
+}
+
+/** 'ok' answered, 'none' no offer was waiting (already answered or cancelled), else the failure the screen shows. */
+export async function answerShare(personId: string, accept: boolean): Promise<'ok' | 'none' | 'offline' | 'refused' | 'limit'> {
+  if (!supabase) return 'offline'
+  try {
+    const { data, error } = await supabase.rpc('share_accept', { p_person: personId, p_accept: accept })
+    if (error) return failureOf(error)
+    return data === true ? 'ok' : 'none'
   } catch { return 'offline' }
 }
 
 /** true when an offer was found and answered. */
-export async function acceptShare(personId: string, accept: boolean): Promise<boolean> {
-  if (!supabase) return false
-  try {
-    const { data, error } = await supabase.rpc('share_accept', { p_person: personId, p_accept: accept })
-    return !error && data === true
-  } catch { return false }
-}
+export async function acceptShare(personId: string, accept: boolean): Promise<boolean> { return (await answerShare(personId, accept)) === 'ok' }
 
 type ViewerRow = { carer_user_id: string; display_name: string; can_write: boolean; pending: boolean; added_by_admin: boolean; added_at: string | null }
 /** My viewers, accepted and pending. null when the server could not be reached. */

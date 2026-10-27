@@ -69,6 +69,7 @@ async function open(page: Page, scheme: 'light' | 'dark', calls: Call[], viewers
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
+  await page.clock.setFixedTime(new Date('2026-10-27T02:00:00Z')) // frozen clock: a rerun of the shots rewrites no committed PNG (ML-32)
   await mock(page, calls, viewers, people())
   await page.goto('/#sharing')
   await expect(page.getByRole('heading', { name: 'Who can see my records' })).toBeVisible()

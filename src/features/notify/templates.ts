@@ -29,6 +29,7 @@ export const TEMPLATES = {
   // Phase 3 (D-80, D-85): sharing offers, storm roll call, kudos. Same B-7 rule: no values, `<name>` only in the app.
   share_offer: { cls: 'carer', title: '<name> wants to share their health records with you', body: 'Open Bantay to accept or say no.', tab: 'family', tone: 'normal' },
   share_on: { cls: 'carer', title: '<name> can now see your records', body: 'Open Bantay to see who can see them.', tab: 'today', tone: 'normal' },
+  share_admin: { cls: 'carer', title: 'A family admin offered to share your records with someone', body: 'Open Bantay to see who, or to stop it.', tab: 'today', tone: 'normal' },
   share_off: { cls: 'carer', title: 'A family member stopped sharing records with you', body: 'Open Bantay to see.', tab: 'family', tone: 'normal' },
   rollcall_help: { cls: 'safety', title: 'Someone in your family needs help in the storm', body: 'Open Bantay now.', tab: 'family', tone: 'urgent' },
   rollcall_ask: { cls: 'safety', title: 'Is everyone safe?', body: 'Open Bantay to tell your family you are safe.', tab: 'today', tone: 'normal' },
@@ -49,7 +50,7 @@ export const ALERT_KIND = {
   storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
   dose_missed: 'dose_missed', review_open: 'review_open', phone_health: 'phone_health', reading_high: 'reading_high', mood_unwell: 'mood_unwell',
   digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system',
-  share_offer: 'share', share_on: 'share', share_off: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'
+  share_offer: 'share', share_on: 'share', share_admin: 'share', share_off: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'
 } as const satisfies Partial<Record<TemplateId, NotifyKind>>
 
 /** Title and body with `<name>` filled (or "Someone" / "someone" when the name is unknown) and the SOS time ("at HH:MM") filled or dropped. Never throws on an unknown id. */

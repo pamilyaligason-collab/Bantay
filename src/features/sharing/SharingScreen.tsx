@@ -10,7 +10,7 @@ import './sharing.css'
 
 export const SHARING_INTRO = 'Only you, the family admins, and the people you share with can see your records.'
 
-const dayOf = (iso: string | null) => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Asia/Manila' }) : '' }
+export const ADMIN_NOTE = 'The family admins can set who sees your records. You will be told, and you can stop it here.'
 
 /** Me > Privacy > "Who can see my records" (#sharing, canvas boards 1b and 1c). The list lives on the server, so it is the same on every phone. */
 export function SharingScreen() {
@@ -31,7 +31,6 @@ export function SharingScreen() {
     if (r === 'offline' || r === 'refused' || r === 'limit') setErr(shareCopy(r))
     load()
   }
-  const log = (viewers ?? []).filter((v) => v.addedAt).sort((a, b) => (b.addedAt ?? '').localeCompare(a.addedAt ?? '')).slice(0, 3)
 
   return (
     <div className="sh sh-me">
@@ -52,7 +51,7 @@ export function SharingScreen() {
               <span className="sh-grow">
                 <b>{v.displayName}</b>
                 <span className={`sh-sub sh-blk${v.pending ? ' sg-wait' : ''}`}>
-                  {v.pending ? `Waiting for ${v.displayName} to accept` : v.canWrite ? 'Carer · gets missed-dose alerts' : 'Can see your records'}{v.addedByAdmin ? ' · added by an admin' : ''}
+                  {v.pending ? `${v.addedByAdmin ? 'An admin offered this. ' : ''}Waiting for ${v.displayName} to accept` : v.canWrite ? 'Carer · gets missed-dose alerts' : 'Can see your records'}{v.addedByAdmin && !v.pending ? ' · added by an admin' : ''}
                 </span>
               </span>
               {asking === v.carerUserId ? (
@@ -73,18 +72,7 @@ export function SharingScreen() {
       <button type="button" className="sh-pill sh-primary sh-block" disabled={!personId} onClick={() => setSheet(true)} aria-haspopup="dialog"><Icon name="plus" size={20} />Share with someone</button>
       {personId === null && <p className="sh-sub sh-note">Sharing is for people with their own page in Bantay.</p>}
 
-      {log.length > 0 && (
-        <>
-          <div className="sh-sech"><b>Recent changes</b></div>
-          <div className="sh-card sg-log">
-            {log.map((v) => (
-              <span key={v.carerUserId}>
-                <b>{v.addedByAdmin ? 'An admin' : 'You'}</b> {v.pending ? 'asked' : v.addedByAdmin ? 'added' : 'shared with'} {v.displayName} · {dayOf(v.addedAt)}
-              </span>
-            ))}
-          </div>
-        </>
-      )}
+      <p className="sh-sub sh-note">{ADMIN_NOTE}</p>
       <p className="sh-sub sh-note">Saved on the server, so it is the same on every phone.</p>
 
       {sheet && personId && <ShareSheet personId={personId} onClose={() => setSheet(false)} onSent={() => { setSheet(false); load() }} />}

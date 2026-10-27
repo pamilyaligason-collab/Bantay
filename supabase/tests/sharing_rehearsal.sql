@@ -186,6 +186,59 @@ select pg_temp.ok(pg_temp.state($$select public.share_set('10000000-0000-0000-00
 select pg_temp.ok(pg_temp.state($$select * from public.my_viewers()$$) = '42501', 'anon cannot call my_viewers');
 reset role;
 
+-- ---------- fix round 2: creator guard, a claimed record, an admin offer on a member ----------
+reset role;
+-- a no-login person whose creator (Joy) is not the admin: the admin must not downgrade or remove that writer link
+insert into public.people (id, display_name, created_by) values ('10000000-0000-0000-0000-0000000000d2', 'Probe Dep', '00000000-0000-0000-0000-0000000000f1');
+select pg_temp.ok((select can_write from public.carers where person_id = '10000000-0000-0000-0000-0000000000d2' and carer_id = '00000000-0000-0000-0000-0000000000f1'), 'link_creator made Joy a writer of Probe Dep');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.ok(pg_temp.state($$select public.share_set('10000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000f1', false, true)$$) = '42501', 'MAJOR 1: an admin cannot downgrade the creator writer link of a no-login person');
+select pg_temp.ok(pg_temp.state($$select public.share_set('10000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000f1', false, false)$$) = '42501', 'MAJOR 1: nor remove it');
+select pg_temp.ok((select can_write from public.carers where person_id = '10000000-0000-0000-0000-0000000000d2' and carer_id = '00000000-0000-0000-0000-0000000000f1'), 'MAJOR 1: the creator link is still a writer');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000f1', true, true) = 'unchanged', 'asking for writer on a writer is unchanged');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f1', false, true) = 'updated', 'an admin may make a non-creator writer read only: updated');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f1', false, true) = 'unchanged', 'the same again is unchanged');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f1', true, true) = 'updated', 'and back to writer: updated');
+-- an admin offer on a member with a login: the member is told at offer time, and can cancel it themself
+reset role;
+delete from public.share_offers where person_id = '10000000-0000-0000-0000-0000000000b1'; -- B's own offer to Rhea from the rate-limit check above
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000051', false, true) = 'pending', 'admin offers Rhea on B again: pending');
+reset role;
+select pg_temp.ok((select count(*) from public.carer_alerts where template = 'share_admin') = 1 and (select bool_and(carer_user_id = '00000000-0000-0000-0000-0000000000b1' and kind = 'share' and ref is not null) from public.carer_alerts where template = 'share_admin'), 'MAJOR 3: B got exactly one share_admin alert at offer time (none for the no-login person E)');
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000b1';
+select pg_temp.ok((select count(*) from public.carer_alerts where template = 'share_admin') = 1, 'MAJOR 3: B reads the share_admin alert');
+select pg_temp.ok((select count(*) = 1 and bool_and(pending) and bool_and(added_by_admin) from public.my_viewers()), 'MAJOR 3: my_viewers shows the admin offer as pending and added by an admin');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000051', false, false) = 'removed', 'MAJOR 3: B cancels the admin offer');
+select pg_temp.ok((select count(*) from public.my_viewers()) = 0, 'B has no viewers or offers left');
+-- a claimed record: the no-login guard no longer applies
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000f1';
+select pg_temp.ok(pg_temp.state($$select public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000051', false, true)$$) = 'ok', 'while E has no login a writer carer may add a viewer');
+reset role;
+insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000e5', 'e1login@example.com', '{"provider":"google"}', '{}');
+insert into public.app_roles (user_id, role) values ('00000000-0000-0000-0000-0000000000e5', 'member');
+update public.people set auth_user_id = '00000000-0000-0000-0000-0000000000e5' where id = '10000000-0000-0000-0000-0000000000e1';
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000f1';
+select pg_temp.ok(pg_temp.state($$select public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000051', false, false)$$) = '42501', 'a claimed record: a writer carer who is not the person or an admin can no longer change sharing');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000e5';
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000a1', false, false) = 'removed', 'MAJOR 2: the person themself removes the creator link of their claimed record');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000051', false, false) = 'removed', 'the person cancels the offer a carer made while the record had no login');
+reset role;
+insert into public.carers (carer_id, person_id, can_write) values ('00000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000e1', true);
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000a1';
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000a1', false, false) = 'removed', 'MAJOR 2: an admin removes any viewer of a claimed record, the creator link included');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000f1', false, false) = 'removed', 'an admin removes Joy from a claimed record');
+select pg_temp.ok(public.share_set('10000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000051', false, true) = 'pending', 'an admin offers a viewer on the claimed record (the member is told, the carer accepts)');
+reset role;
+select pg_temp.ok((select count(*) from public.carer_alerts where template = 'share_admin' and carer_user_id = '00000000-0000-0000-0000-0000000000e5') = 1, 'the claimed member got the share_admin alert');
+delete from public.share_offers;
+insert into public.carers (carer_id, person_id, can_write) values ('00000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000e1', true); -- put the creator link back for the idempotency checks below
+
 -- ---------- the migration runs twice, then down, then up again ----------
 \ir ../migrations/0037_sharing.sql
 select pg_temp.ok((select count(*) from pg_policies where tablename = 'carers' and cmd in ('INSERT', 'UPDATE', 'DELETE')) = 0, 'idempotent: second run leaves no carers write policy');

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), member: vi.fn(), on: true }))
 vi.mock('../auth/client', () => ({ get supabase() { return h.on ? { rpc: h.rpc, from: h.from } : null } }))
 vi.mock('../auth/session', () => ({ getMember: h.member }))
-import { acceptShare, failureOf, myViewers, pendingOffers, setShare, SHARE_COPY, shareCandidates, shareCopy } from './api'
+import { acceptShare, answerShare, failureOf, myViewers, pendingOffers, setShare, SHARE_COPY, shareCandidates, shareCopy } from './api'
 
 const P = 'person-1'
 const C = 'carer-1'
@@ -35,6 +35,8 @@ describe('setShare', () => {
     h.rpc.mockResolvedValue({ data: 'removed', error: null })
     expect(await setShare(P, C, false)).toBe('removed')
     expect(h.rpc).toHaveBeenLastCalledWith('share_set', { p_person: P, p_carer: C, p_can_write: false, p_on: false })
+    h.rpc.mockResolvedValue({ data: 'updated', error: null })
+    expect(await setShare(P, C, true, true)).toBe('updated')
     h.rpc.mockResolvedValue({ data: 'unchanged', error: null })
     expect(await setShare(P, C, true, true)).toBe('unchanged')
     expect(h.rpc).toHaveBeenLastCalledWith('share_set', { p_person: P, p_carer: C, p_can_write: true, p_on: true })
@@ -62,6 +64,18 @@ describe('acceptShare', () => {
     expect(await acceptShare(P, false)).toBe(false)
     h.rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'x' } })
     expect(await acceptShare(P, true)).toBe(false)
+  })
+  it('answerShare tells no offer, a refusal, the limit and no signal apart', async () => {
+    h.rpc.mockResolvedValue({ data: true, error: null })
+    expect(await answerShare(P, true)).toBe('ok')
+    h.rpc.mockResolvedValue({ data: false, error: null })
+    expect(await answerShare(P, true)).toBe('none')
+    h.rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'x' } })
+    expect(await answerShare(P, true)).toBe('limit')
+    h.rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'x' } })
+    expect(await answerShare(P, true)).toBe('refused')
+    h.rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } })
+    expect(await answerShare(P, true)).toBe('offline')
   })
 })
 

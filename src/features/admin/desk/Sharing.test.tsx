@@ -58,7 +58,7 @@ describe('Who sees whom', () => {
     expect(box.disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Offer to share' }))
     await waitFor(() => expect(h.link).toHaveBeenCalledWith('uj', 'pp', false))
-    expect(await screen.findByText('Offer sent to Ate Joy. They see nothing until they accept.')).toBeTruthy()
+    expect(await screen.findByText(/^Offer sent to Ate Joy. They see nothing until they accept. Papa is told and can cancel it.$/)).toBeTruthy()
     expect(h.rpc).toHaveBeenCalledTimes(2) // reloaded after the change
   })
   it('a person with no login can have a carer: the box is on for an existing carer and Save sends can_write', async () => {
