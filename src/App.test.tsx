@@ -9,11 +9,11 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('tab shell', () => {
-  it('renders Today, Health, centre Ask, Family, Safety', () => {
+  it('renders Today, Health, Discover, Family, Safety (no Ask tab)', () => {
     render(<App />)
     const nav = screen.getByRole('navigation', { name: 'Main' })
     const labels = Array.from(nav.querySelectorAll('button')).map((b) => b.textContent)
-    expect(labels).toEqual(['Today', 'Health', 'Ask', 'Family', 'Safety'])
+    expect(labels).toEqual(['Today', 'Health', 'Discover', 'Family', 'Safety'])
   })
 
   it('defaults to Today with aria-current on its tab', () => {
@@ -41,12 +41,37 @@ describe('tab shell', () => {
     }
   })
 
-  it('centre Ask opens the choice sheet, Talk reaches the assistant; no floating button remains', async () => {
+  it('the floating Jack button opens the assistant on a tap and the choice sheet on a hold; the tab bar has no Ask slot', async () => {
     render(<App />)
     expect(document.querySelector('.as-fab')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Ask Bantay' }))
+    expect(screen.getByRole('navigation', { name: 'Main' }).querySelector('[aria-label="Ask Bantay"]')).toBeNull()
+    const jack = await screen.findByRole('button', { name: 'Ask Bantay' })
+    fireEvent.click(jack)
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Ask Bantay' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    fireEvent.contextMenu(jack)
     fireEvent.click(await screen.findByRole('button', { name: /Talk to Jack Jack/ }))
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Ask Bantay' })).toBeTruthy())
+  })
+
+  it('Discover is the third tab: its sub-tabs show, the tab is current, and Jack stays on it', async () => {
+    location.hash = '#discover/play'
+    render(<App />)
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover'))
+    expect(screen.getByRole('button', { name: 'Discover' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Play' }).getAttribute('aria-pressed')).toBe('true')
+    expect(await screen.findByRole('button', { name: 'Ask Bantay' })).toBeTruthy()
+  })
+
+  it('full views and own-header pages have no Jack button', async () => {
+    for (const h of ['#privacy', '#sharing', '#me', '#weather']) {
+      location.hash = h
+      const { unmount } = render(<App />)
+      await new Promise((r) => setTimeout(r, 30))
+      expect(screen.queryByRole('button', { name: 'Ask Bantay' }), h).toBeNull()
+      unmount()
+    }
   })
 
   it('deep-links from the hash and follows hashchange', async () => {

@@ -100,10 +100,10 @@ describe('Assistant v2', () => {
     act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
     await screen.findByRole('dialog')
   }
-  it('has a one-line title, a small Close icon and the four chips', async () => {
+  it('has a one-line title, a Back arrow and the four chips', async () => {
     await open()
     expect(screen.getByRole('heading', { name: 'Ask Bantay' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy()
     for (const c of ['Log my BP', 'Did I take my medicine?', 'What does HbA1c mean?', 'Add a task']) expect(screen.getByRole('button', { name: c })).toBeTruthy()
   })
   it('a complete chip asks right away; an incomplete one only fills the box', async () => {

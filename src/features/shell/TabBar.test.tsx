@@ -1,51 +1,40 @@
-import { useState } from 'react'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TabBar } from './TabBar'
 
-vi.mock('./AskSheet', () => ({ AskSheet: () => null }))
 const alerts = vi.hoisted(() => ({ unseen: 0 }))
 vi.mock('../notify/useAlerts', () => ({ useUnseenAlerts: () => alerts.unseen }))
-// fake-indexeddb schedules its work with setTimeout, so faking the clock would stall Dexie. The kv is a plain in-memory map here, always loaded.
-const store = vi.hoisted(() => new Map<string, unknown>())
-vi.mock('./useKv', () => ({
-  useKv: <T,>(key: string, init: T): [T, (v: T) => void, boolean] => {
-    const [val, setVal] = useState<T>(store.has(key) ? (store.get(key) as T) : init)
-    return [val, (v: T) => { store.set(key, v); setVal(v) }, true]
-  }
-}))
 
-// Fake setTimeout/clearTimeout are installed before render; no real-time waits anywhere.
-beforeEach(() => { store.clear(); alerts.unseen = 0; vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }) })
-afterEach(() => { cleanup(); vi.clearAllTimers(); vi.useRealTimers() })
+beforeEach(() => { alerts.unseen = 0 })
+afterEach(cleanup)
 
-const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms) })
+const nav = () => screen.getByRole('navigation', { name: 'Main' })
 
-describe('TabBar coach mark', () => {
-  it('shows "Scan papers here too" on Today; seen only once exactly 8 s have passed', () => {
+describe('TabBar: five tabs, no Ask slot', () => {
+  it('lists Today, Health, Discover, Family, Safety and nothing else', () => {
     render(<TabBar active="today" />)
-    expect(screen.getByRole('status').textContent).toBe('Scan papers here too')
-    tick(7999)
-    expect(store.get('askHintSeen')).toBeUndefined()
-    expect(screen.queryByRole('status')).not.toBeNull()
-    tick(1)
-    expect(store.get('askHintSeen')).toBe(true)
-    expect(screen.queryByRole('status')).toBeNull()
+    expect(Array.from(nav().querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Today', 'Health', 'Discover', 'Family', 'Safety'])
+    expect(screen.queryByRole('button', { name: 'Ask Bantay' })).toBeNull()
   })
-  it('Simple mode: no hint and no 8 s timer, so it is never marked seen', () => {
-    store.set('mode.simple', true)
+  it.each([['today', 0], ['health', 1], ['discover', 2], ['family', 3], ['safety', 4]] as const)('%s: pill slot %i, that tab is the current page', (tab, slot) => {
+    render(<TabBar active={tab} />)
+    const n = nav()
+    expect(n.style.getPropertyValue('--slot')).toBe(String(slot)) // the pill is 1/5 wide, so slot * 100% lands on tab `slot`
+    expect(n.style.getPropertyValue('--pill')).toBe('1')
+    const current = Array.from(n.querySelectorAll('button')).filter((b) => b.getAttribute('aria-current') === 'page')
+    expect(current).toHaveLength(1)
+    expect(current[0]!.textContent).toBe(tab[0]!.toUpperCase() + tab.slice(1))
+  })
+  it('a full view (Me, notifications) hides the pill and marks no tab', () => {
+    render(<TabBar active={null} />)
+    expect(nav().style.getPropertyValue('--pill')).toBe('0')
+    expect(nav().querySelectorAll('[aria-current="page"]')).toHaveLength(0)
+  })
+  it('a tab button writes its hash', () => {
+    location.hash = ''
     render(<TabBar active="today" />)
-    expect(vi.getTimerCount()).toBe(0)
-    tick(8000)
-    expect(screen.queryByRole('status')).toBeNull()
-    expect(store.get('askHintSeen')).toBeUndefined()
-  })
-  it('not on other tabs', () => {
-    render(<TabBar active="health" />)
-    expect(vi.getTimerCount()).toBe(0)
-    tick(8000)
-    expect(screen.queryByRole('status')).toBeNull()
-    expect(store.get('askHintSeen')).toBeUndefined()
+    screen.getByRole('button', { name: 'Discover' }).click()
+    expect(location.hash).toBe('#discover')
   })
 })
 

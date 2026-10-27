@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const TABS = ['today', 'health', 'records', 'family', 'safety']
+const TABS = ['today', 'health', 'discover', 'discover/play', 'records', 'family', 'safety']
 const SIZES = [
   { width: 375, height: 812 },
   { width: 1280, height: 800 }
