@@ -65,12 +65,13 @@ const at = (h: number, m = 0) => new Date(2026, 9, 27, h, m).toISOString()
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
 // Settled UI before a shot: fonts loaded and every finite reveal animation finished (the sky loops forever) (the weather card fades in).
 const settle = async (page: Page, bottom = false) => { // fonts loaded, finite animations done and the scroll position held still for two reads (smooth scroll)
-  let last = -1
+  let last = ''
+  let held = 0
   await expect.poll(async () => {
-    const [y, ready] = await page.evaluate((end) => { if (end) window.scrollTo({ top: document.scrollingElement!.scrollHeight, behavior: 'instant' }); return [Math.round(window.scrollY), document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running')] as const }, bottom)
-    const still = y === last
+    const [y, ready] = await page.evaluate((end) => { if (end) window.scrollTo({ top: document.scrollingElement!.scrollHeight, behavior: 'instant' }); return [`${Math.round(window.scrollY)}/${document.scrollingElement!.scrollHeight}`, document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running')] as const }, bottom)
+    held = y === last && ready ? held + 1 : 0 // three equal reads in a row: late-loading cards have landed
     last = y
-    return still && ready
+    return held >= 3
   }, { intervals: [200] }).toBe(true)
 }
 const SLOT = hhmm(new Date(NOW.getTime() - 12 * 60_000)) // 9:00, twelve minutes ago
