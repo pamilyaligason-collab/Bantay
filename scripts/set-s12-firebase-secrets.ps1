@@ -7,7 +7,7 @@
 $ErrorActionPreference = 'Stop'
 $repo = 'pamilyaligason-collab/Bantay'
 $ref = 'wuakimpssycbtnmoexuc'
-$dl = Join-Path $env:USERPROFILE 'Downloads'
+$dl = @('D:\Downloads', (Join-Path $env:USERPROFILE 'Downloads')) | Where-Object { Test-Path $_ } # Lloyd's browser saves to D:\Downloads
 $keys = 'D:\Claude\Bantay-keys'
 
 Write-Host '[1/5] find the two files in Downloads'
