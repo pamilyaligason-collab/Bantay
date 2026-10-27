@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { Silhouette } from '../anatomy/Silhouette'
 import { hotspotTone } from '../anatomy/status'
 import '../anatomy/anatomy.css'
+import { EmptyState } from '../look/EmptyState'
 import type { NodeId, NodeView } from './model'
 
 // Which side and body row each node sits on: head, heart, belly, hips, legs (D-38).
@@ -27,14 +28,15 @@ const ORGANS = [
 ]
 
 /** Frosted front-view figure with the organs inside, a glow where a result needs a look, and seven metric buttons tied to body points. */
-export function BodyMap({ nodes, cta }: { nodes: NodeView[]; cta?: { href: string; label: string } }) {
+export function BodyMap({ nodes, cta, onAdd }: { nodes: NodeView[]; cta?: { href: string; label: string }; onAdd?: () => void }) {
   const uid = 'bm' + useId().replace(/\W/g, '')
   const blank = nodes.every((n) => n.empty)
   if (blank) {
     return (
       <div className="hv-map-empty" data-testid="health-empty">
         <svg className="hv-fig" viewBox={VIEW_BOX} aria-hidden="true" focusable="false"><Silhouette /></svg>
-        {cta ? <a className="hv-cta" href={cta.href}>{cta.label}</a> : <p className="hv-map-note">No vitals yet. Lab results are listed below.</p>}
+        {onAdd ? <EmptyState icon="gauge" title="No readings yet" body="Add your first reading to see it on the body." action={{ label: 'Add a reading', onClick: onAdd }} />
+          : cta ? <a className="hv-cta" href={cta.href}>{cta.label}</a> : <p className="hv-map-note">No vitals yet. Lab results are listed below.</p>}
       </div>
     )
   }

@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { ldb, type MedTaken } from '../log/store'
+import { CountUp } from '../look/CountUp'
 import { sparkPoints } from '../today/myWeekLogic'
 import type { Range, Reading } from './ranges'
 import { computeKpis, type Kpi } from './kpisLogic'
@@ -25,11 +26,14 @@ function Spark({ values }: { values: (number | null)[] }) {
   )
 }
 
+/** Plain counts only (steps, weight) rise to their number once when the tile first shows. A reading with a range chip (blood pressure, sugar, heart) never counts: a half-way number beside "High" would mislead. */
+const countable = (k: Kpi) => !k.state && /^\d[\d,]*(\.\d+)?$/.test(k.value)
+
 export function Tile({ k }: { k: Kpi }) {
   return (
-    <a className="kp-tile" href={k.href} data-kpi={k.code}>
+    <a className="kp-tile press" href={k.href} data-kpi={k.code}>
       <span className="kp-l">{k.label}</span>
-      <span className="kp-v">{/^0( |$)/.test(k.value) ? <b className="kp-none">Not yet</b> : <><b>{k.value}</b>{k.unit && <small>{k.unit}</small>}</>}</span>
+      <span className="kp-v">{/^0( |$)/.test(k.value) ? <b className="kp-none">Not yet</b> : <><b>{countable(k) ? <CountUp to={Number(k.value.replace(/,/g, ''))} decimals={k.value.split('.')[1]?.length ?? 0} /> : k.value}</b>{k.unit && <small>{k.unit}</small>}</>}</span>
       <span className="kp-w">{k.when}</span>
       <span className="kp-f">
         {k.state && k.state.kind !== 'none' ? <span className={`kp-chip ${k.state.kind}`}>{k.state.word}</span> : <span className="kp-sub">{k.sub}</span>}

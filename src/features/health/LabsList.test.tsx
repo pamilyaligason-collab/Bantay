@@ -9,7 +9,8 @@ const rd = (test: string, value: number, extra: Partial<Reading> = {}): Reading 
 describe('LabsList empty state', () => {
   it('says so when ready with no lab rows', () => {
     render(<LabsList readings={[]} thresholds={[]} ready />)
-    expect(screen.getByText('No lab results yet. Scan a paper with Ask.')).toBeTruthy()
+    expect(screen.getByText('No lab results yet')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add a paper' })).toBeTruthy()
   })
   it('renders nothing until ready', () => {
     const { container } = render(<LabsList readings={[]} thresholds={[]} ready={false} />)

@@ -40,9 +40,9 @@ describe('Health overview', () => {
     expect(location.hash).toBe('#health/metric/bp_systolic')
   })
 
-  it('has an Explore your body card that opens the body explorer', async () => {
+  it('has a Body tile in Browse that opens the body explorer', async () => {
     render(<Health />)
-    const card = await screen.findByRole('link', { name: /^Explore your body/ })
+    const card = await screen.findByRole('link', { name: /^Body/ })
     expect(card.getAttribute('href')).toBe('#health/body')
     location.hash = '#health/body'
     fireEvent(window, new HashChangeEvent('hashchange'))
@@ -89,24 +89,40 @@ describe('Health overview', () => {
     expect(within(row()).getByText('124')).toBeTruthy()
   })
 
-  it('Learn, Refills, Doctor visits and Papers are reachable from the overview', async () => {
+  it('Library, Videos, Refills, Visits and Papers are reachable from the Browse grid', async () => {
     render(<Health />)
     const hrefs = async (name: RegExp) => (await screen.findByRole('link', { name })).getAttribute('href')
-    expect(await hrefs(/^Health library/)).toBe('#health/library')
+    expect(await hrefs(/^Library/)).toBe('#health/library')
     expect(await hrefs(/^Videos/)).toBe('#health/videos')
     expect(await hrefs(/^Refills/)).toBe('#health/refill')
-    expect(await hrefs(/^Doctor visits/)).toBe('#health/visits')
-    expect(await hrefs(/^Papers · /)).toBe('#health/papers')
-    expect((await screen.findByRole('link', { name: /^Papers · / })).textContent).toMatch(/Papers · (Add your first paper|\d+ of \d+ papers? checked)/)
+    expect(await hrefs(/^Visits/)).toBe('#health/visits')
+    expect(await hrefs(/^Papers/)).toBe('#health/papers')
+    expect((await screen.findByRole('link', { name: /^Papers/ })).textContent).toMatch(/Papers(Add your first paper|\d+ of \d+ papers? checked)/)
   })
 
-  it('empty state: dimmed figure and exactly one call to action', async () => {
+  it('Browse is one grid after the summary: every old door is still there, Readings and Labs scroll to their sections', async () => {
+    render(<Health />)
+    const grid = await screen.findByTestId('browse')
+    const keys = Array.from(grid.querySelectorAll('[data-browse]')).map((e) => e.getAttribute('data-browse'))
+    for (const k of ['body', 'meds', 'refill', 'readings', 'labs', 'move', 'food', 'papers', 'visits', 'library']) expect(keys).toContain(k)
+    expect(grid.querySelector('[data-browse="food"]')?.getAttribute('href')).toBe('#health/nutrition')
+    expect(grid.querySelector('[data-browse="move"]')?.getAttribute('href')).toBe('#health/move')
+    expect(grid.querySelectorAll('.press').length).toBe(keys.length)
+    expect(document.getElementById('lvn-vitals')).toBeTruthy()
+    expect(document.getElementById('lvn-labs')).toBeTruthy()
+    expect(document.querySelector('[aria-busy="true"]')).toBeNull() // ready: the skeleton is gone
+  })
+
+  it('empty state: dimmed figure and exactly one call to action (Add a reading opens the sheet)', async () => {
     await hdb.readings.clear()
     render(<Health />)
     const empty = await screen.findByTestId('health-empty')
-    expect((await screen.findByTestId('insight')).textContent).toBe('No results yet')
-    expect(within(empty).getAllByRole('link')).toHaveLength(1)
-    expect(within(empty).getByRole('link', { name: 'Log a reading' }).getAttribute('href')).toBe('#today') // p1 is the signed-in person
+    expect(screen.queryByTestId('insight')).toBeNull() // one empty state, not a headline on top of it
+    expect(document.querySelectorAll('.empty-state')).toHaveLength(1)
+    expect(within(empty).queryAllByRole('link')).toHaveLength(0)
+    expect(within(empty).getAllByRole('button')).toHaveLength(1) // p1 is the signed-in person, so Add a reading is offered
+    fireEvent.click(within(empty).getByRole('button', { name: 'Add a reading' }))
+    expect(await screen.findByText(/^Add blood pressure/)).toBeTruthy()
     expect(screen.queryByText('No data yet')).toBeNull()
     expect(document.querySelector('[data-node]')).toBeNull()
   })
@@ -122,7 +138,7 @@ describe('Health overview', () => {
     expect(screen.queryByTestId('insight')).toBeNull()
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect(document.querySelector('.ad-av')).toBeNull()
-    expect(screen.getAllByText(/No vitals yet/)).toHaveLength(1) // exactly one empty message
+    expect(document.querySelectorAll('.empty-state')).toHaveLength(1) // exactly one empty state (the h2 is its screen-reader heading)
   })
 
   it('J r2: a lab out of range this week still shows its warning above the no-vitals card; a "SURNAME, Given" name says the given name', async () => {
