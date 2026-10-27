@@ -5,6 +5,8 @@ const LN = vi.hoisted(() => ({ schedule: vi.fn(), cancel: vi.fn(), registerActio
 vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: LN }))
 vi.mock('../sync/profile', () => ({ selfIdOrCached: vi.fn().mockResolvedValue('me') }))
 vi.mock('../admin/events', () => ({ track: vi.fn() }))
+const auth = vi.hoisted(() => ({ uid: 'u1' as string | undefined }))
+vi.mock('../auth/client', () => ({ supabase: { auth: { getSession: async () => ({ data: { session: auth.uid ? { user: { id: auth.uid } } : null } }) } } }))
 
 import { db } from '../../db'
 import { ldb, type Medication } from '../log/store'
@@ -58,6 +60,16 @@ describe('reminder actions', () => {
     await add({ name: 'Evening', schedule: { v: 1, times: ['20:00'] } })
     expect(await handleReminderAction(ev('taken', 480, ['me', 'ma', 'pa']), NOW)).toBe('logged')
     expect((await ldb.meds.toArray()).map((r) => `${r.personId}:${r.name}`).sort()).toEqual(['ma:Metformin', 'me:Losartan'])
+  })
+  it('after a user switch the previous user\x27s writable cache is not used', async () => {
+    await db.kv.put({ key: 'carers.writable', value: { userId: 'u1', ids: ['ma'] } })
+    await add({ name: 'Losartan' })
+    await add({ name: 'Metformin', personId: 'ma' })
+    auth.uid = 'u2'
+    try {
+      expect(await handleReminderAction(ev('taken', 480, ['me', 'ma']), NOW)).toBe('logged')
+      expect((await ldb.meds.toArray()).map((r) => `${r.personId}:${r.name}`)).toEqual(['me:Losartan'])
+    } finally { auth.uid = 'u1' }
   })
   it('a reminder without people (an older one) logs nothing', async () => {
     await add({ name: 'Losartan' })

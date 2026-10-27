@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import AlertsBanner from '../features/notify/AlertsBanner'
 import { AlertCardToday } from '../features/notify/AlertCardToday'
 import { AlarmFixedToast } from '../features/phonecheck/AlarmFixedToast'
+import { IncomingSos } from '../features/family/IncomingSos'
+import { StormCard } from '../features/safety/StormCard'
 import AlertBand from '../features/today/AlertBand'
 import SelfCare from '../features/today/SelfCare'
 import MyWeek from '../features/today/MyWeek'
@@ -49,7 +51,9 @@ export default function Today() {
     <div ref={root} className="td-root">
       {h1}
       <AlarmFixedToast />
+      <IncomingSos placement="today" />
       <AlertBand />
+      <StormCard />
       <WeatherCard expanded={calm} review={next.review} />
       <AlertCardToday />
       {!calm && <NextUp item={next.item} review={next.review} notify={notify} />}

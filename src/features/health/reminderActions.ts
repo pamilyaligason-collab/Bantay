@@ -2,6 +2,7 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import { db } from '../../db'
 import { ldb, logDose } from '../log/store'
 import { selfIdOrCached } from '../sync/profile'
+import { supabase } from '../auth/client'
 import { ALARM_CHANNEL } from '../phonecheck/keys'
 import { dayOf, remindable, reminderId, toClock } from './meds'
 
@@ -35,8 +36,10 @@ export type ReminderOutcome = 'logged' | 'skipped' | 'nothing-due' | 'snoozed' |
 /** The people the Taken button may log for: this user and the people they are a writer carer of (the cached list the Health screens use; read-only carers' people are never in it). */
 export async function markablePeople(selfId?: string | null): Promise<string[]> {
   const self = selfId !== undefined ? selfId : await selfIdOrCached().catch(() => null)
-  const v = (await db.kv.get(WRITABLE_KEY).catch(() => undefined))?.value as { ids?: unknown } | undefined
-  const ids = Array.isArray(v?.ids) ? v!.ids.filter((x): x is string => typeof x === 'string' && !!x) : []
+  const v = (await db.kv.get(WRITABLE_KEY).catch(() => undefined))?.value as { userId?: string; ids?: unknown } | undefined
+  const uid = supabase ? await supabase.auth.getSession().then((r) => r.data.session?.user.id).catch(() => undefined) : undefined
+  // the cache belongs to the user who filled it (useCanMark): after a user switch on a shared phone it is not this user's list
+  const ids = v?.userId && v.userId === uid && Array.isArray(v.ids) ? v!.ids.filter((x): x is string => typeof x === 'string' && !!x) : []
   return [...new Set([...(self ? [self] : []), ...ids])]
 }
 

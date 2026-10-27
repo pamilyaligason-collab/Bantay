@@ -23,7 +23,7 @@ APK: "Family alerts show here when you open Bantay." Never promise a push or loc
 | admin broadcast also writes `hazard` rows | `supabase/functions/broadcast/index.ts` |
 | `ALLOWED_ORIGIN` comma list (APK test window) | `supabase/functions/_shared/http.ts` |
 
-Functions to deploy after merge (ML-22): `dose-watch`, `broadcast` (bundle `_shared/templates.ts`); every function that bundles `_shared/http.ts`: `admin-members`, `ask`, `family-names`, `pin-login`, `records-extract`. Set `ALLOWED_ORIGIN` to a comma list only during an APK test window.
+Functions to deploy before the web merge, after the migrations (contracts.md deploy order: database, functions, web) (ML-22): `dose-watch`, `broadcast` (bundle `_shared/templates.ts`); every function that bundles `_shared/http.ts`: `admin-members`, `ask`, `family-names`, `pin-login`, `records-extract`. Set `ALLOWED_ORIGIN` to a comma list only during an APK test window.
 
 ## Not done here (named so nobody assumes)
 
@@ -36,7 +36,7 @@ Functions to deploy after merge (ML-22): `dose-watch`, `broadcast` (bundle `_sha
 - Deviation, accepted by the orchestrator: kv `alerts.inapp.ok` is set by `pollAlerts` on the first successful `carer_alerts` read (contracts.md assigns it to `AlertsBanner` after the phone check). Before 0030 is applied the read errors, so it is never set.
 - `broadcast` marks its hazard rows offered only after the `push_subscriptions` read succeeds; a failed mark does not stop the safety push, and the reply carries `marked:false` (a repeat push replaces itself by tag).
 ## Deviations and notes (fix round 3)
-- A carer's missed-dose push is the carer-class template `dose_watch`, both from the flush loop (a `carer_alerts` row of kind `dose_missed` pushes `{t:'dose_watch'}`) and from `runDoseWatch`'s direct push. The phone treats it as `cls: carer`: the carer cap (6 a day) and carer quiet hours, one tag `dose_watch` so alerts collapse. It reads "A medicine was missed by someone you look after." (no name).
+- A carer's missed-dose push is the carer-class template `dose_watch`, from the flush loop: `runDoseWatch` writes a `carer_alerts` row of kind `dose_missed` (S4) and the flush pushes `{t:'dose_watch'}`; `runDoseWatch` itself no longer pushes. The phone treats it as `cls: carer`: the carer cap (6 a day) and carer quiet hours, one tag `dose_watch` so alerts collapse. It reads "A medicine was missed by someone you look after." (no name).
 - The payload is `{t:'dose_watch'}` or `{t:'dose_watch', n}` where `n` is a COUNT of missed doses (integer 1 to 99, B-7); a name, a medicine or any other key makes `buildNotification` return null. `firstName` and `doseWatchText` are gone. `dose_missed` stays the user's own health nudge (2 a day, no quiet hours), untouched.
-- ML-24: the flush loop and `runDoseWatch` pushes (`port.push`) both stop at the run budget. When `runDoseWatch` runs out of time (`port.overBudget()`), it stops the loop, gives back the claim of the slot it was on if no carer device got that push, and leaves later slots unclaimed so the next run sends them.
+- ML-24: the flush loop stops at the run budget; `runDoseWatch` stops claiming slots once `port.overBudget()` is true and leaves the rest unclaimed for the next run.
 - Functions to deploy: `dose-watch` and `broadcast` (both bundle `_shared/templates.ts`).

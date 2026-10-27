@@ -2,7 +2,7 @@
 -- (session 10, S6c fix round 3). 0020 flipped every page of a document to 'reading', skipped ones included, so a document with page 1
 -- 'new' and pages 2-3 'skipped' was read in full. Now records_scan_due and records_scan_claim leave such a document alone, and the
 -- claim never touches a 'skipped' row. Needs 0020. Safe to run twice. Undo: 0036_scan_skip.down.sql (restores the 0020 bodies).
--- records-extract needs no redeploy: it only calls records_scan_claim.
+-- This rule needs no records-extract change (it only calls records_scan_claim); records-extract is redeployed in this release for other reasons (printed_name from 0030, heartbeat).
 
 begin;
 
