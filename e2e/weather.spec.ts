@@ -27,11 +27,11 @@ test('weather: action line first, place toggle, forecast sections', async ({ pag
   expect(a!.y).toBeLessThan(h!.y)
   await expect(page.locator('.wx-temp')).toHaveText('33°')
   await expect(page.getByRole('region', { name: 'Details' })).toContainText('UV today')
-  await expect(page.getByRole('region', { name: '7 days' }).getByRole('listitem')).toHaveCount(7)
+  await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(10)
   await expect(page.getByRole('link', { name: /^PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
   await expect(page.getByText('Your rounded location is sent only to the weather service.')).toBeVisible()
   expect(seen[0]).toContain('timezone=auto')
-  expect(seen[0]).toContain('forecast_days=7')
+  expect(seen[0]).toContain('forecast_days=10')
   expect(seen[0]).toContain('latitude=9.65')
 
   // place toggle: Home 2 is Conel
@@ -107,6 +107,19 @@ test('today weather card: from=action only when an action line shows, and it is 
   const card = page.getByRole('region', { name: 'Weather' }).getByRole('link')
   await expect(card).toHaveAttribute('href', '#weather?from=action')
   await expect(card).toContainText('Stay indoors 11 AM-3 PM')
+})
+
+test('weather: rain card shows hourly bars + PAGASA radar link, chips switch to storm track, no map provider loads', async ({ page }) => {
+  await skipOnboarding(page)
+  await mockForecast(page)
+  await page.goto('/#weather')
+  const card = page.getByRole('region', { name: 'Rain and storm map' })
+  await expect(card).toContainText('Saved for offline · updated')
+  await expect(card.getByRole('list', { name: 'Chance of rain, next 12 hours' }).getByRole('listitem')).toHaveCount(12)
+  await expect(card.getByRole('link', { name: /Radar images from PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
+  await card.getByRole('button', { name: 'Storm track' }).click()
+  await expect(card).toContainText('From GDACS and Open-Meteo')
+  await expect(page.locator('iframe')).toHaveCount(0)
 })
 
 test('today weather card: a calm day opens plain #weather', async ({ page }) => {

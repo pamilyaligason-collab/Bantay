@@ -20,8 +20,8 @@ describe('request', () => {
     expect(u.searchParams.get('hourly')!.split(',')).toEqual(['temperature_2m', 'precipitation_probability', 'weather_code'])
     expect(u.searchParams.get('daily')!.split(',')).toEqual(['weather_code', 'temperature_2m_min', 'temperature_2m_max', 'precipitation_probability_max', 'uv_index_max', 'sunrise', 'sunset'])
   })
-  it('asks for 7 days in the place time zone, not Manila', () => {
-    expect(u.searchParams.get('forecast_days')).toBe('7')
+  it('asks for 10 days in the place time zone, not Manila', () => {
+    expect(u.searchParams.get('forecast_days')).toBe('10')
     expect(u.searchParams.get('timezone')).toBe('auto')
   })
   it('sends the location rounded to 2 decimals', () => {
@@ -31,11 +31,11 @@ describe('request', () => {
 })
 
 describe('parse', () => {
-  it('reads current, 7 daily rows and the hourly list', () => {
+  it('reads current, 10 daily rows and the hourly list', () => {
     const fc = parseForecast(fixture({ now: NOW }), NOW.toISOString())!
     expect(fc.current).toMatchObject({ temp: 33, humidity: 68, feels: 42, wind: 9, gust: 18, uv: 9, code: 2 })
-    expect(fc.daily).toHaveLength(7)
-    expect(fc.hourly).toHaveLength(168)
+    expect(fc.daily).toHaveLength(10)
+    expect(fc.hourly).toHaveLength(240)
     expect(fc.tz).toBe('Asia/Manila')
   })
   it('unknown numbers are null, never 0', () => {

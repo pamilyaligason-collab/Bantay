@@ -13,8 +13,10 @@ import { HEAT_BANDS, heatBand, heatIndexC } from './heatIndex'
 import { condOf, feelsLike, isHot, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import LiveMapToggle from './LiveMapToggle'
+import RainMap from './RainMap'
 import { weatherWarning } from './warning'
 import './weather.css'
+import './wxs7w.css'
 
 type Sel = 'me' | 'h1' | 'h2'
 const NONE_A: Alert[] = []
@@ -109,7 +111,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
   const warn = useMemo(() => weatherWarning(alerts, point), [alerts, point])
   const lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
   const main = lines[0]
-  const strip = hoursFrom(fc, 25, now).filter((_, i) => i % 3 === 0)
+  const strip = hoursFrom(fc, 49, now).filter((_, i) => i % 3 === 0)
   const days = fc.daily.filter((d) => d.date)
   const lo = Math.min(...days.map((d) => d.min ?? Infinity))
   const hiAll = Math.max(...days.map((d) => d.max ?? -Infinity))
@@ -152,10 +154,12 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? '–' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
       </section>
 
-      {strip.length > 0 && <section aria-label="Next 24 hours">
-        <div className="wx-sech"><h2 className="wx-h">Next 24 hours</h2><span className="wx-sub">every 3 hours · swipe for more</span></div>
+      <RainMap fc={fc} point={point} placeName={name} alerts={alerts} />
+
+      {strip.length > 0 && <section aria-label="Next 48 hours">
+        <div className="wx-sech"><h2 className="wx-h">Next 48 hours</h2><span className="wx-sub">every 3 hours · swipe for more</span></div>
         <div className="card wx-stripbox">
-          <ul className="wx-strip" tabIndex={0} aria-label="Next 24 hours, scrolls sideways">
+          <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
             {strip.map((h, i) => (
               <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={`${Math.round(h.prob ?? 0)} percent rain`}>{h.prob == null ? '–' : `${Math.round(h.prob)}%`}</span></li>
             ))}
@@ -163,8 +167,8 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
         </div>
       </section>}
 
-      {days.length > 0 && <section aria-label="7 days">
-        <h2 className="wx-h">7 days</h2>
+      {days.length > 0 && <section aria-label="10 days">
+        <h2 className="wx-h">10 days</h2>
         <ul className="card wx-days">
           {days.map((d, i) => (
             <li key={d.date}>
@@ -178,6 +182,13 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
           ))}
         </ul>
       </section>}
+
+      <section aria-label="Season and sun" className="card wx-season">
+        <h2 className="wx-h">Season and sun</h2>
+        {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
+        <p className="wx-sub">Rain this month and the November to February outlook: see the PAGASA climate outlook (link below). The app does not guess a monthly normal.</p>
+        <p className="wx-sub">Typhoons usually form June to November; outer rain bands and strong winds can reach the south. Heat index bands are the PAGASA ones above.</p>
+      </section>
     </>
   )
 }

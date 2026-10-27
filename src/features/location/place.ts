@@ -19,6 +19,10 @@ export function resolvePlace(o: { gps: LatLon | null; lastZone: ZoneId }) {
   return { weather: o.gps, zone: nearestZone(o.gps).id as ZoneId, source: 'gps' as const }
 }
 
+// S7w: the weather surfaces are reached through this module (contract).
+export { WeatherStrip } from '../today/WeatherCard'
+export { default as RainMap } from '../weather/RainMap'
+
 /** IANA time zone of a place. The forecast reports the real one (Open-Meteo `timezone=auto`); before it arrives, inside the Philippines
  *  it is Asia/Manila, anywhere else undefined (the phone's own zone). Never a fixed Manila for a member who is abroad. */
 export function placeTimezone(p: LatLon, reported?: string | null): string | undefined {
