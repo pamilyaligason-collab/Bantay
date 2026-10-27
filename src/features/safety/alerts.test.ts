@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Alert, diffBulletin, distanceKm, hazardOf, HOME, rankAlerts, tierOf } from './alerts'
+import { affectsUs, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -57,4 +57,78 @@ describe('diffBulletin', () => {
 it('distanceKm is zero at the same point and about 111 km per degree of latitude', () => {
   expect(distanceKm(HOME, HOME)).toBe(0)
   expect(distanceKm({ lat: 0, lon: 0 }, { lat: 1, lon: 0 })).toBeCloseTo(111.2, 0)
+})
+
+const NOW = Date.parse('2026-10-27T06:00:00Z')
+const minAgo = (m: number) => new Date(NOW - m * 60_000).toISOString()
+
+describe('freshness', () => {
+  it('59 min is ok, 60 is ok, 61 is amber, over a day is red', () => {
+    expect(freshness(minAgo(59), NOW)).toEqual({ ageMin: 59, tone: 'ok' })
+    expect(freshness(minAgo(60), NOW).tone).toBe('ok')
+    expect(freshness(minAgo(61), NOW)).toEqual({ ageMin: 61, tone: 'amber' })
+    expect(freshness(minAgo(24 * 60 + 1), NOW).tone).toBe('red')
+  })
+  it('null or unreadable is never checked, not fresh (ML-05)', () => {
+    for (const v of [null, undefined, '', 'soon']) {
+      expect(freshness(v, NOW)).toEqual({ ageMin: null, tone: 'red' })
+      expect(freshText(freshness(v, NOW))).toBe('Never checked')
+    }
+  })
+  it('says the age in plain words and a future time is "just now"', () => {
+    expect(freshText(freshness(minAgo(5), NOW))).toBe('Checked 5 min ago')
+    expect(freshText(freshness(minAgo(0), NOW))).toBe('Checked just now')
+    expect(freshText(freshness(minAgo(-3), NOW))).toBe('Checked just now')
+    expect(freshText(freshness(minAgo(180), NOW))).toBe('Checked 3 h ago')
+    expect(freshText(freshness(minAgo(10 * 24 * 60), NOW))).toBe('Checked 10 days ago')
+  })
+  it('newestChecked ignores rows with no or bad time', () => {
+    expect(newestChecked([a('x', 'quake', { checkedAt: minAgo(30) }), a('y', 'quake', { checkedAt: minAgo(5) }), a('z', 'quake', { checkedAt: 'bad' }), a('w', 'quake')])).toBe(minAgo(5))
+    expect(newestChecked([])).toBeNull()
+  })
+  it('the amber line names the time (Manila) and the radio', () => {
+    const t = outdatedLine('2026-10-27T06:00:00Z')
+    expect(t).toMatch(/^Alerts last checked .*2026.*\. They may be out of date\. Check PAGASA or listen to the radio\.$/)
+    expect(t).toContain('2:00') // 06:00 UTC is 2:00 pm in Manila
+    expect(outdatedLine(null)).toMatch(/not been checked on this phone yet\. They may be out of date\./)
+  })
+})
+
+describe('affectsUs', () => {
+  // Hand-computed: 0.8 degrees of latitude = 0.8 * pi/180 * 6371 km = 88.95 km, so a quake 0.8 deg north of Conel (6.2015121, 125.1878084) is 89 km away.
+  const conel = { lat: 6.2015121, lon: 125.1878084 }
+  const q89 = a('q89', 'quake', { lat: conel.lat + 0.8, lon: conel.lon })
+  it('an 89 km quake is far from you and needs no action', () => {
+    expect(Math.round(distanceKm(conel, { lat: q89.lat!, lon: q89.lon! }))).toBe(89)
+    expect(affectsUs(q89, conel)).toEqual({ affects: false, km: 89, line: 'Far from you; no action needed' })
+  })
+  it('the same distance for a typhoon still counts (storms reach 150 km)', () => {
+    const r = affectsUs({ ...q89, kind: 'tcws' }, conel)
+    expect(r.affects).toBe(true)
+    expect(r.line).toBe('Near you. Follow the steps below.')
+  })
+  it('a quake 30 km away is near you; one near the other home zone says near home', () => {
+    expect(affectsUs(a('q30', 'quake', { lat: conel.lat + 0.27, lon: conel.lon }), conel)).toMatchObject({ affects: true, km: 30, line: 'Near you. Follow the steps below.' })
+    // phone far away (Manila), quake 10 km from Dampas (9.645705, 123.877951): near home
+    expect(affectsUs(a('qd', 'quake', { lat: 9.645705 + 0.09, lon: 123.877951 }), { lat: 14.6, lon: 121 })).toMatchObject({ affects: true, km: 10, line: 'Near home (Dampas). Follow the steps below.' })
+  })
+  it('no position and no point: area-wide counts, a far point does not', () => {
+    expect(affectsUs(a('w', 'heat'), null).affects).toBe(true)
+    expect(affectsUs(a('far', 'quake', { lat: 14.6, lon: 121 }), null).affects).toBe(false)
+  })
+})
+
+describe('plain words and copy', () => {
+  it('GDACS population line becomes plain words, never the raw string', () => {
+    const raw = 'A Typhoon BAGYO-26 was active. Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million.'
+    expect(plainWhat({ kind: 'gdacs', what: raw })).toBe('A Typhoon BAGYO-26 was active. About 291,000 people live where the strongest winds or water are expected.')
+    expect(plainWhat({ kind: 'gdacs', what: 'Population affected: unknown' })).toBe('')
+    expect(plainWhat({ kind: 'quake', what: 'Magnitude 5.1, 40 km north.' })).toBe('Magnitude 5.1, 40 km north.')
+  })
+  it('sources line is the contract text and the place label matches the Safety chip', () => {
+    expect(SOURCES_LINE).toBe('Quakes: PHIVOLCS and USGS. Storms: GDACS and PAGASA bulletins. Weather and air: Open-Meteo. Checked every 10 minutes.')
+    expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
+    expect(placeLabel({ source: 'gps', zone: 'dampas' })).toBe('Near you · Dampas')
+    expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
+  })
 })

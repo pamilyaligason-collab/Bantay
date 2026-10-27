@@ -14,20 +14,22 @@ const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour:
 
 // ---------- Scheduled jobs ----------
 export type JobRun = { job: string; ran_at: string; ok: boolean }
-/** The jobs that call heartbeat() (contract). Red when the last run failed or is older than 30 minutes (every job here runs at least every 15). */
+/** The jobs that call heartbeat() (contract). Red when the last run failed or is older than `staleMin` (30 by default: every job here runs at least every 15).
+ *  The alerts feed gets 60, the same hour the app uses to call alerts out of date (safety/alerts.ts FRESH_AMBER_MIN), so the desk and the phones go red together. */
+export const ALERTS_FEED_STALE_MIN = 60
 export const JOBS = [
-  { job: 'dose-watch', label: 'Missed-dose watch', every: 'Every 15 min' },
-  { job: 'alerts-ingest', label: 'Official alerts ingest', every: 'Every 10 min' },
-  { job: 'records-extract', label: 'Records reader', every: 'Every 10 min' }
+  { job: 'dose-watch', label: 'Missed-dose watch', every: 'Every 15 min', staleMin: 30 },
+  { job: 'alerts-ingest', label: 'Official alerts feed', every: 'Every 10 min', staleMin: ALERTS_FEED_STALE_MIN },
+  { job: 'records-extract', label: 'Records reader', every: 'Every 10 min', staleMin: 30 }
 ] as const
 export const JOB_STALE_MIN = 30
 
-export function jobStatus(run: JobRun | null | undefined, now = Date.now()): { tone: Tone; text: string } {
+export function jobStatus(run: JobRun | null | undefined, now = Date.now(), staleMin: number = JOB_STALE_MIN): { tone: Tone; text: string } {
   if (!run) return { tone: 'warn', text: 'No run recorded yet' } // unknown, not red: the job may simply not be deployed yet
   const t = Date.parse(run.ran_at)
   if (Number.isNaN(t)) return { tone: 'warn', text: 'Last run unreadable' }
   if (!run.ok) return { tone: 'bad', text: `Failed ${clock(run.ran_at)}` }
-  if (now - t > JOB_STALE_MIN * 60_000) return { tone: 'bad', text: `Stopped, last ran ${ago(run.ran_at, now)}` }
+  if (now - t > staleMin * 60_000) return { tone: 'bad', text: `Stopped, last ran ${ago(run.ran_at, now)}` }
   return { tone: 'ok', text: clock(run.ran_at) }
 }
 
@@ -184,5 +186,5 @@ export const loadPendingMigrations = () => guard<string[]>(async () => {
 export const loadSystemBadge = (now = Date.now()) => guard<number>(async () => {
   const r = await loadJobRuns()
   if (!r.ok) return bad
-  return { ok: true, data: JOBS.filter((j) => { const s = jobStatus(r.data[j.job], now); return s.tone === 'bad' }).length }
+  return { ok: true, data: JOBS.filter((j) => { const s = jobStatus(r.data[j.job], now, j.staleMin); return s.tone === 'bad' }).length }
 })

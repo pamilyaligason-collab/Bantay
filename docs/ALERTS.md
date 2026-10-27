@@ -74,3 +74,39 @@ next dose-watch run (15 minutes). Redeploy `alerts-ingest` after setting it. `al
 
 Safety screens: storm mode (`StormCard`, on the Safety tab and mounted on Today by S7), Warnings (source line "From PAGASA public alerts ..., GDACS and Open-Meteo, checked
 every 10 minutes ..."), the hub's Phone alerts tile (count from the phone check, only while something needs fixing) and the Phone warnings guide.
+
+## Freshness and honest copy (session 12, lane D)
+
+**The cron gap.** `alerts-ingest` had no cron job from 2026-10-17 (last fetch 22:16) until 2026-10-27 (job `*/10`, first run 17:00 Manila, applied from
+`ops/sql/alerts_cron.sql`). For ten days the phones showed the last rows as if they were current: no row was marked stale because nothing had failed, the job
+had simply never run. The fix has two parts: the cron job above, and the checks below so a silent stop is visible on the phone and on the admin desk.
+
+**On the phone.** Every alert has `checkedAt` (the row's `fetched_at`). `safety/alerts.ts` `freshness(checkedAt, now)` returns `{ageMin, tone}`:
+60 minutes or less is `ok`, over 60 is `amber`, over a day is `red`, and no time at all is `null` and `red` ("Never checked"), never "fresh".
+Where it shows:
+
+| Place | What it says |
+| --- | --- |
+| Each alert card (Safety > Warnings) | "Checked 5 min ago", and whether it affects the family |
+| Today alert band | the same, plus the amber line below |
+| Safety home, Alerts group | "Checked n min ago" from the newest row, and the amber line |
+| Safety hub Warnings tile | "None now · may be out of date" when the newest check is over an hour old |
+
+The amber line is shown even when no row is marked stale: "Alerts last checked <time>. They may be out of date. Check PAGASA or listen to the radio."
+With no saved alert at all the phone cannot tell a quiet day from a dead feed, so it says "Never checked" with the same amber line. (A feed-level "last
+synced" time written by `sync.ts` would remove that ambiguity; it is a one-line follow-up in that file.)
+
+**Does it affect us?** `affectsUs(alert, here)`: an alert with no point covers the whole area. A point alert is near when it is within 50 km (quake, air,
+utility, local notice) or 150 km (storm, flood, heat, tsunami, volcano, GDACS) of the phone's place or of either home zone. Otherwise the band says
+"Far from you; no action needed" and hides the do-now steps. Hand-computed check: 0.8 degrees of latitude is 88.95 km, so a M4.5 quake 89 km from Conel is far.
+
+**Source copy.** One constant, `SOURCES_LINE`, replaces every claim that the app pulls PAGASA, PHIVOLCS or NDRRMC warnings:
+"Quakes: PHIVOLCS and USGS. Storms: GDACS and PAGASA bulletins. Weather and air: Open-Meteo. Checked every 10 minutes."
+What the ingest really reads: USGS (quakes), GDACS (cyclone, flood, volcano, tsunami), the PAGASA public alert feed (wind signals, flood advisories) and
+Open-Meteo (air). PHIVOLCS is not ingested (see "Not ingested"); USGS stands in for its quakes, so the constant's "PHIVOLCS" is a pointer to where to check, not a feed.
+
+**GDACS in plain words.** GDACS statistics ("Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million.") are shown as
+"About 291,000 people live where the strongest winds or water are expected." A statistic line the app cannot read is dropped, never shown raw.
+
+**Admin desk.** System health > Scheduled jobs > "Official alerts feed" turns red when the newest `job_runs` row for `alerts-ingest` is older than 60 minutes
+or `ok = false` (30 minutes for the other jobs). The sidebar dot counts it. No `job_runs` row yet is amber (unknown), never red.

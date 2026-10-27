@@ -2,7 +2,7 @@ import hazards from '../../data/safety/hazards.json'
 
 export type Tone = 'good' | 'warn' | 'none'
 export interface Reading { label: string; value: string | null }
-export interface HazardCard { id: string; title: string; readings: Reading[]; tone: Tone; todo: string }
+export interface HazardCard { id: string; title: string; readings: Reading[]; tone: Tone; todo: string; plain?: string }
 export interface HazardView { cards: HazardCard[]; rest: Reading[]; url: string; source: string }
 
 /** "Safe" and "Low" are calm; any other reading is shown as a warning; no reading yet is neutral. */
@@ -15,6 +15,21 @@ const CARDS = [
   { id: 'quake', title: 'Earthquake', labels: ['Ground shaking', 'Liquefaction, tsunami, ground rupture'], todo: 'Drop, cover and hold on. If you are on the coast and the ground shakes hard, go to high ground at once.' }
 ]
 
+// PHIVOLCS Earthquake Intensity Scale (PEIS), in plain words. The reading says "Prone, Intensity VIII"; nobody should have to know what VIII means.
+const PEIS: Record<string, string> = {
+  I: 'barely felt', II: 'felt a little', III: 'weak shaking', IV: 'moderate shaking', V: 'strong shaking', VI: 'very strong shaking',
+  VII: 'destructive shaking', VIII: 'very destructive shaking', IX: 'devastating shaking', X: 'completely devastating shaking'
+}
+const QUAKE_DO = 'Pick a safe spot in each room. In a quake: drop, cover and hold on.'
+
+/** The ground shaking reading in plain words: what it means and one thing to do. Null when there is no intensity in the reading (we never guess). */
+export function quakeMeaning(value: string | null): { status: string; text: string } | null {
+  const m = value ? /intensity\s+(X|IX|VIII|VII|VI|V|IV|III|II|I)\b/i.exec(value) : null
+  const word = m ? PEIS[m[1]!.toUpperCase()] : undefined
+  if (!word) return null
+  return { status: `can have ${word}`, text: `In a big quake this place can have ${word} (Intensity ${m![1]!.toUpperCase()}). Old or weak buildings can be damaged. ${QUAKE_DO}` }
+}
+
 /** Four hazard cards from the bundled HazardHunterPH readings, or null when we have none for this zone. */
 export function hazardsFor(zone: string): HazardView | null {
   if (hazards.zone !== zone) return null
@@ -23,7 +38,8 @@ export function hazardsFor(zone: string): HazardView | null {
   const cards = CARDS.map((c): HazardCard => {
     const readings = c.labels.map((l) => rows.find((r) => r.label === l) ?? { label: l, value: null })
     const tones = readings.map((r) => toneOf(r.value))
-    return { id: c.id, title: c.title, readings, todo: c.todo, tone: tones.includes('warn') ? 'warn' : tones.includes('none') ? 'none' : 'good' }
+    const q = c.id === 'quake' ? quakeMeaning(readings[0]!.value) : null
+    return { id: c.id, title: c.title, readings, todo: q ? q.text : c.todo, ...(q ? { plain: q.status } : {}), tone: tones.includes('warn') ? 'warn' : tones.includes('none') ? 'none' : 'good' }
   })
   return { cards, rest: rows.filter((r) => !used.has(r.label)), url: hazards.url, source: hazards.source }
 }
@@ -32,7 +48,7 @@ export function hazardsFor(zone: string): HazardView | null {
 export function hazardStatus(v: HazardView | null): string {
   if (!v) return 'Not checked for this place yet'
   const w = v.cards.find((c) => c.tone === 'warn')
-  if (w) return `${w.title}: ${w.readings[0]!.value ?? 'check'}`
+  if (w) return `${w.title}: ${w.plain ?? w.readings[0]!.value ?? 'check'}`
   return v.cards.some((c) => c.tone === 'none') ? 'Some levels not confirmed' : 'No high risks found'
 }
 
