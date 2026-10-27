@@ -7,6 +7,15 @@ test.use({ viewport: { width: 390, height: 844 } })
 type Row = Record<string, unknown>
 /** Put rows in a database the app has already created (open it once first, then reload so Dexie and its live queries see the rows). */
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
+  // Wait until the app's own Dexie has created this database and store; a bare indexedDB.open would make an empty v1 database.
+  await expect.poll(() => page.evaluate(async ([name, st]) => {
+    if (!(await indexedDB.databases()).some((d) => d.name === name)) return false
+    return new Promise<boolean>((res) => {
+      const o = indexedDB.open(name as string)
+      o.onerror = () => res(false)
+      o.onsuccess = () => { const ok = o.result.objectStoreNames.contains(st as string); o.result.close(); res(ok) }
+    })
+  }, [dbName, store] as const)).toBe(true)
   await page.evaluate(async ([name, st, list]) => {
     await new Promise<void>((res, rej) => {
       const open = indexedDB.open(name as string)
@@ -26,12 +35,14 @@ test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 test('five tabs in order; Discover opens with its five sub-tabs and the Coming in this update card', async ({ page }) => {
   await page.goto('/#today')
   const nav = page.getByRole('navigation', { name: 'Main' })
+  await expect(nav.getByRole('button')).toHaveCount(5)
   expect(await nav.getByRole('button').allTextContents()).toEqual(['Today', 'Health', 'Discover', 'Family', 'Safety'])
   await nav.getByRole('button', { name: 'Discover' }).click()
   await expect(page).toHaveURL(/#discover$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
   await expect(nav.getByRole('button', { name: 'Discover' })).toHaveAttribute('aria-current', 'page')
   const subs = page.getByRole('group', { name: 'Discover sections' })
+  await expect(subs.getByRole('button')).toHaveCount(5)
   expect(await subs.getByRole('button').allTextContents()).toEqual(['Learn', 'Listen', 'Play', 'Watch', 'News'])
   await expect(page.getByText('Coming in this update')).toBeVisible()
   await subs.getByRole('button', { name: 'Watch' }).click()

@@ -40,6 +40,15 @@ async function mock(page: Page) {
 }
 
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
+  // Wait until the app's own Dexie has created this database and store; a bare indexedDB.open would make an empty v1 database.
+  await expect.poll(() => page.evaluate(async ([name, st]) => {
+    if (!(await indexedDB.databases()).some((d) => d.name === name)) return false
+    return new Promise<boolean>((res) => {
+      const o = indexedDB.open(name as string)
+      o.onerror = () => res(false)
+      o.onsuccess = () => { const ok = o.result.objectStoreNames.contains(st as string); o.result.close(); res(ok) }
+    })
+  }, [dbName, store] as const)).toBe(true)
   await page.evaluate(async ([name, st, list]) => {
     await new Promise<void>((res, rej) => {
       const open = indexedDB.open(name as string)

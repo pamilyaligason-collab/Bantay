@@ -30,7 +30,7 @@ describe('JackFab visibility', () => {
       unmount()
     }
   })
-  it('is 56 px in the stylesheet contract: a round button with the Jack picture', () => {
+  it('renders a round button with the Jack picture', () => {
     render(<JackFab tab="today" hash="#today" />)
     expect(fab()!.className).toBe('sh-jackfab')
     expect(fab()!.querySelector('img')).not.toBeNull()
