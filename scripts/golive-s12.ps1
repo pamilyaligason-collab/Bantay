@@ -1,5 +1,6 @@
 # Family Bantay - session 12 Phase 3 batch 1 'apply' (D-80..D-88). Lloyd runs it from this worktree BEFORE merging the PR:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s12.ps1          (add -DryRun to print the steps only)
+# Never paste these lines into a shell: pasted, a failed step does not stop the next one. Run the file; it refuses any other branch.
 # Order (release review): checks -> tag pre-s12 -> 0037..0042 (each recorded) -> verify -> deploy 5 functions -> archive the shared admin person row -> post-checks.
 # Then merge the PR right away (old web bundles' direct carers writes get 42501 after 0037). Stops at the first failure.
 param([switch]$DryRun)
@@ -25,11 +26,17 @@ function Deploy($n, $fn, [switch]$Jwt) {
   Run 'npx' $a; Check $n
 }
 
-Step 1 'checks: Supabase link, clean tree, google-services.json present'
+Step 1 'checks: release branch, migration files, Supabase link, clean tree, google-services.json present'
+$branch = git rev-parse --abbrev-ref HEAD
+if ($branch -ne 'claude/family-bantay-phase2-audit-9375db') { throw "step 1 failed: on branch '$branch', not the release branch claude/family-bantay-phase2-audit-9375db" }
+$noFile = @('0037_sharing', '0038_join_claim', '0039_marked_by_digest', '0040_push_tokens', '0041_rollcall', '0042_kudos') | Where-Object { -not (Test-Path "supabase\migrations\$_.sql") }
+if ($noFile) { throw "step 1 failed: missing migration files: $($noFile -join ', ')" }
 if (-not (Test-Path 'supabase\.temp\project-ref')) {
   $main = (git rev-parse --path-format=absolute --git-common-dir) -replace '[\\/]\.git$', ''
   if (-not (Test-Path "$main\supabase\.temp\project-ref")) { throw 'step 1 failed: no supabase\.temp link here or in the main checkout' }
-  Copy-Item "$main\supabase\.temp" 'supabase\.temp' -Recurse
+  # copy the contents: copying the folder onto an existing supabase\.temp nests it as .temp\.temp
+  New-Item -ItemType Directory -Force 'supabase\.temp' | Out-Null
+  Copy-Item "$main\supabase\.temp\*" 'supabase\.temp' -Recurse -Force
 }
 if (git status --porcelain --untracked-files=no) { throw 'step 1 failed: uncommitted changes' }
 if (-not (Test-Path 'android\app\google-services.json')) { throw 'step 1 failed: run scripts\set-s12-firebase-secrets.ps1 first' }
