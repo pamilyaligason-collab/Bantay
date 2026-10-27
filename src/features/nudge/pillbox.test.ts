@@ -58,6 +58,24 @@ describe('logHalf: tap logs through logDose, never twice', () => {
     expect(await logHalf('me', 'am', now)).toBe(0)
     expect(await ldb.meds.count()).toBe(1)
   })
+  it('a 00:30 dose taken at 23:50 the night before is not logged again at 00:10', async () => {
+    const night: Medication = { ...losartan, schedule: { v: 1, times: ['00:30'] } }
+    const justAfter = new Date(2026, 2, 16, 0, 10)
+    await ldb.medications.add(night)
+    await ldb.meds.add({ personId: 'me', name: 'Losartan', medicationId: 'm1', slot: '00:30', takenAt: at(15, 23, 50) })
+    expect(await logHalf('me', 'am', justAfter)).toBe(0)
+    expect(await ldb.meds.count()).toBe(1)
+  })
+  it('the same dose with no earlier take is logged once at 00:10', async () => {
+    await ldb.medications.add({ ...losartan, schedule: { v: 1, times: ['00:30'] } })
+    expect(await logHalf('me', 'am', new Date(2026, 2, 16, 0, 10))).toBe(1)
+    expect(await logHalf('me', 'am', new Date(2026, 2, 16, 0, 11))).toBe(0)
+  })
+  it('a take more than 3 h old does not block a new dose of the same slot', async () => {
+    await ldb.medications.add(losartan)
+    await ldb.meds.add({ personId: 'me', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: at(14, 8, 5) })
+    expect(await logHalf('me', 'am', now)).toBe(1)
+  })
   it('a person with no medicine logs nothing', async () => {
     await ldb.medications.add(losartan)
     expect(await logHalf('someone-else', 'am', now)).toBe(0)

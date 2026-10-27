@@ -12,7 +12,7 @@ export function Pillbox({ personId, meds, takes, canMark, now = new Date() }: { 
   const week = useMemo(() => pillbox({ personId, meds, takes, now }), [personId, meds, takes, now])
   const [busy, setBusy] = useState(false)
   const empty = week.every((d) => d.am.state === 'none' && d.pm.state === 'none')
-  const tap = async (h: Half) => { if (busy) return; setBusy(true); try { await logHalf(personId, h, new Date()) } finally { setBusy(false) } }
+  const tap = async (h: Half) => { if (busy) return; setBusy(true); try { await logHalf(personId, h, new Date()) } catch { /* storage failed: the cell stays open, tap again */ } finally { setBusy(false) } }
   const cell = (d: (typeof week)[number], h: Half, c: PillCell) => {
     const label = `${dow(d.day)} ${h === 'am' ? 'morning' : 'evening'}: ${WORD[c.state]}`
     const tappable = d.today && c.state === 'open' && canMark
