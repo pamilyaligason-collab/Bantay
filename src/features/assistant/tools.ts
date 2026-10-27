@@ -4,7 +4,7 @@ import { deviceSpec } from '../health/readingPreview'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 
 export const MAX_MESSAGES = 10
-export const TABS = ['today', 'health', 'records', 'family', 'safety'] as const
+export const TABS = ['today', 'health', 'discover', 'records', 'family', 'safety'] as const
 export type Tab = (typeof TABS)[number]
 export type Msg = { role: 'user' | 'assistant'; content: string }
 export type DraftTool = 'log_reading' | 'log_med_taken' | 'log_activity'

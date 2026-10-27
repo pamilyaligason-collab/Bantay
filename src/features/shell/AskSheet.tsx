@@ -11,7 +11,7 @@ const ROWS: { id: 'talk' | 'scan' | 'upload'; icon: IconName; title: string; sub
   { id: 'upload', icon: 'upload', title: 'Upload a photo', sub: 'Choose a photo you already have' }
 ]
 
-/** Bottom sheet behind the centre Ask tab: three big rows. Back, Escape and a tap outside close it. */
+/** Bottom sheet behind the floating Jack button (press and hold): three big rows. Back, Escape and a tap outside close it. */
 export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const { ref, onKeyDown } = useDialog(onClose)
   const file = useRef<HTMLInputElement>(null)
@@ -30,7 +30,7 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
     history.back()
   }
   const pick: Record<string, () => void> = {
-    talk: () => leave(() => { document.querySelector<HTMLElement>('.sh-ask')?.focus(); window.dispatchEvent(new Event(ASK_EVENT)) }),
+    talk: () => leave(() => { document.querySelector<HTMLElement>('.sh-jackfab')?.focus(); window.dispatchEvent(new Event(ASK_EVENT)) }),
     scan: () => leave(openScan),
     upload: () => file.current?.click()
   }

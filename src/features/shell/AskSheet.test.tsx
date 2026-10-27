@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { ASK_EVENT } from '../assistant/Assistant'
 import { takePendingFile } from '../scan/open'
-import { TabBar } from './TabBar'
+import { JackFab } from './JackFab'
 
 beforeEach(async () => {
   history.replaceState(null, '', '/')
@@ -12,20 +12,20 @@ beforeEach(async () => {
 })
 afterEach(cleanup)
 
-const ask = () => fireEvent.click(screen.getByRole('button', { name: 'Ask Bantay' }))
+const ask = async () => fireEvent.contextMenu(await screen.findByRole('button', { name: 'Ask Bantay' })) // press and hold = right click
 
 describe('Ask choice sheet', () => {
-  it('renders into the page body, outside the glass tab bar', async () => {
-    render(<TabBar active="today" />)
-    ask()
+  it('renders into the page body, outside the tab bar nav', async () => {
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     const dlg = await screen.findByRole('dialog')
     expect(dlg.closest('nav')).toBeNull()
   })
 
   it.each(['back', 'cancel', 'outside'])('closes via %s and leaves no extra history entry', async (how) => {
-    render(<TabBar active="today" />)
+    render(<JackFab tab="today" hash="#today" />)
     const before = history.length
-    ask()
+    await ask()
     const dlg = await screen.findByRole('dialog')
     if (how === 'back') history.back()
     else if (how === 'cancel') fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -36,16 +36,16 @@ describe('Ask choice sheet', () => {
   })
 
   it('PDF line points to Health > Papers', async () => {
-    render(<TabBar active="today" />)
-    ask()
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     fireEvent.click(await screen.findByRole('link', { name: /PDF files use Health > Papers/ }))
     await waitFor(() => expect(location.hash).toBe('#health/papers'))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('opens a modal with three rows; Escape closes it', async () => {
-    render(<TabBar active="today" />)
-    ask()
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     const dlg = await screen.findByRole('dialog', { name: 'What would you like to do?' })
     expect(dlg.getAttribute('aria-modal')).toBe('true')
     for (const n of [/Talk to Jack Jack/, /Scan & Capture/, /Upload a photo/]) expect(screen.getByRole('button', { name: n })).toBeTruthy()
@@ -57,8 +57,8 @@ describe('Ask choice sheet', () => {
     let n = 0
     const on = () => n++
     window.addEventListener(ASK_EVENT, on)
-    render(<TabBar active="today" />)
-    ask()
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     fireEvent.click(await screen.findByRole('button', { name: /Talk to Jack Jack/ }))
     await waitFor(() => expect(n).toBe(1))
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -66,8 +66,8 @@ describe('Ask choice sheet', () => {
   })
 
   it('Scan opens the scan route and closes the sheet', async () => {
-    render(<TabBar active="today" />)
-    ask()
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     const before = history.length
     fireEvent.click(await screen.findByRole('button', { name: /Scan & Capture/ }))
     await waitFor(() => expect(location.hash).toBe('#scan'))
@@ -77,8 +77,8 @@ describe('Ask choice sheet', () => {
   })
 
   it('Upload hands the chosen file to the scan flow', async () => {
-    render(<TabBar active="today" />)
-    ask()
+    render(<JackFab tab="today" hash="#today" />)
+    await ask()
     await screen.findByRole('dialog')
     const f = new File(['x'], 'p.png', { type: 'image/png' })
     fireEvent.change(screen.getByTestId('ask-file'), { target: { files: [f] } })
@@ -87,15 +87,15 @@ describe('Ask choice sheet', () => {
     expect(takePendingFile()).toBeNull()
   })
 
-  it('shows the hint once: gone after the first open, flag saved', async () => {
-    render(<TabBar active="today" />)
-    expect(await screen.findByText('Scan papers here too')).toBeTruthy()
-    ask()
-    await waitFor(() => expect(screen.queryByText('Scan papers here too')).toBeNull())
+  it('shows the hint once: gone after the choice sheet opens, flag saved', async () => {
+    render(<JackFab tab="today" hash="#today" />)
+    expect(await screen.findByText('Ask me anything')).toBeTruthy()
+    await ask()
+    await waitFor(() => expect(screen.queryByText('Ask me anything')).toBeNull())
     await waitFor(async () => expect((await db.kv.get('askHintSeen'))?.value).toBe(true))
     cleanup()
-    render(<TabBar active="today" />)
+    render(<JackFab tab="today" hash="#today" />)
     await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
-    expect(screen.queryByText('Scan papers here too')).toBeNull()
+    expect(screen.queryByText('Ask me anything')).toBeNull()
   })
 })

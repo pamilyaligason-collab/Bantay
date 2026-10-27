@@ -6,7 +6,7 @@ import { getAccessToken } from '../auth/session'
 // Usage insights (contract D-16..D-19). PRIVACY: only these fixed names are ever recorded. No health values, no free text.
 // Anything not on the list is dropped, so a reading like "bp_150" or a name with a digit cannot get through.
 export const EVENT_NAMES = {
-  screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif', 'docs', 'ask'],
+  screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif', 'docs', 'ask', 'discover', 'sharing'],
   action: ['alerts_on', 'alerts_off', 'sensors_on', 'sensors_off', 'import_started', 'import_done', 'reading_added', 'dose_logged', 'sos_sent',
     // session 6 (docs/session-6/PART-2.md section 4): habit targets H1-H8
     'dose_skipped', 'med_added', 'med_edited', 'med_paused', 'med_deleted', 'reminder_opened', 'checkin_done',

@@ -36,15 +36,18 @@ test('installable: manifest fields and service worker', async ({ page }) => {
   expect(scope).toContain('localhost')
 })
 
-test('tab bar has five slots with Ask raised in the middle', async ({ page }) => {
+test('tab bar has five equal slots (Today, Health, Discover, Family, Safety); Jack floats above it', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
   const nav = page.getByRole('navigation', { name: 'Main' })
   await expect(nav.getByRole('button')).toHaveCount(5)
-  const ask = nav.getByRole('button', { name: 'Ask Bantay' })
-  const box = await ask.boundingBox()
-  const today = await nav.getByRole('button', { name: 'Today' }).boundingBox()
-  expect(box!.y).toBeLessThan(today!.y) // raised
+  await expect(nav.getByRole('button', { name: 'Discover' })).toBeVisible()
+  await expect(nav.getByRole('button', { name: 'Ask Bantay' })).toHaveCount(0)
+  const widths = await nav.getByRole('button').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1)
+  const jack = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
+  const bar = (await nav.boundingBox())!
+  expect(jack.y + jack.height).toBeLessThanOrEqual(bar.y) // floats above the bar, not inside it
 })
 
 test('component button rules beat the .bt reset: tab labels are 13px/600', async ({ page }) => {
