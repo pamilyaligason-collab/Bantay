@@ -5,7 +5,8 @@ import { skipOnboarding } from './helpers'
 // 390x844, light and dark. Synthetic rows in the shape alerts-ingest writes for a PAGASA wind signal and flood advisory.
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 // Session 12 lane D: shots move to docs/session-12/shots/D and the clock is fixed, so a rerun rewrites no committed PNG (ML-32). The session-10 S5 shots stay as they were.
-const SHOTS = 'docs/session-12/shots/D'
+// Committed shots are written only on request (PW_SHOTS=docs/session-12/shots/D): pixels of the floating tab bar differ by a few bytes run to run, so a gate rerun must not rewrite them.
+const SHOTS = process.env.PW_SHOTS ?? 'test-results/shots-D'
 const NOW = Date.parse('2026-10-27T06:00:00Z') // 14:00 in Manila
 type Row = Record<string, unknown>
 
