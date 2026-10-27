@@ -1,9 +1,8 @@
 import { db } from '../../db'
 import { supabase } from '../auth/client'
-import { saveRow, fdb, type FamilyTask } from '../family/store'
 
-/** Storm roll call (0041, D-85): "I'm safe" / "I need help" is one row per person per storm, written by a direct REST upsert (never the outbox: a check-in
- *  that waits in a queue is not a check-in). Offline it is NOT queued; the person is told to try again or call. */
+/** Storm roll call (0041, D-85): "I'm safe" / "I need help" is one row per person per storm, written by the rollcall_set RPC (the table has no write grant; the server checks the
+ *  caller, the live storm and a rate limit). Never the outbox: a check-in that waits in a queue is not a check-in. Offline it is NOT queued; the person is told to try again or call. */
 export type RollStatus = 'ok' | 'need_help'
 export interface RollRow { personId: string; status: RollStatus; at: string }
 export type SendResult = 'sent' | 'offline' | 'refused'
@@ -13,7 +12,7 @@ const isNetwork = (e: { code?: string; message?: string }) => !e.code && /fetch|
 export async function sendRollcall(personId: string, ref: string, status: RollStatus): Promise<SendResult> {
   try {
     if (!supabase) return 'refused'
-    const { error } = await supabase.from('rollcall').upsert({ person_id: personId, storm_ref: ref, status, at: new Date().toISOString() }, { onConflict: 'person_id,storm_ref' })
+    const { error } = await supabase.rpc('rollcall_set', { p_person: personId, p_storm_ref: ref, p_status: status })
     return !error ? 'sent' : isNetwork(error as { code?: string; message?: string }) ? 'offline' : 'refused'
   } catch {
     return 'offline'
@@ -44,48 +43,33 @@ export function tally(peopleIds: string[], rows: RollRow[]): Tally {
   return { safe, help, none, line: `${safe.length} of ${peopleIds.length} safe` }
 }
 
-// ---- the shared Do now checklist: 4 family_tasks rows per storm, made once ----
-export const STORM_TASKS = ['Charge phones and power banks', 'Pack 7 days of medicines in the go-bag', 'Fill water containers', 'Check on a neighbour'] as const
-const NS = 'b4a7e1c2-5d3f-4a86-9e10-2f6c8d7b3a95' // Bantay storm checklist namespace (random, fixed)
+// ---- the shared Do now checklist: 4 family_tasks rows per storm, made once by the SERVER (rollcall_set / ensure_storm_tasks) ----
+export const STORM_TASKS = ['Charge phones and power banks', 'Pack 7 days of medicines in the go-bag', 'Fill water containers', 'Check on a neighbour'] as const // same titles as 0041
+/** The server's client_id for item i (0-based): the same on every phone, so the pull and this list agree. */
+export const stormTaskId = (ref: string, i: number): string => `storm:${ref}:${i + 1}`
 
-/** RFC 4122 version 5 UUID: SHA-1 of the namespace bytes + the name. Same inputs, same id, on every phone. */
-export async function uuidv5(name: string, ns: string = NS): Promise<string> {
-  const nsBytes = ns.replace(/-/g, '').match(/../g)!.map((h) => parseInt(h, 16))
-  const data = new Uint8Array([...nsBytes, ...new TextEncoder().encode(name)])
-  const h = new Uint8Array(await crypto.subtle.digest('SHA-1', data)).slice(0, 16)
-  h[6] = (h[6]! & 0x0f) | 0x50
-  h[8] = (h[8]! & 0x3f) | 0x80
-  const x = [...h].map((b) => b.toString(16).padStart(2, '0')).join('')
-  return `${x.slice(0, 8)}-${x.slice(8, 12)}-${x.slice(12, 16)}-${x.slice(16, 20)}-${x.slice(20)}`
-}
-export const stormTaskId = (ref: string, item: string): Promise<string> => uuidv5(ref + item)
-
-const DONE_KEY = 'storm.tasks' // storm refs whose checklist this phone already made (capped, ML-06)
+const DONE_KEY = 'storm.tasks' // storm refs this phone already asked the server about (capped, ML-06)
 const DONE_MAX = 10
-const inflight = new Map<string, Promise<number>>()
-const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const inflight = new Map<string, Promise<boolean>>()
 
-/** Make the storm's 4 tasks once. Returns how many rows were new here. A second call (mount, remount, another screen) adds 0: this phone remembers the storm,
- *  and a task that already arrived from another phone (same client_id) is not written again, so it cannot un-tick a task the family ticked. */
-export function ensureStormTasks(ref: string): Promise<number> {
+/** Ask the server to make the storm's 4 tasks (it makes them once for the whole family, never over a task the family ticked or deleted), then pull them.
+ *  true = the server has them. A second call on this phone for the same storm does nothing. Offline or refused: false, tried again on the next mount. */
+export function ensureStormTasks(ref: string): Promise<boolean> {
   const cur = inflight.get(ref)
   if (cur) return cur
   const p = (async () => {
     try {
       const raw = (await db.kv.get(DONE_KEY))?.value
       const seen = Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : []
-      if (seen.includes(ref)) return 0
-      let made = 0
-      for (const title of STORM_TASKS) {
-        const clientId = await stormTaskId(ref, title)
-        if (await fdb.tasks.where('clientId').equals(clientId).first()) continue
-        await saveRow<FamilyTask>('family_tasks', { clientId, title, due: today(), assigneePersonId: null, done: false })
-        made++
-      }
+      if (seen.includes(ref)) return true
+      if (!supabase) return false
+      const { error } = await supabase.rpc('ensure_storm_tasks', { p_storm_ref: ref })
+      if (error) return false
       await db.kv.put({ key: DONE_KEY, value: [...seen, ref].slice(-DONE_MAX) })
-      return made
+      void import('../sync/sync').then((m) => m.syncNow()).catch(() => {})
+      return true
     } catch {
-      return 0 // storage blocked: try again on the next mount
+      return false
     } finally {
       inflight.delete(ref)
     }

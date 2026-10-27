@@ -1,9 +1,8 @@
--- Undo 0041_rollcall.sql: storm check-ins are short-lived (30 days), so dropping the table loses nothing worth keeping.
+-- Undo 0041_rollcall.sql: storm check-ins are short-lived (30 days), so dropping the table loses nothing worth keeping. The storm family_tasks rows stay (the family may want them).
 begin;
-drop trigger if exists rollcall_alert on public.rollcall;
-drop trigger if exists rollcall_stamp on public.rollcall;
-drop function if exists public.rollcall_alert();
-drop function if exists public.rollcall_stamp();
+drop function if exists public.rollcall_set(uuid, text, text);
+drop function if exists public.ensure_storm_tasks(text);
+drop function if exists public.storm_gate(text);
 drop table if exists public.rollcall;
 -- sos_events_prune back to its 0031 body
 create or replace function public.sos_events_prune() returns void

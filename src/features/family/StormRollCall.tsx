@@ -42,7 +42,7 @@ export function StormRollCall({ now }: { now?: number }) {
     let live = true
     void (async () => {
       await ensureStormTasks(ref)
-      const ids = new Set(await Promise.all(STORM_TASKS.map((t) => stormTaskId(ref, t))))
+      const ids = new Set(STORM_TASKS.map((_, i) => stormTaskId(ref, i)))
       if (!live) return
       sub = liveQuery(() => fdb.tasks.filter((t) => ids.has(t.clientId)).toArray()).subscribe({
         next: (list) => setTasks(STORM_TASKS.flatMap((title) => list.filter((t) => t.title === title).slice(0, 1))),

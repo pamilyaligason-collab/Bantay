@@ -2,15 +2,17 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ rows: [] as { person_id: string; status: string; at: string }[], upsert: vi.fn() }))
+const h = vi.hoisted(() => ({ rows: [] as { person_id: string; status: string; at: string }[], rpc: vi.fn(), writes: vi.fn() }))
 vi.mock('../auth/client', () => ({
   supabase: {
+    rpc: (fn: string, args: unknown) => { h.rpc(fn, args); return Promise.resolve({ error: null }) },
     from: () => {
-      const q = { select: () => q, eq: () => Promise.resolve({ data: h.rows, error: null }), upsert: (r: unknown, o: unknown) => { h.upsert(r, o); return Promise.resolve({ error: null }) } }
+      const q = { select: () => q, eq: () => Promise.resolve({ data: h.rows, error: null }), upsert: () => { h.writes(); return Promise.resolve({ error: null }) }, insert: () => { h.writes(); return Promise.resolve({ error: null }) } }
       return q
     }
   }
 }))
+vi.mock('../sync/sync', () => ({ syncNow: vi.fn(() => Promise.resolve()) }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p1' }))
 vi.mock('../today/actions', () => ({ logFeeling: vi.fn(), feelingToast: () => '', FAIL_TEXT: {} }))
 vi.mock('./roster', async (orig) => ({
@@ -28,6 +30,7 @@ vi.mock('./roster', async (orig) => ({
 }))
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
+import { STORM_TASKS, stormTaskId } from '../safety/rollcall'
 import { StormCard } from '../safety/StormCard'
 import { fdb } from './store'
 import { StormRollCall } from './StormRollCall'
@@ -38,7 +41,11 @@ const sig = (): Alert => ({
   what: 'w', where: 'Bohol', when: '2026-10-24 04:50 PH time', doNow: 'x', source: 'PAGASA', sourceUrl: null, issuedAt: '2026-10-23T20:50:38.000Z', lat: 9.6, lon: 123.8, bulletin: 'b'
 })
 
-beforeEach(async () => { h.rows = []; h.upsert.mockReset(); await Promise.all([db.kv.clear(), db.outbox.clear(), fdb.tasks.clear()]) })
+const REF = 'pagasa-tcws-rosal-champi-dampas'
+/** What the pull brings once the server has made the storm's 4 tasks. */
+const serverTasks = () => fdb.tasks.bulkAdd(STORM_TASKS.map((title, i) => ({ clientId: stormTaskId(REF, i), title, due: null, assigneePersonId: null, done: false })))
+
+beforeEach(async () => { h.rows = []; h.rpc.mockReset(); h.writes.mockReset(); await Promise.all([db.kv.clear(), db.outbox.clear(), fdb.tasks.clear()]) })
 afterEach(() => cleanup())
 
 describe('StormRollCall', () => {
@@ -70,16 +77,20 @@ describe('StormRollCall', () => {
     expect(within(rowOf('You')).queryByRole('link')).toBeNull()
     expect(within(rowOf('Mama')).queryByRole('link')).toBeNull() // needs help but no number saved
   })
-  it('the shared checklist shows 4 tasks, made once, and a tap ticks the family task', async () => {
+  it('the shared checklist shows the 4 server-made tasks, this phone makes none, and a tap ticks the family task', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [sig()] })
     const a = render(<StormRollCall now={NOW} />)
+    await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('ensure_storm_tasks', { p_storm_ref: REF }))
+    expect(screen.queryAllByRole('checkbox').length).toBe(0) // not pulled yet: nothing is invented locally
+    expect(await fdb.tasks.count()).toBe(0)
+    await serverTasks() // the pull brings the server's rows
     await waitFor(() => expect(screen.getAllByRole('checkbox').length).toBe(4))
-    expect(await fdb.tasks.count()).toBe(4)
     a.unmount()
-    render(<StormRollCall now={NOW} />) // second mount
+    render(<StormRollCall now={NOW} />) // second mount: asks nobody again, still 4
     await waitFor(() => expect(screen.getAllByRole('checkbox').length).toBe(4))
+    expect(h.rpc.mock.calls.filter((c) => c[0] === 'ensure_storm_tasks').length).toBe(1)
     expect(await fdb.tasks.count()).toBe(4)
-    expect((await db.outbox.toArray()).filter((o) => o.table === 'family_tasks').length).toBe(4)
+    expect(await db.outbox.filter((o) => o.table === 'family_tasks').count()).toBe(0)
     fireEvent.click(screen.getByRole('checkbox', { name: 'Fill water containers' }))
     await waitFor(async () => expect((await fdb.tasks.filter((t) => t.title === 'Fill water containers').first())!.done).toBe(true))
   })
@@ -91,20 +102,30 @@ describe('StormCard: Is everyone safe?', () => {
     render(<StormCard now={NOW} />)
     expect(await screen.findByRole('heading', { name: 'Is everyone safe?' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: "I'm safe" }))
-    await waitFor(() => expect(h.upsert).toHaveBeenCalledTimes(1))
-    expect(h.upsert.mock.calls[0]![0]).toMatchObject({ person_id: 'p1', storm_ref: 'pagasa-tcws-rosal-champi-dampas', status: 'ok' })
+    const sets = () => h.rpc.mock.calls.filter((c) => c[0] === 'rollcall_set')
+    await waitFor(() => expect(sets().length).toBe(1))
+    expect(sets()[0]![1]).toEqual({ p_person: 'p1', p_storm_ref: REF, p_status: 'ok' })
     expect(await screen.findByText('Saved. Your family can see you are safe.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'I need help' }))
-    await waitFor(() => expect(h.upsert).toHaveBeenCalledTimes(2))
-    expect(h.upsert.mock.calls[1]![0]).toMatchObject({ status: 'need_help' })
-    expect(await db.outbox.filter((o) => o.table === 'rollcall').count()).toBe(0)
-    await waitFor(async () => expect(await fdb.tasks.count()).toBe(4)) // let the checklist finish before the next test clears the tables
+    await waitFor(() => expect(sets().length).toBe(2))
+    expect(sets()[1]![1]).toEqual({ p_person: 'p1', p_storm_ref: REF, p_status: 'need_help' })
+    expect(h.writes).not.toHaveBeenCalled() // no direct table write
+    expect(await db.outbox.count()).toBe(0)
   })
-  it('the checklist is made once even with the card and the family list both mounted', async () => {
+  it('the card and the family list both mounted ask the server once and write no task locally', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [sig()] })
     render(<><StormCard now={NOW} /><StormRollCall now={NOW} /></>)
+    await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('ensure_storm_tasks', { p_storm_ref: REF }))
+    await serverTasks()
     await waitFor(() => expect(screen.getAllByRole('checkbox').length).toBe(4))
+    expect(h.rpc.mock.calls.filter((c) => c[0] === 'ensure_storm_tasks').length).toBe(1)
     expect(await fdb.tasks.count()).toBe(4)
-    expect(await db.outbox.filter((o) => o.table === 'family_tasks').count()).toBe(4)
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('the card\'s Do now list uses the same four lines as the shared checklist', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [sig()] })
+    render(<StormCard now={NOW} />)
+    for (const t of STORM_TASKS) expect(await screen.findByText(t)).toBeTruthy()
+    expect(screen.queryByText('Keep 7 days of medicines in the go-bag')).toBeNull()
   })
 })

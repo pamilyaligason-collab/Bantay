@@ -4,7 +4,7 @@ import { EMPTY as BAG_EMPTY, KEY as BAG_KEY, readState } from '../gobag/state'
 import { FAIL_TEXT, feelingToast, type Feeling, logFeeling } from '../today/actions'
 import { useSelfPersonId } from '../setup/useProfile'
 import { ALERTS_KEY, type Alert } from './alerts'
-import { ensureStormTasks, sendRollcall, type RollStatus } from './rollcall'
+import { ensureStormTasks, sendRollcall, STORM_TASKS, type RollStatus } from './rollcall'
 import { liveSignals, PAGASA_CREDIT, signalOf, stormRef, stormTitle } from './stormMode'
 import { useKv } from './store'
 import './safety.css'
@@ -24,7 +24,7 @@ export function StormCard({ now }: { now?: number }) {
   const selfId = useSelfPersonId()
   const top = liveSignals(alerts, now)[0]
   const ref = top ? stormRef(top) : null
-  useEffect(() => { if (ref) void ensureStormTasks(ref) }, [ref]) // the shared Do now list: 4 family tasks per storm, once
+  useEffect(() => { if (ref) void ensureStormTasks(ref) }, [ref]) // the shared Do now list: the server makes the 4 family tasks once per storm
   if (!top || !ref) return null
   const n = signalOf(top)!
   const answer = async (f: (typeof FACES)[number]) => {
@@ -77,10 +77,8 @@ export function StormCard({ now }: { now?: number }) {
       <article className="sf-checkin">
         <h2 className="sf-h2">Do now</h2>
         <ul className="sf-do">
-          <li>Charge phones and power banks</li>
+          {STORM_TASKS.map((t) => <li key={t}>{t}</li>)}
           <li><a href="#gobag">Go-bag: {bag.done.length} of {ALL_IDS.length} packed</a></li>
-          <li>Keep 7 days of medicines in the go-bag</li>
-          <li>Fill water containers</li>
         </ul>
       </article>
     </section>
