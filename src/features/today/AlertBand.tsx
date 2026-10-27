@@ -24,7 +24,7 @@ export default function AlertBand() {
       <h2>{a.title}</h2>
       {a.kind === 'gdacs' && plainWhat(a) && <p>{plainWhat(a)}</p>}
       <p><b>{who.line}</b>{who.km != null && ` (${who.km} km away)`}</p>
-      {who.affects && <p>{a.doNow}</p>}
+      {who.steps && <p>{a.doNow}</p>}
       <p>{freshText(f)}</p>
       {f.tone !== 'ok' && <p role="status">{outdatedLine(newestChecked(alerts))}</p>}
       <div className="td-act"><a className="td-pill light" href="#safety/warnings">{who.affects ? 'What to do' : 'See details'}</a></div>
