@@ -269,8 +269,9 @@
 @media (prefers-reduced-motion: no-preference) { .td-morph { animation: td-morph-in var(--dur-base) var(--ease-out); } }
 @keyframes td-morph-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-/* weather text legibility: one more solid veil under the text of both weather cards (alpha from wxVeil.ts), above the picture and its scrim, below the text */
-.bt .td-wx.wxs-host::after, .bt .td-wxh.wxs-host::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; background: rgba(5, 12, 28, var(--wx-veil, .2)); pointer-events: none; }
+/* weather text legibility: a solid veil (alpha from wxVeil.ts) only behind the text block, above the picture and its scrim, below the text. The padding and the equal negative margin keep the layout unchanged. */
+.bt .td-wx.wxs-host .td-wx-row, .bt .td-wxh.wxs-host .wxs-tx { padding: 8px; margin: -8px; border-radius: 16px; background: rgba(5, 12, 28, var(--wx-veil, .2)); box-sizing: border-box; }
+.bt .td-wxh.wxs-host .wxs-tx { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 
 /* More: the bottom group (alerts setup, updates, notices, week line) has its own heading; hidden with the group when nothing in it draws */
 .td-more-g { display: flex; flex-direction: column; gap: 16px; }

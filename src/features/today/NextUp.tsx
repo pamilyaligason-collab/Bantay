@@ -17,7 +17,9 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   const [phase, setPhase] = useState<'idle' | 'done' | 'leave'>('idle') // done: the button reads "Taken h:mm"; leave: the card collapses
   const [label, setLabel] = useState('')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
-  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  const holdRef = useRef(hold)
+  holdRef.current = hold
+  useEffect(() => () => { timers.current.forEach(clearTimeout); holdRef.current?.(null) }, []) // leaving early (SOS, Simple mode, Today closing) must free the held card
   const [picking, setPicking] = useState(false) // 2+ medicines due together: Taken asks which ones
   const [off, setOff] = useState<string[]>([]) // unticked keys; everything starts ticked
   const w = item.who

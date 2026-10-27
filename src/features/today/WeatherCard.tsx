@@ -77,6 +77,7 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
       <section aria-label="Weather" className="td-wxs">
         <a className="td-wxh wxs-host" href={href} style={VEIL}>
           {scene}
+          <span className="wxs-tx">
           <span className="td-k">Weather · {placeNameOf(place)}{clock && ` · as of ${clock}`}</span>
           <span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span></span>
           <b className="td-wxh-c">{cond}</b>
@@ -87,6 +88,7 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
               {next.map((s) => <li key={s.time}><span>{s.time}</span><Icon name={s.kind} size={22} /><span>{s.pct == null ? '–' : `${Math.round(s.pct)}%`}<span className="td-vh"> chance of rain</span></span></li>)}
             </ul>
           )}
+          </span>
         </a>
         {review > 0 && <MedsCheck review={review} quiet />}
       </section>

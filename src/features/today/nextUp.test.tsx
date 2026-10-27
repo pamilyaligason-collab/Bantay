@@ -96,3 +96,14 @@ describe('NextUp', () => {
     expect(screen.getByRole('link', { name: 'Open plan' }).getAttribute('href')).toBe('#family/plan')
   })
 })
+
+describe('NextUp unmounted early', () => {
+  it('frees the held card (SOS or Simple mode replaces Today within the morph)', () => {
+    const hold = vi.fn()
+    const { unmount } = render(<NextUp item={dose()} review={0} notify={() => undefined} hold={hold} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    expect(hold).toHaveBeenCalledWith(dose())
+    unmount()
+    expect(hold).toHaveBeenLastCalledWith(null)
+  })
+})
