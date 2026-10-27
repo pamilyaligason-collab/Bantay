@@ -3,7 +3,8 @@ import { skipOnboarding } from './helpers'
 
 // Session 13 lane F shots (Family): people (ring mix), I'm OK before/after, Learn together, a sheet mid-drag, plan empty. 390x844, light and dark.
 // The clock is frozen (Tue 27 Oct 2026, 10:20 local) and the data is invented, so a rerun writes the same pixels (ML-32).
-const SHOTS = 'docs/session-13/shots/F'
+declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
+const SHOTS = process.env.S13_SHOTS // shots are written only when S13_SHOTS=docs/session-13/shots/F is set, so a gate rerun leaves the tree clean (ML-32); raster edges differ by a few pixels run to run
 const NOW = new Date(2026, 9, 27, 10, 20, 0)
 test.use({ viewport: { width: 390, height: 844 } })
 
@@ -56,6 +57,7 @@ async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
 }
 const at = (h: number, m: number) => new Date(2026, 9, 27, h, m, 0).toISOString()
 async function shot(page: Page, name: string, scheme: string, anchor?: string) {
+  if (!SHOTS) return
   if (anchor) await page.locator(anchor).evaluate((el) => { (el as HTMLElement).style.scrollMarginTop = '84px'; el.scrollIntoView({ block: 'start' }) })
   await page.mouse.move(0, 0)
   await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))))
