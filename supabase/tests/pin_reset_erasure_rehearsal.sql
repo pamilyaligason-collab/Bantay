@@ -156,7 +156,15 @@ insert into public.documents (id, person_id, kind) values ('d0000000-0000-0000-0
 insert into public.source_files (person_id, name, mime, storage_path, document_id) values
  ('10000000-0000-0000-0000-0000000000b1', 'lab.pdf', 'application/pdf', '10000000-0000-0000-0000-0000000000b1/f1.pdf', 'd0000000-0000-0000-0000-0000000000b1'),
  ('10000000-0000-0000-0000-0000000000c1', 'lab.pdf', 'application/pdf', '10000000-0000-0000-0000-0000000000c1/f2.pdf', 'd0000000-0000-0000-0000-0000000000c1');
-update public.people set photo_path = '10000000-0000-0000-0000-0000000000b1.jpg', phone = '0917', blood_type = 'O+' where id = '10000000-0000-0000-0000-0000000000b1';
+update public.people set photo_path = '10000000-0000-0000-0000-0000000000b1.jpg', phone = '0917', blood_type = 'O+', birthdate = '1950-01-02', sex = 'female', address = '1 Rizal St',
+  allergies = '{peanut}', conditions = '{htn}', medicines = '{losartan}', aliases = '{Bebe}', consent_at = now(), consent_version = '2026-10', consent_by = '00000000-0000-0000-0000-00000000000b'
+ where id = '10000000-0000-0000-0000-0000000000b1';
+update public.people set address = '2 Mabini St', aliases = '{Cece}', sex = 'male' where id = '10000000-0000-0000-0000-0000000000c1';
+insert into public.carers (carer_id, person_id, can_write) values ('00000000-0000-0000-0000-00000000000c', '10000000-0000-0000-0000-0000000000b1', true),   -- C cares for B
+  ('00000000-0000-0000-0000-00000000000b', '10000000-0000-0000-0000-0000000000c1', false),                                                                 -- B cares for C
+  ('00000000-0000-0000-0000-00000000000d', '10000000-0000-0000-0000-0000000000c1', false)                                                                  -- D cares for C (stays)
+ on conflict do nothing;
+insert into public.invites (email, invited_by) values ('m-b@members.bantay.invalid', '00000000-0000-0000-0000-00000000000a'), ('keep@example.com', '00000000-0000-0000-0000-00000000000a');
 insert into public.sos_events (id, person_id, user_id, at) values ('e0000000-0000-0000-0000-0000000000b1', '10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', now());
 insert into public.sos_acks (event_id, user_id) values ('e0000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000c');
 insert into public.family_messages (client_id, sender_id, kind, body) values (gen_random_uuid(), '00000000-0000-0000-0000-00000000000b', 'text', 'hi'), (gen_random_uuid(), '00000000-0000-0000-0000-00000000000c', 'text', 'hello');
@@ -171,6 +179,8 @@ select public.export_my_data() as ex \gset
 reset role;
 select pg_temp.ok((:'ex'::jsonb -> 'person' ->> 'display_name') = 'Bee' and jsonb_array_length(:'ex'::jsonb -> 'readings') = 2 and jsonb_array_length(:'ex'::jsonb -> 'meds_taken') = 1, 'export returns the caller own person and rows (2 readings, 1 dose), not C''s');
 select pg_temp.ok(not (:'ex'::text like '%Metformin%') and not (:'ex'::text like '%Cee%'), 'export holds nothing of another member');
+select pg_temp.ok((select count(*) from public.person_tables()) >= 15 and not exists (select 1 from public.person_tables() t where not (:'ex'::jsonb ? t)), 'export covers every table the erase reaches (same discovery function)');
+select pg_temp.ok((:'ex'::jsonb ? 'food_entries') and jsonb_array_length(:'ex'::jsonb -> 'food_entries') = 1 and (:'ex'::jsonb ? 'sos_events') and (:'ex'::jsonb ? 'family_messages') and (:'ex'::jsonb ? 'carer_alerts'), 'export also carries nutrition, SOS, messages and alerts');
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000f');
 set role authenticated;
 select public.export_my_data() as ex2 \gset
@@ -235,6 +245,16 @@ select pg_temp.ok((select count(*) from public.readings where person_id = '10000
   and (select count(*) from public.carer_alerts where ref = 'dm2') = 1, 'C''s rows are untouched');
 select pg_temp.ok((select count(*) from public.audit_log) >= :audit_before and exists (select 1 from public.audit_log where action = 'pin_reset'), 'audit_log is kept');
 select pg_temp.ok((select erased_at is not null and display_name = 'Former member' and photo_path is null and phone is null and blood_type is null from public.people where id = '10000000-0000-0000-0000-0000000000b1'), 'the people row is kept but blanked, with erased_at set');
+-- every personal column of people is blanked: the column count is pinned, so a column added by any migration must be classified here and in erase_user_data
+select pg_temp.ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'people' and column_name <> all (array['id', 'auth_user_id', 'created_by', 'created_at', 'updated_at', 'archived_at', 'archived_by', 'display_name', 'photo_path', 'phone', 'birthdate', 'blood_type', 'allergies', 'conditions', 'medicines', 'aliases', 'sex', 'address', 'consent_at', 'consent_version', 'consent_by', 'erased_at'])), 'people has the columns this rehearsal knows (a new column must be classified here and in erase_user_data)');
+select pg_temp.ok((select p.display_name = 'Former member' and p.photo_path is null and p.phone is null and p.birthdate is null and p.blood_type is null and p.sex is null and p.address is null
+    and p.allergies = '{}' and p.conditions = '{}' and p.medicines = '{}' and p.aliases = '{}' and p.consent_at is null and p.consent_version is null and p.consent_by is null
+    and p.erased_at is not null from public.people p where p.id = '10000000-0000-0000-0000-0000000000b1'), 'every personal column of B''s people row is blank (aliases, sex, address, birthdate, lists, consent included)');
+select pg_temp.ok((select address = '2 Mabini St' and aliases = '{Cece}' and sex = 'male' from public.people where id = '10000000-0000-0000-0000-0000000000c1'), 'C''s profile is untouched');
+select pg_temp.ok((select disabled from public.app_roles where user_id = '00000000-0000-0000-0000-00000000000b'), 'B''s app_roles row is disabled (the sign-in gate refuses a disabled user)');
+select pg_temp.ok(not exists (select 1 from public.carers where carer_id = '00000000-0000-0000-0000-00000000000b' or person_id = '10000000-0000-0000-0000-0000000000b1'), 'carers rows are gone both ways: B as carer and B as the cared-for');
+select pg_temp.ok((select count(*) from public.carers where person_id = '10000000-0000-0000-0000-0000000000c1' and carer_id = '00000000-0000-0000-0000-00000000000d') = 1 and (select disabled from public.app_roles where user_id = '00000000-0000-0000-0000-00000000000c') = false, 'other carers rows and C''s login are untouched');
+select pg_temp.ok(not exists (select 1 from public.invites where email = 'm-b@members.bantay.invalid') and exists (select 1 from public.invites where email = 'keep@example.com'), 'B''s invite row is gone, another stays');
 select pg_temp.ok((select done_at is not null from public.erasure_requests where user_id = '00000000-0000-0000-0000-00000000000b') and not exists (select 1 from public.erasure_due()), 'the request is marked done and no longer due');
 select pg_temp.ok(pg_temp.fails($$select public.erase_user_data('00000000-0000-0000-0000-00000000000b')$$), 'a second erase run for the same user is refused');
 

@@ -44,7 +44,8 @@ export async function attemptLogin(body: unknown, ip: string, port: LoginPort): 
 
 // ---------- PIN reset by family approval (C5, D-76) ----------
 export const RESET_HANDLE_LIMIT = 3 // reset_start per handle per hour
-export const RESET_IP_LIMIT = 10 // reset_start and reset_complete per IP per hour
+export const RESET_IP_LIMIT = 10 // reset_start per IP per hour
+export const RESET_COMPLETE_IP_LIMIT = 120 // reset_complete per IP per hour, its own bucket (one household NAT can finish many resets; reset_start no longer starves it)
 export const RESET_ID_LIMIT = 10 // reset_complete tries per request per hour
 const HOUR = '1 hour'
 
@@ -104,7 +105,7 @@ export async function resetComplete(body: unknown, ip: string, port: ResetPort):
   const id = typeof b.id === 'string' && UUID.test(b.id) ? b.id : null
   const secret = typeof b.secret === 'string' && b.secret.length >= 16 && b.secret.length <= 64 ? b.secret : null
   if (!id || !secret) return bad()
-  if ((await port.tryKey(await limiterKey(port.pepper, 'ip', `reset:${ip}`), RESET_IP_LIMIT, HOUR)) > RESET_IP_LIMIT) return limited()
+  if ((await port.tryKey(await limiterKey(port.pepper, 'ip', `reset-complete:${ip}`), RESET_COMPLETE_IP_LIMIT, HOUR)) > RESET_COMPLETE_IP_LIMIT) return limited()
   if ((await port.tryKey(await limiterKey(port.pepper, 'handle', `reset-id:${id}`), RESET_ID_LIMIT, HOUR)) > RESET_ID_LIMIT) return limited()
   if (!validatePin(b.new_pin)) return { status: 400, body: { ok: false, error: 'weak_pin' } }
 

@@ -6,6 +6,7 @@ drop function if exists public.erasure_due();
 drop function if exists public.cancel_erasure();
 drop function if exists public.request_erasure();
 drop function if exists public.export_my_data();
+drop function if exists public.person_tables();
 drop function if exists public.approve_pin_reset(uuid, text);
 grant execute on function public.request_pin_reset(text) to anon, authenticated;   -- as 0009 left it
 drop trigger if exists people_consent_stamp on public.people;

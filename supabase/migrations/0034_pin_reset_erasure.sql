@@ -51,7 +51,9 @@ grant update (consent_at, consent_version, consent_by) on public.people to authe
 create or replace function public.people_consent_stamp() returns trigger
   language plpgsql set search_path = '' as
   $$ begin
-       if auth.uid() is not null and (new.consent_at is distinct from old.consent_at or new.consent_version is distinct from old.consent_version) then
+       if new.erased_at is distinct from old.erased_at then
+         return new;                                                    -- erase_user_data (service role) blanks the consent columns together with erased_at
+       elsif auth.uid() is not null and (new.consent_at is distinct from old.consent_at or new.consent_version is distinct from old.consent_version) then
          new.consent_by := auth.uid();
        elsif new.consent_by is distinct from old.consent_by then
          new.consent_by := old.consent_by;                              -- never settable on its own
@@ -87,6 +89,17 @@ grant execute on function public.approve_pin_reset(uuid, text) to authenticated;
 revoke execute on function public.request_pin_reset(text) from public, anon, authenticated, service_role;
 
 -- ---------- export / erasure (scoped to the caller's own person) ----------
+-- ONE table discovery for both export and erasure: every base table in public with a person_id column, except the three kept or handled on their own
+-- (audit_log is kept; carer_alerts and carers are removed by user id as well). Never callable by clients.
+create or replace function public.person_tables() returns setof text
+  language sql stable security definer set search_path = '' as
+  $$ select c.table_name::text from information_schema.columns c
+       join information_schema.tables x on x.table_schema = c.table_schema and x.table_name = c.table_name and x.table_type = 'BASE TABLE'
+      where c.table_schema = 'public' and c.column_name = 'person_id' and c.table_name not in ('audit_log', 'carer_alerts', 'carers')
+      order by 1 $$;
+revoke execute on function public.person_tables() from public, anon, authenticated;
+grant execute on function public.person_tables() to service_role;
+
 create or replace function public.export_my_data() returns jsonb
   language plpgsql security definer set search_path = '' as $$
 declare me uuid := auth.uid(); pid uuid; out jsonb := '{}'::jsonb; t text; rows jsonb;
@@ -96,12 +109,16 @@ begin
   select id into pid from public.people where auth_user_id = me;
   if pid is null then return out; end if;
   out := jsonb_build_object('person', (select to_jsonb(p) from public.people p where p.id = pid));
-  foreach t in array array['readings', 'consults', 'meds_taken', 'activity', 'medications', 'documents', 'vaccinations', 'conditions', 'allergies', 'appointments'] loop
-    if to_regclass('public.' || t) is not null then
-      execute format('select coalesce(jsonb_agg(to_jsonb(x)), ''[]''::jsonb) from public.%I x where x.person_id = $1', t) into rows using pid;
-      out := out || jsonb_build_object(t, rows);
-    end if;
+  for t in select * from public.person_tables() loop
+    execute format('select coalesce(jsonb_agg(to_jsonb(x)), ''[]''::jsonb) from public.%I x where x.person_id = $1', t) into rows using pid;
+    out := out || jsonb_build_object(t, rows);
   end loop;
+  -- rows keyed by the user, which erase_user_data also removes
+  out := out || jsonb_build_object(
+    'carer_alerts', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.carer_alerts x where x.carer_user_id = me or x.person_id = pid),
+    'family_messages', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.family_messages x where x.sender_id = me),
+    'push_subscriptions', (select coalesce(jsonb_agg(to_jsonb(x) - 'p256dh' - 'auth'), '[]'::jsonb) from public.push_subscriptions x where x.user_id = me),
+    'sos_acks', (select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) from public.sos_acks x where x.user_id = me));
   return out;
 end $$;
 revoke execute on function public.export_my_data() from public, anon, authenticated, service_role;
@@ -152,7 +169,9 @@ create or replace function public.erasure_paths(p_user uuid) returns table (buck
 revoke execute on function public.erasure_paths(uuid) from public, anon, authenticated;
 grant execute on function public.erasure_paths(uuid) to service_role;
 
--- Deletes the user's rows in one transaction; audit_log is kept. Tables are found by their person_id column (a few passes settle foreign keys).
+-- Deletes the user's rows in one transaction; audit_log is kept. Tables come from person_tables() (a few passes settle foreign keys).
+-- The people row stays, every personal column blanked. The login is disabled (app_roles.disabled) so sign-in fails at the existing gate; carers rows
+-- are removed both ways. The auth.users email scrub needs the service role: see docs/AUTH.md.
 create or replace function public.erase_user_data(p_user uuid) returns void
   language plpgsql security definer set search_path = '' as $$
 declare pid uuid; t text; pass int; pending text[]; r public.erasure_requests%rowtype;
@@ -163,8 +182,7 @@ begin
   if pid is not null then
     for pass in 1..4 loop
       pending := '{}';
-      for t in select c.table_name from information_schema.columns c join information_schema.tables x on x.table_schema = c.table_schema and x.table_name = c.table_name and x.table_type = 'BASE TABLE'
-                where c.table_schema = 'public' and c.column_name = 'person_id' and c.table_name not in ('audit_log', 'carer_alerts', 'carers') loop
+      for t in select * from public.person_tables() loop
         begin
           execute format('delete from public.%I where person_id = $1', t) using pid;
         exception when foreign_key_violation then pending := pending || t;
@@ -175,13 +193,18 @@ begin
     if cardinality(pending) > 0 then raise exception 'erasure blocked by foreign keys' using errcode = '23503'; end if;
   end if;
   delete from public.carer_alerts where carer_user_id = p_user or (pid is not null and person_id = pid);
+  delete from public.carers where carer_id = p_user or (pid is not null and person_id = pid);
   delete from public.family_messages where sender_id = p_user;
   delete from public.push_subscriptions where user_id = p_user;
   if to_regclass('public.phone_health') is not null then delete from public.phone_health where user_id = p_user; end if;
   delete from public.sos_acks where user_id = p_user;
+  delete from public.pin_reset_requests where user_id = p_user;
+  delete from public.pin_attempts where user_id = p_user;
+  delete from public.invites where email = (select lower(u.email) from auth.users u where u.id = p_user);
+  update public.app_roles set disabled = true where user_id = p_user;
   if pid is not null then
-    update public.people set display_name = 'Former member', photo_path = null, phone = null, birthdate = null, blood_type = null,
-           allergies = '{}', conditions = '{}', medicines = '{}', erased_at = now() where id = pid;
+    update public.people set display_name = 'Former member', photo_path = null, phone = null, birthdate = null, blood_type = null, sex = null, address = null,
+           allergies = '{}', conditions = '{}', medicines = '{}', aliases = '{}', consent_at = null, consent_version = null, consent_by = null, erased_at = now() where id = pid;
   end if;
   update public.erasure_requests set done_at = now() where user_id = p_user;
 end $$;

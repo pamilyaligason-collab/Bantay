@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { RESET_HANDLE_LIMIT, RESET_IP_LIMIT, resetComplete, resetStart, type ResetPort, type ResetRow } from './login.ts'
+import { RESET_COMPLETE_IP_LIMIT, RESET_HANDLE_LIMIT, RESET_IP_LIMIT, resetComplete, resetStart, type ResetPort, type ResetRow } from './login.ts'
 import { derivePassword, hashResetSecret, limiterKey } from './pin.ts'
 
 const PEPPER = 'p'.repeat(32)
@@ -142,5 +142,14 @@ describe('reset_complete', () => {
     let last = 0
     for (let i = 0; i < 12; i++) last = (await done(f.port, { ...b, secret: 'y'.repeat(22) })).status
     expect(last).toBe(429)
+  })
+  it('reset_complete has its own per-IP bucket of 120 an hour, separate from reset_start', async () => {
+    expect(RESET_COMPLETE_IP_LIMIT).toBe(120)
+    const f = fake()
+    for (let i = 0; i < RESET_IP_LIMIT + 1; i++) await start(f.port, { handle: 'h' + i }) // reset_start's bucket is now exhausted
+    expect((await start(f.port, {})).status).toBe(429)
+    const other = (n: number) => resetComplete({ id: `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`, secret: 'x'.repeat(22), new_pin: '482916' }, '1.1.1.1', f.port)
+    for (let n = 1; n <= RESET_COMPLETE_IP_LIMIT; n++) expect((await other(n)).status).toBe(403) // unknown ids reach the secret check, none is rate limited
+    expect((await other(999)).status).toBe(429) // the 121st from the same IP
   })
 })
