@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { givenName } from '../health/medName'
+import { Skeleton } from '../look'
+import { Icon } from '../shell/Icon'
 import { checkIn, FAIL_TEXT } from '../today/actions'
 import { StormRollCall } from './StormRollCall'
 import FmAvatar from './FmAvatar'
@@ -36,6 +38,7 @@ export default function People() {
   const loaded = useCheckInsLoaded()
   const last = loaded ?? {}
   const [note, setNote] = useState('')
+  const [okAt, setOkAt] = useState<string | null>(null) // set after the check-in is saved: the button morphs into "You're OK · h:mm", then the card settles
   const [talk, setTalk] = useState<string | null>(null)
   const [phones, setPhones] = useState(false) // Family > Phones, shown in place of the roll call
   useEffect(() => {
@@ -45,8 +48,14 @@ export default function People() {
   }, [note])
   const flags = useFlagLines(people)
   const rc = rollCall(people, last)
+  useEffect(() => {
+    if (!okAt) return
+    const t = setTimeout(() => setOkAt(null), 1800)
+    return () => clearTimeout(t)
+  }, [okAt])
   const imOk = async () => {
     const r = await checkIn()
+    if (r === 'ok') setOkAt(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) // only after the write succeeded
     setNote(r === 'ok' ? 'The family can see you are OK.' : FAIL_TEXT[r])
   }
 
@@ -72,17 +81,25 @@ export default function People() {
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
       <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />
-      {!(selfId && loaded && checkInLabel(loaded[selfId]).ok) && (
+      {(okAt || !(selfId && loaded && checkInLabel(loaded[selfId]).ok)) && (
         <div className="card fm-checkin">
           <div className="grow">
             <b>Today's check-in</b>
             <span className="sub">{loaded === null ? ' ' : rc.total ? `${rc.ok} of ${rc.total} OK today` : 'Nobody has checked in yet'}</span>
           </div>
-          <button type="button" className="pill primary" onClick={() => void imOk()} disabled={!selfId}>I'm OK</button>
+          <div className="fm-okwrap" data-done={okAt ? 'true' : 'false'}>
+            <button type="button" className="pill primary" onClick={() => void imOk()} disabled={!selfId || !!okAt} aria-hidden={okAt ? true : undefined} tabIndex={okAt ? -1 : undefined}>I'm OK</button>
+            {okAt && <span className="pill fm-okdone" role="status"><Icon name="check" size={18} />You're OK · {okAt}</span>}
+          </div>
         </div>
       )}
 
-      {people.length === 0 ? (
+      {loaded === null ? (
+        <section aria-busy="true" aria-label="Family roll call">
+          <Skeleton lines={3} />
+          <p className="sub fm-key">Loading your family…</p>
+        </section>
+      ) : people.length === 0 ? (
         <div className="card"><p className="sub fm-empty">Your family shows here after the app has synced once. Connect to the internet and open the app.</p></div>
       ) : (
         <>
@@ -94,7 +111,7 @@ export default function People() {
               const words = st.key === 'quiet' ? lastCheckInWords(last[p.id]) : st.key === 'ok' ? c.text : st.word // S9: last check-in in words, not a sleep icon
               return (
                 <li key={p.id}>
-                  <button type="button" className="fm-bubble" data-k={known ? st.key : 'quiet'} onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.key === 'quiet' ? words : st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page`}>
+                  <button type="button" className="fm-bubble press" data-k={known ? st.key : 'quiet'} onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.key === 'quiet' ? words : st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page`}>
                     <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={64} />
                     {known && st.key !== 'quiet' && <span className="fm-emo" aria-hidden="true" data-testid="bubble-emoji">{st.emoji}</span>}
                     <b>{p.isMe ? 'You' : givenName(p.name)}</b>

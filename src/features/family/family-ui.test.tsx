@@ -160,7 +160,8 @@ describe('People', () => {
     expect(await screen.findByText('0 of 2 OK today')).toBeTruthy()
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    await waitFor(() => expect(screen.queryByText("Today's check-in")).toBeNull())
+    expect(await screen.findByText(/^You're OK · /)).toBeTruthy() // morphs in place after the write, then the card settles
+    await waitFor(() => expect(screen.queryByText("Today's check-in")).toBeNull(), { timeout: 4000 })
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 

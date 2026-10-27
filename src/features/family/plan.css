@@ -24,6 +24,7 @@
 .fm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .fm-lbl { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 6px; }
 .fm-hint { margin: 0; }
+.fm-empty-wrap { margin-bottom: 76px; } /* room for the floating Add */
 .fm-teach { display: grid; gap: 8px; justify-items: start; padding: 20px 16px; margin-bottom: 76px; }
 .fm-teach b { font-family: var(--f-display); font-size: 18px; font-weight: 600; }
 .fm-teach .pill { margin-top: 6px; }
