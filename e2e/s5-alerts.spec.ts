@@ -43,6 +43,7 @@ async function open(page: Page, hash: string, scheme: 'light' | 'dark', rows: Ro
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
   await page.clock.setFixedTime(NOW)
+  await page.route(/open-meteo\.com/, (r) => r.abort()) // live forecasts would change the weather card, and so the shot, on every run (ML-32)
   await page.goto('/#today')
   await expect(page.locator('h1').first()).toBeVisible()
   await putKv(page, rows)
