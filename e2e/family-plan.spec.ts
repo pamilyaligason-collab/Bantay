@@ -121,10 +121,7 @@ for (const scheme of ['light', 'dark'] as const) {
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
-      await page.getByRole('button', { name: /Papa Ben/ }).click()
-      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
-      if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-messages-${scheme}.png` })
-      await page.getByRole('button', { name: "Papa's page" }).click()
+      await page.getByRole('button', { name: /Papa Ben/ }).click() // S9: a bubble opens the person's page
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')
       await expect(page.getByRole('link', { name: 'Call Papa' })).toHaveAttribute('href', 'tel:+639171234567')

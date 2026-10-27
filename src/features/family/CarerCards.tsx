@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
 import { dayOf, isLive, matchDoses, reviewAgeDays, slotsFor } from '../health/meds'
 import { clock12 } from '../health/medActions'
+import { shortMedName } from '../health/medName'
 import { useMedications } from '../health/useMedications'
 import { useTakenToday } from '../health/useActivity'
 import { useWritableIds } from '../health/useCanMark'
-import { doseRef, MissedDoseActions } from '../inbox/MissedDoseActions'
+import { doseRef } from '../inbox/MissedDoseActions'
 import { shortName } from '../inbox/build'
-import { ldb, type Medication } from '../log/store'
+import { ldb, logDose, type Medication } from '../log/store'
 import { markSeen, type AlertRow } from '../notify/store'
 import { renderTemplate } from '../notify/templates'
 import { useAlertRows } from '../notify/useAlerts'
@@ -79,25 +80,66 @@ function Head({ person, title, sub }: { person: FamilyPerson | undefined; title:
   )
 }
 
-/** A dose nobody marked, today. It closes by itself when the dose is marked on this phone (and the row is marked seen so the count stays true). */
-function MissedDoseCard({ row, person }: { row: AlertRow; person: FamilyPerson | undefined }) {
-  const pid = row.personId ?? ''
+/** Rows of one kind grouped by person, in first-seen order: one card per person, one line per row (S8; ML-34: the count is the lines, the cards are the people). */
+export function byPerson<T>(items: T[], personOf: (x: T) => string | null | undefined): { personId: string; items: T[] }[] {
+  const out: { personId: string; items: T[] }[] = []
+  for (const x of items) {
+    const id = personOf(x)
+    if (!id) continue
+    const g = out.find((o) => o.personId === id)
+    if (g) g.items.push(x); else out.push({ personId: id, items: [x] })
+  }
+  return out
+}
+
+/** Every dose nobody marked, today, for ONE person: a line per missed slot, one set of actions. Lines close by themselves when the dose is marked on this phone (and the row is marked seen so the count stays true). */
+function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPerson | undefined }) {
+  const pid = rows[0]?.personId ?? ''
   const meds = useMedications(pid)
   const takes = useTakenToday(pid, { includeSkipped: true }) as MyTake[]
+  const [ask, setAsk] = useState(false)
+  const [done, setDone] = useState(false)
   const now = new Date()
-  const { day, slot } = doseRef(row.ref)
   const today = dayOf(now)
-  const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today).filter((d) => d.slot === slot && d.state === 'pending') : null
-  const resolved = open != null && meds.length > 0 && open.length === 0
-  useEffect(() => { if (resolved) void markSeen(row.id).catch(() => undefined) }, [resolved, row.id])
-  if (resolved || !showsAsCard(row.ref, now)) return null // an older one stays in the alert list, not here
-  const names = [...new Set((open ?? []).map((d) => d.name))]
-  const ago = slotAgo(day ?? today, slot, now)
-  const what = slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${clock12(slot)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
+  const lines = rows.map((row) => {
+    const { day, slot } = doseRef(row.ref)
+    const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today).filter((d) => d.slot === slot && d.state === 'pending') : null
+    return { row, day, slot, open, resolved: open != null && meds.length > 0 && open.length === 0 }
+  })
+  const resolvedKey = lines.filter((l) => l.resolved).map((l) => l.row.id).join(',')
+  useEffect(() => { for (const id of resolvedKey ? resolvedKey.split(',') : []) void markSeen(id).catch(() => undefined) }, [resolvedKey])
+  const shown = lines.filter((l) => !l.resolved)
+  if (shown.length === 0) return null
+  const name = shortName(person?.name) ?? 'Someone'
+  const open = shown.flatMap((l) => l.open ?? [])
+  const mark = async () => {
+    for (const d of open) { const med = meds.find((m) => m.serverId === d.medicationId && m.name === d.name) ?? meds.find((m) => m.name === d.name); if (med) await logDose(med, d.slot) }
+    setAsk(false); setDone(true)
+  }
+  const what = (l: (typeof shown)[number]) => {
+    const names = [...new Set((l.open ?? []).map((d) => shortMedName(d.name)))]
+    const ago = slotAgo(l.day ?? today, l.slot, now)
+    return l.slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${clock12(l.slot)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
+  }
+  const call = person?.phone ? <a className="btn in-act" href={`tel:${person.phone}`}>Call {name}</a> : <a className="btn in-act" href={`#family/people/${pid}`}>Open {name}</a>
   return (
     <div className="card fm-need" data-kind="dose_missed">
-      <Head person={person} title={`${shortName(person?.name) ?? 'Someone'} missed a medicine`} sub={what} />
-      <MissedDoseActions personId={row.personId} refText={row.ref} now={now} />
+      <Head person={person} title={shown.length === 1 ? `${name} missed a medicine` : `${name} missed ${shown.length} doses`} sub={shown.length === 1 ? what(shown[0]!) : 'Marked taken here when someone saw it.'} />
+      {shown.length > 1 && <ul className="fm-need-lines">{shown.map((l) => <li key={l.row.id}>{what(l)}</li>)}</ul>}
+      <div className="in-actions" role="group" aria-label="What you can do">
+        {call}
+        {done ? <span className="sh-sub" role="status">Marked as taken</span> : open.length > 0 && !ask && <button type="button" className="btn in-act" onClick={() => setAsk(true)}>Mark taken for {name}</button>}
+        <a className="btn in-act" href="#family">Message the family</a>
+        {ask && (
+          <div className="in-confirm" role="alertdialog" aria-label="Confirm">
+            <b>Did you see {name} take {open.length === 1 ? 'it' : 'them'}?</b>
+            <div className="in-actions">
+              <button type="button" className="btn in-act" onClick={() => void mark()}>Yes, I saw</button>
+              <button type="button" className="btn in-act" onClick={() => setAsk(false)}>Not sure</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -117,6 +159,7 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
   const self = people.find((p) => p.id === selfId)
   const who = (id: string | null) => people.find((p) => p.id === id)
   const doses = rows.filter((r) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref))
+  const askGroups = byPerson(asks, (a) => a.person.id)
   const phones = newestPerPerson(rows.filter((r) => r.kind === 'phone_health'))
   const moods = newestPerPerson(rows.filter((r) => r.kind === 'mood_unwell'))
   const count = doses.length + asks.length + phones.length + moods.length
@@ -124,13 +167,32 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
   return (
     <>
       <div className="fm-sech"><b>Needs you now</b><span className="sub">{count === 1 ? '1 thing' : `${count} things`}</span></div>
-      {doses.map((r) => <MissedDoseCard key={r.id} row={r} person={who(r.personId)} />)}
-      {asks.map((a) => {
-        const name = shortName(a.person.name) ?? 'them'
+      {byPerson(doses, (r) => r.personId).map((g) => <MissedDosesCard key={g.personId} rows={g.items} person={who(g.personId)} />)}
+      {askGroups.map((g) => {
+        const person = g.items[0]!.person
+        const name = shortName(person.name) ?? 'them'
+        const when = (a: ReviewAsk) => `"Still taking ${shortMedName(a.med.name)}?" asked ${a.days === 1 ? 'yesterday' : `${a.days} days ago`}.`
+        const keep = 'The reminders keep running until someone answers.'
         return (
-          <div className="card fm-need" key={a.med.clientId ?? a.med.serverId ?? a.med.id} data-kind="review_open">
-            <Head person={a.person} title={`${name} has not answered`} sub={`"Still taking ${a.med.name}?" asked ${a.days === 1 ? 'yesterday' : `${a.days} days ago`}. The reminders keep running until someone answers.`} />
-            <div><button type="button" className="pill ghost fm-need-act" onClick={() => setAnswering(a)}>Answer for {name}</button></div>
+          <div className="card fm-need" key={g.personId} data-kind="review_open">
+            {g.items.length === 1 ? (
+              <>
+                <Head person={person} title={`${name} has not answered`} sub={`${when(g.items[0]!)} ${keep}`} />
+                <div><button type="button" className="pill ghost fm-need-act" onClick={() => setAnswering(g.items[0]!)}>Answer for {name}</button></div>
+              </>
+            ) : (
+              <>
+                <Head person={person} title={`${name} has ${g.items.length} questions waiting`} sub={keep} />
+                <ul className="fm-need-lines">
+                  {g.items.map((a) => (
+                    <li key={a.med.clientId ?? a.med.serverId ?? a.med.id}>
+                      <span>{when(a)}</span>
+                      <button type="button" className="pill ghost fm-need-act" aria-label={`Answer for ${name}: ${shortMedName(a.med.name)}`} onClick={() => setAnswering(a)}>Answer</button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </div>
         )
       })}
@@ -160,7 +222,6 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
           </div>
         )
       })}
-      <p className="sub fm-need-note">Family alerts show here when you open Bantay. The browser app also gets notifications.</p>
       {answering && <FamilyAnswer name={shortName(answering.person.name) ?? 'them'} med={answering.med} by={self?.name ? (shortName(self.name) ?? self.name) : ''} onClose={() => setAnswering(null)} onDone={onNote} />}
     </>
   )

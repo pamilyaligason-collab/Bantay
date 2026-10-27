@@ -107,3 +107,13 @@
 .lr-you b { font-style: normal; position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; white-space: nowrap; }
 .lr-tick { position: absolute; top: 18px; transform: translateX(-50%); font-size: 16px; font-style: normal; color: var(--ink2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lr-more { display: flex; align-items: center; justify-content: flex-end; min-height: 28px; font-size: 15px; font-weight: 600; color: var(--act); }
+
+/* lane J (S7): folded lab panels, one line per result */
+.lr-fold { padding: 0; margin-bottom: 10px; overflow: hidden; }
+.lr-fold > summary { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px; font-weight: 700; font-size: 17px; cursor: pointer; list-style: none; }
+.lr-fold > summary::-webkit-details-marker { display: none; }
+.lr-fold > summary small { font-size: 15px; font-weight: 500; color: var(--ink2); }
+.lr-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 16px; min-height: 56px; box-sizing: border-box; border-top: 1px solid var(--line); color: var(--ink); text-decoration: none; align-items: center; }
+.lr-line .lr-val { font-size: 20px; text-align: right; }
+.lr-vw { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--ink2); }
+.lr-vw.above, .lr-vw.below { color: var(--amber-ink); }

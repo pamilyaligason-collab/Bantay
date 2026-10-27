@@ -54,6 +54,32 @@ export function groupLabs(rows: LabRow[]): LabGroups {
   }
 }
 
+/** One decimal for a lab value on the list: 226.74 -> "226.7", 3.10 -> "3.1", 12 -> "12"; under 1 keeps two significant digits (0.72, 0.004). Unknown is '' never 0. */
+export function labNum(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return ''
+  if (Number.isInteger(value)) return String(value)
+  return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
+}
+
+const PANELS: [string, string[]][] = [
+  ['Cholesterol', ['ldl', 'hdl', 'totalcholesterol', 'cholesterol', 'triglycerides', 'vldl', 'ldlcholesterol', 'hdlcholesterol']],
+  ['Sugar', ['hba1c', 'fastingglucose', 'glucose', 'fbs', 'rbs']],
+  ['Kidney', ['egfr', 'creatinine', 'crea', 'bun', 'urea', 'uricacid']],
+  ['Blood count', ['hemoglobin', 'haemoglobin', 'hgb', 'hematocrit', 'hct', 'platelets', 'platelet', 'plt', 'wbc', 'rbc', 'mcv', 'mch', 'mchc', 'rdw', 'mpv']],
+  ['Liver', ['alt', 'ast', 'alp', 'ggt', 'bilirubin', 'sgpt', 'sgot', 'albumin']]
+]
+export const OTHER_PANEL = 'Other'
+/** The group a lab belongs to on the list (Cholesterol, Sugar, Kidney, Blood count, Liver, else Other). */
+export function panelOf(test: string): string {
+  const k = test.toLowerCase().replace(/[^a-z0-9]/g, '')
+  return PANELS.find(([, names]) => names.includes(k))?.[0] ?? OTHER_PANEL
+}
+/** Rows grouped by panel in a fixed order (Other last), each group sorted by name. Empty panels are left out. */
+export function groupByPanel(rows: LabRow[]): { panel: string; rows: LabRow[] }[] {
+  const byName = (a: LabRow, b: LabRow) => metricLabel(a.reading.test).localeCompare(metricLabel(b.reading.test))
+  return [...PANELS.map(([n]) => n), OTHER_PANEL].map((panel) => ({ panel, rows: rows.filter((r) => panelOf(r.reading.test) === panel).sort(byName) })).filter((g) => g.rows.length > 0)
+}
+
 const distance = (v: number, r: Range) => (r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
 /** Direction depends on the side of the range, not on up or down: 8.1 after 9.4 with a top limit of 7 is "toward"; 4.0 after 5.5 with a bottom limit of 5 is "away". */
 export function moveWords(latest: number, prev: number, range: Range | null): string {

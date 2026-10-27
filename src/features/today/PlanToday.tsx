@@ -29,36 +29,33 @@ export default function PlanToday() {
   const { rows, done, total } = todayRows(tasks, events, now)
   const [err, setErr] = useState('')
   const tick = (t: FamilyTask) => { setErr(''); void toggleTask(t).catch(() => setErr('Could not save that. Try again.')) }
+  if (rows.length === 0) return null // S5: nothing planned, no card (the plan is one tap away in Family)
   return (
     <section className="card td-plan" aria-labelledby="t-plan" data-reveal>
       <div className="td-row between">
         <h2 id="t-plan" className="td-sech">Today&apos;s plan</h2>
-        <a className="td-link" href="#family/plan">{rows.length ? 'Open plan' : 'Add to plan'}</a>
+        <a className="td-link" href="#family/plan">Open plan</a>
       </div>
-      {rows.length === 0 ? <p className="td-sub td-plan-empty">Nothing planned for today.</p> : (
+      {total > 0 && (
         <>
-          {total > 0 && (
-            <>
-              <p className="td-plan-n"><b>{done} of {total}</b> tasks done</p>
-              <div className="td-bar" role="progressbar" aria-label="Tasks done today" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}><i style={{ transform: `scaleX(${done / total})` }} /></div>
-            </>
-          )}
-          <ul className="td-checklist">
-            {rows.slice(0, SHOW).map((r) => (
-              <li key={r.key} className={r.task?.done ? 'done' : ''}>
-                {r.task ? (
-                  <button type="button" className="td-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.title} onClick={() => tick(r.task!)}>
-                    <Icon name="check" size={16} stroke={3} />
-                  </button>
-                ) : <span className="td-dot" aria-hidden="true" />}
-                <span className="td-grow"><span className="td-ttl">{r.title}</span></span>
-                {r.time && <span className={`td-time${r.time === 'Overdue' ? ' late' : ''}`}>{r.time}</span>}
-              </li>
-            ))}
-          </ul>
-          {rows.length > SHOW && <a className="td-link" href="#family/plan">{rows.length - SHOW} more in the plan</a>}
+          <p className="td-plan-n"><b>{done} of {total}</b> tasks done</p>
+          <div className="td-bar" role="progressbar" aria-label="Tasks done today" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}><i style={{ transform: `scaleX(${done / total})` }} /></div>
         </>
       )}
+      <ul className="td-checklist">
+        {rows.slice(0, SHOW).map((r) => (
+          <li key={r.key} className={r.task?.done ? 'done' : ''}>
+            {r.task ? (
+              <button type="button" className="td-chk" role="checkbox" aria-checked={r.task.done} aria-label={r.title} onClick={() => tick(r.task!)}>
+                <Icon name="check" size={16} stroke={3} />
+              </button>
+            ) : <span className="td-dot" aria-hidden="true" />}
+            <span className="td-grow"><span className="td-ttl">{r.title}</span></span>
+            {r.time && <span className={`td-time${r.time === 'Overdue' ? ' late' : ''}`}>{r.time}</span>}
+          </li>
+        ))}
+      </ul>
+      {rows.length > SHOW && <a className="td-link" href="#family/plan">{rows.length - SHOW} more in the plan</a>}
       {err && <p className="td-err" role="alert">{err}</p>}
     </section>
   )

@@ -12,6 +12,7 @@ vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 import Family, { parseFamily } from '../../screens/Family'
 import MemberPage from './MemberPage'
+import Messages from './Messages'
 import { fdb } from './store'
 
 beforeEach(async () => {
@@ -145,9 +146,9 @@ describe('People', () => {
     const roll = await screen.findByRole('list', { name: 'Family roll call' })
     await waitFor(() => expect(within(roll).getByRole('button', { name: /^Lloyd Roc \(you\), OK 7:40/ })).toBeTruthy())
     expect(within(roll).getByRole('button', { name: /^Kuya Ben, No check-in today/ })).toBeTruthy()
-    expect(within(roll).getByText('OK today')).toBeTruthy()
-    expect(within(roll).getByText('No news')).toBeTruthy()
-    expect(within(roll).getAllByTestId('bubble-emoji').map((e) => e.textContent).sort()).toEqual(['✅', '💤'])
+    expect(within(roll).getByText(/^OK 7:40/)).toBeTruthy() // S9: the words are the last check-in
+    expect(within(roll).getByText('No check-in yet')).toBeTruthy()
+    expect(within(roll).getAllByTestId('bubble-emoji').map((e) => e.textContent)).toEqual(['✅']) // no sleep icon for a quiet person
     expect(screen.queryByText("Today's check-in")).toBeNull() // already logged: no second ask
     expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
   })
@@ -163,22 +164,19 @@ describe('People', () => {
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
-  it('no phone: opening Kuya Ben\'s messages shows no hello nudge', async () => {
-    await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
-    location.hash = '#family'
-    render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
+  // The bubble opens the person's page now (S9), so the Messages sheet is rendered directly here; the nudge wiring itself is roster.nudgeFor.
+  const ben = { id: 'p2', name: 'Kuya Ben', photoPath: null, thumb: null, phone: null as string | null, birthdate: null, isMe: false }
+  const sheet = (phone: string | null, nudge: { text: string; href: string } | null) => render(<Messages who={{ ...ben, phone }} people={[{ ...ben, phone }]} nudge={nudge} onClose={() => undefined} onOpenPage={() => undefined} />)
+
+  it('no phone: the messages sheet shows no hello nudge and no Call', async () => {
+    sheet(null, null)
     const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
     expect(within(dlg).queryByText('Not checked in today: send a hello')).toBeNull()
     expect(within(dlg).queryByRole('link', { name: /Call Kuya/ })).toBeNull()
   })
 
   it('with a phone saved, the messages sheet has Call and the hello link', async () => {
-    await db.profiles.put({ id: 'p2', photoPath: null, phone: '+63 917 123 4567', birthdate: null, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null })
-    await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
-    location.hash = '#family'
-    render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
+    sheet('+63 917 123 4567', { text: 'Not checked in today: send a hello', href: 'sms:+639171234567' })
     const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
     expect(within(dlg).getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
     expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
@@ -186,12 +184,10 @@ describe('People', () => {
     expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy() // no Supabase in tests: plain words, no crash
   })
 
-  it('tapping a bubble opens messages; the person\'s page is one tap further', async () => {
+  it('tapping a bubble opens that person\'s page', async () => {
     location.hash = '#family'
     render(<Family />)
     fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
-    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
-    fireEvent.click(within(dlg).getByRole('button', { name: "Kuya's page" }))
     expect(location.hash).toBe('#family/people/p2')
   })
 })

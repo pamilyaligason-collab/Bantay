@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
 test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
   const heading = (name: string) => page.getByRole('heading', { name })
   await expect(heading('Next up')).toHaveCount(0) // calm: no empty card
-  await expect(heading("Today's plan")).toBeVisible()
+  await expect(heading("Today's plan")).toHaveCount(0) // S5: nothing planned, no card and no filler
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
   for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
@@ -53,9 +53,8 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
   expect(near(boxes.map((b) => b.width))).toBe(true) // equal tiles
   const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
   const quick = await y(row)
-  const plan = await y(heading("Today's plan"))
   const week = await y(page.getByRole('link', { name: /Your week/ }))
-  expect([quick, plan, week]).toEqual([...[quick, plan, week]].sort((p, q) => p - q))
+  expect(quick).toBeLessThan(week)
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 })
 
