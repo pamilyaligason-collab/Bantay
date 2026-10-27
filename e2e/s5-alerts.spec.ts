@@ -124,7 +124,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(hub.getByText('Checked 1 h ago')).toBeVisible()
     await expect(hub.getByText(/Alerts last checked .*They may be out of date\. Check PAGASA or listen to the radio\./)).toBeVisible()
     await expect(hub.getByRole('link', { name: /Warnings/ })).toContainText('may be out of date')
-    await expect(hub.getByText(/Quakes: PHIVOLCS and USGS/)).toBeVisible()
+    await expect(hub.getByText(/Quakes: USGS\./)).toBeVisible()
     await expect(page.getByText(/from PAGASA, PHIVOLCS and NDRRMC/)).toHaveCount(0)
     await hub.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })

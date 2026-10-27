@@ -134,7 +134,7 @@ describe('plain words and copy', () => {
     expect(affectsUs(a('s', 'tcws', at(151)), null).affects).toBe(false)
   })
   it('sources line names only what the ingest reads and the place label matches the Safety chip', () => {
-    expect(SOURCES_LINE).toBe('Quakes: USGS. Storms and floods: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PHIVOLCS and PAGASA bulletins are links you can open, not feeds.')
+    expect(SOURCES_LINE).toBe('Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open.')
     expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
     expect(placeLabel({ source: 'gps', zone: 'dampas' })).toBe('Near you · Dampas')
     expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
