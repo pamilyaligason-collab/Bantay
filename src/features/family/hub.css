@@ -13,4 +13,4 @@
 .hub-credit { font-size: 14px; color: var(--ink2); }
 .hub-video { padding: 0 14px 14px; }
 .hub-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-@media (prefers-reduced-motion: no-preference) { .hub-main { transition: background-color 150ms ease, transform var(--dur-press) var(--ease-out); } .hub-main:active { transform: scale(.98); } }
+@media (prefers-reduced-motion: no-preference) { .hub-main { transition: background-color 150ms ease; } }

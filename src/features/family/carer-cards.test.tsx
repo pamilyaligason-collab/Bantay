@@ -244,8 +244,8 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
     expect(await screen.findByText('Papa missed 3 doses')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Mark taken for Papa' })).toBeNull() // no all-in-one button
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Mark taken: / })).toHaveLength(3)) // the lines appear after the async medicine lookup
     const btns = screen.getAllByRole('button', { name: /^Mark taken: / })
-    expect(btns).toHaveLength(3)
     fireEvent.click(btns[1]!) // 08:00
     fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Yes, I saw' }))
     await waitFor(async () => expect((await ldb.meds.toArray()).map((m) => m.slot)).toEqual(['08:00']))
@@ -273,7 +273,7 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     h.rows = [row('md', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-26:09:00' })]
     render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
     expect(await screen.findByText('Papa missed a medicine')).toBeTruthy()
-    expect(screen.getByText('Losartan was due 9:00 AM, 1 h 10 min ago')).toBeTruthy()
+    expect(await screen.findByText('Losartan was due 9:00 AM, 1 h 10 min ago')).toBeTruthy() // the medicine name loads after the card
     expect(screen.getByRole('link', { name: 'Call Papa' }).getAttribute('href')).toBe('tel:+639171234567')
     expect(screen.getByRole('button', { name: 'Mark taken for Papa' })).toBeTruthy()
     await ldb.meds.add({ personId: 'p2', name: 'Losartan', takenAt: new Date('2026-10-26T09:40:00+08:00').toISOString(), medicationId: 'm1', slot: '09:00' })

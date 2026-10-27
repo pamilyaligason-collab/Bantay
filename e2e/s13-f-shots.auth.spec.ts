@@ -98,9 +98,9 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('sheet: mid-drag follows the pointer, a long drag closes it', async ({ page }) => {
       await page.getByRole('button', { name: 'Plan' }).click()
-      await expect(page.getByRole('button', { name: /^Add a reminder for / })).toBeVisible()
+      await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
       await shot(page, 'plan-empty', scheme)
-      await page.getByRole('button', { name: 'Add', exact: true }).click()
+      await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       const dlg = page.getByRole('dialog')
       await expect(dlg).toBeVisible()
       await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))

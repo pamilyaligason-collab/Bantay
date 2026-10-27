@@ -73,15 +73,49 @@ describe('Sheet drag to dismiss', () => {
     expect(dlg.style.transform).toBe('translateY(20px)')
   })
 
-  it('under reduced motion there is no drag, and Escape still closes at once', () => {
+  it('under reduced motion nothing follows the finger, a long drag down still closes at once, a short one does not, and Escape closes', () => {
     motion(true)
     const onClose = vi.fn()
     render(<Sheet title="T" onClose={onClose}><p>x</p></Sheet>)
     const dlg = screen.getByRole('dialog')
     fireEvent.pointerDown(grab(), pt(100, 0))
     fireEvent.pointerMove(dlg, pt(300, 50))
-    expect(dlg.style.transform).toBe('')
-    fireEvent.keyDown(dlg, { key: 'Escape' })
+    expect(dlg.style.transform).toBe('') // no follow animation
+    fireEvent.pointerUp(dlg, pt(300, 1000)) // 200 px of a 400 px sheet, standing still: past the threshold
+    expect(onClose).toHaveBeenCalledTimes(1) // instant, no timer
+    onClose.mockClear(); cleanup()
+    render(<Sheet title="T" onClose={onClose}><p>x</p></Sheet>)
+    const d2 = screen.getByRole('dialog')
+    fireEvent.pointerDown(grab(), pt(100, 0))
+    fireEvent.pointerMove(d2, pt(140, 500))
+    fireEvent.pointerUp(d2, pt(140, 1000)) // 40 px, slow: stays open
+    expect(onClose).not.toHaveBeenCalled()
+    fireEvent.keyDown(d2, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('data-fit follows real size changes of the sheet and its content, and the observers go on close', () => {
+    const cbs: Array<() => void> = []
+    const disconnect = vi.fn()
+    vi.stubGlobal('ResizeObserver', class { constructor(cb: () => void) { cbs.push(cb) } observe() {} disconnect = disconnect })
+    let sh = 100, ch = 400 // scrollHeight, clientHeight
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => sh })
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => ch })
+    try {
+      const { unmount } = render(<Sheet title="T" onClose={() => undefined}><p>x</p></Sheet>)
+      const dlg = screen.getByRole('dialog')
+      expect(dlg.hasAttribute('data-fit')).toBe(true)
+      sh = 500 // content grew, or the keyboard shrank the sheet; no React render happens
+      act(() => cbs.forEach((f) => f()))
+      expect(dlg.hasAttribute('data-fit')).toBe(false)
+      sh = 100
+      act(() => cbs.forEach((f) => f()))
+      expect(dlg.hasAttribute('data-fit')).toBe(true)
+      unmount()
+      expect(disconnect).toHaveBeenCalled()
+    } finally {
+      delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
+      delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
+    }
   })
 })
