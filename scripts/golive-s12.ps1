@@ -1,6 +1,6 @@
 # Family Bantay - session 12 Phase 3 batch 1 'apply' (D-80..D-88). Lloyd runs it from this worktree BEFORE merging the PR:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s12.ps1          (add -DryRun to print the steps only)
-# Order (release review): checks -> tag pre-s12 -> 0037..0040 (each recorded) -> verify -> deploy 5 functions -> archive the shared admin person row -> post-checks.
+# Order (release review): checks -> tag pre-s12 -> 0037..0042 (each recorded) -> verify -> deploy 5 functions -> archive the shared admin person row -> post-checks.
 # Then merge the PR right away (old web bundles' direct carers writes get 42501 after 0037). Stops at the first failure.
 param([switch]$DryRun)
 $ErrorActionPreference = 'Stop'
@@ -42,8 +42,8 @@ if (-not $DryRun) {
   if ($missing) { throw "step 2 failed: missing secrets: $($missing -join ', ') (FIREBASE_SERVICE_ACCOUNT_B64: scripts\set-s12-firebase-secrets.ps1)" }
 }
 
-Step 3 'preflight (expect has_0036=1, done_0037_0040=0)'
-Q "select (select count(*) from supabase_migrations.schema_migrations where version='0036') as has_0036, (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0040') as done_0037_0040;"; Check 3
+Step 3 'preflight (expect has_0036=1, done_0037_0042=0)'
+Q "select (select count(*) from supabase_migrations.schema_migrations where version='0036') as has_0036, (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0042') as done_0037_0042;"; Check 3
 
 Step 4 'tag the live main as pre-s12 (rollback point for functions and web)'
 Run 'git' @('fetch', 'origin', 'main'); Check 4
@@ -55,8 +55,11 @@ Step 6 'apply 0038_join_claim (per-member invite links)'; Apply 6 '0038' 'join_c
 Step 7 'apply 0039_marked_by_digest (who marked a dose, 8 PM summary switch)'; Apply 7 '0039' 'marked_by_digest'
 Step 8 'apply 0040_push_tokens (FCM tokens, final dose_watch_prune)'; Apply 8 '0040' 'push_tokens'
 
-Step 9 'verify (expect recorded=4, share_offers=1, invite_tokens=1, carer_prefs=1, push_tokens=1, marked_by=1)'
-Q "select (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0040') as recorded, (select count(*) from pg_tables where schemaname='public' and tablename='share_offers') as share_offers, (select count(*) from pg_tables where schemaname='public' and tablename='invite_tokens') as invite_tokens, (select count(*) from pg_tables where schemaname='public' and tablename='carer_prefs') as carer_prefs, (select count(*) from pg_tables where schemaname='public' and tablename='push_tokens') as push_tokens, (select count(*) from information_schema.columns where table_schema='public' and table_name='meds_taken' and column_name='marked_by') as marked_by;"; Check 9
+Step 9a 'apply 0041_rollcall (storm roll call)'; Apply 9 '0041' 'rollcall'
+Step 9b 'apply 0042_kudos (kudos and recap messages)'; Apply 9 '0042' 'kudos'
+
+Step 9 'verify (expect recorded=6, rollcall=1, share_offers=1, invite_tokens=1, carer_prefs=1, push_tokens=1, marked_by=1)'
+Q "select (select count(*) from supabase_migrations.schema_migrations where version between '0037' and '0042') as recorded, (select count(*) from pg_tables where schemaname='public' and tablename='rollcall') as rollcall, (select count(*) from pg_tables where schemaname='public' and tablename='share_offers') as share_offers, (select count(*) from pg_tables where schemaname='public' and tablename='invite_tokens') as invite_tokens, (select count(*) from pg_tables where schemaname='public' and tablename='carer_prefs') as carer_prefs, (select count(*) from pg_tables where schemaname='public' and tablename='push_tokens') as push_tokens, (select count(*) from information_schema.columns where table_schema='public' and table_name='meds_taken' and column_name='marked_by') as marked_by;"; Check 9
 
 Step 10 'deploy edge functions (dose-watch first: FCM + digest opt-out; alerts-ingest: D-88 radius and quake wording)'
 Deploy 10 'dose-watch'; Deploy 10 'broadcast' -Jwt; Deploy 10 'pin-login'; Deploy 10 'family-names'; Deploy 10 'alerts-ingest'
@@ -73,4 +76,4 @@ Write-Host "  2. /admin > Members > 'Invite link' for each person still without 
 Write-Host "     npx -y $Sb secrets unset FAMILY_INVITE_TOKEN   (the old family-wide link already stopped working when family-names was redeployed)" -ForegroundColor Green
 Write-Host "  3. GitHub > Actions > Release Android app > version 2.4.0, notes 'Family alerts now reach your phone; new Discover tab.'" -ForegroundColor Green
 Write-Host "  4. Install 2.4.0 on your phone and one carer's; run the live checks in docs/session-12/PLAN.md 6.4 (swiped from recents, after reboot)." -ForegroundColor Green
-Write-Host "Rollback: downs 0040 -> 0037 (supabase\migrations\*.down.sql), functions from tag pre-s12, Pages rollback in Cloudflare." -ForegroundColor Green
+Write-Host "Rollback: downs 0042 -> 0037 (supabase\migrations\*.down.sql), functions from tag pre-s12, Pages rollback in Cloudflare." -ForegroundColor Green
