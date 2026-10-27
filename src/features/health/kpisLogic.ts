@@ -4,6 +4,7 @@ import { computeMyWeek, STEP_GOAL, type StepRow } from '../today/myWeekLogic'
 import { dayOf } from './meds'
 import { rangeState, toCanonicalReading, type Position, type Reading, type RangeState } from './ranges'
 import { positionOf } from './vitals'
+import type { BpArg } from './verdict'
 
 /** "My KPIs": the LATEST reading per measure with its time, a 7-day sparkline and a range chip. The sparklines and the doses figure come from the
  *  same computation as Today's "My week" (computeMyWeek), so the two never disagree. Pure. */
@@ -36,12 +37,13 @@ export function whenWords(iso: string, now: Date): string {
 
 const latestOf = (rs: Reading[], test: string) => rs.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
 /** The chip word comes from the one verdict table (verdict.ts), in the same bands as the Normal text. */
-const chip = (kind: 'bp' | 'vital', pos: Position, top?: number, bottom?: number | null): RangeState => rangeState(pos, kind, { top, bottom })
+const chip = (kind: 'bp' | 'vital', pos: Position, top?: number, bottom?: number | null, doctor?: BpArg['doctor']): RangeState => rangeState(pos, kind, { top, bottom, doctor })
 const worst = (ps: string[]) => ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none'
 
-export function computeKpis(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date }): Kpi[] {
+/** doctor: both of this person's BP targets (bpDoctorOf), so the chip reads the same word as the Vitals rows and My week. */
+export function computeKpis(i: { personId: string; readings: Reading[]; activity: StepRow[]; meds: Medication[]; takes: MedTaken[]; now: Date; doctor?: BpArg['doctor'] }): Kpi[] {
   const mine = i.readings.filter((r) => r.personId === i.personId).map(toCanonicalReading).filter((r): r is Reading => !!r) // glucose in mmol/L is converted; a unit that cannot be compared is left out
-  const week = computeMyWeek({ personId: i.personId, readings: mine, activity: i.activity, meds: i.meds, takes: i.takes, now: i.now })
+  const week = computeMyWeek({ personId: i.personId, readings: mine, activity: i.activity, meds: i.meds, takes: i.takes, now: i.now, doctor: i.doctor })
   const spark = (code: string) => week.find((t) => t.code === code)?.spark ?? []
   const out: Kpi[] = []
 
@@ -52,7 +54,7 @@ export function computeKpis(i: { personId: string; readings: Reading[]; activity
     const pair = dia && Math.abs(Date.parse(dia.takenAt) - t) <= 30 * 60_000 ? dia : undefined
     out.push({
       code: 'bp_systolic', href: '#health/metric/bp_systolic', label: 'Blood pressure', value: pair ? `${formatNumber(sys.value)}/${formatNumber(pair.value)}` : formatNumber(sys.value), unit: 'mmHg',
-      when: whenWords(sys.takenAt, i.now), sub: 'latest', state: chip('bp', worst([positionOf(sys), pair ? positionOf(pair) : 'none']) as Position, sys.value, pair?.value ?? null), spark: spark('bp_systolic')
+      when: whenWords(sys.takenAt, i.now), sub: 'latest', state: chip('bp', worst([positionOf(sys), pair ? positionOf(pair) : 'none']) as Position, sys.value, pair?.value ?? null, i.doctor), spark: spark('bp_systolic')
     })
   }
   const sug = latestOf(mine, 'fasting_glucose')

@@ -69,7 +69,7 @@ export function AuthGate({ children, fallback = null }: { children: ReactNode; f
   if (state === 'out') return <SignIn />
   if (gate?.kind === 'lock') {
     const name = loadFamily().find((m) => m.personId === gate.personId)?.displayName.split(' ')[0] ?? ''
-    return <LockScreen name={name} onUnlocked={() => setGate(null)} onUsePin={() => void signOut()} onNotYou={() => { clearLastPerson(); void signOut() }} />
+    return <LockScreen name={name} personId={gate.personId} onUnlocked={() => setGate(null)} onUsePin={() => void signOut()} onNotYou={() => { clearLastPerson(); void signOut() }} />
   }
   if (gate?.kind === 'offer') return <FingerOffer personId={gate.personId} onDone={() => setGate(null)} />
   return <>{children}</>

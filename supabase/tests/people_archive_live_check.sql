@@ -1,7 +1,7 @@
 -- Live rehearsal of 0022 (orchestrator). Applies 0022 inside one transaction, builds ONE synthetic person ('Test Child') inside it, runs count-only checks
 -- as the real admin and one real member, then the final DO block raises 'RESULT ...', which aborts the transaction: NOTHING is kept.
 -- No real person is archived, no values are printed, only counts. Needs 0021 already applied (people_admin_read, audit trigger).
--- Run: npx -y supabase@2.121.0 db query --linked -f supabase/tests/people_archive_live_check.sql   (expect an error whose text starts with RESULT)
+-- Run: npx -y supabase@2.122.0 db query --linked -f supabase/tests/people_archive_live_check.sql   (expect an error whose text starts with RESULT)
 begin;
 
 alter table public.people

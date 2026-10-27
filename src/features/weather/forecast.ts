@@ -16,7 +16,7 @@ export interface Forecast {
   daily: Day[]
 }
 
-export const FORECAST_DAYS = 7
+export const FORECAST_DAYS = 10
 const FRESH_MS = 10 * 60_000 // a reading younger than this is reused, so five screens do not make five requests
 const KEEP_MS = 24 * 3600_000 // an older cached forecast is not shown (hourly rain would be wrong)
 const r2 = (n: number) => Math.round(n * 100) / 100 // about 1 km: all that is sent to the weather service
@@ -140,6 +140,9 @@ export const hoursFrom = (fc: Forecast, n: number, now = Date.now()): Hour[] => 
   const i = fc.hourly.findIndex((h) => h.time.slice(0, 13) >= at)
   return i < 0 ? [] : fc.hourly.slice(i, i + n)
 }
+
+/** "Saved for offline · updated 6:00 AM": the forecast is kept on the phone, this says how old it is. */
+export const savedLine = (fc: Forecast): string => `Saved for offline · updated ${clockIn(fc.fetchedAt, fc.tz)}`
 
 /** "7:20 PM" in the place's own time zone. */
 export const clockIn = (iso: string, tz?: string): string => {

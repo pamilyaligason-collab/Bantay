@@ -18,6 +18,8 @@ Set-Location $root
 $p = $Version.Split('.') | ForEach-Object { [int]$_ }
 if ($p[1] -ge 1000 -or $p[2] -ge 1000) { throw 'minor and patch must be below 1000 (versionCode would collide)' }
 $versionCode = $p[0] * 1000000 + $p[1] * 1000 + $p[2]
+# 2.3.0 (Session 10): alarm self-heal + phone check shell. Old shells keep working on the new web through feature detection, so do not raise -MinShell for it.
+if ($versionCode -ge 2003000 -and $MinShell -gt 2000000) { Write-Warning "-MinShell $MinShell locks out shells older than that; 2.3.0 does not need it (docs/NATIVE.md, phone alarms)." }
 $out = Join-Path $root 'release-out'
 
 if ($ApkPath -and -not $DryRun) { throw '-ApkPath is only for -DryRun' }

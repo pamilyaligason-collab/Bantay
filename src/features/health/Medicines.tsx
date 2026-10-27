@@ -4,7 +4,8 @@ import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { MedReview, toCheck } from './MedReview'
 import { clock12, setMedStatus } from './medActions'
-import { dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
+import { useSelf } from '../sos/useSelf'
+import { answeredBy, dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
 import { useMedicationRows } from './useMedicationRows'
@@ -51,6 +52,7 @@ function useToday(personId: string) {
  *  `canMark`: this person, or a writer carer (the server takes a dose from them). `canEdit`: also an admin (records_editor). */
 export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }: { personId: string; mine?: boolean; canMark?: boolean; canEdit?: boolean }) {
   const { meds, takes, doses } = useToday(personId)
+  const self = useSelf() // a carer answering for someone else is recorded by name ("Answered by Lloyd")
   const queued = useQueuedDoseIds()
   const [sheet, setSheet] = useState<{ med?: Medication } | null>(null)
   const [note, setNote] = useState<MedNote | null>(null)
@@ -122,6 +124,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
           <div className="grp" data-testid="meds-active">
             {live.map((m) => {
               const s = parseSchedule(m.schedule)
+              const answered = answeredBy(m)
               const body = (
                 <>
                   <strong>{label(m)}</strong>
@@ -131,6 +134,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                     {s.needsTime && !m.asNeeded && <span className="md-tag warn">Set a time</span>}
                     {s.needsCheck && <span className="md-tag warn">Check the name</span>}
                   </span>
+                  {answered && <span className="md-sub" data-testid="answered-by">Answered by {answered}</span>}
                 </>
               )
               return (
@@ -138,7 +142,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                   {canEdit
                     ? <button type="button" className="md-medrow" onClick={() => open(m)}>{body}</button>
                     : <div className="md-medrow">{body}</div>}
-                  {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} />}
+                  {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} by={mine ? undefined : self.name} />}
                 </div>
               )
             })}

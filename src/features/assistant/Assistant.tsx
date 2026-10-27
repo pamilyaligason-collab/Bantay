@@ -13,6 +13,15 @@ import { Icon } from '../shell/Icon'
 import { openScan } from '../scan/open'
 import { weatherSummary } from './weather'
 import { CAUTION, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
+import { localGate, type Emergency } from './gateClient'
+import { EmergencyCard } from './EmergencyCard'
+import { OfflinePanel } from './OfflinePanel'
+import SosScreen from '../sos/SosScreen'
+import { startSos, SOS_CONTACTS_KEY } from '../sos/active'
+import { normalizeContacts } from '../sos/contacts'
+import { loadFamily } from '../auth/family'
+import { useKv } from '../shell/useKv'
+import { AI_OFF, aiOn } from '../privacy/ai'
 import './assistant.css'
 
 const CAP = Number(import.meta.env.VITE_ASSISTANT_DAILY_CAP) || DEFAULT_CAP
@@ -20,13 +29,28 @@ const API = { logReading, logMedTaken, logActivity }
 const TITLE: Record<DraftTool, string> = { log_reading: 'Log a reading', log_med_taken: 'Log a medicine taken', log_activity: 'Log an activity' }
 const LABEL: Record<string, string> = { person: 'Who', test: 'Test', value: 'Value', unit: 'Unit', takenAt: 'When', name: 'Medicine', kind: 'Activity', minutes: 'Minutes', steps: 'Steps', startedAt: 'When' }
 const ERR = {
+  off: AI_OFF,
   unconfigured: 'The assistant is not set up on this phone yet.',
   signin: 'Please sign in again, then ask me once more.',
   limit: 'You have used all of today\'s questions. Please try again tomorrow. For anything urgent, call your doctor, or 911.',
   failed: 'I could not reach the assistant. Please try again in a moment.'
 }
 
-type Item = Msg & { local?: boolean; cards?: Card[] }
+// local = never sent to the server; sensitive = an emergency exchange, never saved on the phone; queued = typed offline, sent when signal returns.
+type Item = Msg & { local?: boolean; cards?: Card[]; emergency?: Emergency; sensitive?: boolean; queued?: boolean }
+const NONE: unknown[] = []
+
+function useOnline() {
+  const [on, setOn] = useState(() => navigator.onLine !== false)
+  useEffect(() => {
+    const up = () => setOn(true)
+    const down = () => setOn(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
+  return on
+}
 
 function DraftCard({ card, people }: { card: Extract<Card, { kind: 'draft' }>; people: People[] }) {
   const [f, setF] = useState(card.fields)
@@ -260,21 +284,44 @@ export default function Assistant() {
     r.start()
   }
 
-  const send = async (override?: string) => {
-    const content = (override ?? text).trim()
-    if (!content || busy) return
-    setText('')
-    if (!(await takeMessage(CAP))) return setItems((i) => [...i, { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
-    const next: Item[] = [...items, { role: 'user', content }]
+  const online = useOnline()
+  const [sos, setSos] = useState(false)
+  const [rawContacts] = useKv<unknown[]>(SOS_CONTACTS_KEY, NONE)
+  const contact = normalizeContacts(rawContacts, loadFamily())[0]
+  const queued = items.find((m) => m.queued)?.content
+
+  // The model path: counts one message, asks, shows the reply. Anything typed while offline waits in `queued` and comes here when signal returns.
+  const deliver = async (content: string) => {
+    if (!(await aiOn())) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) // privacy.ai: before the daily count is used; the local emergency gate runs before this
+    if (!(await takeMessage(CAP))) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
+    const next: Item[] = [...items.filter((m) => !m.queued), { role: 'user', content }]
     setItems(next)
     setBusy(true)
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
     if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
-    const done: Item[] = [...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? '' : 'I am not sure. Please ask your doctor.'), cards: r.cards }]
+    let done: Item[]
+    if ('emergency' in r && r.emergency) { // the server gate fired: same card as the local one, and this exchange never goes back to the model or onto the phone
+      done = [...next.slice(0, -1), { role: 'user', content, local: true, sensitive: true }, { role: 'assistant', content: '', local: true, sensitive: true, emergency: r.emergency }]
+    } else {
+      done = [...next, 'error' in r ? { role: 'assistant', content: ERR[r.error], local: true } : { role: 'assistant', content: r.text || (r.cards.length ? '' : 'I am not sure. Please ask your doctor.'), cards: r.cards }]
+    }
     setItems(done)
-    void saveHistory(trimHistory(done))
+    void saveHistory(trimHistory(done.filter((m) => !m.sensitive)))
   }
+  useEffect(() => { if (online && queued && !busy) void deliver(queued) }, [online]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const send = async (override?: string) => {
+    const content = (override ?? text).trim()
+    if (!content || busy) return
+    setText('')
+    // Local gate first: before the daily cap and before any request, so it works offline and at the limit. The words stay on this phone.
+    const em = await localGate(content)
+    if (em) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content, local: true, sensitive: true }, { role: 'assistant', content: '', local: true, sensitive: true, emergency: em }])
+    if (!online) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content, local: true, queued: true }])
+    await deliver(content)
+  }
+  const tellFamily = () => { startSos(); setSos(true) }
 
   return (
     <>
@@ -294,10 +341,13 @@ export default function Assistant() {
               {items.map((m, i) => (
                 <div key={i} className={`as-msg ${m.role}`}>
                   {m.content && <p>{m.content}</p>}
+                  {m.queued && <span className="sub as-wait" role="status">Waiting for signal</span>}
+                  {m.emergency && <EmergencyCard e={m.emergency} onSos={tellFamily} />}
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}
                 </div>
               ))}
               {busy && <p className="sub" role="status">Thinking...</p>}
+              {!online && <OfflinePanel contact={contact} go={go} />}
             </div>
             {items.length === 0 && <div className="as-chips" role="group" aria-label="Suggestions">
               {CHIPS.map((c) => (
@@ -307,7 +357,7 @@ export default function Assistant() {
             </div>}
             <form className="as-form" onSubmit={(e) => { e.preventDefault(); void send() }}>
               <button type="button" className="as-mic as-cam" aria-label="Scan & Capture" onClick={scan}><Icon name="camera" /></button>
-              <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder="Ask or log something" maxLength={500} autoComplete="off" />
+              <input ref={input} value={text} onChange={(e) => setText(e.target.value)} aria-label="Your question" placeholder={online ? 'Ask or log something' : 'Jack is waiting for signal'} maxLength={500} autoComplete="off" />
               {Mic.current && (
                 <button type="button" className="as-mic" aria-label={listening ? 'Stop listening' : 'Speak'} aria-pressed={listening} onClick={listen}>
                   <Icon name="mic" active={listening} />
@@ -318,6 +368,7 @@ export default function Assistant() {
           </div>
         </div>
       )}
+      {sos && <SosScreen onClose={() => setSos(false)} />}
     </>
   )
 }

@@ -55,8 +55,9 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean', async ({ page }) => {
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.getByRole('button')).toHaveCount(9)
-      await row.getByRole('button', { name: 'Gentle exercise for today' }).click()
+      await expect(row.getByRole('button')).toHaveCount(6)
+      await row.getByRole('button', { name: 'More things to log' }).click()
+      await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
       const sheet = page.getByRole('dialog', { name: 'Move' })
       await expect(sheet.getByText('Check with your doctor before starting new exercise.')).toBeVisible()
       expect(await serious(page)).toEqual([])
@@ -74,7 +75,8 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(rows).toHaveLength(1)
       expect(rows[0]!.minutes).toBeGreaterThan(0)
       // the doctor check is one-time: the sheet now opens straight on the picks
-      await row.getByRole('button', { name: 'Gentle exercise for today' }).click()
+      await row.getByRole('button', { name: 'More things to log' }).click()
+      await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
       await expect(page.getByRole('dialog', { name: 'Move' }).getByText(/of 150 minutes/)).toBeVisible()
       await expect(page.getByRole('dialog', { name: 'Move' }).getByText('I understand')).toHaveCount(0)
       expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)

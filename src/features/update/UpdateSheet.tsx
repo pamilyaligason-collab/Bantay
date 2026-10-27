@@ -1,7 +1,6 @@
 import { App } from '@capacitor/app'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MASCOT_SRC } from '../../assets/mascot'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import '../shell/shell.css'
@@ -30,13 +29,14 @@ type Api = Pick<AppUpdaterPlugin, 'info' | 'openInstallPermission'> & JobApi
 
 export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Latest; api?: Api; onClose?: () => void }) {
   const [canInstall, setCanInstall] = useState<boolean | null>(null)
+  const [have, setHave] = useState('') // the installed shell's versionName, for "You have 2.0.0"
   const [wifiOnly, setWifiOnly] = useKv<boolean>('update.wifiOnly', true)
   const job = useJob()
   const alive = useRef(true)
   const close = useRef(onClose)
   close.current = onClose
 
-  const recheck = useCallback(() => { void api.info().then((i) => alive.current && setCanInstall(i.canInstall), () => undefined) }, [api])
+  const recheck = useCallback(() => { void api.info().then((i) => { if (alive.current) { setCanInstall(i.canInstall); setHave(i.versionCode ? i.versionName : '') } }, () => undefined) }, [api])
   useEffect(() => {
     alive.current = true
     recheck()
@@ -68,13 +68,13 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
         <span className="sh-grab" />
         {idle && (
           <>
-            <img className="up-jj" src={MASCOT_SRC} alt="" width={90} height={90} />
-            <h2 className="sh-h2 up-c">Update ready: {latest.versionName}</h2>
-            <p className="sh-sub up-c up-m0">{latest.notes} {fmtMB(latest.size)} MB.</p>
+            <h2 className="sh-h2 up-c">Bantay {latest.versionName} is ready</h2>
+            <p className="sh-sub up-c up-m0">{have && `You have ${have} · `}{fmtMB(latest.size)} MB · Wi-Fi recommended</p>
+            {latest.notes && <p className="sh-sub up-c up-m0">{latest.notes}</p>}
             {canInstall === false && (
               <div className="sh-card up-soft">
                 <b>First update only</b>
-                <div className="sh-sub">Android asks once to let Bantay install updates. Turn it on, go Back, then tap Update now. After that, updates are one tap.</div>
+                <div className="sh-sub">Android asks once to let Bantay install updates. Turn it on, go Back, then tap Install update. After that, updates are one tap.</div>
                 <div className="sh-row up-between">
                   <span className="sh-grow">Allow Bantay to install updates</span>
                   <button type="button" className="sh-pill sh-ghost sh-small up-card" onClick={() => void api.openInstallPermission()}>Open Settings</button>
@@ -82,8 +82,9 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
               </div>
             )}
             {waiting && <p className="sh-sub up-c up-m0" role="status">Waiting for Wi-Fi. The update starts when you connect, or turn off Wi-Fi only below.</p>}
-            <button type="button" className="sh-pill sh-primary sh-block" disabled={canInstall !== true} onClick={start}>Update now</button>
+            <button type="button" className="sh-pill sh-primary sh-block" disabled={canInstall !== true} onClick={start}>Install update</button>
             <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => onClose?.()}>Later</button>
+            <p className="sh-sub up-c up-m0">Your data stays safe. Android may ask once to allow the install.</p>
           </>
         )}
         {phase === 'downloading' && (

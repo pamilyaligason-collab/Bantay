@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-m0.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 function Run([string]$exe, [string[]]$a) {
   if ($DryRun) { Write-Host "  [dry-run] $exe $($a -join ' ')" -ForegroundColor DarkGray; $global:LASTEXITCODE = 0; return }
@@ -20,7 +20,7 @@ function Check($n) { if ($LASTEXITCODE -ne 0) { throw "step $n failed (exit $LAS
 function Query([string]$sql) { $ErrorActionPreference = 'Continue'; (& npx -y $Sb db query --linked $sql 2>&1 | Out-String) }
 
 Step 1 'checks: linked project, clean tree, 0013 recorded, 0014 not yet recorded'
-if (-not (Test-Path 'supabase\.temp\project-ref')) { throw 'step 1 failed: supabase\.temp link missing (run: npx -y supabase@2.121.0 link)' }
+if (-not (Test-Path 'supabase\.temp\project-ref')) { throw 'step 1 failed: supabase\.temp link missing (run: npx -y supabase@2.122.0 link)' }
 if (git status --porcelain --untracked-files=no) { throw 'step 1 failed: uncommitted changes' }
 if (-not $DryRun) {
   if (-not ((Query "select count(*) as n0013 from supabase_migrations.schema_migrations where version='0013';") -match 'n0013\W+1')) { throw 'step 1 failed: 0013 is not recorded on the live database' }

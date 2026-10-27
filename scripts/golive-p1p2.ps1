@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-p1p2.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $Ref = 'wuakimpssycbtnmoexuc'
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 $Branch = 'claude/bantay-session-4-audit-build-0a39a2'
 $Mig = '0009_pin_reset_requests'
 $env:ANDROID_HOME = 'D:\Android\Sdk'; $env:ANDROID_SDK_ROOT = 'D:\Android\Sdk'

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { GUIDE, latestVsNormal, rangeState, toCanonicalReading } from './ranges'
+import { CHIP, GUIDE, latestVsNormal, rangeState, toCanonicalReading, type Reading } from './ranges'
 import { PersonChips } from '../records/PersonChips'
 import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
@@ -16,13 +16,22 @@ import {
 import { SubHeader } from '../shell/SubHeader'
 import { useActivity } from './useActivity'
 import { isVital } from './vitals'
-import { kindOf } from './verdict'
+import BpCheckButton from './bpcheck/BpCheckButton'
+import BpWords from './bpcheck/BpWords'
+import { BpWord } from './bpcheck/BpCheck'
+import { bpDoctorOf, kindOf, type BpArg } from './verdict'
 
 const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
 const ACT_LABEL: Record<string, { label: string; unit: string }> = { steps: { label: 'Steps', unit: 'steps' }, sleep: { label: 'Sleep', unit: 'hours' }, mood: { label: 'Mood', unit: '' } }
 
 /** #health/metric/<code>: the week and month view of one measurement (mockup v6 "metric"). */
+/** The pair behind the headline word: the latest reading with its mate (the other number taken within 30 minutes), plus both doctor targets. Exported for the test. */
+export function bpHeadlineArg(readings: Reading[], code: string, latest: Reading, doctor: BpArg['doctor']): BpArg {
+  const mate = readings.filter((x) => x.test === (code === 'bp_systolic' ? 'bp_diastolic' : 'bp_systolic') && Math.abs(Date.parse(x.takenAt) - Date.parse(latest.takenAt)) <= 30 * 60_000)[0]?.value
+  return code === 'bp_systolic' ? { top: latest.value, bottom: mate, doctor } : { top: mate, bottom: latest.value, doctor }
+}
+
 export default function MetricScreen({ code }: { code: string }) {
   const { ready, people, ownId, personId, setPersonId, readings, thresholds, canMark, reload } = useHealthPerson()
   const acts = useActivity(personId)
@@ -49,6 +58,16 @@ export default function MetricScreen({ code }: { code: string }) {
   const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
   const labRange = (r: Parameters<typeof latestVsNormal>[0]) => latestVsNormal(r, family).lab.text
   const spec = entrySpec(code)
+  const bpCode = code === 'bp_systolic' || code === 'bp_diastolic'
+  const bpDoctor = bpDoctorOf(thresholds, personId) // both doctor targets, so every row of the pair, the headline and the add preview read the same word on either BP route
+  // blood pressure reads as one pair (top/bottom, one verdict word from the one table); a pair is a top and the bottom taken at the same minute
+  const bottomFor = (at: string) => { // the bottom written with this top (same moment); else the nearest one under a minute away
+    const ds = readings.filter((d) => d.test === 'bp_diastolic')
+    const near = ds.map((d) => ({ d, gap: Math.abs(Date.parse(d.takenAt) - Date.parse(at)) })).filter((x) => x.gap < 60_000).sort((a, b) => a.gap - b.gap)[0]
+    return near?.d.value ?? null
+  }
+  const bpPairs = bpCode ? readings.filter((r) => r.test === 'bp_systolic').map((r) => ({ at: r.takenAt, top: r.value, bottom: bottomFor(r.takenAt) }))
+    .filter((p) => !part || partOf(p.at) === part).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)) : []
   const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : formatNumber(n))
 
   return (
@@ -73,16 +92,17 @@ export default function MetricScreen({ code }: { code: string }) {
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
                 <strong className="hv-big">
-                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : latest ? formatNumber(latest.value) : last ? dp(last.value) : '--'}
+                  {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : bpPairs[0]?.bottom != null ? `${bpPairs[0].top}/${bpPairs[0].bottom}` : latest ? formatNumber(latest.value) : last ? dp(last.value) : '--'}
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), code === 'bp_systolic' && latest ? { top: latest.value, bottom: readings.filter((x) => x.test === 'bp_diastolic' && Math.abs(Date.parse(x.takenAt) - Date.parse(latest.takenAt)) <= 30 * 60_000)[0]?.value } : undefined); return <span className={`hv-state ${v.headline}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
+              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), bpCode && latest ? bpHeadlineArg(readings, code, latest, bpDoctor) : undefined); return <span className={`hv-state ${CHIP[st.kind]}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
           </div>
 
           {lab && latest && <LabDetail code={code} readings={readings} family={family} personId={personId} />}
           {spec && canMark && personId && <button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button>}
+          {bpCode && canMark && personId && <BpCheckButton personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} onSaved={(m) => { setSaved(m); reload() }} className="btn mc-add" />}
           {saved && <p className="sub" role="status">{saved}</p>}
           {!lab && (
             <div className="seg" role="group" aria-label="Period">
@@ -119,6 +139,7 @@ export default function MetricScreen({ code }: { code: string }) {
             )}
           </section>}
 
+          {bpCode && <BpWords />}
           {!activity && latest && v && (
             <section aria-labelledby="hv-src">
               <h2 className="hd" id="hv-src">Where the range comes from</h2>
@@ -146,8 +167,14 @@ export default function MetricScreen({ code }: { code: string }) {
             <section aria-labelledby="hv-rec">
               <h2 className="hd" id="hv-rec">Readings</h2>
               <div className="grp" data-testid="recent">
-                {minePart.length === 0 && <div className="row"><span className="grow">No {part === 'am' ? 'morning' : 'evening'} readings<span className="sub">Try the other time of day.</span></span></div>}
-                {minePart.slice(0, lab ? 30 : 12).map((r, i) => (
+                {(bpCode ? bpPairs.length : minePart.length) === 0 && <div className="row"><span className="grow">No {part === 'am' ? 'morning' : 'evening'} readings<span className="sub">Try the other time of day.</span></span></div>}
+                {bpCode && bpPairs.slice(0, 12).map((p, i) => (
+                  <div className="row" key={`${p.at}:${i}`}>
+                    <span className="grow"><strong>{p.bottom != null ? `${p.top}/${p.bottom}` : p.top} mmHg</strong><span className="sub" style={{ display: 'block' }}>{`${shortDate(p.at)} · ${new Date(p.at).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`}</span></span>
+                    {p.bottom != null && <BpWord top={p.top} bottom={p.bottom} doctor={bpDoctor} />}
+                  </div>
+                ))}
+                {!bpCode && minePart.slice(0, lab ? 30 : 12).map((r, i) => (
                   <div className="row" key={`${r.takenAt}:${i}`}>
                     <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{lab ? shortDate(r.takenAt) : `${shortDate(r.takenAt)} · ${new Date(r.takenAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`}</span>{lab && labRange(r) && <span className="sub" style={{ display: 'block' }}>Lab range {labRange(r)}</span>}</span>
                   </div>
@@ -169,7 +196,7 @@ export default function MetricScreen({ code }: { code: string }) {
           </div>
         </>
       )}
-      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={family} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
+      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={bpCode ? undefined : family} bpDoctor={bpCode ? bpDoctor : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
     </>
   )
 }

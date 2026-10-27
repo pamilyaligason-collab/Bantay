@@ -82,6 +82,16 @@ describe('Assistant', () => {
     await screen.findByText(/used all of today/)
     expect(m.ask).not.toHaveBeenCalled()
   })
+  it('privacy.ai off: says so, makes no call and does not use up a daily question', async () => {
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    fireEvent.change(await screen.findByLabelText('Your question'), { target: { value: 'hi' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('AI is off. Turn it on in Me, Privacy.')
+    expect(m.ask).not.toHaveBeenCalled()
+    expect(await db.kv.get('assistant.cap')).toBeUndefined()
+  })
 })
 
 describe('Assistant v2', () => {

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const calls = vi.hoisted(() => [] as string[][])
 vi.mock('../admin/events', () => ({ track: async (k: string, n: string) => { calls.push([k, n]); return true } }))
-import { confirmClearLabel, showConfirmAll, confirmAllLabel, emitConfirmed, progressPct, progressText } from './papers'
+import { nameMismatch, confirmClearLabel, showConfirmAll, confirmAllLabel, emitConfirmed, progressPct, progressText } from './papers'
 
 beforeEach(() => { calls.length = 0 })
 
@@ -38,5 +38,43 @@ describe('second confirm button', () => {
     expect(confirmClearLabel(4, true)).toBe('Confirm 4 clear lines')
     expect(confirmClearLabel(1, true)).toBe('Confirm 1 clear line')
     expect(confirmClearLabel(4, false)).toBe('Confirm all 4 from this paper')
+  })
+})
+
+describe('nameMismatch (S11)', () => {
+  it('flags another person, accepts reordered, partial and alias names, and treats an unread name as unknown', () => {
+    expect(nameMismatch('Rosa Dela Cruz', 'Me (Jun)')).toBe(true)
+    expect(nameMismatch('Rosa Dela Cruz', 'Juan Dela Cruz')).toBe(true)
+    expect(nameMismatch('CRUZ, JUAN DELA', 'Juan Dela Cruz')).toBe(false)
+    expect(nameMismatch('Juan D. Cruz', 'Juan Dela Cruz')).toBe(false)
+    expect(nameMismatch('Jun Reyes', 'Me (Jun)')).toBe(false)
+    expect(nameMismatch('Rosa Dela Cruz', 'Me (Jun)', ['Rosa Dela Cruz'])).toBe(false)
+    expect(nameMismatch(null, 'Me (Jun)')).toBe(false)
+    expect(nameMismatch('  ', 'Me (Jun)')).toBe(false)
+  })
+  it('a family sharing a surname: another given name, an initial of another name and a surname alone are all flagged', () => {
+    const juan = 'Juan Dela Cruz'
+    expect(nameMismatch('R. Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('DELA CRUZ, R.', juan)).toBe(true)
+    expect(nameMismatch('Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('DELA CRUZ', 'Rosa Dela Cruz')).toBe(true)
+    expect(nameMismatch('Rosa Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('Juan Cruz', juan)).toBe(false)
+    expect(nameMismatch('J. Dela Cruz', juan)).toBe(false)
+    expect(nameMismatch('DELA CRUZ, R.', 'Rosa Dela Cruz')).toBe(false)
+    expect(nameMismatch('Dela Cruz', juan, ['Dela Cruz'])).toBe(false) // an alias that is itself a surname is the carer's own word for the person
+    expect(nameMismatch('Mama Rosa', juan, ['Mama'])).toBe(false)
+  })
+  it('an initial counts only in the given-name position; a middle initial never matches', () => {
+    const juan = 'Juan Dela Cruz'
+    expect(nameMismatch('Rosa J. Dela Cruz', juan)).toBe(true)
+    expect(nameMismatch('DELA CRUZ, ROSA J.', juan)).toBe(true)
+    expect(nameMismatch('J. Dela Cruz', juan)).toBe(false)
+    expect(nameMismatch('DELA CRUZ, J.', juan)).toBe(false)
+    expect(nameMismatch('Juan M. Dela Cruz', juan)).toBe(false)
+    expect(nameMismatch('DELA CRUZ, JUAN M.', juan)).toBe(false)
+    expect(nameMismatch('Dela Cruz', juan)).toBe(true) // unclear
+    expect(nameMismatch('Rosa Dela Cruz', 'Dela Cruz, Juan')).toBe(true) // person stored surname-first
+    expect(nameMismatch('Juan Dela Cruz', 'Mr. Juan Dela Cruz')).toBe(false) // title ignored
   })
 })

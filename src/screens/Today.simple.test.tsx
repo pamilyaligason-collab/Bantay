@@ -3,10 +3,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
-const { stub, storm, meds } = vi.hoisted(() => ({ meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
+const { stub, storm, meds, feel } = vi.hoisted(() => ({ feel: { r: 'told' as string, calls: [] as string[] }, meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
-vi.mock('../features/today/GreetingBand', () => ({ default: () => <button type="button">I&apos;m OK</button> }))
+vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => <div data-testid="alertcard" /> }))
+vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () => null }))
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds.due ? [] : [{ personId: 'me', name: 'Lloyd', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: meds.review, tick: new Date() }), markDue: async () => true }))
 vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
 vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review }: { expanded?: boolean; review?: number }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} /> }))
@@ -17,6 +18,7 @@ vi.mock('../features/today/NextUp', () => stub('nextup'))
 vi.mock('../features/today/PlanToday', () => stub('plan'))
 vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
+vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
@@ -31,12 +33,13 @@ describe('Today simple mode', () => {
     for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
   })
-  it('full page order: Next up, weather, quick log, My week, family line, plan, then More', async () => {
+  it('full page order: weather, family alert card, Next up, quick log, My week, self-care, plan, then More; no OK card, How are you? is the check-in', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['alertband', 'nextup', 'weather', 'quicklog', 'myweek', 'selfcare', 'plan', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['alertband', 'weather', 'alertcard', 'nextup', 'quicklog', 'myweek', 'selfcare', 'plan', 'alerts', 'nearby', 'week'])
   })
   it('a dose due: Next up comes first and the weather card stays compact', async () => {
     render(<Today />)
@@ -50,14 +53,14 @@ describe('Today simple mode', () => {
     expect(screen.queryByTestId('nextup')).toBeNull()
     expect(screen.getByTestId('weather').getAttribute('data-expanded')).toBe('true')
     expect(screen.getByTestId('weather').getAttribute('data-review')).toBe('3')
-    expect([...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).slice(0, 3)).toEqual(['alertband', 'weather', 'quicklog'])
+    expect([...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).slice(0, 4)).toEqual(['alertband', 'weather', 'alertcard', 'quicklog'])
   })
   it('on, calm: the expanded weather card replaces the empty Next up card; no Taken button', async () => {
     meds.due = false
     await db.kv.put({ key: 'mode.simple', value: true })
     render(<Today />)
     expect((await screen.findByTestId('weather')).getAttribute('data-expanded')).toBe('true')
-    expect(screen.queryByRole('button', { name: 'Taken' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'I took it' })).toBeNull()
     expect(screen.queryByText('All clear')).toBeNull()
   })
   it('on: .bt gets data-simple (CSS hides the tab bar and coach mark); off again on exit', async () => {
@@ -85,13 +88,15 @@ describe('Today simple mode', () => {
     fireEvent.click((await screen.findAllByRole('button', { name: /^Exit/ }))[0]!)
     await screen.findByTestId('quicklog')
   })
-  it('on: the next dose with a big Taken, then three big buttons', async () => {
+  it('on: the next dose with a big I took it, Hold for help, Call 911, How are you? and a family number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     render(<Today />)
-    await screen.findByRole('button', { name: 'Taken' })
+    await screen.findByRole('button', { name: 'I took it' })
     expect(screen.getByText('Losartan')).toBeTruthy()
-    expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^SOS/ })).toBeTruthy() // the real hold-to-send button, not a link
+    expect(screen.getByRole('button', { name: 'How are you?' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Hold to call and text your family' })).toBeTruthy() // the real hold button, not a link
+    expect(screen.getByRole('button', { name: /^Call 911/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
     for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
   })
@@ -99,15 +104,38 @@ describe('Today simple mode', () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     storm.v = { title: 'Pepito is near', body: 'about 400 km east of you' }
     render(<Today />)
-    await screen.findByRole('button', { name: 'Taken' })
+    await screen.findByRole('button', { name: 'I took it' })
     expect(screen.getByTestId('alertband')).toBeTruthy()
     storm.v = null
   })
-  it('on with an SOS contact: Call family dials the first valid number', async () => {
+  it('on with an SOS contact: Call <name> dials the first valid number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
     await db.kv.put({ key: 'sos.contacts', value: [{ name: 'Ate Joy', phone: '+63 917 123 4567' }] })
     render(<Today />)
-    const call = await screen.findByRole('link', { name: 'Call family' })
+    const call = await screen.findByRole('link', { name: 'Call Ate Joy' })
     expect(call.getAttribute('href')).toBe('tel:+639171234567')
+  })
+  it('on: How are you? opens the faces, Not now goes back; I took it ends on Well done with the family line', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
+    expect(screen.getByRole('heading', { name: 'How are you?' })).toBeTruthy()
+    expect([...document.querySelectorAll('.td-face')].map((b) => b.textContent)).toEqual(['Great', 'OK', 'Not great', 'Unwell'])
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'I took it' }))
+    expect((await screen.findByRole('heading', { name: 'Well done' })).textContent).toBe('Well done')
+    expect(screen.getByText('Your family will see it in Bantay.')).toBeTruthy()
+  })
+  it('on: a simple-mood face calls logFeeling and shows the told or untold toast', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    expect(await screen.findByText('Saved. Your family will see it in Bantay.')).toBeTruthy()
+    feel.r = 'untold'
+    fireEvent.click(await screen.findByRole('button', { name: 'How are you?' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
+    expect(await screen.findByText('Your family has not seen this. Tap Unwell again when you are online, or call them.')).toBeTruthy()
+    expect(feel.calls).toEqual(['great', 'unwell'])
   })
 })

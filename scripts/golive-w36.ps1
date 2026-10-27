@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)  # CLI tables are UTF-8; PS 5.1 shows them as mojibake otherwise
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-w36.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 # PS 5.1 + Stop turns CLI progress on stderr into errors: run natives with a local Continue, judge by exit code.
 function Run([string]$exe, [string[]]$a) {

@@ -21,7 +21,7 @@ export const PAGE = 1000
 export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
 const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 /** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
-const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages'])
+const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health'])
 const NO_TABLE = /^(PGRST205|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
@@ -96,6 +96,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     payload = { ...payload, client_id: crypto.randomUUID() }
     await db.outbox.update(row.id!, { payload })
   }
+  if (row.table === 'sos_events') payload = { ...payload, sentAt: new Date().toISOString() } // the server marks the row late when sentAt is long after at (same phone clock); not saved, so a retry carries its own send time
   const spec = TABLES[row.table]
   let res: Response
   try {

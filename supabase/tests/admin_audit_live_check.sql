@@ -1,6 +1,6 @@
 -- Live rehearsal of 0021 (orchestrator, 2026-10-21). Applies 0021 inside one transaction, runs count-only checks as the real admin and one
 -- member, then the final DO block raises 'RESULT ...', which aborts the transaction: NOTHING is kept. No values are printed, only counts and column names.
--- Run: npx -y supabase@2.121.0 db query --linked -f supabase/tests/admin_audit_live_check.sql   (expect an error whose text starts with RESULT)
+-- Run: npx -y supabase@2.122.0 db query --linked -f supabase/tests/admin_audit_live_check.sql   (expect an error whose text starts with RESULT)
 begin;
 create table if not exists public.audit_log (
   id bigint generated always as identity primary key,

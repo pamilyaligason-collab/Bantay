@@ -17,7 +17,7 @@ describe('vitalCards', () => {
   it('joins blood pressure into one card and judges it by the worse number', () => {
     const v = vitalCards([r('bp_systolic', 132, 'mmHg'), r('bp_diastolic', 76, 'mmHg')], NOW)
     expect(v).toHaveLength(1)
-    expect(v[0]).toMatchObject({ key: 'bp', value: '132/76', pos: 'above', word: 'High', icon: 'up' })
+    expect(v[0]).toMatchObject({ key: 'bp', value: '132/76', pos: 'above', word: 'Above target', icon: 'up' })
   })
   it('says In range for an in-range reading and never "In range" when there is no range', () => {
     const v = vitalCards([r('heart_rate', 72, 'bpm'), r('weight', 58.2, 'kg')], NOW)

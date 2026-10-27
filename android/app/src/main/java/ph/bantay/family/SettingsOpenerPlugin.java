@@ -29,6 +29,11 @@ import java.util.List;
  *   phones): action com.google.android.gms.location.settings.GOOGLE_LOCATION_SETTINGS (widely
  *   used, undocumented, may not resolve).
  * - Earthquake alerts help: https://support.google.com/android/answer/9319337
+ * - OEM autostart / battery targets (Session 10, lane S3, research R2): no source confirmed any OEM component name, so every
+ *   "oem-*" candidate below is an UNVERIFIED best-effort guess from memory. Each is tried in turn; a missing or unexported one is
+ *   skipped, and the chain always ends at this app's own settings page and then the battery optimisation list (standard intents).
+ *   Confirm each on a real phone (adb shell cmd package resolve-activity, or tap "Fix it now") before relying on it. Nothing here
+ *   disables or modifies any OEM package.
  * - AOSP CellBroadcastReceiver settings activity:
  *   https://android.googlesource.com/platform/packages/apps/CellBroadcastReceiver/+/refs/heads/master/src/com/android/cellbroadcastreceiver/CellBroadcastSettings.java
  *   Its exported state varies by build, so explicit components are tried and guarded.
@@ -49,8 +54,38 @@ public class SettingsOpenerPlugin extends Plugin {
     return new Cand(label, new Intent(Intent.ACTION_MAIN).setComponent(new ComponentName(pkg, cls)));
   }
 
-  private static List<Cand> chain(String target) {
+  private static Cand appDetails(String pkg) {
+    return new Cand("app-settings", new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg)));
+  }
+
+  /** The lower-case phone maker ("xiaomi", "samsung", ...), or "" when unknown. */
+  private static String maker() {
+    String m = Build.MANUFACTURER;
+    return m == null ? "" : m.toLowerCase(java.util.Locale.ROOT);
+  }
+
+  /** Unverified OEM autostart / battery screens for this maker (see the class comment). Empty for makers we have no guess for. */
+  private static List<Cand> oemAutostart(String maker) {
     List<Cand> c = new ArrayList<>();
+    if (maker.contains("xiaomi") || maker.contains("redmi") || maker.contains("poco")) {
+      c.add(component("oem-xiaomi-autostart", "com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"));
+    } else if (maker.contains("huawei") || maker.contains("honor")) {
+      c.add(component("oem-huawei-startup", "com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"));
+      c.add(component("oem-huawei-startup-old", "com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.StartupNormalAppListActivity"));
+    } else if (maker.contains("oppo") || maker.contains("realme") || maker.contains("oneplus")) {
+      c.add(component("oem-oppo-startup", "com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"));
+      c.add(component("oem-oppo-startup-old", "com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"));
+    } else if (maker.contains("vivo") || maker.contains("iqoo")) {
+      c.add(component("oem-vivo-startup", "com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"));
+    } else if (maker.contains("samsung")) {
+      c.add(component("oem-samsung-battery", "com.samsung.android.lool", "com.samsung.android.sm.battery.ui.BatteryActivity"));
+    }
+    return c;
+  }
+
+  private List<Cand> chain(String target) {
+    List<Cand> c = new ArrayList<>();
+    String pkg = getContext().getPackageName();
     if ("earthquake".equals(target)) {
       c.add(action("safety-center", "android.settings.SAFETY_CENTER"));
       c.add(action("google-location-settings", "com.google.android.gms.location.settings.GOOGLE_LOCATION_SETTINGS"));
@@ -64,6 +99,15 @@ public class SettingsOpenerPlugin extends Plugin {
       c.add(component("cellbroadcast-xiaomi", "com.xiaomi.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
       c.add(component("cellbroadcast-huawei", "com.huawei.cellbroadcastreceiver", "com.android.cellbroadcastreceiver.CellBroadcastSettings"));
       c.add(action("safety-center", "android.settings.SAFETY_CENTER"));
+    } else if ("autostart".equals(target)) {
+      c.addAll(oemAutostart(maker()));
+      c.add(appDetails(pkg));
+      c.add(action("battery-list", Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+    } else if ("appdetails".equals(target)) {
+      c.add(appDetails(pkg));
+    } else if ("notifications".equals(target)) {
+      c.add(new Cand("app-notifications", new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, pkg)));
+      c.add(appDetails(pkg));
     } else {
       return null;
     }
@@ -129,6 +173,15 @@ public class SettingsOpenerPlugin extends Plugin {
     r.put("canScheduleExactAlarms", exact);
     PowerManager pm = (PowerManager) ctx.getSystemService(android.content.Context.POWER_SERVICE);
     r.put("ignoringBatteryOptimizations", pm != null && pm.isIgnoringBatteryOptimizations(ctx.getPackageName()));
+    call.resolve(r);
+  }
+
+  /** The phone maker and Android level, for the phone check (OEM-specific fix steps). Values only; nothing is changed. */
+  @PluginMethod
+  public void deviceInfo(PluginCall call) {
+    JSObject r = new JSObject();
+    r.put("manufacturer", maker());
+    r.put("sdk", Build.VERSION.SDK_INT);
     call.resolve(r);
   }
 

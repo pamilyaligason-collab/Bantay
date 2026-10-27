@@ -53,6 +53,11 @@ describe('normalise', () => {
     const hr = [0, 2, 14, 16].map((m) => S({ startDate: new Date(Date.UTC(2026, 9, 1, 6, m)).toISOString(), value: 70 + m }))
     expect(normalise('heartRate', hr, 'p', 'healthkit').readings.map((r) => r.value)).toEqual([70, 86])
   })
+  it('a cuff glitch (bottom above top, 999, a top under 40) is dropped, never saved as a reading that could alert the family', () => {
+    const bad = [S({ value: 0, systolic: 90, diastolic: 120 }), S({ value: 0, systolic: 999, diastolic: 80 }), S({ value: 0, systolic: 30, diastolic: 20 }), S({ value: 0, systolic: 120, diastolic: 120 })]
+    expect(normalise('bloodPressure', bad, 'p', 'health-connect').readings).toEqual([])
+    expect(normalise('bloodPressure', [S({ value: 0, systolic: 185, diastolic: 95 })], 'p', 'health-connect').readings.map((x) => x.value)).toEqual([185, 95])
+  })
   it('blood pressure becomes systolic and diastolic readings the Health screen already knows', () => {
     const r = normalise('bloodPressure', [S({ value: 0, systolic: 128.4, diastolic: 82 })], 'p', 'health-connect').readings
     expect(r.map((x) => [x.test, x.value, x.unit])).toEqual([['bp_systolic', 128, 'mmHg'], ['bp_diastolic', 82, 'mmHg']])

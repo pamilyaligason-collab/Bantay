@@ -21,7 +21,9 @@ import { cyclones, stormLine, stormName, since, windySrc } from './LiveMaps'
 import { stormCentre, zoomEarthUrl } from './stormView'
 import MapsPanel from './MapsPanel'
 import NewsTop5 from './NewsTop5'
+import PhoneAlertsPage from './PhoneAlertsPage'
 import PhoneWarnings from './PhoneWarnings'
+import { WARNINGS_SOURCE_LINE } from './stormMode'
 import Practice from './Practice'
 import SafetyBrief from './SafetyBrief'
 import { useKv } from './store'
@@ -31,14 +33,14 @@ import './safety.css'
 type Loc = ReturnType<typeof useLocation>
 type Place = NonNullable<ReturnType<typeof usePlaceFrom>>
 
-export const SUBS = ['warnings', 'weather', 'storms', 'map', 'dial', 'hazards', 'cards', 'sos', 'sources'] as const
+export const SUBS = ['warnings', 'weather', 'storms', 'map', 'dial', 'hazards', 'cards', 'sos', 'sources', 'phonewarn'] as const
 export type Sub = (typeof SUBS)[number]
 /** '#safety/dial' -> 'dial'; anything else -> null (the hub). */
 export const subOf = (hash: string): Sub | null => SUBS.find((s) => hash === `#safety/${s}`) ?? null
 
 const TITLES: Record<Sub, string> = {
   warnings: 'Warnings', weather: 'Weather maps', storms: 'Storm tracker', map: 'Rescue map',
-  dial: 'Quick dial', hazards: 'Hazards at my location', cards: 'Safety cards', sos: 'Past SOS', sources: 'Sources'
+  dial: 'Quick dial', hazards: 'Hazards at my location', cards: 'Safety cards', sos: 'Past SOS', sources: 'Sources', phonewarn: 'Phone warnings'
 }
 
 
@@ -231,6 +233,7 @@ const SOURCES: [string, string, string][] = [
   ['Ready.gov and WHO', 'Safety card wording (written in our own words)', 'https://www.ready.gov/'],
   ['HazardHunterPH', 'Hazard readings for Dampas', 'https://hazardhunter.georisk.gov.ph/'],
   ['Windy, Ventusky, PAGASA Panahon', 'Weather and storm maps', 'https://www.windy.com/'],
+  ['PAGASA public alerts (CC BY 4.0)', 'Wind signals and flood advisories, read from the PAGASA public alert feed', 'https://publicalert.pagasa.dost.gov.ph/'],
   ['GDACS', 'Storm and quake alerts', 'https://www.gdacs.org/'],
   ['OpenStreetMap contributors', 'Map data (ODbL)', 'https://www.openstreetmap.org/copyright']
 ]
@@ -264,6 +267,7 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
       return (
         <>
           <section aria-label="Official warnings"><SafetyBrief loc={alertRef(place)} /></section>
+          <p className="sub" style={{ margin: '0 4px' }}>{WARNINGS_SOURCE_LINE} <a href="https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin" target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin</a></p>
           <PhoneWarnings level={2} />
           <section aria-labelledby="s-news"><h2 id="s-news" className="hd">Safety news</h2><NewsTop5 zone={newsZone(place)} /></section>
         </>
@@ -291,6 +295,7 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
     case 'cards': return <Practice />
     case 'sos': return <PastSos />
     case 'sources': return <Sources />
+    case 'phonewarn': return <PhoneAlertsPage />
   }
 }
 

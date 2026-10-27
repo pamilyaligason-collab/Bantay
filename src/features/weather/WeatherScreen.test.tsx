@@ -23,19 +23,19 @@ beforeEach(async () => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('WeatherScreen', () => {
-  it('draws the action line first, then the hero, 4 tiles, the strip, 7 days, sources and the footer', async () => {
+  it('draws the action line first, then the hero, 4 tiles, the strip, 10 days, sources and the footer', async () => {
     render(<WeatherScreen />)
     expect(await screen.findByText(/Stay indoors 11 AM-3 PM/)).toBeTruthy() // 33 C at 70% is a heat index in the Danger band
     expect(screen.getByText(/Heat index 4\d° · Danger/)).toBeTruthy()
     const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
-    expect(regions.slice(0, 7)).toEqual(['What to do', 'Now', 'Details', 'Next 24 hours', '7 days', 'Official sources', 'Live weather map'])
+    expect(regions.slice(0, 9)).toEqual(['What to do', 'Now', 'Details', 'Rain and storm map', 'Next 48 hours', '10 days', 'Season and sun', 'Official sources', 'Live weather map'])
     expect(document.querySelector('.wx-temp')?.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     const details = within(screen.getByRole('region', { name: 'Details' }))
     for (const t of ['Rain next 6 h', 'Wind', 'Humidity', 'UV today']) expect(details.getByText(t)).toBeTruthy()
     expect(details.getByText('9 km/h')).toBeTruthy()
     expect(details.getByText('Gusts 18')).toBeTruthy()
-    expect(within(screen.getByRole('region', { name: '7 days' })).getAllByRole('listitem')).toHaveLength(7)
+    expect(within(screen.getByRole('region', { name: '10 days' })).getAllByRole('listitem')).toHaveLength(10)
     expect(screen.getByText('Today')).toBeTruthy()
     for (const n of ['PAGASA', 'Project NOAH', 'PANaHON']) expect(screen.getByText(n)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Open live map' })).toBeTruthy()

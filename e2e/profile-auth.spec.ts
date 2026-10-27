@@ -107,7 +107,10 @@ for (const scheme of ['light', 'dark'] as const) {
     const reqs: Req[] = []
     await mock(page, reqs, scheme, [{ id: 'p1', display_name: 'Test Person', phone: null, birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }])
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText('Your photo')
+    await page.getByRole('button', { name: 'Open Today' }).click() // first launch is start-done since S6a; setup opens from the card on Me
+    await page.goto('/#me')
+    await page.getByRole('button', { name: /^Next: / }).click()
+    await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')
     await shot(page, 'wizard-photo', scheme)
     await page.getByLabel('Add a photo').or(page.locator('input[type=file]')).first().setInputFiles({
       name: 'me.png', mimeType: 'image/png',
@@ -115,7 +118,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
     await expect.poll(() => reqs.some((r) => r.method === 'POST' && r.path.includes('/storage/v1/object/avatars/p1.jpg')), { timeout: 15_000 }).toBe(true)
     await page.getByRole('button', { name: 'Step 2: About me' }).click()
-    await expect(page.locator('h1')).toHaveText('About me')
+    await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('About me')
     await page.getByRole('button', { name: 'A+' }).click()
     await shot(page, 'wizard-about', scheme)
     await page.getByRole('button', { name: 'Step 3: Your medicines' }).click()

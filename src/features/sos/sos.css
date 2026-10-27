@@ -50,3 +50,29 @@
 .sos-who { display: grid; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .sos-st-chip { flex: none; min-height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--soft); color: var(--ink); }
 .sos-st-chip[data-state="ready"], .sos-st-chip[data-state="no-number"] { background: var(--card2); color: var(--muted); }
+
+/* Session 10 (D-78): SOS saves, calls and texts. safety-sos-hold, safety-sos-sent, simple-hold */
+.sos-full { position: fixed; inset: 0; z-index: 100; display: grid; align-content: center; justify-items: center; gap: 12px; background: var(--danger-bg); color: #fff; text-align: center; padding: 24px; pointer-events: none; }
+.sos-full-n { font-size: 96px; font-weight: 800; line-height: 1; display: grid; justify-items: center; }
+.sos-full-n small { font-size: 18px; font-weight: 600; }
+.sos-full b { font-size: 32px; }
+.sos-full p { margin: 0; max-width: 28ch; font-size: 16px; opacity: .92; }
+.sos-bare { position: fixed; inset: 0; z-index: 100; overflow-y: auto; background: var(--bg); color: var(--ink); box-sizing: border-box; padding: max(16px, env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
+.sos-resume { width: 100%; box-sizing: border-box; flex: none; }
+.sos-simple { display: grid; gap: 10px; justify-items: stretch; text-align: center; }
+.sos-simple-btn { min-height: 84px; border: 0; border-radius: 42px; background: var(--danger-bg); color: #fff; font: inherit; font-size: 22px; font-weight: 800; padding: 0 20px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.sos-simple-btn.holding { background: var(--red); }
+.sos-simple-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.sos-simple-sub { margin: 0; font-size: 16px; }
+.sos-911-btn { border: 0; font: inherit; font-weight: 700; width: 100%; box-sizing: border-box; }
+.sos-911-btn span, .sos-card-btn span { display: grid; gap: 2px; text-align: center; }
+.sos-911-btn small, .sos-card-btn small { font-size: 13px; font-weight: 500; opacity: .85; }
+.sos-card-btn { min-height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 26px; border: 0; background: var(--card); color: var(--ink); box-shadow: var(--shadow); font: inherit; font-weight: 700; font-size: 17px; padding: 8px 18px; width: 100%; box-sizing: border-box; }
+.sos-steps { list-style: none; margin: 0; padding: 4px 14px; background: var(--card); border-radius: 16px; box-shadow: var(--shadow); display: grid; }
+.sos-steps li { display: grid; gap: 2px; padding: 12px 0 12px 34px; position: relative; border-top: 1px solid var(--line); }
+.sos-steps li:first-child { border-top: 0; }
+.sos-steps li::before { content: ''; position: absolute; left: 0; top: 14px; width: 22px; height: 22px; border-radius: 50%; background: var(--card2, var(--soft)); border: 2px solid var(--line); box-sizing: border-box; }
+.sos-steps li[data-state="ok"]::before { background: var(--ok); border-color: var(--ok); }
+.sos-steps li[data-state="wait"]::before { border-color: var(--warn); }
+.sos-nowhere { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .sos-btn.holding .sos-ring { transition: none; } }

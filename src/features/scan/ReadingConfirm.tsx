@@ -6,13 +6,14 @@ import '../health/m7a.css' // .ar-prev (the verdict line box)
 import { deviceSpec, previewReading } from '../health/readingPreview'
 import { logReading } from '../log/store'
 import { buildReadings, KIND_LABEL, KIND_ORDER, toTyped, UNIT_WORD, UNITS, type ReadingDraft, type ReadingKind } from './reading'
+import { AI_OFF } from '../privacy/ai'
 
 const SURE = 0.9
 const TEST_OF: Record<ReadingKind, string> = { bp: 'bp_systolic', glucose: 'glucose', weight: 'weight', temp: 'temperature', spo2: 'spo2' }
 type Field = 'systolic' | 'diastolic' | 'pulse' | 'value'
 
-export default function ReadingConfirm({ draft, failed, limited = false, personId, onSaved, onBack }: {
-  draft: ReadingDraft; failed: boolean; limited?: boolean; personId: string; onSaved: () => void; onBack: () => void
+export default function ReadingConfirm({ draft, failed, limited = false, off = false, personId, onSaved, onBack }: {
+  draft: ReadingDraft; failed: boolean; limited?: boolean; off?: boolean; personId: string; onSaved: () => void; onBack: () => void
 }) {
   const [kind, setKind] = useState<ReadingKind>(draft.kind ?? 'bp')
   const [t, setT] = useState(toTyped(draft))
@@ -28,7 +29,7 @@ export default function ReadingConfirm({ draft, failed, limited = false, personI
   // prefilled, still as read, not yet tapped; editing a number counts as confirming it
   const waiting = fields.filter((f) => unsure && kind === draft.kind && first[f] !== '' && t[f] === first[f] && !tapped.includes(f))
   const tap = (f: Field) => setTapped((x) => (x.includes(f) ? x : [...x, f]))
-  const note = limited ? 'Too many photo reads today. Try again tomorrow or type the numbers from the device.'
+  const note = off ? AI_OFF : limited ? 'Too many photo reads today. Try again tomorrow or type the numbers from the device.'
     : failed ? 'Could not read the photo (no signal or a problem). Type the numbers from the device.'
     : draft.kind == null ? 'That does not look like a health device. Pick what it is and type the numbers.'
     : empty ? 'The numbers were not clear. Type them from the device.'

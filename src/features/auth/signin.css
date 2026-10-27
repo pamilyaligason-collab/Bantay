@@ -28,3 +28,39 @@
 .wl-row .avatar { width: 40px; height: 40px; font-size: 16px; }
 .wl-chev { display: inline-flex; flex: none; color: var(--ink2); }
 .wl-row:focus-visible { outline: 3px solid var(--focus, var(--ink)); outline-offset: -3px; }
+
+/* Join, set PIN, forgot PIN and wait screens (S6a). Same tokens as above, light and dark follow the app theme. */
+.si-set { display: grid; gap: 14px; justify-items: stretch; }
+.si-c { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.si-c .pname { margin: 0; }
+.si-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink2); }
+.si-steps { display: flex; gap: 6px; }
+.si-steps i { flex: 1; height: 4px; border-radius: 2px; background: var(--sep, var(--line)); }
+.si-steps i.on { background: var(--btn, var(--act)); }
+.si-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.si-two:has(> :only-child) { grid-template-columns: 1fr; }
+.si-two .btn2 { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.si-bad { margin: 0; color: var(--red, var(--danger)); font-size: 15px; font-weight: 600; text-align: center; }
+.si-opt { display: flex; align-items: center; gap: 12px; padding: 14px 16px; width: 100%; box-sizing: border-box; text-align: left; font: inherit; color: var(--ink); border: 0; cursor: pointer; }
+.si-opt .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.si-opt .grow b { font-size: 17px; }
+.si-opt .si-hint { margin: 0; }
+.si-opt:disabled { opacity: .55; }
+.si-opt:focus-visible { outline: 3px solid var(--focus, var(--ink)); outline-offset: 2px; }
+.si-tile { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--cell, var(--card)); color: var(--act, var(--ink)); }
+.si-switchrow { display: flex; align-items: center; gap: 12px; }
+.si-switchrow .grow { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.si-switchrow .si-hint { margin: 0; }
+.si-opts { display: grid; gap: 4px; padding: 8px 16px; }
+.si-codebox { padding: 22px 16px; }
+.si-code { font-size: 56px; font-weight: 700; letter-spacing: .18em; padding-left: .18em; font-variant-numeric: tabular-nums; }
+.si-ticks { list-style: none; margin: 0; padding: 4px 16px; display: grid; }
+.si-ticks li { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; }
+.si-ticks li + li { border-top: 0.5px solid var(--sep, var(--line)); }
+.si-ticks li > div { display: grid; gap: 2px; min-width: 0; }
+.si-ticks .si-hint { margin: 0; }
+.si-tick { display: inline-grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--sep, var(--line)); color: var(--ink); }
+.si-tick.ok { background: var(--green2, #2f7d4f); color: #fff; }
+.si-tick.bad { background: var(--danger-bg, #C2362B); color: #fff; }
+.si-emg { display: grid; margin-top: 8px; }
+.si-911red { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--danger-bg, #C2362B); color: #fff; text-decoration: none; }

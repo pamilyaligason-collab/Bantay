@@ -206,3 +206,23 @@ describe('confirmDraft log_med_taken resolves the name to a medication', () => {
     expect(a.logMedTaken.mock.calls[0]![0]).not.toHaveProperty('medicationId')
   })
 })
+
+describe('server emergency reply and plausible-range drafts (S10)', () => {
+  it('parseReply keeps the server 911 card: digit-only numbers, text moved into the card', () => {
+    const r = parseReply({ reply: 'Call now.', tool_calls: [], emergency: { kind: 'selfharm', call: ['1553', '911', 'x<b>'] } })
+    expect(r).toEqual({ text: '', cards: [], emergency: { kind: 'selfharm', call: ['1553', '911'], text: 'Call now.' } })
+    expect(parseReply({ emergency: { kind: 'chest', call: [] } }).emergency?.call).toEqual(['911'])
+    expect(parseReply({ reply: 'hi', emergency: {} })).toEqual({ text: 'hi', cards: [] })
+  })
+  it('a reading draft outside the add-sheet plausible range cannot be confirmed; mmol/L sugar and unknown tests pass', () => {
+    const ppl = [{ id: 'p1', name: 'Lola' }]
+    const d = (test: string, value: string, unit = '') => validateDraft('log_reading', { person: 'p1', test, value, unit }, ppl)
+    expect(d('weight', '700', 'kg')).toBe('Check the number: it looks too small or too big.')
+    expect(d('Blood sugar', '2000')).toBe('Check the number: it looks too small or too big.')
+    expect(d('pulse', '10')).toBe('Check the number: it looks too small or too big.')
+    expect(d('weight', '62', 'kg')).toBeNull()
+    expect(d('blood sugar', '6.1', 'mmol/L')).toBeNull()
+    expect(d('blood sugar', '6.1')).toBeNull()
+    expect(d('HbA1c', '6.1', '%')).toBeNull()
+  })
+})

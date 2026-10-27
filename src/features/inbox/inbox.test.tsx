@@ -54,7 +54,7 @@ describe('Inbox screen', () => {
   const inbox = (items: ReturnType<typeof buildInbox>, seen: string[] = []) => ({ items, unread: countUnread(items, seen), seen, markAllRead: vi.fn() })
   it('shows an empty state with no Mark all read button', () => {
     render(<Inbox inbox={inbox([])} />)
-    expect(screen.getByText('No notifications yet')).toBeTruthy()
+    expect(screen.getByText('No alerts yet')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull()
   })
   it('shows unread dots and Mark all read calls through once', () => {

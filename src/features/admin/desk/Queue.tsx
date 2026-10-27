@@ -8,7 +8,7 @@ import type { PageProps } from './types'
 import { BulkBar, Empty, PageHead, Tag, useConfirm, useToast } from './ui'
 import { useDeskPeople } from './people'
 import { EditFields, fmt, LoadError, Preview, say } from './recordsUi'
-import { defaultChecked, isLow, labRange, labTag, labValue, queueKey, reopenDocument, restore, type Change, type QItem, type QTable, type Status } from './recordsApi'
+import { defaultChecked, isLow, labRange, labTag, labValue, nameWarnings, nameWarningText, queueKey, reopenDocument, restore, type Change, type QItem, type QTable, type Status } from './recordsApi'
 import './records.css'
 
 const TITLE: Record<QTable, (r: QItem['row']) => string> = {
@@ -113,7 +113,11 @@ export default function Queue({ id }: PageProps) {
   for (const b of papers ?? []) for (const i of itemsOf(b)) docOf.set(i.row.id, b)
 
   // Confirm or reject a set of rows, close the papers that have nothing left, then offer Undo.
-  const apply = async (items: QItem[], verb: 'confirmed' | 'rejected', extra: { table: 'documents'; id: string }[] = []) => {
+  const apply = async (items: QItem[], verb: 'confirmed' | 'rejected', extra: { table: 'documents'; id: string }[] = [], acked = false): Promise<void> => {
+    if (verb === 'confirmed' && !acked) { // S11: a paper with another name on it is confirmed only after the admin says so
+      const w = await nameWarnings([...new Set([...items.map((i) => docOf.get(i.row.id)?.doc.id), ...extra.map((x) => x.id)].filter((x): x is string => !!x))], (pid) => nameOf(pid))
+      if (w.length) { setTimeout(() => conf.ask(nameWarningText(w), () => apply(items, verb, extra, true), { verb: 'Confirm anyway' }), 0); return } // after the first dialog has closed itself
+    }
     setBusy(true)
     try {
       const changes: Change[] = []

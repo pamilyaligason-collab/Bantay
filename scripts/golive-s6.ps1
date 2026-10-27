@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\golive-s6.ps1' }
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $Ref = 'wuakimpssycbtnmoexuc'
-$Sb = 'supabase@2.121.0'
+$Sb = 'supabase@2.122.0'
 $Migs = @(@('0015', 'usage_client_at'), @('0016', 'medications_softdelete'), @('0017', 'news_zone'), @('0018', 'dose_watch'))
 function Step($n, $t) { Write-Host "`n== step ${n}: $t" -ForegroundColor Cyan }
 function Run([string]$exe, [string[]]$a) {

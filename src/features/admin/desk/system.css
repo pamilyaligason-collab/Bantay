@@ -1,0 +1,21 @@
+/* System health page and the dashboard "alerts seen" line. Tokens only. */
+.sy-list { list-style: none; margin: 0; padding: 4px 0; }
+.sy-ln { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 16px; }
+.sy-ln + .sy-ln { border-top: 1px solid var(--line); }
+.sy-grow { flex: 1; min-width: 0; }
+.sy-sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.sy-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.sy-dot.ok { background: var(--ok); } .sy-dot.warn { background: var(--amber); } .sy-dot.bad { background: var(--red); }
+.sy-st { font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--ink); }
+.sy-st.ok { color: color-mix(in srgb, var(--ok) 70%, var(--ink)); }
+.sy-st.warn { color: var(--amber-ink); }
+.sy-st.bad { color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+.sy-foot { margin: 0; padding: 8px 16px 12px; font-size: 13px; color: var(--muted); }
+.sy-foot.bad { color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+.sy-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.sy-spark { display: flex; align-items: flex-end; gap: 4px; height: 96px; border-bottom: 1px solid var(--line); }
+.sy-spark i { flex: 1; min-height: 2px; background: var(--green2); border-radius: 2px 2px 0 0; }
+.sy-spark i.b { background: var(--red); }
+.hm-seen { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); }
+.hm-seen a { margin-left: auto; color: var(--link); font-weight: 600; font-size: 13px; }
+@media (max-width: 767px) { .sy-ln { padding: 8px 12px; } .sy-st { white-space: normal; text-align: right; } }

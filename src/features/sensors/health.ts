@@ -1,5 +1,6 @@
 import { db } from '../../db'
 import type { Reading } from '../health/ranges'
+import { PLAUSIBLE as P } from '../health/plausible'
 import { type Activity, type ActivitySource, ldb, logActivity, logReading } from '../log/store'
 import { getMember } from '../auth/session'
 import { hdb } from '../records/store'
@@ -91,7 +92,8 @@ export function normalise(type: SensorType, samples: RawSample[], personId: stri
         seenBucket.add(bucket)
         out.readings.push({ personId, takenAt: startedAt, test: 'heart_rate', value: Math.round(s.value), unit: 'bpm' })
       }
-    } else if (s.systolic && s.diastolic) {
+    } else if (s.systolic && s.diastolic && s.systolic >= P.bp.min && s.systolic <= P.bp.max && s.diastolic >= 20 && s.diastolic <= 200 && s.diastolic < s.systolic) {
+      // a cuff glitch (0, 999, bottom above top) is dropped here: a device row can raise the family alert (migration 0035), so an impossible number must never be saved
       out.readings.push({ personId, takenAt: startedAt, test: 'bp_systolic', value: Math.round(s.systolic), unit: 'mmHg' })
       out.readings.push({ personId, takenAt: startedAt, test: 'bp_diastolic', value: Math.round(s.diastolic), unit: 'mmHg' })
     }

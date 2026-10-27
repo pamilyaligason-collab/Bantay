@@ -16,12 +16,14 @@ import Duplicates from './Duplicates'
 import Files from './Files'
 import Ids from './Ids'
 import History from './History'
+import System from './System'
+import { loadSystemBadge } from './systemApi'
 import './desk.css'
 
-const PAGES: Record<DeskPage, ComponentType<PageProps>> = { home: Home, members: Members, calendar: Calendar, queue: Queue, records: Records, duplicates: Duplicates, files: Files, ids: Ids, history: History }
-const ICONS: Record<DeskPage, IconName> = { home: 'home', members: 'users', calendar: 'calendar', queue: 'check', records: 'file', duplicates: 'pdf', files: 'scan', ids: 'key', history: 'clock' }
+const PAGES: Record<DeskPage, ComponentType<PageProps>> = { home: Home, members: Members, calendar: Calendar, queue: Queue, records: Records, duplicates: Duplicates, files: Files, ids: Ids, history: History, system: System }
+const ICONS: Record<DeskPage, IconName> = { home: 'home', members: 'users', calendar: 'calendar', queue: 'check', records: 'file', duplicates: 'pdf', files: 'scan', ids: 'key', history: 'clock', system: 'gauge' }
 /** g + key jumps to a page (help sheet lists them). */
-export const JUMPS: Record<string, DeskPage> = { h: 'home', m: 'members', c: 'calendar', q: 'queue', r: 'records', d: 'duplicates', f: 'files', i: 'ids', y: 'history' }
+export const JUMPS: Record<string, DeskPage> = { h: 'home', m: 'members', c: 'calendar', q: 'queue', r: 'records', d: 'duplicates', f: 'files', i: 'ids', y: 'history', s: 'system' }
 const NAV_KEY = 'admin.nav.collapsed'
 
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))
@@ -35,6 +37,7 @@ function useCounts() {
       setC((x) => ({ ...x, queue: (data ?? []).reduce((a, r: { drafts: number | null }) => a + (r.drafts ?? 0), 0) }))
     })
     void supabase.from('source_files').select('id', { count: 'exact', head: true }).eq('ingest_status', 'failed').then(({ count }) => setC((x) => ({ ...x, files: count ?? 0 })))
+    void loadSystemBadge().then((r) => { if (r.ok) setC((x) => ({ ...x, system: r.data })) }) // red scheduled jobs; the dot stays off when unknown
   }, [])
   return c
 }
@@ -192,7 +195,7 @@ export default function WebShell() {
             {g.pages.map((p) => (
               <a key={p} className="wa-nav" href={deskHref(p)} aria-current={p === at.page ? 'page' : undefined} title={DESK_LABELS[p]}>
                 <Icon name={ICONS[p]} active={p === at.page} size={20} /><span>{DESK_LABELS[p]}</span>
-                {!!counts[p] && <b className={`wa-cnt ${p === 'files' ? 'bad' : 'warn'}`} aria-label={`${counts[p]} waiting`}>{counts[p]}</b>}
+                {!!counts[p] && <b className={`wa-cnt ${p === 'files' || p === 'system' ? 'bad' : 'warn'}`} aria-label={p === 'system' ? `${counts[p]} jobs failing` : `${counts[p]} waiting`}>{counts[p]}</b>}
               </a>
             ))}
           </div>

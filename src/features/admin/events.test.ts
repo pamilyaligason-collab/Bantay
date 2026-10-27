@@ -48,6 +48,9 @@ describe('track allowlist (B-7)', () => {
     }
     expect(await db.outbox.count()).toBe(0)
   })
+  it('allows the S3 phone check events', async () => {
+    for (const n of ['phone_check_pass', 'phone_check_fail']) expect(await track('action', n), n).toBe(true)
+  })
   it('allows every session 6 habit event (PART-2 section 4) and the Ask screen', async () => {
     for (const n of ['dose_logged', 'dose_skipped', 'reading_added', 'sos_sent', 'checkin_done', 'med_added', 'med_edited', 'med_paused',
       'med_deleted', 'reminder_opened', 'card_seen_my_week', 'weather_opened', 'weather_opened_action', 'records_confirmed']) {

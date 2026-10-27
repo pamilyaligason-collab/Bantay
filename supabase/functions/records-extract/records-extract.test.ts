@@ -90,6 +90,7 @@ describe('mapDraft', () => {
       expect(r).not.toHaveProperty('confirmed_by')
     }
     expect(m.document).not.toHaveProperty('status')
+    expect(m.document.printed_name).toBe('TEST PERSON') // S11: the name on the paper is kept for the confirm sheet
   })
   it('maps lab values with the catalog (codes, canonical units, Manila time) and keeps unknown tests raw', async () => {
     const { rows } = await run()

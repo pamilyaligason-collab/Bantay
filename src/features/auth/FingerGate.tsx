@@ -2,11 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
 import { openFingerprintEnrol, promptFingerprint, unlockMode, type UnlockMode } from './biometric'
 import { setPasskeyFlag } from './family'
+import { Icon } from '../shell/Icon'
+import { LockMedicalId } from '../medid/LockMedicalId'
+import { useLockGlance } from '../privacy/lockWeather'
+import '../privacy/privacy.css'
 
-/** APK only. A signed-in phone asks for the fingerprint before showing the app (D-32, A-15/A-16).
- *  The session never leaves WebView storage; "Use PIN" signs out so the remembered person types their PIN again. */
-export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: string; onUnlocked: () => void; onUsePin: () => void; onNotYou: () => void }) {
+const hello = (h: number) => (h < 12 ? 'umaga' : h < 18 ? 'hapon' : 'gabi')
+const today = () => new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+
+/** APK only. A signed-in phone asks for the fingerprint before showing the app (D-32, A-15/A-16; mockup start-finger).
+ *  The session never leaves WebView storage; "Use PIN" signs out so the remembered person types their PIN again.
+ *  Before unlocking it shows only weather (cached, no private data), Call 911 (the dial screen) and the lock Medical ID (allergies, conditions, who to call). */
+export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: { name: string; personId?: string; onUnlocked: () => void; onUsePin: () => void; onNotYou: () => void }) {
   const [tried, setTried] = useState(false)
+  const [medid, setMedid] = useState(false)
+  const glance = useLockGlance()
   const alive = useRef(true)
   const ask = async () => {
     setTried(false)
@@ -15,15 +25,35 @@ export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: str
     if (ok === true) onUnlocked(); else if (ok === 'use_pin') onUsePin(); else setTried(true)
   }
   useEffect(() => { alive.current = true; void ask(); return () => { alive.current = false } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  if (medid) return <LockMedicalId personId={personId} onClose={() => setMedid(false)} />
   return (
-    <main className="scroll si-ret">
-      <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={150} height={150} />
-      <h1 className="h-display">Welcome back{name ? `, ${name}` : ''}</h1>
-      <p className="si-hint" role="status">{tried ? 'That did not work. Touch the sensor again, or use your PIN.' : 'Touch the sensor to open Bantay.'}</p>
-      <button className="btn" onClick={() => void ask()}>Use fingerprint</button>
-      <button className="si-link" onClick={onUsePin}>Use PIN</button>
-      <button className="si-link" onClick={onNotYou}>Not you?</button>
-      <a className="si-link si-911" href="tel:911">Emergency call 911</a>
+    <main className="lk si-ret">
+      <div className="lk-hello">
+        <img src={MASCOT_SRC} alt={MASCOT_ALT} width={56} height={56} />
+        <div><div className="lk-eyebrow">{today()}</div><h1>Magandang {hello(new Date().getHours())}{name ? `, ${name}` : ''}</h1></div>
+      </div>
+      {glance && (
+        <div className="lk-wx">
+          <Icon name={glance.kind} size={24} />
+          <div><b>{glance.temp}° {glance.words}</b>{glance.place && <div className="lk-sub">{glance.place}</div>}{glance.rain && <div className="lk-sub">{glance.rain}</div>}</div>
+        </div>
+      )}
+      <div className="lk-fpwrap">
+        <i /><i />
+        <button type="button" className="lk-fp" aria-label="Use fingerprint" onClick={() => void ask()}><Icon name="fp" size={92} stroke={1.4} /><span className="lk-scan" /></button>
+      </div>
+      <div className="lk-say">
+        <b>Touch the fingerprint sensor</b>
+        {tried ? <span role="status">That did not work. Touch the sensor again, or use your PIN.</span> : <span>to open Bantay</span>}
+      </div>
+      <div className="lk-two">
+        <button type="button" className="lk-btn" onClick={onUsePin}>Use PIN</button>
+        <button type="button" className="lk-btn" onClick={onNotYou}>{name ? `Not ${name}?` : 'Not you?'}</button>
+      </div>
+      <div className="lk-sos">
+        <a className="lk-btn lk-red" href="tel:911">Call 911</a>
+        <button type="button" className="lk-btn lk-out" onClick={() => setMedid(true)}>Medical ID</button>
+      </div>
     </main>
   )
 }

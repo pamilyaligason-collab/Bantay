@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<id>https://publicalert.pagasa.dost.gov.ph/feeds/</id>
+<title type="text">Latest Alerts from Philippine Atmospheric Geophysical and Astronomical Services Administration</title>
+<link rel="hub" href="//alert-hub.appspot.com" />
+<link rel="self" href="https://publicalert.pagasa.dost.gov.ph/feeds/" />
+<rights>Copyright, Philippine Atmospheric Geophysical and Astronomical Services Administration. Licensed under CC BY 4.0.</rights>
+<updated>2026-10-26T05:26:13+08:00</updated>
+<entry>
+  <id>urn:uuid:da3e8383-a066-49ed-99ef-8dd3fe93fb55</id>
+  <title>GFA #6 (Final) - Region 7 (Central Visayas)</title>
+  <updated>2026-10-26T05:22:53+08:00</updated>
+  <author><name>PAGASA DOST</name></author>
+  <link type="application/cap+xml" href="https://publicalert.pagasa.dost.gov.ph/output/gfa/da3e8383-a066-49ed-99ef-8dd3fe93fb55.cap"/>
+</entry>
+<entry>
+  <id>urn:uuid:f1232c02-5d52-4786-90aa-46865ab991a4</id>
+  <title>GFA #5 - Region 7 (Central Visayas)</title>
+  <updated>2026-10-25T17:27:04+08:00</updated>
+  <author><name>PAGASA DOST</name></author>
+  <link type="application/cap+xml" href="https://publicalert.pagasa.dost.gov.ph/output/gfa/f1232c02-5d52-4786-90aa-46865ab991a4.cap"/>
+</entry>
+<entry>
+  <id>urn:uuid:a431156f-570f-403a-8391-b384d23fc11c</id>
+  <title>Tropical Cyclone Alert : Typhoon Rosal (CHAMPI)</title>
+  <updated>2026-10-24T10:52:06+08:00</updated>
+  <author><name>PAGASA DOST</name></author>
+  <link type="application/cap+xml" href="https://publicalert.pagasa.dost.gov.ph/output/acp/a431156f-570f-403a-8391-b384d23fc11c.cap"/>
+</entry>
+<entry>
+  <id>urn:uuid:21b29a06-e297-47bd-a79d-20826e724a2c</id>
+  <title>Tropical Cyclone Warning : Typhoon Rosal (CHAMPI) Signal #1</title>
+  <updated>2026-10-24T04:50:38+08:00</updated>
+  <author><name>PAGASA DOST</name></author>
+  <link type="application/cap+xml" href="https://publicalert.pagasa.dost.gov.ph/output/wcp/21b29a06-e297-47bd-a79d-20826e724a2c.cap"/>
+</entry>
+</feed>

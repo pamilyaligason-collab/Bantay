@@ -1,7 +1,8 @@
 // Official safety alerts ingest (D-25). Not public: callable only with the ALERTS_CRON_SECRET in the x-alerts-secret header
 // (pg_cron + pg_net, see ops/sql/alerts_cron.sql). Deploy with --no-verify-jwt; the secret is the gate.
-// Function secrets (set by Lloyd): ALERTS_CRON_SECRET. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
+// Function secrets (set by Lloyd): ALERTS_CRON_SECRET; DOSE_WATCH_CRON_SECRET (the same value dose-watch uses, so a new wind signal can trigger its Web Push flush; optional). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
+import { heartbeat } from '../_shared/heartbeat.ts'
 import { type Existing, type Port, runIngest } from './ingest.ts'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
@@ -37,6 +38,24 @@ Deno.serve(async (req) => {
     async setStale(source, stale) {
       const { error } = await sb.from('safety_alerts').update({ stale }).eq('source', source)
       if (error) throw new Error('write')
+    },
+    async members() {
+      const { data, error } = await sb.from('people').select('id').not('auth_user_id', 'is', null).is('archived_at', null)
+      if (error) throw new Error('read')
+      return (data ?? []).map((r) => r.id as string)
+    },
+    async notify(personId, template, ref) {
+      const { data, error } = await sb.rpc('notify_family', { p_person: personId, p_kind: 'hazard', p_template: template, p_ref: ref, p_scope: 'self' })
+      if (error) throw new Error('write')
+      return typeof data === 'number' ? data : 0
+    },
+    async flush() {
+      const s = Deno.env.get('DOSE_WATCH_CRON_SECRET')
+      if (!s) return // optional: without it PWA users get the push on the next dose-watch run (every 15 minutes); the in-app row is already written
+      await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/dose-watch`, {
+        method: 'POST', signal: AbortSignal.timeout(15_000),
+        headers: { 'Content-Type': 'application/json', 'x-dose-watch-secret': s }, body: JSON.stringify({ mode: 'flush' })
+      }).catch(() => undefined)
     }
   }
   const fetchText = async (url: string) => {
@@ -46,5 +65,7 @@ Deno.serve(async (req) => {
   }
   const sources = await runIngest(port, fetchText, Date.now())
   const ok = Object.values(sources).some((r) => r.ok) // every source failed: 502 so pg_net/cron health shows it
+  // heartbeat (S8): counts only; a failed PAGASA feed shows as ok=false so the admin System page flags it while GDACS and Open-Meteo carry on
+  await heartbeat(sb, 'alerts-ingest', ok && sources['PAGASA']?.ok !== false, { sources_ok: Object.values(sources).filter((r) => r.ok).length, sources_failed: Object.values(sources).filter((r) => !r.ok).length, rows: Object.values(sources).reduce((n, r) => n + r.rows, 0) })
   return reply(ok ? 200 : 502, { ok, sources })
 })

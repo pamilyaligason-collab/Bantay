@@ -15,7 +15,7 @@ const lab = (id: string, name: string, value: number, o: Record<string, unknown>
 const LABS = [lab('l1', 'LDL Test', 95), lab('l2', 'Glucose Test', 180, { test_code: 'fasting_glucose', ref_high: 100, flag: 'H', confidence: 0.6 })]
 type Patch = { table: string; body: unknown; id: string | null }
 
-async function mock(page: Page, patches: Patch[]) {
+async function mock(page: Page, patches: Patch[], opts: { printed?: string | null; person?: string } = {}) {
   let confirmed = 0 // labs confirmed so far
   await page.addInitScript(([token, u]) => {
     localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: u }))
@@ -41,10 +41,10 @@ async function mock(page: Page, patches: Patch[]) {
     const status = q.get('status')?.replace('eq.', '')
     const done = confirmed >= LABS.length
     const stat = (i: number) => (i < confirmed ? 'confirmed' : 'draft')
-    if (t === 'people') return reply([{ id: 'p1', display_name: 'Test Person' }])
+    if (t === 'people') return reply([{ id: 'p1', display_name: opts.person ?? 'Test Person' }])
     if (t === 'records_queue') return reply(done ? [] : [{ person_id: 'p1', kind: 'lab_results', drafts: LABS.length - confirmed }, { person_id: 'p1', kind: 'documents', drafts: 1 }])
     if (t === 'documents') {
-      if (status === 'draft') return reply(done ? [] : [doc])
+      if (status === 'draft') return reply(done ? [] : [{ ...doc, printed_name: opts.printed ?? null }])
       if (status === 'confirmed') return reply(done ? [{ ...doc, status: 'confirmed', confirmed_by: UID, confirmed_at: '2026-10-18T01:00:00Z' }] : [])
       return reply([])
     }
@@ -61,6 +61,35 @@ async function mock(page: Page, patches: Patch[]) {
 
 const serious = async (page: Page) =>
   (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id + ' ' + v.nodes.map((n) => n.target + ' ' + (n.any[0]?.message ?? '')).join(' | '))
+
+// S11 (hazard K1): the acceptance fixture. A paper printed "Rosa Dela Cruz" filed under "Me (Jun)".
+for (const scheme of ['light', 'dark'] as const) {
+  test(`name on paper: another name warns and blocks Confirm until acknowledged (${scheme}, 390x844)`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ colorScheme: scheme })
+    const patches: Patch[] = []
+    await mock(page, patches, { printed: 'Rosa Dela Cruz', person: 'Me (Jun)' })
+    await skipOnboarding(page)
+    await page.goto('/#health/papers')
+    await page.getByRole('button', { name: /To check/ }).click()
+    const sheet = page.getByRole('dialog')
+    await sheet.getByRole('button', { name: /Lab results, 2026-09-01/ }).click()
+    await expect(sheet.getByTestId('printed-name')).toHaveText('Name on paper: Rosa Dela Cruz')
+    await expect(sheet.getByTestId('name-mismatch')).toContainText('This paper says Rosa Dela Cruz, which does not clearly match Me (Jun)')
+    await page.screenshot({ path: `test-results/records-name-${scheme}.png` })
+    const all = sheet.getByRole('button', { name: /Confirm all checked/ })
+    const one = sheet.getByRole('button', { name: 'Confirm Glucose Test' })
+    await expect(all).toBeDisabled()
+    await expect(one).toBeDisabled()
+    await all.click({ force: true })
+    expect(patches).toHaveLength(0) // nothing is written while the warning stands
+    await sheet.getByRole('checkbox', { name: /I checked/ }).check()
+    await expect(all).toBeEnabled()
+    await all.click()
+    await expect(sheet.getByRole('status')).toHaveText('1 confirmed')
+    expect(patches.some((p) => p.table === 'lab_results')).toBe(true)
+  })
+}
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`queue, confirm sheet and record detail (${scheme}, 390x844)`, async ({ page }) => {

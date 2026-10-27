@@ -4,17 +4,14 @@
 // push_subscriptions columns (endpoint, p256dh, auth) follow lane A2's 0003_sync.sql.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import webpush from 'npm:web-push@3.6.7'
-import { goneEndpoints, parseBody } from './logic.ts'
+import { corsHeaders } from '../_shared/http.ts'
+import { goneEndpoints, hazardRef, isHazardId, parseBody } from './logic.ts'
 
-const cors = (): Record<string, string> => ({
-  'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  Vary: 'Origin'
-})
-const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors(), 'Content-Type': 'application/json' } })
+// ALLOWED_ORIGIN may be a comma list (C1); the reply echoes the matching origin only.
 
 Deno.serve(async (req) => {
+  const cors = (): Record<string, string> => corsHeaders(Deno.env.get('ALLOWED_ORIGIN'), req.headers.get('Origin'))
+  const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { ...cors(), 'Content-Type': 'application/json' } })
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors() })
   if (req.method !== 'POST') return reply(405, { ok: false, error: 'bad_input' })
 
@@ -32,9 +29,28 @@ Deno.serve(async (req) => {
   if (!t) return reply(400, { ok: false, error: 'bad_input' })
 
   const service = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
+  // D-78: the Android app has no push, so a hazard broadcast is also a row in every member's alert list (template id only, B-7). Before 0030 is applied
+  // notify_family does not exist: that is logged as zero rows, never a failure of the web push below.
+  let rows = 0
+  const hazardAt = Date.now() // one instant: the ref the rows were written with is the ref the mark looks for
+  if (isHazardId(t)) {
+    const ref = hazardRef(t, hazardAt)
+    const { data: people } = await service.from('people').select('id').not('auth_user_id', 'is', null).is('archived_at', null)
+    for (const p of (people ?? []) as { id: string }[]) {
+      const { data: n } = await service.rpc('notify_family', { p_person: p.id, p_kind: 'hazard', p_template: t, p_ref: ref, p_scope: 'self' })
+      rows += typeof n === 'number' ? n : 0
+    }
+  }
   const { data: subs, error } = await service.from('push_subscriptions').select('endpoint,p256dh,auth')
-  if (error) return reply(500, { ok: false, error: 'failed' })
-  if (!subs || subs.length === 0) return reply(200, { ok: true, sent: 0, removed: 0 })
+  if (error) return reply(500, { ok: false, error: 'failed' }) // rows stay unmarked: dose-watch's flush still offers them
+  // The direct push below already reaches every subscription; mark the rows offered so dose-watch's flush does not push the same alert again within 15 minutes.
+  // A failed mark is not fatal (a repeat push replaces itself by tag; a missed safety push would not come back): it is reported as marked:false.
+  let marked = true
+  if (rows && isHazardId(t)) {
+    const { error: me } = await service.from('carer_alerts').update({ pushed_at: new Date().toISOString() }).eq('kind', 'hazard').eq('ref', hazardRef(t, hazardAt)).is('pushed_at', null)
+    marked = !me
+  }
+  if (!subs || subs.length === 0) return reply(200, { ok: true, sent: 0, removed: 0, rows, ...(marked ? {} : { marked: false }) })
 
   webpush.setVapidDetails(vapid[0]!, vapid[1]!, vapid[2]!)
   const payload = JSON.stringify({ t }) // B-7: the template id and nothing else
@@ -48,5 +64,5 @@ Deno.serve(async (req) => {
   }))
   const gone = goneEndpoints(results)
   if (gone.length) await service.from('push_subscriptions').delete().in('endpoint', gone)
-  return reply(200, { ok: true, sent: results.filter((r) => r.status === 201).length, removed: gone.length })
+  return reply(200, { ok: true, sent: results.filter((r) => r.status === 201).length, removed: gone.length, rows, ...(marked ? {} : { marked: false }) })
 })

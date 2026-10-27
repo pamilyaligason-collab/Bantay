@@ -22,8 +22,8 @@ Requests always carry `provider: {zdr: true, data_collection: 'deny'}`.
    `{"<person folder>": "<uuid>", "<name as printed>": "<uuid>"}`.
    Unknown names, or a folder and printed name that disagree, give `person_id` null: the file sits in the unassigned admin queue and gets no health rows. Re-run step 4 after adding map entries.
 4. `node scripts/import/load.mjs` writes `import/load.sql` and `import/load-summary.json` (counts by person-folder index `p1..`, kind and status; no names). Ids are uuid v5 from the drive file id, so re-running is safe (`on conflict (id) do nothing`; `source_files` updates modified time and status, and fills person/document once known; `done` never goes backwards).
-5. Apply (verified with `npx -y supabase@2.121.0 db query --help`):
-   `npx -y supabase@2.121.0 db query --linked -f import/load.sql`
+5. Apply (verified with `npx -y supabase@2.122.0 db query --help`):
+   `npx -y supabase@2.122.0 db query --linked -f import/load.sql`
    (`--file`/`-f` is the SQL file flag; `--linked` targets the linked project; `--local` and `--db-url` also exist.) The file is one `begin; ... commit;`, so a failure changes nothing.
 6. Open the confirm queue in the app and confirm or reject each row.
 

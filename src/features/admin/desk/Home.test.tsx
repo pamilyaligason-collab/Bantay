@@ -62,6 +62,21 @@ describe('Home', () => {
     expect(screen.getByRole('link', { name: /To confirm/ }).className).toContain('plain')
   })
 
+  it('shows who has seen the alerts (S8) and hides the line when reach is unknown', async () => {
+    const alerts = { sent: 80, due_1h: 74, seen: 76, seen_1h: 71, unseen_by_kind: { system: 2, hazard: 1 }, by_day: [] }
+    const kpis = { today: '2026-10-26', active_members: { cur: 1, prev: 1 }, screens: { cur: 1, prev: 1 }, doses_logged: { cur: 0, prev: 0 }, readings_logged: { cur: 0, prev: 0 }, client_errors: { cur: 0, prev: 0 }, alerts }
+    h.rpc.mockImplementation(async (name: string) => (name === 'admin_weekly_kpis' ? { data: kpis, error: null } : name === 'admin_usage_summary' ? { data: [], error: null } : { data: [], error: null }))
+    const { unmount } = render(<Home id={null} />)
+    const line = (await screen.findByText(/96% of alerts opened/)).closest('.hm-seen') as HTMLElement
+    expect(line.textContent).toContain('96% of alerts opened within 1 hour (71 of 74), last 7 days · 3 not opened yet')
+    expect(within(line).getByRole('link', { name: 'System health' }).getAttribute('href')).toBe('#/system')
+    unmount()
+    h.rpc.mockImplementation(async (name: string) => (name === 'admin_weekly_kpis' ? { data: { ...kpis, alerts: null }, error: null } : { data: [], error: null }))
+    render(<Home id={null} />)
+    expect(await screen.findByText('0 / 2')).toBeTruthy() // the cards loaded (no usage rows in this case)
+    expect(screen.queryByText(/of alerts opened/)).toBeNull() // before 0030: nothing shown, never 0%
+  })
+
   it('fails one card on its own and retries it', async () => {
     h.tables.audit_log = { data: [], error: true }
     render(<Home id={null} />)

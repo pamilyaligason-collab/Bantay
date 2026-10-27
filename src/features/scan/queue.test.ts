@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addScan, flushQueue } from '../docs/api'
+import { db } from '../../db'
 import { ddb } from '../docs/store'
 
 // Synthetic pages only. The fake records every call in order so "upload per page, then invoke" can be asserted.
@@ -9,18 +10,22 @@ type Row = Record<string, unknown>
 function fake(o: { offline?: () => boolean } = {}) {
   const calls: string[] = []
   const upserts: { table: string; row: Row }[] = []
+  const updates: { table: string; row: Row; where: Row }[] = []
   const invoke = vi.fn(async (name: string, opts: { body: unknown }) => { calls.push(`invoke:${name}:${JSON.stringify(opts.body)}`); return { data: null, error: null } })
   const client = {
     auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) },
-    from: (table: string) => ({ upsert: async (row: Row) => { calls.push(`upsert:${table}`); upserts.push({ table, row }); return { error: null } } }),
+    from: (table: string) => ({
+      upsert: async (row: Row) => { calls.push(`upsert:${table}`); upserts.push({ table, row }); return { error: null } },
+      update: (row: Row) => ({ eq: (c1: string, v1: unknown) => ({ eq: async (c2: string, v2: unknown) => { updates.push({ table, row, where: { [c1]: v1, [c2]: v2 } }); return { error: null } } }) })
+    }),
     storage: { from: () => ({ upload: async (path: string) => { if (o.offline?.()) return { error: { message: 'Failed to fetch' } }; calls.push(`upload:${path}`); return { error: null } } }) },
     functions: { invoke }
   }
-  return { client: client as unknown as SupabaseClient, calls, upserts, invoke }
+  return { client: client as unknown as SupabaseClient, calls, upserts, updates, invoke }
 }
 const jpg = (n: string) => new Blob([n], { type: 'image/jpeg' })
 
-beforeEach(async () => { await ddb.cards.clear(); await ddb.queue.clear() })
+beforeEach(async () => { await ddb.cards.clear(); await ddb.queue.clear(); await db.kv.clear() })
 
 describe('scan queue', () => {
   it('queues N pages as one document and stores each page on the phone', async () => {
@@ -61,6 +66,50 @@ describe('scan queue', () => {
     expect(await flushQueue(f.client, 'u1')).toBe(1)
     await vi.waitFor(() => expect(f.invoke).toHaveBeenCalledTimes(1))
     expect(await ddb.queue.count()).toBe(0)
+  })
+
+  it('privacy.ai off: pages are kept, marked skipped for the server sweep, and the server is never asked to read them', async () => {
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    await addScan({ pages: [jpg('a'), jpg('b')], owner: 'u1', personId: 'p1', kind: 'lab' })
+    const f = fake()
+    expect(await flushQueue(f.client, 'u1')).toBe(2)
+    expect(f.upserts.filter((u) => u.table === 'source_files').map((u) => u.row.ingest_status)).toEqual(['skipped', 'skipped'])
+    await new Promise((r) => setTimeout(r, 30)) // a call that must NOT happen: give a wrongly fired one time to land
+    expect(f.invoke).not.toHaveBeenCalled()
+  })
+
+  it('privacy.ai turned off after scanning but before upload: every page of that document is skipped, none is left new', async () => {
+    await addScan({ pages: [jpg('a'), jpg('b'), jpg('c')], owner: 'u1', personId: 'p1', kind: 'lab' })
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    const f = fake()
+    expect(await flushQueue(f.client, 'u1')).toBe(3)
+    expect(f.upserts.filter((u) => u.table === 'source_files').map((u) => u.row.ingest_status)).toEqual(['skipped', 'skipped', 'skipped'])
+    await new Promise((r) => setTimeout(r, 30))
+    expect(f.invoke).not.toHaveBeenCalled()
+  })
+
+  it('first page sent, privacy.ai switched off, flush resumes: the rest are skipped and records-extract is never called', async () => {
+    await addScan({ pages: [jpg('a'), jpg('b'), jpg('c')], owner: 'u1', personId: 'p1', kind: 'lab' })
+    let n = 0
+    const f = fake({ offline: () => ++n > 1 }) // page 1 goes, page 2 hits no signal
+    expect(await flushQueue(f.client, 'u1')).toBe(1)
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    n = -99
+    expect(await flushQueue(f.client, 'u1')).toBe(2)
+    expect(f.upserts.filter((u) => u.table === 'source_files').map((u) => u.row.ingest_status)).toEqual([undefined, 'skipped', 'skipped'])
+    // page 1 is already up as 'new': the resume marks it skipped too, so the whole document stays unread
+    expect(f.updates).toEqual([{ table: 'source_files', row: { ingest_status: 'skipped' }, where: { document_id: expect.any(String), ingest_status: 'new' } }])
+    await new Promise((r) => setTimeout(r, 30))
+    expect(f.invoke).not.toHaveBeenCalled()
+    expect(await ddb.queue.count()).toBe(0)
+  })
+
+  it('privacy.ai on (default): no ingest_status is sent, so the row stays new and is read', async () => {
+    await addScan({ pages: [jpg('a')], owner: 'u1', personId: 'p1', kind: 'lab' })
+    const f = fake()
+    await flushQueue(f.client, 'u1')
+    expect(f.upserts.find((u) => u.table === 'source_files')!.row).not.toHaveProperty('ingest_status')
+    await vi.waitFor(() => expect(f.invoke).toHaveBeenCalledTimes(1))
   })
 
   it('an ID goes the old way: confirmed, with a card type, and the server is not asked to read it', async () => {

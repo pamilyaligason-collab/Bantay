@@ -4,7 +4,7 @@ import { countDoses } from '../health/doseCount'
 import { lastDays } from '../today/myWeekLogic'
 import { matchDoses, slotsFor, type DoseState } from '../health/meds'
 import { metricLabel, plainName, readingPosition, shortDate } from '../health/model'
-import { verdictFor, kindOf } from '../health/verdict'
+import { verdictFor, kindOf, type BpArg } from '../health/verdict'
 import { latestByTest, type Position, type Range, type Reading } from '../health/ranges'
 import { byVitalOrder, isVital } from '../health/vitals'
 import type { Medication, MedTaken } from '../log/store'
@@ -37,8 +37,8 @@ export function vitalCards(readings: Reading[], now: Date, familyOf: FamilyOf = 
   const out: VitalCard[] = []
   const sys = latest.find((r) => r.test === 'bp_systolic')
   const dia = latest.find((r) => r.test === 'bp_diastolic')
-  const card = (r: Reading, value: string, pos: Position, key = r.test, label = metricLabel(r.test), bp?: { top: number; bottom: number }): VitalCard => ({ key, label, value, unit: r.unit ?? '', ...(verdictFor(kindOf(r.test), pos, bp) ?? NO_RANGE), pos, on: shortDate(r.takenAt) })
-  if (sys && dia) out.push(card(sys, `${formatNumber(sys.value)}/${formatNumber(dia.value)}`, worst(readingPosition(sys, familyOf(sys)), readingPosition(dia, familyOf(dia))), 'bp', 'Blood pressure', { top: sys.value, bottom: dia.value }))
+  const card = (r: Reading, value: string, pos: Position, key = r.test, label = metricLabel(r.test), bp?: BpArg): VitalCard => ({ key, label, value, unit: r.unit ?? '', ...(verdictFor(kindOf(r.test), pos, bp) ?? NO_RANGE), pos, on: shortDate(r.takenAt) })
+  if (sys && dia) out.push(card(sys, `${formatNumber(sys.value)}/${formatNumber(dia.value)}`, worst(readingPosition(sys, familyOf(sys)), readingPosition(dia, familyOf(dia))), 'bp', 'Blood pressure', { top: sys.value, bottom: dia.value, doctor: { top: familyOf(sys), bottom: familyOf(dia) } }))
   for (const r of latest) {
     if (sys && dia && (r.test === 'bp_systolic' || r.test === 'bp_diastolic')) continue
     out.push(card(r, formatNumber(r.value), readingPosition(r, familyOf(r))))

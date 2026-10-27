@@ -1,5 +1,6 @@
 import { GUIDE, latestVsNormal, type Range, type Reading } from '../health/ranges'
 import { pickSlot, resolveMedication } from '../health/meds'
+import { deviceSpec } from '../health/readingPreview'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 
 export const MAX_MESSAGES = 10
@@ -30,9 +31,12 @@ export const FIELDS: Record<DraftTool, string[]> = {
   log_activity: ['person', 'kind', 'minutes', 'steps', 'startedAt']
 }
 
-/** Server reply -> text + cards. Unknown tools and bad arguments are dropped, never executed. */
-export function parseReply(r: unknown): { text: string; cards: Card[] } {
-  const o = (r && typeof r === 'object' ? r : {}) as { reply?: unknown; tool_calls?: unknown }
+/** The server's 911 card: `emergency.call` lists the numbers (['911'] or ['1553','911']); only plain digit strings are kept. */
+export interface ReplyEmergency { kind: string; call: string[]; text: string }
+
+/** Server reply -> text + cards (+ the 911 card when the server gate fired). Unknown tools and bad arguments are dropped, never executed. */
+export function parseReply(r: unknown): { text: string; cards: Card[]; emergency?: ReplyEmergency } {
+  const o = (r && typeof r === 'object' ? r : {}) as { reply?: unknown; tool_calls?: unknown; emergency?: { kind?: unknown; call?: unknown } }
   const calls = Array.isArray(o.tool_calls) ? o.tool_calls : []
   const cards: Card[] = []
   calls.forEach((c, i) => {
@@ -52,7 +56,13 @@ export function parseReply(r: unknown): { text: string; cards: Card[] } {
     else if (name === 'add_task' && str(a.title).trim()) cards.push({ kind: 'task', id, title: str(a.title).trim(), due: str(a.due), assignee: str(a.assignee) })
     else if (name === 'records_answer' && str(a.test).trim()) cards.push({ kind: 'records', id, person: str(a.person), test: str(a.test).trim() })
   })
-  return { text: typeof o.reply === 'string' ? o.reply : '', cards }
+  const text = typeof o.reply === 'string' ? o.reply : ''
+  const em = o.emergency
+  if (em && typeof em === 'object' && str(em.kind)) {
+    const call = (Array.isArray(em.call) ? em.call : []).map(str).filter((n) => /^\d{3,4}$/.test(n))
+    return { text: '', cards, emergency: { kind: str(em.kind), call: call.length ? call : ['911'], text } }
+  }
+  return { text, cards }
 }
 
 /** Source links are built here, never taken from the model. */
@@ -98,6 +108,9 @@ export function dateWords(d: string) {
   return Number.isNaN(t) ? d : new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(t)
 }
 
+// Spoken test names -> the add-sheet spec code, so a draft is held to the same plausible range as a typed reading (readingPreview SPECS).
+const SPEC_CODE: Record<string, string> = { bp: 'bp', bloodpressure: 'bp', bpsystolic: 'bp', glucose: 'glucose', bloodsugar: 'glucose', sugar: 'glucose', fastingglucose: 'fasting_glucose', fastingsugar: 'fasting_glucose', weight: 'weight', pulse: 'heart_rate', heartrate: 'heart_rate', temperature: 'temperature', temp: 'temperature', spo2: 'spo2', oxygen: 'spo2' }
+
 const num = (s: string) => (s.trim() !== '' && Number.isFinite(Number(s)) ? Number(s) : null)
 const when = (s: string, now: Date) => (s && !Number.isNaN(Date.parse(s)) ? new Date(s).toISOString() : now.toISOString())
 
@@ -105,6 +118,13 @@ const when = (s: string, now: Date) => (s && !Number.isNaN(Date.parse(s)) ? new 
 export function validateDraft(tool: DraftTool, f: Record<string, string>, people: People[]): string | null {
   if (!personFor(f.person ?? '', people)) return people.length ? 'Pick who this is for.' : 'Add a family member first.'
   if (tool === 'log_reading' && (!f.test?.trim() || num(f.value ?? '') === null)) return 'Needs a test name and a number.'
+  if (tool === 'log_reading') {
+    const spec = deviceSpec(SPEC_CODE[f.test!.toLowerCase().replace(/[^a-z0-9]/g, '')] ?? '')
+    const v = num(f.value!)!
+    const unit = (f.unit ?? '').trim().toLowerCase()
+    const mmol = spec?.unit === 'mg/dL' && (/mmol/.test(unit) || (!unit && v < 20)) // sugar in mmol/L is not range-checked here
+    if (spec && !mmol && (!unit || unit === spec.unit.toLowerCase()) && (v < spec.min || v > spec.max)) return 'Check the number: it looks too small or too big.'
+  }
   if (tool === 'log_med_taken' && !f.name?.trim()) return 'Needs a medicine name.'
   if (tool === 'log_activity' && (!f.kind?.trim() || (num(f.minutes ?? '') === null && num(f.steps ?? '') === null))) return 'Needs an activity and minutes or steps.'
   return null

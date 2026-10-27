@@ -33,7 +33,7 @@ function png(w: number, h: number) {
 const photo = (name: string) => ({ name, mimeType: 'image/png', buffer: png(300, 400) })
 
 type Srv = { calls: string[]; docs: Record<string, unknown>[]; files: Record<string, unknown>[]; uploads: string[]; invokes: unknown[] }
-async function mock(page: Page, reply: { status: number; reading?: unknown } = { status: 200, reading: null }): Promise<Srv> {
+async function mock(page: Page, reply: { status: number; reading?: unknown } = { status: 200, reading: null }, dependent = false): Promise<Srv> {
   const s: Srv = { calls: [], docs: [], files: [], uploads: [], invokes: [] }
   await page.addInitScript(() => {
     localStorage.setItem('bantay.onboarded', '1')
@@ -46,8 +46,8 @@ async function mock(page: Page, reply: { status: number; reading?: unknown } = {
     const url = new URL(req.url())
     if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors })
     const p = url.pathname
-    if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id') ? [{ id: 'p-self', display_name: 'Test Person' }] : [])
-    if (p.startsWith('/rest/v1/carers')) return json(route, [])
+    if (p.startsWith('/rest/v1/people')) return json(route, url.searchParams.get('auth_user_id')?.startsWith('eq.') ? [{ id: 'p-self', display_name: 'Test Person' }] : dependent ? [{ id: 'p-dep', display_name: 'Test Dependent' }] : [])
+    if (p.startsWith('/rest/v1/carers')) return json(route, dependent ? [{ person_id: 'p-dep' }] : [])
     if (p.startsWith('/rest/v1/documents') && req.method() === 'POST') { s.calls.push('documents'); s.docs.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
     if (p.startsWith('/rest/v1/source_files') && req.method() === 'POST') { s.calls.push('source_files'); s.files.push(req.postDataJSON()); return route.fulfill({ status: 201, headers: cors }) }
     if (p.startsWith('/rest/v1/')) return json(route, [])
@@ -149,6 +149,41 @@ test('offline: Save keeps the pages queued and nothing is sent', async ({ page, 
   expect(queued).toHaveLength(1)
   expect(queued[0]).toMatchObject({ page: 1, pages: 1, kind: 'lab' })
   expect(s.calls).toEqual([])
+})
+
+// S11 (hazard K1): with more than one person on the list nobody is pre-picked; Save waits for an explicit pick.
+test('two people: a paper is not filed under anyone until a person is picked', async ({ page }) => {
+  const s = await mock(page, { status: 200, reading: null }, true)
+  await page.goto('/docs-harness.html#scan')
+  await page.getByTestId('scan-file').setInputFiles(photo('one.png'))
+  await page.getByRole('button', { name: 'Paper' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Continue' }).click()
+  const chip = (n: string) => page.getByRole('group', { name: 'Whose paper' }).getByRole('button', { name: n, exact: true })
+  await expect(chip('Test')).toBeVisible() // the fresh family list arrived
+  await expect(chip('Me')).toHaveAttribute('aria-pressed', 'false')
+  await expect(chip('Test')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('status').filter({ hasText: 'Pick whose paper this is' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await chip('Test').click()
+  await expect(chip('Test')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('Pick whose paper this is')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => s.docs.length).toBe(1)
+  expect(s.docs[0]).toMatchObject({ person_id: 'p-dep' })
+})
+
+test('two people: a device reading shows no numbers to save until a person is picked', async ({ page }) => {
+  await mock(page, { status: 200, reading: { kind: 'bp', systolic: 128, diastolic: 82, pulse: 71, value: null, unit: 'mmHg', confidence: 0.95 } }, true)
+  await page.goto('/docs-harness.html#scan')
+  await page.getByTestId('scan-camera').setInputFiles(photo('bp.png'))
+  await page.getByRole('button', { name: /Device reading/ }).click()
+  await expect(page.getByText('Pick whose reading this is')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByTestId('reading-confirm')).toHaveCount(0)
+  await page.getByRole('group', { name: 'Whose reading' }).getByRole('button', { name: 'Test', exact: true }).click()
+  await expect(page.getByTestId('reading-confirm')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Save reading' })).toBeEnabled()
 })
 
 // Never open a database that is not there yet: that would create an empty one and break the app's own open.

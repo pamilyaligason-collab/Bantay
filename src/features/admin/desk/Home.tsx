@@ -5,17 +5,19 @@ import {
   actionTone, ago, fieldsText, kindWord, loadActiveWeeks, loadConfirmedWeeks, loadDupeCount, loadExpiring, loadFailedScans, loadPeopleState, loadPins, loadQueue, loadRecent,
   loadUsageSeries, needsYou, queueSummary, summarize, toneIf, weekDelta, type Res
 } from './homeApi'
+import { loadKpis, seenLine } from './systemApi'
 import { deskHref, type PageProps } from './types'
 import { tableWords } from './logsApi'
 import { Empty, Kpi, PageHead, Skeleton, Tag } from './ui'
 import { useDeskPeople } from './people'
 import './home.css'
+import './system.css' // .hm-seen (the alerts-seen line)
 import './files.css' // dk-cardtab: tables become cards on a phone
 
 type Src<T> = { data: T | null; loading: boolean; error: boolean; retry: () => void }
 
 /** One card's data. `tick` (the Refresh button) reloads it; `retry` reloads just this one. */
-function useSource<T>(load: () => Promise<Res<T>>, tick: number): Src<T> {
+export function useSource<T>(load: () => Promise<Res<T>>, tick: number): Src<T> {
   const [s, set] = useState<{ data: T | null; loading: boolean; error: boolean }>({ data: null, loading: true, error: false })
   const [n, setN] = useState(0)
   useEffect(() => {
@@ -27,9 +29,9 @@ function useSource<T>(load: () => Promise<Res<T>>, tick: number): Src<T> {
   return { ...s, retry: () => setN((x) => x + 1) }
 }
 
-const join = (...a: Src<unknown>[]) => ({ loading: a.some((x) => x.loading), error: a.some((x) => x.error), retry: () => a.forEach((x) => x.error && x.retry()) })
+export const join = (...a: Src<unknown>[]) => ({ loading: a.some((x) => x.loading), error: a.some((x) => x.error), retry: () => a.forEach((x) => x.error && x.retry()) })
 
-function Card({ id, title, cls, link, src, children }: { id: string; title: string; cls: string; link?: [string, string]; src: { loading: boolean; error: boolean; retry: () => void }; children: ReactNode }) {
+export function Card({ id, title, cls, link, src, children }: { id: string; title: string; cls: string; link?: [string, string]; src: { loading: boolean; error: boolean; retry: () => void }; children: ReactNode }) {
   return (
     <section className={`dk-card ${cls}`} aria-labelledby={id}>
       <div className="dk-card-h"><h2 id={id}>{title}</h2>{link && <a href={link[1]}>{link[0]}</a>}</div>
@@ -100,7 +102,9 @@ export default function Home(_: PageProps) {
   const weeks = useSource(() => loadConfirmedWeeks(), tick)
   const activeWk = useSource(() => loadActiveWeeks(), tick)
   const recent = useSource(loadRecent, tick)
+  const kpis = useSource(loadKpis, tick)
 
+  const seen = useMemo(() => seenLine(kpis.data?.alerts), [kpis.data]) // hidden while loading, on error, or before alerts exist (0030)
   const q = useMemo(() => (queue.data ? queueSummary(queue.data) : null), [queue.data])
   const busy = [ppl, queue, failed, expiring, dupes, pins, usage, weeks, recent, activeWk].some((s) => s.loading)
   const needs = useMemo(() => needsYou({ pins: pins.data ?? [], personOf: (u) => ppl.data?.personOf[u] ?? null, dupes: dupes.data, failed: failed.data, locked: ppl.data?.locked ?? [] }), [pins.data, ppl.data, dupes.data, failed.data])
@@ -123,6 +127,8 @@ export default function Home(_: PageProps) {
         <div className="dk-s3"><Kpi label="To confirm" value={queue.loading ? '...' : queue.error || !q ? '-' : q.total} foot={<>{q?.biggest ? `Mostly ${kindWord(q.biggest.kind, q.biggest.n)} (${q.biggest.n})` : 'Open the queue'}{confirmedNote && <span className="hm-delta">{confirmedNote}</span>}</>} href={deskHref('queue')} tone={toneIf(q?.total, 'warn')} /></div>
         <div className="dk-s3"><Kpi label="Failed scans" value={num(failed)} foot="Open files and scans" href={deskHref('files')} tone={toneIf(failed.data, 'bad')} /></div>
         <div className="dk-s3"><Kpi label="IDs expiring in 60 days" value={num(expiring)} foot="See which IDs and when" href={deskHref('ids')} tone={toneIf(expiring.data, 'warn')} /></div>
+
+        {seen && <div className="dk-s12 hm-seen" role="status"><Tag tone={seen.tone}>Alerts</Tag><span>{seen.text}</span><a href={deskHref('system')}>System health</a></div>}
 
         <Card id="hm-use" title="App use, last 30 days" cls="dk-s6" src={usage}>{usage.data && <Chart title="Screens opened per day" series={usage.data} unit="Screens opened" />}</Card>
         <Card id="hm-conf" title="Records confirmed per week" cls="dk-s6" src={weeks}>{weeks.data && <Chart title="Labs and papers confirmed per week" series={weeks.data} bars weekly unit="Confirmed" />}</Card>
