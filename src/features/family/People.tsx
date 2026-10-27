@@ -1,7 +1,7 @@
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useState } from 'react'
 import { givenName } from '../health/medName'
 import { checkIn, FAIL_TEXT } from '../today/actions'
-import { useStorm } from '../today/useStorm'
+import { StormRollCall } from './StormRollCall'
 import FmAvatar from './FmAvatar'
 import { bubbleStatus } from './messagesLogic'
 import Messages from './Messages'
@@ -16,10 +16,6 @@ import FamilyPhones from './FamilyPhones'
 import { IncomingSos } from './IncomingSos'
 import { AcceptCard } from '../sharing/AcceptCard'
 
-// shortcut: StormRollCall (lane I) is not merged yet; the glob renders nothing until the file exists. Swap for a static import when I merges.
-type Mod = Record<string, unknown>
-const stormMods = import.meta.glob('./StormRollCall.tsx', { eager: true }) as Record<string, Mod>
-const StormRollCall: ComponentType | null = (() => { for (const m of Object.values(stormMods)) { const c = m.StormRollCall ?? m.default; if (typeof c === 'function') return c as ComponentType } return null })()
 
 /** The words under a picture: today's check-in ("OK 7:40 AM"), else when they were last OK ("Last OK yesterday", "Last OK 3 days ago", "Last OK 12 Oct"), else "No check-in yet". */
 export function lastCheckInWords(iso: string | undefined, now: Date = new Date()): string {
@@ -49,7 +45,6 @@ export default function People() {
   }, [note])
   const flags = useFlagLines(people)
   const rc = rollCall(people, last)
-  const storm = useStorm()
   const imOk = async () => {
     const r = await checkIn()
     setNote(r === 'ok' ? 'The family can see you are OK.' : FAIL_TEXT[r])
@@ -75,7 +70,7 @@ export default function People() {
     <>
       <AcceptCard />
       <IncomingSos placement="family" />
-      {storm && StormRollCall && <StormRollCall />}
+      <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
       <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />
       {!(selfId && loaded && checkInLabel(loaded[selfId]).ok) && (
         <div className="card fm-checkin">

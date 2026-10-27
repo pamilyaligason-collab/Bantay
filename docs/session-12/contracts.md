@@ -93,3 +93,9 @@ export function stormRef(a: Alert): string                       // safety_alert
 export const placeNameOf: (place) => string                      // same string on Today, Safety header and AlertBand (S10)
 ```
 kv keys: removed `share.*` (A); new local-only `nudge.kudosOff`, `nudge.bpTimes`, `play.day` (G, F3); `push.token` (E). Templates: `share_offer` (carer: "<name> wants to share their health records with you", tab family), `share_on` (member: "<name> can now see your records", today), `share_off`, `rollcall_help` (safety, "Someone in your family needs help in the storm", family, urgent), `rollcall_ask`, `kudos` (carer cls, "Someone sent you a heart", health). Secrets: `FIREBASE_SERVICE_ACCOUNT_B64` (new, E); `FAMILY_INVITE_TOKEN` (retired, B). GitHub secret `GOOGLE_SERVICES_JSON_BASE64` (E).
+
+## Batch 2 overrides (merge, D-89)
+- **Roll call (I, 0041):** no direct writes. Client calls `rollcall_set(p_person uuid, p_storm_ref text, p_status text) returns void` and `ensure_storm_tasks(p_storm_ref text) returns void` (SECURITY DEFINER, authenticated, active family member, live tcws/rainfall/thunderstorm/tsunami safety_alerts row only, 30/h per caller, need_help alert cooldown 30 min per person per storm). No `rollcall_alert` trigger. Storm task `client_id` = `storm:<ref>:<1..4>`. `StormRollCall` hides itself unless a PAGASA signal is live; People renders it unconditionally.
+- **Discover registry (F2):** `registerSub`/`subScreen` live in `src/features/discover/registry.ts`, re-exported by `index.ts`; sub modules import from `../registry` (or `..`).
+- **Pillbox (G):** dose logging reuses the `markTaken` 3 h same-medicine+slot guard.
+- **Learn (F2):** medicine and supplement cards stay hidden until kv `learn.medcards` is true (clinician sign-off).

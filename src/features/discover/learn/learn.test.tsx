@@ -141,6 +141,14 @@ describe('recipes', () => {
 
 describe('cook mode', () => {
   const lock = () => ({ released: false, release: vi.fn(async () => undefined), addEventListener: vi.fn() })
+  it('an unknown recipe shows a Back link that works: the app is not made inert', () => {
+    const root = document.createElement('div'); root.id = 'root'; document.body.appendChild(root)
+    try {
+      render(<Cook id="no-such-recipe" />, { container: root })
+      expect(screen.getByText('We do not have that recipe.')).toBeTruthy()
+      expect(root.hasAttribute('inert')).toBe(false)
+    } finally { root.remove() }
+  })
   it('shows one step at a time and walks back and forward', () => {
     render(<Cook id="sinigang-isda" />)
     expect(screen.getByTestId('cook-step').textContent).toBe('Step 1 of 4')

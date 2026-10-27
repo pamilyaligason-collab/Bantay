@@ -60,13 +60,14 @@ export default function Cook({ id }: { id: string }) {
   const box = useRef<HTMLDivElement>(null)
   // The overlay is modal: hide the app behind it from the tab order and screen readers, put focus inside, and let Escape leave.
   useEffect(() => {
+    if (!r) return // the not-found card renders inside #root: never make it inert
     const app = document.getElementById('root')
     app?.setAttribute('inert', '')
     box.current?.focus()
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') location.hash = '#discover/learn/recipe/' + id }
     document.addEventListener('keydown', esc)
     return () => { app?.removeAttribute('inert'); document.removeEventListener('keydown', esc) }
-  }, [id])
+  }, [id, r])
   if (!r) return <div className="lr"><p className="card sub">We do not have that recipe.</p><a className="sh-pill sh-ghost" href="#discover/learn/recipes">Back to recipes</a></div>
   const step = r.steps[i]
   const mins = stepMinutes(step)
