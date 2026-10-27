@@ -1,46 +1,35 @@
-/** Short, readable medicine name for dose rows and Next up. Imported labels arrive as "generic ( BRAND 050 FORM (CHILD) )"; this keeps what is on the box.
- *  Rules: drop qualifier-only brackets "(CHILD)", prefer a bracketed ALL-CAPS brand over the generic before it, drop strengths, pack sizes and noise words,
- *  sentence case, never drops the first word unless a brand bracket replaces it, max 28 chars cut at a word, and never end up empty (fall back to the raw label). */
+/** Short, readable medicine name for dose rows and Next up. Imported labels arrive as "generic ( BRAND 050 FORM (CHILD) )".
+ *  Rule (J r3): the name is the first one or two words before any bracket, strength or pack size (the generic, or the brand when no generic is given),
+ *  plus the dose form (spray, drops, syrup, tablet...) when it appears anywhere, with a route word before it ("nasal spray").
+ *  Brackets are never used as the name, so the first word is never dropped. Sentence case, max 28 chars, never empty (falls back to the raw label). */
 const MAX = 28
-const QUALIFIER = new Set(['child', 'children', 'adult', 'kids', 'pedia', 'pediatric', 'infant', 'baby', 'forte', 'plus'])
-const NOISE = new Set(['hypertonic', 'isotonic', 'film-coated', 'coated', 'x', 'pack', 'pcs', 'of', 'mg', 'mcg', 'g', 'ml', 'iu'])
-const UNIT = '(mg|mcg|ug|g|ml|l|iu|%)'
-const STRENGTH = new RegExp(String.raw`^\d+([.,]\d+)?${UNIT}?(/\d*([.,]\d+)?${UNIT})?$`, 'i') // 500, 500mg, 250mg/5ml, 2.5mg/2.5ml
+const FORMS: Record<string, string> = { spray: 'spray', drops: 'drops', syrup: 'syrup', tablet: 'tablet', tablets: 'tablet', tab: 'tablet', tabs: 'tablet', capsule: 'capsule', capsules: 'capsule', cap: 'capsule', caps: 'capsule', cream: 'cream', inhaler: 'inhaler', nebule: 'nebule' }
+const ROUTES = new Set(['nasal', 'oral', 'eye', 'ear', 'topical'])
+const STOP = new Set(['x', 'pack', 'pcs', 'of', 'hypertonic', 'isotonic', 'film-coated', 'coated'])
 
-const words = (s: string) => s.split(/\s+/).filter(Boolean)
-const letters = (s: string) => s.replace(/[^a-z]/gi, '')
-/** A bracket is a note, not a name, when every word in it is a qualifier ("(CHILD)", "(Adult)"). */
-const isNote = (s: string) => words(s.toLowerCase()).every((w) => QUALIFIER.has(w.replace(/[^a-z]/g, '')))
-/** Words that mark a bracket as a salt, form or dosing note, not a brand: "(AS TRIHYDRATE)", "(TABLET)", "(BID)". */
-const NOTE_WORDS = new Set(['as', 'equiv', 'equivalent', 'eq', 'tablet', 'tablets', 'tab', 'tabs', 'capsule', 'capsules', 'cap', 'caps', 'bid', 'tid', 'qid', 'od', 'hs', 'prn', 'oral', 'complex', 'trihydrate', 'dihydrate', 'monohydrate', 'anhydrous', 'besilate', 'hydrochloride', 'hcl', 'sodium', 'potassium', 'calcium', 'maleate', 'sulfate', 'sulphate', 'phosphate', 'acetate', 'succinate', 'tartrate', 'mesylate', 'er', 'xr', 'sr', 'mr'])
-/** A bracket is a brand when it is written in capitals ("(FLUIMUCIL 600MG)") and its first word is a real word that is not a salt or form note;
- *  "(Ascorbic Acid)" is a generic alias, "(AS TRIHYDRATE)" a salt, "(BID)" a schedule, "(B-COMPLEX)" part of the generic: none of them replaces the first word. */
-const isBrand = (s: string) => {
-  const l = letters(s)
-  const first = s.trim().split(/[\s-]+/)[0] ?? ''
-  return l.length >= 3 && l === l.toUpperCase() && letters(first).length >= 3 && !NOTE_WORDS.has(letters(first).toLowerCase())
-}
+const clean = (w: string) => w.replace(/[^\p{L}\p{N}-]/gu, '')
+const cap = (w: string, first: boolean) => (w.length <= 2 ? w.toUpperCase() : first ? w[0]!.toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase())
 
 export function shortMedName(name: string): string {
   const raw = name.replace(/\s+/g, ' ').trim()
   if (!raw) return ''
-  // 1. remove note-only brackets, innermost first
-  let s = raw
-  for (let i = 0; i < 4; i++) s = s.replace(/\(\s*([^()]*)\s*\)/g, (m, inner: string) => (isNote(inner) ? ' ' : m))
-  // 2. outer text + one bracket group: a brand in the bracket wins
-  const m = /^(.*?)\(\s*([^()]+?)\s*\)(.*)$/.exec(s)
-  if (m) s = isBrand(m[2]!) ? m[2]! : `${m[1]} ${m[3]}`
-  s = s.replace(/[()]/g, ' ')
-  // 3. drop strengths, pack sizes and noise words
-  const kept = words(s).filter((w) => !STRENGTH.test(w) && !/^x\d+$/i.test(w) && !NOISE.has(w.toLowerCase()))
-  if (kept.length === 0) return raw.slice(0, MAX)
-  // 4. sentence case (a lone capital like the C in "Vitamin C" stays), then fit
-  const cased = kept.map((w, i) => (w.length === 1 ? w : i === 0 ? w[0]!.toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
-  let out = ''
-  for (const w of cased) {
-    const next = out ? `${out} ${w}` : w
-    if (next.length > MAX && out) break
-    out = next
+  const open = raw.indexOf('(')
+  // the words before the first bracket; a label that starts with a bracket uses the words inside it instead
+  const lead = (open > 0 ? raw.slice(0, open) : raw.replace(/[()]/g, ' ')).split(/\s+/).map(clean).filter(Boolean)
+  const base: string[] = []
+  for (const w of lead) {
+    if (base.length === 2 || /^\d/.test(w) || STOP.has(w.toLowerCase()) || ROUTES.has(w.toLowerCase()) || FORMS[w.toLowerCase()]) break
+    base.push(w)
+  }
+  if (base.length === 0) return raw.slice(0, MAX)
+  const all = raw.replace(/[(),]/g, ' ').split(/\s+/).filter(Boolean)
+  const fi = all.findIndex((w) => FORMS[clean(w).toLowerCase()])
+  let out = base.map((w, i) => cap(w, i === 0)).join(' ')
+  if (fi >= 0) {
+    const form = FORMS[clean(all[fi]!).toLowerCase()]!
+    const route = fi > 0 && ROUTES.has(clean(all[fi - 1]!).toLowerCase()) ? `${clean(all[fi - 1]!).toLowerCase()} ` : ''
+    if (`${out} ${route}${form}`.length <= MAX) out = `${out} ${route}${form}`
+    else if (`${out} ${form}`.length <= MAX) out = `${out} ${form}`
   }
   return out.length > MAX ? `${out.slice(0, MAX - 1)}…` : out
 }

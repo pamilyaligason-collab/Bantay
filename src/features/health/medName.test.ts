@@ -19,25 +19,35 @@ describe('names (S6, S9; ML-35)', () => {
   })
 })
 
-// Expected strings are computed by hand from the rules in medName.ts, not copied from the function output.
+// Expected strings are computed by hand from the rule in medName.ts (first 1-2 words before a bracket or digit, plus the form word), not copied from the function output.
 describe('shortMedName', () => {
   const cases: [string, string][] = [
-    ['Sea Water ( HUMER 050 HYPERTONIC NASAL SPRAY (CHILD) )', 'Humer nasal spray'],
-    ['acetylcisteine (FLUIMUCIL 600MG)', 'Fluimucil'],
-    ['cefixime (TERGECEF 200)', 'Tergecef'],
+    ['Sea Water ( HUMER 050 HYPERTONIC NASAL SPRAY (CHILD) )', 'Sea water nasal spray'],
+    ['acetylcisteine (FLUIMUCIL 600MG)', 'Acetylcisteine'],
+    ['cefixime (TERGECEF 200)', 'Cefixime'],
+    ['Amlodipine (NORVASC) 5MG', 'Amlodipine'],
+    ['Amlodipine (BESYLATE) 5mg', 'Amlodipine'],
+    ['Clopidogrel (BISULFATE) 75mg', 'Clopidogrel'],
+    ['Cetirizine (DIHYDROCHLORIDE) 10mg', 'Cetirizine'],
+    ['Insulin (NPH) 100IU/ML', 'Insulin'],
+    ['Vitamin D3 (CHOLECALCIFEROL) 1000IU', 'Vitamin D3'],
+    ['Paracetamol (ACETAMINOPHEN) 500mg', 'Paracetamol'],
+    ['Losartan (MSD) 50mg', 'Losartan'],
     ['Losartan 50mg tablet', 'Losartan tablet'],
     ['PARACETAMOL (CHILD) 250MG/5ML SYRUP', 'Paracetamol syrup'],
     ['Amoxicillin 500 mg capsule x 21', 'Amoxicillin capsule'],
     ['Vitamin C (Ascorbic Acid) 500mg', 'Vitamin C'],
-    // J r2: a salt, schedule or form note in capitals is not a brand and never replaces the first word (hand-computed)
     ['AMOXICILLIN (AS TRIHYDRATE) 500MG CAPSULE', 'Amoxicillin capsule'],
     ['AMOXICILLIN (AS TRIHYDRATE) 500MG', 'Amoxicillin'],
     ['Amlodipine (AS BESILATE) 5mg tablet', 'Amlodipine tablet'],
     ['Metformin (BID)', 'Metformin'],
-    ['Amlodipine (TABLET) 5mg', 'Amlodipine'],
+    ['Amlodipine (TABLET) 5mg', 'Amlodipine tablet'],
     ['Vitamin B (B-COMPLEX)', 'Vitamin B'],
-    ['SALBUTAMOL (VENTOLIN NEBULE 2.5MG/2.5ML)', 'Ventolin nebule'],
-    ['Metformin Hydrochloride Extended-Release Tablets 500 mg', 'Metformin hydrochloride'] // 23 chars; adding "extended-release" would make 40 > 28
+    ['SALBUTAMOL (VENTOLIN NEBULE 2.5MG/2.5ML)', 'Salbutamol nebule'],
+    ['PNEUMOCOCCAL POLYSACCHARIDE VACCINE, POLYVALENT', 'Pneumococcal polysaccharide'],
+    ['Metformin Hydrochloride Extended-Release Tablets 500 mg', 'Metformin hydrochloride'], // with "tablet" it would be 30 chars > 28, so the form is dropped
+    ['Salbutamol Sulfate Inhaler 100mcg', 'Salbutamol sulfate inhaler'], // 26 chars
+    ['Betamethasone eye drops 0.1%', 'Betamethasone eye drops']
   ]
   for (const [raw, want] of cases) it(`${raw} -> ${want}`, () => expect(shortMedName(raw)).toBe(want))
   it('never longer than 28 characters, never empty', () => {

@@ -39,14 +39,15 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
   const row = page.getByRole('group', { name: 'Quick log' })
   await expect(row.getByRole('button')).toHaveCount(6)
   await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined)))) // the reveal motion is done: measure settled boxes
-  const boxes = []
-  for (const b of await row.getByRole('button').all()) {
-    const box = (await b.boundingBox())!
+  // All six boxes are read in one page call (a late layout shift cannot land between two reads) and polled until Today has stopped moving.
+  const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
+  const measure = () => page.getByRole('group', { name: 'Quick log' }).evaluate((el) => [...el.querySelectorAll('button')].map((b) => { const r = b.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } }))
+  await expect.poll(async () => { const b = await measure(); return b.length === 6 && near(b.slice(0, 3).map((q) => q.y)) && near(b.slice(3).map((q) => q.y)) }).toBe(true) // two rows of three
+  const boxes = await measure()
+  for (const box of boxes) {
     expect(box.height).toBeGreaterThanOrEqual(72)
     expect(box.width).toBeGreaterThanOrEqual(48)
-    boxes.push(box)
   }
-  const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
   for (const r of [0, 3]) expect(near(boxes.slice(r, r + 3).map((b) => b.y))).toBe(true) // two rows of three
   for (const c of [0, 1, 2]) expect(near([boxes[c]!.x, boxes[c + 3]!.x])).toBe(true) // columns line up
   expect(boxes[3]!.y - boxes[0]!.y).toBeGreaterThan(60)
