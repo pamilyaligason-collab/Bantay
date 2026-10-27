@@ -34,6 +34,12 @@ describe('reminder actions', () => {
     expect(REMINDER_ACTIONS.map((a) => a.title)).toEqual(['I took it', 'In 10 min', 'Skip today'])
     expect(t.actions.filter((a: { foreground?: boolean }) => a.foreground)).toEqual([])
   })
+  it('registers the BP reply type after the dose type (the dose actions are unchanged)', async () => {
+    await registerReminderActions()
+    const types = LN.registerActionTypes.mock.calls[0]![0].types
+    expect(types.map((x: { id: string }) => x.id)).toEqual([DOSE_ACTION_TYPE, 'BP_REMINDER'])
+    expect(types[1].actions).toEqual([expect.objectContaining({ id: 'BP_REPLY', input: true })])
+  })
   it('Taken logs every dose due at that time with its slot, without opening the app', async () => {
     await add({ name: 'Losartan' })
     await add({ name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } })

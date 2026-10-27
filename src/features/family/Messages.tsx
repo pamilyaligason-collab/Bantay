@@ -118,6 +118,8 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
               {m.kind === 'voice' && (m.url ? <audio controls preload="none" src={m.url} aria-label={`Voice note from ${nameOf(m)}, ${m.durationS ? mmss(m.durationS) : ''}`} /> : <p className="sub">Voice note</p>)}
               {m.kind === 'photo' && (m.url ? <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt={`Photo from ${nameOf(m)}`} loading="lazy" /></a> : <p className="sub">Photo</p>)}
               {m.kind === 'file' && (m.url ? <a className="msg-file" href={m.url} target="_blank" rel="noreferrer" download={shortName(m.name)}><Icon name="pdf" size={22} />{shortName(m.name)}</a> : <p className="sub">{shortName(m.name)}</p>)}
+              {m.kind === 'recap' && <p>{m.body}</p>}
+              {m.kind === 'kudos' && (m.url ? <audio controls preload="none" src={m.url} aria-label={`Voice kudos from ${nameOf(m)}, ${m.durationS ? mmss(m.durationS) : ''}`} /> : <p><span aria-hidden="true">{'♥'} </span>Sent a heart</p>)}
               {m.mine && !m.queued && <button type="button" className="msg-del" onClick={() => setGone(m)} aria-label="Delete this message"><Icon name="trash" size={18} /></button>}
             </li>
           ))}

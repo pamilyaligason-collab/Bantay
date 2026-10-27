@@ -32,6 +32,8 @@ import { PersonChips } from '../features/records/PersonChips'
 import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
 import { givenName, properName } from '../features/health/medName'
+import NudgeHub from '../features/nudge/NudgeHub'
+import { NudgeEntry } from '../features/nudge/NudgeEntry'
 
 const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
@@ -56,6 +58,7 @@ export default function Health() {
   if (hash === '#health/refill') return <Refill />
   if (hash === '#health/visits') return <Visits />
   if (hash === '#health/summary') return <VisitSummary />
+  if (hash === '#health/nudge') return <NudgeHub />
   return code ? <MetricScreen code={code} /> : <Overview />
 }
 
@@ -131,6 +134,7 @@ function Overview() {
         <span className="grow">Food and nutrients<small>Meals, salt and nutrients, next to blood pressure</small></span>
         <Icon name="chev" size={20} />
       </a>
+      <NudgeEntry />
       {personId && <MedicinesSummary personId={personId} />}
       {!blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} />}
       {!blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}

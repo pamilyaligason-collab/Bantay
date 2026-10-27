@@ -7,7 +7,7 @@ vi.mock('../sync/sync', () => ({ syncNow }))
 
 import { db } from '../../db'
 import { toRow } from '../sync/tables'
-import { listQueued, sendText } from './messagesApi'
+import { listQueued, sendRecap, sendText } from './messagesApi'
 
 beforeEach(async () => { await db.outbox.clear(); syncNow.mockClear() })
 
@@ -34,5 +34,20 @@ describe('family text through the outbox', () => {
   })
   it('sync sends only kind, body and client_id (the server stamps the sender)', () => {
     expect(toRow('family_messages', { kind: 'text', body: 'hi', client_id: 'c', senderId: 'x', attachmentPath: 'p' }, 'c')).toEqual({ kind: 'text', body: 'hi', client_id: 'c' })
+  })
+})
+
+describe('Sunday recap through the outbox (counts only)', () => {
+  it('queues a recap row of kind recap', async () => {
+    expect(await sendRecap('This week: 7 of 7 morning checks, medicines on 5 of 7 days.')).toEqual({ ok: true, data: null })
+    const rows = await db.outbox.toArray()
+    expect(rows[0]).toMatchObject({ table: 'family_messages', op: 'insert', payload: { kind: 'recap', body: 'This week: 7 of 7 morning checks, medicines on 5 of 7 days.' } })
+  })
+  it('refuses anything shaped like a reading, an empty line and a line over 200 characters; nothing is queued', async () => {
+    for (const s of ['Average 133/83', 'Average 133 / 83 this week', '   ', 'a'.repeat(201)]) expect(await sendRecap(s), s).toEqual({ ok: false, error: 'failed' })
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('sync keeps kind recap (the field list is kind and body)', () => {
+    expect(toRow('family_messages', { kind: 'recap', body: 'x', client_id: 'c', aboutPerson: 'p' }, 'c')).toEqual({ kind: 'recap', body: 'x', client_id: 'c' })
   })
 })

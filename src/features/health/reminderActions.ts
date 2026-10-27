@@ -5,6 +5,7 @@ import { selfIdOrCached } from '../sync/profile'
 import { supabase } from '../auth/client'
 import { ALARM_CHANNEL } from '../phonecheck/keys'
 import { dayOf, remindable, reminderId, toClock } from './meds'
+import { BP_TYPE, handleBpAction } from '../nudge/bpReminder'
 
 /** Lock-screen actions on a dose alarm: I took it / In 10 min / Skip today. "I took it" and "Skip today" log the doses due at that time without opening the app and cancel the rest of that slot's repeats;
  *  "In 10 min" keeps the +10 / +20 repeats already planned (they ring within 10 minutes) and, on the third reminder, rings once more in 10 minutes.
@@ -24,14 +25,16 @@ export const REMINDER_ACTIONS = [
 ]
 
 export async function registerReminderActions(): Promise<void> {
-  try { await LocalNotifications.registerActionTypes({ types: [{ id: DOSE_ACTION_TYPE, actions: REMINDER_ACTIONS }] }) } catch { /* the reminder still rings, just without buttons */ }
+  try { await LocalNotifications.registerActionTypes({ types: [{ id: DOSE_ACTION_TYPE, actions: REMINDER_ACTIONS }, BP_TYPE] }) } catch { /* the reminder still rings, just without buttons */ }
 }
 
 export interface ReminderEvent {
   actionId?: string
+  /** The text typed into a reply action (the BP reminder's BP_REPLY). */
+  inputValue?: string
   notification?: { id?: number; title?: string; body?: string; extra?: { kind?: string; at?: number; slot?: string; people?: string[]; rep?: number; day?: string; sib?: number[] } }
 }
-export type ReminderOutcome = 'logged' | 'skipped' | 'nothing-due' | 'snoozed' | 'open' | 'ignored'
+export type ReminderOutcome = 'logged' | 'skipped' | 'nothing-due' | 'snoozed' | 'open' | 'ignored' | 'ask'
 
 /** The people the Taken button may log for: this user and the people they are a writer carer of (the cached list the Health screens use; read-only carers' people are never in it). */
 export async function markablePeople(selfId?: string | null): Promise<string[]> {
@@ -76,6 +79,7 @@ async function cancelRest(extra: NonNullable<ReminderEvent['notification']>['ext
 /** What a tap on a reminder button does. Anything that is not a dose reminder is ignored. */
 export async function handleReminderAction(ev: ReminderEvent, now = new Date()): Promise<ReminderOutcome> {
   const n = ev?.notification
+  if (n?.extra?.kind === 'bp') return handleBpAction(ev) // the BP reminder's reply box (nudge/bpReminder.ts); the dose actions below are untouched
   if (n?.extra?.kind !== 'dose') return 'ignored'
   const clear = async () => { try { if (n.id != null) await LocalNotifications.removeDeliveredNotifications({ notifications: [{ id: n.id, title: n.title ?? '', body: n.body ?? '' }] }) } catch { /* already gone */ } }
   if (ev.actionId === 'taken' || ev.actionId === 'skip') {

@@ -120,4 +120,5 @@ grant select, insert, update, delete on storage.objects to authenticated;
 \ir ../migrations/0039_marked_by_digest.sql
 \ir ../migrations/0040_push_tokens.sql
 \ir ../migrations/0041_rollcall.sql
+\ir ../migrations/0042_kudos.sql
 \echo REHEARSAL DONE
