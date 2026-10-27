@@ -5,7 +5,7 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 const PORT = Number(process.env.PW_PORT ?? 4317) // lanes set PW_PORT so parallel runs do not collide
 // The sign-in spec needs a build WITH Supabase env (the normal build has none, so AuthGate is bypassed). Test values only, nothing real.
 const AUTH_PORT = PORT + 500
-const AUTH_ENV = { VITE_SUPABASE_URL: 'https://bantay-test.supabase.test', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key' }
+const AUTH_ENV = { VITE_SUPABASE_URL: 'https://bantay-test.supabase.test', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key', VITE_JOIN_STUB: '1' }
 
 export default defineConfig({
   testDir: 'e2e',

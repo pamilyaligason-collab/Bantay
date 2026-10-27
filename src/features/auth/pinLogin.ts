@@ -27,26 +27,32 @@ export async function signInWithPin(handle: string, pin: string): Promise<string
   }
 }
 
-/** "Forgot PIN? Send a request": the server answers the same for any handle, so this only reports whether the phone could reach it. */
-export async function requestPinReset(handle: string): Promise<'sent' | 'no_signal'> {
-  if (!supabase) return 'no_signal'
-  try {
-    const { error } = await supabase.rpc('request_pin_reset', { h: handle.trim().toLowerCase() })
-    // postgrest-js reports a network failure as an error with no code. PGRST202 = the function is not on the server yet: never say "sent" then.
-    return error && (!error.code || error.code === 'PGRST202') ? 'no_signal' : 'sent'
-  } catch {
-    return 'no_signal'
-  }
+/** Wrong-PIN wait (start-wrong): five misses in a row make the phone wait one minute, then it unlocks by itself. Fingerprint stays available.
+ *  Counting is pinAttempts (kv pin.fail.<handle>); this only turns the count into a one-minute wait. */
+export const WAIT_MS = 60_000
+export type WrongState = { kind: 'tries'; left: number } | { kind: 'wait'; until: number }
+export function wrongState(f: { n: number; lastAt: number } | undefined, now: number, limit = 5): WrongState {
+  if (!f) return { kind: 'tries', left: limit }
+  if (f.n >= limit) return now < f.lastAt + WAIT_MS ? { kind: 'wait', until: f.lastAt + WAIT_MS } : { kind: 'tries', left: 1 } // after the wait one try at a time; a miss waits again
+  return { kind: 'tries', left: limit - f.n }
+}
+
+/** Family invite link (start-invite): https://bantay.pages.dev/#join/<token>. Returns the token or null. */
+export const INVITE_RE = /^[A-Za-z0-9_-]{8,64}$/
+export function inviteFromHash(hash: string): string | null {
+  const m = /^#join\/([^/?#]+)/.exec(hash)
+  return m && INVITE_RE.test(m[1]!) ? m[1]! : null
 }
 
 export interface NameEntry { first_name: string; initial: string; handle: string }
 export type NamesResult = { kind: 'ok'; names: NameEntry[] } | { kind: 'offline' } | { kind: 'error' }
 
-/** Fresh phone (D-41): first names of active PIN members from the family-names Edge Function. A network failure is 'offline'; anything else is 'error'. */
-export async function fetchFamilyNames(): Promise<NamesResult> {
+/** Fresh phone (D-41) or invite link (M6): first names of active PIN members from the family-names Edge Function. A network failure is 'offline'; anything else is 'error'. */
+export async function fetchFamilyNames(invite?: string | null): Promise<NamesResult> {
   if (!supabaseUrl || !supabasePublishableKey) return { kind: 'error' }
   try {
-    const res = await fetch(`${supabaseUrl}/functions/v1/family-names`, { headers: { apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}` } })
+    const q = invite && INVITE_RE.test(invite) ? `?invite=${encodeURIComponent(invite)}` : '' // invite mode (M6): the names on that invite
+    const res = await fetch(`${supabaseUrl}/functions/v1/family-names${q}`, { headers: { apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}` } })
     const body = res.ok ? await res.json().catch(() => null) : null
     if (!Array.isArray(body)) return { kind: 'error' }
     const names = body.flatMap((r): NameEntry[] =>
