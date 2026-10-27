@@ -13,17 +13,26 @@ const at = (h: number, m: number) => new Date(2026, 9, 20, h, m, 0).toISOString(
 type Row = Record<string, unknown>
 
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
+  // Wait until the app's own Dexie has created the store: a bare open before that makes an empty v1 database and the transaction never settles (ML-25).
   await page.evaluate(async ([name, st, list]) => {
-    await new Promise<void>((res, rej) => {
-      const open = indexedDB.open(name as string)
-      open.onerror = () => rej(open.error)
-      open.onsuccess = () => {
-        const tx = open.result.transaction(st as string, 'readwrite')
-        for (const r of list as Row[]) tx.objectStore(st as string).add(r)
-        tx.oncomplete = () => { open.result.close(); res() }
-        tx.onerror = () => rej(tx.error)
-      }
-    })
+    for (let i = 0; i < 100; i++) {
+      const ok = await new Promise<boolean>((res, rej) => {
+        const open = indexedDB.open(name as string)
+        open.onupgradeneeded = () => { open.transaction?.abort() } // never create the app's database from the test
+        open.onerror = () => res(false)
+        open.onsuccess = () => {
+          const db = open.result
+          if (!db.objectStoreNames.contains(st as string)) { db.close(); res(false); return }
+          const tx = db.transaction(st as string, 'readwrite')
+          for (const r of list as Row[]) tx.objectStore(st as string).add(r)
+          tx.oncomplete = () => { db.close(); res(true) }
+          tx.onerror = () => { db.close(); rej(tx.error) }
+        }
+      })
+      if (ok) return
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    throw new Error(`store ${st as string} never appeared in ${name as string}`)
   }, [dbName, store, rows] as const)
 }
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
