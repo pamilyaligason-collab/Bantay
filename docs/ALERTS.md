@@ -101,9 +101,10 @@ utility, local notice) or 150 km (storm, flood, heat, tsunami, volcano, GDACS) o
 "Far from you; no action needed" and hides the do-now steps. Hand-computed check: 0.8 degrees of latitude is 88.95 km, so a M4.5 quake 89 km from Conel is far.
 
 **Source copy.** One constant, `SOURCES_LINE`, replaces every claim that the app pulls PAGASA, PHIVOLCS or NDRRMC warnings:
-"Quakes: PHIVOLCS and USGS. Storms: GDACS and PAGASA bulletins. Weather and air: Open-Meteo. Checked every 10 minutes."
+"Quakes: USGS. Storms and floods: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PHIVOLCS and PAGASA bulletins are links you can open, not feeds."
 What the ingest really reads: USGS (quakes), GDACS (cyclone, flood, volcano, tsunami), the PAGASA public alert feed (wind signals, flood advisories) and
-Open-Meteo (air). PHIVOLCS is not ingested (see "Not ingested"); USGS stands in for its quakes, so the constant's "PHIVOLCS" is a pointer to where to check, not a feed.
+Open-Meteo (air quality only, no weather). PHIVOLCS is not ingested (see "Not ingested") and neither are the PAGASA bulletin PDFs: the constant says they are links you can open, not feeds.
+The line names only what the ingest reads (ML-12). Other screens that still name PHIVOLCS or PAGASA as sources are outside lane D (SafetyPages, stormMode, heroCards) and are routed to the orchestrator.
 
 **GDACS in plain words.** GDACS statistics ("Population affected by Category 1 (120 km/h) wind speeds or higher is 0.291 million.") are shown as
 "About 291,000 people live where the strongest winds or water are expected." A statistic line the app cannot read is dropped, never shown raw.

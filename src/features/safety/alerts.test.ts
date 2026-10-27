@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ALERT_RADIUS_KM } from '../today/heroCards'
 import { affectsUs, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
@@ -125,8 +126,15 @@ describe('plain words and copy', () => {
     expect(plainWhat({ kind: 'gdacs', what: 'Population affected: unknown' })).toBe('')
     expect(plainWhat({ kind: 'quake', what: 'Magnitude 5.1, 40 km north.' })).toBe('Magnitude 5.1, 40 km north.')
   })
-  it('sources line is the contract text and the place label matches the Safety chip', () => {
-    expect(SOURCES_LINE).toBe('Quakes: PHIVOLCS and USGS. Storms: GDACS and PAGASA bulletins. Weather and air: Open-Meteo. Checked every 10 minutes.')
+  it('wide radius equals the Today band radius (ML-10)', () => {
+    // a storm 149 km and 151 km from home: the Safety text and the Today band must agree
+    const at = (km: number) => ({ lat: HOME.lat + km / 111.19, lon: HOME.lon })
+    expect(ALERT_RADIUS_KM).toBe(150)
+    expect(affectsUs(a('s', 'tcws', at(149)), null).affects).toBe(true)
+    expect(affectsUs(a('s', 'tcws', at(151)), null).affects).toBe(false)
+  })
+  it('sources line names only what the ingest reads and the place label matches the Safety chip', () => {
+    expect(SOURCES_LINE).toBe('Quakes: USGS. Storms and floods: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PHIVOLCS and PAGASA bulletins are links you can open, not feeds.')
     expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
     expect(placeLabel({ source: 'gps', zone: 'dampas' })).toBe('Near you · Dampas')
     expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')

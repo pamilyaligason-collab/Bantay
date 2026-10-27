@@ -7,7 +7,7 @@ import { zoneAlert } from './heroCards'
 
 const NONE: Alert[] = []
 
-/** The top band of Today, drawn only while an official warning (PAGASA, PHIVOLCS) is active for the area. No warning: nothing. No motion.
+/** The top band of Today, drawn only while an official warning is active for the area. No warning: nothing. No motion.
  *  It says whether the warning reaches the family, when alerts were last checked, and (amber) when that is too long ago. */
 export default function AlertBand() {
   const place = usePlace()
