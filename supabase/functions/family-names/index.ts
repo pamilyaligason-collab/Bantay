@@ -3,6 +3,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
 import { listNames, type NamesPort } from '../_shared/names.ts'
+import { limiterKey, safeEqual } from '../_shared/pin.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
 
@@ -37,6 +38,14 @@ Deno.serve(async (req) => {
   try {
     const xff = (req.headers.get('x-forwarded-for') ?? '').split(',').map((s) => s.trim()).filter(Boolean)
     const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-real-ip') ?? xff[xff.length - 1] ?? 'unknown'
+    // Invite mode (M6): ?invite=<token> is checked against the FAMILY_INVITE_TOKEN secret (link https://bantay.pages.dev/#join/<token>).
+    // A wrong or missing-secret token gets the same refusal; guesses are counted per address like the name list itself.
+    const token = new URL(req.url).searchParams.get('invite')
+    if (token !== null) {
+      const want = env('FAMILY_INVITE_TOKEN')
+      if ((await port.tryKey(await limiterKey(pepper, 'ip', `invite:${ip}`), 10)) > 10) return json({ ok: false }, 429, cors)
+      if (want.length < 16 || !safeEqual(token, want)) return json({ ok: false }, 403, cors)
+    }
     const r = await listNames(ip, port)
     return json(r.body, r.status, cors)
   } catch {
