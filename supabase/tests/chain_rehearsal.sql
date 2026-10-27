@@ -115,4 +115,5 @@ grant select, insert, update, delete on storage.objects to authenticated;
 \ir ../migrations/0034_pin_reset_erasure.sql
 \ir ../migrations/0035_reading_alerts.sql
 \ir ../migrations/0036_scan_skip.sql
+\ir ../migrations/0038_join_claim.sql
 \echo REHEARSAL DONE

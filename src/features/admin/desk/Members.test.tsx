@@ -14,7 +14,7 @@ vi.mock('../../auth/client', () => ({
   supabase: { functions: { invoke: h.invoke }, rpc: h.rpc, auth: { getUser: h.getUser }, from: (t: string) => ({ ...(chain(h.data[t] ?? []) as object), insert: h.insert }) }
 }))
 
-import Members, { createBody, dependentRow, filterLines, memberState, type Row } from './Members'
+import Members, { createBody, dependentRow, filterLines, memberState, needsInvite, type Row } from './Members'
 import { agoOf, carersText, needsAttention, roleOf, signInOf, stateOf, type Line } from './Person'
 
 const base: Row = { userId: 'u2', personId: 'p2', displayName: 'Test Person', handle: 'testp', role: 'member', disabled: false, lastSignInAt: null, provider: 'email', profile: null }
@@ -139,7 +139,8 @@ describe('Members page', () => {
     expect(within(kid).getByText('No phone')).toBeTruthy()
     expect(within(kid).getByText('2 (1 can edit)')).toBeTruthy()
     expect(within(kid).getByText('4')).toBeTruthy() // 3 + 1 drafts
-    expect(within(row).queryByRole('button')).toBeNull() // actions live on the member page
+    expect(within(row).getAllByRole('button').map((b) => b.textContent)).toEqual(['Invite link']) // a PIN member who never signed in; other actions live on the member page
+    expect(within(kid).queryByRole('button')).toBeNull()
   })
 
   it('clicking a row opens the member page', async () => {
@@ -207,6 +208,42 @@ describe('Members page', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Add dependent' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
     await waitFor(() => expect(h.insert).toHaveBeenCalledWith({ display_name: 'Test Kid', created_by: ME }))
+  })
+
+  it('needsInvite: only an active PIN member who has never signed in, and not an archived one', () => {
+    expect(needsInvite(line())).toBe(true)
+    expect(needsInvite(line({ m: { ...base, lastSignInAt: '2026-10-01T00:00:00Z' } }))).toBe(false) // already has a PIN
+    expect(needsInvite(line({ m: { ...base, disabled: true } }))).toBe(false)
+    expect(needsInvite(line({ m: { ...base, provider: 'google', handle: null } }))).toBe(false)
+    expect(needsInvite(line({ m: undefined }))).toBe(false) // a dependent
+    expect(needsInvite(line({ p: { ...people[1]!, archived_at: '2026-10-01T00:00:00Z' } }))).toBe(false)
+  })
+
+  it('Invite link: confirm, make the link, show it once with a copy button', async () => {
+    const write = vi.fn(async () => undefined)
+    Object.assign(navigator, { clipboard: { writeText: write } })
+    h.rpc.mockImplementation(async (fn: string) => (fn === 'admin_create_invite' ? { data: 'TOKEN_abc-123', error: null } : { data: [], error: null }))
+    render(<Members id={null} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Invite link for Test Person' }))
+    expect(h.rpc).not.toHaveBeenCalledWith('admin_create_invite', expect.anything()) // nothing before the confirm
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    const box = (await screen.findByRole('textbox', { name: 'Invite link' })) as HTMLInputElement
+    expect(h.rpc).toHaveBeenCalledWith('admin_create_invite', { p_user: 'u2' })
+    expect(box.value).toBe('https://bantay.pages.dev/#join/TOKEN_abc-123')
+    expect(screen.getByText(/works once and ends in 7 days/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }))
+    await waitFor(() => expect(write).toHaveBeenCalledWith('https://bantay.pages.dev/#join/TOKEN_abc-123'))
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByRole('textbox', { name: 'Invite link' })).toBeNull()
+  })
+
+  it('Invite link: a refusal says why in plain words and shows no link', async () => {
+    h.rpc.mockImplementation(async (fn: string) => (fn === 'admin_create_invite' ? { data: null, error: { code: '22023' } } : { data: [], error: null }))
+    render(<Members id={null} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Invite link for Test Person' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
+    expect(await screen.findByText(/already have a PIN/)).toBeTruthy()
+    expect(screen.queryByRole('textbox', { name: 'Invite link' })).toBeNull()
   })
 
   it('Invite by email sends invite after a confirm', async () => {

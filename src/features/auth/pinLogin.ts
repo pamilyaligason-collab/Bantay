@@ -45,14 +45,20 @@ export function inviteFromHash(hash: string): string | null {
 }
 
 export interface NameEntry { first_name: string; initial: string; handle: string }
-export type NamesResult = { kind: 'ok'; names: NameEntry[] } | { kind: 'offline' } | { kind: 'error' }
+/** 'invite': the link itself is refused. why: used (claimed or replaced), ended (past 7 days), tries (5 claim tries used), bad (unknown). */
+export type InviteWhy = 'used' | 'ended' | 'tries' | 'bad'
+export type NamesResult = { kind: 'ok'; names: NameEntry[] } | { kind: 'offline' } | { kind: 'error' } | { kind: 'invite'; why: InviteWhy }
 
 /** Fresh phone (D-41) or invite link (M6): first names of active PIN members from the family-names Edge Function. A network failure is 'offline'; anything else is 'error'. */
 export async function fetchFamilyNames(invite?: string | null): Promise<NamesResult> {
   if (!supabaseUrl || !supabasePublishableKey) return { kind: 'error' }
   try {
-    const q = invite && INVITE_RE.test(invite) ? `?invite=${encodeURIComponent(invite)}` : '' // invite mode (M6): the names on that invite
+    const q = invite && INVITE_RE.test(invite) ? `?invite=${encodeURIComponent(invite)}` : '' // invite mode (D-81): the one name on that link
     const res = await fetch(`${supabaseUrl}/functions/v1/family-names${q}`, { headers: { apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}` } })
+    if (q && res.status === 404) { // the link is refused; the body says why (used, ended, tries), anything else counts as unknown
+      const why = (await res.json().catch(() => null))?.why
+      return { kind: 'invite', why: why === 'used' || why === 'ended' || why === 'tries' ? why : 'bad' }
+    }
     const body = res.ok ? await res.json().catch(() => null) : null
     if (!Array.isArray(body)) return { kind: 'error' }
     const names = body.flatMap((r): NameEntry[] =>
@@ -62,6 +68,27 @@ export async function fetchFamilyNames(invite?: string | null): Promise<NamesRes
     return { kind: 'ok', names }
   } catch {
     return { kind: 'offline' }
+  }
+}
+
+/** Claiming a name from a personal invite link (D-81): pin-login action join_claim. The link names the member, so only the token and the new PIN go up.
+ *  429 is 'too_many' (10 an hour per address); a network failure is 'no_signal'; any other refusal reads as an unusable link. */
+export type JoinResult = { ok: true } | { ok: false; why: 'no_signal' | 'bad_invite' | 'taken' | 'bad_pin' | 'too_many' }
+export async function joinPort(o: { invite: string; handle?: string; pin: string }): Promise<JoinResult> {
+  if (!supabaseUrl || !supabasePublishableKey) return { ok: false, why: 'no_signal' }
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/pin-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: supabasePublishableKey, Authorization: `Bearer ${supabasePublishableKey}` },
+      body: JSON.stringify({ action: 'join_claim', token: o.invite, pin: o.pin })
+    })
+    const body = await res.json().catch(() => null)
+    if (res.status === 200 && body?.ok === true) return { ok: true }
+    if (res.status === 429) return { ok: false, why: 'too_many' }
+    if (res.status >= 500) return { ok: false, why: 'no_signal' }
+    return { ok: false, why: body?.why === 'taken' || body?.why === 'bad_pin' ? body.why : 'bad_invite' }
+  } catch {
+    return { ok: false, why: 'no_signal' }
   }
 }
 

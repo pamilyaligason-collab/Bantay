@@ -339,13 +339,19 @@ describe('SignIn: #join invite links', () => {
   beforeEach(() => { localStorage.clear(); h.names.mockReset(); h.names.mockResolvedValue(NAMES); history.replaceState(null, '', '/#join/abcd1234efgh') })
   afterEach(() => { cleanup(); history.replaceState(null, '', '/') })
 
-  it('no join action on the server yet: the link opens the ordinary sign-in, so joining does not regress', async () => {
-    render(<SignIn />)
+  it('with no join port (null) the link opens the ordinary sign-in, so an old build does not regress', async () => {
+    render(<SignIn joinPort={null} />)
     expect(await screen.findByRole('heading', { name: /Jack Jack/ })).toBeTruthy() // the fresh-phone picker, from family-names without the token
     expect(h.names).toHaveBeenCalledWith()
     expect(screen.queryByRole('heading', { name: 'Is this you?' })).toBeNull()
     choose('Mama')
     expect(pad()).not.toBeNull() // tap a name, type the PIN that was set for it
+  })
+
+  it('the default build has the live join port (D-81): the link opens start-who with the invite token', async () => {
+    render(<SignIn />)
+    expect(await screen.findByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+    expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
   })
 
   it('with a join port the same link opens start-who with the invite token', async () => {

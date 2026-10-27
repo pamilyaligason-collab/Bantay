@@ -1,9 +1,10 @@
 // Edge Function: handle + 6-digit PIN -> Supabase session. Deploy with --no-verify-jwt (callers are signed out by definition).
 // Secrets: PIN_PEPPER, ALLOWED_ORIGIN. SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
-// Never log request bodies, PINs, derived passwords or tokens.
+// Actions: sign-in (default), reset_start, reset_complete, join_claim {token, pin} (D-81). Never log request bodies, PINs, derived passwords or tokens.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
 import { attemptLogin, resetComplete, resetStart, type LoginPort, type ResetPort } from '../_shared/login.ts'
+import { joinClaim, type JoinPort } from './join.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
 
@@ -113,6 +114,39 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Per-member invite link (D-81, 0038). The link names the member; only this function can hash and set a PIN.
+  const join: JoinPort = {
+    pepper,
+    tryKey: reset.tryKey,
+    async check(hash) {
+      const { data, error } = await admin.rpc('join_claim_check', { p_hash: hash })
+      if (error) throw new Error('check')
+      const row = (data as { user_id: string; handle: string }[] | null)?.[0]
+      return row ? { userId: row.user_id, handle: row.handle } : null
+    },
+    async hasSignedIn(userId) {
+      const { data, error } = await admin.auth.admin.getUserById(userId)
+      if (error || !data.user) throw new Error('lookup') // unsure: fail closed, never overwrite a PIN
+      return Boolean(data.user.last_sign_in_at)
+    },
+    async use(hash) {
+      const { data, error } = await admin.rpc('join_claim_use', { p_hash: hash })
+      if (error) throw new Error('use')
+      return data === true
+    },
+    async release(hash) {
+      try { await admin.from('invite_tokens').update({ used_at: null }).eq('token_hash', hash) } catch { /* the admin makes a new link */ }
+    },
+    setPin: reset.setPin,
+    async afterJoin(userId) {
+      const { data: person } = await admin.from('people').select('id').eq('auth_user_id', userId).maybeSingle()
+      await Promise.allSettled([
+        admin.from('pin_attempts').delete().eq('user_id', userId),
+        admin.from('audit_log').insert({ actor: userId, tbl: 'app_roles', row_id: null, person_id: person?.id ?? null, action: 'join', fields: null })
+      ])
+    }
+  }
+
   try {
     const raw = await req.text()
     const body = raw.length <= 6144 ? JSON.parse(raw) : null // reset_start may carry a Google access token
@@ -122,6 +156,10 @@ Deno.serve(async (req) => {
     const action = typeof body === 'object' && body !== null ? (body as { action?: unknown }).action : undefined
     if (action === 'reset_start') { const r = await resetStart(body, ip, reset); return json(r.body, r.status, cors) }
     if (action === 'reset_complete') { const r = await resetComplete(body, ip, reset); return json(r.body, r.status, cors) }
+    if (action === 'join_claim') {
+      try { const r = await joinClaim(body, ip, join); return json(r.body, r.status, cors) }
+      catch { return json({ ok: false, why: 'no_signal', error: 'server_error' }, 500, cors) } // limiter or database failure: the app says try again
+    }
     if (typeof body === 'object' && body !== null && raw.length > 1024) throw new Error('too long') // sign-in bodies stay small
     const r = await attemptLogin(body, ip, port)
     return json(r.body, r.status, cors)

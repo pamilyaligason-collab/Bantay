@@ -58,8 +58,45 @@ describe('JoinFlow (start-who, start-pin)', () => {
     expect(signIn).not.toHaveBeenCalled()
   })
 
-  it('there is no live port until pin-login has a join action (SignIn then ignores #join links)', () => {
-    expect(defaultJoinPort).toBeNull()
+  it('the default port is the live pin-login join_claim, not a stub', async () => {
+    const pl = await import('../auth/pinLogin')
+    expect(defaultJoinPort).toBe(pl.joinPort)
+  })
+
+  it('one name on the link: "Is this you?" shows just that name', async () => {
+    h.names.mockResolvedValue({ kind: 'ok', names: [NAMES[0]!] })
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
+    const list = await screen.findByLabelText('Who are you?')
+    expect(within(list).getAllByRole('button')).toHaveLength(1)
+    expect(screen.getByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+  })
+
+  it.each([
+    ['used', /already used, or a newer link replaced it/],
+    ['ended', /ended\. Links work for 7 days/],
+    ['tries', /Too many tries on this link/],
+    ['bad', /invite link is not working/]
+  ] as const)('a refused link (%s) says why and offers no Try again', async (why, text) => {
+    h.names.mockResolvedValue({ kind: 'invite', why })
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
+    expect(await screen.findByText(text)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Back to sign in' })).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/—/) // no em dash in user copy
+  })
+
+  it.each([
+    ['bad_pin', /not all the same digit/],
+    ['too_many', /Wait an hour/],
+    ['no_signal', /No signal/],
+    ['bad_invite', /not working/]
+  ] as const)('a refused claim (%s) shows its own line and signs nobody in', async (why, text) => {
+    const signIn = vi.fn(async () => null as string | null)
+    render(<JoinFlow invite="abcd1234efgh" port={async () => ({ ok: false, why })} signIn={signIn} onBack={() => undefined} />)
+    fireEvent.click(within(await screen.findByLabelText('Who are you?')).getByRole('button', { name: /Mama/ }))
+    enter('135790'); enter('135790')
+    expect((await screen.findByRole('alert')).textContent).toMatch(text)
+    expect(signIn).not.toHaveBeenCalled()
   })
 
   it('a bad invite (server error) says so and offers Try again; offline says No signal', async () => {
