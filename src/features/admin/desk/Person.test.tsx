@@ -47,7 +47,7 @@ beforeEach(() => {
   h.update.mockReset().mockResolvedValue({ data: [{ id: 'p4' }], error: null })
   h.getUser.mockReset().mockResolvedValue({ data: { user: { id: ME } } })
   h.invoke.mockReset().mockImplementation(async (_n: string, o: { body: { action: string } }) => ({ data: o.body.action === 'list' ? { ok: true, members } : { ok: true }, error: null }))
-  h.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'admin_identifiers' ? [{ id: 'i1' }, { id: 'i2' }] : [], error: null }))
+  h.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'admin_identifiers' ? [{ id: 'i1' }, { id: 'i2' }] : name === 'share_set' ? 'pending' : [], error: null }))
   location.hash = '#/members/p4'
   Object.assign(people[3]!, { archived_at: null })
 })
@@ -88,13 +88,14 @@ describe('ageOf', () => {
 })
 
 describe('addReadOnly', () => {
-  it('always upserts can_write false', async () => {
-    expect((await addReadOnly('u5', 'p4', ME)).ok).toBe(true)
-    expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u5', person_id: 'p4', can_write: false }, expect.anything())
+  it('always offers through share_set with can_write false', async () => {
+    h.rpc.mockResolvedValue({ data: 'pending', error: null })
+    expect(await addReadOnly('u5', 'p4', ME)).toEqual({ ok: true, data: 'pending' })
+    expect(h.rpc).toHaveBeenCalledWith('share_set', { p_person: 'p4', p_carer: 'u5', p_can_write: false, p_on: true })
   })
   it('never links the admin themself', async () => {
     expect((await addReadOnly(ME, 'p4', ME)).ok).toBe(false)
-    expect(h.upsert).not.toHaveBeenCalled()
+    expect(h.rpc).not.toHaveBeenCalledWith('share_set', expect.anything())
   })
 })
 
@@ -217,11 +218,12 @@ describe('Member page', () => {
     fireEvent.change(pick, { target: { value: 'u5' } })
     fireEvent.click(within(carersBox).getByRole('button', { name: 'Add read-only link' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
-    await waitFor(() => expect(h.upsert).toHaveBeenCalledWith({ carer_id: 'u5', person_id: 'p4', can_write: false }, expect.anything()))
+    await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('share_set', { p_person: 'p4', p_carer: 'u5', p_can_write: false, p_on: true }))
+    expect(await screen.findByText(/Offer sent to Test Cousin\. They see nothing until they accept\./)).toBeTruthy()
   })
 
-  it('Remove maps an RLS refusal to the forbidden message', async () => {
-    h.del.mockResolvedValue({ data: [], error: null })
+  it('Remove maps a server refusal to the forbidden message', async () => {
+    h.rpc.mockImplementation(async (name: string) => (name === 'share_set' ? { data: null, error: { code: '42501', message: 'not allowed' } } : { data: [], error: null }))
     await page('p4', 'carers')
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Test Person as carer' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Confirm' }))
