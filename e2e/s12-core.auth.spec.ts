@@ -63,6 +63,8 @@ const count = (page: Page, dbName: string, store: string) => page.evaluate(([nam
 const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 const at = (h: number, m = 0) => new Date(2026, 9, 27, h, m).toISOString()
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
+// Settled UI before a shot: fonts loaded and every finite reveal animation finished (the sky loops forever) (the weather card fades in).
+const settle = (page: Page) => expect.poll(() => page.evaluate(() => document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running'))).toBe(true)
 const SLOT = hhmm(new Date(NOW.getTime() - 12 * 60_000)) // 9:00, twelve minutes ago
 
 type Meds = 'two' | 'one' | 'none'
@@ -100,7 +102,7 @@ test('Unwell offline is told once when the phone is back online (exactly 1 raise
   await expect(page.getByText('Your family has been told you are unwell.')).toBeVisible()
   await page.reload() // Today mount: nothing left to send
   await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
-  await page.waitForTimeout(300)
+  await page.waitForLoadState('networkidle') // the Today mount retry has run
   expect(rpc.filter((r) => r === 'raise_mood_alert')).toHaveLength(1)
 })
 
@@ -113,6 +115,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(boxes).toHaveCount(2)
     await expect(boxes.first()).toBeChecked()
     await expect(boxes.last()).toBeChecked()
+    await settle(page)
     await shot(page, 'today-full', scheme)
     await boxes.first().uncheck()
     await page.getByRole('button', { name: 'Mark these taken' }).click()
@@ -121,7 +124,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const sos = page.getByRole('button', { name: 'Hold to call and text your family' })
     await sos.scrollIntoViewIfNeeded()
     await expect(sos).toBeVisible()
-    await page.waitForTimeout(400)
+    await settle(page)
     await shot(page, 'today-sos', scheme)
     await noSideways(page)
   })
@@ -142,9 +145,11 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(card).toContainText('Later')
     await expect(card).toContainText('Good, 7:30 AM')
     await expect(card).toContainText('150/95, High, 7:40 AM')
-    await page.waitForTimeout(400)
+    await settle(page)
     await shot(page, 'family-member', scheme)
     await noSideways(page)
+    await page.getByRole('button', { name: 'Message Ate' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
   })
 
   test(`simple-today with a dose and nothing due ${scheme}`, async ({ page }) => {
@@ -154,7 +159,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await bp.scrollIntoViewIfNeeded()
     await expect(bp).toBeVisible()
     await expect(page.getByRole('link', { name: 'Medicines' })).toHaveCount(0) // the dose card is the medicine entry
-    await page.waitForTimeout(400)
+    await settle(page)
     await shot(page, 'simple-today', scheme)
     await bp.click()
     await expect(page.getByRole('dialog')).toBeVisible()
@@ -167,7 +172,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await link.scrollIntoViewIfNeeded()
     await expect(link).toHaveAttribute('href', '#health/meds')
     await expect(page.getByRole('button', { name: 'Check my blood pressure' })).toBeVisible()
-    await page.waitForTimeout(400)
+    await settle(page)
     await shot(page, 'simple-today-calm', scheme)
   })
 }

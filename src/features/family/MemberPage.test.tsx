@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./roster', async (orig) => ({
@@ -7,11 +7,14 @@ vi.mock('./roster', async (orig) => ({
   useFamilyPeople: () => ({ people: [{ id: 'p2', name: 'Lola Sample', isMe: false, phone: '0917 123 4567', birthdate: null, photoPath: null, thumb: null }], selfId: 'p1' }),
   useCheckIns: () => ({})
 }))
+const acc = vi.hoisted(() => ({ v: true as boolean | null }))
+vi.mock('./reportData', async (orig) => ({ ...(await orig<typeof import('./reportData')>()), useReportAccess: () => acc.v }))
+vi.mock('./Messages', () => ({ default: ({ who }: { who: { name: string } }) => <div role="dialog" aria-label={`Messages with ${who.name}`} /> }))
 import MemberPage, { todayView, whenAgo } from './MemberPage'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.useRealTimers() })
 const now = new Date(2026, 9, 27, 14, 0) // 2:00 PM
 const med = (name: string, time: string, id: string) => ({ personId: 'p2', name, medStatus: 'active', schedule: { v: 1, times: [time] }, serverId: id }) as never
 const iso = (h: number, m = 0, d = 27) => new Date(2026, 9, d, h, m).toISOString()
@@ -42,7 +45,7 @@ describe('todayView (hand-computed at 2:00 PM)', () => {
 })
 
 describe('MemberPage', () => {
-  beforeEach(async () => { await Promise.all([ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear(), hdb.readings.clear()]) })
+  beforeEach(async () => { acc.v = true; vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 27, 14, 0) }); await Promise.all([ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear(), hdb.readings.clear()]) })
   it('shows today doses, last mood, last BP with its word, and Call and Text', async () => {
     const t = new Date().toISOString()
     await ldb.medications.add({ personId: 'p2', name: 'Aspirin', medStatus: 'active', schedule: { v: 1, times: ['00:01'] }, serverId: 'a' } as never)
@@ -50,10 +53,24 @@ describe('MemberPage', () => {
     await hdb.readings.bulkAdd([{ personId: 'p2', takenAt: t, test: 'bp_systolic', value: 150, unit: 'mmHg' }, { personId: 'p2', takenAt: t, test: 'bp_diastolic', value: 95, unit: 'mmHg' }])
     render(<MemberPage id="p2" />)
     const card = await screen.findByTestId('member-today')
-    await waitFor(() => expect(card.textContent).toMatch(/Aspirin.*12:01 AM.*(Missed|Due now|Later)/))
+    await waitFor(() => expect(card.textContent).toMatch(/Aspirin.*12:01 AM.*Missed/))
     await waitFor(() => expect(card.textContent).toMatch(/Good,/))
     await waitFor(() => expect(card.textContent).toMatch(/150\/95, High/))
     expect(screen.getByRole('link', { name: 'Call Lola' }).getAttribute('href')).toBe('tel:09171234567')
     expect(screen.getByRole('link', { name: 'Text Lola' }).getAttribute('href')).toBe('sms:09171234567')
+  })
+  it('without access: asks to share, links to Sharing, and never says no mood or no blood pressure', async () => {
+    acc.v = false
+    render(<MemberPage id="p2" />)
+    const card = await screen.findByTestId('member-today-denied')
+    expect(card.textContent).toContain('Ask Lola to share with you')
+    expect(card.querySelector('a')?.getAttribute('href')).toBe('#sharing')
+    expect(screen.queryByTestId('member-today')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/has not said how they feel|No blood pressure saved yet/)
+  })
+  it('the Message button opens the Messages sheet for this person', async () => {
+    render(<MemberPage id="p2" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Message Lola' }))
+    expect(screen.getByRole('dialog', { name: 'Messages with Lola Sample' })).toBeTruthy()
   })
 })

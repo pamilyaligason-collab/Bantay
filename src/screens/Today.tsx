@@ -17,7 +17,7 @@ import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
 import SosHold from '../features/sos/SosHold'
 import SosScreen from '../features/sos/SosScreen'
-import { retryUnsentMood } from '../features/today/actions'
+import { retryToast, retryUnsentMood } from '../features/today/actions'
 import WeekLine from '../features/today/WeekLine'
 import { PwaBanner } from '../features/update/PwaBanner'
 import { UpdateCard } from '../features/update/UpdateCard'
@@ -47,7 +47,7 @@ export default function Today() {
   }, [loaded, simple])
   const [sos, setSos] = useState(false)
   useEffect(() => { // an Unwell saved offline is sent when Today opens and when the phone is back online (the server keeps one per day)
-    const go = () => { void retryUnsentMood().then((r) => { if (r === 'sent') notify('Your family has been told you are unwell.') }, () => undefined) }
+    const go = () => { void retryUnsentMood().then((r) => { const t = retryToast(r); if (t) notify(t) }, () => undefined) }
     go()
     window.addEventListener('online', go)
     return () => window.removeEventListener('online', go)

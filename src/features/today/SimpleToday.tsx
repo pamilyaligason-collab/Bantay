@@ -56,7 +56,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     setBusy(true)
     const r = await logFeeling(f)
     setBusy(false)
-    if (r === 'told' || r === 'untold') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
+    if (r === 'told' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as the Safety tab
   if (view === 'mood') {

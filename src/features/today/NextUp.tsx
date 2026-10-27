@@ -20,7 +20,7 @@ export default function NextUp({ item, review, notify }: { item: NextItem; revie
     if (!skip && many && !picking) { setOff([]); return setPicking(true) }
     setBusy(true)
     const keep = w.slots.filter((x) => !off.includes(x.key))
-    const ok = !skip && many ? (keep.length > 0 && (await markTaken(w.personId, keep.map((x) => x.key))) === keep.length) : await markDue(w, skip)
+    const ok = !skip && many ? (keep.length > 0 && (await markTaken(w.personId, keep.map((x) => x.key))) > 0) : await markDue(w, skip)
     setBusy(false)
     const what = joinNames([...new Set((skip || !many ? w.slots : keep).map((x) => shortMed(x.name)))])
     if (ok) setPicking(false)

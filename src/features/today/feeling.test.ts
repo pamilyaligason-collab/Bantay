@@ -6,7 +6,7 @@ vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.self }))
 vi.mock('../auth/client', () => ({ supabase: { rpc: (...a: unknown[]) => h.rpc(...a) } }))
 vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('../log/store', () => ({ logActivity: async (a: { kind: string }) => { if (a.kind === 'check-in') h.checkins++; else h.moods.push(a.kind) } }))
-import { FEELINGS, feelingToast, logFeeling, retryUnsentMood } from './actions'
+import { FEELINGS, feelingToast, logFeeling, retryToast, retryUnsentMood } from './actions'
 
 beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ error: null }); h.moods = []; h.checkins = 0 })
 
@@ -25,11 +25,33 @@ describe('logFeeling (How are you?)', () => {
     expect(h.rpc).toHaveBeenCalledTimes(1)
     expect(h.rpc).toHaveBeenCalledWith('raise_mood_alert', { p_person: 'p1' })
   })
-  it('Unwell with the alert refused or the network down is saved but never reported as told', async () => {
-    h.rpc.mockResolvedValue({ error: { code: '42501' } })
+  it('Unwell with the network down is saved and queued (untold); a refusal is not queued and says call them', async () => {
+    const { db } = await import('../../db')
+    await db.kv.delete('mood.unsent')
+    h.rpc.mockResolvedValue({ error: { code: '42501', message: 'denied' } })
+    expect(await logFeeling('unwell')).toBe('refused')
+    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    h.rpc.mockResolvedValue({ error: { code: '', message: 'TypeError: Failed to fetch' } })
     expect(await logFeeling('unwell')).toBe('untold')
     h.rpc.mockRejectedValue(new Error('offline'))
     expect(await logFeeling('unwell')).toBe('untold')
+    expect(feelingToast('refused')).toBe('Your family was not told. Call them.')
+  })
+  it('a later Great or OK clears a queued Unwell', async () => {
+    const { db } = await import('../../db')
+    h.rpc.mockRejectedValue(new Error('offline'))
+    await logFeeling('unwell')
+    expect(await db.kv.get('mood.unsent')).toBeTruthy()
+    await logFeeling('ok')
+    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+  })
+  it('two retries at once make one call', async () => {
+    const { db } = await import('../../db')
+    await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: Date.now() } })
+    h.rpc.mockResolvedValue({ error: null })
+    const [a, b] = await Promise.all([retryUnsentMood(), retryUnsentMood()])
+    expect([a, b]).toEqual(['sent', 'sent'])
+    expect(h.rpc).toHaveBeenCalledTimes(1)
   })
   it('the untold toast says the family has not seen it and to tap again or call; told says the family will see it', () => {
     expect(feelingToast('untold')).toBe('Saved. We will tell them when you are online.')
@@ -53,17 +75,22 @@ describe('logFeeling (How are you?)', () => {
     expect(await db.kv.get('mood.unsent')).toBeUndefined()
     online.mockRestore()
   })
-  it('a refused retry keeps the unsent Unwell; one older than a day is dropped without a call', async () => {
+  it('a refused retry drops the unsent Unwell and says call them; one older than a day is dropped with a day line and no call', async () => {
     const { db } = await import('../../db')
     h.rpc.mockRejectedValueOnce(new Error('offline'))
     await logFeeling('unwell')
     h.rpc.mockClear()
-    h.rpc.mockResolvedValueOnce({ error: { code: '42501' } })
-    expect(await retryUnsentMood()).toBe('offline')
-    expect(await db.kv.get('mood.unsent')).toBeTruthy()
-    await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: Date.now() - 25 * 3_600_000 } })
+    h.rpc.mockResolvedValueOnce({ error: { code: '42501', message: 'denied' } })
+    expect(await retryUnsentMood()).toBe('refused')
+    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    expect(retryToast('refused')).toBe('Your family was not told. Call them.')
+    await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: new Date(2026, 9, 26, 9).getTime() } })
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 27, 18) }) // 33 h later
     h.rpc.mockClear()
-    expect(await retryUnsentMood()).toBe('none')
+    const r = await retryUnsentMood()
+    vi.useRealTimers()
+    expect(r).toEqual({ expired: 'Monday' })
+    expect(retryToast(r)).toBe('Your Unwell from Monday did not reach your family. Call them.')
     expect(h.rpc).not.toHaveBeenCalled()
   })
   it('signed out: nothing is written and no alert is raised', async () => {

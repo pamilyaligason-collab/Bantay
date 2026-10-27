@@ -8,7 +8,9 @@ import { ldb, type MedTaken, type Medication } from '../log/store'
 import { shortMed } from '../today/nextPick'
 import { hdb } from '../records/store'
 import type { Reading } from '../health/ranges'
-import { ageOf, checkInLabel, dial, lastCheckIn, useCheckIns, useFamilyPeople } from './roster'
+import { ageOf, checkInLabel, dial, lastCheckIn, nudgeFor, useCheckIns, useFamilyPeople } from './roster'
+import { useReportAccess } from './reportData'
+import Messages from './Messages'
 import './family.css'
 import { Icon } from '../shell/Icon'
 
@@ -89,6 +91,8 @@ export function MemberToday({ personId, first }: { personId: string; first: stri
 export default function MemberPage({ id }: { id: string }) {
   const { people } = useFamilyPeople()
   const last = useCheckIns()
+  const access = useReportAccess(id)
+  const [talk, setTalk] = useState(false)
   const p = people.find((x) => x.id === id)
   if (!p) {
     return (
@@ -123,7 +127,14 @@ export default function MemberPage({ id }: { id: string }) {
       ) : (
         <p className="sub fm-empty">No phone number saved for {first}. They can add it in Me.</p>
       )}
-      <MemberToday personId={p.id} first={first} />
+      <button type="button" className="pill ghost fm-msg" onClick={() => setTalk(true)}>Message {first}</button>
+      {access === true && <MemberToday personId={p.id} first={first} />}
+      {access === false && (
+        <section aria-labelledby="mt-h" data-testid="member-today-denied">
+          <h2 className="hd" id="mt-h">Today</h2>
+          <div className="card"><b>Ask {first} to share with you</b><p className="sub">{first}'s medicines, mood and blood pressure show here once {first} shares with you. <a href="#sharing">Sharing</a></p></div>
+        </section>
+      )}
       <div className="card list">
         <div><div className="grow"><b>Last check-in</b><span className="sub">{when ?? 'Never checked in on this phone'}</span></div></div>
         <a className="fm-link" href={`#medid/${p.id}`}><span className="grow"><b>{first}'s Medical ID</b><span className="sub">Allergies, conditions, who to call</span></span><span className="fm-chev"><Icon name="chev" size={20} /></span></a>
@@ -133,6 +144,7 @@ export default function MemberPage({ id }: { id: string }) {
         <b>What stays private</b>
         <p className="sub">Health readings and records are private. Only {first}, the family admins, and the people {first} shares with can see them.</p>
       </div>
+      {talk && <Messages who={p} people={people} nudge={(() => { const n = nudgeFor(p, c.ok); return n ? { text: n.text, href: n.href } : null })()} onClose={() => setTalk(false)} onOpenPage={() => setTalk(false)} />}
     </>
   )
 }
