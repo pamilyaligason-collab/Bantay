@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
+import { distanceKm, HOME_ZONES } from '../location/geo'
 import { conditionWords, kindOf, type Forecast, type Kind } from '../weather/forecast'
 
 /** The lock-screen weather glance (mockup start-finger). Weather has no health or private data, so it is safe before unlocking.
  *  Read from the newest forecast already cached on this phone (works offline); no request, no location. null when nothing usable is cached. */
-export interface Glance { temp: number; words: string; kind: Kind; rain: string | null }
+export interface Glance { temp: number; words: string; kind: Kind; rain: string | null; place?: string }
+
+/** Cache key `weather.forecast.<lat>,<lon>` -> the home zone's name when that forecast is for a home zone (within 3 km); a GPS spot gets no name rather than a wrong one. */
+export function placeOfKey(key: string): string | undefined {
+  const [lat, lon] = key.replace('weather.forecast.', '').split(',').map(Number)
+  if (lat == null || lon == null || Number.isNaN(lat) || Number.isNaN(lon)) return undefined
+  return HOME_ZONES.find((z) => distanceKm({ lat, lon }, z) <= 3)?.name
+}
 
 const MAX_AGE = 12 * 3600_000 // an older reading could say clear in a storm
 
@@ -24,9 +32,10 @@ export function useLockGlance(): Glance | null {
   useEffect(() => {
     let live = true
     void db.kv.where('key').startsWith('weather.forecast.').toArray().then((rows) => {
-      const best = rows.map((r) => r.value as Forecast).filter((f) => f && typeof f.fetchedAt === 'string' && f.current && Array.isArray(f.hourly))
-        .sort((a, b) => Date.parse(b.fetchedAt) - Date.parse(a.fetchedAt))[0]
-      if (live && best) setG(glanceOf(best))
+      const best = rows.map((r) => ({ key: r.key, f: r.value as Forecast })).filter((x) => x.f && typeof x.f.fetchedAt === 'string' && x.f.current && Array.isArray(x.f.hourly))
+        .sort((a, b) => Date.parse(b.f.fetchedAt) - Date.parse(a.f.fetchedAt))[0]
+      const g = best ? glanceOf(best.f) : null
+      if (live && g && best) { const place = placeOfKey(best.key); setG(place ? { ...g, place } : g) }
     }).catch(() => undefined)
     return () => { live = false }
   }, [])

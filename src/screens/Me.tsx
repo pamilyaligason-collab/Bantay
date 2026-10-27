@@ -21,7 +21,9 @@ import DetailsSheet from '../features/setup/DetailsSheet'
 import { useOwnAvatar } from '../features/setup/useProfile'
 import SensorSettings from '../features/sensors/SensorSettings'
 import SetupCard from '../features/today/SetupCard'
-import { UpdateRow } from '../features/update/UpdateRow'
+import { UpdateRow, VersionRow } from '../features/update/UpdateRow'
+import { loadCarerOf } from '../features/family/reportData'
+import { useFamilyPeople } from '../features/family/roster'
 import '../features/shell/shell.css'
 
 // Me and settings (mockup data-id="me"). Sharing defaults to OFF for everything (D-34); stored on this phone as kv share.<key>, synced in P5.
@@ -95,12 +97,15 @@ export default function Me() {
   const [lang, setLangKv] = useKv<Lang>(LANG_KEY, 'en')
   const photo = useOwnAvatar()
   const [detailsOpen, setDetailsOpen] = useState(false)
+  const [carerOf, setCarerOf] = useState<string[]>([])
+  const { people: roster } = useFamilyPeople()
 
   useEffect(() => {
     let live = true
     void getMember().then(async (m) => {
       if (!live || !m) return
       setMember(m)
+      void loadCarerOf(supabase, m.userId).then((ids) => { if (live) setCarerOf(ids) })
       if (!m.personId) return
       if (hasPasskeyFlag(m.personId)) setPasskey(true)
       const row = await supabase?.from('people').select('display_name').eq('id', m.personId).maybeSingle()
@@ -144,6 +149,16 @@ export default function Me() {
       <p className="sh-sub sh-note">Everything starts off. You choose what the family sees. Admins can see everything.</p>
 
       <div className="sh-card sh-list">
+        {carerOf.filter((id) => id !== member?.personId).map((id) => {
+          const p = roster.find((x) => x.id === id)
+          return (
+            <a key={id} className="sh-navrow" href={`#family/people/${id}`}>
+              <Icon name="users" boxed size={20} />
+              <span className="sh-grow"><b>{p?.name ?? 'Family member'}</b><span className="sh-sub sh-blk">You are their carer. Open their page.</span></span>
+              <Icon name="chev" />
+            </a>
+          )
+        })}
         <button type="button" className="sh-navrow" onClick={() => setSosOpen(true)} aria-haspopup="dialog">
           <Icon name="phone" boxed size={20} />
           <span className="sh-grow"><b>Who gets your SOS text</b><span className="sh-sub sh-blk">{names || 'Nobody picked yet'}</span></span>
@@ -198,7 +213,7 @@ export default function Me() {
       <div className="sh-me-sensors"><SensorSettings /></div>
 
       <div className="sh-card sh-list">
-        {member?.role === 'admin' && <UpdateRow />}
+        {member?.role === 'admin' ? <UpdateRow /> : <VersionRow />}
         {member?.role === 'admin' && (
           <a className="sh-navrow" href="#admin">
             <Icon name="gear" boxed size={20} />

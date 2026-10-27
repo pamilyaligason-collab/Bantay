@@ -23,7 +23,8 @@ export async function ensureConsent(personId: string): Promise<Consent> {
     if (read.data.consent_at) return { at: read.data.consent_at as string, backfilled: false }
     const uid = (await getMember())?.userId
     const at = new Date().toISOString()
-    const w = await supabase.from('people').update({ consent_at: at, consent_version: CONSENT_VERSION, consent_by: uid ?? null }).eq('id', personId).is('consent_at', null)
-    return w.error ? { at: null, backfilled: false } : { at, backfilled: true }
+    const w = await supabase.from('people').update({ consent_at: at, consent_version: CONSENT_VERSION, consent_by: uid ?? null }).eq('id', personId).is('consent_at', null).select('id')
+    // 0 rows written (another phone got there first, or RLS filtered it): nothing was stored, so show nothing, never a date that was not saved
+    return w.error || !w.data?.length ? { at: null, backfilled: false } : { at, backfilled: true }
   } catch { return { at: null, backfilled: false } }
 }

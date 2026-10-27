@@ -5,13 +5,16 @@ import type { MedicalId } from './card'
 import { CACHE_KEY } from './useMedicalId'
 import '../privacy/privacy.css'
 
+/** The cached card only if it is this person's: on a shared phone the cache may hold the previous person's allergies and contacts. No personId given = old behaviour. */
+export const forPerson = (c: { personId?: string; card?: MedicalId } | undefined, personId?: string): MedicalId | null => (personId && c?.personId !== personId ? null : c?.card ?? null)
+
 /** Medical ID from the fingerprint lock screen (mockup safety-medid, lock variant). Opens without unlocking, so it shows only what helps a stranger:
  *  allergies, conditions and who to call. No blood type, no medicines, no photo, nothing from the server: it reads the card cached on this phone. */
-export function LockMedicalId({ onClose }: { onClose: () => void }) {
+export function LockMedicalId({ onClose, personId }: { onClose: () => void; personId?: string }) {
   const [card, setCard] = useState<MedicalId | null | undefined>(undefined)
   useEffect(() => {
     let live = true
-    void db.kv.get(CACHE_KEY).then((r) => { if (live) setCard((r?.value as { card?: MedicalId } | undefined)?.card ?? null) }, () => { if (live) setCard(null) })
+    void db.kv.get(CACHE_KEY).then((r) => { if (live) setCard(forPerson(r?.value as { personId?: string; card?: MedicalId } | undefined, personId)) }, () => { if (live) setCard(null) })
     return () => { live = false }
   }, [])
   const list = (l: string[] | undefined) => (l && l.length ? l.join(', ') : 'Not added')

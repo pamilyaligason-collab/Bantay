@@ -1,6 +1,7 @@
 // Supabase side of the cards screen. Errors are swallowed or rethrown without values: no names, paths or URLs in logs (B-7).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CARD_TYPES, ddb, type CardType, type DocKind, type Kind, type PersonRow, type QueueRow, type ScanKind, type Side } from './store'
+import { aiOn } from '../privacy/ai'
 
 export const MAX_BYTES = 15 * 1024 * 1024 // same limit as the 'records' bucket
 export const MAX_TRIES = 5 // a picture that fails this many times (not counting no-signal) is given up on; Retry puts it back
@@ -51,6 +52,7 @@ export async function addScan(o: { pages: Blob[]; owner?: string; personId: stri
   const kind: DocKind = o.kind === 'id' ? 'id_card' : o.kind
   const sums = await Promise.all(files.map(async (f) => hex(await crypto.subtle.digest('SHA-256', await bytes(f)))))
   const now = Date.now()
+  const skipRead = !(await aiOn()) // privacy.ai off while scanning: the pages are kept, never read by the AI
   await ddb.transaction('rw', ddb.cards, ddb.queue, async () => {
     for (const [i, file] of files.entries()) {
       const ext = EXT[file.type]!
@@ -59,7 +61,7 @@ export async function addScan(o: { pages: Blob[]; owner?: string; personId: stri
       const base = { docId, personId: o.personId, kind, cardType: 'other' as CardType, title: o.title?.trim() || null, side, mime: file.type }
       await ddb.cards.put({ ...base, path, blob: file, updated: now, pending: true, owner })
       await ddb.queue.add({ ...base, side: isId ? side : null, owner, createdAt: now, clientId: crypto.randomUUID(), docNew: i === 0, path, name: `page-${String(i + 1).padStart(2, '0')}.${ext}`, size: file.size, sha256: sums[i]!, tries: 0, page: i + 1, pages: isId ? undefined : files.length, // an ID is kept, never read: no pages count, no extract call
-         docDate: o.docDate || null })
+         docDate: o.docDate || null, ...(skipRead && !isId ? { skipRead: true } : {}) })
     }
   })
   return { docId }
@@ -87,8 +89,10 @@ async function sendOne(client: SupabaseClient, q: QueueRow, blob: Blob) {
     )
     if (d.error) fail('document', d.error)
   }
+  // privacy.ai off (decided once per document, see flushQueue): the page is kept but marked 'skipped'; the server sweep takes 'new' only
+  const skip = !!q.pages && q.skipRead === true
   const f = await client.from('source_files').upsert(
-    { client_id: q.clientId, person_id: q.personId, storage_path: q.path, side: q.side, document_id: q.docId, name: q.name, mime: q.mime, size_bytes: q.size, sha256: q.sha256, drive_file_id: null, ...(q.page ? { page_no: q.page } : {}) },
+    { client_id: q.clientId, person_id: q.personId, storage_path: q.path, side: q.side, document_id: q.docId, name: q.name, mime: q.mime, size_bytes: q.size, sha256: q.sha256, drive_file_id: null, ...(q.page ? { page_no: q.page } : {}), ...(skip ? { ingest_status: 'skipped' } : {}) },
     { onConflict: 'client_id', ignoreDuplicates: true }
   )
   if (f.error) fail('file', f.error)
@@ -104,10 +108,17 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
   return (running = (async () => {
     let sent = 0
     const dead = new Set<number>()
+    const skipped = new Set<string>()
     do {
       again = false
       for (const q of await ddb.queue.orderBy('seq').toArray()) {
         if (q.owner !== owner || dead.has(q.seq!)) continue // another user's picture: kept, never sent from here
+        // Switched off after scanning but before the first page went up: the whole document is skipped (all pages the same, so the server never sees a mixed document).
+        if (q.docNew && q.pages && !q.skipRead && !(await aiOn())) {
+          await ddb.queue.filter((r) => r.docId === q.docId && r.owner === q.owner).modify({ skipRead: true })
+          skipped.add(q.docId)
+        }
+        if (skipped.has(q.docId)) q.skipRead = true // the rows of this pass were read before the modify above
         const card = await ddb.cards.get(q.path)
         if (card) {
           try { await sendOne(client, q, card.blob) } catch (e) {
@@ -130,7 +141,7 @@ export function flushQueue(client: SupabaseClient | null, owner = ''): Promise<n
         }
         await ddb.queue.delete(q.seq!)
         // The last page of a scanned document is up: ask the server to read it (not awaited; a slow reply must not hold the queue).
-        if (q.pages && !(await ddb.queue.filter((r) => r.docId === q.docId).count())) void askToRead(client, q.docId)
+        if (q.pages && !q.skipRead && !(await ddb.queue.filter((r) => r.docId === q.docId).count())) void askToRead(client, q.docId)
       }
     } while (again)
     return sent

@@ -11,7 +11,7 @@ const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
-const FAMILY = [{ personId: 'p-mama', displayName: 'Mama', handle: 'mama', provider: 'pin', initials: 'M' }]
+const FAMILY = [{ personId: 'p-mama', displayName: 'Mama', handle: 'mama', provider: 'pin', initials: 'M' }, { personId: 'p-lola', displayName: 'Lola', handle: null, provider: 'pin', initials: 'L' }]
 const LATEST = { versionCode: 2001000, versionName: '2.1.0', url: 'https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.1.0/b.apk', sha256: 'a'.repeat(64), size: 14_680_064, minShell: 2000000, notes: 'Text size now scales every screen. Fixes for medicine alarms on Xiaomi phones.' }
 
 async function setup(page: Page, o: { lock: boolean; admin?: boolean; callPerm?: 'granted' | 'denied' }) {
@@ -22,6 +22,8 @@ async function setup(page: Page, o: { lock: boolean; admin?: boolean; callPerm?:
     const reply = (status: number, body: unknown) => route.fulfill({ status, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify(body) })
     if (url.pathname === '/auth/v1/user') return reply(200, user)
     if (url.pathname === '/rest/v1/rpc/ensure_self_person') return reply(200, '44444444-4444-4444-8444-444444444444')
+    if (url.pathname === '/rest/v1/carers') return reply(200, url.searchParams.get('carer_id') ? [{ person_id: 'p-lola' }] : [{ carer_id: 'u-papa' }, { carer_id: 'u-joy' }]) // Mama looks after Lola; Papa and Ate Joy look after Mama
+    if (url.pathname === '/rest/v1/people' && url.searchParams.get('auth_user_id')?.startsWith('in.')) return reply(200, [{ display_name: 'Papa' }, { display_name: 'Ate Joy' }])
     if (url.pathname === '/rest/v1/people') return reply(200, { id: 'p-mama', display_name: 'Mama', consent_at: '2026-10-26T01:00:00Z' })
     if (url.pathname === '/rest/v1/app_roles') return reply(200, { role: o.admin ? 'admin' : 'member', handle: 'mama' })
     if (url.pathname.startsWith('/rest/v1/')) return reply(200, [])
@@ -67,7 +69,7 @@ const seedKv = (page: Page, rows: { key: string; value: unknown }[]) =>
   }, rows)
 
 const MEDID = { key: 'medid.cache', value: { personId: 'p-mama', at: 1, card: { name: 'Mama', age: 68, bloodType: 'O+', allergies: ['Penicillin'], conditions: ['High blood pressure', 'diabetes'], medicines: ['Losartan 50 mg'], calls: [{ name: 'Papa', phone: '0917 123 4567' }, { name: 'Ate Joy', phone: '0917 765 4321' }], missing: [] } } }
-const FORECAST = { key: 'weather.forecast.6.11,125.17', value: { fetchedAt: new Date().toISOString(), tz: 'Asia/Manila', utcOffset: 28800, current: { time: '', temp: 31, humidity: 70, feels: 36, code: 2, wind: 10, gust: 20, uv: 6 }, hourly: Array.from({ length: 24 }, (_, i) => ({ time: `${new Date(Date.now() + 28800_000).toISOString().slice(0, 10)}T${String(i).padStart(2, '0')}:00`, temp: 30, prob: i >= 15 ? 80 : 10, code: 3 })), daily: [] } }
+const FORECAST = { key: 'weather.forecast.6.2,125.19', value: { fetchedAt: new Date().toISOString(), tz: 'Asia/Manila', utcOffset: 28800, current: { time: '', temp: 31, humidity: 70, feels: 36, code: 2, wind: 10, gust: 20, uv: 6 }, hourly: Array.from({ length: 24 }, (_, i) => ({ time: `${new Date(Date.now() + 28800_000).toISOString().slice(0, 10)}T${String(i).padStart(2, '0')}:00`, temp: 30, prob: i >= 15 ? 80 : 10, code: 3 })), daily: [] } }
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`fingerprint lock and its Medical ID ${scheme}`, async ({ page }) => {
@@ -80,6 +82,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.reload()
     await expect(page.getByText('Touch the fingerprint sensor')).toBeVisible()
     await expect(page.getByText(/31° partly cloudy/)).toBeVisible()
+    await expect(page.getByText('Conel, General Santos City')).toBeVisible()
     await expect(page.getByRole('heading', { name: /Magandang .*, Mama/ })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Not Mama?' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
@@ -99,6 +102,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('link', { name: /Privacy/ })).toHaveAttribute('href', '#privacy')
     await expect(page.getByText(/Hold for help can (call for you|no longer call for you)/)).toHaveCount(1) // one row or the other, never both
     await expect(page.getByText('Family admin tools')).toBeVisible()
+    await expect(page.getByRole('link', { name: /Lola/ })).toHaveAttribute('href', '#family/people/p-lola')
     await page.screenshot({ path: `${SHOTS}/start-me-${scheme}.png` })
     await page.getByRole('link', { name: /Privacy/ }).scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/start-me-rows-${scheme}.png` })
@@ -107,6 +111,19 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText('You have 2.0.0 · 14 MB · Wi-Fi recommended')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Install update' })).toBeEnabled()
     await page.screenshot({ path: `${SHOTS}/start-update-${scheme}.png` })
+  })
+
+  test(`Me as a member ${scheme}`, async ({ page }) => {
+    await setup(page, { lock: false })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/#me')
+    await expect(page.getByRole('heading', { name: 'Me' })).toBeVisible()
+    await expect(page.getByText('Family admin tools')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Check for updates' })).toHaveCount(0)
+    await page.getByText(/^Bantay 2\.0\.0$/).scrollIntoViewIfNeeded()
+    await expect(page.getByText(/^Bantay 2\.0\.0$/)).toBeVisible()
+    await page.screenshot({ path: `${SHOTS}/start-me-member-${scheme}.png` })
   })
 
   // Needs the Privacy route (hook lines in App.tsx and routes.ts, added by the orchestrator): `S6C_ROUTE=1` once they are in.
@@ -118,6 +135,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#privacy')
     await expect(page.getByText('Agreed when you joined, 26 Oct')).toBeVisible()
     await expect(page.getByRole('switch', { name: 'Use AI for Jack and photos' })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByText('Papa and Ate Joy. Admins can see everything.')).toBeVisible()
     await expect(page.getByText('Where your data goes')).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/start-privacy-${scheme}.png` })
     await page.getByText('Where your data goes').scrollIntoViewIfNeeded()

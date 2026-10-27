@@ -1,4 +1,6 @@
+import 'fake-indexeddb/auto'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { db } from '../../db'
 import { describe, expect, it, vi } from 'vitest'
 import { buildReadings, EMPTY_DRAFT, parseDraft, readDevicePhoto, toTyped, type Typed } from './reading'
 
@@ -63,5 +65,15 @@ describe('readDevicePhoto', () => {
     expect(await readDevicePhoto(client(async () => ({ data: null, error: { context: { status: 429 } } })), photo)).toEqual({ failed: true, limited: true, draft: EMPTY_DRAFT })
     expect(await readDevicePhoto(client(async () => ({ data: { ok: false, error: 'rate_limited' }, error: null })), photo)).toMatchObject({ failed: true, limited: true })
     expect(await readDevicePhoto(client(async () => { throw new Error('offline') }), photo)).toEqual({ failed: true, draft: EMPTY_DRAFT })
+  })
+  it('privacy.ai off: the photo is not sent (no invoke) and the result says off', async () => {
+    await db.kv.put({ key: 'privacy.ai', value: false })
+    const invoke = vi.fn(async () => ({ data: { ok: true, reading: {} }, error: null }))
+    expect(await readDevicePhoto(client(invoke), photo)).toEqual({ failed: true, off: true, draft: EMPTY_DRAFT })
+    expect(invoke).not.toHaveBeenCalled()
+    await db.kv.put({ key: 'privacy.ai', value: true })
+    await readDevicePhoto(client(invoke), photo)
+    expect(invoke).toHaveBeenCalledTimes(1)
+    await db.kv.clear()
   })
 })

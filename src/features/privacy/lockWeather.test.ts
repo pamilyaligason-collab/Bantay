@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { Forecast } from '../weather/forecast'
-import { glanceOf } from './lockWeather'
+import { glanceOf, placeOfKey } from './lockWeather'
+
+describe('placeOfKey (name only a home zone)', () => {
+  it('a forecast cached for the Conel zone names it; a spot far from both zones names nothing', () => {
+    expect(placeOfKey('weather.forecast.6.2,125.19')).toBe('Conel, General Santos City')
+    expect(placeOfKey('weather.forecast.9.65,123.88')).toBe('Dampas, Tagbilaran City')
+    expect(placeOfKey('weather.forecast.14.6,121')).toBeUndefined()
+    expect(placeOfKey('weather.forecast.nonsense')).toBeUndefined()
+  })
+})
 
 const NOW = Date.parse('2026-10-26T00:30:00Z') // 08:30 in Manila (utcOffset 28800)
 const hours = (probs: [string, number][]) => probs.map(([time, prob]) => ({ time, temp: 30, prob, code: 3 }))

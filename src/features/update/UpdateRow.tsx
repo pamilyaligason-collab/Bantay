@@ -31,3 +31,13 @@ export function UpdateRow() {
     </>
   )
 }
+
+/** Me > version line for everyone (mockup start-me "Bantay 2.0.0 · Up to date"). No button: Check for updates is the admin row, and a ready update still shows on Today (UpdateCard).
+ *  "Up to date" is said only after a real check found nothing newer; before that, or after a failed check, it says so. */
+export function VersionRow() {
+  const u = useUpdate()
+  const web = String(import.meta.env.VITE_APP_VERSION ?? 'dev')
+  const version = u.shell && u.shell.versionCode !== 0 ? u.shell.versionName : web
+  const sub = u.decision.kind !== 'none' ? `${u.decision.latest.versionName} is ready` : u.checkedAt && !u.failed ? 'Up to date' : 'Not checked yet'
+  return <div><div className="sh-grow"><b>Bantay {version}</b><div className="sh-sub" role="status">{sub}</div></div></div>
+}

@@ -4,7 +4,9 @@ import { SubHeader } from '../shell/SubHeader'
 import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
 import { consentDate, ensureConsent } from './consent'
-import { AI_KEY, ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } from './data'
+import { AI_KEY } from './ai'
+import { joinNames, loadViewers } from './viewers'
+import { ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } from './data'
 import '../shell/shell.css'
 import './privacy.css'
 
@@ -28,11 +30,13 @@ export default function PrivacyScreen() {
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [viewers, setViewers] = useState<string[] | null>(null)
 
   useEffect(() => {
     if (!personId) { setAgreed(null); return }
     let live = true
     void ensureConsent(personId).then((c) => { if (live) setAgreed(c.at) })
+    void loadViewers(personId).then((v) => { if (live) setViewers(v) })
     return () => { live = false }
   }, [personId])
 
@@ -76,14 +80,14 @@ export default function PrivacyScreen() {
       <div className="sh-card sh-list">
         <a className="sh-navrow" href="#me">
           <Icon name="users" boxed size={20} />
-          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Pick what the family sees in Me. Admins can see everything.</span></span>
+          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">{viewers ? `${viewers.length ? joinNames(viewers) : 'Only you'}. Admins can see everything.` : 'Pick what the family sees in Me. Admins can see everything.'}</span></span>
           <Icon name="chev" />
         </a>
         <div>
           <Icon name="chat" boxed size={20} />
           <div className="sh-grow">
             <b>Use AI for Jack and photos</b>
-            <div className="sh-sub">{ai ? 'On. Sends only the text or photo you share, outside the Philippines. Turn off any time.' : 'Off. Jack and photo reading are paused on this phone. Nothing is sent to the AI.'}</div>
+            <div className="sh-sub">{ai ? 'On. Sends only the text or photo you share, outside the Philippines. Turn off any time.' : 'Off. Jack and photo reading are paused. Papers you scan from now on are kept, not read by the AI.'}</div>
           </div>
           <button type="button" className="sh-switch" role="switch" aria-checked={ai} aria-label="Use AI for Jack and photos" onClick={() => setAi(!ai)} />
         </div>

@@ -13,7 +13,7 @@ const today = () => new Date().toLocaleDateString('en-GB', { weekday: 'long', da
 /** APK only. A signed-in phone asks for the fingerprint before showing the app (D-32, A-15/A-16; mockup start-finger).
  *  The session never leaves WebView storage; "Use PIN" signs out so the remembered person types their PIN again.
  *  Before unlocking it shows only weather (cached, no private data), Call 911 (the dial screen) and the lock Medical ID (allergies, conditions, who to call). */
-export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: string; onUnlocked: () => void; onUsePin: () => void; onNotYou: () => void }) {
+export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: { name: string; personId?: string; onUnlocked: () => void; onUsePin: () => void; onNotYou: () => void }) {
   const [tried, setTried] = useState(false)
   const [medid, setMedid] = useState(false)
   const glance = useLockGlance()
@@ -25,7 +25,7 @@ export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: str
     if (ok === true) onUnlocked(); else if (ok === 'use_pin') onUsePin(); else setTried(true)
   }
   useEffect(() => { alive.current = true; void ask(); return () => { alive.current = false } }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  if (medid) return <LockMedicalId onClose={() => setMedid(false)} />
+  if (medid) return <LockMedicalId personId={personId} onClose={() => setMedid(false)} />
   return (
     <main className="lk si-ret">
       <div className="lk-hello">
@@ -35,7 +35,7 @@ export function LockScreen({ name, onUnlocked, onUsePin, onNotYou }: { name: str
       {glance && (
         <div className="lk-wx">
           <Icon name={glance.kind} size={24} />
-          <div><b>{glance.temp}° {glance.words}</b>{glance.rain && <div className="lk-sub">{glance.rain}</div>}</div>
+          <div><b>{glance.temp}° {glance.words}</b>{glance.place && <div className="lk-sub">{glance.place}</div>}{glance.rain && <div className="lk-sub">{glance.rain}</div>}</div>
         </div>
       )}
       <div className="lk-fpwrap">

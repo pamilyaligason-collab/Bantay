@@ -55,6 +55,20 @@ describe('LockScreen start-finger', () => {
     render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
     expect(await screen.findByText('31° partly cloudy')).toBeTruthy()
   })
+  it('names the place when the cached forecast is for a home zone', async () => {
+    hang()
+    await db.kv.put({ key: 'weather.forecast.6.2,125.19', value: { fetchedAt: new Date().toISOString(), tz: 'Asia/Manila', utcOffset: 28800, current: { time: '', temp: 30.6, humidity: 70, feels: 36, code: 2, wind: 10, gust: 20, uv: 6 }, hourly: [], daily: [] } })
+    render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(await screen.findByText('Conel, General Santos City')).toBeTruthy()
+  })
+  it('Medical ID on a shared phone never shows the previous person\'s cached card', async () => {
+    hang()
+    await db.kv.put({ key: 'medid.cache', value: { personId: 'pOld', at: 1, card: { name: 'Lolo', age: 80, allergies: ['Aspirin'], conditions: [], medicines: [], calls: [], missing: [] } } })
+    render(<LockScreen name="Mama" personId="pNew" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Medical ID' }))
+    expect(await screen.findByText('Nothing saved on this phone yet')).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/Aspirin|Lolo/)
+  })
   it('Medical ID opens without unlocking and shows allergies, conditions and who to call only', async () => {
     hang()
     await db.kv.put({ key: 'medid.cache', value: { personId: 'p1', at: 1, card: { name: 'Mama', age: 68, bloodType: 'O+', allergies: ['Penicillin'], conditions: ['Diabetes'], medicines: ['Losartan 50 mg'], calls: [{ name: 'Papa', phone: '0917 123 4567' }], missing: [] } } })

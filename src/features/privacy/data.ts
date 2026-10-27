@@ -18,7 +18,6 @@ export const requestErasure = () => call<string>('request_erasure')
 export const cancelErasure = () => call<null>('cancel_erasure')
 
 export const ERASURE_KEY = 'privacy.erasure' // kv: cancel_until ISO while a deletion is pending on this phone
-export const AI_KEY = 'privacy.ai' // kv: boolean, default true; false = Jack and photo reading are paused on this phone
 
 /** Hands the export to the browser or WebView as a file download. */
 export function saveJson(name: string, data: unknown): boolean {

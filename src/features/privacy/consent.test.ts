@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ read: { data: null as unknown, error: null as unknown }, update: vi.fn(), updateErr: null as unknown }))
+const h = vi.hoisted(() => ({ read: { data: null as unknown, error: null as unknown }, update: vi.fn(), updateErr: null as unknown, written: [{ id: 'p1' }] as unknown[] }))
 vi.mock('../auth/client', () => ({
   supabase: {
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => h.read }) }),
-      update: (v: unknown) => ({ eq: () => ({ is: async (col: string, val: unknown) => { h.update(v, col, val); return { error: h.updateErr } } }) })
+      update: (v: unknown) => ({ eq: () => ({ is: (col: string, val: unknown) => { h.update(v, col, val); return { select: async () => ({ data: h.updateErr ? null : h.written, error: h.updateErr }) } } }) })
     })
   }
 }))
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1' }) }))
 import { CONSENT_VERSION, consentDate, ensureConsent } from './consent'
 
-beforeEach(() => { h.read = { data: null, error: null }; h.update.mockReset(); h.updateErr = null })
+beforeEach(() => { h.read = { data: null, error: null }; h.update.mockReset(); h.updateErr = null; h.written = [{ id: 'p1' }] })
 
 describe('consentDate', () => {
   const now = new Date(2026, 9, 27)
@@ -44,6 +44,12 @@ describe('ensureConsent (Q37 backfill)', () => {
     h.read = { data: null, error: { message: 'x' } }
     expect(await ensureConsent('p1')).toEqual({ at: null, backfilled: false })
     expect(h.update).not.toHaveBeenCalled()
+  })
+  it('a write that matched 0 rows (another phone wrote first, or RLS filtered it) reports no date, never "agreed today"', async () => {
+    h.read = { data: { consent_at: null }, error: null }
+    h.written = []
+    expect(await ensureConsent('p1')).toEqual({ at: null, backfilled: false })
+    h.written = [{ id: 'p1' }]
   })
   it('a failed write reports no date', async () => {
     h.read = { data: { consent_at: null }, error: null }

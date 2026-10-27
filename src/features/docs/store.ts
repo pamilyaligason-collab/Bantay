@@ -43,6 +43,7 @@ export interface QueueRow {
   page?: number // 1-based source_files.page_no; set only for scanned pages
   pages?: number // pages in the whole document; set only for scanned pages (when the last one is up, the server is asked to read them)
   docDate?: string | null // documents.doc_date (YYYY-MM-DD), chosen by the person
+  skipRead?: boolean // privacy.ai was off: the page goes up with source_files.ingest_status 'skipped' and the server is not asked to read it
   name: string
   mime: string
   size: number
