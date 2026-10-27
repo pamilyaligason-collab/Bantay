@@ -64,10 +64,10 @@ const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.g
 const at = (h: number, m = 0) => new Date(2026, 9, 27, h, m).toISOString()
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
 // Settled UI before a shot: fonts loaded and every finite reveal animation finished (the sky loops forever) (the weather card fades in).
-const settle = async (page: Page) => { // fonts loaded, finite animations done and the scroll position held still for two reads (smooth scroll)
+const settle = async (page: Page, bottom = false) => { // fonts loaded, finite animations done and the scroll position held still for two reads (smooth scroll)
   let last = -1
   await expect.poll(async () => {
-    const [y, ready] = await page.evaluate(() => [Math.round(window.scrollY), document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running')] as const)
+    const [y, ready] = await page.evaluate((end) => { if (end) window.scrollTo({ top: document.scrollingElement!.scrollHeight, behavior: 'instant' }); return [Math.round(window.scrollY), document.fonts.status === 'loaded' && document.getAnimations().every((x) => x.effect?.getComputedTiming().iterations === Infinity || x.playState !== 'running')] as const }, bottom)
     const still = y === last
     last = y
     return still && ready
@@ -167,7 +167,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await bp.scrollIntoViewIfNeeded()
     await expect(bp).toBeVisible()
     await expect(page.getByRole('link', { name: 'Medicines' })).toHaveCount(0) // the dose card is the medicine entry
-    await settle(page)
+    await settle(page, true)
     await shot(page, 'simple-today', scheme)
     await bp.click()
     await expect(page.getByRole('dialog')).toBeVisible()
@@ -180,7 +180,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await link.scrollIntoViewIfNeeded()
     await expect(link).toHaveAttribute('href', '#health/meds')
     await expect(page.getByRole('button', { name: 'Check my blood pressure' })).toBeVisible()
-    await settle(page)
+    await settle(page, true)
     await shot(page, 'simple-today-calm', scheme)
   })
 }
