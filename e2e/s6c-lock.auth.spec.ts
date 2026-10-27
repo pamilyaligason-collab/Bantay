@@ -128,14 +128,13 @@ for (const scheme of ['light', 'dark'] as const) {
 
   // Needs the Privacy route (hook lines in App.tsx and routes.ts, added by the orchestrator): `S6C_ROUTE=1` once they are in.
   test(`privacy ${scheme}`, async ({ page }) => {
-    test.skip(process.env.S6C_ROUTE !== '1', 'needs the #privacy route hook lines')
     await setup(page, { lock: false })
     await page.setViewportSize({ width: 390, height: 844 })
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#privacy')
     await expect(page.getByText('Agreed when you joined, 26 Oct')).toBeVisible()
     await expect(page.getByRole('switch', { name: 'Use AI for Jack and photos' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByText('Papa and Ate Joy. Admins can see everything.')).toBeVisible()
+    await expect(page.getByText('Pick what the family sees in Me. Admins can see everything.')).toBeVisible() // names need a member-readable source (S6c needs)
     await expect(page.getByText('Where your data goes')).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/start-privacy-${scheme}.png` })
     await page.getByText('Where your data goes').scrollIntoViewIfNeeded()

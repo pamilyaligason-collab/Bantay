@@ -13,6 +13,7 @@ import { AdminScreen, useTrackScreen } from './features/admin'
 import { webAdminUrl } from './features/admin/desk/types'
 import { DocsScreen } from './features/docs/DocsScreen'
 import WeatherScreen from './features/weather/WeatherScreen'
+import PrivacyScreen from './features/privacy/PrivacyScreen'
 import { getMember, onAuthChange } from './features/auth/session'
 import { canonicalHash, hasOwnHeader, parseHash, TABS, type Tab } from './features/shell/routes'
 import { Inbox } from './features/inbox/Inbox'
@@ -102,7 +103,7 @@ export default function App() {
       <OfflineBar />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <Assistant />
