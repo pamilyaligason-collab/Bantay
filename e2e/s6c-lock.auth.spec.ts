@@ -126,7 +126,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `${SHOTS}/start-me-member-${scheme}.png` })
   })
 
-  // Needs the Privacy route (hook lines in App.tsx and routes.ts, added by the orchestrator): `S6C_ROUTE=1` once they are in.
+  // The Privacy route is wired in App.tsx and routes.ts.
   test(`privacy ${scheme}`, async ({ page }) => {
     await setup(page, { lock: false })
     await page.setViewportSize({ width: 390, height: 844 })
