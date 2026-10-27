@@ -285,10 +285,10 @@ describe('digest opt-out (carer_prefs.digest_on)', () => {
 
 describe('isVaccine: a one-off shot is never watched', () => {
   it('reads real-looking vaccine names, and leaves ordinary medicines alone', () => {
-    for (const name of ['PNEUMOCOCCAL POLYSACCHARIDE VACCINE', 'Influenza Vaccine 0.5 mL', 'Tetanus Toxoid 0.5 mL', 'PREVNAR 13', 'Hepatitis B vaccination', 'Shingrix 0.5 mL IM']) {
+    for (const name of ['PNEUMOCOCCAL POLYSACCHARIDE VACCINE', 'Influenza Vaccine 0.5 mL', 'Tetanus Toxoid 0.5 mL', 'PREVNAR 13', 'Hepatitis B vaccination', 'Shingrix 0.5 mL IM', 'PNEUMOCOCCAL POLYSACCHARIDE VACCINE, POLYVALENT', 'Bakuna sa trangkaso', 'Influenza vaccines 2026']) {
       expect(isVaccine({ name }), name).toBe(true)
     }
-    for (const name of ['Losartan 50 mg', 'Metformin 500 mg tablet', 'Amlodipine 5 mg', 'Vitamin D3 1000 IU', 'Cefuroxime 500 mg', 'Omeprazole 20 mg capsule', 'Pneumonia relief syrup']) {
+    for (const name of ['Losartan 50 mg', 'Metformin 500 mg tablet', 'Amlodipine 5 mg', 'Vitamin D3 1000 IU', 'Cefuroxime 500 mg', 'Omeprazole 20 mg capsule', 'Pneumonia relief syrup', 'Cranberry (Vaccinium macrocarpon) 500 mg', 'Bilberry Vaccinium myrtillus', 'Vaccinium extract 100 mg']) {
       expect(isVaccine({ name }), name).toBe(false)
     }
     expect(isVaccine({ name: 'Pneumovax 23' })).toBe(true)

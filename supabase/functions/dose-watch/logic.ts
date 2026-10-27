@@ -51,9 +51,9 @@ export function normaliseDrug(x: string | null | undefined): string | null {
 }
 
 /** A vaccine is a one-off shot, not a medicine to take on a clock: it never raises dose_missed, review_open or the digest. The prescription import turns a vaccine line
- *  (for example "PNEUMOCOCCAL POLYSACCHARIDE VACCINE 0.5 ML") into a medication row, so this reads the name. Whole words only: "vaccine"/"vaccination", "toxoid",
+ *  (for example "PNEUMOCOCCAL POLYSACCHARIDE VACCINE 0.5 ML") into a medication row, so this reads the name. Whole words only: "vaccine"/"vaccination"/"bakuna" ("Vaccinium", the cranberry and bilberry plant, is not one), "toxoid",
  *  the pneumococcal and meningococcal families, and common brands. A normal medicine name never contains these words. */
-const VACCINE_WORDS = /(?<![\p{L}\p{N}])(vaccin\p{L}*|toxoids?|pneumococcal|meningococcal|pneumovax|prevnar|prevenar|shingrix|zostavax|gardasil|twinrix|havrix|engerix|vaxigrip|fluarix|influvac|boostrix|adacel|tdap|dtap|mmr)(?![\p{L}\p{N}])/iu
+const VACCINE_WORDS = /(?<![\p{L}\p{N}])(vaccines?|vaccinations?|bakuna|toxoids?|pneumococcal|meningococcal|pneumovax|prevnar|prevenar|shingrix|zostavax|gardasil|twinrix|havrix|engerix|vaxigrip|fluarix|influvac|boostrix|adacel|tdap|dtap|mmr)(?![\p{L}\p{N}])/iu
 export const isVaccine = (m: Pick<MedRow, 'name' | 'generic_name'>) => VACCINE_WORDS.test(m.name ?? '') || VACCINE_WORDS.test(m.generic_name ?? '')
 
 /** Valid sorted unique HH:MM times from the v1 schedule object or the legacy array. Bad times are dropped, never guessed. */

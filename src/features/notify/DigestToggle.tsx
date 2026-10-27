@@ -4,7 +4,7 @@ import { supabase } from '../auth/client'
 import { getMember } from '../auth/session'
 import { loadCarerOf } from '../family/reportData'
 
-type Client = { from: (t: string) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
+type Client = { from: (t: string) => any; rpc: (fn: string, args: object) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
 const KEY = 'digest.on' // { userId, on }: a cache only. The server row (carer_prefs, 0039) decides; no row = on.
 
 /** The "8 PM summary" switch in Me, only for someone who cares for another person. Off hides the calm 8 PM note (kind digest) and nothing else:
@@ -40,7 +40,7 @@ export default function DigestToggle() {
     const prev = state.on
     setState({ ...state, on })
     try {
-      const r = await (supabase as Client | null)?.from('carer_prefs').upsert({ user_id: state.userId, digest_on: on, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+      const r = await (supabase as Client | null)?.rpc('set_digest', { p_on: on }) // 0039: the table has no write grant, a PostgREST upsert would be refused
       if (!r || r.error) throw new Error('save failed')
       await db.kv.put({ key: KEY, value: { userId: state.userId, on } }).catch(() => {})
     } catch {

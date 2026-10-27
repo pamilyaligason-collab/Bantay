@@ -7,30 +7,33 @@ const h = vi.hoisted(() => ({
   carers: [] as { person_id: string }[],
   prefs: null as { digest_on: boolean } | null,
   saveError: false,
-  upserts: [] as { row: Record<string, unknown>; opts: unknown }[]
+  calls: [] as { fn: string; args: unknown }[],
+  carersAsked: 0
 }))
 vi.mock('../auth/client', () => ({
   supabase: {
     from: (t: string) => ({
       select: () => ({
-        eq: () => (t === 'carers' ? Promise.resolve({ data: h.carers, error: null }) : { maybeSingle: () => Promise.resolve({ data: h.prefs, error: null }) })
+        eq: () => (t === 'carers' ? (h.carersAsked++, Promise.resolve({ data: h.carers, error: null })) : { maybeSingle: () => Promise.resolve({ data: h.prefs, error: null }) })
       }),
-      upsert: (row: Record<string, unknown>, opts: unknown) => { h.upserts.push({ row, opts }); return Promise.resolve({ error: h.saveError ? { code: '500' } : null }) }
-    })
+      upsert: () => { throw new Error('carer_prefs has no write grant: the app must call the set_digest RPC (0039)') }
+    }),
+    rpc: (fn: string, args: unknown) => { h.calls.push({ fn, args }); return Promise.resolve({ data: h.saveError ? null : (args as { p_on: boolean }).p_on, error: h.saveError ? { code: '500' } : null }) }
   }
 }))
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p-me', role: 'member', handle: null }) }))
 
 import DigestToggle from './DigestToggle'
 
-beforeEach(async () => { h.carers = []; h.prefs = null; h.saveError = false; h.upserts = []; await db.kv.clear() })
+beforeEach(async () => { h.carers = []; h.prefs = null; h.saveError = false; h.calls = []; h.carersAsked = 0; await db.kv.clear() })
 afterEach(cleanup)
 
 describe('DigestToggle', () => {
   it('shows nothing for someone who cares for nobody (only their own link does not count)', async () => {
     h.carers = [{ person_id: 'p-me' }]
     const { container } = render(<DigestToggle />)
-    await new Promise((r) => setTimeout(r, 50)) // nothing to wait on: the component stays empty
+    await waitFor(() => expect(h.carersAsked).toBe(1)) // the carers lookup has been answered: empty now means hidden, not loading
+    await Promise.resolve()
     expect(container.textContent).toBe('')
   })
 
@@ -49,13 +52,12 @@ describe('DigestToggle', () => {
     expect((await screen.findByRole('switch', { name: '8 PM summary' })).getAttribute('aria-checked')).toBe('false')
   })
 
-  it('turning it off upserts digest_on false for this user once, and the choice is cached', async () => {
+  it('turning it off calls the set_digest RPC with p_on false once (the real request shape), and the choice is cached', async () => {
     h.carers = [{ person_id: 'p-mom' }]
     render(<DigestToggle />)
     fireEvent.click(await screen.findByRole('switch', { name: '8 PM summary' }))
-    await waitFor(() => expect(h.upserts).toHaveLength(1))
-    expect(h.upserts[0]!.row).toMatchObject({ user_id: 'u1', digest_on: false })
-    expect(h.upserts[0]!.opts).toEqual({ onConflict: 'user_id' })
+    await waitFor(() => expect(h.calls).toHaveLength(1))
+    expect(h.calls[0]).toEqual({ fn: 'set_digest', args: { p_on: false } }) // auth.uid() is the user: no user_id is sent
     expect(screen.getByRole('switch', { name: '8 PM summary' }).getAttribute('aria-checked')).toBe('false')
     await waitFor(async () => expect((await db.kv.get('digest.on'))?.value).toEqual({ userId: 'u1', on: false }))
   })

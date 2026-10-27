@@ -50,6 +50,21 @@ create policy carer_prefs_select on public.carer_prefs for select to authenticat
 create policy carer_prefs_insert on public.carer_prefs for insert to authenticated with check (user_id = auth.uid());
 create policy carer_prefs_update on public.carer_prefs for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 revoke all on public.carer_prefs from public, anon, authenticated, service_role;
-grant select, insert on public.carer_prefs to authenticated;
-grant update (digest_on, updated_at) on public.carer_prefs to authenticated;
-grant select on public.carer_prefs to service_role;
+grant select on public.carer_prefs to authenticated, service_role;
+-- Writes go only through set_digest(): a PostgREST upsert sends ON CONFLICT DO UPDATE SET user_id = ..., which a column grant that leaves out user_id refuses.
+-- The insert and update policies above stay as a second wall; with no insert/update grant they cannot be reached.
+
+-- The switch in Me. auth.uid() only (nobody sets another person's choice), 30 changes an hour per user, returns the saved value.
+create or replace function public.set_digest(p_on boolean) returns boolean
+  language plpgsql security definer set search_path = '' as $$
+declare me uuid := auth.uid();
+begin
+  if me is null then raise exception 'not signed in' using errcode = '28000'; end if;
+  if p_on is null then raise exception 'p_on required' using errcode = '22004'; end if;
+  if public.pin_try(md5('digest:' || me::text)::uuid, 30, interval '1 hour') > 30 then raise exception 'too many changes' using errcode = '53400'; end if;
+  insert into public.carer_prefs as c (user_id, digest_on, updated_at) values (me, p_on, now())
+    on conflict (user_id) do update set digest_on = excluded.digest_on, updated_at = now();
+  return p_on;
+end $$;
+revoke execute on function public.set_digest(boolean) from public, anon, authenticated, service_role;
+grant execute on function public.set_digest(boolean) to authenticated;

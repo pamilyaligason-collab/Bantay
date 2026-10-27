@@ -48,26 +48,36 @@ select pg_temp.ok(not has_function_privilege('authenticated', 'public.meds_taken
 select pg_temp.ok(not has_column_privilege('authenticated', 'public.meds_taken', 'marked_by', 'update') and has_column_privilege('authenticated', 'public.meds_taken', 'slot', 'update') and has_column_privilege('authenticated', 'public.meds_taken', 'skipped', 'update'), 'update grants: 0014 list kept, marked_by absent');
 
 -- ===== carer_prefs =====
+-- The app writes only through set_digest (the request shape DigestToggle sends: rpc set_digest {p_on}). Every call here is the authenticated role through the real grants.
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000c1';
-select pg_temp.ok((select count(*) from public.carer_prefs) = 0 and not pg_temp.fails($$insert into public.carer_prefs (user_id, digest_on) values ('00000000-0000-0000-0000-0000000000c1', false)$$), 'a user may add their own opt-out row');
-select pg_temp.ok(pg_temp.fails($$insert into public.carer_prefs (user_id, digest_on) values ('00000000-0000-0000-0000-0000000000d1', false)$$), 'a user cannot add a row for someone else');
-update public.carer_prefs set digest_on = true, updated_at = now() where user_id = '00000000-0000-0000-0000-0000000000c1';
-select pg_temp.ok((select digest_on from public.carer_prefs where user_id = '00000000-0000-0000-0000-0000000000c1') = true, 'a user may flip their own switch back');
-select pg_temp.ok(pg_temp.fails($$update public.carer_prefs set user_id = '00000000-0000-0000-0000-0000000000d1'$$), 'user_id is not updatable');
-insert into public.carer_prefs (user_id, digest_on) values ('00000000-0000-0000-0000-0000000000c1', false) on conflict (user_id) do update set digest_on = excluded.digest_on, updated_at = now();
-select pg_temp.ok((select digest_on from public.carer_prefs) = false, 'the app upsert works');
+select (select count(*) from public.carer_prefs) = 0 as was_empty, public.set_digest(false) as ret \gset
+select pg_temp.ok(:'was_empty' = 't' and :'ret' = 'f' and (select digest_on from public.carer_prefs) = false, 'set_digest(false) on an empty table inserts the caller own row');
+select public.set_digest(true) as ret2 \gset
+select pg_temp.ok(:'ret2' = 't' and (select digest_on from public.carer_prefs) = true and (select count(*) from public.carer_prefs) = 1, 'set_digest(true) flips it back, still one row');
+select pg_temp.ok(pg_temp.fails($$select public.set_digest(null)$$), 'set_digest(null) is refused');
+select pg_temp.ok(pg_temp.fails($$insert into public.carer_prefs (user_id, digest_on) values ('00000000-0000-0000-0000-0000000000c1', false)$$), 'no direct insert grant');
+select pg_temp.ok(pg_temp.fails($$update public.carer_prefs set digest_on = false$$), 'no direct update grant');
+select pg_temp.ok(pg_temp.fails($$insert into public.carer_prefs (user_id, digest_on) values ('00000000-0000-0000-0000-0000000000c1', false) on conflict (user_id) do update set user_id = excluded.user_id, digest_on = excluded.digest_on, updated_at = excluded.updated_at$$), 'the PostgREST upsert shape is closed (that is why the app uses the RPC)');
+select public.set_digest(false);
+select pg_temp.ok((select digest_on from public.carer_prefs) = false and (select user_id::text from public.carer_prefs) = '00000000-0000-0000-0000-0000000000c1', 'the row is the caller own and off');
+-- rate limit: 30 an hour. Calls so far: 3 counted (the null call stops before the counter). Run to 30, the 31st is refused.
+do $$ declare i int; begin for i in 4..30 loop perform public.set_digest(false); end loop; end $$;
+select pg_temp.ok(pg_temp.fails($$select public.set_digest(true)$$), 'the 31st change in an hour is refused');
+select pg_temp.ok((select digest_on from public.carer_prefs) = false, 'a refused change leaves the saved value');
 reset role;
 set role authenticated; set request.jwt.claim.sub = '00000000-0000-0000-0000-0000000000d1';
 select pg_temp.ok((select count(*) from public.carer_prefs) = 0, 'another user cannot read the row');
-do $$ declare n int; begin update public.carer_prefs set digest_on = true; get diagnostics n = row_count; if n <> 0 then raise exception 'FAIL another user changed the row'; end if; raise notice 'PASS another user cannot change the row'; end $$;
+select public.set_digest(true);
+select pg_temp.ok((select count(*) from public.carer_prefs) = 1 and (select user_id::text from public.carer_prefs) = '00000000-0000-0000-0000-0000000000d1', 'another user set_digest touches only their own row');
 select pg_temp.ok(pg_temp.fails($$delete from public.carer_prefs$$), 'no delete grant');
 reset role;
 set role anon;
 select pg_temp.ok(pg_temp.fails($$select * from public.carer_prefs$$), 'anon cannot read');
+select pg_temp.ok(pg_temp.fails($$select public.set_digest(true)$$), 'anon cannot call set_digest');
 reset role;
 set role service_role;
-select pg_temp.ok((select count(*) from public.carer_prefs where digest_on = false) = 1, 'the service role reads who opted out');
-select pg_temp.ok(pg_temp.fails($$update public.carer_prefs set digest_on = true$$), 'the service role only reads');
+select pg_temp.ok((select count(*) from public.carer_prefs where digest_on = false) = 1 and (select count(*) from public.carer_prefs) = 2, 'the service role reads who opted out');
+select pg_temp.ok(pg_temp.fails($$update public.carer_prefs set digest_on = true$$) and pg_temp.fails($$select public.set_digest(true)$$), 'the service role only reads and cannot call set_digest');
 reset role;
 
 -- ===== erasure / export =====
