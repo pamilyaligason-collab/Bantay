@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ALL_IDS } from '../gobag/items'
 import { EMPTY as BAG_EMPTY, KEY as BAG_KEY, readState } from '../gobag/state'
 import { FAIL_TEXT, feelingToast, type Feeling, logFeeling } from '../today/actions'
+import { useSelfPersonId } from '../setup/useProfile'
 import { ALERTS_KEY, type Alert } from './alerts'
-import { liveSignals, PAGASA_CREDIT, signalOf, stormTitle } from './stormMode'
+import { ensureStormTasks, sendRollcall, type RollStatus } from './rollcall'
+import { liveSignals, PAGASA_CREDIT, signalOf, stormRef, stormTitle } from './stormMode'
 import { useKv } from './store'
 import './safety.css'
 
@@ -18,14 +20,25 @@ export function StormCard({ now }: { now?: number }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
   const bag = readState(useKv<unknown>(BAG_KEY, BAG_EMPTY))
   const [saved, setSaved] = useState<string | null>(null)
+  const [safeSaid, setSafeSaid] = useState<string | null>(null)
+  const selfId = useSelfPersonId()
   const top = liveSignals(alerts, now)[0]
-  if (!top) return null
+  const ref = top ? stormRef(top) : null
+  useEffect(() => { if (ref) void ensureStormTasks(ref) }, [ref]) // the shared Do now list: 4 family tasks per storm, once
+  if (!top || !ref) return null
   const n = signalOf(top)!
   const answer = async (f: (typeof FACES)[number]) => {
     const r = await logFeeling(f.feeling)
     if (r === 'untold' || r === 'refused') return setSaved(feelingToast(r))
     if (r !== 'told') return setSaved(FAIL_TEXT[r])
     setSaved(f.feeling === 'unwell' ? 'Saved. Your family can see it in Bantay. If you need help now, hold SOS or call 911.' : 'Saved. Your family can see it in Bantay.')
+  }
+  const roll = async (status: RollStatus) => {
+    if (!selfId) return setSafeSaid('Sign in first, then try again.')
+    const r = await sendRollcall(selfId, ref, status)
+    if (r === 'offline') return setSafeSaid('No signal. Your family has not seen this. Try again, or call them.')
+    if (r === 'refused') return setSafeSaid('Could not save. Call your family.')
+    setSafeSaid(status === 'ok' ? 'Saved. Your family can see you are safe.' : 'Saved. Your family can see you need help. If it is an emergency, hold SOS or call 911.')
   }
   return (
     <section className="sf sf-stormcard" aria-label="Storm mode">
@@ -52,6 +65,14 @@ export function StormCard({ now }: { now?: number }) {
         </div>
         {saved && <p className="sub" role="status" style={{ margin: 0 }}>{saved}</p>}
         <a className="sf-link" href="#family">See who has checked in</a>
+      </article>
+      <article className="sf-checkin">
+        <h2 className="sf-h2">Is everyone safe?</h2>
+        <div className="sf-faces" role="group" aria-label="Is everyone safe?">
+          <button type="button" className="sf-face" onClick={() => void roll('ok')}>I'm safe</button>
+          <button type="button" className="sf-face" onClick={() => void roll('need_help')}>I need help</button>
+        </div>
+        {safeSaid && <p className="sub" role="status" style={{ margin: 0 }}>{safeSaid}</p>}
       </article>
       <article className="sf-checkin">
         <h2 className="sf-h2">Do now</h2>
