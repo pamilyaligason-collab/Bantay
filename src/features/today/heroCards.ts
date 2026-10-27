@@ -1,6 +1,6 @@
 import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
-import { distanceKm, rankAlerts, tierOf, type Alert, type LatLon } from '../safety/alerts'
+import { affectsUs, distanceKm, rankAlerts, tierOf, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { actionLine, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
 
@@ -43,7 +43,7 @@ export const skyOf = (w: Wx): Sky | undefined => {
   return c <= 1 ? 'clear' : c <= 3 ? 'cloud' : c <= 48 ? 'fog' : c >= 95 ? 'storm' : c >= 51 && c <= 86 ? 'rain' : 'cloud'
 }
 
-export const ALERT_RADIUS_KM = 150
+export const ALERT_RADIUS_KM = WIDE_KM // D-88: 1000 km, the same limit alerts-ingest uses for GDACS
 export const DOSE_WINDOW_MIN = 120 // the inbox calls a dose missed this long after its time; Today keeps it due until taken or skipped
 export const SKIP_KEY = 'today.skipped' // { day, names }: doses marked Skipped today, so the card does not come back on reload
 
@@ -113,11 +113,13 @@ export function rainWords(r: RainOutlook): string {
   return `Rain likely ${r.tomorrow ? 'tomorrow ' : ''}from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. Chance: ${r.peakPct}%.`
 }
 
-/** Official warnings only (PAGASA, PHIVOLCS tier), inside the radius of where the member is. Area-wide alerts count. */
+/** Official warnings only (PAGASA, PHIVOLCS tier), for where the member is. Area-wide alerts and every ingested quake count (D-88: the ingest already limits quakes by size and distance);
+ *  other hazards count inside ALERT_RADIUS_KM. Ranked by "affects us" first, then tier and distance; the first row is the one Today shows. */
 export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
   const refs: LatLon[] = ref ? [ref] : [...HOME_ZONES]
-  const near = (a: Alert) => a.lat == null || a.lon == null || refs.some((r) => distanceKm(r, { lat: a.lat!, lon: a.lon! }) <= ALERT_RADIUS_KM)
-  return rankAlerts(alerts.filter((a) => tierOf(a.kind) <= 1 && near(a)), ref)[0] ?? null
+  const near = (a: Alert) => a.kind === 'quake' || a.lat == null || a.lon == null || refs.some((r) => distanceKm(r, { lat: a.lat!, lon: a.lon! }) <= ALERT_RADIUS_KM)
+  const hits = rankAlerts(alerts.filter((a) => tierOf(a.kind) <= 1 && near(a)), ref)
+  return [...hits.filter((a) => affectsUs(a, ref).affects), ...hits.filter((a) => !affectsUs(a, ref).affects)][0] ?? null
 }
 
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */

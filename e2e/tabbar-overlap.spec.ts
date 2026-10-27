@@ -108,9 +108,10 @@ for (const width of [360, 390]) {
           if (b.left < fab.right && b.right > fab.left && b.top < fab.bottom && b.bottom > fab.top) overlaps++
         }
         const b0 = btn.getBoundingClientRect()
-        return { overlaps, crossed, right: b0.right, fabLeft: fab.left, minTop, maxTop, fabTop: fab.top, fabBottom: fab.bottom, sh: main.scrollHeight, ch: main.clientHeight }
+        return { overlaps, crossed, left: b0.left, right: b0.right, vw: window.innerWidth, fabLeft: fab.left, minTop, maxTop, fabTop: fab.top, fabBottom: fab.bottom, sh: main.scrollHeight, ch: main.clientHeight }
       })
       expect(r.crossed, `the hold passed the height of Jack while scrolling ${JSON.stringify(r)}`).toBe(true)
+      expect(Math.abs((r.left + r.right) / 2 - r.vw / 2), `the SOS hold is centred: left ${r.left}, right ${r.right}, width ${r.vw}`).toBeLessThan(2) // D-88
       expect(r.overlaps, `hold right edge ${r.right} vs Jack left ${r.fabLeft}`).toBe(0)
     })
 

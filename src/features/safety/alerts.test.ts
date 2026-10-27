@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ALERT_RADIUS_KM } from '../today/heroCards'
-import { affectsUs, quakeFeltKm, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
+import { affectsUs, quakeFeltKm, quakeMag, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -103,20 +103,48 @@ describe('affectsUs', () => {
     expect(Math.round(distanceKm(conel, { lat: q89.lat!, lon: q89.lon! }))).toBe(89)
     expect(affectsUs(q89, conel)).toEqual({ affects: true, km: 89, line: 'Near you. Follow the steps below.', steps: true })
   })
-  it('an 89 km M3.0 quake is probably too far to feel, and the steps still show', () => {
-    expect(affectsUs({ ...q89, level: 'Magnitude 3.0', title: 'M 3.0 quake', what: '' }, conel)).toEqual({ affects: false, km: 89, line: 'Probably too far to feel strongly. If you felt shaking, follow the steps below.', steps: true })
+  const ABOUT = (km: number) => `About ${km} km away. You may feel it. If you feel shaking, follow the steps below.`
+  const TSUNAMI = ' If you live near the sea, watch for a tsunami warning.'
+  it('an 89 km M3.0 quake is felt to 50 km only: it still affects the family, with the distance and the steps', () => {
+    expect(affectsUs({ ...q89, level: 'Magnitude 3.0', title: 'M 3.0 quake', what: '' }, conel)).toEqual({ affects: true, km: 89, line: ABOUT(89), steps: true })
+  })
+  it('M3.6 at 140 km (1.2591 deg x 111.195 km) is beyond its 50 km radius: About 140 km away', () => {
+    const q = a('q140', 'quake', { level: 'Magnitude 3.6', lat: conel.lat + 1.2591, lon: conel.lon })
+    expect(Math.round(distanceKm(conel, { lat: q.lat!, lon: q.lon! }))).toBe(140)
+    expect(affectsUs(q, conel)).toEqual({ affects: true, km: 140, line: ABOUT(140), steps: true })
+  })
+  it('M7.2 at 2500 km (22.483 deg due south of Conel) says About 2500 km and adds the tsunami line', () => {
+    const q = a('q2500', 'quake', { level: 'Magnitude 7.2', lat: conel.lat - 22.483, lon: conel.lon })
+    expect(Math.round(distanceKm(conel, { lat: q.lat!, lon: q.lon! }))).toBe(2500)
+    expect(affectsUs(q, conel)).toEqual({ affects: true, km: 2500, line: ABOUT(2500) + TSUNAMI, steps: true })
+  })
+  it('the tsunami line starts at M6.5: M6.4 far away has none, M6.5 has it, and a near M7.2 has it too', () => {
+    const far = (level: string) => affectsUs(a('f', 'quake', { level, lat: conel.lat - 8.99, lon: conel.lon }), conel) // 8.99 deg = 999.7 km, beyond the 400 km radius of M6
+    expect(far('Magnitude 6.4').line).toBe(ABOUT(1000))
+    expect(far('Magnitude 6.5').line).toBe(ABOUT(1000) + TSUNAMI)
+    expect(affectsUs(a('n', 'quake', { level: 'Magnitude 7.2', lat: conel.lat + 0.27, lon: conel.lon }), conel).line).toBe('Near you. Follow the steps below.' + TSUNAMI)
+    expect(quakeMag({ level: 'Strong', title: '', what: '' })).toBeNull()
   })
   it('felt radius by magnitude: 50, 100, 200, 400, 800 km, unknown 100', () => {
     const km = (level: string) => quakeFeltKm({ level, title: '', what: '' })
     expect([km('Magnitude 3.9'), km('Magnitude 4.0'), km('Magnitude 5.9'), km('Magnitude 6.0'), km('Magnitude 6.9'), km('Magnitude 7.0'), km('Strong')]).toEqual([50, 100, 200, 400, 400, 800, 100])
     expect(km('Magnitude 5.0')).toBe(200)
   })
-  it('a typhoon 160 km away is far and has no steps; the line never says no action needed', () => {
-    const r = affectsUs({ ...q89, kind: 'tcws', lat: conel.lat + 1.44 }, conel) // 1.44 deg = 160 km
-    expect(r).toEqual({ affects: false, km: 160, line: 'Far from you. Watch for updates.', steps: false })
+  it('a typhoon 900 km away (8.1 deg due south of Conel x 111.195 = 900.7 km) still affects the family, with the steps', () => {
+    const r = affectsUs({ ...q89, kind: 'tcws', lat: conel.lat - 8.1 }, conel)
+    expect(r).toEqual({ affects: true, km: 901, line: 'About 901 km away. Follow the steps below.', steps: true })
     expect(JSON.stringify(r)).not.toMatch(/no action needed/i)
   })
-  it('the same distance for a typhoon still counts (storms reach 150 km)', () => {
+  it('a typhoon 1100 km away (9.9 deg = 1100.8 km) is far: no steps, and the line never says no action needed', () => {
+    const r = affectsUs({ ...q89, kind: 'tcws', lat: conel.lat - 9.9 }, conel)
+    expect(r).toEqual({ affects: false, km: 1101, line: 'Far from you. Watch for updates.', steps: false })
+    expect(JSON.stringify(r)).not.toMatch(/no action needed/i)
+  })
+  it('air quality keeps the 50 km limit: 40 km is near, 60 km (0.54 deg = 60.05 km) is far', () => {
+    expect(affectsUs(a('air40', 'air', { lat: conel.lat + 0.36, lon: conel.lon }), conel)).toMatchObject({ affects: true, km: 40, steps: true })
+    expect(affectsUs(a('air60', 'air', { lat: conel.lat + 0.54, lon: conel.lon }), conel)).toEqual({ affects: false, km: 60, line: 'Far from you. Watch for updates.', steps: false })
+  })
+  it('the same distance for a typhoon (89 km) is near you', () => {
     const r = affectsUs({ ...q89, kind: 'tcws' }, conel)
     expect(r.affects).toBe(true)
     expect(r.line).toBe('Near you. Follow the steps below.')
@@ -126,9 +154,12 @@ describe('affectsUs', () => {
     // phone far away (Manila), quake 10 km from Dampas (9.645705, 123.877951): near home
     expect(affectsUs(a('qd', 'quake', { lat: 9.645705 + 0.09, lon: 123.877951 }), { lat: 14.6, lon: 121 })).toMatchObject({ affects: true, km: 10, line: 'Near home (Dampas). Follow the steps below.' })
   })
-  it('no position and no point: area-wide counts, a far point does not', () => {
+  it('no position and no point: area-wide counts; a quake in Manila counts too, with the distance; a Manila typhoon is inside 1000 km of Dampas', () => {
     expect(affectsUs(a('w', 'heat'), null).affects).toBe(true)
-    expect(affectsUs(a('far', 'quake', { lat: 14.6, lon: 121 }), null).affects).toBe(false) // unknown size counts as 100 km; Manila is about 900 km from both homes
+    const manilaQuake = affectsUs(a('far', 'quake', { lat: 14.6, lon: 121 }), null) // unknown size counts as 100 km; Manila is about 590 km from Dampas
+    expect(manilaQuake).toMatchObject({ affects: true, steps: true })
+    expect(manilaQuake.line).toMatch(/^About \d+ km away\. You may feel it\. If you feel shaking, follow the steps below\.$/)
+    expect(affectsUs(a('t', 'tcws', { lat: 14.6, lon: 121 }), null).affects).toBe(true)
   })
 })
 
@@ -139,12 +170,12 @@ describe('plain words and copy', () => {
     expect(plainWhat({ kind: 'gdacs', what: 'Population affected: unknown' })).toBe('')
     expect(plainWhat({ kind: 'quake', what: 'Magnitude 5.1, 40 km north.' })).toBe('Magnitude 5.1, 40 km north.')
   })
-  it('wide radius equals the Today band radius (ML-10)', () => {
-    // a storm 149 km and 151 km from home: the Safety text and the Today band must agree
-    const at = (km: number) => ({ lat: HOME.lat + km / 111.19, lon: HOME.lon })
-    expect(ALERT_RADIUS_KM).toBe(150)
-    expect(affectsUs(a('s', 'tcws', at(149)), null).affects).toBe(true)
-    expect(affectsUs(a('s', 'tcws', at(151)), null).affects).toBe(false)
+  it('wide radius equals the Today band radius (ML-10): 1000 km (D-88)', () => {
+    // a storm 999 km and 1001 km from home: the Safety text and the Today band must agree
+    const at = (km: number) => ({ lat: HOME.lat + km / 111.195, lon: HOME.lon })
+    expect(ALERT_RADIUS_KM).toBe(1000)
+    expect(affectsUs(a('s', 'tcws', at(999)), null).affects).toBe(true)
+    expect(affectsUs(a('s', 'tcws', at(1001)), null).affects).toBe(false)
   })
   it('sources line names only what the ingest reads and the place label matches the Safety chip', () => {
     expect(SOURCES_LINE).toBe('Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open.')

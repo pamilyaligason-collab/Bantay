@@ -36,6 +36,27 @@ describe('AlertCard freshness and plain words', () => {
   })
 })
 
+describe('AlertCard distance line (D-88)', () => {
+  const quake = (over: Partial<Alert>): Alert => ({ ...gdacs, id: 'q', kind: 'quake', level: 'Magnitude 3.6', title: 'Magnitude 3.6 earthquake', what: '', where: 'Far away', doNow: 'If you feel shaking: drop, cover and hold on.', source: 'USGS', lat: 6.2015121 + 1.2591, lon: 125.1878084, ...over })
+  it('a far M3.6 quake still has its distance line and steps, never "no action needed"', () => {
+    render(<AlertCard alert={quake({})} />)
+    expect(screen.getByText(/About 140 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(140 km\)/)).toBeTruthy()
+    expect(screen.getByText('If you feel shaking: drop, cover and hold on.')).toBeTruthy()
+    expect(screen.queryByText(/no action needed/i)).toBeNull()
+  })
+  it('M7.2 at 2500 km adds the tsunami line', () => {
+    render(<AlertCard alert={quake({ level: 'Magnitude 7.2', title: 'Magnitude 7.2 earthquake', lat: 6.2015121 - 22.483 })} />)
+    expect(screen.getByText(/About 2500 km away\..*If you live near the sea, watch for a tsunami warning\. \(2500 km\)/)).toBeTruthy()
+  })
+  it('a typhoon 900 km away says About 901 km; air 60 km away says far', () => {
+    const { unmount } = render(<AlertCard alert={quake({ id: 't', kind: 'tcws', title: 'Typhoon 900', level: 'Signal No. 1', lat: 6.2015121 - 8.1 })} />)
+    expect(screen.getByText(/About 901 km away\. Follow the steps below\. \(901 km\)/)).toBeTruthy()
+    unmount()
+    render(<AlertCard alert={quake({ id: 'a', kind: 'air', title: 'Air 60', level: 'US AQI 120', lat: 6.2015121 + 0.54 })} />)
+    expect(screen.getByText(/Far from you\. Watch for updates\. \(60 km\)/)).toBeTruthy()
+  })
+})
+
 describe('FreshLine', () => {
   it('reads the newest check from the saved list', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...gdacs, checkedAt: minAgo(200) }, { ...gdacs, id: 'b', checkedAt: minAgo(10) }] })
