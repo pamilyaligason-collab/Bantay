@@ -4,10 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 import { pickNext, type DuePerson } from '../features/today/nextPick'
 
-const h = vi.hoisted(() => ({ pick: null as unknown, review: 0 }))
+const h = vi.hoisted(() => ({ pick: null as unknown, review: 0, taken: [] as unknown[][] }))
 const { stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/today/useNext', () => ({ useNext: () => ({ item: h.pick, review: h.review }) }))
-vi.mock('../features/today/useDueMeds', () => ({ markDue: async () => true, markTaken: async () => 1 }))
+vi.mock('../features/today/useDueMeds', () => ({ markDue: async () => true, markTaken: async (...a: unknown[]) => { h.taken.push(a); return 1 } }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => null }))
@@ -73,6 +73,7 @@ describe('Today after the dose card is released', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Metformin/ })) // untick Metformin: only Aspirin is taken
     fireEvent.click(screen.getByRole('button', { name: 'Mark these taken' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
+    expect(h.taken.at(-1)).toEqual(['ma', ['k-Aspirin']]) // only the ticked medicine is written
     h.pick = dose(two(['Metformin'])) // same key dose:ma:480, one slot left
     rerender(<Today />)
     await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
