@@ -347,7 +347,7 @@ export default function Assistant() {
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}
                 </div>
               ))}
-              {busy && <p className="sub s14j-row" role="status"><JackArt name="thinking" size={48} decorative />Thinking...</p>}
+              {busy && <p className="sub s14j-row" role="status">{!items.some((m) => m.emergency) && <JackArt name="thinking" size={48} decorative />}Thinking...</p>}
               {!online && <OfflinePanel contact={contact} go={go} />}
             </div>
             {items.length === 0 && <div className="as-chips" role="group" aria-label="Suggestions">

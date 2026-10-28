@@ -33,6 +33,24 @@ describe('Play hub', () => {
   })
 })
 
+describe('Play hub Jack (D-91)', () => {
+  const put = (n: number) => db.kv.put({ key: 'play.day', value: { day: new Date().toLocaleDateString('sv-SE'), n, games: ['Memory match'], days: {} } })
+  it('plays with a ball for 0 to 2 games today', async () => {
+    await put(2)
+    render(<PlayScreen />)
+    await screen.findByText('Played today: 2 games')
+    expect(screen.getByAltText('Jack Jack playing with a ball')).toBeTruthy()
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+  it('jumps for joy from the third game today', async () => {
+    await put(3)
+    render(<PlayScreen />)
+    expect(await screen.findByAltText('Jack Jack jumping for joy')).toBeTruthy()
+    expect(screen.queryByAltText('Jack Jack playing with a ball')).toBeNull()
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+})
+
 describe('Memory match screen', () => {
   it('solving all 6 pairs says kind words with no number, and counts one game played today', async () => {
     const seed = 11

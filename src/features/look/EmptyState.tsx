@@ -1,7 +1,7 @@
 import { Icon, type IconName } from '../shell/Icon'
 import { JackArt } from './JackArt'
 
-/** A blank list says what goes here and what to do next, instead of rendering nothing. With no icon it shows Jack peeking out of a box (D-91). */
+/** A blank list says what goes here and what to do next, instead of rendering nothing. With no icon it shows Jack holding an empty checklist (D-91). */
 export function EmptyState({ icon, title, body, action, heading }: { icon?: IconName; title: string; body?: string; action?: { label: string; onClick: () => void }; heading?: 'h2' | 'h3' }) {
   const Title = heading ?? 'p' // a heading only where the empty card stands in for a section that had one
   return (

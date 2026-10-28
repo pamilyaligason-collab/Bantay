@@ -4,7 +4,7 @@ import { EmptyState } from './EmptyState'
 import { JACK_ALT } from './JackArt'
 
 describe('EmptyState art (D-91)', () => {
-  it('shows Jack peeking out of a box when no icon is given, one picture only', () => {
+  it('shows Jack holding an empty checklist when no icon is given, one picture only', () => {
     const { container } = render(<EmptyState title="Nothing yet" />)
     const imgs = container.querySelectorAll('img')
     expect(imgs).toHaveLength(1)

@@ -29,8 +29,8 @@ const sideways = (page: Page) => page.evaluate(() => document.documentElement.sc
 
 /** A Jack picture on the screen: loaded, a fixed width and height, and an alt attribute (empty when decorative). */
 async function expectJack(page: Page, alt: string | null, size: number) {
-  const img = page.locator('img.jack[width="' + size + '"]')
-  await expect(img).toHaveCount(1) // at most one Jack per screen (the Ask button's 48 px head is chrome)
+  const img = page.locator('img.jack:not([aria-label="Ask Bantay"] img)')
+  await expect(img).toHaveCount(1) // exactly one Jack per screen, of any width; the Ask button's head is chrome and has its own test
   await expect(img).toBeVisible()
   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
   expect(await img.getAttribute('width')).toBe(String(size))
@@ -97,7 +97,7 @@ test('the offline band carries a small decorative Jack and keeps its words', asy
   const img = bar.locator('img')
   await expect(img).toHaveCount(1)
   expect(await img.getAttribute('alt')).toBe('')
-  expect(await img.getAttribute('width')).toBe('32')
+  expect(await img.getAttribute('width')).toBe('40')
   await expect(bar).toHaveText(/^Offline · showing (saved data|data from \d{1,2}:\d{2} (AM|PM)) · will sync$/)
   expect(await sideways(page)).toBe(0)
   await shot(page, 'offline')
