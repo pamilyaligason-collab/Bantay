@@ -1,3 +1,4 @@
+import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { playable, VIDEOS } from '../../health/library/videosLogic'
 
@@ -9,6 +10,7 @@ export default function Watch() {
   const topics = [...new Set(list.map((v) => v.topic))]
   return (
     <div className="dc-list" data-testid="watch">
+      <div className="s14j-art"><JackArt name="watching" size={96} /></div>
       {topics.map((t) => (
         <section key={t} className="dc-shelf" aria-label={t}>
           <h2 className="sh-h2 dc-shelf-h">{t}</h2>

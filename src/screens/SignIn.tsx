@@ -4,6 +4,7 @@ import { NO_SIGNAL, SIGN_IN_ERROR, fetchFamilyNames, inviteFromHash, signInWithG
 import { afterFailure, loadFails, saveFails } from '../features/auth/pinAttempts'
 import '../features/auth/signin.css'
 import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
+import { JackArt } from '../features/look/JackArt'
 import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
 import { onNativeSignInError } from '../features/auth/nativeOAuth'
@@ -234,7 +235,7 @@ export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: Join
           <>
             {welcome ? (
               <div className="wl-hello">
-                <img className="wl-jj" src={MASCOT_SRC} alt={MASCOT_ALT} width={150} height={150} />
+                <JackArt name="hello" size={150} className="wl-jj" />
                 <h1>Hi! I'm Jack Jack.</h1>
                 <p>I watch over the family's health and safety. Who are you?</p>
               </div>

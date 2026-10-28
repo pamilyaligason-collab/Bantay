@@ -1,3 +1,4 @@
+import { JackArt } from '../look'
 import { offlineText, useOffline } from './useOffline'
 import './offline.css'
 
@@ -5,7 +6,7 @@ import './offline.css'
 export function OfflineBar() {
   const { offline, since } = useOffline()
   if (!offline) return null
-  return <div role="status" className="offline-bar" data-testid="offline-bar">{offlineText(since)}</div>
+  return <div role="status" className="offline-bar" data-testid="offline-bar"><span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><JackArt name="offline" size={32} decorative />{offlineText(since)}</span></div>
 }
 
 /** Small "Queued" tag on a dose row that is saved on this phone and not yet sent. */

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { useKv } from '../../shell/useKv'
 import Cook from './Cook'
@@ -31,6 +32,7 @@ export default function Screen() {
   if (medcards && view === 'med' && id) return <MedCard id={id} />
   return (
     <div className="lr" data-testid="learn-home">
+      <div className="s14j-art"><JackArt name="reading" size={96} /></div>
       {medcards && (
         <section className="dc-shelf" aria-label="Medicine guide">
           <h2 className="sh-h2 dc-shelf-h">Medicine guide</h2>

@@ -51,3 +51,6 @@
 .as-off-list button { min-height: 52px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 14px; border: 0; border-bottom: 0.5px solid var(--sep); background: transparent; color: var(--ink); font-size: 16px; font-weight: 600; text-align: left; }
 .as-off-list button:last-child { border-bottom: 0; }
 .as-wait { align-self: flex-end; }
+/* s14 J: Jack Jack art (D-91), fixed boxes, no entrance animation */
+.s14j-art { display: flex; justify-content: center; margin: 0; }
+.s14j-row { display: flex; align-items: center; gap: 10px; }

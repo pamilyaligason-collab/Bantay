@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { SubHeader } from '../../shell/SubHeader'
 import { DAILY_SODIUM_MG, RECIPES, RECIPE_SOURCES, sodiumPerServing, type RecipeTag } from './data'
@@ -17,6 +18,7 @@ export default function Recipes() {
   return (
     <div className="lr">
       <SubHeader title="Healthy recipes" backHref="#discover/learn" backLabel="Back to Learn" />
+      <div className="s14j-art"><JackArt name="cooking" size={96} /></div>
       <div className="lr-chips" role="group" aria-label="Filter recipes">
         {FILTERS.map((x) => <button key={x.id} type="button" className="chip lr-chip" aria-pressed={f === x.id} onClick={() => setF(x.id)}>{x.label}</button>)}
       </div>

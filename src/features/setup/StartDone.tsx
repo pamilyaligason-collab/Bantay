@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look/JackArt'
 import { hasPasskeyFlag, loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
 import { PhoneCheckCard } from '../phonecheck/PhoneCheckCard'
@@ -43,7 +43,7 @@ export default function StartDone({ onDone }: { onDone: () => void }) {
         <span className="si-eyebrow">Step 3 of 3 · then Today</span>
         <div className="si-steps" aria-hidden="true"><i className="on" /><i className="on" /><i className="on" /></div>
         <div className="si-c">
-          <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} />
+          <JackArt name="hello" size={96} />
           <h1 className="pname">{name ? `You're in, ${name}` : "You're in"}</h1>
           <p className="si-hint">Jack will remind you about your medicines and help you call your family if you need help.</p>
         </div>

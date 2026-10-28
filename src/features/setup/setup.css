@@ -39,3 +39,6 @@ label.wz-field { flex-direction: column; align-items: stretch; }
 .ap-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--sep); align-self: center; }
 .ap-who { display: flex; align-items: center; gap: 12px; }
 .ap-who .h2 { margin: 0; font-size: 20px; }
+/* s14 J: Jack Jack art (D-91), fixed boxes, no entrance animation */
+.s14j-art { display: flex; justify-content: center; margin: 0; }
+.s14j-row { display: flex; align-items: center; gap: 10px; }

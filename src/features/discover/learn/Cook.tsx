@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { recipe, stepMinutes, stepText } from './data'
 
@@ -76,6 +77,7 @@ export default function Cook({ id }: { id: string }) {
   return createPortal(
     <div ref={box} tabIndex={-1} className="lr-cook" role="dialog" aria-modal="true" aria-label={`Cook mode: ${r.name}`} data-testid="cook">
       <div className="lr-row">
+        <JackArt name="cooking" size={48} decorative />
         <span className="lr-grow"><span className="eyebrow">{awake ? 'Cook mode, screen stays on' : 'Cook mode'}</span></span>
         <span className="chip" data-testid="cook-step">Step {i + 1} of {r.steps.length}</span>
       </div>
