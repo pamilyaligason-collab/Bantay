@@ -29,8 +29,10 @@ const sideways = (page: Page) => page.evaluate(() => document.documentElement.sc
 
 /** A Jack picture on the screen: loaded, a fixed width and height, and an alt attribute (empty when decorative). */
 async function expectJack(page: Page, alt: string | null, size: number) {
+  // docs/session-14/contracts.md (orchestrator decision): the Ask button's Jack head (JackFab) is button chrome and does not count toward "one Jack per screen"; it has its own test below.
   const img = page.locator('img.jack:not([aria-label="Ask Bantay"] img)')
-  await expect(img).toHaveCount(1) // exactly one Jack per screen, of any width; the Ask button's head is chrome and has its own test
+  await expect(img).toHaveCount(1) // at most one non-FAB Jack, and a placement that renders none fails here
+  expect(await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').count()).toBeLessThanOrEqual(1)
   await expect(img).toBeVisible()
   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
   expect(await img.getAttribute('width')).toBe(String(size))
@@ -56,6 +58,7 @@ for (const p of PLACES) {
       if (p.ready === 'mv-page') await expect(page.locator('.mv-page')).toBeVisible()
       else await expect(page.getByTestId(p.ready).first()).toBeVisible()
       if (zoom === 200) await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+      await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
       await expectJack(page, p.alt, p.size)
       expect(await sideways(page)).toBe(0)
       if (zoom === 100) await shot(page, p.name)

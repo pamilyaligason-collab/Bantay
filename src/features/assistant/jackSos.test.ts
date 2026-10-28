@@ -15,12 +15,8 @@ const GUARDED = [
   join(SRC, 'features', 'health', 'bpcheck', 'CrisisCard.tsx'),
 ]
 
+// The Ask screen's thinking Jack hiding under an emergency card is proven by behaviour in Assistant.jack.test.tsx.
 describe('Jack Jack stays off emergencies (D-91)', () => {
-  it('the Ask screen hides its thinking Jack while an emergency card is in the transcript', () => {
-    const text = readFileSync(join(SRC, 'features', 'assistant', 'Assistant.tsx'), 'utf8')
-    expect(text).toMatch(/!items\.some\(\(m\) => m\.emergency\) && <JackArt name="thinking"/)
-  })
-
   it('guards the SOS, incoming SOS, emergency and crisis files', () => {
     expect(GUARDED.length).toBeGreaterThanOrEqual(15) // the sos folder alone has 17 source files; a bad path would shrink this
   })
