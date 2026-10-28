@@ -6,9 +6,12 @@ import { db } from '../../db'
 
 const ev = vi.hoisted(() => ({ track: vi.fn(async (_kind: string, _name: string) => true) }))
 vi.mock('../admin/events', () => ev)
+// The detail screen reads who is signed in; here it is p1 themself (can edit).
+vi.mock('../records/useHealthData', () => ({ useHealthData: () => ({ people: [{ id: 'p1', name: 'Test Person' }], member: { userId: 'u1', role: 'member' }, ownId: 'p1' }) }))
 
 import { ldb, type Medication } from '../log/store'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
+import MedDetail from './MedDetail'
 import { Medicines } from './Medicines'
 import { setMedStatus } from './medActions'
 import { toCheck } from './MedReview'
@@ -122,10 +125,10 @@ describe('MedEditSheet', () => {
 })
 
 describe('Delete and Undo on the Medicines screen', () => {
-  it('Delete removes the row, sends deleted_at, shows an Undo toast for 6 s; Undo brings it back', async () => {
+  it('Delete (from the detail) removes the row, sends deleted_at, shows an Undo toast for 6 s; Undo brings it back', async () => {
     await ldb.medications.add(base({ schedule: { v: 1, times: ['08:00'] } }))
-    render(<Medicines personId="p1" mine canMark canEdit />)
-    fireEvent.click(await screen.findByRole('button', { name: /^Metformin 500 mg/ }))
+    render(<MedDetail medicationId="s1" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
     vi.useFakeTimers({ shouldAdvanceTime: true })
     fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
     const toast = await screen.findByRole('status')
@@ -143,8 +146,8 @@ describe('Delete and Undo on the Medicines screen', () => {
 
   it('the toast goes away after 6 seconds', async () => {
     await ldb.medications.add(base({ schedule: { v: 1, times: ['08:00'] } }))
-    render(<Medicines personId="p1" mine canMark canEdit />)
-    fireEvent.click(await screen.findByRole('button', { name: /^Metformin 500 mg/ }))
+    render(<MedDetail medicationId="s1" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
     expect(await screen.findByRole('status')).toBeTruthy()
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull(), { timeout: 8000 })
