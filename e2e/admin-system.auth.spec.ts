@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // S8 MONITOR: System health, the dashboard "alerts seen" line and the broadcast copy. Runs in the "auth" project (build WITH Supabase env).
 // Everything on the wire is mocked; synthetic data only. Shots for the mockup compare (admin-system, admin-home, admin-broadcast) go to docs/session-10/shots/s8/.
@@ -10,7 +11,7 @@ const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'admin@example.test', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'content-range' }
-const SHOTS = 'docs/session-10/shots/s8'
+const SHOTS = shotPath('docs/session-10/shots/s8')
 
 const now = Date.now()
 const iso = (minAgo: number) => new Date(now - minAgo * 60_000).toISOString()

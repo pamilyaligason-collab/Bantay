@@ -1,12 +1,13 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { shotPath } from './shotPath'
 
 // The auth build sets VITE_JOIN_STUB=1 (playwright.config.ts), so #join opens start-who with a stub claim port; the real build has no join port until S6b adds the action.
 // S6a ONBOARD shots, 390x844 light and dark: start-who, start-pin, start-done, start-pinpad, start-wrong, start-forgot, start-approve-wait.
 // (start-approve-req is a sheet over Today: its mount point is a Today hook owned by S7, covered by ApprovePinSheet.test.tsx until then.)
 // Filename ends in .auth.spec: only that project builds with Supabase env. All Supabase traffic is mocked, test values only.
 const API = 'https://bantay-test.supabase.test'
-const SHOTS = 'docs/session-10/shots/S6a'
+const SHOTS = shotPath('docs/session-10/shots/S6a')
 const UID = '33333333-3333-4333-8333-333333333333'
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`

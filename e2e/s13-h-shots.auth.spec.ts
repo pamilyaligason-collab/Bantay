@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Session 13 lane H shots (auth project: signed in, so Add a reading is offered): Health overview (summary, then Browse), a person with nothing logged, and a person with labs only.
 // The clock is frozen (26 Oct 2026, 10:20 local), motion is reduced, and the data is made up, so a rerun writes the same pixels (ML-32).
-const SHOTS = 'docs/session-13/shots/H'
+const SHOTS = shotPath('docs/session-13/shots/H')
 const NOW = new Date(2026, 9, 26, 10, 20, 0)
 test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
 

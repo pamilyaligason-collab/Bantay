@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
 import { openChat, skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // S10 JACK-CLIENT shots (390x844, light and dark): ask-emergency (local 911 card, nothing leaves the phone) and ask-offline (what still works, the question kept).
 // Run with PW_PORT=5457: PW_PORT=5457 npx playwright test e2e/jack-gate.spec.ts
-const SHOTS = 'docs/session-10/shots/S10'
+const SHOTS = shotPath('docs/session-10/shots/S10')
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(scheme, () => {

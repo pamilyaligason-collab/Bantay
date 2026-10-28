@@ -2,11 +2,12 @@ import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Session 13 lane T (Today): dose done-morph, first-week My week, More heading, weather cards. Auth project (test Supabase env, PostgREST mocked, invented data).
 // The clock is frozen at Tue 2026-10-20 10:00 Manila and animations are off in screenshots, so a rerun rewrites no PNG (ML-32).
 // Shots go to docs/session-13/shots/T/ (light and dark).
-const SHOTS = 'docs/session-13/shots/T'
+const SHOTS = shotPath('docs/session-13/shots/T')
 const NOW = new Date('2026-10-20T10:00:00+08:00')
 type Row = Record<string, unknown>
 

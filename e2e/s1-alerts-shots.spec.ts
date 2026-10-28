@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // S1 ALERTS-INAPP shots (390x844, light and dark): start-inbox, lock-missed (alert list with count), today-full (alert card variant, needs AlertCardToday mounted
 // in Today), start-banner (switch-to-app banner, shown once kv alerts.inapp.ok is true). Synthetic rows only: template ids, no values.
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
-const SHOTS = 'docs/session-10/shots/S1'
+const SHOTS = shotPath('docs/session-10/shots/S1')
 type Row = Record<string, unknown>
 
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {

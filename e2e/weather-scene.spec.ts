@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Weather scene: every condition x time of day at 390x844, light and dark. Made-up forecast, no network.
 // Place clock is Manila (UTC+8); the fixture's sunrise is 05:50 and sunset 17:45.
-const SHOTS = 'docs/session-9/shots/w1-weather'
+const SHOTS = shotPath('docs/session-9/shots/w1-weather')
 const TODS = { night: '2026-10-20T14:00:00Z', dawn: '2026-10-19T22:15:00Z', day: '2026-10-20T04:00:00Z', dusk: '2026-10-20T09:30:00Z' } as const // 22:00, 06:15, 12:00, 17:30 local
 const CONDS = { clear: 0, partly: 2, overcast: 3, fog: 45, drizzle: 53, rain: 63, storm: 95 } as const
 
