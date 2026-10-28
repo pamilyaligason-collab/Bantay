@@ -69,6 +69,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const seg = page.getByRole('group', { name: 'Family view' })
       await expect(seg.getByRole('button')).toHaveText(['Home', 'Messages', 'Plan'])
       await expect(seg.getByRole('button', { name: 'Home' })).toHaveAttribute('aria-pressed', 'true')
+      await shot(page, 'family-home', scheme)
       await seg.getByRole('button', { name: 'Messages' }).click()
       await expect(page).toHaveURL(/#family\/messages$/)
       await expect(page.getByRole('group', { name: 'Quick replies' })).toBeVisible()
@@ -111,6 +112,23 @@ for (const scheme of ['light', 'dark'] as const) {
         const tiny = await page.locator('.seg button').evaluateAll((bs) => bs.filter((b) => b.getBoundingClientRect().height < 48).length)
         expect(tiny).toBe(0)
       }
+    })
+
+    test('200% text zoom: the done check-in card with Jack does not overflow and its tile stays 44 px', async ({ page }) => {
+      await page.goto('/#family')
+      await page.getByRole('button', { name: "I'm OK", exact: true }).click()
+      const card = page.locator('.fm-checkin')
+      await expect(card).toContainText(/^You're OK · /)
+      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+      await settle(page)
+      expect(await card.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+      const tile = await card.locator('.tile').boundingBox()
+      expect(tile!.width).toBeGreaterThanOrEqual(44)
+      expect(tile!.height).toBeGreaterThanOrEqual(44)
+      const jack = await card.locator('img.jack').boundingBox()
+      const box = await card.boundingBox()
+      expect(jack!.x + jack!.width).toBeLessThanOrEqual(box!.x + box!.width + 1)
     })
   })
 }

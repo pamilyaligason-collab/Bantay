@@ -43,6 +43,21 @@ describe('Messages', () => {
     await waitFor(() => expect(api.sendText).toHaveBeenCalledWith('On my way'))
     expect(screen.queryByRole('dialog')).toBeNull() // inline: no sheet
   })
+  it('the sheet (opened from a member bubble) shows the quick replies and sends the exact words', async () => {
+    show()
+    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
+    const qr = within(dlg).getByRole('group', { name: 'Quick replies' })
+    expect(within(qr).getAllByRole('button').map((b) => b.textContent)).toEqual(['All good', 'On my way'])
+    fireEvent.click(within(qr).getByRole('button', { name: 'All good' }))
+    await waitFor(() => expect(api.sendText).toHaveBeenCalledWith('All good'))
+  })
+  it('the inline header names the family and counts people', async () => {
+    const me = { ...ben, isMe: true }
+    render(<Messages inline who={me} people={[me, ben, { ...ben, id: 'p3' }]} nudge={null} onClose={() => undefined} onOpenPage={() => undefined} />)
+    await screen.findByTestId('msg-list')
+    expect(screen.getByRole('heading', { name: 'Family messages' })).toBeTruthy()
+    expect(screen.getByText('3 people, one shared chat')).toBeTruthy()
+  })
   it('sends a text and clears the box; empty text cannot be sent', async () => {
     show()
     await screen.findByTestId('msg-list')

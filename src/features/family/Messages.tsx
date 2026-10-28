@@ -98,7 +98,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
 
   const body = (
     <>
-      <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>
+      {inline ? <div><h2 className="h2">Family messages</h2><p className="sub msg-lead">{people.length} {people.length === 1 ? 'person' : 'people'}, one shared chat</p></div> : <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>}
       <div className="msg-actions">
         {tel && !who.isMe && <a className="pill" href={`tel:${tel}`} aria-label={`Call ${first(who.name)}`}><Icon name="phone" size={20} />Call</a>}
         <a className="pill" href={mess.href} target="_blank" rel="noreferrer"><Icon name="out" size={20} />{mess.label}</a>

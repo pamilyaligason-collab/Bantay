@@ -172,6 +172,7 @@ describe('People', () => {
     expect(await screen.findByText(/^You're OK · /)).toBeTruthy() // the same card turns into the done state after the write
     expect(screen.queryByText("Today's check-in")).toBeNull()
     expect(screen.getByText(/Your family can see it/)).toBeTruthy()
+    expect(within(document.querySelector('.fm-checkin') as HTMLElement).getByRole('status').textContent).toMatch(/^You're OK · .*Your family can see it/) // announced politely to a screen reader
     expect(document.activeElement?.classList.contains('fm-checkin')).toBe(true) // focus moves to the card, not lost with the button
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
