@@ -90,6 +90,7 @@ test('signed in: Next up for me and Ma, weather action, My week tiles, self-care
   await expect(page.getByRole('heading', { name: /Losartan/ }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: /1 medicine to check/ })).toHaveAttribute('href', '#health/meds')
   await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
+  await page.getByRole('button', { name: 'See the week' }).click() // S14: My week sits behind the See the week link
   const week = page.getByRole('region', { name: 'My week' }).or(page.locator('section[aria-labelledby="t-myweek"]'))
   await expect(week.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
   await expect(week.getByRole('link', { name: /Steps a day/ })).toContainText('goal 6,000')

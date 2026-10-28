@@ -9,7 +9,7 @@ import { useSelfPersonId } from '../setup/useProfile'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
 import PlateSheet from '../nutrition/PlateSheet'
-import MealsTodayCard from '../nutrition/SaltSummary'
+import SaltLine from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
@@ -111,7 +111,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
           </button>
         ))}
       </div>
-      <MealsTodayCard onMeal={() => setOpen('meal')} />
+      <SaltLine />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>

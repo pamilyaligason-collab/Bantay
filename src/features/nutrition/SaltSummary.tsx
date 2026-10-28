@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSelfPersonId } from '../setup/useProfile'
 import { Icon, type IconName } from '../shell/Icon'
 import type { FoodEntry } from '../log/store'
-import { useFood, useGoal, useWater } from './hooks'
+import { useFood, useGoal } from './hooks'
 import { BAND_WORD, dailyTotals, fillPct, fmt, goalBand, onDay, saltGrams, topSodium, type Band } from './logic'
-import WaterPanel from './WaterPanel'
 import './nutrition.css'
 
 const BAND_ICON: Record<Exclude<Band, 'none'>, IconName> = { under: 'check', near: 'info', over: 'warn' }
@@ -60,25 +59,26 @@ const useNow = () => {
   return now
 }
 
-/** Today's "Meals today" card: this phone's member. Salt is part of the meals (no separate salt log). Shows once signed in; links to Health > Food and nutrients. */
-export default function MealsTodayCard({ onMeal }: { onMeal(): void }) {
+/** The words on Today's salt line. Meals logged with no sodium number say so; that is not "nothing logged", and never a made-up 0. */
+export function saltLineText(entries: FoodEntry[], goalMg: number): string {
+  const mg = dailyTotals(entries).sodiumMg
+  if (mg != null) return `Salt ${fmt(mg)} of ${fmt(goalMg)} mg today`
+  return entries.length ? "Salt: not known for today's meals" : 'Salt: nothing logged yet today'
+}
+
+/** Today's one salt line (the Meals card moved to Health > Food, D-62 / mockup v8): this phone's member, "Salt 1,300 of 1,500 mg today", a link to Health > Food and nutrients.
+ *  Nothing until signed in. With nothing logged, or meals without a salt number, it says so instead of a made-up 0. */
+export default function SaltLine() {
   const personId = useSelfPersonId() ?? ''
   const now = useNow()
   const food = useFood(personId, 2)
-  const water = useWater(personId, 2)
   const goal = useGoal(personId)
-  const today = useMemo(() => onDay(food, now), [food, now])
+  const text = useMemo(() => saltLineText(onDay(food, now), goal.sodiumMg), [food, now, goal.sodiumMg])
   if (!personId) return null
   return (
-    <section className="card nu-card nu" aria-labelledby="t-meals" data-reveal>
-      <div className="td-row between">
-        <h2 id="t-meals" className="td-sech">Meals today</h2>
-        <a className="td-link" href="#health/nutrition">See nutrients</a>
-      </div>
-      <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="t-meals">
-        <div className="nu-act"><button type="button" className="nu-big-btn" onClick={onMeal}><Icon name="meal" size={22} />Log a meal</button></div>
-      </SaltSummary>
-      <WaterPanel rows={water} goalMl={goal.waterMl} now={now} />
-    </section>
+    <a className="td-saltline press" href="#health/nutrition" data-testid="salt-line">
+      <span>{text}</span>
+      <span className="td-link">Food</span>
+    </a>
   )
 }

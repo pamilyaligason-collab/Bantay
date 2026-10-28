@@ -11,7 +11,7 @@ vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () =
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds.due ? [] : [{ personId: 'me', name: 'Lloyd', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: meds.review, tick: new Date() }), markDue: async () => true }))
 vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
 vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review }: { expanded?: boolean; review?: number }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} /> }))
-vi.mock('../features/today/MyWeek', () => stub('myweek'))
+vi.mock('../features/today/SeeWeek', () => stub('seeweek'))
 vi.mock('../features/today/SelfCare', () => stub('selfcare'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/NextUp', () => stub('nextup'))
@@ -31,18 +31,18 @@ describe('Today simple mode', () => {
   it('off: the full page', async () => {
     render(<Today />)
     await screen.findByTestId('quicklog')
-    for (const id of ['alertband', 'nextup', 'weather', 'myweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
+    for (const id of ['alertband', 'nextup', 'weather', 'seeweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
     expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
   })
-  it('off: Hold for help sits on Today (the same hold button as Simple mode), right under the quick log and above My week, so the Jack button at the bottom never covers it', async () => {
+  it('off: Hold for help sits on Today (the same hold button as Simple mode), right under the quick log and above self-care, so the Jack button at the bottom never covers it', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
     const sos = screen.getByRole('button', { name: 'Hold to call and text your family' })
     const order = [...container.querySelectorAll('[data-testid], .td-sos')].map((e) => e.getAttribute('data-testid') ?? 'sos')
     expect(order.indexOf('sos')).toBe(order.indexOf('quicklog') + 1)
-    expect(order.indexOf('sos')).toBeLessThan(order.indexOf('myweek'))
+    expect(order.indexOf('sos')).toBeLessThan(order.indexOf('selfcare'))
     expect(sos.closest('section')?.getAttribute('aria-label')).toBe('Emergency')
   })
   it('on, a dose due: a Check my blood pressure tile opens the guided check', async () => {
@@ -59,11 +59,11 @@ describe('Today simple mode', () => {
     expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
-  it('full page order: weather, family alert card, Next up, quick log, My week, self-care, plan, then More; no OK card, How are you? is the check-in', async () => {
+  it('full page order: weather, family alert card, Next up, quick log, self-care, plan, See the week, then More; no OK card, How are you? is the check-in', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['alertband', 'weather', 'alertcard', 'nextup', 'quicklog', 'myweek', 'selfcare', 'plan', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['alertband', 'weather', 'alertcard', 'nextup', 'quicklog', 'selfcare', 'plan', 'seeweek', 'alerts', 'nearby', 'week'])
   })
   it('a dose due: Next up comes first and the weather card stays compact', async () => {
     render(<Today />)
@@ -122,7 +122,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: 'Hold to call and text your family' })).toBeTruthy() // the real hold button, not a link
     expect(screen.getByRole('button', { name: /^Call 911/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'myweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'seeweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on: the warning band and a storm within 500 km are not lost', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

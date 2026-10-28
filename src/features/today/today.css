@@ -280,3 +280,11 @@
 .td-more-h { margin: 0 2px; font-family: var(--f-ui); font-size: 17px; font-weight: 700; }
 .td-lrow.press { border-radius: 12px; }
 .td-plan li.press { cursor: pointer; border-radius: 12px; }
+
+/* Session 14 (T2): Today v7 cleanup. One salt line under the quick log, the See the week link, Jack Jack beside the dose-saved line, rain/heat tip and Simple mode at night. */
+.bt .td-saltline { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 4px 8px; box-sizing: border-box; color: var(--muted); font-size: 15px; text-decoration: none; }
+.bt .td-seeweek { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; padding: 8px 16px; box-sizing: border-box; border: 0; border-radius: 20px; background: var(--card, var(--bg)); color: var(--ink); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.bt .td-seeweek .td-link { min-height: 0; }
+.td-saved { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; font-size: 15px; }
+.td-act-box .td-wx-jack { margin-left: auto; margin-top: -6px; margin-bottom: -6px; }
+.td-simple-night { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }

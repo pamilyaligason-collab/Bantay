@@ -6,7 +6,7 @@ import { IncomingSos } from '../features/family/IncomingSos'
 import { StormCard } from '../features/safety/StormCard'
 import AlertBand from '../features/today/AlertBand'
 import SelfCare from '../features/today/SelfCare'
-import MyWeek from '../features/today/MyWeek'
+import SeeWeek from '../features/today/SeeWeek'
 import WeatherCard from '../features/today/WeatherCard'
 import NearbyList from '../features/today/NearbyList'
 import NextUp from '../features/today/NextUp'
@@ -25,7 +25,7 @@ import { Skeleton, wireMotion } from '../features/look'
 import type { NextItem } from '../features/today/nextPick'
 import '../features/today/today.css'
 
-/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in), My week, self-care breathing, today's plan, then More (alerts setup, banners, notices, week line).
+/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in; one salt line under it, Meals live in Health > Food), self-care breathing, today's plan, the See the week link (My week opens under it), then More (alerts setup, banners, notices, week line).
  *  News and the video live elsewhere (Safety, Health).
  *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
@@ -76,9 +76,9 @@ export default function Today() {
       <QuickLog notify={notify} />
       {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
       <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>
-      <MyWeek />
       <SelfCare />
       <PlanToday />
+      <SeeWeek />
       {/* More: alerts setup, update and install banners, other notices, the week line. D-50: the update card never sits above a warning. */}
       <div className="td-more-g" role="group" aria-labelledby="t-more">
         <h2 id="t-more" className="td-more-h">More</h2>
