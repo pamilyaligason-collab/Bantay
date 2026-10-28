@@ -83,7 +83,8 @@ describe('weekStrip agrees with countDoses', () => {
   it('a 23:30 dose taken at 00:10 is whatever the counter says, and tonight is pending', () => {
     const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-27' })
     const w = same(m, [take(28, 0, 10, { slot: '23:30' })], d(28, 9))
-    expect(w.cells.at(-1)!.state).toBe('pending')
+    expect(w.cells.slice(-2).map((c) => [c.day, c.state])).toEqual([['2026-10-27', 'missed'], ['2026-10-28', 'pending']]) // the 00:10 take is on the 28th: the counter does not carry it back to the 27th (see the mirror below)
+    expect([w.taken, w.due]).toEqual([0, 1])
   })
   it('a take at 01:31 for a 23:30 slot is outside 2 hours and is not claimed by today or the day before', () => {
     const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-26' })

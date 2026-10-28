@@ -42,7 +42,8 @@ export interface Alarm { id: number; when: Date; at: number; rep: 0 | 1 | 2; day
 
 const unique = <T,>(xs: T[]) => [...new Set(xs)]
 
-async function remindPeople(selfId: string | null): Promise<string[]> {
+/** The people whose alarms ring on this phone: the signed-in person and the known people in kv `remind.for`. Read-only; MedDetail asks it too. */
+export async function remindPeople(selfId: string | null): Promise<string[]> {
   const v = (await db.kv.get(REMIND_FOR).catch(() => undefined))?.value
   const extra = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!x) : []
   const known = new Set(await hdb.people.toCollection().primaryKeys()) // an archived person is gone from here: no reminder for their medicines

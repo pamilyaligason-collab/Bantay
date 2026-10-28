@@ -1,5 +1,6 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { supabase } from '../auth/client'
 import { ldb, type MedTaken, type Medication } from '../log/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { useHealthData } from '../records/useHealthData'
@@ -11,7 +12,7 @@ import { clock12, setMedStatus } from './medActions'
 import { missNote, stockInfo, weekStrip, type CellState } from './medDetailLogic'
 import { givenName } from './medName'
 import { parseSchedule } from './meds'
-import { CARER_AFTER_MIN } from './reminders'
+import { CARER_AFTER_MIN, remindPeople } from './reminders'
 import { canMarkFor, useWritableIds } from './useCanMark'
 import './health.css'
 import './medicines.css'
@@ -46,6 +47,38 @@ function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
   return got && got.id === personId ? got.rows : undefined // rows read for another person never pass as this one's
 }
 
+/** true when this phone's dose alarms ring for the person: the same list the alarm planner uses (reminders.ts remindPeople). undefined while reading. */
+function useRingsHere(personId: string | undefined, ownId: string): boolean | undefined {
+  const [got, setGot] = useState<{ key: string; on: boolean } | undefined>(undefined)
+  const key = `${personId}|${ownId}`
+  useEffect(() => {
+    if (!personId) return
+    const sub = liveQuery(() => remindPeople(ownId || null)).subscribe({ next: (ids) => setGot({ key, on: ids.includes(personId) }), error: () => setGot({ key, on: false }) })
+    return () => sub.unsubscribe()
+  }, [key, personId, ownId])
+  return got && got.key === key ? got.on : undefined
+}
+
+/** true when the person has a writer carer other than their own login: dose-watch (supabase/functions/dose-watch/logic.ts recipients) alerts only those.
+ *  undefined while reading, offline, or when this user may not read the person's carer rows (carers_read RLS: the person, a writer carer, an admin): no promise is made then.
+ *  shortcut: no offline cache, so the row hides offline; cache it in kv like useCanMark.loadWritable if that matters. */
+function useHasWriterCarer(personId: string | undefined, selfUserId: string | undefined): boolean | undefined {
+  const [got, setGot] = useState<{ id: string; on: boolean } | undefined>(undefined)
+  useEffect(() => {
+    if (!personId || !supabase) return
+    let live = true
+    void (async () => {
+      try {
+        const r = await supabase!.from('carers').select('carer_id').eq('person_id', personId).eq('can_write', true)
+        if (!live || r.error) return
+        setGot({ id: personId, on: ((r.data ?? []) as { carer_id: string }[]).some((c) => c.carer_id !== selfUserId) })
+      } catch { /* unknown: say nothing */ }
+    })()
+    return () => { live = false }
+  }, [personId, selfUserId])
+  return got && got.id === personId ? got.on : undefined
+}
+
 const startedText = (iso?: string) => (iso ? new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : null)
 
 /** One medicine (#health/med/<id>, mockup v8 health-meddetail): dose and times, who is alarmed, stock, the last 7 days, and the only door to the edit sheet.
@@ -56,6 +89,8 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   const writable = useWritableIds(member?.userId)
   const takes = useWeekTakes(med?.personId)
   const alerts = useAlertRows()
+  const ringsHere = useRingsHere(med?.personId, ownId)
+  const writerCarer = useHasWriterCarer(med?.personId, med?.personId === ownId ? member?.userId : undefined)
   const [sheet, setSheet] = useState(false)
   const [note, setNote] = useState<MedNote | null>(null)
   const timer = useRef<number>(0)
@@ -89,6 +124,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   const canEdit = canMark || member?.role === 'admin'
   const person = people.find((p) => p.id === med.personId)
   const who = med.personId === ownId ? 'Your' : person ? `${givenName(person.name)}'s` : 'Their'
+  const whom = med.personId === ownId ? 'you' : person ? givenName(person.name) : 'them'
   const s = parseSchedule(med.schedule)
   const status = med.medStatus ?? 'active'
   const stock = stockInfo(med, now)
@@ -123,8 +159,10 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
         <>
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
           <div className="card md-rem" data-testid="med-reminders">
-            <div className="md-phone"><Icon name="phone" size={22} /><span className="grow"><b>{who} phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
-            <div className="md-phone"><Icon name="bell" size={22} /><span className="grow"><b>The family</b><span className="sub md-sub">Told in the app after about {CARER_AFTER_MIN} minutes with no answer</span></span></div>
+            {ringsHere !== undefined && (ringsHere
+              ? <div className="md-phone" data-testid="med-rings"><Icon name="phone" size={22} /><span className="grow"><b>This phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
+              : <div className="md-phone" data-testid="med-no-ring"><Icon name="phone" size={22} /><span className="grow"><b>No alarm on this phone for {whom}</b></span></div>)}
+            {writerCarer && <div className="md-phone" data-testid="med-carers-told"><Icon name="bell" size={22} /><span className="grow"><b>Carers who can mark doses</b><span className="sub md-sub">Told in the app if no dose is logged about {CARER_AFTER_MIN} minutes after the time</span></span></div>}
           </div>
           <p className="sub md-help">Dose alarms ring in the Android app. On an iPhone or the web version, only the in-app alert to the carer works.</p>
           {canEdit && <button type="button" className="md-pill md-block" onClick={pause}>Pause reminders</button>}
