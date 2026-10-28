@@ -51,7 +51,7 @@ async function start(page: Page, scheme: 'light' | 'dark', o: { code?: number; d
   // The mocked server never takes the app's own writes, so the sync pill and the bell dot come and go with timing; they are not what this lane shows.
   await page.addStyleTag({ content: '.sync-status, .sh-badge { display: none !important; }' })
   await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible() // the forecast answers after the first paint
-  await expect(page.getByRole('heading', { name: 'Meals today' })).toBeVisible() // appears once sign-in finished: wait so a rerun draws the same page (ML-25, ML-32)
+  await expect(page.getByTestId('salt-line')).toBeVisible() // appears once sign-in finished: wait so a rerun draws the same page (ML-25, ML-32)
 }
 // The tab bar is masked: its glass blurs whatever scrolls under it and flickers a few pixels between runs (ML-32). tabbar-overlap.spec.ts covers the bar itself.
 const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled', mask: [page.locator('nav.tabbar')] })
@@ -94,6 +94,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`today full: first-week My week empty state, More heading ${scheme}`, async ({ page }) => {
     await start(page, scheme)
     await shot(page, 'today-full', scheme)
+    await page.getByRole('button', { name: 'See the week' }).click() // S14: My week is behind the See the week link
     await expect(page.getByRole('heading', { name: 'My week' })).toBeVisible()
     await expect(page.getByText('Your week will show here')).toBeVisible()
     await page.getByRole('heading', { name: 'My week' }).scrollIntoViewIfNeeded()
@@ -106,6 +107,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`after the first week an empty My week draws nothing ${scheme}`, async ({ page }) => {
     await start(page, scheme, { since: '2026-10-01' })
+    await page.getByRole('button', { name: 'See the week' }).click()
     await expect(page.getByText('Your week will show here')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'My week' })).toHaveCount(0)
   })

@@ -15,7 +15,7 @@ vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () =
 vi.mock('../features/family/IncomingSos', () => ({ IncomingSos: () => null }))
 vi.mock('../features/safety/StormCard', () => ({ StormCard: () => null }))
 vi.mock('../features/today/WeatherCard', () => stub('weather'))
-vi.mock('../features/today/MyWeek', () => stub('myweek'))
+vi.mock('../features/today/SeeWeek', () => stub('seeweek'))
 vi.mock('../features/today/SelfCare', () => stub('selfcare'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/PlanToday', () => stub('plan'))

@@ -174,7 +174,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
 
 /** The one action line weather earns on Today and in Simple mode. It is the top line of the Weather screen's actionLines() (heat index first,
  *  then rain in the next 12 hours, then strong sun), so Today and Weather never disagree. null when none applies. */
-export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
+export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null) {
   if (!w || w.temp == null) return null
   return actionLine({
     heatIndexC: heatIndexC(w.temp, w.humidity),
@@ -182,5 +182,8 @@ export function weatherAction(w: Wx | null, now: Date = new Date(), warning: War
     nowLocal: wxLocal(w, now),
     uvMax: w.uvMax ?? null,
     warning
-  })?.text ?? null
+  })
+}
+export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
+  return weatherActionLine(w, now, warning)?.text ?? null
 }

@@ -17,6 +17,10 @@ import { markDue, useDueMeds } from './useDueMeds'
 import { useStorm } from './useStorm'
 import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
+import { JackArt } from '../look'
+
+/** Night for Jack's sleepy sticker: 9 PM to before 5 AM, phone time. */
+export const isNight = (d: Date) => d.getHours() >= 21 || d.getHours() < 5
 
 const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgreat: 'mid', unwell: 'bad' }
 
@@ -73,6 +77,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   if (view === 'taken') {
     return (
       <div className="td-simple">
+        <JackArt name="well-done" size={96} decorative />
         <h2 className="td-simple-h">Well done</h2>
         <p className="td-simple-p">{doneNames ? `${doneNames} marked as taken.` : 'Marked as taken.'}</p>
         <p className="td-sub td-simple-sub">Your family will see it in Bantay.</p>
@@ -84,6 +89,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     <div className="td-simple">
       <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={18} />Exit</button>
       <AlertBand />
+      {isNight(tick) && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />It is late. Rest well.</p>}
       {calm ? <WeatherCard expanded review={review} /> : (
         <>
           <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>

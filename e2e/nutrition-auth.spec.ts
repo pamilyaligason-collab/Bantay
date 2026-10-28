@@ -65,6 +65,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean', async ({ page }) => {
+      test.setTimeout(120_000) // long flow with five axe runs; 30 s is not enough on a busy PC
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
       await expect(row.getByRole('button')).toHaveCount(6)
@@ -75,10 +76,11 @@ for (const scheme of ['light', 'dark'] as const) {
       }
       // salt is part of the meals now: there is no separate "Salt today" card
       await expect(page.getByRole('heading', { name: 'Salt today' })).toHaveCount(0)
-      const salt = page.locator('section[aria-labelledby="t-meals"]')
-      await expect(salt.getByRole('heading', { name: 'Meals today' })).toBeVisible()
-      await expect(salt.getByText('Nothing logged yet today.')).toBeVisible()
-      expect((await salt.getByRole('button', { name: 'Log a meal' }).boundingBox())!.height).toBeGreaterThanOrEqual(56)
+      // S14: the Meals card moved to Health > Food; Today keeps one salt line
+      await expect(page.getByRole('heading', { name: 'Meals today' })).toHaveCount(0)
+      const salt = page.getByTestId('salt-line')
+      await expect(salt).toHaveText(/Salt: nothing logged yet today/)
+      expect((await salt.boundingBox())!.height).toBeGreaterThanOrEqual(48)
       await shot(page, 'today-meals-empty', scheme)
       expect(await serious(page)).toEqual([])
 
@@ -114,43 +116,49 @@ for (const scheme of ['light', 'dark'] as const) {
       await save.click()
       await expect(page.getByRole('status').filter({ hasText: 'Saved 2 foods for lunch' })).toBeVisible()
 
-      // the card updates: chicken adobo (1204 mg) + 1.5 cups rice (3 mg) = 1207 mg, 60% of 2000 mg, so Under
-      await expect(salt.getByTestId('salt-mg')).toContainText('1,207 mg')
-      await expect(salt.getByTestId('salt-band')).toHaveText('Under')
-      await expect(salt.getByTestId('salt-g')).toHaveText('3 g')
-      await expect(salt.getByTestId('salt-top').getByRole('listitem').first()).toContainText('Adobong manok')
-      await expect(salt.getByTestId('day-keys')).toContainText('Protein')
-      await salt.scrollIntoViewIfNeeded()
-      await shot(page, 'today-meals-filled', scheme)
-      await expect(salt.getByTestId('kcal')).toContainText('For information only')
-      await expect(salt.getByRole('progressbar', { name: 'Sodium today' })).toHaveAttribute('aria-valuenow', '1207')
+      // the line updates: chicken adobo (1204 mg) + 1.5 cups rice (3 mg) = 1207 mg of the 2000 mg limit
+      await expect(salt).toContainText('Salt 1,207 of 2,000 mg today')
+      await shot(page, 'today-salt-line', scheme)
       expect(await serious(page)).toEqual([])
 
       // salty extras go on the plate with the meal: toyo (879 mg) + patis (1413 mg) goes over the limit
-      await salt.getByRole('button', { name: 'Log a meal' }).click()
+      await row.getByRole('button', { name: 'More things to log' }).click()
+      await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Food' }).click()
       const again = page.getByRole('dialog', { name: 'Meal' })
       for (const extra of ['Toyo', 'Patis']) await again.getByRole('group', { name: 'Salty extras on this meal' }).getByRole('button', { name: new RegExp(`^Add ${extra} to`) }).click()
       await expect(again.getByTestId('plate-salt')).toHaveText('2,292 mg')
       await expect(again.locator('.nu-band')).toHaveText('Over') // 1207 + 2292 = 3499 of 2000
       await again.getByRole('button', { name: 'Save meal' }).click()
       await expect(page.getByRole('dialog', { name: 'Meal' })).toHaveCount(0)
-      await expect(salt.getByTestId('salt-band')).toHaveText('Over')
-      await expect(salt.getByTestId('salt-mg')).toContainText('3,499 mg')
+      await expect(salt).toContainText('Salt 3,499 of 2,000 mg today')
       expect(await serious(page)).toEqual([])
 
-      // water: 250 ml a tap in the card, and the Water pill opens the same counter
-      await salt.getByRole('button', { name: /Add a glass of water/ }).click()
-      await expect(salt.getByTestId('water-ml')).toHaveText('250 ml')
+      // water: the Water pill opens the counter (250 ml a tap, Undo)
       await row.getByRole('button', { name: 'Log water you drank' }).click()
       const wsheet = page.getByRole('dialog', { name: 'Water' })
+      await wsheet.getByRole('button', { name: /Add a glass of water/ }).click()
       await wsheet.getByRole('button', { name: /Add a glass of water/ }).click()
       await expect(wsheet.getByTestId('water-ml')).toHaveText('500 ml')
       expect((await wsheet.getByRole('button', { name: /Add a glass/ }).boundingBox())!.height).toBeGreaterThanOrEqual(56)
       await wsheet.getByRole('button', { name: 'Undo' }).click()
       await expect(wsheet.getByTestId('water-ml')).toHaveText('250 ml')
       expect(await serious(page)).toEqual([])
-      await page.keyboard.press('Escape')
+      await wsheet.getByRole('button', { name: 'Close' }).click()
+      await expect(page.getByRole('dialog', { name: 'Water' })).toHaveCount(0)
       expect(await noSideways(page)).toBe(true)
+
+      // the Meals card now lives in Health > Food: the salt line opens it
+      await salt.click()
+      await expect(page).toHaveURL(/#health\/nutrition$/)
+      const card = page.locator('section[aria-labelledby="nu-salt"]')
+      await expect(card.getByTestId('salt-mg')).toContainText('3,499 mg')
+      await expect(card.getByTestId('salt-band')).toHaveText('Over')
+      await expect(card.getByTestId('day-keys')).toContainText('Protein')
+      await expect(card.getByTestId('kcal')).toContainText('For information only')
+      await expect(card.getByTestId('water-ml')).toHaveText('250 ml')
+      expect((await card.getByRole('button', { name: 'Log a meal' }).boundingBox())!.height).toBeGreaterThanOrEqual(56)
+      await shot(page, 'health-food-meals', scheme)
+      expect(await serious(page)).toEqual([])
     })
 
     test('Health > Food and nutrients: the card, the limit (2000 or 1500), the week next to blood pressure; axe clean', async ({ page }) => {

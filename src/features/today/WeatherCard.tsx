@@ -5,11 +5,12 @@ import { placeTimezone } from '../location/place'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { Icon } from '../shell/Icon'
+import { JackArt, type JackName } from '../look'
 import { clockIn, kindOf } from '../weather/forecast'
 import { condOf, feelsLike, isHot, todOf } from '../weather/scene'
 import WeatherScene from '../weather/WeatherScene'
 import { weatherWarning } from '../weather/warning'
-import { rainOutlook, rainWords, skyOf, weatherAction, wxLocal, type Wx } from './heroCards'
+import { rainOutlook, rainWords, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
 import { placeNameOf } from './placeName'
 import { useWeather } from './weather'
@@ -60,14 +61,17 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   if (!wx || wx.temp == null || !place) return null
   const now = new Date()
   const sky = skyOf(wx)
-  const action = weatherAction(wx, now, warn)
+  const line = weatherActionLine(wx, now, warn)
+  const action = line?.text ?? null
+  // Jack only on an everyday rain or heat tip. Never on a PAGASA warning, an air alert or the worst heat bands (D-91).
+  const jack: JackName | null = line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 90 ? 'drink-water' : null
   const href = action ? WEATHER_ACTION_HREF : WEATHER_HREF
   const cond = `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
   // The same single "Feels like" and danger label as the Weather screen (scene.ts feelsLike): heat index when it applies, else the forecast's apparent temperature.
   const fl = feelsLike(wx.temp, wx.humidity, wx.feels)
   const feels = fl.value != null && Math.round(fl.value) > Math.round(wx.temp) ? [`Feels like ${deg(fl.value)}`, fl.label].filter(Boolean).join(' · ') : null
   const scene = <WeatherScene tod={todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={condOf(wx.code)} hot={isHot(wx.temp, wx.humidity)} />
-  const box = action && <span className="td-act-box"><Icon name="therm" size={22} /><b>{action}</b></span>
+  const box = action && <span className="td-act-box"><Icon name="therm" size={22} /><b>{action}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>
 
   if (expanded) {
     const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
