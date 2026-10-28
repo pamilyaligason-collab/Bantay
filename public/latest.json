@@ -1,9 +1,9 @@
 {
-  "versionCode": 2002000,
-  "versionName": "2.2.0",
-  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.2.0/bantay-2.2.0.apk",
-  "sha256": "bfb9187c67e5346547fafb6d5994e269b14e89cb6ea8902640e2b61ee1a6306b",
-  "size": 6691570,
+  "versionCode": 2005000,
+  "versionName": "2.5.0",
+  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.5.0/bantay-2.5.0.apk",
+  "sha256": "cc043c6610f5c589f767ba940027316cd2f461441c8dabc14ffd89d29f16f0ad",
+  "size": 7908401,
   "minShell": 2000000,
-  "notes": "Scan a paper with your camera, and weather now follows where you are."
+  "notes": "Lab results with dates and sources, a medicine detail page, In 10 min on a late dose, family messages, phone alerts, and Jack Jack stickers."
 }
