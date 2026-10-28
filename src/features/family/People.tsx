@@ -15,7 +15,8 @@ import Memories from './Memories'
 import { useFlagLines } from './reportData'
 import { CarerCards } from './CarerCards'
 import FamilyPhones from './FamilyPhones'
-import { IncomingSos, useSosActive } from './IncomingSos'
+import { IncomingSos } from './IncomingSos'
+import { useSosActive } from './sosActive'
 import { AcceptCard } from '../sharing/AcceptCard'
 
 
