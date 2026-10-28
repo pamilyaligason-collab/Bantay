@@ -84,7 +84,7 @@ export default function People() {
         {doneAt ? (
           <>
             <span className="tile" aria-hidden="true"><Icon name="check" size={24} /></span>
-            <div className="grow" role="status">
+            <div className="grow">
               <b className="fm-okdone">You're OK · {doneAt}</b>
               <span className="sub"> Your family can see it.</span>
             </div>

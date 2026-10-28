@@ -98,7 +98,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
 
   const body = (
     <>
-      {inline ? <div><h2 className="h2">Family messages</h2><p className="sub msg-lead">{people.length} {people.length === 1 ? 'person' : 'people'}, one shared chat</p></div> : <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>}
+      {inline ? <div><h2 className="h2">Family messages</h2>{people.length > 0 && <p className="sub msg-lead">{people.length} {people.length === 1 ? 'person' : 'people'}, one shared chat</p>}</div> : <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>}
       <div className="msg-actions">
         {tel && !who.isMe && <a className="pill" href={`tel:${tel}`} aria-label={`Call ${first(who.name)}`}><Icon name="phone" size={20} />Call</a>}
         <a className="pill" href={mess.href} target="_blank" rel="noreferrer"><Icon name="out" size={20} />{mess.label}</a>
@@ -109,7 +109,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
       {view.kind === 'loading' && <p className="sub" role="status">Loading</p>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <p role="status" data-testid="msg-state"><b>{WORDS[view.kind]}</b></p>}
       {(view.kind === 'ready' || queued.length > 0) && (
-        <ul className="msg-list" aria-label="Family messages" data-testid="msg-list">
+        <ul className="msg-list" aria-label="Messages" data-testid="msg-list">
           {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <li className="sub msg-empty">No messages yet. Say hello.</li>}
           {[...(view.kind === 'ready' ? view.msgs : []), ...queued].map((m) => (
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>

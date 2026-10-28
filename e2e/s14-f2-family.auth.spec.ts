@@ -100,13 +100,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, 'im-ok', scheme)
     })
 
-    test('200% text zoom: no sideways scroll on Home, Messages and Plan', async ({ page }) => {
-      await page.goto('/#family')
-      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+    // House convention for 200% text: a 195 px wide viewport (e2e/health-labs.spec.ts), because the app's CSS uses px font sizes.
+    test('200% text zoom (195 px wide): no sideways scroll on Home, Messages and Plan', async ({ page }) => {
+      await page.setViewportSize({ width: 195, height: 844 })
       for (const h of ['#family', '#family/messages', '#family/plan']) {
         await page.goto('/' + h)
         await expect(page.getByRole('group', { name: 'Family view' })).toBeVisible()
-        await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
         await settle(page)
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
         const tiny = await page.locator('.seg button').evaluateAll((bs) => bs.filter((b) => b.getBoundingClientRect().height < 48).length)
@@ -114,12 +113,12 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('200% text zoom: the done check-in card with Jack does not overflow and its tile stays 44 px', async ({ page }) => {
+    test('200% text zoom (195 px wide): the done check-in card with Jack does not overflow, its tile stays 44 px and Jack does not cover the text', async ({ page }) => {
+      await page.setViewportSize({ width: 195, height: 844 })
       await page.goto('/#family')
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
       const card = page.locator('.fm-checkin')
       await expect(card).toContainText(/^You're OK · /)
-      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
       await settle(page)
       expect(await card.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
@@ -127,8 +126,11 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(tile!.width).toBeGreaterThanOrEqual(44)
       expect(tile!.height).toBeGreaterThanOrEqual(44)
       const jack = await card.locator('img.jack').boundingBox()
+      const text = await card.locator('.grow').boundingBox()
       const box = await card.boundingBox()
       expect(jack!.x + jack!.width).toBeLessThanOrEqual(box!.x + box!.width + 1)
+      const apart = jack!.x >= text!.x + text!.width - 1 || jack!.y >= text!.y + text!.height - 1 || jack!.y + jack!.height <= text!.y + 1 // beside it or wrapped below it, never on top
+      expect(apart).toBe(true)
     })
   })
 }

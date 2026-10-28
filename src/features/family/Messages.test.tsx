@@ -57,6 +57,13 @@ describe('Messages', () => {
     await screen.findByTestId('msg-list')
     expect(screen.getByRole('heading', { name: 'Family messages' })).toBeTruthy()
     expect(screen.getByText('3 people, one shared chat')).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Messages' })).toBeTruthy() // the list is not named like the h2 or the region
+  })
+  it('the inline header shows no count before the roster has people', async () => {
+    const me = { ...ben, isMe: true }
+    render(<Messages inline who={me} people={[]} nudge={null} onClose={() => undefined} onOpenPage={() => undefined} />)
+    await screen.findByTestId('msg-list')
+    expect(screen.queryByText(/people|person/)).toBeNull()
   })
   it('sends a text and clears the box; empty text cannot be sent', async () => {
     show()
