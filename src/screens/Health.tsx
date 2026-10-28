@@ -20,6 +20,8 @@ import Videos from '../features/health/library/Videos'
 import MoveScreen from '../features/exercise/MoveScreen'
 import NutritionScreen from '../features/nutrition/NutritionScreen'
 import Refill from '../features/health/Refill'
+import LabsScreen from '../features/health/LabsScreen'
+import MedDetail from '../features/health/MedDetail'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
 import { averageNodes, isVital } from '../features/health/vitals'
@@ -38,6 +40,7 @@ import { NudgeEntry } from '../features/nudge/NudgeEntry'
 const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
 const METRIC = /^#health\/metric\/([\w-]+)$/
+const MED = /^#health\/med\/([\w-]+)$/ // session 13: medicine detail (lane M); #health/labs is lane L's labs screen
 
 export default function Health() {
   const [hash, setHash] = useState(location.hash)
@@ -47,6 +50,9 @@ export default function Health() {
     return () => window.removeEventListener('hashchange', on)
   }, [])
   const code = METRIC.exec(hash)?.[1]
+  const medId = MED.exec(hash)?.[1]
+  if (hash === '#health/labs') return <LabsScreen />
+  if (medId) return <MedDetail medicationId={medId} />
   if (hash === '#health/body') return <ExploreScreen />
   if (hash === '#health/meds') return <MedsPage />
   if (hash === '#health/papers') return <Papers />
@@ -118,7 +124,7 @@ function Overview() {
       {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && !blank && noVitals && (
         <div className="hv-empty-wrap" data-testid="no-vitals">
-          <EmptyState heading="h2" icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : undefined} />
+          <EmptyState heading="h2" icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : { label: cta.label, onClick: () => { location.hash = cta.href } }} />
         </div>
       )}
       {ready && !(noVitals && !blank) && (
@@ -131,7 +137,7 @@ function Overview() {
       {ready && personId && <MedicinesSummary personId={personId} />}
       {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
       {ready && !blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
-      {ready && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
+      {ready && personId && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
         return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null

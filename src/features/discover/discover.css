@@ -19,7 +19,7 @@
 .dc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .dc-go { text-decoration: none; display: inline-flex; align-items: center; min-height: var(--tap, 48px); padding: 0 18px; }
 .dc-src { font-size: 13px; color: var(--muted); }
-a.dc-src { text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; }
+a.dc-src { text-decoration: underline; display: inline-flex; align-items: center; min-height: var(--tap, 48px); }
 
 /* Shelves (Learn, Watch) and lists (Listen). */
 .dc-list { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
