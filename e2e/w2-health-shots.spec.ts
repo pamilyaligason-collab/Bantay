@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // W2-HEALTH: the nudge card in its empty, partial and all-done states, light and dark, 390x844 and 360 wide. Synthetic data only.
-const SHOTS = 'docs/session-9/shots/w2-health'
+const SHOTS = shotPath('docs/session-9/shots/w2-health')
 
 const seed = (page: Page, mode: 'empty' | 'some' | 'done') =>
   page.evaluate(async ([nowMs, mode]) => {

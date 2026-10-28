@@ -148,7 +148,7 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
       <div className="in-actions" role="group" aria-label="What you can do">
         {call}
         {shown.length === 1 && (doneIds.includes(first.row.id) ? <span className="sh-sub" role="status">Marked as taken</span> : (first.open?.length ?? 0) > 0 && ask !== first.row.id && <button type="button" className="btn in-act" onClick={() => setAsk(first.row.id)}>Mark taken for {name}</button>)}
-        <a className="btn in-act" href="#family">Message the family</a>
+        <a className="btn in-act" href="#family/messages">Message the family</a>
         {shown.length === 1 && ask === first.row.id && confirm(first)}
       </div>
     </div>

@@ -24,6 +24,9 @@ export function pickSos(rows: AlertRow[]): AlertRow | null {
   return rows.find((r) => r.kind === 'sos' && r.template === 'family_sos' && r.seenAt == null && !cancelled(r)) ?? null
 }
 
+/** true while a family SOS banner is up: Jack Jack stays off that screen (D-91). */
+export const useSosActive = () => pickSos(useAlertRows()) != null
+
 const clock = (iso: string) => {
   const t = Date.parse(iso)
   return Number.isNaN(t) ? '' : new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(t)

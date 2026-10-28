@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canonicalHash, hasOwnHeader, parseHash, familyEntry } from './routes'
+import { canonicalHash, hasOwnHeader, parseHash } from './routes'
 
 describe('parseHash', () => {
   it('defaults to today', () => expect(parseHash('')).toEqual({ tab: 'today', view: null }))
@@ -28,10 +28,5 @@ describe('parseHash', () => {
 })
 describe('hasOwnHeader', () => {
   it('is true for sub-pages that draw Back + title', () => expect(['#weather', '#weather?from=action', '#health/metric/bp', '#health/refill', '#safety/map', '#gobag', '#medid', '#docs', '#family/people/p1'].every(hasOwnHeader)).toBe(true))
-  it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/people', '#safety', '#me'].some(hasOwnHeader)).toBe(false))
-})
-describe('familyEntry (D-44)', () => {
-  it('opens People during an alert or SOS', () => expect(familyEntry({ alertActive: true, last: 'plan' })).toBe('people'))
-  it('else reopens the last segment', () => expect(familyEntry({ alertActive: false, last: 'plan' })).toBe('plan'))
-  it('first time opens People', () => expect(familyEntry({ alertActive: false, last: null })).toBe('people'))
+  it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/people', '#family/messages', '#safety', '#me'].some(hasOwnHeader)).toBe(false))
 })

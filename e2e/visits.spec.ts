@@ -41,10 +41,10 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   await expect(page.getByTestId('insight')).toBeVisible() // the health database exists once the screen has read it
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Doctor visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
+  await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
   await seed(page, 2)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Doctor visits/ })).toContainText('Next visit:')
+  await expect(page.getByRole('link', { name: /^Visits/ })).toContainText('Next visit:')
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#health/visits')

@@ -1,7 +1,7 @@
 /* Family bubbles and the message thread (session 9). Tokens only, so dark follows. */
 .fm-bubbles { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 8px; }
 .bt .fm-bubble { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; min-height: 120px; padding: 6px 4px; border: 0; background: none; color: var(--ink); font-size: 16px; text-align: center; }
-.fm-bubble .fm-av { box-shadow: 0 0 0 3px var(--bub, var(--line)); }
+.fm-bubble .fm-av { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--bub, var(--line)); } /* status ring: --ok today, --amber needs a look, --line none; the corner icon says it in a shape too */
 .fm-bubble[data-k="ok"] { --bub: var(--ok); }
 .fm-bubble[data-k="look"] { --bub: var(--amber); }
 .fm-bubble b { font-weight: 700; overflow-wrap: anywhere; line-height: 1.2; }
@@ -42,3 +42,9 @@
 .msg-send { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .msg-fine { margin: 0; font-size: 14px; }
 .msg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* S14 F2: Family > Messages is the thread drawn in the page; quick replies sit above the box */
+.msg-inline { display: grid; gap: 12px; }
+.msg-inline .msg-list { max-height: 52dvh; }
+.msg-qr { display: flex; gap: 8px; flex-wrap: wrap; }
+.msg-qr .chip { min-height: var(--tap); padding: 0 18px; font-size: 16px; cursor: pointer; }
+.msg-qr .chip:disabled { opacity: .5; }

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Runs in the "auth" project (build WITH test Supabase env). Signed in as a made-up member; PostgREST is mocked; all data is invented.
 // Move (senior exercise): Today pill -> sheet -> gate -> Done logs; Health Move card. Light and dark, axe 0.
@@ -84,7 +85,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Move v2: chips and sitting filter, a video move shows its preview, minutes are logged; shots; axe clean', async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 })
-      const shot = (name: string) => page.screenshot({ path: `docs/session-9/shots/w1-move/${name}-${scheme}.png`, fullPage: true })
+      const shot = (name: string) => page.screenshot({ path: shotPath(`docs/session-9/shots/w1-move/${name}-${scheme}.png`), fullPage: true })
       await page.goto('/#health/move')
       await page.getByRole('button', { name: 'I understand' }).click()
       await expect(page.getByRole('heading', { name: "Today's plan" })).toBeVisible()

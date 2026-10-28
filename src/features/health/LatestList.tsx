@@ -5,6 +5,7 @@ import { sparkPath, sparkCount, barLayout, beforeLine, effectiveRange, metricLab
 import { byVitalOrder, isVital, NORMAL, positionOf, weekAverages } from './vitals'
 import { Icon } from '../shell/Icon'
 import { kindOf } from './verdict'
+import { EmptyState } from '../look/EmptyState'
 
 const open = (code: string) => { location.hash = `#health/metric/${code}` }
 export type VitalsMode = 'latest' | 'average' | 'normal'
@@ -25,7 +26,7 @@ function NormalRows() {
       {NORMAL.map((n) => {
         const l = barLayout(0, null, { low: n.low, high: n.high })
         return (
-          <div className="row hv-row" key={n.code} data-test={n.code} style={{ alignItems: 'flex-start' }} onClick={() => open(n.code)}>
+          <div className="row hv-row press" key={n.code} data-test={n.code} style={{ alignItems: 'flex-start' }} onClick={() => open(n.code)}>
             <span className="grow">
               <a className="hv-open" href={`#health/metric/${n.code}`} onClick={(e) => e.stopPropagation()}>{n.label}<Icon name="chev" size={20} /></a>
               {l.band && <span className="hv-bar" aria-hidden="true"><i className="hv-band" style={{ left: `${l.band.from}%`, width: `${l.band.to - l.band.from}%` }} /></span>}
@@ -40,7 +41,7 @@ function NormalRows() {
 }
 
 /** Vitals (blood pressure, sugar, pulse, weight) with a Latest | Average | Normal toggle, Each row opens the metric detail; the Previous switch (Latest only) adds a hollow marker and the "Before" line. */
-export function LatestList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
+export function LatestList({ readings, thresholds, ready, onAdd }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; onAdd?: () => void }) {
   const [showPrev, setShowPrev] = useState(false)
   const [mode, setMode] = useState<VitalsMode>('latest')
   const shown = mode
@@ -65,8 +66,8 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
       </div>
       <p className="sub hv-modeline" data-testid="mode-line">{MODE_LINE[mode]}</p>
       {shown === 'normal' ? <NormalRows /> : (
-        <div className="grp">
-          {rows.length === 0 && <div className="row"><span className="grow">No readings in the last 7 days<span className="sub">Log one to see the average.</span></span></div>}
+        <div className={rows.length ? 'grp' : undefined}>
+          {rows.length === 0 && <EmptyState icon="gauge" title="No readings in the last 7 days" body="Log one to see the average." action={onAdd ? { label: 'Add a reading', onClick: onAdd } : undefined} />}
           {rows.map((r) => {
             const fam = thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
             const pos = positionOf(r, fam)
@@ -80,7 +81,7 @@ export function LatestList({ readings, thresholds, ready }: { readings: Reading[
             const range = effectiveRange(r, fam).range ?? (r.test === 'heart_rate' ? { low: 60, high: 100 } : null)
             const layout = barLayout(r.value, shown === 'latest' && showPrev && prev ? prev.value : null, range)
             return (
-              <div className="row hv-row" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
+              <div className="row hv-row press" key={r.test} data-test={r.test} style={{ alignItems: 'flex-start' }} onClick={() => open(r.test)}>
                 <span className="grow">
                   <a className="hv-open" href={`#health/metric/${r.test}`} onClick={(e) => e.stopPropagation()}>{metricLabel(r.test)}<Icon name="chev" size={20} /></a>
                   <span className={`hv-state ${cls}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>

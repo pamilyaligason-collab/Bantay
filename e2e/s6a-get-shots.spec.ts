@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { shotPath } from './shotPath'
 
 // S6a shots of the static Get Bantay page (public/get): start-get (Android) and start-iphone, 390x844, light and dark.
 // start-invite is a Messenger chat outside the app and start-dependent is the Family person page (S4/S7), so neither has a shot here.
-const SHOTS = 'docs/session-10/shots/S6a'
+const SHOTS = shotPath('docs/session-10/shots/S6a')
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`get page: start-get and start-iphone, ${scheme}`, async ({ page }) => {

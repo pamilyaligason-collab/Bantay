@@ -15,7 +15,7 @@ const first = (n: string) => n.trim().split(/\s+/)[0] || n
 
 /** The family thread, opened from a member's bubble. One shared thread for everyone on Bantay (migration 0027); the buttons on top are about the person you tapped:
  *  Call, and Messenger for video (video is not built in). Text, voice note (max 60 s), photo or file (max 10 MB). New messages arrive by checking every 8 seconds while open. */
-export default function Messages({ who, people, onClose, onOpenPage, nudge }: { who: FamilyPerson; people: FamilyPerson[]; onClose: () => void; onOpenPage: () => void; nudge: { text: string; href: string } | null }) {
+export default function Messages({ who, people, onClose, onOpenPage, nudge, inline = false }: { who: FamilyPerson; people: FamilyPerson[]; onClose: () => void; onOpenPage: () => void; nudge: { text: string; href: string } | null; inline?: boolean }) {
   const [view, setView] = useState<View>({ kind: 'loading' })
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -96,9 +96,9 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
   const tel = dial(who.phone)
   const mess = messengerHref(null)
 
-  return (
-    <Sheet title={who.isMe ? 'Family messages' : `Message ${first(who.name)}`} onClose={onClose}>
-      <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>
+  const body = (
+    <>
+      {inline ? <div><h2 className="h2">Family messages</h2>{people.length > 0 && <p className="sub msg-lead">{people.length} {people.length === 1 ? 'person' : 'people'}, one shared chat</p>}</div> : <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>}
       <div className="msg-actions">
         {tel && !who.isMe && <a className="pill" href={`tel:${tel}`} aria-label={`Call ${first(who.name)}`}><Icon name="phone" size={20} />Call</a>}
         <a className="pill" href={mess.href} target="_blank" rel="noreferrer"><Icon name="out" size={20} />{mess.label}</a>
@@ -109,7 +109,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
       {view.kind === 'loading' && <p className="sub" role="status">Loading</p>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <p role="status" data-testid="msg-state"><b>{WORDS[view.kind]}</b></p>}
       {(view.kind === 'ready' || queued.length > 0) && (
-        <ul className="msg-list" aria-label="Family messages" data-testid="msg-list">
+        <ul className="msg-list" aria-label="Messages" data-testid="msg-list">
           {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <li className="sub msg-empty">No messages yet. Say hello.</li>}
           {[...(view.kind === 'ready' ? view.msgs : []), ...queued].map((m) => (
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>
@@ -151,6 +151,9 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
       )}
       {note && <p className="fm-warn" role="alert">{note}</p>}
 
+      <div className="msg-qr" role="group" aria-label="Quick replies">
+        {['All good', 'On my way'].map((q) => <button key={q} type="button" className="chip" disabled={busy} onClick={() => void done(sendText(q))}>{q}</button>)}
+      </div>
       <div className="msg-compose">
         <label htmlFor="msg-text" className="msg-sr">Message</label>
         <textarea id="msg-text" rows={2} maxLength={BODY_MAX} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message" />
@@ -162,6 +165,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge }: { 
         <input ref={file} type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden data-testid="msg-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
         <p className="sub msg-fine">Texts wait on your phone until there is signal. Voice notes (up to 1 minute) and files (up to 10 MB) need signal. For video, use Messenger.</p>
       </div>
-    </Sheet>
+    </>
   )
+  return inline ? <section className="msg-inline" aria-label="Family messages">{body}</section> : <Sheet title={who.isMe ? 'Family messages' : `Message ${first(who.name)}`} onClose={onClose}>{body}</Sheet>
 }

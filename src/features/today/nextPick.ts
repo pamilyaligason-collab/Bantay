@@ -43,6 +43,12 @@ export function nextDoses(people: DoseTarget[], meds: Medication[], takes: Take[
   }).sort((a, b) => a.rel - b.rel || Number(b.isMe) - Number(a.isMe))
 }
 
+/** The snooze key of a dose card (also its NextItem key). */
+export const doseKey = (d: DuePerson) => `dose:${d.personId}:${d.at}`
+
+/** The local day (YYYY-MM-DD) the dose belongs to: `rel` is minutes from today's midnight, so a 23:30 dose seen at 00:10 is yesterday's. The native snooze keys its alarm on this day. */
+export const doseDay = (d: DuePerson, now: Date) => dayOf(addDays(now, Math.floor(d.rel / DAY_MIN)))
+
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
 
 /** "40 min" / "1 h 5 min" from a minute count. */
@@ -66,7 +72,7 @@ export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { 
     const title = d.isMe ? joinNames(names) : `${d.name}: ${joinNames(names)}`
     const late = d.status === 'missed'
     const note = [late ? lateNote(d) : '', others.length ? `Also waiting: ${joinNames(others)}.` : ''].filter(Boolean).join(' ')
-    return { key: `dose:${d.personId}:${d.at}`, kind: 'dose', kicker: late ? 'Late · not taken yet' : 'Next up · medicine', title, body: whenLine(d, now), note: note || undefined, who: d, late }
+    return { key: doseKey(d), kind: 'dose', kicker: late ? 'Late · not taken yet' : 'Next up · medicine', title, body: whenLine(d, now), note: note || undefined, who: d, late }
   }
   const p = i.plan
   if (p) return { key: p.key, kind: 'plan', kicker: p.kicker, title: p.title, body: p.body, href: '#family/plan', linkLabel: 'Open plan' }

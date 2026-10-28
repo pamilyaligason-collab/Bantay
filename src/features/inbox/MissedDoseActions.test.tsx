@@ -27,7 +27,7 @@ describe('MissedDoseActions (lock-missed)', () => {
   it('Call opens the phone app with her number; Message the family goes to the Family tab', () => {
     render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
     expect(screen.getByRole('link', { name: 'Call Mama Rosa' }).getAttribute('href')).toBe('tel:+639171234567')
-    expect(screen.getByRole('link', { name: 'Message the family' }).getAttribute('href')).toBe('#family')
+    expect(screen.getByRole('link', { name: 'Message the family' }).getAttribute('href')).toBe('#family/messages')
   })
   it('no phone number: no tel link, a link to her page instead (never a blank number)', () => {
     h.phone = null

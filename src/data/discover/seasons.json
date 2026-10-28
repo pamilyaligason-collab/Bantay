@@ -1,0 +1,26 @@
+{
+  "_note": "Season windows by local month-day (from..to, inclusive; from > to wraps the new year). First match wins, so the order is the priority: Undas, New Year, Christmas, heat, rainy season. Every line comes from the named source (checked on the date). No doses, no diagnosis.",
+  "checked": "2026-10-28",
+  "seasons": [
+    { "id": "undas", "title": "Undas", "from": "10-25", "to": "11-03",
+      "lines": ["Drink water often, and take breaks out of the sun.", "Agree on a meeting spot before you go in with a crowd."],
+      "link": { "label": "Open Safety", "href": "#safety" },
+      "source": { "name": "MedlinePlus: Heat illness", "url": "https://medlineplus.gov/heatillness.html" } },
+    { "id": "newyear", "title": "New Year fireworks", "from": "12-26", "to": "01-02",
+      "lines": ["Burned by a firecracker? Cool it under cool running water, about 20 minutes.", "Do not put ice, oil, butter or toothpaste on a burn.", "Get help right away for a deep burn, or a burn on the face, hands or feet."],
+      "link": { "label": "Open Safety", "href": "#safety" },
+      "source": { "name": "WHO: Burns", "url": "https://www.who.int/news-room/fact-sheets/detail/burns" } },
+    { "id": "christmas", "title": "Christmas food", "from": "12-01", "to": "01-06",
+      "lines": ["Salt adds up fast at the party table.", "Adults are advised to keep to less than 5 grams of salt a day."],
+      "link": { "label": "See low salt recipes", "href": "#discover/learn/recipes" },
+      "source": { "name": "WHO: Healthy diet", "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet" } },
+    { "id": "heat", "title": "Hot season", "from": "03-15", "to": "05-31",
+      "lines": ["Drink water often.", "Limit your time in the heat.", "Some medicines make heat harder on the body. Ask your pharmacist."],
+      "link": { "label": "Open Safety", "href": "#safety" },
+      "source": { "name": "MedlinePlus: Heat illness", "url": "https://medlineplus.gov/heatillness.html" } },
+    { "id": "typhoon", "title": "Rainy and typhoon season", "from": "06-01", "to": "11-30",
+      "lines": ["Have a plan for floods and storms.", "Check the storm alerts in Safety."],
+      "link": { "label": "Open Safety", "href": "#safety" },
+      "source": { "name": "MedlinePlus: Floods", "url": "https://medlineplus.gov/floods.html" } }
+  ]
+}

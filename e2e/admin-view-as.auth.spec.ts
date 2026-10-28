@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Runs in the "auth" project (build WITH Supabase env). Everything on the wire is mocked; synthetic data only.
 const API = 'https://bantay-test.supabase.test'
@@ -84,7 +85,7 @@ for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) 
       await expect(region.getByText('Test Lab Paper')).toBeVisible()
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
       expect(await violations(page)).toEqual([])
-      await page.screenshot({ path: `docs/session-9/shots/adm-view/view-as-${size.width}-${scheme}.png` })
+      await page.screenshot({ path: shotPath(`docs/session-9/shots/adm-view/view-as-${size.width}-${scheme}.png`) })
 
       // the only write is the audit RPC, with the person id and nothing else
       const mine = () => writes.filter((w) => !/rpc\/(ensure_self_person|family_profiles|admin_usage_summary|admin_identifiers)$/.test(w.path)) // app boot and read-only RPCs, not part of the preview

@@ -157,9 +157,3 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 @keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }
 
-/* Discover (F1): five sub-tabs in one row that wraps instead of scrolling sideways, and the empty-sub card. */
-.dc-subnav { display: flex; flex-wrap: wrap; gap: 2px; background: var(--card2); border-radius: 26px; padding: 3px; }
-.dc-subnav button { flex: 1 1 0; min-width: 0; border: 0; background: none; border-radius: 999px; min-height: var(--tap, 48px); padding: 0 4px; font: inherit; font-size: 14px; font-weight: 600; color: var(--muted); }
-.dc-subnav button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
-.dc-subnav button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.dc-soon { display: flex; flex-direction: column; gap: 6px; }

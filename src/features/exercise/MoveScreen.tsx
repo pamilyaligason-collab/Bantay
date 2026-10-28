@@ -1,3 +1,4 @@
+import { JackArt } from '../look'
 import { SubHeader } from '../shell/SubHeader'
 import MovePanel from './MovePanel'
 
@@ -6,7 +7,7 @@ export default function MoveScreen() {
   return (
     <>
       <SubHeader title="Move" backHref="#health" backLabel="Back to Health" />
-      <div className="mv-page"><MovePanel /></div>
+      <div className="mv-page"><div className="s14j-art"><JackArt name="walking" size={96} /></div><MovePanel /></div>
     </>
   )
 }

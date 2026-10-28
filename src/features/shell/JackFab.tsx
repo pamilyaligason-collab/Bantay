@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look'
 import { ASK_EVENT } from '../assistant/Assistant'
 import { isDiscoverSubRoot } from '../discover'
 import { AskSheet } from './AskSheet'
@@ -54,7 +54,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
         onContextMenu={(e) => { e.preventDefault(); stop(); held.current = false; openSheet() }}
         onClick={click}
       >
-        <img src={MASCOT_SRC} alt="" width={48} height={48} />
+        <JackArt name="head" size={48} decorative />
       </button>
       {hint && <p className="sh-hint" role="status">Ask me anything</p>}
       {sheet && <AskSheet onClose={onClose} onDone={onDone} />}

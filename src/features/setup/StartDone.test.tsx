@@ -28,6 +28,15 @@ describe('StartDone (start-done, start-done-fix)', () => {
     expect(screen.queryByLabelText('Phone check')).toBeNull()
   })
 
+  it('Jack Jack waves hello at 112 px, one picture (D-91)', async () => {
+    h.probe.mockResolvedValue(OK)
+    render(<StartDone onDone={() => undefined} />)
+    await screen.findByRole('heading', { name: "You're in, Mama" })
+    const img = screen.getByAltText('Jack Jack waving hello')
+    expect(img.getAttribute('width')).toBe('112')
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+
   it('a failing check shows the fix card but Today still opens', async () => {
     h.probe.mockResolvedValue({ ...OK, battery_ok: false })
     const done = vi.fn()

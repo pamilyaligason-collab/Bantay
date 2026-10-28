@@ -1,13 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // S12 lane B JOIN shots, 390x844 light and dark: the invite link states (start-who with one name, used, ended, too many tries, not working),
 // start-pin, and the admin "Invite link" copy sheet. Filename ends in .auth.spec: only that project builds with Supabase env. All traffic is mocked.
 // The auth build sets VITE_JOIN_STUB=1, so the claim step itself is a stub here; the real joinPort is covered by pinLogin.test.ts and the SQL/deno tests.
 // The clock is frozen so a rerun rewrites no committed PNG (ML-32).
 const API = 'https://bantay-test.supabase.test'
-const SHOTS = 'docs/session-12/shots/B'
+const SHOTS = shotPath('docs/session-12/shots/B')
 const UID = '33333333-3333-4333-8333-333333333333'
 const NOW = new Date('2026-10-27T01:00:00Z')
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')

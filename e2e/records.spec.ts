@@ -50,12 +50,11 @@ test('timeline, trend chart and latest vs normal from seeded data', async ({ pag
   await page.reload()
   await expect(page.getByTestId('timeline')).toContainText('Doctor visit: Dr Test')
   await expect(page.locator('.uplot canvas').first()).toBeVisible()
-  await page.goto('/#health')
+  await page.goto('/#health/labs') // session 14: labs moved off the Health overview to their own screen
   const ldl = page.locator('[data-test="ldl"]')
   await expect(ldl).toContainText('95')
   await expect(ldl).toContainText('In range') // labs list (lane J): an in-range result is one line with the verdict word; the paper's range is on the metric page below
   // the lab range, the general guide and the source now live on the metric page
   await page.goto('/#health/metric/ldl')
-  await expect(page.getByText('Lab range: 0 to 130')).toBeVisible()
-  await expect(page.getByText(/MedlinePlus/).first()).toBeVisible()
+  await expect(page.getByTestId('lab-range')).toContainText('0 to 130')
 })

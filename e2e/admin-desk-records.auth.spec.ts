@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Admin dashboard lane LB: Records, Confirm queue, Duplicates. "auth" project; all PostgREST traffic is mocked; synthetic data only.
 const API = 'https://bantay-test.supabase.test'
@@ -291,7 +292,7 @@ test('queue: source paper beside the values at 1440, below at 1024; sticky Confi
   expect(s.x).toBeGreaterThanOrEqual(t.x + t.width - 1) // beside, not under
   await expect(page.getByText('Range 0 to 100')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Confirm 4 checked' })).toBeInViewport()
-  await page.screenshot({ path: 'docs/session-9/shots/adm-c/queue-1440-light.png', fullPage: true })
+  await page.screenshot({ path: shotPath('docs/session-9/shots/adm-c/queue-1440-light.png'), fullPage: true })
   await page.setViewportSize({ width: 1024, height: 800 })
   const t2 = (await page.locator('.rc-qt').first().boundingBox())!, s2 = (await src.boundingBox())!
   expect(s2.y).toBeGreaterThan(t2.y + t2.height - 1) // stacked below
@@ -345,7 +346,7 @@ test('shots: queue, records and duplicates, light and dark, 1440 and 390', async
         await page.goto(`/admin#/${path}`)
         await expect(page.getByText(ready, { exact: false }).or(page.getByRole('button', { name: ready })).first()).toBeVisible()
         await page.waitForTimeout(400)
-        await page.screenshot({ path: `docs/session-9/shots/adm-c/${name}-${s.w}-${scheme}.png`, fullPage: true })
+        await page.screenshot({ path: shotPath(`docs/session-9/shots/adm-c/${name}-${s.w}-${scheme}.png`), fullPage: true })
       }
     }
   }

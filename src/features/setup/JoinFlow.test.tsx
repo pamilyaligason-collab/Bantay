@@ -26,6 +26,14 @@ describe('JoinFlow (start-who, start-pin)', () => {
     expect(document.body.textContent).not.toMatch(/admin/i)
   })
 
+  it('Jack Jack waves hello at 112 px, one picture (D-91)', async () => {
+    render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
+    await screen.findByLabelText('Who are you?')
+    const img = screen.getByAltText('Jack Jack waving hello')
+    expect(img.getAttribute('width')).toBe('112')
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+
   it('tap a name, type the PIN twice, the port claims it, then the person is signed in', async () => {
     const port = vi.fn<JoinPort>(async () => ({ ok: true }))
     const signIn = vi.fn(async () => null as string | null)

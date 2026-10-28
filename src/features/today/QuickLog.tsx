@@ -9,7 +9,7 @@ import { useSelfPersonId } from '../setup/useProfile'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
 import PlateSheet from '../nutrition/PlateSheet'
-import MealsTodayCard from '../nutrition/SaltSummary'
+import SaltLine from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
@@ -106,12 +106,12 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => (
-          <button key={p.id} type="button" className="td-q" aria-label={p.aria} onClick={() => setOpen(p.id)}>
+          <button key={p.id} type="button" className="td-q press" aria-label={p.aria} onClick={() => setOpen(p.id)}>
             <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.id === 'mood' && storm ? 'Is everyone safe?' : p.label}</span>
           </button>
         ))}
       </div>
-      <MealsTodayCard onMeal={() => setOpen('meal')} />
+      <SaltLine />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>

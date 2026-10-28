@@ -6,6 +6,9 @@ import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { MedReview, toCheck } from './MedReview'
 import { clock12, setMedStatus } from './medActions'
 import { useSelf } from '../sos/useSelf'
+import { JackArt } from '../look'
+import { lastDays } from '../today/myWeekLogic'
+import { stockInfo, weekCounter } from './medDetailLogic'
 import { answeredBy, dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
@@ -18,16 +21,17 @@ const NONE: MedTaken[] = []
 const TOAST_MS = 3500
 const UNDO_MS = 6000
 
-/** Doses logged on `day` for one person, live. Full rows: the medication id, slot and skipped flag decide what is taken. */
-function useDayTakes(personId: string, day: string): MedTaken[] {
-  const [rows, setRows] = useState<MedTaken[]>(NONE)
+/** Doses logged since `day` (the start of the 7-day window) for one person, live. Full rows: the medication id, slot and skipped flag decide what is taken. */
+function useTakesSince(personId: string, day: string): MedTaken[] | undefined {
+  const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
+  const id = `${personId}|${day}`
   useEffect(() => {
-    if (!personId) return setRows(NONE)
+    if (!personId) return
     const since = new Date(`${day}T00:00:00`).toISOString()
-    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: setRows, error: () => setRows(NONE) })
+    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id, rows }), error: () => setGot({ id, rows: NONE }) })
     return () => sub.unsubscribe()
-  }, [personId, day])
-  return rows
+  }, [personId, day, id])
+  return got && got.id === id ? got.rows : personId ? undefined : NONE
 }
 
 const timeOf = (iso: string) => { const d = new Date(iso); return clock12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`) }
@@ -46,15 +50,16 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 function useToday(personId: string) {
   const meds = useMedicationRows(personId)
   const day = dayOf(new Date())
-  const takes = useDayTakes(personId, day)
+  const week = useTakesSince(personId, lastDays(new Date())[0]!)
+  const takes = useMemo(() => (week ?? NONE).filter((t) => dayOf(t.takenAt) === day), [week, day])
   const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day), [meds, personId, day, takes])
-  return { meds, takes, doses, day }
+  return { meds, takes, week, doses, day }
 }
 
 /** Health > Medicines for one person: Today (Take / Skip), Active, Paused, Past, and Add.
  *  `canMark`: this person, or a writer carer (the server takes a dose from them). `canEdit`: also an admin (records_editor). */
 export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }: { personId: string; mine?: boolean; canMark?: boolean; canEdit?: boolean }) {
-  const { meds, takes, doses } = useToday(personId)
+  const { meds, takes, week, doses } = useToday(personId)
   const self = useSelf() // a carer answering for someone else is recorded by name ("Answered by Lloyd")
   const queued = useQueuedDoseIds()
   const [sheet, setSheet] = useState<{ med?: Medication } | null>(null)
@@ -79,6 +84,8 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
   const past = (meds ?? []).filter((m) => m.medStatus === 'stopped').sort((a, b) => (b.stoppedOn ?? '').localeCompare(a.stoppedOn ?? ''))
   const done = doses.filter((d) => d.state !== 'pending').length
   const open = (med?: Medication) => canEdit && setSheet({ med })
+  const weekLine = meds && week ? weekCounter({ meds, takes: week, personId, now: new Date() }) : null
+  const idOf = (m: Medication) => m.serverId ?? m.clientId ?? String(m.id)
   const empty = meds !== undefined && live.length + paused.length + past.length === 0
 
   return (
@@ -89,7 +96,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </div>
       )}
       {empty && (
-        <div className="grp"><div className="row"><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Health > Papers.' : 'Nothing has been added for them yet.'}</span></span></div></div>
+        <div className="grp"><div className="row md-empty"><JackArt name="medicine" size={88} className="md-jack" /><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Health > Papers.' : 'Nothing has been added for them yet.'}</span></span></div></div>
       )}
 
       {doses.length > 0 && (
@@ -121,6 +128,8 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </>
       )}
 
+      {weekLine && <p className="sub md-weekline" data-testid="meds-week">{weekLine}</p>}
+
       {live.length > 0 && (
         <>
           <div className="md-sech"><h2 className="hd">Active</h2><span className="sub">{live.length}</span></div>
@@ -128,23 +137,24 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
             {live.map((m) => {
               const s = parseSchedule(m.schedule)
               const answered = answeredBy(m)
-              const body = (
-                <>
-                  <strong>{label(m)}</strong>
-                  <span className="md-chips">
-                    {s.times.map((t) => <span className="md-tag" key={t}>{clock12(t)}</span>)}
-                    {m.asNeeded && <span className="md-tag">As needed</span>}
-                    {s.needsTime && !m.asNeeded && <span className="md-tag warn">Set a time</span>}
-                    {s.needsCheck && <span className="md-tag warn">Check the name</span>}
-                  </span>
-                  {answered && <span className="md-sub" data-testid="answered-by">Answered by {answered}</span>}
-                </>
-              )
+              const stock = stockInfo(m, new Date())
               return (
                 <div className="md-li" key={m.clientId ?? m.serverId ?? m.id} data-med={m.name}>
-                  {canEdit
-                    ? <button type="button" className="md-medrow" onClick={() => open(m)}>{body}</button>
-                    : <div className="md-medrow">{body}</div>}
+                  <a className="md-medrow md-link" href={`#health/med/${idOf(m)}`}>
+                    <span className="md-lmain">
+                      <strong>{label(m)}</strong>
+                      <span className="md-chips">
+                        {s.times.map((t) => <span className="md-tag" key={t}>{clock12(t)}</span>)}
+                        {m.asNeeded && <span className="md-tag">As needed</span>}
+                        {s.needsTime && !m.asNeeded && <span className="md-tag warn">Set a time</span>}
+                        {s.needsCheck && <span className="md-tag warn">Check the name</span>}
+                      </span>
+                      {stock.kind !== 'as-needed' && <span className="md-sub" data-testid="med-stock-line">{stock.line}</span>}
+                      {answered && <span className="md-sub" data-testid="answered-by">Answered by {answered}</span>}
+                    </span>
+                    {stock.chip && <span className={`md-tag${stock.low ? ' warn' : ''}`} data-testid="med-days">{stock.chip}</span>}
+                    <Icon name="chev" size={20} />
+                  </a>
                   {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} by={mine ? undefined : self.name} />}
                 </div>
               )
@@ -159,7 +169,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
           <div className="grp" data-testid="meds-paused">
             {paused.map((m) => (
               <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
-                <span className="grow md-main"><strong>{label(m)}</strong><span className="sub">Paused, no reminders</span></span>
+                <a className="grow md-main md-plink" href={`#health/med/${idOf(m)}`}><strong>{label(m)}</strong><span className="sub">Paused, no reminders</span></a>
                 {canEdit && <button type="button" className="md-pill" aria-label={`Resume ${m.name}`} onClick={() => void setMedStatus(m, 'active').then(() => say({ text: `${m.name} resumed. Reminders are back on.` })).catch(() => say({ text: 'Could not save on this phone. Try again.' }))}>Resume</button>}
               </div>
             ))}
@@ -173,8 +183,8 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
           <div className="grp" data-testid="meds-past">
             {past.map((m) => (
               <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
-                <span className="grow md-main"><strong>{label(m)}</strong><span className="sub">{m.stoppedOn ? `Stopped ${new Date(`${m.stoppedOn}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'Stopped'}</span></span>
-                {canEdit && <button type="button" className="md-pill" aria-label={`Open ${m.name}`} onClick={() => open(m)}>Open</button>}
+                <a className="grow md-main md-plink" href={`#health/med/${idOf(m)}`}><strong>{label(m)}</strong><span className="sub">{m.stoppedOn ? `Stopped ${new Date(`${m.stoppedOn}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'Stopped'}</span></a>
+                <a className="md-pill md-link" aria-label={`Open ${m.name}`} href={`#health/med/${idOf(m)}`}>Open</a>
               </div>
             ))}
           </div>

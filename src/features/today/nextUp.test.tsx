@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({ markDue: vi.fn(async () => true), markTaken: vi.fn(async (_p: string, ids: string[]) => ids.length) }))
@@ -36,6 +36,9 @@ describe('NextUp', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
     await waitFor(() => expect(h.markDue).toHaveBeenCalledWith(ma, false))
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Marked Aspirin taken'))
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull() // after Taken the card is on its way out
+    cleanup()
+    run(dose(), 2, notify)
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
     await waitFor(() => expect(h.markDue).toHaveBeenLastCalledWith(ma, true))
   })
@@ -61,8 +64,46 @@ describe('NextUp', () => {
     for (const b of screen.getAllByRole('checkbox')) fireEvent.click(b)
     expect((screen.getByRole('button', { name: 'Mark these taken' }) as HTMLButtonElement).disabled).toBe(true)
   })
+  it('done-morph: the card is held while the write runs; only after it succeeds does the button read "Taken h:mm", then the card collapses and is freed', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const hold = vi.fn()
+      render(<NextUp item={dose()} review={0} notify={() => undefined} hold={hold} />)
+      fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+      expect(hold).toHaveBeenCalledWith(dose()) // frozen before the write, not animated
+      await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
+      expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
+      expect(document.querySelector('.td-next.leaving')).toBeNull()
+      await act(async () => { await vi.advanceTimersByTimeAsync(600) })
+      expect(document.querySelector('.td-next.leaving')).not.toBeNull()
+      expect(hold).not.toHaveBeenCalledWith(null)
+      await act(async () => { await vi.advanceTimersByTimeAsync(240) })
+      expect(hold).toHaveBeenLastCalledWith(null)
+    } finally { vi.useRealTimers() }
+  })
+  it('done-morph: a failed write never morphs and frees the card at once', async () => {
+    h.markDue.mockResolvedValueOnce(false)
+    const hold = vi.fn()
+    const notify = vi.fn()
+    render(<NextUp item={dose()} review={0} notify={notify} hold={hold} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    await waitFor(() => expect(hold).toHaveBeenLastCalledWith(null))
+    expect(screen.getByRole('button', { name: 'Taken' })).toBeTruthy()
+    expect(document.querySelector('.td-taken.done')).toBeNull()
+  })
   it('a plan item links to the plan', () => {
     run(pickNext({ due: [], plan: { key: 'p', kind: 'plan', kicker: 'Plan · today', title: 'Next: Pay bills', body: 'Due today', actions: [] }, storm: null }))
     expect(screen.getByRole('link', { name: 'Open plan' }).getAttribute('href')).toBe('#family/plan')
+  })
+})
+
+describe('NextUp unmounted early', () => {
+  it('frees the held card (SOS or Simple mode replaces Today within the morph)', () => {
+    const hold = vi.fn()
+    const { unmount } = render(<NextUp item={dose()} review={0} notify={() => undefined} hold={hold} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    expect(hold).toHaveBeenCalledWith(dose())
+    unmount()
+    expect(hold).toHaveBeenLastCalledWith(null)
   })
 })

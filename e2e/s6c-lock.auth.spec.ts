@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // S6c shots + checks (390x844, light and dark): start-finger, safety-medid (lock variant), start-me, start-privacy, start-update.
 // Runs on the auth build (project "auth"): a stored session, a faked Android Capacitor bridge, every Supabase call mocked. Synthetic people only.
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
-const SHOTS = 'docs/session-10/shots/S6c'
+const SHOTS = shotPath('docs/session-10/shots/S6c')
 const API = 'https://bantay-test.supabase.test'
 const UID = '33333333-3333-4333-8333-333333333333'
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')

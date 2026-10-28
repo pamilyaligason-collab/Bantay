@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Runs in the "auth" project (build WITH Supabase env). Everything on the wire is mocked; synthetic data only.
 const API = 'https://bantay-test.supabase.test'
@@ -113,7 +114,7 @@ test('phone: theme is reachable in the account menu and changes the theme', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await item.click() // light -> dark
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.screenshot({ path: 'docs/session-9/shots/adm-a/menu-390-dark.png' })
+  await page.screenshot({ path: shotPath('docs/session-9/shots/adm-a/menu-390-dark.png') })
 })
 
 // Danger ConfirmDialog styling (no page uses danger yet): the same markup the component renders, styled by the real CSS. Checks white-on-red contrast >= 4.5 in both themes.
@@ -138,7 +139,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
     expect(ratio).toBeGreaterThanOrEqual(4.5)
     expect((await page.locator('.bad-solid').boundingBox())!.height).toBeGreaterThanOrEqual(48)
-    await page.screenshot({ path: `docs/session-9/shots/adm-a/confirm-danger-390-${scheme}.png` })
+    await page.screenshot({ path: shotPath(`docs/session-9/shots/adm-a/confirm-danger-390-${scheme}.png`) })
   })
 }
 

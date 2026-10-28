@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { shotPath } from './shotPath'
 
 // Runs in the "auth" project (build WITH Supabase env). Everything on the wire is mocked; synthetic data only.
 const API = 'https://bantay-test.supabase.test'
@@ -267,10 +268,10 @@ for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) 
       await skipOnboarding(page)
       await page.goto('/admin#/members')
       await expect(page.getByRole('table').getByRole('link', { name: /Test Person/ })).toBeVisible()
-      await page.screenshot({ path: `docs/session-9/shots/adm-view/members-${size.width}-${scheme}.png` })
+      await page.screenshot({ path: shotPath(`docs/session-9/shots/adm-view/members-${size.width}-${scheme}.png`) })
       await page.goto('/admin#/members/p2')
       await expect(page.getByRole('heading', { level: 1, name: 'Test Person' })).toBeVisible()
-      await page.screenshot({ path: `docs/session-9/shots/adm-view/member-${size.width}-${scheme}.png` })
+      await page.screenshot({ path: shotPath(`docs/session-9/shots/adm-view/member-${size.width}-${scheme}.png`) })
     })
   }
 }

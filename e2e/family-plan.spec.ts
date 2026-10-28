@@ -64,19 +64,19 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByRole('button', { name: 'Plan' }).click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
-      await expect(page.getByRole('button', { name: /^Add a reminder for / })).toBeVisible()
+      await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-empty-${scheme}.png` })
-      await page.getByRole('button', { name: 'Add', exact: true }).click()
+      await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       await page.getByRole('button', { name: 'Event', exact: true }).click()
       await page.getByLabel('What is happening?').fill('Family dinner at Lola')
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-add-${scheme}.png` })
       await page.getByRole('button', { name: 'Save' }).click()
-      await page.getByRole('button', { name: 'Add', exact: true }).click()
+      await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       await page.getByLabel('What needs doing?').fill('Buy maintenance medicines')
       await expect(page.getByLabel('Who does it?').locator('option')).toHaveCount(4)
       await page.getByLabel('Who does it?').selectOption('p2')
       await page.getByRole('button', { name: 'Save' }).click()
-      await page.getByRole('button', { name: 'Add', exact: true }).click()
+      await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       await page.getByRole('button', { name: 'Note', exact: true }).click()
       await page.getByLabel('Note for the family').fill('Gate code 1234')
       await page.getByLabel('Pin it to the top').check()
@@ -91,7 +91,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await scrollEnd(page)
       expect(await fabClear(page)).toEqual([])
       for (let i = 1; i <= 8; i++) { // long list
-        await page.getByRole('button', { name: 'Add', exact: true }).click()
+        await page.getByRole('button', { name: 'Add', exact: true }).first().click()
         await page.getByLabel('What needs doing?').fill(`Extra reminder number ${i}`)
         await page.getByRole('button', { name: 'Save' }).click()
       }
@@ -135,12 +135,12 @@ for (const scheme of ['light', 'dark'] as const) {
   })
 }
 
-test('Family is People and Plan only; Records moved to Health', async ({ page }) => {
+test('Family is Home, Messages and Plan only; Records moved to Health', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#family')
   await expect(page.locator('h1')).toHaveText('Family')
   const seg = page.getByRole('group', { name: 'Family view' })
-  await expect(seg.getByRole('button')).toHaveText(['People', 'Plan'])
+  await expect(seg.getByRole('button')).toHaveText(['Home', 'Messages', 'Plan'])
   await expect(seg.getByRole('button', { name: 'Records' })).toHaveCount(0)
   await page.goto('/#family/records')
   await expect(page).toHaveURL(/#health\/papers$/)

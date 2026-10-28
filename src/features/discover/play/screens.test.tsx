@@ -33,6 +33,35 @@ describe('Play hub', () => {
   })
 })
 
+describe('Play hub Jack (D-91)', () => {
+  // Only Date is faked (a local clock, ML-38) so IndexedDB and findBy keep real timers; the seed day is the hand-written local day.
+  afterEach(() => { vi.useRealTimers() })
+  const put = (day: string, n: number) => db.kv.put({ key: 'play.day', value: { day, n, games: ['Memory match'], days: {} } })
+  it.each([[new Date(2026, 9, 28, 12, 0), '12:00'], [new Date(2026, 9, 28, 23, 30), '23:30']])('plays with a ball for 0 to 2 games today (%s %s)', async (now) => {
+    vi.useFakeTimers({ toFake: ['Date'], now })
+    await put('2026-10-28', 2)
+    render(<PlayScreen />)
+    await screen.findByText('Played today: 2 games')
+    expect(screen.getByAltText('Jack Jack playing with a ball')).toBeTruthy()
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+  it.each([[new Date(2026, 9, 28, 12, 0), '12:00'], [new Date(2026, 9, 28, 23, 30), '23:30']])('jumps for joy from the third game today (%s %s)', async (now) => {
+    vi.useFakeTimers({ toFake: ['Date'], now })
+    await put('2026-10-28', 3)
+    render(<PlayScreen />)
+    expect(await screen.findByAltText('Jack Jack jumping for joy')).toBeTruthy()
+    expect(screen.queryByAltText('Jack Jack playing with a ball')).toBeNull()
+    expect(document.querySelectorAll('img.jack')).toHaveLength(1)
+  })
+  it('at 23:30 a count saved on the previous local day does not celebrate', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 28, 23, 30) })
+    await put('2026-10-27', 5)
+    render(<PlayScreen />)
+    await screen.findByText('Nothing played yet today')
+    expect(screen.getByAltText('Jack Jack playing with a ball')).toBeTruthy()
+  })
+})
+
 describe('Memory match screen', () => {
   it('solving all 6 pairs says kind words with no number, and counts one game played today', async () => {
     const seed = 11

@@ -3,16 +3,13 @@
 .hub-card { background: var(--card); border-radius: 24px; box-shadow: var(--shadow); min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
 .hub-card.feat, .hub-card.wide, .hub-card.open { grid-column: 1 / -1; }
 .hub-main { display: flex; gap: 12px; align-items: flex-start; width: 100%; box-sizing: border-box; min-height: 64px; padding: 14px; border: 0; background: none; color: var(--ink); text-align: left; text-decoration: none; font-size: 16px; }
-.hub-card.feat .hub-main { flex-direction: column; padding: 0 0 14px; }
-.hub-card.feat .hub-txt { padding: 0 16px; }
 .hub-card.sm .hub-main { flex-direction: column; }
 .hub-pic { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px; background: var(--soft); color: var(--c-medicine); }
-.hub-card.feat .hub-pic { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; background: var(--green); color: var(--on-green); }
+.hub-card.feat .hub-pic { background: var(--green); color: var(--on-green); } /* compact: the featured card is a full-width row with a small tile, not a tall dark block */
 .hub-txt { display: grid; gap: 4px; min-width: 0; }
 .hub-txt b { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
-.hub-card.feat .hub-txt b { font-family: var(--f-display); font-size: 20px; }
+.hub-card.feat .hub-txt b { font-family: var(--f-display); font-size: 18px; }
 .hub-kind { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--ink2); }
 .hub-credit { font-size: 14px; color: var(--ink2); }
 .hub-video { padding: 0 14px 14px; }
 .hub-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-@media (prefers-reduced-motion: no-preference) { .hub-main { transition: background-color 150ms ease; } }

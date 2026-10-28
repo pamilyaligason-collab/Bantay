@@ -258,3 +258,33 @@
 .td-check input { width: 26px; height: 26px; accent-color: currentColor; flex: none; }
 .td-sos { margin: 4px 0 8px; }
 .bt .td-bigbtn:not(.ok):not(.call) { background: var(--card); color: var(--ink); }
+
+/* Session 13: dose done-morph. The button reads "Taken h:mm", then the card collapses (opacity + height, 240 ms); reduced motion cross-fades in 150 ms. */
+.td-next { display: grid; grid-template-rows: 1fr; opacity: 1; }
+.td-next-in { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; }
+.td-next.leaving { grid-template-rows: 0fr; opacity: 0; margin-bottom: -16px; pointer-events: none; transition: grid-template-rows var(--collapse-ms, 240ms) var(--ease-out), opacity var(--collapse-ms, 240ms) var(--ease-out), margin-bottom var(--collapse-ms, 240ms) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { .td-next.leaving { grid-template-rows: 1fr; margin-bottom: 0; transition: opacity var(--dur-fast) var(--ease-out); } }
+.bt .td-taken.done:disabled { opacity: 1; }
+.td-morph { display: inline-block; font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: no-preference) { .td-morph { animation: td-morph-in var(--dur-base) var(--ease-out); } }
+@keyframes td-morph-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* weather text legibility: a solid veil (alpha from wxVeil.ts) only behind the text block, above the picture and its scrim, below the text. The padding and the equal negative margin keep the layout unchanged. */
+.bt .td-wx.wxs-host .td-wx-row, .bt .td-wxh.wxs-host .wxs-tx { padding: 8px; margin: -8px; border-radius: 16px; background: rgba(5, 12, 28, var(--wx-veil, .2)); box-sizing: border-box; }
+.bt .td-wxh.wxs-host .wxs-tx { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+/* More: the bottom group (alerts setup, updates, notices, week line) has its own heading; hidden with the group when nothing in it draws */
+.td-more-g { display: flex; flex-direction: column; gap: 16px; }
+.td-more-g:has(> h2:only-child) { display: none; }
+.td-more-g > * { margin-top: 0; margin-bottom: 0; }
+.td-more-h { margin: 0 2px; font-family: var(--f-ui); font-size: 17px; font-weight: 700; }
+.td-lrow.press { border-radius: 12px; }
+.td-plan li.press { cursor: pointer; border-radius: 12px; }
+
+/* Session 14 (T2): Today v7 cleanup. One salt line under the quick log, the See the week link, Jack Jack beside the dose-saved line, rain/heat tip and Simple mode at night. */
+.bt .td-saltline { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 4px 8px; box-sizing: border-box; color: var(--muted); font-size: 15px; text-decoration: none; }
+.bt .td-seeweek { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; padding: 8px 16px; box-sizing: border-box; border: 0; border-radius: 20px; background: var(--card, var(--bg)); color: var(--ink); font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.bt .td-seeweek .td-link { min-height: 0; }
+.td-saved { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; font-size: 15px; }
+.td-act-box .td-wx-jack { margin-left: auto; margin-top: -6px; margin-bottom: -6px; }
+.td-simple-night { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }

@@ -1,5 +1,7 @@
 import { barLayout, effectiveRange, metricLabel, readingPosition } from './model'
-import { toCanonicalReading, type Position, type Range, type Reading } from './ranges'
+import { GUIDE, generalRange, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
+import { providerName } from '../../lib/labFormat'
+import type { DocBundle, SourceFile } from '../records/api'
 import { verdictFor } from './verdict'
 import type { IconName } from '../shell/Icon'
 
@@ -61,36 +63,22 @@ export function labNum(value: number | null | undefined): string {
   return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
 }
 
-const PANELS: [string, string[]][] = [
-  ['Cholesterol', ['ldl', 'hdl', 'totalcholesterol', 'cholesterol', 'triglycerides', 'vldl', 'ldlcholesterol', 'hdlcholesterol']],
-  ['Sugar', ['hba1c', 'fastingglucose', 'glucose', 'fbs', 'rbs']],
-  ['Kidney', ['egfr', 'creatinine', 'crea', 'bun', 'urea', 'uricacid']],
-  ['Blood count', ['hemoglobin', 'haemoglobin', 'hgb', 'hematocrit', 'hct', 'platelets', 'platelet', 'plt', 'wbc', 'rbc', 'mcv', 'mch', 'mchc', 'rdw', 'mpv']],
-  ['Liver', ['alt', 'ast', 'alp', 'ggt', 'bilirubin', 'sgpt', 'sgot', 'albumin']]
-]
-export const OTHER_PANEL = 'Other'
-/** The group a lab belongs to on the list (Cholesterol, Sugar, Kidney, Blood count, Liver, else Other). */
-export function panelOf(test: string): string {
-  const k = test.toLowerCase().replace(/[^a-z0-9]/g, '')
-  return PANELS.find(([, names]) => names.includes(k))?.[0] ?? OTHER_PANEL
-}
-/** Rows grouped by panel in a fixed order (Other last), each group sorted by name. Empty panels are left out. */
-export function groupByPanel(rows: LabRow[]): { panel: string; rows: LabRow[] }[] {
-  const byName = (a: LabRow, b: LabRow) => metricLabel(a.reading.test).localeCompare(metricLabel(b.reading.test))
-  return [...PANELS.map(([n]) => n), OTHER_PANEL].map((panel) => ({ panel, rows: rows.filter((r) => panelOf(r.reading.test) === panel).sort(byName) })).filter((g) => g.rows.length > 0)
-}
-
 const distance = (v: number, r: Range) => (r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
-/** Direction depends on the side of the range, not on up or down: 8.1 after 9.4 with a top limit of 7 is "toward"; 4.0 after 5.5 with a bottom limit of 5 is "away". */
-export function moveWords(latest: number, prev: number, range: Range | null): string {
-  if (!range || (range.low == null && range.high == null)) return ''
+export type CloserKind = 'in' | 'crossed' | 'same' | 'closer' | 'further'
+/** Direction depends on the side of the range, not on up or down: 8.1 after 9.4 with a top limit of 7 is closer; 4.0 after 5.5 with a bottom limit of 5 is further. Null without a range. */
+export function closerKind(latest: number, prev: number, range: Range | null): CloserKind | null {
+  if (!range || (range.low == null && range.high == null)) return null
   const a = distance(latest, range)
   const b = distance(prev, range)
-  if (a === 0 && b === 0) return 'in the usual range both times'
+  if (a === 0 && b === 0) return 'in'
   const side = (v: number) => (range.low != null && v < range.low ? -1 : range.high != null && v > range.high ? 1 : 0)
-  if (side(latest) * side(prev) < 0) return 'now on the other side of the usual range'
-  if (a === b) return 'no change from the one before'
-  return a < b ? 'toward the usual range' : 'away from the usual range'
+  if (side(latest) * side(prev) < 0) return 'crossed'
+  return a === b ? 'same' : a < b ? 'closer' : 'further'
+}
+const MOVE: Record<CloserKind, string> = { in: 'in the usual range both times', crossed: 'now on the other side of the usual range', same: 'no change from the one before', closer: 'toward the usual range', further: 'away from the usual range' }
+export function moveWords(latest: number, prev: number, range: Range | null): string {
+  const k = closerKind(latest, prev, range)
+  return k ? MOVE[k] : ''
 }
 
 export interface LabHistoryItem { takenAt: string; value: number; unit: string; pos: Position; move: string }
@@ -130,4 +118,58 @@ export function labInfo(test: string): LabInfo & { known: boolean } {
   const t = test.toLowerCase()
   const hit = INFO[t] ?? INFO[ALIAS[t.replace(/[^a-z0-9]/g, '')] ?? '']
   return hit ? { ...hit, known: true } : { ...NEUTRAL, known: false }
+}
+
+// ---- session 14 lane L: dated history, whose range, previous result, trend (mockup v8 health-labs, health-labdetail; D-9, D-38) ----
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** "2 Oct" or "2 Oct 2026" in the phone's local day (fixed order; ICU's en-PH puts the month first). '' for a date that cannot be read. */
+export function labDate(iso: string, withYear = false): string {
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T12:00:00` : iso) // a plain document date is a calendar day, not a UTC instant
+  return Number.isNaN(d.getTime()) ? '' : `${d.getDate()} ${MON[d.getMonth()]}${withYear ? ` ${d.getFullYear()}` : ''}`
+}
+
+const words = (r: Range) => (r.low != null && r.high != null ? `${labNum(r.low)} to ${labNum(r.high)}` : r.high != null ? `up to ${labNum(r.high)}` : `${labNum(r.low)} or more`)
+export interface RangeSource { kind: 'lab' | 'guide' | 'doctor'; text: string }
+/** Whose range a result is judged against, in one line that includes the numbers. The lab's own range printed on the paper comes first; a general guide names its source and year. Null when there is no range. */
+export function rangeSource(r: Reading, family?: Range | null): RangeSource | null {
+  const { range, from } = effectiveRange(r, family)
+  if (!range || from === 'none') return null
+  if (from === 'family') return { kind: 'doctor', text: `Your doctor's target ${words(range)}` }
+  if (from === 'lab') return { kind: 'lab', text: `Lab range ${words(range)}` }
+  if (from === 'guide') { const g = GUIDE[r.test]!; return { kind: 'guide', text: `General guide (${g.source}, ${g.year}): ${g.text}` } }
+  return { kind: 'guide', text: `General guide (typical adults, labs differ): ${generalRange(r.test, r.unit)!.text}` }
+}
+
+export interface PreviousResult { value: number; unit: string; date: string; direction: 'up' | 'down' | 'same'; change: number; kind: CloserKind | null; prevAt: number | null; line: string }
+/** D-38: the result before the latest, in the same unit. `prevAt` is its value in the range's unit (for the hollow mark). Null when there is no earlier result in that unit. */
+export function previousResult(readings: Reading[], test: string, family?: Range | null): PreviousResult | null {
+  const all = readings.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt)) && Number.isFinite(r.value)).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
+  const latest = all[0]
+  const unit = (latest?.unit ?? '').trim().toLowerCase()
+  const prev = all.slice(1).find((r) => (r.unit ?? '').trim().toLowerCase() === unit)
+  if (!latest || !prev) return null
+  const change = Math.round((latest.value - prev.value) * 100) / 100
+  const direction = change > 0 ? 'up' : change < 0 ? 'down' : 'same'
+  const a = rangeValue(latest, family)
+  const b = rangeValue(prev, family)
+  const kind = a && b ? closerKind(a.value, b.value, effectiveRange(latest, family).range) : null
+  const tail = kind === 'closer' ? ' · closer to the range' : kind === 'further' ? ' · further from the range' : kind === 'in' ? ' · in the range both times' : kind === 'crossed' ? ' · now on the other side of the range' : ''
+  const u = prev.unit ? ` ${prev.unit}` : ''
+  const line = `Before: ${labNum(prev.value)}${u} on ${labDate(prev.takenAt)} · ${direction === 'same' ? 'no change' : `${direction} ${labNum(Math.abs(change))}`}${tail}`
+  return { value: prev.value, unit: prev.unit ?? '', date: prev.takenAt, direction, change, kind, prevAt: b ? b.value : null, line }
+}
+
+/** "going down", "going up" or "steady" from the oldest to the newest of the shown results (newest first). '' with fewer than two. */
+export function trendOfLastThree(items: { value: number }[]): string {
+  if (items.length < 2) return ''
+  const d = items[0]!.value - items[items.length - 1]!.value
+  return d < 0 ? 'going down' : d > 0 ? 'going up' : 'steady'
+}
+
+export interface LabSource { facility: string; docDate: string | null; file: SourceFile }
+/** Source file id -> the paper it came from (lab name, date, the file to open), from the confirmed documents. */
+export function sourceIndex(docs: DocBundle[]): Map<string, LabSource> {
+  const m = new Map<string, LabSource>()
+  for (const b of docs) for (const file of b.files) m.set(file.id, { facility: providerName(b.doc.facility), docDate: b.doc.doc_date, file })
+  return m
 }

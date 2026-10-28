@@ -6,7 +6,7 @@ import { skipOnboarding } from './helpers'
 // health-med-stop, lock-sos (the red banner on Family; the Today hook is S7's). Written to docs/session-10/shots/s4.
 const API = 'https://bantay-test.supabase.test'
 const UID = '55555555-5555-4555-8555-555555555555'
-const SHOTS = 'docs/session-10/shots/s4'
+const SHOTS = process.env.S4_SHOTS // shots are written only when S4_SHOTS=docs/session-10/shots/s4 is set, so a gate rerun leaves the tree clean (ML-32)
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
@@ -99,13 +99,13 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText("Papa's phone may miss alarms")).toBeVisible()
     await expect(page.getByRole('alert', { name: /needs help/ })).toHaveCount(0) // no SOS in this scenario
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
-    await page.screenshot({ path: `${SHOTS}/family-home-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-home-${scheme}.png` })
 
     await page.getByRole('button', { name: 'Answer for Papa' }).click()
     const sheet = page.getByRole('dialog', { name: 'Answer for Papa' })
     await expect(sheet.getByText('Still taking Metformin 500 mg?')).toBeVisible()
     await page.waitForTimeout(300) // the sheet slide-in
-    await page.screenshot({ path: `${SHOTS}/family-answer-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-answer-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Send answer' }).click()
     await expect(page.getByText('Papa has not answered')).toHaveCount(0)
     await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Metformin' && JSON.stringify(p.body.schedule).includes('"answered_by":"Lloyd"'))).toBe(true)
@@ -115,7 +115,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText('Battery saver is stopping alarms')).toBeVisible()
     await page.getByRole('button', { name: 'Needs fixing' }).click()
     await expect(page.getByLabel("Fix Papa's phone")).toBeVisible()
-    await page.screenshot({ path: `${SHOTS}/family-phones-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-phones-${scheme}.png` })
   })
 
   test(`SOS banner on Family ${scheme}`, async ({ page }) => {
@@ -128,7 +128,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(banner.getByRole('button', { name: /on my way/i })).toHaveCount(0)
     await expect.poll(() => posts.some((p) => p.path === 'sos_acks' && p.body.event_id === 'e1')).toBe(true) // opening it tells the server this carer saw it
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
-    await page.screenshot({ path: `${SHOTS}/lock-sos-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/lock-sos-${scheme}.png` })
   })
 
   test(`medicines: still taking it, I stopped it asks first ${scheme}`, async ({ page }) => {
@@ -137,13 +137,13 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#health/meds')
     await expect(page.getByText('Still taking it?').first()).toBeVisible()
     await expect(page.getByText(/The reminders keep going until someone answers/)).toBeVisible()
-    await page.screenshot({ path: `${SHOTS}/health-meds-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/health-meds-${scheme}.png` })
     await page.getByRole('button', { name: 'I stopped Amlodipine' }).click()
     const sheet = page.getByRole('dialog', { name: 'Stop reminders for Amlodipine?' })
     await expect(sheet.getByText('Alarms stop on every phone.')).toBeVisible()
     expect(posts.filter((p) => p.path === 'medications' && p.body.med_status === 'stopped')).toHaveLength(0) // nothing is silenced by the first tap
     await page.waitForTimeout(300)
-    await page.screenshot({ path: `${SHOTS}/health-med-stop-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/health-med-stop-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Stop reminders' }).click()
     await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Amlodipine' && p.body.med_status === 'stopped')).toBe(true)
   })

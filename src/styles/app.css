@@ -127,3 +127,17 @@ img.avatar { object-fit: cover; }
 
 /* Text size (Me > Text size): zoom scales the page content and sheets; --text-scale is set on <html> by shell/textSize.ts. */
 :root[data-text] .scroll, :root[data-text] .sheet, :root[data-text] .sh-sheet { zoom: var(--text-scale); }
+
+/* Session 13 shared look: loading placeholders, empty states, press feedback on tappable cards (docs/session-13/contracts.md). */
+.skel { display: grid; gap: 10px; }
+.skel-line { display: block; height: 14px; border-radius: 7px; background: var(--card2); }
+@media (prefers-reduced-motion: no-preference) { .skel-line { animation: skel-pulse 1.4s var(--ease-in-out) infinite alternate; } }
+@keyframes skel-pulse { from { opacity: 1; } to { opacity: .55; } }
+.empty-state { display: grid; justify-items: start; gap: 6px; }
+.empty-state .hd { margin: 4px 0 0; font-size: 18px; }
+.empty-state .sub { margin: 0; }
+.jack { display: block; flex: none; object-fit: contain; }
+.empty-state .btn2 { margin-top: 6px; }
+.bt .press { transition: transform var(--dur-press) var(--ease-out); }
+.bt .press:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) { .bt .press { transition: none; } .bt .press:active { transform: none; } }

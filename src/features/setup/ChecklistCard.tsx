@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { JackArt } from '../look'
 import Wizard from './Wizard'
 import { TITLES, currentPlatform, onResume, probe, remaining, type StepId } from './steps'
 import './setup.css'
@@ -27,7 +28,7 @@ export default function ChecklistCard() {
     <>
       {left.length > 0 && (
         <section className="grp wz-card" aria-labelledby="wz-ck">
-          <h2 id="wz-ck" className="hd" style={{ margin: 0 }}>{left.length} {left.length === 1 ? 'thing' : 'things'} left to set up</h2>
+          <div className="s14j-row"><JackArt name="get-help" size={56} decorative /><h2 id="wz-ck" className="hd" style={{ margin: 0 }}>{left.length} {left.length === 1 ? 'thing' : 'things'} left to set up</h2></div>
           <ul>
             {left.map((s) => <li key={s}><button type="button" onClick={() => setOpen(s)}>{TITLES[s]}</button></li>)}
           </ul>

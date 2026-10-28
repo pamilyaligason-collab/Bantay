@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look/JackArt'
 import { NO_SIGNAL, fetchFamilyNames, joinPort, signInWithPin, type InviteWhy, type JoinResult, type NameEntry, type NamesResult } from '../auth/pinLogin'
 import { enablePasskey, passkeySupported, setPasskeyFlag } from '../auth/family'
 import { promptFingerprint, unlockMode } from '../auth/biometric'
@@ -76,7 +76,7 @@ export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack 
       <span className="si-eyebrow">Step 1 of 3 · then Today</span>
       <div className="si-steps" aria-hidden="true"><i className="on" /><i /><i /></div>
       <div className="si-c">
-        <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} />
+        <JackArt name="hello" size={112} />
         <h1 className="pname">Is this you?</h1>
         <p className="si-hint">I am Jack Jack. You are invited to Family Bantay. Tap your name to choose a PIN.</p>
       </div>

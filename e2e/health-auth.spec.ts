@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 test('signed in: Papers is reachable from the Health overview with a papers progress line', async ({ page }) => {
   await page.goto('/#health')
   await expect(page.locator('h1')).toHaveText('Health')
-  const papers = page.getByRole('link', { name: /^Papers · / })
+  const papers = page.getByRole('link', { name: /^Papers/ })
   await expect(papers).toBeVisible()
   await expect(papers).toContainText(/Add your first paper|\d+ of \d+ papers? checked/)
   await expect(papers).toHaveAttribute('href', '#health/papers')

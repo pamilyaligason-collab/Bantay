@@ -11,6 +11,7 @@ import { removeFood, saveGoal } from './actions'
 import { useFood, useGoal, useWater } from './hooks'
 import { dailySodium, fmt, foodByKey, GOAL_NOTE, onDay, portionWord, saltGrams, SODIUM_OPTIONS, WHO_SALT_URL, MEALS } from './logic'
 import { SaltSummary } from './SaltSummary'
+import PlateSheet from './PlateSheet'
 import WaterPanel from './WaterPanel'
 import './nutrition.css'
 
@@ -25,6 +26,8 @@ export default function NutritionScreen() {
   const water = useWater(personId, 2)
   const goal = useGoal(personId)
   const [msg, setMsg] = useState('')
+  const [saved, setSaved] = useState('')
+  const [plating, setPlating] = useState(false) // the Log a meal form, open in place (the Meals card left Today)
   const today = useMemo(() => onDay(food, now), [food, now])
   const sodium = useMemo(() => dailySodium(food, now, 7), [food, now])
   const bp = useMemo(() => {
@@ -59,7 +62,9 @@ export default function NutritionScreen() {
             <h2 id="nu-salt" className="td-sech">Salt and meals today</h2>
             <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="nu-salt" />
             <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={mine} />
-            {mine && <div className="nu-act"><a className="nu-ghost" href="#today"><Icon name="meal" size={20} />Log a meal from Today</a></div>}
+            {mine && !plating && <div className="nu-act"><button type="button" className="nu-big-btn" onClick={() => setPlating(true)}><Icon name="meal" size={22} />Log a meal</button></div>}
+            {mine && plating && <PlateSheet onDone={(m) => { setPlating(false); setSaved(m) }} />}
+            {saved && mine && <p className="nu-sub" role="status">{saved}</p>}
           </section>
 
           <NutrientsToday personId={personId} entries={today} sodiumMg={goal.sodiumMg} potassiumLimit={goal.potassiumMg} sex={goal.sex} canEdit={canMark} name={name} />
@@ -97,7 +102,7 @@ export default function NutritionScreen() {
 
           <section aria-labelledby="nu-food">
             <h2 id="nu-food" className="hd">Food today</h2>
-            {today.length === 0 ? <div className="grp"><div className="row"><span className="grow">Nothing logged yet<span className="sub">Use Meal on Today to add what was eaten.</span></span></div></div> : (
+            {today.length === 0 ? <div className="grp"><div className="row"><span className="grow">Nothing logged yet<span className="sub">Use Log a meal above to add what was eaten.</span></span></div></div> : (
               <ul className="grp nu-foodlist" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {[...today].sort((a, b) => a.eatenAt.localeCompare(b.eatenAt)).map((e) => (
                   <li className="row" key={e.clientId}>
