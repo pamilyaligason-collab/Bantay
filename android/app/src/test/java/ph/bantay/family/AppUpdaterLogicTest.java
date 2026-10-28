@@ -35,4 +35,12 @@ public class AppUpdaterLogicTest {
     assertTrue(AppUpdaterPlugin.hasSpace(2_000, 1_000));
     assertFalse(AppUpdaterPlugin.hasSpace(1_999, 1_000));
   }
+
+  @Test
+  public void sizeOfAcceptsTheIntegerJsonGivesForARealApkSize() {
+    assertEquals(7908401L, AppUpdaterPlugin.sizeOf(Integer.valueOf(7908401))); // the 2.5.0 APK; PluginCall.getLong returned null for this
+    assertEquals(3000000000L, AppUpdaterPlugin.sizeOf(Long.valueOf(3000000000L)));
+    assertEquals(-1L, AppUpdaterPlugin.sizeOf(null));
+    assertEquals(-1L, AppUpdaterPlugin.sizeOf("7908401"));
+  }
 }
