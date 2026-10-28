@@ -23,8 +23,8 @@ Jack per screen. Size 72-120 px in cards, 40-56 px inline, the Ask button uses `
 
 | Lane | Name | Signature |
 |---|---|---|
-| L | `labHistory(results, testKey)` and helpers | src/features/health/labsLogic.ts (extend; pure, tested) -> newest-first list for one test with `{ value, unit, date, sourceFileId?, labName?, range? }` |
-| L | `rangeSource(result)` | labsLogic.ts -> `{ kind: 'lab', text }` (the lab's own range on the paper) or `{ kind: 'guide', text: 'General guide (<source>, <year>)' }` |
+| L | lab helpers (as built: `previousResult`, `lastThree`, `sourceIndex`; `labHistory` was dropped in r2, no callers) | src/features/health/labsLogic.ts (pure, tested) |
+| L | `rangeSource(result)` | labsLogic.ts -> `{ kind: 'lab', text }` (the lab's own range on the paper) or `{ kind: 'guide', text: 'General guide (<source>, <year>)' }`, or `{ kind: 'doctor' }` for a family-set target (accepted at merge) |
 | M | `medDetail` helpers | src/features/health/medDetailLogic.ts (new; pure, tested): days left, 7-day strip, who saw a miss |
 | T2 | `snoozeCard(slotKey, minutes=10)` / `isSnoozed(slotKey, now)` | src/features/today/ (new file, e.g. snoozeCard.ts; pure, tested). Native alarm snooze reuses `reminderActions` (read-only). |
 | F2 | Family segment hash | `#family` = Home, `#family/messages` = Messages, `#family/plan` (and `#plan`) = Plan. `#family/people` keeps opening Home. |

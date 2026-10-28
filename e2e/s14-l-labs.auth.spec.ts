@@ -148,7 +148,7 @@ for (const scheme of ['light', 'dark'] as const) {
 test('Overview shows one Lab results row that opens the screen; the Labs tile does too', async ({ page }) => {
   await open(page, '#health', 'light')
   const row = page.getByTestId('labs-row')
-  await expect(row).toHaveText('Lab results · last paper 2 Oct 2026')
+  await expect(row).toHaveText('Lab resultsLast paper 2 Oct 2026')
   await expect(page.getByTestId('labs-list')).toHaveCount(0)
   await row.scrollIntoViewIfNeeded()
   await shot(page, 'health-overview-labsrow', 'light')

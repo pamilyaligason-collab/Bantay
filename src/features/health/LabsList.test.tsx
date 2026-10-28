@@ -80,10 +80,10 @@ describe('LabsRow', () => {
     render(<LabsRow readings={[rd('ldl', 162), rd('bp_systolic', 130, { takenAt: '2026-10-20T00:00:00Z' })]} />)
     const row = screen.getByTestId('labs-row')
     expect(row.getAttribute('href')).toBe('#health/labs')
-    expect(row.textContent).toBe('Lab results · last paper 2 Oct 2026')
+    expect(row.textContent).toBe('Lab resultsLast paper 2 Oct 2026')
   })
   it('says no papers yet without lab results', () => {
     render(<LabsRow readings={[]} />)
-    expect(screen.getByTestId('labs-row').textContent).toBe('Lab results · no papers yet')
+    expect(screen.getByTestId('labs-row').textContent).toBe('Lab resultsNo papers yet')
   })
 })

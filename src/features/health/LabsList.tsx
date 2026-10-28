@@ -116,7 +116,7 @@ export function LabsRow({ readings }: { readings: Reading[] }) {
   return (
     <a className="grp lr-row press" href="#health/labs" data-testid="labs-row">
       <Icon name="flask" tone="vitals" boxed />
-      <span className="grow">Lab results<span className="sub"> · {last ? `last paper ${labDate(last.takenAt, true)}` : 'no papers yet'}</span></span>
+      <span className="grow">Lab results<span className="sub">{last ? `Last paper ${labDate(last.takenAt, true)}` : 'No papers yet'}</span></span>
       <Icon name="chev" size={20} />
     </a>
   )

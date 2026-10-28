@@ -149,7 +149,7 @@
 .lr-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .lr-row { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 16px; box-sizing: border-box; color: var(--ink); text-decoration: none; margin-bottom: 0; }
 .lr-row .grow { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
-.lr-row .sub { font-weight: 500; }
+.lr-row .sub { display: block; font-weight: 500; }
 .lb-big { font-size: 34px; }
 .lb-top { display: block; padding: 16px; margin-top: 12px; }
 .lb-meaning { margin: 0; }

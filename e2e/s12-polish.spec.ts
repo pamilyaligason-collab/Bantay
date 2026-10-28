@@ -140,7 +140,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('no-vitals').locator('.empty-state')).toHaveCount(1) // the h2 above it is its screen-reader heading
       const labs = page.getByTestId('labs-row') // S14: the overview keeps one row, the list lives on #health/labs
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs).toContainText('Lab results · last paper')
+      await expect(labs).toContainText('Last paper')
       await shot(page, `health-labs-${scheme}`)
     })
 
