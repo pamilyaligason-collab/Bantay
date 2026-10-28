@@ -100,7 +100,7 @@ describe('Health overview', () => {
     expect((await screen.findByRole('link', { name: /^Papers/ })).textContent).toMatch(/Papers(Add your first paper|\d+ of \d+ papers? checked)/)
   })
 
-  it('Browse is one grid after the summary: every old door is still there, Readings and Labs scroll to their sections', async () => {
+  it('Browse is one grid after the summary: every old door is still there, Readings scrolls to its section and Labs opens its screen', async () => {
     render(<Health />)
     const grid = await screen.findByTestId('browse')
     const keys = Array.from(grid.querySelectorAll('[data-browse]')).map((e) => e.getAttribute('data-browse'))
@@ -109,7 +109,8 @@ describe('Health overview', () => {
     expect(grid.querySelector('[data-browse="move"]')?.getAttribute('href')).toBe('#health/move')
     expect(grid.querySelectorAll('.press').length).toBe(keys.length)
     expect(document.getElementById('lvn-vitals')).toBeTruthy()
-    expect(document.getElementById('lvn-labs')).toBeTruthy()
+    expect(grid.querySelector('[data-browse="labs"]')?.getAttribute('href')).toBe('#health/labs')
+    expect(screen.getByTestId('labs-row').getAttribute('href')).toBe('#health/labs')
     expect(document.querySelector('[aria-busy="true"]')).toBeNull() // ready: the skeleton is gone
   })
 

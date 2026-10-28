@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { BodyMap } from '../features/health/BodyMap'
-import { LabsList } from '../features/health/LabsList'
+import { LabsRow } from '../features/health/LabsList'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines, MedicinesSummary } from '../features/health/Medicines'
 import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
@@ -136,7 +136,7 @@ function Overview() {
       {ready && <NudgeEntry />}
       {ready && personId && <MedicinesSummary personId={personId} />}
       {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
-      {ready && !blank && <LabsList readings={readings} thresholds={thresholds} ready={ready} />}
+      {ready && !blank && <LabsRow readings={readings} />}
       {ready && personId && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)

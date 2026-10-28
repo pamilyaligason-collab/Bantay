@@ -24,7 +24,7 @@ function Door({ t }: { t: Tile }) {
     </>
   )
   if (t.href) return <a className="hb-tile press" href={t.href} data-browse={t.key}>{body}</a>
-  // Readings and Labs have no route of their own: they scroll to their section above.
+  // Readings has no route of its own: it scrolls to its section above (Labs opens #health/labs).
   const go = () => document.getElementById(t.to ?? '')?.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
   return <button type="button" className="hb-tile press" data-browse={t.key} onClick={go}>{body}</button>
 }
@@ -55,7 +55,7 @@ export function HealthLinks({ personId, jump }: { personId: string; jump: { read
     { key: 'meds', icon: 'pill', label: 'Medicines', sub: 'Doses and your list', href: '#health/meds' },
     { key: 'refill', icon: 'clock', label: 'Refills', sub: low ? `${low.name}: ${refillLine(low.days, low.by)}` : 'Days of medicine left', href: '#health/refill' },
     ...(jump.readings ? [{ key: 'readings', icon: 'gauge', label: 'Readings', sub: 'Blood pressure, sugar, weight', to: 'lvn-vitals' } as Tile] : []),
-    ...(jump.labs ? [{ key: 'labs', icon: 'flask', label: 'Labs', sub: 'Your lab results', to: 'lvn-labs' } as Tile] : []),
+    ...(jump.labs ? [{ key: 'labs', icon: 'flask', label: 'Labs', sub: 'Your lab results', href: '#health/labs' } as Tile] : []),
     { key: 'move', icon: 'move', label: 'Move', sub: 'Gentle exercise picks', href: '#health/move' },
     { key: 'food', icon: 'meal', label: 'Food', sub: 'Meals, salt and nutrients', href: '#health/nutrition' },
     { key: 'papers', icon: 'file', label: 'Papers', sub: papersLine(papers.checked, papers.total), href: '#health/papers', pct: papers.total > 0 ? progressPct(papers.checked, papers.total) : undefined },

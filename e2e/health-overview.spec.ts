@@ -118,7 +118,8 @@ test('refill rows give the text the full row width at 360px', async ({ page }) =
 
 test('a lab result opens as a dated list: no period, time-of-day or monthly average controls', async ({ page }) => {
   await page.goto('/#health/metric/ldl')
-  await expect(page.getByTestId('recent')).toContainText('162')
+  await expect(page.getByTestId('lab-last3')).toContainText('162') // S14: a lab page has no Readings block, the last 3 results are the list
+  await expect(page.getByTestId('recent')).toHaveCount(0)
   await expect(page.getByRole('group', { name: 'Period' })).toHaveCount(0)
   await expect(page.getByRole('group', { name: 'Time of day' })).toHaveCount(0)
   await expect(page.getByText('Monthly averages')).toHaveCount(0)
@@ -126,12 +127,12 @@ test('a lab result opens as a dated list: no period, time-of-day or monthly aver
   await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
 })
 
-test('the Browse grid links to Library, Videos, Refills, Visits and Papers; labs have a plain flag', async ({ page }) => {
+test('the Browse grid links to Library, Videos, Refills, Visits and Papers; Labs is one row that opens its own screen', async ({ page }) => {
   await expect(page.getByRole('link', { name: /^Library/ })).toHaveAttribute('href', '#health/library')
   await expect(page.getByRole('link', { name: /^Videos/ })).toHaveAttribute('href', '#health/videos')
   await expect(page.getByRole('link', { name: /^Papers/ })).toHaveAttribute('href', '#health/papers')
   await expect(page.getByRole('link', { name: /^Refills/ })).toContainText('Metformin 500 mg: 7 days left')
-  await expect(page.getByTestId('labs-list').locator('[data-test="ldl"]')).toContainText('High')
+  await expect(page.getByTestId('labs-row')).toHaveAttribute('href', '#health/labs')
 })
 
 for (const scheme of ['light', 'dark'] as const) {

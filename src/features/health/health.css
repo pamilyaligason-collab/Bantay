@@ -128,3 +128,31 @@
 .hv-load { display: grid; gap: 12px; margin-top: 12px; }
 .hv-empty-wrap { margin: 12px 0 8px; }
 .hv-map-empty .empty-state { width: 100%; box-sizing: border-box; }
+
+/* Session 14 lane L: Lab results screen and detail (mockup v8 health-labs, health-labdetail). Prefix lb- / lr- as above. */
+.lb-eyebrow { margin: 4px 4px 0; }
+.lb-src { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; margin-top: 12px; background: var(--soft); box-shadow: none; }
+.lb-src b { overflow-wrap: anywhere; }
+.lb-src .rx-open, .lb-src .rx-btn { align-self: flex-start; min-height: 48px; }
+.lb-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.lb-chips button { min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+.lb-chips button[aria-pressed="true"] { background: var(--soft); box-shadow: inset 0 0 0 2px var(--green2); }
+.lb-chips button:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.lb-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 8px 4px 16px; margin-bottom: 10px; }
+.lb-sw .hv-sw { flex: none; }
+.lb-sw b, .lb-sw .sub { display: block; }
+.lr-prev { position: absolute; top: 6px; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; box-sizing: border-box; border: 3px solid var(--ink2); background: var(--card); }
+.lr-rng { display: block; margin-top: 6px; font-size: 15px; color: var(--ink2); overflow-wrap: anywhere; }
+.lr-date { font-size: 15px; color: var(--ink2); white-space: nowrap; }
+.lr-vrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lr-ask { font-size: 15px; font-weight: 700; color: var(--act); }
+.lr-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lr-row { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 16px; box-sizing: border-box; color: var(--ink); text-decoration: none; margin-bottom: 0; }
+.lr-row .grow { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.lr-row .sub { font-weight: 500; }
+.lb-big { font-size: 34px; }
+.lb-top { display: block; padding: 16px; margin-top: 12px; }
+.lb-meaning { margin: 0; }
+.lb-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lb-q { display: flex; align-items: center; gap: 10px; min-height: 56px; }
+.lb-q .btn2 { width: auto; min-width: 72px; min-height: 48px; flex: none; }

@@ -32,6 +32,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId('insight')).toBeVisible()
   await seed(page)
   await page.reload()
+  await page.goto('/#health/labs') // S14: the list is its own screen
   await expect(page.getByTestId('labs-list')).toBeVisible()
 })
 
@@ -39,17 +40,17 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`labs list groups out-of-range first, with verdict words and a number line (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     const list = page.getByTestId('labs-list')
-    await expect(list.locator('[data-group="ask"] [data-test]')).toHaveCount(2)
-    await expect(list.locator('[data-group="usual"] [data-test="creatinine"]')).toContainText('In range')
+    await expect(list.locator('a.lr-card')).toHaveCount(5)
+    await expect(list.locator('[data-test="creatinine"]')).toContainText('In range')
     await expect(list.locator('[data-test="ldl"]')).toContainText('High')
     await expect(list.locator('[data-test="hemoglobin"]')).toContainText('Low')
     await expect(list.locator('[data-test="ldl"] .lr-track')).toBeVisible()
     await expect(list.locator('[data-test="ldl"] .lr-you')).toContainText('You')
-    const none = list.locator('[data-group="none"] [data-test="uric_acid"]')
+    const none = list.locator('[data-test="uric_acid"]')
     await expect(none).toContainText('No range on the paper')
     await expect(none.locator('.lr-track')).toHaveCount(0)
     // a unit that cannot be compared (triglycerides in mmol/L) draws no number line
-    const tg = list.locator('[data-group="none"] [data-test="triglycerides"]')
+    const tg = list.locator('[data-test="triglycerides"]')
     await expect(tg).toContainText('Different unit, not compared')
     await expect(tg.locator('.lr-track')).toHaveCount(0)
     expect(await axe(page)).toEqual([])
@@ -66,10 +67,11 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(last).toContainText('162')
     await expect(last).toContainText('toward the usual range') // 171 -> 162, top limit 99
     expect(await axe(page)).toEqual([])
-    await page.getByRole('button', { name: 'Add to visit list' }).click()
+    await page.getByRole('button', { name: /^Add to visit list:/ }).first().click()
     await expect(page.getByTestId('lab-questions').getByRole('status')).toContainText('Added')
     await page.getByRole('link', { name: 'Open your visit list' }).click()
     await expect(page.getByText('Is my LDL where you want it for me?').first()).toBeVisible()
+    await expect(page.getByText('Should I change what I eat, or my medicines, because of this?')).toHaveCount(0) // one Add per question: only the first was added
   })
 }
 

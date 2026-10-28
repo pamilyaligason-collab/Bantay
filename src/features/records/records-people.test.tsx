@@ -107,9 +107,11 @@ describe('confirm -> readings', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Lola/ }))
     expect(await screen.findByText(/95 mg\/dL/)).toBeTruthy()
     cleanup()
+    location.hash = '#health/labs' // S14: the labs list is its own screen; the overview keeps one row
     render(<Health />) // same choice, no re-pick
     const row = await screen.findByText(/95/)
     expect(row.closest('[data-test="ldl"]')).toBeTruthy()
+    location.hash = ''
   })
 })
 
