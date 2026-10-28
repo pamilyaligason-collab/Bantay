@@ -26,20 +26,26 @@ afterEach(cleanup)
 
 describe('Family segments', () => {
   it('parses the deep links', () => {
-    expect(parseFamily('#family')).toEqual({ seg: 'people', member: null })
+    expect(parseFamily('#family')).toEqual({ seg: 'home', member: null })
     expect(parseFamily('#family/plan')).toEqual({ seg: 'plan', member: null })
-    expect(parseFamily('#family/people')).toEqual({ seg: 'people', member: null })
-    expect(parseFamily('#family/people/p2')).toEqual({ seg: 'people', member: 'p2' })
-    expect(parseFamily('#family/records')).toEqual({ seg: 'people', member: null }) // Records moved to Health > Papers
+    expect(parseFamily('#family/people')).toEqual({ seg: 'home', member: null }) // old link still opens Home
+    expect(parseFamily('#family/messages')).toEqual({ seg: 'messages', member: null })
+    expect(parseFamily('#messages')).toEqual({ seg: 'home', member: null }) // only #family/messages names Messages
+    expect(parseFamily('#family/people/p2')).toEqual({ seg: 'home', member: 'p2' })
+    expect(parseFamily('#family/records')).toEqual({ seg: 'home', member: null }) // Records moved to Health > Papers
     expect(parseFamily('#plan')).toEqual({ seg: 'plan', member: null })
   })
 
-  it('shows People | Plan only (no Records) and Plan writes #family/plan', async () => {
+  it('shows Home | Messages | Plan only (no Records); each writes its hash', async () => {
     render(<Family />)
     const seg = screen.getByRole('group', { name: 'Family view' })
-    expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['People', 'Plan'])
+    expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['Home', 'Messages', 'Plan'])
     fireEvent.click(within(seg).getByRole('button', { name: 'Plan' }))
     expect(location.hash).toBe('#family/plan')
+    fireEvent.click(within(seg).getByRole('button', { name: 'Messages' }))
+    expect(location.hash).toBe('#family/messages')
+    fireEvent.click(within(seg).getByRole('button', { name: 'Home' }))
+    expect(location.hash).toBe('#family')
   })
 })
 
@@ -156,15 +162,20 @@ describe('People', () => {
     expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
   })
 
-  it('I\'m OK writes a check-in activity row, then the card goes away', async () => {
+  it('I\'m OK writes a check-in activity row, then the card stays as done with focus on it', async () => {
     location.hash = '#family'
     render(<Family />)
     await screen.findByRole('list', { name: 'Family roll call' })
     expect(await screen.findByText('0 of 2 OK today')).toBeTruthy()
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    expect(await screen.findByText(/^You're OK · /)).toBeTruthy() // morphs in place after the write, then the card settles
-    await waitFor(() => expect(screen.queryByText("Today's check-in")).toBeNull(), { timeout: 4000 })
+    expect(await screen.findByText(/^You're OK · /)).toBeTruthy() // the same card turns into the done state after the write
+    expect(screen.queryByText("Today's check-in")).toBeNull()
+    expect(screen.getByText(/Your family can see it/)).toBeTruthy()
+    expect(within(document.querySelector('.fm-checkin') as HTMLElement).queryByRole('status')).toBeNull() // one announcement only: the toast
+    expect((await screen.findByText('The family can see you are OK.')).getAttribute('role')).toBe('status')
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+    expect(document.activeElement?.classList.contains('fm-checkin')).toBe(true) // focus moves to the card, not lost with the button
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
@@ -216,6 +227,14 @@ describe('People', () => {
     expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
     expect(within(dlg).getByRole('link', { name: 'Use Messenger for video' }).getAttribute('href')).toBe('https://www.messenger.com/')
     expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy() // no Supabase in tests: plain words, no crash
+  })
+
+  it('the Message bubble button opens the sheet with the quick replies', async () => {
+    location.hash = '#family'
+    render(<Family />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Message Kuya' }))
+    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
+    expect(within(dlg).getByRole('group', { name: 'Quick replies' })).toBeTruthy()
   })
 
   it('tapping a bubble opens that person\'s page', async () => {

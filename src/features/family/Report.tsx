@@ -1,4 +1,5 @@
 import { givenName } from '../health/medName'
+import { JackArt } from '../look'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { useMemberReport, useReportAccess } from './reportData'
@@ -111,6 +112,7 @@ export default function Report({ id }: { id: string }) {
       <div className="rp-actions no-print">
         <button type="button" className="btn" onClick={() => window.print()}><Icon name="dl" size={22} />Print or save as PDF for the doctor</button>
       </div>
+      <div className="rp-hug no-print"><JackArt name="family-hug" size={96} decorative /></div>
       <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the family admins, and the people {first} shares with can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
     </div>
   )

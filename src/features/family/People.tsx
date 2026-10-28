@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { givenName } from '../health/medName'
-import { Skeleton } from '../look'
+import { JackArt, Skeleton } from '../look'
 import { Icon } from '../shell/Icon'
 import { checkIn, FAIL_TEXT } from '../today/actions'
 import { StormRollCall } from './StormRollCall'
@@ -48,11 +48,10 @@ export default function People() {
   }, [note])
   const flags = useFlagLines(people)
   const rc = rollCall(people, last)
-  useEffect(() => {
-    if (!okAt) return
-    const t = setTimeout(() => setOkAt(null), 1800)
-    return () => clearTimeout(t)
-  }, [okAt])
+  const card = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (okAt) card.current?.focus() }, [okAt]) // the button is gone now: keep focus on the card
+  const selfAt = selfId && loaded && checkInLabel(loaded[selfId]).ok ? checkInLabel(loaded[selfId]).text.replace(/^OK /, '') : null
+  const doneAt = okAt ?? selfAt
   const imOk = async () => {
     const r = await checkIn()
     if (r === 'ok') setOkAt(new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })) // only after the write succeeded
@@ -81,18 +80,26 @@ export default function People() {
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
       <CarerCards onMessage={setTalk} onPhones={() => setPhones(true)} onNote={setNote} />
-      {(okAt || !(selfId && loaded && checkInLabel(loaded[selfId]).ok)) && (
-        <div className="card fm-checkin">
-          <div className="grow">
-            <b>Today's check-in</b>
-            <span className="sub">{loaded === null ? ' ' : rc.total ? `${rc.ok} of ${rc.total} OK today` : 'Nobody has checked in yet'}</span>
-          </div>
-          <div className="fm-okwrap" data-done={okAt ? 'true' : 'false'}>
-            <button type="button" className="pill primary" onClick={() => void imOk()} disabled={!selfId || !!okAt} aria-hidden={okAt ? true : undefined} tabIndex={okAt ? -1 : undefined}>I'm OK</button>
-            {okAt && <span className="pill fm-okdone" role="status"><Icon name="check" size={18} />You're OK · {okAt}</span>}
-          </div>
-        </div>
-      )}
+      <div className="card fm-checkin" ref={card} tabIndex={-1}>
+        {doneAt ? (
+          <>
+            <span className="tile" aria-hidden="true"><Icon name="check" size={24} /></span>
+            <div className="grow">
+              <b className="fm-okdone">You're OK · {doneAt}</b>
+              <span className="sub"> Your family can see it.</span>
+            </div>
+            {okAt && <JackArt name="well-done" size={72} decorative />}
+          </>
+        ) : (
+          <>
+            <div className="grow">
+              <b>Today's check-in</b>
+              <span className="sub">{loaded === null ? ' ' : rc.total ? `${rc.ok} of ${rc.total} OK today` :'Nobody has checked in yet'}</span>
+            </div>
+            <button type="button" className="pill primary" onClick={() => void imOk()} disabled={!selfId}>I'm OK</button>
+          </>
+        )}
+      </div>
 
       {loaded === null ? (
         <section aria-busy="true" aria-label="Family roll call">
