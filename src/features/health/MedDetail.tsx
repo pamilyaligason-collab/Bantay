@@ -163,13 +163,13 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
       {status === 'active' && !med.asNeeded && times.length > 0 && (
         <>
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
-          <div className="card md-rem" data-testid="med-reminders">
+          {((native && ringsHere !== undefined) || writerCarer) && <div className="card md-rem" data-testid="med-reminders">
             {native && ringsHere === true && alarmsOk === false && <a className="md-phone" href="#me" data-testid="med-alarms-off"><Icon name="phone" size={22} /><span className="grow"><b>Alarms are not set on this phone</b><span className="sub md-sub">Open Me to check the phone</span></span></a>}
             {native && ringsHere !== undefined && (ringsHere ? alarmsOk === true : true) && (ringsHere
               ? <div className="md-phone" data-testid="med-rings"><Icon name="phone" size={22} /><span className="grow"><b>This phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
               : <div className="md-phone" data-testid="med-no-ring"><Icon name="phone" size={22} /><span className="grow"><b>No alarm on this phone for {whom}</b></span></div>)}
             {writerCarer && <div className="md-phone" data-testid="med-carers-told"><Icon name="bell" size={22} /><span className="grow"><b>Carers who can mark doses</b><span className="sub md-sub">Told in the app if no dose is logged about {CARER_AFTER_MIN} minutes after the time</span></span></div>}
-          </div>
+          </div>}
           {!native && <p className="sub md-help">Dose alarms ring only in the phone app, not on the web version.</p>}
           {canEdit && <button type="button" className="md-pill md-block" onClick={pause}>Pause reminders</button>}
         </>

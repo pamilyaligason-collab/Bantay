@@ -37,9 +37,9 @@ describe('MedDetail', () => {
     vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(false)
     await ldb.medications.add(med())
     render(<MedDetail medicationId="s1" />)
-    const card = within(await screen.findByTestId('med-reminders'))
     expect(await screen.findByText('Dose alarms ring only in the phone app, not on the web version.')).toBeTruthy()
-    expect(card.queryByText(/Rings at|No alarm on this phone/)).toBeNull()
+    expect(screen.queryByText(/Rings at|No alarm on this phone/)).toBeNull()
+    expect(screen.queryByTestId('med-reminders')).toBeNull() // no empty card
   })
 
   it('shows dose, times, stock with days left and the 7-day strip', async () => {
