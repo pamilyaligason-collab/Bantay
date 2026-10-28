@@ -71,6 +71,11 @@ public class AppUpdaterPlugin extends Plugin {
 
   private static final String RELEASE_PATH = "/pamilyaligason-collab/Bantay/releases/download/";
 
+  /** The APK size from JS. A JSON number under 2^31 arrives as Integer, which PluginCall.getLong rejects (it only accepts Long), so every update failed as bad_args. -1 when not a number. */
+  static long sizeOf(Object v) {
+    return v instanceof Number ? ((Number) v).longValue() : -1;
+  }
+
   /** https, no credentials, default port, a GitHub release host; github.com only for this repo's release downloads. */
   static boolean allowedUrl(String url) {
     if (url == null) return false;
@@ -127,12 +132,11 @@ public class AppUpdaterPlugin extends Plugin {
   public void download(PluginCall call) {
     final String url = call.getString("url");
     final String sha = call.getString("sha256");
-    final Long sizeBoxed = call.getLong("size");
-    if (!allowedUrl(url) || sha == null || !sha.matches("(?i)[0-9a-f]{64}") || sizeBoxed == null || sizeBoxed <= 0) {
+    final long size = sizeOf(call.getData().opt("size"));
+    if (!allowedUrl(url) || sha == null || !sha.matches("(?i)[0-9a-f]{64}") || size <= 0) {
       call.reject("bad_args", "bad_args");
       return;
     }
-    final long size = sizeBoxed;
     if (!busy.compareAndSet(false, true)) {
       call.reject("busy", "busy");
       return;
