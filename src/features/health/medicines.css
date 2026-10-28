@@ -45,3 +45,43 @@ div.md-medrow { cursor: default; }
 .md-acts[data-two] { grid-template-columns: 1fr 1fr; }
 .md-dup { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; font-weight: 600; }
 .md-ed-toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); z-index: 50; }
+
+/* Session 14 lane M: list rows open the detail; the detail screen (v8 health-meddetail). */
+.md-medrow.md-link { flex-direction: row; align-items: center; gap: 10px; text-decoration: none; }
+.md-lmain { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; }
+.md-medrow.md-link > .md-tag { flex: none; }
+.md-medrow.md-link > svg { flex: none; color: var(--muted); }
+.md-medrow.md-link:focus-visible, .md-plink:focus-visible, a.md-pill:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.md-plink { color: var(--ink); text-decoration: none; min-height: 44px; justify-content: center; }
+a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.md-weekline { margin: 12px 4px 0; }
+.md-empty { align-items: center; }
+.md-jack { flex: none; width: 88px; height: 88px; object-fit: contain; }
+.md-detail { display: flex; flex-direction: column; gap: 12px; }
+.md-eyebrow { margin: -4px 4px 0; }
+.md-facts { display: grid; gap: 10px; }
+.md-dl { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding-top: 10px; border-top: 0.5px solid var(--sep); }
+.md-dl:first-child { border-top: 0; padding-top: 0; }
+.md-dl span { color: var(--muted); }
+.md-dl b { text-align: right; overflow-wrap: anywhere; }
+.md-paused { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn); }
+.md-paused .grow { display: flex; flex-direction: column; flex: 1 1 160px; }
+.md-detail .md-sech { margin-top: 4px; }
+.md-rem { display: grid; gap: 14px; }
+.md-phone { display: flex; align-items: flex-start; gap: 12px; }
+.md-phone .grow { display: flex; flex-direction: column; min-width: 0; }
+.md-block { width: 100%; }
+.md-stock { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.md-stock .grow { display: flex; flex-direction: column; flex: 1 1 160px; }
+.md-big { font-size: 22px; overflow-wrap: anywhere; }
+.md-pill.md-amber { background: var(--amber); color: #2A1C00; }
+.md-gone { margin-top: 12px; }
+.md-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; text-align: center; }
+.md-strip li { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.md-dn { font-size: 13px; color: var(--muted); }
+.md-strip i { display: grid; place-items: center; width: 100%; max-width: 40px; aspect-ratio: 1; border-radius: 50%; font-style: normal; font-weight: 700; font-size: 16px; background: var(--card2); color: var(--ink); }
+.md-strip li[data-state="taken"] i { background: var(--green); color: var(--on-green); }
+.md-strip li[data-state="late"] i { background: var(--warn-bg); color: var(--ink); box-shadow: inset 0 0 0 2px var(--warn); }
+.md-strip li[data-state="missed"] i { background: var(--red-soft); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
+.md-legend, .md-miss { margin: 8px 0 0; }
+@media (prefers-reduced-motion: reduce) { .md-strip i { transition: none; } }
