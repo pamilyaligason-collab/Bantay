@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupByPanel, groupLabs, labBand, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, panelOf } from './labsLogic'
+import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
 import type { Reading } from './ranges'
 
 const r = (test: string, value: number, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: '2026-10-01T08:00:00Z', test, value, unit: 'mg/dL', ...extra })
@@ -101,15 +101,53 @@ describe('labNum (S7: one decimal on the list)', () => {
   })
 })
 
-describe('panels', () => {
-  it('maps tests to panels and groups in a fixed order with Other last', () => {
-    expect(panelOf('total_cholesterol')).toBe('Cholesterol')
-    expect(panelOf('HbA1c')).toBe('Sugar')
-    expect(panelOf('egfr')).toBe('Kidney')
-    expect(panelOf('hemoglobin')).toBe('Blood count')
-    expect(panelOf('alt')).toBe('Liver')
-    expect(panelOf('mystery')).toBe('Other')
-    const g = groupByPanel(['mystery', 'creatinine', 'ldl', 'hdl'].map((t) => labRow(r(t, 1))))
-    expect(g.map((x) => [x.panel, x.rows.map((y) => y.reading.test)])).toEqual([['Cholesterol', ['hdl', 'ldl']], ['Kidney', ['creatinine']], ['Other', ['mystery']]])
+describe('s14 L: rangeSource, previousResult, trendOfLastThree', () => {
+  const at = (d: string) => `${d}T12:00:00`
+  const hba = [r('hba1c', 7.4, { unit: '%', takenAt: at('2026-04-04'), labLow: 4, labHigh: 5.6 }), r('hba1c', 6.8, { unit: '%', takenAt: at('2026-10-02'), labLow: 4, labHigh: 5.6, sourceFileId: 'f1' }), r('hba1c', 7.1, { unit: '%', takenAt: at('2026-07-03'), labLow: 4, labHigh: 5.6 }), r('ldl', 100, { takenAt: at('2026-10-02') })]
+  it('rangeSource says whose range: the lab paper first, else a named guide, else nothing', () => {
+    expect(rangeSource(hba[1]!)).toEqual({ kind: 'lab', text: 'Lab range 4 to 5.6' })
+    const g = rangeSource(r('ldl', 162))!
+    expect(g.kind).toBe('guide')
+    expect(g.text).toMatch(/^General guide \(.+, \d{4}\): /)
+    expect(rangeSource(r('hba1c', 6.8), { low: null, high: 7 })).toEqual({ kind: 'doctor', text: "Your doctor's target up to 7" })
+    expect(rangeSource(r('mystery', 5))).toBeNull()
+  })
+  it('previousResult: down 0.3, closer to the range (HbA1c 7.1 -> 6.8, top 5.6)', () => {
+    const p = previousResult(hba, 'hba1c')!
+    expect(p).toMatchObject({ value: 7.1, direction: 'down', change: -0.3, kind: 'closer' })
+    expect(p.line).toBe('Before: 7.1 % on 3 Jul · down 0.3 · closer to the range')
+  })
+  it('previousResult: up and further; same unit only; none with one result', () => {
+    const up = [r('ldl', 150, { takenAt: at('2026-07-01') }), r('ldl', 162, { takenAt: at('2026-10-01') })]
+    expect(previousResult(up, 'ldl')).toMatchObject({ direction: 'up', change: 12, kind: 'further' })
+    const mixed = [r('ldl', 4, { unit: 'mmol/L', takenAt: at('2026-07-01') }), r('ldl', 162, { takenAt: at('2026-10-01') })]
+    expect(previousResult(mixed, 'ldl')).toBeNull()
+    expect(previousResult([up[1]!], 'ldl')).toBeNull()
+  })
+  it('previousResult lines: in range both times, crossed, no change', () => {
+    const two = (prev: number, latest: number) => [r('hba1c', prev, { unit: '%', takenAt: at('2026-07-03'), labLow: 4, labHigh: 5.6 }), r('hba1c', latest, { unit: '%', takenAt: at('2026-10-02'), labLow: 4, labHigh: 5.6 })]
+    const inn = previousResult(two(5.2, 5.0), 'hba1c')!
+    expect(inn.kind).toBe('in')
+    expect(inn.line).toBe('Before: 5.2 % on 3 Jul · down 0.2 · in the range both times')
+    const crossed = previousResult(two(6, 3.5), 'hba1c')!
+    expect(crossed.kind).toBe('crossed')
+    expect(crossed.line).toBe('Before: 6 % on 3 Jul · down 2.5 · now on the other side of the range')
+    const same = previousResult(two(7, 7), 'hba1c')!
+    expect(same).toMatchObject({ direction: 'same', change: 0, kind: 'same' })
+    expect(same.line).toBe('Before: 7 % on 3 Jul · no change')
+  })
+  it('rangeSource guide string names the source and year', () => {
+    expect(rangeSource(r('ldl', 162))).toEqual({ kind: 'guide', text: 'General guide (MedlinePlus, Cholesterol Levels: What You Need to Know, 2026): Under 100' })
+  })
+  it('trendOfLastThree reads newest against oldest', () => {
+    expect(trendOfLastThree([{ value: 6.8 }, { value: 7.1 }, { value: 7.4 }])).toBe('going down')
+    expect(trendOfLastThree([{ value: 9 }, { value: 7 }])).toBe('going up')
+    expect(trendOfLastThree([{ value: 5 }, { value: 5 }])).toBe('steady')
+    expect(trendOfLastThree([{ value: 5 }])).toBe('')
+  })
+  it('labDate is a fixed-order local date', () => {
+    expect(labDate('2026-10-02T12:00:00')).toBe('2 Oct')
+    expect(labDate('2026-10-02T12:00:00', true)).toBe('2 Oct 2026')
+    expect(labDate('not a date')).toBe('')
   })
 })

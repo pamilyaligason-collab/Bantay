@@ -6,8 +6,6 @@ import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
 import { LabDetail } from './LabDetail'
-import { Icon } from '../shell/Icon'
-import { labVerdict, lastThree } from './labsLogic'
 import { entrySpec } from './readingPreview'
 import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
@@ -56,7 +54,6 @@ export default function MetricScreen({ code }: { code: string }) {
   const last = pts[pts.length - 1]
   const months = monthlyAverages(pts, now)
   const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
-  const labRange = (r: Parameters<typeof latestVsNormal>[0]) => latestVsNormal(r, family).lab.text
   const spec = entrySpec(code)
   const bpCode = code === 'bp_systolic' || code === 'bp_diastolic'
   const bpDoctor = bpDoctorOf(thresholds, personId) // both doctor targets, so every row of the pair, the headline and the add preview read the same word on either BP route
@@ -87,7 +84,7 @@ export default function MetricScreen({ code }: { code: string }) {
         </div>
       ) : (
         <>
-          <div className="grp hv-latest" style={{ marginTop: 12 }}>
+          {!lab && <div className="grp hv-latest" style={{ marginTop: 12 }}>
             <div className="row">
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
@@ -96,9 +93,9 @@ export default function MetricScreen({ code }: { code: string }) {
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
               </span>
-              {lab && labVerdict(lastThree(readings, code, family)[0]?.pos ?? 'none') ? (() => { const pos = lastThree(readings, code, family)[0]!.pos; const lv = labVerdict(pos)!; return <span className={`lr-verdict ${pos}`} style={{ marginTop: 0 }}><Icon name={lv.icon} size={20} />{lv.word}</span> })() : v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), bpCode && latest ? bpHeadlineArg(readings, code, latest, bpDoctor) : undefined); return <span className={`hv-state ${CHIP[st.kind]}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
+              {v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), bpCode && latest ? bpHeadlineArg(readings, code, latest, bpDoctor) : undefined); return <span className={`hv-state ${CHIP[st.kind]}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
-          </div>
+          </div>}
 
           {lab && latest && <LabDetail code={code} readings={readings} family={family} personId={personId} />}
           {spec && canMark && personId && <button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button>}
@@ -140,7 +137,7 @@ export default function MetricScreen({ code }: { code: string }) {
           </section>}
 
           {bpCode && <BpWords />}
-          {!activity && latest && v && (
+          {!activity && !lab && latest && v && (
             <section aria-labelledby="hv-src">
               <h2 className="hd" id="hv-src">Where the range comes from</h2>
               <div className="grp">
@@ -163,7 +160,7 @@ export default function MetricScreen({ code }: { code: string }) {
             </section>
           )}
 
-          {!activity && mine.length > 0 && (
+          {!activity && !lab && mine.length > 0 && (
             <section aria-labelledby="hv-rec">
               <h2 className="hd" id="hv-rec">Readings</h2>
               <div className="grp" data-testid="recent">
@@ -174,16 +171,16 @@ export default function MetricScreen({ code }: { code: string }) {
                     {p.bottom != null && <BpWord top={p.top} bottom={p.bottom} doctor={bpDoctor} />}
                   </div>
                 ))}
-                {!bpCode && minePart.slice(0, lab ? 30 : 12).map((r, i) => (
+                {!bpCode && minePart.slice(0, 12).map((r, i) => (
                   <div className="row" key={`${r.takenAt}:${i}`}>
-                    <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{lab ? shortDate(r.takenAt) : `${shortDate(r.takenAt)} · ${new Date(r.takenAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`}</span>{lab && labRange(r) && <span className="sub" style={{ display: 'block' }}>Lab range {labRange(r)}</span>}</span>
+                    <span className="grow"><strong>{formatNumber(r.value)}{r.unit ? ` ${r.unit}` : ''}</strong><span className="sub" style={{ display: 'block' }}>{`${shortDate(r.takenAt)} · ${new Date(r.takenAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })}`}</span></span>
                   </div>
                 ))}
               </div>
             </section>
           )}
 
-          <div className="grp hv-advice" style={{ marginTop: 16 }}>
+          {!lab && <div className="grp hv-advice" style={{ marginTop: 16 }}>
             <div className="row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 6 }}>
               <strong>General tips</strong>
               <span>{ADVICE[code] ?? ADVICE_FALLBACK}</span>
@@ -193,7 +190,7 @@ export default function MetricScreen({ code }: { code: string }) {
                 <span style={HIDDEN}> (opens in new tab)</span>
               </a>
             </div>
-          </div>
+          </div>}
         </>
       )}
       {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={bpCode ? undefined : family} bpDoctor={bpCode ? bpDoctor : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}

@@ -131,19 +131,26 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, `today-${scheme}`)
     })
 
-    test(`S6, S7: Health with old readings only has one empty state, a proper-case name and folded labs (${scheme})`, async ({ page }) => {
+    test(`S6, S7: Health with old readings only has one empty state, a proper-case name and one Lab results row (${scheme})`, async ({ page }) => {
       await open(page, 'health')
       await expect(page.getByTestId('no-vitals')).toBeVisible()
       await expect(page.getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeVisible()
       await expect(page.getByTestId('insight')).toHaveCount(0)
       await expect(page.getByTestId('nudge')).toHaveCount(0)
       await expect(page.getByTestId('no-vitals').locator('.empty-state')).toHaveCount(1) // the h2 above it is its screen-reader heading
-      const labs = page.getByTestId('labs-list')
+      const labs = page.getByTestId('labs-row') // S14: the overview keeps one row, the list lives on #health/labs
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs).not.toContainText('226.74')
-      await expect(labs.locator('details.lr-fold').first()).toBeVisible()
-      expect(await labs.locator('details[open]').count()).toBe(0) // folded until tapped
+      await expect(labs).toContainText('Lab results · last paper')
       await shot(page, `health-labs-${scheme}`)
+    })
+
+    test(`S7: the Lab results screen shows one decimal, never the raw stored value (${scheme})`, async ({ page }) => {
+      await open(page, 'health/labs')
+      await page.getByRole('group', { name: 'Whose records' }).getByRole('button', { name: 'loyd' }).click() // the readings belong to this person
+      const labs = page.getByTestId('labs-list')
+      await expect(labs).toBeVisible()
+      await expect(labs).not.toContainText('226.74')
+      await expect(labs).toContainText('226.7')
     })
 
     test(`S9: People bubbles say the last check-in in words, with no sleep icon (${scheme})`, async ({ page }) => {

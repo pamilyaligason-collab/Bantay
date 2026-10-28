@@ -1,89 +1,123 @@
+import { useState } from 'react'
 import { latestByTest, type Range, type Reading } from './ranges'
-import { groupByPanel, groupLabs, labBand, labNum, labRow, labVerdict, type LabRow } from './labsLogic'
+import { groupLabs, labBand, labDate, labNum, labRow, labVerdict, previousResult, rangeSource, type LabRow, type LabSource } from './labsLogic'
 import { metricLabel } from './model'
 import { isVital } from './vitals'
 import { Icon } from '../shell/Icon'
 import { EmptyState } from '../look/EmptyState'
+import { OriginalLink } from '../records/ConfirmSheet'
 
-const rangeWords = (r: Range, unit?: string) => {
-  const u = unit ? ` ${unit}` : ''
-  return r.low != null && r.high != null ? `${labNum(r.low)} to ${labNum(r.high)}${u}` : r.high != null ? `up to ${labNum(r.high)}${u}` : `${labNum(r.low)} or more${u}`
+/** The number line of one lab: the usual range as a band, "You" on the latest value and, with the Previous switch on, a hollow mark for the one before (D-38). */
+export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null }) {
+  const { range, pos, rv } = row
+  const b = range && rv ? labBand(rv.value, range) : null
+  if (!b || !range || !rv) return null
+  const p0 = prevAt != null ? labBand(prevAt, range) : null
+  // shortcut: two values off the SAME end of the track clamp to one spot, so the lower-ranked one steps 8% inward to stay visible (the higher value keeps the track end); the Before line holds the exact numbers.
+  let you = b.you
+  let prev = p0 ? p0.you : null
+  if (p0 && prevAt != null && b.edge && p0.edge === b.edge) {
+    const prevOutermost = b.edge === 'high' ? prevAt > rv.value : prevAt < rv.value
+    if (prevOutermost) you = b.edge === 'high' ? b.you - 8 : b.you + 8
+    else prev = b.edge === 'high' ? p0.you - 8 : p0.you + 8
+  }
+  return (
+    <span className="lr-track" aria-hidden="true">
+      <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
+      {prev != null && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${prev}%` }} />}
+      <i className={`lr-you ${pos}`} style={{ left: `${you}%` }}><b>You</b></i>
+      {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
+      {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
+    </span>
+  )
 }
 
-function LabCard({ row }: { row: LabRow }) {
-  const { reading: r, range, pos, rv, unitGap } = row
-  const v = labVerdict(pos)
-  const b = range && rv ? labBand(rv.value, range) : null
+/** One plain word and an icon, never colour alone; no range says so (or that the unit cannot be compared). */
+export function VerdictChip({ row }: { row: LabRow }) {
+  const v = labVerdict(row.pos)
+  return v
+    ? <span className={`lr-verdict ${row.pos}`}><Icon name={v.icon} size={20} />{v.word}</span>
+    : <span className="lr-verdict none">{row.unitGap ? 'Different unit, not compared' : 'No range on the paper'}</span>
+}
+
+function LabCard({ row, all, family, showPrev }: { row: LabRow; all: Reading[]; family?: Range; showPrev: boolean }) {
+  const { reading: r, pos } = row
+  const src = rangeSource(r, family)
+  const prev = previousResult(all, r.test, family)
+  const ask = pos === 'above' || pos === 'below'
   return (
     <a className="grp lr-card press" href={`#health/metric/${r.test}`} data-test={r.test}>
       <span className="lr-top">
         <span className="lr-name">{metricLabel(r.test)}</span>
-        <span className="lr-val">{labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
+        <VerdictChip row={row} />
       </span>
-      {v ? <span className={`lr-verdict ${pos}`}><Icon name={v.icon} size={20} />{v.word}</span> : <span className="lr-verdict none">{unitGap ? 'Different unit, not compared' : 'No range on the paper'}</span>}
-      {b && range && (
-        <>
-          <span className="lr-track" aria-hidden="true">
-            <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
-            <i className={`lr-you ${pos}`} style={{ left: `${b.you}%` }}><b>You</b></i>
-            {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
-            {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
-          </span>
-          <span className="hv-sr">Usual range {rangeWords(range, rv?.unit)}.</span>
-        </>
-      )}
-      <span className="lr-more">See details<Icon name="chev" size={20} /></span>
+      <span className="lr-vrow">
+        <span className="lr-val">{labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
+        <span className="lr-date" data-testid="lab-date">{labDate(r.takenAt)}</span>
+      </span>
+      <LabBar row={row} prevAt={showPrev ? prev?.prevAt : null} />
+      <span className="lr-foot">
+        <span className="lr-rng" data-testid="lab-range">{src ? src.text : 'No range printed on the paper'}</span>
+        {ask ? <span className="lr-ask">Ask about it</span> : null}
+      </span>
+      {showPrev && <span className="sub hv-before" data-testid="lab-before">{prev ? prev.line : 'Before: no earlier result'}</span>}
     </a>
   )
 }
 
-/** A usual-range or not-compared lab as one line: name, value, verdict word. Opens the same detail page as a card. */
-function LabLine({ row }: { row: LabRow }) {
-  const { reading: r, pos, unitGap } = row
-  const v = labVerdict(pos)
-  return (
-    <a className="lr-line press" href={`#health/metric/${r.test}`} data-test={r.test}>
-      <span className="lr-name">{metricLabel(r.test)}</span>
-      <span className="lr-val">{labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</span>
-      <span className={`lr-vw ${pos}`}>{v ? <><Icon name={v.icon} size={16} />{v.word}</> : unitGap ? 'Different unit, not compared' : 'No range on the paper'}</span>
-    </a>
-  )
-}
+type Filter = 'all' | 'ask' | 'in'
 
-/** Everything that is not "Ask about": folded by panel (Cholesterol, Sugar, Kidney, ...), closed until tapped, so 20 results are 4 or 5 lines. */
-function Folded({ id, title, rows }: { id: string; title: string; rows: LabRow[] }) {
-  if (rows.length === 0) return null
-  return (
-    <div data-group={id}>
-      <h3 className="lr-h">{title}</h3>
-      {groupByPanel(rows).map(({ panel, rows: list }) => (
-        <details key={panel} className="grp lr-fold" data-panel={panel}>
-          <summary><span>{panel}</span><small>{list.length === 1 ? '1 result' : `${list.length} results`}</small></summary>
-          {list.map((row) => <LabLine key={row.reading.test} row={row} />)}
-        </details>
-      ))}
-    </div>
-  )
-}
-
-/** Lab results (session 8): "Ask about" (out of range) first, then "In the usual range"; each card has the value, a plain verdict, and a number line with the usual range. Opens #health/metric/<code>. */
-export function LabsList({ readings, thresholds, ready }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean }) {
-  const rows = latestByTest(readings.filter((r) => !isVital(r.test))).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
+/** Lab results screen body (mockup v8 health-labs): the source paper (D-9), filter chips, the Previous switch (D-38) and one card per test with its date and whose range it is. */
+export function LabsList({ readings, thresholds, ready, sources, name }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; sources: Map<string, LabSource>; name?: string }) {
+  const [filter, setFilter] = useState<Filter>('all')
+  const [showPrev, setShowPrev] = useState(true)
   if (!ready) return null
-  if (rows.length === 0) return <section aria-labelledby="lvn-labs" data-testid="labs-list"><h2 className="hd" id="lvn-labs">Labs</h2><EmptyState icon="flask" title="No lab results yet" body="Scan a paper with Ask, or add one in Papers." action={{ label: 'Add a paper', onClick: () => { location.hash = '#health/papers' } }} /></section>
+  const labs = readings.filter((r) => !isVital(r.test))
+  const rows = latestByTest(labs).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
+  if (rows.length === 0) return <EmptyState heading="h2" icon="drop" title="No lab papers yet" body={`Take a photo of a lab paper. A person checks every number before it is saved to ${name ? `${name}'s` : 'the'} record.`} action={{ label: 'Scan a paper', onClick: () => { location.hash = '#health/papers' } }} />
   const g = groupLabs(rows)
+  const ordered = [...g.ask, ...g.usual, ...g.noRange]
+  const shown = filter === 'ask' ? g.ask : filter === 'in' ? g.usual : ordered
+  const newest = [...rows].sort((a, b) => Date.parse(b.reading.takenAt) - Date.parse(a.reading.takenAt))[0]!.reading
+  const paper = [...rows].filter((x) => x.reading.sourceFileId && sources.has(x.reading.sourceFileId)).sort((a, b) => Date.parse(b.reading.takenAt) - Date.parse(a.reading.takenAt))[0]
+  const src = paper ? sources.get(paper.reading.sourceFileId!)! : null
+  const paperDate = labDate(src?.docDate ?? newest.takenAt, true)
+  const allLab = rows.every((x) => !x.range || rangeSource(x.reading, thresholds.find((t) => t.key === `${x.reading.personId}:${x.reading.test}`))?.kind === 'lab')
+  const anyPrev = rows.some((x) => previousResult(labs, x.reading.test))
+  const chip = (id: Filter, label: string, n: number) => <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label} {n}</button>
   return (
-    <section aria-labelledby="lvn-labs" data-testid="labs-list">
-      <h2 className="hd" id="lvn-labs">Labs</h2>
-      {g.ask.length > 0 && (
-        <div data-group="ask">
-          <h3 className="lr-h">Ask about</h3>
-          {g.ask.map((row) => <LabCard key={row.reading.test} row={row} />)}
+    <section aria-label="Lab results" data-testid="labs-list">
+      <div className="grp lb-src" data-testid="lab-source">
+        <b><Icon name="file" size={20} /> Source: {src?.facility ? `${src.facility}, ` : 'lab paper, '}{paperDate}</b>
+        <span className="sub">{allLab ? "Ranges are the lab's own printed ranges, not Bantay's." : 'Where the paper prints no range, a general guide is used and named on the result.'}</span>
+        {src ? <OriginalLink file={src.file} /> : <a className="rx-open" href="#health/papers">Open Papers</a>}
+      </div>
+      <div className="lb-chips" role="group" aria-label="Show">
+        {chip('all', 'All', ordered.length)}
+        {chip('ask', 'To ask about', g.ask.length)}
+        {chip('in', 'In range', g.usual.length)}
+      </div>
+      {anyPrev && (
+        <div className="grp lb-sw">
+          <span className="grow"><b>Show previous result</b><span className="sub">A hollow mark on each bar</span></span>
+          <button type="button" className="hv-sw" role="switch" aria-checked={showPrev} aria-label="Show previous result" onClick={() => setShowPrev((p) => !p)}><span className="hv-sw-t" aria-hidden="true" /></button>
         </div>
       )}
-      <Folded id="usual" title="In the usual range" rows={g.usual} />
-      <Folded id="none" title="Not compared" rows={g.noRange} />
-      <p className="sub" style={{ margin: '8px 4px 0' }}>Ranges are for information only and are not medical advice. Ask your doctor what is right for you. Ask your doctor about any result marked not compared.</p>
+      {shown.length === 0 && <p className="sub" role="status">{filter === 'ask' ? 'Nothing to ask about. Every result with a range is in it.' : 'No results in the range yet.'}</p>}
+      {shown.map((row) => <LabCard key={row.reading.test} row={row} all={labs} family={thresholds.find((t) => t.key === `${row.reading.personId}:${row.reading.test}`)} showPrev={showPrev && anyPrev} />)}
+      <p className="sub" style={{ margin: '8px 4px 0' }}>A result outside the range is a question for your doctor, not a diagnosis. Tap a test to see what it means and the last 3 results. Ranges are for information only and are not medical advice.</p>
     </section>
+  )
+}
+
+/** The Health overview's one line for labs: opens the Lab results screen. */
+export function LabsRow({ readings }: { readings: Reading[] }) {
+  const last = readings.filter((r) => !isVital(r.test) && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
+  return (
+    <a className="grp lr-row press" href="#health/labs" data-testid="labs-row">
+      <Icon name="flask" tone="vitals" boxed />
+      <span className="grow">Lab results<span className="sub"> · {last ? `last paper ${labDate(last.takenAt, true)}` : 'no papers yet'}</span></span>
+      <Icon name="chev" size={20} />
+    </a>
   )
 }
