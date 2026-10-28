@@ -17,19 +17,18 @@ async function open(page: Page) {
   await page.goto('/')
 }
 
-for (const [label, css] of [['100%', ''], ['200%', 'html { font-size: 200% !important; }']] as const) {
-  test(`welcome at 375 px and ${label} text: Jack waves hello, an alt, no sideways scroll`, async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 })
+for (const width of [375, 195] as const) { // 195 px = 200% text: app CSS uses px font sizes (house convention, e2e/health-labs.spec.ts)
+  test(`welcome at ${width} px: Jack waves hello, an alt, no sideways scroll`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 812 })
     await open(page)
     await expect(page.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeVisible()
-    if (css) await page.addStyleTag({ content: css })
     const img = page.locator('.wl-hello img.jack')
     await expect(img).toHaveCount(1)
     await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
     expect(await img.getAttribute('alt')).toBe('Jack Jack waving hello')
     expect(await img.getAttribute('width')).toBe('150')
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
-    if (process.env.S14_SHOTS && !css) {
+    if (process.env.S14_SHOTS && width === 375) {
       mkdirSync(process.env.S14_SHOTS, { recursive: true })
       await page.evaluate(() => document.fonts.ready)
       await page.screenshot({ path: `${process.env.S14_SHOTS}/welcome.png`, animations: 'disabled', caret: 'hide' })

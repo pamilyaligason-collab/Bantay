@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto'
+import { Capacitor } from '@capacitor/core'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,10 +20,19 @@ import { Medicines } from './Medicines'
 const iso = (back: number, h = 12) => { const d = new Date(); d.setDate(d.getDate() - back); d.setHours(h, 0, 0, 0); return d.toISOString() }
 const med = (o: Partial<Medication> = {}): Medication => ({ clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed', schedule: { v: 1, times: ['08:00'] }, ...o })
 
-beforeEach(async () => { who.own = 'p1'; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]) })
-afterEach(() => cleanup())
+beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]) })
+afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 describe('MedDetail', () => {
+  it('makes no ring claim on the web version, where no alarms are scheduled', async () => {
+    vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(false)
+    await ldb.medications.add(med())
+    render(<MedDetail medicationId="s1" />)
+    const card = within(await screen.findByTestId('med-reminders'))
+    expect(await screen.findByText('Dose alarms ring only in the phone app, not on the web version.')).toBeTruthy()
+    expect(card.queryByText(/Rings at|No alarm on this phone/)).toBeNull()
+  })
+
   it('shows dose, times, stock with days left and the 7-day strip', async () => {
     await ldb.medications.add(med({ stockQty: 20, perDay: 1, stockSetAt: iso(0), startedOn: iso(10).slice(0, 10) }))
     render(<MedDetail medicationId="s1" />)

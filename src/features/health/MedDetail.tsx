@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../auth/client'
@@ -53,7 +54,7 @@ function useRingsHere(personId: string | undefined, ownId: string): boolean | un
   const key = `${personId}|${ownId}`
   useEffect(() => {
     if (!personId) return
-    const sub = liveQuery(() => remindPeople(ownId || null)).subscribe({ next: (ids) => setGot({ key, on: ids.includes(personId) }), error: () => setGot({ key, on: false }) })
+    const sub = liveQuery(() => remindPeople(ownId || null)).subscribe({ next: (ids) => setGot({ key, on: ids.includes(personId) }), error: () => undefined }) // unreadable: claim nothing either way
     return () => sub.unsubscribe()
   }, [key, personId, ownId])
   return got && got.key === key ? got.on : undefined
@@ -90,6 +91,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   const takes = useWeekTakes(med?.personId)
   const alerts = useAlertRows()
   const ringsHere = useRingsHere(med?.personId, ownId)
+  const native = Capacitor.isNativePlatform() // reminders.ts schedules alarms on native only
   const writerCarer = useHasWriterCarer(med?.personId, med?.personId === ownId ? member?.userId : undefined)
   const [sheet, setSheet] = useState(false)
   const [note, setNote] = useState<MedNote | null>(null)
@@ -159,12 +161,12 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
         <>
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
           <div className="card md-rem" data-testid="med-reminders">
-            {ringsHere !== undefined && (ringsHere
+            {native && ringsHere !== undefined && (ringsHere
               ? <div className="md-phone" data-testid="med-rings"><Icon name="phone" size={22} /><span className="grow"><b>This phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
               : <div className="md-phone" data-testid="med-no-ring"><Icon name="phone" size={22} /><span className="grow"><b>No alarm on this phone for {whom}</b></span></div>)}
             {writerCarer && <div className="md-phone" data-testid="med-carers-told"><Icon name="bell" size={22} /><span className="grow"><b>Carers who can mark doses</b><span className="sub md-sub">Told in the app if no dose is logged about {CARER_AFTER_MIN} minutes after the time</span></span></div>}
           </div>
-          <p className="sub md-help">Dose alarms ring in the Android app. On an iPhone or the web version, only the in-app alert to the carer works.</p>
+          {!native && <p className="sub md-help">Dose alarms ring only in the phone app, not on the web version.</p>}
           {canEdit && <button type="button" className="md-pill md-block" onClick={pause}>Pause reminders</button>}
         </>
       )}

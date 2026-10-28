@@ -32,7 +32,6 @@ async function expectJack(page: Page, alt: string | null, size: number) {
   // docs/session-14/contracts.md (orchestrator decision): the Ask button's Jack head (JackFab) is button chrome and does not count toward "one Jack per screen"; it has its own test below.
   const img = page.locator('img.jack:not([aria-label="Ask Bantay"] img)')
   await expect(img).toHaveCount(1) // at most one non-FAB Jack, and a placement that renders none fails here
-  expect(await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').count()).toBeLessThanOrEqual(1)
   await expect(img).toBeVisible()
   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
   expect(await img.getAttribute('width')).toBe(String(size))
@@ -52,12 +51,12 @@ const PLACES: { name: string; hash: string; ready: string; alt: string | null; s
 
 for (const p of PLACES) {
   for (const zoom of [100, 200]) {
-    test(`${p.name} at 375 px and ${zoom}% text: one Jack, an alt, no sideways scroll`, async ({ page }) => {
+    test(`${p.name} at ${zoom === 200 ? '195 px (200% text, house convention)' : '375 px'}: one Jack, an alt, no sideways scroll`, async ({ page }) => {
+      if (zoom === 200) await page.setViewportSize({ width: 195, height: 812 }) // app CSS uses px font sizes, so 200% text = half the width (e2e/health-labs.spec.ts)
       await page.goto('/' + p.hash)
       await page.waitForFunction((hash) => location.hash === hash, p.hash)
       if (p.ready === 'mv-page') await expect(page.locator('.mv-page')).toBeVisible()
       else await expect(page.getByTestId(p.ready).first()).toBeVisible()
-      if (zoom === 200) await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
       await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
       await expectJack(page, p.alt, p.size)
       expect(await sideways(page)).toBe(0)

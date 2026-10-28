@@ -40,7 +40,7 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
       {done
         ? <span className="sh-sub" role="status">Marked as taken</span>
         : open.length > 0 && !ask && <button type="button" className="btn in-act" onClick={() => setAsk(true)}>Mark taken for {name}</button>}
-      <a className="btn in-act" href="#family">Message the family</a>
+      <a className="btn in-act" href="#family/messages">Message the family</a>
       {ask && (
         <div className="in-confirm" role="alertdialog" aria-label="Confirm">
           <b>Did you see {name} take it?</b>

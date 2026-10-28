@@ -79,7 +79,8 @@ test('list rows show stock, open the detail, and the edit sheet opens from insid
   await expect(page.locator('h1')).toHaveText('Amlodipine 5 mg')
   await expect(page.getByTestId('med-facts')).toContainText('Every day at 8:00 AM')
   await expect(page.getByTestId('med-stock')).toContainText('6 tablets · 6 days left')
-  await expect(page.getByTestId('med-reminders')).toContainText('Rings at 8:00 AM')
+  await expect(page.getByTestId('med-reminders')).not.toContainText('Rings at') // the web build schedules no alarms
+  await expect(page.getByText('Dose alarms ring only in the phone app, not on the web version.')).toBeVisible()
   await expect(page.getByTestId('med-week').getByRole('listitem')).toHaveCount(7)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByTestId('med-week').scrollIntoViewIfNeeded()
