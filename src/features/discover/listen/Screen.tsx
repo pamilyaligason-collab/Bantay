@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { EmptyState } from '../../look'
+import { EmptyState, JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { useKv } from '../../shell/useKv'
 import { MEDCARDS, RECIPES } from '../learn/data'
@@ -32,6 +32,7 @@ export default function Listen() {
   ]
   return (
     <div className="dc-list" data-testid="listen">
+      <div className="s14j-art"><JackArt name="listening" size={96} /></div>
       <p className="sub dc-lead">Tap play and your phone reads it out loud.</p>
       {items.map((it) => {
         const on = playing === it.id

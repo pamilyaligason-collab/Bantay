@@ -33,3 +33,6 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-quiet { margin: 4px 4px 0; text-align: center; }
 .dc-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .lr-tile .dc-src { display: block; margin-top: 2px; }
+/* s14 J: Jack Jack art (D-91), fixed boxes, no entrance animation */
+.s14j-art { display: flex; justify-content: center; margin: 0; }
+.s14j-row { display: flex; align-items: center; gap: 10px; }

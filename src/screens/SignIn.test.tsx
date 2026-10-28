@@ -117,7 +117,7 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
   it('trusted phone, nobody remembered: Jack Jack greets, a tappable list shows the family, tapping a name opens the PIN pad', () => {
     render(<SignIn />)
     expect(screen.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeTruthy()
-    expect(screen.getByAltText('Jack Jack, the Bantay dog')).toBeTruthy()
+    expect(screen.getByAltText('Jack Jack waving hello')).toBeTruthy()
     expect(screen.getByText(/I watch over the family's health and safety\. Who are you\?/)).toBeTruthy()
     const list = screen.getByLabelText('Who are you?')
     expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben'])
@@ -163,7 +163,7 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     render(<SignIn />)
     tap(/Not you\? Switch person/)
     expect(screen.getByLabelText('Who are you?')).toBeTruthy()
-    expect(screen.getAllByAltText('Jack Jack, the Bantay dog')).toHaveLength(1) // the welcome Jack, not the returning avatar
+    expect(screen.getAllByAltText('Jack Jack waving hello')).toHaveLength(1) // the welcome Jack, not the returning avatar
     expect(screen.queryByRole('heading', { name: 'Hi Kuya' })).toBeNull()
   })
 

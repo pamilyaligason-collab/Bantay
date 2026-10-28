@@ -10,6 +10,7 @@ import { addTask } from '../family/tasks'
 import { cardScrollTop, confirmDraft, confirmTask, FIELDS, personChoices, dateWords, personFor, recordsAnswer, sourceLink, taskArgs, validateDraft, type Card, type DraftTool, type Msg, type People, type RecordsAnswer } from './tools'
 import { speechCtor, type RecCtor } from './speech'
 import { Icon } from '../shell/Icon'
+import { JackArt } from '../look'
 import { openScan } from '../scan/open'
 import { weatherSummary } from './weather'
 import { CAUTION, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
@@ -346,7 +347,7 @@ export default function Assistant() {
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}
                 </div>
               ))}
-              {busy && <p className="sub" role="status">Thinking...</p>}
+              {busy && <p className="sub s14j-row" role="status">{!items.some((m) => m.emergency) && <JackArt name="thinking" size={48} decorative />}Thinking...</p>}
               {!online && <OfflinePanel contact={contact} go={go} />}
             </div>
             {items.length === 0 && <div className="as-chips" role="group" aria-label="Suggestions">

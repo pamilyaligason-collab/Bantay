@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import Facts from './Facts'
 import Memory from './Memory'
@@ -30,6 +31,7 @@ export default function PlayScreen() {
   if (page === 'facts') return <Facts onBack={back} />
   return (
     <div className="fp" data-testid="play-hub">
+      <div className="s14j-art"><JackArt name={today.n >= 3 ? 'celebrate' : 'playing'} size={96} /></div>
       <section className="sh-card fp-row" aria-label="Played today">
         <span className="fp-ico"><Icon name="smile" /></span>
         <div className="sh-grow">
