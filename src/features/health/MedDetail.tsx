@@ -14,6 +14,8 @@ import { missNote, stockInfo, weekStrip, type CellState } from './medDetailLogic
 import { givenName } from './medName'
 import { parseSchedule } from './meds'
 import { CARER_AFTER_MIN, remindPeople } from './reminders'
+import { KEY_ALARM_HEALTH, type AlarmHealth } from '../phonecheck/keys'
+import { useKvValue } from '../phonecheck/useKvValue'
 import { canMarkFor, useWritableIds } from './useCanMark'
 import './health.css'
 import './medicines.css'
@@ -92,6 +94,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   const alerts = useAlertRows()
   const ringsHere = useRingsHere(med?.personId, ownId)
   const native = Capacitor.isNativePlatform() // reminders.ts schedules alarms on native only
+  const alarmsOk = useKvValue<AlarmHealth>(KEY_ALARM_HEALTH)?.ok // false when the last plan failed (no notification permission); undefined before the first check
   const writerCarer = useHasWriterCarer(med?.personId, med?.personId === ownId ? member?.userId : undefined)
   const [sheet, setSheet] = useState(false)
   const [note, setNote] = useState<MedNote | null>(null)
@@ -161,7 +164,8 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
         <>
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
           <div className="card md-rem" data-testid="med-reminders">
-            {native && ringsHere !== undefined && (ringsHere
+            {native && ringsHere === true && alarmsOk === false && <a className="md-phone" href="#me" data-testid="med-alarms-off"><Icon name="phone" size={22} /><span className="grow"><b>Alarms are not set on this phone</b><span className="sub md-sub">Open Me to check the phone</span></span></a>}
+            {native && ringsHere !== undefined && (ringsHere ? alarmsOk === true : true) && (ringsHere
               ? <div className="md-phone" data-testid="med-rings"><Icon name="phone" size={22} /><span className="grow"><b>This phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
               : <div className="md-phone" data-testid="med-no-ring"><Icon name="phone" size={22} /><span className="grow"><b>No alarm on this phone for {whom}</b></span></div>)}
             {writerCarer && <div className="md-phone" data-testid="med-carers-told"><Icon name="bell" size={22} /><span className="grow"><b>Carers who can mark doses</b><span className="sub md-sub">Told in the app if no dose is logged about {CARER_AFTER_MIN} minutes after the time</span></span></div>}

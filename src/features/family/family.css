@@ -151,5 +151,4 @@
 .seg.fm-seg3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fm-checkin .tile { width: 44px; height: 44px; }
 .fm-checkin:focus-visible { outline: 3px solid var(--green2); outline-offset: 2px; }
-.rp-hug { display: flex; justify-content: center; }
 @media (hover: hover) { .bt .seg.fm-seg3 button:not([aria-pressed="true"]):hover { color: var(--ink); } } /* hover fill is darker than the card: keep the label readable (4.5:1) */

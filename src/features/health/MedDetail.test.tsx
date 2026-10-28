@@ -14,16 +14,25 @@ import { db } from '../../db'
 import { ldb, type Medication } from '../log/store'
 import { hdb } from '../records/store'
 import { REMIND_FOR } from './reminders'
+import { KEY_ALARM_HEALTH } from '../phonecheck/keys'
 import MedDetail from './MedDetail'
 import { Medicines } from './Medicines'
 
 const iso = (back: number, h = 12) => { const d = new Date(); d.setDate(d.getDate() - back); d.setHours(h, 0, 0, 0); return d.toISOString() }
 const med = (o: Partial<Medication> = {}): Medication => ({ clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed', schedule: { v: 1, times: ['08:00'] }, ...o })
 
-beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]) })
+beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]); await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 1, rearmed: 0, ok: true } }) })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 describe('MedDetail', () => {
+  it('says alarms are not set, not "rings at", when the last alarm plan failed on this phone', async () => {
+    await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 0, rearmed: 0, ok: false } })
+    await ldb.medications.add(med())
+    render(<MedDetail medicationId="s1" />)
+    expect(await screen.findByTestId('med-alarms-off')).toBeTruthy()
+    expect(screen.queryByText(/Rings at/)).toBeNull()
+  })
+
   it('makes no ring claim on the web version, where no alarms are scheduled', async () => {
     vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(false)
     await ldb.medications.add(med())

@@ -15,7 +15,7 @@ import Memories from './Memories'
 import { useFlagLines } from './reportData'
 import { CarerCards } from './CarerCards'
 import FamilyPhones from './FamilyPhones'
-import { IncomingSos } from './IncomingSos'
+import { IncomingSos, useSosActive } from './IncomingSos'
 import { AcceptCard } from '../sharing/AcceptCard'
 
 
@@ -35,6 +35,7 @@ export function lastCheckInWords(iso: string | undefined, now: Date = new Date()
 /** Family > People (mockup v6): today's check-in, then the roll call. Each row: picture, name, one status line. The phone health data switches live in Me. */
 export default function People() {
   const { people, selfId } = useFamilyPeople()
+  const sos = useSosActive() // no Jack beside a live SOS banner (D-91)
   const loaded = useCheckInsLoaded()
   const last = loaded ?? {}
   const [note, setNote] = useState('')
@@ -88,7 +89,7 @@ export default function People() {
               <b className="fm-okdone">You're OK · {doneAt}</b>
               <span className="sub"> Your family can see it.</span>
             </div>
-            {okAt && <JackArt name="well-done" size={72} decorative />}
+            {okAt && !sos && <JackArt name="well-done" size={72} decorative />}
           </>
         ) : (
           <>

@@ -10,6 +10,8 @@ import { prefersReducedMotion } from '../look/useReducedMotion'
 import { JackArt } from '../look'
 import { loadLang } from '../../lib/i18n'
 import { snoozeCard } from './snoozeCard'
+import { Capacitor } from '@capacitor/core'
+import { useSosActive } from '../family/IncomingSos'
 
 export const SNOOZE_MIN = 10 // the same minutes as reminderActions.SNOOZE_MIN (a test holds them equal); that module is loaded on tap, not here, so WeatherStrip's import chain stays light
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
@@ -18,6 +20,7 @@ export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it 
  *  Today does not render it for a calm pick (it gives the space to the weather card). A panel under it counts medicines waiting for "Still taking it?". */
 export default function NextUp({ item, review, notify, hold }: { item: NextItem; review: number; notify: (msg: string) => void; hold?: (it: NextItem | null) => void }) {
   const [busy, setBusy] = useState(false)
+  const sos = useSosActive() // no Jack beside a live SOS banner (D-91)
   const [phase, setPhase] = useState<'idle' | 'done' | 'leave'>('idle') // done: the button reads "Taken h:mm"; leave: the card collapses
   const [label, setLabel] = useState('')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -52,7 +55,7 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   const later = async () => {
     if (!w) return
     snoozeCard(item.key, SNOOZE_MIN)
-    notify(`Okay. I will remind you in ${SNOOZE_MIN} minutes`)
+    notify(Capacitor.isNativePlatform() ? `Okay. I will remind you in ${SNOOZE_MIN} minutes` : `Okay. This card comes back in ${SNOOZE_MIN} minutes`) // the web build rings nothing
     try {
       const [{ handleReminderAction }, { alarmText }] = await Promise.all([import('../health/reminderActions'), import('../health/reminders')])
       const text = alarmText(w.at, 1, await loadLang()) // no rep: reminderActions rings once more, in 10 minutes
@@ -87,7 +90,7 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
             {phase === 'idle' && item.late && <button type="button" className="td-skip" disabled={busy} onClick={() => void later()}>In {SNOOZE_MIN} min</button>}
           </div>
         )}
-        {w && phase !== 'idle' && <p className="td-saved"><JackArt name="well-done" size={48} decorative />Saved. This card folds away in a moment.</p>}
+        {w && phase !== 'idle' && <p className="td-saved">{!sos && <JackArt name="well-done" size={48} decorative />}Saved. This card folds away in a moment.</p>}
         {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}
       </article>
       {review > 0 && <MedsCheck review={review} />}

@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { JACK_ALT, JackArt, jackSrc, type JackName } from './JackArt'
 
 describe('JackArt', () => {
-  it('has a 256 and a 1024 file for every name, and the head has a 128', () => {
+  it('has a 256 file for every name, and the head has a 128', () => {
     for (const name of Object.keys(JACK_ALT) as JackName[]) {
       expect(jackSrc(name, 256), name).toBeTruthy()
-      expect(jackSrc(name, 1024), name).toBeTruthy()
     }
     expect(jackSrc('head', 128)).toBeTruthy()
   })

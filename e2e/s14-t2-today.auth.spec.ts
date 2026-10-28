@@ -62,7 +62,7 @@ test('In 10 min hides the late dose card, it stays hidden after a reload, and co
   expect((await later.boundingBox())!.height).toBeGreaterThanOrEqual(48)
   await later.click()
   await expect(page.locator('.td-next')).toHaveCount(0)
-  await expect(page.getByRole('status').filter({ hasText: 'remind you in 10 minutes' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'This card comes back in 10 minutes' })).toBeVisible()
   await shot(page, 'today-snoozed')
   await page.reload()
   await expect(page.getByTestId('salt-line')).toBeVisible()

@@ -18,6 +18,7 @@ import { weatherAction, zoneAlert } from './heroCards'
 import { joinNames, pickNext } from './nextPick'
 import { markDue, useDueMeds } from './useDueMeds'
 import { useStorm } from './useStorm'
+import { useSosActive } from '../family/IncomingSos'
 import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
 import { JackArt } from '../look'
@@ -52,7 +53,8 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const w = item.who
   const calm = item.kind === 'calm'
   // The sleepy Jack only when nothing needs action: no dose or storm card, no warning band, no weather warning. It is then the screen's one Jack (the weather card drops its own).
-  const sleepy = isNight(tick) && calm && !zoneAlert(alerts, place ? alertRef(place) : null) && !(place && weatherWarning(alerts, place.weather))
+  const sosLive = useSosActive()
+  const sleepy = isNight(tick) && calm && !sosLive && !zoneAlert(alerts, place ? alertRef(place) : null) && !(place && weatherWarning(alerts, place.weather))
   const taken = async () => {
     if (!w || busy) return
     setBusy(true)
@@ -96,7 +98,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     <div className="td-simple">
       <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={18} />Exit</button>
       <AlertBand />
-      {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />Nothing needs you right now. Good night.</p>}
+      {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />No medicine due right now. Good night.</p>}
       {calm ? <WeatherCard expanded review={review} noJack={sleepy} /> : (
         <>
           <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>

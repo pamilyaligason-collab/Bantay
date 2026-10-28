@@ -1,6 +1,7 @@
-/** Jack Jack sticker art (D-91). Files live in src/assets/jack as jack-<name>-<px>.webp (1024 and 256; head also 128).
+/** Jack Jack sticker art (D-91). Files live in src/assets/jack as jack-<name>-<px>.webp (256 shipped; head also 128; 1024 kept for print).
  *  Never place him on SOS, an emergency result or a diagnosis screen. */
-const FILES = import.meta.glob<string>('../../assets/jack/*.webp', { eager: true, query: '?url', import: 'default' })
+// shortcut: only the 128/256 files ship (precached for offline); the 1024s stay in src/assets/jack for print or the mockup, add them here if a screen ever draws Jack above 128 px at 2x
+const FILES = import.meta.glob<string>('../../assets/jack/*-{128,256}.webp', { eager: true, query: '?url', import: 'default' })
 
 export const JACK_ALT = {
   hello: 'Jack Jack waving hello',
@@ -26,19 +27,16 @@ export const JACK_ALT = {
 
 export type JackName = keyof typeof JACK_ALT
 
-export const jackSrc = (name: JackName, px: 128 | 256 | 1024): string | undefined => FILES[`../../assets/jack/jack-${name}-${px}.webp`]
+export const jackSrc = (name: JackName, px: 128 | 256): string | undefined => FILES[`../../assets/jack/jack-${name}-${px}.webp`]
 
 /** A fixed-size box (no layout shift), lazy-loaded. `decorative` when text beside it already says the same thing. */
 export function JackArt({ name, size = 96, decorative = false, className }: { name: JackName; size?: number; decorative?: boolean; className?: string }) {
   const small = name === 'head' && size <= 64 ? jackSrc(name, 128) : jackSrc(name, 256)
-  const big = jackSrc(name, 1024)
   if (!small) return null
   return (
     <img
       className={className ? `jack ${className}` : 'jack'}
       src={small}
-      srcSet={big && size > 128 ? `${small} 256w, ${big} 1024w` : undefined}
-      sizes={big && size > 128 ? `${size}px` : undefined}
       width={size}
       height={size}
       loading="lazy"

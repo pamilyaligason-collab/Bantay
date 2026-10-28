@@ -67,7 +67,7 @@ describe('Simple mode night: one Jack per screen, and only when nothing needs ac
   it('night, nothing due, no warning, rain tip: exactly one Jack (the sleepy one) and the true copy', async () => {
     m.wx = rainy
     const { container } = simple()
-    await screen.findByText('Nothing needs you right now. Good night.')
+    await screen.findByText('No medicine due right now. Good night.')
     expect(screen.getByText(/^Rain likely/)).toBeTruthy() // the tip still shows; only its Jack is dropped
     expect(container.querySelectorAll('img.jack')).toHaveLength(1)
     expect(jacks(container)[0]).toMatch(/sleepy/)
