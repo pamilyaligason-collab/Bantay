@@ -2,13 +2,16 @@ import { useEffect, useState } from 'react'
 import { db, enqueue } from '../../db'
 import { supabase } from '../auth/client'
 import { shortName } from '../inbox/build'
-import { markSeen, type AlertRow } from '../notify/store'
+import { markSeen } from '../notify/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { callFirstContact } from '../sos/call'
 import { mapLink } from '../sos/sms'
 import { Icon } from '../shell/Icon'
 import { dial, useFamilyPeople } from './roster'
 import './family.css'
+import { pickSos } from './sosActive'
+
+export { pickSos, useSosActive } from './sosActive'
 
 /** The red SOS banner at the top of Today and Family (D-78, mockup lock-sos). A family SOS reaches a carer's Bantay as a `sos` row with template `family_sos`;
  *  the instant part is the elder's own phone (it dials and opens a text). This banner is the saved record, shown each time Bantay is opened until the carer marks it handled.
@@ -17,15 +20,6 @@ interface SosEventRow { id: string; person_id: string; at: string; lat: number |
 
 const ACKED_KEY = 'sos.acked' // the last SOS ids this phone has told the server it saw (ML-06: capped)
 const ACKED_MAX = 20
-
-/** The newest unseen family SOS that nobody cancelled, or null. `rows` are the unexpired alert rows, newest first. */
-export function pickSos(rows: AlertRow[]): AlertRow | null {
-  const cancelled = (r: AlertRow) => rows.some((c) => c.kind === 'sos_cancel' && !!r.ref && !!c.ref && c.ref.startsWith(`${r.ref}:`))
-  return rows.find((r) => r.kind === 'sos' && r.template === 'family_sos' && r.seenAt == null && !cancelled(r)) ?? null
-}
-
-/** true while a family SOS banner is up: Jack Jack stays off that screen (D-91). */
-export const useSosActive = () => pickSos(useAlertRows()) != null
 
 const clock = (iso: string) => {
   const t = Date.parse(iso)

@@ -11,7 +11,7 @@ import { JackArt } from '../look'
 import { loadLang } from '../../lib/i18n'
 import { snoozeCard } from './snoozeCard'
 import { Capacitor } from '@capacitor/core'
-import { useSosActive } from '../family/IncomingSos'
+import { useSosActive } from '../family/sosActive'
 
 export const SNOOZE_MIN = 10 // the same minutes as reminderActions.SNOOZE_MIN (a test holds them equal); that module is loaded on tap, not here, so WeatherStrip's import chain stays light
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
