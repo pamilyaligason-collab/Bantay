@@ -81,7 +81,6 @@ a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify
 .md-dn { font-size: 13px; color: var(--muted); }
 .md-strip i { display: grid; place-items: center; width: 100%; max-width: 40px; aspect-ratio: 1; border-radius: 50%; font-style: normal; font-weight: 700; font-size: 16px; background: var(--card2); color: var(--ink); }
 .md-strip li[data-state="taken"] i { background: var(--green); color: var(--on-green); }
-.md-strip li[data-state="late"] i { background: var(--warn-bg); color: var(--ink); box-shadow: inset 0 0 0 2px var(--warn); }
 .md-strip li[data-state="missed"] i { background: var(--red-soft); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
 .md-legend, .md-miss { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) { .md-strip i { transition: none; } }

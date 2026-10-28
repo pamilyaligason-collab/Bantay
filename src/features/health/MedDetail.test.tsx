@@ -25,7 +25,24 @@ describe('MedDetail', () => {
     expect(facts.getByText('1 tablet')).toBeTruthy()
     expect(facts.getByText('Every day at 8:00 AM')).toBeTruthy()
     expect(within(screen.getByTestId('med-stock')).getByText('20 tablets · 20 days left')).toBeTruthy()
-    expect(within(screen.getByTestId('med-week')).getAllByRole('listitem')).toHaveLength(7)
+    expect(within(await screen.findByTestId('med-week')).getAllByRole('listitem')).toHaveLength(7)
+  })
+
+  it('the reminders card promises nothing about the carers phones', async () => {
+    await ldb.medications.add(med())
+    render(<MedDetail medicationId="s1" />)
+    const card = within(await screen.findByTestId('med-reminders'))
+    expect(card.getByText(/Rings at 8:00 AM/)).toBeTruthy()
+    expect(card.getByText(/Told in the app after about 30 minutes/)).toBeTruthy()
+    expect(card.queryByText(/Their phones ring/)).toBeNull()
+  })
+
+  it('the week header appears only with the doses in: never a 0 of N first', async () => {
+    await ldb.medications.add(med({ schedule: { v: 1, times: ['23:59'] }, startedOn: iso(3).slice(0, 10) })) // tonight is never due yet, so 3 doses are due
+    await ldb.meds.bulkAdd([{ personId: 'p1', name: 'Amlodipine', takenAt: iso(3, 23), medicationId: 's1', slot: '23:59' }, { personId: 'p1', name: 'Amlodipine', takenAt: iso(2, 23), medicationId: 's1', slot: '23:59' }])
+    render(<MedDetail medicationId="s1" />)
+    await screen.findByTestId('med-week') // the first time the week exists, its header already has the real count
+    expect(screen.getByText('2 of 3 taken')).toBeTruthy()
   })
 
   it('someone who may not edit can read it but has no Edit or Pause', async () => {
@@ -44,9 +61,9 @@ describe('MedDetail', () => {
 })
 
 describe('Medicines list rows', () => {
-  it('link to the detail, show stock, and turn the days amber under a week', async () => {
+  it('link to the detail, show stock, and turn the days amber at a week or less', async () => {
     await ldb.medications.bulkAdd([
-      med({ stockQty: 3, perDay: 1, stockSetAt: iso(0) }),
+      med({ stockQty: 7, perDay: 1, stockSetAt: iso(0) }),
       med({ clientId: 'c2', serverId: 's2', name: 'Losartan', strength: '50 mg', stockQty: 24, perDay: 1, stockSetAt: iso(0) }),
       med({ clientId: 'c3', serverId: 's3', name: 'Paracetamol', strength: undefined, asNeeded: true, schedule: { v: 1, times: [] } })
     ])
@@ -54,7 +71,7 @@ describe('Medicines list rows', () => {
     const rows = within(await screen.findByTestId('meds-active'))
     const amlo = rows.getByRole('link', { name: /Amlodipine 5 mg/ })
     expect(amlo.getAttribute('href')).toBe('#health/med/s1')
-    expect(within(amlo).getByTestId('med-days').textContent).toBe('Refill in 3 days')
+    expect(within(amlo).getByTestId('med-days').textContent).toBe('Refill in 7 days')
     expect(within(amlo).getByTestId('med-days').className).toContain('warn')
     const los = rows.getByRole('link', { name: /Losartan 50 mg/ })
     expect(within(los).getByTestId('med-days').textContent).toBe('24 days')

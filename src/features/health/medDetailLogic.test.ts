@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
 import type { AlertRow } from '../notify/store'
+import { countDoses } from './doseCount'
 import { missNote, stockInfo, weekCounter, weekStrip } from './medDetailLogic'
+import { lastDays } from '../today/myWeekLogic'
 
 const d = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m) // October 2026, local clock
 const med = (o: Partial<Medication> = {}): Medication => ({ serverId: 'm1', personId: 'p1', name: 'Amlodipine', schedule: { v: 1, times: ['08:00'] }, medStatus: 'active', ...o })
@@ -14,7 +16,8 @@ describe('stockInfo', () => {
   })
   it('7 days left is not amber; 1 day is singular; 0 runs out today', () => {
     const base = { stockSetAt: d(28, 7).toISOString() }
-    expect(stockInfo(med({ ...base, stockQty: 7 }), d(28, 9))).toMatchObject({ days: 7, low: false, chip: '7 days' })
+    expect(stockInfo(med({ ...base, stockQty: 7 }), d(28, 9))).toMatchObject({ days: 7, low: true, chip: 'Refill in 7 days' }) // stock.ts: low is <= 7, same as the Refill screen
+    expect(stockInfo(med({ ...base, stockQty: 8 }), d(28, 9))).toMatchObject({ days: 8, low: false, chip: '8 days' })
     expect(stockInfo(med({ ...base, stockQty: 1 }), d(28, 9))).toMatchObject({ days: 1, low: true, chip: 'Refill in 1 day' })
     expect(stockInfo(med({ ...base, stockQty: 0 }), d(28, 9))).toMatchObject({ days: 0, low: true, chip: 'Runs out today' })
   })
@@ -26,12 +29,12 @@ describe('stockInfo', () => {
 
 describe('weekStrip', () => {
   const now = d(28, 9) // Wed 28 Oct 09:00; the strip is Thu 22 .. Wed 28
-  it('shows taken, late, missed (no take and skipped), pending today, with counts', () => {
+  it('shows taken, missed (no take, skipped, or more than 2 hours off), pending today, with counts', () => {
     const takes = [take(22, 8, 5), take(23, 11, 0), take(25, 8, 1, { skipped: true }), take(26, 8, 30), take(27, 7, 50)]
     const w = weekStrip(med({ startedOn: '2026-10-20' }), takes, now)
-    expect(w.cells.map((c) => c.state)).toEqual(['taken', 'late', 'missed', 'missed', 'taken', 'taken', 'pending'])
+    expect(w.cells.map((c) => c.state)).toEqual(['taken', 'missed', 'missed', 'missed', 'taken', 'taken', 'pending'])
     expect(w.cells.map((c) => c.label)).toEqual(['Thu', 'Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed'])
-    expect(w.taken).toBe(4)
+    expect(w.taken).toBe(3)
     expect(w.due).toBe(6)
   })
   it('days before it started are not due', () => {
@@ -41,11 +44,6 @@ describe('weekStrip', () => {
   })
   it('an as-needed medicine has no due days', () => {
     expect(weekStrip(med({ asNeeded: true }), [], now).cells.every((c) => c.state === 'not-due')).toBe(true)
-  })
-  it('across midnight: a 23:30 dose taken at 00:10 counts for the day it was due; tonight is pending', () => {
-    const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-27' })
-    const w = weekStrip(m, [take(28, 0, 10, { slot: '23:30' })], now)
-    expect(w.cells.slice(-2).map((c) => c.state)).toEqual(['taken', 'pending'])
   })
   it('across midnight: at 23:45 the 23:30 dose is still pending, at 01:31 next day it is missed', () => {
     const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-27' })
@@ -60,6 +58,42 @@ describe('weekStrip', () => {
     const m = med({ schedule: { v: 1, times: ['08:00', '20:00'] }, startedOn: '2026-10-27' })
     const w = weekStrip(m, [take(27, 8, 0)], d(28, 9))
     expect(w.cells.slice(-2).map((c) => c.state)).toEqual(['missed', 'pending'])
+  })
+})
+
+/** The strip must say what the one counter says, on the same data. */
+const same = (m: Medication, takes: MedTaken[], now: Date) => {
+  const w = weekStrip(m, takes, now)
+  const n = countDoses({ meds: [m], takes, personId: 'p1', now, days: lastDays(now) })
+  expect([w.taken, w.due]).toEqual([n.done, n.want])
+  return w
+}
+describe('weekStrip agrees with countDoses', () => {
+  it('one slot, early, on time, late and skipped takes', () => {
+    const m = med({ startedOn: '2026-10-20' })
+    const w = same(m, [take(22, 8, 0), take(23, 7, 0), take(24, 5, 0), take(25, 11, 0), take(26, 8, 0, { skipped: true })], d(28, 9))
+    expect(w.cells.map((c) => c.state)).toEqual(['taken', 'taken', 'missed', 'missed', 'missed', 'missed', 'pending']) // 7:00 is an hour early: taken; 5:00 and 11:00 are outside 2 hours
+    expect(w.cells[1]).toMatchObject({ state: 'taken' })
+  })
+  it('two slots a day', () => {
+    const m = med({ schedule: { v: 1, times: ['08:00', '20:00'] }, startedOn: '2026-10-25' })
+    const w = same(m, [take(25, 8, 0), take(25, 20, 0, { slot: '20:00' }), take(26, 8, 0), take(27, 20, 5, { slot: '20:00' })], d(28, 21))
+    expect(w.cells.slice(-4).map((c) => c.state)).toEqual(['taken', 'missed', 'missed', 'missed'])
+  })
+  it('a 23:30 dose taken at 00:10 is whatever the counter says, and tonight is pending', () => {
+    const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-27' })
+    const w = same(m, [take(28, 0, 10, { slot: '23:30' })], d(28, 9))
+    expect(w.cells.at(-1)!.state).toBe('pending')
+  })
+  it('a take at 01:31 for a 23:30 slot is outside 2 hours and is not claimed by today or the day before', () => {
+    const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-26' })
+    const w = same(m, [take(28, 1, 31, { slot: '23:30' })], d(28, 9))
+    expect(w.cells.slice(-3).map((c) => c.state)).toEqual(['missed', 'missed', 'pending'])
+  })
+  it('a 00:30 dose: 00:20 is on time, 23:50 the night before is not that day', () => {
+    const m = med({ schedule: { v: 1, times: ['00:30'] }, startedOn: '2026-10-26' })
+    const w = same(m, [take(27, 0, 20, { slot: '00:30' }), take(27, 23, 50, { slot: '00:30' })], d(28, 9))
+    expect(w.cells.slice(-3).map((c) => c.state)).toEqual(['missed', 'taken', 'missed'])
   })
 })
 

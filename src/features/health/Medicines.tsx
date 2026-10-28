@@ -22,15 +22,16 @@ const TOAST_MS = 3500
 const UNDO_MS = 6000
 
 /** Doses logged since `day` (the start of the 7-day window) for one person, live. Full rows: the medication id, slot and skipped flag decide what is taken. */
-function useTakesSince(personId: string, day: string): MedTaken[] {
-  const [rows, setRows] = useState<MedTaken[]>(NONE)
+function useTakesSince(personId: string, day: string): MedTaken[] | undefined {
+  const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
+  const id = `${personId}|${day}`
   useEffect(() => {
-    if (!personId) return setRows(NONE)
+    if (!personId) return
     const since = new Date(`${day}T00:00:00`).toISOString()
-    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: setRows, error: () => setRows(NONE) })
+    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id, rows }), error: () => setGot({ id, rows: NONE }) })
     return () => sub.unsubscribe()
-  }, [personId, day])
-  return rows
+  }, [personId, day, id])
+  return got && got.id === id ? got.rows : personId ? undefined : NONE
 }
 
 const timeOf = (iso: string) => { const d = new Date(iso); return clock12(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`) }
@@ -50,7 +51,7 @@ function useToday(personId: string) {
   const meds = useMedicationRows(personId)
   const day = dayOf(new Date())
   const week = useTakesSince(personId, lastDays(new Date())[0]!)
-  const takes = useMemo(() => week.filter((t) => dayOf(t.takenAt) === day), [week, day])
+  const takes = useMemo(() => (week ?? NONE).filter((t) => dayOf(t.takenAt) === day), [week, day])
   const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day), [meds, personId, day, takes])
   return { meds, takes, week, doses, day }
 }
@@ -83,7 +84,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
   const past = (meds ?? []).filter((m) => m.medStatus === 'stopped').sort((a, b) => (b.stoppedOn ?? '').localeCompare(a.stoppedOn ?? ''))
   const done = doses.filter((d) => d.state !== 'pending').length
   const open = (med?: Medication) => canEdit && setSheet({ med })
-  const weekLine = meds ? weekCounter({ meds, takes: week, personId, now: new Date() }) : null
+  const weekLine = meds && week ? weekCounter({ meds, takes: week, personId, now: new Date() }) : null
   const idOf = (m: Medication) => m.serverId ?? m.clientId ?? String(m.id)
   const empty = meds !== undefined && live.length + paused.length + past.length === 0
 

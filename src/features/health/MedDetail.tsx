@@ -20,8 +20,8 @@ const NONE: MedTaken[] = []
 const TOAST_MS = 3500
 const UNDO_MS = 6000
 const label = (m: Pick<Medication, 'name' | 'strength'>) => [m.name, m.strength].filter(Boolean).join(' ')
-const GLYPH: Record<CellState, string> = { taken: '✓', late: '!', missed: '×', 'not-due': '–', pending: '…' }
-const SAYS: Record<CellState, string> = { taken: 'taken', late: 'taken late', missed: 'missed', 'not-due': 'not due', pending: 'not yet' }
+const GLYPH: Record<CellState, string> = { taken: '✓', missed: '×', 'not-due': '–', pending: '…' }
+const SAYS: Record<CellState, string> = { taken: 'taken', missed: 'missed', 'not-due': 'not due', pending: 'not yet' }
 
 /** The medications row for a route id (server id, else client id, else local id). undefined while loading, null when there is none (deleted or never here). */
 function useMedById(id: string): Medication | null | undefined {
@@ -34,16 +34,16 @@ function useMedById(id: string): Medication | null | undefined {
   return med
 }
 
-/** Doses this person logged in the last 7 days, live. */
-function useWeekTakes(personId: string | undefined): MedTaken[] {
-  const [rows, setRows] = useState<MedTaken[]>(NONE)
+/** Doses this person logged in the last 7 days, live. undefined until the first read, so the week never shows "0 taken" before the doses are in. */
+function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
+  const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
   useEffect(() => {
-    if (!personId) return setRows(NONE)
+    if (!personId) return
     const since = new Date(`${lastDays(new Date())[0]}T00:00:00`).toISOString()
-    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: setRows, error: () => setRows(NONE) })
+    const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id: personId, rows }), error: () => setGot({ id: personId, rows: NONE }) })
     return () => sub.unsubscribe()
   }, [personId])
-  return rows
+  return got && got.id === personId ? got.rows : undefined // rows read for another person never pass as this one's
 }
 
 const startedText = (iso?: string) => (iso ? new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : null)
@@ -66,7 +66,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
     timer.current = window.setTimeout(() => setNote(null), n.undo ? UNDO_MS : TOAST_MS)
   }
   const now = new Date()
-  const week = useMemo(() => (med ? weekStrip(med, takes, new Date()) : null), [med, takes])
+  const week = useMemo(() => (med && takes ? weekStrip(med, takes, new Date()) : null), [med, takes])
   const toast = note && (
     <div className="toast md-toast" role="status">
       <span>{note.text}</span>
@@ -75,7 +75,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   )
 
   if (med === undefined) return <SubHeader title="Medicine" backHref="#health/meds" backLabel="Back to Medicines" />
-  if (med === null || !week) {
+  if (med === null) {
     return (
       <>
         <SubHeader title="Medicine" backHref="#health/meds" backLabel="Back to Medicines" />
@@ -94,7 +94,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
   const stock = stockInfo(med, now)
   const times = s.times.map(clock12)
   const when = med.asNeeded ? 'As needed, when you need it' : times.length ? `Every day at ${times.join(', ')}` : 'No time set yet'
-  const miss = missNote(week.cells, alerts, med)
+  const miss = week ? missNote(week.cells, alerts, med) : null
   const resume = () => void setMedStatus(med, 'active').then(() => say({ text: `${med.name} resumed. Reminders are back on.` })).catch(() => say({ text: 'Could not save on this phone. Try again.' }))
   const pause = () => void setMedStatus(med, 'paused').then(() => say({ text: `${med.name} paused. Reminders are off.` })).catch(() => say({ text: 'Could not save on this phone. Try again.' }))
   const started = startedText(med.startedOn)
@@ -124,7 +124,6 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
           <div className="card md-rem" data-testid="med-reminders">
             <div className="md-phone"><Icon name="phone" size={22} /><span className="grow"><b>{who} phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
-            <div className="md-phone"><Icon name="phone" size={22} /><span className="grow"><b>Carers who can mark doses</b><span className="sub md-sub">Their phones ring for the same times</span></span></div>
             <div className="md-phone"><Icon name="bell" size={22} /><span className="grow"><b>The family</b><span className="sub md-sub">Told in the app after about {CARER_AFTER_MIN} minutes with no answer</span></span></div>
           </div>
           <p className="sub md-help">Dose alarms ring in the Android app. On an iPhone or the web version, only the in-app alert to the carer works.</p>
@@ -142,7 +141,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
         )}
       </div>
 
-      {status !== 'stopped' && !med.asNeeded && week.cells.some((c) => c.state !== 'not-due') && (
+      {week && status !== 'stopped' && !med.asNeeded && week.cells.some((c) => c.state !== 'not-due') && (
         <>
           <div className="md-sech"><h2 className="hd">Last 7 days</h2><span className="sub">{week.taken} of {week.due} taken</span></div>
           <div className="card md-week" data-testid="med-week">
@@ -151,7 +150,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
                 <li key={c.day} data-state={c.state} aria-label={`${c.label}: ${SAYS[c.state]}`}><span className="md-dn">{c.label}</span><i aria-hidden="true">{GLYPH[c.state]}</i></li>
               ))}
             </ol>
-            <p className="sub md-legend">{'✓'} taken &nbsp; ! late &nbsp; {'×'} missed &nbsp; {'–'} not due</p>
+            <p className="sub md-legend">{'✓'} taken &nbsp; {'×'} missed &nbsp; {'–'} not due</p>
             {miss && <p className="sub md-miss" data-testid="med-miss">{miss}</p>}
           </div>
         </>
