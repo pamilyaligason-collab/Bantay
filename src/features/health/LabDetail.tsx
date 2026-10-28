@@ -31,8 +31,14 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
   useEffect(() => { if (personId) void kvGet(key).then((have) => setAdded(info.questions.filter((q) => have.includes(q)))) }, [key, personId, info.questions])
   const add = async (q: string) => {
     if (!personId) return
-    const have = await kvGet(key)
-    try { await db.kv.put({ key, value: have.includes(q) ? have : [...have, q] }); setAdded((a) => [...a, q]) } catch { /* stays unadded, the button remains */ }
+    try {
+      // one transaction so two quick adds both land (read then write was last-writer-wins)
+      await db.transaction('rw', db.kv, async () => {
+        const have = await kvGet(key)
+        if (!have.includes(q)) await db.kv.put({ key, value: [...have, q] })
+      })
+      setAdded((a) => [...a, q])
+    } catch { /* stays unadded, the button remains */ }
   }
   return (
     <>

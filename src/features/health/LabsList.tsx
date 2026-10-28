@@ -11,15 +11,21 @@ import { OriginalLink } from '../records/ConfirmSheet'
 export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null }) {
   const { range, pos, rv } = row
   const b = range && rv ? labBand(rv.value, range) : null
-  if (!b || !range) return null
+  if (!b || !range || !rv) return null
   const p0 = prevAt != null ? labBand(prevAt, range) : null
-  // shortcut: two values off the same end of the track clamp to one spot, so the hollow mark steps 8% toward the middle to stay visible; the Before line holds the exact numbers.
-  const p = p0 && Math.abs(p0.you - b.you) < 8 ? { ...p0, you: b.you > 50 ? b.you - 8 : b.you + 8 } : p0
+  // shortcut: two values off the SAME end of the track clamp to one spot, so the lower-ranked one steps 8% inward to stay visible (the higher value keeps the track end); the Before line holds the exact numbers.
+  let you = b.you
+  let prev = p0 ? p0.you : null
+  if (p0 && prevAt != null && b.edge && p0.edge === b.edge) {
+    const prevOutermost = b.edge === 'high' ? prevAt > rv.value : prevAt < rv.value
+    if (prevOutermost) you = b.edge === 'high' ? b.you - 8 : b.you + 8
+    else prev = b.edge === 'high' ? p0.you - 8 : p0.you + 8
+  }
   return (
     <span className="lr-track" aria-hidden="true">
       <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
-      {p && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${p.you}%` }} />}
-      <i className={`lr-you ${pos}`} style={{ left: `${b.you}%` }}><b>You</b></i>
+      {prev != null && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${prev}%` }} />}
+      <i className={`lr-you ${pos}`} style={{ left: `${you}%` }}><b>You</b></i>
       {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
       {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
     </span>

@@ -63,25 +63,6 @@ export function labNum(value: number | null | undefined): string {
   return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
 }
 
-const PANELS: [string, string[]][] = [
-  ['Cholesterol', ['ldl', 'hdl', 'totalcholesterol', 'cholesterol', 'triglycerides', 'vldl', 'ldlcholesterol', 'hdlcholesterol']],
-  ['Sugar', ['hba1c', 'fastingglucose', 'glucose', 'fbs', 'rbs']],
-  ['Kidney', ['egfr', 'creatinine', 'crea', 'bun', 'urea', 'uricacid']],
-  ['Blood count', ['hemoglobin', 'haemoglobin', 'hgb', 'hematocrit', 'hct', 'platelets', 'platelet', 'plt', 'wbc', 'rbc', 'mcv', 'mch', 'mchc', 'rdw', 'mpv']],
-  ['Liver', ['alt', 'ast', 'alp', 'ggt', 'bilirubin', 'sgpt', 'sgot', 'albumin']]
-]
-export const OTHER_PANEL = 'Other'
-/** The group a lab belongs to on the list (Cholesterol, Sugar, Kidney, Blood count, Liver, else Other). */
-export function panelOf(test: string): string {
-  const k = test.toLowerCase().replace(/[^a-z0-9]/g, '')
-  return PANELS.find(([, names]) => names.includes(k))?.[0] ?? OTHER_PANEL
-}
-/** Rows grouped by panel in a fixed order (Other last), each group sorted by name. Empty panels are left out. */
-export function groupByPanel(rows: LabRow[]): { panel: string; rows: LabRow[] }[] {
-  const byName = (a: LabRow, b: LabRow) => metricLabel(a.reading.test).localeCompare(metricLabel(b.reading.test))
-  return [...PANELS.map(([n]) => n), OTHER_PANEL].map((panel) => ({ panel, rows: rows.filter((r) => panelOf(r.reading.test) === panel).sort(byName) })).filter((g) => g.rows.length > 0)
-}
-
 const distance = (v: number, r: Range) => (r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
 export type CloserKind = 'in' | 'crossed' | 'same' | 'closer' | 'further'
 /** Direction depends on the side of the range, not on up or down: 8.1 after 9.4 with a top limit of 7 is closer; 4.0 after 5.5 with a bottom limit of 5 is further. Null without a range. */
@@ -145,23 +126,6 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 export function labDate(iso: string, withYear = false): string {
   const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T12:00:00` : iso) // a plain document date is a calendar day, not a UTC instant
   return Number.isNaN(d.getTime()) ? '' : `${d.getDate()} ${MON[d.getMonth()]}${withYear ? ` ${d.getFullYear()}` : ''}`
-}
-
-export interface LabHistoryEntry { value: number; unit: string; date: string; sourceFileId?: string; labName?: string; range?: Range }
-/** Every result of one test, newest first, each with its date, the paper it came from and the range printed on that paper. `labOf` names the lab from a source file id. */
-export function labHistory(results: Reading[], testKey: string, labOf?: (sourceFileId: string) => string | undefined): LabHistoryEntry[] {
-  return results
-    .filter((r) => r.test === testKey && Number.isFinite(Date.parse(r.takenAt)) && typeof r.value === 'number' && Number.isFinite(r.value))
-    .sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
-    .map((r) => {
-      const labName = r.sourceFileId ? labOf?.(r.sourceFileId) : undefined
-      return {
-        value: r.value, unit: r.unit ?? '', date: r.takenAt,
-        ...(r.sourceFileId ? { sourceFileId: r.sourceFileId } : {}),
-        ...(labName ? { labName } : {}),
-        ...(r.labLow != null || r.labHigh != null ? { range: { low: r.labLow ?? null, high: r.labHigh ?? null } } : {})
-      }
-    })
 }
 
 const words = (r: Range) => (r.low != null && r.high != null ? `${labNum(r.low)} to ${labNum(r.high)}` : r.high != null ? `up to ${labNum(r.high)}` : `${labNum(r.low)} or more`)

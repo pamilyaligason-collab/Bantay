@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupByPanel, groupLabs, labBand, labDate, labHistory, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, panelOf, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
+import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
 import type { Reading } from './ranges'
 
 const r = (test: string, value: number, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: '2026-10-01T08:00:00Z', test, value, unit: 'mg/dL', ...extra })
@@ -101,29 +101,9 @@ describe('labNum (S7: one decimal on the list)', () => {
   })
 })
 
-describe('panels', () => {
-  it('maps tests to panels and groups in a fixed order with Other last', () => {
-    expect(panelOf('total_cholesterol')).toBe('Cholesterol')
-    expect(panelOf('HbA1c')).toBe('Sugar')
-    expect(panelOf('egfr')).toBe('Kidney')
-    expect(panelOf('hemoglobin')).toBe('Blood count')
-    expect(panelOf('alt')).toBe('Liver')
-    expect(panelOf('mystery')).toBe('Other')
-    const g = groupByPanel(['mystery', 'creatinine', 'ldl', 'hdl'].map((t) => labRow(r(t, 1))))
-    expect(g.map((x) => [x.panel, x.rows.map((y) => y.reading.test)])).toEqual([['Cholesterol', ['hdl', 'ldl']], ['Kidney', ['creatinine']], ['Other', ['mystery']]])
-  })
-})
-
-describe('s14 L: labHistory, rangeSource, previousResult, trendOfLastThree', () => {
+describe('s14 L: rangeSource, previousResult, trendOfLastThree', () => {
   const at = (d: string) => `${d}T12:00:00`
   const hba = [r('hba1c', 7.4, { unit: '%', takenAt: at('2026-04-04'), labLow: 4, labHigh: 5.6 }), r('hba1c', 6.8, { unit: '%', takenAt: at('2026-10-02'), labLow: 4, labHigh: 5.6, sourceFileId: 'f1' }), r('hba1c', 7.1, { unit: '%', takenAt: at('2026-07-03'), labLow: 4, labHigh: 5.6 }), r('ldl', 100, { takenAt: at('2026-10-02') })]
-  it('labHistory is one test, newest first, with the file, lab name and printed range', () => {
-    const h = labHistory(hba, 'hba1c', (id) => (id === 'f1' ? 'GenSan Medical Lab' : undefined))
-    expect(h.map((x) => x.value)).toEqual([6.8, 7.1, 7.4])
-    expect(h[0]).toMatchObject({ sourceFileId: 'f1', labName: 'GenSan Medical Lab', range: { low: 4, high: 5.6 } })
-    expect(h[1]!.sourceFileId).toBeUndefined()
-    expect(labHistory(hba, 'nope')).toEqual([])
-  })
   it('rangeSource says whose range: the lab paper first, else a named guide, else nothing', () => {
     expect(rangeSource(hba[1]!)).toEqual({ kind: 'lab', text: 'Lab range 4 to 5.6' })
     const g = rangeSource(r('ldl', 162))!
@@ -143,6 +123,21 @@ describe('s14 L: labHistory, rangeSource, previousResult, trendOfLastThree', () 
     const mixed = [r('ldl', 4, { unit: 'mmol/L', takenAt: at('2026-07-01') }), r('ldl', 162, { takenAt: at('2026-10-01') })]
     expect(previousResult(mixed, 'ldl')).toBeNull()
     expect(previousResult([up[1]!], 'ldl')).toBeNull()
+  })
+  it('previousResult lines: in range both times, crossed, no change', () => {
+    const two = (prev: number, latest: number) => [r('hba1c', prev, { unit: '%', takenAt: at('2026-07-03'), labLow: 4, labHigh: 5.6 }), r('hba1c', latest, { unit: '%', takenAt: at('2026-10-02'), labLow: 4, labHigh: 5.6 })]
+    const inn = previousResult(two(5.2, 5.0), 'hba1c')!
+    expect(inn.kind).toBe('in')
+    expect(inn.line).toBe('Before: 5.2 % on 3 Jul · down 0.2 · in the range both times')
+    const crossed = previousResult(two(6, 3.5), 'hba1c')!
+    expect(crossed.kind).toBe('crossed')
+    expect(crossed.line).toBe('Before: 6 % on 3 Jul · down 2.5 · now on the other side of the range')
+    const same = previousResult(two(7, 7), 'hba1c')!
+    expect(same).toMatchObject({ direction: 'same', change: 0, kind: 'same' })
+    expect(same.line).toBe('Before: 7 % on 3 Jul · no change')
+  })
+  it('rangeSource guide string names the source and year', () => {
+    expect(rangeSource(r('ldl', 162))).toEqual({ kind: 'guide', text: 'General guide (MedlinePlus, Cholesterol Levels: What You Need to Know, 2026): Under 100' })
   })
   it('trendOfLastThree reads newest against oldest', () => {
     expect(trendOfLastThree([{ value: 6.8 }, { value: 7.1 }, { value: 7.4 }])).toBe('going down')
