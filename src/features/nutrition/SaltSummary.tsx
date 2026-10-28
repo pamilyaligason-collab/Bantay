@@ -59,18 +59,25 @@ const useNow = () => {
   return now
 }
 
+/** The words on Today's salt line. Meals logged with no sodium number say so; that is not "nothing logged", and never a made-up 0. */
+export function saltLineText(entries: FoodEntry[], goalMg: number): string {
+  const mg = dailyTotals(entries).sodiumMg
+  if (mg != null) return `Salt ${fmt(mg)} of ${fmt(goalMg)} mg today`
+  return entries.length ? "Salt: not known for today's meals" : 'Salt: nothing logged yet today'
+}
+
 /** Today's one salt line (the Meals card moved to Health > Food, D-62 / mockup v8): this phone's member, "Salt 1,300 of 1,500 mg today", a link to Health > Food and nutrients.
- *  Nothing until signed in. With nothing logged it says so instead of a made-up 0. */
+ *  Nothing until signed in. With nothing logged, or meals without a salt number, it says so instead of a made-up 0. */
 export default function SaltLine() {
   const personId = useSelfPersonId() ?? ''
   const now = useNow()
   const food = useFood(personId, 2)
   const goal = useGoal(personId)
-  const mg = useMemo(() => dailyTotals(onDay(food, now)).sodiumMg, [food, now])
+  const text = useMemo(() => saltLineText(onDay(food, now), goal.sodiumMg), [food, now, goal.sodiumMg])
   if (!personId) return null
   return (
     <a className="td-saltline press" href="#health/nutrition" data-testid="salt-line">
-      <span>{mg == null ? 'Salt: nothing logged yet today' : `Salt ${fmt(mg)} of ${fmt(goal.sodiumMg)} mg today`}</span>
+      <span>{text}</span>
       <span className="td-link">Food</span>
     </a>
   )

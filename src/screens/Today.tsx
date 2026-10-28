@@ -11,7 +11,6 @@ import WeatherCard from '../features/today/WeatherCard'
 import NearbyList from '../features/today/NearbyList'
 import NextUp from '../features/today/NextUp'
 import { useNext } from '../features/today/useNext'
-import { useSnoozed } from '../features/today/useSnoozed'
 import PlanToday from '../features/today/PlanToday'
 import QuickLog from '../features/today/QuickLog'
 import SimpleToday from '../features/today/SimpleToday'
@@ -58,7 +57,6 @@ export default function Today() {
   const [held, setHeld] = useState<NextItem | null>(null) // the dose card stays up while its take is saved and the done-morph plays (NextUp frees it)
   const item = held ?? next.item
   const calm = item.kind === 'calm' // nothing next: no Next up card, the weather card takes its place
-  const snoozed = useSnoozed(item.key) // "In 10 min" on the late dose card hides it until then
   const h1 = <h1 className="td-h1">Today</h1>
   if (!loaded) return ( // one read of the Simple mode switch, so the full page never flashes first
     <section className="td-root" aria-busy="true">{h1}<span className="td-vh">Loading</span><Skeleton lines={4} /><Skeleton lines={2} /></section>
@@ -74,7 +72,7 @@ export default function Today() {
       <StormCard />
       <WeatherCard expanded={calm} review={next.review} />
       <AlertCardToday />
-      {!calm && !snoozed && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={next.review} notify={notify} hold={setHeld} />}
+      {!calm && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={next.review} notify={notify} hold={setHeld} />}
       <QuickLog notify={notify} />
       {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
       <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>

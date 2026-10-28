@@ -3,12 +3,11 @@ import type { CSSProperties } from 'react'
 import { Icon } from '../shell/Icon'
 import { FAIL_TEXT } from './actions'
 import { shortMedName } from '../health/medName'
-import { joinNames, type NextItem } from './nextPick'
+import { doseDay, joinNames, type NextItem } from './nextPick'
 import { markDue, markTaken } from './useDueMeds'
 import { COLLAPSE_MS, leaveMs, MORPH_MS, takenLabel } from './doneMorph'
 import { prefersReducedMotion } from '../look/useReducedMotion'
 import { JackArt } from '../look'
-import { dayOf } from '../health/meds'
 import { loadLang } from '../../lib/i18n'
 import { snoozeCard } from './snoozeCard'
 
@@ -57,7 +56,7 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
     try {
       const [{ handleReminderAction }, { alarmText }] = await Promise.all([import('../health/reminderActions'), import('../health/reminders')])
       const text = alarmText(w.at, 1, await loadLang()) // no rep: reminderActions rings once more, in 10 minutes
-      await handleReminderAction({ actionId: 'snooze', notification: { ...text, extra: { kind: 'dose', at: w.at, day: dayOf(new Date()), people: [w.personId] } } })
+      await handleReminderAction({ actionId: 'snooze', notification: { ...text, extra: { kind: 'dose', at: w.at, day: doseDay(w, new Date()), people: [w.personId] } } })
     } catch { /* the web has no alarm; the card still comes back */ }
   }
 

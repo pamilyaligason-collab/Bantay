@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { isSnoozed, snoozedUntil, SNOOZE_EVENT } from './snoozeCard'
 
-/** True while this slot's card is snoozed; flips back by itself when the time comes (and when the app returns to the front). */
-export function useSnoozed(slotKey: string): boolean {
+/** The items whose snooze has not ended. Snooze hides only that slot's card, so the rest (another person's dose, the plan) stays. Re-checks when a snooze is set,
+ *  when the app returns to the front, and exactly when the next snooze ends. */
+export function useUnsnoozed<T>(items: T[], keyOf: (t: T) => string): T[] {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const sync = () => setNow(new Date())
@@ -10,11 +11,12 @@ export function useSnoozed(slotKey: string): boolean {
     document.addEventListener('visibilitychange', sync)
     return () => { window.removeEventListener(SNOOZE_EVENT, sync); document.removeEventListener('visibilitychange', sync) }
   }, [])
-  const until = snoozedUntil(slotKey, now)
+  const ends = items.map((t) => snoozedUntil(keyOf(t), now)).filter((u): u is number => u != null && u > now.getTime())
+  const next = ends.length ? Math.min(...ends) : null
   useEffect(() => {
-    if (until == null) return
-    const t = setTimeout(() => setNow(new Date()), Math.max(0, until - Date.now()) + 50)
+    if (next == null) return
+    const t = setTimeout(() => setNow(new Date()), Math.max(0, next - Date.now()) + 50)
     return () => clearTimeout(t)
-  }, [until, now])
-  return isSnoozed(slotKey, now)
+  }, [next, now])
+  return items.filter((t) => !isSnoozed(keyOf(t), now))
 }

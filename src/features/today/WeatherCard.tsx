@@ -51,9 +51,9 @@ export function WeatherStrip() {
 }
 
 /** Today's one weather card from the cached forecast. Compact: one row (temperature, condition and place, feels like, rain line) with the action line in an amber box below.
- *  `expanded` (Today has no Next up item) is the dark green hero from the Weather screen filling that slot: big temperature, sky icon, range, the action box, the next three
+ *  `noJack` drops the tip's Jack when the screen already shows one (Simple mode at night). `expanded` (Today has no Next up item) is the dark green hero from the Weather screen filling that slot: big temperature, sky icon, range, the action box, the next three
  *  slots, and a quiet medicines row when `review` > 0. Nothing is drawn until a temperature is known (never a made-up 0). */
-export default function WeatherCard({ expanded = false, review = 0 }: { expanded?: boolean; review?: number }) {
+export default function WeatherCard({ expanded = false, review = 0, noJack = false }: { expanded?: boolean; review?: number; noJack?: boolean }) {
   const place = usePlace()
   const wx = useWeather(place?.weather ?? null)
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
@@ -63,8 +63,8 @@ export default function WeatherCard({ expanded = false, review = 0 }: { expanded
   const sky = skyOf(wx)
   const line = weatherActionLine(wx, now, warn)
   const action = line?.text ?? null
-  // Jack only on an everyday rain or heat tip. Never on a PAGASA warning, an air alert or the worst heat bands (D-91).
-  const jack: JackName | null = line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 90 ? 'drink-water' : null
+  // Jack only on an everyday rain or heat tip. Never on a PAGASA warning, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack` (another Jack is on the screen).
+  const jack: JackName | null = noJack ? null : line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 80 ? 'drink-water' : null
   const href = action ? WEATHER_ACTION_HREF : WEATHER_HREF
   const cond = `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
   // The same single "Feels like" and danger label as the Weather screen (scene.ts feelsLike): heat index when it applies, else the forecast's apparent temperature.

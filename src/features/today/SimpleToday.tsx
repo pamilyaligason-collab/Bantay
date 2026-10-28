@@ -2,7 +2,10 @@ import { useState } from 'react'
 import AlertBand from './AlertBand'
 import { loadFamily } from '../auth/family'
 import { usePlace } from '../location/useLocation'
+import { alertRef } from '../location/place'
+import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
+import { weatherWarning } from '../weather/warning'
 import Call911 from '../sos/Call911'
 import { normalizeContacts, validPhone } from '../sos/contacts'
 import SosHold from '../sos/SosHold'
@@ -11,7 +14,7 @@ import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, type Feeling } from './a
 import { Icon } from '../shell/Icon'
 import BpCheck from '../health/bpcheck/BpCheck'
 import { useSelfPersonId } from '../setup/useProfile'
-import { weatherAction } from './heroCards'
+import { weatherAction, zoneAlert } from './heroCards'
 import { joinNames, pickNext } from './nextPick'
 import { markDue, useDueMeds } from './useDueMeds'
 import { useStorm } from './useStorm'
@@ -22,6 +25,7 @@ import { JackArt } from '../look'
 /** Night for Jack's sleepy sticker: 9 PM to before 5 AM, phone time. */
 export const isNight = (d: Date) => d.getHours() >= 21 || d.getHours() < 5
 
+const NONE: Alert[] = []
 const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgreat: 'mid', unwell: 'bad' }
 
 /** Simple mode (Me switch `mode.simple`): the next dose with a big I took it button, then Hold for help (3 seconds) and Call 911, How are you? and Call <family contact>, plus the weather action line when one applies.
@@ -36,6 +40,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const storm = useStorm()
   const place = usePlace()
   const action = weatherAction(useWeather(place?.weather ?? null))
+  const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
   const [busy, setBusy] = useState(false)
   const [sos, setSos] = useState(false)
   const [view, setView] = useState<'home' | 'mood' | 'taken'>('home')
@@ -46,6 +51,8 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const item = pickNext({ due, plan: null, storm }, tick)
   const w = item.who
   const calm = item.kind === 'calm'
+  // The sleepy Jack only when nothing needs action: no dose or storm card, no warning band, no weather warning. It is then the screen's one Jack (the weather card drops its own).
+  const sleepy = isNight(tick) && calm && !zoneAlert(alerts, place ? alertRef(place) : null) && !(place && weatherWarning(alerts, place.weather))
   const taken = async () => {
     if (!w || busy) return
     setBusy(true)
@@ -89,8 +96,8 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     <div className="td-simple">
       <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={18} />Exit</button>
       <AlertBand />
-      {isNight(tick) && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />It is late. Rest well.</p>}
-      {calm ? <WeatherCard expanded review={review} /> : (
+      {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />Nothing needs you right now. Good night.</p>}
+      {calm ? <WeatherCard expanded review={review} noJack={sleepy} /> : (
         <>
           <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
             <div className="td-k">{item.kicker}</div>
