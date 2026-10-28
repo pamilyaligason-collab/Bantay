@@ -1,9 +1,9 @@
 {
-  "versionCode": 2005000,
-  "versionName": "2.5.0",
-  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.5.0/bantay-2.5.0.apk",
-  "sha256": "cc043c6610f5c589f767ba940027316cd2f461441c8dabc14ffd89d29f16f0ad",
-  "size": 7908401,
+  "versionCode": 2005001,
+  "versionName": "2.5.1",
+  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.5.1/bantay-2.5.1.apk",
+  "sha256": "87e419b17985cb98319b5cb90e74215af913f6f2efc3a3f9e4d6979a53ea9a02",
+  "size": 7908445,
   "minShell": 2000000,
-  "notes": "Lab results with dates and sources, a medicine detail page, In 10 min on a late dose, family messages, phone alerts, and Jack Jack stickers."
+  "notes": "Fixes in-app updates. Includes everything in 2.5.0: lab results with dates, medicine details, In 10 min, family messages, phone alerts and Jack Jack."
 }
