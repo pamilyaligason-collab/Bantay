@@ -17,7 +17,7 @@ body map stays), D-62 (SOS hold + Self-care stay on Today), D-82/D-84 (member re
 
 **Jack Jack rules (D-91):** never on SOS, IncomingSos, emergency or high-reading results, a diagnosis, or a lab/medicine
 warning. get-help is for set-up and to-do help, never SOS. Reduced motion: no entrance animation on the art. At most one
-Jack per screen. Size 72-120 px in cards, 40-56 px inline, the Ask button uses `head`.
+Jack per screen; the Ask button head (JackFab) is button chrome and does not count. Size 72-120 px in cards, 40-56 px inline, the Ask button uses `head`.
 
 ## Lane-owned names
 
