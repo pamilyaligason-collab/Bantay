@@ -33,6 +33,16 @@ describe('Messages', () => {
     expect(within(list).getByLabelText(/Voice note from You, 0:12/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
   })
+  it('quick replies send the exact words through sendText, inline or in a sheet', async () => {
+    const me = { ...ben, isMe: true }
+    render(<Messages inline who={me} people={[me]} nudge={null} onClose={() => undefined} onOpenPage={() => undefined} />)
+    await screen.findByTestId('msg-list')
+    const qr = screen.getByRole('group', { name: 'Quick replies' })
+    expect(within(qr).getAllByRole('button').map((b) => b.textContent)).toEqual(['All good', 'On my way'])
+    fireEvent.click(within(qr).getByRole('button', { name: 'On my way' }))
+    await waitFor(() => expect(api.sendText).toHaveBeenCalledWith('On my way'))
+    expect(screen.queryByRole('dialog')).toBeNull() // inline: no sheet
+  })
   it('sends a text and clears the box; empty text cannot be sent', async () => {
     show()
     await screen.findByTestId('msg-list')

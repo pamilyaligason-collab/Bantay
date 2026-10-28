@@ -67,15 +67,8 @@
 
 /* people */
 .fm-checkin { display: flex; align-items: center; gap: 12px; }
-/* "I'm OK" -> check + "You're OK · h:mm": both sit in one grid cell and cross-fade; instant under reduced motion */
-.fm-okwrap { display: grid; justify-items: end; flex: none; }
-.fm-okwrap > * { grid-area: 1 / 1; }
-.fm-okdone { background: var(--soft); color: var(--ink); white-space: nowrap; font-size: 14px; padding: 0 12px; gap: 6px; }
-.fm-okwrap[data-done="true"] > button { opacity: 0; pointer-events: none; }
-.fm-okwrap[data-done="false"] > .fm-okdone { opacity: 0; }
+/* "I'm OK" -> the same card shows check + "You're OK · h:mm"; the fade-in is skipped under reduced motion */
 @media (prefers-reduced-motion: no-preference) {
-  .fm-okwrap > button, .fm-okdone { transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
-  .fm-okwrap[data-done="true"] > button { transform: scale(.96); }
   .fm-okdone { animation: fm-ok-in var(--dur-base) var(--ease-out); }
 }
 @keyframes fm-ok-in { from { opacity: 0; transform: scale(.96); } }
@@ -154,3 +147,9 @@
 .fm-need-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .fm-need-lines li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; overflow-wrap: anywhere; }
 .fm-need-lines li .fm-need-act { flex: none; padding: 0 16px; }
+/* S14 F2: three segments (Home, Messages, Plan); the done check-in card keeps its place so focus can stay on it */
+.seg.fm-seg3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fm-checkin .tile { width: 44px; height: 44px; }
+.fm-checkin:focus-visible { outline: 3px solid var(--green2); outline-offset: 2px; }
+.rp-hug { display: flex; justify-content: center; }
+@media (hover: hover) { .bt .seg.fm-seg3 button:not([aria-pressed="true"]):hover { color: var(--ink); } } /* hover fill is darker than the card: keep the label readable (4.5:1) */

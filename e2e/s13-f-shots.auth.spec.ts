@@ -89,7 +89,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
       await expect(page.getByText(/^You're OK · /)).toBeVisible()
       await shot(page, 'im-ok-after', scheme)
-      await expect(page.getByText("Today's check-in")).toHaveCount(0, { timeout: 5000 }) // the card settles
+      await expect(page.getByText("Today's check-in")).toHaveCount(0) // the card turns into You're OK and stays
       await shot(page, 'people-after', scheme)
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 8000 }) // the note clears itself; a shot must not catch it
       await expect(page.getByTestId('learn-hub')).toBeVisible()

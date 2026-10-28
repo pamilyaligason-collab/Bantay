@@ -42,3 +42,9 @@
 .msg-send { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .msg-fine { margin: 0; font-size: 14px; }
 .msg-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* S14 F2: Family > Messages is the thread drawn in the page; quick replies sit above the box */
+.msg-inline { display: grid; gap: 12px; }
+.msg-inline .msg-list { max-height: 52dvh; }
+.msg-qr { display: flex; gap: 8px; flex-wrap: wrap; }
+.msg-qr .chip { min-height: var(--tap); padding: 0 18px; font-size: 16px; cursor: pointer; }
+.msg-qr .chip:disabled { opacity: .5; }
