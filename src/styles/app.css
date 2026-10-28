@@ -136,6 +136,7 @@ img.avatar { object-fit: cover; }
 .empty-state { display: grid; justify-items: start; gap: 6px; }
 .empty-state .hd { margin: 4px 0 0; font-size: 18px; }
 .empty-state .sub { margin: 0; }
+.jack { display: block; flex: none; object-fit: contain; }
 .empty-state .btn2 { margin-top: 6px; }
 .bt .press { transition: transform var(--dur-press) var(--ease-out); }
 .bt .press:active { transform: scale(0.97); }
