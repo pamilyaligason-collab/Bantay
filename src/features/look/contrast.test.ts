@@ -55,6 +55,9 @@ for (const [name, get] of themes) {
         it(`${fg} on ${bg} >= 4.5`, () => expect(pair(fg, bg)).toBeGreaterThanOrEqual(4.5))
       }
     }
+    // UI-16: chips sit on --soft. Light --ok is 4.40 there (fails), so light chips use --green; dark --green is a fill (1.6), so dark chips use --ok.
+    const onSoft = name === 'light' ? '--green' : '--ok'
+    it(`chip text ${onSoft} on --soft >= 4.5`, () => expect(pair(onSoft, '--soft')).toBeGreaterThanOrEqual(4.5))
     it('--on-green on --green >= 4.5', () => expect(pair('--on-green', '--green')).toBeGreaterThanOrEqual(4.5))
     it('--btn-fg on --btn >= 4.5', () => expect(pair('--btn-fg', '--btn')).toBeGreaterThanOrEqual(4.5))
     it('white on --green2 (switch and check mark) >= 3', () => expect(ratio([255, 255, 255], c('--green2'))).toBeGreaterThanOrEqual(3))
