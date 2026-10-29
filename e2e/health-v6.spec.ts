@@ -118,7 +118,7 @@ test('header says whose health it is, and Papers sits under Health with the same
   await expect(page.locator('h1')).toHaveText('Health')
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByTestId('showing')).toHaveText('Showing: Maria Sample')
+  await expect(page.getByTestId('showing')).toHaveText('Maria Sample')
   await page.goto('/#health/papers')
   await expect(page.locator('h1')).toHaveText('Papers')
   await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()

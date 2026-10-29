@@ -11,9 +11,9 @@ const paper = new Map<string, LabSource>([['f1', { facility: 'GenSan Medical Lab
 
 describe('LabsList empty state', () => {
   it('says so when ready with no lab rows', () => {
-    render(<LabsList readings={[]} thresholds={[]} ready sources={none} name="Mama" />)
+    render(<LabsList readings={[]} thresholds={[]} ready sources={none} />)
     expect(screen.getByText('No lab papers yet')).toBeTruthy()
-    expect(screen.getByText(/saved to Mama's record/)).toBeTruthy()
+    expect(screen.getByText('Snap a lab paper. A person checks it first.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Scan a paper' })).toBeTruthy()
   })
   it('renders nothing until ready', () => {

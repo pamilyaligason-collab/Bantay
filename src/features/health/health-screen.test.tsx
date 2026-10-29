@@ -135,7 +135,7 @@ describe('Health overview', () => {
     render(<Health />)
     const card = await screen.findByTestId('no-vitals')
     expect(within(card).getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeTruthy()
-    expect(screen.getByTestId('showing').textContent).toBe('Showing: Loyd Sevilla')
+    expect(screen.getByTestId('showing').textContent).toBe('Loyd Sevilla')
     expect(screen.queryByTestId('insight')).toBeNull()
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect(document.querySelector('.ad-av')).toBeNull()
@@ -254,7 +254,7 @@ describe('Medicines screen', () => {
 
   it('empty state says how to add one', async () => {
     render(<Health />)
-    expect(await screen.findByText(/Tap Add to put one in/)).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Add a medicine' })).toBeTruthy()
   })
 })
 

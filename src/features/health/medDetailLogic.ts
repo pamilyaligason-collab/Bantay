@@ -30,7 +30,7 @@ export function stockInfo(m: Medication, now: Date): StockInfo {
   if (days == null || units == null) return { kind: 'not-counted', left: null, days: null, unit, low: false, chip: null, line: 'No count yet' }
   const left = Math.floor(units)
   const low = days <= LOW_DAYS // the Refill screen's own test (stock.ts stockRows), so the chip and Refill agree
-  return { kind: 'counted', left, days, unit, low, chip: days <= 0 ? 'Runs out today' : low ? `Refill in ${plural(days, 'day')}` : plural(days, 'day'), line: `${left} ${unit} left` }
+  return { kind: 'counted', left, days, unit, low, chip: days <= 0 ? 'Runs out today' : low ? `Refill in ${plural(days, 'day')}` : `${plural(days, 'day')} left`, line: `${left} ${unit} left` }
 }
 
 export type CellState = 'taken' | 'missed' | 'not-due' | 'pending'

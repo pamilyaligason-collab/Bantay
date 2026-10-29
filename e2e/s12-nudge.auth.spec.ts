@@ -4,7 +4,7 @@ import { skipOnboarding } from './helpers'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
-// Session 12 lane G (nudge): Health > Check-in and kudos. Auth project (test Supabase env, PostgREST mocked, invented data).
+// Session 12 lane G (nudge): Health > My progress. Auth project (test Supabase env, PostgREST mocked, invented data).
 // The clock is frozen at Tue 2026-10-20 10:00 so a rerun draws the same pixels (ML-32); the week is Wed 14 to Tue 20 October.
 // Shots only when S12G_SHOTS=<dir> is set: nudge-home (hub top), nudge-recap, nudge-pillbox, nudge-pixels, nudge-reminder (web shows the app-only line).
 const SHOTS = process.env.S12G_SHOTS
@@ -77,7 +77,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#health')
     await page.reload() // raw IndexedDB writes do not notify live queries
     await page.getByTestId('nudge-entry').click()
-    await expect(page.getByRole('heading', { name: 'Check-in and kudos' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'My progress' })).toBeVisible()
     await shot(page, 'nudge-home', scheme)
 
     // recap: hand-computed 133/83, 7 of 7 morning checks, medicines on 5 of 7 days

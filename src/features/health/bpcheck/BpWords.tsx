@@ -23,7 +23,8 @@ export default function BpWords() {
           </div>
         ))}
       </div>
-      <p className="sub" style={{ margin: '6px 4px 0' }}>Home thresholds (High from 135/85: ISH 2020 and ESH), waiting for a doctor to sign them off. The same words are used everywhere in the app. Ask your doctor for your own target.</p>
+      <p className="sub" style={{ margin: '6px 4px 0' }}>High means 135/85 or more at home. Ask your doctor for your target.</p>
+      <details className="sub" style={{ margin: '2px 4px 0' }}><summary style={{ minHeight: 48, display: 'flex', alignItems: 'center' }}>Source</summary>Home thresholds from ISH 2020 and ESH, waiting for a doctor to sign them off.</details>
     </section>
   )
 }
