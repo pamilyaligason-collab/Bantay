@@ -8,7 +8,7 @@ import './setup.css'
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 
-/** `start-approve-req`: the sheet a family member sees over their own app when someone asks for a new PIN (a `pin_approve` row from the alert store, `ref` = request id).
+/** `start-approve-req`: the sheet a family admin sees over their own app when someone asks for a new PIN (a `pin_approve` row from the alert store, `ref` = request id).
  *  Contract: the approver types the 4-digit number the requester reads out; the server checks it (approve_pin_reset), 5 wrong numbers burn the request, first Approve wins.
  *  The number is never in the row, so seeing the sheet is not enough to approve. Mount it once near the top of Today (S7 hook). */
 export default function ApprovePinSheet({ approve = approveReset }: { approve?: typeof approveReset }) {

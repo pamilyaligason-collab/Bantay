@@ -91,6 +91,12 @@ describe('dueSlots', () => {
     const late = Date.parse('2026-10-21T01:10:00+08:00')
     expect(dueSlots([med({ schedule: ['23:00'] })], [], late)).toEqual([{ personId: 'p1', day: '2026-10-20', slot: '23:00' }])
   })
+  it('a 23:50 dose taken at 00:05 closes that night slot, not the next one (DS-7)', () => {
+    const m = med({ schedule: ['23:50'] })
+    const t = took({ slot: '23:50', taken_at: '2026-10-21T00:05:00+08:00' })
+    expect(dueSlots([m], [t], Date.parse('2026-10-21T00:25:00+08:00'))).toEqual([]) // no false "missed" for the night it was taken
+    expect(dueSlots([m], [t], Date.parse('2026-10-22T00:25:00+08:00'))).toEqual([{ personId: 'p1', day: '2026-10-21', slot: '23:50' }]) // next night is still open
+  })
   it('ignores bad times', () => {
     expect(scheduleTimes({ v: 1, times: ['8am', '25:00', '08:00', '08:00'] })).toEqual(['08:00'])
   })

@@ -79,7 +79,7 @@ const needsTime = (raw: unknown) => !!raw && typeof raw === 'object' && !Array.i
 
 interface OpenSlot { personId: string; day: string; slot: string; late: number }
 /** Every watched slot of the given Manila days with no taken or skipped row, and how many ms past its time it is (negative = still to come).
- *  A row with a slot closes that slot of its medicine. A row with no slot (an older dose, matched by medication id or by the normalised name)
+ *  A row with a slot closes that slot of its medicine, matched by real time (within 12 h of the slot instant, so across midnight too). A row with no slot (an older dose, matched by medication id or by the normalised name)
  *  closes ONE open slot of that day, the earliest, like the app's matchDoses.
  *  Skipped: paused, stopped, deleted, as needed, needing a time, not started yet, already stopped, and a review medicine less than a day into its question. */
 function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: string[]): OpenSlot[] {
@@ -91,11 +91,12 @@ function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: strin
     const key = normaliseDrug(m.name)
     for (const day of days) {
       if ((m.started_on && m.started_on.slice(0, 10) > day) || (m.stopped_on && m.stopped_on.slice(0, 10) < day)) continue
-      const mine = rows.filter((t) => t.person_id === m.person_id && t.day === day && (t.medication_id ? t.medication_id === m.id : !!key && t.key === key))
-      const bySlot = new Set(mine.filter((t) => t.slot).map((t) => t.slot))
-      let loose = mine.filter((t) => !t.slot).length // each unslotted dose covers one open slot, earliest first
+      const mine = rows.filter((t) => t.person_id === m.person_id && (t.medication_id ? t.medication_id === m.id : !!key && t.key === key))
+      const dayRows = mine.filter((t) => t.day === day)
+      let loose = dayRows.filter((t) => !t.slot).length // each unslotted dose covers one open slot, earliest first
       for (const slot of scheduleTimes(m.schedule)) { // sorted ascending
-        if (bySlot.has(slot)) continue
+        // a slotted row closes its slot by real time (DS-7): a 23:50 dose taken at 00:05 still closes that night's 23:50, and not the next night's
+        if (mine.some((t) => t.slot === slot && Math.abs(Date.parse(t.taken_at) - slotInstant(day, slot)) < 12 * 3600_000)) continue
         if (loose > 0) { loose--; continue }
         out.push({ personId: m.person_id, day, slot, late: nowMs - slotInstant(day, slot) })
       }

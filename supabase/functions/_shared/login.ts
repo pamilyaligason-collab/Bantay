@@ -56,7 +56,7 @@ export interface ResetPort {
   findUser(handle: string): Promise<{ userId: string; email: string; disabled: boolean } | null>
   /** Burns the user's older open requests (one open per user), then inserts. */
   createRequest(r: { id: string; userId: string; method: 'google' | 'family'; code: string; secretHash: string; approved: boolean }): Promise<void>
-  /** method family: one pin_approve carer_alerts row per active member except the requester. Best-effort web push flush follows in the caller. */
+  /** method family: one pin_approve carer_alerts row per active admin except the requester (SEC-1: only an admin may approve). Best-effort web push flush follows in the caller. */
   notifyApprovers(requestId: string, userId: string): Promise<void>
   /** method google: the access token's user id when it carries a Google identity, else null. */
   verifyGoogle(token: string): Promise<string | null>
