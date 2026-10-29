@@ -31,4 +31,21 @@ describe('one dose counter', () => {
   it('no scheduled doses gives no percentage, never 0', () => {
     expect(countDoses({ meds: [], takes: [], personId: 'p1', now: NOW, days }).pct).toBeNull()
   })
+  it('a 23:00 dose taken at 00:30 the next day counts as done, not missed', () => {
+    const night: Medication = { ...med, schedule: { v: 1, times: ['23:00'] }, startedOn: '2026-10-19' }
+    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '23:00', takenAt: new Date('2026-10-20T00:30:00').toISOString() }
+    const n = countDoses({ meds: [night], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00'), days: ['2026-10-19'] })
+    expect([n.done, n.want]).toEqual([1, 1])
+  })
+  it('a 00:30 dose taken at 23:45 the night before counts as done, and one take never serves two days', () => {
+    const early: Medication = { ...med, schedule: { v: 1, times: ['00:30'] }, startedOn: '2026-10-19' }
+    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '00:30', takenAt: new Date('2026-10-19T23:45:00').toISOString() }
+    const n = countDoses({ meds: [early], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00'), days: ['2026-10-19', '2026-10-20'] })
+    expect([n.done, n.want]).toEqual([1, 2]) // 19 Oct 00:30 slot is 23h away: missed; 20 Oct 00:30 slot takes it
+  })
+  it('just after midnight a 23:00 slot of yesterday is still inside its 2 hours', () => {
+    const night: Medication = { ...med, schedule: { v: 1, times: ['23:00'] }, startedOn: '2026-10-19' }
+    const n = countDoses({ meds: [night], takes: [], personId: 'p1', now: new Date('2026-10-20T00:30:00'), days: ['2026-10-19'] })
+    expect([n.done, n.want]).toEqual([0, 0])
+  })
 })

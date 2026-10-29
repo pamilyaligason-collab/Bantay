@@ -22,9 +22,9 @@ export function TabBar({ active }: { active: Tab | null }) {
   return (
     <nav aria-label="Main" className="tabbar sh sh-tabs" style={pill}>
       {ITEMS.map((t) => (
-        <button key={t.id} type="button" aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
+        <button key={t.id} type="button" aria-label={t.label} aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
           <Icon name={t.icon} />
-          {t.label}
+          <span>{t.label}</span>
           {t.id === 'family' && unseen > 0 && <span className="sh-tabbadge" role="img" aria-label={`${unseen} new alert${unseen === 1 ? '' : 's'}`} />}
         </button>
       ))}
