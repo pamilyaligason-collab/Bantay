@@ -110,6 +110,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await serious(page)).toEqual([])
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
       await page.getByRole('button', { name: 'Done' }).click()
+      await expect.poll(async () => (await exRows(page)).length).toBe(1) // the save is async; read after it lands
       const rows = await exRows(page)
       expect(rows.map((r) => r.kind)).toEqual(['ex:neck-side-tilt'])
       expect(rows[0]!.minutes).toBe(3)
