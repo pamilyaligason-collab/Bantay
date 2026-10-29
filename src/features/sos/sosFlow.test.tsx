@@ -6,6 +6,7 @@ import { SOS_ACTIVE_KEY, SOS_CONTACTS_KEY, startSos } from './active'
 import SosScreen from './SosScreen'
 
 const h = vi.hoisted(() => ({
+  sync: vi.fn(async (_f?: boolean) => undefined),
   call: vi.fn(async (_c: unknown[], _o?: unknown) => ({ placed: true, via: 'native' as 'native' | 'tel' | 'none' })),
   listeners: [] as ((s: { isActive: boolean }) => void)[],
   request: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('@capacitor/app', () => ({ App: { addListener: async (_e: string, cb: (s
 vi.mock('./locate', () => ({ sosPosition: async () => ({ lat: 9.65, lon: 123.85, at: 1, gps: true }) }))
 vi.mock('./useSelf', () => ({ useSelf: () => ({ name: 'Lola', personId: h.pid }) }))
 vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.cached }))
+vi.mock('../sync/sync', () => ({ syncNow: (f?: boolean) => h.sync(f) }))
 vi.mock('../auth/family', () => ({ loadFamily: () => [] }))
 vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('./SosContactsPicker', () => ({ default: () => <div data-testid="picker" /> }))
@@ -26,7 +28,7 @@ const two = [{ name: 'Ana', phone: '0917 123 4567' }, { name: 'Ben', phone: '091
 let hrefs: string[]
 beforeEach(async () => {
   await Promise.all([db.outbox.clear(), db.kv.clear()])
-  h.call.mockClear(); h.request.mockClear(); h.listeners.length = 0
+  h.call.mockClear(); h.sync.mockClear(); h.request.mockClear(); h.listeners.length = 0
   h.pid = 'p1'; h.cached = null
   h.call.mockImplementation(async () => ({ placed: true, via: 'native' }))
   hrefs = []
@@ -131,6 +133,14 @@ describe('SosScreen flow', () => {
     render(<SosScreen onClose={() => undefined} />)
     await waitFor(() => expect(h.call).toHaveBeenCalled())
     expect((await rows('sos_events'))[0]!.id).not.toBe('e-stale')
+  })
+
+  it('forces a sync right after the SOS row is queued, so a sync backoff cannot hold it back', async () => {
+    startSos()
+    render(<SosScreen onClose={() => undefined} />)
+    await waitFor(() => expect(h.sync).toHaveBeenCalledWith(true))
+    await waitFor(() => expect(h.call).toHaveBeenCalled()) // let the whole flow finish before the next test clears storage
+    await screen.findByText('SOS saved for the family')
   })
 
   it('the person id that arrives late (cache or network) is waited for, so the SOS is still saved', async () => {
