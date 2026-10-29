@@ -13,16 +13,16 @@ const C = 2 * Math.PI * R
 
 function Ring({ g }: { g: Goal }) {
   return (
-    <svg className="nd-ring" width="52" height="52" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
+    <svg className="nd-ring" width="64" height="64" viewBox="0 0 52 52" aria-hidden="true" focusable="false">
       <circle cx="26" cy="26" r={R} className="nd-track" />
       <circle cx="26" cy="26" r={R} className="nd-arc" strokeDasharray={C} strokeDashoffset={C * (1 - g.pct)} transform="rotate(-90 26 26)" />
-      {g.met && <polyline points="17,26.5 23,32.5 35,19.5" className="nd-tick" />}
+      <text x="26" y="26" className="nd-count" textAnchor="middle" dominantBaseline="central">{g.count}</text>
     </svg>
   )
 }
 
 /** The Health nudge: a streak, this week's rings and one friendly next step with a one-tap button. Replaces the plain "no new reading" and zero tiles.
- *  Gentle by design: no red, no "you missed", a goal with nothing yet says "Not yet this week". */
+ *  Gentle by design: no red, no "you missed", a goal with nothing yet reads "0/3". */
 export function NudgeCard({ personId, readings, canLog, onAdd }: { personId: string; readings: Reading[]; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
   const meds = useMedications(personId)
   const [rows, setRows] = useState<{ takes: MedTaken[]; activity: Activity[]; food: FoodEntry[]; water: WaterEntry[] }>({ takes: [], activity: [], food: [], water: [] })
@@ -64,7 +64,7 @@ export function NudgeCard({ personId, readings, canLog, onAdd }: { personId: str
           <li key={g.id} className={`nd-goal${g.met ? ' met' : ''}`} data-goal={g.id}>
             <Ring g={g} />
             <b>{g.label}</b>
-            <span className="nd-t">{g.met ? 'Done this week' : g.text}</span>
+            <span className="nd-t">{g.met ? 'Done' : g.text}</span>
           </li>
         ))}
       </ul>

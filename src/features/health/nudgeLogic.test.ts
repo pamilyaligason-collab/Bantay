@@ -10,7 +10,7 @@ describe('computeNudge', () => {
   it('nothing logged: no streak number, no zero, BP is the next step', () => {
     const n = computeNudge(base)
     expect(n.streak).toBeNull()
-    expect(n.goals.every((g) => g.done === null && g.text === 'Not yet this week')).toBe(true)
+    expect(n.goals.every((g) => g.done === null && g.count.startsWith('0/'))).toBe(true)
     expect(n.next?.id).toBe('bp')
     expect(n.allMet).toBe(false)
   })
@@ -28,14 +28,14 @@ describe('computeNudge', () => {
     const n = computeNudge({ ...base, readings: [bp(0), bp(1), bp(1), bp(2)] })
     const g = n.goals.find((x) => x.id === 'bp')!
     expect(g.met).toBe(true)
-    expect(g.text).toBe('3 of 3 days')
+    expect(g.count).toBe('3/3')
     expect(n.next?.id).toBe('meals')
   })
   it('sugar shows only once a sugar reading exists; move counts minutes and ignores null minutes', () => {
     expect(computeNudge(base).goals.some((g) => g.id === 'sugar')).toBe(false)
     const n = computeNudge({ ...base, readings: [{ ...bp(0), test: 'glucose', value: 100, unit: 'mg/dL' }], activity: [{ personId: 'p', kind: 'walk', minutes: 20, steps: null, startedAt: at(0), source: 'manual' }, { personId: 'p', kind: 'steps', minutes: null, steps: 900, startedAt: at(0), source: 'manual' }] })
     expect(n.goals.some((g) => g.id === 'sugar')).toBe(true)
-    expect(n.goals.find((g) => g.id === 'move')!.text).toBe('20 of 150 minutes')
+    expect(n.goals.find((g) => g.id === 'move')!.count).toBe('20/150')
   })
   it('all met: BP 3 days, meals 4 days and 150 minutes of moving, no next step', () => {
     const food = [0, 1, 2, 3].map((b) => ({ personId: 'p', eatenAt: at(b), meal: 'lunch' as const, name: 'Rice', clientId: `f${b}`, foodKey: null, portion: 1, servingLabel: null, kcal: null, sodiumMg: null, potassiumMg: null, proteinG: null }))
@@ -50,6 +50,6 @@ describe('computeNudge', () => {
     const med = { personId: 'p', name: 'Losartan', clientId: 'm1', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-10-20' }
     const take = { personId: 'p', name: 'Losartan', takenAt: at(0, 8) }
     const g = computeNudge({ ...base, meds: [med], takes: [take] }).goals.find((x) => x.id === 'meds')
-    expect(g?.text).toBe('1 of 3 doses')
+    expect(g?.count).toBe('1/3')
   })
 })

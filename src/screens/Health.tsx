@@ -103,7 +103,7 @@ function Overview() {
         <h1>Health</h1>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
-      {name && <p className="sub" style={{ margin: '4px 4px 0' }} data-testid="showing">Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
+      {name && <p className="who-chip"><span className="who-av" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span data-testid="showing">{name}</span></p>}
       {!ready && (
         <section className="hv-load" aria-busy="true" aria-label="Health" data-testid="health-loading">
           <span className="hv-sr">Loading</span>
@@ -157,7 +157,7 @@ function MedsPage() {
     <>
       <SubHeader title="Medicines" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
+      {name && <p className="who-chip"><span className="who-av" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span>{name}</span></p>}
       {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMark} canEdit={canEdit} />}
     </>
   )

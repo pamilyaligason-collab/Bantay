@@ -17,7 +17,7 @@ describe('stockInfo', () => {
   it('7 days left is not amber; 1 day is singular; 0 runs out today', () => {
     const base = { stockSetAt: d(28, 7).toISOString() }
     expect(stockInfo(med({ ...base, stockQty: 7 }), d(28, 9))).toMatchObject({ days: 7, low: true, chip: 'Refill in 7 days' }) // stock.ts: low is <= 7, same as the Refill screen
-    expect(stockInfo(med({ ...base, stockQty: 8 }), d(28, 9))).toMatchObject({ days: 8, low: false, chip: '8 days' })
+    expect(stockInfo(med({ ...base, stockQty: 8 }), d(28, 9))).toMatchObject({ days: 8, low: false, chip: '8 days left' })
     expect(stockInfo(med({ ...base, stockQty: 1 }), d(28, 9))).toMatchObject({ days: 1, low: true, chip: 'Refill in 1 day' })
     expect(stockInfo(med({ ...base, stockQty: 0 }), d(28, 9))).toMatchObject({ days: 0, low: true, chip: 'Runs out today' })
   })

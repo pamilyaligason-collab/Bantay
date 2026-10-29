@@ -20,8 +20,8 @@ export default function LabsScreen() {
     <>
       <SubHeader title="Lab results" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)} · from the lab's own paper</p>}
-      <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} name={name ? givenName(name) : undefined} />
+      {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)} · from lab papers</p>}
+      <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} />
     </>
   )
 }

@@ -135,7 +135,7 @@ describe('Medicines list rows', () => {
     expect(within(amlo).getByTestId('med-days').textContent).toBe('Refill in 7 days')
     expect(within(amlo).getByTestId('med-days').className).toContain('warn')
     const los = rows.getByRole('link', { name: /Losartan 50 mg/ })
-    expect(within(los).getByTestId('med-days').textContent).toBe('24 days')
+    expect(within(los).getByTestId('med-days').textContent).toBe('24 days left')
     expect(within(los).getByTestId('med-days').className).not.toContain('warn')
     expect(within(rows.getByRole('link', { name: /Paracetamol/ })).queryByTestId('med-days')).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()

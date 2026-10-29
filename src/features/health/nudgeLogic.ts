@@ -6,7 +6,7 @@ import type { Reading } from './ranges'
 
 /** The Health nudge card: this week's habit goals and the streak of days with any log. Pure.
  *  The goals are friendly habit targets, NOT clinical thresholds (see CLINICAL-REVIEW.md, session 9). Unknown is never 0:
- *  a goal with nothing done yet says "Not yet this week", and a streak that is not running is not shown as a number. */
+ *  a goal with nothing done yet reads "0/3" in its ring, and a streak that is not running is not shown as a number. */
 export type GoalId = 'bp' | 'sugar' | 'meds' | 'meals' | 'move'
 export interface Goal {
   id: GoalId
@@ -14,7 +14,9 @@ export interface Goal {
   /** Done so far, null when nothing yet (never 0). */
   done: number | null
   target: number
-  /** Words under the ring: "2 of 3 days", "Not yet this week". */
+  /** Inside the ring: "2/3", "0/3". */
+  count: string
+  /** Words under the ring: "days this week". */
   text: string
   met: boolean
   /** 0..1 for the ring. */
@@ -60,9 +62,9 @@ export function computeNudge(i: { personId: string; readings: Reading[]; takes: 
 
   const goal = (g: { id: GoalId; label: string; n: number; target: number; unitWord: string; cta: Goal['cta']; step: string }): Goal => {
     const done = g.n > 0 ? g.n : null
-    return { id: g.id, label: g.label, target: g.target, cta: g.cta, step: g.step, done, met: g.n >= g.target, pct: Math.min(1, g.n / g.target), text: done == null ? 'Not yet this week' : `${done} of ${g.target} ${g.unitWord}` }
+    return { id: g.id, label: g.label, target: g.target, cta: g.cta, step: g.step, done, met: g.n >= g.target, pct: Math.min(1, g.n / g.target), count: `${g.n}/${g.target}`, text: `${g.unitWord} this week` }
   }
-  const goals: Goal[] = [goal({ id: 'bp', label: 'Blood pressure', n: daysOf(mine, BP), target: BP_DAYS, unitWord: 'days', cta: { label: 'Add BP', sheet: 'bp' }, step: 'Take your BP now - it takes about 1 minute' })]
+  const goals: Goal[] = [goal({ id: 'bp', label: 'Blood pressure', n: daysOf(mine, BP), target: BP_DAYS, unitWord: 'days', cta: { label: 'Add BP', sheet: 'bp' }, step: 'Check your BP now (1 minute)' })]
   if (mine.some((r) => SUGAR.includes(r.test))) goals.push(goal({ id: 'sugar', label: 'Sugar', n: daysOf(mine, SUGAR), target: SUGAR_DAYS, unitWord: 'days', cta: { label: 'Add sugar', sheet: 'fasting_glucose' }, step: 'Check your sugar - about 2 minutes' }))
   const doses = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days })
   if (doses.want > 0) goals.push(goal({ id: 'meds', label: 'Medicines', n: doses.done, target: doses.want, unitWord: 'doses', cta: { label: 'Open medicines', href: '#health/meds' }, step: "Mark today's medicines - 30 seconds" }))

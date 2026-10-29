@@ -6,7 +6,7 @@ import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { MedReview, toCheck } from './MedReview'
 import { clock12, setMedStatus } from './medActions'
 import { useSelf } from '../sos/useSelf'
-import { JackArt } from '../look'
+import { EmptyState } from '../look/EmptyState'
 import { lastDays } from '../today/myWeekLogic'
 import { stockInfo, weekCounter } from './medDetailLogic'
 import { answeredBy, dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
@@ -17,6 +17,7 @@ import './health.css'
 import './medicines.css'
 import { Icon } from '../shell/Icon'
 
+const RING_C = 2 * Math.PI * 20 // circumference of the 20-radius progress ring
 const NONE: MedTaken[] = []
 const TOAST_MS = 3500
 const UNDO_MS = 6000
@@ -96,12 +97,12 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </div>
       )}
       {empty && (
-        <div className="grp"><div className="row md-empty"><JackArt name="medicine" size={88} className="md-jack" /><span className="grow">No medicines yet<span className="sub">{canEdit ? 'Tap Add to put one in, or confirm a prescription in Health > Papers.' : 'Nothing has been added for them yet.'}</span></span></div></div>
+        <EmptyState jack="medicine" title="No medicines yet" body={canEdit ? 'Add one, or scan a prescription.' : 'Nothing has been added for them yet.'} action={canEdit ? { label: 'Add a medicine', onClick: () => open() } : undefined} />
       )}
 
       {doses.length > 0 && (
         <>
-          <div className="md-sech"><h2 className="hd">Today</h2><span className="sub">{done} of {doses.length} done</span></div>
+          <div className="md-sech"><h2 className="hd">Today</h2><span className="sub md-prog"><svg className="md-ring" width="36" height="36" viewBox="0 0 52 52" aria-hidden="true" focusable="false"><circle cx="26" cy="26" r="20" className="md-rtrack" /><circle cx="26" cy="26" r="20" className="md-rarc" strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - done / doses.length)} transform="rotate(-90 26 26)" /></svg>{done} of {doses.length} done</span></div>
           <div className="grp" data-testid="meds-today">
             {doses.map((d) => {
               const t = settledBy(d, takes)
@@ -152,7 +153,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                       {stock.kind !== 'as-needed' && <span className="md-sub" data-testid="med-stock-line">{stock.line}</span>}
                       {answered && <span className="md-sub" data-testid="answered-by">Answered by {answered}</span>}
                     </span>
-                    {stock.chip && <span className={`md-tag${stock.low ? ' warn' : ''}`} data-testid="med-days">{stock.chip}</span>}
+                    {stock.chip && <span className={`md-tag${stock.low ? ' warn' : ''}`} data-testid="med-days">{stock.low && <Icon name="warn" size={14} />}{stock.chip}</span>}
                     <Icon name="chev" size={20} />
                   </a>
                   {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} by={mine ? undefined : self.name} />}
