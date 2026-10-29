@@ -49,7 +49,7 @@
 .td-lrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 44px; color: var(--ink); text-decoration: none; min-width: 0; box-sizing: border-box; }
 .td-lrow:first-child { border-top: 0; }
 .td-lrow b { font-weight: 600; overflow-wrap: anywhere; }
-.td-more { color: var(--link); font-weight: 600; font-size: 13px; }
+.td-more { color: var(--link); font-weight: 600; font-size: 14px; }
 .td-video { display: flex; gap: 12px; align-items: center; text-decoration: none; color: var(--ink); }
 .td-video b { font-weight: 600; overflow-wrap: anywhere; }
 .td-thumb { width: 96px; height: 68px; border-radius: 16px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, var(--green2), var(--green)); }
@@ -207,18 +207,18 @@
 /* My week */
 .td-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .td-tile { display: flex; flex-direction: column; gap: 2px; background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; text-decoration: none; color: var(--ink); min-width: 0; box-sizing: border-box; min-height: 44px; }
-.td-tile-l { font-size: 13px; font-weight: 600; color: var(--muted); }
+.td-tile-l { font-size: 14px; font-weight: 600; color: var(--muted); }
 .td-tile-v { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
 .td-tile-v b { font-family: var(--f-display); font-size: 26px; font-weight: 600; line-height: 1.1; }
-.td-tile-v span { font-size: 13px; color: var(--muted); }
-.td-tile-s { font-size: 13px; color: var(--muted); }
+.td-tile-v span { font-size: 14px; color: var(--muted); }
+.td-tile-s { font-size: 14px; color: var(--muted); }
 .td-tile-f { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; margin-top: 6px; min-height: 28px; }
 .td-spark { width: 72px; height: 28px; flex: none; stroke: var(--green2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .td-spark circle { fill: var(--green2); stroke: none; }
 :root[data-theme="dark"] .td-spark { stroke: var(--amber); }
 :root[data-theme="dark"] .td-spark circle { fill: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-spark { stroke: var(--amber); } :root:not([data-theme="light"]) .td-spark circle { fill: var(--amber); } }
-.td-chip { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--ok); white-space: nowrap; }
+.td-chip { font-size: 14px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--green); white-space: nowrap; }
 .td-chip.high, .td-chip.low { background: var(--warn-bg); color: var(--warn); }
 
 /* family line */
@@ -288,3 +288,8 @@
 .td-saved { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; font-size: 15px; }
 .td-act-box .td-wx-jack { margin-left: auto; margin-top: -6px; margin-bottom: -6px; }
 .td-simple-night { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+/* Dark --green is a fill (1.6:1 on --soft); chip text uses --ok there (UI-16). */
+:root[data-theme="dark"] .td-chip { color: var(--ok); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip { color: var(--ok); } }
+:root[data-theme="dark"] .td-chip.high, :root[data-theme="dark"] .td-chip.low { color: var(--warn); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip.high, :root:not([data-theme="light"]) .td-chip.low { color: var(--warn); } }
