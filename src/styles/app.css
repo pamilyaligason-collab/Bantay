@@ -141,3 +141,11 @@ img.avatar { object-fit: cover; }
 .bt .press { transition: transform var(--dur-press) var(--ease-out); }
 .bt .press:active { transform: scale(0.97); }
 @media (prefers-reduced-motion: reduce) { .bt .press { transition: none; } .bt .press:active { transform: none; } }
+
+/* Person chip (icon + name) in place of "Showing: Name". Tappable ones (button/link) keep the 48px target. */
+.who-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; box-sizing: border-box; padding: 6px 14px 6px 10px; border-radius: 999px; border: 0; background: var(--soft); color: var(--ink); font-size: 15px; font-weight: 600; text-decoration: none; }
+.who-chip .sh-ic { color: var(--green); }
+.who-chip > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.who-chip, a.who-chip, .who-chip[role="button"] { min-height: var(--tap); }
+:root[data-theme="dark"] .who-chip .sh-ic { color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .who-chip .sh-ic { color: var(--ink); } }

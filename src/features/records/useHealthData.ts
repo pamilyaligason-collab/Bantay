@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getMember, type Member } from '../auth/session'
 import { labName } from '../../lib/labFormat'
+import { selfIdOrCached } from '../sync/profile'
 import { loadAll } from './store'
 import { usePeople } from './useRecordsServer'
 
@@ -32,7 +33,7 @@ export function useHealthData() {
   }, [tick])
   useEffect(() => {
     let live = true
-    getMember().then((m) => live && setMember(m)).catch(() => {}) // not signed in or no auth: no "me"
+    getMember().then(async (m) => { const mm = m && !m.personId ? { ...m, personId: (await selfIdOrCached().catch(() => null)) ?? null } : m; if (live) setMember(mm) }).catch(() => {}) // not signed in or no auth: no "me"
     return () => {
       live = false
     }

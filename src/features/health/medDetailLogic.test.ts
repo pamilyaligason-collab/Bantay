@@ -80,21 +80,21 @@ describe('weekStrip agrees with countDoses', () => {
     const w = same(m, [take(25, 8, 0), take(25, 20, 0, { slot: '20:00' }), take(26, 8, 0), take(27, 20, 5, { slot: '20:00' })], d(28, 21))
     expect(w.cells.slice(-4).map((c) => c.state)).toEqual(['taken', 'missed', 'missed', 'missed'])
   })
-  it('a 23:30 dose taken at 00:10 is whatever the counter says, and tonight is pending', () => {
+  it('a 23:30 dose taken at 00:10 counts for the evening before (40 minutes late by real time), and tonight is pending', () => {
     const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-27' })
     const w = same(m, [take(28, 0, 10, { slot: '23:30' })], d(28, 9))
-    expect(w.cells.slice(-2).map((c) => [c.day, c.state])).toEqual([['2026-10-27', 'missed'], ['2026-10-28', 'pending']]) // the 00:10 take is on the 28th: the counter does not carry it back to the 27th (see the mirror below)
-    expect([w.taken, w.due]).toEqual([0, 1])
+    expect(w.cells.slice(-2).map((c) => [c.day, c.state])).toEqual([['2026-10-27', 'taken'], ['2026-10-28', 'pending']]) // the counter matches by real time, so the 00:10 take on the 28th closes the 27th's 23:30 slot
+    expect([w.taken, w.due]).toEqual([1, 1])
   })
   it('a take at 01:31 for a 23:30 slot is outside 2 hours and is not claimed by today or the day before', () => {
     const m = med({ schedule: { v: 1, times: ['23:30'] }, startedOn: '2026-10-26' })
     const w = same(m, [take(28, 1, 31, { slot: '23:30' })], d(28, 9))
     expect(w.cells.slice(-3).map((c) => c.state)).toEqual(['missed', 'missed', 'pending'])
   })
-  it('a 00:30 dose: 00:20 is on time, 23:50 the night before is not that day', () => {
+  it('a 00:30 dose: 00:20 is on time, and 23:50 the night before is 40 minutes early by real time, so it counts for the next day', () => {
     const m = med({ schedule: { v: 1, times: ['00:30'] }, startedOn: '2026-10-26' })
     const w = same(m, [take(27, 0, 20, { slot: '00:30' }), take(27, 23, 50, { slot: '00:30' })], d(28, 9))
-    expect(w.cells.slice(-3).map((c) => c.state)).toEqual(['missed', 'taken', 'missed'])
+    expect(w.cells.slice(-3).map((c) => c.state)).toEqual(['missed', 'taken', 'taken'])
   })
 })
 
