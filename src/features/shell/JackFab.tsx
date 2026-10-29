@@ -20,6 +20,7 @@ function coversText(hint: Box): boolean {
   if (!root) return false
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const range = document.createRange()
+  if (typeof range.getClientRects !== 'function') return false // jsdom has no layout; real browsers do
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     if (!n.nodeValue?.trim()) continue
     range.selectNodeContents(n)
