@@ -62,7 +62,7 @@ export function whenLine(d: DuePerson, now: Date): string {
 }
 
 /** A dose past its slot: it still counts as on time until ON_TIME_MIN after the slot (the same 2 hours the adherence counter uses). */
-export const lateNote = (d: DuePerson) => `Taking it by ${clock((d.at + ON_TIME_MIN) % DAY_MIN)} still counts as on time.`
+export const lateNote = (d: DuePerson) => `On time until ${clock((d.at + ON_TIME_MIN) % DAY_MIN)}.`
 
 export function pickNext(i: { due: DuePerson[]; plan: HeroCard | null; storm: { title: string; body: string } | null }, now: Date = new Date()): NextItem {
   const d = i.due[0]

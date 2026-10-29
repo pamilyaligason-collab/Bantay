@@ -73,7 +73,7 @@ describe('pickNext', () => {
     expect(pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30)).kicker).toBe('Late · not taken yet')
     const late = pickNext({ ...none, due: nextDoses([ma], meds, [], at(10, 30)) }, at(10, 30))
     expect(late.late).toBe(true)
-    expect(late.note).toBe('Taking it by 12:00 PM still counts as on time.') // slot 10:00 + the 2 h of doseCount's ON_TIME_MIN
+    expect(late.note).toBe('On time until 12:00 PM.') // slot 10:00 + the 2 h of doseCount's ON_TIME_MIN
     expect(pickNext({ ...none, due }, at(9, 30)).late).toBe(false)
     expect(pickNext(none).kind).toBe('calm')
   })
