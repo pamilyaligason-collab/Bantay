@@ -29,12 +29,12 @@ const setup = (over: Partial<Parameters<typeof ForgotFlow>[0]> = {}) => {
 }
 
 describe('ForgotFlow', () => {
-  it('shows two ways back in and no fingerprint route, no admin', () => {
+  it('shows two ways back in and no fingerprint route; an admin approves (SEC-1)', () => {
     setup()
     expect(screen.getByRole('heading', { name: 'Forgot your PIN?' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Ask a family member to approve/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Ask a family admin to approve/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Sign in with Google/ })).toBeTruthy()
-    expect(document.body.textContent).not.toMatch(/admin|fingerprint/i)
+    expect(document.body.textContent).not.toMatch(/fingerprint/i)
   })
 
   it('Google goes straight to Google sign-in', () => {
@@ -45,7 +45,7 @@ describe('ForgotFlow', () => {
 
   it('new PIN twice, then the code screen, polling until approved, then signs in with the new PIN', async () => {
     const { start, complete, signIn } = setup()
-    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family admin to approve/ }))
     expect(screen.getByRole('heading', { name: 'Choose a new PIN' })).toBeTruthy()
     enter('246810')
     expect(screen.getByRole('heading', { name: 'Type it again' })).toBeTruthy()
@@ -53,7 +53,7 @@ describe('ForgotFlow', () => {
     await waitFor(() => expect(start).toHaveBeenCalledWith('mama', 'family'))
     expect(await screen.findByText('4821')).toBeTruthy() // the number to read out
     expect(screen.getByText(/open Bantay and tap Approve/)).toBeTruthy()
-    expect(document.body.textContent).toContain('Ate Joy and Kuya Ben') // the other family members, not Mama herself
+    expect(document.body.textContent).toContain('your family admin') // only an admin can approve (SEC-1)
     await waitFor(() => expect(complete.mock.calls.length).toBeGreaterThan(1)) // keeps polling while not approved
     expect(complete).toHaveBeenCalledWith(START, '246810')
     expect(signIn).not.toHaveBeenCalled()
@@ -63,7 +63,7 @@ describe('ForgotFlow', () => {
 
   it('two different PINs start over with a red line and never call the server', async () => {
     const { start } = setup()
-    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family admin to approve/ }))
     enter('246810')
     enter('246811')
     expect((await screen.findByRole('alert')).textContent).toBe('Those two did not match. Start again.')
@@ -74,7 +74,7 @@ describe('ForgotFlow', () => {
   it('an expired request ends the poll and offers to start again', async () => {
     const complete = vi.fn(async () => ({ ok: false as const, why: 'expired' as const }))
     setup({ complete })
-    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family admin to approve/ }))
     enter('246810'); enter('246810')
     expect((await screen.findByRole('alert')).textContent).toContain('ran out of time')
     const n = complete.mock.calls.length
@@ -86,7 +86,7 @@ describe('ForgotFlow', () => {
 
   it('a rate-limited start shows the reason on the PIN screen', async () => {
     setup({ start: vi.fn(async () => ({ ok: false as const, why: 'rate_limited' as const })) })
-    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family admin to approve/ }))
     enter('246810'); enter('246810')
     expect((await screen.findByRole('alert')).textContent).toContain('Too many requests')
   })
@@ -98,7 +98,7 @@ describe('ForgotFlow', () => {
     const start = vi.fn(async () => ({ ok: true as const, start: START }))
     render(<ForgotFlow member={MAMA} onBack={() => undefined} google={() => undefined} start={start} complete={complete} signIn={async () => null} />)
     const tick = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
-    fireEvent.click(screen.getByRole('button', { name: /Ask a family member to approve/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Ask a family admin to approve/ }))
     enter('246810'); enter('246810')
     await tick(0)
     expect(screen.getByText('4821')).toBeTruthy()

@@ -1,8 +1,8 @@
 import { supabase, supabaseUrl, supabasePublishableKey } from './client'
 
-// Self-service PIN reset (D-76: no admin). Server side is pin-login reset_start / reset_complete and the approve_pin_reset RPC (contracts.md, S6b 0034).
+// Self-service PIN reset (D-76 no-admin reversed by SEC-1, 0043: only a family admin approves). Server side is pin-login reset_start / reset_complete and the approve_pin_reset RPC (contracts.md, S6b 0034).
 // Flow on the requester's phone: choose the new PIN (held in memory only), reset_start -> {id, secret, code}, show the code, poll reset_complete
-// until a family member approves, then sign in with the new PIN. Nothing secret is stored: id, secret and PIN live in this state only.
+// until a family admin approves, then sign in with the new PIN. Nothing secret is stored: id, secret and PIN live in this state only.
 
 export type ResetMethod = 'family'
 export interface ResetStart { id: string; secret: string; code: string }
@@ -42,7 +42,7 @@ export const POLL_GIVE_UP_MS = 30 * 60_000
 
 export const RESET_COPY: Record<ResetFail, string> = {
   no_signal: 'No signal. Try again when you have data.',
-  rate_limited: 'Too many requests. Try again in an hour, or ask a family member to help in person.',
+  rate_limited: 'Too many requests. Try again in an hour, or ask a family admin to help in person.',
   expired: 'That request ran out of time. Start again.',
   used: 'That request was already used. Start again.',
   bad_secret: 'Something went wrong with that request. Start again.',
@@ -90,7 +90,7 @@ export async function startReset(handle: string, method: ResetMethod = 'family')
   return { ok: false, why: why === 'not_approved' ? 'server' : why }
 }
 
-/** One poll: sends the new PIN with the secret. `not_approved` until a family member approves; then ok. */
+/** One poll: sends the new PIN with the secret. `not_approved` until a family admin approves; then ok. */
 export async function completeReset(start: ResetStart, newPin: string): Promise<CompleteResult> {
   const r = await post({ action: 'reset_complete', id: start.id, secret: start.secret, new_pin: newPin })
   if (!r) return { ok: false, why: 'no_signal' }
@@ -99,7 +99,7 @@ export async function completeReset(start: ResetStart, newPin: string): Promise<
 }
 
 /** The approver's side (start-approve-req): the 4-digit number the requester reads out. true = approved. The server gives false for a wrong code
- *  (5 wrong codes burn the request), an expired or used request, the requester, a non-family caller or an already approved request. */
+ *  (5 wrong codes burn the request), an expired or used request, the requester, a caller who is not an admin or an already approved request. */
 export async function approveReset(id: string, code: string): Promise<'approved' | 'refused' | 'no_signal'> {
   if (!supabase || !/^\d{4}$/.test(code)) return 'refused'
   try {

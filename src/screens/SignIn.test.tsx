@@ -290,14 +290,14 @@ describe('SignIn: PIN errors, lock, forgot PIN (P1 Task 5)', () => {
     expect(await screen.findByRole('heading', { name: 'Take a short break' }, { timeout: 8000 })).toBeTruthy()
   })
 
-  it('Forgot PIN? opens the three-way screen with no admin anywhere; Family approval asks for a new PIN first', async () => {
+  it('Forgot PIN? opens the three-way screen, an admin approves; Family approval asks for a new PIN first', async () => {
     render(<SignIn />)
     tap(/^Forgot PIN\?$/)
     expect(await screen.findByRole('heading', { name: 'Forgot your PIN?' })).toBeTruthy()
     expect(screen.queryByText(/fingerprint/i)).toBeNull() // no Keystore-bound route yet (Q33)
-    expect(document.body.textContent).not.toMatch(/admin/i)
+    expect(document.body.textContent).toMatch(/family admin/i) // SEC-1: only an admin approves
     expect(screen.getByRole('button', { name: /Sign in with Google/ })).toBeTruthy()
-    tap(/Ask a family member to approve/)
+    tap(/Ask a family admin to approve/)
     expect(await screen.findByRole('heading', { name: 'Choose a new PIN' })).toBeTruthy()
   })
 

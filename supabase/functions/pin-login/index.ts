@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     async notifyApprovers(requestId, userId) {
       const { data: me } = await admin.from('people').select('id').eq('auth_user_id', userId).maybeSingle()
       if (!me) return
-      const { data: members } = await admin.from('app_roles').select('user_id').eq('disabled', false).neq('user_id', userId)
+      const { data: members } = await admin.from('app_roles').select('user_id').eq('disabled', false).eq('role', 'admin').neq('user_id', userId) // admins only (SEC-1): the same people approve_pin_reset lets approve
       const rows = (members ?? []).map((m) => ({ person_id: me.id, carer_user_id: m.user_id, kind: 'pin_approve', template: 'pin_approve', ref: requestId }))
       for (const row of rows) await admin.from('carer_alerts').insert(row) // one by one: a duplicate (kind, ref, carer) fails alone
       // Best effort: web push for PWA approvers now instead of at the next 15 minute run. Needs the dose-watch cron secret (ML-29: redeploy on rotation).
