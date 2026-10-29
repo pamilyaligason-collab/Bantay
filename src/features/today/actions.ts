@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { manilaDay } from '../assistant/cap'
+import { getMember } from '../auth/session'
 import { pickSlot } from '../health/meds'
 import { logActivity, logDose, logMedTaken, logReading, type MedTaken, type Medication } from '../log/store'
 import { track } from '../admin/events'
@@ -62,22 +64,27 @@ async function queueUnsent(personId: string): Promise<boolean> {
 /** Only a network failure is 'offline' (worth a retry). A refusal (42501, signed out, no client) will not get better by waiting. */
 const isNetwork = (e: { code?: string; message?: string }) => !e.code && /fetch|network|load failed|timeout/i.test(e.message ?? '')
 /** raise_mood_alert returns how many carer alerts it made (0 = no writer carer, or one was already sent today). Told-today is kept in kv so a second Unwell the same day, which makes 0 new rows, still reads 'sent'. */
-const manilaDay = () => new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10)
 async function raise(personId: string): Promise<'sent' | 'nobody' | 'offline' | 'refused'> {
   try {
     if (!supabase) return 'refused'
     const { data, error } = await supabase.rpc('raise_mood_alert', { p_person: personId })
     if (error) return isNetwork(error as { code?: string; message?: string }) ? 'offline' : 'refused'
-    const key = `mood.told.${personId}.${manilaDay()}`
-    if (typeof data === 'number' && data > 0) { await db.kv.put({ key, value: true }).catch(() => undefined); return 'sent' }
+    const prefix = `mood.told.${personId}.`
+    const key = prefix + manilaDay()
+    if (typeof data === 'number' && data > 0) {
+      await db.kv.put({ key, value: true }).catch(() => undefined)
+      await db.kv.where('key').startsWith(prefix).filter((r) => r.key !== key).delete().catch(() => undefined) // keep today's flag only
+      return 'sent'
+    }
     return (await db.kv.get(key).catch(() => undefined)) ? 'sent' : 'nobody' // unknown count counts as nobody: never promise what we cannot show
   } catch {
     return 'offline'
   }
 }
-/** true when someone with edit rights (a writer carer) will get this person's alerts. undefined while unknown (reading, offline): no promise is made then.
- *  shortcut: not cached offline, so the promise hides offline; cache in kv like MedDetail's loader if that matters. */
-export function useHasWriterCarer(personId: string | null | undefined): boolean | undefined {
+/** true when the person has a writer carer other than their own login (carers.can_write; notify_family and dose-watch skip the owner): only then is "your family will see it" true.
+ *  undefined while reading, offline, or when this user may not read the person's carer rows (carers_read RLS): no promise is made then.
+ *  shortcut: no offline cache, so the promise hides offline; cache in kv like useCanMark.loadWritable if that matters. */
+export function useHasWriterCarer(personId: string | null | undefined, ownerUserId?: string): boolean | undefined {
   const [got, setGot] = useState<{ id: string; on: boolean }>()
   useEffect(() => {
     if (!personId || !supabase) return
@@ -85,11 +92,14 @@ export function useHasWriterCarer(personId: string | null | undefined): boolean 
     void (async () => {
       try {
         const r = await supabase!.from('carers').select('carer_id').eq('person_id', personId).eq('can_write', true)
-        if (live && !r.error) setGot({ id: personId, on: (r.data ?? []).length > 0 })
+        if (!live || r.error) return
+        const m = ownerUserId ? null : await getMember().catch(() => null) // callers that already know the login pass it
+        const owner = ownerUserId ?? (m?.personId === personId ? m.userId : undefined)
+        if (live) setGot({ id: personId, on: ((r.data ?? []) as { carer_id: string }[]).some((c) => c.carer_id !== owner) })
       } catch { /* unknown: say nothing */ }
     })()
     return () => { live = false }
-  }, [personId])
+  }, [personId, ownerUserId])
   return got && got.id === personId ? got.on : undefined
 }
 /** The line under the mood faces. Only promises the family sees it when a writer carer exists. */

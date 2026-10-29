@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { supabase } from '../auth/client'
+import { useHasWriterCarer } from '../today/actions'
 import { ldb, type MedTaken, type Medication } from '../log/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { useHealthData } from '../records/useHealthData'
@@ -60,26 +60,6 @@ function useRingsHere(personId: string | undefined, ownId: string): boolean | un
     return () => sub.unsubscribe()
   }, [key, personId, ownId])
   return got && got.key === key ? got.on : undefined
-}
-
-/** true when the person has a writer carer other than their own login: dose-watch (supabase/functions/dose-watch/logic.ts recipients) alerts only those.
- *  undefined while reading, offline, or when this user may not read the person's carer rows (carers_read RLS: the person, a writer carer, an admin): no promise is made then.
- *  shortcut: no offline cache, so the row hides offline; cache it in kv like useCanMark.loadWritable if that matters. */
-function useHasWriterCarer(personId: string | undefined, selfUserId: string | undefined): boolean | undefined {
-  const [got, setGot] = useState<{ id: string; on: boolean } | undefined>(undefined)
-  useEffect(() => {
-    if (!personId || !supabase) return
-    let live = true
-    void (async () => {
-      try {
-        const r = await supabase!.from('carers').select('carer_id').eq('person_id', personId).eq('can_write', true)
-        if (!live || r.error) return
-        setGot({ id: personId, on: ((r.data ?? []) as { carer_id: string }[]).some((c) => c.carer_id !== selfUserId) })
-      } catch { /* unknown: say nothing */ }
-    })()
-    return () => { live = false }
-  }, [personId, selfUserId])
-  return got && got.id === personId ? got.on : undefined
 }
 
 const startedText = (iso?: string) => (iso ? new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : null)

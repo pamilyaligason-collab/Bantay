@@ -88,6 +88,12 @@ describe('language toggle (M7b)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Normal' }))
     expect(document.documentElement.dataset.text).toBeUndefined()
   })
+  it('DS-9: the Quiet hours line says only SOS and storm alerts still ring', async () => {
+    render(<Me />)
+    await screen.findByRole('switch', { name: 'Quiet hours' })
+    expect(screen.getByText('10 PM to 6 AM. SOS and storm alerts still ring; other family updates are silent')).toBeTruthy()
+    expect(screen.queryByText(/alerts still ring$/)).toBeNull()
+  })
   it('hides the app version row from non-admins', async () => {
     render(<Me />)
     await screen.findByRole('switch', { name: 'Simple mode' })
