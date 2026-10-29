@@ -143,7 +143,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 /* The SOS hold scrolls past the Jack button's height too. Keep the hold centred (D-88): equal space on both sides of the button only, wide enough that its right edge
    (56px + 14px margin + 6px air = 76px from the screen edge, less the page gutter) stays clear of Jack. The sentence under it keeps the full width. */
 .bt[data-jack] .sos-simple-btn { margin-inline: 62px; }
-.sh-hint { position: absolute; right: 14px; bottom: calc(var(--tabbar-clear) + 56px + 12px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; max-width: calc(100% - 28px); box-sizing: border-box; pointer-events: none; }
+.sh-hint { position: absolute; right: 14px; bottom: calc(var(--tabbar-clear) + 56px + 12px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; width: max-content; max-width: calc(100% - 28px); box-sizing: border-box; pointer-events: none; }
 /* above Jack, not beside him: beside him it sat on the SOS caption and clipped at 200% (UI-1) */
 .sh-hint::after { content: ""; position: absolute; right: 22px; top: 100%; border: 7px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .sh-jackfab { transition: none; } .sh-jackfab:active { transform: none; } }

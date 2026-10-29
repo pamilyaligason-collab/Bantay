@@ -48,6 +48,8 @@ describe('TabBar family badge (D-78)', () => {
     render(<TabBar active="today" />)
     const badge = screen.getByRole('img', { name: '3 new alerts' })
     expect(badge.closest('button')!.textContent).toContain('Family')
+    expect(screen.getByRole('button', { name: 'Family, 3 new alerts' })).toBe(badge.closest('button')) // the count is in the button's own name
+    expect(screen.getByRole('button', { name: 'Today' })).toBeTruthy()
     expect(screen.getAllByRole('img', { name: /new alert/ })).toHaveLength(1)
     cleanup()
     alerts.unseen = 1

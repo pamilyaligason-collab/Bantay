@@ -95,6 +95,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }) // the hint shows only where it covers no text (UI-1); this size has a clear spot
       await skipOnboarding(page)
       await page.goto('/#today')
       await expect(page.getByText(/Ask me anything/)).toBeVisible()
@@ -133,6 +134,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('the one-time hint shows, never covers the Jack button, and is gone after the first open', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 })
       await skipOnboarding(page)
       await page.goto('/#today')
       const hint = page.getByText(/Ask me anything/)

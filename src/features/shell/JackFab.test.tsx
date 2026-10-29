@@ -115,7 +115,7 @@ describe('JackFab actions', () => {
 describe('JackFab coach mark', () => {
   it('shows "Ask me anything" and the hold hint on Today; seen only once exactly 8 s have passed', () => {
     render(<JackFab tab="today" hash="#today" />)
-    expect(screen.getByRole('status').textContent).toBe('Ask me anything. Hold for the camera.')
+    expect(screen.getByRole('status').textContent).toBe('Ask me anything. Hold for more.')
     tick(7999)
     expect(store.get('askHintSeen')).toBeUndefined()
     expect(screen.queryByRole('status')).not.toBeNull()
