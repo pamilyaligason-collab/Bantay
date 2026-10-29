@@ -11,6 +11,7 @@ describe('NudgeCard', () => {
     render(<NudgeCard personId="p" readings={[]} canLog onAdd={onAdd} />)
     const card = screen.getByTestId('nudge')
     expect(card.textContent).toContain('0/3')
+    expect(card.textContent).toContain('Not yet this week')
     expect(card.textContent).toContain('Check your BP now')
     fireEvent.click(screen.getByRole('button', { name: 'Add BP' }))
     expect(onAdd).toHaveBeenCalledWith('bp')

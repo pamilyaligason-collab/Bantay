@@ -67,7 +67,7 @@ test('list rows show stock, open the detail, and the edit sheet opens from insid
   await expect(aml.getByTestId('med-days')).toHaveText('Refill in 6 days')
   await expect(aml.getByTestId('med-days')).toHaveClass(/warn/)
   const los = active.getByRole('link', { name: /^Losartan 50 mg/ })
-  await expect(los.getByTestId('med-days')).toHaveText('24 days')
+  await expect(los.getByTestId('med-days')).toHaveText('24 days left')
   await expect(los.getByTestId('med-days')).not.toHaveClass(/warn/)
   await expect(active.getByRole('link', { name: /^Paracetamol/ }).getByTestId('med-days')).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)

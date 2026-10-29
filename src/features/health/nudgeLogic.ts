@@ -18,6 +18,8 @@ export interface Goal {
   count: string
   /** Words under the ring: "days this week". */
   text: string
+  /** What a screen reader hears, with the count: "2 of 3 days this week"; "Not yet this week" when nothing is done. */
+  say: string
   met: boolean
   /** 0..1 for the ring. */
   pct: number
@@ -62,7 +64,8 @@ export function computeNudge(i: { personId: string; readings: Reading[]; takes: 
 
   const goal = (g: { id: GoalId; label: string; n: number; target: number; unitWord: string; cta: Goal['cta']; step: string }): Goal => {
     const done = g.n > 0 ? g.n : null
-    return { id: g.id, label: g.label, target: g.target, cta: g.cta, step: g.step, done, met: g.n >= g.target, pct: Math.min(1, g.n / g.target), count: `${g.n}/${g.target}`, text: `${g.unitWord} this week` }
+    const shown = Math.min(g.n, g.target) // never "4/3": past the target the ring just stays full
+    return { id: g.id, label: g.label, target: g.target, cta: g.cta, step: g.step, done, met: g.n >= g.target, pct: Math.min(1, g.n / g.target), count: `${shown}/${g.target}`, text: `${g.unitWord} this week`, say: g.n > 0 ? `${shown} of ${g.target} ${g.unitWord} this week` : 'Not yet this week' }
   }
   const goals: Goal[] = [goal({ id: 'bp', label: 'Blood pressure', n: daysOf(mine, BP), target: BP_DAYS, unitWord: 'days', cta: { label: 'Add BP', sheet: 'bp' }, step: 'Check your BP now (1 minute)' })]
   if (mine.some((r) => SUGAR.includes(r.test))) goals.push(goal({ id: 'sugar', label: 'Sugar', n: daysOf(mine, SUGAR), target: SUGAR_DAYS, unitWord: 'days', cta: { label: 'Add sugar', sheet: 'fasting_glucose' }, step: 'Check your sugar - about 2 minutes' }))

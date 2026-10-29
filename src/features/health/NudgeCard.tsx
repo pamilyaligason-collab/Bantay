@@ -64,7 +64,8 @@ export function NudgeCard({ personId, readings, canLog, onAdd }: { personId: str
           <li key={g.id} className={`nd-goal${g.met ? ' met' : ''}`} data-goal={g.id}>
             <Ring g={g} />
             <b>{g.label}</b>
-            <span className="nd-t">{g.met ? 'Done' : g.text}</span>
+            <span className="nd-t" aria-hidden="true">{g.met ? 'Done' : g.text}</span>
+            <span className="nd-sr">{g.say}</span>
           </li>
         ))}
       </ul>

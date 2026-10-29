@@ -31,6 +31,16 @@ describe('computeNudge', () => {
     expect(g.count).toBe('3/3')
     expect(n.next?.id).toBe('meals')
   })
+  it('past the target the count stays at the target (never 4/3) and the spoken text carries the count', () => {
+    const n = computeNudge({ ...base, readings: [bp(0), bp(1), bp(2), bp(3)] })
+    const g = n.goals.find((x) => x.id === 'bp')!
+    expect(g.done).toBe(4)
+    expect(g.count).toBe('3/3')
+    expect(g.pct).toBe(1)
+    expect(g.say).toBe('3 of 3 days this week')
+    expect(computeNudge({ ...base, readings: [bp(0), bp(1)] }).goals.find((x) => x.id === 'bp')!.say).toBe('2 of 3 days this week')
+    expect(computeNudge(base).goals[0].say).toBe('Not yet this week')
+  })
   it('sugar shows only once a sugar reading exists; move counts minutes and ignores null minutes', () => {
     expect(computeNudge(base).goals.some((g) => g.id === 'sugar')).toBe(false)
     const n = computeNudge({ ...base, readings: [{ ...bp(0), test: 'glucose', value: 100, unit: 'mg/dL' }], activity: [{ personId: 'p', kind: 'walk', minutes: 20, steps: null, startedAt: at(0), source: 'manual' }, { personId: 'p', kind: 'steps', minutes: null, steps: 900, startedAt: at(0), source: 'manual' }] })

@@ -8,7 +8,7 @@ import { logBp } from '../today/actions'
 import { parseReading, replyValid } from './replyParse'
 
 /** The morning blood pressure reminder with a reply box: the lock screen shows "Reply with a reading", the person types 128/82 and it is saved without opening the app.
- *  kv `nudge.bpTimes` (local only, never synced): the 'HH:MM' times to remind at; empty or missing = no reminder (opt-in from Health > Check-in and kudos).
+ *  kv `nudge.bpTimes` (local only, never synced): the 'HH:MM' times to remind at; empty or missing = no reminder (opt-in from Health > My progress).
  *  One-shot alarms for the next 7 days at ids 1.82e9 + day * 10 + n (above the dose alarms, below the snoozes at 1.9e9), re-planned on every app open, like the dose alarms.
  *  The text never carries a number or a name (B-7). A reply is parsed by replyParse; numbers outside the safe range, a top not above the bottom, or words that are not a reading are NEVER saved:
  *  the person gets a plain notification that opens Bantay instead. Native only. Not run on a device in this lane (ML-19): the tests use the plugin mock. */
