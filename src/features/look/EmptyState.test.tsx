@@ -12,6 +12,15 @@ describe('EmptyState art (D-91)', () => {
     expect(imgs[0]!.getAttribute('width')).toBe('88')
   })
 
+  it('shows the chosen pose, decorative, and it beats an icon (UI-10)', () => {
+    const { container } = render(<EmptyState jack="well-done" icon="check" title="All done" />)
+    const imgs = container.querySelectorAll('img')
+    expect(imgs).toHaveLength(1)
+    expect(imgs[0]!.getAttribute('alt')).toBe('')
+    expect(imgs[0]!.getAttribute('width')).toBe('88')
+    expect(container.querySelector('svg')).toBeNull()
+  })
+
   it('keeps the icon, and no Jack, when an icon is given', () => {
     const { container } = render(<EmptyState icon="check" title="All done" />)
     expect(container.querySelector('img')).toBeNull()

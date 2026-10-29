@@ -9,7 +9,7 @@ import './shell.css'
 
 const HOLD_MS = 500
 
-/** Floating Jack button (round 2, replaces the centre Ask tab). Tap opens Jack; press and hold (or right click) opens the Ask choice sheet
+/** Floating Jack button (round 2, replaces the centre Ask tab). Tap opens Jack; press and hold (or right click) opens the Ask choice sheet; the coach mark says so (UI-19)
  *  (Talk, Scan & Capture, Upload a photo). Hidden in Simple mode, on every route that draws its own header, and off the five tabs.
  *  While shown it marks `.bt[data-jack]` so the page content keeps clear of it (shell.css). */
 export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
@@ -56,7 +56,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
       >
         <JackArt name="head" size={48} decorative />
       </button>
-      {hint && <p className="sh-hint" role="status">Ask me anything</p>}
+      {hint && <p className="sh-hint" role="status">Ask me anything. Hold for the camera.</p>}
       {sheet && <AskSheet onClose={onClose} onDone={onDone} />}
     </>
   )
