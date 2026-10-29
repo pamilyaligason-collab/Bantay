@@ -105,7 +105,7 @@ export function LabsList({ readings, thresholds, ready, sources }: { readings: R
       )}
       {shown.length === 0 && <p className="sub" role="status">{filter === 'ask' ? 'Nothing to ask about. Every result with a range is in it.' : 'No results in the range yet.'}</p>}
       {shown.map((row) => <LabCard key={row.reading.test} row={row} all={labs} family={thresholds.find((t) => t.key === `${row.reading.personId}:${row.reading.test}`)} showPrev={showPrev && anyPrev} />)}
-      <p className="sub" style={{ margin: '8px 4px 0' }}>Outside the range? Ask your doctor. Not a diagnosis. Tap a test for more.</p>
+      <p className="sub" style={{ margin: '8px 4px 0' }}>Outside the range? Ask your doctor. Not a diagnosis or medical advice. Tap a test for more.</p>
     </section>
   )
 }

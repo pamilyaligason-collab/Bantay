@@ -88,7 +88,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     await page.getByRole('button', { name: 'Forgot PIN?' }).click()
     await expect(page.getByRole('heading', { name: 'Forgot your PIN?' })).toBeVisible()
-    await expect(page.locator('body')).not.toContainText(/admin/i)
+    await expect(page.locator('body')).toContainText('Ask a family admin to approve') // SEC-1: only an admin approves
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await page.screenshot({ path: `${SHOTS}/start-forgot-${scheme}.png` })
 

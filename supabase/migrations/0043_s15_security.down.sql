@@ -22,10 +22,8 @@ drop policy if exists people_read on public.people;
 create policy people_read on public.people for select to authenticated
   using (auth_user_id = auth.uid() or ((created_by = auth.uid() or public.is_carer_of(id)) and archived_at is null));
 
--- SEC-3 undo: the state before 0043 (authenticated on every table; anon only on assistant_usage). New tables get the Supabase default again.
-grant truncate, references, trigger on all tables in schema public to authenticated;
-grant truncate, references, trigger on public.assistant_usage to anon;
-alter default privileges in schema public grant truncate, references, trigger on tables to anon, authenticated;
+-- SEC-3 is not undone on purpose: before 0043 many tables had revoke all for authenticated, so a blanket re-grant would widen access
+-- (TRUNCATE skips RLS). The revoke is safe to keep after a rollback; re-grant per table from a privilege snapshot if ever needed.
 
 alter function public.records_auto_threshold() reset search_path;
 

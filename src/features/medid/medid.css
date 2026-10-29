@@ -15,6 +15,6 @@
 .mid-none { color: var(--muted); font-size: 17px; font-weight: 500; }
 .mid-add { display: inline-flex; align-items: center; min-height: 48px; margin-left: 14px; color: var(--act); font-size: 16px; font-weight: 600; text-decoration: none; }
 .mid-add:hover { text-decoration: underline; }
-.mid-call { display: block; min-height: 48px; line-height: 44px; color: var(--act); text-decoration: none; }
+.mid-call { display: block; min-height: 48px; line-height: 48px; color: var(--act); text-decoration: none; }
 .mid-edit { min-height: 48px; display: flex; align-items: center; color: var(--act); font-weight: 600; }
 .mid-tip { display: grid; gap: 4px; }
