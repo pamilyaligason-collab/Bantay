@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
-import { loadFamily, type FamilyMember } from '../auth/family'
+import { type FamilyMember } from '../auth/family'
 import { signInWithPin } from '../auth/pinLogin'
 import { POLL_GIVE_UP_MS, RESET_COPY, completeReset, pollDelay, resetStep, startReset, type ResetState } from '../auth/pinReset'
 import { Icon } from '../shell/Icon'
@@ -9,7 +9,7 @@ import SetPin from './SetPin'
 const clock = (d: Date) => d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 
 /** `start-forgot` -> (new PIN) -> `start-approve-wait`. The new PIN is chosen first and held in memory, because the server only says "approved" to a reset_complete call
- *  that carries it. When a family member approves, the poll succeeds and the person is signed in with the new PIN. No admin anywhere (D-76). */
+ *  that carries it. When a family admin approves (SEC-1, 0043: only an admin can; supersedes D-76), the poll succeeds and the person is signed in with the new PIN. */
 export default function ForgotFlow({ member, onBack, google, start = startReset, complete = completeReset, signIn = signInWithPin, delay = pollDelay, giveUpMs = POLL_GIVE_UP_MS }: {
   member: FamilyMember; onBack: () => void; google: () => void
   start?: typeof startReset; complete?: typeof completeReset; signIn?: typeof signInWithPin; delay?: typeof pollDelay; giveUpMs?: number
@@ -65,8 +65,7 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
     void signIn(handle, pin).then((e) => { if (e && alive.current) setErr(e) })
   }, [st.s]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const others = loadFamily().filter((m) => m.personId !== member.personId).map((m) => m.displayName.trim()).filter(Boolean).slice(0, 3)
-  const sentTo = others.length ? others.length === 1 ? others[0]! : `${others.slice(0, -1).join(', ')} and ${others[others.length - 1]}` : 'your family'
+  const sentTo = 'your family admin' // the server tells admins only, and the app does not know who they are
 
   if (st.s === 'failed') {
     return (
@@ -92,8 +91,8 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
       <div className="si-set">
         <div className="si-c">
           <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} />
-          <h2 className="pname">Asked the family</h2>
-          <p className="si-hint">Ask a family member to open Bantay and tap Approve. Read them this number so they know it is you.</p>
+          <h2 className="pname">Asked the family admin</h2>
+          <p className="si-hint">Ask a family admin to open Bantay and tap Approve. Read them this number so they know it is you.</p>
         </div>
         <div className="grp si-c si-codebox"><span className="si-eyebrow">Your number</span><div className="si-code" aria-label={`Your number is ${waiting.start.code.split('').join(' ')}`}>{waiting.start.code}</div></div>
         <ul className="grp si-ticks">
@@ -118,7 +117,7 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
       </div>
       <button type="button" className="grp si-opt" disabled={!handle} onClick={() => setView('newpin')}>
         <span className="si-tile" aria-hidden="true"><Icon name="users" size={22} /></span>
-        <span className="grow"><b>Ask a family member to approve</b><span className="si-hint">They tap Approve in their Bantay app.</span></span>
+        <span className="grow"><b>Ask a family admin to approve</b><span className="si-hint">They tap Approve in their Bantay app.</span></span>
         <Icon name="chev" size={20} />
       </button>
       <button type="button" className="grp si-opt" onClick={google}>

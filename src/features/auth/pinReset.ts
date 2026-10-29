@@ -1,6 +1,6 @@
 import { supabase, supabaseUrl, supabasePublishableKey } from './client'
 
-// Self-service PIN reset (D-76: no admin). Server side is pin-login reset_start / reset_complete and the approve_pin_reset RPC (contracts.md, S6b 0034).
+// Self-service PIN reset (D-76 no-admin reversed by SEC-1, 0043: only a family admin approves). Server side is pin-login reset_start / reset_complete and the approve_pin_reset RPC (contracts.md, S6b 0034).
 // Flow on the requester's phone: choose the new PIN (held in memory only), reset_start -> {id, secret, code}, show the code, poll reset_complete
 // until a family admin approves, then sign in with the new PIN. Nothing secret is stored: id, secret and PIN live in this state only.
 

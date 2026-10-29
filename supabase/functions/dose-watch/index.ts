@@ -11,7 +11,7 @@ import webpush from 'npm:web-push@3.6.7'
 import { fcmMessageFor, fcmOutcome, parseServiceAccount, sendFcm } from '../_shared/fcm.ts'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
-import { manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, slotDayOf, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
     const meds = await port.medications()
     const taken = await port.taken(new Date(now.getTime() - 86_400_000).toISOString())
     const slots = new Set<string>() // person|slot
-    const open = (m: MedRow, t: string) => !taken.some((r) => r.person_id === m.person_id && r.slot === t && manilaDay(Date.parse(r.taken_at)) === day && (r.medication_id ? r.medication_id === m.id : !!normaliseDrug(r.name) && normaliseDrug(r.name) === normaliseDrug(m.name)))
+    const open = (m: MedRow, t: string) => !taken.some((r) => r.person_id === m.person_id && r.slot === t && slotDayOf(Date.parse(r.taken_at), t) === day && (r.medication_id ? r.medication_id === m.id : !!normaliseDrug(r.name) && normaliseDrug(r.name) === normaliseDrug(m.name)))
     for (const m of meds) {
       for (const t of scheduleTimes(m.schedule)) {
         const late = now.getTime() - Date.parse(`${day}T${t}:00+08:00`)
