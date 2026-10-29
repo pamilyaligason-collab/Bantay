@@ -37,7 +37,7 @@ export default function Facts({ onBack, now }: { onBack: () => void; now?: Date 
         <span className="sh-sub">Did you know? Philippines</span>
         <b>{phFactOf(dayKey(today))}</b>
       </section>
-      <div className="fp-src"><Icon name="info" size={18} /><span>On this day: Wikipedia, CC BY-SA 4.0, credit and link on each card. Philippine fact written by us. Yesterday's cards stay on the phone.</span></div>
+      <div className="fp-src"><Icon name="info" size={18} /><span>Facts from Wikipedia (CC BY-SA). Saved for offline.</span></div>
     </div>
   )
 }
