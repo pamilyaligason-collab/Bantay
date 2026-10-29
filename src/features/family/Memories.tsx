@@ -19,7 +19,7 @@ export default function Memories() {
       {on ? <MemoriesOn turnOff={() => setOn(false)} /> : (
         <div className="card mem-off">
           <p className="mem-lead">Share family photos in one private place. Off for now.</p>
-          <p className="sub">Only the people in your family on Bantay can see them. Location and camera details are removed from every photo before it is saved.</p>
+          <p className="sub">Only family sees these. Photo location is removed.</p>
           <button type="button" className="btn2 mem-btn" onClick={() => setOn(true)}><Icon name="photo" size={22} />Turn on Memories</button>
         </div>
       )}
@@ -67,7 +67,7 @@ function MemoriesOn({ turnOff }: { turnOff: () => void }) {
       )}
       <input ref={input} type="file" accept="image/*" hidden data-testid="mem-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
       {note && <p className="sub" role="status">{note}</p>}
-      <p className="sub mem-privacy"><Icon name="lock" size={18} /> Only your family on Bantay sees these. Location and camera details are removed from every photo.</p>
+      <p className="sub mem-privacy"><Icon name="lock" size={18} /> Only family sees these. Photo location is removed.</p>
       <button type="button" className="mem-off-link" onClick={turnOff}>Turn Memories off on this phone</button>
 
       {picked && <AddSheet jpeg={picked} onClose={() => setPicked(null)} onDone={() => { setPicked(null); void load() }} />}
@@ -96,7 +96,7 @@ function AddSheet({ jpeg, onClose, onDone }: { jpeg: Blob; onClose: () => void; 
         <label htmlFor="mem-cap">Caption (optional)</label>
         <input id="mem-cap" maxLength={CAPTION_MAX} value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Sunday lunch" />
       </div>
-      <p className="sub">Location and camera details are already removed. Your family on Bantay will see this photo.</p>
+      <p className="sub">Your family will see this photo.</p>
       {err && <p className="fm-warn" role="alert">{err}</p>}
       <button type="button" className="btn mem-btn" disabled={busy} onClick={() => void save()}>{busy ? 'Saving' : 'Add to Memories'}</button>
     </Sheet>
