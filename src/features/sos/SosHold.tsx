@@ -16,7 +16,7 @@ export default function SosHold({ onSend }: { onSend: () => void }) {
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setConfirm(true) } }}>
         <span>{holding ? `Holding... ${left} ${left === 1 ? 'second' : 'seconds'} to go` : 'Hold for help'}</span>
       </button>
-      <p className="sub sos-simple-sub">{holding ? 'Let go to cancel. Nothing is sent yet.' : 'Hold for 3 seconds. Your phone calls your family and opens a text. They will see it in Bantay.'}</p>
+      <p className="sub sos-simple-sub">{holding ? 'Let go to cancel. Nothing is sent yet.' : 'Hold 3 seconds. Calls your family and opens a text.'}</p>
       {confirm && (
         <div className="sos-confirm" role="alertdialog" aria-label="Send SOS now?">
           <b>Send SOS now?</b>

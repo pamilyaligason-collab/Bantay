@@ -95,7 +95,7 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
   return (
     <section aria-labelledby="ss-h">
       <h2 id="ss-h" className="hd">Phone health data</h2>
-      <p className="sec">Off until you turn a switch on. Bantay only reads. It never changes your phone’s health data, and never puts these numbers in a notification.</p>
+      <p className="sec">Off until you switch it on. Bantay only reads.</p>
       <div className="grp">
         <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
           <span className="grow">
