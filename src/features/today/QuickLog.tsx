@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { liveMedicines } from '../health/meds'
-import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, takeDose, takeMedication, type Feeling, type LogResult } from './actions'
+import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import { useStorm } from './useStorm'
 import BpCheckButton from '../health/bpcheck/BpCheckButton'
@@ -68,6 +68,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const [fasting, setFasting] = useState(true)
   const storm = useStorm()
   const self = useSelfPersonId()
+  const writer = useHasWriterCarer(self)
 
   const close = () => { setOpen(null); setErr(''); setA(''); setB('') }
   const run = async (p: Promise<LogResult>, done: string) => {
@@ -82,7 +83,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     setBusy(true)
     const r = await logFeeling(f)
     setBusy(false)
-    if (r === 'told' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
+    if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,7 +178,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
               <button key={f} type="button" className={`td-face ${FACE_CLASS[f]}`} disabled={busy} onClick={() => void face(f)}>{label}</button>
             ))}
             {err && <p className="td-err" role="alert">{err}</p>}
-            <p className="td-sub">Your family will see it in Bantay.</p>
+            <p className="td-sub">{moodLine(writer)}</p>
           </div>
         </Sheet>
       )}

@@ -8,7 +8,7 @@ vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('../log/store', () => ({ logActivity: async (a: { kind: string }) => { if (a.kind === 'check-in') h.checkins++; else h.moods.push(a.kind) } }))
 import { FEELINGS, feelingToast, logFeeling, retryToast, retryUnsentMood } from './actions'
 
-beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ error: null }); h.moods = []; h.checkins = 0 })
+beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ data: 1, error: null }); h.moods = []; h.checkins = 0 })
 
 describe('logFeeling (How are you?)', () => {
   it('has the four faces in the mockup order', () => expect(FEELINGS.map(([, l]) => l)).toEqual(['Great', 'OK', 'Not great', 'Unwell']))
@@ -37,6 +37,20 @@ describe('logFeeling (How are you?)', () => {
     expect(await logFeeling('unwell')).toBe('untold')
     expect(feelingToast('refused')).toBe('Your family was not told. Call them.')
   })
+  it('DS-1: the RPC reaching 0 carers is nobody (never "family told"); 1 is sent; a second Unwell the same day with 0 new rows is still sent', async () => {
+    const { db } = await import('../../db')
+    await db.kv.delete('mood.unsent')
+    for (const k of await db.kv.toCollection().primaryKeys()) if (String(k).startsWith('mood.told.')) await db.kv.delete(k)
+    h.rpc.mockResolvedValue({ data: 0, error: null })
+    expect(await logFeeling('unwell')).toBe('nobody')
+    expect(await db.kv.get('mood.unsent')).toBeUndefined() // nothing to retry
+    expect(feelingToast('nobody')).toBe('Saved. No one gets your alerts yet. Call your family.')
+    expect(retryToast('nobody')).toBe('Saved. No one gets your alerts yet. Call your family.')
+    h.rpc.mockResolvedValue({ data: 1, error: null })
+    expect(await logFeeling('unwell')).toBe('told')
+    h.rpc.mockResolvedValue({ data: 0, error: null }) // server dedupes: already told today
+    expect(await logFeeling('unwell')).toBe('told')
+  })
   it('a later Great or OK clears a queued Unwell', async () => {
     const { db } = await import('../../db')
     h.rpc.mockRejectedValue(new Error('offline'))
@@ -48,7 +62,7 @@ describe('logFeeling (How are you?)', () => {
   it('two retries at once make one call', async () => {
     const { db } = await import('../../db')
     await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: Date.now() } })
-    h.rpc.mockResolvedValue({ error: null })
+    h.rpc.mockResolvedValue({ data: 1, error: null })
     const [a, b] = await Promise.all([retryUnsentMood(), retryUnsentMood()])
     expect([a, b]).toEqual(['sent', 'sent'])
     expect(h.rpc).toHaveBeenCalledTimes(1)

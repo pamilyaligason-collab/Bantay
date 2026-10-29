@@ -53,7 +53,7 @@ export default function AddReadingSheet({ spec, personId, forName, family, bpDoc
     } catch { setErr('Could not save on this phone. Try again.'); setBusy(false) }
   }
 
-  if (crisis) return <Sheet title={`Add ${spec.label}`} onClose={onClose}><CrisisCard kind={crisis.kind} fresh={crisis.fresh} onClose={onClose} /></Sheet>
+  if (crisis) return <Sheet title={`Add ${spec.label}`} onClose={onClose}><CrisisCard kind={crisis.kind} fresh={crisis.fresh} personId={personId} onClose={onClose} /></Sheet>
   return (
     <Sheet title={`Add ${spec.label}`} onClose={onClose}>
       <div className="fm-form md-form">

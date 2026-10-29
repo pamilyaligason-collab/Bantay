@@ -10,7 +10,7 @@ import Call911 from '../sos/Call911'
 import { normalizeContacts, validPhone } from '../sos/contacts'
 import SosHold from '../sos/SosHold'
 import SosScreen from '../sos/SosScreen'
-import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, type Feeling } from './actions'
+import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, moodLine, useHasWriterCarer, type Feeling } from './actions'
 import { Icon } from '../shell/Icon'
 import BpCheck from '../health/bpcheck/BpCheck'
 import { useSelfPersonId } from '../setup/useProfile'
@@ -22,6 +22,7 @@ import { useSosActive } from '../family/sosActive'
 import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
 import { JackArt } from '../look'
+import { IncomingSos } from '../family/IncomingSos'
 
 /** Night for Jack's sleepy sticker: 9 PM to before 5 AM, phone time. */
 export const isNight = (d: Date) => d.getHours() >= 21 || d.getHours() < 5
@@ -49,6 +50,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const [err, setErr] = useState('')
   const [bp, setBp] = useState(false)
   const self = useSelfPersonId()
+  const writer = useHasWriterCarer(self)
   const item = pickNext({ due, plan: null, storm }, tick)
   const w = item.who
   const calm = item.kind === 'calm'
@@ -69,7 +71,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     setBusy(true)
     const r = await logFeeling(f)
     setBusy(false)
-    if (r === 'told' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
+    if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
   if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as the Safety tab
   if (view === 'mood') {
@@ -78,7 +80,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
         <h2 className="td-simple-h">How are you?</h2>
         {FEELINGS.map(([f, label]) => <button key={f} type="button" className={`td-face big ${FACE_CLASS[f]}`} disabled={busy} onClick={() => void face(f)}>{label}</button>)}
         {err && <p className="td-err" role="alert">{err}</p>}
-        <p className="td-sub td-simple-sub">Your family will see it in Bantay.</p>
+        <p className="td-sub td-simple-sub">{moodLine(writer)}</p>
         <button type="button" className="td-exit bottom" onClick={() => { setErr(''); setView('home') }}>Not now</button>
       </div>
     )
@@ -97,9 +99,10 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   return (
     <div className="td-simple">
       <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={18} />Exit</button>
+      <IncomingSos placement="today" />
       <AlertBand />
       {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />No medicine due right now. Good night.</p>}
-      {calm ? <WeatherCard expanded review={review} noJack={sleepy} /> : (
+      {calm ? <WeatherCard expanded review={review} noJack={sleepy || sosLive} /> : (
         <>
           <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
             <div className="td-k">{item.kicker}</div>

@@ -21,6 +21,7 @@ import { retryToast, retryUnsentMood } from '../features/today/actions'
 import WeekLine from '../features/today/WeekLine'
 import { PwaBanner } from '../features/update/PwaBanner'
 import { UpdateCard } from '../features/update/UpdateCard'
+import { useSosActive } from '../features/family/sosActive'
 import { Skeleton, wireMotion } from '../features/look'
 import type { NextItem } from '../features/today/nextPick'
 import '../features/today/today.css'
@@ -53,6 +54,7 @@ export default function Today() {
     window.addEventListener('online', go)
     return () => window.removeEventListener('online', go)
   }, [notify])
+  const sosLive = useSosActive()
   const next = useNext()
   const [held, setHeld] = useState<NextItem | null>(null) // the dose card stays up while its take is saved and the done-morph plays (NextUp frees it)
   const item = held ?? next.item
@@ -70,7 +72,7 @@ export default function Today() {
       <IncomingSos placement="today" />
       <AlertBand />
       <StormCard />
-      <WeatherCard expanded={calm} review={next.review} />
+      <WeatherCard expanded={calm} review={next.review} noJack={sosLive || !calm} />
       <AlertCardToday />
       {!calm && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={next.review} notify={notify} hold={setHeld} />}
       <QuickLog notify={notify} />
