@@ -55,7 +55,7 @@ export default function NutritionScreen() {
     <>
       <SubHeader title="Food and nutrients" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Showing: <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
+      {name && <p className="who-chip"><span className="hv-sr">Showing </span><span aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>{name}</p>}
       {ready && personId && (
         <div className="nu" style={{ marginTop: 12 }}>
           <section className="card nu-card" aria-labelledby="nu-salt">
@@ -97,7 +97,7 @@ export default function NutritionScreen() {
                 ? <p className="sub" style={{ margin: 0, padding: 16 }}>No blood pressure readings in the last 7 days.</p>
                 : <MetricChart pts={bp} days={7} now={now} band={GUIDE.bp_systolic ?? null} label="Blood pressure top number, last 7 days" unit="mmHg" />}
             </div>
-            <p className="nu-sub" style={{ margin: '8px 4px 0' }}>Salt can raise blood pressure in some people. These two charts share the same 7 days so you can look at them together. This is not a diagnosis; talk to your doctor.</p>
+            <p className="nu-sub" style={{ margin: '8px 4px 0' }}>Salt and blood pressure, same 7 days. Not a diagnosis.</p>
           </section>
 
           <section aria-labelledby="nu-food">
@@ -116,7 +116,6 @@ export default function NutritionScreen() {
               </ul>
             )}
           </section>
-          <p className="nu-sub">Food numbers come from USDA FoodData Central and are estimates for a typical serving. A packaged food label is more exact.</p>
         </div>
       )}
     </>

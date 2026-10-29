@@ -55,7 +55,7 @@ Looked at and not used:
 
 | Item | Used | Licence | URL |
 | --- | --- | --- | --- |
-| USDA FoodData Central (nutrient values behind `src/features/nutrition/foods.json`, built from `scripts/nutrition/recipes.json`) | Yes, food and salt logging | CC0 1.0 public domain (USDA ARS). No credit is required; "USDA FoodData Central" is credited on Health > Food and salt and in docs/SOURCES.md. Values are hand-entered estimates until `--verify` is run with an API key (see SOURCES.md). | https://fdc.nal.usda.gov/ |
+| USDA FoodData Central (nutrient values behind `src/features/nutrition/foods.json`, built from `scripts/nutrition/recipes.json`) | Yes, food and salt logging | CC0 1.0 public domain (USDA ARS). No credit is required; the Food screen footer says "Food numbers: USDA estimates", and docs/SOURCES.md credits FoodData Central. Values are hand-entered estimates until `--verify` is run with an API key (see SOURCES.md). | https://fdc.nal.usda.gov/ |
 | Tabler icons `IconToolsKitchen2`, `IconSalt`, `IconGlassFull` (Meal, salt and water icons) | Yes, via `<Icon name>` | MIT, as the rest of Tabler | https://tabler.io/icons |
 
 Looked at and not used: Philippine Food Composition Tables (FNRI PhilFCT, not open for reuse here) and SparkyFitness (non-commercial, source-available: no code or data copied).

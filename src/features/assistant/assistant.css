@@ -46,7 +46,7 @@
 .as-911-alt { background: rgba(255,243,239,.16); color: #FFF3EF; font-size: 16px; }
 /* Offline (mockup ask-offline) */
 .as-offline { display: flex; flex-direction: column; gap: 8px; }
-.as-off-banner { padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }
+.as-off-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }
 .as-off-list { display: flex; flex-direction: column; border-radius: 14px; background: var(--cell); border: 0.5px solid var(--sep); overflow: hidden; }
 .as-off-list button { min-height: 52px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 14px; border: 0; border-bottom: 0.5px solid var(--sep); background: transparent; color: var(--ink); font-size: 16px; font-weight: 600; text-align: left; }
 .as-off-list button:last-child { border-bottom: 0; }

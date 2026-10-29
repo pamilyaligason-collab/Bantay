@@ -27,7 +27,7 @@ export default function Videos() {
       <ul className="vd-list">
         {list.map((v) => <Card key={v.id} v={v} />)}
       </ul>
-      <p className="sub">Videos play inside the app (YouTube, no cookies until you tap) from a fixed, checked list. No search, no suggestions.</p>
+      <p className="sub">Checked videos only. Play inside Bantay.</p>
     </>
   )
 }
