@@ -152,3 +152,9 @@
 .fm-checkin .tile { width: 44px; height: 44px; }
 .fm-checkin:focus-visible { outline: 3px solid var(--green2); outline-offset: 2px; }
 @media (hover: hover) { .bt .seg.fm-seg3 button:not([aria-pressed="true"]):hover { color: var(--ink); } } /* hover fill is darker than the card: keep the label readable (4.5:1) */
+
+/* S15 UI-13: status badge is a Tabler icon on a coloured disc, not an emoji */
+.fm-bubble .fm-emo { color: #fff; background: var(--ok); }
+.fm-bubble .fm-emo[data-k="look"] { background: var(--amber); color: #1b1b1b; }
+.fm-key-i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; vertical-align: middle; color: #fff; background: var(--ok); }
+.fm-key-i[data-k="look"] { background: var(--amber); color: #1b1b1b; }

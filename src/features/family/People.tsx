@@ -122,7 +122,7 @@ export default function People() {
                 <li key={p.id}>
                   <button type="button" className="fm-bubble press" data-k={known ? st.key : 'quiet'} onClick={() => { location.hash = `family/people/${p.id}` }} aria-label={known ? `${p.name}${p.isMe ? ' (you)' : ''}, ${c.text}, ${st.key === 'quiet' ? words : st.word}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page` : `${p.name}${p.isMe ? ' (you)' : ''}${flags[p.id] ? `, ${flags[p.id]}` : ''}. Open page`}>
                     <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={64} />
-                    {known && st.key !== 'quiet' && <span className="fm-emo" aria-hidden="true" data-testid="bubble-emoji">{st.emoji}</span>}
+                    {known && st.key !== 'quiet' && <span className="fm-emo" aria-hidden="true" data-testid="bubble-badge" data-k={st.key}><Icon name={st.key === 'ok' ? 'check' : 'warn'} size={18} /></span>}
                     <b>{p.isMe ? 'You' : givenName(p.name)}</b>
                     {known && <span className="sub">{words}</span>}
                     {flags[p.id] && <span className="fm-flag" data-testid="flag-line">{flags[p.id]}</span>}
@@ -132,7 +132,7 @@ export default function People() {
               )
             })}
           </ul>
-          <p className="sub fm-key">✅ OK today &nbsp; ⚠️ Needs a look. Tap a picture to open the person, or Message to talk.</p>
+          <p className="sub fm-key"><span className="fm-key-i" data-k="ok"><Icon name="check" size={16} /></span> OK today · <span className="fm-key-i" data-k="look"><Icon name="warn" size={16} /></span> Needs a look</p>
         </>
       )}
       <LearningHub />

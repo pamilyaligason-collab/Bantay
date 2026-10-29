@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       const roll = page.getByRole('list', { name: 'Family roll call' })
       await expect(roll.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
-      await expect(roll.getByTestId('bubble-emoji')).toHaveText(['✅', '✅'])
+      await expect(roll.getByTestId('bubble-badge')).toHaveCount(2)
       for (const b of await roll.getByRole('button').all()) {
         const box = await b.boundingBox()
         expect(box!.height).toBeGreaterThanOrEqual(48)
