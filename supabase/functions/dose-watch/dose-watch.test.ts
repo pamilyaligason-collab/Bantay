@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { reviewAgeDays as appAge } from '../../../src/features/health/meds'
 import { buildNotification } from '../../../src/features/notify/templates'
 import {
-  type Carer, doseWatchPayload, dueSlots, inDigestWindow, isVaccine, type MedRow, openToday, type Port, recipients, reviewAgeDays, runDoseWatch, scheduleTimes, slotDayOf, type TakenRow
+  type Carer, doseWatchPayload, dueSlots, inDigestWindow, isVaccine, type MedRow, openToday, type Port, recipients, reviewAgeDays, runDoseWatch, scheduleTimes, type TakenRow
 } from './logic.ts'
 
 const NOW = Date.parse('2026-10-20T10:05:00+08:00')
@@ -90,29 +90,6 @@ describe('dueSlots', () => {
     expect(dueSlots([med({ schedule: ['02:00'] })], [], NOW)).toEqual([]) // 8 h ago
     const late = Date.parse('2026-10-21T01:10:00+08:00')
     expect(dueSlots([med({ schedule: ['23:00'] })], [], late)).toEqual([{ personId: 'p1', day: '2026-10-20', slot: '23:00' }])
-  })
-  it('a 23:50 dose taken at 00:05 closes that night slot, not the next one (DS-7)', () => {
-    const m = med({ schedule: ['23:50'] })
-    const t = took({ slot: '23:50', taken_at: '2026-10-21T00:05:00+08:00' })
-    expect(dueSlots([m], [t], Date.parse('2026-10-21T00:25:00+08:00'))).toEqual([]) // no false "missed" for the night it was taken
-    expect(dueSlots([m], [t], Date.parse('2026-10-22T00:25:00+08:00'))).toEqual([{ personId: 'p1', day: '2026-10-21', slot: '23:50' }]) // next night is still open
-  })
-  it('an 08:00 daily dose taken late at 20:30 closes that day, not the next day (DS-7)', () => {
-    const m = med({ schedule: ['08:00'] })
-    const t = took({ slot: '08:00', taken_at: '2026-10-20T20:30:00+08:00' })
-    expect(dueSlots([m], [t], Date.parse('2026-10-21T08:40:00+08:00'))).toEqual([{ personId: 'p1', day: '2026-10-21', slot: '08:00' }]) // next day's dose is still open: the alert survives
-    expect(openToday([m], [t], Date.parse('2026-10-20T21:00:00+08:00'))).toEqual([]) // the 20:30 take closed that day's 08:00
-  })
-  it('a 07:30 take closes the 08:00 slot (60 min early window)', () => {
-    const m = med({ schedule: ['08:00'] })
-    const t = took({ slot: '08:00', taken_at: '2026-10-20T07:30:00+08:00' })
-    expect(dueSlots([m], [t], Date.parse('2026-10-20T08:40:00+08:00'))).toEqual([])
-  })
-  it('slotDayOf: latest instance at or before take time + 60 min', () => {
-    expect(slotDayOf(Date.parse('2026-10-20T20:30:00+08:00'), '08:00')).toBe('2026-10-20')
-    expect(slotDayOf(Date.parse('2026-10-21T00:05:00+08:00'), '23:50')).toBe('2026-10-20')
-    expect(slotDayOf(Date.parse('2026-10-20T07:30:00+08:00'), '08:00')).toBe('2026-10-20')
-    expect(slotDayOf(Date.parse('2026-10-20T23:10:00+08:00'), '00:00')).toBe('2026-10-21') // an hour early for the next midnight
   })
   it('ignores bad times', () => {
     expect(scheduleTimes({ v: 1, times: ['8am', '25:00', '08:00', '08:00'] })).toEqual(['08:00'])

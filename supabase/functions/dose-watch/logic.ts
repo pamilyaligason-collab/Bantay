@@ -38,13 +38,6 @@ const MANILA_OFFSET_MS = 8 * 3600_000 // Asia/Manila is UTC+8, no daylight savin
 export const manilaDay = (ms: number) => new Date(ms + MANILA_OFFSET_MS).toISOString().slice(0, 10)
 /** The instant (ms) of a Manila day + HH:MM. */
 const slotInstant = (day: string, hhmm: string) => Date.parse(`${day}T${hhmm}:00+08:00`)
-export const TAKE_EARLY_MIN = 60 // a take may close a slot up to an hour before its time (07:30 closes 08:00)
-/** The Manila day of the slot instance a take at `atMs` closes: the latest instance at or before take time + the early window, never a later day's slot (DS-7). */
-export function slotDayOf(atMs: number, slot: string): string {
-  const d0 = manilaDay(atMs)
-  const days = [-1, 0, 1].map((k) => manilaDay(Date.parse(`${d0}T12:00:00+08:00`) + k * 86_400_000))
-  return days.filter((d) => slotInstant(d, slot) <= atMs + TAKE_EARLY_MIN * 60_000).pop()!
-}
 
 /** Same rule as the app's normaliseDrug (health/meds.ts) and SQL normalise_drug: lower case, strength and form words removed. null when nothing is left. */
 const NON_ALNUM = /[^a-z0-9]+/g
@@ -86,7 +79,7 @@ const needsTime = (raw: unknown) => !!raw && typeof raw === 'object' && !Array.i
 
 interface OpenSlot { personId: string; day: string; slot: string; late: number }
 /** Every watched slot of the given Manila days with no taken or skipped row, and how many ms past its time it is (negative = still to come).
- *  A row with a slot closes that slot of its medicine, matched by real time (the latest instance at or before take time + 60 min, so across midnight too). A row with no slot (an older dose, matched by medication id or by the normalised name)
+ *  A row with a slot closes that slot of its medicine. A row with no slot (an older dose, matched by medication id or by the normalised name)
  *  closes ONE open slot of that day, the earliest, like the app's matchDoses.
  *  Skipped: paused, stopped, deleted, as needed, needing a time, not started yet, already stopped, and a review medicine less than a day into its question. */
 function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: string[]): OpenSlot[] {
@@ -98,13 +91,11 @@ function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: strin
     const key = normaliseDrug(m.name)
     for (const day of days) {
       if ((m.started_on && m.started_on.slice(0, 10) > day) || (m.stopped_on && m.stopped_on.slice(0, 10) < day)) continue
-      const mine = rows.filter((t) => t.person_id === m.person_id && (t.medication_id ? t.medication_id === m.id : !!key && t.key === key))
-      const dayRows = mine.filter((t) => t.day === day)
-      const used = new Set(mine.filter((t) => t.slot).map((t) => `${slotDayOf(Date.parse(t.taken_at), t.slot!)}|${t.slot}`)) // each take closes exactly one slot instance
-      let loose = dayRows.filter((t) => !t.slot).length // each unslotted dose covers one open slot, earliest first
+      const mine = rows.filter((t) => t.person_id === m.person_id && t.day === day && (t.medication_id ? t.medication_id === m.id : !!key && t.key === key))
+      const bySlot = new Set(mine.filter((t) => t.slot).map((t) => t.slot))
+      let loose = mine.filter((t) => !t.slot).length // each unslotted dose covers one open slot, earliest first
       for (const slot of scheduleTimes(m.schedule)) { // sorted ascending
-        // a slotted row closes the latest instance at or before take time + 60 min (DS-7): 23:50 taken 00:05 closes that night's 23:50; 20:30 closes that day's 08:00, never the next day's
-        if (used.has(`${day}|${slot}`)) continue
+        if (bySlot.has(slot)) continue
         if (loose > 0) { loose--; continue }
         out.push({ personId: m.person_id, day, slot, late: nowMs - slotInstant(day, slot) })
       }
