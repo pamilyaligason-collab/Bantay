@@ -58,3 +58,20 @@ DS-12 Video of the day built but never shown (D-64) · UI-5..8, UI-11..15, UI-18
 
 ## Fix plan
 See `contracts.md` (9 lanes, one owner per file). Server changes (migration 0043, pin-login and dose-watch deploys) are built and tested here and wait for Lloyd's approval to apply.
+
+## Fix results (branch claude/family-bantay-review-check-ac44fa)
+
+Built as 9 lanes (workflows wf_b4a3522d-8d8, fix round wf_a07207f0-4a8), Sonnet builders, Opus audit per lane, merged one at a time with tsc 0 after each.
+Then a 44->48 px min tap-size sweep (82 lines, 31 CSS files) and a final whole-branch Opus review (GO_WITH_FIXES, all majors fixed in 0e73e20).
+
+| Finding | Status |
+|---|---|
+| DS-1 | Fixed: 0 recipients -> "Saved. No one gets your alerts yet. Call your family."; family lines only when a writer carer exists; storm card keeps "hold SOS or call 911" |
+| DS-2, DS-3, DS-4, DS-5, DS-6, DS-8, DS-9, DS-11 | Fixed with tests |
+| DS-7 | Not changed: the app's `pickSlot` (`health/meds.ts:156`) tags a take with a slot of the day it was taken, and dose-watch's day bucketing mirrors it. Two attempts to change only the server created false missed-dose alerts. Needs one joint app + server change later. |
+| SEC-1..SEC-5 | Fixed in `0043_s15_security.sql` + pin-login + client copy (admin approves a PIN reset). The down migration deliberately does not re-grant TRUNCATE. **Not applied: needs Lloyd.** |
+| UI-1..UI-5, UI-7..UI-17, UI-19, C1-C30 | Fixed (UI-1: the Ask hint hides where it would cover text; UI-2: Plan Add sits at the list end) |
+| UI-6, DS-12 | Out of scope this round |
+
+Final gates on 0e73e20: tsc 0; vitest 318 files / 3491 tests, exit 0; Playwright: see the PR.
+To ship: `0043` migration + pin-login deploy (dose-watch unchanged), web deploy, APK 2.6.0.
