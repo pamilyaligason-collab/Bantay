@@ -80,7 +80,7 @@ export default function MyWeek() {
     return (
       <section aria-labelledby="t-myweek">
         <h2 id="t-myweek" className="td-sech">My week</h2>
-        <EmptyState jack="walking" title="Your week will show here" body="Add a reading, a walk or a dose. Your last 7 days show up here." action={{ label: 'Open Health', onClick: () => { location.hash = '#health' } }} />
+        <EmptyState icon="heart" title="Your week will show here" body="Add a reading, a walk or a dose. Your last 7 days show up here." action={{ label: 'Open Health', onClick: () => { location.hash = '#health' } }} />
       </section>
     )
   }

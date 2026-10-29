@@ -288,3 +288,8 @@
 .td-saved { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; font-size: 15px; }
 .td-act-box .td-wx-jack { margin-left: auto; margin-top: -6px; margin-bottom: -6px; }
 .td-simple-night { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+/* Dark --green is a fill (1.6:1 on --soft); chip text uses --ok there (UI-16). */
+:root[data-theme="dark"] .td-chip { color: var(--ok); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip { color: var(--ok); } }
+:root[data-theme="dark"] .td-chip.high, :root[data-theme="dark"] .td-chip.low { color: var(--warn); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip.high, :root:not([data-theme="light"]) .td-chip.low { color: var(--warn); } }
