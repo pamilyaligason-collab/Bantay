@@ -60,7 +60,7 @@ describe('PhoneWarnings', () => {
     expect(screen.getByText('Wireless emergency alerts')).toBeTruthy()
     expect(screen.queryByText('Government Alerts')).toBeNull()
     expect(screen.getByText(NOT_A_SIREN, { exact: false })).toBeTruthy()
-    expect(screen.getByText(/Bantay cannot send one/)).toBeTruthy()
+    expect(screen.getByText(/not Bantay/)).toBeTruthy()
     expect(screen.getByText('Not checked')).toBeTruthy()
   })
   it('shows only iPhone steps on iOS', () => {

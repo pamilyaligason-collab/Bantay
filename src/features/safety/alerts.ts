@@ -71,7 +71,9 @@ export const hazardOf = (k: AlertKind): string | null =>
 // ---- D (session 12): honest freshness, honest sources, "does it affect us?" ----
 
 /** One sentence for every place that says where alerts come from (ML-12): never claim more than the ingest reads. */
-export const SOURCES_LINE = 'Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open.'
+export const SOURCES_LINE = 'From PAGASA, USGS, GDACS. Checked every 10 min.'
+/** The full list, for a "Sources" disclosure (ML-12). */
+export const SOURCES_FULL = 'Quakes: USGS. Storms, floods, volcanoes and tsunamis: GDACS and the PAGASA public alert feed. Air quality: Open-Meteo. Checked every 10 minutes. PAGASA bulletins are links you can open.'
 
 export const FRESH_AMBER_MIN = 60 // the ingest runs every 10 minutes; over an hour means something is wrong
 export const FRESH_RED_MIN = 24 * 60 // shortcut: a one-day cut-off for red, no per-source rule; the cron gap of 2026-10-17..27 would have shown red here

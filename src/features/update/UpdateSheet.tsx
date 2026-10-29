@@ -74,7 +74,8 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
             {canInstall === false && (
               <div className="sh-card up-soft">
                 <b>First update only</b>
-                <div className="sh-sub">Android asks once to let Bantay install updates. Turn it on, go Back, then tap Install update. After that, updates are one tap.</div>
+                <div className="sh-sub">Android asks once to let Bantay install updates.</div>
+                <ol className="sh-sub" style={{ margin: '4px 0 0', paddingLeft: 22 }}><li>Turn on Allow.</li><li>Go back.</li><li>Tap Install update.</li></ol>
                 <div className="sh-row up-between">
                   <span className="sh-grow">Allow Bantay to install updates</span>
                   <button type="button" className="sh-pill sh-ghost sh-small up-card" onClick={() => void api.openInstallPermission()}>Open Settings</button>

@@ -196,7 +196,7 @@ const BODY: Record<StepId, () => ReactNode> = {
   sos: () => <Sos />,
   sharing: () => (
     <div className="wz-body">
-      <p className="sub" style={{ margin: 0 }}>Everything you share with family is off until you turn it on in Me. Your admin can see which screens you use, never your health values.</p>
+      <p className="sub" style={{ margin: 0 }}>Sharing is off until you turn it on. Admins never see your health numbers.</p>
     </div>
   )
 }

@@ -134,7 +134,7 @@ function UploadSheet(p: { owner: string; people: PersonRow[]; forId: string; kin
               <input value={title} maxLength={40} autoComplete="off" onChange={(e) => setTitle(e.target.value)} />
             </label>
             {actions}
-            <p className="sub dc-note">Saved to the family Drive and your records when you have signal. Only you, the admins and the people who keep your records can see it. Bantay keeps the picture only; it does not read the numbers.</p>
+            <p className="sub dc-note">Saved to family Drive when online. Only you, admins and record keepers see it.</p>
             {err && <p className="dc-err" role="alert">{err}</p>}
             <button className="btn2" onClick={p.onClose}>Cancel</button>
           </>
@@ -279,7 +279,7 @@ export function DocsScreen({ client = supabase }: { client?: SupabaseClient | nu
           </div>
         </div>
       )}
-      <p className="sub dc-note">Photos go to the family Drive and your records when you have signal. Bantay keeps the picture only; it does not read or store the numbers.</p>
+      <p className="sub dc-note">Photo only. Saved to family Drive when online.</p>
       {view && <Viewer doc={view.doc} side={view.side} onClose={() => setView(null)} onRetry={() => { setView(null); void retryCard(view.doc.docId).then(saved) }} />}
       {sheet && <UploadSheet owner={owner} people={people} forId={forId} kind={kind} cardType={sheet.cardType} addTo={sheet.addTo} onSaved={saved} onClose={() => setSheet(null)} />}
     </>
