@@ -108,18 +108,20 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
       void track('action', 'sos_hold')
 
       // 1 record
+      // the person id arrives a moment after the screen (cache or network): look it up while GPS runs, never waiting more than 3 s
+      const pidP = Promise.race([selfIdOrCached().catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 3000))])
       let got: SosFix | null = null
       try { got = await sosPosition(FIX_MS) } catch { got = null }
       place.current = got
       say(setFix, got)
       const cs = latest.current.contacts
-      // the person id arrives a moment after the screen (cache or network): wait for it, but never longer than 3 s
-      const pid = latest.current.personId ?? await Promise.race([selfIdOrCached().catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 3000))])
+      const pid = latest.current.personId ?? await pidP
       let ok = false
       if (pid) {
         try {
           await enqueue('sos_events', 'insert', { id: start.id, personId: pid, at: start.at, lat: got?.lat ?? null, lon: got?.lon ?? null, gps: got ? got.gps : null, callTo: cs.length ? 'family' : '911', smsOpened: false })
           ok = true
+          void import('../sync/sync').then((m) => m.syncNow(true)).catch(() => undefined) // a backoff must not hold the SOS row back
         } catch { ok = false }
       }
       savedRef.current = ok

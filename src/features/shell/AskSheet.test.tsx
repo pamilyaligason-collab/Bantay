@@ -89,13 +89,13 @@ describe('Ask choice sheet', () => {
 
   it('shows the hint once: gone after the choice sheet opens, flag saved', async () => {
     render(<JackFab tab="today" hash="#today" />)
-    expect(await screen.findByText('Ask me anything')).toBeTruthy()
+    expect(await screen.findByText(/Ask me anything/)).toBeTruthy()
     await ask()
-    await waitFor(() => expect(screen.queryByText('Ask me anything')).toBeNull())
+    await waitFor(() => expect(screen.queryByText(/Ask me anything/)).toBeNull())
     await waitFor(async () => expect((await db.kv.get('askHintSeen'))?.value).toBe(true))
     cleanup()
     render(<JackFab tab="today" hash="#today" />)
     await act(async () => { await new Promise((r) => setTimeout(r, 50)) })
-    expect(screen.queryByText('Ask me anything')).toBeNull()
+    expect(screen.queryByText(/Ask me anything/)).toBeNull()
   })
 })
