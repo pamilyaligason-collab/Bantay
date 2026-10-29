@@ -20,6 +20,8 @@ export const stormTitle = (a: Pick<Alert, 'title'>): string => a.title.split(': 
 export const PAGASA_CREDIT = 'PAGASA, CC BY 4.0'
 /** The one line under Warnings: where the alerts come from and what happens when a source is down. */
 export const WARNINGS_SOURCE_LINE = `From PAGASA (${PAGASA_CREDIT}), GDACS, Open-Meteo. Checked every 10 min.`
+/** The fallback sentence behind the Warnings "If a source is down" disclosure (ML-12). */
+export const WARNINGS_FALLBACK = 'If PAGASA cannot be reached, GDACS and Open-Meteo carry on and the card says when it was last checked.'
 
 /** The phone check result (kv phone.check, written by the phone check). null = unknown, never counted as a problem. */
 export interface PhoneCheck { notif_ok?: boolean | null; exact_ok?: boolean | null; battery_ok?: boolean | null; alarms_ok?: boolean | null; call_ok?: boolean | null }

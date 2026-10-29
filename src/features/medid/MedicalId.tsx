@@ -46,7 +46,7 @@ export default function MedicalId() {
       )}
       <div className="sh-card mid-tip">
         <b>Show on lock screen</b>
-        <p className="sh-sub">Helpers can read this without your PIN. Also add it in your phone:</p>
+        <p className="sh-sub">Helpers can read this without your PIN. Also add it in your phone. On Android:</p>
         <ol className="sh-sub" style={{ margin: '4px 0 0', paddingLeft: 22 }}><li>Open Settings.</li><li>Tap Safety and emergency.</li><li>Tap Medical information.</li></ol>
       </div>
     </div>

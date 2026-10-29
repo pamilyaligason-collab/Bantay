@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ALERT_RADIUS_KM } from '../today/heroCards'
-import { affectsUs, quakeFeltKm, quakeMag, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_LINE, tierOf } from './alerts'
+import { affectsUs, quakeFeltKm, quakeMag, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_FULL, SOURCES_LINE, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -187,6 +187,7 @@ describe('plain words and copy', () => {
   })
   it('sources line names only what the ingest reads and the place label matches the Safety chip', () => {
     expect(SOURCES_LINE).toBe('From PAGASA, USGS, GDACS. Checked every 10 min.')
+    expect(SOURCES_FULL).toContain('Open-Meteo') // CC BY 4.0 credit stays on the Sources disclosure
     expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
     expect(placeLabel({ source: 'gps', zone: 'dampas' })).toBe('Near you · Dampas')
     expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
