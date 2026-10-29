@@ -19,7 +19,7 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fm-n { color: var(--amber); } }
 .bt .seg.fm-kind { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
 .fm-layer { display: flex; flex-wrap: wrap; gap: 8px; }
-.bt .fm-layer button, .bt .fm-chips button { min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 600; }
+.bt .fm-layer button, .bt .fm-chips button { min-height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 600; }
 .bt .fm-layer button[aria-pressed="true"], .bt .fm-chips button[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 .fm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .fm-lbl { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 6px; }

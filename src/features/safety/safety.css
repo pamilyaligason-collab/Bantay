@@ -35,7 +35,7 @@
 .pw-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .pw-item { display: flex; flex-direction: column; gap: 6px; }
 .pw-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-.pw-btns .btn2 { flex: 1 1 140px; min-height: 44px; }
+.pw-btns .btn2 { flex: 1 1 140px; min-height: 48px; }
 .pw-btns .btn2[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .sf-pair { display: flex; gap: 10px; }
 .sf-pair > a { flex: 1 1 0; min-width: 0; min-height: 52px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; text-align: center; }
@@ -132,7 +132,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .fa-911 h2 { margin: 0 0 8px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .fa-911 ul { font-size: 17px; line-height: 1.4; }
 .fa-links { list-style: none; padding: 0 !important; }
-.sf .fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
+.sf .fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
 .fa-foot { margin: 0 4px; font-size: 14px; }
 
 /* Safety sections (W2): each group has its own tint from tokens; text stays var(--ink) on the tint, tiles stay on var(--card). */

@@ -27,7 +27,7 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 .topbar { z-index: 2; }
 .topbar, .scroll { position: relative; }
 /* The bottom 10px of the top bar overlaps the scroll area so content slides under the glass once it scrolls (D-71). */
-.topbar { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 44px; display: flex; align-items: center; gap: 8px; flex: none; transition: box-shadow var(--dur-base) var(--ease-out); }
+.topbar { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 48px; display: flex; align-items: center; gap: 8px; flex: none; transition: box-shadow var(--dur-base) var(--ease-out); }
 /* Prototype bug fix: the scroll container never scrolls sideways, and flex children may shrink. */
 .scroll { flex: 1; overflow-y: auto; overflow-x: hidden; overscroll-behavior-y: none; touch-action: pan-y pinch-zoom; min-width: 0; padding: 10px 16px 0; display: flex; flex-direction: column; gap: 22px; }
 .scroll > * { min-width: 0; flex-shrink: 0; }
@@ -56,11 +56,11 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 
 /* Sign-in screen */
 .signin .row .si-l { width: 56px; flex: none; color: var(--ink2); font-size: 15px; }
-.signin input { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; letter-spacing: 0.02em; }
+.signin input { flex: 1; min-width: 0; min-height: 48px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; letter-spacing: 0.02em; }
 .signin input::placeholder { color: var(--ink2); }
 .si-err { margin: 0; padding: 14px 16px; font-size: 16px; color: var(--ink); }
 .si-hint { margin: 0; padding: 0 4px; font-size: 13px; color: var(--ink2); }
-.admin-link { margin-left: auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; color: var(--act); font-weight: 600; text-decoration: none; }
+.admin-link { margin-left: auto; min-height: 48px; display: inline-flex; align-items: center; padding: 0 12px; color: var(--act); font-weight: 600; text-decoration: none; }
 
 /* Quick login picker (D-24) */
 .faces { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
@@ -70,7 +70,7 @@ img.avatar { object-fit: cover; }
 .avatar.big { width: 72px; height: 72px; font-size: 26px; }
 .avatar.mascot { width: 112px; height: 112px; object-fit: cover; background: var(--fill); }
 .signin .row:has(select) .si-l { width: 100px; }
-.signin select { flex: 1; min-width: 0; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; }
+.signin select { flex: 1; min-width: 0; min-height: 48px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 17px; }
 .fname { font-size: 16px; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; text-align: center; }
 .pickcard { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 20px 16px; }
 .pickcard > .btn, .pickcard > .btn2 { max-width: 320px; }
