@@ -67,12 +67,13 @@ describe('guided check', () => {
 })
 
 describe('crisis card', () => {
-  it('blood pressure, no symptoms: rest 5 minutes, re-check, call the doctor today; the family line never promises a push', () => {
+  it('blood pressure, no symptoms: rest 5 minutes, re-check, call the doctor today; the family line never promises a push or an alert nobody gets', () => {
     render(<CrisisCard kind="bp" doctor="Dr. Santos" onClose={() => undefined} />)
     fireEvent.click(screen.getByRole('button', { name: 'No' }))
     expect(screen.getByText(/Rest for 5 minutes/)).toBeTruthy()
     expect(screen.getByText(/180\/120 or more, call Dr\. Santos today/)).toBeTruthy()
-    expect(screen.getByText('Your family will see this in Bantay.')).toBeTruthy()
+    expect(screen.queryByText('Your family will see this in Bantay.')).toBeNull() // DS-1: no writer carer known, so no promise
+    expect(screen.getByText('Tell your family now. Bantay may not reach them.')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Call 911' })).toBeNull()
     expect(document.body.textContent).not.toMatch(/notif|lock screen|I'm OK/i)
   })

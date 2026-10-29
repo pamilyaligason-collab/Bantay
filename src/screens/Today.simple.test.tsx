@@ -3,14 +3,16 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 
-const { stub, storm, meds, feel } = vi.hoisted(() => ({ feel: { r: 'told' as string, calls: [] as string[] }, meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
+const { stub, storm, meds, feel, sosb } = vi.hoisted(() => ({ sosb: { on: false }, feel: { r: 'told' as string, calls: [] as string[] }, meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => <div data-testid="alertcard" /> }))
 vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () => null }))
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds.due ? [] : [{ personId: 'me', name: 'Lloyd', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: meds.review, tick: new Date() }), markDue: async () => true }))
 vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
-vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review }: { expanded?: boolean; review?: number }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} /> }))
+vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review, noJack }: { expanded?: boolean; review?: number; noJack?: boolean }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} data-nojack={String(!!noJack)} /> }))
+vi.mock('../features/family/IncomingSos', () => ({ IncomingSos: () => (sosb.on ? <div data-testid="incoming-sos" /> : null) }))
+vi.mock('../features/family/sosActive', () => ({ useSosActive: () => sosb.on }))
 vi.mock('../features/today/SeeWeek', () => stub('seeweek'))
 vi.mock('../features/today/SelfCare', () => stub('selfcare'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
@@ -24,7 +26,7 @@ vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
 
-beforeEach(async () => { await db.kv.clear(); meds.due = true; meds.review = 0 })
+beforeEach(async () => { await db.kv.clear(); meds.due = true; meds.review = 0; sosb.on = false })
 afterEach(cleanup)
 
 describe('Today simple mode', () => {
@@ -51,6 +53,20 @@ describe('Today simple mode', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check my blood pressure' }))
     expect(await screen.findByRole('dialog')).toBeTruthy()
     expect(screen.queryByRole('link', { name: 'Medicines' })).toBeNull() // the dose card is the medicine entry
+  })
+  it('DS-3: Simple mode shows the family SOS banner; DS-5: no weather Jack beside it, on the full page or in Simple mode', async () => {
+    sosb.on = true
+    await db.kv.put({ key: 'mode.simple', value: true })
+    meds.due = false
+    const { unmount } = render(<Today />)
+    expect(await screen.findByTestId('incoming-sos')).toBeTruthy()
+    expect(screen.getByTestId('weather').getAttribute('data-nojack')).toBe('true')
+    unmount()
+    await db.kv.put({ key: 'mode.simple', value: false })
+    render(<Today />)
+    await screen.findByTestId('quicklog')
+    expect(screen.getByTestId('incoming-sos')).toBeTruthy()
+    expect(screen.getByTestId('weather').getAttribute('data-nojack')).toBe('true')
   })
   it('on, nothing due: Simple mode is not a dead end: a Medicines entry and the BP tile stay', async () => {
     meds.due = false

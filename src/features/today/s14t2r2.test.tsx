@@ -21,6 +21,7 @@ vi.mock('./useDueMeds', () => ({ useDueMeds: () => ({ due: m.due, review: m.revi
 vi.mock('./useStorm', () => ({ useStorm: () => null }))
 vi.mock('./planCard', () => ({ usePlanCard: () => null }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'me' }))
+vi.mock('../family/IncomingSos', () => ({ IncomingSos: () => null })) // DS-3 mounts it in Simple mode; covered in Today.simple.test
 vi.mock('../sos/SosHold', () => ({ default: () => null }))
 vi.mock('../sos/Call911', () => ({ default: () => null }))
 vi.mock('../sos/SosScreen', () => ({ default: () => null }))

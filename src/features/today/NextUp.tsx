@@ -12,6 +12,8 @@ import { loadLang } from '../../lib/i18n'
 import { snoozeCard } from './snoozeCard'
 import { Capacitor } from '@capacitor/core'
 import { useSosActive } from '../family/sosActive'
+import { useKvValue } from '../phonecheck/useKvValue'
+import { KEY_ALARM_HEALTH, type AlarmHealth } from '../phonecheck/keys'
 
 export const SNOOZE_MIN = 10 // the same minutes as reminderActions.SNOOZE_MIN (a test holds them equal); that module is loaded on tap, not here, so WeatherStrip's import chain stays light
 export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it lands the Health tab opens
@@ -20,6 +22,7 @@ export const MEDS_HREF = '#health/meds' // lane M2's medicines screen; until it 
  *  Today does not render it for a calm pick (it gives the space to the weather card). A panel under it counts medicines waiting for "Still taking it?". */
 export default function NextUp({ item, review, notify, hold }: { item: NextItem; review: number; notify: (msg: string) => void; hold?: (it: NextItem | null) => void }) {
   const [busy, setBusy] = useState(false)
+  const alarmsOk = useKvValue<AlarmHealth>(KEY_ALARM_HEALTH)?.ok // false: notifications are off, so nothing will ring
   const sos = useSosActive() // no Jack beside a live SOS banner (D-91)
   const [phase, setPhase] = useState<'idle' | 'done' | 'leave'>('idle') // done: the button reads "Taken h:mm"; leave: the card collapses
   const [label, setLabel] = useState('')
@@ -55,7 +58,7 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   const later = async () => {
     if (!w) return
     snoozeCard(item.key, SNOOZE_MIN)
-    notify(Capacitor.isNativePlatform() ? `Okay. I will remind you in ${SNOOZE_MIN} minutes` : `Okay. This card comes back in ${SNOOZE_MIN} minutes`) // the web build rings nothing
+    notify(Capacitor.isNativePlatform() && alarmsOk === true ? `Okay. I will remind you in ${SNOOZE_MIN} minutes` : `Okay. This card comes back in ${SNOOZE_MIN} minutes`) // the web build rings nothing
     try {
       const [{ handleReminderAction }, { alarmText }] = await Promise.all([import('../health/reminderActions'), import('../health/reminders')])
       const text = alarmText(w.at, 1, await loadLang()) // no rep: reminderActions rings once more, in 10 minutes

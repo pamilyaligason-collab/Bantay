@@ -88,10 +88,10 @@ describe('syncDoseReminders', () => {
     expect(LN.createChannel).toHaveBeenCalledWith(expect.objectContaining({ id: 'alarms_v1', importance: 5, vibration: true }))
     expect(JSON.stringify(LN.createChannel.mock.calls)).not.toMatch(/silent/i)
   })
-  it('uses the specified copy: the +20 text names the family and the :30 time, nothing says "even on silent"', () => {
+  it('uses the specified copy: the +20 text promises no family alert (DS-1), nothing says "even on silent"', () => {
     expect(alarmText(1200, 0, 'en')).toEqual({ title: 'Medicine time', body: 'It is 8:00 PM. Open Bantay to see what is due.' })
-    expect(alarmText(1200, 2, 'en')).toEqual({ title: 'Third reminder', body: 'Third reminder; your family will see this in Bantay at 8:30 PM.' })
-    expect(alarmText(1425, 2, 'en').body).toBe('Third reminder; your family will see this in Bantay at 12:15 AM.') // 23:45 + 30 min wraps past midnight
+    expect(alarmText(1200, 2, 'en')).toEqual({ title: 'Third reminder', body: 'Third reminder. Take it now, or call your family if you cannot.' })
+    expect(alarmText(1425, 2, 'fil').body).not.toMatch(/makikita|Bantay/)
     for (const r of [0, 1, 2] as const) for (const l of ['en', 'fil'] as const) expect(JSON.stringify(alarmText(540, r, l))).not.toMatch(/silent|will be (told|notified)|lock screen/i)
   })
   it('every open arms the whole plan again, so an alarm Android dropped (invisible to getPending) rings again', async () => {

@@ -129,8 +129,8 @@ export function buildAlarms(planned: Planned[], now: Date, answered: Set<string>
 }
 
 const REPEAT_TEXT: Record<Lang, { t1: string; b1: string; t2: string; b2: string }> = {
-  en: { t1: 'Medicine reminder', b1: 'Not logged yet. It was {time}. Tap I took it, or open Bantay.', t2: 'Third reminder', b2: 'Third reminder; your family will see this in Bantay at {late}.' },
-  fil: { t1: 'Paalala sa gamot', b1: 'Hindi pa naitala. {time} ito. Pindutin ang I took it, o buksan ang Bantay.', t2: 'Ikatlong paalala', b2: 'Ikatlong paalala; makikita ito ng pamilya mo sa Bantay ng {late}.' } // review by a native speaker
+  en: { t1: 'Medicine reminder', b1: 'Not logged yet. It was {time}. Tap I took it, or open Bantay.', t2: 'Third reminder', b2: 'Third reminder. Take it now, or call your family if you cannot.' },
+  fil: { t1: 'Paalala sa gamot', b1: 'Hindi pa naitala. {time} ito. Pindutin ang I took it, o buksan ang Bantay.', t2: 'Ikatlong paalala', b2: 'Ikatlong paalala. Inumin na ito, o tawagan ang pamilya mo kung hindi mo kaya.' } // review by a native speaker
 }
 /** Title and body of repeat `rep` for the slot at `at`. Never a medicine name or a value (B-7). */
 export function alarmText(at: number, rep: 0 | 1 | 2, lang: Lang): { title: string; body: string } {
@@ -138,7 +138,7 @@ export function alarmText(at: number, rep: 0 | 1 | 2, lang: Lang): { title: stri
   if (rep === 0) return { title: t('med.title', {}, lang), body: t('med.body', { time }, lang) }
   const r = REPEAT_TEXT[lang]
   if (rep === 1) return { title: r.t1, body: r.b1.replace('{time}', time) }
-  return { title: r.t2, body: r.b2.replace('{late}', clock((at + CARER_AFTER_MIN) % 1440)) }
+  return { title: r.t2, body: r.b2 }
 }
 
 const toNotification = (a: Alarm, lang: Lang): LocalNotificationSchema => ({
