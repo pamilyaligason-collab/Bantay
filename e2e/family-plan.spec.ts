@@ -61,7 +61,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('Plan: add an event, a task and a note offline, they survive a reload, and the page is accessible', async ({ page, context }) => {
-      await page.getByRole('button', { name: 'Plan' }).click()
+      await page.getByTestId('planrow').getByRole('link').click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
       await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
@@ -121,7 +121,8 @@ for (const scheme of ['light', 'dark'] as const) {
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
-      await page.getByRole('button', { name: /Papa Ben/ }).click() // S9: a bubble opens the person's page
+      await page.getByRole('button', { name: /Papa Ben/ }).click() // a face opens a sheet; See their stats opens the person's page
+      await page.getByRole('link', { name: 'See their stats' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')
       await expect(page.getByRole('link', { name: 'Call Papa' })).toHaveAttribute('href', 'tel:+639171234567')
@@ -135,13 +136,13 @@ for (const scheme of ['light', 'dark'] as const) {
   })
 }
 
-test('Family is Home, Messages and Plan only; Records moved to Family > Papers', async ({ page }) => {
+test('Family root has Messages and Plan rows; Records moved to Family > Papers', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#family')
   await expect(page.locator('h1')).toHaveText('Family')
-  const seg = page.getByRole('group', { name: 'Family view' })
-  await expect(seg.getByRole('button')).toHaveText(['Home', 'Messages', 'Plan'])
-  await expect(seg.getByRole('button', { name: 'Records' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Family view' })).toHaveCount(0) // Messages and Plan are rows now
+  await expect(page.getByTestId('msgs')).toBeVisible()
+  await expect(page.getByTestId('planrow')).toBeVisible()
   await page.goto('/#family/records')
   await expect(page).toHaveURL(/#family\/papers$/)
 })
