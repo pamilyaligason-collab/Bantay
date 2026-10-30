@@ -3,6 +3,7 @@ import { supabase } from '../auth/client'
 import { getMember } from '../auth/session'
 import { JOIN, UNKNOWN, splitItems } from '../setup/lists'
 import type { About } from '../setup/steps'
+import { getActingPersonId } from '../viewas/store' // S16-L6: store.ts has no imports, so no cycle
 
 // Profile columns of public.people (migration 0010), kept in Dexie `profiles` and edited through the outbox.
 // DEPRECATED: the `medicines` column of people (and the kv profile.medicines cache) is read-only, kept for one release for screens that
@@ -25,6 +26,7 @@ const BUCKET = 'avatars'
 // never be shown to, or uploaded for, someone else. Their unsent edits stay in the outbox (those carry their own id).
 const PHONE_KEYS = ['profile.photo', PHOTO_UP, PHOTO_AT, MIGRATED, MIGRATING, MIGRATE_TRIES, 'profile.about', 'profile.medicines', 'profile.photoPath']
 export async function adoptPerson(personId: string): Promise<void> {
+  if (personId === getActingPersonId()) throw new Error('acting:profile') // S16-L6: the member's profile is never adopted while an admin acts for them (D-99); before any local write
   const owner = (await db.kv.get(SELF_ID))?.value as string | undefined
   if (owner === personId) return
   if (owner) await db.kv.bulkDelete(PHONE_KEYS)

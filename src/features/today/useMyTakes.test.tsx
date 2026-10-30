@@ -9,7 +9,8 @@ const rows = [
 const self = vi.hoisted(() => ({ id: 'me' as string | null }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => self.id }))
 vi.mock('../health/useActivity', () => ({ useTakenToday: (pid: string) => (pid ? rows.filter((r) => r.personId === pid) : []) }))
-import { useMyTakes } from './useMyTakes'
+import { setActing } from '../viewas/store'
+import { useMyDoseRows, useMyTakes } from './useMyTakes'
 
 describe('useMyTakes', () => {
   it("keeps only this member's takes, never a family member's synced row", () => {
@@ -18,5 +19,13 @@ describe('useMyTakes', () => {
     expect(result.current[1]).toMatchObject({ medicationId: 'srv-a', slot: '08:00', skipped: true }) // id fields pass through for id-based matching
     self.id = null // not resolved yet: no takes rather than someone else's
     expect(renderHook(() => useMyTakes()).result.current).toEqual([])
+  })
+  it('while an admin acts for another member, useMyTakes (the inbox bell) stays the signed-in person; the dose-row hook follows the acting member', () => {
+    self.id = 'me'
+    setActing({ personId: 'ma', name: 'Mama', can: { log: true, edit: true, rollcall: true, mood: true, reason: null } })
+    try {
+      expect(renderHook(() => useMyTakes()).result.current.map((r) => r.name)).toEqual(['Losartan', 'Drug A'])
+      expect(renderHook(() => useMyDoseRows()).result.current.map((r) => r.name)).toEqual(['Metformin'])
+    } finally { setActing(null) }
   })
 })

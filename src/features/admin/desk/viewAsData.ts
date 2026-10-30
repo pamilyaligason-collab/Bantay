@@ -36,7 +36,8 @@ export function visibleTo(userId: string, people: ViewPerson[], carers: Pick<Car
 export const RELATION_TEXT: Record<Relation, string> = { self: 'You', writer: 'Carer, can edit', carer: 'Carer, read only', creator: 'Added by them, no records access', admin: 'Admin, sees everyone' }
 
 export type PvMed = { name: string; dose: string | null; strength: string | null; schedule: string[]; as_needed: boolean }
-export type PvReading = { test: string; value: number | null; unit: string | null; taken_at: string }
+/** logged_by exists only after migration 0044; absent or null means unknown (never read as "self"). */
+export type PvReading = { test: string; value: number | null; unit: string | null; taken_at: string; logged_by?: string | null }
 export type PvDoc = { id: string; kind: string; title: string | null; doc_date: string | null }
 export type Preview = { meds: PvMed[] | null; readings: PvReading[] | null; docs: PvDoc[] | null }
 
@@ -72,6 +73,12 @@ export async function loadRoster(): Promise<{ people: ViewPerson[]; carers: Care
   return people && c.ok ? { people, carers: c.data } : null
 }
 
+/** Readings with the 0044 logged_by column when the server has it; a server before 0044 refuses that select, so retry without it. */
+async function readingRows(s: NonNullable<typeof supabase>, personId: string): Promise<PvReading[] | null> {
+  const q = (cols: string) => s.from('readings').select(cols).eq('person_id', personId).order('taken_at', { ascending: false }).limit(300) as unknown as Q<PvReading>
+  return (await rows(q('test, value, unit, taken_at, logged_by'))) ?? (await rows(q('test, value, unit, taken_at')))
+}
+
 type MedRow = PvMed & { med_status: string; status: string; deleted_at: string | null }
 /** Reads for one person, all SELECT. A part that fails is null so the screen says "could not load" for it instead of showing 0. */
 export async function loadPreview(personId: string, relation: Relation = 'self'): Promise<Preview> {
@@ -79,7 +86,7 @@ export async function loadPreview(personId: string, relation: Relation = 'self')
   const s = supabase
   const [meds, readings, docs] = await Promise.all([
     rows(s.from('medications').select('name, dose, strength, schedule, as_needed, med_status, status, deleted_at').eq('person_id', personId).eq('status', 'confirmed').eq('med_status', 'active').is('deleted_at', null).order('name') as unknown as Q<MedRow>),
-    rows(s.from('readings').select('test, value, unit, taken_at').eq('person_id', personId).order('taken_at', { ascending: false }).limit(300) as unknown as Q<PvReading>),
+    readingRows(s, personId),
     // documents_read (0008) hides ID and insurance cards from a read-only carer; mirror that.
     rows((relation === 'carer' ? s.from('documents').select('id, kind, title, doc_date').eq('person_id', personId).eq('status', 'confirmed').not('kind', 'in', '(id_card,insurance_card)') : s.from('documents').select('id, kind, title, doc_date').eq('person_id', personId).eq('status', 'confirmed')).order('doc_date', { ascending: false }).limit(20) as unknown as Q<PvDoc>)
   ])

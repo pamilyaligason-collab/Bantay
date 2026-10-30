@@ -27,10 +27,10 @@ describe('logFeeling (How are you?)', () => {
   })
   it('Unwell with the network down is saved and queued (untold); a refusal is not queued and says call them', async () => {
     const { db } = await import('../../db')
-    await db.kv.delete('mood.unsent')
+    await db.kv.delete('mood.unsent.p1')
     h.rpc.mockResolvedValue({ error: { code: '42501', message: 'denied' } })
     expect(await logFeeling('unwell')).toBe('refused')
-    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    expect(await db.kv.get('mood.unsent.p1')).toBeUndefined()
     h.rpc.mockResolvedValue({ error: { code: '', message: 'TypeError: Failed to fetch' } })
     expect(await logFeeling('unwell')).toBe('untold')
     h.rpc.mockRejectedValue(new Error('offline'))
@@ -39,11 +39,11 @@ describe('logFeeling (How are you?)', () => {
   })
   it('DS-1: the RPC reaching 0 carers is nobody (never "family told"); 1 is sent; a second Unwell the same day with 0 new rows is still sent', async () => {
     const { db } = await import('../../db')
-    await db.kv.delete('mood.unsent')
+    await db.kv.delete('mood.unsent.p1')
     for (const k of await db.kv.toCollection().primaryKeys()) if (String(k).startsWith('mood.told.')) await db.kv.delete(k)
     h.rpc.mockResolvedValue({ data: 0, error: null })
     expect(await logFeeling('unwell')).toBe('nobody')
-    expect(await db.kv.get('mood.unsent')).toBeUndefined() // nothing to retry
+    expect(await db.kv.get('mood.unsent.p1')).toBeUndefined() // nothing to retry
     expect(feelingToast('nobody')).toBe('Saved. No one gets your alerts yet. Call your family.')
     expect(retryToast('nobody')).toBe('Saved. No one gets your alerts yet. Call your family.')
     h.rpc.mockResolvedValue({ data: 1, error: null })
@@ -55,9 +55,9 @@ describe('logFeeling (How are you?)', () => {
     const { db } = await import('../../db')
     h.rpc.mockRejectedValue(new Error('offline'))
     await logFeeling('unwell')
-    expect(await db.kv.get('mood.unsent')).toBeTruthy()
+    expect(await db.kv.get('mood.unsent.p1')).toBeTruthy()
     await logFeeling('ok')
-    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    expect(await db.kv.get('mood.unsent.p1')).toBeUndefined()
   })
   it('two retries at once make one call', async () => {
     const { db } = await import('../../db')
@@ -71,13 +71,13 @@ describe('logFeeling (How are you?)', () => {
     expect(feelingToast('untold')).toBe('Saved. We will tell them when you are online.')
     expect(feelingToast('told')).toBe('Saved. Your family will see it in Bantay.')
   })
-  it('an offline Unwell is kept in kv mood.unsent (not the outbox) and sent once on reconnect: exactly 1 raise_mood_alert call', async () => {
+  it('an offline Unwell is kept in kv mood.unsent.<personId> (not the outbox) and sent once on reconnect: exactly 1 raise_mood_alert call', async () => {
     const { db } = await import('../../db')
-    await db.kv.delete('mood.unsent')
+    await db.kv.delete('mood.unsent.p1')
     const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     expect(await logFeeling('unwell')).toBe('untold')
     expect(h.rpc).not.toHaveBeenCalled()
-    expect((await db.kv.get('mood.unsent'))?.value).toMatchObject({ personId: 'p1' })
+    expect((await db.kv.get('mood.unsent.p1'))?.value).toMatchObject({ personId: 'p1' })
     expect(await db.outbox.count()).toBe(0)
     expect(await retryUnsentMood()).toBe('offline') // still offline: kept
     expect(h.rpc).not.toHaveBeenCalled()
@@ -86,7 +86,7 @@ describe('logFeeling (How are you?)', () => {
     expect(await retryUnsentMood()).toBe('none') // sent once, cleared
     expect(h.rpc).toHaveBeenCalledTimes(1)
     expect(h.rpc).toHaveBeenCalledWith('raise_mood_alert', { p_person: 'p1' })
-    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    expect(await db.kv.get('mood.unsent.p1')).toBeUndefined()
     online.mockRestore()
   })
   it('a refused retry drops the unsent Unwell and says call them; one older than a day is dropped with a day line and no call', async () => {
@@ -96,7 +96,7 @@ describe('logFeeling (How are you?)', () => {
     h.rpc.mockClear()
     h.rpc.mockResolvedValueOnce({ error: { code: '42501', message: 'denied' } })
     expect(await retryUnsentMood()).toBe('refused')
-    expect(await db.kv.get('mood.unsent')).toBeUndefined()
+    expect(await db.kv.get('mood.unsent.p1')).toBeUndefined()
     expect(retryToast('refused')).toBe('Your family was not told. Call them.')
     await db.kv.put({ key: 'mood.unsent', value: { personId: 'p1', at: new Date(2026, 9, 26, 9).getTime() } })
     vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 27, 18) }) // 33 h later

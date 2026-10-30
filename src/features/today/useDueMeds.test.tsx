@@ -8,7 +8,8 @@ vi.mock('../health/useCanMark', () => ({ canMarkFor: () => true, useWritableIds:
 
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { markTaken, useDueMeds } from './useDueMeds'
+import { markDue, markTaken, useDueMeds } from './useDueMeds'
+import { setActing } from '../viewas/store'
 
 const soon = () => { const d = new Date(Date.now() + 30 * 60_000); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
 
@@ -65,5 +66,34 @@ describe('useDueMeds', () => {
       expect(await markTaken('me', [b!])).toBe(1) // a different unsynced medicine in the same slot still logs
       expect((await ldb.meds.toArray()).map((r) => r.name).sort()).toEqual(['Unsynced A', 'Unsynced B'])
     } finally { vi.useRealTimers() }
+  })
+  it('S16 L6: while acting the targets are the acting member (even without edit access), at 23:30 and 00:30 local; exit returns to me', async () => {
+    for (const [now, dose] of [[new Date(2026, 9, 30, 23, 30), '23:50'], [new Date(2026, 9, 31, 0, 30), '00:50']] as const) {
+      await ldb.medications.clear()
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(now)
+      try {
+        const schedule = { v: 1, times: [dose] }
+        await ldb.medications.bulkAdd([{ personId: 'me', name: 'Mine', medStatus: 'active', schedule, serverId: 's1' }, { personId: 'ma', name: 'Hers', medStatus: 'active', schedule, serverId: 's2' }])
+        setActing({ personId: 'ma', name: 'Child', can: { log: false, edit: true, rollcall: false, mood: false, reason: 'x' } })
+        const { result, unmount } = renderHook(() => useDueMeds())
+        await waitFor(() => expect(result.current.due.map((d) => d.personId)).toEqual(['ma']))
+        setActing(null)
+        await waitFor(() => expect(result.current.due.map((d) => d.personId)).toEqual(['me']))
+        unmount()
+      } finally { setActing(null); vi.useRealTimers() }
+    }
+  })
+  it('S16 L6: markDue for the acting member logs nothing without log access (no local dose the server would refuse), and logs for her with it', async () => {
+    const d = { personId: 'ma', name: 'Child', isMe: false, slots: [{ key: 'k', name: 'Hers', slot: '08:00', medicationId: 's2' }] } as unknown as Parameters<typeof markDue>[0]
+    await ldb.meds.clear()
+    setActing({ personId: 'ma', name: 'Child', can: { log: false, edit: true, rollcall: false, mood: false, reason: 'x' } })
+    try {
+      expect(await markDue(d)).toBe(false)
+      expect(await ldb.meds.count()).toBe(0)
+      setActing({ personId: 'ma', name: 'Child', can: { log: true, edit: true, rollcall: true, mood: true, reason: null } })
+      expect(await markDue(d)).toBe(true)
+      expect((await ldb.meds.toArray()).map((r) => r.personId)).toEqual(['ma'])
+    } finally { setActing(null) }
   })
 })
