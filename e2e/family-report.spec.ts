@@ -70,7 +70,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByRole('button', { name: /Maria Sample/ }).click() // S9: a bubble opens the person's page
+    await page.getByRole('button', { name: /Maria Sample/ }).click() // a face opens a sheet; See their stats opens the person's page
+    await page.getByRole('link', { name: 'See their stats' }).click()
     await page.getByRole('link', { name: 'Full report' }).click()
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()
@@ -93,27 +94,11 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(box!.height).toBeGreaterThanOrEqual(56)
   })
 
-  test(`learning hub: four cards, one per topic, sources credited (${scheme})`, async ({ page }) => {
-    await page.emulateMedia({ colorScheme: scheme })
-    const hub = page.getByTestId('learn-hub')
-    await expect(hub.locator('.hub-card')).toHaveCount(4)
-    expect(await hub.locator('.hub-card').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.cat).sort())).toEqual(['mind', 'move-eat', 'sleep', 'stress'])
-    expect(await hub.locator('.hub-card').evaluateAll((els) => new Set(els.map((e) => e.className.replace(/\bhub-card\b|\bopen\b/g, '').trim())).size)).toBeGreaterThan(1) // mixed sizes
-    for (const a of await hub.locator('a.hub-main').all()) {
-      await expect(a).toHaveAttribute('rel', /noopener/)
-      await expect(a).toHaveAttribute('href', /^https:\/\/(www\.nimh\.nih\.gov|medlineplus\.gov|www\.who\.int)\//)
-    }
-    const video = hub.locator('button.hub-main').first()
-    await video.scrollIntoViewIfNeeded()
-    await video.click()
-    await expect(hub.getByRole('button', { name: /^Play / }).or(hub.getByText('Open when online'))).toBeVisible() // nothing loads from YouTube until Play is tapped
-    expect(await hub.locator('iframe').count()).toBe(0)
-    expect(await axe(page)).toEqual([])
-    expect(await noSideways(page)).toBe(true)
-  })
+  // The learning hub test moved with LearningHub to Discover (PLAN 1.4, L3).
 
   test(`memories is off by default, then says what is missing instead of failing (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
+    await page.getByRole('button', { name: 'Show Memories' }).click() // Memories is a row that opens in place
     const m = page.getByTestId('memories')
     await m.scrollIntoViewIfNeeded()
     await expect(m.getByRole('button', { name: 'Turn on Memories' })).toBeVisible()
@@ -124,6 +109,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(m.getByRole('button', { name: 'Turn Memories off on this phone' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.reload()
+    await page.getByRole('button', { name: 'Show Memories' }).click()
     await expect(page.getByTestId('memories').getByTestId('mem-state')).toBeVisible() // the choice is remembered on this phone
   })
 }

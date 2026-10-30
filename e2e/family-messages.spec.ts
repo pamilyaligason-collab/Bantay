@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       const roll = page.getByRole('list', { name: 'Family roll call' })
       await expect(roll.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
-      await expect(roll.getByTestId('bubble-badge')).toHaveCount(2)
+      await expect(roll.getByTestId('bubble-badge')).toHaveCount(3)
       for (const b of await roll.getByRole('button').all()) {
         const box = await b.boundingBox()
         expect(box!.height).toBeGreaterThanOrEqual(48)
@@ -85,6 +85,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
       // S9: a bubble opens the person's page. The Messages sheet is no longer reached from the bubble (its sheet tests live in Messages.test.tsx); lane K's member page owns the entry to it.
       await roll.getByRole('button', { name: /Lola Remy/ }).click()
+      await page.getByRole('link', { name: 'See their stats' }).click()
       await expect(page).toHaveURL(/#family\/people\/p3$/)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])

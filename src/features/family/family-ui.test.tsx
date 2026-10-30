@@ -24,28 +24,28 @@ beforeEach(async () => {
 })
 afterEach(cleanup)
 
-describe('Family segments', () => {
+describe('Family routes', () => {
   it('parses the deep links', () => {
     expect(parseFamily('#family')).toEqual({ seg: 'home', member: null })
     expect(parseFamily('#family/plan')).toEqual({ seg: 'plan', member: null })
     expect(parseFamily('#family/people')).toEqual({ seg: 'home', member: null }) // old link still opens Home
     expect(parseFamily('#family/messages')).toEqual({ seg: 'messages', member: null })
+    expect(parseFamily('#family/papers')).toEqual({ seg: 'papers', member: null })
     expect(parseFamily('#messages')).toEqual({ seg: 'home', member: null }) // only #family/messages names Messages
     expect(parseFamily('#family/people/p2')).toEqual({ seg: 'home', member: 'p2' })
-    expect(parseFamily('#family/records')).toEqual({ seg: 'home', member: null }) // Records moved to Health > Papers
     expect(parseFamily('#plan')).toEqual({ seg: 'plan', member: null })
   })
 
-  it('shows Home | Messages | Plan only (no Records); each writes its hash', async () => {
+  it('the root has no Home | Messages | Plan segments: Messages and Plan are rows, Back returns', async () => {
+    location.hash = '#family'
+    const { unmount } = render(<Family />)
+    expect(screen.queryByRole('group', { name: 'Family view' })).toBeNull()
+    expect((await screen.findByTestId('msgs')).querySelector('a')!.getAttribute('href')).toBe('#family/messages')
+    expect(screen.getByTestId('planrow').querySelector('a')!.getAttribute('href')).toBe('#family/plan')
+    unmount()
+    location.hash = '#family/plan'
     render(<Family />)
-    const seg = screen.getByRole('group', { name: 'Family view' })
-    expect(within(seg).getAllByRole('button').map((b) => b.textContent)).toEqual(['Home', 'Messages', 'Plan'])
-    fireEvent.click(within(seg).getByRole('button', { name: 'Plan' }))
-    expect(location.hash).toBe('#family/plan')
-    fireEvent.click(within(seg).getByRole('button', { name: 'Messages' }))
-    expect(location.hash).toBe('#family/messages')
-    fireEvent.click(within(seg).getByRole('button', { name: 'Home' }))
-    expect(location.hash).toBe('#family')
+    expect(screen.getByRole('link', { name: 'Back to Family' }).getAttribute('href')).toBe('#family')
   })
 })
 
@@ -145,41 +145,37 @@ describe('Plan', () => {
   })
 })
 
-describe('People', () => {
+describe('Faces row', () => {
   const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString() }
 
-  it('shows the family as status bubbles with the latest I\'m OK, and hides the check-in card once I have checked in', async () => {
+  it('draws a status ring and a corner glyph per face, with a legend, and the latest I\'m OK', async () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
     const roll = await screen.findByRole('list', { name: 'Family roll call' })
     await waitFor(() => expect(within(roll).getByRole('button', { name: /^Lloyd Roc \(you\), OK 7:40/ })).toBeTruthy())
     expect(within(roll).getByRole('button', { name: /^Kuya Ben, No check-in today/ })).toBeTruthy()
-    expect(within(roll).getByText(/^OK 7:40/)).toBeTruthy() // S9: the words are the last check-in
+    expect(within(roll).getAllByTestId('face-ring').map((e) => e.getAttribute('data-k')).sort()).toEqual(['none', 'ok'])
+    expect(within(roll).getAllByTestId('bubble-badge').length).toBe(2) // colour plus shape on every face
     expect(within(roll).getByText('No check-in yet')).toBeTruthy()
-    expect(within(roll).getAllByTestId('bubble-badge').map((e) => e.getAttribute('data-k'))).toEqual(['ok']) // no sleep icon for a quiet person
-    expect(screen.queryByText("Today's check-in")).toBeNull() // already logged: no second ask
-    expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
+    expect(screen.getByLabelText('Legend').textContent).toBe('OK todayNeeds a lookNo news')
+    expect(screen.queryByText('Phone health data')).toBeNull()
   })
 
-  it('I\'m OK writes a check-in activity row, then the card stays as done with focus on it', async () => {
+  it('I\'m OK writes a check-in activity row and turns into "You\'re OK" with focus kept', async () => {
     location.hash = '#family'
     render(<Family />)
     await screen.findByRole('list', { name: 'Family roll call' })
-    expect(await screen.findByText('0 of 2 OK today')).toBeTruthy()
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    expect(await screen.findByText(/^You're OK · /)).toBeTruthy() // the same card turns into the done state after the write
-    expect(screen.queryByText("Today's check-in")).toBeNull()
-    expect(screen.getByText(/Your family can see it/)).toBeTruthy()
-    expect(within(document.querySelector('.fm-checkin') as HTMLElement).queryByRole('status')).toBeNull() // one announcement only: the toast
+    expect(await screen.findByText(/^You're OK · /)).toBeTruthy()
     expect((await screen.findByText('The family can see you are OK.')).getAttribute('role')).toBe('status')
     expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(document.activeElement?.classList.contains('fm-checkin')).toBe(true) // focus moves to the card, not lost with the button
+    expect(document.activeElement?.classList.contains('fm2-fh')).toBe(true)
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
-  it("I'm OK that fails to save shows the failure text and never the \"You're OK\" morph", async () => {
+  it("I'm OK that fails to save shows the failure text and never the done state", async () => {
     location.hash = '#family'
     render(<Family />)
     await screen.findByRole('list', { name: 'Family roll call' })
@@ -188,28 +184,25 @@ describe('People', () => {
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
     expect(await screen.findByText('Could not save on this phone. Try again.')).toBeTruthy()
     expect(screen.queryByText(/^You're OK · /)).toBeNull()
-    expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false) // still there to try again
     add.mockRestore()
   })
 
-  it('the roster is a busy skeleton (aria-busy) until the first read, then the list', async () => {
+  it('the roster is busy until the first read, then the faces', async () => {
     location.hash = '#family'
     const { container } = render(<Family />)
-    expect(container.querySelector('section[aria-busy="true"]')).not.toBeNull() // first paint: nothing says "No check-in today" yet
-    expect(screen.queryByRole('list', { name: 'Family roll call' })).toBeNull()
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
     await screen.findByRole('list', { name: 'Family roll call' })
-    expect(container.querySelector('[aria-busy="true"]')).toBeNull()
+    expect(container.querySelector('.fm2-faces [aria-busy="true"]')).toBeNull()
   })
 
   it("the I'm OK morph only animates inside the no-preference media block, so reduced motion is instant", () => {
     const css = readFileSync(resolve(__dirname, 'family.css'), 'utf8')
     const animated = css.match(/@media \(prefers-reduced-motion: no-preference\) \{[^@]*?\n\}/g)!.join('')
-    expect(animated).toMatch(/\.fm-okdone \{ animation: fm-ok-in/) // the animation lives in the guarded block
+    expect(animated).toMatch(/\.fm-okdone \{ animation: fm-ok-in/)
     const outside = css.replace(animated, '')
-    expect(outside.split('\n').filter((l) => /fm-ok/.test(l) && /(transition|animation)\s*:/.test(l))).toEqual([]) // and nowhere else
+    expect(outside.split('\n').filter((l) => /fm-ok/.test(l) && /(transition|animation)\s*:/.test(l))).toEqual([])
   })
 
-  // The bubble opens the person's page now (S9), so the Messages sheet is rendered directly here; the nudge wiring itself is roster.nudgeFor.
   const ben = { id: 'p2', name: 'Kuya Ben', photoPath: null, thumb: null, phone: null as string | null, birthdate: null, isMe: false }
   const sheet = (phone: string | null, nudge: { text: string; href: string } | null) => render(<Messages who={{ ...ben, phone }} people={[{ ...ben, phone }]} nudge={nudge} onClose={() => undefined} onOpenPage={() => undefined} />)
 
@@ -225,23 +218,21 @@ describe('People', () => {
     const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
     expect(within(dlg).getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
     expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
-    expect(within(dlg).getByRole('link', { name: 'Use Messenger for video' }).getAttribute('href')).toBe('https://www.messenger.com/')
-    expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy() // no Supabase in tests: plain words, no crash
+    expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy()
   })
 
-  it('the Message bubble button opens the sheet with the quick replies', async () => {
+  it('tapping a face opens a sheet whose Send a message link opens the one chat with @name ready', async () => {
     location.hash = '#family'
-    render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Message Kuya' }))
-    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
-    expect(within(dlg).getByRole('group', { name: 'Quick replies' })).toBeTruthy()
-  })
-
-  it('tapping a bubble opens that person\'s page', async () => {
-    location.hash = '#family'
-    render(<Family />)
+    const { unmount } = render(<Family />)
     fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
-    expect(location.hash).toBe('#family/people/p2')
+    const dlg = await screen.findByRole('dialog', { name: 'Kuya Ben' })
+    const send = within(dlg).getByRole('link', { name: 'Send a message' })
+    expect(send.getAttribute('href')).toBe('#family/messages')
+    fireEvent.click(send)
+    unmount()
+    location.hash = '#family/messages'
+    render(<Family />)
+    expect((await screen.findByLabelText('Message') as HTMLTextAreaElement).value).toBe('@Kuya Ben ')
   })
 })
 

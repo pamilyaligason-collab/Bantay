@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lastCheckInWords } from './People'
+import { lastCheckInWords } from './FacesRow'
 
 // Local-time dates, so the day maths does not depend on the machine's zone. now = Tue 27 Oct 2026, 10:00.
 const NOW = new Date(2026, 9, 27, 10, 0)

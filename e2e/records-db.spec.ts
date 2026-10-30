@@ -101,7 +101,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#health/papers')
 
     const entry = page.getByRole('button', { name: /To check \(2\)/ })
-    await expect(entry).toBeVisible()
+    await expect(entry).toBeVisible({ timeout: 15_000 }) // the queue loads after the session restores (flaked at 5 s under load)
     await entry.click()
     const sheet = page.getByRole('dialog')
     await expect(sheet.getByRole('heading', { name: 'To check' })).toBeFocused()

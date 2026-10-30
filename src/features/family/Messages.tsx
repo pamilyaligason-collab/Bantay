@@ -13,12 +13,15 @@ type View = { kind: 'loading' } | { kind: 'ready'; msgs: Msg[] } | { kind: 'not_
 const WORDS = { not_set_up: 'Messages are not set up yet', unavailable: 'Messages need you to be signed in', offline: 'Messages show when you are online', failed: 'Messages could not load. Try again in a moment.' } as const
 const POLL_MS = 8000
 const first = (n: string) => n.trim().split(/\s+/)[0] || n
+/** A face sheet or a Needs-you-now row sets `text` ("@Ate Joy ") and opens the chat; the composer takes it once. It is still one shared chat, the prefill only starts the message. */
+export const messagePrefill = { text: '' }
+const takePrefill = () => messagePrefill.text // cleared in an effect, so a double render in dev still sees it
 
 /** The family thread, opened from a member's bubble. One shared thread for everyone on Bantay (migration 0027); the buttons on top are about the person you tapped:
  *  Call, and Messenger for video (video is not built in). Text, voice note (max 60 s), photo or file (max 10 MB). New messages arrive by checking every 8 seconds while open. */
 export default function Messages({ who, people, onClose, onOpenPage, nudge, inline = false }: { who: FamilyPerson; people: FamilyPerson[]; onClose: () => void; onOpenPage: () => void; nudge: { text: string; href: string } | null; inline?: boolean }) {
   const [view, setView] = useState<View>({ kind: 'loading' })
-  const [text, setText] = useState('')
+  const [text, setText] = useState(takePrefill)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const [rec, setRec] = useState<{ secs: number } | null>(null)
@@ -41,6 +44,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
     return () => clearInterval(id)
   }, [load])
   useEffect(() => { if (view.kind === 'ready' && view.msgs.length !== count.current) { count.current = view.msgs.length; end.current?.scrollIntoView?.({ block: 'end' }) } }, [view])
+  useEffect(() => { messagePrefill.text = '' }, [])
   useEffect(() => () => { mr.current?.cancel() }, [])
   useEffect(() => () => { if (voice) URL.revokeObjectURL(voice.url) }, [voice])
 

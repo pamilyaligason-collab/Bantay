@@ -3,14 +3,12 @@ import { skipOnboarding } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
   await page.goto('/#family/plan')
-  await expect(page.locator('h1')).toHaveText('Family')
-  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Home' }).click()
-  await expect(page.getByRole('button', { name: 'Home', pressed: true })).toBeVisible()
+  await expect(page.locator('h1')).toHaveText('Plan')
+  await page.getByRole('link', { name: 'Back to Family' }).click()
   await expect(page.locator('h1')).toHaveText('Family')
   await expect(page).toHaveURL(/#family$/)
   await page.goBack()
-  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
+  await expect(page.locator('h1')).toHaveText('Plan')
 })
 
 test('installable: manifest fields and service worker', async ({ page }) => {
