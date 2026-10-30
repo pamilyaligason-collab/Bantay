@@ -18,10 +18,10 @@ import QuickLog from './QuickLog'
 afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.feel.mockReset() })
 
 describe('QuickLog (today-log)', () => {
-  it('six tiles: BP, Sugar, Weight, How are you?, Water, More', () => {
+  it("six tiles plus the small I'm OK beside How are you?", () => {
     render(<QuickLog notify={() => undefined} />)
     const tiles = screen.getByRole('group', { name: 'Quick log' }).querySelectorAll('button')
-    expect([...tiles].map((b) => b.textContent)).toEqual(['BP', 'Sugar', 'Weight', 'How are you?', 'Water', 'More'])
+    expect([...tiles].map((b) => b.textContent)).toEqual(['BP', 'Sugar', 'Weight', 'How are you?', "I'm OK", 'Water', 'More'])
   })
   it('in a storm the mood tile reads Is everyone safe?', () => {
     h.storm = { title: 'Pepito is near', body: 'about 300 km east' }

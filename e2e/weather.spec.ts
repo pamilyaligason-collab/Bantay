@@ -104,9 +104,9 @@ test('today weather card: from=action only when an action line shows, and it is 
   await skipOnboarding(page)
   await mockForecast(page) // 33 C at 70% humidity: Danger, so an action line shows
   await page.goto('/#today')
-  const card = page.getByRole('region', { name: 'Weather' }).getByRole('link')
-  await expect(card).toHaveAttribute('href', '#weather?from=action')
-  await expect(card).toContainText('Stay indoors 11 AM-3 PM')
+  const hero = page.getByRole('region', { name: 'Weather' })
+  await expect(hero.getByRole('link')).toHaveAttribute('href', '#weather?from=action')
+  await expect(hero).toContainText('Stay indoors 11 AM-3 PM')
 })
 
 test('weather: rain card shows hourly bars + PAGASA radar link, chips switch to storm track, no map provider loads', async ({ page }) => {

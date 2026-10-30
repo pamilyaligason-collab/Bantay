@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { liveMedicines } from '../health/meds'
-import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
+import { checkIn, FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import { useStorm } from './useStorm'
 import BpCheckButton from '../health/bpcheck/BpCheckButton'
@@ -85,6 +85,14 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
+  /** D-100: the small "I'm OK" beside How are you? is one tap, a check-in with no mood. */
+  const imOk = async () => {
+    if (busy) return
+    setBusy(true)
+    const r = await checkIn()
+    setBusy(false)
+    notify(r === 'ok' ? "Saved. Your family can see you are OK." : FAIL_TEXT[r])
+  }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (open === 'bp') {
@@ -106,9 +114,14 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   return (
     <>
       <div className="td-quick" role="group" aria-label="Quick log">
-        {PILLS.map((p) => (
+        {PILLS.map((p) => p.id === 'mood' ? (
+          <div key={p.id} className="td-q td-q-mood">
+            <button type="button" className="td-qm press" aria-label={p.aria} onClick={() => setOpen(p.id)}>{storm ? 'Is everyone safe?' : p.label}</button>
+            <button type="button" className="td-ok press" disabled={busy} onClick={() => void imOk()}><Icon name="check" size={16} />I'm OK</button>
+          </div>
+        ) : (
           <button key={p.id} type="button" className="td-q press" aria-label={p.aria} onClick={() => setOpen(p.id)}>
-            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.id === 'mood' && storm ? 'Is everyone safe?' : p.label}</span>
+            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.label}</span>
           </button>
         ))}
       </div>

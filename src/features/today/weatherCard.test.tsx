@@ -30,31 +30,43 @@ describe('Today weather card', () => {
     render(<WeatherCard />)
     expect(screen.queryByText(/noon sun|Stay indoors/)).toBeNull()
   })
-  it('compact: one row with temperature, condition and place, feels like, a chevron icon and no glyph arrow', () => {
+  it('compact: temperature, condition, place, a feels pill, a chevron and no glyph arrow; 196 px size flag', () => {
     m.wx = { ...base, temp: 31, humidity: 70, words: 'partly cloudy' }
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
-    expect(screen.getByText('Partly cloudy · Dampas (saved zone)')).toBeTruthy()
-    expect(screen.getByText(/^Feels like 3\d° · Extreme caution$/)).toBeTruthy()
-    expect(container.querySelector('.td-link svg')).toBeTruthy()
+    expect(screen.getByText('Partly cloudy')).toBeTruthy()
+    expect(screen.getByText(/^Dampas · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
+    expect(screen.getByText('Drink water')).toBeTruthy()
+    expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
     expect(container.textContent).not.toContain('›')
-    expect(container.querySelector('.td-wxh')).toBeNull()
+    expect(container.querySelector('[data-size="compact"]')).toBeTruthy()
   })
-  it('compact: the action sits in an amber box below the row', () => {
+  it('compact: the action is one plain line, no box and no Jack', () => {
     m.wx = { ...base, temp: 34, humidity: 70 }
     const { container } = render(<WeatherCard />)
-    expect(container.querySelector('.td-act-box svg')).toBeTruthy()
-    expect(container.querySelector('.td-act-box')!.textContent).toMatch(/^Stay indoors/)
+    expect(container.querySelector('.td-act-box')).toBeNull()
+    expect(container.querySelector('.td-wxh-line')!.textContent).toMatch(/^Stay indoors/)
+    expect(container.querySelector('img.jack')).toBeNull()
   })
   it('one feels like and one danger label: the heat index (same as the action line and the Weather screen), not the forecast apparent temperature', () => {
     m.wx = { ...base, temp: 33, humidity: 70, feels: 42 }
     render(<WeatherCard />)
-    expect(screen.getByText('Feels like 43° · Danger')).toBeTruthy()
+    expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
   })
-  it('no heat index (no humidity): the forecast apparent temperature, no label', () => {
+  it('no heat index (no humidity): the forecast apparent temperature, no label, no Drink water', () => {
     m.wx = { ...base, temp: 33, humidity: null, feels: 38 }
     render(<WeatherCard />)
-    expect(screen.getByText('Feels like 38°')).toBeTruthy()
+    expect(screen.getByText('Feels 38°')).toBeTruthy()
+    expect(screen.queryByText('Drink water')).toBeNull()
+  })
+  it('a storm draws the night storm scene, the storm copy and never Jack', () => {
+    m.wx = { ...base, temp: 26, humidity: 80, feels: 31, code: 0 }
+    const { container } = render(<WeatherCard expanded storm />)
+    expect(container.querySelector('.wxs')!.getAttribute('data-cond')).toBe('storm')
+    expect(container.querySelector('.wxs')!.getAttribute('data-tod')).toBe('night')
+    expect(screen.getByText('Rain and strong wind.')).toBeTruthy()
+    expect(container.querySelector('img.jack')).toBeNull()
   })
   it('draws the scene for the weather code and time of day', () => {
     m.wx = { ...base, code: 63, sunrise: '2000-01-01T05:50', sunset: '2000-01-01T17:45' }
@@ -81,14 +93,16 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Weather · Dampas \(saved zone\) · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Feels like 4\d° · Danger · High 34° · Low 26°$/)).toBeTruthy()
+    expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
+    expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
     expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
     expect(screen.getAllByRole('link')).toHaveLength(1)
     expect(screen.getByRole('link').getAttribute('href')).toBe('#weather?from=action')
+    expect(container.querySelector('.td-act-box')).toBeTruthy()
     expect(screen.queryByText(/medicines/)).toBeNull()
   })
   it('"as of" uses the place time zone when abroad, not Manila', () => {

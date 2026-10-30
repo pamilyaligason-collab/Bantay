@@ -26,14 +26,14 @@ describe('NextUp', () => {
   })
   it('Skip is hidden for a medicine with no server id (it could never be matched)', () => {
     run(dose({ ...ma, slots: [{ ...ma.slots[0]!, medicationId: null }] }))
-    expect(screen.getByRole('button', { name: 'Taken' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Mark as taken' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
   })
   it('a cared-for person dose: Taken and Skip log through markDue; the panel counts medicines to check', async () => {
     const notify = vi.fn()
     run(dose(), 2, notify)
     expect(screen.getByRole('link', { name: /2 medicines to check/ }).getAttribute('href')).toBe('#health/meds')
-    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
     await waitFor(() => expect(h.markDue).toHaveBeenCalledWith(ma, false))
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Marked Aspirin taken'))
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull() // after Taken the card is on its way out
@@ -46,7 +46,7 @@ describe('NextUp', () => {
     const two: DuePerson = { ...ma, slots: [ma.slots[0]!, { name: 'Metformin (Glucophage)', slot: '08:00', at: 480, medicationId: 'm2', key: 'm2', personId: 'ma', dose: null }] }
     const notify = vi.fn()
     run(dose(two), 0, notify)
-    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
     expect(h.markTaken).not.toHaveBeenCalled() // nothing is logged by the first tap
     const boxes = screen.getAllByRole('checkbox') as HTMLInputElement[]
     expect(boxes.map((b) => b.checked)).toEqual([true, true])
@@ -60,7 +60,7 @@ describe('NextUp', () => {
   it('2 medicines, everything unticked: the button is off (never logs nothing as success)', () => {
     const two: DuePerson = { ...ma, slots: [ma.slots[0]!, { ...ma.slots[0]!, name: 'Metformin', medicationId: 'm2', key: 'm2' }] }
     run(dose(two))
-    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
     for (const b of screen.getAllByRole('checkbox')) fireEvent.click(b)
     expect((screen.getByRole('button', { name: 'Mark these taken' }) as HTMLButtonElement).disabled).toBe(true)
   })
@@ -69,7 +69,7 @@ describe('NextUp', () => {
     try {
       const hold = vi.fn()
       render(<NextUp item={dose()} review={0} notify={() => undefined} hold={hold} />)
-      fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
       expect(hold).toHaveBeenCalledWith(dose()) // frozen before the write, not animated
       await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
       expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
@@ -86,9 +86,9 @@ describe('NextUp', () => {
     const hold = vi.fn()
     const notify = vi.fn()
     render(<NextUp item={dose()} review={0} notify={notify} hold={hold} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
     await waitFor(() => expect(hold).toHaveBeenLastCalledWith(null))
-    expect(screen.getByRole('button', { name: 'Taken' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Mark as taken' })).toBeTruthy()
     expect(document.querySelector('.td-taken.done')).toBeNull()
   })
   it('a plan item links to the plan', () => {
@@ -101,7 +101,7 @@ describe('NextUp unmounted early', () => {
   it('frees the held card (SOS or Simple mode replaces Today within the morph)', () => {
     const hold = vi.fn()
     const { unmount } = render(<NextUp item={dose()} review={0} notify={() => undefined} hold={hold} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
     expect(hold).toHaveBeenCalledWith(dose())
     unmount()
     expect(hold).toHaveBeenLastCalledWith(null)

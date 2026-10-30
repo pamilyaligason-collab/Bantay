@@ -9,7 +9,8 @@ const { stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <di
 vi.mock('../features/today/useNext', () => ({ useNext: () => ({ item: h.pick, review: h.review }) }))
 vi.mock('../features/today/useDueMeds', () => ({ markDue: async () => true, markTaken: async (...a: unknown[]) => { h.taken.push(a); return 1 } }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
-vi.mock('../features/today/AlertBand', () => stub('alertband'))
+vi.mock('../features/today/WarningCard', () => ({ default: () => <div data-testid="alertband" />, useWarnings: () => ({ onScreen: false, storm: null }) }))
+vi.mock('../features/setup/steps', () => ({ useSetupLeft: () => ({ left: [] }), turnOnReminders: async () => undefined, notifyState: async () => ({}), notifyDone: () => false }))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => null }))
 vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () => null }))
 vi.mock('../features/family/IncomingSos', () => ({ IncomingSos: () => null }))
@@ -40,7 +41,7 @@ async function takeThenFlip(after: unknown) {
   vi.useFakeTimers({ shouldAdvanceTime: true })
   h.pick = dose(person('ma', 'Ma', 480))
   const { rerender } = render(<Today />)
-  fireEvent.click(await screen.findByRole('button', { name: 'Taken' }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Mark as taken' }))
   await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
   h.pick = after // the data flips the moment the take is saved; the held card stays up
   rerender(<Today />)
@@ -53,7 +54,7 @@ describe('Today after the dose card is released', () => {
     await takeThenFlip(dose(person('pa', 'Pa', 540)))
     expect(screen.getByRole('heading', { name: 'Pa: Aspirin' })).toBeTruthy()
     expect(document.querySelector('.td-next.leaving')).toBeNull()
-    expect((screen.getByRole('button', { name: 'Taken' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'Mark as taken' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy()
   })
   it('a plan item renders fresh with its link', async () => {
@@ -70,7 +71,7 @@ describe('Today after the dose card is released', () => {
     const two = (names: string[]): DuePerson => ({ personId: 'ma', name: 'Ma', isMe: false, at: 480, rel: 480, status: 'upcoming', slots: names.map((n) => ({ name: n, slot: '08:00', at: 480, medicationId: `m-${n}`, key: `k-${n}`, personId: 'ma', dose: null })) })
     h.pick = dose(two(['Aspirin', 'Metformin']))
     const { rerender } = render(<Today />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Taken' })) // 2 due: opens the picker
+    fireEvent.click(await screen.findByRole('button', { name: 'Mark as taken' })) // 2 due: opens the picker
     fireEvent.click(screen.getByRole('checkbox', { name: /Metformin/ })) // untick Metformin: only Aspirin is taken
     fireEvent.click(screen.getByRole('button', { name: 'Mark these taken' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })).toBeTruthy())
@@ -80,7 +81,7 @@ describe('Today after the dose card is released', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(1000) })
     expect(document.querySelector('.td-next.leaving')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Ma: Metformin' })).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Taken' }) as HTMLButtonElement).disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'Mark as taken' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByRole('button', { name: 'Skip' })).toBeTruthy()
   })
 })
