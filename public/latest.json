@@ -1,9 +1,9 @@
 {
-  "versionCode": 2006000,
-  "versionName": "2.6.0",
-  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.6.0/bantay-2.6.0.apk",
-  "sha256": "9eaf7148d8641ed036533355533fa99b987184f17fc85d511be9d483bd5d66b6",
-  "size": 7909373,
+  "versionCode": 2006001,
+  "versionName": "2.6.1",
+  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.6.1/bantay-2.6.1.apk",
+  "sha256": "b765650cceb704b0f9bd05816b4080b305c57b93ec8138e26c864b7088ec3ceb",
+  "size": 7910485,
   "minShell": 2000000,
-  "notes": "Safer alerts: Unwell says when no one was told, SOS sends at once, only admins approve a PIN reset, and bigger, clearer screens."
+  "notes": "Fixes: Health Connect check no longer hangs, weather uses your phone's location, Today shows only your own medicines, and big text no longer breaks words."
 }
