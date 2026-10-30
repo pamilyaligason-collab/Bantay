@@ -3,7 +3,8 @@ import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
 import MetricScreen from '../features/health/MetricScreen'
-import { insightHeadline } from '../features/health/model'
+import { insightHeadline, type NodeId } from '../features/health/model'
+import type { IconName } from '../features/shell/Icon'
 import { latestByTest } from '../features/health/ranges'
 import { Kpis } from '../features/health/Kpis'
 import AddReadingSheet from '../features/health/AddReadingSheet'
@@ -108,6 +109,9 @@ function Overview() {
   )
 }
 
+/** One glyph per measure (ICON-JACK-AUDIT rule 5): BP = gauge, Sugar = drop. */
+export const NODE_ICON: Record<NodeId, IconName> = { sleep: 'moon', mood: 'smile', bp: 'gauge', pulse: 'heart', sugar: 'drop', weight: 'scale', steps: 'walk' }
+
 /** Health > Readings: all seven numbers (sleep, mood and steps included), My numbers (latest per measure) and Latest | Average | Normal. The doors from the body hero and More in Health land here. */
 function ReadingsPage() {
   const { ready, people, ownId, personId, setPersonId, readings, thresholds, canMark, reload } = useHealthPerson()
@@ -127,7 +131,7 @@ function ReadingsPage() {
           <section aria-labelledby="rd-h" data-testid="seven">
             <h2 className="hd" id="rd-h">7-day averages</h2>
             <div className="rd-list">
-              {nodes.map((n) => <Row key={n.id} icon="gauge" title={`${n.label} ${n.value}`} sub={n.note} href={`#health/metric/${n.code}`} testId={`node-${n.id}`} />)}
+              {nodes.map((n) => <Row key={n.id} icon={NODE_ICON[n.id]} title={`${n.label} ${n.value}`} sub={n.note} href={`#health/metric/${n.code}`} testId={`node-${n.id}`} />)}
             </div>
           </section>
           <Kpis personId={personId} readings={readings} thresholds={thresholds} />

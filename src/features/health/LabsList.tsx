@@ -73,7 +73,7 @@ export function LabsList({ readings, thresholds, ready, sources }: { readings: R
   if (!ready) return null
   const labs = readings.filter((r) => !isVital(r.test))
   const rows = latestByTest(labs).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
-  if (rows.length === 0) return <EmptyState heading="h2" icon="drop" title="No lab papers yet" body="A person checks every number." action={{ label: 'Scan a paper', onClick: () => { location.hash = '#scan' } }} />
+  if (rows.length === 0) return <EmptyState heading="h2" icon="flask" title="No lab papers yet" body="A person checks every number." action={{ label: 'Scan a paper', onClick: () => { location.hash = '#scan' } }} />
   const g = groupLabs(rows)
   const ordered = [...g.ask, ...g.usual, ...g.noRange]
   const shown = filter === 'ask' ? g.ask : filter === 'in' ? g.usual : ordered

@@ -21,8 +21,9 @@ const amt = (n: number | null | undefined, unit: string, d = 0) => (n == null ? 
  * salty extras and "add your own" if the dish is not on the list. Every dish on the plate has its own half / 1 / 1½ / 2 stepper, and the
  * summary under it shows the salt of this plate against today's limit and the key nutrients, live. Salt is part of the meal, not a separate log.
  */
-export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
-  const personId = useActingPersonId() ?? ''
+export default function PlateSheet({ onDone, personId: forPerson }: { onDone(msg: string): void; personId?: string }) {
+  const acting = useActingPersonId() ?? ''
+  const personId = forPerson ?? acting // an explicit person (Food screen, carer logging for Ma) beats the signed-in one
   const can = useActingCan()
   const locked = !!can && !can.log
   const history = useFood(personId, 30)

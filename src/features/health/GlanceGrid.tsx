@@ -39,9 +39,11 @@ export function labsLine(readings: Reading[], thresholds: Thresholds): string {
   const labs = readings.filter((r) => !isVital(r.test) && Number.isFinite(Date.parse(r.takenAt)))
   if (!labs.length) return 'No papers yet'
   const rows = latestByTest(labs).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
-  const ask = groupLabs(rows).ask.length
+  const g = groupLabs(rows)
   const last = [...labs].sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]!
-  return `${ask ? `${ask} to ask` : 'All in range'} · ${labDate(last.takenAt, true)}`
+  // a result with no printed range is neither in nor out of range: never counted as "in range" (ML-12)
+  const head = g.ask.length ? `${g.ask.length} to ask` : g.noRange.length === rows.length ? 'No range printed' : g.noRange.length ? 'None to ask' : 'All in range'
+  return `${head} · ${labDate(last.takenAt, true)}`
 }
 
 /** Today's doses done over due, live. Null until the medicines are read; "No medicines yet" when none. */
@@ -104,13 +106,22 @@ export function useNudge(personId: string, readings: Reading[]) {
   return useMemo(() => computeNudge({ personId, readings, meds, now: new Date(), ...rows }), [personId, readings, meds, rows])
 }
 
+/** The row's headline. The BP goal stays open until 3 days, so with a reading already in today it must not claim none was logged. */
+export function nudgeTitle(next: Goal | null, allMet: boolean, bpToday: boolean): string {
+  if (allMet) return 'Great week'
+  if (!next) return 'Nice. Everything for this week is done.'
+  if (next.id !== 'bp') return next.step
+  return bpToday ? `BP logged today · ${next.say}` : 'Morning BP not logged'
+}
+
 const RING_HUE: Record<string, Goal['id']> = { BP: 'bp', Meals: 'meals', Move: 'move' }
 
-/** Nudge row (88 px): three rings (BP, Meals, Move) with their count as visible text, what to log next, the family streak, and "Log". The row opens the guided check (#health/nudge). */
+/** Nudge row (88 px): three rings (BP, Meals, Move) with their count as visible text, what to log next, the logging streak, and "Log". The row opens the guided check (#health/nudge). */
 export function NudgeRow({ personId, readings, canLog, onAdd }: { personId: string; readings: Reading[]; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
   const { next, streak, goals, allMet } = useNudge(personId, readings)
-  const title = allMet ? 'Great week' : next ? (next.id === 'bp' ? 'Morning BP not logged' : next.step) : 'Nice. Everything for this week is done.'
-  const streakLine = streak == null ? 'Start your streak' : `Family streak ${streak >= 30 ? '30+' : streak} ${streak === 1 ? 'day' : 'days'}`
+  const title = nudgeTitle(next, allMet, readings.some((r) => r.personId === personId && (r.test === 'bp_systolic' || r.test === 'bp_diastolic') && dayOf(r.takenAt) === dayOf(new Date())))
+  // nudgeLogic's streak is days with any log for this one person, so it is not called a family streak
+  const streakLine = streak == null ? 'Start your streak' : `Logging streak ${streak >= 30 ? '30+' : streak} ${streak === 1 ? 'day' : 'days'}`
   const log = next && canLog ? (next.cta.sheet
     ? <button type="button" className="btn2 gl-log" data-goal={next.id} onClick={() => onAdd(next.cta.sheet!)}>Log</button>
     : <a className="btn2 gl-log" data-goal={next.id} href={next.cta.href}>Log</a>) : null

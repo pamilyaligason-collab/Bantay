@@ -26,6 +26,7 @@ test('full: body hero, At a glance, nudge row, More in Health, in that order, wi
   await expect(page.getByTestId('glance-labs')).toContainText('to ask')
   await expect(page.getByTestId('nudge')).toContainText('This week')
   await expect(page.getByTestId('nudge')).toContainText(/streak/i)
+  expect((await page.locator('[data-testid="nudge"] a.nr-t').boundingBox())!.width).toBeGreaterThan(120) // the title link must not be squeezed to nothing by the Log button
   await expect(page.getByTestId('browse').locator('a')).toHaveCount(4)
   await expect(page.getByRole('link', { name: /Papers/ })).toHaveCount(0) // Papers moved to Family (D-100)
   await assertBudget(page, 1250)
@@ -79,4 +80,26 @@ test('labs keep the v9 design: eyebrow, source card link, previous switch, v9 fo
   await shot(page, 'health-labs', 'light')
   await page.goto('/#health/metric/hba1c')
   await expect(page.getByTestId('lab-short')).toHaveText('Average sugar over about 3 months')
+})
+
+test('the nudge row link does not cover the overview: a glance tile still opens its own screen', async ({ page }) => {
+  await full(page)
+  await page.getByTestId('glance-meds').click()
+  await expect(page).toHaveURL(/#health\/meds/)
+})
+
+test('a carer who picks Ma logs the meal for Ma, not for themself', async ({ page }) => {
+  await full(page)
+  await page.goto('/#health/nutrition')
+  await page.getByRole('button', { name: /Ma/ }).first().click()
+  await page.getByRole('button', { name: /Log a meal/ }).click()
+  await page.getByRole('group', { name: 'Salty extras on this meal' }).getByRole('button', { name: /^Add Toyo/ }).click()
+  await page.getByRole('button', { name: 'Save meal' }).click()
+  await expect(page.getByRole('status').filter({ hasText: /^Saved 1 food/ })).toBeVisible()
+  const who = await page.evaluate(() => new Promise<string[]>((res, rej) => {
+    const o = indexedDB.open('bantay-log')
+    o.onerror = () => rej(o.error)
+    o.onsuccess = () => { const g = o.result.transaction('food').objectStore('food').getAll(); g.onsuccess = () => { o.result.close(); res((g.result as { personId: string }[]).map((x) => x.personId)) } }
+  }))
+  expect(who).toEqual(['ma'])
 })

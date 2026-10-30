@@ -7,6 +7,7 @@ import { FOODS, foodByKey } from './logic'
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p-me' }))
 vi.mock('./hooks', () => ({ useFood: () => [], useGoal: () => ({ sodiumMg: 2000, waterMl: 1500, potassiumMg: null, sex: null }) }))
 afterEach(cleanup)
+vi.setConfig({ testTimeout: 30_000 }) // the dish grid renders slowly when the full suite loads the machine
 const logPlate = vi.fn(async () => 'ok' as const)
 vi.mock('./actions', () => ({ logPlate: (...a: unknown[]) => (logPlate as (...x: unknown[]) => Promise<'ok'>)(...a), logSameAsYesterday: async () => ({ result: 'ok', added: 0 }) }))
 
@@ -82,5 +83,17 @@ describe('PlateSheet meal flow', () => {
     const [items] = logPlate.mock.calls[0] as unknown as [{ food: { key: string; name: string; sodium_mg: number | null }; portion: number }[]]
     expect(items[0]).toMatchObject({ food: { key: '', name: 'Kakanin ni Lola', sodium_mg: null }, portion: 1 })
     expect(done).toHaveBeenCalled()
+  })
+})
+
+describe('PlateSheet person', () => {
+  it('logs for the explicit person (a carer logging for Ma), not the signed-in one', async () => {
+    const u = userEvent.setup()
+    logPlate.mockClear()
+    render(<PlateSheet personId="p-ma" onDone={() => {}} />)
+    await u.click(within(screen.getByRole('group', { name: 'Salty extras on this meal' })).getByRole('button', { name: /^Add Toyo/ }))
+    await u.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(logPlate).toHaveBeenCalledTimes(1)
+    expect((logPlate.mock.calls[0] as unknown[])[3]).toBe('p-ma')
   })
 })

@@ -49,7 +49,7 @@ function Card({ m, onOpen }: { m: Move; onOpen: (m: Move) => void }) {
   return (
     <li>
       <button type="button" className="mv-card" onClick={() => onOpen(m)}>
-        <Icon name={GROUP_ICON[m.group]} tone="vitals" boxed size={24} />
+        <Icon name={GROUP_ICON[m.group]} tone="vitals" boxed size={20} />
         <span className="mv-card-t"><b>{m.name}</b><small>{GROUP_WORD[m.group]} · {POSTURE_WORD[m.posture]} · {amount(m)}{m.video ? ' · Video' : ''}</small></span>
         <Icon name="chev" size={20} />
       </button>
@@ -97,7 +97,7 @@ export default function MovePanel({ notify, lockLog }: { notify?: (msg: string) 
     return (
       <div className="mv" data-testid="move-detail">
         <button type="button" className="mv-back" onClick={() => { setOpen(null); setErr('') }}><Icon name="back" size={20} />All moves</button>
-        <div className="mv-head"><Icon name={GROUP_ICON[open.group]} tone="vitals" boxed size={24} /><div><h3>{open.name}</h3><p className="sub">{open.tl} · {POSTURE_WORD[open.posture]} · {amount(open)}</p></div></div>
+        <div className="mv-head"><Icon name={GROUP_ICON[open.group]} tone="vitals" boxed size={20} /><div><h3>{open.name}</h3><p className="sub">{open.tl} · {POSTURE_WORD[open.posture]} · {amount(open)}</p></div></div>
         {open.video && <LiteVideo id={open.video.id} title={`${open.video.title} (${open.video.channel})`} />}
         <ol className="mv-steps">{open.steps.map((s) => <li key={s}>{s}</li>)}</ol>
         <div className="mv-stop" role="group" aria-label="Stop if">

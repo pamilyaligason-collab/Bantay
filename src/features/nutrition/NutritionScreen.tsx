@@ -62,7 +62,7 @@ export default function NutritionScreen() {
             <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="nu-salt" />
             <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={canMark} personId={personId} />
             {canMark && !plating && <div className="nu-act"><button type="button" className="nu-big-btn" onClick={() => setPlating(true)}><Icon name="meal" size={24} />Log a meal</button></div>}
-            {canMark && plating && <PlateSheet onDone={(m) => { setPlating(false); setSaved(m) }} />}
+            {canMark && plating && <PlateSheet personId={personId} onDone={(m) => { setPlating(false); setSaved(m) }} />}
             {saved && canMark && <p className="nu-sub" role="status">{saved}</p>}
           </section>
 
