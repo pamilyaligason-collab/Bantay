@@ -126,7 +126,7 @@ const typeIn = (label: string, v: string) => fireEvent.change(screen.getByLabelT
 /** Every surface's word for the seeded pair: both Vitals rows, the KPI chip, My week, the headline, the reading list and the add preview on both metric routes, and the guided check. */
 async function wordsOnEverySurface(top: number, bottom: number): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
-  location.hash = '#health'
+  location.hash = '#health/readings' // S16: the rows and the KPI chip live on Readings
   render(<Health />)
   await waitFor(() => expect(txt(document.querySelector('[data-test="bp_diastolic"] .hv-state'))).not.toBe(''), SLOW)
   await waitFor(() => expect(txt(document.querySelector('[data-kpi="bp_systolic"] .kp-chip'))).not.toBe(''), SLOW)
@@ -183,7 +183,7 @@ describe("one BP pair, one person's doctor targets: every surface shows the same
 
   it('185/95 with both targets set: rows, KPI, My week, both headlines and both previews say High with the crisis line; the check goes to the crisis card', async () => {
     await seed([{ key: 'p1:bp_systolic', low: null, high: 115 }, { key: 'p1:bp_diastolic', low: null, high: 75 }], 185, 95)
-    location.hash = '#health'
+    location.hash = '#health/readings' // S16: the rows and the KPI chip live on Readings
     render(<Health />)
     await waitFor(() => expect(txt(document.querySelector('[data-kpi="bp_systolic"] .kp-chip'))).toBe('High'), SLOW)
     await waitFor(() => expect(txt(document.querySelector('[data-test="bp_systolic"] .hv-state'))).toMatch(/^High/), SLOW)

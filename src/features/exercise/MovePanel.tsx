@@ -49,7 +49,7 @@ function Card({ m, onOpen }: { m: Move; onOpen: (m: Move) => void }) {
   return (
     <li>
       <button type="button" className="mv-card" onClick={() => onOpen(m)}>
-        <Icon name={GROUP_ICON[m.group]} tone="vitals" boxed size={22} />
+        <Icon name={GROUP_ICON[m.group]} tone="vitals" boxed size={24} />
         <span className="mv-card-t"><b>{m.name}</b><small>{GROUP_WORD[m.group]} · {POSTURE_WORD[m.posture]} · {amount(m)}{m.video ? ' · Video' : ''}</small></span>
         <Icon name="chev" size={20} />
       </button>
@@ -59,7 +59,7 @@ function Card({ m, onOpen }: { m: Move; onOpen: (m: Move) => void }) {
 
 /** Move: today's plan of 3, all moves by category and sitting or standing, one move at a time with big steps, a video where there is one,
  *  a Stop if box and a Done button that logs it with the minutes the person chooses. */
-export default function MovePanel({ notify }: { notify?: (msg: string) => void }) {
+export default function MovePanel({ notify, lockLog }: { notify?: (msg: string) => void; lockLog?: string }) {
   const d = useMoveData()
   const [open, setOpen] = useState<Move | null>(null)
   const [mins, setMins] = useState(2)
@@ -110,7 +110,8 @@ export default function MovePanel({ notify }: { notify?: (msg: string) => void }
           <button type="button" aria-label="One minute more" disabled={mins >= 60} onClick={() => setMins((n) => Math.min(60, n + 1))}>+</button>
         </div>
         {err && <p className="td-err" role="alert">{err}</p>}
-        <button type="button" className="mv-big" disabled={busy} onClick={() => void done(open)}>Done</button>
+        {lockLog && <p className="sub" role="status">{lockLog}</p>}
+        <button type="button" className="mv-big" disabled={busy || !!lockLog} onClick={() => void done(open)}>Done</button>
       </div>
     )
   }

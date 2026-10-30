@@ -59,6 +59,20 @@ describe('logging', () => {
     expect(await ldb.food.count() + await ldb.water.count() + await db.outbox.count()).toBe(0)
   })
 
+  it('S16: with a named person the plate, the same-as-yesterday copy and the water go to that person, never to the signed-in one', async () => {
+    const now = new Date('2026-10-21T04:00:00Z')
+    expect(await logPlate([{ food: foodByKey('rice_white')!, portion: 1 }], 'lunch', now, 'p-mama')).toBe('ok')
+    expect(await logWater(250, now, 'p-mama')).toBe('ok')
+    expect((await ldb.food.toArray()).map((f) => f.personId)).toEqual(['p-mama'])
+    expect((await ldb.water.toArray()).map((w) => w.personId)).toEqual(['p-mama'])
+    const y = new Date(now.getTime() + 86_400_000)
+    expect((await logSameAsYesterday('lunch', y, 'p-mama')).added).toBe(1)
+    expect((await ldb.food.toArray()).every((f) => f.personId === 'p-mama')).toBe(true)
+    await undoWater(now, 'p-mama')
+    expect(await ldb.water.count()).toBe(0)
+    expect((await ldb.food.where('personId').equals('p-me').count()) + (await ldb.water.where('personId').equals('p-me').count())).toBe(0)
+  })
+
   it('water is 250 ml a tap, undo takes back the latest glass with a tombstone', async () => {
     const now = new Date()
     await logWater(250, new Date(now.getTime() - 60_000))

@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
-// Health overview (M7a): My KPIs, the Vitals Latest | Average | Normal toggle, metric detail with Add reading, Refill, Library, Videos, Explore.
+// Health overview (M7a): My KPIs, the Vitals Latest | Average | Normal toggle, metric detail with Add reading, Refill, Explore (Library and Videos moved to Discover).
 // Made-up data only. M7A_SHOTS=<dir> also writes 390x844 light and dark screenshots.
 const SHOTS = process.env.M7A_SHOTS
 
@@ -41,11 +41,12 @@ test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#health')
-  await expect(page.getByTestId('insight')).toBeVisible() // the health database exists once the screen has read it
+  await expect(page.getByTestId('bodyhero')).toBeVisible() // the health database exists once the screen has read it
   await seed(page, 1)
   await page.reload()
   await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
   await seed(page, 2)
+  await page.goto('/#health/readings') // S16: the KPIs, the seven numbers and Latest | Average | Normal live on Readings
   await page.reload()
   await expect(page.getByTestId('kpis')).toBeVisible()
 })
@@ -56,7 +57,7 @@ test('My KPIs show the latest reading and time; the Vitals toggle switches Lates
   await expect(kpi).toContainText('today')
   await expect(page.getByTestId('kpis').locator('[data-kpi="steps"]')).toContainText('4,210')
   await expect(page.getByRole('link', { name: /^BP 130\/84/ })).toBeVisible() // the body map is the 7-day average
-  await expect(page.getByTestId('avg-note')).toContainText('7-day average')
+  await expect(page.getByTestId('seven')).toContainText('7-day averages')
 
   const row = page.locator('[data-test="bp_systolic"]')
   await expect(page.getByRole('button', { name: 'Latest' })).toHaveAttribute('aria-pressed', 'true')
@@ -127,16 +128,24 @@ test('a lab result opens as a dated list: no period, time-of-day or monthly aver
   await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
 })
 
-test('the Browse grid links to Library, Videos, Refills, Visits and Papers; Labs is one row that opens its own screen', async ({ page }) => {
-  await expect(page.getByRole('link', { name: /^Library/ })).toHaveAttribute('href', '#health/library')
-  await expect(page.getByRole('link', { name: /^Videos/ })).toHaveAttribute('href', '#health/videos')
-  await expect(page.getByRole('link', { name: /^Papers/ })).toHaveAttribute('href', '#health/papers')
-  await expect(page.getByRole('link', { name: /^Refills/ })).toContainText('Metformin 500 mg: 7 days left')
-  await expect(page.getByTestId('labs-row')).toHaveAttribute('href', '#health/labs')
+test('More in Health links to Readings, Body wiki, Move and Visits; the Labs tile opens its own screen', async ({ page }) => {
+  await page.goto('/#health')
+  await expect(page.getByTestId('browse-readings')).toHaveAttribute('href', '#health/readings')
+  await expect(page.getByTestId('browse-move')).toHaveAttribute('href', '#health/move')
+  await expect(page.getByTestId('browse-visits')).toHaveAttribute('href', '#health/visits')
+  await expect(page.getByTestId('glance-labs')).toHaveAttribute('href', '#health/labs')
+  await expect(page.getByRole('link', { name: /^(Library|Videos|Papers)/ })).toHaveCount(0)
+  await page.goto('/#health/meds')
+  await expect(page.getByTestId('refills-door').getByRole('link')).toContainText('Refills')
+})
+
+test('refill rows still read their stock line', async ({ page }) => {
+  await page.goto('/#health/refill')
+  await expect(page.getByTestId('refill-soon')).toContainText('Metformin 500 mg: 7 days left')
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`screens: overview, vitals modes, metric, add reading, refill, library, videos, explore (${scheme}, axe)`, async ({ page }) => {
+  test(`screens: readings, vitals modes, metric, add reading, refill, explore (${scheme}, axe)`, async ({ page }) => {
     test.setTimeout(150_000)
     await page.emulateMedia({ colorScheme: scheme })
     await page.reload()
@@ -161,21 +170,6 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#health/refill')
     await expect(page.getByTestId('refill-soon')).toContainText('Metformin 500 mg: 7 days left')
     await shot(page, 'refill', scheme)
-    expect(await axe(page)).toEqual([])
-
-    await page.goto('/#health/library')
-    await expect(page.getByRole('link', { name: /^Metformin/ })).toBeVisible()
-    await shot(page, 'library', scheme)
-    expect(await axe(page)).toEqual([])
-    await page.route('https://connect.medlineplus.gov/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ feed: { entry: [{ title: { _value: 'Metformin' }, link: [{ href: 'https://medlineplus.gov/druginfo/meds/a696005.html' }], summary: { _value: '<p>Metformin is used to treat type 2 diabetes. It lowers the sugar in your blood.</p>' } }] } }) }))
-    await page.getByRole('link', { name: /^Metformin/ }).click()
-    await expect(page.getByTestId('article')).toContainText('Metformin is used to treat type 2 diabetes')
-    await expect(page.getByTestId('article')).toContainText('From MedlinePlus (U.S. National Library of Medicine), summarised; not medical advice')
-    await shot(page, 'article', scheme)
-
-    await page.goto('/#health/videos')
-    await expect(page.getByRole('heading', { level: 1, name: 'Videos' })).toBeVisible()
-    await shot(page, 'videos', scheme)
     expect(await axe(page)).toEqual([])
 
     await page.goto('/#health/body')

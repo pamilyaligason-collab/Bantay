@@ -1,22 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
-import { BodyMap } from '../features/health/BodyMap'
-import { LabsRow } from '../features/health/LabsList'
 import { LatestList } from '../features/health/LatestList'
-import { Medicines, MedicinesSummary } from '../features/health/Medicines'
-import { canMarkFor, useWritableIds } from '../features/health/useCanMark'
+import { Medicines } from '../features/health/Medicines'
 import MetricScreen from '../features/health/MetricScreen'
 import { insightHeadline } from '../features/health/model'
 import { latestByTest } from '../features/health/ranges'
 import { Kpis } from '../features/health/Kpis'
-import { NudgeCard } from '../features/health/NudgeCard'
 import AddReadingSheet from '../features/health/AddReadingSheet'
 import { entrySpec } from '../features/health/readingPreview'
 import { bpDoctorOf } from '../features/health/verdict'
-import { HealthLinks } from '../features/health/HealthLinks'
-import Library from '../features/health/library/Library'
-import Article from '../features/health/library/Article'
-import Videos from '../features/health/library/Videos'
 import MoveScreen from '../features/exercise/MoveScreen'
 import NutritionScreen from '../features/nutrition/NutritionScreen'
 import Refill from '../features/health/Refill'
@@ -24,20 +16,20 @@ import LabsScreen from '../features/health/LabsScreen'
 import MedDetail from '../features/health/MedDetail'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
-import { averageNodes, isVital } from '../features/health/vitals'
+import { averageNodes } from '../features/health/vitals'
+import { BodyHero } from '../features/health/BodyHero'
+import { GlanceGrid, NudgeRow } from '../features/health/GlanceGrid'
+import { HealthBrowse } from '../features/health/HealthBrowse'
+import { useHealthPerson } from '../features/health/useHealthPerson'
+import { Row, Skeleton } from '../features/look'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
-import { Skeleton, EmptyState } from '../features/look'
 import { SubHeader } from '../features/shell/SubHeader'
-import Records from './Records'
 import { PersonChips } from '../features/records/PersonChips'
-import { useHealthData } from '../features/records/useHealthData'
 import { loadAll } from '../features/records/store'
-import { givenName, properName } from '../features/health/medName'
+import { properName } from '../features/health/medName'
 import NudgeHub from '../features/nudge/NudgeHub'
-import { NudgeEntry } from '../features/nudge/NudgeEntry'
 
-const safeDecode = (s: string) => { try { return decodeURIComponent(s) } catch { return s } }
 const NO_DRAFTS: Record<string, number> = {}
 const METRIC = /^#health\/metric\/([\w-]+)$/
 const MED = /^#health\/med\/([\w-]+)$/ // session 13: medicine detail (lane M); #health/labs is lane L's labs screen
@@ -55,10 +47,7 @@ export default function Health() {
   if (medId) return <MedDetail medicationId={medId} />
   if (hash === '#health/body') return <ExploreScreen />
   if (hash === '#health/meds') return <MedsPage />
-  if (hash === '#health/papers') return <Papers />
-  if (hash === '#health/library') return <Library />
-  if (hash === '#health/videos') return <Videos />
-  if (hash.startsWith('#health/library/')) return <Article rawKey={safeDecode(hash.slice('#health/library/'.length))} />
+  if (hash === '#health/readings') return <ReadingsPage />
   if (hash === '#health/move') return <MoveScreen />
   if (hash === '#health/nutrition') return <NutritionScreen />
   if (hash === '#health/refill') return <Refill />
@@ -69,41 +58,35 @@ export default function Health() {
 }
 
 function Overview() {
-  const { ready, people, member, ownId, personId, setPersonId, readings, thresholds, reload } = useHealthData()
-  const writable = useWritableIds(member?.userId)
+  const { ready, people, ownId, personId, setPersonId, readings, thresholds, reload, canMark: canLog, canEdit, acting, lockReason } = useHealthPerson()
   const [adding, setAdding] = useState<'bp' | 'fasting_glucose' | null>(null)
   const [saved, setSaved] = useState('')
   const acts = useActivity(personId)
   // Default person: the signed-in user; with nobody signed in, the first person who has readings (not just the first name). A tap on a chip wins.
   const picked = useRef(false)
   useEffect(() => {
-    if (!ready || picked.current || ownId || readings.length > 0) return
+    if (!ready || picked.current || ownId || acting || readings.length > 0) return
     let live = true
     void loadAll().then((d) => {
       const withData = d.people.find((p) => d.readings.some((r) => r.personId === p.id)) ?? null
       if (live && !picked.current && withData) setPersonId(withData.id)
     }).catch(() => {})
     return () => { live = false }
-  }, [ready, ownId, readings.length, setPersonId])
+  }, [ready, ownId, acting, readings.length, setPersonId])
   const pick = (id: string) => { picked.current = true; setPersonId(id) }
   const latest = latestByTest(readings)
-  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
-  const raw = insightHeadline(latest, new Date(), familyOf)
-  const head = raw
+  const head = insightHeadline(latest, new Date(), familyOf)
   const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
-  const blank = ready && readings.length === 0 && nodes.every((n) => n.empty)
-  const noVitals = ready && nodes.every((n) => n.empty) // S6: readings but no vitals: ONE empty state (the no-vitals card), no headline or nudge above it. No readings at all keeps the figure + headline
-  const canLog = canMarkFor(personId, ownId, writable)
-  const oneEmpty = blank && canLog // a blank person who can log sees only the figure's empty state and its one action
-  const cta = personId && personId === ownId ? { href: '#today', label: 'Log a reading' } : { href: '#health/papers', label: 'Confirm records' }
+  const blank = ready && nodes.every((n) => n.empty)
+  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
+  const showHead = ready && readings.length > 0 && (!blank || head.tone === 'watch') // labs-only: only a lab out of range warns
   return (
     <>
       <div className="hdr">
         <h1>Health</h1>
       </div>
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
-      {name && <p className="who-chip"><span className="who-av" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span data-testid="showing">{name}</span></p>}
       {!ready && (
         <section className="hv-load" aria-busy="true" aria-label="Health" data-testid="health-loading">
           <span className="hv-sr">Loading</span>
@@ -111,33 +94,12 @@ function Overview() {
           <Skeleton lines={4} />
         </section>
       )}
-      {ready && !oneEmpty && !(noVitals && !blank && head.tone !== 'watch') && ( // a lab out of range this week still warns above the no-vitals card
-        <div className="hv-head" data-tone={head.tone}>
-          <div className="grow">
-            <h2 className="hv-insight" data-testid="insight">{head.title}</h2>
-            <p className="sub hv-sub">{head.sub}</p>
-          </div>
-        </div>
-      )}
-      {ready && !(noVitals && !blank) && personId && <NudgeCard personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
+      {showHead && <p className={`hv-insight2${head.tone === 'watch' ? ' watch' : ''}`} data-testid="insight">{head.title}</p>}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
-      {ready && personId && <Kpis personId={personId} readings={readings} thresholds={thresholds} />}
-      {ready && !blank && noVitals && (
-        <div className="hv-empty-wrap" data-testid="no-vitals">
-          <EmptyState heading="h2" icon="gauge" title={`No vitals yet${name ? ` for ${givenName(name)}` : ''}`} body="Blood pressure, sugar, weight and steps show here once they are logged. Lab results are below." action={canLog ? { label: 'Add a reading', onClick: () => setAdding('bp') } : { label: cta.label, onClick: () => { location.hash = cta.href } }} />
-        </div>
-      )}
-      {ready && !(noVitals && !blank) && (
-        <>
-          <BodyMap nodes={nodes} cta={blank ? cta : undefined} onAdd={blank && canLog ? () => setAdding('bp') : undefined} />
-          {!blank && <p className="sub hv-avgnote" data-testid="avg-note">7-day average on the body map. Tap a part to explore it; the latest readings are in My numbers.</p>}
-        </>
-      )}
-      {ready && <NudgeEntry />}
-      {ready && personId && <MedicinesSummary personId={personId} />}
-      {ready && !blank && <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canLog ? () => setAdding('bp') : undefined} />}
-      {ready && !blank && <LabsRow readings={readings} />}
-      {ready && personId && <HealthLinks personId={personId} jump={{ readings: !blank && readings.some((r) => isVital(r.test)), labs: !blank }} />}
+      {ready && <BodyHero nodes={nodes} blank={blank} canLog={canLog} canEdit={canEdit} onAdd={() => setAdding('bp')} lockReason={lockReason ?? undefined} />}
+      {ready && personId && readings.length > 0 && <GlanceGrid personId={personId} readings={readings} thresholds={thresholds} />}
+      {ready && personId && !blank && <NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
+      {ready && personId && <HealthBrowse personId={personId} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
         return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null
@@ -146,29 +108,49 @@ function Overview() {
   )
 }
 
-/** Health > Medicines: the person chips, then one person's medicines (Today, Active, Paused, Past). */
+/** Health > Readings: all seven numbers (sleep, mood and steps included), My numbers (latest per measure) and Latest | Average | Normal. The doors from the body hero and More in Health land here. */
+function ReadingsPage() {
+  const { ready, people, ownId, personId, setPersonId, readings, thresholds, canMark, reload } = useHealthPerson()
+  const acts = useActivity(personId)
+  const [adding, setAdding] = useState(false)
+  const [saved, setSaved] = useState('')
+  const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
+  const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
+  const spec = entrySpec('bp_systolic')
+  return (
+    <>
+      <SubHeader title="Readings" backHref="#health" backLabel="Back to Health" />
+      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
+      {ready && personId && (
+        <>
+          <section aria-labelledby="rd-h" data-testid="seven">
+            <h2 className="hd" id="rd-h">7-day averages</h2>
+            <div className="rd-list">
+              {nodes.map((n) => <Row key={n.id} icon="gauge" title={`${n.label} ${n.value}`} sub={n.note} href={`#health/metric/${n.code}`} testId={`node-${n.id}`} />)}
+            </div>
+          </section>
+          <Kpis personId={personId} readings={readings} thresholds={thresholds} />
+          <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canMark ? () => setAdding(true) : undefined} />
+        </>
+      )}
+      {adding && personId && spec && <AddReadingSheet spec={spec} personId={personId} forName={properName(people.find((p) => p.id === personId)?.name ?? '')} bpDoctor={bpDoctorOf(thresholds, personId)} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
+    </>
+  )
+}
+
+/** Health > Medicines: the person chips, then one person's medicines (Today, Active, Paused, Past), and the door to Refills. */
 function MedsPage() {
-  const { people, member, ownId, personId, setPersonId } = useHealthData()
-  const writable = useWritableIds(member?.userId)
+  const { people, ownId, personId, setPersonId, canMark, canEdit } = useHealthPerson()
   const name = people.find((p) => p.id === personId)?.name ?? ''
-  const canMark = canMarkFor(personId, ownId, writable)
-  const canEdit = canMark || member?.role === 'admin' // self, writer carer and admin (records_editor) may edit; only self or a writer carer marks a dose
   return (
     <>
       <SubHeader title="Medicines" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="who-chip"><span className="who-av" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span>{name}</span></p>}
       {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMark} canEdit={canEdit} />}
+      <Row icon="clock" title="Refills" sub="Days of medicine left" href="#health/refill" testId="refills-door" />
     </>
   )
 }
 
-/** Health > Papers: the old Records screen (trend, timeline, the check queue) under Health. */
-function Papers() {
-  return (
-    <>
-      <SubHeader title="Papers" backHref="#health" backLabel="Back to Health" />
-      <Records />
-    </>
-  )
-}

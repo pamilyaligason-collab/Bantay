@@ -5,7 +5,6 @@ import { metricLabel } from './model'
 import { isVital } from './vitals'
 import { Icon } from '../shell/Icon'
 import { EmptyState } from '../look/EmptyState'
-import { OriginalLink } from '../records/ConfirmSheet'
 
 /** The number line of one lab: the usual range as a band, "You" on the latest value and, with the Previous switch on, a hollow mark for the one before (D-38). */
 export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null }) {
@@ -74,7 +73,7 @@ export function LabsList({ readings, thresholds, ready, sources }: { readings: R
   if (!ready) return null
   const labs = readings.filter((r) => !isVital(r.test))
   const rows = latestByTest(labs).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
-  if (rows.length === 0) return <EmptyState heading="h2" icon="flask" title="No lab papers yet" body="Snap a lab paper. A person checks it first." action={{ label: 'Scan a paper', onClick: () => { location.hash = '#health/papers' } }} />
+  if (rows.length === 0) return <EmptyState heading="h2" icon="drop" title="No lab papers yet" body="A person checks every number." action={{ label: 'Scan a paper', onClick: () => { location.hash = '#scan' } }} />
   const g = groupLabs(rows)
   const ordered = [...g.ask, ...g.usual, ...g.noRange]
   const shown = filter === 'ask' ? g.ask : filter === 'in' ? g.usual : ordered
@@ -87,25 +86,24 @@ export function LabsList({ readings, thresholds, ready, sources }: { readings: R
   const chip = (id: Filter, label: string, n: number) => <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label} {n}</button>
   return (
     <section aria-label="Lab results" data-testid="labs-list">
-      <div className="grp lb-src" data-testid="lab-source">
-        <b><Icon name="file" size={20} /> Source: {src?.facility ? `${src.facility}, ` : 'lab paper, '}{paperDate}</b>
-        <span className="sub">{allLab ? "Ranges are the lab's own printed ranges, not Bantay's." : 'Where the paper prints no range, a general guide is used and named on the result.'}</span>
-        {src ? <OriginalLink file={src.file} /> : <a className="rx-open" href="#health/papers">Open Papers</a>}
-      </div>
+      <a className="grp lb-src press" href="#family/papers" data-testid="lab-source">
+        <span className="hc-ic"><Icon name="file" size={20} /></span>
+        <span className="grow"><b>{src?.facility ? `${src.facility} · ` : 'Lab paper · '}{paperDate}</b>
+          <span className="sub">{allLab ? "Ranges are the lab's own printed ranges, not Bantay's." : 'Where the paper prints no range, a general guide is used and named on the result.'}</span></span>
+        <Icon name="chev" size={20} />
+      </a>
       <div className="lb-chips" role="group" aria-label="Show">
         {chip('all', 'All', ordered.length)}
         {chip('ask', 'To ask about', g.ask.length)}
         {chip('in', 'In range', g.usual.length)}
       </div>
-      {anyPrev && (
-        <div className="grp lb-sw">
-          <span className="grow"><b>Show previous result</b><span className="sub">A hollow mark on each bar</span></span>
-          <button type="button" className="hv-sw" role="switch" aria-checked={showPrev} aria-label="Show previous result" onClick={() => setShowPrev((p) => !p)}><span className="hv-sw-t" aria-hidden="true" /></button>
-        </div>
-      )}
+      <div className="grp lb-sw">
+        <span className="grow"><b>Show previous result</b><span className="sub">{anyPrev ? 'A hollow mark on each bar' : 'No earlier result yet'}</span></span>
+        <button type="button" className="hv-sw" role="switch" aria-checked={anyPrev && showPrev} aria-label="Show previous result" disabled={!anyPrev} onClick={() => setShowPrev((p) => !p)}><span className="hv-sw-t" aria-hidden="true" /></button>
+      </div>
       {shown.length === 0 && <p className="sub" role="status">{filter === 'ask' ? 'Nothing to ask about. Every result with a range is in it.' : 'No results in the range yet.'}</p>}
       {shown.map((row) => <LabCard key={row.reading.test} row={row} all={labs} family={thresholds.find((t) => t.key === `${row.reading.personId}:${row.reading.test}`)} showPrev={showPrev && anyPrev} />)}
-      <p className="sub" style={{ margin: '8px 4px 0' }}>Outside the range? Ask your doctor. Not a diagnosis or medical advice. Tap a test for more.</p>
+      <p className="sub" style={{ margin: '8px 4px 0' }}>A result outside the range is a question for your doctor, not a diagnosis. Tap a test to see what it means and the last 3 results.</p>
     </section>
   )
 }

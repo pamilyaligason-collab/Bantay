@@ -29,7 +29,7 @@ test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#health')
-  await expect(page.getByTestId('insight')).toBeVisible()
+  await expect(page.getByTestId('bodyhero')).toBeVisible()
   await seed(page)
   await page.reload()
   await page.goto('/#health/labs') // S14: the list is its own screen

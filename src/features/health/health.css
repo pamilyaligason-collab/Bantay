@@ -131,7 +131,9 @@
 
 /* Session 14 lane L: Lab results screen and detail (mockup v8 health-labs, health-labdetail). Prefix lb- / lr- as above. */
 .lb-eyebrow { margin: 4px 4px 0; }
-.lb-src { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; margin-top: 12px; background: var(--soft); box-shadow: none; }
+.lb-src { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-top: 12px; background: var(--hue-lilac); box-shadow: none; color: var(--ink); text-decoration: none; }
+.lb-src .grow { min-width: 0; }
+.lb-src .sub { display: block; }
 .lb-src b { overflow-wrap: anywhere; }
 .lb-src .rx-open, .lb-src .rx-btn { align-self: flex-start; min-height: 48px; }
 .lb-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
@@ -156,3 +158,45 @@
 .lb-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .lb-q { display: flex; align-items: center; gap: 10px; min-height: 56px; }
 .lb-q .btn2 { width: auto; min-width: 72px; min-height: 48px; flex: none; }
+
+/* Session 16 lane L2: Health version B (BodyHero, GlanceGrid, nudge row, More in Health). Scale 4/8/12/16/24/32. */
+.gl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* compact tile (mockup v12: 104 px glance, 80 px More): bare 24 px icon beside the label, the value under both, the ring at the right */
+.gl-grid .tl { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 4px 8px; min-height: 104px; padding: 12px 16px; align-content: start; }
+.gl-grid .hc-ic { grid-column: 1; grid-row: 1; width: 24px; height: 24px; background: none; border-radius: 6px; }
+.gl-grid .tl-txt { display: contents; }
+.gl-grid .tl-label { grid-column: 2; grid-row: 1; font-size: 16px; }
+.gl-grid .tl-value { grid-column: 1 / -1; grid-row: 2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 15px; }
+.gl-grid .rg, .gl-grid .tl-spark { grid-column: 3; grid-row: 1; }
+.gl-grid.more .tl { min-height: 80px; }
+.gl-grid.more .tl-value { -webkit-line-clamp: 1; }
+.bh { margin-top: 12px; }
+.bh .sc { min-height: 0; }
+.bh .sc-body { padding-left: 72px; }
+.bh .sc-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.bh-sub { font-size: 13px; font-weight: 500; color: var(--muted); }
+.bh-scene { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 0 0 16px; background: var(--hue-green); }
+:root[data-theme="dark"] .bh-scene { border-top: 3px solid var(--hue-green-ic); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bh-scene { border-top: 3px solid var(--hue-green-ic); } }
+.bh .hv-fig.bh-fig { grid-column: auto; grid-row: auto; width: 56px; height: 194px; overflow: visible; }
+.bh-blank .bh-fig { width: 40px; height: 138px; opacity: .6; }
+.bh-blank .sc-body { padding-left: 56px; }
+.bh .hv-glow.warn { animation-duration: 3s; }
+.bh-line { margin: 0; }
+.bh-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bh-stat { display: flex; flex-direction: column-reverse; min-height: 44px; color: var(--ink); text-decoration: none; position: relative; }
+.bh-v { font-size: 20px; line-height: 24px; font-weight: 700; overflow-wrap: anywhere; }
+.bh-l { font-size: 13px; line-height: 17px; color: var(--muted); }
+.bh .sc-acts { flex-wrap: nowrap; }
+.bh .sc-acts > .cd-act { flex: 1 1 0; min-width: 0; }
+.nr { padding: 12px 16px; margin-top: 12px; }
+.nr-top { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.nr-t { flex: 1; min-width: 0; font-size: 17px; line-height: 1.3; }
+.gl-log { flex: none; position: relative; z-index: 1; width: auto; min-width: 72px; min-height: 48px; }
+.nr-rings { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.nr-ring { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
+.nr-ring small { font-size: 13px; color: var(--ink); }
+.nr-sub { flex-basis: 100%; font-size: 13px; }
+.rd-list { display: grid; gap: 8px; margin-top: 12px; }
+.hv-insight2 { margin: 12px 4px 0; font-size: 17px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
+.hv-insight2.watch { color: var(--warn); }

@@ -39,7 +39,6 @@ export default function NutritionScreen() {
       .map((r) => ({ takenAt: r.takenAt, value: r.value }))
   }, [readings, personId, now])
   const name = people.find((p) => p.id === personId)?.name ?? ''
-  const mine = !!personId && personId === ownId
 
   const setLimit = async (mg: number) => {
     setMsg('')
@@ -61,10 +60,10 @@ export default function NutritionScreen() {
           <section className="card nu-card" aria-labelledby="nu-salt">
             <h2 id="nu-salt" className="td-sech">Salt and meals today</h2>
             <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="nu-salt" />
-            <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={mine} />
-            {mine && !plating && <div className="nu-act"><button type="button" className="nu-big-btn" onClick={() => setPlating(true)}><Icon name="meal" size={22} />Log a meal</button></div>}
-            {mine && plating && <PlateSheet onDone={(m) => { setPlating(false); setSaved(m) }} />}
-            {saved && mine && <p className="nu-sub" role="status">{saved}</p>}
+            <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={canMark} personId={personId} />
+            {canMark && !plating && <div className="nu-act"><button type="button" className="nu-big-btn" onClick={() => setPlating(true)}><Icon name="meal" size={24} />Log a meal</button></div>}
+            {canMark && plating && <PlateSheet onDone={(m) => { setPlating(false); setSaved(m) }} />}
+            {saved && canMark && <p className="nu-sub" role="status">{saved}</p>}
           </section>
 
           <NutrientsToday personId={personId} entries={today} sodiumMg={goal.sodiumMg} potassiumLimit={goal.potassiumMg} sex={goal.sex} canEdit={canMark} name={name} />

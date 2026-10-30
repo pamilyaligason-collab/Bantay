@@ -18,9 +18,10 @@ export default function LabsScreen() {
   const name = people.find((p) => p.id === personId)?.name
   return (
     <>
+      <p className="eyebrow lb-eyebrow">from the lab's own paper</p>
       <SubHeader title="Lab results" backHref="#health" backLabel="Back to Health" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)} · from lab papers</p>}
+      {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)}</p>}
       <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} />
     </>
   )

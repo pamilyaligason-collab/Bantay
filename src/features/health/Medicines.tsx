@@ -93,7 +93,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
     <section aria-label="Medicines" className="md">
       {canEdit && (
         <div className="md-addrow">
-          <button type="button" className="md-add" onClick={() => open()}><Icon name="plus" size={18} />Add</button>
+          <button type="button" className="md-add" onClick={() => open()}><Icon name="plus" size={20} />Add</button>
         </div>
       )}
       {empty && (
@@ -114,7 +114,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                     <span className="sub">{d.state === 'taken' ? (t ? takenText(t) : 'Taken') : d.state === 'skipped' ? 'Skipped' : 'Not yet'}</span>
                   </span>
                   {t?.id != null && queued.has(t.id) && <QueuedBadge />}
-                  {d.state === 'taken' && <span className="hv-done"><Icon name="check" size={18} /> Taken</span>}
+                  {d.state === 'taken' && <span className="hv-done"><Icon name="check" size={20} /> Taken</span>}
                   {d.state === 'skipped' && <span className="md-tag">Skipped</span>}
                   {d.state === 'pending' && canMark && (
                     <span className="md-rowacts">

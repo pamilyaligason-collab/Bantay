@@ -39,7 +39,7 @@ for (const [w, h] of [[390, 844], [360, 780]] as const) {
         await expect(page.getByTestId('nudge')).toBeVisible()
         await expect(page.getByTestId('nudge')).not.toContainText(/(?<![\d/])0(?![\d/])/)
         if (mode === 'empty') await expect(page.getByTestId('nudge')).toContainText('0/3')
-        if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Done')
+        if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Great week')
         await page.screenshot({ path: `${SHOTS}/health-nudge-${mode}-${w}-${scheme}.png` })
       }
     })
