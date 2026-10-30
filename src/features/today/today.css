@@ -4,7 +4,7 @@
 .td-grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .td-row { display: flex; align-items: center; gap: 12px; }
 .td-row.between { justify-content: space-between; }
-.bt .td-link { color: var(--link); font-weight: 600; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; background: none; border: 0; padding: 0 4px; min-height: 44px; min-width: 44px; }
+.bt .td-link { color: var(--link); font-weight: 600; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; background: none; border: 0; padding: 0 4px; min-height: 48px; min-width: 48px; }
 .td-sech { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px 10px; }
 .td-sech h2, h2.td-sech { font-family: var(--f-ui); font-size: 17px; font-weight: 700; margin: 0; letter-spacing: 0; }
 .td-sech h2 { margin: 0; }
@@ -40,16 +40,16 @@
 /* setup card */
 .td-setup { display: flex; flex-direction: column; gap: 8px; }
 .td-setup ul { margin: 0; padding: 0; list-style: none; }
-.bt .td-setup li button, .bt .td-next { width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--link); font-size: 15px; font-weight: 600; text-align: left; padding: 0; }
+.bt .td-setup li button, .bt .td-next { width: 100%; min-height: 48px; border: 0; background: transparent; color: var(--link); font-size: 15px; font-weight: 600; text-align: left; padding: 0; }
 .td-bar { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
 .td-bar > i { display: block; width: 100%; height: 100%; background: var(--green2); transform-origin: left center; } /* scaleX, not width: compositor only */
 
 /* nearby notices, video */
 .td-list { display: grid; padding-top: 4px; padding-bottom: 4px; }
-.td-lrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 44px; color: var(--ink); text-decoration: none; min-width: 0; box-sizing: border-box; }
+.td-lrow { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-height: 48px; color: var(--ink); text-decoration: none; min-width: 0; box-sizing: border-box; }
 .td-lrow:first-child { border-top: 0; }
 .td-lrow b { font-weight: 600; overflow-wrap: anywhere; }
-.td-more { color: var(--link); font-weight: 600; font-size: 13px; }
+.td-more { color: var(--link); font-weight: 600; font-size: 14px; }
 .td-video { display: flex; gap: 12px; align-items: center; text-decoration: none; color: var(--ink); }
 .td-video b { font-weight: 600; overflow-wrap: anywhere; }
 .td-thumb { width: 96px; height: 68px; border-radius: 16px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, var(--green2), var(--green)); }
@@ -57,13 +57,13 @@
 
 .td-sheet-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .td-sheet-h h2 { font-family: var(--f-display); font-weight: 600; font-size: 22px; margin: 0; }
-.bt .td-x { background: none; border: 0; color: var(--link); font-weight: 600; min-height: 44px; min-width: 44px; padding: 0 4px; }
+.bt .td-x { background: none; border: 0; color: var(--link); font-weight: 600; min-height: 48px; min-width: 48px; padding: 0 4px; }
 .td-form { display: flex; flex-direction: column; gap: 12px; }
 .td-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); font-weight: 600; min-width: 0; }
 .td-form input { font: inherit; font-size: 20px; min-height: 52px; border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; background: var(--card); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
 .td-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .td-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--card2); border-radius: 999px; padding: 3px; }
-.bt .td-seg button { border: 0; background: none; border-radius: 999px; min-height: 44px; font-weight: 600; color: var(--muted); }
+.bt .td-seg button { border: 0; background: none; border-radius: 999px; min-height: 48px; font-weight: 600; color: var(--muted); }
 .bt .td-seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 .bt .td-form .td-pill.solid { background: var(--green); color: var(--on-green); min-height: 52px; font-size: 16px; }
 .bt .td-opt { min-height: 56px; border: 0; border-radius: 18px; background: var(--card2); color: var(--ink); font-size: 17px; font-weight: 600; padding: 0 16px; text-align: left; overflow-wrap: anywhere; }
@@ -206,26 +206,26 @@
 
 /* My week */
 .td-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.td-tile { display: flex; flex-direction: column; gap: 2px; background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; text-decoration: none; color: var(--ink); min-width: 0; box-sizing: border-box; min-height: 44px; }
-.td-tile-l { font-size: 13px; font-weight: 600; color: var(--muted); }
+.td-tile { display: flex; flex-direction: column; gap: 2px; background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 14px; text-decoration: none; color: var(--ink); min-width: 0; box-sizing: border-box; min-height: 48px; }
+.td-tile-l { font-size: 14px; font-weight: 600; color: var(--muted); }
 .td-tile-v { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
 .td-tile-v b { font-family: var(--f-display); font-size: 26px; font-weight: 600; line-height: 1.1; }
-.td-tile-v span { font-size: 13px; color: var(--muted); }
-.td-tile-s { font-size: 13px; color: var(--muted); }
+.td-tile-v span { font-size: 14px; color: var(--muted); }
+.td-tile-s { font-size: 14px; color: var(--muted); }
 .td-tile-f { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; margin-top: 6px; min-height: 28px; }
 .td-spark { width: 72px; height: 28px; flex: none; stroke: var(--green2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .td-spark circle { fill: var(--green2); stroke: none; }
 :root[data-theme="dark"] .td-spark { stroke: var(--amber); }
 :root[data-theme="dark"] .td-spark circle { fill: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-spark { stroke: var(--amber); } :root:not([data-theme="light"]) .td-spark circle { fill: var(--amber); } }
-.td-chip { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--ok); white-space: nowrap; }
+.td-chip { font-size: 14px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--green); white-space: nowrap; }
 .td-chip.high, .td-chip.low { background: var(--warn-bg); color: var(--warn); }
 
 /* family line */
 .td-attn { color: var(--amber-ink); font-weight: 600; }
 
 .td-due { margin: 10px 4px 0; font-size: 15px; font-weight: 600; }
-.td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+.td-due a { color: var(--link); text-decoration: none; display: inline-flex; align-items: center; min-height: 48px; }
 
 /* Late dose: past its slot but still inside the on-time window. Warm brown keeps light text above 4.5:1 in both themes. */
 .bt { --late-bg: color-mix(in srgb, var(--warn) 40%, #000); --late-ink: #F5C468; } /* late dose card: warm brown, light text above 4.5:1 in both themes */
@@ -247,7 +247,7 @@
 .bt[data-simple] .tabbar, .bt[data-simple] .sh-hint { display: none; }
 /* Simple mode fits Hold for help and the dose card in the first screen (390x844, 360x640): 72px buttons, 56px weather strip, Hold for help and Call 911 below it. */
 .td-simple .td-wx { min-height: 56px; }
-.td-simple .td-exit { min-height: 44px; }
+.td-simple .td-exit { min-height: 48px; }
 /* Short phones (360x640): Hold for help shrinks so it and the dose card stay in the first screen. */
 @media (max-height: 700px) { .td-simple .sos-simple-btn { min-height: 64px; } .td-simple .td-slide h2 { font-size: 28px; } }
 
@@ -288,3 +288,11 @@
 .td-saved { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; font-size: 15px; }
 .td-act-box .td-wx-jack { margin-left: auto; margin-top: -6px; margin-bottom: -6px; }
 .td-simple-night { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+/* Dark --green is a fill (1.6:1 on --soft); chip text uses --ok there (UI-16). */
+:root[data-theme="dark"] .td-chip { color: var(--ok); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip { color: var(--ok); } }
+:root[data-theme="dark"] .td-chip.high, :root[data-theme="dark"] .td-chip.low { color: var(--warn); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip.high, :root:not([data-theme="light"]) .td-chip.low { color: var(--warn); } }
+
+/* 200% text (195 px): the weather row stacks instead of breaking words one letter per line; the small weather Jack steps aside. */
+@media (max-width: 300px) { .td-wx-row, .td-act-box { flex-wrap: wrap; } .td-wx-row .td-grow { flex: 1 1 100%; min-width: 0; } .td-wx-jack { display: none; } }

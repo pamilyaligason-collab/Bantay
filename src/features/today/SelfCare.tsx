@@ -65,7 +65,7 @@ export default function SelfCare() {
           <button type="button" className="btn sc-go" onClick={() => setStage({ s: 'run' })}><Icon name="play" size={22} />Start</button>
           <label className="sc-buzz"><input type="checkbox" checked={buzzOn} onChange={(e) => setBuzzOn(e.target.checked)} /> Gentle buzz on each breath</label>
           <p className="sub sc-note">{SAFETY}</p>
-          <p className="sub sc-note">Source: <a href={pat.sourceUrl} target="_blank" rel="noreferrer">{pat.source}</a></p>
+          <p className="sub sc-note"><a href={pat.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Source: ${pat.source}`}>Source</a></p>
           {today && <p className="sub sc-note" role="status">Last time today: {last!.minutes} min{last!.mood ? `, felt ${MOODS[last!.mood - 1]!.word.toLowerCase()}` : ''}</p>}
         </>
       )}

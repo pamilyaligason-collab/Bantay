@@ -5,7 +5,7 @@
 .bc-steps-bar i { height: 6px; border-radius: 3px; background: var(--line); }
 .bc-steps-bar i.on { background: var(--green2); }
 .bc-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); text-decoration: none; }
-.bc-link { min-height: 44px; }
+.bc-link { min-height: 48px; }
 .bc-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .bc-chip { padding: 3px 10px; border-radius: 999px; font-size: 14px; font-weight: 600; background: var(--card2); }
 .bc-ring { align-self: center; display: grid; place-items: center; width: 132px; height: 132px; border-radius: 50%; border: 8px solid var(--soft); text-align: center; }

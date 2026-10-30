@@ -5,9 +5,9 @@
 .sos-err { color: var(--danger, var(--ink)); font-size: 16px; }
 .sos-quick { display: flex; flex-direction: column; gap: 6px; }
 .sos-quick-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.sos-chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2, var(--card)); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
+.sos-chip { min-height: 48px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2, var(--card)); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
 .sos-chip:disabled { opacity: 0.4; }
-.sos-pick { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--act); font: inherit; font-weight: 600; }
+.sos-pick { min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--act); font: inherit; font-weight: 600; }
 
 /* SOS button, flow and history (mockup v6 safety / sos-status) */
 .sos-wrap { display: grid; gap: 8px; justify-items: center; text-align: center; }
@@ -21,7 +21,7 @@
 .sos-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
 .sos-sub { margin: 4px 0 0; max-width: 32ch; }
 .sos-hint { margin: 0; color: var(--warn); font-weight: 600; }
-.sos-alt { min-height: 44px; background: none; border: 0; color: var(--act); font: inherit; font-weight: 600; padding: 0 12px; }
+.sos-alt { min-height: 48px; background: none; border: 0; color: var(--act); font: inherit; font-weight: 600; padding: 0 12px; }
 .sos-confirm { display: grid; gap: 10px; width: 100%; background: var(--red-soft); border-radius: 16px; padding: 14px; }
 .sos-confirm-row { display: flex; gap: 10px; }
 .sos-go, .sos-no, .sos-911, .sos-text, .sos-safe { min-height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 26px; border: 0; font: inherit; font-weight: 700; font-size: 17px; text-decoration: none; padding: 0 18px; text-align: center; flex: 1; }
@@ -46,7 +46,7 @@
 .sos-page .btn2 { box-sizing: border-box; }
 .sos-status { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 14px; display: grid; gap: 8px; }
 .sos-status ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.sos-status li { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.sos-status li { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
 .sos-who { display: grid; min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
 .sos-st-chip { flex: none; min-height: 28px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--soft); color: var(--ink); }
 .sos-st-chip[data-state="ready"], .sos-st-chip[data-state="no-number"] { background: var(--card2); color: var(--muted); }

@@ -138,7 +138,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`empty: one sentence and one button (${scheme})`, async ({ page }) => {
     await open(page, '#health/labs', scheme, [])
     await expect(page.getByRole('heading', { name: 'No lab papers yet' })).toBeVisible()
-    await expect(page.getByText("A person checks every number before it is saved to Mama's record.")).toBeVisible()
+    await expect(page.getByText("Snap a lab paper. A person checks it first.")).toBeVisible()
     await shot(page, 'health-labs-empty', scheme)
     await page.getByRole('button', { name: 'Scan a paper' }).click()
     await expect(page).toHaveURL(/#health\/papers$/)

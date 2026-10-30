@@ -2,16 +2,16 @@
 .dc-head { display: flex; align-items: center; gap: 12px; }
 .dc-head .hdr { flex: 1; }
 .dc-head h1 { font-size: 26px; }
-.dc-head .dc-back { flex: none; width: auto; min-width: 64px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
+.dc-head .dc-back { flex: none; width: auto; min-width: 64px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
 .dc-note { margin: 0 4px; font-size: 15px; }
 .dc-err { margin: 0; color: var(--danger); font-size: 16px; }
 .dc-thumb { width: 44px; height: 32px; border-radius: 6px; background: var(--fill); color: var(--ink); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
 .dc-thumb.miss { background: transparent; border: 1.5px dashed var(--ink2); color: var(--ink2); font-size: 18px; }
-.dc-btn { min-height: 44px; min-width: 44px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 15px; font-weight: 600; background: var(--fill); color: var(--act); cursor: pointer; font-family: inherit; }
+.dc-btn { min-height: 48px; min-width: 48px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 15px; font-weight: 600; background: var(--fill); color: var(--act); cursor: pointer; font-family: inherit; }
 .dc-btn.dc-primary { background: var(--btn); color: var(--btn-fg); }
 .dc-btn:focus-visible, .dc-chip:focus-visible, .dc-vseg button:focus-visible, .dc-sheet button:focus-visible, .dc-sheet select:focus-visible, .dc-sheet input:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .dc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.dc-chip { min-height: 44px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 16px; font-weight: 600; background: var(--fill); color: var(--ink); cursor: pointer; font-family: inherit; }
+.dc-chip { min-height: 48px; border: 0; border-radius: 22px; padding: 0 16px; font-size: 16px; font-weight: 600; background: var(--fill); color: var(--ink); cursor: pointer; font-family: inherit; }
 .dc-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .dc-actions { background: var(--fill); box-shadow: none; }
 .dc-actions .row { cursor: pointer; font-family: inherit; }
@@ -32,7 +32,7 @@
 .dc-vbar h2 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
 .dc-viewer .dc-btn { background: #E5E5EA; color: #004A99; }
 .dc-vseg { margin: 0; background: #E5E5EA; }
-.dc-vseg button { color: #000000; background: transparent; border: 0; min-height: 44px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
+.dc-vseg button { color: #000000; background: transparent; border: 0; min-height: 48px; border-radius: 10px; font: inherit; font-weight: 600; cursor: pointer; }
 .dc-vseg button[aria-pressed="true"] { background: #004A99; color: #FFFFFF; }
 .dc-vbody { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
 .dc-vbody img, .dc-vbody object { width: 100%; height: 100%; object-fit: contain; }

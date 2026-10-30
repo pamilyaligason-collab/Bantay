@@ -68,13 +68,13 @@ function LabCard({ row, all, family, showPrev }: { row: LabRow; all: Reading[]; 
 type Filter = 'all' | 'ask' | 'in'
 
 /** Lab results screen body (mockup v8 health-labs): the source paper (D-9), filter chips, the Previous switch (D-38) and one card per test with its date and whose range it is. */
-export function LabsList({ readings, thresholds, ready, sources, name }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; sources: Map<string, LabSource>; name?: string }) {
+export function LabsList({ readings, thresholds, ready, sources }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; sources: Map<string, LabSource> }) {
   const [filter, setFilter] = useState<Filter>('all')
   const [showPrev, setShowPrev] = useState(true)
   if (!ready) return null
   const labs = readings.filter((r) => !isVital(r.test))
   const rows = latestByTest(labs).map((r) => labRow(r, thresholds.find((t) => t.key === `${r.personId}:${r.test}`)))
-  if (rows.length === 0) return <EmptyState heading="h2" icon="drop" title="No lab papers yet" body={`Take a photo of a lab paper. A person checks every number before it is saved to ${name ? `${name}'s` : 'the'} record.`} action={{ label: 'Scan a paper', onClick: () => { location.hash = '#health/papers' } }} />
+  if (rows.length === 0) return <EmptyState heading="h2" icon="flask" title="No lab papers yet" body="Snap a lab paper. A person checks it first." action={{ label: 'Scan a paper', onClick: () => { location.hash = '#health/papers' } }} />
   const g = groupLabs(rows)
   const ordered = [...g.ask, ...g.usual, ...g.noRange]
   const shown = filter === 'ask' ? g.ask : filter === 'in' ? g.usual : ordered
@@ -105,7 +105,7 @@ export function LabsList({ readings, thresholds, ready, sources, name }: { readi
       )}
       {shown.length === 0 && <p className="sub" role="status">{filter === 'ask' ? 'Nothing to ask about. Every result with a range is in it.' : 'No results in the range yet.'}</p>}
       {shown.map((row) => <LabCard key={row.reading.test} row={row} all={labs} family={thresholds.find((t) => t.key === `${row.reading.personId}:${row.reading.test}`)} showPrev={showPrev && anyPrev} />)}
-      <p className="sub" style={{ margin: '8px 4px 0' }}>A result outside the range is a question for your doctor, not a diagnosis. Tap a test to see what it means and the last 3 results. Ranges are for information only and are not medical advice.</p>
+      <p className="sub" style={{ margin: '8px 4px 0' }}>Outside the range? Ask your doctor. Not a diagnosis or medical advice. Tap a test for more.</p>
     </section>
   )
 }

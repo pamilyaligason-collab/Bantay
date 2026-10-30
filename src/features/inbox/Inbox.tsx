@@ -1,3 +1,4 @@
+import { EmptyState } from '../look/EmptyState'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { groupInbox, iconOf, type InboxIcon, type InboxItem } from './build'
@@ -34,11 +35,13 @@ export function Inbox({ inbox, now }: { inbox: Omit<InboxState, 'openRow'> & { o
   return (
     <div className="sh sh-me">
       <SubHeader title="Alerts" backHref="#today" backLabel="Back to Today" trailing={inbox.unread > 0 ? <button type="button" className="in-read" onClick={inbox.markAllRead}>Mark all read</button> : undefined} />
-      <div className="sh-card in-info" role="note"><Icon name="bell" /><div><b>Family alerts show here when you open Bantay</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>Missed doses, storms and SOS from your family appear in this list. The browser app also gets notifications.</p></div></div>
       {inbox.items.length === 0 ? (
-        <div className="sh-card"><b>No alerts yet</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>Warnings, medicine reminders and family alerts show here.</p></div>
+        <EmptyState icon="bell" title="No alerts yet" body="Family alerts show up here." />
       ) : (
-        <>{group('Today', today)}{group('Earlier', earlier)}</>
+        <>
+          <div className="sh-card in-info" role="note"><Icon name="bell" /><div><b>Family alerts show here when you open Bantay</b><p className="sh-sub" style={{ margin: '4px 0 0' }}>Missed doses, storms and SOS from your family appear in this list. The browser app also gets notifications.</p></div></div>
+          {group('Today', today)}{group('Earlier', earlier)}
+        </>
       )}
       <p className="sh-sub" style={{ margin: 0 }}>Alerts never show readings or results. Open Bantay to see more.</p>
     </div>

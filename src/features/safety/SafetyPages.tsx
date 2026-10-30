@@ -23,7 +23,7 @@ import MapsPanel from './MapsPanel'
 import NewsTop5 from './NewsTop5'
 import PhoneAlertsPage from './PhoneAlertsPage'
 import PhoneWarnings from './PhoneWarnings'
-import { WARNINGS_SOURCE_LINE } from './stormMode'
+import { WARNINGS_FALLBACK, WARNINGS_SOURCE_LINE } from './stormMode'
 import Practice from './Practice'
 import SafetyBrief from './SafetyBrief'
 import { useKv } from './store'
@@ -268,6 +268,7 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
         <>
           <section aria-label="Official warnings"><SafetyBrief loc={alertRef(place)} /></section>
           <p className="sub" style={{ margin: '0 4px' }}>{WARNINGS_SOURCE_LINE} <a href="https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin" target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin</a></p>
+          <details className="sub" style={{ margin: '0 4px' }}><summary>If a source is down</summary>{WARNINGS_FALLBACK}</details>
           <PhoneWarnings level={2} />
           <section aria-labelledby="s-news"><h2 id="s-news" className="hd">Safety news</h2><NewsTop5 zone={newsZone(place)} /></section>
         </>

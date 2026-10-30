@@ -198,7 +198,7 @@ test.describe('quick login (D-24)', () => {
     await page.getByRole('button', { name: 'Forgot PIN?' }).click()
     await expect(page.getByRole('heading', { name: 'Forgot your PIN?' })).toBeVisible()
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-    await page.getByRole('button', { name: /Ask a family member to approve/ }).click()
+    await page.getByRole('button', { name: /Ask a family admin to approve/ }).click()
     await expect(page.getByRole('heading', { name: 'Choose a new PIN' })).toBeVisible()
     await keys(page, '246810')
     await expect(page.getByRole('heading', { name: 'Type it again' })).toBeVisible()

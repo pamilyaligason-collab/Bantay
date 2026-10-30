@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
+import { EmptyState } from '../look'
 import { listMessages, listQueued, removeMessage, sendAttachment, sendText, type Msg } from './messagesApi'
 import { BODY_MAX, classifyFile, messengerHref, mmss, pickRecorderMime, stamp, VOICE_MAX_S, shortName } from './messagesLogic'
 import { stripToJpeg } from './memoriesLogic'
@@ -108,9 +109,9 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
 
       {view.kind === 'loading' && <p className="sub" role="status">Loading</p>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <p role="status" data-testid="msg-state"><b>{WORDS[view.kind]}</b></p>}
+      {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <EmptyState jack="family-hug" title="No messages yet" body="Say hello to your family." />}
       {(view.kind === 'ready' || queued.length > 0) && (
         <ul className="msg-list" aria-label="Messages" data-testid="msg-list">
-          {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <li className="sub msg-empty">No messages yet. Say hello.</li>}
           {[...(view.kind === 'ready' ? view.msgs : []), ...queued].map((m) => (
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>
               <span className="msg-by">{nameOf(m)}<time> {stamp(m.createdAt) ?? ''}</time>{m.queued && <b className="msg-q" data-testid="msg-queued"> Queued</b>}</span>
@@ -163,7 +164,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
           <button type="button" className="btn msg-send" onClick={() => void send()} disabled={busy || !text.trim()}><Icon name="send" size={20} />Send</button>
         </div>
         <input ref={file} type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden data-testid="msg-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
-        <p className="sub msg-fine">Texts wait on your phone until there is signal. Voice notes (up to 1 minute) and files (up to 10 MB) need signal. For video, use Messenger.</p>
+        <p className="sub msg-fine">Texts send when online. Voice and files need signal.</p>
       </div>
     </>
   )

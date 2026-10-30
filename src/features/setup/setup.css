@@ -1,5 +1,5 @@
 .wz-top { gap: 8px; }
-.wz-back, .wz-skip { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--act); font-size: 17px; font-weight: 600; border-radius: 12px; }
+.wz-back, .wz-skip { min-width: 48px; min-height: 48px; border: 0; background: transparent; color: var(--act); font-size: 17px; font-weight: 600; border-radius: 12px; }
 .wz-back { display: inline-grid; place-items: center; }
 .wz-back:disabled { opacity: 0.3; }
 .wz-dots { display: flex; justify-content: center; gap: 2px; flex-wrap: wrap; }
@@ -11,11 +11,11 @@
 .wz-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
 .wz-row + .wz-row { border-top: 0.5px solid var(--sep); }
 .wz-row .grow strong { font-weight: 600; }
-.btn2.wz-sm { width: auto; min-height: 44px; font-size: 15px; padding: 0 14px; flex: none; }
+.btn2.wz-sm { width: auto; min-height: 48px; font-size: 15px; padding: 0 14px; flex: none; }
 .btn2.wz-sm[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .wz-field { display: flex; align-items: center; gap: 8px; padding: 10px 16px; }
 .wz-field label { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.wz-field input { font: inherit; min-height: 44px; border: 1px solid var(--sep); border-radius: 10px; padding: 0 12px; background: var(--cell); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
+.wz-field input { font: inherit; min-height: 48px; border: 1px solid var(--sep); border-radius: 10px; padding: 0 12px; background: var(--cell); color: var(--ink); min-width: 0; width: 100%; box-sizing: border-box; }
 label.wz-field { flex-direction: column; align-items: stretch; }
 .wz-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background: var(--fill); margin: 0 auto; display: block; }
 .wz-file { display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; }
@@ -24,14 +24,14 @@ label.wz-field { flex-direction: column; align-items: stretch; }
 .wz-ov { position: fixed; inset: 0; z-index: 60; background: var(--bg); padding-top: var(--sat); box-sizing: border-box; }
 .wz-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; }
 .wz-card ul { margin: 0; padding: 0; list-style: none; }
-.wz-card li button { width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--act); font-size: 16px; font-weight: 600; text-align: left; padding: 0; }
+.wz-card li button { width: 100%; min-height: 48px; border: 0; background: transparent; color: var(--act); font-size: 16px; font-weight: 600; text-align: left; padding: 0; }
 .wz-chipfield { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
 .wz-chipfield + .wz-chipfield { border-top: 0.5px solid var(--sep); }
 .wz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.wz-chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
+.wz-chip { min-height: 48px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--sep); background: var(--cell); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
 .wz-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); border-color: var(--btn); }
 .wz-other { display: flex; gap: 8px; align-items: center; }
-.wz-other input { flex: 1; font: inherit; min-height: 44px; border: 1px solid var(--sep); border-radius: 10px; padding: 0 12px; background: var(--cell); color: var(--ink); min-width: 0; box-sizing: border-box; }
+.wz-other input { flex: 1; font: inherit; min-height: 48px; border: 1px solid var(--sep); border-radius: 10px; padding: 0 12px; background: var(--cell); color: var(--ink); min-width: 0; box-sizing: border-box; }
 
 /* Approve a PIN reset (start-approve-req): a sheet over the family member's own app. */
 .ap-back { position: fixed; inset: 0; z-index: 70; background: rgba(10,15,10,.4); display: flex; align-items: flex-end; }

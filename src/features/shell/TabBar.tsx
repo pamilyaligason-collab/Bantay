@@ -21,13 +21,16 @@ export function TabBar({ active }: { active: Tab | null }) {
   const pill = { '--slot': Math.max(at, 0), '--pill': at < 0 ? 0 : 1 } as CSSProperties
   return (
     <nav aria-label="Main" className="tabbar sh sh-tabs" style={pill}>
-      {ITEMS.map((t) => (
-        <button key={t.id} type="button" aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
+      {ITEMS.map((t) => {
+        const alerts = t.id === 'family' && unseen > 0 ? `${unseen} new alert${unseen === 1 ? '' : 's'}` : ''
+        return (
+        <button key={t.id} type="button" aria-label={alerts ? `${t.label}, ${alerts}` : t.label} aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
           <Icon name={t.icon} />
-          {t.label}
-          {t.id === 'family' && unseen > 0 && <span className="sh-tabbadge" role="img" aria-label={`${unseen} new alert${unseen === 1 ? '' : 's'}`} />}
+          <span>{t.label}</span>
+          {alerts && <span className="sh-tabbadge" role="img" aria-label={alerts} />}
         </button>
-      ))}
+        )
+      })}
     </nav>
   )
 }

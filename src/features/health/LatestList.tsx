@@ -11,8 +11,8 @@ const open = (code: string) => { location.hash = `#health/metric/${code}` }
 export type VitalsMode = 'latest' | 'average' | 'normal'
 const MODES: { id: VitalsMode; label: string }[] = [{ id: 'latest', label: 'Latest' }, { id: 'average', label: 'Average' }, { id: 'normal', label: 'Normal' }]
 const MODE_LINE: Record<VitalsMode, string> = {
-  latest: 'Showing your latest reading for each. The green band is the normal range.',
-  average: 'Showing the average of the last 7 days. The green band is the normal range.',
+  latest: 'Latest readings. Green band = normal.',
+  average: '7-day averages. Green band = normal.',
   normal: 'The standard ranges for adults. Your doctor may set a different target for you.'
 }
 

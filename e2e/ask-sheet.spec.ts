@@ -95,9 +95,10 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 }) // the hint shows only where it covers no text (UI-1); this size has a clear spot
       await skipOnboarding(page)
       await page.goto('/#today')
-      await expect(page.getByText('Ask me anything')).toBeVisible()
+      await expect(page.getByText(/Ask me anything/)).toBeVisible()
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').include('.sh-jackfab').include('.sh-hint').analyze()
       expect(res.violations).toEqual([])
     })
@@ -133,19 +134,20 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('the one-time hint shows, never covers the Jack button, and is gone after the first open', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 })
       await skipOnboarding(page)
       await page.goto('/#today')
-      const hint = page.getByText('Ask me anything')
+      const hint = page.getByText(/Ask me anything/)
       await expect(hint).toBeVisible()
       const h = (await hint.boundingBox())!
       const a = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
-      expect(h.x + h.width).toBeLessThanOrEqual(a.x) // the bubble sits left of the button
+      expect(h.y + h.height).toBeLessThanOrEqual(a.y) // the bubble sits above the button, clear of the SOS caption (UI-1)
       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.keyboard.press('Escape')
       await expect(hint).toHaveCount(0)
       await page.reload()
       await page.waitForTimeout(300)
-      await expect(page.getByText('Ask me anything')).toHaveCount(0)
+      await expect(page.getByText(/Ask me anything/)).toHaveCount(0)
     })
   })
 }

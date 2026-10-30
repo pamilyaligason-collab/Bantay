@@ -7,7 +7,7 @@
 .pv-where { display: grid; gap: 6px; }
 .pv-where ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
 .pv-where li b { color: var(--ink); }
-.pv-link { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; color: var(--green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.pv-link { align-self: flex-start; min-height: 48px; display: inline-flex; align-items: center; color: var(--green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .pv-notice { margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--soft); color: var(--ink); font-size: 14px; }
 .pv-notice a { color: var(--green); font-weight: 600; }
 

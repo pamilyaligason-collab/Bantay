@@ -186,8 +186,8 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
       <section aria-label="Season and sun" className="card wx-season">
         <h2 className="wx-h">Season and sun</h2>
         {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
-        <p className="wx-sub">Rain this month and the November to February outlook: see the PAGASA climate outlook (link below). The app does not guess a monthly normal.</p>
-        <p className="wx-sub">Typhoons usually form June to November; outer rain bands and strong winds can reach the south. Heat index bands are the PAGASA ones above.</p>
+        <p className="wx-sub">Monthly outlook: see PAGASA (link below).</p>
+        <p className="wx-sub">Typhoon season: June to November.</p>
       </section>
     </>
   )

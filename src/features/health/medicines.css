@@ -1,13 +1,13 @@
 /* Medicines screen, review line, edit sheet, undo toast (lane M2). App tokens only. */
 .md-addrow { display: flex; justify-content: flex-end; margin: 4px 0 0; }
-.md-add { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; }
+.md-add { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; }
 .md-sech { display: flex; align-items: baseline; justify-content: space-between; margin-top: 16px; }
 .md-sech .hd { margin-bottom: 8px; }
 .md-dose { align-items: center; flex-wrap: wrap; }
 .md-tm { flex: none; width: 70px; font-weight: 700; font-size: 15px; }
 .md-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 120px; overflow-wrap: anywhere; }
 .md-rowacts { display: flex; gap: 8px; flex-basis: 100%; margin-left: 82px; }
-.md-pill { min-height: 44px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill, var(--card2)); color: var(--act); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
+.md-pill { min-height: 48px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill, var(--card2)); color: var(--act); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
 .md-pill.md-pri { background: var(--btn); color: var(--btn-fg); }
 .md-pill:disabled { opacity: 0.5; }
 .md-pill:focus-visible, .md-add:focus-visible, .md-medrow:focus-visible, .md-undo:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
@@ -40,7 +40,7 @@ div.md-medrow { cursor: default; }
 .bt .md-acts .md-del { background: var(--red-soft); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--red); }
 .md-help { margin: 0; font-size: 14px; }
 .md-toast { display: flex; align-items: center; gap: 10px; width: max-content; }
-.md-undo { min-height: 44px; min-width: 56px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-weight: 700; }
+.md-undo { min-height: 48px; min-width: 56px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-weight: 700; }
 .md-foot { position: sticky; bottom: -28px; margin: 0 -20px -28px; padding: 10px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--card); border-top: 0.5px solid var(--sep); z-index: 1; }
 .md-acts[data-two] { grid-template-columns: 1fr 1fr; }
 .md-dup { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; font-weight: 600; }
@@ -52,11 +52,12 @@ div.md-medrow { cursor: default; }
 .md-medrow.md-link > .md-tag { flex: none; }
 .md-medrow.md-link > svg { flex: none; color: var(--muted); }
 .md-medrow.md-link:focus-visible, .md-plink:focus-visible, a.md-pill:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.md-plink { color: var(--ink); text-decoration: none; min-height: 44px; justify-content: center; }
+.md-plink { color: var(--ink); text-decoration: none; min-height: 48px; justify-content: center; }
 a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .md-weekline { margin: 12px 4px 0; }
-.md-empty { align-items: center; }
-.md-jack { flex: none; width: 88px; height: 88px; object-fit: contain; }
+.md-prog { display: inline-flex; align-items: center; gap: 8px; }
+.md-rtrack { fill: none; stroke: var(--line); stroke-width: 6; }
+.md-rarc { fill: none; stroke: var(--ok); stroke-width: 6; stroke-linecap: round; }
 .md-detail { display: flex; flex-direction: column; gap: 12px; }
 .md-eyebrow { margin: -4px 4px 0; }
 .md-facts { display: grid; gap: 10px; }
@@ -84,3 +85,4 @@ a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify
 .md-strip li[data-state="missed"] i { background: var(--red-soft); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
 .md-legend, .md-miss { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) { .md-strip i { transition: none; } }
+.md-tag svg { vertical-align: -2px; margin-right: 4px; }

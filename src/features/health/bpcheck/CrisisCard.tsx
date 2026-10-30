@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useHasWriterCarer } from '../../today/actions'
 import type { Crisis } from '../readingPreview'
 import './bpcheck.css'
 
@@ -6,10 +7,12 @@ import './bpcheck.css'
  *  Copy needs clinician sign-off (docs/session-8/CLINICAL-REVIEW.md "Session 10 safety"). 911 opens the phone's dialer with the number typed in; Bantay never places an emergency call itself.
  *  The family row is raised by the server whatever is tapped here (migration 0035), so the line says so and promises nothing about a push (D-78). */
 const FAMILY = 'Your family will see this in Bantay.'
+const CALL_FAMILY = 'Tell your family now. Bantay may not reach them.'
 const Call911 = () => <a className="pill primary bc-911" href="tel:911">Call 911</a>
 
 /** fresh: false when the reading is older than the 2 hours the server alert covers (0035): the family line is then left out rather than promised. */
-export default function CrisisCard({ kind, doctor, fresh = true, onClose }: { kind: Crisis; doctor?: string; fresh?: boolean; onClose: () => void }) {
+export default function CrisisCard({ kind, doctor, fresh = true, personId, onClose }: { kind: Crisis; doctor?: string; fresh?: boolean; personId?: string; onClose: () => void }) {
+  const writer = useHasWriterCarer(personId) // the server alert goes to writer carers only; with none (or unknown) we promise nothing
   const dr = doctor?.trim() || 'your doctor'
   const [ans, setAns] = useState<'yes' | 'no' | null>(null)
   const done = <button type="button" className="pill ghost bc-close" onClick={onClose}>Close</button>
@@ -17,7 +20,7 @@ export default function CrisisCard({ kind, doctor, fresh = true, onClose }: { ki
     <div className="bc-crisis" role="alert" data-testid="crisis-card" data-kind={kind}>
       <h3 className="bc-ct">{title}</h3>
       {children}
-      {fresh && <p className="sub bc-fam">{FAMILY}</p>}
+      {fresh && <p className="sub bc-fam">{writer ? FAMILY : CALL_FAMILY}</p>}
     </div>
   )
 

@@ -8,7 +8,7 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, type Alert, freshness, newestChecked, rankAlerts, SOURCES_LINE } from './alerts'
+import { ALERTS_KEY, type Alert, freshness, newestChecked, rankAlerts, SOURCES_FULL, SOURCES_LINE } from './alerts'
 import { FreshLine, useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
@@ -114,6 +114,7 @@ export default function SafetyHub({ place }: { place: Place }) {
     <>
       <Group id="sf-g-alerts" tone="alerts" title="Alerts and official sources" sub={SOURCES_LINE}>
         <FreshLine checkedAt={newestChecked(alerts)} />
+        <details className="sf-sources"><summary>Sources</summary><p className="sub">{SOURCES_FULL}</p></details>
         <nav className="sf-tiles" aria-label="Safety topics: alerts">{by(['#safety/warnings', '#weather', '#safety/storms', '#safety/map', '#safety/hazards', '#safety/phonewarn'])}</nav>
       </Group>
       <Group id="sf-g-hot" tone="hotlines" title="Hotlines" sub="Numbers to call, and what you sent before.">

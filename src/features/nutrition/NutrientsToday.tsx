@@ -105,14 +105,14 @@ export default function NutrientsToday({ personId, entries, sodiumMg, potassiumL
           ))}
         </ul>
       )}
-      {supplements.some((s) => s.nutrient && s.perDose != null) && <p className="nu-sub">The strength on a medicine may be the salt, not the mineral itself (calcium carbonate 500 mg holds about 200 mg of calcium), so a bar can read high. Check the label.</p>}
+      {supplements.some((s) => s.nutrient && s.perDose != null) && <p className="nu-sub">Supplement bars may read high. Check the label.</p>}
       {supplements.some((s) => s.nutrient && s.perDose == null) && <p className="nu-sub">A supplement with no amount (for example 500 mg) on the medicine list is not counted in a bar.</p>}
       {supplements.some((s) => !s.nutrient) && <p className="nu-sub">Fish oil and multivitamins are listed but not counted in a bar.</p>}
 
       {canEdit && (
         <div className="nu-setup">
           <h3 className="nu-h3" id="nu-k">Doctor&apos;s potassium limit</h3>
-          <p className="nu-sub">Only if a doctor set one (for example for kidney problems). With a limit, potassium is shown as a limit instead of a target.</p>
+          <p className="nu-sub">Only if your doctor set a limit (e.g. kidneys).</p>
           <p className="nu-line" data-testid="k-state">{potassiumLimit == null ? 'No limit set.' : `Limit: ${fmt(potassiumLimit)} mg a day.`}</p>
           <div className="nu-kform">
             <input className="nu-search" inputMode="numeric" value={kDraft} onChange={(e) => setKDraft(e.target.value)} placeholder="2500" aria-labelledby="nu-k" />
@@ -126,7 +126,7 @@ export default function NutrientsToday({ personId, entries, sodiumMg, potassiumL
       <details className="nu-src">
         <summary>Where the targets come from</summary>
         <ul>{[...new Set(BAR_NUTRIENTS.map((n) => n.source))].map((u) => <li key={u}><a href={u} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>{u.replace('https://', '')}<span className="hv-sr"> (opens in new tab)</span></a></li>)}</ul>
-        <p className="nu-sub">Food numbers: USDA FoodData Central (SR Legacy), public domain. Supplement amounts are what the medicine list says; check the label.</p>
+        <p className="nu-sub">Food numbers: USDA estimates. Labels are more exact.</p>
       </details>
     </section>
   )

@@ -8,7 +8,7 @@
 .rm-mapwrap { position: relative; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); isolation: isolate; }
 .rm-map { height: 340px; background: var(--fill); }
 .rm-wait { display: flex; align-items: center; justify-content: center; color: var(--ink2); }
-.rm-recentre { position: absolute; right: 10px; bottom: 28px; z-index: 500; min-height: 44px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--btn); color: var(--btn-fg); font-size: 16px; font-weight: 600; box-shadow: var(--shadow); }
+.rm-recentre { position: absolute; right: 10px; bottom: 28px; z-index: 500; min-height: 48px; padding: 0 16px; border: 0; border-radius: 22px; background: var(--btn); color: var(--btn-fg); font-size: 16px; font-weight: 600; box-shadow: var(--shadow); }
 .rm-pin { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 3px solid #fff; background: var(--green); color: #fff; font: 700 16px var(--f-ui); box-shadow: 0 2px 6px rgba(0,0,0,.35); box-sizing: border-box; }
 .rm-pin.me { width: 22px; height: 22px; margin: 7px; background: #2B6CC4; box-shadow: 0 0 0 6px rgba(43,108,196,.28); }
 .rm-pin.health { background: #C2362B; }
@@ -21,7 +21,7 @@
 .rm-item .grow { display: flex; flex-direction: column; min-width: 0; }
 .rm-item .sub, .rm-sheet .sub { color: var(--ink2); font-size: 14px; margin: 0; }
 .rm-static { cursor: default; }
-.rm-call { width: auto; min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
+.rm-call { width: auto; min-height: 48px; display: inline-flex; align-items: center; text-decoration: none; }
 .rm-badge { flex: none; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
 .rm-badge.ok { background: var(--soft); color: var(--ok); }
 .rm-badge.un { background: var(--warn-bg); color: var(--warn); }

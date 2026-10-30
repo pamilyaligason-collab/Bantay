@@ -30,7 +30,7 @@ async function mock(page: Page, rpc: string[]) {
     if (url.pathname === '/auth/v1/user') return reply(user)
     if (!url.pathname.startsWith('/rest/v1/')) return reply({})
     const t = url.pathname.replace('/rest/v1/', '')
-    if (t.startsWith('rpc/')) { rpc.push(t.slice(4)); return reply(null) }
+    if (t.startsWith('rpc/')) { rpc.push(t.slice(4)); return reply(t === 'rpc/raise_mood_alert' ? 1 : null) } // one writer carer told
     if (t === 'people') return reply(url.searchParams.has('auth_user_id') ? [{ id: 'me' }] : PEOPLE)
     if (t === 'app_roles') return reply([{ role: 'member', handle: null }])
     if (t === 'carers') return reply([{ person_id: 'ma' }])

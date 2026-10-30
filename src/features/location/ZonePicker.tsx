@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { HOME_ZONES } from './geo'
 import { type useLocation, usePlaceFrom } from './useLocation'
 
@@ -9,7 +9,7 @@ const short = (n: string) => n.split(',')[0]!
 export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation> }) {
   const place = usePlaceFrom(loc)
   const [open, setOpen] = useState(false)
-  const [msg, setMsg] = useState('')
+  const [msg, setMsg] = useState<ReactNode>('')
   if (!place) return null
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const label = place.source === 'gps' ? `Near you · ${short(zone.name)}` : place.source === 'gps-abroad' ? `Away · ${short(zone.name)}` : short(zone.name)
@@ -19,7 +19,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
     if (l?.source === 'gps') return setOpen(false)
     const st = await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt')
     setMsg(st === 'denied'
-      ? 'Location is blocked for Bantay. Open your phone Settings, then Apps, Bantay, Permissions, Location, and choose Allow.'
+      ? <>Location is blocked for Bantay.<ol style={{ margin: '4px 0 0', paddingLeft: 22 }}><li>Open your phone Settings.</li><li>Tap Apps, then Bantay.</li><li>Tap Permissions, then Location.</li><li>Choose Allow.</li></ol></>
       : 'We could not find your location. Turn on Location on your phone, go near a window, and try again.')
   }
   const pills: [string, string, boolean, () => void][] = [
@@ -35,7 +35,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
             <button key={id} type="button" className="pill" aria-pressed={on} onClick={go} style={{ background: on ? 'var(--btn)' : 'var(--fill)', color: on ? 'var(--btn-fg)' : 'var(--ink)' }}>{text}</button>
           ))}
           {place.source === 'gps' && <p className="sf-empty" style={{ flexBasis: '100%' }}>Following your phone. Your zone pick is used when you are away from the Philippines or location is off.</p>}
-          {msg && <p className="sf-empty" role="status" style={{ flexBasis: '100%' }}>{msg}</p>}
+          {msg && <div className="sf-empty" role="status" style={{ flexBasis: '100%' }}>{msg}</div>}
         </div>
       )}
     </div>

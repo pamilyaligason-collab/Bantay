@@ -12,7 +12,7 @@
 .lr-search { display: flex; align-items: center; gap: 10px; background: var(--card); border-radius: 999px; padding: 0 16px; min-height: var(--tap, 48px); box-shadow: var(--shadow); color: var(--muted); }
 .lr-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--ink); min-height: var(--tap, 48px); outline-offset: 4px; }
 .lr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.lr-chip { min-height: 44px; padding: 0 16px; font-size: 14px; }
+.lr-chip { min-height: 48px; padding: 0 16px; font-size: 14px; }
 .lr-chip[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 .lr-list { display: grid; padding-top: 6px; padding-bottom: 6px; }
 .lr-list > b { padding: 8px 0 4px; }

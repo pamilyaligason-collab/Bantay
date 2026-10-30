@@ -159,11 +159,11 @@ describe('alert reach', () => {
 
 describe('migrations.json', () => {
   const files = Object.keys(import.meta.glob('../../../../supabase/migrations/*.sql')).map((p) => p.split('/').pop()!).filter((f) => !f.endsWith('.down.sql')).map((f) => f.slice(0, 4))
-  it('is sorted, has no duplicates, skips 0028 and ends with the range 0035 to 0042', () => {
+  it('is sorted, has no duplicates, skips 0028 and ends with the range 0036 to 0043', () => {
     expect([...KNOWN_MIGRATIONS].sort()).toEqual(KNOWN_MIGRATIONS)
     expect(new Set(KNOWN_MIGRATIONS).size).toBe(KNOWN_MIGRATIONS.length)
     expect(KNOWN_MIGRATIONS).not.toContain('0028')
-    expect(KNOWN_MIGRATIONS.slice(-8)).toEqual(['0035', '0036', '0037', '0038', '0039', '0040', '0041', '0042'])
+    expect(KNOWN_MIGRATIONS.slice(-8)).toEqual(['0036', '0037', '0038', '0039', '0040', '0041', '0042', '0043'])
     expect(KNOWN_MIGRATIONS.every((v) => /^\d{4}$/.test(v))).toBe(true)
   })
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
@@ -171,7 +171,7 @@ describe('migrations.json', () => {
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v))).toEqual([])
   })
   it('has no gap except 0028 up to the last number', () => {
-    const all = Array.from({ length: 42 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
+    const all = Array.from({ length: 43 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
     expect(KNOWN_MIGRATIONS).toEqual(all)
   })
 })

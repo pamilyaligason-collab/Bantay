@@ -157,7 +157,7 @@ describe('People', () => {
     expect(within(roll).getByRole('button', { name: /^Kuya Ben, No check-in today/ })).toBeTruthy()
     expect(within(roll).getByText(/^OK 7:40/)).toBeTruthy() // S9: the words are the last check-in
     expect(within(roll).getByText('No check-in yet')).toBeTruthy()
-    expect(within(roll).getAllByTestId('bubble-emoji').map((e) => e.textContent)).toEqual(['✅']) // no sleep icon for a quiet person
+    expect(within(roll).getAllByTestId('bubble-badge').map((e) => e.getAttribute('data-k'))).toEqual(['ok']) // no sleep icon for a quiet person
     expect(screen.queryByText("Today's check-in")).toBeNull() // already logged: no second ask
     expect(screen.queryByText('Phone health data')).toBeNull() // the switches moved to Me
   })

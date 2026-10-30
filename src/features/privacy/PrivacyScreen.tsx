@@ -114,7 +114,7 @@ export default function PrivacyScreen() {
       {confirm && !pending && (
         <div className="sh-card pv-confirm" role="alertdialog" aria-label="Delete my data">
           <b>Delete all your data?</b>
-          <div className="sh-sub">Your readings, medicines, papers, messages and alerts are removed after 7 days. Until then you can undo here. A log of who changed what is kept. Copies in the family&apos;s Google Drive folder are removed by the folder owner.</div>
+          <div className="sh-sub">Deleted in 7 days. You can undo until then. A log of changes is kept. Drive copies: the folder owner deletes them.</div>
           <button type="button" className="sh-pill pv-danger sh-block" disabled={busy} onClick={() => void del()}>Delete my data in 7 days</button>
           <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => setConfirm(false)}>Keep my data</button>
         </div>

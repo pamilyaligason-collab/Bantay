@@ -3,11 +3,12 @@ import { Capacitor } from '@capacitor/core'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const who = vi.hoisted(() => ({ own: 'p1' }))
+const who = vi.hoisted(() => ({ own: 'p1', real: false, offline: false }))
 const sb = vi.hoisted(() => ({ writers: [] as { carer_id: string }[], asked: [] as unknown[] }))
 vi.mock('../auth/client', () => ({ supabase: { from: (t: string) => ({ select: () => { const q = { eq: (k: string, v: unknown) => { sb.asked.push([t, k, v]); return q }, then: (ok: (r: unknown) => unknown) => Promise.resolve({ data: sb.writers, error: null }).then(ok) }; return q } }) } }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
-vi.mock('../records/useHealthData', () => ({ useHealthData: () => ({ people: [{ id: 'p1', name: 'Test Person' }], member: { userId: 'u1', role: 'member' }, ownId: who.own }) }))
+vi.mock('../records/useHealthData', async (orig) => { const actual = await orig<typeof import('../records/useHealthData')>(); return { ...actual, useHealthData: () => who.real ? actual.useHealthData() : ({ people: [{ id: 'p1', name: 'Test Person' }], member: { userId: 'u1', role: 'member' }, ownId: who.own }) } })
+vi.mock('../auth/session', async (orig) => { const actual = await orig<typeof import('../auth/session')>(); return { ...actual, getMember: () => who.offline ? Promise.resolve({ userId: 'u1', personId: null, role: 'member' as const, handle: null }) : actual.getMember() } })
 vi.mock('./useCanMark', async (orig) => ({ ...(await orig<typeof import('./useCanMark')>()), useWritableIds: () => [] }))
 
 import { db } from '../../db'
@@ -15,16 +16,26 @@ import { ldb, type Medication } from '../log/store'
 import { hdb } from '../records/store'
 import { REMIND_FOR } from './reminders'
 import { KEY_ALARM_HEALTH } from '../phonecheck/keys'
+import { renderHook } from '@testing-library/react'
+import { SELF_ID, SELF_USER } from '../sync/profile'
 import MedDetail from './MedDetail'
+import { useHealthData } from '../records/useHealthData'
 import { Medicines } from './Medicines'
 
 const iso = (back: number, h = 12) => { const d = new Date(); d.setDate(d.getDate() - back); d.setHours(h, 0, 0, 0); return d.toISOString() }
 const med = (o: Partial<Medication> = {}): Medication => ({ clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed', schedule: { v: 1, times: ['08:00'] }, ...o })
 
-beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]); await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 1, rearmed: 0, ok: true } }) })
+beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; who.real = false; who.offline = false; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]); await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 1, rearmed: 0, ok: true } }) })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 describe('MedDetail', () => {
+  it('offline: the member has no person yet, so the own id falls back to the id cached on this phone', async () => {
+    who.real = true; who.offline = true
+    await db.kv.bulkPut([{ key: SELF_USER, value: 'u1' }, { key: SELF_ID, value: 'p1' }])
+    const { result } = renderHook(() => useHealthData())
+    await waitFor(() => expect(result.current.ownId).toBe('p1'))
+  })
+
   it('says alarms are not set, not "rings at", when the last alarm plan failed on this phone', async () => {
     await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 0, rearmed: 0, ok: false } })
     await ldb.medications.add(med())
@@ -135,7 +146,7 @@ describe('Medicines list rows', () => {
     expect(within(amlo).getByTestId('med-days').textContent).toBe('Refill in 7 days')
     expect(within(amlo).getByTestId('med-days').className).toContain('warn')
     const los = rows.getByRole('link', { name: /Losartan 50 mg/ })
-    expect(within(los).getByTestId('med-days').textContent).toBe('24 days')
+    expect(within(los).getByTestId('med-days').textContent).toBe('24 days left')
     expect(within(los).getByTestId('med-days').className).not.toContain('warn')
     expect(within(rows.getByRole('link', { name: /Paracetamol/ })).queryByTestId('med-days')).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()

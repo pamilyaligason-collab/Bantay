@@ -43,12 +43,12 @@
 .an-sheet { max-height: 88vh; overflow-y: auto; }
 .an-sheet-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .an-sheet-h h2 { margin: 0; font-size: 24px; overflow-wrap: anywhere; }
-.an-x { min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+.an-x { min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
 .an-sec h3 { margin: 0 0 4px; font-size: 14px; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.04em; }
 .an-sec p { margin: 0; font-size: 16px; line-height: 1.4; }
 .an-sec ul { margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.4; }
 .an-src { margin: 0; font-size: 14px; }
-.an-src a { color: var(--link); font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; }
+.an-src a { color: var(--link); font-weight: 600; display: inline-flex; align-items: center; min-height: 48px; }
 
 .hv-explore { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 4px; min-height: 52px; text-decoration: none; color: var(--ink); font-weight: 600; font-size: 17px; }
 .hv-explore small { display: block; font-size: 13px; font-weight: 400; color: var(--ink2); }

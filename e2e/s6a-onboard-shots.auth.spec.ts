@@ -88,14 +88,14 @@ for (const scheme of ['light', 'dark'] as const) {
 
     await page.getByRole('button', { name: 'Forgot PIN?' }).click()
     await expect(page.getByRole('heading', { name: 'Forgot your PIN?' })).toBeVisible()
-    await expect(page.locator('body')).not.toContainText(/admin/i)
+    await expect(page.locator('body')).toContainText('Ask a family admin to approve') // SEC-1: only an admin approves
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await page.screenshot({ path: `${SHOTS}/start-forgot-${scheme}.png` })
 
-    await page.getByRole('button', { name: /Ask a family member to approve/ }).click()
+    await page.getByRole('button', { name: /Ask a family admin to approve/ }).click()
     await keys(page, '246810')
     await keys(page, '246810')
-    await expect(page.getByRole('heading', { name: 'Asked the family' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Asked the family admin' })).toBeVisible()
     await expect(page.getByText('4821')).toBeVisible()
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await page.screenshot({ path: `${SHOTS}/start-approve-wait-${scheme}.png` })

@@ -3,10 +3,10 @@
 .as-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .as-head h2 { margin: 0; font-size: 22px; }
 .as-head h2 { white-space: nowrap; }
-.as-x, .as-mic { flex: none; width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--fill); color: var(--ink); }
+.as-x, .as-mic { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--fill); color: var(--ink); }
 .as-mic[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .as-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0 4px; flex: none; }
-.as-chip { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 0.5px solid var(--sep); background: var(--cell); color: var(--ink); font-size: 14px; font-weight: 600; }
+.as-chip { min-height: 48px; padding: 0 12px; border-radius: 999px; border: 0.5px solid var(--sep); background: var(--cell); color: var(--ink); font-size: 14px; font-weight: 600; }
 .as-chip:disabled { opacity: .55; }
 .as-note { margin: 0; font-size: 13px; }
 .as-list { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 10px; min-height: 0; overscroll-behavior: contain; }
@@ -19,7 +19,7 @@
 .as-card a { color: var(--act); }
 .as-fields { display: flex; flex-direction: column; gap: 6px; }
 .as-fields label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
-.as-fields input, .as-fields select { min-height: 44px; min-width: 0; flex: 1; max-width: 60%; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 8px; padding: 0 8px; background: var(--cell); color: var(--ink); }
+.as-fields input, .as-fields select { min-height: 48px; min-width: 0; flex: 1; max-width: 60%; font-size: 16px; border: 0.5px solid var(--sep); border-radius: 8px; padding: 0 8px; background: var(--cell); color: var(--ink); }
 .as-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .as-actions .btn, .as-actions .btn2 { flex: 1; min-width: 80px; }
 .as-err { color: var(--danger); font-size: 16px; }
@@ -35,7 +35,7 @@
 
 /* Keyboard open: the container ends where the keyboard starts (visualViewport), so the composer sits right above it with no safe-area gap. */
 .as-back[data-kb="open"] .as-sheet { padding-bottom: 8px; height: min(86dvh, 720px, 100%); }
-.as-clear { margin-left: auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
+.as-clear { margin-left: auto; min-height: 48px; padding: 0 14px; font-size: 15px; }
 
 /* 911 card (mockup ask-emergency) */
 .as-emerg { background: var(--danger-bg); color: #fff; border: 0; gap: 10px; padding: 16px; }
@@ -46,7 +46,7 @@
 .as-911-alt { background: rgba(255,243,239,.16); color: #FFF3EF; font-size: 16px; }
 /* Offline (mockup ask-offline) */
 .as-offline { display: flex; flex-direction: column; gap: 8px; }
-.as-off-banner { padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }
+.as-off-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }
 .as-off-list { display: flex; flex-direction: column; border-radius: 14px; background: var(--cell); border: 0.5px solid var(--sep); overflow: hidden; }
 .as-off-list button { min-height: 52px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 14px; border: 0; border-bottom: 0.5px solid var(--sep); background: transparent; color: var(--ink); font-size: 16px; font-weight: 600; text-align: left; }
 .as-off-list button:last-child { border-bottom: 0; }

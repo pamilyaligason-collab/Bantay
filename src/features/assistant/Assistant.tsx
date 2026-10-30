@@ -348,7 +348,7 @@ export default function Assistant() {
                 </div>
               ))}
               {busy && <p className="sub s14j-row" role="status">{!items.some((m) => m.emergency) && <JackArt name="thinking" size={48} decorative />}Thinking...</p>}
-              {!online && <OfflinePanel contact={contact} go={go} />}
+              {!online && <OfflinePanel contact={contact} go={go} emergency={items.some((m) => m.emergency)} />}
             </div>
             {items.length === 0 && <div className="as-chips" role="group" aria-label="Suggestions">
               {CHIPS.map((c) => (

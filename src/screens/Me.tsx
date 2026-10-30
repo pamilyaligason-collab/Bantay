@@ -172,7 +172,7 @@ export default function Me() {
       </div>
 
       <div className="sh-card sh-list">
-        <div><div className="sh-grow"><b>Quiet hours</b><div className="sh-sub">10 PM to 6 AM, alerts still ring</div></div><Switch label="Quiet hours" on={quiet} onChange={setQuiet} /></div>
+        <div><div className="sh-grow"><b>Quiet hours</b><div className="sh-sub">10 PM to 6 AM. SOS and storm alerts still ring; other family updates are silent</div></div><Switch label="Quiet hours" on={quiet} onChange={setQuiet} /></div>
         <div className="sh-stack">
           <div className="sh-grow"><b>Text size</b><div className="sh-sub">Makes words and buttons bigger</div></div>
           <div className="sh-seg" role="group" aria-label="Text size">

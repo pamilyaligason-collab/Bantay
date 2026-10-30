@@ -87,7 +87,7 @@ export default function BpCheck({ personId, forName, doctor, onClose, onSaved }:
     setStep('result')
   }
 
-  if (crisis) return <Sheet title="Blood pressure" onClose={onClose}><CrisisCard kind={crisis} doctor={doctor} onClose={onClose} /></Sheet>
+  if (crisis) return <Sheet title="Blood pressure" onClose={onClose}><CrisisCard kind={crisis} doctor={doctor} personId={personId} onClose={onClose} /></Sheet>
 
   const avg = first && second ? averagePair(first.p, second) : null
   const wk = week

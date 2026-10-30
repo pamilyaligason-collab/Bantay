@@ -81,6 +81,7 @@ grant execute on function pg_temp.fails(text), pg_temp.ok(boolean, text) to auth
 -- 0034 must be safe to run twice
 \ir ../migrations/0034_pin_reset_erasure.sql
 \ir ../migrations/0035_reading_alerts.sql
+\ir ../migrations/0043_s15_security.sql
 
 -- ===== grants (ML-21) =====
 select pg_temp.ok(not has_function_privilege('anon', 'public.request_pin_reset(text)', 'execute') and not has_function_privilege('authenticated', 'public.request_pin_reset(text)', 'execute'), 'request_pin_reset is revoked from anon and authenticated (admin flow retired)');
@@ -98,7 +99,7 @@ insert into public.pin_reset_requests (id, user_id, method, code, secret_hash) v
  ('a0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-00000000000b', 'family', '1111', 'h2');
 insert into public.carer_alerts (person_id, carer_user_id, kind, template, ref)
 select '10000000-0000-0000-0000-0000000000b1', u, 'pin_approve', 'pin_approve', r
-  from unnest(array['00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000e']::uuid[]) u,
+  from unnest(array['00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000d', '00000000-0000-0000-0000-00000000000e']::uuid[]) u,
        unnest(array['a0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002']) r;
 create function pg_temp.as_user(u text) returns void language plpgsql as $$ begin perform set_config('request.jwt.claim.sub', u, false); end $$;
 grant execute on function pg_temp.as_user(text) to authenticated, anon, service_role;
@@ -110,31 +111,33 @@ select pg_temp.ok((select attempts from public.pin_reset_requests where id = 'a0
 select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000f', '4821') = false, 'F (no app_roles row) cannot approve');
 select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000e', '4821') = false, 'E (disabled) cannot approve even holding a row');
 select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000b', '4821') = false, 'the requester cannot approve their own reset');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '4821') = false, 'the admin cannot approve without the pin_approve row');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '4821') = false, 'C (a non-admin member holding the pin_approve row) cannot approve, even with the right code (SEC-1)');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '0000') = false and (select attempts from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = 0, 'a non-admin with a wrong code costs the request no attempt (SEC-1 refuses before the counter)');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-000000000010', '4821') = false and pg_temp.approve('00000000-0000-0000-0000-00000000000d', '4821') = false, 'other non-admin members are refused too');
 select pg_temp.ok((select attempts from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = 0, 'none of the refusals counted an attempt');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '0000') = false, 'a wrong code is refused');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', 'abcd') = false, 'a malformed code is refused');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '0000') = false, 'a wrong code is refused');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', 'abcd') = false, 'a malformed code is refused');
 select pg_temp.ok((select attempts from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = 2 and (select approved_at from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') is null, 'two wrong tries counted, still unapproved');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '4821') = true, 'C approves with the right code');
-select pg_temp.ok((select approved_by from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = '00000000-0000-0000-0000-00000000000c', 'approved_by is C');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000d', '4821') = false, 'first approval wins: D is refused');
-select pg_temp.ok((select approved_by from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = '00000000-0000-0000-0000-00000000000c', 'approved_by is still C');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '4821') = true, 'the admin A approves with the right code');
+select pg_temp.ok((select approved_by from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = '00000000-0000-0000-0000-00000000000a', 'approved_by is the admin A');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '4821') = false, 'first approval wins: a second approval is refused');
+select pg_temp.ok((select approved_by from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000001') = '00000000-0000-0000-0000-00000000000a', 'approved_by is still the admin A');
 -- 5 wrong codes burn the request
-select pg_temp.approve('00000000-0000-0000-0000-00000000000c', '0000', 'a0000000-0000-0000-0000-000000000002') from generate_series(1, 4);
+select pg_temp.approve('00000000-0000-0000-0000-00000000000a', '0000', 'a0000000-0000-0000-0000-000000000002') from generate_series(1, 4);
 select pg_temp.ok((select used_at from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000002') is null, 'four wrong codes do not burn it yet');
-select pg_temp.approve('00000000-0000-0000-0000-00000000000d', '0000', 'a0000000-0000-0000-0000-000000000002');
+select pg_temp.approve('00000000-0000-0000-0000-00000000000a', '0000', 'a0000000-0000-0000-0000-000000000002');
 select pg_temp.ok((select used_at is not null and attempts = 5 from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000002'), 'the fifth wrong code burns the request (used_at set)');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '1111', 'a0000000-0000-0000-0000-000000000002') = false, 'after burning, even the right code is refused');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '1111', 'a0000000-0000-0000-0000-000000000002') = false, 'after burning, even the right code is refused');
 select pg_temp.ok((select attempts from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000002') = 5 and (select approved_at from public.pin_reset_requests where id = 'a0000000-0000-0000-0000-000000000002') is null, 'attempts stay at 5 and it was never approved');
 -- expired, used, google
 insert into public.pin_reset_requests (id, user_id, method, code, secret_hash, expires_at) values ('a0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-00000000000b', 'family', '2222', 'h3', now() - interval '1 minute');
 insert into public.pin_reset_requests (id, user_id, method, code, secret_hash, used_at) values ('a0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-00000000000b', 'family', '3333', 'h4', now());
 insert into public.pin_reset_requests (id, user_id, method, code, secret_hash) values ('a0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-00000000000b', 'google', '4444', 'h5');
 insert into public.carer_alerts (person_id, carer_user_id, kind, template, ref)
-select '10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000c', 'pin_approve', 'pin_approve', r from unnest(array['a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000005']) r;
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '2222', 'a0000000-0000-0000-0000-000000000003') = false, 'an expired request cannot be approved');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '3333', 'a0000000-0000-0000-0000-000000000004') = false, 'a used request cannot be approved');
-select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000c', '4444', 'a0000000-0000-0000-0000-000000000005') = false, 'a google-method request is never approved by a family member');
+select '10000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000a', 'pin_approve', 'pin_approve', r from unnest(array['a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000005']) r;
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '2222', 'a0000000-0000-0000-0000-000000000003') = false, 'an expired request cannot be approved');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '3333', 'a0000000-0000-0000-0000-000000000004') = false, 'a used request cannot be approved');
+select pg_temp.ok(pg_temp.approve('00000000-0000-0000-0000-00000000000a', '4444', 'a0000000-0000-0000-0000-000000000005') = false, 'a google-method request is never approved by a family member');
 select pg_temp.ok(not pg_temp.fails($$select public.approve_pin_reset(null, '1234')$$) , 'null id as postgres is a quiet false');
 set role anon;
 select pg_temp.ok(pg_temp.fails($$select public.approve_pin_reset('a0000000-0000-0000-0000-000000000001', '4821')$$), 'anon cannot call approve_pin_reset');

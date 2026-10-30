@@ -16,4 +16,4 @@
 .up-gate p { margin: 0; max-width: 32ch; }
 .up-card { white-space: nowrap; flex: none; }
 .up-wrap { z-index: 40; } /* above .up-gate (30) so the sheet opens in front of the full-screen update gate */
-.up-911 { min-height: 44px; display: inline-flex; align-items: center; color: var(--link, var(--ink)); text-decoration: underline; }
+.up-911 { min-height: 48px; display: inline-flex; align-items: center; color: var(--link, var(--ink)); text-decoration: underline; }

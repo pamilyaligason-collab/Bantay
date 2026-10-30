@@ -47,4 +47,16 @@ describe('Assistant thinking Jack (D-91)', () => {
     await screen.findByText('Thinking...')
     expect(thinkingJack()).toHaveLength(0)
   })
+
+  it('offline: the panel wears Jack, but not once an emergency card is on screen', async () => {
+    const nav = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    act(() => { window.dispatchEvent(new Event('offline')) })
+    const offJack = () => document.querySelectorAll('.as-offline img.jack')
+    await screen.findByText('Jack needs the internet. You are offline.')
+    expect(offJack()).toHaveLength(1)
+    await type('he is unconscious')
+    await screen.findByRole('alert')
+    expect(offJack()).toHaveLength(0)
+    nav.mockRestore()
+  })
 })

@@ -78,10 +78,10 @@ export default function Plan() {
       {rows.length === 0 ? (
         <div className="fm-empty-wrap">
           {view === 'done'
-            ? <EmptyState icon="check" title={EMPTY.done} body="Ticked reminders and past events show up here." />
+            ? <EmptyState jack="well-done" title={EMPTY.done} body="Ticked reminders and past events show up here." />
             : byDay && view < today
-              ? <EmptyState icon="calendar" title={`Nothing for ${midSentence(heading)}.`} body="This day has passed. Overdue reminders show under Today." />
-              : <EmptyState icon="calendar" title={byDay ? `Nothing for ${midSentence(heading)}.` : EMPTY.later} body={byDay ? emptyHint(people) : 'Add something to look forward to.'} action={{ label: 'Add to the plan', onClick: add }} />}
+              ? <EmptyState jack="empty-list" title={`Nothing for ${midSentence(heading)}.`} body="This day has passed. Overdue reminders show under Today." />
+              : <EmptyState jack="empty-list" title={byDay ? `Nothing for ${midSentence(heading)}.` : EMPTY.later} body={byDay ? emptyHint(people) : 'Add something to look forward to.'} action={{ label: 'Add to the plan', onClick: add }} />}
         </div>
       ) : (
         <ul className="card fm-list fm-rows" aria-label={heading}>

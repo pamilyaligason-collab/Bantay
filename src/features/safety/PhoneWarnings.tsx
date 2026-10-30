@@ -8,12 +8,12 @@ export const RECHECK_DAYS = 90
 
 export type Platform = 'android' | 'ios' | 'other'
 export type Rec = { items: Record<string, { state: 'on' | 'unsure'; at: string }>; checkedAt: string; os?: string | null }
-type Item = { id: string; platform: 'android' | 'ios'; title: string; steps: string }
+type Item = { id: string; platform: 'android' | 'ios'; title: string; steps: string[] }
 
 export const ITEMS: Item[] = [
-  { id: 'android-eq', platform: 'android', title: 'Android Earthquake Alerts', steps: 'Open Settings, then Safety and emergency, then Earthquake alerts, and turn it on. On some phones it is under Settings, then Location, then Earthquake alerts.' },
-  { id: 'android-wea', platform: 'android', title: 'Wireless emergency alerts', steps: 'Open Settings, then Safety and emergency, then Wireless emergency alerts. Turn on every alert type, including extreme, severe and test alerts.' },
-  { id: 'ios-gov', platform: 'ios', title: 'Government Alerts', steps: 'Open Settings, then Notifications, then scroll to Government Alerts. Turn on Emergency Alerts and Public Safety Alerts.' }
+  { id: 'android-eq', platform: 'android', title: 'Android Earthquake Alerts', steps: ['Open Settings, then Safety and emergency.', 'Tap Earthquake alerts and turn it on.', 'Not there? Try Settings, then Location, then Earthquake alerts.'] },
+  { id: 'android-wea', platform: 'android', title: 'Wireless emergency alerts', steps: ['Open Settings, then Safety and emergency.', 'Tap Wireless emergency alerts.', 'Turn on every alert type, including extreme, severe and test alerts.'] },
+  { id: 'ios-gov', platform: 'ios', title: 'Government Alerts', steps: ['Open Settings, then Notifications.', 'Scroll to Government Alerts.', 'Turn on Emergency Alerts and Public Safety Alerts.'] }
 ]
 
 export function detectPlatform(ua: string): Platform {
@@ -82,7 +82,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
         return (
           <div key={it.id} className="pw-item">
             <strong>{it.title}</strong>
-            <span className="sub">{it.steps}</span>
+            <ol className="sub pw-steps" style={{ margin: 0, paddingLeft: 22 }}>{it.steps.map((t) => <li key={t}>{t}</li>)}</ol>
             {native && OPEN_TARGET[it.id] && <button type="button" className="btn2" aria-label={`Open Settings for ${it.title}`} onClick={() => open(it.id)}>Open Settings</button>}
             {lines[it.id] && <span className="sub" role="status">{lines[it.id]}</span>}
             <div className="pw-btns">
@@ -92,7 +92,7 @@ export default function PhoneWarnings({ ua = navigator.userAgent, now = Date.now
           </div>
         )
       })}
-      <p className="sub" style={{ margin: 0, fontSize: 14 }}>Bantay cannot read your phone settings, so this list is what you tell us. Test messages come from the government, and Bantay cannot send one. If your phone gets one, that tells you the setting works.</p>
+      <p className="sub" style={{ margin: 0, fontSize: 14 }}>Tick what you turned on. A test alert comes from the government, not Bantay. Getting one proves it works.</p>
     </div>
   )
 }
