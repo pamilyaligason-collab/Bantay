@@ -7,24 +7,32 @@ export const platform = (): Platform => {
 }
 export const isNative = () => Capacitor.isNativePlatform()
 
+/** N-1: a Health Connect call that never answers (seen on a phone) must end in a visible error, not "Checking..." forever. */
+export const HC_TIMEOUT_MS = 10_000
+export const within = <T>(p: Promise<T>, ms = HC_TIMEOUT_MS): Promise<T> =>
+  new Promise<T>((ok, no) => {
+    const t = setTimeout(() => no(new Error(`Health Connect did not answer in ${Math.round(ms / 1000)} s`)), ms)
+    p.then((v) => { clearTimeout(t); ok(v) }, (e) => { clearTimeout(t); no(e) })
+  })
+
 /** The real bridge, over @capgo/capacitor-health. The plugin loads only when a method is called on a phone. */
 export function capgoBridge(): HealthBridge {
   let loading: ReturnType<typeof load> | undefined
   const load = () => import('@capgo/capacitor-health').then((m) => m.Health)
-  const plugin = () => (loading ??= load()) // one import shared by calls that overlap (mount check + a tap)
+  const plugin = () => within(loading ??= load()) // one import shared by calls that overlap (mount check + a tap)
   let why = ''
   const trace = { request: '(not called yet)', check: '(not called yet)' }
   const fmt = (e: unknown) => { const o = e as { code?: unknown; message?: unknown } | null; return `ERROR code=${String(o?.code ?? '')} message=${String(o?.message ?? e)}` }
   /** Runs a plugin call, keeps its raw result or error in the trace, and rethrows: nothing is swallowed. */
   const traced = async <T>(slot: 'request' | 'check', f: () => Promise<T>): Promise<T> => {
-    try { const r = await f(); trace[slot] = `OK ${JSON.stringify(r)}`; return r } catch (e) { trace[slot] = fmt(e); throw e }
+    try { const r = await (slot === 'check' ? within(f()) : f()); trace[slot] = `OK ${JSON.stringify(r)}`; return r } catch (e) { trace[slot] = fmt(e); throw e }
   }
   const only = (l: string[] | undefined, types: SensorType[]) => (l ?? []).filter((t): t is SensorType => types.includes(t as SensorType))
   const market = () => void window.open('market://details?id=com.google.android.apps.healthdata', '_system')
   return {
     platform: platform(),
     isAvailable: async () => {
-      const r = await (await plugin()).isAvailable()
+      const r = await within((await plugin()).isAvailable())
       why = r.available ? '' : (r.reason ?? '')
       return r.available
     },
@@ -42,7 +50,7 @@ export function capgoBridge(): HealthBridge {
       const all: SensorType[] = ['steps', 'sleep', 'heartRate', 'bloodPressure']
       let available: boolean | null = null
       let reason = ''
-      try { const r = await p.isAvailable(); available = r.available; reason = `platform=${String((r as { platform?: unknown }).platform ?? '')} reason=${r.reason ?? ''}` } catch (e) { reason = fmt(e) }
+      try { const r = await within(p.isAvailable()); available = r.available; reason = `platform=${String((r as { platform?: unknown }).platform ?? '')} reason=${r.reason ?? ''}` } catch (e) { reason = fmt(e) }
       let granted: SensorType[] = []
       try { granted = only((await traced('check', () => p.checkAuthorization({ read: all }))).readAuthorized, all) } catch { /* recorded in trace.check */ }
       return { available, platform: Capacitor.getPlatform(), reason, lastRequest: trace.request, lastCheck: trace.check, granted }
@@ -56,7 +64,7 @@ export function capgoBridge(): HealthBridge {
       if ((await traced('request', () => p.requestAuthorization({ read: [type] }))).readAuthorized.includes(type)) return true
       return (await traced('check', () => p.checkAuthorization({ read: [type] }))).readAuthorized.includes(type)
     },
-    granted: async (type: SensorType) => (await (await plugin()).checkAuthorization({ read: [type] })).readAuthorized.includes(type),
+    granted: async (type: SensorType) => (await within((await plugin()).checkAuthorization({ read: [type] }))).readAuthorized.includes(type),
     read: async (type: SensorType, sinceIso: string) =>
       (await (await plugin()).readSamples({ dataType: type, startDate: sinceIso, endDate: new Date().toISOString(), limit: 1000, ascending: true })).samples
   }

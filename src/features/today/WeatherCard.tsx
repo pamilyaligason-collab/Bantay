@@ -13,6 +13,9 @@ import { weatherWarning } from '../weather/warning'
 import { rainOutlook, rainWords, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
 import { placeNameOf } from './placeName'
+
+/** N-2: say when the weather is for the saved zone because the phone did not share its position. */
+const whereOf = (place: Parameters<typeof placeNameOf>[0]) => (place?.source === 'zone' ? `${placeNameOf(place)} (saved zone)` : placeNameOf(place))
 import { useWeather } from './weather'
 
 export const WEATHER_HREF = '#weather'
@@ -82,7 +85,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
         <a className="td-wxh wxs-host" href={href} style={VEIL}>
           {scene}
           <div className="wxs-tx">
-          <span className="td-k">Weather · {placeNameOf(place)}{clock && ` · as of ${clock}`}</span>
+          <span className="td-k">Weather · {whereOf(place)}{clock && ` · as of ${clock}`}</span>
           <span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span></span>
           <b className="td-wxh-c">{cond}</b>
           {range && <span className="td-wxh-s">{range}</span>}
@@ -107,7 +110,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
         <span className="td-wx-row">
           <span className="td-wx-t">{deg(wx.temp)}</span>
           <span className="td-grow">
-            <b>{cond} · {placeNameOf(place)}</b>
+            <b>{cond} · {whereOf(place)}</b>
             {feels && <span className="td-sub">{feels}</span>}
             {rain && <span className="td-sub">{rainWords(rain)}</span>}
           </span>

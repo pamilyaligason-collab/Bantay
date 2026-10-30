@@ -34,7 +34,7 @@ describe('Today weather card', () => {
     m.wx = { ...base, temp: 31, humidity: 70, words: 'partly cloudy' }
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
-    expect(screen.getByText('Partly cloudy · Dampas')).toBeTruthy()
+    expect(screen.getByText('Partly cloudy · Dampas (saved zone)')).toBeTruthy()
     expect(screen.getByText(/^Feels like 3\d° · Extreme caution$/)).toBeTruthy()
     expect(container.querySelector('.td-link svg')).toBeTruthy()
     expect(container.textContent).not.toContain('›')
@@ -81,7 +81,7 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Weather · Dampas · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Weather · Dampas \(saved zone\) · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText(/^Feels like 4\d° · Danger · High 34° · Low 26°$/)).toBeTruthy()

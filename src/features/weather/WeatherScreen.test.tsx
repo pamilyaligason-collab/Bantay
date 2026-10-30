@@ -42,10 +42,10 @@ describe('WeatherScreen', () => {
     expect(screen.getByText('Forecast: Open-Meteo. Your rounded location is sent only to the weather service.')).toBeTruthy()
   })
 
-  it('place toggle: Home 1 and Home 2 fetch their own forecast; My location is off without GPS', async () => {
+  it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    expect((screen.getByRole('button', { name: 'My location' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Use my location' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.getByRole('button', { name: 'Home 1' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Home 2' }))
     expect(screen.getByRole('button', { name: 'Home 2' }).getAttribute('aria-pressed')).toBe('true')

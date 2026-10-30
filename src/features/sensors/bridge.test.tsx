@@ -47,6 +47,29 @@ describe('capgoBridge', () => {
     expect(d).toMatchObject({ available: false, granted: ['steps'], platform: 'android' })
     expect(d.reason).toContain('NOT_INSTALLED')
   })
+  it('N-1: a Health Connect that never answers ends the check with a visible reason, not a hang', async () => {
+    vi.useFakeTimers()
+    try {
+      plug.isAvailable.mockReturnValue(new Promise(() => {}) as never)
+      plug.checkAuthorization.mockReturnValue(new Promise(() => {}) as never)
+      const p = capgoBridge().diagnose!()
+      await vi.advanceTimersByTimeAsync(25_000)
+      const d = await p
+      expect(d.available).toBeNull()
+      expect(d.reason).toContain('did not answer')
+      expect(d.lastCheck).toContain('did not answer')
+    } finally { vi.useRealTimers() }
+  })
+  it('N-1: a tap on a switch whose Health Connect never answers says it is not available, with the reason', async () => {
+    vi.useFakeTimers()
+    try {
+      plug.isAvailable.mockReturnValue(new Promise(() => {}) as never)
+      const { enableTypes } = await import('./health')
+      const p = enableTypes(['steps'] as never, capgoBridge())
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect(await p).toMatchObject({ result: 'unavailable', error: expect.stringContaining('did not answer') })
+    } finally { vi.useRealTimers() }
+  })
 })
 
 describe('SensorSettings result line and check row', () => {
