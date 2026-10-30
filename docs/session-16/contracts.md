@@ -201,3 +201,8 @@ See C-6. Plus: never `taskkill /IM node.exe`; stop only your own `PW_PORT` serve
 2. APK 2.7.0 (D-50 updater).
 3. **Last and separate:** migration 0044 applied only after Lloyd types "apply 0044" (D-102); 2.7.0 is complete without it.
 4. `retro.mjs` with every run journal (PLAYBOOK step 5).
+
+## Orchestrator amendments after ICON-JACK-AUDIT.md (2026-10-30, binding)
+- **Jack button clearance:** every tab page keeps the app's existing bottom clearance (`--tabbar-clear` plus the Jack button height) so the Jack button never covers a control at the end of the scroll; while scrolling it may pass over content. Page-height budgets (D-102) are measured WITHOUT that bottom clearance. L1-L5 assert no control under the button at scroll end (e2e helper in e2e/s16.ts, L0/L7).
+- **C-7 wording:** tab frames show the Jack button EXCEPT on warning, storm, quake, SOS, storm-track and update-sheet frames (D-91); `data-nofab` is correct there.
+- **Icons and Jack art (D-103):** the 10 rules in ICON-JACK-AUDIT.md are a gate for every lane. L9 owns `shell/Icon.tsx` (default 24, sizes 16/20/24/32 only, `strokeFor`, chip 40 px at 20, filled twin only for the active tab, a language icon) and the Jack art re-cut A1-A6 (one 1024 source per pose, transparent, no backing panel or baked badge, common canvas, 256 + 384 exports, `JACK_ALT` text updated) plus `JackArt` size clamp 56/96/112. L8 replaces `src/assets/mascot.svg` uses (FingerGate, ForgotFlow, RequiresUpdate) and drops the 150 px SignIn size; L9 deletes mascot.svg after L8 merges. Lanes replace text-glyph status marks (✓ × – ○) in files they own; L7 extends the noGlyphIcons test to scan for them.
