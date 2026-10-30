@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look/JackArt'
 import '../shell/shell.css'
 import './update.css'
 import { UpdateSheet } from './UpdateSheet'
@@ -13,7 +13,7 @@ export function RequiresUpdate() {
   const l = u.decision.latest
   return (
     <div className="sh up-gate" role="alertdialog" aria-modal="true" aria-label="Update needed" aria-describedby="up-gate-d">
-      <img src={MASCOT_SRC} alt="" width={110} height={110} />
+      <JackArt name="hello" size={96} decorative />
       <h1 className="sh-h2">Please update Bantay</h1>
       <p id="up-gate-d" className="sh-sub">This version is too old to keep working. {l.notes} Your data and reminders are safe.</p>
       <button type="button" className="sh-pill sh-primary sh-block" onClick={() => setOpen(true)}>Update to {l.versionName}</button>

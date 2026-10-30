@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look/JackArt'
 import { openFingerprintEnrol, promptFingerprint, unlockMode, type UnlockMode } from './biometric'
 import { setPasskeyFlag } from './family'
 import { Icon } from '../shell/Icon'
@@ -29,7 +29,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
   return (
     <main className="lk si-ret">
       <div className="lk-hello">
-        <img src={MASCOT_SRC} alt={MASCOT_ALT} width={56} height={56} />
+        <JackArt name="head" size={56} />
         <div><div className="lk-eyebrow">{today()}</div><h1>Magandang {hello(new Date().getHours())}{name ? `, ${name}` : ''}</h1></div>
       </div>
       {glance && (

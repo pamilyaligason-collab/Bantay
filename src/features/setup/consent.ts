@@ -5,6 +5,9 @@ import { getMember } from '../auth/session'
 export const CONSENT_VERSION = '2026-10'
 const PENDING = 'consent.pending'
 
+/** The D-86 behaviour in one sentence (A-15, M2-4): private until shared and accepted, admins can read. Shown on onboarding screen 5 and in the Wizard's Sharing step. */
+export const CONSENT_LINE = 'Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing.'
+
 /** Writes people.consent_at / consent_version / consent_by for the signed-in person (the one-line notice on `start-done`, never a question).
  *  Offline or refused: the intent is kept in kv and retried by flushConsent() on the next app start, so the notice is never silently dropped. */
 export async function recordConsent(): Promise<boolean> {

@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { MASCOT_ALT, MASCOT_SRC } from '../../assets/mascot'
+import { JackArt } from '../look/JackArt'
 import { type FamilyMember } from '../auth/family'
 import { signInWithPin } from '../auth/pinLogin'
 import { POLL_GIVE_UP_MS, RESET_COPY, completeReset, pollDelay, resetStep, startReset, type ResetState } from '../auth/pinReset'
@@ -70,7 +70,7 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
   if (st.s === 'failed') {
     return (
       <div className="si-set">
-        <div className="si-c"><img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} /><h2 className="pname">That did not work</h2></div>
+        <div className="si-c"><JackArt name="head" size={96} /><h2 className="pname">That did not work</h2></div>
         <p className="si-bad" role="alert">{RESET_COPY[st.why]}</p>
         <button type="button" className="btn" onClick={() => { send({ t: 'cancel' }); setView('routes') }}>Start again</button>
         <button type="button" className="btn2" onClick={onBack}>Back</button>
@@ -80,7 +80,7 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
   if (st.s === 'done') {
     return (
       <div className="si-set">
-        <div className="si-c"><img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} /><h2 className="pname">Approved</h2></div>
+        <div className="si-c"><JackArt name="head" size={96} /><h2 className="pname">Approved</h2></div>
         <p className="si-hint" role="status">{err || 'Signing you in with your new PIN.'}</p>
         {err && <button type="button" className="btn2" onClick={onBack}>Back</button>}
       </div>
@@ -90,7 +90,7 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
     return (
       <div className="si-set">
         <div className="si-c">
-          <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={96} height={96} />
+          <JackArt name="head" size={96} />
           <h2 className="pname">Asked the family admin</h2>
           <p className="si-hint">Ask a family admin to open Bantay and tap Approve. Read them this number so they know it is you.</p>
         </div>

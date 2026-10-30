@@ -1,69 +1,62 @@
-import { useEffect, useState } from 'react'
-import { JackArt } from '../look/JackArt'
-import { hasPasskeyFlag, loadFamily } from '../auth/family'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { track } from '../admin/events'
+import { loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
-import { PhoneCheckCard } from '../phonecheck/PhoneCheckCard'
-import { probe, probeProblems, type ProbeResult } from '../phonecheck/probe'
-import { Icon } from '../shell/Icon'
-import { applyTextSize, TEXT_SIZE_KEY, type TextSize } from '../shell/textSize'
-import { useKv } from '../shell/useKv'
+import FirstSuccessStep from './FirstSuccessStep'
+import RemindersStep from './RemindersStep'
+import { OnbDots } from './SetPin'
+import WhereStep from './WhereStep'
 import { recordConsent } from './consent'
 import './setup.css'
+import './onboarding.css'
 
-const Switch = ({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) =>
-  <button type="button" role="switch" className="sh-switch" aria-label={label} aria-checked={on} onClick={() => onChange(!on)} />
+type Step = 3 | 4 | 5
+const SKIP_NAME = { 3: 'onboard_skip_reminders', 4: 'onboard_skip_where', 5: 'onboard_skip_test' } as const
 
-const known = (r: ProbeResult) => [r.notif_ok, r.exact_ok, r.battery_ok, r.alarms_ok].some((v) => v !== null)
-
-/** `start-done` (3 of 3) and `start-done-fix`: replaces the old consent, phone check, text size and recap steps with one last screen.
- *  Consent is one quiet line, never a question: it is written when the person taps Open Today. The phone check runs by itself;
- *  when it passes there are two ticks and nothing else, when it fails the short fix card shows on top and Today still opens (the card's Remind me later is kept by S3's PhoneCheckCard in kv, so the Today card comes from S3 and S7, not from this screen). */
+/** Onboarding screens 3 to 5 of 5 (screens 1 and 2 are the welcome and PIN, shown before sign-in): Reminders, Where you are, First success.
+ *  Skip on 3-5 records nothing; the step stays on the Today setup row (useSetupLeft). System back steps back one screen (one history entry per screen).
+ *  Consent is a quiet line on screen 5, never a question: it is written when the person leaves for Today. */
 export default function StartDone({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState<Step>(3)
   const [name, setName] = useState('')
-  const [finger, setFinger] = useState(false)
-  const [phone, setPhone] = useState<ProbeResult | null>(null)
-  const [big, setBig] = useKv<TextSize>(TEXT_SIZE_KEY, 'normal')
-  const [simple, setSimple] = useKv<boolean>('mode.simple', false)
+  const [rung, setRung] = useState(false)
+  const stepRef = useRef<Step>(3)
+  const closed = useRef(false)
   useEffect(() => {
     let live = true
     void getMember().then((m) => {
       if (!live || !m?.personId) return
       setName(loadFamily().find((f) => f.personId === m.personId)?.displayName.trim().split(/\s+/)[0] ?? '')
-      setFinger(hasPasskeyFlag(m.personId))
     }).catch(() => undefined)
-    void probe().then((r) => { if (live) setPhone(r) }).catch(() => undefined) // in the background: never blocks Open Today
-    return () => { live = false }
+    const back = () => { if (!closed.current && stepRef.current > 3) { stepRef.current = (stepRef.current - 1) as Step; setStep(stepRef.current) } }
+    window.addEventListener('popstate', back)
+    return () => { live = false; window.removeEventListener('popstate', back) }
   }, [])
-  const problems = phone ? probeProblems(phone) : []
-  const open = () => { void recordConsent(); onDone() }
+  const go = useCallback((n: Step) => {
+    if (n > stepRef.current) { try { history.pushState({ bantayOnb: n }, '') } catch { /* no history */ } }
+    stepRef.current = n
+    setStep(n)
+  }, [])
+  const leave = (consent: boolean) => {
+    if (closed.current) return
+    closed.current = true
+    if (stepRef.current > 3) { try { history.go(3 - stepRef.current) } catch { /* no history */ } } // drop this screen's own entries
+    if (consent) void recordConsent()
+    onDone()
+  }
+  const next = () => (step < 5 ? go((step + 1) as Step) : leave(true))
+  const skip = () => { void track('action', SKIP_NAME[step]); next() }
   return (
     <div className="bt">
       <div className="topbar" />
-      <main className="scroll si-set">
-        <span className="si-eyebrow">Step 3 of 3 · then Today</span>
-        <div className="si-steps" aria-hidden="true"><i className="on" /><i className="on" /><i className="on" /></div>
-        <div className="si-c">
-          <JackArt name="hello" size={112} />
-          <h1 className="pname">{name ? `You're in, ${name}` : "You're in"}</h1>
-          <p className="si-hint">Jack will remind you about your medicines and help you call your family if you need help.</p>
+      <main className="scroll si-set ob-main" key={step}>
+        <OnbDots n={step} />
+        {!(step === 5 && rung) && <div className="ob-top"><button type="button" className="ob-skip" onClick={skip}>Skip</button></div>}
+        <div className="ob-slide ob-page">
+          {step === 3 && <RemindersStep onNext={next} />}
+          {step === 4 && <WhereStep onNext={next} />}
+          {step === 5 && <FirstSuccessStep name={name} onRung={() => setRung(true)} onBackToReminders={() => go(3)} onOpenToday={() => leave(true)} />}
         </div>
-        {problems.length > 0 && phone && <PhoneCheckCard result={phone} onLater={() => undefined} />}
-        <ul className="grp si-ticks" aria-label="Checks">
-          {phone && known(phone) && (
-            <li><span className={`si-tick ${problems.length ? 'bad' : 'ok'}`} aria-hidden="true"><Icon name={problems.length ? 'close' : 'check'} size={16} /></span>
-              <div><b>Alarms, phone and text apps</b><span className="si-hint">{problems.length ? 'One thing to fix above' : 'Checked in the background. All good.'}</span></div></li>
-          )}
-          <li><span className="si-tick ok" aria-hidden="true"><Icon name="check" size={16} /></span>
-            <div><b>{finger ? 'PIN and fingerprint' : 'PIN'}</b><span className="si-hint">Ready on this phone</span></div></li>
-        </ul>
-        <div className="grp si-opts">
-          <div className="si-switchrow"><div className="grow"><b>Bigger text</b><span className="si-hint">Easier to read everywhere</span></div>
-            <Switch label="Bigger text" on={big === 'large' || big === 'xlarge'} onChange={(v) => { const t: TextSize = v ? 'large' : 'normal'; setBig(t); applyTextSize(t) }} /></div>
-          <div className="si-switchrow"><div className="grow"><b>Simple mode</b><span className="si-hint">Just big buttons for the daily things</span></div>
-            <Switch label="Simple mode" on={simple === true} onChange={setSimple} /></div>
-        </div>
-        <p className="si-hint si-c">By using Bantay you agree to share your health records with your family. AI features and privacy are in Me, then Privacy.</p>
-        <button type="button" className="btn" onClick={open}>Open Today</button>
       </main>
     </div>
   )

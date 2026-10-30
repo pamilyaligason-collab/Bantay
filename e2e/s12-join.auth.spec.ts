@@ -49,7 +49,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.setViewportSize({ width: 390, height: 844 })
     await mockJoin(page)
     await page.goto(`/#join/${LINKS.open}`)
-    await expect(page.getByRole('heading', { name: 'Is this you?' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeVisible()
     const list = page.getByLabel('Who are you?')
     await expect(list.getByRole('button')).toHaveCount(1) // the link names one member, never the family
     await expect(list.getByRole('button')).toContainText('Nene C.')
@@ -57,7 +57,7 @@ for (const scheme of ['light', 'dark'] as const) {
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
     await page.screenshot({ path: `${SHOTS}/join-who-${scheme}.png` })
     await list.getByRole('button').click()
-    await expect(page.getByRole('heading', { name: 'Hi Nene, choose a 6-digit PIN' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Choose a 6-digit PIN' })).toBeVisible()
     await keys(page, '1357')
     await page.screenshot({ path: `${SHOTS}/join-pin-${scheme}.png` })
   })

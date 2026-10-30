@@ -42,34 +42,37 @@ const openStep = async (page: Page, title: string) => {
   await expect(page.locator('.wz-ov h1')).toHaveText(title)
 }
 
-test.describe('start-done: the one screen after joining (3 of 3)', () => {
-  test('first launch shows "You\'re in", the consent notice and two off switches, then Today', async ({ page }) => {
+test.describe('onboarding screens 3 to 5 after joining', () => {
+  test('first launch asks for reminders in context, with dots and Skip, no switches', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText("You're in")
-    await expect(page.getByText('Step 3 of 3 · then Today')).toBeVisible()
-    await expect(page.getByText(/By using Bantay you agree to share your health records with your family/)).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(0) // a notice, never a question
-    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'false')
-    await expect(page.getByRole('switch', { name: 'Simple mode' })).toHaveAttribute('aria-checked', 'false')
+    await expect(page.locator('h1')).toHaveText('Medicine reminders')
+    await expect(page.getByRole('img', { name: 'Step 3 of 5' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible()
+    await expect(page.getByRole('switch')).toHaveCount(0) // Bigger text and Simple mode live in Settings > Display
     await expect(page.locator('body')).not.toContainText(/admin/i)
-    await page.getByRole('button', { name: 'Open Today' }).click()
+  })
+
+  test('Skip on 3, 4 and 5 opens Today with the consent line on screen 5, and remembers it', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect(page.locator('h1')).toHaveText('Where are you most days?')
+    await expect(page.getByLabel(/latitude|longitude/i)).toHaveCount(0)
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect(page.locator('h1')).toHaveText("Let's test it.")
+    await expect(page.getByText(/Family admins can see them. Change this in Settings > Family and sharing./)).toBeVisible()
+    await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.locator('h1')).toHaveText('Today')
     expect(await kv(page, 'onboarded')).toBe(true)
     await page.reload()
     await expect(page.locator('h1')).toHaveText('Today')
   })
 
-  test('Bigger text is saved from the switch', async ({ page }) => {
+  test('a zone chip saves the zone', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('switch', { name: 'Bigger text' }).click()
-    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'true')
-    await expect.poll(() => kv(page, 'look.textsize')).toBe('large')
-  })
-
-  test('no phone tick on the web: unknown is never "all good"', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.locator('h1')).toHaveText("You're in")
-    await expect(page.getByText('Alarms, phone and text apps')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await page.getByRole('button', { name: 'Conel, GenSan' }).click()
+    await expect(page.locator('h1')).toHaveText("Let's test it.")
+    expect(await kv(page, 'loc.zone')).toBe('conel')
   })
 })
 
@@ -215,7 +218,7 @@ test('a deep link skips onboarding', async ({ page }) => {
 
 test.describe('375px', () => {
   test.use({ viewport: { width: 375, height: 812 } })
-  test('start-done has no sideways scroll', async ({ page }) => {
+  test('onboarding has no sideways scroll', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('h1')).toBeVisible()
     const root = await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)
