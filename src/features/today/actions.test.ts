@@ -29,6 +29,15 @@ describe('explicit personId (View as)', () => {
     expect(h.rows.length).toBe(7) // checkin 1, dose 1, bp 2, sugar 1, weight 1, medication 1
     expect(who()).toEqual(['mama'])
   })
+  it('S16 L6 fix2: takeMedication writes only for the medicine own person: a mismatch (explicit or signed-in) is refused with nothing written', async () => {
+    const mamas = { name: 'Metformin', personId: 'mama', schedule: { v: 1, times: [] } } as never
+    expect(await takeMedication(mamas, [], 'admin1')).toBe('failed') // explicit id is not the medicine's person
+    expect(await takeMedication(mamas, [])).toBe('failed') // no id: the signed-in admin1 is not Mama
+    expect(h.rows).toEqual([])
+    expect(await takeMedication(mamas, [], 'mama')).toBe('ok')
+    expect(h.rows.length).toBe(1) // one as-needed row
+    expect(who()).toEqual(['mama'])
+  })
   it('writes for the signed-in person when none is passed (background callers never act)', async () => {
     await checkIn(); await takeDose('Losartan'); await logBp(120, 80); await logSugar(99, false); await logWeight(55)
     expect(who()).toEqual(['admin1'])

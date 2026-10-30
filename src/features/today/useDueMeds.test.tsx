@@ -96,4 +96,16 @@ describe('useDueMeds', () => {
       expect((await ldb.meds.toArray()).map((r) => r.personId)).toEqual(['ma'])
     } finally { setActing(null) }
   })
+  it('S16 L6 fix2: markTaken for the acting member logs nothing without log access, and logs her one dose with it', async () => {
+    await Promise.all([ldb.medications.clear(), ldb.meds.clear()])
+    await ldb.medications.bulkAdd([{ personId: 'ma', name: 'Hers', medStatus: 'active', schedule: { v: 1, times: [soon()] }, serverId: 's2' }])
+    setActing({ personId: 'ma', name: 'Child', can: { log: false, edit: true, rollcall: false, mood: false, reason: 'x' } })
+    try {
+      expect(await markTaken('ma', ['s2'])).toBe(0)
+      expect(await ldb.meds.count()).toBe(0)
+      setActing({ personId: 'ma', name: 'Child', can: { log: true, edit: true, rollcall: true, mood: true, reason: null } })
+      expect(await markTaken('ma', ['s2'])).toBe(1)
+      expect((await ldb.meds.toArray()).map((r) => [r.personId, r.medicationId])).toEqual([['ma', 's2']])
+    } finally { setActing(null) }
+  })
 })

@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // B2-1: while an admin acts for Mama, everything that is NOT a named UI entry point keeps working as the admin and queues as before.
 // Real db.ts, real sync/profile.ts, real log/store.ts, and the REAL SOS screen, Health Connect sync and reminder action handlers; only the sign-in session, the phone (call, GPS, notifications) and the wire are faked.
-const h = vi.hoisted(() => ({ member: { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null } as unknown, listeners: [] as ((s: { isActive: boolean }) => void)[] }))
+const h = vi.hoisted(() => ({ member: { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null } as unknown, listeners: [] as ((s: { isActive: boolean }) => void)[], sb: null as unknown }))
 vi.mock('../auth/session', () => ({
   getMember: async () => h.member,
   getAccessToken: async () => 'tok',
   onAuthChange: () => () => undefined
 }))
-vi.mock('../auth/client', () => ({ supabase: null }))
+vi.mock('../auth/client', () => ({ get supabase() { return h.sb } }))
 vi.mock('../admin/events', () => ({ track: async () => true }))
 vi.mock('../sos/call', () => ({ callFirstContact: async () => ({ placed: true, via: 'native' }), requestCallPermission: async () => 'granted' }))
 vi.mock('../sos/locate', () => ({ sosPosition: async () => ({ lat: 9.65, lon: 123.85, at: 1, gps: true }) }))
@@ -41,6 +41,7 @@ const payloads = async (table: string) => (await db.outbox.where('table').equals
 beforeEach(async () => {
   h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null }
   h.listeners.length = 0
+  h.sb = null
   await Promise.all([db.outbox.clear(), db.kv.clear(), db.profiles.clear(), ldb.meds.clear(), ldb.activity.clear(), ldb.medications.clear()])
   setActing(null)
 })
@@ -70,12 +71,16 @@ describe('background paths keep acting as the admin', () => {
     expect((await ldb.activity.toArray()).map((r) => [r.personId, r.kind, r.steps, r.source])).toEqual([['p-admin', 'steps', 1200, 'health-connect']])
     expect((await payloads('activity')).map((r) => r.personId)).toEqual(['p-admin'])
   })
-  it('the real reminder Taken action logs the admin dose and never the acting member dose, even when her id is in the notification', async () => {
+  it('the real reminder Taken action ignores the acting member: Mama is a writable person of the admin, yet only the listed admin dose is logged', async () => {
+    // Mama IS in the admin's writer-carer cache, so only the acting rule (reminders act as the signed-in person: allowed = self + cache, listed = notification people) can decide the outcome.
+    // Had the reminder path used the acting id as "self", the admin id would no longer be allowed and nothing would be logged.
+    h.sb = { auth: { getSession: async () => ({ data: { session: { user: { id: 'u-admin' } } } }) } }
+    await db.kv.put({ key: 'carers.writable', value: { userId: 'u-admin', ids: ['p-mama'] } })
     act()
     const schedule = { v: 1, times: ['08:00'] }
     await ldb.medications.bulkAdd([{ personId: 'p-admin', name: 'Losartan', medStatus: 'active', schedule, serverId: 's-a' }, { personId: 'p-mama', name: 'Metformin', medStatus: 'active', schedule, serverId: 's-m' }])
-    const ev = { actionId: 'taken', notification: { id: 1, title: 't', body: 'b', extra: { kind: 'dose', at: 480, slot: '08:00', people: ['p-admin', 'p-mama'] } } }
-    expect(await handleReminderAction(ev, new Date(2026, 9, 30, 8, 5))).toBe('logged')
+    const ev = (people: string[]) => ({ actionId: 'taken', notification: { id: 1, title: 't', body: 'b', extra: { kind: 'dose', at: 480, slot: '08:00', people } } })
+    expect(await handleReminderAction(ev(['p-admin']), new Date(2026, 9, 30, 8, 5))).toBe('logged')
     expect((await ldb.meds.toArray()).map((m) => [m.personId, m.name])).toEqual([['p-admin', 'Losartan']])
     expect((await payloads('meds_taken')).map((r) => r.personId)).toEqual(['p-admin'])
   })
