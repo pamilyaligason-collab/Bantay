@@ -1,9 +1,9 @@
 {
-  "versionCode": 2005001,
-  "versionName": "2.5.1",
-  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.5.1/bantay-2.5.1.apk",
-  "sha256": "87e419b17985cb98319b5cb90e74215af913f6f2efc3a3f9e4d6979a53ea9a02",
-  "size": 7908445,
+  "versionCode": 2006000,
+  "versionName": "2.6.0",
+  "url": "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.6.0/bantay-2.6.0.apk",
+  "sha256": "9eaf7148d8641ed036533355533fa99b987184f17fc85d511be9d483bd5d66b6",
+  "size": 7909373,
   "minShell": 2000000,
-  "notes": "Fixes in-app updates. Includes everything in 2.5.0: lab results with dates, medicine details, In 10 min, family messages, phone alerts and Jack Jack."
+  "notes": "Safer alerts: Unwell says when no one was told, SOS sends at once, only admins approve a PIN reset, and bigger, clearer screens."
 }
