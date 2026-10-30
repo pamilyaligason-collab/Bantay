@@ -30,6 +30,16 @@ const broken = (page: Page) => page.evaluate(() => {
   return out
 })
 
+/** Anything that scrolls sideways: the page, or the main.scroll column (its overflow-x is hidden, so a wider scrollWidth means clipped content). */
+const sideways = (page: Page) => page.evaluate(() => {
+  const out: string[] = []
+  const doc = document.scrollingElement!
+  if (doc.scrollWidth > 195 + 1) out.push(`page scrolls sideways (${doc.scrollWidth} px)`)
+  const m = document.querySelector('main.scroll')
+  if (m && m.scrollWidth > m.clientWidth + 1) out.push(`main.scroll is wider than its box (${m.scrollWidth} > ${m.clientWidth})`)
+  return out
+})
+
 for (const scheme of ['light', 'dark'] as const) {
   test(`no letter-per-line text at 195 px, ${scheme}`, async ({ page }) => {
     test.setTimeout(180_000)
@@ -48,6 +58,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.evaluate((h) => { location.hash = h }, r)
       await page.waitForTimeout(600) // lazy screens and the forecast settle
       for (const b of await broken(page)) found.push(`${r}: ${b}`)
+      for (const b of await sideways(page)) found.push(`${r}: ${b}`)
     }
     expect(found).toEqual([])
   })
