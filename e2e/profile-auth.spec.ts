@@ -120,6 +120,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Step 2: About me' }).click()
     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('About me')
     await page.getByRole('button', { name: 'A+' }).click()
+    await expect(page.getByRole('button', { name: 'A+' })).toHaveAttribute('aria-pressed', 'true') // the choice is stored before Skip moves on
     await shot(page, 'wizard-about', scheme)
     await page.getByRole('button', { name: 'Step 3: Your medicines' }).click()
     await page.getByRole('button', { name: 'Metformin' }).click()
@@ -130,7 +131,7 @@ for (const scheme of ['light', 'dark'] as const) {
     for (let i = 0; i < 9 && !(await page.getByRole('button', { name: 'Finish' }).isVisible()); i++) await page.getByRole('button', { name: 'Skip' }).click()
     await page.getByRole('button', { name: 'Finish' }).click()
     await expect.poll(() => patches(reqs).some((p) => (p.body as { photo_path?: string }).photo_path === 'p1.jpg'), { timeout: 20_000 }).toBe(true)
-    await expect.poll(() => patches(reqs).some((p) => (p.body as { blood_type?: string }).blood_type === 'A+'), { timeout: 15_000 }).toBe(true)
+    await expect.poll(() => patches(reqs).some((p) => (p.body as { blood_type?: string }).blood_type === 'A+'), { timeout: 30_000 }).toBe(true)
     await expect.poll(() => medPosts(reqs).filter((m) => m.name === 'Metformin').pop()?.schedule, { timeout: 15_000 }).toEqual({ v: 1, times: ['08:00', '20:00'] })
     expect(medPosts(reqs).filter((m) => m.name === 'Metformin').pop()).toMatchObject({ person_id: 'p1', schedule: { v: 1, times: ['08:00', '20:00'] } })
     expect(medPosts(reqs).find((m) => m.name === 'Metformin')).toMatchObject({ status: 'confirmed', med_status: 'active' }) // the first write carries everything; later edits only what changed

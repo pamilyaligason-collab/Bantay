@@ -192,5 +192,13 @@ describe('About, Sign-in, Phone', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('button', { name: /Family phones/ })).toBeNull()
     expect(rowsOf(container)).toEqual([])
+    expect(screen.getByText('Setup checklist')).toBeTruthy()
+    expect(container.querySelector('.sh-me-sensors')).not.toBeNull()
+  })
+  it('Family phones is its own route (#me/phone/phones) with one Back that returns to the Phone group', async () => {
+    const { container } = at('#me/phone/phones')
+    await screen.findByRole('heading', { name: 'Family phones' })
+    expect(screen.getByRole('link', { name: 'Back to Phone' }).getAttribute('href')).toBe('#me/phone')
+    expect(container.querySelectorAll('.st-group .hdr').length).toBe(1)
   })
 })

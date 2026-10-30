@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCarerIds } from '../family/CarerCards'
 import FamilyPhones from '../family/FamilyPhones'
 import SensorSettings from '../sensors/SensorSettings'
@@ -10,12 +10,18 @@ import { useAccount } from './useAccount'
 export default function PhoneGroup() {
   const { member, roster } = useAccount()
   const carerIds = useCarerIds()
-  const [phones, setPhones] = useState(false)
+  const [hash, setHash] = useState(() => location.hash)
+  useEffect(() => {
+    const on = () => setHash(location.hash)
+    window.addEventListener('hashchange', on)
+    return () => window.removeEventListener('hashchange', on)
+  }, [])
+  const phones = /^#me\/phone\/phones/.test(hash) // a real route, so the hardware Back returns to the Phone group
   const showPhones = member?.role === 'admin' || carerIds.length > 0
   if (phones) {
     return (
-      <Group title="Family phones" testId="settings-phones">
-        <FamilyPhones people={roster.filter((p) => !p.isMe)} onBack={() => setPhones(false)} onMessage={() => { location.hash = '#family/messages' }} />
+      <Group title="Family phones" testId="settings-phones" backHref="#me/phone" backLabel="Back to Phone">
+        <FamilyPhones people={roster.filter((p) => !p.isMe)} onBack={() => { location.hash = '#me/phone' }} onMessage={() => { location.hash = '#family/messages' }} />
       </Group>
     )
   }
@@ -28,7 +34,7 @@ export default function PhoneGroup() {
       </div>
       {showPhones && (
         <div className="sh-card sh-list st-list">
-          <NavRow icon="phone" title="Family phones" sub="Can each phone wake its owner for alarms?" onClick={() => setPhones(true)} />
+          <NavRow icon="phone" title="Family phones" sub="Can each phone wake its owner for alarms?" href="#me/phone/phones" />
         </div>
       )}
     </Group>

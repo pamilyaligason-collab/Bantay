@@ -16,3 +16,5 @@
 .st-rad[aria-checked="true"] i { box-shadow: inset 0 0 0 2px var(--green2); }
 .st-rad[aria-checked="true"] i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--green2); }
 .st-rad[aria-checked="true"] { font-weight: 700; }
+.bt .st-group .fm-back { display: none; } /* the group header is the one Back (to the Phone group) */
+.st-edit-off { background: none; box-shadow: none; }

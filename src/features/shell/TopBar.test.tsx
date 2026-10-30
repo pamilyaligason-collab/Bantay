@@ -18,7 +18,7 @@ describe('TopBar admin shield', () => {
   it('hides for member', async () => {
     member.role = 'member'
     render(<TopBar />)
-    await screen.findByRole('link', { name: 'Me and settings' })
+    await screen.findByRole('link', { name: 'Settings' })
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('link', { name: 'Admin' })).toBeNull()
   })

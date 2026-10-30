@@ -5,6 +5,7 @@ import { db } from '../../db'
 const acting = vi.hoisted(() => ({ on: true }))
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: acting.on, personId: acting.on ? 'm1' : null, name: acting.on ? 'Mama' : '' }) }))
 vi.mock('../privacy/ConsentNotice', () => ({ ConsentNotice: () => <p>consent notice</p> }))
+vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => ({ userId: 'u0', personId: 'p0', role: 'member' }) }))
 import Me from '../../screens/Me'
 
 beforeEach(async () => { await db.kv.clear(); localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'p0', displayName: 'Lloyd', handle: null, provider: 'pin' }])) })
@@ -28,13 +29,12 @@ describe('Settings while an admin is acting (W-28)', () => {
     expect(screen.queryByRole('button', { name: /Who gets your SOS text/ })).toBeNull()
     expect(screen.getByRole('link', { name: /Medical ID/ }).getAttribute('href')).toBe('#medid') // read-only
   })
-  it('Edit name and photo is off', async () => {
+  it('Edit name and photo is off and shows the lock with "View only"', async () => {
     location.hash = '#me'
     render(<Me />)
-    await screen.findByRole('switch', { name: 'Simple mode' })
-    await new Promise((r) => setTimeout(r, 50))
-    const edit = screen.queryByRole('button', { name: 'Edit name and photo' })
-    if (edit) expect((edit as HTMLButtonElement).disabled).toBe(true) // no member row in this test: either absent or disabled
+    const edit = (await screen.findByRole('button', { name: 'Edit name and photo, view only' })) as HTMLButtonElement
+    expect(edit.disabled).toBe(true)
+    expect(edit.textContent).toContain('View only')
   })
   it('not acting: the consent notice is mounted and nothing is locked', async () => {
     acting.on = false
@@ -43,6 +43,7 @@ describe('Settings while an admin is acting (W-28)', () => {
     await screen.findByRole('switch', { name: 'Simple mode' })
     expect(screen.getByText('consent notice')).toBeTruthy()
     expect(container.querySelectorAll('[aria-disabled="true"]').length).toBe(0)
+    expect((await screen.findByRole('button', { name: 'Edit name and photo' }) as HTMLButtonElement).disabled).toBe(false)
     acting.on = true
   })
 })

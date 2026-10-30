@@ -10,7 +10,7 @@ import ViewAsRow from '../viewas/ViewAsRow'
 import { useActing } from '../viewas/viewAs'
 import { THEMES } from './DisplayGroup'
 import { sosNames } from './FamilyGroup'
-import { NavRow, Switch } from './Group'
+import { Lock, NavRow, Switch } from './Group'
 import { useAccount } from './useAccount'
 import './settings.css'
 
@@ -39,7 +39,9 @@ export default function Overview() {
           <b>{who || 'You'}</b>
           <div className="sh-sub">{member?.role === 'admin' ? 'Admin' : `This phone · fingerprint ${passkey ? 'on' : 'off'}`}</div>
         </div>
-        {member?.personId && <button type="button" className="sh-edit" disabled={acting} onClick={() => setDetailsOpen(true)} aria-haspopup="dialog" aria-label="Edit name and photo">Edit</button>}
+        {member?.personId && (acting
+          ? <button type="button" className="sh-edit st-edit-off" disabled aria-label="Edit name and photo, view only"><Lock /></button>
+          : <button type="button" className="sh-edit" onClick={() => setDetailsOpen(true)} aria-haspopup="dialog" aria-label="Edit name and photo">Edit</button>)}
       </div>
 
       <div className="sh-card st-simple">

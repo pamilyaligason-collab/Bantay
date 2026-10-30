@@ -11,11 +11,6 @@ const shot = async (page: Page, name: string, scheme: string) => {
   mkdirSync(SHOTS, { recursive: true })
   await page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` })
 }
-/** A group page is short, so assertBudget (scrollHeight) would read the 764 px scroller itself: measure the content, from the top of the page to the end of its last block. */
-async function assertGroupHeight(page: Page, max: number) {
-  const h = await page.evaluate(() => { const el = document.querySelector('.st-group') as HTMLElement; const r = el.getBoundingClientRect(); const last = el.lastElementChild!.getBoundingClientRect(); return Math.round(last.bottom - r.top) })
-  expect(h, `group content ${h} px over ${max} px`).toBeLessThanOrEqual(max)
-}
 const GROUPS: [string, string][] = [['alerts', 'Alerts and reminders'], ['display', 'Display'], ['family', 'Family and sharing'], ['phone', 'Phone'], ['signin', 'Sign-in'], ['about', 'About']]
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -38,12 +33,13 @@ for (const scheme of ['light', 'dark'] as const) {
   for (const [g, title] of GROUPS) {
     test(`#me/${g}: own Back and title, one screen, back lands on #me (${scheme})`, async ({ page }) => {
       await admin(page)
-      await page.setViewportSize({ width: 390, height: 844 })
+      await page.setViewportSize({ width: 390, height: 640 }) // shorter than the 700 budget, so scrollHeight is the content and assertBudget can fail
       await page.goto(`/#me/${g}`)
       await setScheme(page, scheme)
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
       await expect(page.locator('.sh-top')).toHaveCount(0) // the group draws its own header, no avatar bar
-      await assertGroupHeight(page, 700)
+      await assertBudget(page, 700)
+      await page.setViewportSize({ width: 390, height: 844 })
       await assertJackClear(page)
       await shot(page, `settings-${g}`, scheme)
       await page.getByRole('link', { name: 'Back to Settings' }).click()
@@ -80,6 +76,18 @@ test('no button wraps at 360 on the overview or any group', async ({ page }) => 
     await assertNoWrappedButtons(page)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `sideways scroll on ${h}`).toBe(true)
   }
+})
+
+test('Family phones is a route of the Phone group: one Back, and the hardware Back returns to Phone', async ({ page }) => {
+  await admin(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/#me/phone')
+  await page.getByRole('link', { name: /Family phones/ }).click()
+  await expect(page).toHaveURL(/#me\/phone\/phones$/)
+  await expect(page.getByRole('heading', { name: 'Family phones' })).toBeVisible()
+  await expect(page.locator('.st-group').getByRole('button', { name: /^Family$/ })).toHaveCount(0) // FamilyPhones' own Back is hidden here
+  await page.goBack()
+  await expect(page).toHaveURL(/#me\/phone$/)
 })
 
 test('a member sees no admin rows', async ({ page }) => {

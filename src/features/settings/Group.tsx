@@ -5,10 +5,10 @@ import '../shell/shell.css'
 import './settings.css'
 
 /** A Settings group page: its own Back (to #me) and title, one screen of rows. */
-export default function Group({ title, children, testId }: { title: string; children: ReactNode; testId?: string }) {
+export default function Group({ title, children, testId, backHref = '#me', backLabel = 'Back to Settings' }: { title: string; children: ReactNode; testId?: string; backHref?: string; backLabel?: string }) {
   return (
     <div className="sh sh-me st-group" data-testid={testId}>
-      <SubHeader title={title} backHref="#me" backLabel="Back to Settings" />
+      <SubHeader title={title} backHref={backHref} backLabel={backLabel} />
       {children}
     </div>
   )
