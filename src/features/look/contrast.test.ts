@@ -119,14 +119,14 @@ describe('dark blocks', () => {
 })
 
 // S16 hue families (PLAN section 3, C-2). Unrounded WCAG values. Light: ink, muted and icon on the tint fill. Dark: no fill, so ink, muted and icon on --card, and the icon on its real background, the 18% chip.
-const HUES = ['blue', 'green', 'lilac', 'amber', 'terra'] as const
+const HUES = ['blue', 'green', 'lilac', 'amber', 'terra', 'none'] as const // 'none' = plain card: --card fill, --c-neutral icon (cards.css)
 for (const [name, get] of themes) {
   describe(`S16 hue families ${name}`, () => {
     const v = get()
     const c = (k: string) => parse(resolve(v, k))[0]
     for (const h of HUES) {
-      const fill = c(`--hue-${h}`)
-      const ic = c(`--hue-${h}-ic`)
+      const fill = h === 'none' ? c('--card') : c(`--hue-${h}`)
+      const ic = h === 'none' ? c('--c-neutral') : c(`--hue-${h}-ic`)
       if (name === 'light') {
         it(`${h}: ink on fill >= 4.5`, () => expect(ratio(c('--ink'), fill)).toBeGreaterThanOrEqual(4.5))
         it(`${h}: muted on fill >= 4.5`, () => expect(ratio(c('--muted'), fill)).toBeGreaterThanOrEqual(4.5))
@@ -134,7 +134,7 @@ for (const [name, get] of themes) {
         it(`${h}: icon on --card >= 3`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(3))
       } else {
         const chip = over([ic, 0.18], c('--card')) // color-mix(in srgb, ic 18%, --card)
-        it(`${h}: fill is --card (dark draws no fill)`, () => expect(v[`--hue-${h}`]).toBe('var(--card)'))
+        if (h !== 'none') it(`${h}: fill is --card (dark draws no fill)`, () => expect(v[`--hue-${h}`]).toBe('var(--card)'))
         it(`${h}: ink and muted on --card >= 4.5`, () => {
           expect(ratio(c('--ink'), c('--card'))).toBeGreaterThanOrEqual(4.5)
           expect(ratio(c('--muted'), c('--card'))).toBeGreaterThanOrEqual(4.5)
@@ -144,5 +144,15 @@ for (const [name, get] of themes) {
         it(`${h}: kicker text (icon colour) on --card >= 4.5`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(4.5))
       }
     }
+  })
+}
+
+// Row lead icon (--c-neutral on its --soft box) and the white secondary action on a SceneHero (white on 55% black, worst case over a white sky; the scrim only darkens it more).
+for (const [name, get] of themes) {
+  describe(`S16 row and scene action ${name}`, () => {
+    const v = get()
+    const c = (k: string) => parse(resolve(v, k))[0]
+    it('row icon --c-neutral on --soft >= 3', () => expect(ratio(c('--c-neutral'), c('--soft'))).toBeGreaterThanOrEqual(3))
+    it('scene secondary: white on 55% black over white >= 4.5', () => expect(ratio([255, 255, 255], over([[0, 0, 0], 0.55], [255, 255, 255]))).toBeGreaterThanOrEqual(4.5))
   })
 }

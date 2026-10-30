@@ -185,8 +185,9 @@ export function Ring(p: { value: number; size?: 20 | 28 | 40; hue?: Hue; label?:
 ### C-11 Test fixtures and helpers (`e2e/s16.ts`, L0; fixtures per lane)
 ```ts
 export const ROUTES: string[]                       // C-3 list
-export async function assertNoWrappedButtons(page: Page): Promise<void>   // every .btn has one line box at 360
-export async function assertBudget(page: Page, max: number): Promise<void> // document.scrollingElement.scrollHeight <= max
+export async function assertNoWrappedButtons(page: Page): Promise<void>   // every .btn and .btn2 has one line box at 360
+export async function assertBudget(page: Page, max: number): Promise<void> // `.bt .scroll` scrollHeight minus its ::after clearance spacer <= max (the app scrolls in main.scroll, not the document)
+export async function assertJackClear(page: Page): Promise<void>        // at scroll end no visible button, a, input or [role=button] intersects the Jack button (.sh-jackfab)
 export async function setScheme(page: Page, s: 'light' | 'dark'): Promise<void>
 export const liveShot = (tab: string, s: 'light' | 'dark') => `docs/session-16/shots/live/${tab}-${s}.png`
 export const FIXED_CLOCKS = ['2026-10-30T23:30:00+08:00', '2026-10-31T00:30:00+08:00'] as const   // ML-38

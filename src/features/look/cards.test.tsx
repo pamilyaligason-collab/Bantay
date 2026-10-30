@@ -26,8 +26,10 @@ for (const theme of ['light', 'dark'] as const) {
     it('HeroCard with a locked action draws the lock and "View only" with the reason', () => {
       setup()
       const { container } = render(<HeroCard hue="blue" icon="heart" title="Mama" action={{ label: 'Log', disabled: true, lockReason: 'You can see Mama but not log for her.' }} />)
-      const b = screen.getByRole('button', { name: /View only/ }) as HTMLButtonElement
+      const b = screen.getByRole('button', { name: 'Log, view only' }) as HTMLButtonElement
       expect(b.disabled).toBe(true)
+      expect(b.textContent).toBe('View only')
+      expect(document.getElementById(b.getAttribute('aria-describedby')!)!.textContent).toContain('not log for her')
       expect(b.querySelector('svg.sh-ic')).toBeTruthy()
       expect(container.textContent).toContain('You can see Mama but not log for her.')
     })

@@ -13,11 +13,11 @@ export const ROUTES: string[] = [
   '#privacy', '#sharing', '#medid', '#notif'
 ]
 
-/** Every `.btn` has a one-line text box (L-6: no button wraps at 360 px). Hidden buttons are skipped. */
+/** Every `.btn` and `.btn2` has a one-line text box (L-6: no button wraps at 360 px). Hidden buttons are skipped. */
 export async function assertNoWrappedButtons(page: Page): Promise<void> {
   const wrapped = await page.evaluate(() => {
     const out: string[] = []
-    for (const b of Array.from(document.querySelectorAll<HTMLElement>('.btn'))) {
+    for (const b of Array.from(document.querySelectorAll<HTMLElement>('.btn, .btn2'))) {
       const box = b.getBoundingClientRect()
       if (box.width === 0 || box.height === 0 || getComputedStyle(b).visibility === 'hidden') continue
       const size = parseFloat(getComputedStyle(b).fontSize) || 16
@@ -36,10 +36,31 @@ export async function assertNoWrappedButtons(page: Page): Promise<void> {
   expect(wrapped, 'buttons that wrap to a second line').toEqual([])
 }
 
-/** The page is no taller than its D-102 budget (390 px wide, set the viewport first). */
+/** Content height of the tab page (390 px wide, set the viewport first) <= its D-102 budget. The app scrolls inside `.bt .scroll`, not the document, and budgets exclude the bottom
+ *  clearance (`.scroll::after`: tab bar + Jack button), so we measure scrollHeight minus that spacer. Top bars above the scroller are not counted. */
 export async function assertBudget(page: Page, max: number): Promise<void> {
-  const h = await page.evaluate(() => (document.scrollingElement as Element).scrollHeight)
+  const h = await page.evaluate(() => {
+    const el = document.querySelector('.bt .scroll') as HTMLElement
+    return el.scrollHeight - (parseFloat(getComputedStyle(el, '::after').height) || 0)
+  })
   expect(h, `page height ${h} px over the ${max} px budget`).toBeLessThanOrEqual(max)
+}
+
+/** At the end of the scroll no interactive element (button, a, input, [role=button]) sits under the Jack button. */
+export async function assertJackClear(page: Page): Promise<void> {
+  const hits = await page.evaluate(async () => {
+    const fab = document.querySelector('.sh-jackfab')
+    const el = document.querySelector('.bt .scroll') as HTMLElement
+    if (!fab) return [] as string[] // tab frames without the button (warning, storm, SOS ...) have nothing to clear
+    el.scrollTop = el.scrollHeight
+    for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); el.scrollTop = el.scrollHeight } // late content (cards that load after first paint) moves the end
+    const f = fab.getBoundingClientRect()
+    return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
+      .filter((n) => n !== fab && !fab.contains(n))
+      .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
+      .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
+  })
+  expect(hits, 'controls under the Jack button at scroll end').toEqual([])
 }
 
 /** Light or dark for the whole page: the media query and the saved-theme attribute agree. */

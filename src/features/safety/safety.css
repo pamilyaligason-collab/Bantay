@@ -52,7 +52,7 @@ button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px
 .sf-hdr .zp .sf-chip::before { content: ""; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--pin) center/contain no-repeat; mask: var(--pin) center/contain no-repeat; }
 .sf-hdr { --pin: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6z%27/%3E%3C/svg%3E"); }
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
-.sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; }
+.sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; padding: 0 8px; white-space: nowrap; } /* S16-L0: "Medical ID" wrapped in the 160 px cell at 360 */
 
 /* D-68 hub: solid tiles in v6 tokens (D-71: glass is for the frame only) */
 .sf-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

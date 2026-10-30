@@ -4,7 +4,7 @@
 .card[data-hue="lilac"], .rg[data-hue="lilac"] { --h: var(--hue-lilac); --h-ic: var(--hue-lilac-ic); }
 .card[data-hue="amber"], .rg[data-hue="amber"] { --h: var(--hue-amber); --h-ic: var(--hue-amber-ic); }
 .card[data-hue="terra"], .rg[data-hue="terra"] { --h: var(--hue-terra); --h-ic: var(--hue-terra-ic); }
-.card[data-hue="none"], .rg[data-hue="none"] { --h: var(--card); --h-ic: var(--green2); }
+.card[data-hue="none"], .rg[data-hue="none"] { --h: var(--card); --h-ic: var(--c-neutral); } /* light green2, dark ink: >= 3:1 on the card and on the chip in both themes */
 .card[data-hue] { background: var(--h); }
 .hc-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: var(--h-ic); background: rgb(255 255 255 / .55); }
 :root[data-theme="dark"] .card[data-hue]:not([data-hue="none"]) { border-top: 3px solid var(--h-ic); }
@@ -49,6 +49,7 @@
 .sc-jack .jack { object-fit: contain; display: block; }
 .sc-acts { position: relative; display: flex; flex-wrap: wrap; gap: 8px; }
 .sc[data-ink="light"] .sc-title, .sc[data-ink="light"] .sc-copy, .sc[data-ink="light"] .sc-kicker { color: #fff; }
+.sc[data-ink="light"] .btn2 { color: #fff; background: rgb(0 0 0 / .55); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .7); }
 
 /* Tile */
 .tl { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 96px; padding: 16px; box-sizing: border-box; border: 0; text-align: left; text-decoration: none; color: var(--ink); font: inherit; width: 100%; }
@@ -61,8 +62,9 @@
 
 /* Row */
 .rw { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.rw > :not(.rw-main) { flex: none; width: auto; }
 .rw-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
-.rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--soft); color: var(--green2); overflow: hidden; }
+.rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--soft); color: var(--c-neutral); overflow: hidden; }
 .rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .rw-title { font-size: 17px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rw-sub { font-size: 15px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
