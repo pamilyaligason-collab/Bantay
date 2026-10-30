@@ -104,14 +104,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Answer for Papa' }).click()
     const sheet = page.getByRole('dialog', { name: 'Answer for Papa' })
     await expect(sheet.getByText('Still taking Metformin 500 mg?')).toBeVisible()
-    await page.waitForTimeout(300) // the sheet slide-in
+    await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished))) // the sheet slide-in has finished
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-answer-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Send answer' }).click()
     await expect(page.getByText('Papa has not answered')).toHaveCount(0)
     await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Metformin' && JSON.stringify(p.body.schedule).includes('"answered_by":"Lloyd"'))).toBe(true)
 
     await page.getByRole('button', { name: "Fix Papa's phone" }).click()
-    await expect(page.getByRole('heading', { name: 'Phones' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Family phones' })).toBeVisible() // v12: Fix goes straight to Settings > Phone > Family phones (#me/phone/phones)
     await expect(page.getByText('Battery saver is stopping alarms')).toBeVisible()
     await page.getByRole('button', { name: 'Needs fixing' }).click()
     await expect(page.getByLabel("Fix Papa's phone")).toBeVisible()
@@ -142,7 +142,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const sheet = page.getByRole('dialog', { name: 'Stop reminders for Amlodipine?' })
     await expect(sheet.getByText('Alarms stop on every phone.')).toBeVisible()
     expect(posts.filter((p) => p.path === 'medications' && p.body.med_status === 'stopped')).toHaveLength(0) // nothing is silenced by the first tap
-    await page.waitForTimeout(300)
+    await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished))) // the sheet slide-in has finished
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/health-med-stop-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Stop reminders' }).click()
     await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Amlodipine' && p.body.med_status === 'stopped')).toBe(true)

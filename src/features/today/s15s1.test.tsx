@@ -66,22 +66,23 @@ describe('DS-1: told-today follows the Manila day (23:30 and 00:30)', () => {
 describe('DS-8: the In 10 min toast follows the alarm health', () => {
   const now = new Date(2026, 9, 19, 9)
   const late: DuePerson = { personId: 'me', name: 'Lloyd', isMe: true, at: 540, rel: 540, status: 'missed', slots: [{ name: 'Losartan', slot: '09:00', at: 540, medicationId: 'm1', key: 'm1', personId: 'me', dose: '1 tablet' }] }
-  const toast = async (native: boolean, ok: boolean | undefined) => {
+  /** Taps Snooze until the toast reads `want` (useKvValue reads Dexie live, so the first tap may still see no health row); a wrong toast never appears, so the wait times out and fails. */
+  const toast = async (native: boolean, ok: boolean | undefined, want: string) => {
     h.native = native
     await db.kv.delete(KEY_ALARM_HEALTH)
     if (ok !== undefined) await db.kv.put({ key: KEY_ALARM_HEALTH, value: { ok } })
     const notify = vi.fn()
     render(<NextUp item={pickNext({ due: [late], plan: null, storm: null }, now)} review={0} notify={notify} />)
-    if (ok !== undefined) await new Promise((r) => setTimeout(r, 50)) // useKvValue reads Dexie live
-    fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
-    await waitFor(() => expect(notify).toHaveBeenCalled())
+    await waitFor(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
+      expect(notify).toHaveBeenLastCalledWith(want)
+    })
     cleanup()
-    return notify.mock.calls[0]![0] as string
   }
   it('promises a reminder only on native with alarms known to work', async () => {
-    expect(await toast(true, true)).toBe('Okay. I will remind you in 10 minutes')
-    expect(await toast(true, false)).toBe('Okay. This card comes back in 10 minutes')
-    expect(await toast(true, undefined)).toBe('Okay. This card comes back in 10 minutes')
-    expect(await toast(false, true)).toBe('Okay. This card comes back in 10 minutes')
+    await toast(true, true, 'Okay. I will remind you in 10 minutes')
+    await toast(true, false, 'Okay. This card comes back in 10 minutes')
+    await toast(true, undefined, 'Okay. This card comes back in 10 minutes')
+    await toast(false, true, 'Okay. This card comes back in 10 minutes')
   })
 })

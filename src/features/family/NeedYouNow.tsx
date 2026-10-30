@@ -22,7 +22,7 @@ export default function NeedYouNow() {
   }
   return (
     <>
-      <CarerCards onMessage={talk} onPhones={() => { location.hash = 'me/phone' }} onNote={setNote} />
+      <CarerCards onMessage={talk} onPhones={() => { location.hash = 'me/phone/phones' }} onNote={setNote} />
       {note && <div className="toast" role="status">{note}</div>}
     </>
   )

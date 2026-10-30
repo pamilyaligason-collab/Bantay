@@ -107,7 +107,12 @@ for (const scheme of ['light', 'dark'] as const) {
     const reqs: Req[] = []
     await mock(page, reqs, scheme, [{ id: 'p1', display_name: 'Test Person', phone: null, birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }])
     await page.goto('/')
-    await page.getByRole('button', { name: 'Open Today' }).click() // first launch is start-done since S6a; setup opens from the card on Me
+    // v12 first launch: screens 3 to 5 (Reminders, Where you are, Test it), each with Skip; the last Skip lands on Today. Setup then opens from Settings > Phone.
+    for (const h of ['Medicine reminders', 'Where are you most days?', "Let's test it."]) {
+      await expect(page.getByRole('heading', { name: h })).toBeVisible()
+      await page.getByRole('button', { name: 'Skip' }).click()
+    }
+    await expect(page.locator('h1')).toHaveText('Today')
     await page.goto('/#me/phone')
     await page.getByRole('button', { name: /^Next: / }).click()
     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')

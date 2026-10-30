@@ -4,8 +4,8 @@ import Wizard from '../setup/Wizard'
 import { ORDER, TITLES, currentPlatform, onResume, probe, remaining, type Probe, type StepId } from '../setup/steps'
 import '../setup/setup.css'
 
-/** Quiet setup nudge for Today, shown while under half of setup is done: how many things are left, the one next step, and See all. Same list and same wizard as
- *  features/setup/ChecklistCard (steps.remaining); only the presentation is different. Hidden once everything is done. */
+/** Quiet setup list: how many things are left, the one next step, and See all. Same list and same wizard as
+ *  features/setup/ChecklistCard (steps.remaining); only the presentation is different. Never hidden at half done (Settings > Phone shows the full list); gone once everything is done. */
 export default function SetupCard() {
   const [left, setLeft] = useState<StepId[]>([])
   const [total, setTotal] = useState(0)
@@ -37,7 +37,7 @@ export default function SetupCard() {
   const next = left[0]
   return (
     <>
-      {n > 0 && next && total - n < total / 2 && ( // Today nags only while less than half is set up; the full list lives in Me
+      {n > 0 && next && (
         <section className="card td-setup" role="region" aria-label={`${n} ${n === 1 ? 'thing' : 'things'} left to set up`}>
           <div className="td-row between">
             <b>{n} {n === 1 ? 'thing' : 'things'} left</b>
