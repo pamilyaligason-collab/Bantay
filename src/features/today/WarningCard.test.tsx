@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
@@ -11,9 +11,10 @@ const h = vi.hoisted(() => ({
   rows: null as null | { personId: string; status: 'ok' | 'need_help' }[],
   people: [] as { id: string; name: string }[],
   can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null },
-  sent: vi.fn(async (..._a: unknown[]) => 'sent')
+  sent: vi.fn(async (..._a: unknown[]) => 'sent'),
+  fetch: vi.fn(async (..._a: unknown[]) => null as null | { personId: string; status: 'ok' | 'need_help' }[]) // set in beforeEach: counts the roll-call reads so a test can wait for one
 }))
-vi.mock('../safety/rollcall', async (orig) => ({ ...(await orig<typeof import('../safety/rollcall')>()), fetchRollcall: async () => h.rows, ensureStormTasks: async () => true, sendRollcall: h.sent }))
+vi.mock('../safety/rollcall', async (orig) => ({ ...(await orig<typeof import('../safety/rollcall')>()), fetchRollcall: async (...a: unknown[]) => { await h.fetch(...a); return h.rows }, ensureStormTasks: async () => true, sendRollcall: h.sent }))
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: h.people, selfId: null }) }))
 vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => 'me', useActingCan: () => h.can }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
@@ -23,7 +24,7 @@ const issued = new Date().toISOString()
 const quake: Alert = { id: 'q1', kind: 'quake', level: 'Magnitude 5.1', title: 'Earthquake', what: 'Magnitude 5.1, 40 km north.', where: 'Off Bohol', when: 'Just now', doNow: 'Drop, cover and hold on.', source: 'PHIVOLCS', sourceUrl: null, issuedAt: issued, lat: 6.2, lon: 125.2, bulletin: 'b' }
 const storm: Alert = { id: 'pagasa-tcws-x-dampas', kind: 'tcws', level: 'Signal No. 2', title: 'Wind Signal No. 2 for Dampas: Typhoon Rosal (CHAMPI)', what: 'Strong winds until 6 AM.', where: 'Sarangani (near Dampas)', when: 'now', doNow: 'x', source: 'PAGASA', sourceUrl: 'https://www.pagasa.dost.gov.ph/', issuedAt: issued, lat: 6.1, lon: 125.2, bulletin: 'b' }
 
-beforeEach(async () => { await db.kv.clear(); h.rows = null; h.people = []; h.can = null; h.sent.mockClear(); vi.mocked(track).mockClear() })
+beforeEach(async () => { await db.kv.clear(); h.rows = null; h.people = []; h.can = null; h.sent.mockClear(); h.fetch.mockClear(); vi.mocked(track).mockClear() })
 afterEach(cleanup)
 
 describe('WarningCard', () => {
@@ -92,7 +93,8 @@ describe('WarningCard', () => {
     h.rows = [{ personId: 'me', status: 'ok' }]
     h.people = [{ id: 'me', name: 'Lloyd' }]
     const { container } = render(<WarningCard />)
-    await new Promise((r) => setTimeout(r, 60))
+    await waitFor(() => expect(h.fetch).toHaveBeenCalled()) // the alerts, the ack and the roll call have been read: only then is "nothing" a real answer
+    await act(async () => { await Promise.resolve() }) // let the answered rows land in the component
     expect(container.textContent).toBe('')
     expect(screen.queryByRole('heading', { name: 'Is everyone safe?' })).toBeNull()
   })

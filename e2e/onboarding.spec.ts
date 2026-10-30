@@ -32,10 +32,10 @@ const kvSet = (page: Page, key: string, value: unknown) =>
 
 const STEPS = ['Your photo', 'About me', 'Your medicines', 'Reminders and alerts', 'Where you are', "Your phone's warnings", 'SOS text contacts', 'Sharing']
 
-/** Setup lives on the checklist now (Me shows the full card, Today only nudges). Opens the wizard overlay at one step. */
+/** Setup lives on the checklist: Settings > Phone (#me/phone) shows the full card, Today has a one-line setup row (v12). Opens the wizard overlay at one step. */
 const openStep = async (page: Page, title: string) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/phone')
   const card = page.getByRole('region', { name: /left to set up/ })
   await card.getByRole('button', { name: 'See all' }).click()
   await card.getByRole('button', { name: title, exact: true }).click()
@@ -100,7 +100,7 @@ test.describe('setup steps from the checklist', () => {
 
   test('a step whose flag is already set leaves the list', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length} things left`)
     await kvSet(page, 'profile.photo', 'data:image/jpeg;base64,AA==')
     await page.reload()
@@ -166,7 +166,7 @@ test.describe('notifications already allowed', () => {
     // Headless Chromium grants the permission but still reports Notification.permission as "denied", which the web plugin reads.
     await page.addInitScript(() => Object.defineProperty(Notification, 'permission', { get: () => 'granted' }))
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length - 1} things left`)
     await card.getByRole('button', { name: 'See all' }).click()
@@ -177,7 +177,7 @@ test.describe('notifications already allowed', () => {
 test.describe('Me checklist', () => {
   test('lists the same count as the wizard and each item opens its own step', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length} things left`)
     await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
@@ -188,7 +188,7 @@ test.describe('Me checklist', () => {
   })
   test('a finished step leaves the list', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
     await kvSet(page, 'setup.sharing', true)
     await page.reload()
@@ -233,7 +233,6 @@ test.describe("alerts-off card on Today", () => {
     await page.goto("/")
     const card = page.getByRole("region", { name: "Alerts are off" })
     await expect(card).toBeVisible()
-    await page.waitForTimeout(1500)
     await card.scrollIntoViewIfNeeded() // the card sits in the "More" group, below the fold on a 812px phone by design (D-50 order)
     expect(await card.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true)
     await expect(card.getByRole("button", { name: "Turn on alerts" })).toBeInViewport()

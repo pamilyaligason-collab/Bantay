@@ -42,13 +42,13 @@ describe('NeedYouNow', () => {
     expect(messagePrefill.text).toBe('')
   })
 
-  it('the phones button goes to Me > Phone; a note shows as a status toast and clears itself', () => {
+  it('the phones button goes to Me > Phone > Family phones; a note shows as a status toast and clears itself', () => {
     vi.useFakeTimers()
     try {
       cards.items = 1
       render(<NeedYouNow />)
       fireEvent.click(screen.getByText('phones'))
-      expect(location.hash).toBe('#me/phone')
+      expect(location.hash).toBe('#me/phone/phones')
       fireEvent.click(screen.getByText('note'))
       expect(screen.getByRole('status').textContent).toBe('Marked as taken')
       act(() => { vi.advanceTimersByTime(4000) })
