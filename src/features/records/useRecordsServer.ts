@@ -45,9 +45,11 @@ export function useConfirmedDocs(personId: string, version = 0) {
   useEffect(() => {
     if (!personId) return
     let live = true
-    void cachedDocs(personId).then((d) => live && setDocs(d))
+    let fresh = false // the offline copy must never overwrite a server answer that arrived first (a slow IndexedDB read left the list empty for good)
+    void cachedDocs(personId).then((d) => live && !fresh && setDocs(d))
     void listConfirmedDocuments(personId).then((r) => {
       if (!live || !r.ok) return
+      fresh = true
       setDocs(r.data)
       void cacheDocs(personId, r.data)
     })

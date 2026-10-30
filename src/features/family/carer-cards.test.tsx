@@ -118,7 +118,11 @@ describe('IncomingSos (lock-sos)', () => {
   it('opening it writes one sos_acks row for the event, and a second open writes no more', async () => {
     h.rows = [row('r1', {})]
     const a = render(<IncomingSos placement="today" />)
-    await waitFor(async () => expect((await db.outbox.toArray()).filter((o) => o.table === 'sos_acks')).toHaveLength(1))
+    // settled = the outbox row AND the remembered id are both written (ack() does them in two steps); the 1 s default is too short when the whole suite runs at once
+    await waitFor(async () => {
+      expect((await db.outbox.toArray()).filter((o) => o.table === 'sos_acks')).toHaveLength(1)
+      expect((await db.kv.get('sos.acked'))?.value).toEqual(['e1'])
+    }, { timeout: 8000 })
     const sent = (await db.outbox.toArray()).find((o) => o.table === 'sos_acks')!
     expect(sent.op).toBe('insert')
     expect(sent.payload).toMatchObject({ eventId: 'e1' })
