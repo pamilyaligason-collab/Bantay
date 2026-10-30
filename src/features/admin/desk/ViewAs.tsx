@@ -7,6 +7,13 @@ import './members.css'
 
 const words = (s: string) => s.replace(/_/g, ' ')
 
+/** "who logged" line (0044): empty when the column is absent or unknown, or when the person logged it themselves. */
+export function loggedByText(by: string | null | undefined, cur: Visible | null, shown: Visible[]): string {
+  if (!by || !cur || by === cur.person.auth_user_id) return ''
+  const who = shown.find((v) => v.person.auth_user_id === by)?.person.display_name
+  return ` · logged by ${who ?? 'another member'}`
+}
+
 /** The phone's buttons, drawn disabled so the admin sees what a member can do and cannot press any of it. */
 export const PHONE_ACTIONS = ['Log a reading', 'Take a dose', 'Add a medicine', 'Scan a paper'] as const
 
@@ -57,7 +64,7 @@ export function ViewAsPreview({ name, shown, hidden, selected, onSelect, preview
                 </div>
                 <div className="mb-sec"><h3>Latest readings</h3>
                   {preview.readings === null ? <p className="dk-sub">Could not load.</p> : preview.readings.length === 0 ? <p className="dk-sub">No readings.</p> : (
-                    <ul className="mb-list">{preview.readings.map((r) => <li key={r.test}><b>{words(r.test)}</b> {r.value}{r.unit ? ` ${r.unit}` : ''} <span className="dk-sub">{day(r.taken_at)}</span></li>)}</ul>
+                    <ul className="mb-list">{preview.readings.map((r) => <li key={r.test}><b>{words(r.test)}</b> {r.value}{r.unit ? ` ${r.unit}` : ''} <span className="dk-sub">{day(r.taken_at)}{loggedByText(r.logged_by, cur, shown)}</span></li>)}</ul>
                   )}
                 </div>
                 <div className="mb-sec"><h3>Records</h3>

@@ -5,6 +5,7 @@ import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { isLive, parseSchedule } from '../health/meds'
 import { hdb } from '../records/store'
+import { useActing, useActingPersonId } from '../viewas/viewAs'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import { nextDoses, type DuePerson } from './nextPick'
 
@@ -37,8 +38,10 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
     return () => { live = false; off(); a.unsubscribe(); k.unsubscribe(); b.unsubscribe(); clearInterval(t) }
   }, [])
 
-  const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === selfId || ok.has(m.personId)) }, [allMeds, known, selfId])
-  const targets = useMemo(() => people.filter((p) => p.id === selfId && canMarkFor(p.id, selfId, writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])
+  const target = useActingPersonId() // S16 L6: the acting member while an admin acts for them, else me. The card stays visible when `useActingCan().log` is false; the caller locks its buttons.
+  const { acting } = useActing()
+  const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === target || ok.has(m.personId)) }, [allMeds, known, target])
+  const targets = useMemo(() => people.filter((p) => p.id === target && (acting || canMarkFor(p.id, selfId ?? '', writable))).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable, target, acting])
   const due = useMemo(() => nextDoses(targets, meds, takes, tick), [targets, meds, takes, tick])
   const review = useMemo(() => {
     const ids = new Set(targets.map((t) => t.personId))
