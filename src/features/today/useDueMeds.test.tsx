@@ -8,7 +8,7 @@ vi.mock('../health/useCanMark', () => ({ canMarkFor: () => true, useWritableIds:
 
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { markTaken, useDueMeds } from './useDueMeds'
+import { markDue, markTaken, useDueMeds } from './useDueMeds'
 import { setActing } from '../viewas/store'
 
 const soon = () => { const d = new Date(Date.now() + 30 * 60_000); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
@@ -83,5 +83,17 @@ describe('useDueMeds', () => {
         unmount()
       } finally { setActing(null); vi.useRealTimers() }
     }
+  })
+  it('S16 L6: markDue for the acting member logs nothing without log access (no local dose the server would refuse), and logs for her with it', async () => {
+    const d = { personId: 'ma', name: 'Child', isMe: false, slots: [{ key: 'k', name: 'Hers', slot: '08:00', medicationId: 's2' }] } as unknown as Parameters<typeof markDue>[0]
+    await ldb.meds.clear()
+    setActing({ personId: 'ma', name: 'Child', can: { log: false, edit: true, rollcall: false, mood: false, reason: 'x' } })
+    try {
+      expect(await markDue(d)).toBe(false)
+      expect(await ldb.meds.count()).toBe(0)
+      setActing({ personId: 'ma', name: 'Child', can: { log: true, edit: true, rollcall: true, mood: true, reason: null } })
+      expect(await markDue(d)).toBe(true)
+      expect((await ldb.meds.toArray()).map((r) => r.personId)).toEqual(['ma'])
+    } finally { setActing(null) }
   })
 })

@@ -1,8 +1,10 @@
+import { liveQuery } from 'dexie'
 import { useEffect, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import { getMember } from '../auth/session'
 import { useFamilyPeople } from '../family/roster'
 import { Row } from '../look/Row'
+import { hdb } from '../records/store'
 import { enterActing, exitActing, useActing } from './viewAs'
 import './viewas.css'
 
@@ -15,13 +17,15 @@ export default function ViewAsRow(): ReactElement | null {
   const [err, setErr] = useState('')
   const { people, selfId } = useFamilyPeople()
   const { acting, name } = useActing()
+  const [known, setKnown] = useState<Set<string>>(new Set()) // people rows on this phone: enterActing refuses anyone else, so they are not offered
   useEffect(() => {
     let live = true
     void getMember().then((m) => { if (live) setAdmin(m?.role === 'admin') }, () => undefined)
-    return () => { live = false }
+    const sub = liveQuery(() => hdb.people.toCollection().primaryKeys()).subscribe({ next: (ids) => setKnown(new Set(ids as string[])), error: () => undefined })
+    return () => { live = false; sub.unsubscribe() }
   }, [])
   if (!admin) return null
-  const others = people.filter((p) => p.id !== selfId && !p.isMe)
+  const others = people.filter((p) => p.id !== selfId && !p.isMe && known.has(p.id))
   const pick = async (id: string) => {
     if (busy) return
     setBusy(id); setErr('')

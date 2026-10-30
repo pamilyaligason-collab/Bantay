@@ -26,6 +26,11 @@ beforeEach(async () => {
 afterEach(() => { exitActing() })
 
 describe('enterActing', () => {
+  it('a person with no people row on this phone is refused before any audit row is written', async () => {
+    expect(await enterActing('p-cache-only')).toBe(false)
+    expect(h.log).not.toHaveBeenCalled()
+    expect(getActingPersonId()).toBeNull()
+  })
   it('a member (not admin) cannot enter and no audit row is written', async () => {
     h.member = { userId: 'u-m', personId: 'p-m', role: 'member', handle: null }
     expect(await enterActing('p-mama')).toBe(false)
@@ -100,7 +105,7 @@ describe('useActingCan (computed once at enter, from carers)', () => {
     for (const c of [link(false), { ok: true, data: [] }]) {
       exitActing(); h.carers.mockResolvedValue(c)
       await enterActing('p-mama')
-      expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: 'You can see Mama but not log for Mama. Ask Mama (or an admin) to make you a carer with edit access.' })
+      expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: 'You can see Mama but not log for her. Ask her (or an admin) to make you a carer with edit access.' })
     }
   })
   it('a failed carers read: every flag false with the could-not-check reason', async () => {

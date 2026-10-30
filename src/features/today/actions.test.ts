@@ -2,8 +2,9 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // D-99: the loggers write for an explicit person when a named UI entry point passes one, and for the signed-in person otherwise.
-const h = vi.hoisted(() => ({ self: 'admin1' as string | null, rpc: vi.fn(), rows: [] as { fn: string; personId: string; kind?: string; test?: string }[] }))
+const h = vi.hoisted(() => ({ user: 'u-admin' as string | null, self: 'admin1' as string | null, rpc: vi.fn(), rows: [] as { fn: string; personId: string; kind?: string; test?: string }[] }))
 vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.self }))
+vi.mock('../auth/session', () => ({ getMember: async () => (h.user ? { userId: h.user, personId: 'admin1', role: 'admin', handle: null } : null) }))
 vi.mock('../auth/client', () => ({ supabase: { rpc: (...a: unknown[]) => h.rpc(...a) } }))
 vi.mock('../admin/events', () => ({ track: async () => undefined }))
 vi.mock('../log/store', () => ({
@@ -13,10 +14,10 @@ vi.mock('../log/store', () => ({
   logReading: async (a: { personId: string; test: string }) => { h.rows.push({ fn: 'reading', personId: a.personId, test: a.test }) }
 }))
 import { db } from '../../db'
-import { checkIn, feelingToast, logBp, logFeeling, logSugar, logWeight, retryUnsentMood, takeDose, takeMedication } from './actions'
+import { checkIn, clearUnsentMood, feelingToast, logBp, logFeeling, logSugar, logWeight, retryUnsentMood, takeDose, takeMedication } from './actions'
 
 beforeEach(async () => {
-  h.self = 'admin1'; h.rows = []; h.rpc.mockReset(); h.rpc.mockResolvedValue({ data: 1, error: null })
+  h.user = 'u-admin'; h.self = 'admin1'; h.rows = []; h.rpc.mockReset(); h.rpc.mockResolvedValue({ data: 1, error: null })
   for (const k of await db.kv.toCollection().primaryKeys()) if (String(k).startsWith('mood.')) await db.kv.delete(k)
 })
 const who = () => [...new Set(h.rows.map((r) => r.personId))]
@@ -65,6 +66,30 @@ describe('mood.unsent per person (M2-1)', () => {
     await logFeeling('ok', 'mama')
     expect(await db.kv.get('mood.unsent.mama')).toBeUndefined()
     expect(await db.kv.get('mood.unsent.admin1')).toBeTruthy()
+    online.mockRestore()
+  })
+})
+
+describe('queued Unwell never leaves the account that queued it (shared phone)', () => {
+  it('another user signing in drops the row and sends nothing; the same user still sends it; sign-out clears every row', async () => {
+    const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    await logFeeling('unwell', 'mama')
+    expect((await db.kv.get('mood.unsent.mama'))?.value).toMatchObject({ personId: 'mama', by: 'u-admin' })
+    online.mockReturnValue(true)
+    h.user = 'u-other'
+    expect(await retryUnsentMood()).toBe('none')
+    expect(h.rpc).not.toHaveBeenCalled()
+    expect(await db.kv.get('mood.unsent.mama')).toBeUndefined()
+    h.user = 'u-admin'
+    online.mockReturnValue(false)
+    await logFeeling('unwell', 'mama')
+    online.mockReturnValue(true)
+    await retryUnsentMood()
+    expect(h.rpc).toHaveBeenCalledWith('raise_mood_alert', { p_person: 'mama' })
+    online.mockReturnValue(false)
+    await logFeeling('unwell', 'mama'); await logFeeling('unwell')
+    await clearUnsentMood()
+    expect(await db.kv.where('key').startsWith('mood.unsent').count()).toBe(0)
     online.mockRestore()
   })
 })

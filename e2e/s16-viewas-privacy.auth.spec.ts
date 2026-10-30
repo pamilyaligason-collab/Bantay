@@ -25,7 +25,7 @@ test('an admin with no carer link gets the one reason sentence on the bar, and t
   await sheet.getByRole('button', { name: 'Mama' }).click()
   const bar = page.getByTestId('viewas-bar').first()
   await expect(bar).toContainText('Acting as Mama')
-  await expect(bar).toContainText('You can see Mama but not log for Mama. Ask Mama (or an admin) to make you a carer with edit access.')
+  await expect(bar).toContainText('You can see Mama but not log for her. Ask her (or an admin) to make you a carer with edit access.')
   expect(seen.audits).toEqual([{ p_person: 'p-mama' }])
 })
 

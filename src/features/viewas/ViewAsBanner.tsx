@@ -28,7 +28,7 @@ export default function ViewAsBanner(): ReactElement | null {
   const sos = useSosScreenUp()
 
   // Sign-out clears it (S16 hook line). onAuthChange also fires on token refresh, so only a missing session exits.
-  useEffect(() => onAuthChange(() => { void getAccessToken().then((t) => { if (!t) exitActing() }, () => undefined) }), [])
+  useEffect(() => onAuthChange(() => { void getAccessToken().then((t) => { if (!t) { exitActing(); void import('../today/actions').then((a) => a.clearUnsentMood()).catch(() => undefined) } }, () => undefined) }), [])
   // The viewed person leaving this phone's people (archived, removed, erased) exits automatically (r-2).
   useEffect(() => {
     if (!personId) return

@@ -5,6 +5,7 @@ import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { isLive, parseSchedule } from '../health/meds'
 import { hdb } from '../records/store'
+import { getActingState } from '../viewas/store'
 import { useActing, useActingPersonId } from '../viewas/viewAs'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import { nextDoses, type DuePerson } from './nextPick'
@@ -52,6 +53,8 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
 
 /** Marks every dose of this group taken (or skipped) for the person, each with its medication id and slot. Resolves to false if storage failed. */
 export async function markDue(d: DuePerson, skipped = false): Promise<boolean> {
+  const a = getActingState()
+  if (a && a.personId === d.personId && !a.can.log) return false // the card shows Mama's doses read-only; RLS would refuse the row at sync and local state would show a dose the server never got
   try {
     for (const s of d.slots) await logDose({ personId: d.personId, name: s.name, serverId: s.medicationId ?? undefined }, s.slot, { skipped })
     return true

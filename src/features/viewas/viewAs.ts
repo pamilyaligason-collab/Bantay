@@ -9,7 +9,7 @@ import { actingEpoch, getActingPersonId, getActingState, setActing, subscribeAct
 // Every write still carries the admin as actor; RLS (not this file) decides what is allowed. These flags only mirror it so the UI can say so.
 
 export const NO_ACCESS = 'Could not check your access. Exit and try again online.'
-export const reasonFor = (name: string) => `You can see ${name} but not log for ${name}. Ask ${name} (or an admin) to make you a carer with edit access.`
+export const reasonFor = (name: string) => `You can see ${name} but not log for her. Ask her (or an admin) to make you a carer with edit access.`
 
 /** What the admin may do for the member: log = self or a can_write carer link (meds_taken/readings/activity RLS 0003:88, 0001:115; app admin alone does not count);
  *  edit = log or admin (records_editor, nutrition); rollcall = family member and log (0041:71, an admin is always an app_roles member); mood = log. */
@@ -43,6 +43,8 @@ export async function enterActing(personId: string): Promise<boolean> {
     if (m.personId === personId || (await selfIdOrCached().catch(() => null)) === personId) return false // you cannot act as yourself; no audit row
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return false
     const started = actingEpoch()
+    const { hdb } = await import('../records/store')
+    if (!(await hdb.people.get(personId))) return false // a person only in the sign-in list cache: acting would end at once (the bar exits), so spend no audit row
     const { logViewAs } = await import('../admin/desk/viewAsData')
     if (!(await logViewAs(personId))) return false
     const name = await nameOf(personId)

@@ -22,6 +22,8 @@ select pg_temp.ok((select logged_by::text from public.activity where client_id =
 -- no rewriting who logged it
 update public.readings set logged_by = '00000000-0000-0000-0000-0000000000a1', value = 61 where test = 'weight';
 select pg_temp.ok((select logged_by::text from public.readings where test = 'weight') = '00000000-0000-0000-0000-0000000000c1' and (select value from public.readings where test = 'weight') = 61, 'an update keeps logged_by and still changes the value');
+update public.readings set logged_by = null where test = 'weight';
+select pg_temp.ok((select logged_by::text from public.readings where test = 'weight') = '00000000-0000-0000-0000-0000000000c1', 'a user cannot blank logged_by either (the trigger pins it at depth 1)');
 reset role;
 
 -- the owner logging for themselves is stamped with their own id

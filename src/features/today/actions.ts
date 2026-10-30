@@ -62,7 +62,15 @@ const UNSENT = 'mood.unsent'
 const unsentKey = (personId: string) => `${UNSENT}.${personId}`
 const UNSENT_MAX_MS = 24 * 3_600_000 // shortcut: older than a day is dropped, an old "unwell" is not news; raise if the family wants it
 async function queueUnsent(personId: string): Promise<boolean> {
-  try { await clearLegacyUnsent(personId); await db.kv.put({ key: unsentKey(personId), value: { personId, at: Date.now() } }); return true } catch { return false }
+  try {
+    const by = (await getMember().catch(() => null))?.userId // who queued it: a different user signing in on this phone must never send it (retryOne)
+    await clearLegacyUnsent(personId); await db.kv.put({ key: unsentKey(personId), value: { personId, at: Date.now(), ...(by ? { by } : {}) } }); return true
+  } catch { return false }
+}
+/** Sign-out: queued Unwell alerts belong to the signed-out user and are dropped (called by the View as bar's sign-out hook). */
+export async function clearUnsentMood(): Promise<void> {
+  const keys = await db.kv.where('key').startsWith(UNSENT).primaryKeys().catch(() => [])
+  await db.kv.bulkDelete(keys).catch(() => undefined)
 }
 async function clearLegacyUnsent(personId: string): Promise<void> {
   const old = (await db.kv.get(UNSENT).catch(() => undefined))?.value as { personId?: string } | undefined
@@ -125,15 +133,20 @@ async function retryOnce(): Promise<RetryResult> {
   let anyOffline = false
   for (const row of rows) {
     if (row.key !== UNSENT && !row.key.startsWith(`${UNSENT}.`)) continue
-    const v = row.value as { personId?: string; at?: number } | undefined
+    const v = row.value as { personId?: string; at?: number; by?: string } | undefined
     const res = await retryOne(row.key, v)
     if (res === 'offline') anyOffline = true
     if (v?.personId && v.personId === mine && res !== 'none') own = res
   }
   return own ?? (anyOffline ? 'offline' : 'none')
 }
-async function retryOne(key: string, v: { personId?: string; at?: number } | undefined): Promise<RetryResult> {
+async function retryOne(key: string, v: { personId?: string; at?: number; by?: string } | undefined): Promise<RetryResult> {
   if (!v?.personId) return 'none'
+  if (v.by) { // queued under another account (shared phone): drop it, never send it under this session
+    const m = await getMember().catch(() => null)
+    if (!m) return 'none'
+    if (m.userId !== v.by) { await db.kv.delete(key).catch(() => undefined); return 'none' }
+  }
   if (typeof v.at !== 'number') { await db.kv.delete(key).catch(() => undefined); return 'none' }
   if (Date.now() - v.at > UNSENT_MAX_MS) {
     await db.kv.delete(key).catch(() => undefined)

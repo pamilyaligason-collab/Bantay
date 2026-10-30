@@ -3,7 +3,7 @@
 --
 -- * logged_by is stamped by a BEFORE INSERT trigger from auth.uid(); a value the client sends is overwritten by the caller's own id, only a caller with no
 --   auth.uid() (the service role, imports) keeps what it sends. On UPDATE it is pinned to its old value, so nobody can rewrite who logged a row (readings keeps its
---   table-wide update grant, so a column grant cannot do this; the trigger does).
+--   table-wide update grant, so a column grant cannot do this; the trigger does). The one exception is the foreign key's own ON DELETE SET NULL (nested trigger depth), so erasing a user still clears the id.
 -- * RLS is unchanged: no policy reads logged_by. The trigger function is security definer with an empty search_path and no caller may execute it directly (ML-21).
 
 alter table public.readings add column if not exists logged_by uuid references auth.users (id) on delete set null;
@@ -13,7 +13,7 @@ create or replace function public.stamp_logged_by() returns trigger
   language plpgsql security definer set search_path = '' as
   $$ begin
        if tg_op = 'INSERT' then new.logged_by := coalesce(auth.uid(), new.logged_by);
-       else new.logged_by := old.logged_by; end if;
+       else new.logged_by := case when new.logged_by is null and pg_trigger_depth() > 1 then null else old.logged_by end; end if; -- depth > 1 = the foreign key's own ON DELETE SET NULL update (a user update fires this trigger at depth 1 and stays pinned)
        return new;
      end $$;
 revoke execute on function public.stamp_logged_by() from public, anon, authenticated, service_role;
