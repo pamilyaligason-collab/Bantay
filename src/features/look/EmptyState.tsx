@@ -6,7 +6,7 @@ export function EmptyState({ icon, jack, title, body, action, heading }: { icon?
   const Title = heading ?? 'p' // a heading only where the empty card stands in for a section that had one
   return (
     <div className="card empty-state">
-      {icon ? <Icon name={icon} size={26} boxed /> : jack ? <JackArt name={jack} size={88} decorative /> : <JackArt name="empty-list" size={88} />}
+      {icon ? <Icon name={icon} boxed /> : jack ? <JackArt name={jack} size={96} decorative /> : <JackArt name="empty-list" size={96} />}
       <Title className="hd">{title}</Title>
       {body && <p className="sub">{body}</p>}
       {action && <button type="button" className="btn2" onClick={action.onClick}>{action.label}</button>}

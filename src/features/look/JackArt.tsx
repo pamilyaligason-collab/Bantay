@@ -1,12 +1,12 @@
-/** Jack Jack sticker art (D-91). Files live in src/assets/jack as jack-<name>-<px>.webp (256 shipped; head also 128; 1024 kept for print).
+/** Jack Jack sticker art (D-91, D-103). Files live in src/assets/jack as jack-<name>-<px>.webp (256 for the 56 slot, 384 for 96 and 112; head also 128; 1024 kept for print).
  *  Never place him on SOS, an emergency result or a diagnosis screen. */
-// shortcut: only the 128/256 files ship (precached for offline); the 1024s stay in src/assets/jack for print or the mockup, add them here if a screen ever draws Jack above 128 px at 2x
-const FILES = import.meta.glob<string>('../../assets/jack/*-{128,256}.webp', { eager: true, query: '?url', import: 'default' })
+// shortcut: only the 128/256/384 files ship (precached for offline); the 1024s stay in src/assets/jack for print or the mockup
+const FILES = import.meta.glob<string>('../../assets/jack/*-{128,256,384}.webp', { eager: true, query: '?url', import: 'default' })
 
 export const JACK_ALT = {
   hello: 'Jack Jack waving hello',
   head: 'Jack Jack',
-  'well-done': 'Jack Jack sitting proudly beside a check mark',
+  'well-done': 'Jack Jack sitting proudly',
   thinking: 'Jack Jack tilting his head, thinking',
   reading: 'Jack Jack reading a book',
   listening: 'Jack Jack sitting with one paw raised, listening',
@@ -27,18 +27,25 @@ export const JACK_ALT = {
 
 export type JackName = keyof typeof JACK_ALT
 
-export const jackSrc = (name: JackName, px: 128 | 256): string | undefined => FILES[`../../assets/jack/jack-${name}-${px}.webp`]
+export const jackSrc = (name: JackName, px: 128 | 256 | 384): string | undefined => FILES[`../../assets/jack/jack-${name}-${px}.webp`]
+
+/** The only three sizes Jack is drawn at: 56 (action box, row), 96 (hero, success), 112 (onboarding). Anything else snaps to the nearest. */
+export const JACK_SIZES = [56, 96, 112] as const
+export type JackSize = (typeof JACK_SIZES)[number]
+export const clampJack = (n: number): JackSize => (n <= 76 ? 56 : n <= 104 ? 96 : 112)
 
 /** A fixed-size box (no layout shift), lazy-loaded. `decorative` when text beside it already says the same thing. */
 export function JackArt({ name, size = 96, decorative = false, className }: { name: JackName; size?: number; decorative?: boolean; className?: string }) {
-  const small = name === 'head' && size <= 64 ? jackSrc(name, 128) : jackSrc(name, 256)
+  const px = clampJack(size)
+  const small = px === 56 ? (name === 'head' ? jackSrc(name, 128) : jackSrc(name, 256)) : jackSrc(name, 384) ?? jackSrc(name, 256)
   if (!small) return null
   return (
     <img
       className={className ? `jack ${className}` : 'jack'}
       src={small}
-      width={size}
-      height={size}
+      width={px}
+      height={px}
+      style={{ objectFit: 'contain' }}
       loading="lazy"
       decoding="async"
       alt={decorative ? '' : JACK_ALT[name]}

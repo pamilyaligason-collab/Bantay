@@ -5,6 +5,7 @@ import { db, enqueue } from '../../db'
 import { track } from '../admin/events'
 import { loadFamily } from '../auth/family'
 import { useKv } from '../shell/useKv'
+import { setSosScreenOpen } from '../look/motion'
 import { selfIdOrCached } from '../sync/profile'
 import { autoTextAllowed, clearActive, loadActive, saveActive, SOS_CONTACTS_KEY, takeFresh, type SosActive } from './active'
 import { callFirstContact } from './call'
@@ -84,6 +85,8 @@ export default function SosScreen({ onClose }: { onClose: () => void }) {
     live.current = true
     return () => { live.current = false; stopWait.current() }
   }, [])
+
+  useEffect(() => { setSosScreenOpen(true); return () => setSosScreenOpen(false) }, []) // S16-L9: no scene animation or canvas while this screen is up
 
   useEffect(() => {
     if (!loaded || ran.current) return
