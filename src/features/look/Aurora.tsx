@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motionOk, useOnScreen, usePageVisible, useSafetyHash, useSosScreenOpen, webgl2Capable } from './motion'
+import { motionOk, useOnScreen, usePageVisible, useSafetyHash, useSosScreenOpen, useTodayHash, webgl2Capable } from './motion'
 import { useReducedMotion } from './useReducedMotion'
 
 // Night-clear sky accent (D-99, optional). One small WebGL2 fragment shader, drawn at half resolution with the pixel ratio capped at 1.
@@ -19,16 +19,13 @@ void main(){
   o=vec4(c*band*.85,band*.7);
 }`
 
-/** true on Today (empty hash or #today): Aurora stays a still gradient there in this release. */
-const onToday = () => /^#?(today)?$/.test(location.hash)
-
 export function Aurora({ className }: { className?: string }) {
   const host = useRef<HTMLDivElement>(null)
   const cv = useRef<HTMLCanvasElement>(null)
   const reduced = useReducedMotion()
-  const [sos, safety, seen, visible] = [useSosScreenOpen(), useSafetyHash(), useOnScreen(host), usePageVisible()]
+  const [sos, safety, today, seen, visible] = [useSosScreenOpen(), useSafetyHash(), useTodayHash(), useOnScreen(host), usePageVisible()] // Today: still gradient in this release
   const [capable] = useState(() => webgl2Capable())
-  const allowed = capable && !reduced && !sos && !safety && !onToday()
+  const allowed = capable && !reduced && !sos && !safety && !today
   const running = allowed && seen && visible
   const [live, setLive] = useState(false)
   const go = useRef(running)

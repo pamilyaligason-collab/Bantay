@@ -13,7 +13,8 @@ import { wireMotion, springIn, motionOk, setSosScreenOpen } from './motion'
 import { Ring, ringDash } from './Ring'
 
 const reduce = () => vi.stubGlobal('matchMedia', (q: string) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} }))
-afterEach(() => vi.unstubAllGlobals())
+const realGetContext = HTMLCanvasElement.prototype.getContext
+afterEach(() => { vi.unstubAllGlobals(); HTMLCanvasElement.prototype.getContext = realGetContext; location.hash = '' })
 
 describe('reduced motion', () => {
   it('CountUp renders the final value', () => {
@@ -147,6 +148,47 @@ describe('WeatherScene stillness', () => {
     setSosScreenOpen(true)
     expect(motionOk()).toBe(false)
     setSosScreenOpen(false)
+  })
+})
+
+describe('WeatherScene pause', () => {
+  it('pauses (data-paused) when scrolled off screen or the page is hidden, and resumes', () => {
+    location.hash = '#today'
+    let cb: (e: Array<{ isIntersecting: boolean }>) => void = () => undefined
+    vi.stubGlobal('IntersectionObserver', class { constructor(f: typeof cb) { cb = f } observe() {} disconnect() {} })
+    const { container } = render(<WeatherScene tod="day" cond="rain" />)
+    const el = () => container.querySelector('.wxs') as HTMLElement
+    expect(el().dataset.paused).toBeUndefined()
+    act(() => cb([{ isIntersecting: false }]))
+    expect(el().dataset.paused).toBe('1')
+    act(() => cb([{ isIntersecting: true }]))
+    expect(el().dataset.paused).toBeUndefined()
+    const hidden = vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+    act(() => { document.dispatchEvent(new Event('visibilitychange')) })
+    expect(el().dataset.paused).toBe('1')
+    hidden.mockReturnValue(false)
+    act(() => { document.dispatchEvent(new Event('visibilitychange')) })
+    expect(el().dataset.paused).toBeUndefined()
+    hidden.mockRestore()
+  })
+  it('Aurora draws no canvas when the hash moves to Today after mount', () => {
+    vi.stubGlobal('navigator', { hardwareConcurrency: 8 })
+    const gl = new Proxy({}, { get: (_t, k) => (k === 'getProgramParameter' ? () => true : k === 'getExtension' ? () => ({ loseContext() {} }) : typeof k === 'string' && /^[A-Z_0-9]+$/.test(k) ? 1 : () => ({})) })
+    HTMLCanvasElement.prototype.getContext = (() => gl) as never
+    location.hash = '#discover'
+    const { container } = render(<Aurora />)
+    expect(container.querySelector('canvas')).not.toBeNull()
+    act(() => { location.hash = '#today'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
+    expect(container.querySelector('canvas')).toBeNull()
+  })
+})
+
+describe('offline art', () => {
+  it('the service worker precache glob covers every Jack size JackArt can load', () => {
+    const cfg = readFileSync('vite.config.ts', 'utf8')
+    const m = /jack-\*-\{([\d,]+)\}-\*\.webp/.exec(cfg)
+    expect(m, 'precache pattern').toBeTruthy()
+    expect(m![1].split(',').sort()).toEqual(['128', '256', '384'])
   })
 })
 

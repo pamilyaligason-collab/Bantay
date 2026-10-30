@@ -16,6 +16,9 @@ const hashSub = (cb: () => void) => { addEventListener('hashchange', cb); return
 /** true on `#safety*`: no scene animation and no canvas there. */
 export const useSafetyHash = () => useSyncExternalStore(hashSub, () => location.hash.startsWith('#safety'), () => false)
 
+/** true on Today (empty hash or #today); re-renders on hashchange so a canvas never keeps running after a move to Today. */
+export const useTodayHash = () => useSyncExternalStore(hashSub, () => /^#?(today)?$/.test(location.hash), () => true)
+
 const visSub = (cb: () => void) => { document.addEventListener('visibilitychange', cb); return () => document.removeEventListener('visibilitychange', cb) }
 export const usePageVisible = () => useSyncExternalStore(visSub, () => !document.hidden, () => true)
 
@@ -38,7 +41,11 @@ export function webgl2Capable(): boolean {
   const nav = navigator as Navigator & { deviceMemory?: number }
   if ((nav.hardwareConcurrency ?? 0) < 4) return false
   if (nav.deviceMemory != null && nav.deviceMemory < 4) return false
-  try { return !!document.createElement('canvas').getContext('webgl2') } catch { return false }
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2')
+    gl?.getExtension('WEBGL_lose_context')?.loseContext() // release the throwaway context
+    return !!gl
+  } catch { return false }
 }
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
