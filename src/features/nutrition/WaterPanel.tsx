@@ -7,7 +7,7 @@ import { FAIL_TEXT } from '../today/actions'
 import './nutrition.css'
 
 /** Water today against the person's water goal, with a +250 ml button (one glass per tap) and Undo for the latest glass. `canAdd` is false when looking at someone else. */
-export default function WaterPanel({ rows, goalMl, now, canAdd = true }: { rows: WaterEntry[]; goalMl: number; now: Date; canAdd?: boolean }) {
+export default function WaterPanel({ rows, goalMl, now, canAdd = true, personId }: { rows: WaterEntry[]; goalMl: number; now: Date; canAdd?: boolean; personId?: string }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const today = onDay(rows, now)
@@ -28,8 +28,8 @@ export default function WaterPanel({ rows, goalMl, now, canAdd = true }: { rows:
       </div>
       {canAdd && (
         <div className="nu-act">
-          <button type="button" className="nu-big-btn" disabled={busy} onClick={() => void run(logWater(ML_PER_TAP, new Date()))} aria-label={`Add a glass of water, ${ML_PER_TAP} millilitres`}><Icon name="glass" size={22} />+{ML_PER_TAP} ml</button>
-          {today.length > 0 && <button type="button" className="nu-ghost" disabled={busy} onClick={() => void run(undoWater(new Date()))}>Undo</button>}
+          <button type="button" className="nu-big-btn" disabled={busy} onClick={() => void run(logWater(ML_PER_TAP, new Date(), personId))} aria-label={`Add a glass of water, ${ML_PER_TAP} millilitres`}><Icon name="glass" size={24} />+{ML_PER_TAP} ml</button>
+          {today.length > 0 && <button type="button" className="nu-ghost" disabled={busy} onClick={() => void run(undoWater(new Date(), personId))}>Undo</button>}
         </div>
       )}
       {err && <p className="nu-err" role="alert" style={{ flexBasis: '100%' }}>{err}</p>}

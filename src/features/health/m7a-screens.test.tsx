@@ -11,6 +11,9 @@ vi.mock('./summaryImage', () => ({ renderSummaryImage: async () => new Blob(['x'
 (URL as unknown as { revokeObjectURL: () => void }).revokeObjectURL = () => undefined
 
 import Health from '../../screens/Health'
+import Article from './library/Article'
+import Library from './library/Library'
+import Videos from './library/Videos'
 import { fdb } from '../family/store'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
@@ -90,19 +93,18 @@ describe('Doctor visits', () => {
   })
 })
 
-describe('Health library', () => {
+describe('Health library (moved to Discover, S16; the components are tested where they now live)', () => {
   it('lists the medicines of the person, opens an article, shows the source line, and the offline state', async () => {
     await ldb.medications.add(med({ name: 'Metformin 500 mg tab' }))
-    go('#health/library')
-    render(<Health />)
+    go('#discover/learn/library')
+    render(<Library />)
     const link = await screen.findByRole('link', { name: /^Metformin/ })
     expect(link.getAttribute('href')).toBe('#discover/learn/library/m%3Ametformin')
     expect(screen.getByText(/From MedlinePlus \(U\.S\. National Library of Medicine\), summarised; not medical advice/)).toBeTruthy()
     cleanup()
     const f = vi.fn().mockRejectedValue(new Error('offline'))
     vi.stubGlobal('fetch', f)
-    go('#health/library/m%3Ametformin')
-    render(<Health />)
+    render(<Article rawKey="m:metformin" />)
     expect(await screen.findByTestId('article-offline')).toBeTruthy()
     expect(f).toHaveBeenCalledTimes(1) // one request per open
     vi.unstubAllGlobals()
@@ -111,8 +113,7 @@ describe('Health library', () => {
 
   it('an article shows the summary and the source line from a mocked MedlinePlus answer', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ feed: { entry: [{ title: { _value: 'Metformin' }, link: [{ href: 'https://medlineplus.gov/druginfo/meds/a696005.html' }], summary: { _value: '<p>Metformin is used to treat type 2 diabetes.</p>' } }] } }) }))
-    go('#health/library/m%3Ametformin')
-    render(<Health />)
+    render(<Article rawKey="m:metformin" />)
     expect(await screen.findByText('Metformin is used to treat type 2 diabetes.')).toBeTruthy()
     expect(screen.getByText('From MedlinePlus (U.S. National Library of Medicine), summarised; not medical advice')).toBeTruthy()
     vi.unstubAllGlobals()
@@ -120,18 +121,23 @@ describe('Health library', () => {
   })
 })
 
-describe('Videos entry points', () => {
-  it('show now that the playlist has real ids', async () => {
+describe('Video of the day', () => {
+  it('is a tile in At a glance that opens the player in a sheet', async () => {
+    await hdb.readings.add({ personId: 'p1', test: 'weight', value: 61, unit: 'kg', takenAt: day(1) })
     go('#health')
     render(<Health />)
-    expect((await screen.findByRole('link', { name: /^Videos/ })).getAttribute('href')).toBe('#health/videos')
+    const tile = await screen.findByTestId('glance-video')
+    expect(tile.tagName).toBe('BUTTON')
+    expect(document.querySelector('iframe')).toBeNull() // nothing loads until a tap
+    fireEvent.click(tile)
+    expect(await screen.findByRole('button', { name: /^Play / })).toBeTruthy()
   })
 })
 
 describe('Videos', () => {
   it('shows the fixed list; nothing loads until a tap, then the no-cookie player', async () => {
-    go('#health/videos')
-    render(<Health />)
+    go('#discover/watch')
+    render(<Videos />)
     expect(await screen.findByRole('button', { name: 'Play Hands-only CPR' })).toBeTruthy()
     expect(document.querySelector('iframe')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Play Hands-only CPR' }))

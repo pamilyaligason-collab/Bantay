@@ -76,7 +76,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await seed(page, 'bantay-log', 'meds', [14, 15, 16, 18, 20].map((d) => ({ personId: 'me', name: 'Losartan', takenAt: at(d, 8, 10), medicationId: 's1', slot: '08:00' }))) // missed Sat 17 and Sun 19 -> 5 of 7
     await page.goto('/#health')
     await page.reload() // raw IndexedDB writes do not notify live queries
-    await page.getByTestId('nudge-entry').click()
+    await page.getByTestId('nudge').locator('a.nr-t').click()
     await expect(page.getByRole('heading', { name: 'My progress' })).toBeVisible()
     await shot(page, 'nudge-home', scheme)
 

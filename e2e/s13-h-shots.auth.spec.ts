@@ -51,42 +51,40 @@ async function shot(page: Page, name: string, scheme: string, anchor?: string) {
 }
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`health overview: summary, vitals, Browse grid (${scheme})`, async ({ page }) => {
+  test(`health overview: body hero, At a glance, More in Health (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await open(page, 'full')
-    await expect(page.getByTestId('kpis')).toBeVisible()
-    await expect(page.locator('[data-kpi="steps"]')).toContainText('4,210')
+    await expect(page.getByTestId('bodyhero')).toBeVisible()
     await shot(page, 'overview-top', scheme)
-    await shot(page, 'overview-kpis', scheme, '[data-testid="kpis"]')
-    await shot(page, 'overview-vitals', scheme, '#lvn-vitals')
+    await shot(page, 'overview-glance', scheme, '#gl-h')
     await shot(page, 'overview-browse', scheme, '#hb-h')
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight))
     await shot(page, 'overview-end', scheme)
     // 2 columns at 360 px, every tile 48 px or taller
     await page.setViewportSize({ width: 360, height: 780 })
-    const boxes = await page.locator('[data-browse]').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), w: Math.round(b.width), h: Math.round(b.height) } }))
-    expect(boxes.length).toBeGreaterThanOrEqual(9)
+    const boxes = await page.locator('.gl-grid .tl').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), w: Math.round(b.width), h: Math.round(b.height) } }))
+    expect(boxes.length).toBe(8)
     expect(boxes.every((b) => b.h >= 48)).toBe(true)
-    expect(new Set(boxes.map((b) => b.x)).size).toBeLessThanOrEqual(2) // two columns (a lone last tile may span both)
-    await page.getByTestId('browse').locator('[data-browse="readings"]').click()
-    await expect(page.getByRole('heading', { name: 'Vitals' })).toBeInViewport()
+    expect(new Set(boxes.map((b) => b.x)).size).toBe(2)
+    await page.getByTestId('browse-readings').click()
+    await expect(page.getByRole('heading', { name: '7-day averages' })).toBeVisible()
+    await expect(page.getByTestId('kpis')).toBeVisible()
   })
 
   test(`health overview: a person with nothing logged (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await open(page, 'empty')
-    await expect(page.getByTestId('health-empty').getByRole('button', { name: 'Add a reading' })).toBeVisible()
+    await expect(page.getByTestId('bodyhero').getByRole('button', { name: '+ Reading' })).toBeVisible()
     await shot(page, 'empty-person', scheme)
-    await shot(page, 'empty-person-card', scheme, '[data-testid="health-empty"]')
-    await page.getByTestId('health-empty').getByRole('button', { name: 'Add a reading' }).click()
+    await page.getByTestId('bodyhero').getByRole('button', { name: '+ Reading' }).click()
     await expect(page.getByText(/^Add blood pressure/)).toBeVisible()
   })
 
-  test(`health overview: labs only has one no-vitals state and the Browse grid (${scheme})`, async ({ page }) => {
+  test(`health overview: labs only has one empty hero, the Labs tile and More in Health (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await open(page, 'labs')
-    await expect(page.getByTestId('no-vitals')).toBeVisible()
-    await shot(page, 'no-vitals', scheme, '[data-testid="no-vitals"]')
-    await shot(page, 'no-vitals-browse', scheme, '#hb-h')
+    await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
+    await expect(page.getByTestId('glance-labs')).toBeVisible()
+    await shot(page, 'labs-only', scheme)
   })
 }

@@ -175,7 +175,7 @@ for (const scheme of ['light', 'dark'] as const) {
         { personId: 'me', takenAt: at(2, 8), test: 'bp_systolic', value: 132, unit: 'mmHg' }
       ])
       await page.reload()
-      await page.evaluate(() => { location.hash = '#health' })
+      await page.evaluate(() => { location.hash = '#health/move' }) // S16: Food is the row under Move
       const link = page.getByRole('link', { name: /^Food/ })
       await expect(link).toBeVisible()
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(56)

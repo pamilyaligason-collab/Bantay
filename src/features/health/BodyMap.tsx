@@ -13,12 +13,12 @@ const PLACE: Record<NodeId, { side: 'l' | 'r'; row: 1 | 2 | 3 | 4 | 5 }> = {
 }
 // Row centres in figure units. Rows are 66px tall with a 4px gap, and the figure box starts 18 units above the head.
 const ROW_Y = [15, 85, 155, 225, 295]
-const VIEW_BOX = '0 -18 100 346'
+export const VIEW_BOX = '0 -18 100 346'
 // Where each dot sits on the body (head, heart, belly, hips, legs).
-const AT: Record<NodeId, [number, number]> = { sleep: [44, 18], mood: [56, 18], bp: [43, 74], pulse: [57, 78], sugar: [58, 112], weight: [41, 148], steps: [61, 255] }
+export const AT: Record<NodeId, [number, number]> = { sleep: [44, 18], mood: [56, 18], bp: [43, 74], pulse: [57, 78], sugar: [58, 112], weight: [41, 148], steps: [61, 255] }
 const WHERE: Record<NodeId, string> = { sleep: 'head', mood: 'head', bp: 'heart', pulse: 'heart', sugar: 'belly', weight: 'hips', steps: 'legs' }
 // Faint organs seen through the frosted body, so each glow sits on the part it belongs to.
-const ORGANS = [
+export const ORGANS = [
   'M50 8C58 8 60 14 59 20C58 25 54 27 50 27C46 27 42 25 41 20C40 14 42 8 50 8Z', // brain
   'M46 62C41 62 36 68 35 80C34 90 36 97 41 97C45 97 47 93 47 86L47 68Z M54 62C59 62 64 68 65 80C66 90 64 97 59 97C55 97 53 93 53 86L53 68Z', // lungs
   'M52 74C52 70 58 69 60 73C62 69 69 70 68 76C67 82 61 87 60 90C57 87 52 80 52 74Z', // heart
