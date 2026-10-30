@@ -4,6 +4,7 @@ import { skipOnboarding } from './helpers'
 
 // Doctor visits (M7a): next visit card, Follow-up due from a prescription, Bring checklist, the visit summary page and its share fallback. Made-up data only.
 const SHOTS = process.env.M7A_SHOTS
+const PICTURE_MS = 30_000 // ceiling for the summary picture to be drawn; the assertion returns the moment the picture is on screen
 
 const seed = (page: Page, phase: 1 | 2) =>
   page.evaluate(async ([nowMs, phase]) => {
@@ -84,10 +85,11 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/summary-light.png` })
   // desktop chromium cannot share files: the page offers to save the picture instead
   await page.getByRole('button', { name: 'Share as picture' }).click()
-  await expect(page.getByRole('status').filter({ hasText: /Shared|Take a screenshot to share/ }).first()).toBeVisible()
+  // the picture is drawn on a canvas and PNG-encoded: under 4 parallel browsers that takes up to ~7 s (measured), so wait for the app's own result, not a fixed beat
+  await expect(page.getByRole('status').filter({ hasText: /Shared|Take a screenshot to share/ }).first()).toBeVisible({ timeout: PICTURE_MS })
   await page.getByRole('button', { name: 'Close' }).click()
   await page.getByRole('button', { name: 'Show full screen' }).click()
-  await expect(page.getByRole('dialog', { name: /full screen/ }).getByRole('img')).toBeVisible()
+  await expect(page.getByRole('dialog', { name: /full screen/ }).getByRole('img')).toBeVisible({ timeout: PICTURE_MS })
   await expect(page.getByText('Take a screenshot to share.')).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
