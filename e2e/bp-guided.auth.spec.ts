@@ -2,25 +2,21 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
+import { seed } from './fixtures/s16/health'
 
 // Runs in the "auth" project (signed in as a made-up member with a mocked server; own person id is 'me').
 // S9: the one BP table, the guided two-reading check and the crisis card. Made-up data only.
 // Shots (390x844, light and dark) go to docs/session-10/shots/s9/<data-s>-<scheme>.png and are compared with the mockup sections health-vitals, health-bp, health-bpresult.
 const SHOTS = 'docs/session-10/shots/s9'
 
-const seed = (page: Page) =>
-  page.evaluate(async (nowMs) => {
-    const at = (h: number, daysAgo = 0) => { const d = new Date(nowMs - daysAgo * 86_400_000); d.setHours(Math.floor(h), Math.round((h % 1) * 60), 0, 0); return d.toISOString() }
-    const db = await new Promise<IDBDatabase>((res, rej) => { const r = indexedDB.open('bantay-health'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
-    const tx = db.transaction(['readings'], 'readwrite')
-    const rows: [number, number, number, number][] = [[8.7, 0, 134, 84], [8.08, 1, 138, 86], [7.83, 2, 126, 78], [8.08, 3, 118, 76], [21.17, 4, 142, 90]]
-    for (const [h, ago, s, d] of rows) {
-      tx.objectStore('readings').put({ personId: 'me', takenAt: at(h, ago), test: 'bp_systolic', value: s, unit: 'mmHg' })
-      tx.objectStore('readings').put({ personId: 'me', takenAt: at(h, ago), test: 'bp_diastolic', value: d, unit: 'mmHg' })
-    }
-    await new Promise((r) => (tx.oncomplete = r))
-    db.close()
-  }, Date.now())
+const seedBp = (page: Page) => {
+  const at = (h: number, daysAgo = 0) => { const d = new Date(Date.now() - daysAgo * 86_400_000); d.setHours(Math.floor(h), Math.round((h % 1) * 60), 0, 0); return d.toISOString() }
+  const rows: [number, number, number, number][] = [[8.7, 0, 134, 84], [8.08, 1, 138, 86], [7.83, 2, 126, 78], [8.08, 3, 118, 76], [21.17, 4, 142, 90]]
+  return seed(page, 'bantay-health', { readings: rows.flatMap(([h, ago, s, d]) => [
+    { personId: 'me', takenAt: at(h, ago), test: 'bp_systolic', value: s, unit: 'mmHg' },
+    { personId: 'me', takenAt: at(h, ago), test: 'bp_diastolic', value: d, unit: 'mmHg' }
+  ]) })
+}
 
 const axe = async (page: Page, scope: string) => (await new AxeBuilder({ page }).include(scope).analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
 // shots are rewritten only when SHOTS=1, so a plain gate run never dirties the committed PNGs
@@ -32,8 +28,8 @@ test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#health')
   await expect(page.locator('h1')).toHaveText('Health')
-  await expect(page.getByTestId('insight')).toBeVisible()
-  await seed(page)
+  await expect(page.getByTestId('bodyhero')).toBeVisible() // v12: no headline sentence while there are no readings; the hero is the settled state
+  await seedBp(page)
   await page.reload()
 })
 

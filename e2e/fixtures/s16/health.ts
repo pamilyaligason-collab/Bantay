@@ -6,15 +6,23 @@ import { FIXED_CLOCKS } from '../../s16'
 
 type Rows = Record<string, Record<string, unknown>[]>
 
-const seed = (page: Page, dbName: string, rows: Rows) =>
-  page.evaluate(async ([name, data]) => {
-    const open = new Promise<IDBDatabase>((res, rej) => { const r = indexedDB.open(name as string); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) })
-    const db = await open
-    const tx = db.transaction(Object.keys(data as Rows), 'readwrite')
-    for (const [store, list] of Object.entries(data as Rows)) for (const row of list) tx.objectStore(store).put(row)
-    await new Promise((r) => (tx.oncomplete = r))
-    db.close()
-  }, [dbName, rows] as const)
+/** Puts rows into stores the app already created. Never creates a database itself (an aborted upgrade) and waits until every store exists, so a slow first load under parallel workers cannot race the seed. */
+export const seed = async (page: Page, dbName: string, rows: Rows) => {
+  await expect.poll(() => page.evaluate(([name, data]) => new Promise<boolean>((res) => {
+    const o = indexedDB.open(name as string)
+    o.onupgradeneeded = () => o.transaction!.abort()
+    o.onerror = (e) => { e.preventDefault(); res(false) }
+    o.onsuccess = () => {
+      const db = o.result
+      const stores = Object.keys(data as Rows)
+      if (!stores.every((s) => db.objectStoreNames.contains(s))) { db.close(); return res(false) }
+      const tx = db.transaction(stores, 'readwrite')
+      for (const [store, list] of Object.entries(data as Rows)) for (const row of list) tx.objectStore(store).put(row)
+      tx.oncomplete = () => { db.close(); res(true) }
+      tx.onerror = () => { db.close(); res(false) }
+    }
+  }), [dbName, rows] as const), { message: `${dbName} stores ${Object.keys(rows).join(', ')} written` }).toBe(true)
+}
 
 async function open(page: Page, at: string) {
   await page.clock.setFixedTime(at)
@@ -25,7 +33,6 @@ async function open(page: Page, at: string) {
 /** Mama-like person `me` with BP above the guide (glow), sugar, weight, pulse, steps, a lab set, three medicines. */
 export async function full(page: Page, at: string = FIXED_CLOCKS[0]) {
   await open(page, at)
-  await page.evaluate(() => new Promise((r) => setTimeout(r, 300))) // the databases exist once the screen has read them
   const ago = (d: number) => new Date(Date.parse(new Date().toISOString()) - d * 86_400_000).toISOString()
   const r = (test: string, value: number, unit: string, d: number, extra: Record<string, unknown> = {}) => ({ personId: 'me', takenAt: ago(d), test, value, unit, ...extra })
   await seed(page, 'bantay-health', {
