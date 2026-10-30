@@ -21,8 +21,15 @@ export const getHome = async (): Promise<Home> => {
 }
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
-const gps = (ask: boolean) =>
-  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, ask ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { maximumAge: 600_000, timeout: 15_000 }))
+const gpsOpts = (ask: boolean) => (ask ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { maximumAge: 600_000, timeout: 15_000 })
+const web = (ask: boolean) =>
+  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, gpsOpts(ask)))
+/** N-2: on the APK the WebView's own geolocation often times out even with Android's permission granted (the phone then showed Dampas).
+ *  The Geolocation plugin asks Android directly; the WebView call stays as the second try. */
+const gps = async (ask: boolean, native: boolean): Promise<{ coords: { latitude: number; longitude: number } }> => {
+  if (native) { try { return await import('@capacitor/geolocation').then((m) => m.Geolocation.getCurrentPosition(gpsOpts(ask))) } catch { /* fall through to the WebView */ } }
+  return web(ask)
+}
 
 /** ask=true shows the browser prompt (once, from onboarding). ask=false only uses GPS if already granted.
  *  Any failure or denial falls back to the saved home barangay (default Dampas). */
@@ -39,7 +46,7 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
     // Older APKs: Android WebView never retains the grant, so permissions.query stays 'prompt' after a yes: trust our own record there.
     const allowed = st === 'granted' || (!os && st === 'prompt' && Capacitor.isNativePlatform() && (await db.kv.get('loc.asked').catch(() => undefined))?.value === true)
     if (st === 'denied' || (!allowed && !ask)) return fallback
-    const p = await gps(ask)
+    const p = await gps(ask, os !== null)
     return { lat: p.coords.latitude, lon: p.coords.longitude, source: 'gps' }
   } catch {
     return fallback
@@ -95,5 +102,6 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
-  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask }
+  // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
+  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending' }
 }

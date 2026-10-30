@@ -15,7 +15,7 @@ const soon = () => { const d = new Date(Date.now() + 30 * 60_000); return `${Str
 beforeEach(async () => { await Promise.all([ldb.medications.clear(), ldb.meds.clear(), hdb.people.clear()]) })
 
 describe('useDueMeds', () => {
-  it('a medicine for a person this phone no longer knows yields no due dose', async () => {
+  it('N-3: Next up shows only my own doses, even for a known person I can mark for', async () => {
     const schedule = { v: 1, times: [soon()] }
     await ldb.medications.bulkAdd([
       { personId: 'me', name: 'Mine', medStatus: 'active', schedule, serverId: 's1' },
@@ -24,7 +24,8 @@ describe('useDueMeds', () => {
     const { result } = renderHook(() => useDueMeds())
     await waitFor(() => expect(result.current.due.map((d) => d.personId)).toEqual(['me']))
     await hdb.people.put({ id: 'ma', name: 'Test Child' })
-    await waitFor(() => expect(result.current.due.map((d) => d.personId).sort()).toEqual(['ma', 'me']))
+    await new Promise((r) => setTimeout(r, 50)) // the live query has seen the new person
+    expect(result.current.due.map((d) => d.personId)).toEqual(['me'])
   })
   it('markTaken logs only the chosen medicines among the doses due now', async () => {
     const schedule = { v: 1, times: [soon()] }

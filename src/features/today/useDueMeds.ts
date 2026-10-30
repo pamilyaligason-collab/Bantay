@@ -13,8 +13,9 @@ const NO_IDS: string[] = []
 const NO_TAKES: MedTaken[] = []
 const startOfYesterday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 1); return d } // yesterday's late doses count at the midnight edge
 
-/** Medicines for Next up: the dose due soon (or just missed) for me and the people I can mark for, from the medications table (no profile text).
- *  `review` counts those people's medicines still waiting for "Still taking it?". */
+/** Medicines for Next up: the dose due soon (or just missed) for me only, from the medications table (no profile text).
+ *  N-3 (Lloyd 2026-10-30): Today shows the signed-in person's own items; a carer's dependants live in Family and, for an admin, View as.
+ *  `review` counts my medicines still waiting for "Still taking it?". */
 export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
   const { people, selfId } = useFamilyPeople()
   const [userId, setUserId] = useState<string | undefined>(undefined)
@@ -37,7 +38,7 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
   }, [])
 
   const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === selfId || ok.has(m.personId)) }, [allMeds, known, selfId])
-  const targets = useMemo(() => people.filter((p) => canMarkFor(p.id, selfId ?? '', writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])
+  const targets = useMemo(() => people.filter((p) => p.id === selfId && canMarkFor(p.id, selfId, writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])
   const due = useMemo(() => nextDoses(targets, meds, takes, tick), [targets, meds, takes, tick])
   const review = useMemo(() => {
     const ids = new Set(targets.map((t) => t.personId))

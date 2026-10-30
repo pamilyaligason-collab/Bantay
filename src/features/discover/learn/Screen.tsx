@@ -63,7 +63,7 @@ export default function Screen() {
         <h2 className="sh-h2 dc-shelf-h">Your benefits</h2>
         {BENEFITS.map((b) => (
           <a key={b.id} className="card press lr-tile" href={b.url} target="_blank" rel="noopener noreferrer">
-            <span className="lr-grow"><b className="sh-h2">{b.title}</b><span className="sub">{b.body}</span><span className="dc-src">Source: {b.source}, checked {b.checked}</span></span>
+            <span className="lr-grow"><b className="sh-h2">{b.title}</b><span className="sub">{b.body}</span><span className="dc-src">Source: {b.source}, checked <span className="nw">{b.checked}</span></span></span>
             <Icon name="out" />
             <span className="dc-sr">Opens outside the app</span>
           </a>

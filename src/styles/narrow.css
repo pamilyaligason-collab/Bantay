@@ -1,0 +1,38 @@
+/* Session 16 G-1: 200% text is simulated as a 195 px viewport (e2e/s16-narrow-text.auth.spec.ts). Under 300 px of effective width (src/styles/narrowMode.ts sets :root[data-narrow]; Android text zoom does not shrink the viewport) every layout gives
+   up its side-by-side columns before a word is allowed to break. `:root` raises specificity so lazy screen CSS cannot win. */
+  :root[data-narrow] .scroll { padding-left: 12px; padding-right: 12px; }
+  /* column grids -> one column (two for the heat scale) */
+  :root[data-narrow] :is(.hub, .rp-grid, .kp-grid, .ar-three, .md-two, .md-acts, .md-acts[data-two], .nd-rings, .nu-tiles, .lk-two, .rx-form, .sf-tiles, .sf-faces, .sc-big3, .td-quick, .td-two, .td-tiles, .wx-tiles, .wx-seg, .lr-grid2, .fp-tiles, .fm-two, .fm-actions) { grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] .wx-scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root[data-narrow] .sf-tile { min-height: 88px; }
+  :root[data-narrow] .sf-tile-t, :root[data-narrow] .sf-tile-s, :root[data-narrow] .wx-scale span, :root[data-narrow] .hub-txt b, :root[data-narrow] .wx-seg button { overflow-wrap: break-word; }
+  /* top bar: avatar and icons on one row, the greeting under them with the full width */
+  :root[data-narrow] .sh-top { flex-wrap: wrap; row-gap: 4px; }
+  :root[data-narrow] .sh-top-text { order: 2; flex: 1 1 100%; }
+  :root[data-narrow] .sh-top .sh-me-btn { margin-right: auto; }
+  :root[data-narrow] .sh-top > :not(.sh-me-btn):not(.sh-top-text) { order: 1; }
+  /* sub-page headers: back button (and chip) on a row, the title under it with the full width */
+  :root[data-narrow] .hdr.sh-subhdr { flex-wrap: wrap; row-gap: 4px; }
+  :root[data-narrow] .hdr.sh-subhdr h1 { flex: 1 1 100%; order: 2; hyphens: manual; }
+  :root[data-narrow] .hdr.sf-hdr { flex-wrap: wrap; }
+  :root[data-narrow] .hdr.sf-hdr h1 { flex: 1 1 100%; order: 2; }
+  :root[data-narrow] .sf-subhdr .zp { max-width: 100%; align-items: flex-start; }
+  :root[data-narrow] .sf-hdr .zp { order: 1; max-width: 100%; }
+  /* rows of icon + text + chevron: the text takes its own full row */
+  :root[data-narrow] .sf-ids, :root[data-narrow] .lr-tile, :root[data-narrow] .fm-checkin { flex-wrap: wrap; }
+  :root[data-narrow] .sf-ids-t, :root[data-narrow] .lr-tile > .lr-grow, :root[data-narrow] .fm-checkin > .grow { flex: 1 1 100%; order: 2; min-width: 0; }
+  :root[data-narrow] .sf-ids > :last-child:not(.sf-ids-t), :root[data-narrow] .lr-tile > :last-child:not(.lr-grow) { margin-left: auto; }
+  :root[data-narrow] .lr-tile .dc-src { white-space: normal; }
+  /* weather: 7 day rows drop the range bar under the numbers */
+  :root[data-narrow] .wx-days li { grid-template-columns: minmax(0, 1fr) 22px auto auto auto; column-gap: 8px; }
+  :root[data-narrow] .wx-days li .wx-range { order: 9; grid-column: 1 / -1; }
+  /* SOS circle shrinks to the width, search rows and chips wrap */
+  :root[data-narrow] .sos-btn { width: min(180px, 100%); height: auto; aspect-ratio: 1; }
+  :root[data-narrow] .sos-sub { max-width: none; }
+  :root[data-narrow] .sos-simple { grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] .vs-q { grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] .vs-qrow { flex-wrap: wrap; }
+  :root[data-narrow] .vs-qrow input { flex: 1 1 9em; }
+  :root[data-narrow] .msg-tools, :root[data-narrow] .msg-actions { flex-wrap: wrap; }
+  :root[data-narrow] .sh-seg { grid-auto-flow: row; border-radius: 24px; }
+.nw { white-space: nowrap; }

@@ -9,7 +9,8 @@ const plug = vi.hoisted(() => ({
   checkAuthorization: vi.fn(async (_o: { read: string[] }) => ({ readAuthorized: [] as string[], readDenied: [] as string[] })),
   openHealthConnectSettings: vi.fn(async () => {})
 }))
-vi.mock('@capgo/capacitor-health', () => ({ Health: plug }))
+// Like the real Capacitor proxy, Health answers every property, `then` included, and that `then` never settles (N-1 root cause).
+vi.mock('@capgo/capacitor-health', () => ({ Health: new Proxy(plug, { get: (t, k) => (k === 'then' ? () => undefined : (t as Record<string | symbol, unknown>)[k]) }) }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { getPlatform: () => 'android', isNativePlatform: () => true } }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u', personId: 'p', role: 'member', handle: null }), getAccessToken: async () => null }))
@@ -46,6 +47,29 @@ describe('capgoBridge', () => {
     const d = await capgoBridge().diagnose!()
     expect(d).toMatchObject({ available: false, granted: ['steps'], platform: 'android' })
     expect(d.reason).toContain('NOT_INSTALLED')
+  })
+  it('N-1: a Health Connect that never answers ends the check with a visible reason, not a hang', async () => {
+    vi.useFakeTimers()
+    try {
+      plug.isAvailable.mockReturnValue(new Promise(() => {}) as never)
+      plug.checkAuthorization.mockReturnValue(new Promise(() => {}) as never)
+      const p = capgoBridge().diagnose!()
+      await vi.advanceTimersByTimeAsync(25_000)
+      const d = await p
+      expect(d.available).toBeNull()
+      expect(d.reason).toContain('did not answer')
+      expect(d.lastCheck).toContain('did not answer')
+    } finally { vi.useRealTimers() }
+  })
+  it('N-1: a tap on a switch whose Health Connect never answers says it is not available, with the reason', async () => {
+    vi.useFakeTimers()
+    try {
+      plug.isAvailable.mockReturnValue(new Promise(() => {}) as never)
+      const { enableTypes } = await import('./health')
+      const p = enableTypes(['steps'] as never, capgoBridge())
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect(await p).toMatchObject({ result: 'unavailable', error: expect.stringContaining('did not answer') })
+    } finally { vi.useRealTimers() }
   })
 })
 

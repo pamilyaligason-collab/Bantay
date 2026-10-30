@@ -50,7 +50,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
 .sh-tabs button > span:not(.sh-tabbadge) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 200% text on a small phone: five labels cannot fit 35px slots, so keep icons (each button has an aria-label) and the active tab's label (UI-3) */
-@media (max-width: 300px) { .sh-tabs button:not([aria-current="page"]) > span:not(.sh-tabbadge) { display: none; } }
+:root[data-narrow] .sh-tabs button:not([aria-current="page"]) > span:not(.sh-tabbadge) { display: none; }
 :root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
 
