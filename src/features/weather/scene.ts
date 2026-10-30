@@ -17,6 +17,36 @@ export const SKY: Record<Tod, readonly [string, string]> = {
 }
 export const SCRIM = 0.58 // black-blue veil, alpha, drawn between the picture and the text
 
+/** Which layers a state draws (WeatherScene renders from this, scene.test.ts gates the same list). */
+export interface Layers { stars: boolean; sun: boolean; moon: boolean; clouds: 0 | 2 | 4; haze: boolean; fog: boolean; rain: number; flash: boolean; heat: boolean; shimmer: boolean }
+const RAIN: Partial<Record<Cond, number>> = { drizzle: 10, rain: 18, storm: 24 }
+export function layersFor(tod: Tod, cond: Cond, hot = false): Layers {
+  const night = tod === 'night'
+  const wet = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
+  const body = cond === 'clear' || cond === 'partly' || cond === 'none'
+  return {
+    stars: night && cond !== 'overcast' && !wet && cond !== 'fog',
+    sun: body && !night, moon: body && night,
+    clouds: cond === 'partly' || cond === 'fog' ? 2 : cond === 'clear' || cond === 'none' ? 0 : 4,
+    haze: cond === 'overcast' || cond === 'fog' || wet, fog: cond === 'fog',
+    rain: RAIN[cond] ?? 0, flash: cond === 'storm', heat: hot, shimmer: hot
+  }
+}
+
+/** The brightest colour each layer can reach at its highest opacity, over the sky. scene.css must carry the same hex (scene.test.ts greps it); the contrast gate uses these. */
+export const LIT = {
+  sun: { hex: '#FFF4C8', a: 1 }, sunGlow: { hex: '#FFD66B', a: 0.45 },
+  moon: { hex: '#F4F1E6', a: 1 }, moonGlow: { hex: '#F4F1E6', a: 0.35 },
+  cloud: { hex: '#FFFFFF', a: 0.55 }, fog: { hex: '#EBF0F5', a: 0.55 },
+  rain: { hex: '#DCEBFF', a: 0.85 }, flash: { hex: '#FFFFFF', a: 0.55 },
+  heat: { hex: '#FF781E', a: 0.5 }, shimmer: { hex: '#FFFFFF', a: 0.18 }, star: { hex: '#FFFFFF', a: 1 }
+} as const
+export const litOf = (l: Layers): (keyof typeof LIT)[] => [
+  ...(l.sun ? ['sun', 'sunGlow'] as const : []), ...(l.moon ? ['moon', 'moonGlow'] as const : []), ...(l.stars ? ['star'] as const : []),
+  ...(l.clouds ? ['cloud'] as const : []), ...(l.fog ? ['fog'] as const : []), ...(l.rain ? ['rain'] as const : []),
+  ...(l.flash ? ['flash'] as const : []), ...(l.heat ? ['heat'] as const : []), ...(l.shimmer ? ['shimmer'] as const : [])
+]
+
 const mins = (t: string | null | undefined): number | null => {
   const m = /T(\d{2}):(\d{2})/.exec(t ?? '')
   return m ? Number(m[1]) * 60 + Number(m[2]) : null

@@ -1,0 +1,10 @@
+/* Breathing orb: four rings and a disc scale together; the label stays unscaled on top. Theme tokens only, so light and dark both work. */
+.bo { position: relative; display: grid; place-items: center; }
+.bo-orb { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
+.bo-orb i, .bo-orb b { position: absolute; border-radius: 50%; inset: 0; }
+.bo-orb i { border: 2px solid var(--green2); }
+.bo-orb i:nth-child(1) { opacity: .16; } .bo-orb i:nth-child(2) { inset: 8%; opacity: .26; } .bo-orb i:nth-child(3) { inset: 16%; opacity: .4; } .bo-orb i:nth-child(4) { inset: 24%; opacity: .55; }
+.bo-orb b { inset: 32%; background: color-mix(in srgb, var(--green2) 22%, var(--card)); }
+.bo-label { position: relative; display: grid; justify-items: center; gap: 2px; text-align: center; color: var(--ink); }
+.bo-word { font-size: 15px; font-weight: 600; }
+.bo-count { font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
