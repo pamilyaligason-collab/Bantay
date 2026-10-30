@@ -19,12 +19,11 @@ for (const variant of ['calm', 'alertsOff', 'quake', 'storm'] as Variant[]) {
       await setScheme(page, scheme)
       await assertBudget(page, BUDGET[variant])
       const order = (await ids(page)).filter((i) => ['weather-hero', 'alerts-off', 'warning-card', 'warning-card-storm', 'family-notice', 'selfcare'].includes(i ?? ''))
-      expect(order[0]).toBe('weather-hero')
-      if (variant === 'alertsOff') expect(order[1]).toBe('alerts-off')
-      if (variant === 'quake') expect(order).toContain('warning-card')
-      if (variant === 'storm') expect(order).toContain('warning-card-storm')
+      expect(order).toEqual({ calm: ['weather-hero', 'selfcare'], alertsOff: ['weather-hero', 'alerts-off', 'selfcare'], quake: ['weather-hero', 'warning-card', 'selfcare'], storm: ['weather-hero', 'warning-card-storm', 'selfcare'], offline: ['weather-hero', 'selfcare'] }[variant])
       const hero = await page.getByTestId('weather-hero').getAttribute('data-size')
       expect(hero).toBe(variant === 'calm' ? 'expanded' : 'compact')
+      const hh = await page.getByTestId('weather-hero').evaluate((e) => e.querySelector('.sc')!.getBoundingClientRect().height)
+      expect(Math.abs(hh - (variant === 'calm' ? 232 : 196)), `hero is ${hh} px`).toBeLessThanOrEqual(2) // PLAN 1.1 row 2: 232 expanded, 196 compact
       expect(await page.locator('.wxs').count()).toBe(1) // the scene renders in both themes, no pale tint
       await page.setViewportSize({ width: 360, height: 800 })
       await assertNoWrappedButtons(page)
@@ -61,14 +60,57 @@ test('storm: the roll-call pair, Do now rows and links; closing keeps the roll c
 test('Next up: Take, Snooze and Skip; the More tile opens the log sheet; the breath row opens the sheet and back closes it', async ({ page }) => {
   await startToday(page, 'calm', { dose: true })
   const card = page.locator('.td-next')
-  await expect(card.getByRole('button', { name: 'Mark as taken' })).toBeVisible()
-  await expect(card.getByRole('button', { name: 'In 10 minutes' })).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Take, mark as taken' })).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Snooze, in 10 minutes' })).toBeVisible()
   await expect(card.getByRole('button', { name: 'Skip' })).toBeVisible()
   await page.getByRole('button', { name: 'More things to log' }).click()
-  await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  const more = page.getByRole('dialog', { name: 'More' })
+  await expect(more).toBeVisible()
+  for (const t of ['Dose taken', 'Food', 'Walk', 'Move', 'Pain', 'Sleep', 'Temperature', 'Mood', 'Water']) await expect(more.getByRole('button', { name: t, exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Start breathing' }).click()
   await expect(page.getByRole('dialog', { name: 'Take a breath' })).toBeVisible()
   await page.goBack()
   await expect(page.getByRole('dialog', { name: 'Take a breath' })).toHaveCount(0)
 })
+
+test('the whole stack in order: hero, alerts-off, warning, family notice, Next up, quick log, SOS, breathing (PLAN 1.1 rows 2-9)', async ({ page }) => {
+  await startToday(page, 'quake', { dose: true, notice: true, alertsOff: true })
+  const sels = ['[data-testid=weather-hero]', '[data-testid=alerts-off]', '[data-testid=warning-card]', '[data-testid=family-notice]', '.td-next', '.td-quick', '.td-sos', '[data-testid=selfcare]']
+  const tops = await page.evaluate((list) => list.map((q) => { const el = document.querySelector(q); return el ? el.getBoundingClientRect().top + (document.querySelector('main.scroll')?.scrollTop ?? 0) : null }), sels)
+  expect(tops.every((t) => t != null), `missing: ${sels.filter((_, i) => tops[i] == null)}`).toBe(true)
+  for (let i = 1; i < tops.length; i++) expect(tops[i]!, `${sels[i]} must sit below ${sels[i - 1]}`).toBeGreaterThan(tops[i - 1]!)
+  await expect(page.getByTestId('weather-hero')).toHaveAttribute('data-size', 'compact')
+  await assertJackClear(page)
+})
+
+test('a family notice opens what it is about; its close button marks it seen', async ({ page }) => {
+  await startToday(page, 'calm', { notice: true })
+  const row = page.getByTestId('family-notice')
+  await expect(row.getByRole('link')).toHaveAttribute('href', '#health') // the dose_missed template opens Health (templates.ts tab)
+  await row.getByRole('button', { name: 'Dismiss this family alert' }).click()
+  await expect(row).toHaveCount(0)
+})
+
+// Weather screen (D-102 budget 1900; PLAN 1.1 row 12): place switcher, scene hero, heat strip, four tiles, Season and sun.
+for (const scheme of ['light', 'dark'] as const) {
+  test(`Weather screen ${scheme}: budget, place switcher, hero, heat strip, tiles, Season and sun`, async ({ page }) => {
+    await startToday(page, 'calm', { scheme })
+    await page.goto('/#weather')
+    await expect(page.getByRole('group', { name: 'Place' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Use my location' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Now' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Details' }).locator('.wx-tile')).toHaveCount(4)
+    await expect(page.getByRole('region', { name: 'Season and sun' })).toBeVisible()
+    await expect(page.locator('.wx-scale')).toBeVisible()
+    await setScheme(page, scheme)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await assertBudget(page, 1900)
+    await page.setViewportSize({ width: 360, height: 800 })
+    await assertNoWrappedButtons(page)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await assertJackClear(page)
+    await page.locator('main.scroll').evaluate((el) => { el.scrollTop = 0 })
+    await shot(page, 'l1', `weather-${scheme}`)
+  })
+}

@@ -22,7 +22,6 @@ import { useSosActive } from '../features/family/sosActive'
 import { Skeleton, wireMotion } from '../features/look'
 import type { NextItem } from '../features/today/nextPick'
 import '../features/today/today.css'
-import '../features/today/l1.css'
 
 /** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in; one salt line under it, Meals live in Health > Food), self-care breathing, today's plan, the See the week link (My week opens under it), then More (alerts setup, banners, notices, week line).
  *  News and the video live elsewhere (Safety, Health).

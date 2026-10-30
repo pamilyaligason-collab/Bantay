@@ -7,14 +7,23 @@ import WarningCard from './WarningCard'
 import { ACK_KEY, ackStamp } from './warnAck'
 
 vi.mock('../location/useLocation', () => ({ usePlace: () => ({ weather: { lat: 6.1, lon: 125.2 }, zone: 'dampas', source: 'zone', settled: true }) }))
-vi.mock('../safety/rollcall', async (orig) => ({ ...(await orig<typeof import('../safety/rollcall')>()), fetchRollcall: async () => null, ensureStormTasks: async () => true, sendRollcall: vi.fn(async () => 'sent') }))
-vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [], selfId: null }) }))
+const h = vi.hoisted(() => ({
+  rows: null as null | { personId: string; status: 'ok' | 'need_help' }[],
+  people: [] as { id: string; name: string }[],
+  can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null },
+  sent: vi.fn(async (..._a: unknown[]) => 'sent')
+}))
+vi.mock('../safety/rollcall', async (orig) => ({ ...(await orig<typeof import('../safety/rollcall')>()), fetchRollcall: async () => h.rows, ensureStormTasks: async () => true, sendRollcall: h.sent }))
+vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: h.people, selfId: null }) }))
+vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => 'me', useActingCan: () => h.can }))
+vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
+import { track } from '../admin/events'
 
 const issued = new Date().toISOString()
 const quake: Alert = { id: 'q1', kind: 'quake', level: 'Magnitude 5.1', title: 'Earthquake', what: 'Magnitude 5.1, 40 km north.', where: 'Off Bohol', when: 'Just now', doNow: 'Drop, cover and hold on.', source: 'PHIVOLCS', sourceUrl: null, issuedAt: issued, lat: 6.2, lon: 125.2, bulletin: 'b' }
 const storm: Alert = { id: 'pagasa-tcws-x-dampas', kind: 'tcws', level: 'Signal No. 2', title: 'Wind Signal No. 2 for Dampas: Typhoon Rosal (CHAMPI)', what: 'Strong winds until 6 AM.', where: 'Sarangani (near Dampas)', when: 'now', doNow: 'x', source: 'PAGASA', sourceUrl: 'https://www.pagasa.dost.gov.ph/', issuedAt: issued, lat: 6.1, lon: 125.2, bulletin: 'b' }
 
-beforeEach(async () => { await db.kv.clear() })
+beforeEach(async () => { await db.kv.clear(); h.rows = null; h.people = []; h.can = null; h.sent.mockClear(); vi.mocked(track).mockClear() })
 afterEach(cleanup)
 
 describe('WarningCard', () => {
@@ -68,5 +77,53 @@ describe('WarningCard', () => {
     expect(await screen.findByRole('button', { name: "I'm OK" })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Storm mode' })).toBeNull()
     expect(screen.queryByRole('list', { name: 'Do now' })).toBeNull()
+  })
+
+  it('closing a warning records the warn_ack usage event (name only)', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [quake] })
+    render(<WarningCard />)
+    fireEvent.click(await screen.findByRole('button', { name: /Hide this warning/ }))
+    expect(track).toHaveBeenCalledWith('action', 'warn_ack')
+  })
+
+  it('a closed storm card whose roll call I already answered draws nothing, not an empty heading', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [storm] })
+    await db.kv.put({ key: ACK_KEY, value: { [storm.id]: ackStamp(storm) } })
+    h.rows = [{ personId: 'me', status: 'ok' }]
+    h.people = [{ id: 'me', name: 'Lloyd' }]
+    const { container } = render(<WarningCard />)
+    await new Promise((r) => setTimeout(r, 60))
+    expect(container.textContent).toBe('')
+    expect(screen.queryByRole('heading', { name: 'Is everyone safe?' })).toBeNull()
+  })
+
+  it('who answered: OK, Needs help (never "Waiting") and Waiting are three separate groups', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [storm] })
+    h.rows = [{ personId: 'me', status: 'ok' }, { personId: 'ma', status: 'need_help' }]
+    h.people = [{ id: 'me', name: 'Lloyd' }, { id: 'ma', name: 'Ma Cruz' }, { id: 'pa', name: 'Pa Cruz' }]
+    render(<WarningCard />)
+    await screen.findByText(/^OK: Lloyd/)
+    const line = document.querySelector('.sf-tally')!
+    expect(line.textContent).toBe('OK: Lloyd · Needs help: Ma · Waiting: Pa')
+    expect(line.querySelector('.sf-warn')!.textContent).toBe('Needs help: Ma')
+  })
+
+  it('acting without the roll-call right: both buttons are locked with View only and nothing is sent', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [storm] })
+    h.can = { log: false, edit: false, rollcall: false, mood: false, reason: 'You can see Mama but not log for her.' }
+    render(<WarningCard />)
+    const ok = (await screen.findAllByRole('button', { name: /view only/i }))
+    expect(ok).toHaveLength(2)
+    ok.forEach((b) => expect((b as HTMLButtonElement).disabled).toBe(true))
+    expect(screen.getByText('You can see Mama but not log for her.')).toBeTruthy()
+    fireEvent.click(ok[0]!)
+    expect(h.sent).not.toHaveBeenCalled()
+  })
+
+  it('I am OK sends the roll call as the acting person id', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [storm] })
+    render(<WarningCard />)
+    fireEvent.click(await screen.findByRole('button', { name: "I'm OK" }))
+    await waitFor(() => expect(h.sent).toHaveBeenCalledWith('me', expect.any(String), 'ok'))
   })
 })

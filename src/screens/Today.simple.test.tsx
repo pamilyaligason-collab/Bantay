@@ -24,11 +24,13 @@ vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../features/setup/useProfile')>()), useSelfPersonId: () => 'me' }))
+const lock = vi.hoisted(() => ({ can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } }))
+vi.mock('../features/viewas/viewAs', async (orig) => ({ ...(await orig<typeof import('../features/viewas/viewAs')>()), useActingCan: () => lock.can }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
 
-beforeEach(async () => { await db.kv.clear(); meds.due = true; meds.review = 0; sosb.on = false })
+beforeEach(async () => { await db.kv.clear(); lock.can = null; meds.due = true; meds.review = 0; sosb.on = false })
 afterEach(cleanup)
 
 describe('Today simple mode', () => {
@@ -177,5 +179,15 @@ describe('Today simple mode', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     expect(await screen.findByText('Saved. We will tell them when you are online.')).toBeTruthy()
     expect(feel.calls).toEqual(['great', 'unwell'])
+  })
+  it('on, acting without the log and mood rights: I took it and How are you? are locked as View only and write nothing', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    lock.can = { log: false, edit: false, rollcall: false, mood: false, reason: 'You can see Mama but not log for her.' }
+    render(<Today />)
+    const locked = await screen.findAllByRole('button', { name: 'View only' })
+    expect(locked).toHaveLength(2)
+    locked.forEach((b) => { expect((b as HTMLButtonElement).disabled).toBe(true); fireEvent.click(b) })
+    expect(screen.queryByRole('button', { name: 'I took it' })).toBeNull()
+    expect(feel.calls).toEqual([])
   })
 })

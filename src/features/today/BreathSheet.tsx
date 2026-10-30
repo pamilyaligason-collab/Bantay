@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { track } from '../admin/events'
 import { JackArt } from '../look'
 import { BreathOrb } from '../look/BreathOrb'
 import { prefersReducedMotion } from '../look/useReducedMotion'
@@ -57,6 +58,7 @@ export default function BreathSheet({ onClose }: { onClose: () => void }) {
 
   const finish = (mood: number | null) => {
     setLog(addEntry(log, { at: new Date().toISOString(), pattern: pat.id, minutes: mins, mood, personId: self }))
+    void track('action', 'breathe_done') // C-4 usage kind (name only); dropped until admin/events.ts lists it (needs)
     setStage({ s: 'thanks', mood })
   }
   const last = log.length ? log[log.length - 1]! : null

@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Dampas · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas \(saved zone\) · as of /)).toBeTruthy()
     expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
@@ -93,10 +93,11 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Dampas · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas \(saved zone\) · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
+    expect(screen.getByText('High 34° · Low 26°')).toBeTruthy() // live parity: today's range stays on the expanded card
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
     expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
@@ -104,6 +105,23 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByRole('link').getAttribute('href')).toBe('#weather?from=action')
     expect(container.querySelector('.td-act-box')).toBeTruthy()
     expect(screen.queryByText(/medicines/)).toBeNull()
+  })
+  it('compact keeps the 3-slot hourly strip but drops the range and the action box (PLAN 1.1 row 2)', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
+    const { container } = render(<WeatherCard />)
+    expect(container.querySelector('[data-size="compact"]')).toBeTruthy()
+    expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
+    expect(screen.queryByText(/^High /)).toBeNull()
+    expect(container.querySelector('.td-act-box')).toBeNull()
+  })
+  it('a slot with no rain chance draws no dash glyph (D-103 rule 1)', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    const h = hours(24)
+    m.wx = { ...base, temp: 33, humidity: 68, hourly: { ...h, prob: h.prob.map(() => null) } as never }
+    const { container } = render(<WeatherCard expanded />)
+    expect(container.querySelectorAll('.td-wxh-hrs li').length).toBe(3)
+    expect(container.querySelector('.td-wxh-hrs')!.textContent).not.toContain('–')
   })
   it('"as of" uses the place time zone when abroad, not Manila', () => {
     m.place = { weather: { lat: 32.78, lon: -96.8 }, zone: 'dampas', source: 'gps-abroad' }

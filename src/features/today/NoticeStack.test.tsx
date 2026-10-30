@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
@@ -11,6 +11,7 @@ vi.mock('../update/UpdateCard', () => ({ UpdateCard: () => null }))
 vi.mock('../update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('./NearbyList', () => ({ default: () => null }))
 vi.mock('./WeekLine', () => ({ default: () => null }))
+import { turnOnReminders } from '../setup/steps'
 import NoticeStack, { AlertsOffCard, alertsAreOff } from './NoticeStack'
 
 beforeEach(async () => { await db.kv.clear(); h.left = [] })
@@ -37,9 +38,12 @@ describe('AlertsOffCard', () => {
   })
   it('after two failed tries the action opens the app settings', async () => {
     await db.kv.put({ key: KEY_PHONE_CHECK, value: { notif_ok: false } })
-    await db.kv.put({ key: 'alerts.denied', value: 2 })
     render(<AlertsOffCard />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Turn on' }))
+    await waitFor(() => expect(turnOnReminders).toHaveBeenCalledTimes(1))
+    fireEvent.click(await screen.findByRole('button', { name: 'Turn on' }))
     expect(await screen.findByRole('button', { name: 'Open app settings' })).toBeTruthy()
+    expect(await db.kv.get('alerts.denied')).toBeUndefined() // the count is this visit's only; no stored key outside the contract
   })
 })
 

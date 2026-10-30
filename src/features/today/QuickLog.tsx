@@ -5,7 +5,8 @@ import { checkIn, FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import { useStorm } from './useStorm'
 import BpCheckButton from '../health/bpcheck/BpCheckButton'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingCan, useActingPersonId } from '../viewas/viewAs' // S16-L1: acting person + View only (C-9)
+import { logActivity, logReading } from '../log/store'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
 import PlateSheet from '../nutrition/PlateSheet'
@@ -13,7 +14,7 @@ import SaltLine from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
 import { Icon, type IconName, type IconTone } from '../shell/Icon'
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more'
+type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more' | 'pain' | 'sleep' | 'temp'
 const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
   { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
   { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
@@ -22,8 +23,25 @@ const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefin
   { id: 'water', label: 'Water', icon: 'glass', tone: undefined, aria: 'Log water you drank' },
   { id: 'more', label: 'More', icon: 'plus', tone: undefined, aria: 'More things to log' }
 ]
-/** Behind More: the four things that are not daily numbers. */
-const MORE: { id: Kind; label: string }[] = [{ id: 'dose', label: 'Dose taken' }, { id: 'meal', label: 'Food' }, { id: 'walk', label: 'Walk' }, { id: 'move', label: 'Move' }]
+/** Behind More (frame today-log, 3 x 3): Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood, Water. One meaning per glyph (D-103 rule 5). */
+const MORE: { id: Kind; label: string; icon: IconName }[] = [
+  { id: 'dose', label: 'Dose taken', icon: 'pill' }, { id: 'meal', label: 'Food', icon: 'meal' }, { id: 'walk', label: 'Walk', icon: 'walk' },
+  { id: 'move', label: 'Move', icon: 'move' }, { id: 'pain', label: 'Pain', icon: 'warn' }, { id: 'sleep', label: 'Sleep', icon: 'moon' },
+  { id: 'temp', label: 'Temperature', icon: 'therm' }, { id: 'mood', label: 'Mood', icon: 'smile' }, { id: 'water', label: 'Water', icon: 'glass' }
+]
+/** Pain on the 0-10 scale, as five plain words. Stored as the activity kind `pain-<n>` (the same shape as `mood-<word>`). */
+const PAIN: [number, string][] = [[0, 'No pain'], [2, 'Mild'], [5, 'Moderate'], [7, 'Strong'], [10, 'Worst']]
+
+/** S16-L1 (C-5): L6 adds a trailing `personId` to the loggers in today/actions.ts. Until that merges the L0 signatures lack it, so call through this type; it stays valid after. */
+const withPerson = <A extends unknown[], R>(f: (...a: A) => R) => f as unknown as (...a: [...A, string?]) => R
+
+const now = () => new Date().toISOString()
+
+/** Pain, Sleep and Temperature have no logger in actions.ts (L6's file), so they write through the shared log store here, for the viewed person. */
+async function logFor(personId: string | null, fn: (id: string) => Promise<unknown>): Promise<LogResult> {
+  if (!personId) return 'signedout'
+  try { await fn(personId); return 'ok' } catch { return 'failed' }
+}
 const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgreat: 'mid', unwell: 'bad' }
 
 /** Reads a typed number: whole text must be a finite number inside the range, else null. Never 0 for blank. */
@@ -67,7 +85,11 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
   const storm = useStorm()
-  const self = useSelfPersonId()
+  const self = useActingPersonId() // the viewed person while an admin is acting, else me
+  const personId = self ?? undefined
+  const can = useActingCan() // null when not acting
+  const lockLog = !!can && !can.log
+  const lockMood = !!can && !can.mood
   const writer = useHasWriterCarer(self)
 
   const close = () => { setOpen(null); setErr(''); setA(''); setB('') }
@@ -81,7 +103,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const face = async (f: Feeling) => {
     if (busy) return
     setBusy(true)
-    const r = await logFeeling(f)
+    const r = await withPerson(logFeeling)(f, personId)
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
@@ -89,9 +111,9 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const imOk = async () => {
     if (busy) return
     setBusy(true)
-    const r = await checkIn()
+    const r = await withPerson(checkIn)(personId)
     setBusy(false)
-    notify(r === 'ok' ? "Saved. Your family can see you are OK." : FAIL_TEXT[r])
+    notify(r === 'ok' ? (can ? 'Saved for them. Their family can see they are OK.' : "Saved. Your family can see you are OK.") : FAIL_TEXT[r])
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,15 +121,23 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       const s = readNum(a, 50, 300)
       const d = readNum(b, 30, 200)
       if (s == null || d == null || d >= s) return setErr('Type the top number (50 to 300) and the bottom number (30 to 200). The top is the bigger one.')
-      void run(logBp(Math.round(s), Math.round(d)), `Saved blood pressure ${Math.round(s)}/${Math.round(d)}`)
+      void run(withPerson(logBp)(Math.round(s), Math.round(d), personId), `Saved blood pressure ${Math.round(s)}/${Math.round(d)}`)
     } else if (open === 'sugar') {
       const v = readNum(a, 20, 700)
       if (v == null) return setErr('Type your sugar in mg/dL, a number from 20 to 700.')
-      void run(logSugar(v, fasting), `Saved sugar ${v}`)
+      void run(withPerson(logSugar)(v, fasting, personId), `Saved sugar ${v}`)
     } else if (open === 'weight') {
       const v = readNum(a, 20, 300)
       if (v == null) return setErr('Type your weight in kg, a number from 20 to 300.')
-      void run(logWeight(v), `Saved weight ${v} kg`)
+      void run(withPerson(logWeight)(v, personId), `Saved weight ${v} kg`)
+    } else if (open === 'temp') {
+      const v = readNum(a, 30, 45)
+      if (v == null) return setErr('Type the temperature in °C, a number from 30 to 45.')
+      void run(logFor(self, (id) => logReading({ personId: id, takenAt: now(), test: 'temperature', value: v, unit: '°C' })), `Saved temperature ${v} °C`)
+    } else if (open === 'sleep') {
+      const h = readNum(a, 0, 16)
+      if (h == null) return setErr('Type the hours you slept, a number from 0 to 16.')
+      void run(logFor(self, (id) => logActivity({ personId: id, kind: 'sleep', minutes: Math.round(h * 60), steps: null, startedAt: now(), source: 'manual' })), `Saved sleep ${h} hours`)
     }
   }
 
@@ -116,15 +146,16 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       <div className="td-quick" role="group" aria-label="Quick log">
         {PILLS.map((p) => p.id === 'mood' ? (
           <div key={p.id} className="td-q td-q-mood">
-            <button type="button" className="td-qm press" aria-label={p.aria} onClick={() => setOpen(p.id)}>{storm ? 'Is everyone safe?' : p.label}</button>
-            <button type="button" className="td-ok press" disabled={busy} onClick={() => void imOk()}><Icon name="check" size={16} />I'm OK</button>
+            <button type="button" className="td-qm press" aria-label={lockMood ? `${p.aria}, view only` : p.aria} disabled={lockMood} onClick={() => setOpen(p.id)}>{storm ? 'Is everyone safe?' : p.label}</button>
+            <button type="button" className="td-ok press" disabled={busy || lockMood} onClick={() => void imOk()}><Icon name={lockMood ? 'lock' : 'check'} size={16} />{lockMood ? 'View only' : "I'm OK"}</button>
           </div>
         ) : (
-          <button key={p.id} type="button" className="td-q press" aria-label={p.aria} onClick={() => setOpen(p.id)}>
+          <button key={p.id} type="button" className="td-q press" aria-label={lockLog ? `${p.aria}, view only` : p.aria} disabled={lockLog} onClick={() => setOpen(p.id)}>
             <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.label}</span>
           </button>
         ))}
       </div>
+      {(lockLog || lockMood) && can?.reason && <p className="sub td-lock-why"><Icon name="lock" size={16} />View only. {can.reason}</p>}
       <SaltLine />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
@@ -173,11 +204,11 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
         <Sheet title="Which medicine did you take?" onClose={close}>
           <div className="td-form">
             {meds.length ? meds.map((m) => (
-              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(takeMedication(m, takes), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
+              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(withPerson(takeMedication)(m, takes, personId), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
             )) : (
               <>
                 <label>Medicine name<input value={a} onChange={(e) => setA(e.target.value)} placeholder="Losartan" /></label>
-                <button type="button" className="td-pill light solid" disabled={busy || !a.trim()} onClick={() => void run(takeDose(a.trim()), `Marked ${a.trim()} taken`)}>Mark taken</button>
+                <button type="button" className="td-pill light solid" disabled={busy || !a.trim()} onClick={() => void run(withPerson(takeDose)(a.trim(), personId), `Marked ${a.trim()} taken`)}>Mark taken</button>
               </>
             )}
             {err && <p className="td-err" role="alert">{err}</p>}
@@ -195,10 +226,27 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
           </div>
         </Sheet>
       )}
-      {open === 'more' && (
-        <Sheet title="More" onClose={close}>
+      {(open === 'temp' || open === 'sleep') && (
+        <Sheet title={open === 'temp' ? 'Temperature' : 'Sleep'} onClose={close}>
+          <form className="td-form" onSubmit={submit} noValidate>
+            <label>{open === 'temp' ? 'Temperature (°C)' : 'Hours slept last night'}<input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} placeholder={open === 'temp' ? '36.8' : '7'} /></label>
+            {err && <p className="td-err" role="alert">{err}</p>}
+            <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
+          </form>
+        </Sheet>
+      )}
+      {open === 'pain' && (
+        <Sheet title="How strong is the pain?" onClose={close} focusFirst={false}>
           <div className="td-form">
-            {MORE.map((m) => <button key={m.id} type="button" className="td-opt" onClick={() => setOpen(m.id)}>{m.label}</button>)}
+            {PAIN.map(([n, word]) => <button key={n} type="button" className="td-opt" disabled={busy} onClick={() => void run(logFor(self, (id) => logActivity({ personId: id, kind: `pain-${n}`, minutes: null, steps: null, startedAt: now(), source: 'manual' })), `Saved pain: ${word.toLowerCase()}`)}>{word}</button>)}
+            {err && <p className="td-err" role="alert">{err}</p>}
+          </div>
+        </Sheet>
+      )}
+      {open === 'more' && (
+        <Sheet title="More" onClose={close} focusFirst={false}>
+          <div className="td-more-grid" role="group" aria-label="More things to log">
+            {MORE.map((m) => <button key={m.id} type="button" className="td-opt td-more-t" disabled={lockLog && m.id !== 'mood'} aria-label={lockLog && m.id !== 'mood' ? `${m.label}, view only` : undefined} onClick={() => setOpen(m.id)}><Icon name={m.icon} size={24} /><span>{m.label}</span></button>)}
           </div>
         </Sheet>
       )}

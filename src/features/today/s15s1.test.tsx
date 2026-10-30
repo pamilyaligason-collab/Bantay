@@ -73,7 +73,7 @@ describe('DS-8: the In 10 min toast follows the alarm health', () => {
     const notify = vi.fn()
     render(<NextUp item={pickNext({ due: [late], plan: null, storm: null }, now)} review={0} notify={notify} />)
     if (ok !== undefined) await new Promise((r) => setTimeout(r, 50)) // useKvValue reads Dexie live
-    fireEvent.click(screen.getByRole('button', { name: 'In 10 minutes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     await waitFor(() => expect(notify).toHaveBeenCalled())
     cleanup()
     return notify.mock.calls[0]![0] as string

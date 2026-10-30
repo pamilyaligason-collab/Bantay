@@ -22,7 +22,7 @@ const run = (status: 'missed' | 'upcoming') => render(<NextUp item={pickNext({ d
 describe('Today v7: In 10 min on the late dose card', () => {
   it('a late card has In 10 min; click snoozes this slot for 10 minutes and rings the native snooze once', async () => {
     run('missed')
-    fireEvent.click(screen.getByRole('button', { name: 'In 10 minutes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     expect(isSnoozed('dose:me:540', new Date(Date.now() + 9 * 60_000))).toBe(true)
     expect(isSnoozed('dose:me:540', new Date(Date.now() + 11 * 60_000))).toBe(false)
     await waitFor(() => expect(h.snooze).toHaveBeenCalledTimes(1))
@@ -33,14 +33,14 @@ describe('Today v7: In 10 min on the late dose card', () => {
   })
   it('an upcoming card has Snooze too (S16: Take, Snooze, Skip)', () => {
     run('upcoming')
-    expect(screen.getByRole('button', { name: 'In 10 minutes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Snooze, in 10 minutes' })).toBeTruthy()
   })
   it('after Taken the card says Saved and shows Jack well-done, decorative', async () => {
     const { container } = run('missed')
-    fireEvent.click(screen.getByRole('button', { name: 'Mark as taken' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Take, mark as taken' }))
     await screen.findByText(/Saved\. This card folds away/)
     expect(container.querySelector('img.jack')?.getAttribute('alt')).toBe('')
-    expect(screen.queryByRole('button', { name: 'In 10 minutes' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Snooze, in 10 minutes' })).toBeNull()
   })
 })
 

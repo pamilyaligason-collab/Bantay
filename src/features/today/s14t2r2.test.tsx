@@ -131,7 +131,7 @@ describe('Native snooze carries the dose day, not the tap day', () => {
     vi.setSystemTime(new Date(2026, 9, 29, 0, 10))
     const item = pickNext({ due: [dose('me', 'Lloyd', 1410, -30)], plan: null, storm: null }, new Date(2026, 9, 29, 0, 10))
     render(<NextUp item={item} review={0} notify={() => undefined} />)
-    fireEvent.click(screen.getByRole('button', { name: 'In 10 minutes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     await waitFor(() => expect(m.snooze).toHaveBeenCalledTimes(1))
     const ev = (m.snooze.mock.calls[0] as unknown as [{ notification: { extra: { day: string; at: number; people: string[] } } }])[0]
     expect(ev.notification.extra).toMatchObject({ day: '2026-10-28', at: 1410, people: ['me'] })

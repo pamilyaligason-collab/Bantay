@@ -17,6 +17,7 @@ import RainMap from './RainMap'
 import { weatherWarning } from './warning'
 import './weather.css'
 import './wxs7w.css'
+import '../today/today.css' // S16-L1: the Weather screen's D-102 budget trims (scoped under .wx) live with the lane's other styles
 
 type Sel = 'me' | 'h1' | 'h2'
 const NONE_A: Alert[] = []
@@ -31,7 +32,7 @@ const Glyph = ({ kind }: { kind: Kind }) => <Icon name={kind} tone="weather" />
 /** Icon for the warning that tops the action line: cyclone, quake, flood, storm, heat, else a plain warning triangle. */
 const WARN_ICON: Record<string, IconName> = { tcws: 'typhoon', quake: 'quake', rainfall: 'flood', thunderstorm: 'storm', heat: 'therm', tsunami: 'flood' }
 
-const deg = (n: number | null) => (n == null ? '–' : `${Math.round(n)}°`)
+const deg = (n: number | null) => (n == null ? 'n/a' : `${Math.round(n)}°`)
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 const dayLabel = (date: string, i: number) => (i === 0 ? 'Today' : new Date(`${date}T12:00:00Z`).toLocaleDateString('en-PH', { weekday: 'short', timeZone: 'UTC' }))
@@ -92,16 +93,16 @@ export default function WeatherScreen() {
       {fc && point ? <Body fc={fc} name={name} point={point} alerts={alerts} offline={offline || !online} /> : (
         <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
       )}
-      <section aria-label="Official sources">
-        <h2 className="wx-h">Official sources</h2>
-        <div className="grp">
+      {point && <LiveMapToggle loc={point} />}
+      <details className="wx-src">
+        <summary><h2 className="wx-h">Official sources</h2><Icon name="down" size={20} /></summary>
+        <div className="grp" role="group" aria-label="Official sources">
           {LINKS.map(([n, sub, url]) => (
             <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer"><span className="grow"><b>{n}</b><span className="sub">{sub}</span></span><span className="wx-out"><Icon name="out" size={20} /></span></a>
           ))}
         </div>
-      </section>
-      {point && <LiveMapToggle loc={point} />}
-      <p className="wx-foot">Forecast: Open-Meteo. Your rounded location is sent only to the weather service.</p>
+        <p className="wx-foot">Forecast: Open-Meteo. Your rounded location is sent only to the weather service.</p>
+      </details>
     </div>
   )
 }
@@ -125,6 +126,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
   const hiAll = Math.max(...days.map((d) => d.max ?? -Infinity))
   const span = Math.max(1, hiAll - lo)
   const asOf = clockIn(fc.fetchedAt, placeTimezone(point, fc.tz))
+  const [allDays, setAllDays] = useState(false) // 5 days first, all 10 on a tap: keeps the screen inside its D-102 budget
 
   return (
     <>
@@ -156,10 +158,10 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
       </section>
 
       <section aria-label="Details" className="wx-tiles">
-        <div className="wx-tile"><span className="eyebrow">Rain next 6 h</span><b>{rain6 == null ? '–' : `${Math.round(rain6)}%`}</b><span className="wx-sub">{rain6 == null ? 'No data' : rainWord(rain6)}</span></div>
-        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? '–' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
-        <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? '–' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
-        <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? '–' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
+        <div className="wx-tile"><span className="eyebrow">Rain next 6 h</span><b>{rain6 == null ? 'n/a' : `${Math.round(rain6)}%`}</b><span className="wx-sub">{rain6 == null ? 'No data' : rainWord(rain6)}</span></div>
+        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
+        <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
+        <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
       </section>
 
       <RainMap fc={fc} point={point} placeName={name} alerts={alerts} />
@@ -169,7 +171,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
         <div className="card wx-stripbox">
           <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
             {strip.map((h, i) => (
-              <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={`${Math.round(h.prob ?? 0)} percent rain`}>{h.prob == null ? '–' : `${Math.round(h.prob)}%`}</span></li>
+              <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={`${Math.round(h.prob ?? 0)} percent rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}%`}</span></li>
             ))}
           </ul>
         </div>
@@ -178,24 +180,24 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
       {days.length > 0 && <section aria-label="10 days">
         <h2 className="wx-h">10 days</h2>
         <ul className="card wx-days">
-          {days.map((d, i) => (
+          {(allDays ? days : days.slice(0, 5)).map((d, i) => (
             <li key={d.date}>
               <b>{dayLabel(d.date, i)}</b>
               <Glyph kind={kindOf(d.code)} />
               <span className="wx-lo">{deg(d.min)}</span>
               <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%` }} /></span>
               <span className="wx-hi">{deg(d.max)}</span>
-              <span className="wx-rp" aria-label={`${Math.round(d.prob ?? 0)} percent rain`}>{d.prob == null ? '–' : `${Math.round(d.prob)}%`}</span>
+              <span className="wx-rp" aria-label={`${Math.round(d.prob ?? 0)} percent rain`}>{d.prob == null ? 'n/a' : `${Math.round(d.prob)}%`}</span>
             </li>
           ))}
         </ul>
+        {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </section>}
 
       <section aria-label="Season and sun" className="card wx-season">
         <h2 className="wx-h">Season and sun</h2>
         {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
-        <p className="wx-sub">Monthly outlook: see PAGASA (link below).</p>
-        <p className="wx-sub">Typhoon season: June to November.</p>
+        <p className="wx-sub">Monthly outlook: see PAGASA (link below). Typhoon season: June to November.</p>
       </section>
     </>
   )

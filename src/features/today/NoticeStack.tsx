@@ -6,14 +6,11 @@ import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } from '../phoneche
 import { useKvValue } from '../phonecheck/useKvValue'
 import { SettingsOpener } from '../safety/settingsOpener'
 import { notifyDone, notifyState, turnOnReminders, useSetupLeft } from '../setup/steps'
-import { db } from '../../db'
 import { UpdateCard } from '../update/UpdateCard'
 import { PwaBanner } from '../update/PwaBanner'
 import NearbyList from './NearbyList'
 import WeekLine from './WeekLine'
 import './today.css'
-
-export const DENIED_KEY = 'alerts.denied' // how many times "Turn on" left the phone still off (kv, this phone only)
 
 /** F-4 / P-3: true only when the phone check says notifications are off or the alarm plan failed. Unknown is not off (ML-05). */
 export const alertsAreOff = (check: { notif_ok?: boolean | null } | undefined, alarms: Pick<AlarmHealth, 'ok'> | undefined): boolean => check?.notif_ok === false || alarms?.ok === false
@@ -22,7 +19,7 @@ export const alertsAreOff = (check: { notif_ok?: boolean | null } | undefined, a
 export function AlertsOffCard() {
   const check = useKvValue<{ notif_ok?: boolean | null }>(KEY_PHONE_CHECK)
   const alarms = useKvValue<AlarmHealth>(KEY_ALARM_HEALTH)
-  const denied = useKvValue<number>(DENIED_KEY) ?? 0
+  const [denied, setDenied] = useState(0) // "Turn on" tries that left the phone still off, this visit only (no stored count is in the contract; see needs)
   const [busy, setBusy] = useState(false)
   if (!alertsAreOff(check, alarms)) return null
   const open = denied >= 2
@@ -32,8 +29,8 @@ export function AlertsOffCard() {
     try {
       if (open) { await SettingsOpener.open({ target: 'appdetails' }).catch(() => undefined); return }
       await turnOnReminders()
-      if (!notifyDone(await notifyState())) await db.kv.put({ key: DENIED_KEY, value: denied + 1 }).catch(() => undefined)
-      else await db.kv.delete(DENIED_KEY).catch(() => undefined)
+      if (!notifyDone(await notifyState())) setDenied((n) => n + 1)
+      else setDenied(0)
     } finally { setBusy(false) }
   }
   return (

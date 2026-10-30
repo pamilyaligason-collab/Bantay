@@ -37,7 +37,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('hot clear day: heat tint, one feels-like on card and screen; hero repeats no danger label', async ({ page }) => {
       await openAt(page, TODS.day, 0, '/#today', { temp: 33, humidity: 70 })
       await expect(page.locator('section[aria-label="Weather"] .wxs')).toHaveAttribute('data-hot', '1')
-      await expect(page.getByRole('region', { name: 'Weather' })).toContainText(/Feels 4\d° · Danger/)
+      await expect(page.getByRole('region', { name: 'Weather' })).toContainText(/Feels like 4\d° · Danger/)
       await page.screenshot({ path: `${SHOTS}/today-hot-day-${scheme}.png` })
       await page.goto('/#weather')
       await expect(page.getByRole('region', { name: 'Now' })).toContainText(/Feels like 4\d°/)

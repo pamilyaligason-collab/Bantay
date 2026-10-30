@@ -13,7 +13,7 @@ import SosScreen from '../sos/SosScreen'
 import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, moodLine, useHasWriterCarer, type Feeling } from './actions'
 import { Icon } from '../shell/Icon'
 import BpCheck from '../health/bpcheck/BpCheck'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingCan, useActingPersonId } from '../viewas/viewAs' // S16-L1: acting person + View only (C-9)
 import { weatherAction, zoneAlert } from './heroCards'
 import { joinNames, pickNext } from './nextPick'
 import { markDue, useDueMeds } from './useDueMeds'
@@ -23,6 +23,9 @@ import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
 import { JackArt } from '../look'
 import { IncomingSos } from '../family/IncomingSos'
+
+/** S16-L1 (C-5): L6 adds a trailing `personId` to logFeeling; the L0 signature lacks it until that merges, so call through this type (same one-liner as QuickLog). */
+const withPerson = <A extends unknown[], R>(f: (...a: A) => R) => f as unknown as (...a: [...A, string?]) => R
 
 /** Night for Jack's sleepy sticker: 9 PM to before 5 AM, phone time. */
 export const isNight = (d: Date) => d.getHours() >= 21 || d.getHours() < 5
@@ -49,7 +52,10 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const [doneNames, setDoneNames] = useState('')
   const [err, setErr] = useState('')
   const [bp, setBp] = useState(false)
-  const self = useSelfPersonId()
+  const self = useActingPersonId() // the viewed person while an admin is acting, else me
+  const can = useActingCan()
+  const lockLog = !!can && !can.log
+  const lockMood = !!can && !can.mood
   const writer = useHasWriterCarer(self)
   const item = pickNext({ due, plan: null, storm }, tick)
   const w = item.who
@@ -58,7 +64,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const sosLive = useSosActive()
   const sleepy = isNight(tick) && calm && !sosLive && !zoneAlert(alerts, place ? alertRef(place) : null) && !(place && weatherWarning(alerts, place.weather))
   const taken = async () => {
-    if (!w || busy) return
+    if (!w || busy || lockLog) return
     setBusy(true)
     const ok = await markDue(w)
     setBusy(false)
@@ -67,9 +73,9 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
     setView('taken')
   }
   const face = async (f: Feeling) => {
-    if (busy) return
+    if (busy || lockMood) return
     setBusy(true)
-    const r = await logFeeling(f)
+    const r = await withPerson(logFeeling)(f, self ?? undefined)
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
@@ -98,10 +104,10 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   }
   return (
     <div className="td-simple">
-      <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={18} />Exit</button>
+      <button type="button" className="td-exit" onClick={onExit}><Icon name="close" size={20} />Exit</button>
       <IncomingSos placement="today" />
       <AlertBand />
-      {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={72} decorative />No medicine due right now. Good night.</p>}
+      {sleepy && <p className="td-simple-night"><JackArt name="sleepy" size={56} decorative />No medicine due right now. Good night.</p>}
       {calm ? <WeatherCard expanded review={review} noJack={sleepy || sosLive} /> : (
         <>
           <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
@@ -110,7 +116,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
             <p>{item.body}</p>
             {item.note && <p className="td-note">{item.note}</p>}
             {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}
-            {w && <div className="td-act"><button type="button" className="td-pill light td-taken td-taken-big" disabled={busy} onClick={() => void taken()}><Icon name="check" size={28} stroke={2.4} />I took it</button></div>}
+            {w && <div className="td-act"><button type="button" className="td-pill light td-taken td-taken-big" disabled={busy || lockLog} onClick={() => void taken()}><Icon name={lockLog ? 'lock' : 'check'} size={32} />{lockLog ? 'View only' : 'I took it'}</button></div>}
           </article>
           {action && <p className="td-wxline td-wxline-big">{action}</p>}
         </>
@@ -118,7 +124,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
       <SosHold onSend={() => setSos(true)} />
       <Call911 />
       <div className="td-big-btns">
-        <button type="button" className="td-bigbtn ok" onClick={() => setView('mood')}>How are you?</button>
+        <button type="button" className="td-bigbtn ok" disabled={lockMood} onClick={() => setView('mood')}>{lockMood ? 'View only' : 'How are you?'}</button>
         <a className="td-bigbtn call" href={phone ? `tel:${phone}` : '#safety'}>{contact && phone ? `Call ${contact.name}` : 'Add a family number'}</a>
       </div>
       <div className="td-big-btns">

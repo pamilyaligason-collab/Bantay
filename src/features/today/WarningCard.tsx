@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { track } from '../admin/events'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { AlertCard } from '../look'
@@ -37,6 +38,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
   const clock = useNow()
   const close = useCallback((a: Alert) => {
     void putKv(ACK_KEY, ackWarning(acks, a, alerts)).catch(() => undefined)
+    void track('action', 'warn_ack') // C-4 usage kind (name only); dropped until admin/events.ts lists it (needs)
     notify?.(HIDDEN_TOAST)
   }, [acks, alerts, notify])
   const f = freshness(newestChecked(alerts), clock)
@@ -69,10 +71,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
         )
       })()}
       {storm && (isAcked(acks, storm) ? (
-        <section className="card td-rc" aria-label="Storm check-in" data-testid="storm-rollcall">
-          <h2 className="td-rc-h">Is everyone safe?</h2>
-          <StormBlock now={now} compact />
-        </section>
+        <StormBlock now={now} compact />
       ) : (
         <section role="region" aria-label="Storm mode" data-testid="warning-card-storm">
           <AlertCard
