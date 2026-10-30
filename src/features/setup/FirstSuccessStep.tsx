@@ -3,8 +3,10 @@ import { track } from '../admin/events'
 import { CheckDraw } from '../look/CheckDraw'
 import { scheduleTestAlarm } from '../phonecheck/probe'
 import { Icon } from '../shell/Icon'
-import { CONSENT_LINE } from './consent'
 import { notifyState } from './steps'
+
+/** The D-86 behaviour in one sentence (A-15, M2-4): private until shared and accepted, admins can read. Shown on onboarding screen 5 and in the Wizard's Sharing step. */
+export const CONSENT_LINE = 'Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing.'
 
 const SECONDS = 5
 

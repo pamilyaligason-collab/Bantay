@@ -10,7 +10,7 @@ import { callPermission, requestCallPermission, type CallPermission } from '../s
 import SosContactsPicker from '../sos/SosContactsPicker'
 import { saveAbout, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
-import { CONSENT_LINE } from './consent'
+import { CONSENT_LINE } from './FirstSuccessStep'
 import WarningsStep from './WarningsStep'
 import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, splitItems } from './lists'
 import MedicineEditor, { useSelfId } from './MedicineEditor'

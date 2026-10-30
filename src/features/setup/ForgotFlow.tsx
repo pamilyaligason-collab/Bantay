@@ -116,12 +116,12 @@ export default function ForgotFlow({ member, onBack, google, start = startReset,
         <p className="si-hint">No problem. Pick the easiest way back in. Your records are not touched.</p>
       </div>
       <button type="button" className="grp si-opt" disabled={!handle} onClick={() => setView('newpin')}>
-        <span className="si-tile" aria-hidden="true"><Icon name="users" size={22} /></span>
+        <span className="si-tile" aria-hidden="true"><Icon name="users" size={24} /></span>
         <span className="grow"><b>Ask a family admin to approve</b><span className="si-hint">They tap Approve in their Bantay app.</span></span>
         <Icon name="chev" size={20} />
       </button>
       <button type="button" className="grp si-opt" onClick={google}>
-        <span className="si-tile" aria-hidden="true"><Icon name="shield" size={22} /></span>
+        <span className="si-tile" aria-hidden="true"><Icon name="shield" size={24} /></span>
         <span className="grow"><b>Sign in with Google</b><span className="si-hint">If you linked a Google account in Me.</span></span>
         <Icon name="chev" size={20} />
       </button>

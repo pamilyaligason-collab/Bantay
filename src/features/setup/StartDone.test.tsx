@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
@@ -12,7 +12,7 @@ vi.mock('../auth/client', () => ({ supabase: {} }))
 vi.mock('../auth/session', () => ({ getMember: vi.fn(async () => ({ userId: 'u1', personId: 'p-mama', role: 'member', handle: 'mama' })) }))
 vi.mock('../admin/events', () => ({ track: h.track }))
 vi.mock('./consent', async (orig) => ({ ...(await orig<object>()), recordConsent: h.consent, flushConsent: vi.fn() }))
-vi.mock('../sensors/health', () => ({ currentPersonId: async () => h.person }))
+vi.mock('../sensors/health', () => ({ currentPersonId: async () => h.person, getState: async () => ({ enabled: [] }) }))
 vi.mock('../location/useLocation', async (orig) => ({ ...(await orig<object>()), resolveLocation: h.gps }))
 vi.mock('./steps', async (orig) => ({
   ...(await orig<object>()),
@@ -22,6 +22,7 @@ vi.mock('./steps', async (orig) => ({
 }))
 vi.mock('../phonecheck/probe', () => ({ scheduleTestAlarm: vi.fn(async () => 'scheduled') }))
 import StartDone from './StartDone'
+import { useSetupLeft } from './steps'
 
 const kv = async (k: string) => (await db.kv.get(k))?.value
 const dots = (n: number) => screen.getByRole('img', { name: `Step ${n} of 5` })
@@ -137,5 +138,34 @@ describe('onboarding screens 3 to 5 (StartDone)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Skip' }))
     expect(done).toHaveBeenCalledTimes(1)
     expect(h.consent).toHaveBeenCalledTimes(1)
+  })
+
+  it('Skip on 3 leaves Reminders on the Today setup row (useSetupLeft)', async () => {
+    const { unmount } = render(<StartDone onDone={() => undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(await screen.findByRole('heading', { name: 'Where are you most days?' })).toBeTruthy()
+    unmount()
+    const { result } = renderHook(() => useSetupLeft())
+    await waitFor(() => expect(result.current.left).toContain('Reminders'))
+  })
+
+  it('"Turn on reminders first" drops the pushed entries: a second pass leaves with exactly the entries it pushed', async () => {
+    const go = vi.spyOn(history, 'go')
+    const push = vi.spyOn(history, 'pushState')
+    const done = vi.fn()
+    render(<StartDone onDone={done} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Turn on reminders first' }))
+    expect(await screen.findByRole('heading', { name: 'Medicine reminders' })).toBeTruthy()
+    expect(go).toHaveBeenCalledWith(-2) // screen 5 back to 3 pops the 2 entries
+    go.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip' }))
+    expect(push).toHaveBeenCalledTimes(4) // 2 per pass
+    expect(go).toHaveBeenCalledWith(-2) // leave pops this pass's 2, so none are left
+    expect(done).toHaveBeenCalledTimes(1)
+    go.mockRestore(); push.mockRestore()
   })
 })

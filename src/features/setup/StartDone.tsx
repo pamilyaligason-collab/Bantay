@@ -22,18 +22,24 @@ export default function StartDone({ onDone }: { onDone: () => void }) {
   const [rung, setRung] = useState(false)
   const stepRef = useRef<Step>(3)
   const closed = useRef(false)
+  const jumping = useRef(false) // our own history.go() is in flight: the state is already set, the popstate it fires is ignored
   useEffect(() => {
     let live = true
     void getMember().then((m) => {
       if (!live || !m?.personId) return
       setName(loadFamily().find((f) => f.personId === m.personId)?.displayName.trim().split(/\s+/)[0] ?? '')
     }).catch(() => undefined)
-    const back = () => { if (!closed.current && stepRef.current > 3) { stepRef.current = (stepRef.current - 1) as Step; setStep(stepRef.current) } }
+    const back = () => {
+      if (jumping.current) { jumping.current = false; return }
+      if (!closed.current && stepRef.current > 3) { stepRef.current = (stepRef.current - 1) as Step; setStep(stepRef.current) }
+    }
     window.addEventListener('popstate', back)
     return () => { live = false; window.removeEventListener('popstate', back) }
   }, [])
   const go = useCallback((n: Step) => {
     if (n > stepRef.current) { try { history.pushState({ bantayOnb: n }, '') } catch { /* no history */ } }
+    // going back by button pops this screen's own entries too, so a later forward/leave never meets stale same-URL entries (entries = step - 3)
+    else if (n < stepRef.current) { try { jumping.current = true; history.go(n - stepRef.current) } catch { jumping.current = false } }
     stepRef.current = n
     setStep(n)
   }, [])

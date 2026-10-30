@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { assertBudget, assertNoWrappedButtons, setScheme } from './s16'
-import { deniedTwice, noMeds, signInMama } from './fixtures/s16/onboarding'
+import { deniedTwice, noMeds, signInMama, withMeds } from './fixtures/s16/onboarding'
 
 // S16 L8: onboarding screens 3 to 5 after the first sign-in (390x844, budget 700 each, D-102). Screens 1 and 2 are covered by s12-join.auth and s6a-onboard-shots.auth.
 // Filename ends in .auth.spec: only that project builds with Supabase env. Shots are written only when S16_SHOTS is set (ML-32).
@@ -35,6 +35,17 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: 'Medicine reminders' })).toBeVisible()
   })
 }
+
+test('screen 3 with a dose on file fits the 700 px budget at 390 px', async ({ page }) => {
+  await noMeds(page)
+  await signInMama(page)
+  await expect(page.getByRole('heading', { name: 'Medicine reminders' })).toBeVisible()
+  await withMeds(page)
+  await page.reload()
+  await expect(page.getByText('Losartan 50 mg · 9:00 AM')).toBeVisible()
+  await expect(page.getByText('Not right? Fix later in Health.')).toBeVisible()
+  await assertBudget(page, BUDGET); await assertNoWrappedButtons(page)
+})
 
 test('after two refusals the button opens the app settings', async ({ page }) => {
   await noMeds(page)

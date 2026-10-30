@@ -6,7 +6,8 @@ import { currentPersonId } from '../sensors/health'
 import { DENIALS_BEFORE_SETTINGS, bumpNotifyDenials, notifyDenials, notifyState, onResume, openAppSettings, turnOnReminders } from './steps'
 
 const clock = (hhmm: string) => {
-  const m = toMinutes(hhmm) ?? 0
+  const m = toMinutes(hhmm)
+  if (m == null) return '' // unknown time: show nothing, never 12:00 AM
   return new Date(2000, 0, 1, Math.floor(m / 60), m % 60).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
@@ -16,7 +17,7 @@ async function dosesOnFile(): Promise<string[]> {
   if (!id) return []
   const meds = liveMedicines(await ldb.medications.where('personId').equals(id).toArray().catch(() => []), id)
   return meds.map((m) => {
-    const times = parseSchedule(m.schedule).times.map(clock).join(', ')
+    const times = parseSchedule(m.schedule).times.map(clock).filter(Boolean).join(', ')
     const name = [m.name, m.strength || m.dose].filter(Boolean).join(' ')
     return times ? `${name} · ${times}` : name
   })
@@ -34,12 +35,13 @@ export default function RemindersStep({ onNext }: { onNext: () => void }) {
   const settings = denials >= DENIALS_BEFORE_SETTINGS && !on
   const turnOn = async () => {
     setBusy(true)
-    if (settings) { await openAppSettings(); setBusy(false); return } // back from Settings: onResume re-reads the switch
-    await turnOnReminders()
-    const n = await notifyState()
-    if (n.display) { setBusy(false); onNext(); return }
-    setDenials(await bumpNotifyDenials())
-    setBusy(false)
+    try {
+      if (settings) { await openAppSettings(); return } // back from Settings: onResume re-reads the switch
+      await turnOnReminders()
+      const n = await notifyState()
+      if (n.display) { onNext(); return }
+      setDenials(await bumpNotifyDenials())
+    } finally { setBusy(false) }
   }
   return (
     <div className="ob-page">

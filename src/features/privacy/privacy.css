@@ -26,7 +26,7 @@
 .lk-fpwrap i + i { animation-delay: 1.2s; }
 .lk-fp { position: relative; overflow: hidden; width: 184px; height: 184px; border-radius: 50%; border: 0; background: var(--green); color: var(--on-green); display: grid; place-items: center;
   box-shadow: 0 10px 30px color-mix(in srgb, var(--green) 45%, transparent), 0 0 0 8px color-mix(in srgb, var(--green2) 25%, transparent); cursor: pointer; }
-.lk-fp svg { position: relative; z-index: 1; color: #CFE8D6; }
+.lk-fp svg { position: relative; z-index: 1; width: 92px; height: 92px; color: #CFE8D6; }
 .lk-scan { position: absolute; left: 14%; right: 14%; top: 22%; height: 3px; border-radius: 2px; z-index: 2; background: linear-gradient(90deg, transparent, var(--amber), transparent); box-shadow: 0 0 12px var(--amber); opacity: .85; animation: lk-scan 2.4s ease-in-out infinite alternate; }
 .lk-say { text-align: center; display: grid; gap: 4px; }
 .lk-say b { font-size: 20px; }

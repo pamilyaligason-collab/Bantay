@@ -40,7 +40,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
       )}
       <div className="lk-fpwrap">
         <i /><i />
-        <button type="button" className="lk-fp" aria-label="Use fingerprint" onClick={() => void ask()}><Icon name="fp" size={92} stroke={1.4} /><span className="lk-scan" /></button>
+        <button type="button" className="lk-fp" aria-label="Use fingerprint" onClick={() => void ask()}><Icon name="fp" size={32} /><span className="lk-scan" /></button>
       </div>
       <div className="lk-say">
         <b>Touch the fingerprint sensor</b>

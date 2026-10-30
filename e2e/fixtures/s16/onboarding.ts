@@ -50,10 +50,10 @@ export async function signInMama(page: Page): Promise<void> {
 export const noMeds = async (page: Page): Promise<void> => { await mockServer(page) }
 /** Screen 3 after Android stopped prompting: two refusals are already counted (m2-3). Call after the app has opened once so the database exists. */
 export const deniedTwice = (page: Page) => kvPut(page, 'setup.notifDenials', 2)
-/** Screen 3 with a dose on file. Needs the signed-in person's id; the mock gives p-mama. */
+/** Screen 3 with a dose on file (medicines live in the 'bantay-log' database). Call after the app has opened once so Dexie has made the database, then reload. */
 export const withMeds = (page: Page) =>
   page.evaluate(() => new Promise<void>((res, rej) => {
-    const r = indexedDB.open('bantay')
+    const r = indexedDB.open('bantay-log')
     r.onerror = () => rej(r.error)
     r.onsuccess = () => {
       const t = r.result.transaction('medications', 'readwrite')

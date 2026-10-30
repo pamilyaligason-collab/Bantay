@@ -41,7 +41,7 @@ export default function SetPin({ name, title, step, canFinger, busy, onSubmit, o
       {err && <p className="si-bad" role="alert">{err}</p>}
       {canFinger && (
         <div className="grp si-opt si-switchrow">
-          <span className="si-tile" aria-hidden="true"><Icon name="fp" size={22} /></span>
+          <span className="si-tile" aria-hidden="true"><Icon name="fp" size={24} /></span>
           <div className="grow"><b>Open with fingerprint</b></div>
           <button type="button" role="switch" className="sh-switch" aria-label="Open with fingerprint" aria-checked={finger} onClick={() => setFinger(!finger)} />
         </div>
