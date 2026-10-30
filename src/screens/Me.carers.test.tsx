@@ -12,10 +12,11 @@ import Me from './Me'
 const FAMILY = [{ personId: 'p0', displayName: 'Mama' }, { personId: 'pLola', displayName: 'Lola' }].map((m) => ({ ...m, handle: null, provider: 'pin' }))
 
 beforeEach(async () => { h.role = 'member'; h.carerOf = ['pLola', 'p0']; await db.kv.clear(); localStorage.setItem('bantay.family', JSON.stringify(FAMILY)) })
-afterEach(() => { cleanup(); localStorage.clear() })
+afterEach(() => { cleanup(); localStorage.clear(); location.hash = '' })
 
 describe('Me, people I look after and the version line (start-me)', () => {
   it('lists each person the member is a carer of by name and links to their page, never themself', async () => {
+    location.hash = '#me/family' // Settings > Family and sharing
     render(<Me />)
     const row = await screen.findByRole('link', { name: /Lola/ })
     expect(row.getAttribute('href')).toBe('#family/people/pLola')
@@ -24,11 +25,14 @@ describe('Me, people I look after and the version line (start-me)', () => {
   })
   it('a member who looks after nobody sees no such row', async () => {
     h.carerOf = []
+    location.hash = '#me/family'
     render(<Me />)
-    await screen.findByText(/^Bantay /)
+    await screen.findByRole('link', { name: /Medical ID/ })
+    await new Promise((r) => setTimeout(r, 50)) // the carer list loads after first paint
     expect(screen.queryByText(/You are their carer/)).toBeNull()
   })
   it('every member sees "Bantay <version>" with "Not checked yet" until a real check ran; no Check button for non-admins', async () => {
+    location.hash = '#me/about'
     render(<Me />)
     expect((await screen.findByText(/^Bantay /)).textContent).toMatch(/^Bantay \S+/)
     expect(screen.getByText('Not checked yet')).toBeTruthy()
@@ -36,6 +40,7 @@ describe('Me, people I look after and the version line (start-me)', () => {
   })
   it('an admin keeps the Check for updates row', async () => {
     h.role = 'admin'
+    location.hash = '#me/about'
     render(<Me />)
     expect(await screen.findByRole('button', { name: 'Check for updates' })).toBeTruthy()
   })

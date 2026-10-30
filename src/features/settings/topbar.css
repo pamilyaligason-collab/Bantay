@@ -1,0 +1,4 @@
+/* TopBar greeting (S16 L5, plan 1.1 row 1): "Magandang umaga, Mama" wraps to two lines at 22 px, the date sits on its own 13 px line, and a name is never cut with an ellipsis. */
+.sh-top .sh-top-date { font-size: 13px; overflow: visible; text-overflow: clip; white-space: normal; }
+.sh-top .sh-top-greet { display: block; overflow: visible; -webkit-line-clamp: unset; }
+.sh-top:not([data-compact="true"]) .sh-top-greet { font-size: 22px; line-height: 1.2; }

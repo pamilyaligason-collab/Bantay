@@ -66,9 +66,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await mock(page, reqs, scheme, PEOPLE, [LOSARTAN])
     await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
     await page.goto('/#me')
-    await expect(page.getByRole('heading', { name: 'Me' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
     await shot(page, 'me', scheme)
-    await page.getByRole('button', { name: 'Edit' }).click()
+    await page.getByRole('button', { name: 'Edit name and photo' }).click()
     const sheet = page.getByRole('dialog', { name: 'My details' })
     await expect(sheet.getByLabel('Phone number')).toHaveValue('0917 123 4567') // pulled from the server row
     await expect(sheet.getByLabel('Birthday')).toHaveValue('1958-03-14')
@@ -93,7 +93,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const reqs: Req[] = []
     await mock(page, reqs, scheme)
     await page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
-    await page.goto('/#me')
+    await page.goto('/#me/family')
     await page.getByRole('button', { name: /Who gets your SOS text/ }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.waitForTimeout(1500) // first pull stores people.phone
@@ -108,7 +108,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await mock(page, reqs, scheme, [{ id: 'p1', display_name: 'Test Person', phone: null, birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }])
     await page.goto('/')
     await page.getByRole('button', { name: 'Open Today' }).click() // first launch is start-done since S6a; setup opens from the card on Me
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     await page.getByRole('button', { name: /^Next: / }).click()
     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')
     await shot(page, 'wizard-photo', scheme)

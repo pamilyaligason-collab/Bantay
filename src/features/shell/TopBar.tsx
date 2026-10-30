@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 import { parseHash } from './routes'
 import { useOwnAvatar } from '../setup/useProfile'
 import './shell.css'
+import '../settings/topbar.css'
 
 const greeting = (d: Date) => (d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening')
 const dateLine = (d: Date) => new Intl.DateTimeFormat('en-PH', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Asia/Manila' }).format(d)
