@@ -9,7 +9,8 @@ const plug = vi.hoisted(() => ({
   checkAuthorization: vi.fn(async (_o: { read: string[] }) => ({ readAuthorized: [] as string[], readDenied: [] as string[] })),
   openHealthConnectSettings: vi.fn(async () => {})
 }))
-vi.mock('@capgo/capacitor-health', () => ({ Health: plug }))
+// Like the real Capacitor proxy, Health answers every property, `then` included, and that `then` never settles (N-1 root cause).
+vi.mock('@capgo/capacitor-health', () => ({ Health: new Proxy(plug, { get: (t, k) => (k === 'then' ? () => undefined : (t as Record<string | symbol, unknown>)[k]) }) }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { getPlatform: () => 'android', isNativePlatform: () => true } }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u', personId: 'p', role: 'member', handle: null }), getAccessToken: async () => null }))

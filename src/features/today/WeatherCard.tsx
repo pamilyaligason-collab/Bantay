@@ -14,9 +14,10 @@ import { rainOutlook, rainWords, skyOf, weatherActionLine, wxLocal, type Wx } fr
 import { MedsCheck } from './NextUp'
 import { placeNameOf } from './placeName'
 
-/** N-2: say when the weather is for the saved zone because the phone did not share its position. */
-const whereOf = (place: Parameters<typeof placeNameOf>[0]) => (place?.source === 'zone' ? `${placeNameOf(place)} (saved zone)` : placeNameOf(place))
 import { useWeather } from './weather'
+
+/** N-2: say when the weather is for the saved zone because the phone did not share its position (not while it is still looking). */
+const whereOf = (place: Parameters<typeof placeNameOf>[0]) => (place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (saved zone)` : placeNameOf(place))
 
 export const WEATHER_HREF = '#weather'
 export const WEATHER_ACTION_HREF = '#weather?from=action' // from=action counts weather_opened_action: only when an action line is on the card

@@ -5,7 +5,7 @@ import type { Entry } from '../safety/entries'
 import { wxLocal, type Wx } from './heroCards'
 import WeatherCard from './WeatherCard'
 
-const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' } as unknown, wx: null as unknown }))
+const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true } as unknown, wx: null as unknown }))
 vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
 vi.mock('../safety/store', () => ({ useKv: () => [] }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
@@ -78,7 +78,7 @@ describe('Today weather card, expanded', () => {
     return { time, prob: time.map((_, i) => 10 * i), code: time.map(() => 61) }
   }
   it('is the hero: eyebrow with place and as-of, big temperature, condition, range, three slots, one link to #weather', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
     expect(screen.getByText(/^Weather · Dampas \(saved zone\) · as of /)).toBeTruthy()
@@ -98,7 +98,7 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText(/as of 12:00 AM/)).toBeTruthy()
   })
   it('quiet medicines row with the count, linking to the medicines screen', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
     m.wx = base
     render(<WeatherCard expanded review={2} />)
     const a = screen.getByRole('link', { name: /Nothing due right now · 2 medicines to check/ })

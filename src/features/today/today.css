@@ -297,4 +297,6 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .td-chip.high, :root:not([data-theme="light"]) .td-chip.low { color: var(--warn); } }
 
 /* 200% text (195 px): the weather row stacks instead of breaking words one letter per line; the small weather Jack steps aside. */
-@media (max-width: 300px) { .td-wx-row, .td-act-box { flex-wrap: wrap; } .td-wx-row .td-grow { flex: 1 1 100%; min-width: 0; } .td-wx-jack { display: none; } }
+:root[data-narrow] :is(.td-wx-row, .td-act-box) { flex-wrap: wrap; }
+:root[data-narrow] .td-wx-row .td-grow { flex: 1 1 100%; min-width: 0; }
+:root[data-narrow] .td-wx-jack { display: none; }

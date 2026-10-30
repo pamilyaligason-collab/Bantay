@@ -102,5 +102,6 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
-  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask }
+  // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
+  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending' }
 }

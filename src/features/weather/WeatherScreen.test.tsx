@@ -45,7 +45,8 @@ describe('WeatherScreen', () => {
   it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    expect((screen.getByRole('button', { name: 'Use my location' }) as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }))
+    expect(await screen.findByText(/Location is off for Bantay/)).toBeTruthy() // no GPS in the test: the tap says why instead of doing nothing (m-1)
     expect(screen.getByRole('button', { name: 'Home 1' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Home 2' }))
     expect(screen.getByRole('button', { name: 'Home 2' }).getAttribute('aria-pressed')).toBe('true')

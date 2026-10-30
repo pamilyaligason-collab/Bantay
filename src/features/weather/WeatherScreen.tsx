@@ -56,6 +56,8 @@ export default function WeatherScreen() {
   const place = usePlaceFrom(l)
   const gps: LatLon | null = l.source === 'gps' ? { lat: l.lat, lon: l.lon } : null
   const [pick, setPick] = useState<Sel | null>(null)
+  const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
+  const [locOff, setLocOff] = useState(false)
   const homeSel: Sel = place?.zone === HOME_ZONES[1].id ? 'h2' : 'h1'
   const sel: Sel = pick ?? (gps ? 'me' : homeSel)
   const point: LatLon | null = sel === 'me' ? gps ?? place?.weather ?? null : HOME_ZONES[sel === 'h1' ? 0 : 1]
@@ -77,10 +79,16 @@ export default function WeatherScreen() {
     <div className="wx">
       <SubHeader title="Weather" backHref="#today" backLabel="Back to Today" />
       <div className="wx-seg" role="group" aria-label="Place">
-        <button type="button" aria-pressed={sel === 'me'} onClick={async () => { if (gps || (await l.ask()).source === 'gps') setPick('me') }}>{gps ? 'My location' : 'Use my location'}</button>
+        <button type="button" aria-pressed={sel === 'me'} disabled={finding} onClick={async () => {
+          if (gps) return setPick('me')
+          setFinding(true); setLocOff(false)
+          const got = (await l.ask().catch(() => null))?.source === 'gps'
+          setFinding(false); if (got) setPick('me'); else setLocOff(true)
+        }}>{gps ? 'My location' : finding ? 'Finding you…' : 'Use my location'}</button>
         <button type="button" aria-pressed={sel === 'h1'} onClick={() => setPick('h1')}>Home 1</button>
         <button type="button" aria-pressed={sel === 'h2'} onClick={() => setPick('h2')}>Home 2</button>
       </div>
+      {locOff && !gps && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
       {fc && point ? <Body fc={fc} name={name} point={point} alerts={alerts} offline={offline || !online} /> : (
         <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
       )}

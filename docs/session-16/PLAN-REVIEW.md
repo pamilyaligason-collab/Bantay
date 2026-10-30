@@ -116,3 +116,78 @@ N-19 cites mockup v9. D-91 (v8 contract) is consistent.
 - Missing: the read-only rule for View as (B-1), memory-only state (B-2), and SimpleToday, Safety StormCard, routes.test and the App.tsx track line in the lanes (M-2, M-4).
 
 Not checked: mockup v9/v10 frames visually, the Me.tsx "22 rows" count, Discover sub-screen internals, MemberPage write paths.
+
+---
+
+# Re-review 1 (Opus, 2026-10-30, PLAN.md Revision 1)
+
+## Verdict: GO_WITH_CHANGES
+
+B-1, B-2 and B-3 are fixed in design. View as is now a read-only display lens. It is memory-only (`PLAN:215-236`), audited before the switch (`:226`), and `sync/profile.ts`, SOS, consent and sensors are untouched (`:211`). I checked `useHealthData.ts:55`: `resetPersonChoice` exists, so L6 needs no edit there.
+
+No blockers remain. Three majors remain. All are about *completeness* of read-only, not identity: every write still goes out under the admin's own id and is allowed by existing RLS. Apply R-1..R-3 to the briefs; no further plan review is needed.
+
+M-2..M-7 are fixed:
+- M-2: StormCard and AlertBand kept; SimpleToday is in L1 (`:78,105,361`).
+- M-3: the ack stamp includes `level` and `kind` (`:95`).
+- M-4: no file moves (`:160-162,369`); `routes.test` and the `App.tsx:86` track line are in L0 (`:326`).
+- M-5: every spec named exists in `e2e/` and has an owner (`:288`).
+- M-6: the ingest row, CarerCards and Memories are placed (`:174-181`).
+- M-7: C-5 is trimmed and the stubs are in L0 (`:326,345-352`).
+
+M-1 is fixed, apart from R-3.
+
+## Remaining findings
+
+### R-1 (major) The read-only list misses live write controls, and two of them have no owner
+The plan relies on each lane disabling its own write controls (`PLAN:251`, risk R6 `:397`). Grepping the code turns up writes that are not on the list:
+- **Simple mode "Took it":** `today/SimpleToday.tsx:41,63` calls `markDue` on `useDueMeds()` rows. Those become the viewed member's doses (`PLAN:245`), so Simple mode marks Mama's dose. L1 owns the file, but neither 1.1 (f) (`:113`) nor `:251` names it.
+- **QuickLog and NextUp:** `today/QuickLog.tsx:63-64` (now shows the viewed member's meds via `useMyTakes`, `PLAN:246`) and `today/NextUp.tsx:7` (`markTaken`/`markDue`). These two files are in **no lane** (L1's list at `:361` has neither, nor `quickLog.test.tsx`).
+- **Bell inbox:** `inbox/useInbox.ts:29` uses `useMyTakes`, so the bell lists the viewed member's doses. `inbox/MissedDoseActions.tsx:6` (`logDose`) is reachable from there, and L7 owns it for hrefs only.
+- **Health sub-screens:** `health/useHealthPerson.ts:8-9` computes `canMark`/`canEdit` from `ownId`. If L2 makes the "viewed id" the owner (`PLAN:247,362`), `canMarkFor(viewed, viewed)` is true. That enables every write in Refill, Visits, VisitSummary, MetricScreen, Nutrition and Labs, which all use `useHealthPerson`.
+
+**Change:**
+1. Add `today/QuickLog.tsx`, `today/NextUp.tsx` and `quickLog.test.tsx` to L1, and add SimpleToday's dose and face buttons to 1.1 (f). Add the MissedDoseActions disable to L7.
+2. In `useHealthPerson` (L2), set `canMark = !viewing && canMarkFor(...)` and `canEdit = !viewing && (…)`. Get the viewed default person through `resetPersonChoice()` + `setPersonId(viewed)`, never by changing `ownId`.
+3. Add one fail-closed backstop owned by L6 in `src/db.ts:48` `enqueue`: throw `'viewing'` when `getViewedPersonId() !== null`, unless `table === 'sos_events'` (and the telemetry table `admin/events.ts` uses). Callers already map a throw to `'failed'` (e.g. `today/actions.ts:20`). Add a vitest for it.
+
+With the backstop, R6 stops depending on every lane remembering. Only the direct-RPC writes still rely on per-lane disabling: `raise_mood_alert`, roll call, consent and share.
+
+### R-2 (major) The C-6 grep guard is a denylist with holes, and C-5 contradicts it
+The guard (`PLAN:255,354`) lists directories. It does not cover:
+- `today/actions.ts` (all the quick-log writes)
+- `safety/StormCard.tsx:24,39` (roll call, now composed by WarningCard)
+- `health/reminderActions.ts:41` and `health/medActions.ts`
+- `setup/MedicineEditor.tsx:20`
+- `family/store.ts` and `family/messagesApi.ts`
+
+Separately, C-5 offers `exitViewAs()` inside `auth/session.ts` (`:350`). That breaks the guard's own `auth/` rule, and `viewAs.ts` imports `getMember` from `auth/session`, which would make a circular import.
+
+**Change:**
+- Turn the guard into an allowlist: `useViewedPersonId` / `getViewedPersonId` may be imported only by the files in the 1.6 reader table (`:242-249`) plus `viewas/**` and `db.ts` (R-1). `useViewAs` (the boolean) is allowed anywhere.
+- Fix C-5 to the banner option: `onAuthChange(exitViewAs)` in `ViewAsBanner`'s mount effect. Drop the `auth/session.ts` row.
+
+### R-3 (major) `useViewedVisibleIds` fails open
+`PLAN:237-238` returns null, meaning no filter, "when not viewing". It does not say what happens while viewing when `loadRoster()` fails. `loadRoster` returns null on any failed read (`viewAsData.ts:65-72`). Read literally, a failed roster load while viewing shows the admin's whole family under "Viewing as Mama", which defeats M-1.
+**Change:** while viewing, a null or failed roster gives `new Set([viewedId])` (only that person) plus a line "Family list could not be loaded". Return null only when not viewing. Test the failed-load case.
+
+### Minors
+- r-1 Stale text that contradicts rev 1. Fix these in place:
+  - `PLAN:28` Architecture still says "one local override of … `selfIdOrCached`".
+  - `PLAN:43` still says "close button + swipe".
+  - `PLAN:315-316` still says "local kv" and "a non-admin with the kv key set".
+  - `PLAN:378` still says "`learn/library/*.test` moved".
+  - `PLAN:380` still says "22 labels" (`:207` says to count instead).
+  - `PLAN:407` "roll-call faces inside" should be "StormBlock: faces, I'm safe / I need help, Do now".
+- r-2 "Member archived = exit automatically" (`:253`) has no mechanism or owner. L6: `useViewAs` calls `exitViewAs()` when the viewed id leaves `hdb.people`.
+- r-3 Fidelity: some screens still show the admin's own data under "Viewing as Mama":
+  - Move: `exercise/data.ts:45`
+  - Food: `nutrition/SaltSummary.tsx:72`
+  - Water: `nutrition/WaterSheet.tsx:9`
+  - Plate: `nutrition/PlateSheet.tsx:25`
+  - Privacy: `privacy/PrivacyScreen.tsx:25`
+
+  Either add the Move and Food display reads to the reader table, or say in 1.6 that those sub-screens show "yourself". With R-1 their writes are blocked either way.
+- r-4 `viewas` importing `admin/desk/viewAsData.ts` also pulls `admin/api` (`viewAsData.ts:2`) into the main bundle. Lazy-import it inside `enterViewAs` / `useViewedVisibleIds`.
+
+Not checked: the mockup frames, and the full direct-RPC write inventory beyond the files named in R-1 and R-2.

@@ -18,7 +18,8 @@ export const within = <T>(p: Promise<T>, ms = HC_TIMEOUT_MS): Promise<T> =>
 /** The real bridge, over @capgo/capacitor-health. The plugin loads only when a method is called on a phone. */
 export function capgoBridge(): HealthBridge {
   let loading: ReturnType<typeof load> | undefined
-  const load = () => import('@capgo/capacitor-health').then((m) => m.Health)
+  // N-1 root cause: a Capacitor plugin proxy answers `then`, so resolving a promise with it never settles. Keep it wrapped; never return it from async code.
+  const load = () => import('@capgo/capacitor-health').then((m) => ({ h: m.Health }))
   const plugin = () => within(loading ??= load()) // one import shared by calls that overlap (mount check + a tap)
   let why = ''
   const trace = { request: '(not called yet)', check: '(not called yet)' }
@@ -32,13 +33,13 @@ export function capgoBridge(): HealthBridge {
   return {
     platform: platform(),
     isAvailable: async () => {
-      const r = await within((await plugin()).isAvailable())
+      const r = await within(((await plugin()).h).isAvailable())
       why = r.available ? '' : (r.reason ?? '')
       return r.available
     },
     reason: () => why,
     requestAll: async (types: SensorType[]) => {
-      const p = await plugin()
+      const p = (await plugin()).h
       const r = await traced('request', () => p.requestAuthorization({ read: types }))
       const got = only(r.readAuthorized, types)
       if (got.length) return got
@@ -46,7 +47,7 @@ export function capgoBridge(): HealthBridge {
       return only((await traced('check', () => p.checkAuthorization({ read: types }))).readAuthorized, types)
     },
     diagnose: async (): Promise<HealthDiag> => {
-      const p = await plugin()
+      const p = (await plugin()).h
       const all: SensorType[] = ['steps', 'sleep', 'heartRate', 'bloodPressure']
       let available: boolean | null = null
       let reason = ''
@@ -57,15 +58,15 @@ export function capgoBridge(): HealthBridge {
     },
     openSettings: async (kind: 'settings' | 'install') => {
       if (kind === 'install') return market()
-      try { await (await plugin()).openHealthConnectSettings() } catch { market() } // not installed or too old: its Play Store page
+      try { await ((await plugin()).h).openHealthConnectSettings() } catch { market() } // not installed or too old: its Play Store page
     },
     request: async (type: SensorType) => {
-      const p = await plugin()
+      const p = (await plugin()).h
       if ((await traced('request', () => p.requestAuthorization({ read: [type] }))).readAuthorized.includes(type)) return true
       return (await traced('check', () => p.checkAuthorization({ read: [type] }))).readAuthorized.includes(type)
     },
-    granted: async (type: SensorType) => (await within((await plugin()).checkAuthorization({ read: [type] }))).readAuthorized.includes(type),
+    granted: async (type: SensorType) => (await within(((await plugin()).h).checkAuthorization({ read: [type] }))).readAuthorized.includes(type),
     read: async (type: SensorType, sinceIso: string) =>
-      (await (await plugin()).readSamples({ dataType: type, startDate: sinceIso, endDate: new Date().toISOString(), limit: 1000, ascending: true })).samples
+      (await ((await plugin()).h).readSamples({ dataType: type, startDate: sinceIso, endDate: new Date().toISOString(), limit: 1000, ascending: true })).samples
   }
 }
