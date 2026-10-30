@@ -30,7 +30,7 @@ vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
 
-beforeEach(async () => { await db.kv.clear(); lock.can = null; meds.due = true; meds.review = 0; sosb.on = false })
+beforeEach(async () => { await db.kv.clear(); lock.can = null; feel.calls.length = 0; feel.r = 'told'; meds.due = true; meds.review = 0; sosb.on = false })
 afterEach(cleanup)
 
 describe('Today simple mode', () => {

@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { h, stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }), h: { storm: null as null | { title: string; body: string }, feel: vi.fn(), result: 'told' as string, checkIn: vi.fn(), act: vi.fn(), read: vi.fn(), can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } } }))
+const { h, stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }), h: { storm: null as null | { title: string; body: string }, feel: vi.fn(), result: 'told' as string, checkIn: vi.fn(), act: vi.fn(), read: vi.fn(), take: vi.fn(), meds: [] as unknown[], can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } } }))
 vi.mock('./useStorm', () => ({ useStorm: () => h.storm }))
-vi.mock('./useMyTakes', () => ({ useMyMedications: () => [], useMyDoseRows: () => [] }))
+vi.mock('./useMyTakes', () => ({ useMyMedications: () => h.meds, useMyDoseRows: () => [] }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p1' }))
 vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => 'p1', useActingCan: () => h.can }))
 vi.mock('../log/store', async (orig) => ({ ...(await orig<typeof import('../log/store')>()), logActivity: (a: unknown) => { h.act(a); return Promise.resolve(1) }, logReading: (r: unknown) => { h.read(r); return Promise.resolve(1) } }))
@@ -14,10 +14,10 @@ vi.mock('../nutrition/PlateSheet', () => stub('meal'))
 vi.mock('../nutrition/SaltSummary', () => stub('salt'))
 vi.mock('../nutrition/WaterSheet', () => stub('water'))
 vi.mock('../health/bpcheck/BpCheckButton', () => ({ default: () => <button type="button">Guided check</button> }))
-vi.mock('./actions', async (orig) => ({ ...(await orig<typeof import('./actions')>()), logFeeling: (f: string, id?: string) => { h.feel(f, id); return Promise.resolve(h.result) }, checkIn: (id?: string) => { h.checkIn(id); return Promise.resolve('ok') } }))
+vi.mock('./actions', async (orig) => ({ ...(await orig<typeof import('./actions')>()), logFeeling: (f: string, id?: string) => { h.feel(f, id); return Promise.resolve(h.result) }, checkIn: (id?: string) => { h.checkIn(id); return Promise.resolve('ok') }, takeMedication: (m: unknown, _t: unknown, id?: string) => { h.take(m, id); return Promise.resolve('ok') } }))
 import QuickLog from './QuickLog'
 
-afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.can = null; for (const f of [h.feel, h.checkIn, h.act, h.read]) f.mockReset() })
+afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.can = null; h.meds = []; for (const f of [h.feel, h.checkIn, h.act, h.read, h.take]) f.mockReset() })
 
 describe('QuickLog (today-log)', () => {
   it("six tiles plus the small I'm OK beside How are you?", () => {
@@ -88,6 +88,14 @@ describe('QuickLog (today-log)', () => {
     more(); fireEvent.click(screen.getByRole('button', { name: 'Pain' }))
     fireEvent.click(screen.getByRole('button', { name: 'Moderate' }))
     await waitFor(() => expect(h.act).toHaveBeenCalledWith(expect.objectContaining({ personId: 'p1', kind: 'pain-5' })))
+  })
+  it("Dose taken logs the medicine under the medicine's own person, never the admin", async () => {
+    h.meds = [{ id: 1, serverId: 's9', personId: 'mama', name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['08:00'] } }]
+    render(<QuickLog notify={() => undefined} />)
+    fireEvent.click(screen.getByRole('button', { name: 'More things to log' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dose taken' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Losartan' }))
+    await waitFor(() => expect(h.take).toHaveBeenCalledWith(expect.objectContaining({ name: 'Losartan' }), 'mama'))
   })
   it('acting without the log right: tiles are locked with View only and the reason; the mood tile follows the mood right', () => {
     h.can = { log: false, edit: false, rollcall: false, mood: true, reason: 'You can see Mama but not log for her.' }

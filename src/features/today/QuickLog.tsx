@@ -204,7 +204,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
         <Sheet title="Which medicine did you take?" onClose={close}>
           <div className="td-form">
             {meds.length ? meds.map((m) => (
-              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(withPerson(takeMedication)(m, takes, personId), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
+              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(withPerson(takeMedication)(m, takes, m.personId ?? personId), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
             )) : (
               <>
                 <label>Medicine name<input value={a} onChange={(e) => setA(e.target.value)} placeholder="Losartan" /></label>
