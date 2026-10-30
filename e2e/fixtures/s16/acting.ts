@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 // S16 L6 fixtures (contracts C-11): `adminWriter`, `adminNoLink`, `member`. Signed in as a made-up user; PostgREST and RPCs are mocked; all data is invented.
 // The mock records every non-GET request in `writes` and every admin_log_view_as call in `audits`.
@@ -53,7 +53,5 @@ export async function openPicker(page: Page): Promise<void> {
     await page.locator('h1').first().waitFor()
     if (await row.waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false)) { await row.click(); return }
   }
-  // The row is mounted by L5 (Settings). Until it is merged the specs that need it skip; the merge gate sets VIEWAS_ROW_REQUIRED=1 so a missing row is a failure, not a skip.
-  if (process.env.VIEWAS_ROW_REQUIRED === '1') throw new Error('View as row not found in Settings')
-  test.skip(true, 'ViewAsRow is not mounted yet (L5 mounts it in Settings)')
+  throw new Error('View as row not found in Settings') // L5 mounts it; a missing row is a failure, never a skip
 }

@@ -162,8 +162,9 @@ export const retryToast = (r: RetryResult): string | null =>
   r === 'sent' ? 'Your family has been told you are unwell.' : r === 'nobody' ? NOBODY : r === 'refused' ? NOT_TOLD : typeof r === 'object' ? `Your Unwell from ${r.expired} did not reach your family. Call them.` : null
 // The trailing `personId` below is passed only by the named UI entry points while acting (D-99); everything else leaves it out and acts as the signed-in person.
 export const takeDose = (name: string, personId?: string) => asPerson((personId) => logMedTaken({ personId, name, takenAt: now() }), personId)
-/** A dose of one of my medications from the quick log: logged against its medication id and the open slot nearest now (no slot for an as-needed medicine or an extra dose). */
+/** A dose of one medication from the quick log (refused when `personId`, or the signed-in person, is not the medication's own person): logged against its medication id and the open slot nearest now (no slot for an as-needed medicine or an extra dose). */
 export const takeMedication = (med: Medication, takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], personId?: string) => asPerson(async (personId) => {
+  if (med.personId && med.personId !== personId) throw new Error('person-mismatch') // a dose is only ever written for the medicine's own person; asPerson reports 'failed', nothing is written
   const slot = pickSlot(med, takes, new Date())
   if (slot) await logDose({ personId, name: med.name, serverId: med.serverId }, slot)
   else await logMedTaken({ personId, name: med.name, takenAt: now(), ...(med.serverId ? { medicationId: med.serverId } : {}) })

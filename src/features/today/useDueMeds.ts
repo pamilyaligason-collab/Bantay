@@ -76,6 +76,8 @@ export function recentlyTaken(takes: Pick<MedTaken, 'personId' | 'medicationId' 
  *  Reads the same local tables the Next up card is drawn from, so the ticks and the rows agree. */
 export async function markTaken(personId: string, medIds: string[]): Promise<number> {
   if (!medIds.length) return 0
+  const a = getActingState()
+  if (a && a.personId === personId && !a.can.log) return 0 // same refusal as markDue: read-only acting writes nothing, not even locally
   try {
     const [meds, takes] = await Promise.all([ldb.medications.toArray(), ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()])
     const d = nextDoses([{ personId, name: '', isMe: false }], meds, takes, new Date())[0]

@@ -4,7 +4,8 @@
 .st-account .sh-grow b { overflow-wrap: anywhere; } /* a name is never cut with an ellipsis */
 .st-simple { min-height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 12px; }
 .st-list { padding-top: 8px; padding-bottom: 8px; }
-.st-list > .st-row { min-height: 64px; padding-top: 8px; padding-bottom: 8px; }
+.st-list > .st-row, .st-list > .rw { box-sizing: border-box; min-height: 64px; padding-top: 8px; padding-bottom: 8px; } /* border-box: the row is 64 px in all, not 64 + padding (measured 80, page 908 over 850) */
+.st-list > .rw .rw-main { min-height: 0; padding: 0; } /* the View as row (look/Row) takes the same 64 px as the group rows */
 .st-row { display: flex; align-items: center; gap: 12px; }
 .st-row .sh-sub { margin-top: 1px; }
 .st-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); flex: none; }
