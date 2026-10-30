@@ -431,3 +431,17 @@
 .wx .wx-rain { gap: 8px; }
 .wx .wx-scale span { padding: 6px 2px; }
 .wx .wx-hero { padding-block: 10px; }
+
+/* S16 TB alerts-off budget (D-102 Q6, mockup v12): SOS block 92 px with the hold line inside the button, salt line 48 px, setup row 56 px, week line one 56 px row. Text sizes and 48 px tap targets stay. */
+.td-sos .sos-simple-btn, .td-sos .sos-simple-sub { grid-area: 1 / 1; }
+/* the row is as tall as the taller of button (92) and the hold line (reserved label strip + its lines), so at 360 / 195 px the line grows the button instead of covering the label */
+.td-sos .sos-simple-btn { min-height: 92px; padding: 14px 8px 0; display: flex; align-items: flex-start; justify-content: center; }
+.td-sos .sos-simple-sub { align-self: end; padding: 42px 12px 8px; color: #fff; pointer-events: none; z-index: 1; line-height: 1.3; }
+.bt[data-jack] .td-sos .sos-simple-sub { margin-inline: 62px; padding-inline: 8px; }
+:root[data-narrow] .bt[data-jack] .td-sos .sos-simple-btn, :root[data-narrow] .bt[data-jack] .td-sos .sos-simple-sub { margin-inline: 0; }
+:root[data-narrow] .td-sos .sos-simple-sub { padding-top: 80px; } /* 195 px: 62 px each side left a 50 px column (Jack clears the block through the scroll spacer) and the label takes two lines */
+.td-sos .sos-simple:has(.holding) .sos-simple-sub { padding-top: 80px; } /* "Holding... 3 seconds to go" wraps to two lines beside Jack: reserve both (the press does not move the button top) */
+.bt .td-saltline { padding-block: 0; }
+.td-more-g [data-testid="setup-row"] .rw-main { padding-block: 0; }
+.bt .td-week { padding-block: 4px; min-height: 56px; }
+.card.td-ao { padding: 8px 16px; } /* the .td-ao rule above lost to .card (16 px all round): 80 -> 64 px */
