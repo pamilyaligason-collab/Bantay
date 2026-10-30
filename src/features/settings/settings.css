@@ -1,0 +1,20 @@
+/* Settings (S16 L5): overview rows 72 / 56 / 64 px, group pages, choice sheet, lock mark. Shared .sh-* classes live in shell.css. */
+.st-account { min-height: 72px; padding: 0 16px; }
+.st-account .sh-av { width: 48px; height: 48px; font-size: 18px; }
+.st-account .sh-grow b { overflow-wrap: anywhere; } /* a name is never cut with an ellipsis */
+.st-simple { min-height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 12px; }
+.st-list { padding-top: 8px; padding-bottom: 8px; }
+.st-list > .st-row { min-height: 64px; padding-top: 8px; padding-bottom: 8px; }
+.st-row { display: flex; align-items: center; gap: 12px; }
+.st-row .sh-sub { margin-top: 1px; }
+.st-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); flex: none; }
+.st-row[aria-disabled="true"] { color: var(--muted); }
+.st-radios { display: grid; }
+.st-rad { display: flex; align-items: center; gap: 12px; min-height: 52px; background: none; border: 0; border-top: 1px solid var(--line); font: inherit; font-size: 16px; color: var(--ink); text-align: left; padding: 0 4px; }
+.st-rad:first-child { border-top: 0; }
+.st-rad i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--muted); flex: none; position: relative; }
+.st-rad[aria-checked="true"] i { box-shadow: inset 0 0 0 2px var(--green2); }
+.st-rad[aria-checked="true"] i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--green2); }
+.st-rad[aria-checked="true"] { font-weight: 700; }
+.bt .st-group .fm-back { display: none; } /* the group header is the one Back (to the Phone group) */
+.st-edit-off { background: none; box-shadow: none; }
