@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { full } from './fixtures/s16/family'
+import { emptyNeeds, full } from './fixtures/s16/family'
 import { assertBudget, assertJackClear, assertNoWrappedButtons, setScheme } from './s16'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
@@ -12,13 +12,17 @@ for (const scheme of ['light', 'dark'] as const) {
     test.beforeEach(async ({ page }) => {
       await skipOnboarding(page)
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
-      await full(page)
-      await setScheme(page, scheme)
     })
+    const go = async (page: Page, fixture: (p: Page) => Promise<void>) => { await fixture(page); await setScheme(page, scheme) }
 
     test('family root: ID card, faces with rings and legend, Messages and Plan rows, week calendar, within budget', async ({ page }) => {
+      await go(page, full)
       await expect(page.getByTestId('profilecard')).toBeVisible()
-      await expect(page.getByTestId('needyounow')).toHaveCount(0) // nothing needs you: not drawn at all
+      await expect(page.getByText('Needs you now')).toBeVisible()
+      await expect(page.getByText(/missed a medicine/)).toBeVisible()
+      const order = await page.locator('[data-testid="profilecard"], .fm-sech, [data-testid="face-ring"]').evaluateAll((els) => els.map((e) => e.getAttribute('data-testid') ?? 'needs'))
+      expect(order[0]).toBe('profilecard') // Needs you now is the second block, under the ID card and above the faces
+      expect(order[1]).toBe('needs')
       const rings = page.getByTestId('face-ring')
       await expect(rings.first()).toBeVisible()
       expect(await rings.evaluateAll((els) => els.map((e) => e.getAttribute('data-k')).sort())).toEqual(['none', 'none', 'ok', 'ok'])
@@ -42,7 +46,18 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
+    test('empty needs: Needs you now is not drawn at all, within the 1500 budget', async ({ page }) => {
+      await go(page, emptyNeeds)
+      await expect(page.getByTestId('profilecard')).toBeVisible()
+      await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
+      await expect(page.getByText('Needs you now')).toHaveCount(0)
+      await expect(page.getByTestId('msgs')).toBeVisible()
+      await assertBudget(page, 1500)
+      await assertJackClear(page)
+    })
+
     test('a face sheet offers Send a message and the chat opens with @name ready; Papers lives at #family/papers', async ({ page }) => {
+      await go(page, emptyNeeds)
       await page.getByRole('button', { name: /^Papa Ben, OK / }).click()
       await page.getByRole('link', { name: 'Send a message' }).click()
       await expect(page).toHaveURL(/#family\/messages$/)
@@ -54,6 +69,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('no button wraps at 360', async ({ page }) => {
+      await go(page, full)
       await page.setViewportSize({ width: 360, height: 740 })
       await assertNoWrappedButtons(page)
     })

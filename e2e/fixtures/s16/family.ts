@@ -52,8 +52,10 @@ export async function seed(page: Page, dbName: string, store: string, rows: Row[
 
 const at = (h: number, m: number) => new Date(2026, 9, 27, h, m, 0).toISOString()
 
-/** `full`: open #family, seed the check-ins and a week of plan items, reload. */
-export async function full(page: Page): Promise<void> {
+/** One unseen missed-dose alert for Ate Joy (09:00 today, Manila ref format), so "Needs you now" has something to draw. */
+const NEED = { id: 'a1', personId: 'ma', kind: 'dose_missed', template: 'dose_missed', ref: 'm1:2026-10-27:09:00', createdAt: at(9, 30), pushedAt: null, seenAt: null, expiresAt: new Date(2026, 10, 27).toISOString() }
+
+async function open(page: Page, needs: boolean): Promise<void> {
   await mockFamily(page)
   await page.clock.setFixedTime(NOW)
   await page.goto('/#family')
@@ -61,6 +63,13 @@ export async function full(page: Page): Promise<void> {
   await seed(page, 'bantay-log', 'activity', [{ personId: 'pa', kind: 'check-in', minutes: null, steps: null, startedAt: at(6, 55), source: 'manual' }, { personId: 'lo', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 10), source: 'manual' }])
   await seed(page, 'bantay-family', 'events', [{ clientId: 'e1', title: 'School program', startsAt: at(16, 30), endsAt: null, allDay: false, personId: null }])
   await seed(page, 'bantay-family', 'tasks', [{ clientId: 't1', title: 'Buy rice', due: '2026-10-27', assigneePersonId: 'ma', done: false }])
+  if (needs) await seed(page, 'bantay-alerts', 'alerts', [NEED])
   await page.reload()
   await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
 }
+
+/** `full`: open #family with a missed dose waiting under the ID card (budget 1650), the check-ins and a week of plan items seeded. */
+export const full = (page: Page) => open(page, true)
+
+/** `emptyNeeds`: the same family with nothing needing the carer, so "Needs you now" draws nothing (budget 1500). */
+export const emptyNeeds = (page: Page) => open(page, false)

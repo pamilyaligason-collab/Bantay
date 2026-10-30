@@ -98,7 +98,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`memories is off by default, then says what is missing instead of failing (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByRole('button', { name: 'Show Memories' }).click() // Memories is a row that opens in place
+    await page.getByTestId('memoriesrow').getByRole('button', { expanded: false }).click() // Memories is a row that opens in place
     const m = page.getByTestId('memories')
     await m.scrollIntoViewIfNeeded()
     await expect(m.getByRole('button', { name: 'Turn on Memories' })).toBeVisible()
@@ -109,7 +109,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(m.getByRole('button', { name: 'Turn Memories off on this phone' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.reload()
-    await page.getByRole('button', { name: 'Show Memories' }).click()
+    await page.getByTestId('memoriesrow').getByRole('button', { expanded: false }).click()
     await expect(page.getByTestId('memories').getByTestId('mem-state')).toBeVisible() // the choice is remembered on this phone
   })
 }

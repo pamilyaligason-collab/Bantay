@@ -93,15 +93,18 @@ for (const scheme of ['light', 'dark'] as const) {
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`queue, confirm sheet and record detail (${scheme}, 390x844)`, async ({ page }) => {
+    test.slow() // three axe passes and two sheets: 30 s is not enough on a loaded runner
     await page.setViewportSize({ width: 390, height: 844 })
     await page.emulateMedia({ colorScheme: scheme })
     const patches: Patch[] = []
     await mock(page, patches)
     await skipOnboarding(page)
+    const queued = page.waitForResponse((r) => r.url().includes('/rest/v1/records_queue') && r.ok()) // the settled state: the queue's own answer, however slow the session restore is under load
     await page.goto('/#health/papers')
+    await queued
 
     const entry = page.getByRole('button', { name: /To check \(2\)/ })
-    await expect(entry).toBeVisible({ timeout: 15_000 }) // the queue loads after the session restores (flaked at 5 s under load)
+    await expect(entry).toBeVisible()
     await entry.click()
     const sheet = page.getByRole('dialog')
     await expect(sheet.getByRole('heading', { name: 'To check' })).toBeFocused()

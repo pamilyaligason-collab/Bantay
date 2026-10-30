@@ -7,7 +7,6 @@ vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', pers
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: !!acting.ids, personId: 'p9', name: 'Mama' }), useViewedVisibleIds: () => acting.ids }))
 import { hdb } from '../records/store'
 import FacesRow, { faceName, faceStatus } from './FacesRow'
-import NeedYouNow from './NeedYouNow'
 
 afterEach(() => { cleanup(); acting.ids = null })
 
@@ -41,12 +40,5 @@ describe('FacesRow while acting', () => {
     expect(list.textContent).not.toContain('Lloyd')
     expect(screen.getByText('Showing only who Mama can see.')).toBeTruthy()
     expect((screen.getByRole('button', { name: /I'm OK/ }) as HTMLButtonElement).disabled).toBe(true)
-  })
-})
-
-describe('NeedYouNow', () => {
-  it('draws nothing at all when nothing needs you', () => {
-    const { container } = render(<NeedYouNow />)
-    expect(container.textContent).toBe('')
   })
 })

@@ -184,6 +184,7 @@ describe('Faces row', () => {
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
     expect(await screen.findByText('Could not save on this phone. Try again.')).toBeTruthy()
     expect(screen.queryByText(/^You're OK · /)).toBeNull()
+    expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false) // still there to try again
     add.mockRestore()
   })
 
@@ -218,6 +219,7 @@ describe('Faces row', () => {
     const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
     expect(within(dlg).getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
     expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
+    expect(within(dlg).getByRole('link', { name: 'Use Messenger for video' }).getAttribute('href')).toBe('https://www.messenger.com/')
     expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy()
   })
 

@@ -6,6 +6,7 @@ import FamilyMessages from '../features/family/FamilyMessages'
 import { IncomingSos } from '../features/family/IncomingSos'
 import MemberPage from '../features/family/MemberPage'
 import Memories from '../features/family/Memories'
+import { dayKey } from '../features/family/events'
 import { listMessages, type Msg } from '../features/family/messagesApi'
 import { stamp } from '../features/family/messagesLogic'
 import NeedYouNow from '../features/family/NeedYouNow'
@@ -18,6 +19,7 @@ import { useFamilyPeople, type FamilyPerson } from '../features/family/roster'
 import { StormRollCall } from '../features/family/StormRollCall'
 import { usePlan } from '../features/family/usePlan'
 import { Row } from '../features/look/Row'
+import { Icon } from '../features/shell/Icon'
 import { SubHeader } from '../features/shell/SubHeader'
 import { useKv } from '../features/shell/useKv'
 import { useActing } from '../features/viewas/viewAs'
@@ -47,7 +49,8 @@ export function messagesPreview(msgs: Msg[], people: FamilyPerson[], seen: strin
   if (!last) return { sub: 'Say hello', unread: 0 }
   const who = last.mine ? 'You' : (people.find((p) => p.id === last.senderPersonId)?.name.trim().split(/\s+/)[0] ?? 'Family')
   const t = stamp(last.createdAt)
-  const unread = msgs.filter((m) => !m.mine && (!seen || m.createdAt > seen)).length
+  const seenAt = seen ? Date.parse(seen) : NaN // parsed, not string-compared: the server writes '+00:00', the phone 'Z'
+  const unread = msgs.filter((m) => !m.mine && !(Date.parse(m.createdAt) <= seenAt)).length
   return { sub: `Family chat · ${who}: ${textOf(last)}${t ? ` · ${t}` : ''}`, unread }
 }
 
@@ -67,19 +70,25 @@ function MessagesRow() {
 function PlanRow() {
   const { tasks, events, notes } = usePlan()
   const now = new Date()
-  const rows = dayRows(groupPlan(tasks, events, notes, now), `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`, now)
+  const rows = dayRows(groupPlan(tasks, events, notes, now), dayKey(now), now)
   const prog = progressOf(rows)
   const sub = prog.total > 0 ? `${prog.done} of ${prog.total} done today` : rows.length > 0 ? `${rows.length} ${rows.length === 1 ? 'thing' : 'things'} today` : 'Nothing planned'
   return <div className="card fm2-row"><Row icon="calendar" title="Plan" sub={sub} href="#family/plan" testId="planrow" /></div>
 }
 
-/** Memories as a 64 px row; tap to open the photos in place (as now: off until turned on, family uploads only). */
+/** Memories as a 64 px row; tap to open the photos in place (as now: off until turned on, family uploads only). One button, so one expanded state (the Row's own button cannot carry aria-expanded). */
 function MemoriesRow() {
   const [open, setOpen] = useState(false)
   return (
     <div className="card fm2-row fm2-mem" data-testid="memoriesrow">
-      <Row icon="photo" title="Memories" sub={open ? 'Family photos' : 'Family photos, kept private'} onClick={() => setOpen((o) => !o)} control={<button type="button" className="fm2-toggle" aria-expanded={open} aria-label={open ? 'Hide Memories' : 'Show Memories'} onClick={() => setOpen((o) => !o)}><span aria-hidden="true">{open ? '–' : '+'}</span></button>} />
-      {open && <Memories />}
+      <div className="rw">
+        <button type="button" className="rw-main press" aria-expanded={open} aria-controls="fm2-mem-body" onClick={() => setOpen((o) => !o)}>
+          <span className="rw-lead"><Icon name="smile" size={20} /></span>
+          <span className="rw-txt"><b className="rw-title">Memories</b><span className="rw-sub">{open ? 'Family photos' : 'Family photos, kept private'}</span></span>
+          <Icon name={open ? 'up' : 'plus'} size={20} />
+        </button>
+      </div>
+      {open && <div id="fm2-mem-body"><Memories /></div>}
     </div>
   )
 }
@@ -88,7 +97,13 @@ export default function Family() {
   const { seg, member } = parseFamily(location.hash)
   const { acting } = useActing()
   const [, setSeen] = useKv<string | null>(SEEN, null)
-  useEffect(() => { if (seg === 'messages' && !member) void setSeen(new Date().toISOString()) }, [seg, member]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (seg !== 'messages' || member) return
+    // Seen = the newest message's own (server) time, so a phone clock that is off cannot hide or invent unread. Leaving marks what arrived while the chat was open.
+    const mark = () => void listMessages(1).then((r) => { if (r.ok) setSeen(r.data[r.data.length - 1]?.createdAt ?? new Date().toISOString()) })
+    mark()
+    return mark
+  }, [seg, member]) // eslint-disable-line react-hooks/exhaustive-deps
   if (member) return isReport(location.hash) ? <Report id={member} /> : <MemberPage id={member} />
   if (seg === 'papers') return <Papers />
   if (seg === 'messages') return (<><SubHeader title="Messages" backHref="#family" backLabel="Back to Family" /><FamilyMessages /></>)
