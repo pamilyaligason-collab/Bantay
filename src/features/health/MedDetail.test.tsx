@@ -25,8 +25,10 @@ import { Medicines } from './Medicines'
 const iso = (back: number, h = 12) => { const d = new Date(); d.setDate(d.getDate() - back); d.setHours(h, 0, 0, 0); return d.toISOString() }
 const med = (o: Partial<Medication> = {}): Medication => ({ clientId: 'c1', serverId: 's1', personId: 'p1', name: 'Amlodipine', strength: '5 mg', dose: '1 tablet', medStatus: 'active', status: 'confirmed', schedule: { v: 1, times: ['08:00'] }, ...o })
 
-beforeEach(async () => { vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; who.real = false; who.offline = false; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]); await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 1, rearmed: 0, ok: true } }) })
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
+// Fixed local noon (ML-38): before 02:00 yesterday's 23:59 dose is still inside its 2 hours, so the week counts change with the runner's clock.
+const noon = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d }
+beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'], now: noon() }); vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true); who.own = 'p1'; who.real = false; who.offline = false; sb.writers = []; sb.asked = []; await Promise.all([ldb.medications.clear(), ldb.meds.clear(), db.kv.clear(), hdb.people.clear()]); await db.kv.put({ key: KEY_ALARM_HEALTH, value: { at: new Date().toISOString(), set: 1, rearmed: 0, ok: true } }) })
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers() })
 
 describe('MedDetail', () => {
   it('offline: the member has no person yet, so the own id falls back to the id cached on this phone', async () => {
