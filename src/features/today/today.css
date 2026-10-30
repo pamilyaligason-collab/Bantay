@@ -431,3 +431,13 @@
 .wx .wx-rain { gap: 8px; }
 .wx .wx-scale span { padding: 6px 2px; }
 .wx .wx-hero { padding-block: 10px; }
+
+/* S16 TB alerts-off budget (D-102 Q6, mockup v12): SOS block 92 px with the hold line inside the button, salt line 48 px, setup row 56 px, week line one 56 px row. Text sizes and 48 px tap targets stay. */
+.td-sos .sos-simple-btn, .td-sos .sos-simple-sub { grid-area: 1 / 1; }
+.td-sos .sos-simple-btn { min-height: 92px; padding-bottom: 48px; }
+.td-sos .sos-simple-sub { align-self: end; padding: 0 12px 10px; color: #fff; pointer-events: none; z-index: 1; line-height: 1.3; }
+.bt[data-jack] .td-sos .sos-simple-sub { margin-inline: 62px; }
+.bt .td-saltline { padding-block: 0; }
+.td-more-g [data-testid="setup-row"] .rw-main { padding-block: 0; }
+.bt .td-week { padding-block: 4px; min-height: 56px; }
+.card.td-ao { padding: 8px 16px; } /* the .td-ao rule above lost to .card (16 px all round): 80 -> 64 px */
