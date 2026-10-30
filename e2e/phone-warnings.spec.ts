@@ -36,7 +36,7 @@ test.describe('android phone', () => {
 
 test('the setup wizard has the phone warnings step, and it can be passed', async ({ page }) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/phone') // the setup card moved to Settings > Phone (S16)
   await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
   await page.getByRole('button', { name: /: Your phone's warnings$/ }).click()
   await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText("Your phone's warnings")

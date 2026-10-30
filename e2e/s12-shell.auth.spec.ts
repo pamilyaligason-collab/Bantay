@@ -129,7 +129,8 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`learn-home: Discover shell ${scheme}`, async ({ page }) => {
     await open(page, scheme, 390, 'discover')
     await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
-    await expect(page.getByTestId('learn-home')).toBeVisible()
+    await expect(page.getByTestId('pick')).toBeVisible() // S16: the Discover root is the pick hero, the season row and five tiles; Learn is its own sub
+    await expect(page.getByTestId('discover-tiles').getByRole('link')).toHaveCount(5)
     await page.waitForTimeout(600)
     await shot(page, 'learn-home', scheme)
   })

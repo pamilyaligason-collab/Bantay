@@ -35,11 +35,11 @@ describe('Ask choice sheet', () => {
     expect(history.length).toBeLessThanOrEqual(before + 1) // jsdom keeps forward entries; the point is state is ours no more
   })
 
-  it('PDF line points to Health > Papers', async () => {
+  it('PDF line points to Family > Papers', async () => {
     render(<JackFab tab="today" hash="#today" />)
     await ask()
-    fireEvent.click(await screen.findByRole('link', { name: /PDF files use Health > Papers/ }))
-    await waitFor(() => expect(location.hash).toBe('#health/papers'))
+    fireEvent.click(await screen.findByRole('link', { name: /PDF files use Family > Papers/ }))
+    await waitFor(() => expect(location.hash).toBe('#family/papers'))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 

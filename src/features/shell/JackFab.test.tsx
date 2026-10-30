@@ -23,6 +23,16 @@ const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms) })
 const fab = () => screen.queryByRole('button', { name: 'Ask Bantay' })
 
 describe('JackFab visibility', () => {
+  it('S16: hides while a storm or quake warning marks the screen data-nofab, and returns when it goes', async () => {
+    render(<JackFab tab="today" hash="#today" />)
+    expect(fab()).not.toBeNull()
+    const warn = document.createElement('section')
+    warn.setAttribute('data-nofab', '')
+    await act(async () => { document.body.appendChild(warn); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).toBeNull())
+    await act(async () => { warn.remove(); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).not.toBeNull())
+  })
   it('shows on each of the five tabs', () => {
     for (const tab of ['today', 'health', 'discover', 'family', 'safety'] as const) {
       const { unmount } = render(<JackFab tab={tab} hash={'#' + tab} />)

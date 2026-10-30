@@ -8,6 +8,7 @@ import { short } from '../docs/DocsScreen'
 import { ddb, type PersonRow } from '../docs/store'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
+import { useActingPersonId } from '../viewas/viewAs'
 import { convex, defaultQuad, type Mode, type Quad } from './crop'
 import { scannerKind, scanNative } from './nativeScan'
 import { closeScan, takePendingFile } from './open'
@@ -85,7 +86,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
   const [err, setErr] = useState('')
   const [people, setPeople] = useState<PersonRow[]>([])
   const [owner, setOwner] = useState('')
-  const [forId, setForId] = useState('')
+  const [forId, setForId] = useState(useActingPersonId() ?? '') // viewing as a member: the paper is for them unless another name is picked
   const [kind, setKind] = useState<ScanChoice>('lab')
   const [date, setDate] = useState('')
   const [draft, setDraft] = useState<ReadingDraft>(EMPTY_DRAFT)
@@ -215,7 +216,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
 
   return (
     <>
-      <SubHeader title="Scan & Capture" backHref="#health/papers" backLabel="Back" className="sc-hdr" />
+      <SubHeader title="Scan & Capture" backHref="#family/papers" backLabel="Back" className="sc-hdr" />
       <input ref={cam} type="file" accept="image/*" capture="environment" hidden data-testid="scan-camera" onChange={onPhoto} />
       <input ref={pick} type="file" accept="image/*" hidden data-testid="scan-file" onChange={onPhoto} />
       <div className="sc">

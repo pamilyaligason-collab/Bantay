@@ -5,7 +5,7 @@ import { useMedicalId } from './useMedicalId'
 import './medid.css'
 
 /** Blank answers show quiet "Not added" text, plus an Add link to Me when the card is the person's own. */
-const Val = ({ v, add }: { v: string; add: boolean }) => v === 'Not added' ? <><span className="mid-none">{v}</span>{add && <a className="mid-add" href="#me">Add</a>}</> : <>{v}</>
+const Val = ({ v, add }: { v: string; add: boolean }) => v === 'Not added' ? <><span className="mid-none">{v}</span>{add && <a className="mid-add" href="#me/family">Add</a>}</> : <>{v}</>
 
 const initial = (n: string) => (n.trim().charAt(0) || '?').toUpperCase()
 
@@ -42,7 +42,7 @@ export default function MedicalId() {
       )}
       {fromCache && <p className="sh-sub">Showing what was saved on this phone.</p>}
       {ready && !other && card.missing.length > 0 && (
-        <a className="mid-edit" href="#me">Add the missing answers in Me</a>
+        <a className="mid-edit" href="#me/family">Add the missing answers in Me</a>
       )}
       <div className="sh-card mid-tip">
         <b>Show on lock screen</b>

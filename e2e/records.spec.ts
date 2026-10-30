@@ -25,7 +25,7 @@ test('empty states', async ({ page }) => {
   await page.goto('/#health/papers')
   await expect(page.getByText('No records yet')).toBeVisible()
   await page.goto('/#health')
-  await expect(page.getByText('No results yet')).toBeVisible()
+  await expect(page.getByTestId('bodyhero')).toContainText('No readings yet') // the one empty hero (S16)
 })
 
 test('Papers lives under Family; the old #records, #family/records and #health/papers links land there', async ({ page }) => {

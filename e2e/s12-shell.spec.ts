@@ -41,21 +41,30 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   await expect(page).toHaveURL(/#discover$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
   await expect(nav.getByRole('button', { name: 'Discover' })).toHaveAttribute('aria-current', 'page')
-  const subs = page.getByRole('group', { name: 'Discover sections' })
-  await expect(subs.getByRole('button')).toHaveCount(5)
-  expect(await subs.getByRole('button').allTextContents()).toEqual(['Learn', 'Listen', 'Play', 'Watch', 'News'])
-  await expect(page.getByTestId('learn-home')).toBeVisible() // Learn (lane F2) is the default sub
-  await subs.getByRole('button', { name: 'Watch' }).click()
+  // S16: the overview is a hero, a season row and five tiles (one link each); the sub-tab pills live on the sub screens
+  const tiles = page.getByTestId('discover-tiles').getByRole('link')
+  await expect(tiles).toHaveCount(5)
+  const names = await tiles.allTextContents()
+  const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // tile and pill order of S16, so no two neighbouring hues repeat
+  expect(ORDER.map((l, i) => names[i]!.startsWith(l))).toEqual([true, true, true, true, true])
+  await page.getByTestId('tile-watch').click()
   await expect(page).toHaveURL(/#discover\/watch$/)
   await expect(page.getByTestId('watch')).toBeVisible() // session 13 registered Watch
+  const subs = page.getByRole('group', { name: 'Discover sections' })
+  await expect(subs.getByRole('button')).toHaveCount(5)
+  expect(await subs.getByRole('button').allTextContents()).toEqual(ORDER)
   await expect(subs.getByRole('button', { name: 'Watch' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.locator('.sh-jackfab')).toBeVisible() // a sub-tab is still a tab page
-  await expect(page.locator('.sh-top')).toHaveCount(1) // and keeps the top bar
+  await subs.getByRole('button', { name: 'Learn' }).click()
+  await expect(page).toHaveURL(/#discover\/learn$/)
+  await expect(page.getByTestId('learn-home')).toBeVisible()
+  await expect(page.locator('.sh-jackfab')).toBeVisible() // a sub-tab root is still a tab page
+  await expect(page.locator('.sh-top')).toHaveCount(1) // and keeps the top bar (App.tsx), with its own Back to Discover under it
+  await expect(page.getByRole('link', { name: 'Back to Discover' })).toBeVisible()
 })
 
 test('Discover sub-tabs fit at 360 px without sideways scroll', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 780 })
-  await page.goto('/#discover')
+  await page.goto('/#discover/learn')
   const subs = page.getByRole('group', { name: 'Discover sections' })
   await expect(subs).toBeVisible()
   const over = await page.evaluate(() => {
@@ -72,7 +81,7 @@ test('Jack: on the five tabs, off on full views and own-header pages', async ({ 
   }
   for (const h of ['me', 'notif', 'privacy', 'sharing', 'weather', 'docs', 'family/people/someone']) {
     await page.goto('/#' + h)
-    await page.waitForTimeout(250)
+    await expect(page.locator('main'), h).toBeVisible() // the route has drawn; then the button must not be there
     await expect(page.locator('.sh-jackfab'), h).toHaveCount(0)
   }
 })

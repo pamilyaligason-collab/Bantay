@@ -5,11 +5,11 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 test('setup tells members what the admin can see', async ({ page }) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/phone') // the setup card moved to Settings > Phone (S16)
   await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
   await page.getByRole('button', { name: /: Sharing$/ }).click()
   await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Sharing')
-  await expect(page.getByText('Your admin can see which screens you use, never your health values.')).toBeVisible()
+  await expect(page.getByText(/Your records stay private until you or a family admin share them and the person accepts\. Family admins can see them\./)).toBeVisible() // CONSENT_LINE (D-86)
 })
 
 test('app still opens normally without an admin session', async ({ page }) => {

@@ -2,14 +2,16 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
+  // S16: Plan is a sub-screen of Family (Back + title header), reached from the Plan row on the Family root
   await page.goto('/#family/plan')
-  await expect(page.locator('h1')).toHaveText('Plan') // v12: Plan is a sub-screen with its own header and a Back to Family link (N-15), not a segment of Family
-  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Family' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('h1')).toHaveText('Plan')
   await page.getByRole('link', { name: 'Back to Family' }).click()
   await expect(page.locator('h1')).toHaveText('Family')
+  await expect(page.getByRole('button', { name: 'Family', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page).toHaveURL(/#family$/)
   await page.goBack()
   await expect(page.locator('h1')).toHaveText('Plan')
+  await expect(page).toHaveURL(/#family\/plan$/)
 })
 
 test('installable: manifest fields and service worker', async ({ page }) => {
