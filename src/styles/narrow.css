@@ -2,7 +2,7 @@
    up its side-by-side columns before a word is allowed to break. `:root` raises specificity so lazy screen CSS cannot win. */
   :root[data-narrow] .scroll { padding-left: 12px; padding-right: 12px; }
   /* column grids -> one column (two for the heat scale) */
-  :root[data-narrow] :is(.hub, .rp-grid, .kp-grid, .ar-three, .md-two, .md-acts, .md-acts[data-two], .nd-rings, .nu-tiles, .lk-two, .rx-form, .sf-tiles, .sf-faces, .sc-big3, .td-quick, .td-two, .td-tiles, .wx-tiles, .wx-seg, .lr-grid2, .fp-tiles, .fm-two, .fm-actions) { grid-template-columns: minmax(0, 1fr); }
+  :root[data-narrow] :is(.hub, .rp-grid, .kp-grid, .ar-three, .md-two, .md-acts, .md-acts[data-two], .nd-rings, .nu-tiles, .lk-two, .rx-form, .sf-tiles, .sf-faces, .sc-big3, .td-quick, .td-two, .td-tiles, .wx-tiles, .wx-seg, .lr-grid2, .fp-tiles, .fm-two, .fm-actions, .dc-tiles, .fm2-two, .fm2-strip) { grid-template-columns: minmax(0, 1fr); }
   :root[data-narrow] .wx-scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :root[data-narrow] .sf-tile { min-height: 88px; }
   :root[data-narrow] .sf-tile-t, :root[data-narrow] .sf-tile-s, :root[data-narrow] .wx-scale span, :root[data-narrow] .hub-txt b, :root[data-narrow] .wx-seg button { overflow-wrap: break-word; }
@@ -36,3 +36,9 @@
   :root[data-narrow] .msg-tools, :root[data-narrow] .msg-actions { flex-wrap: wrap; }
   :root[data-narrow] .sh-seg { grid-auto-flow: row; border-radius: 24px; }
 .nw { white-space: nowrap; }
+  /* S16 fix round 2 (N): Discover and Family. Poster strip margins follow the 12 px gutter; the safety call pair stacks; Family buttons may wrap their label; the calendar header wraps. */
+  :root[data-narrow] .dc-posters { margin-left: -12px; margin-right: -12px; padding-left: 12px; padding-right: 12px; }
+  :root[data-narrow] .sf-pair { flex-direction: column; }
+  :root[data-narrow] :is(.fm2-two > *, .fm2-doc) { white-space: normal; text-align: center; }
+  :root[data-narrow] .fm2-cal-h { flex-wrap: wrap; }
+  :root[data-narrow] .fm2-id-name { overflow-wrap: anywhere; }
