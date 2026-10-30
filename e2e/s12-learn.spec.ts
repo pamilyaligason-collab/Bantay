@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
 test('flag off: Learn shows recipes only, and a medicine link falls back to the Learn home', async ({ page }) => {
   await page.goto('/#discover/learn')
   await expect(page.getByTestId('learn-home')).toBeVisible()
-  await expect(page.getByText('Healthy recipes')).toBeVisible()
+  await expect(page.getByTestId('learn-recipes')).toBeVisible()
   await expect(page.getByText('Medicine wiki')).toHaveCount(0)
   await page.goto('/#discover/learn/med/losartan')
   await expect(page.getByTestId('learn-home')).toBeVisible()
@@ -53,7 +53,7 @@ test('flag off: Learn shows recipes only, and a medicine link falls back to the 
 
 test('recipes to a recipe to cook mode: big steps, a one tap timer, wake lock asked and let go', async ({ page }) => {
   await page.goto('/#discover/learn')
-  await page.getByRole('link', { name: /Healthy recipes/ }).click()
+  await page.getByTestId('learn-recipes').click()
   await expect(page.getByTestId('recipe-card')).toHaveCount(20)
   await page.getByRole('link', { name: /Sinigang na isda/ }).click()
   await expect(page.getByTestId('salt')).toContainText('240 mg')

@@ -58,7 +58,7 @@ describe('tab shell', () => {
   it('Discover is the third tab: its sub-tabs show, the tab is current, and Jack stays on it', async () => {
     location.hash = '#discover/play'
     render(<App />)
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover'))
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Play'))
     expect(screen.getByRole('button', { name: 'Discover' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Play' }).getAttribute('aria-pressed')).toBe('true')
     expect(await screen.findByRole('button', { name: 'Ask Bantay' })).toBeTruthy()
