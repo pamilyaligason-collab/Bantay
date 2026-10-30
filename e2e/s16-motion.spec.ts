@@ -44,21 +44,25 @@ test('moving: rain falls and the clouds drift at two depths', async ({ page }) =
   expect(await page.locator('.wxs-far').first().evaluate((el) => getComputedStyle(el).animationDuration)).toBe('110s')
 })
 
-test('Safety: no canvas, and the Today scene is still once Safety is up (hash change, not a vacuous count)', async ({ page }) => {
+test('Safety: no canvas, and no moving scene once Safety is up (scene rendered first, so the count is not vacuous)', async ({ page }) => {
   await page.goto('/#today')
-  await expect(page.locator('.wxs')).not.toHaveAttribute('data-still', '1')
+  const moving = page.locator('.wxs:not([data-still])')
+  await expect(moving.first()).toBeVisible()
+  expect(await page.locator('.wxs').count()).toBeGreaterThan(0)
   await page.evaluate(() => { location.hash = '#safety/warnings' })
+  await expect(page).toHaveURL(/#safety\/warnings$/)
   await expect(page.locator('canvas')).toHaveCount(0)
-  await expect(page.locator('.wxs[data-still="1"]')).toHaveCount(await page.locator('.wxs').count())
+  await expect(moving).toHaveCount(0)
 })
 
 test('hold SOS with Aurora allowed: the SOS screen opens and there is no canvas and no moving scene', async ({ page }) => {
-  await page.goto('/#safety')
-  const btn = page.getByRole('button', { name: /^SOS\./ })
+  await page.goto('/#today')
+  await expect(page.locator('.wxs:not([data-still])').first()).toBeVisible() // the scene is up before the hold
+  const btn = page.getByRole('button', { name: 'Hold to call and text your family' })
   const c = (await btn.boundingBox())!
   await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2)
   await page.mouse.down()
-  await page.waitForTimeout(3400) // HOLD_MS is 3000
+  await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible({ timeout: 8000 }) // the hold completes by itself at HOLD_MS
   await page.mouse.up()
   await expect(page.locator('canvas')).toHaveCount(0)
   await expect(page.locator('.wxs:not([data-still])')).toHaveCount(0)

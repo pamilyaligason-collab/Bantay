@@ -54,4 +54,5 @@
   .wxs-cloud { left: 20%; } .wxs-cloud:nth-of-type(2n) { left: 60%; }
   .wxs-rain i { top: var(--y); } .wxs-rain i:nth-child(n+9) { display: none; }
   .wxs-flash { display: none; }
+  .dc-sea-bg .wxs-rain { display: none; } /* the Discover season row reuses the streaks outside .wxs; they stop under reduced motion */
 }
