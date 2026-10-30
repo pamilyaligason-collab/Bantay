@@ -6,7 +6,7 @@ import { enablePasskey, passkeySupported, setPasskeyFlag } from '../auth/family'
 import { promptFingerprint, unlockMode } from '../auth/biometric'
 import { getMember } from '../auth/session'
 import { Icon } from '../shell/Icon'
-import SetPin from './SetPin'
+import SetPin, { OnbDots } from './SetPin'
 
 /** Claiming the name on a personal invite link and setting the first PIN: pin-login action join_claim (D-81), through joinPort in pinLogin.ts.
  *  The e2e build (VITE_JOIN_STUB=1, test builds only) uses a stub that always accepts. */
@@ -48,7 +48,7 @@ export async function fingerCapable(): Promise<boolean> {
   return m === 'fingerprint' || m === 'enrol-first'
 }
 
-/** `start-who` (1 of 3) then `start-pin` (2 of 3). The third step is `start-done`, which Onboarding shows once the person is signed in. */
+/** Onboarding screen 1 (welcome and who) then 2 (PIN) of 5. Screens 3 to 5 are StartDone, which Onboarding shows once the person is signed in. */
 export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack }: {
   invite: string; port: JoinPort; signIn?: (handle: string, pin: string) => Promise<string | null>; onBack: () => void
 }) {
@@ -70,15 +70,14 @@ export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack 
     return null // the auth change takes AuthGate to Onboarding (start-done)
   }
 
-  if (who) return <SetPin name={who.first_name} step={{ n: 2, of: 3 }} canFinger={canFinger} onSubmit={submit} onBack={() => setWho(null)} />
+  if (who) return <SetPin name={who.first_name} step={{ n: 2, of: 5 }} canFinger={canFinger} onSubmit={submit} onBack={() => setWho(null)} />
   return (
     <div className="si-set">
-      <span className="si-eyebrow">Step 1 of 3 · then Today</span>
-      <div className="si-steps" aria-hidden="true"><i className="on" /><i /><i /></div>
+      <OnbDots n={1} />
       <div className="si-c">
         <JackArt name="hello" size={112} />
-        <h1 className="pname">Is this you?</h1>
-        <p className="si-hint">I am Jack Jack. You are invited to Family Bantay. Tap your name to choose a PIN.</p>
+        <h1 className="pname">Hi! I'm Jack Jack.</h1>
+        <p className="si-hint">Tap your name.</p>
       </div>
       {names === 'loading' ? <p className="si-hint" role="status">Looking for your family</p>
         : names.kind === 'ok' && names.names.length > 0 ? (
@@ -99,7 +98,7 @@ export default function JoinFlow({ invite, port, signIn = signInWithPin, onBack 
             {names.kind !== 'invite' && <button type="button" className="btn2" onClick={load}>Try again</button>}
           </>
         )}
-      <p className="si-hint si-c">Not on the list? Tell whoever sent you the link.</p>
+      <p className="si-hint si-c">Not on the list? Ask whoever sent the link.</p>
       <button type="button" className="btn2" onClick={onBack}>Back to sign in</button>
     </div>
   )

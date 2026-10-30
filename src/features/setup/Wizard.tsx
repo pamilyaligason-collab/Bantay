@@ -10,6 +10,7 @@ import { callPermission, requestCallPermission, type CallPermission } from '../s
 import SosContactsPicker from '../sos/SosContactsPicker'
 import { saveAbout, savePhoto } from '../sync/profile'
 import ChipField from './ChipField'
+import { CONSENT_LINE } from './FirstSuccessStep'
 import WarningsStep from './WarningsStep'
 import { ALLERGIES, BLOOD_TYPES, CONDITIONS, JOIN, splitItems } from './lists'
 import MedicineEditor, { useSelfId } from './MedicineEditor'
@@ -196,7 +197,7 @@ const BODY: Record<StepId, () => ReactNode> = {
   sos: () => <Sos />,
   sharing: () => (
     <div className="wz-body">
-      <p className="sub" style={{ margin: 0 }}>Sharing is off until you turn it on in Me. Your admin can see which screens you use, never your health values.</p>
+      <p className="sub" style={{ margin: 0 }}>{CONSENT_LINE}</p>
     </div>
   )
 }

@@ -22,7 +22,9 @@ describe('JoinFlow (start-who, start-pin)', () => {
     const list = await screen.findByLabelText('Who are you?')
     expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
     expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['MMama', 'PRPapa R.'])
-    expect(screen.getByText('Step 1 of 3 · then Today')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Step 1 of 5' })).toBeTruthy()
+    expect(screen.getByText('Tap your name.')).toBeTruthy()
+    expect(screen.getByText('Not on the list? Ask whoever sent the link.')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/admin/i)
   })
 
@@ -39,8 +41,9 @@ describe('JoinFlow (start-who, start-pin)', () => {
     const signIn = vi.fn(async () => null as string | null)
     render(<JoinFlow invite="abcd1234efgh" port={port} signIn={signIn} onBack={() => undefined} />)
     fireEvent.click(within(await screen.findByLabelText('Who are you?')).getByRole('button', { name: /Mama/ }))
-    expect(screen.getByRole('heading', { name: 'Hi Mama, choose a 6-digit PIN' })).toBeTruthy()
-    expect(screen.getByText('Step 2 of 3 · then Today')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Choose a 6-digit PIN' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Step 2 of 5' })).toBeTruthy()
+    expect(screen.getByText('Numbers you will remember.')).toBeTruthy()
     enter('135790')
     expect(screen.getByRole('heading', { name: 'Type it again' })).toBeTruthy()
     enter('135790')
@@ -71,12 +74,12 @@ describe('JoinFlow (start-who, start-pin)', () => {
     expect(defaultJoinPort).toBe(pl.joinPort)
   })
 
-  it('one name on the link: "Is this you?" shows just that name', async () => {
+  it('one name on the link shows just that name', async () => {
     h.names.mockResolvedValue({ kind: 'ok', names: [NAMES[0]!] })
     render(<JoinFlow invite="abcd1234efgh" port={okPort} onBack={() => undefined} />)
     const list = await screen.findByLabelText('Who are you?')
     expect(within(list).getAllByRole('button')).toHaveLength(1)
-    expect(screen.getByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeTruthy()
   })
 
   it.each([

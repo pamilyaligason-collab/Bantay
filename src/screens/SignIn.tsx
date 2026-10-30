@@ -3,7 +3,6 @@ import { Sky } from '../features/look'
 import { NO_SIGNAL, SIGN_IN_ERROR, fetchFamilyNames, inviteFromHash, signInWithGoogle, signInWithPin, wrongState, type NamesResult } from '../features/auth/pinLogin'
 import { afterFailure, loadFails, saveFails } from '../features/auth/pinAttempts'
 import '../features/auth/signin.css'
-import { MASCOT_ALT, MASCOT_SRC } from '../assets/mascot'
 import { JackArt } from '../features/look/JackArt'
 import { getLastPerson, hasPasskeyFlag, loadFamily, passkeySupported, signInWithPasskey, abandonPasskeyWait, type FamilyMember } from '../features/auth/family'
 import { urlSignInError } from '../features/auth/urlError'
@@ -79,7 +78,7 @@ function PickCard({ pick, busy, run, setError, onBack, returning, tryPin, google
   return (
     <div className="grp pickcard">
       {pick.photo ? <img className="avatar big" src={pick.photo} alt="" width={72} height={72} />
-        : returning ? <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
+        : returning ? <JackArt name="head" size={96} />
         : <span className="avatar big" aria-hidden="true">{pick.initials}</span>}
       <h2 className="pname" ref={head} tabIndex={-1}>{phase === 'pin' && pin ? `Hi ${pick.displayName.split(' ')[0]}` : pick.displayName}</h2>
       {phase === 'prompting' ? (
@@ -138,7 +137,7 @@ function WrongWait({ name, until, finger, onFinger, onForgot, onBack, onClear }:
 function GoogleWait({ onBack, onAgain }: { onBack: () => void; onAgain: () => void }) {
   return (
     <div className="grp pickcard">
-      <img className="avatar mascot" src={MASCOT_SRC} alt={MASCOT_ALT} width={112} height={112} />
+      <JackArt name="head" size={96} />
       <h2 className="pname">Finishing sign-in in Chrome…</h2>
       <p className="si-hint" role="status">Pick your Google account there. When Chrome says you are done, come back here. Bantay may open by itself.</p>
       <button className="btn" onClick={onBack}>I'm back</button>
@@ -163,7 +162,7 @@ export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: Join
     : fresh !== 'loading' && fresh.kind === 'ok'
       ? fresh.names.map((n) => ({ personId: `name:${n.handle}`, displayName: n.initial ? `${n.first_name} ${n.initial}.` : n.first_name, handle: n.handle, provider: 'pin' as const, initials: (n.first_name.slice(0, 1) + n.initial).toUpperCase() }))
       : []
-  // A returning visit shows only the last person (mascot: the app has no profile photo field) and goes straight to PickCard.
+  // A returning visit shows only the last person (Jack's head: the app has no profile photo field) and goes straight to PickCard.
   const [pick, setPick] = useState<FamilyMember | null>(() => { const id = getLastPerson(); return family.find((m) => m.personId === id) ?? null })
   const [returning, setReturning] = useState(pick !== null)
   const [other, setOther] = useState(false)
@@ -235,9 +234,9 @@ export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: Join
           <>
             {welcome ? (
               <div className="wl-hello">
-                <JackArt name="hello" size={150} className="wl-jj" />
+                <JackArt name="hello" size={112} />
                 <h1>Hi! I'm Jack Jack.</h1>
-                <p>I watch over the family's health and safety. Who are you?</p>
+                <p>Tap your name.</p>
               </div>
             ) : (
               <div className="hdr">
@@ -266,7 +265,7 @@ export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: Join
                         </li>
                       ))}
                     </ul>
-                    <p className="si-hint si-c">Not on the list? Tell whoever sent you the invite link.</p>
+                    <p className="si-hint si-c">Not on the list? Ask whoever sent the link.</p>
                     <button className="btn2" onClick={() => { setError(''); setOther(true) }}>Sign in with a handle and PIN</button>
                     <button className="btn2" disabled={busy} onClick={google}>Continue with Google</button>
                   </>
@@ -290,7 +289,7 @@ export default function SignIn({ joinPort = defaultJoinPort }: { joinPort?: Join
                         </>
                       )
                       : <p className="si-hint">First time on this phone? Sign in once and it will remember your family.</p>}
-                    {roster.length === 0 && <p className="si-hint si-c">Not on the list? Tell whoever sent you the invite link.</p>}
+                    {roster.length === 0 && <p className="si-hint si-c">Not on the list? Ask whoever sent the link.</p>}
                   </>
                 )}
               </>
