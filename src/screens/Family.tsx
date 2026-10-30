@@ -3,6 +3,8 @@ import MemberPage from '../features/family/MemberPage'
 import People from '../features/family/People'
 import Plan from '../features/family/Plan'
 import Report from '../features/family/Report'
+import Records from './Records'
+import { SubHeader } from '../features/shell/SubHeader'
 
 export type FamilySeg = 'home' | 'messages' | 'plan'
 
@@ -23,6 +25,8 @@ const HASH: Record<FamilySeg, string> = { plan: 'family/plan', messages: 'family
 export default function Family() {
   const { seg, member } = parseFamily(location.hash)
   const pick = (s: FamilySeg) => { if (location.hash !== '#' + HASH[s]) location.hash = HASH[s] }
+  // S16-L0: #records, #health/papers and #family/records redirect here (C-3); L4 replaces this with the new Papers screen
+  if (location.hash === '#family/papers') return (<><SubHeader title="Papers" backHref="#family" backLabel="Back to Family" /><Records /></>)
   if (member) return isReport(location.hash) ? <Report id={member} /> : <MemberPage id={member} />
   return (
     <>

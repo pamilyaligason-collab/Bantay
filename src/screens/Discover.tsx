@@ -1,13 +1,20 @@
 import type { CSSProperties } from 'react'
 import { DISCOVER_SUBS, isDiscoverSubRoot, subOf, subScreen, type DiscoverSub } from '../features/discover'
 import { PickCard, SeasonCard } from '../features/discover/today/Cards'
+import Library from '../features/health/library/Library'
+import Article from '../features/health/library/Article'
 import '../features/shell/shell.css'
 import '../features/discover/discover.css'
+
+const safeDecode = (x: string) => { try { return decodeURIComponent(x) } catch { return x } }
 
 /** Discover tab: Learn, Listen, Play, Watch, News. A sub that no lane has registered yet shows a short "Coming in this update" card.
  *  The hash is the source of truth (`#discover/<sub>`), so Back and deep links work. Today's pick sits above the sub-nav on a sub's own page (not on a recipe or a game);
  *  the season card sits under it, on every sub's own page. */
 export default function Discover() {
+  // S16-L0: #health/library[/<key>] redirects to #discover/learn/library[/<key>] (C-3); L3 moves these into Learn
+  const lib = /^#discover\/learn\/library(?:\/(.+))?$/.exec(location.hash)
+  if (lib) return lib[1] === undefined ? <Library /> : <Article rawKey={safeDecode(lib[1])} />
   const sub = subOf(location.hash)
   const root = isDiscoverSubRoot(location.hash) || /^#?discover\/?$/.test(location.hash)
   const pick = (s: DiscoverSub) => { if (location.hash !== '#discover/' + s) location.hash = 'discover/' + s }

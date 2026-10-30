@@ -117,3 +117,32 @@ describe('dark blocks', () => {
     expect(varsAt(tokens, mediaAt(tokens), MEDIA_SEL)).toEqual(varsAt(tokens, 0, DARK_SEL))
   })
 })
+
+// S16 hue families (PLAN section 3, C-2). Unrounded WCAG values. Light: ink, muted and icon on the tint fill. Dark: no fill, so ink, muted and icon on --card, and the icon on its real background, the 18% chip.
+const HUES = ['blue', 'green', 'lilac', 'amber', 'terra'] as const
+for (const [name, get] of themes) {
+  describe(`S16 hue families ${name}`, () => {
+    const v = get()
+    const c = (k: string) => parse(resolve(v, k))[0]
+    for (const h of HUES) {
+      const fill = c(`--hue-${h}`)
+      const ic = c(`--hue-${h}-ic`)
+      if (name === 'light') {
+        it(`${h}: ink on fill >= 4.5`, () => expect(ratio(c('--ink'), fill)).toBeGreaterThanOrEqual(4.5))
+        it(`${h}: muted on fill >= 4.5`, () => expect(ratio(c('--muted'), fill)).toBeGreaterThanOrEqual(4.5))
+        it(`${h}: icon on fill >= 3`, () => expect(ratio(ic, fill)).toBeGreaterThanOrEqual(3))
+        it(`${h}: icon on --card >= 3`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(3))
+      } else {
+        const chip = over([ic, 0.18], c('--card')) // color-mix(in srgb, ic 18%, --card)
+        it(`${h}: fill is --card (dark draws no fill)`, () => expect(v[`--hue-${h}`]).toBe('var(--card)'))
+        it(`${h}: ink and muted on --card >= 4.5`, () => {
+          expect(ratio(c('--ink'), c('--card'))).toBeGreaterThanOrEqual(4.5)
+          expect(ratio(c('--muted'), c('--card'))).toBeGreaterThanOrEqual(4.5)
+        })
+        it(`${h}: icon on --card >= 3`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(3))
+        it(`${h}: icon on the 18% chip >= 3`, () => expect(ratio(ic, chip)).toBeGreaterThanOrEqual(3))
+        it(`${h}: kicker text (icon colour) on --card >= 4.5`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(4.5))
+      }
+    }
+  })
+}

@@ -122,3 +122,8 @@ export const scheduleTest = () =>
   LocalNotifications.schedule({
     notifications: [{ id: 9001, title: 'Bantay test', body: 'Reminders work on this phone.', schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true } }]
   })
+
+/** S16 C-9/L0 stub: the setup steps still to do, shown as a row on Today (NoticeStack). L8 fills the body (settings fallback). */
+export function useSetupLeft(): { left: string[] } {
+  return { left: [] }
+}

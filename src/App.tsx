@@ -27,6 +27,7 @@ import { useSavedTheme } from './features/shell/theme'
 import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
+import ViewAsBanner from './features/viewas/ViewAsBanner'
 import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { watchPushForSession } from './features/notify/fcm'
@@ -63,7 +64,7 @@ export default function App() {
       const w = webAdminUrl(location.hash)
       if (w) { location.replace(w); return } // the dashboard moved to its own page, /admin
       const c = canonicalHash(location.hash)
-      if (c !== location.hash) { location.replace(c); return } // old #records / #family/records links land on Health > Papers
+      if (c !== location.hash) { location.replace(c); return } // moved links (#records, #health/library, #family/people ...) land on their new screen (C-3)
       setRoute(parseHash(location.hash)); setHash(location.hash)
     }
     on()
@@ -83,7 +84,7 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, isTabView && (tab === 'today' || tab === 'safety'))
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
-  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
@@ -110,6 +111,7 @@ export default function App() {
       <Sky state="clear" />
       {isTabView && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
+      <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
         {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}

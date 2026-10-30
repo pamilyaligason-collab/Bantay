@@ -28,19 +28,19 @@ test('empty states', async ({ page }) => {
   await expect(page.getByText('No results yet')).toBeVisible()
 })
 
-test('Papers lives under Health; the old #records and #family/records links land there', async ({ page }) => {
-  await page.goto('/#health/papers')
+test('Papers lives under Family; the old #records, #family/records and #health/papers links land there', async ({ page }) => {
+  await page.goto('/#family/papers')
   await expect(page.locator('h1')).toHaveText('Papers')
-  await expect(page.getByRole('button', { name: 'Health', exact: true })).toHaveAttribute('aria-current', 'page')
-  await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
-  for (const old of ['/#records', '/#family/records']) {
+  await expect(page.getByRole('button', { name: 'Family', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('link', { name: 'Back to Family' })).toBeVisible()
+  for (const old of ['/#records', '/#family/records', '/#health/papers']) {
     await page.goto('/#health')
     await page.goto(old)
-    await expect(page).toHaveURL(/#health\/papers$/)
+    await expect(page).toHaveURL(/#family\/papers$/)
     await expect(page.locator('h1')).toHaveText('Papers')
   }
-  await page.getByRole('link', { name: 'Back to Health' }).click()
-  await expect(page.locator('h1')).toHaveText('Health')
+  await page.getByRole('link', { name: 'Back to Family' }).click()
+  await expect(page.locator('h1')).toHaveText('Family')
 })
 
 test('timeline, trend chart and latest vs normal from seeded data', async ({ page }) => {

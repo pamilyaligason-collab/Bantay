@@ -30,13 +30,13 @@ describe('tab shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health'))
   })
 
-  it('old #records and #family/records links land on Health > Papers', async () => {
+  it('old #records and #family/records links land on Family > Papers', async () => {
     for (const old of ['#records', '#family/records']) {
       location.hash = old
       const { unmount } = render(<App />)
-      await waitFor(() => expect(location.hash).toBe('#health/papers'))
+      await waitFor(() => expect(location.hash).toBe('#family/papers'))
       await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Papers'))
-      expect(screen.getByRole('button', { name: 'Health' }).getAttribute('aria-current')).toBe('page')
+      expect(screen.getByRole('button', { name: 'Family' }).getAttribute('aria-current')).toBe('page')
       unmount()
     }
   })

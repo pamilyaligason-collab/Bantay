@@ -9,7 +9,9 @@ const GRAPHICS = [
   '/src/features/anatomy/Silhouette.tsx', // body art
   '/src/features/health/MetricChart.tsx', // chart line
   '/src/features/health/LatestList.tsx', // sparkline
-  '/src/features/weather/WeatherScene.tsx' // weather scene cloud
+  '/src/features/weather/WeatherScene.tsx', // weather scene cloud
+  '/src/features/look/Tile.tsx', // tile sparkline (S16)
+  '/src/features/look/CheckDraw.tsx' // the self-drawing check mark graphic (S16)
 ]
 
 describe('no glyph or hand-drawn icons', () => {

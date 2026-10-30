@@ -135,7 +135,7 @@ for (const scheme of ['light', 'dark'] as const) {
   })
 }
 
-test('Family is Home, Messages and Plan only; Records moved to Health', async ({ page }) => {
+test('Family is Home, Messages and Plan only; Records moved to Family > Papers', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#family')
   await expect(page.locator('h1')).toHaveText('Family')
@@ -143,5 +143,5 @@ test('Family is Home, Messages and Plan only; Records moved to Health', async ({
   await expect(seg.getByRole('button')).toHaveText(['Home', 'Messages', 'Plan'])
   await expect(seg.getByRole('button', { name: 'Records' })).toHaveCount(0)
   await page.goto('/#family/records')
-  await expect(page).toHaveURL(/#health\/papers$/)
+  await expect(page).toHaveURL(/#family\/papers$/)
 })
