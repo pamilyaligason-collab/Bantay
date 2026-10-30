@@ -6,6 +6,8 @@ import { db } from '../db'
 const { stub, storm, meds, feel, sosb } = vi.hoisted(() => ({ sosb: { on: false }, feel: { r: 'told' as string, calls: [] as string[] }, meds: { due: true, review: 0 }, storm: { v: null as null | { title: string; body: string } }, stub: (id: string) => ({ default: () => <div data-testid={id} /> }) }))
 vi.mock('../features/notify/AlertsBanner', () => stub('alerts'))
 vi.mock('../features/today/AlertBand', () => stub('alertband'))
+vi.mock('../features/today/WarningCard', () => ({ default: () => <div data-testid="alertband" />, useWarnings: () => ({ onScreen: false, storm: null }) }))
+vi.mock('../features/setup/steps', () => ({ useSetupLeft: () => ({ left: [] }), turnOnReminders: async () => undefined, notifyState: async () => ({}), notifyDone: () => false }))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => <div data-testid="alertcard" /> }))
 vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () => null }))
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds.due ? [] : [{ personId: 'me', name: 'Lloyd', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: meds.review, tick: new Date() }), markDue: async () => true }))
@@ -22,11 +24,13 @@ vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../features/setup/useProfile')>()), useSelfPersonId: () => 'me' }))
+const lock = vi.hoisted(() => ({ can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } }))
+vi.mock('../features/viewas/viewAs', async (orig) => ({ ...(await orig<typeof import('../features/viewas/viewAs')>()), useActingCan: () => lock.can }))
 vi.mock('../features/update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('../features/update/UpdateCard', () => ({ UpdateCard: () => null }))
 import Today from './Today'
 
-beforeEach(async () => { await db.kv.clear(); meds.due = true; meds.review = 0; sosb.on = false })
+beforeEach(async () => { await db.kv.clear(); lock.can = null; feel.calls.length = 0; feel.r = 'told'; meds.due = true; meds.review = 0; sosb.on = false })
 afterEach(cleanup)
 
 describe('Today simple mode', () => {
@@ -36,7 +40,6 @@ describe('Today simple mode', () => {
     for (const id of ['alertband', 'nextup', 'weather', 'seeweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
   })
   it('off: Hold for help sits on Today (the same hold button as Simple mode), right under the quick log and above self-care, so the Jack button at the bottom never covers it', async () => {
     const { container } = render(<Today />)
@@ -79,7 +82,7 @@ describe('Today simple mode', () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['alertband', 'weather', 'alertcard', 'nextup', 'quicklog', 'selfcare', 'plan', 'seeweek', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['weather', 'alertband', 'alertcard', 'nextup', 'quicklog', 'selfcare', 'plan', 'seeweek', 'alerts', 'nearby', 'week'])
   })
   it('a dose due: Next up comes first and the weather card stays compact', async () => {
     render(<Today />)
@@ -93,7 +96,7 @@ describe('Today simple mode', () => {
     expect(screen.queryByTestId('nextup')).toBeNull()
     expect(screen.getByTestId('weather').getAttribute('data-expanded')).toBe('true')
     expect(screen.getByTestId('weather').getAttribute('data-review')).toBe('3')
-    expect([...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).slice(0, 4)).toEqual(['alertband', 'weather', 'alertcard', 'quicklog'])
+    expect([...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).slice(0, 4)).toEqual(['weather', 'alertband', 'alertcard', 'quicklog'])
   })
   it('on, calm: the expanded weather card replaces the empty Next up card; no Taken button', async () => {
     meds.due = false
@@ -134,7 +137,6 @@ describe('Today simple mode', () => {
     await screen.findByRole('button', { name: 'I took it' })
     expect(screen.getByText('Losartan')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'How are you?' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
     expect(screen.getByRole('button', { name: 'Hold to call and text your family' })).toBeTruthy() // the real hold button, not a link
     expect(screen.getByRole('button', { name: /^Call 911/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
@@ -177,5 +179,15 @@ describe('Today simple mode', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     expect(await screen.findByText('Saved. We will tell them when you are online.')).toBeTruthy()
     expect(feel.calls).toEqual(['great', 'unwell'])
+  })
+  it('on, acting without the log and mood rights: I took it and How are you? are locked as View only and write nothing', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    lock.can = { log: false, edit: false, rollcall: false, mood: false, reason: 'You can see Mama but not log for her.' }
+    render(<Today />)
+    const locked = await screen.findAllByRole('button', { name: 'View only' })
+    expect(locked).toHaveLength(2)
+    locked.forEach((b) => { expect((b as HTMLButtonElement).disabled).toBe(true); fireEvent.click(b) })
+    expect(screen.queryByRole('button', { name: 'I took it' })).toBeNull()
+    expect(feel.calls).toEqual([])
   })
 })

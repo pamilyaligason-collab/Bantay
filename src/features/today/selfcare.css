@@ -1,22 +1,8 @@
-/* Today > Self-care (breathing). Tokens only, so dark follows. */
-.sc { display: grid; gap: 12px; }
-.sc-h { font-family: var(--f-display); font-size: 20px; font-weight: 600; margin: 0; }
-.sc-lead { margin: 0; font-size: 17px; line-height: 1.4; }
-.sc-note { margin: 0; font-size: 14px; }
-.sc-note a { color: var(--link); overflow-wrap: anywhere; }
-.sc-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.bt .sc-chip { flex: 1 1 96px; min-height: var(--tap); border: 2px solid transparent; border-radius: 16px; background: var(--card2); color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 8px; font-size: 16px; box-sizing: border-box; }
-.sc-chip span { font-size: 13px; color: var(--muted); }
-.sc-chip b { font-weight: 700; }
-.bt .sc-chip[aria-pressed="true"] { border-color: var(--green2); background: var(--soft); }
-.sc-face span:first-child { font-size: 26px; }
-.sc-go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.sc-buzz { display: flex; align-items: center; gap: 10px; min-height: var(--tap); font-size: 16px; }
-.sc-buzz input { width: 24px; height: 24px; accent-color: var(--green2); }
-.bt .sc-skip { min-height: var(--tap); border: 0; background: none; color: var(--link); font-size: 16px; font-weight: 600; text-decoration: underline; }
-.sc-run { display: grid; gap: 8px; justify-items: center; text-align: center; }
-.sc-stage { position: relative; width: min(260px, 70vw); aspect-ratio: 1; display: grid; place-items: center; }
-.sc-circle { position: absolute; inset: 0; border-radius: 50%; background: var(--soft); border: 3px solid var(--green2); transition: transform .3s linear; }
-.sc-count { position: relative; font-family: var(--f-display); font-size: 64px; font-weight: 600; color: var(--ink); }
-.sc-phase { margin: 0; font-family: var(--f-display); font-size: 26px; font-weight: 600; }
-@media (prefers-reduced-motion: reduce) { .sc-circle { transition: none; transform: none; } } /* the number and the words carry the rhythm */
+/* Today > Take a breath row (S16 L1). Own class names (td-sc-): `.sc` belongs to the scene hero in look/cards.css. */
+.td-sc { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 8px 16px; box-sizing: border-box; }
+.td-sc-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.td-sc-h { margin: 0; font-size: 17px; font-weight: 600; font-family: var(--f-ui); }
+.td-sc-sub { font-size: 15px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt .td-sc-go { flex: none; width: auto; min-width: 72px; padding: 0 16px; white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) { .td-sc-ic { animation: td-breathe 2s ease-in-out 4 alternate; } }
+@keyframes td-breathe { from { transform: scale(1); } to { transform: scale(1.08); } }

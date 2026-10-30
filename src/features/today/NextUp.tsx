@@ -12,6 +12,7 @@ import { loadLang } from '../../lib/i18n'
 import { snoozeCard } from './snoozeCard'
 import { Capacitor } from '@capacitor/core'
 import { useSosActive } from '../family/sosActive'
+import { useActingCan } from '../viewas/viewAs' // S16-L1: View only while acting without the log right (C-9)
 import { useKvValue } from '../phonecheck/useKvValue'
 import { KEY_ALARM_HEALTH, type AlarmHealth } from '../phonecheck/keys'
 
@@ -24,6 +25,8 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   const [busy, setBusy] = useState(false)
   const alarmsOk = useKvValue<AlarmHealth>(KEY_ALARM_HEALTH)?.ok // false: notifications are off, so nothing will ring
   const sos = useSosActive() // no Jack beside a live SOS banner (D-91)
+  const can = useActingCan() // null when not acting
+  const locked = !!can && !can.log
   const [phase, setPhase] = useState<'idle' | 'done' | 'leave'>('idle') // done: the button reads "Taken h:mm"; leave: the card collapses
   const [label, setLabel] = useState('')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -70,8 +73,8 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
     <section aria-labelledby="t-next" className={`td-next${phase === 'leave' ? ' leaving' : ''}`} style={{ '--collapse-ms': `${COLLAPSE_MS}ms` } as CSSProperties}>
       <div className="td-next-in">
       <h2 id="t-next" className="td-vh">Next up</h2>
-      <article className={`td-slide ${item.kind}${item.late ? ' late' : ''}`} aria-label={item.title}>
-        <div className="td-k">{item.kicker}</div>
+      <article className={`card td-nu ${item.kind}${item.late ? ' late' : ''}`} data-hue="green" aria-label={item.title}>
+        <div className="td-nu-k"><Icon name="pill" size={20} /><span>{item.kicker}</span></div>
         <h3>{item.title}</h3>
         <p>{item.body}</p>
         {item.note && <p className="td-note">{item.note}</p>}
@@ -86,15 +89,21 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
             ))}
           </fieldset>
         )}
-        {w && (
-          <div className="td-act">
-            <button type="button" className={`td-pill light td-taken${phase !== 'idle' ? ' done' : ''}`} disabled={busy || phase !== 'idle' || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} stroke={2.4} />{phase !== 'idle' ? <span className="td-morph">{label}</span> : picking ? 'Mark these taken' : 'Taken'}</button>
-            {phase === 'idle' && w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
-            {phase === 'idle' && item.late && <button type="button" className="td-skip" disabled={busy} onClick={() => void later()}>In {SNOOZE_MIN} min</button>}
+        {w && locked && (
+          <div className="td-nu-acts td-nu-lock">
+            <button type="button" className="btn td-taken" disabled aria-label="Take, view only"><Icon name="lock" size={20} />View only</button>
+            {can?.reason && <p className="sub td-lock-why">{can.reason}</p>}
           </div>
         )}
-        {w && phase !== 'idle' && <p className="td-saved">{!sos && <JackArt name="well-done" size={48} decorative />}Saved. This card folds away in a moment.</p>}
-        {item.href && <div className="td-act"><a className="td-pill light" href={item.href}>{item.linkLabel}</a></div>}
+        {w && !locked && (
+          <div className="td-nu-acts">
+            <button type="button" className={`btn td-taken${phase !== 'idle' ? ' done' : ''}`} aria-label={phase === 'idle' && !picking ? 'Take, mark as taken' : undefined} disabled={busy || phase !== 'idle' || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} />{phase !== 'idle' ? <span className="td-morph">{label}</span> : picking ? 'Mark these taken' : 'Take'}</button>
+            {phase === 'idle' && <button type="button" className="btn2 td-snooze" aria-label={`Snooze, in ${SNOOZE_MIN} minutes`} disabled={busy} onClick={() => void later()}>Snooze</button>}
+            {phase === 'idle' && w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
+          </div>
+        )}
+        {w && phase !== 'idle' && <p className="td-saved">{!sos && <JackArt name="well-done" size={56} decorative />}Saved. This card folds away in a moment.</p>}
+        {item.href && <div className="td-nu-acts"><a className="btn td-nu-link" href={item.href}>{item.linkLabel}</a></div>}
       </article>
       {review > 0 && <MedsCheck review={review} />}
       </div>
@@ -107,7 +116,7 @@ export function MedsCheck({ review, quiet }: { review: number; quiet?: boolean }
   const n = `${review} ${review === 1 ? 'medicine' : 'medicines'}`
   return (
     <a className="td-mc" href={MEDS_HREF}>
-      <Icon name="pill" size={22} />
+      <Icon name="pill" size={24} />
       <span className="td-grow">
         {quiet ? <span>Nothing due right now · <b>{n} to check</b></span> : <><b>{n} to check</b><span className="td-sub">Still taking {review === 1 ? 'it' : 'them'}?</span></>}
       </span>

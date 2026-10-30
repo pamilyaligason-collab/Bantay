@@ -103,13 +103,13 @@ describe('Simple mode night: one Jack per screen, and only when nothing needs ac
 describe('Weather card Jack cutoff', () => {
   it('Extreme caution (rank 40) keeps the drink-water Jack', () => {
     m.wx = { ...base, temp: 31, humidity: 70 }
-    const { container } = render(<WeatherCard />)
-    expect(screen.getByText(/Extreme caution|Feels like/)).toBeTruthy()
+    const { container } = render(<WeatherCard expanded />)
+    expect(screen.getByText(/Extreme caution/)).toBeTruthy()
     expect(jacks(container)[0]).toMatch(/drink-water/)
   })
   it('Danger (rank 80) has no Jack', () => {
     m.wx = { ...base, temp: 33, humidity: 70 }
-    const { container } = render(<WeatherCard />)
+    const { container } = render(<WeatherCard expanded />)
     expect(screen.getByText(/Danger/)).toBeTruthy()
     expect(container.querySelector('img.jack')).toBeNull()
   })
@@ -131,7 +131,7 @@ describe('Native snooze carries the dose day, not the tap day', () => {
     vi.setSystemTime(new Date(2026, 9, 29, 0, 10))
     const item = pickNext({ due: [dose('me', 'Lloyd', 1410, -30)], plan: null, storm: null }, new Date(2026, 9, 29, 0, 10))
     render(<NextUp item={item} review={0} notify={() => undefined} />)
-    fireEvent.click(screen.getByRole('button', { name: 'In 10 min' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     await waitFor(() => expect(m.snooze).toHaveBeenCalledTimes(1))
     const ev = (m.snooze.mock.calls[0] as unknown as [{ notification: { extra: { day: string; at: number; people: string[] } } }])[0]
     expect(ev.notification.extra).toMatchObject({ day: '2026-10-28', at: 1410, people: ['me'] })
