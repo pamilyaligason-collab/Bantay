@@ -3,7 +3,6 @@ import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
-import { useActing } from '../viewas/viewAs'
 import { consentDate, ensureConsent } from './consent'
 import { ConsentNotice } from './ConsentNotice'
 import { AI_KEY } from './ai'
@@ -23,9 +22,8 @@ export const PROCESSORS: { name: string; what: string }[] = [
 const dayLabel = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) }
 
 /** Mockup start-privacy. Reached from Me > Privacy (#privacy). */
-export default function PrivacyScreen() {
+export default function PrivacyScreen({ acting = false }: { acting?: boolean }) { // acting comes from App: privacy paths never import viewas (C-6)
   const personId = useSelfPersonId()
-  const { acting } = useActing()
   const [agreed, setAgreed] = useState<string | null | undefined>(undefined) // undefined = still reading
   const [ai, setAi] = useKv<boolean>(AI_KEY, true)
   const [until, setUntil] = useKv<string | null>(ERASURE_KEY, null)

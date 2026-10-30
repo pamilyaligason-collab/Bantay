@@ -28,6 +28,7 @@ import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
 import ViewAsBanner from './features/viewas/ViewAsBanner' // S16-L0
+import { useActing } from './features/viewas/viewAs'
 import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { watchPushForSession } from './features/notify/fcm'
@@ -47,6 +48,7 @@ const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
 }
 
 export default function App() {
+  const { acting } = useActing()
   const [route, setRoute] = useState(() => parseHash(location.hash))
   const [hash, setHash] = useState(location.hash)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -116,7 +118,7 @@ export default function App() {
       <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />
