@@ -70,9 +70,9 @@ test('sub-pages show only their own header; tab roots keep the top bar', async (
 test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await page.getByRole('link', { name: /Me and settings/ }).click()
+  await page.getByRole('link', { name: /Settings/ }).click()
   await expect(page).toHaveURL(/#me$/)
-  await expect(page.locator('h1')).toHaveText('Me')
+  await expect(page.locator('h1')).toHaveText('Settings')
   await page.goto('/#today')
   await page.getByRole('link', { name: /Notifications/ }).click()
   await expect(page).toHaveURL(/#notif$/)
@@ -82,7 +82,7 @@ test('avatar opens Me and bell opens notifications', async ({ page }) => {
 
 test('Me: sharing is the server list (#sharing), no tab is active, Family no longer shows phone settings', async ({ page }) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/family')
   await expect(page.getByRole('link', { name: /Who can see my records/ })).toHaveAttribute('href', '#sharing')
   await expect(page.getByRole('switch', { name: 'Share readings' })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Main' }).locator('[aria-current="page"]')).toHaveCount(0)

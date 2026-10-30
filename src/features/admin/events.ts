@@ -14,7 +14,9 @@ export const EVENT_NAMES = {
     // session 8 nutrition: fixed names only, never a food name (B-7)
     'meal_logged', 'water_logged', 'salt_goal_set',
     // session 10 S3: phone check result, fixed names only
-    'phone_check_pass', 'phone_check_fail'],
+    'phone_check_pass', 'phone_check_fail',
+    // session 16 onboarding: skips per step and the first test alarm
+    'onboard_skip_reminders', 'onboard_skip_where', 'onboard_skip_test', 'onboard_test_rang'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const
 export type EventKind = keyof typeof EVENT_NAMES
