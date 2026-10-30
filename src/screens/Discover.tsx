@@ -5,6 +5,8 @@ import { SeasonCard } from '../features/discover/today/Cards'
 import Library from '../features/health/library/Library'
 import Article from '../features/health/library/Article'
 import { SubHeader } from '../features/shell/SubHeader'
+import { useKv } from '../features/shell/useKv'
+import { MEDCARDS_FLAG } from '../features/discover/learn/Screen'
 import '../features/shell/shell.css'
 import '../features/discover/discover.css'
 
@@ -13,6 +15,7 @@ const safeDecode = (x: string) => { try { return decodeURIComponent(x) } catch {
 /** Discover tab. `#discover` is the overview (pick hero, season row, five tiles); `#discover/<sub>` is that sub's screen under a pill row (Learn, Watch, Listen, Play, News).
  *  A sub that no lane has registered yet shows a short "Coming in this update" card. The hash is the source of truth, so Back and deep links work. */
 export default function Discover() {
+  const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const lib = /^#discover\/learn\/library(?:\/(.+))?$/.exec(location.hash)
   if (lib) return lib[1] === undefined ? <Library /> : <Article rawKey={safeDecode(lib[1])} />
   if (/^#?discover\/?$/.test(location.hash)) return <Overview />
@@ -31,7 +34,9 @@ export default function Discover() {
   const meta = DISCOVER_SUBS.find((s) => s.id === sub)!
   const at = DISCOVER_SUBS.findIndex((s) => s.id === sub)
   // Learn pages below its home (recipes, a recipe, cook mode, medicine cards, benefits, together) draw their own Back + title header.
-  if (/^#discover\/learn\//.test(location.hash) && Sub) return <Sub />
+  // An unknown page, or a medicine page while the flag is off, falls through to the Discover header + pills + Learn home instead of a bare Learn home.
+  const own = /^#discover\/learn\/(?:recipes|recipe\/.+|cook\/.+|together|benefits)$/.test(location.hash) || (medcards && /^#discover\/learn\/(?:meds|med\/.+)$/.test(location.hash))
+  if (own && Sub) return <Sub />
   return (
     <>
       {root ? <SubHeader title={meta.label} backHref="#discover" backLabel="Back to Discover" /> : <div className="hdr"><h1>Discover</h1></div>}

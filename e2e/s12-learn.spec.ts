@@ -49,6 +49,8 @@ test('flag off: Learn shows recipes only, and a medicine link falls back to the 
   await page.goto('/#discover/learn/med/losartan')
   await expect(page.getByTestId('learn-home')).toBeVisible()
   await expect(page.getByTestId('medcard')).toHaveCount(0)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible() // the fallback keeps a title and the pill row
+  await expect(page.getByRole('group', { name: 'Discover sections' })).toBeVisible()
 })
 
 test('recipes to a recipe to cook mode: big steps, a one tap timer, wake lock asked and let go', async ({ page }) => {

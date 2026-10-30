@@ -46,6 +46,7 @@ describe('MedlinePlus Connect', () => {
   })
   it('article keys round-trip through the address', () => {
     const href = articleHref('c', 'Type 2 diabetes')
+    expect(href.startsWith('#discover/learn/library/')).toBe(true) // the canonical address, so a tap needs no redirect
     expect(parseKey(decodeURIComponent(href.split('/').pop()!))).toEqual({ kinds: ['condition'], text: 'Type 2 diabetes' })
     expect(parseKey('s:metformin')?.kinds).toEqual(['condition', 'medicine'])
     expect(parseKey('junk')).toBeNull()
