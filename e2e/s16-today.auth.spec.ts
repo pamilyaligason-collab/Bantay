@@ -115,3 +115,38 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'l1', `weather-${scheme}`)
   })
 }
+
+// SOS block (TB fix run 5): the hold line sits inside the button but never over the label, at 390 / 360 / 195 px, idle and holding, light and dark; the holding line is >= 4.5:1.
+const lum = (c: string) => { const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number).map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
+const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05) }
+for (const scheme of ['light', 'dark'] as const) {
+  test(`SOS block ${scheme}: label and hold line never intersect (390, 360, 195), holding line contrast >= 4.5`, async ({ page }) => {
+    await startToday(page, 'alertsOff', { scheme })
+    await setScheme(page, scheme)
+    const btn = page.locator('.td-sos .sos-simple-btn')
+    const gap = () => page.evaluate(() => {
+      const b = document.querySelector('.td-sos .sos-simple-btn')!
+      const label = b.querySelector('span')!.getBoundingClientRect()
+      const r = document.createRange(); r.selectNodeContents(document.querySelector('.td-sos .sos-simple-sub')!)
+      const sub = r.getBoundingClientRect()
+      const bb = b.getBoundingClientRect()
+      return { overlap: label.bottom > sub.top && sub.bottom > label.top, labelBottom: label.bottom, subTop: sub.top, subBottom: sub.bottom, btnBottom: bb.bottom, h: bb.height }
+    })
+    for (const w of [390, 360, 195]) {
+      await page.setViewportSize({ width: w, height: 800 })
+      await btn.scrollIntoViewIfNeeded()
+      const g = await gap()
+      expect(g.overlap, `idle ${w}px ${JSON.stringify(g)}`).toBe(false)
+      expect(g.subBottom, `idle ${w}px line stays inside the button`).toBeLessThanOrEqual(g.btnBottom + 0.5)
+      await btn.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+      await expect(page.locator('.td-sos .sos-simple-sub')).toHaveText('Let go to cancel. Nothing is sent yet.')
+      const h = await gap()
+      expect(h.overlap, `holding ${w}px ${JSON.stringify(h)}`).toBe(false)
+      expect(h.subBottom, `holding ${w}px line stays inside the button`).toBeLessThanOrEqual(h.btnBottom + 0.5)
+      const c = await page.evaluate(() => ({ fg: getComputedStyle(document.querySelector('.td-sos .sos-simple-sub')!).color, bg: getComputedStyle(document.querySelector('.td-sos .sos-simple-btn')!).backgroundColor }))
+      expect(ratio(c.fg, c.bg), `holding ${w}px ${c.fg} on ${c.bg}`).toBeGreaterThanOrEqual(4.5)
+      await btn.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+      await expect(page.locator('.td-sos .sos-simple-sub')).toHaveText(/Hold 3 seconds/)
+    }
+  })
+}
