@@ -3,13 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Medication } from '../log/store'
 import { doseRef, MissedDoseActions } from './MissedDoseActions'
 
-const h = vi.hoisted(() => ({ phone: '+639171234567' as string | null, takes: [] as unknown[], logDose: vi.fn() }))
+const h = vi.hoisted(() => ({ phone: '+639171234567' as string | null, takes: [] as unknown[], logDose: vi.fn(), can: null as { log: boolean; reason: string | null } | null }))
 const MED: Medication = { personId: 'p1', name: 'Losartan', serverId: 'm1', medStatus: 'active', schedule: { v: 1, times: ['09:00'] } }
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Mama Rosa', phone: h.phone, isMe: false }], selfId: 'me' }) }))
 vi.mock('../health/useMedications', () => ({ useMedications: (id: string) => (id === 'p1' ? [MED] : []) }))
 vi.mock('../health/useActivity', () => ({ useTakenToday: () => h.takes }))
+vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can }))
 vi.mock('../log/store', () => ({ logDose: (...a: unknown[]) => h.logDose(...a) }))
-afterEach(() => { cleanup(); h.phone = '+639171234567'; h.takes = []; h.logDose.mockReset() })
+afterEach(() => { cleanup(); h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
 
 const NOW = new Date(2026, 9, 26, 10, 10)
 const REF = 'm1:2026-10-26:09:00'
@@ -46,6 +47,21 @@ describe('MissedDoseActions (lock-missed)', () => {
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Marked as taken'))
     expect(h.logDose).toHaveBeenCalledTimes(1)
     expect(h.logDose).toHaveBeenCalledWith(MED, '09:00')
+  })
+  it('S16: acting for a member the admin cannot log for, Mark taken is disabled with a lock and "View only", and nothing is logged', () => {
+    h.can = { log: false, reason: 'You can see her but not log for her.' }
+    render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
+    const b = screen.getByRole('button', { name: /Mark taken for Mama Rosa/ }) as HTMLButtonElement
+    expect(b.disabled).toBe(true)
+    expect(b.textContent).toContain('View only')
+    fireEvent.click(b)
+    expect(screen.queryByText('Did you see Mama Rosa take it?')).toBeNull()
+    expect(h.logDose).not.toHaveBeenCalled()
+  })
+  it('S16: acting with log access keeps the normal button', () => {
+    h.can = { log: true, reason: null }
+    render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
+    expect((screen.getByRole('button', { name: 'Mark taken for Mama Rosa' }) as HTMLButtonElement).disabled).toBe(false)
   })
   it('no Mark taken when the slot is already taken, is not today, or the ref has no slot', () => {
     h.takes = [{ name: 'Losartan', takenAt: new Date(2026, 9, 26, 9, 40).toISOString(), medicationId: 'm1', slot: '09:00' }]

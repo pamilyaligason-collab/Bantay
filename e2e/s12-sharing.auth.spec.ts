@@ -117,8 +117,8 @@ for (const scheme of ['light', 'dark'] as const) {
 test('Me has the Who can see my records row and no sharing switches; Privacy opens the same list', async ({ page }) => {
   const calls: Call[] = []
   await open(page, 'light', calls)
-  await page.goto('/#me')
-  await expect(page.getByRole('heading', { name: 'Me' })).toBeVisible()
+  await page.goto('/#me/family') // S16: the row lives in Settings > Family and sharing
+  await expect(page.getByRole('heading', { level: 1, name: 'Family and sharing' })).toBeVisible()
   const row = page.getByRole('link', { name: /Who can see my records/ })
   await expect(row).toHaveAttribute('href', '#sharing')
   await expect(page.getByRole('switch', { name: /^Share / })).toHaveCount(0)

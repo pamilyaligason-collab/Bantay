@@ -47,7 +47,7 @@ export function AskSheet({ onClose, onDone }: { onClose: () => void; onDone: () 
             <Icon name="chev" />
           </button>
         ))}
-        <a className="ask-pdf" href="#health/papers" onClick={(e) => { e.preventDefault(); leave(() => { location.hash = '#health/papers' }) }}>For PDF files use Health &gt; Papers</a>
+        <a className="ask-pdf" href="#family/papers" onClick={(e) => { e.preventDefault(); leave(() => { location.hash = '#family/papers' }) }}>For PDF files use Family &gt; Papers</a>
         <button type="button" className="btn2 ask-cancel" onClick={onClose}>Cancel</button>
         <input ref={file} type="file" accept="image/*" hidden aria-label="Choose a photo" data-testid="ask-file" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; chosen(f) }} />
       </div>

@@ -357,8 +357,7 @@
 .td-q-mood { padding: 8px; gap: 8px; align-items: center; }
 .bt .td-qm { border: 0; background: none; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; padding: 0 4px; }
 .bt .td-ok { display: inline-flex; align-items: center; gap: 4px; border: 0; border-radius: 999px; background: var(--green2); color: #fff; font-size: 15px; font-weight: 600; min-height: 40px; padding: 0 12px; }
-:root[data-theme="dark"] .bt .td-ok { color: #0d1a12; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .bt .td-ok { color: #0d1a12; } }
+/* dark keeps the white label: --green2 is #3b7350 there and white on it is 5.6:1, the old dark label was 3.19 (axe) */
 
 /* More */
 .td-more-g { gap: 12px; }

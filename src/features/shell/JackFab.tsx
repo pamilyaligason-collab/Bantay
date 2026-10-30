@@ -38,7 +38,16 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode has no Jack button, so its hint must not count as seen
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const held = useRef(false) // a hold opened the sheet; the click that follows the release must not also open Jack
-  const visible = tab !== null && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
+  const [nofab, setNofab] = useState(false) // a storm or quake warning on screen marks itself data-nofab (D-91): nothing but the warning's own buttons
+  useEffect(() => {
+    const root = document.querySelector('.bt') ?? document.body
+    const check = () => setNofab(!!document.querySelector('[data-nofab]'))
+    check()
+    const mo = new MutationObserver(check)
+    mo.observe(root, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [hash])
+  const visible = tab !== null && !nofab && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
   const hint = visible && loaded && !seen && !sheet && tab === 'today'
   const hintRef = useRef<HTMLParagraphElement>(null)
   const [fits, setFits] = useState(false) // the hint is measured before it shows; it stays hidden while it would cover text

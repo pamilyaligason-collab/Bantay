@@ -62,7 +62,7 @@ describe('Inbox screen', () => {
     const i = inbox(items, [items[0]!.id])
     render(<Inbox inbox={i} />)
     expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
-    expect(screen.getByRole('link', { name: /2 records to check/ }).getAttribute('href')).toBe('#records')
+    expect(screen.getByRole('link', { name: /2 records to check/ }).getAttribute('href')).toBe('#family/papers')
     fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }))
     expect(i.markAllRead).toHaveBeenCalledTimes(1)
   })

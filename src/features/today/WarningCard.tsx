@@ -48,7 +48,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
       {hazard && !isAcked(acks, hazard) && (() => {
         const who = affectsUs(hazard, ref)
         return (
-          <section role="region" aria-label="Active warning" data-testid="warning-card">
+          <section role="region" aria-label="Active warning" data-testid="warning-card" data-nofab={hazard.kind === 'quake' || hazard.kind === 'tcws' ? '' : undefined}>
             <AlertCard
               tone="red"
               icon={ICON[hazard.kind] ?? 'warn'}
@@ -73,7 +73,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
       {storm && (isAcked(acks, storm) ? (
         <StormBlock now={now} compact />
       ) : (
-        <section role="region" aria-label="Storm mode" data-testid="warning-card-storm">
+        <section role="region" aria-label="Storm mode" data-testid="warning-card-storm" data-nofab="">
           <AlertCard
             tone="red"
             icon="typhoon"

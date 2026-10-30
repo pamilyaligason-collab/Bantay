@@ -86,12 +86,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page).toHaveURL(/#today$/)
     })
 
-    test('PDF line goes to Health > Papers', async ({ page }) => {
+    test('PDF line goes to Family > Papers', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
-      await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
-      await expect(page).toHaveURL(/#health\/papers/)
+      await page.getByRole('link', { name: /For PDF files use Family > Papers/ }).click()
+      await expect(page).toHaveURL(/#family\/papers/)
     })
 
     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {

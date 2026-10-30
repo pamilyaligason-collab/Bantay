@@ -6,9 +6,9 @@ import { skipOnboarding } from './helpers'
 // Session 16 G-1 / N-4: at 200% text (195 px) no text on any screen may break one or two letters per line, light and dark.
 // Session 15 checked only the first screen; the rain pill inside the weather card was missed. Clock frozen (ML-38).
 const NOW = new Date('2026-10-30T09:00:00+08:00')
-const ROUTES = ['#today', '#weather', '#health', '#health/meds', '#health/labs', '#health/body', '#health/library', '#health/visits', '#health/move',
-  '#discover', '#discover/learn', '#discover/watch', '#family', '#family/plan', '#family/people', '#family/records', '#family/messages',
-  '#safety', '#safety/warnings', '#safety/storms', '#safety/hazards', '#safety/cards', '#me']
+const ROUTES = ['#today', '#weather', '#health', '#health/meds', '#health/labs', '#health/body', '#discover/learn/library', '#health/visits', '#health/move',
+  '#discover', '#discover/learn', '#discover/watch', '#family', '#family/plan', '#family/papers', '#family/messages',
+  '#safety', '#safety/warnings', '#safety/storms', '#safety/hazards', '#safety/cards', '#me', '#me/alerts', '#me/family', '#me/phone']
 
 test.use({ timezoneId: 'Asia/Manila', viewport: { width: 195, height: 844 } })
 

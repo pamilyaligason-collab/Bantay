@@ -38,7 +38,7 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#health')
-  await expect(page.getByTestId('insight')).toBeVisible() // the health database exists once the screen has read it
+  await expect(page.getByTestId('bodyhero')).toBeVisible() // the health database exists once the screen has read it (the headline needs a reading)
   await seed(page, 1)
   await page.reload()
   await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen

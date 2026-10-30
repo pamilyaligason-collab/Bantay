@@ -6,10 +6,10 @@ export function openScan() {
   window.dispatchEvent(new HashChangeEvent('hashchange')) // pushState is silent; App listens for this
 }
 
-/** Leave the flow: Back if we came in through openScan, else straight to Health > Papers. */
+/** Leave the flow: Back if we came in through openScan, else straight to Family > Papers. */
 export function closeScan() {
   if (history.state?.bantayScan) history.back()
-  else location.hash = '#health/papers'
+  else location.hash = '#family/papers'
 }
 
 // A photo picked in the Ask sheet waits here until the scan flow opens and takes it (same crop path as "Choose a photo").

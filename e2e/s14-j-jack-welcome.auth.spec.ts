@@ -26,7 +26,7 @@ for (const width of [375, 195] as const) { // 195 px = 200% text: app CSS uses p
     await expect(img).toHaveCount(1)
     await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
     expect(await img.getAttribute('alt')).toBe('Jack Jack waving hello')
-    expect(await img.getAttribute('width')).toBe('150')
+    expect(await img.getAttribute('width')).toBe('112') // S16: JackArt's onboarding size (D-103), was 150 px
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
     if (process.env.S14_SHOTS && width === 375) {
       mkdirSync(process.env.S14_SHOTS, { recursive: true })
