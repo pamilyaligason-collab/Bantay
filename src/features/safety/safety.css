@@ -102,7 +102,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 
 /* IDs and insurance row, Act early grid, first-aid pages (session 8) */
 .fa { gap: 16px; }
-.sf a.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; gap: 8px; }
+.sf a.fa-call, a.btn.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; gap: 8px; }
 .fa-steps { list-style: none; padding: 0 !important; gap: 12px !important; }
 .fa-steps li { display: flex; gap: 14px; align-items: flex-start; font-size: 17px; line-height: 1.4; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow-wrap: anywhere; }
 .fa-n { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; background: var(--btn); color: var(--btn-fg); }
