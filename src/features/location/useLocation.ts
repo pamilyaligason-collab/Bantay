@@ -11,6 +11,7 @@ export interface Home {
   lon: number
 }
 export const ZONE_KEY = 'loc.zone'
+const LAST_KEY = 'loc.last'
 const FIRST_ZONE: ZoneId = HOME_ZONES[0].id
 const zoneHome = (id: string): Home => HOME_ZONES.find((z) => z.id === id) ?? HOME_ZONES[0]
 /** D-33: a saved custom home, else the last chosen zone, else the first zone. */
@@ -35,9 +36,14 @@ const gps = async (ask: boolean, native: boolean): Promise<{ coords: { latitude:
  *  Any failure or denial falls back to the saved home barangay (default Dampas). */
 export async function resolveLocation(ask: boolean): Promise<Loc> {
   const home = await getHome()
-  const fallback: Loc = { lat: home.lat, lon: home.lon, source: 'home' }
+  const dampas: Loc = { lat: home.lat, lon: home.lon, source: 'home' }
+  // D-105: the last real fix beats the saved home zone; the home zone is only the first-run fallback.
+  const fallback = async (): Promise<Loc> => {
+    const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number } | undefined
+    return v && Number.isFinite(v.lat) && Number.isFinite(v.lon) ? { lat: v.lat, lon: v.lon, at: v.at, source: 'last' } : dampas
+  }
   try {
-    if (!('geolocation' in navigator)) return fallback
+    if (!('geolocation' in navigator)) return await fallback()
     // APK 2.2+: the Geolocation plugin reads Android's own permission (it throws when location is switched off: treat as denied).
     const os = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Geolocation')
       ? await import('@capacitor/geolocation').then((m) => m.Geolocation.checkPermissions()).then((p) => (p.location.startsWith('prompt') ? 'prompt' : p.location), () => 'denied')
@@ -45,11 +51,13 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
     const st = os ?? (await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt'))
     // Older APKs: Android WebView never retains the grant, so permissions.query stays 'prompt' after a yes: trust our own record there.
     const allowed = st === 'granted' || (!os && st === 'prompt' && Capacitor.isNativePlatform() && (await db.kv.get('loc.asked').catch(() => undefined))?.value === true)
-    if (st === 'denied' || (!allowed && !ask)) return fallback
+    if (st === 'denied' || (!allowed && !ask)) return await fallback()
     const p = await gps(ask, os !== null)
-    return { lat: p.coords.latitude, lon: p.coords.longitude, source: 'gps' }
+    const fix = { lat: p.coords.latitude, lon: p.coords.longitude }
+    void db.kv.put({ key: LAST_KEY, value: { ...fix, at: Date.now() } }).catch(() => {})
+    return { ...fix, source: 'gps' }
   } catch {
-    return fallback
+    return await fallback()
   } finally {
     if (ask) await db.kv.put({ key: 'loc.asked', value: true })
   }
@@ -58,7 +66,7 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
 /** The phone's position when GPS is already granted, else null (callers then use the home zones). Never prompts. */
 export function useGpsLoc(): LatLon | null {
   const l = useLocation()
-  return l.source === 'gps' ? l : null
+  return l.source === 'gps' || l.source === 'last' ? l : null
 }
 
 /** Nothing is known until resolveLocation finishes: unknown is null, never a made-up Dampas position. */
@@ -103,5 +111,5 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
-  return { ...resolvePlace({ gps: l.source === 'gps' ? l : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending' }
+  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'last' ? l.at : undefined }
 }

@@ -56,3 +56,18 @@ describe('resolveLocation(false)', () => {
     expect(await resolveLocation(false)).toEqual({ lat: 9.65, lon: 123.85, source: 'gps' }); expect(g).not.toHaveBeenCalled()
   })
 })
+
+describe('last known fix (D-105)', () => {
+  beforeEach(async () => { h.native = false; h.plugin = false; h.os = 'granted'; h.pos = null; await db.kv.clear() })
+  it('a GPS success is stored as loc.last', async () => {
+    setup('granted'); await resolveLocation(false)
+    await vi.waitFor(async () => expect((await db.kv.get('loc.last'))?.value).toMatchObject({ lat: 6.11, lon: 125.17 }))
+  })
+  it('without GPS the stored fix comes back as last, with its time', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 9.65, lon: 123.85, at: 1700000000000 } }); setup('denied')
+    expect(await resolveLocation(false)).toEqual({ lat: 9.65, lon: 123.85, source: 'last', at: 1700000000000 })
+  })
+  it('with no fix ever, the home zone (Dampas) is the labelled fallback', async () => {
+    setup('denied'); expect((await resolveLocation(false)).source).toBe('home')
+  })
+})

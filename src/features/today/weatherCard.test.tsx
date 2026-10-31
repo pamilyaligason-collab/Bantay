@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Dampas \(saved zone\) · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas \((no location yet, set your home in Settings)\) · as of /)).toBeTruthy()
     expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
@@ -93,7 +93,7 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Dampas \(saved zone\) · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas \((no location yet, set your home in Settings)\) · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()

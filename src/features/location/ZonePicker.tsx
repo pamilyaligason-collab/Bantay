@@ -12,7 +12,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   const [msg, setMsg] = useState<ReactNode>('')
   if (!place) return null
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
-  const label = place.source === 'gps' ? `Near you · ${short(zone.name)}` : place.source === 'gps-abroad' ? `Away · ${short(zone.name)}` : short(zone.name)
+  const label = place.source === 'gps' ? `Near you · ${short(zone.name)}` : place.source === 'last' ? `Last known · ${short(zone.name)}` : place.source === 'gps-abroad' ? `Away · ${short(zone.name)}` : short(zone.name)
   const current = async () => {
     setMsg('')
     const l = await place.ask().catch(() => null)
@@ -23,8 +23,8 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
       : 'We could not find your location. Turn on Location on your phone, go near a window, and try again.')
   }
   const pills: [string, string, boolean, () => void][] = [
-    ['current', 'Current', place.source === 'gps', current],
-    ...HOME_ZONES.map((z): [string, string, boolean, () => void] => [z.id, short(z.name), place.source !== 'gps' && place.zone === z.id, () => { setMsg(''); void place.pickZone(z.id) }])
+    ['current', 'Current', place.source === 'gps' || place.source === 'last', current],
+    ...HOME_ZONES.map((z): [string, string, boolean, () => void] => [z.id, short(z.name), place.source !== 'gps' && place.source !== 'last' && place.zone === z.id, () => { setMsg(''); void place.pickZone(z.id) }])
   ]
   return (
     <div className="zp">

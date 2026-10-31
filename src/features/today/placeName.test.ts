@@ -16,4 +16,7 @@ describe('placeNameOf', () => {
   it('zone source keeps the zone short name', () => {
     expect(placeNameOf(resolvePlace({ gps: null, lastZone: 'conel' }) as never)).toBe('Conel')
   })
+  it('a last known fix says so', () => {
+    expect(placeNameOf(resolvePlace({ gps: { lat: 9.65, lon: 123.85, stale: true }, lastZone: 'dampas' }) as never)).toBe('Tagbilaran · last known')
+  })
 })

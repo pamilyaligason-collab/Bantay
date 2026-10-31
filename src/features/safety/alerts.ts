@@ -116,7 +116,7 @@ export function outdatedLine(checkedAt: string | null | undefined): string {
 export function placeLabel(place: { source: string; zone: string }): string {
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const name = zone.name.split(',')[0]!
-  return place.source === 'gps' ? `Near you · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
+  return place.source === 'gps' ? `Near you · ${name}` : place.source === 'last' ? `Last known · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
 }
 
 // shortcut: flat radii for everything but quakes, and a rough strong-shaking radius by magnitude for quakes; upgrade when the ingest sends a shake model.

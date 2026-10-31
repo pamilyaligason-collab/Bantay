@@ -38,7 +38,7 @@ export const LOCATION_OFF ='Location is off for Bantay. Turn it on in your phone
  *  "Near me" is always offered and asks for location only when tapped. */
 export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask?: () => Promise<Loc>; zone?: string }) {
   const own = useLocation()
-  const here = loc === undefined ? (own.source === 'gps' ? own : null) : loc
+  const here = loc === undefined ? (own.source === 'gps' || own.source === 'last' ? own : null) : loc
   const doAsk = ask ?? own.ask
   const [finding, setFinding] = useState(false)
   const [off, setOff] = useState('')

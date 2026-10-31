@@ -55,7 +55,7 @@ function useOnlineNow() {
 export default function WeatherScreen() {
   const l = useLocation()
   const place = usePlaceFrom(l)
-  const gps: LatLon | null = l.source === 'gps' ? { lat: l.lat, lon: l.lon } : null
+  const gps: LatLon | null = l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon } : null
   const [pick, setPick] = useState<Sel | null>(null)
   const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
   const [locOff, setLocOff] = useState(false)
