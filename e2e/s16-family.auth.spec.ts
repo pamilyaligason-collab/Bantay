@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 import { emptyNeeds, full } from './fixtures/s16/family'
-import { assertBudget, assertJackClear, assertNoWrappedButtons, setScheme } from './s16'
+import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, setScheme } from './v13'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 const SHOTS = process.env.S16_SHOTS // shots only when set, so a gate rerun leaves the tree clean (ML-32)
@@ -15,7 +15,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
     const go = async (page: Page, fixture: (p: Page) => Promise<void>) => { await fixture(page); await setScheme(page, scheme) }
 
-    test('family root: ID card, faces with rings and legend, Messages and Plan rows, week calendar, within budget', async ({ page }) => {
+    test('family root: ID card, faces with rings and legend, Messages and Plan rows, week calendar, targets and contrast', async ({ page }) => {
       await go(page, full)
       await expect(page.getByTestId('profilecard')).toBeVisible()
       await expect(page.getByText('Needs you now')).toBeVisible()
@@ -35,7 +35,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await cal.getByRole('button', { name: 'Month' }).click()
       await expect(cal.getByRole('group', { name: /days$/ })).toBeVisible()
       await cal.getByRole('button', { name: 'Week' }).click()
-      await assertBudget(page, 1650)
+      await assertTargets(page); await assertTextContrast(page)
       await assertJackClear(page)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
       if (SHOTS) {
@@ -46,13 +46,13 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('empty needs: Needs you now is not drawn at all, within the 1500 budget', async ({ page }) => {
+    test('empty needs: Needs you now is not drawn at all', async ({ page }) => {
       await go(page, emptyNeeds)
       await expect(page.getByTestId('profilecard')).toBeVisible()
       await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
       await expect(page.getByText('Needs you now')).toHaveCount(0)
       await expect(page.getByTestId('msgs')).toBeVisible()
-      await assertBudget(page, 1500)
+      await assertTargets(page); await assertTextContrast(page)
       await assertJackClear(page)
     })
 

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
-import { assertBudget, assertJackClear, assertNoWrappedButtons, FIXED_CLOCKS, setScheme } from './s16'
+import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, FIXED_CLOCKS, setScheme } from './v13'
 import { empty, full } from './fixtures/s16/health'
 
 declare const process: { env: Record<string, string | undefined> }
@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await mock(page, FIXED_CLOCKS[1])
 })
 
-test('full: body hero, At a glance, nudge row, More in Health, in that order, within 1250 px', async ({ page }) => {
+test('full: body hero, At a glance, nudge row, More in Health, in that order', async ({ page }) => {
   await full(page)
   const order = await page.evaluate(() => ['bodyhero', 'glance', 'nudge', 'browse'].map((id) => { const el = document.querySelector(`[data-testid="${id}"]`); return el ? el.getBoundingClientRect().top + window.scrollY : -1 }))
   expect(order.every((y, i) => y > 0 && (i === 0 || y > order[i - 1]!))).toBe(true)
@@ -29,7 +29,7 @@ test('full: body hero, At a glance, nudge row, More in Health, in that order, wi
   expect((await page.locator('[data-testid="nudge"] a.nr-t').boundingBox())!.width).toBeGreaterThan(120) // the title link must not be squeezed to nothing by the Log button
   await expect(page.getByTestId('browse').locator('a')).toHaveCount(4)
   await expect(page.getByRole('link', { name: /Papers/ })).toHaveCount(0) // Papers moved to Family (D-100)
-  await assertBudget(page, 1250)
+  await assertTargets(page); await assertTextContrast(page)
   await assertJackClear(page)
 })
 
@@ -43,7 +43,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await assertNoWrappedButtons(page)
   })
 
-  test(`empty (${scheme}): one hero and the More grid, within 700 px`, async ({ page }) => {
+  test(`empty (${scheme}): one hero and the More grid`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await empty(page, FIXED_CLOCKS[1])
     await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
@@ -51,7 +51,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('nudge')).toHaveCount(0)
     await setScheme(page, scheme)
     await shot(page, 'health-empty', scheme)
-    await assertBudget(page, 700)
+    await assertTargets(page); await assertTextContrast(page)
     await assertJackClear(page)
   })
 }
