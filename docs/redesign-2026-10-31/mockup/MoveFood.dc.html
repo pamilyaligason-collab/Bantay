@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Move and food</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding-right:12px;font-size:17px;font-weight:500;text-decoration:none;margin-left:-6px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+h1{margin:2px 0 0;font-size:34px;font-weight:700;letter-spacing:-0.02em}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+</style>
+</helmet>
+<div class="ph" style="height: 1760px;">
+<div class="pad" style="padding-top: 20px;">
+<div style="display:flex;align-items:center;justify-content:space-between;min-height:44px;"><a href="Health.dc.html" class="back" style="color:#0F766E;"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Health</a></div><h1>Move and food</h1>
+<div class="card" style="margin-top:14px;padding:20px;display:flex;align-items:center;gap:18px;background:linear-gradient(160deg,#fff,#DDF1EE);">
+<svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="0 of 150 minutes this week" style="flex:none;"><circle cx="75" cy="75" r="62" fill="none" stroke="#C9E4DF" stroke-width="14"></circle><circle cx="75" cy="13" r="7" fill="#0F766E"></circle><text x="75" y="80" text-anchor="middle" font-size="38" font-weight="700" fill="#1C1B19" font-family="inherit">0</text><text x="75" y="102" text-anchor="middle" font-size="13" font-weight="600" fill="#6B675F" font-family="inherit">of 150 min</text></svg>
+<div><div style="font-size:13px;font-weight:600;color:#0F766E;letter-spacing:.04em;">THIS WEEK</div><div style="font-size:20px;font-weight:700;line-height:24px;margin-top:2px;">No moving minutes yet</div><div class="s" style="margin-top:4px;">150 min is a sample goal. Your doctor can change it.</div></div></div>
+
+<div class="sh"><h2>Today&#39;s moves</h2></div>
+<div class="scroller">
+<a href="#move" class="card" style="flex:none;width:250px;text-decoration:none;color:inherit;overflow:hidden;"><div style="height:96px;background:#E9F5F2;display:flex;align-items:center;justify-content:center;color:#0F766E;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg></div><div style="padding:12px 14px 14px;"><div style="font-size:17px;font-weight:600;line-height:22px;">Seated leg lifts</div><div class="s">5 min &middot; sample move</div><div style="display:flex;gap:6px;margin-top:8px;"><span class="chip" style="background:#DDF1EE;color:#0F766E;">Sitting</span></div><div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:#FDF1DC;color:#8A4B06;font-size:13px;line-height:18px;"><b>Stop if</b> you feel dizzy or have chest pain.</div></div></a>
+<a href="#move" class="card" style="flex:none;width:250px;text-decoration:none;color:inherit;overflow:hidden;"><div style="height:96px;background:#DDF1EE;display:flex;align-items:center;justify-content:center;color:#0F766E;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg></div><div style="padding:12px 14px 14px;"><div style="font-size:17px;font-weight:600;line-height:22px;">Slow walk indoors</div><div class="s">10 min &middot; sample move</div><div style="display:flex;gap:6px;margin-top:8px;"><span class="chip" style="background:#DDF1EE;color:#0F766E;">Standing</span></div><div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:#FDF1DC;color:#8A4B06;font-size:13px;line-height:18px;"><b>Stop if</b> you feel short of breath or unsteady.</div></div></a>
+<a href="#move" class="card" style="flex:none;width:250px;text-decoration:none;color:inherit;overflow:hidden;"><div style="height:96px;background:#E5EDFB;display:flex;align-items:center;justify-content:center;color:#0F766E;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg></div><div style="padding:12px 14px 14px;"><div style="font-size:17px;font-weight:600;line-height:22px;">Arm circles</div><div class="s">3 min &middot; sample move</div><div style="display:flex;gap:6px;margin-top:8px;"><span class="chip" style="background:#DDF1EE;color:#0F766E;">Sitting</span><span class="chip" style="background:#DDF1EE;color:#0F766E;">Standing</span></div><div style="margin-top:10px;padding:8px 10px;border-radius:10px;background:#FDF1DC;color:#8A4B06;font-size:13px;line-height:18px;"><b>Stop if</b> your shoulder hurts or feels sharp pain.</div></div></a>
+</div>
+<div class="s" style="margin:12px 4px 0;font-size:15px;line-height:21px;color:#B42318;font-weight:600;">Chest pain that does not stop: call 911.</div>
+<a href="#doctor" class="grp row" style="margin-top:14px;display:flex;"><span class="ic" style="background:#FDF1DC;color:#8A4B06;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path><path d="m9 12 2 2 4-4"></path></svg></span><div><div class="t">Doctor OK first</div><div class="s">Check with your doctor before you start.</div></div><span class="v">Not yet</span><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+
+<div class="sh"><h2>Food</h2></div>
+<a href="#meal" class="btn bp" style="display:flex;width:100%;min-height:52px;font-size:17px;box-sizing:border-box;">Log a meal</a>
+<div class="card" style="margin-top:12px;padding:16px;">
+<div style="display:flex;align-items:baseline;justify-content:space-between;"><div style="font-size:15px;font-weight:600;">Salt today</div><div class="s">limit 2000 mg (1500 if high BP)</div></div>
+<div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;margin-top:6px;">0 <span style="font-size:15px;font-weight:500;color:#6B675F;">of 2000 mg</span></div>
+<div style="position:relative;height:12px;border-radius:6px;background:#EEE9DD;margin-top:10px;"><div style="position:absolute;left:75%;top:-3px;bottom:-3px;width:2px;background:#8A4B06;"></div></div>
+<div style="display:flex;justify-content:space-between;margin-top:6px;" class="s"><span>0</span><span>1500</span><span>2000 mg</span></div></div>
+<div class="card" style="margin-top:12px;padding:16px;">
+<div style="display:flex;align-items:baseline;justify-content:space-between;"><div style="font-size:15px;font-weight:600;">Salt, last 7 days</div><span class="chip" style="background:#FDF1DC;color:#8A4B06;">Sample numbers</span></div>
+<div style="display:flex;align-items:flex-end;gap:8px;height:110px;margin-top:14px;position:relative;" role="img" aria-label="Sample sodium chart for seven days"><div style="position:absolute;left:0;right:0;bottom:104px;border-top:1.5px dashed #8A4B06;"></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:56px;border-radius:6px;background:#9FD0C9;"></div><span class="s" style="font-weight:600;">M</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:76px;border-radius:6px;background:#9FD0C9;"></div><span class="s" style="font-weight:600;">T</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:92px;border-radius:6px;background:#E4A09A;"></div><span class="s" style="font-weight:600;">W</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:68px;border-radius:6px;background:#9FD0C9;"></div><span class="s" style="font-weight:600;">T</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:48px;border-radius:6px;background:#9FD0C9;"></div><span class="s" style="font-weight:600;">F</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:84px;border-radius:6px;background:#E4A09A;"></div><span class="s" style="font-weight:600;">S</span></div><div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;"><div style="width:100%;height:64px;border-radius:6px;background:#9FD0C9;"></div><span class="s" style="font-weight:600;">S</span></div></div>
+<div class="s" style="margin-top:6px;">Dashed line is 2000 mg. Not your real meals.</div></div>
+<div class="card" style="margin-top:12px;padding:16px;">
+<div style="display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:15px;font-weight:600;">Water</div><div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;">0 <span style="font-size:15px;font-weight:500;color:#6B675F;">of 8 glasses</span></div></div>
+<button type="button" aria-label="Add a glass of water" style="width:56px;height:56px;border-radius:50%;border:0;background:#2459C7;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div>
+<div style="display:flex;gap:6px;margin-top:12px;" aria-hidden="true"><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span><span style="width:26px;height:34px;border-radius:5px 5px 9px 9px;border:2px solid #7FB3C8;background:#fff;box-sizing:border-box;"></span></div></div>
+
+<div class="sh"><h2>Steps</h2></div>
+<div class="card" style="padding:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;"><span class="ic" style="width:44px;height:44px;border-radius:12px;background:#DDF1EE;color:#0F766E;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg></span>
+<div style="flex:1;"><div class="t">Not connected</div><div class="s">Reads your phone&#39;s step count</div></div>
+<a href="#hc" class="btn bt" style="width:100%;box-sizing:border-box;">Connect Health Connect</a></div>
+
+</div>
+<a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+<nav class="tabs" aria-label="Tabs">
+<a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Health.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+<a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+<a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+<a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

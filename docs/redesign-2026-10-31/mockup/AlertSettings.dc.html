@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay World Alerts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:16px;font-size:17px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;gap:8px}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:8px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+
+</style>
+</helmet>
+<div class="ph" style="height: 1250px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;">
+      <a href="World.dc.html" style="display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-left: -8px; padding: 0 8px; font-size: 17px; font-weight: 500; text-decoration: none;"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="#1E6B4E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>World</a>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">World alerts</h1>
+    <div class="sh"><h2>Instant</h2></div>
+    <div class="grp">
+      <div class="row"><div class="ic" style="background: #FBE7E4; color: #B42318;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Hazards near family</div><div class="s">Instant. Home zones Dampas and Conel, plus members who share their place.</div><div class="s" style="margin-top: 2px;">Turning this off asks you to confirm.</div></div><button role="switch" aria-checked="true" aria-label="Hazards near family, instant" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+      <div class="row"><div class="ic" style="background: #FDF1DC; color: #8A4B06;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h3l3-7 4 14 3-7h7"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Philippines-wide warnings</div><div class="s">Instant when urgent, otherwise in the digest.</div></div><button role="switch" aria-checked="true" aria-label="Philippines-wide warnings, instant when urgent" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+    </div>
+    <p class="s" style="margin: 8px 4px 0;">Urgent means: tsunami warning, PAGASA wind signal 3 or higher, earthquake M6+ in the Philippines, red flood or rainfall warning, volcano level 3+.</p>
+    <div class="sh"><h2>Daily digest</h2></div>
+    <div class="grp">
+      <div class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">World big events</div><div class="s">Daily digest.</div></div><button role="switch" aria-checked="true" aria-label="World big events, daily digest" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+      <div class="row"><div class="ic" style="background: #DDF1EE; color: #0F766E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h8M8 16h5"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Macro and news</div><div class="s">Daily digest.</div></div><button role="switch" aria-checked="true" aria-label="Macro and news, daily digest" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+      <a href="#digest-time" class="row"><div class="ic" style="background: #E3EFE8; color: #1E6B4E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div><div class="t">Daily digest time</div><div class="v">7:00 AM</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+    </div>
+    <div class="sh"><h2>Quiet hours</h2></div>
+    <div class="grp">
+      <div class="row"><div class="ic" style="background: #EEE9FA; color: #6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Quiet hours 10 PM to 6 AM</div><div class="s">Emergencies still ring.</div></div><button role="switch" aria-checked="true" aria-label="Quiet hours 10 PM to 6 AM" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+    </div>
+    <div class="sh"><h2>Channels</h2></div>
+    <div class="grp">
+      <div class="row"><div class="ic" style="background: #E3EFE8; color: #1E6B4E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Push notification</div><div class="s">Main way Bantay reaches you.</div></div><button role="switch" aria-checked="true" aria-label="Push notification" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #1E6B4E;"><span style="position: absolute; top: 2px; right: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+      <div class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"></rect><path d="M8 21l3-4M8 10h8"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">SMS fallback <span style="padding: 3px 9px; border-radius: 999px; background: #E3EFE8; color: #1E6B4E; font-size: 13px; font-weight: 700; white-space: nowrap;">New</span></div><div class="s">Text message if push does not arrive. Carrier charges may apply.</div></div><button role="switch" aria-checked="false" aria-label="SMS fallback" style="flex: none; width: 56px; min-height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: flex-end;"><span style="position: relative; display: block; width: 51px; height: 31px; border-radius: 16px; background: #D3CFC5;"><span style="position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></span></button></div>
+    </div>
+    <p class="s" style="margin: 16px 4px 0;" id="digest-time">Phone warnings from your carrier (cell broadcast) work even without Bantay.</p>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

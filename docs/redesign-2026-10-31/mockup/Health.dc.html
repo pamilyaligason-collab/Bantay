@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Health</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tile{padding:14px;text-decoration:none;color:inherit;display:flex;flex-direction:column;min-height:150px;box-sizing:border-box}
+.tk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.tv{font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:10px}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none;background:#EFECE6;color:#4A463F}
+.post{padding:14px 16px;border-top:0.5px solid rgba(60,55,45,.16)}
+.react{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:999px;border:0;background:transparent;font-family:inherit;font-size:15px;color:#6B675F;cursor:pointer}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+</style>
+</helmet>
+<div class="ph" style="height: 2440px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;">
+      <div style="font-size: 13px; font-weight: 600; color: #6B675F; letter-spacing: 0.04em;">SUMMARY</div>
+      <a href="HealthMember.dc.html" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px 0 4px; border-radius: 999px; background: #fff; text-decoration: none; color: #1C1B19; box-shadow: 0 1px 2px rgba(40,30,10,.08);">
+        <span style="width: 36px; height: 36px; border-radius: 50%; background: #1E6B4E; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700;">L</span>
+        <span style="font-size: 15px; font-weight: 600;">Me</span>
+        <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="m1 1.5 5 5 5-5" fill="none" stroke="#6B675F" stroke-width="2" stroke-linecap="round"></path></svg>
+      </a>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Health</h1>
+
+    <div class="sh" style="margin-top: 18px;"><h2>Needs attention</h2></div>
+    <div class="card" style="padding: 18px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="font-size: 15px; font-weight: 600;">ALT · liver test</div>
+        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: #FBE7E4; color: #B42318; font-size: 13px; font-weight: 700;"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 9V1M1.5 4.5 5 1l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>High</span>
+      </div>
+      <div style="margin-top: 8px; font-size: 44px; font-weight: 700; letter-spacing: -0.03em;">115 <span style="font-size: 17px; font-weight: 500; color: #6B675F;">U/L</span></div>
+      <div style="position: relative; height: 10px; border-radius: 5px; background: #F1EDE6; margin-top: 12px;">
+        <div style="position: absolute; left: 0; width: 48%; top: 0; bottom: 0; border-radius: 5px; background: #BFE0CE;"></div>
+        <div style="position: absolute; left: calc(100% - 12px); top: -4px; width: 18px; height: 18px; border-radius: 50%; background: #C8372D; box-shadow: 0 0 0 3px #fff;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px;" class="s"><span>Normal up to 55</span><span>Lab paper · 6 Oct 2026</span></div>
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <a href="Labs.dc.html" class="btn bt" style="flex: 1;">What it means</a>
+        <a href="Visits.dc.html" class="btn bp" style="flex: 1;">Ask at next visit</a>
+      </div>
+    </div>
+
+    <div class="sh"><h2>Pinned</h2><a href="#edit">Edit</a></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <a href="Readings.dc.html" class="card tile">
+        <div class="tk" style="color: #2459C7;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 9V5M4.9 19a9 9 0 1 1 14.2 0"></path></svg>Blood pressure</div>
+        <div class="tv" style="color: #8A857C;">--/--</div>
+        <div class="s">None this week</div>
+        <div style="margin-top: auto; font-size: 15px; font-weight: 600; color: #1E6B4E;">Log now</div>
+      </a>
+      <a href="Medicines.dc.html" class="card tile">
+        <div class="tk" style="color: #1E6B4E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"></rect><path d="M12 8v8"></path></svg>Medicines</div>
+        <div class="tv" style="font-size: 20px;">None added</div>
+        <div class="s">Add yours to get reminders</div>
+        <div style="margin-top: auto; font-size: 15px; font-weight: 600; color: #1E6B4E;">Add or scan</div>
+      </a>
+      <a href="MoveFood.dc.html" class="card tile">
+        <div class="tk" style="color: #0F766E;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg>Steps</div>
+        <div class="tv" style="font-size: 20px;">Not connected</div>
+        <div class="s">Reads your phone's step count</div>
+        <div style="margin-top: auto; font-size: 15px; font-weight: 600; color: #1E6B4E;">Connect</div>
+      </a>
+      <a href="Visits.dc.html" class="card tile">
+        <div class="tk" style="color: #6D4BC2;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Next visit</div>
+        <div class="tv" style="font-size: 20px;">Not booked</div>
+        <div class="s">1 question ready to ask</div>
+        <div style="margin-top: auto; font-size: 15px; font-weight: 600; color: #1E6B4E;">Plan a visit</div>
+      </a>
+    </div>
+
+    <div class="sh"><h2>Family health</h2><a href="FamilyFeed.dc.html">All updates</a></div>
+    <div class="card" style="overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #FFF8F1;">
+        <div style="display: flex;">
+          <span class="av" style="background: #FDF1DC; color: #8A4B06; box-shadow: 0 0 0 2px #FFF8F1;">ML</span>
+          <span class="av" style="background: #E5EDFB; color: #2459C7; margin-left: -10px; box-shadow: 0 0 0 2px #FFF8F1;">RL</span>
+          <span class="av" style="background: #FBE7E4; color: #B42318; margin-left: -10px; box-shadow: 0 0 0 2px #FFF8F1;">JB</span>
+        </div>
+        <div style="flex: 1; min-width: 0;"><div style="font-size: 17px; font-weight: 700;">3 new from family</div><div class="s">1 of 10 checked in today</div></div>
+        <a href="FamilyFeed.dc.html" class="btn bt">Share yours</a>
+      </div>
+      <div class="post">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="av" style="background: #FDF1DC; color: #8A4B06;">ML</span><div style="flex: 1;"><div style="font-size: 15px;"><b>Ma</b> shared a reading</div><div class="s">Dampas · 8:12 AM</div></div></div>
+        <div style="margin: 10px 0 0 46px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #F7F5F1;">
+          <div><div class="s" style="font-weight: 600; color: #2459C7;">BLOOD PRESSURE</div><div style="font-size: 26px; font-weight: 700; letter-spacing: -0.02em;">148/90</div></div>
+          <svg width="90" height="34" viewBox="0 0 90 34" aria-hidden="true" style="margin-left: auto;"><polyline points="0,24 18,20 36,26 54,14 72,18 90,10" fill="none" stroke="#C2410C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+          <span style="padding: 3px 9px; border-radius: 999px; background: #FDF1DC; color: #8A4B06; font-size: 13px; font-weight: 700;">High</span>
+        </div>
+        <div style="margin-left: 38px; display: flex;"><button class="react" aria-label="Send care, 2 so far"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg>2</button><button class="react"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Reply</button></div>
+      </div>
+      <div class="post">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="av" style="background: #FBE7E4; color: #B42318;">JB</span><div style="flex: 1;"><div style="font-size: 15px;"><b>Joshua</b> posted a photo</div><div class="s">Yesterday · 5:40 PM</div></div></div>
+        <div style="margin: 10px 0 0 46px; height: 150px; border-radius: 14px; background: linear-gradient(135deg,#F6D7C3,#E7B9A4); display: flex; align-items: flex-end; padding: 10px 12px; box-sizing: border-box; color: #5C2E1F; font-size: 15px; font-weight: 600;">[Family photo]</div>
+        <div style="margin: 8px 0 0 46px; font-size: 15px;">Swimming class done!</div>
+        <div style="margin-left: 38px; display: flex;"><button class="react" aria-label="Send care, 5 so far"><svg width="18" height="18" viewBox="0 0 24 24" fill="#C8372D" stroke="#C8372D" stroke-width="2" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg>5</button><button class="react"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Reply</button></div>
+      </div>
+      <div class="post" style="display: flex; align-items: center; gap: 10px;">
+        <span class="av" style="background: #E5EDFB; color: #2459C7;">RL</span>
+        <div style="flex: 1;"><div style="font-size: 15px;"><b>Rosalino</b> is OK · "At the market, all good"</div><div class="s">GenSan · 7:05 AM</div></div>
+        <svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Checked in"><circle cx="12" cy="12" r="11" fill="#1E6B4E"></circle><path d="m7 12.5 3 3 7-7" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div class="s" style="padding: 0 16px 12px;">Posts in this mockup are samples. People choose what they share.</div>
+    </div>
+
+
+    <div class="sh"><h2>Browse</h2></div>
+    <div class="grp">
+      <a href="Readings.dc.html" class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"></path></svg></div><div><div class="t">Readings</div><div class="s">BP, sugar, weight</div></div><div class="v">None this week</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="Labs.dc.html" class="row"><div class="ic" style="background: #FBE7E4; color: #B42318;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"></path></svg></div><div><div class="t">Labs and papers</div><div class="s">From your scans</div></div><div class="v">1 high · 6 Oct</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="Medicines.dc.html" class="row"><div class="ic" style="background: #E3EFE8; color: #1E6B4E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="4"></rect><path d="M12 8v8"></path></svg></div><div><div class="t">Medicines</div><div class="s">Doses, refills, reminders</div></div><div class="v">None</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="Visits.dc.html" class="row"><div class="ic" style="background: #EEE9FA; color: #6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18"></path></svg></div><div><div class="t">Visits</div><div class="s">What to bring, what to ask</div></div><div class="v">1 to ask</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="MoveFood.dc.html" class="row"><div class="ic" style="background: #DDF1EE; color: #0F766E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4" r="2"></circle><path d="m9 20 3-6 3 3v4M7 12l3-4 4 2 3 3"></path></svg></div><div><div class="t">Move and food</div><div class="s">Walks, meals, salt</div></div><div class="v">No walks yet</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="BodyWiki.dc.html" class="row"><div class="ic" style="background: #FDF1DC; color: #8A4B06;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"></circle><path d="M12 8v7M8 11h8M10 21l2-6 2 6"></path></svg></div><div><div class="t">Body wiki</div><div class="s">How each part works</div></div><svg width="8" height="14" viewBox="0 0 8 14" style="margin-left: auto;" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+    </div>
+
+    <div class="sh"><h2>For you</h2><a href="Discover.dc.html">Discover</a></div>
+    <div class="scroller">
+      <a href="Discover.dc.html" class="card" style="flex: none; width: 250px; overflow: hidden; text-decoration: none; color: inherit;">
+        <div style="height: 130px; background: #F4D7CF; display: flex; align-items: center; justify-content: center;"><span style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#B42318"></path></svg></span></div>
+        <div style="padding: 12px 14px 14px;"><div class="s" style="font-weight: 600; color: #B42318;">VIDEO · 4 MIN</div><div style="font-size: 17px; font-weight: 600; line-height: 22px; margin-top: 2px;">Five a day: eating more fruit and vegetables</div></div>
+      </a>
+      <a href="#article" class="card" style="flex: none; width: 250px; overflow: hidden; text-decoration: none; color: inherit;">
+        <div style="height: 130px; background: #FBE7E4; display: flex; align-items: center; justify-content: center; color: #B42318;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"></path></svg></div>
+        <div style="padding: 12px 14px 14px;"><div class="s" style="font-weight: 600; color: #6D4BC2;">BECAUSE OF YOUR ALT</div><div style="font-size: 17px; font-weight: 600; line-height: 22px; margin-top: 2px;">What a liver test tells your doctor</div></div>
+      </a>
+    </div>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2440}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

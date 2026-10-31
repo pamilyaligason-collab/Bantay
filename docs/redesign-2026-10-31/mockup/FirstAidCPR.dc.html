@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay CPR</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:16px;font-size:17px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;gap:8px}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+.back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 8px 0 0;font-size:17px;font-weight:500;text-decoration:none}
+.sw{width:52px;height:32px;border-radius:16px;border:0;background:#1E6B4E;position:relative;flex:none;cursor:pointer;padding:0}
+.sw::after{content:"";position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tc{display:flex;flex-direction:column;height:160px;box-sizing:border-box;padding:12px;text-decoration:none;color:inherit;border-radius:20px}
+.tc .ti{display:flex;align-items:flex-start;justify-content:space-between}
+.tc .il{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center}
+.tc .nm{margin-top:auto;font-size:16px;line-height:20px;font-weight:700}
+.tc .tl{font-size:13px;line-height:18px}
+.st{display:inline-flex;align-items:center;gap:4px;min-height:24px;padding:0 8px;border-radius:999px;background:#fff;font-size:12px;font-weight:700}
+@keyframes beat{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
+@keyframes pump{0%,100%{transform:translateY(0)}50%{transform:translateY(14px)}}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(180,35,24,.35)}50%{box-shadow:0 0 0 10px rgba(180,35,24,0)}}
+.beat{animation:beat .545s ease-in-out infinite}
+.pump{animation:pump .545s ease-in-out infinite}
+.pulse{animation:ring .545s ease-out infinite}
+@media (prefers-reduced-motion: reduce){.pump,.pulse{animation:none}}
+</style>
+</helmet>
+<div class="ph" style="height: 2170px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px;"><a href="FirstAid.dc.html" class="back"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="#1E6B4E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>First aid</a></div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">CPR (hands-only)</h1>
+
+    <div style="margin-top: 14px; border-radius: 24px; background: #1C1B19; overflow: hidden;">
+      <div style="position: relative; aspect-ratio: 16 / 9;">
+        <svg viewBox="0 0 358 201" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position:absolute;inset:0;"><rect width="358" height="201" fill="#1C1B19"></rect><path d="M30 172c10-34 50-52 149-52s139 18 149 52z" fill="#3A3733"></path><g class="pump"><rect x="139" y="62" width="80" height="24" rx="12" fill="#E8B9A4"></rect><rect x="147" y="44" width="64" height="22" rx="11" fill="#F0C9B6"></rect><rect x="169" y="86" width="20" height="30" rx="8" fill="#E8B9A4"></rect></g><path d="M268 40v34M260 66l8 8 8-8" fill="none" stroke="#F6CFCA" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span style="position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; background: #fff; color: #1E6B4E; font-size: 13px; font-weight: 700;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v10M8 9l4 4 4-4M4 15v4h16v-4"></path></svg>Offline</span>
+        <span style="position: absolute; left: 10px; bottom: 10px; padding: 4px 10px; border-radius: 8px; background: rgba(0,0,0,.75); color: #fff; font-size: 14px; font-weight: 600;">Push hard and fast in the centre of the chest.</span>
+      </div>
+      <div style="padding: 12px 14px 14px;">
+        <div style="height: 6px; border-radius: 3px; background: #4A463F; position: relative;"><div style="width: 14%; height: 6px; border-radius: 3px; background: #7BD0A6;"></div><div style="position: absolute; left: 14%; top: -5px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #fff;"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #D9D5CC; margin-top: 8px;"><span>0:12</span><span>1:30</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px;">
+          <button aria-label="Captions on" aria-pressed="true" style="min-width: 56px; min-height: 44px; border-radius: 14px; border: 2px solid #7BD0A6; background: transparent; color: #fff; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">CC</button>
+          <button aria-label="Pause" style="width: 56px; height: 56px; border-radius: 50%; border: 0; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="#1C1B19"></rect><rect x="14" y="5" width="4" height="14" rx="1" fill="#1C1B19"></rect></svg></button>
+          <button aria-label="Language: English, tap for Tagalog" style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 0; background: #3A3733; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;">English</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px; padding: 18px; background: #FBE7E4; display: flex; align-items: center; gap: 16px;">
+      <span class="pulse" style="width: 56px; height: 56px; border-radius: 50%; background: #B42318; display: flex; align-items: center; justify-content: center; flex: none;"><span class="beat" style="width: 26px; height: 26px; border-radius: 50%; background: #fff; display: block;"></span></span>
+      <div><div style="font-size: 20px; line-height: 25px; font-weight: 700; color: #7A1810;">Push hard and fast</div><div style="font-size: 15px; line-height: 20px; color: #6E2A22; margin-top: 2px;">100 to 120 per minute. Push each time the dot grows.</div><div style="font-size: 15px; line-height: 20px; color: #6E2A22; margin-top: 6px; font-weight: 600;">100&ndash;120 per minute</div><div style="font-size: 15px; line-height: 20px; color: #6E2A22; margin-top: 2px;">Beat also plays as a click and buzz, 110 per minute.</div></div>
+    </div>
+
+    <div class="sh"><h2>Five steps</h2></div>
+    <div style="display: grid; gap: 10px;">
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #E3EFE8; color: #1E6B4E; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></div>
+          <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1C1B19; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none;">1</span><span style="font-size: 17px; line-height: 21px; font-weight: 700;">Check</span></div><div style="font-size: 15px; line-height: 21px; color: #4A463F; margin-top: 6px;">Is it safe? Tap the shoulders and shout. If there is no answer and no normal breathing (or only gasping), start.</div></div>
+        </div>
+        <button class="btn" style="width: 100%; min-height: 44px; margin-top: 12px; background: #E3EFE8; color: #1E6B4E; font-size: 15px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1E6B4E"></path></svg>Play this step</button>
+      </div>
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #FBE7E4; color: #B42318; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></div>
+          <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1C1B19; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none;">2</span><span style="font-size: 17px; line-height: 21px; font-weight: 700;">Call 911</span></div><div style="font-size: 15px; line-height: 21px; color: #4A463F; margin-top: 6px;">Call 911, or ask someone to call and bring an AED if there is one. Put the phone on speaker.</div></div>
+        </div>
+        <button class="btn" style="width: 100%; min-height: 44px; margin-top: 12px; background: #E3EFE8; color: #1E6B4E; font-size: 15px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1E6B4E"></path></svg>Play this step</button>
+      </div>
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #FDF1DC; color: #8A4B06; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18M7 18v-3a5 5 0 0 1 10 0v3M9 9h6M12 5v4"></path></svg></div>
+          <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1C1B19; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none;">3</span><span style="font-size: 17px; line-height: 21px; font-weight: 700;">Hands on the centre of the chest</span></div><div style="font-size: 15px; line-height: 21px; color: #4A463F; margin-top: 6px;">Lay the person on their back on a firm, flat place. Heel of one hand on the centre of the chest, other hand on top, arms straight.</div></div>
+        </div>
+        <button class="btn" style="width: 100%; min-height: 44px; margin-top: 12px; background: #E3EFE8; color: #1E6B4E; font-size: 15px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1E6B4E"></path></svg>Play this step</button>
+      </div>
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #E5EDFB; color: #2459C7; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"></path></svg></div>
+          <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1C1B19; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none;">4</span><span style="font-size: 17px; line-height: 21px; font-weight: 700;">Push 5 to 6 cm</span></div><div style="font-size: 15px; line-height: 21px; color: #4A463F; margin-top: 6px;">Push straight down about 5 to 6 cm (2 inches), then let the chest come fully back up. Two pushes every second or so.</div></div>
+        </div>
+        <button class="btn" style="width: 100%; min-height: 44px; margin-top: 12px; background: #E3EFE8; color: #1E6B4E; font-size: 15px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1E6B4E"></path></svg>Play this step</button>
+      </div>
+      <div class="card" style="padding: 14px;">
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: #EEE9FA; color: #6D4BC2; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+          <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1C1B19; color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex: none;">5</span><span style="font-size: 17px; line-height: 21px; font-weight: 700;">Keep going until help arrives</span></div><div style="font-size: 15px; line-height: 21px; color: #4A463F; margin-top: 6px;">Do not stop until help takes over, an AED is ready, or the person moves or breathes normally. Swap with someone every 2 minutes if you can.</div></div>
+        </div>
+        <button class="btn" style="width: 100%; min-height: 44px; margin-top: 12px; background: #E3EFE8; color: #1E6B4E; font-size: 15px;"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#1E6B4E"></path></svg>Play this step</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px; padding: 16px; background: #E3EFE8;">
+      <div style="font-size: 17px; font-weight: 700; color: #14503A;">Not trained? Hands-only CPR is OK.</div>
+      <div style="font-size: 15px; line-height: 21px; color: #1C4D3A; margin-top: 4px;">Doing something is better than waiting. This is for adults. Children and babies need different steps.</div>
+    </div>
+    <div class="grp" style="margin-top: 12px;"><div class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM9 12h7M9 16h5"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Sources</div><div class="s">DOH · Philippine Red Cross · AHA</div></div></div></div>
+    <p class="s" style="margin: 10px 4px 0;">Bantay animation based on DOH and Philippine Red Cross guidance. Beat is 110 per minute.</p>
+  </div>
+
+  <a href="tel:911" class="btn" style="position: absolute; left: 16px; right: 92px; bottom: 92px; min-height: 52px; background: #B42318; color: #fff; box-shadow: 0 6px 18px rgba(122,24,16,.35);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>Call 911</a>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2170}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

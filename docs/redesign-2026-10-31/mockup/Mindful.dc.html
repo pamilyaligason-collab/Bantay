@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Calm</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tile{padding:14px;text-decoration:none;color:inherit;display:flex;flex-direction:column;min-height:150px;box-sizing:border-box}
+.tk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.tv{font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:10px}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none;background:#EFECE6;color:#4A463F}
+.post{padding:14px 16px;border-top:0.5px solid rgba(60,55,45,.16)}
+.react{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border-radius:999px;border:0;background:transparent;font-family:inherit;font-size:15px;color:#6B675F;cursor:pointer}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.ph{background:linear-gradient(180deg,#123038 0%,#1F3B45 100%);color:#fff}
+.ph a{color:#fff}.ph a:hover{color:#fff}
+.ph .tabs a.tab{color:#6B675F}.ph .tabs a.tab.on{color:#1E6B4E}
+.m2{color:rgba(255,255,255,.8)}
+.cd{background:rgba(255,255,255,.08);border:0.5px solid rgba(185,228,218,.22);border-radius:20px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:600;border:1px solid rgba(185,228,218,.4);background:transparent;color:#fff;font-family:inherit;cursor:pointer;white-space:nowrap;text-decoration:none}
+.chip.on{background:#B9E4DA;color:#123038;border-color:#B9E4DA}
+.chip[disabled]{opacity:1;color:rgba(255,255,255,.75);border-style:dashed}
+.ph a.mb{background:#B9E4DA;color:#123038}
+.mb{background:#B9E4DA;color:#123038}
+.orbw{display:flex;align-items:center;justify-content:center;height:250px}
+.orb{width:210px;height:210px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#DDF5EE 0%,#B9E4DA 35%,#5FA89B 80%);box-shadow:0 0 60px 10px rgba(185,228,218,.35);animation:breathe 10s ease-in-out infinite}
+.eq{display:inline-flex;align-items:flex-end;gap:3px;height:20px;width:22px;flex:none}
+.eq span{width:4px;height:20px;border-radius:2px;background:#B9E4DA;animation:eq 1s ease-in-out infinite}
+.eq span:nth-child(2){animation-delay:-.4s}.eq span:nth-child(3){animation-delay:-.7s}.eq span:nth-child(4){animation-delay:-.2s}
+.tg{width:52px;height:32px;border-radius:16px;background:#B9E4DA;position:relative;flex:none;border:0;padding:0;cursor:pointer}
+.tg i{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;background:#123038}
+.face{flex:1;min-height:76px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(185,228,218,.3);color:#fff;font-family:inherit;font-size:13px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.rw{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:64px;box-sizing:border-box;text-decoration:none;color:#fff;position:relative}
+.rw + .rw::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:0.5px solid rgba(185,228,218,.2)}
+.pl{width:44px;height:44px;border-radius:50%;background:#B9E4DA;color:#123038;border:0;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;background:rgba(185,228,218,.18);color:#D3F2EA;font-size:12px;font-weight:700}
+@keyframes breathe{0%,100%{transform:scale(.7)}40%{transform:scale(1)}}
+@keyframes eq{50%{height:4px}}
+@media (prefers-reduced-motion: reduce){.orb,.eq span{animation:none}.orb{transform:scale(.88)}}
+.ph .tabs{background:rgba(255,255,255,.92)}
+</style>
+</helmet>
+<div class="ph" style="height: 1900px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px 0 0; text-decoration: none; font-size: 17px; font-weight: 500;"><svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M8.5 1.5 2 8l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Today</a>
+      <a href="JackSheet.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 600; text-decoration: none; color: #B9E4DA;">Ask Jack</a>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Calm</h1>
+
+    <div class="cd" style="margin-top: 16px; padding: 18px 16px 20px; text-align: center;">
+      <div class="orbw"><div class="orb" role="img" aria-label="Breathing orb: grows for 4 seconds, shrinks for 6"></div></div>
+      <div style="font-size: 22px; font-weight: 700;">Breathe in&hellip; out</div>
+      <div class="s m2">In for 4 seconds, out for 6</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px;">
+        <button class="chip on" aria-pressed="true">Relax &middot; in 4, out 6</button>
+        <button class="chip" aria-pressed="false">Calm box &middot; 4-4-4-4</button>
+        <button class="chip" disabled>Sleep 4-7-8 &middot; coming</button>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+        <button class="chip" aria-pressed="false">1 min</button>
+        <button class="chip on" aria-pressed="true">3 min</button>
+        <button class="chip" aria-pressed="false">5 min</button>
+      </div>
+      <button class="btn mb" style="width: 100%; min-height: 56px; font-size: 19px; margin-top: 18px;">Start</button>
+      <label style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; text-align: left; min-height: 44px; cursor: pointer;">
+        <div><div style="font-size: 17px; font-weight: 500;">Gentle buzz</div><div class="s m2">Phone taps in and out</div></div>
+        <button class="tg" role="switch" aria-checked="true" aria-label="Gentle buzz"><i></i></button>
+      </label>
+      <div class="s m2" style="margin-top: 10px;">After, you tell us: Worse &middot; Same &middot; Better</div>
+      <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(185,228,218,.16); font-size: 15px; font-weight: 600; color: #B9E4DA;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9E4DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"></path></svg>Done once today</div>
+    </div>
+
+    <div class="sh"><h2>Mood check</h2></div>
+    <div class="cd" style="padding: 16px;">
+      <div style="font-size: 17px; font-weight: 600;">How are you?</div>
+      <div style="display: flex; gap: 8px; margin-top: 12px;"><button class="face"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B9E4DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"></path></svg>Good</button><button class="face"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B9E4DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9 15h6M9 9.5h.01M15 9.5h.01"></path></svg>Okay</button><button class="face"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B9E4DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 16a4.5 4.5 0 0 1 7 0M9 9.5h.01M15 9.5h.01"></path></svg>Low</button><button class="face"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B9E4DA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 16.5a4.5 4.5 0 0 1 7 0M8 9l2 1M16 9l-2 1M9 12.5h.01M15 12.5h.01"></path></svg>Unwell</button></div>
+      <div class="s m2" style="margin-top: 12px;">Choosing Unwell tells your family once a day.</div>
+    </div>
+
+    <div class="sh"><h2>Listen and watch</h2><span class="badge">NEW</span></div>
+    <div class="scroller"><a href="https://somafm.com/groovesalad/" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Radio</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">SomaFM Groove Salad</div><div class="s m2" style="margin-top:4px">Chill beats &middot; listener-supported</div></div></a><a href="https://somafm.com/dronezone/" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 11v2"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Radio</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">SomaFM Drone Zone</div><div class="s m2" style="margin-top:4px">Ambient &middot; good for sleep</div></div></a><a href="#home-radio-site" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="12" rx="2"></rect><path d="M7 8l10-4M8 14h.01M12 14h5"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Radio</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">97.9 Home Radio</div><div class="s m2" style="margin-top:4px">Soft songs, Manila</div><div class="s" style="margin-top:4px;color:#D3F2EA;font-weight:600">No official stream: opens their site</div></div></a><a href="https://www.tarabrach.com/podcasts/" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Podcast</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">Tara Brach</div><div class="s m2" style="margin-top:4px">Meditation talks &middot; new one weekly</div></div></a><a href="Discover.dc.html" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Video</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">[Checked video: guided breathing]</div><div class="s m2" style="margin-top:4px">Privacy-mode player after you tap</div></div></a><a href="#sleep-sounds" class="cd" style="flex:none;width:240px;overflow:hidden;text-decoration:none;color:#fff"><div style="height:84px;background:#2C5560;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#D3F2EA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 6.5a4.2 4.2 0 0 1-.5 8.5z"></path><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"></path></svg></div><div style="padding:12px 14px 14px"><div class="s" style="color:#D3F2EA;font-weight:600">Sleep sounds</div><div style="font-size:17px;font-weight:600;line-height:22px;margin-top:2px">Rain and waves</div><div class="s m2" style="margin-top:4px">Loops, no ads &middot; sample</div></div></a></div>
+    <div class="s m2" style="margin: 10px 0 0;">Radio and podcasts open the official site. Video titles are placeholders.</div>
+
+    <div class="cd" style="margin-top: 28px; padding: 18px; border-color: rgba(185,228,218,.45);">
+      <div style="font-size: 20px; font-weight: 700;">Need to talk to someone?</div>
+      <div style="font-size: 17px; font-weight: 600; margin-top: 8px;">If someone is in danger now, call 911.</div>
+      <div class="m2" style="font-size: 15px; margin-top: 4px;">NCMH Crisis Hotline, free to call, 24/7</div>
+      <a href="tel:1553" class="btn mb" style="width: 100%; min-height: 56px; font-size: 19px; margin-top: 14px;">Call 1553</a>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <a href="tel:09190571553" class="btn" style="flex: 1; background: rgba(185,228,218,.16); color: #B9E4DA; padding: 0 8px;">0919-057-1553</a>
+        <a href="tel:09178998727" class="btn" style="flex: 1; background: rgba(185,228,218,.16); color: #B9E4DA; padding: 0 8px;">0917-899-8727</a>
+      </div>
+      <div class="s m2" style="margin-top: 12px;">Numbers to confirm on the official DOH site before release.</div>
+    </div>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
