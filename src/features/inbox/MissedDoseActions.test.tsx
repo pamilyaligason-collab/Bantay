@@ -8,7 +8,7 @@ const MED: Medication = { personId: 'p1', name: 'Losartan', serverId: 'm1', medS
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Mama Rosa', phone: h.phone, isMe: false }], selfId: 'me' }) }))
 vi.mock('../health/useMedications', () => ({ useMedications: (id: string) => (id === 'p1' ? [MED] : []) }))
 vi.mock('../health/useActivity', () => ({ useTakenToday: () => h.takes }))
-vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can }))
+vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can, useActingPersonId: () => (h.can ? 'p1' : null) }))
 vi.mock('../log/store', () => ({ logDose: (...a: unknown[]) => h.logDose(...a) }))
 afterEach(() => { cleanup(); h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
 

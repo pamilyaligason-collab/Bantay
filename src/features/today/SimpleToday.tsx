@@ -25,7 +25,6 @@ import { JackArt } from '../look'
 import { IncomingSos } from '../family/IncomingSos'
 
 /** S16-L1 (C-5): L6 adds a trailing `personId` to logFeeling; the L0 signature lacks it until that merges, so call through this type (same one-liner as QuickLog). */
-const withPerson = <A extends unknown[], R>(f: (...a: A) => R) => f as unknown as (...a: [...A, string?]) => R
 
 /** Night for Jack's sleepy sticker: 9 PM to before 5 AM, phone time. */
 export const isNight = (d: Date) => d.getHours() >= 21 || d.getHours() < 5
@@ -75,7 +74,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const face = async (f: Feeling) => {
     if (busy || lockMood) return
     setBusy(true)
-    const r = await withPerson(logFeeling)(f, self ?? undefined)
+    const r = await logFeeling(f, self ?? undefined)
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { setErr(''); setView('home'); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }

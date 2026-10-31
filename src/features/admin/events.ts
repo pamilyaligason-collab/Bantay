@@ -18,7 +18,9 @@ export const EVENT_NAMES = {
     // session 16 onboarding: skips per step and the first test alarm
     'onboard_skip_reminders', 'onboard_skip_where', 'onboard_skip_test', 'onboard_test_rang',
     // session 16 Today (C-4)
-    'warn_ack', 'breathe_done'],
+    'warn_ack', 'breathe_done',
+    // session 16 View as: fixed names, never a person id
+    'acting_enter', 'acting_exit'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const
 export type EventKind = keyof typeof EVENT_NAMES

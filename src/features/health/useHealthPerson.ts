@@ -20,7 +20,8 @@ export function useHealthPerson() {
     was.current = acting
   }, [acting, actingId, ownId, setPersonId])
   const people = useMemo(() => (visible ? d.people.filter((p) => visible.has(p.id)) : d.people), [d.people, visible])
-  const canMark = acting ? !!can?.log : canMarkFor(d.personId, d.ownId, writable)
-  const canEdit = acting ? !!can?.edit : canMark || d.member?.role === 'admin'
-  return { ...d, people, acting, canMark, canEdit, lockReason: acting ? can?.reason ?? null : null }
+  const asMember = acting && d.personId === actingId // the acting rights cover the member only; another picked person uses the admin's own links
+  const canMark = asMember ? !!can?.log : canMarkFor(d.personId, d.ownId, writable)
+  const canEdit = asMember ? !!can?.edit : canMark || d.member?.role === 'admin'
+  return { ...d, people, acting, canMark, canEdit, lockReason: asMember ? can?.reason ?? null : null }
 }

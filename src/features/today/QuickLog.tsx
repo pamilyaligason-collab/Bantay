@@ -33,7 +33,6 @@ const MORE: { id: Kind; label: string; icon: IconName }[] = [
 const PAIN: [number, string][] = [[0, 'No pain'], [2, 'Mild'], [5, 'Moderate'], [7, 'Strong'], [10, 'Worst']]
 
 /** S16-L1 (C-5): L6 adds a trailing `personId` to the loggers in today/actions.ts. Until that merges the L0 signatures lack it, so call through this type; it stays valid after. */
-const withPerson = <A extends unknown[], R>(f: (...a: A) => R) => f as unknown as (...a: [...A, string?]) => R
 
 const now = () => new Date().toISOString()
 
@@ -103,7 +102,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const face = async (f: Feeling) => {
     if (busy) return
     setBusy(true)
-    const r = await withPerson(logFeeling)(f, personId)
+    const r = await logFeeling(f, personId)
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
   }
@@ -111,7 +110,7 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const imOk = async () => {
     if (busy) return
     setBusy(true)
-    const r = await withPerson(checkIn)(personId)
+    const r = await checkIn(personId)
     setBusy(false)
     notify(r === 'ok' ? (can ? 'Saved for them. Their family can see they are OK.' : "Saved. Your family can see you are OK.") : FAIL_TEXT[r])
   }
@@ -121,15 +120,15 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       const s = readNum(a, 50, 300)
       const d = readNum(b, 30, 200)
       if (s == null || d == null || d >= s) return setErr('Type the top number (50 to 300) and the bottom number (30 to 200). The top is the bigger one.')
-      void run(withPerson(logBp)(Math.round(s), Math.round(d), personId), `Saved blood pressure ${Math.round(s)}/${Math.round(d)}`)
+      void run(logBp(Math.round(s), Math.round(d), personId), `Saved blood pressure ${Math.round(s)}/${Math.round(d)}`)
     } else if (open === 'sugar') {
       const v = readNum(a, 20, 700)
       if (v == null) return setErr('Type your sugar in mg/dL, a number from 20 to 700.')
-      void run(withPerson(logSugar)(v, fasting, personId), `Saved sugar ${v}`)
+      void run(logSugar(v, fasting, personId), `Saved sugar ${v}`)
     } else if (open === 'weight') {
       const v = readNum(a, 20, 300)
       if (v == null) return setErr('Type your weight in kg, a number from 20 to 300.')
-      void run(withPerson(logWeight)(v, personId), `Saved weight ${v} kg`)
+      void run(logWeight(v, personId), `Saved weight ${v} kg`)
     } else if (open === 'temp') {
       const v = readNum(a, 30, 45)
       if (v == null) return setErr('Type the temperature in °C, a number from 30 to 45.')
@@ -204,11 +203,11 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
         <Sheet title="Which medicine did you take?" onClose={close}>
           <div className="td-form">
             {meds.length ? meds.map((m) => (
-              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(withPerson(takeMedication)(m, takes, m.personId ?? personId), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
+              <button key={m.serverId ?? m.clientId ?? m.id} type="button" className="td-opt" disabled={busy} onClick={() => void run(takeMedication(m, takes, m.personId ?? personId), `Marked ${m.name} taken`)}>{m.name}{m.dose ? ` ${m.dose}` : ''}</button>
             )) : (
               <>
                 <label>Medicine name<input value={a} onChange={(e) => setA(e.target.value)} placeholder="Losartan" /></label>
-                <button type="button" className="td-pill light solid" disabled={busy || !a.trim()} onClick={() => void run(withPerson(takeDose)(a.trim(), personId), `Marked ${a.trim()} taken`)}>Mark taken</button>
+                <button type="button" className="td-pill light solid" disabled={busy || !a.trim()} onClick={() => void run(takeDose(a.trim(), personId), `Marked ${a.trim()} taken`)}>Mark taken</button>
               </>
             )}
             {err && <p className="td-err" role="alert">{err}</p>}

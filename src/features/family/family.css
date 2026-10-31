@@ -169,7 +169,7 @@
 .fm2-edit { flex: none; width: 48px; height: 48px; border: 0; border-radius: 24px; background: transparent; color: var(--ink); display: grid; place-items: center; }
 .fm2-edit:disabled { opacity: .5; }
 .fm2-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.fm2-warnchip, .fm2-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border-radius: 16px; font-size: 15px; font-weight: 600; text-decoration: none; }
+.fm2-warnchip, .fm2-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 48px; padding: 0 12px; border-radius: 16px; font-size: 15px; font-weight: 600; text-decoration: none; }
 .fm2-warnchip { background: var(--red-soft); color: var(--red); }
 .fm2-chip { background: var(--card); color: var(--link); box-shadow: inset 0 0 0 1px var(--line); min-height: 48px; }
 .fm2-div { height: 1px; background: color-mix(in srgb, var(--h-ic) 20%, transparent); }

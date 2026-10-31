@@ -32,11 +32,11 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
   const [note, setNote] = useState('')
 
   useEffect(() => {
-    if (!personId) { setAgreed(null); return }
+    if (!personId || acting) { setAgreed(null); return } // no consent write while acting (C-9)
     let live = true
     void ensureConsent(personId).then((c) => { if (live) setAgreed(c.at) })
     return () => { live = false }
-  }, [personId])
+  }, [personId, acting])
 
   const download = async () => {
     setBusy(true); setNote('')

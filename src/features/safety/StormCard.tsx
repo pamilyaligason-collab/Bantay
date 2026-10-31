@@ -131,7 +131,7 @@ export function StormBlock({ now, compact = false }: { now?: number; compact?: b
     void fetchRollcall(refsKey.split('|')).then((x) => { if (x) setRows(x) })
   }
   // Closed card: the row stays only while my answer is missing (PLAN 1.1: "while a signal is live and unanswered"). Answered = no card at all, not an empty heading.
-  if (compact && selfId && rows?.some((r) => r.personId === selfId)) return null
+  if (compact && selfId && rows?.some((r) => r.personId === selfId) && t.help.length === 0) return null // a call for help keeps the row on Today
   const pair = (
     <>
       <div className="sf-pair">

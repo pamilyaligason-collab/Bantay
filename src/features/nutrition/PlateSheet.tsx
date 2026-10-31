@@ -25,7 +25,7 @@ export default function PlateSheet({ onDone, personId: forPerson }: { onDone(msg
   const acting = useActingPersonId() ?? ''
   const personId = forPerson ?? acting // an explicit person (Food screen, carer logging for Ma) beats the signed-in one
   const can = useActingCan()
-  const locked = !!can && !can.log
+  const locked = !!can && !can.log && personId === acting // the acting lock is about the member, not another picked person
   const history = useFood(personId, 30)
   const goal = useGoal(personId)
   const [meal, setMeal] = useState<Meal>(() => mealAt(new Date()))
