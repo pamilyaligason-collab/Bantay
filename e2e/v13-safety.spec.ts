@@ -50,3 +50,19 @@ test.describe('S3', () => {
     expect(await noSideways(page)).toBe(true)
   })
 })
+
+// ---- S4 Storm tracker ----
+test.describe('S4', () => {
+  test('storms: PAR polygon, No storms now, Windy waits for Load on cellular', async ({ page }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { type: 'cellular' }, configurable: true }))
+    await page.goto('/#safety/storms')
+    await expect(page.getByTestId('storm-hero')).toContainText('No storms now')
+    await expect(page.locator('.leaflet-interactive')).toHaveCount(0) // PAR ring is non-interactive; the path itself is .lm-par
+    await expect(page.locator('path.lm-par')).toHaveCount(1)
+    await expect(page.locator('iframe.sf-frame')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Load live layer' }).click()
+    await expect(page.locator('iframe.sf-frame')).toHaveCount(1)
+    expect(await targets44(page)).toEqual([])
+    expect(await noSideways(page)).toBe(true)
+  })
+})
