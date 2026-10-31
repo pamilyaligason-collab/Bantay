@@ -15,8 +15,18 @@ describe('RescueMap offline list', () => {
     expect(screen.getByText('Barangay Dampas evacuation centre')).toBeTruthy()
     fireEvent.click(screen.getByText(/Dao evacuation centre/))
     expect(screen.getAllByText(/1.1 km away/)).toHaveLength(2)
-    expect(screen.getByRole('link', { name: 'Go' }).getAttribute('href')).toContain('travelmode=driving')
-    expect(screen.getByRole('link', { name: /Call 0917/ }).getAttribute('href')).toBe('tel:09170000000')
+    expect(screen.getAllByRole('link', { name: 'Directions' })[0]!.getAttribute('href')).toContain('travelmode=walking')
+    expect(screen.getAllByRole('link', { name: /Call.*0917/ })[0]!.getAttribute('href')).toBe('tel:09170000000')
+  })
+  it('shows status, source and Directions only for pins; the OSM credit is there with the map off', () => {
+    vi.stubGlobal('navigator', { ...navigator, onLine: false })
+    kv.rows = { 'safety.overrides': { 'evac-dao': { lat: 9.6557, lon: 123.878 } } }
+    render(<RescueMap lat={9.6457} lon={123.878} />)
+    expect(screen.getAllByText(/^Source: /).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Last confirmed: /).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Not confirmed').length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('link', { name: 'Directions' })).toHaveLength(1)
+    expect(screen.getByText('© OpenStreetMap contributors')).toBeTruthy()
   })
   it('a filter chip hides its kind', () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
