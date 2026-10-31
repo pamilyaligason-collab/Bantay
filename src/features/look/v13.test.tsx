@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Carousel, GroupedList, LargeTitle, PreviewTile, Row, Section, Segmented } from './index'
+import { Carousel, GroupedList, LargeTitle, MapCard, PreviewTile, Row, Section, Segmented } from './index'
 afterEach(cleanup)
 
 describe('LargeTitle', () => {
@@ -67,5 +67,17 @@ describe('Segmented', () => {
     screen.getByRole('button', { name: 'This month' }).click()
     expect(on).toHaveBeenCalledWith('month')
     expect(screen.getByRole('button', { name: 'This week' }).getAttribute('aria-pressed')).toBe('true')
+  })
+})
+describe('MapCard', () => {
+  it('static image with credit and a 44 px recentre button; live render mounts and cleans up', () => {
+    const cleanup = vi.fn(); const render_ = vi.fn(() => cleanup); const re = vi.fn()
+    const { unmount, rerender } = render(<MapCard image={{ src: '/maps/dampas.jpg', alt: 'Map around Dampas' }} credit="Map: OpenStreetMap" onRecentre={re} testId="map" />)
+    expect(screen.getByRole('img', { name: 'Map around Dampas' })).not.toBeNull()
+    expect(screen.getByText('Map: OpenStreetMap')).not.toBeNull()
+    screen.getByRole('button', { name: 'Recentre' }).click(); expect(re).toHaveBeenCalled()
+    rerender(<MapCard render={render_} credit="Windy" />)
+    expect(render_).toHaveBeenCalledTimes(1)
+    unmount(); expect(cleanup).toHaveBeenCalled()
   })
 })

@@ -41,3 +41,12 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .segd > * { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--ink); background: none; border: 0; text-decoration: none; font-family: inherit; }
 .segd > [aria-current="page"], .segd > [aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(40,30,10,.14); font-weight: 600; }
 :root[data-narrow] .segd { grid-auto-flow: row; }
+
+/* MapCard */
+.mapc { padding: 0; overflow: hidden; position: relative; }
+.mapc-t { margin: 0; padding: 12px 14px 0; font-size: 17px; font-weight: 600; }
+.mapc-link { display: block; color: inherit; text-decoration: none; }
+.mapc-layer { height: var(--h, 200px); background: var(--card2); }
+.mapc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mapc-credit { padding: 8px 14px; font-size: 13px; color: var(--muted); }
+.mapc-re { position: absolute; right: 10px; bottom: 46px; width: 44px; height: 44px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-float); border: 0; color: var(--green); display: grid; place-items: center; }
