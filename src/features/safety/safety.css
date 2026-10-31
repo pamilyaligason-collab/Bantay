@@ -53,8 +53,6 @@ button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
 .sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; padding: 0 8px; white-space: nowrap; } /* S16-L0: "Medical ID" wrapped in the 160 px cell at 360 */
 
-  background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
-
 /* sub-pages */
 .hdr.sf-subhdr { flex-wrap: nowrap; justify-content: flex-start; }
 .hdr.sf-subhdr h1 { flex: 1 1 0; min-width: 0; font-size: 26px; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
