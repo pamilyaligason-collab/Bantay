@@ -97,10 +97,10 @@ test('Meals is not on Today (one salt line is); the line opens Health > Food whe
   await shot(page, 'health-food')
 })
 
-test('My week is a See the week link that opens the same tiles; SOS hold and Self-care stay', async ({ page }) => {
+test('My week is a See the week link that opens the same tiles; Self-care stays, SOS is not on Today', async ({ page }) => {
   await start(page)
   await expect(page.getByRole('heading', { name: 'My week' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Hold to call and text your family' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Hold to call and text your family' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
   const link = page.getByRole('button', { name: 'See the week' })
   expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48)

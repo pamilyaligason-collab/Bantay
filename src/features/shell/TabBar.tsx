@@ -20,11 +20,11 @@ export function TabBar({ active }: { active: Tab | null }) {
   const at = active ? TABS.indexOf(active) : -1
   const pill = { '--slot': Math.max(at, 0), '--pill': at < 0 ? 0 : 1 } as CSSProperties
   return (
-    <nav aria-label="Main" className="tabbar sh sh-tabs" style={pill}>
+    <nav aria-label="Main" className="tabbar sh sh-tabs" data-testid="tabbar" style={pill}>
       {ITEMS.map((t) => {
         const alerts = t.id === 'family' && unseen > 0 ? `${unseen} new alert${unseen === 1 ? '' : 's'}` : ''
         return (
-        <button key={t.id} type="button" aria-label={alerts ? `${t.label}, ${alerts}` : t.label} aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
+        <button key={t.id} type="button" data-testid={`tab-${t.id}`} aria-label={alerts ? `${t.label}, ${alerts}` : t.label} aria-current={t.id === active ? 'page' : 'false'} onClick={() => { location.hash = t.id }}>
           <Icon name={t.icon} />
           <span>{t.label}</span>
           {alerts && <span className="sh-tabbadge" role="img" aria-label={alerts} />}

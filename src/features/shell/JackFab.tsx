@@ -1,21 +1,21 @@
+import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { JackArt } from '../look'
-import { ASK_EVENT } from '../assistant/Assistant'
+import SosScreen from '../sos/SosScreen'
+import { loadFamily } from '../auth/family'
+import { getMember } from '../auth/session'
 import { isDiscoverSubRoot } from '../discover'
-import { AskSheet } from './AskSheet'
+import { JackSheet } from './JackSheet'
+import { firstName as firstOf } from './TopBar'
 import { hasOwnHeader, type Tab } from './routes'
 import { useKv } from './useKv'
 import './shell.css'
 
-const HOLD_MS = 500
-
 type Box = { left: number; right: number; top: number; bottom: number }
 const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
 
-/** True when the coach mark would sit on the SOS section or on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
+/** True when the coach mark would sit on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
 function coversText(hint: Box): boolean {
-  const sos = document.querySelector('.td-sos')?.getBoundingClientRect()
-  if (sos && hits(hint, sos)) return true
   const root = document.querySelector('.bt .scroll')
   if (!root) return false
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
@@ -29,15 +29,14 @@ function coversText(hint: Box): boolean {
   return false
 }
 
-/** Floating Jack button (round 2, replaces the centre Ask tab). Tap opens Jack; press and hold (or right click) opens the Ask choice sheet; the coach mark says so (UI-19)
- *  (Talk, Scan & Capture, Upload a photo). Hidden in Simple mode, on every route that draws its own header, and off the five tabs.
+/** Floating Jack button (replaces the centre Ask tab). One tap opens the Jack sheet (Help hold, Scan, Chat, Upload); the coach mark says so (UI-19). Hidden in Simple mode, on every route that draws its own header, and off the five tabs.
  *  While shown it marks `.bt[data-jack]` so the page content keeps clear of it (shell.css). */
 export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const [sheet, setSheet] = useState(false)
   const [seen, setSeen, loaded] = useKv('askHintSeen', false)
   const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode has no Jack button, so its hint must not count as seen
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const held = useRef(false) // a hold opened the sheet; the click that follows the release must not also open Jack
+  const [sos, setSos] = useState(false) // the full SOS screen, opened by a 3 s hold in the sheet
+  const [name, setName] = useState('')
   const [nofab, setNofab] = useState(false) // a storm or quake warning on screen marks itself data-nofab (D-91): nothing but the warning's own buttons
   useEffect(() => {
     const root = document.querySelector('.bt') ?? document.body
@@ -78,32 +77,31 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     const t = setTimeout(() => setSeen(true), 8000)
     return () => clearTimeout(t)
   }, [hint, fits, setSeen])
-  useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => {
+    let live = true
+    void getMember().then((m) => {
+      const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''
+      if (live && n) setName(n)
+    })
+    return () => { live = false }
+  }, [])
 
-  const openSheet = () => { setSheet(true); if (!seen) setSeen(true) }
-  const onClose = useCallback(() => { if (history.state?.bantayAsk) history.back(); else setSheet(false) }, [])
-  const onDone = useCallback(() => setSheet(false), [])
-  const stop = () => clearTimeout(timer.current)
-  const down = () => { held.current = false; stop(); timer.current = setTimeout(() => { held.current = true; openSheet() }, HOLD_MS) }
-  const click = () => {
-    if (held.current) { held.current = false; return }
-    if (!seen) setSeen(true)
-    window.dispatchEvent(new Event(ASK_EVENT))
-  }
+  const onClose = useCallback(() => setSheet(false), [])
+  const onSos = useCallback(() => { setSheet(false); setSos(true) }, [])
 
-  if (!visible) return null
+  const sosScreen = sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body) // outlives the button: a warning or Simple mode hiding Jack must not end a running SOS
+  if (!visible) return sosScreen || null
   return (
     <>
       <button
-        type="button" className="sh-jackfab" aria-label="Ask Bantay" aria-haspopup="dialog"
-        onPointerDown={down} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
-        onContextMenu={(e) => { e.preventDefault(); stop(); held.current = false; openSheet() }}
-        onClick={click}
+        type="button" className="sh-jackfab" data-testid="jack" aria-label="Jack: help, scan, chat" aria-haspopup="dialog"
+        onClick={() => { setSheet(true); if (!seen) setSeen(true) }}
       >
-        <JackArt name="head" size={48} decorative />
+        <JackArt name="head" size={56} decorative />
       </button>
-      {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits ? undefined : { visibility: 'hidden' }}>Ask me anything. Hold for more.</p>}
-      {sheet && <AskSheet onClose={onClose} onDone={onDone} />}
+      {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits ? undefined : { visibility: 'hidden' }}>Help, scan or chat</p>}
+      {sheet && <JackSheet onClose={onClose} onSos={onSos} firstName={firstOf(name)} />}
+      {sosScreen}
     </>
   )
 }

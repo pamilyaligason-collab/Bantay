@@ -15,8 +15,6 @@ import PlanToday from '../features/today/PlanToday'
 import QuickLog from '../features/today/QuickLog'
 import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
-import SosHold from '../features/sos/SosHold'
-import SosScreen from '../features/sos/SosScreen'
 import { retryToast, retryUnsentMood } from '../features/today/actions'
 import { useSosActive } from '../features/family/sosActive'
 import { Skeleton, wireMotion } from '../features/look'
@@ -44,7 +42,6 @@ export default function Today() {
     bt.setAttribute('data-simple', '')
     return () => bt.removeAttribute('data-simple')
   }, [loaded, simple])
-  const [sos, setSos] = useState(false)
   useEffect(() => { // an Unwell saved offline is sent when Today opens and when the phone is back online (the server keeps one per day)
     const go = () => { void retryUnsentMood().then((r) => { const t = retryToast(r); if (t) notify(t) }, () => undefined) }
     go()
@@ -63,7 +60,6 @@ export default function Today() {
   if (!loaded) return ( // one read of the Simple mode switch, so the full page never flashes first
     <section className="td-root" aria-busy="true">{h1}<span className="td-vh">Loading</span><Skeleton lines={4} /><Skeleton lines={2} /></section>
   )
-  if (sos) return <SosScreen onClose={() => setSos(false)} /> // the same hold-to-send flow as Simple mode and the Safety tab
   if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
     <div ref={root} className="td-root">
@@ -76,8 +72,6 @@ export default function Today() {
       <AlertCardToday />
       {!calm && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={next.review} notify={notify} hold={setHeld} />}
       <QuickLog notify={notify} />
-      {/* SOS sits mid-page on purpose: the Jack button floats at the bottom (--tabbar-clear) and must never cover it. */}
-      <section className="td-sos" aria-label="Emergency"><SosHold onSend={() => setSos(true)} /></section>
       <SelfCare />
       <PlanToday />
       <SeeWeek />

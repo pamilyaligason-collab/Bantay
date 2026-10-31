@@ -58,6 +58,7 @@ test('Safety: no canvas, and no moving scene once Safety is up (scene rendered f
 test('hold SOS with Aurora allowed: the SOS screen opens and there is no canvas and no moving scene', async ({ page }) => {
   await page.goto('/#today')
   await expect(page.locator('.wxs:not([data-still])').first()).toBeVisible() // the scene is up before the hold
+  await page.getByTestId('jack').click()
   const btn = page.getByRole('button', { name: 'Hold to call and text your family' })
   const c = (await btn.boundingBox())!
   await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2)

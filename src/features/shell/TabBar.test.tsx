@@ -25,6 +25,13 @@ describe('TabBar: five tabs, no Ask slot', () => {
     expect(current).toHaveLength(1)
     expect(current[0]!.textContent).toBe(tab[0]!.toUpperCase() + tab.slice(1))
   })
+  it('marks the active tab for assistive tech and gives each tab a test id', () => {
+    render(<TabBar active="health" />)
+    expect(screen.getByTestId('tabbar')).toBe(nav())
+    expect(screen.getByTestId('tab-health').getAttribute('aria-current')).toBe('page')
+    for (const id of ['today', 'health', 'discover', 'family', 'safety']) expect(screen.getByTestId(`tab-${id}`)).toBeTruthy()
+    expect(screen.getByTestId('tab-today').getAttribute('aria-current')).toBe('false')
+  })
   it('a full view (Me, notifications) hides the pill and marks no tab', () => {
     render(<TabBar active={null} />)
     expect(nav().style.getPropertyValue('--pill')).toBe('0')

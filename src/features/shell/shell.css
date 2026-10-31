@@ -42,17 +42,14 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
 /* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Five slots (Today, Health, Discover, Family, Safety), so --slot is the tab index 0..4. */
-.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(var(--tabbar-gap) + var(--sab)); height: var(--tabbar-h); border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
-.tabbar.sh-tabs::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 22px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
-.sh-tabs button { position: relative; background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--ink); min-height: 56px; min-width: 0; }
+.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(var(--tabbar-gap) + var(--sab)); height: var(--tabbar-h); border-radius: 32px; box-shadow: var(--shadow-float); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
+.tabbar.sh-tabs::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 26px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
+.sh-tabs button { position: relative; background: none; border: 0; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); min-height: 52px; min-width: 0; }
 @media (hover: hover) { .sh-tabs button:not([aria-current="page"]):hover { background: var(--fill); } }
-.sh-tabs button[aria-current="page"] { color: var(--ink); background: none; }
-.sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
+.sh-tabs button[aria-current="page"], .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green); background: none; }
 .sh-tabs button > span:not(.sh-tabbadge) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 200% text on a small phone: five labels cannot fit 35px slots, so keep icons (each button has an aria-label) and the active tab's label (UI-3) */
 :root[data-narrow] .sh-tabs button:not([aria-current="page"]) > span:not(.sh-tabbadge) { display: none; }
-:root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
 
 /* Scrolling content ends above the tab bar: one global rule, the `.scroll::after` spacer (height from var(--tabbar-clear)) in app.css. */
 
@@ -133,33 +130,42 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 :root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }
 
-/* Floating Jack button (round 2): 56px circle, bottom right. Its bottom edge sits on --tabbar-clear and .bt[data-jack] .scroll::after adds the button's height
-   to the end spacer, so the last item (the Taken pill, the SOS hold) always ends above it. Tap opens Jack; press and hold opens the Ask choice sheet. */
-.sh-jackfab { position: absolute; right: 14px; bottom: var(--tabbar-clear); z-index: 6; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; background: var(--green); display: grid; place-items: center; box-shadow: 0 6px 20px rgba(20,30,20,.28), 0 0 0 3px var(--amber); touch-action: manipulation; -webkit-touch-callout: none; user-select: none; transition: transform var(--dur-press) var(--ease-out); }
-.sh-jackfab img { width: 48px; height: 48px; border-radius: 50%; background: var(--on-green); object-fit: cover; pointer-events: none; }
+/* Floating Jack button: 62px white disc, bottom right. It floats 14px above the tab bar and .bt[data-jack] .scroll::after adds the button's height
+   to the end spacer, so the last item (the Taken pill) always ends above it. One tap opens the Jack sheet. */
+.sh-jackfab { position: absolute; right: 18px; bottom: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 14px); z-index: 6; width: 62px; height: 62px; padding: 0; border-radius: 50%; background: var(--card); border: 3px solid var(--card); display: grid; place-items: center; box-shadow: var(--shadow-float); touch-action: manipulation; -webkit-touch-callout: none; user-select: none; transition: transform var(--dur-press) var(--ease-out); }
+.sh-jackfab img { width: 56px; height: 56px; border-radius: 50%; background: var(--on-green); object-fit: cover; pointer-events: none; }
 .sh-jackfab:active { transform: scale(.94); }
 .sh-jackfab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-.bt[data-jack] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 8px); }
-.bt[data-jack][data-hint] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 12px + 56px); } /* while the one-time coach mark waits: room for it above Jack at the page end (D-104) */ /* the spacer grows, not the padding: a webview that drops padding-bottom still clears Jack (S3) */
+.bt[data-jack] .scroll::after { height: calc(var(--tabbar-clear) + 62px + 8px); }
+.bt[data-jack][data-hint] .scroll::after { height: calc(var(--tabbar-clear) + 62px + 12px + 56px); } /* while the one-time coach mark waits: room for it above Jack at the page end (D-104) */ /* the spacer grows, not the padding: a webview that drops padding-bottom still clears Jack (S3) */
 /* The SOS hold scrolls past the Jack button's height too. Keep the hold centred (D-88): equal space on both sides of the button only, wide enough that its right edge
    (56px + 14px margin + 6px air = 76px from the screen edge, less the page gutter) stays clear of Jack. The sentence under it keeps the full width. */
-.bt[data-jack] .sos-simple-btn { margin-inline: 62px; }
-.sh-hint { position: absolute; right: 14px; bottom: calc(var(--tabbar-clear) + 56px + 12px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; width: max-content; max-width: calc(100% - 28px); box-sizing: border-box; pointer-events: none; }
+.sh-hint { position: absolute; right: 18px; bottom: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 14px + 62px + 10px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; width: max-content; max-width: calc(100% - 28px); box-sizing: border-box; pointer-events: none; }
 /* above Jack, not beside him: beside him it sat on the SOS caption and clipped at 200% (UI-1) */
 .sh-hint::after { content: ""; position: absolute; right: 22px; top: 100%; border: 7px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .sh-jackfab { transition: none; } .sh-jackfab:active { transform: none; } }
 
-/* Ask choice sheet (S8 L2): three 76px rows over a dimmed screen. */
-.ask-back { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; justify-content: center; }
-.ask-sheet { width: 100%; max-width: 520px; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; gap: 8px; padding: 18px 16px calc(14px + env(safe-area-inset-bottom)); box-sizing: border-box; color: var(--ink); animation: ask-up var(--dur-sheet) var(--ease-sheet); }
-.ask-sheet h2 { margin: 0 0 4px; font-family: var(--f-display); font-size: 22px; }
-.ask-row { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 10px 14px; box-sizing: border-box; width: 100%; border: 0; border-radius: 18px; background: var(--cell); color: var(--ink); text-align: left; font-size: 17px; }
-.ask-row b { display: block; font-size: 18px; font-weight: 700; }
-.ask-row .sub { display: block; font-size: 15px; }
-.ask-row:focus-visible, .ask-cancel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.ask-cancel { min-height: 48px; }
-.ask-pdf { display: flex; align-items: center; min-height: 48px; padding: 0 14px; font-size: 15px; color: var(--ink); text-decoration: underline; }
-.ask-pdf:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-@keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .ask-sheet { animation: none; } }
 
+/* Jack sheet (D-105): head, red Help row (SosHold restyled), Safety link, Scan and Chat tiles, Upload link. */
+.jk-head { display: flex; align-items: center; gap: 12px; padding: 0 4px 16px; }
+.jk-head .grow { flex: 1; min-width: 0; }
+.jk-head b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.jk-head .sub { font-size: 15px; }
+.jk-head .lk-x { flex: none; }
+.jk-sos .sos-simple { display: flex; flex-direction: column; }
+.jk-sos .sos-simple-btn { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 16px; border-radius: 20px; background: var(--danger-bg); color: #fff; text-align: left; width: 100%; border: 0; font: inherit; touch-action: none; }
+.jk-sos .sos-simple-btn.holding { background: #8E1B14; }
+.jk-sos .sos-simple-btn::before { content: "SOS"; width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.16); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; }
+.jk-sos .sos-simple-btn > span { font-size: 20px; font-weight: 700; }
+.jk-sos .sos-simple-sub { color: var(--muted); font-size: 15px; margin: 8px 4px 0; }
+.jk-safety { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 12px; }
+.jk-safety a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-weight: 600; color: var(--green); }
+.jk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.jk-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 150px; padding: 16px; border-radius: 20px; background: var(--card); border: 0; text-align: left; font: inherit; color: var(--ink); }
+.jk-tile .big { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--tint-fill); color: var(--tint-ink); }
+.jk-tile b { font-size: 20px; font-weight: 700; }
+.jk-tile .sub { font-size: 15px; }
+.jk-upload { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; margin-top: 8px; font-size: 15px; color: var(--ink); text-decoration: underline; background: none; border: 0; font: inherit; }
+:root[data-narrow] .jk-tiles { grid-template-columns: minmax(0, 1fr); }
+.jk-sos .sos-simple-btn:focus-visible, .jk-tile:focus-visible, .jk-upload:focus-visible, .jk-safety a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sh-sosfull { position: absolute; inset: 0; z-index: 40; background: var(--ground); overflow: auto; display: flex; flex-direction: column; }

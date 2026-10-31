@@ -13,8 +13,6 @@ const overlaps = (page: Page) => page.evaluate(() => {
   const h = document.querySelector('.sh-hint')!.getBoundingClientRect()
   const hit = (r: DOMRect) => r.width > 0 && h.left < r.right && h.right > r.left && h.top < r.bottom && h.bottom > r.top
   const out: string[] = []
-  const sos = document.querySelector('.td-sos')
-  if (sos && hit(sos.getBoundingClientRect())) out.push('.td-sos')
   const w = document.createTreeWalker(document.querySelector('.bt .scroll')!, NodeFilter.SHOW_TEXT)
   const range = document.createRange()
   for (let n = w.nextNode(); n; n = w.nextNode()) {
@@ -27,11 +25,11 @@ const overlaps = (page: Page) => page.evaluate(() => {
 const shown = (page: Page) => page.locator('.sh-hint').evaluate((el) => getComputedStyle(el).visibility !== 'hidden')
 
 for (const [width, height] of [[375, 600], [375, 667], [360, 640], [375, 800]] as const) {
-  test(`Ask hint stays clear of the SOS caption and page text at ${width}x${height}`, async ({ page }) => {
+  test(`Jack hint stays clear of page text at ${width}x${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height })
     await skipOnboarding(page)
     await page.goto('/#today')
-    await expect(page.locator('.td-sos')).toBeVisible()
+    await expect(page.locator('.td-sos')).toHaveCount(0)
     await expect(page.locator('.sh-hint')).toBeAttached()
     // shown only where it fits; otherwise hidden, never drawn over text
     if (await shown(page)) expect(await overlaps(page)).toEqual([])

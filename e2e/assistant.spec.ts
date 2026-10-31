@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }) => {
 
 test('button opens a dialog, Esc closes it, focus returns', async ({ page }) => {
   await page.goto('/')
-  const fab = page.getByRole('button', { name: 'Ask Bantay' })
+  const fab = page.getByTestId('jack')
   await expect(fab).toBeVisible()
   await openChat(page)
   await expect(page.getByRole('dialog', { name: 'Ask Bantay' })).toBeVisible()

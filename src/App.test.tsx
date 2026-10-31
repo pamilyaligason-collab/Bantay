@@ -41,18 +41,17 @@ describe('tab shell', () => {
     }
   })
 
-  it('the floating Jack button opens the assistant on a tap and the choice sheet on a hold; the tab bar has no Ask slot', async () => {
+  it('the floating Jack button opens the Jack sheet on a tap, Chat in it opens the assistant; the tab bar has no Ask slot', async () => {
     render(<App />)
     expect(document.querySelector('.as-fab')).toBeNull()
-    expect(screen.getByRole('navigation', { name: 'Main' }).querySelector('[aria-label="Ask Bantay"]')).toBeNull()
-    const jack = await screen.findByRole('button', { name: 'Ask Bantay' })
+    expect(screen.getByRole('navigation', { name: 'Main' }).querySelector('[data-testid="jack"]')).toBeNull()
+    const jack = await screen.findByTestId('jack')
     fireEvent.click(jack)
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Jack' })).toBeTruthy())
+    fireEvent.click(screen.getByTestId('jack-chat'))
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Ask Bantay' })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    fireEvent.contextMenu(jack)
-    fireEvent.click(await screen.findByRole('button', { name: /Talk to Jack Jack/ }))
-    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Ask Bantay' })).toBeTruthy())
   })
 
   it('Discover is the third tab: its sub-tabs show, the tab is current, and Jack stays on it', async () => {
@@ -61,7 +60,7 @@ describe('tab shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Play'))
     expect(screen.getByRole('button', { name: 'Discover' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Play' }).getAttribute('aria-pressed')).toBe('true')
-    expect(await screen.findByRole('button', { name: 'Ask Bantay' })).toBeTruthy()
+    expect(await screen.findByTestId('jack')).toBeTruthy()
   })
 
   it('full views and own-header pages have no Jack button', async () => {
@@ -69,7 +68,7 @@ describe('tab shell', () => {
       location.hash = h
       const { unmount } = render(<App />)
       await new Promise((r) => setTimeout(r, 30))
-      expect(screen.queryByRole('button', { name: 'Ask Bantay' }), h).toBeNull()
+      expect(screen.queryByTestId('jack'), h).toBeNull()
       unmount()
     }
   })

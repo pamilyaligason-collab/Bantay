@@ -41,14 +41,11 @@ describe('Today simple mode', () => {
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
   })
-  it('off: Hold for help sits on Today (the same hold button as Simple mode), right under the quick log and above self-care, so the Jack button at the bottom never covers it', async () => {
+  it('off: the SOS hold is not on Today any more (Jack sheet and Safety carry it)', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('quicklog')
-    const sos = screen.getByRole('button', { name: 'Hold to call and text your family' })
-    const order = [...container.querySelectorAll('[data-testid], .td-sos')].map((e) => e.getAttribute('data-testid') ?? 'sos')
-    expect(order.indexOf('sos')).toBe(order.indexOf('quicklog') + 1)
-    expect(order.indexOf('sos')).toBeLessThan(order.indexOf('selfcare'))
-    expect(sos.closest('section')?.getAttribute('aria-label')).toBe('Emergency')
+    expect(container.querySelector('.td-sos')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Hold to call and text your family' })).toBeNull()
   })
   it('on, a dose due: a Check my blood pressure tile opens the guided check', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
