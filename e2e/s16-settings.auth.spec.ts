@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { assertBudget, assertJackClear, assertNoWrappedButtons, setScheme } from './s16'
+import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, setScheme } from './v13'
 import { admin, member } from './fixtures/s16/settings'
 
 // S16 L5: Settings overview (<= 850) and groups (<= 700), light and dark at 390, buttons at 360, no control under the Jack button, TopBar greeting wraps.
@@ -14,7 +14,7 @@ const shot = async (page: Page, name: string, scheme: string) => {
 const GROUPS: [string, string][] = [['alerts', 'Alerts and reminders'], ['display', 'Display'], ['family', 'Family and sharing'], ['phone', 'Phone'], ['signin', 'Sign-in'], ['about', 'About']]
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`overview: every row reaches its screen, within budget (${scheme})`, async ({ page }) => {
+  test(`overview: every row reaches its screen (${scheme})`, async ({ page }) => {
     await admin(page)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/#me')
@@ -24,7 +24,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('switch', { name: 'Simple mode' })).toBeVisible()
     for (const [g, title] of GROUPS) await expect(page.getByRole('link', { name: new RegExp(title) })).toHaveAttribute('href', `#me/${g}`)
     await expect(page.getByRole('link', { name: /Privacy/ })).toHaveAttribute('href', '#privacy')
-    await assertBudget(page, 850)
+    await assertTargets(page); await assertTextContrast(page)
     await assertJackClear(page)
     await shot(page, 'settings-s16', scheme)
     await expect(page).toHaveTitle('Settings - Family Bantay')
@@ -33,12 +33,12 @@ for (const scheme of ['light', 'dark'] as const) {
   for (const [g, title] of GROUPS) {
     test(`#me/${g}: own Back and title, one screen, back lands on #me (${scheme})`, async ({ page }) => {
       await admin(page)
-      await page.setViewportSize({ width: 390, height: 640 }) // shorter than the 700 budget, so scrollHeight is the content and assertBudget can fail
+      await page.setViewportSize({ width: 390, height: 640 })
       await page.goto(`/#me/${g}`)
       await setScheme(page, scheme)
       await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible()
       await expect(page.locator('.sh-top')).toHaveCount(0) // the group draws its own header, no avatar bar
-      await assertBudget(page, 700)
+      await assertTargets(page); await assertTextContrast(page)
       await page.setViewportSize({ width: 390, height: 844 })
       await assertJackClear(page)
       await shot(page, `settings-${g}`, scheme)

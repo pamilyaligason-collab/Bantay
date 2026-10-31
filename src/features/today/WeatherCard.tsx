@@ -113,7 +113,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
     <span className="td-act-box"><Icon name="therm" size={24} /><b>{text}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>
   )
   return (
-    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-testid="weather-hero" style={VEIL}>
+    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-hero data-testid="weather-hero" style={VEIL}>
       <SceneHero
         scene={scene}
         inkOnScene
