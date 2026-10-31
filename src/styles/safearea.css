@@ -1,0 +1,2 @@
+/* P0-6: pushed pages have no top bar, so the scroller itself clears the status bar. */
+.bt:not(:has(.sh-top)) > .scroll { padding-top: calc(10px + var(--sat)); }
