@@ -145,3 +145,26 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-hint::after { content: ""; position: absolute; right: 22px; top: 100%; border: 7px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { .sh-jackfab { transition: none; } .sh-jackfab:active { transform: none; } }
 
+
+/* Jack sheet (D-105): head, red Help row (SosHold restyled), Safety link, Scan and Chat tiles, Upload link. */
+.jk-head { display: flex; align-items: center; gap: 12px; padding: 0 4px 16px; }
+.jk-head .grow { flex: 1; min-width: 0; }
+.jk-head b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.jk-head .sub { font-size: 15px; }
+.jk-head .lk-x { flex: none; }
+.jk-sos .sos-simple { display: flex; flex-direction: column; }
+.jk-sos .sos-simple-btn { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 16px; border-radius: 20px; background: var(--danger-bg); color: #fff; text-align: left; width: 100%; border: 0; font: inherit; touch-action: none; }
+.jk-sos .sos-simple-btn::before { content: "SOS"; width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.16); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; }
+.jk-sos .sos-simple-btn > span { font-size: 20px; font-weight: 700; }
+.jk-sos .sos-simple-sub { color: var(--muted); font-size: 15px; margin: 8px 4px 0; }
+.jk-safety { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 12px; }
+.jk-safety a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-weight: 600; color: var(--green); }
+.jk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.jk-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 150px; padding: 16px; border-radius: 20px; background: var(--card); border: 0; text-align: left; font: inherit; color: var(--ink); }
+.jk-tile .big { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--tint-fill); color: var(--tint-ink); }
+.jk-tile b { font-size: 20px; font-weight: 700; }
+.jk-tile .sub { font-size: 15px; }
+.jk-upload { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; margin-top: 8px; font-size: 15px; color: var(--ink); text-decoration: underline; background: none; border: 0; font: inherit; }
+:root[data-narrow] .jk-tiles { grid-template-columns: minmax(0, 1fr); }
+.jk-sos .sos-simple-btn:focus-visible, .jk-tile:focus-visible, .jk-upload:focus-visible, .jk-safety a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sh-sosfull { position: absolute; inset: 0; z-index: 40; background: var(--ground); overflow: auto; display: flex; flex-direction: column; }
