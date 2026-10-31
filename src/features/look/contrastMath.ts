@@ -17,7 +17,7 @@ export const parse = (c: string): [RGB, number] => {
   const n = c.match(/[\d.]+/g)!.map(Number); return [[n[0]!, n[1]!, n[2]!], n[3] ?? 1]
 }
 export const over = (fg: [RGB, number], bg: RGB): RGB => fg[0].map((v, i) => v * fg[1] + bg[i]! * (1 - fg[1])) as RGB
-export const lum = (c: RGB) => { const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
+export const lum = (c: RGB) => { const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
 export const ratio = (a: RGB, b: RGB) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05) }
 /** ratio of two tokens (fg may be rgba: composited over bg). */
 export const pair = (t: Record<string, string>, fg: string, bg: string) => ratio(over(parse(t[fg]!), parse(t[bg]!)[0]), parse(t[bg]!)[0])

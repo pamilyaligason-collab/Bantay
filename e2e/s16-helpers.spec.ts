@@ -22,6 +22,7 @@ test('assertTextContrast fails muted-on-white at 3.9:1 and passes ink; data-cont
   await load(page, '<div data-contrast-bg="#1C2F57" style="background:linear-gradient(#fff,#fff)"><p style="color:#fff">On the sky</p></div>'); await assertTextContrast(page)
   await load(page, '<div style="background:rgb(255 255 255 / .8)"><p style="color:#818181">Over glass</p></div>')
   await expect(assertTextContrast(page)).rejects.toThrow(/Over glass/)
+  await load(page, '<div style="background:color-mix(in srgb,#D97706 22%,#fff)"><p style="color:#1c1b19">Mix</p></div>'); await assertTextContrast(page)
 })
 
 test('assertNoSideways fails an element 20 px past the right edge', async ({ page }) => {

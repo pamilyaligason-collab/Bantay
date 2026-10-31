@@ -53,7 +53,7 @@ export async function assertNoSideways(page: Page): Promise<void> {
       const r = el.getBoundingClientRect(); const s = getComputedStyle(el)
       if (r.width === 0 || r.height === 0 || s.visibility === 'hidden' || el.closest('[aria-hidden="true"]')) continue
       let clipped = false
-      for (let p = el.parentElement; p && p !== sc; p = p.parentElement) { const ox = getComputedStyle(p).overflowX; if (ox === 'auto' || ox === 'scroll' || ox === 'hidden') { clipped = true; break } }
+      for (let p = el.parentElement; p && p !== sc; p = p.parentElement) { const ox = getComputedStyle(p).overflowX; if (ox === 'auto' || ox === 'scroll' || ox === 'hidden' || ox === 'clip') { clipped = true; break } }
       if (!clipped && r.right > edge + 0.5) out.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 30)} right ${Math.round(r.right)} > ${edge}`)
     }
     return out
@@ -65,8 +65,8 @@ export async function assertNoSideways(page: Page): Promise<void> {
  *  `[data-contrast-bg="#hex"]` on a gradient element stands in for its darkest stop (getComputedStyle cannot read a gradient). */
 export async function assertTextContrast(page: Page, min = 4.5): Promise<void> {
   const bad = await page.evaluate((min) => {
-    const parse = (c: string) => (c.match(/[\d.]+/g) ?? []).map(Number)
-    const lin = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
+    const parse = (c: string) => { const n = (c.match(/[\d.]+/g) ?? []).map(Number); if (c.startsWith('color(srgb')) { n[0]! *= 255; n[1]! *= 255; n[2]! *= 255 } return n } // Chrome serialises color-mix() as color(srgb 0.96 0.9 0.8)
+    const lin = (v: number) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }
     const lum = (c: number[]) => 0.2126 * lin(c[0]!) + 0.7152 * lin(c[1]!) + 0.0722 * lin(c[2]!)
     const ratio = (a: number[], b: number[]) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05) }
     const hex = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
@@ -93,7 +93,7 @@ export async function assertTextContrast(page: Page, min = 4.5): Promise<void> {
       if (!t || !el || el.closest('[aria-hidden="true"], script, style')) continue
       const r = el.getBoundingClientRect(); const s = getComputedStyle(el)
       if (r.width === 0 || r.height === 0 || s.visibility === 'hidden' || s.opacity === '0' || parseFloat(s.fontSize) === 0) continue
-      const size = parseFloat(s.fontSize); const big = size >= 32 || (size >= 24 && parseInt(s.fontWeight) >= 700)
+      const size = parseFloat(s.fontSize); const big = size >= 24 || (size >= 18.66 && parseInt(s.fontWeight) >= 700)
       const need = big ? 3 : min
       const bg = bgOf(el); const fgc = parse(s.color); const fa = fgc[3] ?? 1
       const fg = [0, 1, 2].map((i) => fgc[i]! * fa + bg[i]! * (1 - fa))

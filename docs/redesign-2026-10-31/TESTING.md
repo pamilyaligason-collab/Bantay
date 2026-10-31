@@ -12,14 +12,14 @@ design rule. Source: `contracts-phase0.md` section 8.
 | `assertOrder(page, ids)` | each `data-testid` is present and lower than the one before |
 | `assertTargets(page)` | every visible `a[href]`, `button`, `input`, `[role=button]` in `.bt` is >= 44 x 44; failures named with size |
 | `assertNoSideways(page)` | `.bt .scroll` is no wider than its box and nothing pokes past the right edge (boxes inside a horizontal scroller are skipped) |
-| `assertTextContrast(page, min=4.5)` | every visible text node: computed colour vs the composited ancestors (rgba layers over the first opaque one, then the body). 3:1 for >= 32 px, or >= 24 px bold |
+| `assertTextContrast(page, min=4.5)` | every visible text node: computed colour vs the composited ancestors (rgba layers over the first opaque one, then the body). 3:1 for large text (WCAG: >= 24 px, or >= 18.66 px bold). Chrome's `color(srgb ...)` colours (from `color-mix`) are read |
 | `assertJackClear(page)` | at scroll end no control sits under the Jack button |
 | `assertNoWrappedButtons(page)` | `.btn` / `.btn2` stay on one line |
 | `assertNarrow(page)` | 195 px wide, reload, then `assertNoSideways`, `assertTargets`, `assertNoWrappedButtons` |
 | `shotsLightDark(page, name)` | with `V13_SHOTS=<dir>` writes `<dir>/<name>-light.png` and `-dark.png`; without it, nothing |
 
 `ROUTES`, `FIXED_CLOCKS` and `setScheme` are re-exported from `e2e/s16.ts`. `assertBudget` and `liveShot` are gone.
-`e2e/s16-helpers.spec.ts` proves each helper fails on a bad fixture page and passes a clean one.
+`e2e/s16-helpers.spec.ts` has fail-case self-tests for `assertTargets`, `assertTextContrast`, `assertNoSideways`, `assertHero` and `assertJackClear`. `assertOrder`, `assertNarrow`, `assertNoWrappedButtons` have no fail-case self-test yet (assertNarrow is a composition of the others).
 
 ## Marking the page
 
@@ -57,4 +57,4 @@ e2e/tabbar-overlap.spec.ts e2e/subpage-header.spec.ts e2e/s16-*.spec.ts` green (
 
 ## Known until lane X
 
-(filled in from the Playwright run; see the bottom of this file)
+No `test.fixme` entries yet. The Playwright gate run for F0-D review round 1 did not complete (the web server build timed out on a loaded machine); the real result must be recorded here from the next run.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pair, tokensOf } from '../look/contrastMath'
+import { over, pair, parse, ratio, tokensOf } from '../look/contrastMath'
 import css from './today.css?raw'
 
 // The rule under test is "the chip's token pair is AA in both themes", computed from tokens.css; the css text is only checked for which tokens the chip uses.
@@ -16,8 +16,9 @@ describe('My week chip text >= 4.5 on --soft (UI-16)', () => {
   it('every pair the chip can show is AA in both themes: green/ok and the high-low warn pair', () => {
     for (const theme of ['light', 'dark'] as const) {
       const t = tokensOf(theme)
-      expect(pair(t, theme === 'light' ? '--green' : '--ok', '--green-tint'), `${theme} ok chip`).toBeGreaterThanOrEqual(4.5)
-      expect(pair(t, '--warn', '--card'), `${theme} warn on card`).toBeGreaterThanOrEqual(4.5)
+      expect(pair(t, theme === 'light' ? '--green' : '--ok', '--soft'), `${theme} ok chip`).toBeGreaterThanOrEqual(4.5)
+      const wb = over([parse(t['--amber']!)[0], 0.22], parse(t['--card']!)[0]) // --warn-bg = color-mix(amber 22%, card)
+      expect(ratio(parse(t['--warn']!)[0], wb), `${theme} high/low chip: --warn on --warn-bg`).toBeGreaterThanOrEqual(4.5)
     }
   })
 })

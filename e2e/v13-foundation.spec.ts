@@ -1,10 +1,16 @@
 import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertJackClear, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, setScheme, shotsLightDark } from './v13'
+import { openMeteoFixture } from '../src/features/weather/fixture'
+import { assertHero, assertJackClear, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, setScheme, shotsLightDark } from './v13'
 
 // v13 Phase 0 foundation: the shell and the four tab roots Phase 0 touched, light and dark at 390x844, then the 195 px narrow check.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
-test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
+test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(FIXED_CLOCKS[1])
+  await skipOnboarding(page)
+  const now = new Date(FIXED_CLOCKS[1])
+  await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now, temp: 28, humidity: 55, feels: 30, code: 63, hourlyProb: () => 10 }) }))
+})
 
 for (const root of ['today', 'health', 'safety', 'me']) {
   for (const scheme of ['light', 'dark'] as const) {
@@ -13,6 +19,7 @@ for (const root of ['today', 'health', 'safety', 'me']) {
       await page.goto(`/#${root}`)
       await expect(page.locator('h1').first()).toBeVisible()
       await setScheme(page, scheme)
+      if (root === 'today') await assertHero(page)
       await assertTargets(page)
       await assertTextContrast(page)
       await assertNoSideways(page)
