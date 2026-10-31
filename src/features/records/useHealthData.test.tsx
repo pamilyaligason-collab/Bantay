@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto'
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-const who = vi.hoisted(() => ({ gate: null as null | (() => void), signedIn: true }))
+const who = vi.hoisted(() => ({ gate: null as null | (() => void), signedIn: true, hang: false }))
 vi.mock('../auth/session', () => ({
-  getMember: () => who.signedIn
+  getMember: () => who.hang ? new Promise(() => {}) : who.signedIn
     ? new Promise((res) => { who.gate = () => res({ userId: 'u1', personId: 'me', role: 'admin', handle: null }) })
     : Promise.reject(new Error('no auth'))
 }))
@@ -13,7 +13,7 @@ import { resetPersonChoice, useHealthData } from './useHealthData'
 
 function Probe() { const d = useHealthData(); return <p data-testid="who">{d.ready ? d.personId || '(none)' : 'loading'}</p> }
 beforeEach(async () => {
-  resetPersonChoice(); who.gate = null; who.signedIn = true
+  resetPersonChoice(); who.gate = null; who.signedIn = true; who.hang = false
   await hdb.people.clear(); await hdb.readings.clear()
   await hdb.people.bulkPut([{ id: 'ma', name: 'Ma' }, { id: 'me', name: 'Zed' }, { id: 'aa', name: 'Ann' }] as never)
   await hdb.readings.put({ id: 'r1', personId: 'ma', test: 'bp_systolic', value: 140, unit: 'mmHg', takenAt: new Date().toISOString() } as never)
@@ -33,5 +33,10 @@ describe('useHealthData default person', () => {
     who.signedIn = false
     render(<Probe />)
     await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('ma'))
+  })
+  it('a getMember that never settles does not keep Health loading', async () => {
+    who.hang = true
+    render(<Probe />)
+    await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('ma'), { timeout: 6000 })
   })
 })

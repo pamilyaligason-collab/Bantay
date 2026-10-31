@@ -81,11 +81,11 @@ export default function WeatherScreen() {
       <SubHeader title="Weather" backHref="#today" backLabel="Back to Today" />
       <div className="wx-seg" role="group" aria-label="Place">
         <button type="button" aria-pressed={sel === 'me'} disabled={finding} onClick={async () => {
-          if (gps) return setPick('me')
+          if (gps && l.source === 'gps') return setPick('me') // an old fix is tried again
           setFinding(true); setLocOff(false)
           const got = (await l.ask().catch(() => null))?.source === 'gps'
           setFinding(false); if (got) setPick('me'); else setLocOff(true)
-        }}>{gps ? 'My location' : finding ? 'Finding you…' : 'Use my location'}</button>
+        }}>{gps && l.source === 'gps' ? 'My location' : gps ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location'}</button>
         <button type="button" aria-pressed={sel === 'h1'} onClick={() => setPick('h1')}>Home 1</button>
         <button type="button" aria-pressed={sel === 'h2'} onClick={() => setPick('h2')}>Home 2</button>
       </div>

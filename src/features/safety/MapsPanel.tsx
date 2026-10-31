@@ -48,7 +48,7 @@ export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask
   const c = HOME_ZONES.find((z) => z.id === active) ?? here ?? HOME
   const pickHere = async () => {
     setOff('')
-    if (here) return setPlace('here')
+    if (here && own.source !== 'last') return setPlace('here') // an old fix is tried again
     setFinding(true)
     const l = await doAsk().catch(() => null)
     if (l?.source === 'gps') setPlace('here')

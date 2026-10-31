@@ -15,6 +15,8 @@ export function alertRef(p: ReturnType<typeof resolvePlace>): LatLon {
 export function resolvePlace(o: { gps: (LatLon & { stale?: boolean }) | null; lastZone: ZoneId }) {
   const last = HOME_ZONES.find((z) => z.id === o.lastZone) ?? HOME_ZONES[0]
   if (!o.gps) return { weather: { lat: last.lat, lon: last.lon }, zone: last.id as ZoneId, source: 'zone' as const }
+  // an old fix from outside the Philippines is not where the phone is now: use the zone
+  if (o.gps.stale && !inPhilippines(o.gps)) return { weather: { lat: last.lat, lon: last.lon }, zone: last.id as ZoneId, source: 'zone' as const }
   const weather = { lat: o.gps.lat, lon: o.gps.lon }
   if (!inPhilippines(o.gps)) return { weather, zone: last.id as ZoneId, source: 'gps-abroad' as const }
   return { weather, zone: nearestZone(o.gps).id as ZoneId, source: o.gps.stale ? ('last' as const) : ('gps' as const) }

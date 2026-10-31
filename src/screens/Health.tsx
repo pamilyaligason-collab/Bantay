@@ -84,7 +84,7 @@ function Overview() {
       )}
       {showHead && <p className={`hv-insight2${head.tone === 'watch' ? ' watch' : ''}`} data-testid="insight">{head.title}</p>}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
-      {ready && <BodyHero nodes={nodes} blank={blank} canLog={canLog} canEdit={canEdit} onAdd={() => setAdding('bp')} lockReason={lockReason ?? undefined} viewOnly={!canLog ? { name, reason: lockReason ?? 'You can see this person but not log for them.' } : undefined} />}
+      {ready && <BodyHero nodes={nodes} blank={blank} canLog={canLog} canEdit={canEdit} onAdd={() => setAdding('bp')} lockReason={lockReason ?? undefined} viewOnly={!canLog && personId && ownId ? { name, reason: lockReason ?? 'You can see this person but not log for them.' } : undefined} />}
       {ready && personId && readings.length > 0 && <GlanceGrid personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && !blank && <NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {ready && personId && <HealthBrowse personId={personId} />}

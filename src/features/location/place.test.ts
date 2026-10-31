@@ -30,3 +30,15 @@ describe('resolvePlace last known fix (D-105)', () => {
     expect(alertRef(resolvePlace({ gps: { lat: 9.65, lon: 123.85, stale: true }, lastZone: 'conel' }))).toEqual({ lat: 9.65, lon: 123.85 })
   })
 })
+
+describe('stale fix abroad', () => {
+  it('is ignored: the zone is used', () => {
+    expect(resolvePlace({ gps: { ...TOKYO, stale: true }, lastZone: 'conel' }).source).toBe('zone')
+  })
+})
+
+describe('stale fix abroad', () => {
+  it('is ignored: the zone is used', () => {
+    expect(resolvePlace({ gps: { ...TOKYO, stale: true }, lastZone: 'conel' }).source).toBe('zone')
+  })
+})

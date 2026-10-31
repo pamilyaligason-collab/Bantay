@@ -88,11 +88,16 @@ export function useLocation() {
     setLoc(l)
     return l
   }, [])
+  const forget = useCallback(async () => {
+    await db.kv.delete(LAST_KEY)
+    const home = await getHome()
+    setLoc((l) => (l.source === 'last' ? { lat: home.lat, lon: home.lon, source: 'home' as const } : l))
+  }, [])
   const setHome = useCallback(async (h: Home) => {
     await saveHome(h)
     setLoc((l) => (l.source === 'home' ? { lat: h.lat, lon: h.lon, source: 'home' as const } : l))
   }, [])
-  return { ...loc, ask, setHome }
+  return { ...loc, ask, setHome, forget }
 }
 
 /** D-33 place: null until the saved zone is read (the saved zone stands in while GPS is pending). `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
@@ -107,7 +112,8 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
     return () => sub.unsubscribe()
   }, [])
   const lastZone = saved ?? FIRST_ZONE
-  const pickZone = useCallback((id: ZoneId) => db.kv.put({ key: ZONE_KEY, value: id }), [])
+  // a zone pick wins over an old fix: forget the fix so the pick is honoured when location is off
+  const pickZone = useCallback(async (id: ZoneId) => { await db.kv.put({ key: ZONE_KEY, value: id }); if (l.source === 'last') await l.forget() }, [l])
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"

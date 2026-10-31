@@ -34,9 +34,11 @@ export function useHealthData() {
   }, [tick])
   useEffect(() => {
     let live = true
+    const slow = setTimeout(() => live && setMemberReady(true), 3000) // a hung auth call must not keep Health on its loading state
     getMember().then(async (m) => { const mm = m && !m.personId ? { ...m, personId: (await selfIdOrCached().catch(() => null)) ?? null } : m; if (live) setMember(mm) }).catch(() => {}).finally(() => live && setMemberReady(true)) // not signed in or no auth: no "me"
     return () => {
       live = false
+      clearTimeout(slow)
     }
   }, [])
   const ownId = member?.personId ?? ''
