@@ -1,158 +1,45 @@
 import { describe, expect, it } from 'vitest'
-import { existsSync } from 'node:fs'
 import app from '../../styles/app.css?raw'
 import glass from '../../styles/glass.css?raw'
 import tokens from '../../styles/tokens.css?raw'
+import { DARK_SEL, MEDIA_SEL, over, pair, parse, ratio, tokensOf, varsOf } from './contrastMath'
 
-type RGB = [number, number, number]
-type Vars = Record<string, string>
-
-const varsAt = (css: string, from: number, selector: string): Vars => {
-  const at = css.indexOf(selector + ' {', from)
-  const body = css.slice(at + selector.length + 2).split('}')[0]
-  return Object.fromEntries([...body.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]))
-}
-const DARK_SEL = ':root[data-theme="dark"]'
-const MEDIA_SEL = ':root:not([data-theme="light"])'
-const mediaAt = (css: string) => css.indexOf('prefers-color-scheme: dark')
-
-const parse = (c: string): [RGB, number] => {
-  if (c.startsWith('#')) return [[1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) as RGB, 1]
-  const n = c.match(/[\d.]+/g)!.map(Number)
-  return [[n[0], n[1], n[2]], n[3] ?? 1]
-}
-const over = (fg: [RGB, number], bg: RGB): RGB => fg[0].map((v, i) => v * fg[1] + bg[i] * (1 - fg[1])) as RGB
-const lum = (c: RGB) => {
-  const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-const ratio = (a: RGB, b: RGB) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
-
-const themes = [
-  ['light', () => ({ ...varsAt(tokens, 0, ':root'), ...varsAt(glass, 0, ':root') })],
-  ['dark', () => ({ ...varsAt(tokens, 0, DARK_SEL), ...varsAt(glass, 0, DARK_SEL) })]
-] as const
-
-/** Resolve one level of var(--x) so the alias tokens (--act, --link, --bg ...) can be checked too. */
-const resolve = (v: Vars, k: string): string => {
-  let val = v[k]
-  for (let n = 0; n < 4 && val?.startsWith('var('); n++) val = v[val.slice(4, -1)]
-  return val
-}
-
-for (const [name, get] of themes) {
-  describe(`v2 palette (D-29) ${name}`, () => {
-    const v = get()
-    const c = (k: string) => parse(resolve(v, k))[0]
-    const pair = (fg: string, bg: string) => ratio(c(fg), c(bg))
-    for (const bg of ['--ground', '--card', '--card2', '--soft']) {
-      it(`--ink on ${bg} >= 4.5`, () => expect(pair('--ink', bg)).toBeGreaterThanOrEqual(4.5))
-      it(`--muted on ${bg} >= 4.5`, () => expect(pair('--muted', bg)).toBeGreaterThanOrEqual(4.5))
+const TINTS = ['blue', 'red', 'amber', 'teal', 'purple', 'green'] as const
+const FILLS = ['--ground', '--card', '--card2', '--green-tint', ...TINTS.map((t) => `--tint-${t}`)]
+const WHITE: [number, number, number] = [255, 255, 255]
+for (const theme of ['light', 'dark'] as const) {
+  describe(`v13 tokens ${theme}`, () => {
+    const t = { ...tokensOf(theme), ...tokensOf(theme, glass) }
+    const c = (k: string) => parse(t[k]!)[0]
+    for (const bg of FILLS) {
+      it(`--ink on ${bg} >= 4.5`, () => expect(pair(t, '--ink', bg)).toBeGreaterThanOrEqual(4.5))
+      it(`--muted on ${bg} >= 4.5`, () => expect(pair(t, '--muted', bg)).toBeGreaterThanOrEqual(4.5))
     }
-    for (const fg of ['--red', '--ok', '--warn', '--act', '--link', '--green2']) {
-      if (fg === '--green2' && name === 'dark') continue // dark green2 is a fill, never text
-      for (const bg of ['--ground', '--card']) {
-        it(`${fg} on ${bg} >= 4.5`, () => expect(pair(fg, bg)).toBeGreaterThanOrEqual(4.5))
-      }
+    for (const x of TINTS) {
+      it(`--tint-${x}-ink on its fill >= 4.5`, () => expect(pair(t, `--tint-${x}-ink`, `--tint-${x}`)).toBeGreaterThanOrEqual(4.5))
+      it(`--tint-${x}-ink on --card >= 4.5`, () => expect(pair(t, `--tint-${x}-ink`, '--card')).toBeGreaterThanOrEqual(4.5))
     }
-    // UI-16: chips sit on --soft. Light --ok is 4.40 there (fails), so light chips use --green; dark --green is a fill (1.6), so dark chips use --ok.
-    const onSoft = name === 'light' ? '--green' : '--ok'
-    it(`chip text ${onSoft} on --soft >= 4.5`, () => expect(pair(onSoft, '--soft')).toBeGreaterThanOrEqual(4.5))
-    it('--warn on --soft >= 4.5', () => expect(pair('--warn', '--soft')).toBeGreaterThanOrEqual(4.5))
-    if (name === 'light') it('--ok on --soft is below 4.5, so no chip may use it in light (guards the chip choice above)', () => expect(pair('--ok', '--soft')).toBeLessThan(4.5))
-    it('--on-green on --green >= 4.5', () => expect(pair('--on-green', '--green')).toBeGreaterThanOrEqual(4.5))
-    it('--btn-fg on --btn >= 4.5', () => expect(pair('--btn-fg', '--btn')).toBeGreaterThanOrEqual(4.5))
-    it('white on --green2 (switch and check mark) >= 3', () => expect(ratio([255, 255, 255], c('--green2'))).toBeGreaterThanOrEqual(3))
-    it('white on --danger-bg (Call 911 button) >= 4.5', () => expect(ratio([255, 255, 255], c('--danger-bg'))).toBeGreaterThanOrEqual(4.5))
-    it('ink on amber pill >= 4.5', () => expect(ratio([42, 28, 0], c('--amber'))).toBeGreaterThanOrEqual(4.5))
-    it('focus ring on ground and card >= 3', () => {
-      expect(pair('--focus', '--ground')).toBeGreaterThanOrEqual(3)
-      expect(pair('--focus', '--card')).toBeGreaterThanOrEqual(3)
-    })
-    it('active tab (--ink on --fill over --card) >= 4.5', () => {
-      expect(ratio(c('--ink'), over(parse(v['--fill']), c('--card')))).toBeGreaterThanOrEqual(4.5)
-    })
-    // D-71: the tab bar is glass, so its labels sit on --glass-bg over whatever scrolls behind it. Check the worst backdrops: page ground, card, and the dark green fill.
-    for (const back of ['--ground', '--card', '--green', '--red']) {
-      it(`tab label --ink on --glass-bg over ${back} >= 4.5`, () => {
-        const glass = over(parse(v['--glass-bg']), c(back))
-        expect(ratio(c('--ink'), glass)).toBeGreaterThanOrEqual(4.5)
-      })
+    for (const bg of ['--card', '--ground', '--green-tint']) it(`--green on ${bg} >= 4.5`, () => expect(pair(t, '--green', bg)).toBeGreaterThanOrEqual(4.5))
+    it('white on --btn and --danger-bg >= 4.5', () => { expect(ratio(WHITE, c('--btn'))).toBeGreaterThanOrEqual(4.5); expect(ratio(WHITE, c('--danger-bg'))).toBeGreaterThanOrEqual(4.5) })
+    it('--on-green on --green >= 4.5', () => expect(pair(t, '--on-green', '--green')).toBeGreaterThanOrEqual(4.5))
+    it('--focus on --ground and --card >= 3', () => { expect(pair(t, '--focus', '--ground')).toBeGreaterThanOrEqual(3); expect(pair(t, '--focus', '--card')).toBeGreaterThanOrEqual(3) })
+    for (const back of ['--ground', '--card', '--tint-red', '--green']) {
+      it(`tab label --ink on --glass-bg over ${back} >= 4.5`, () => expect(ratio(c('--ink'), over(parse(t['--glass-bg']!), c(back)))).toBeGreaterThanOrEqual(4.5))
+      it(`sheet --muted on --glass-sheet over dim over ${back} >= 4.5`, () => expect(ratio(c('--muted'), over(parse(t['--glass-sheet']!), over([[0, 0, 0], 0.38], c(back))))).toBeGreaterThanOrEqual(4.5))
     }
-    // sheets: --muted text on --glass-sheet over a 40% black dim over the worst page colours
-    for (const back of ['--green', '--red', '--ground']) {
-      it(`sheet --muted on --glass-sheet over dim over ${back} >= 4.5`, () => {
-        const dimmed = over([[0, 0, 0], 0.4], c(back))
-        expect(ratio(c('--muted'), over(parse(v['--glass-sheet']), dimmed))).toBeGreaterThanOrEqual(4.5)
-      })
-    }
-    it('active tab pill (--ink on --fill over --glass-bg over --card) >= 4.5', () => {
-      const glass = over(parse(v['--glass-bg']), c('--card'))
-      expect(ratio(c('--ink'), over(parse(v['--fill']), glass))).toBeGreaterThanOrEqual(4.5)
-    })
-    it('keeps 8 sky stops for the P3 weather background', () => {
-      expect(Object.keys(v).filter((k) => k.startsWith('--sky-'))).toHaveLength(8)
-    })
+    it('active tab --green on --fill over --glass-bg over --card >= 4.5', () => expect(ratio(c('--green'), over(parse(t['--fill']!), over(parse(t['--glass-bg']!), c('--card'))))).toBeGreaterThanOrEqual(4.5))
+    it('keeps 8 sky stops', () => expect(Object.keys(t).filter((k) => k.startsWith('--sky-'))).toHaveLength(8))
+    it('legacy aliases stay defined', () => { for (const k of ['--green2', '--soft', '--line', '--ok', '--warn', '--warn-bg', '--link', '--act', '--fill', '--bg', '--cell', '--ink2', '--sep', '--btn-fg', '--danger', '--hue-blue', '--hue-blue-ic', '--hue-terra-ic']) expect(t[k], k).toBeDefined() })
   })
 }
-
-describe('v2 look files', () => {
-  it('legacy token aliases stay defined', () => {
-    for (const k of ['--bg', '--cell', '--ink2', '--sep', '--btn', '--btn-fg', '--danger', '--warn-bg', '--act']) expect(tokens).toContain(k + ':')
+describe('dark blocks and fonts', () => {
+  it('prefers-color-scheme dark equals data-theme dark (tokens and glass)', () => {
+    for (const css of [tokens, glass]) expect(varsOf(css, MEDIA_SEL, css.indexOf('prefers-color-scheme: dark'))).toEqual(varsOf(css, DARK_SEL))
   })
-  it('self-hosts the fonts it declares', () => {
-    for (const f of ['fraunces-600', 'jakarta-400', 'jakarta-600', 'jakarta-700']) {
-      expect(app).toContain(`/fonts/${f}.woff2`)
-      expect(existsSync(`public/fonts/${f}.woff2`)).toBe(true)
-    }
-    expect(app).not.toMatch(/fonts\.googleapis/)
+  it('system font only: no @font-face, no googleapis, --f-ui starts with -apple-system', () => {
+    expect(app).not.toMatch(/@font-face|fonts\.googleapis/)
+    expect(app).toMatch(/--f-ui: -apple-system, "SF Pro Text", "Inter", system-ui/)
+    expect(app).not.toMatch(/--f-display/)
   })
+  it('--warn-bg keeps its exact color-mix text (viewas test reads it)', () => expect(tokens.match(/--warn-bg: color-mix\(in srgb, var\(--amber\) 22%, var\(--card\)\);/g)!.length).toBeGreaterThanOrEqual(2))
 })
-
-describe('dark blocks', () => {
-  it('prefers-color-scheme dark block equals the data-theme dark block (glass.css)', () => {
-    expect(varsAt(glass, mediaAt(glass), MEDIA_SEL)).toEqual(varsAt(glass, 0, DARK_SEL))
-  })
-  it('same for tokens.css', () => {
-    expect(varsAt(tokens, mediaAt(tokens), MEDIA_SEL)).toEqual(varsAt(tokens, 0, DARK_SEL))
-  })
-})
-
-// S16 hue families (PLAN section 3, C-2). Unrounded WCAG values. Light: ink, muted and icon on the tint fill. Dark: no fill, so ink, muted and icon on --card, and the icon on its real background, the 18% chip.
-const HUES = ['blue', 'green', 'lilac', 'amber', 'terra', 'none'] as const // 'none' = plain card: --card fill, --c-neutral icon (cards.css)
-for (const [name, get] of themes) {
-  describe(`S16 hue families ${name}`, () => {
-    const v = get()
-    const c = (k: string) => parse(resolve(v, k))[0]
-    for (const h of HUES) {
-      const fill = h === 'none' ? c('--card') : c(`--hue-${h}`)
-      const ic = h === 'none' ? c('--c-neutral') : c(`--hue-${h}-ic`)
-      if (name === 'light') {
-        it(`${h}: ink on fill >= 4.5`, () => expect(ratio(c('--ink'), fill)).toBeGreaterThanOrEqual(4.5))
-        it(`${h}: muted on fill >= 4.5`, () => expect(ratio(c('--muted'), fill)).toBeGreaterThanOrEqual(4.5))
-        it(`${h}: icon on fill >= 3`, () => expect(ratio(ic, fill)).toBeGreaterThanOrEqual(3))
-        it(`${h}: icon on --card >= 3`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(3))
-      } else {
-        const chip = over([ic, 0.18], c('--card')) // color-mix(in srgb, ic 18%, --card)
-        if (h !== 'none') it(`${h}: fill is --card (dark draws no fill)`, () => expect(v[`--hue-${h}`]).toBe('var(--card)'))
-        it(`${h}: ink and muted on --card >= 4.5`, () => {
-          expect(ratio(c('--ink'), c('--card'))).toBeGreaterThanOrEqual(4.5)
-          expect(ratio(c('--muted'), c('--card'))).toBeGreaterThanOrEqual(4.5)
-        })
-        it(`${h}: icon on --card >= 3`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(3))
-        it(`${h}: icon on the 18% chip >= 3`, () => expect(ratio(ic, chip)).toBeGreaterThanOrEqual(3))
-        it(`${h}: kicker text (icon colour) on --card >= 4.5`, () => expect(ratio(ic, c('--card'))).toBeGreaterThanOrEqual(4.5))
-      }
-    }
-  })
-}
-
-// Row lead icon (--c-neutral on its --soft box) and the white secondary action on a SceneHero (white on 55% black, worst case over a white sky; the scrim only darkens it more).
-for (const [name, get] of themes) {
-  describe(`S16 row and scene action ${name}`, () => {
-    const v = get()
-    const c = (k: string) => parse(resolve(v, k))[0]
-    it('row icon --c-neutral on --soft >= 3', () => expect(ratio(c('--c-neutral'), c('--soft'))).toBeGreaterThanOrEqual(3))
-    it('scene secondary: white on 55% black over white >= 4.5', () => expect(ratio([255, 255, 255], over([[0, 0, 0], 0.55], [255, 255, 255]))).toBeGreaterThanOrEqual(4.5))
-  })
-}

@@ -42,3 +42,6 @@
   :root[data-narrow] :is(.fm2-two > *, .fm2-doc) { white-space: normal; text-align: center; }
   :root[data-narrow] .fm2-cal-h { flex-wrap: wrap; }
   :root[data-narrow] .fm2-id-name { overflow-wrap: anywhere; }
+
+  /* v13 */
+  :root[data-narrow] .lt-title { font-size: 28px; line-height: 34px; }

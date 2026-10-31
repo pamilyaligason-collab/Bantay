@@ -1,14 +1,10 @@
-/* Component styles ported from the prototype <style> block. Class names are unchanged. v2 look (D-29): Fraunces for display, Plus Jakarta Sans for UI, both self-hosted (OFL, see docs/ASSETS.md). */
-@font-face { font-family: "Fraunces"; src: url(/fonts/fraunces-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-400.woff2) format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-600.woff2) format("woff2"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "Plus Jakarta Sans"; src: url(/fonts/jakarta-700.woff2) format("woff2"); font-weight: 700; font-display: swap; }
-:root { --tap: 48px; --text-scale: 1; --tabbar-h: 68px; --tabbar-gap: 10px; /* tab bar height and its gap above the bottom edge */ --sab: env(safe-area-inset-bottom, 0px); --tabbar-clear: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 24px); /* spacer height under scrolling content (.scroll::after): bar + safe area + breathing room */ --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)); /* env() on new WebViews; Capacitor SystemBars injects --safe-area-inset-top on older ones */ --f-display: "Fraunces", Georgia, "Times New Roman", serif; --f-ui: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+/* Component styles ported from the prototype <style> block. Class names are unchanged. v13 look (D-108): the phone's own system font, no downloads. */
+:root { --tap: 44px; --text-scale: 1; --tabbar-h: 64px; --tabbar-gap: 14px; /* tab bar height and its gap above the bottom edge */ --sab: env(safe-area-inset-bottom, 0px); --tabbar-clear: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 24px); /* spacer height under scrolling content (.scroll::after): bar + safe area + breathing room */ --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)); /* env() on new WebViews; Capacitor SystemBars injects --safe-area-inset-top on older ones */ --f-ui: -apple-system, "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif; }
 html, body, #root { margin: 0; height: 100%; }
 html, body { overscroll-behavior-y: none; }
 body { background: var(--ground); color: var(--ink); font-family: var(--f-ui); font-size: 16px; }
-h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing: -.015em; text-wrap: balance; }
-.h2 { font-family: var(--f-display); font-weight: 600; font-size: 20px; margin: 0; letter-spacing: -.01em; }
+h1, .h-display { font-family: var(--f-ui); font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+.h2 { font-family: var(--f-ui); font-weight: 700; font-size: 20px; margin: 0; letter-spacing: -.01em; }
 
 .bt {
   height: 100dvh; max-width: 520px; margin: 0 auto; box-sizing: border-box;
@@ -35,19 +31,21 @@ h1, .h-display { font-family: var(--f-display); font-weight: 600; letter-spacing
 .scroll::after { content: ""; flex: none; height: max(0px, calc(var(--tabbar-clear) - 22px)); }
 @media print { .scroll::after { display: none; } }
 .hdr { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; min-width: 0; }
-.hdr h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
+.hdr h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; overflow-wrap: anywhere; }
 .hdr span { font-size: 15px; color: var(--ink2); }
 
-.grp { background: var(--cell); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
-.row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 16px; width: 100%; box-sizing: border-box; background: transparent; border: 0; color: var(--ink); text-align: left; text-decoration: none; font-size: 17px; min-width: 0; }
-.grp .row + .row::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 0.5px; background: var(--sep); }
+.grp { background: var(--cell); border-radius: var(--r-group); overflow: hidden; box-shadow: var(--shadow); min-width: 0; }
+.row { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 14px; width: 100%; box-sizing: border-box; background: transparent; border: 0; color: var(--ink); text-align: left; text-decoration: none; font-size: 17px; min-width: 0; }
+.grp .row + .row::before { content: ""; position: absolute; top: 0; left: 14px; right: 0; height: 0.5px; background: var(--hair); }
 .grp.ic .row + .row::before { left: 58px; }
 .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .sub { font-size: 15px; color: var(--ink2); }
 .sec { font-size: 14px; color: var(--ink2); margin: 0 16px 6px; }
 .hd { font-size: 22px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -0.01em; }
-.btn { min-height: 52px; border: 0; border-radius: 14px; background: var(--btn); color: var(--btn-fg); font-size: 17px; font-weight: 600; width: 100%; padding: 0 16px; box-sizing: border-box; }
-.btn2 { min-height: 52px; border: 0; border-radius: 14px; background: var(--fill); color: var(--act); font-size: 17px; font-weight: 600; width: 100%; padding: 0 16px; box-sizing: border-box; }
+.btn, .btn2 { min-height: 44px; border: 0; border-radius: 999px; font-size: 15px; font-weight: 600; width: auto; padding: 0 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
+.btn.block, .btn2.block { width: 100%; }
+.btn { background: var(--btn); color: #fff; }
+.btn2 { background: var(--green-tint); color: var(--green); }
 .chev { color: var(--ink2); flex: none; }
 .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; border: 0; padding: 0; flex: none; }
 @media (prefers-reduced-motion: reduce) { .sw span { transition: none !important; } }
@@ -86,7 +84,7 @@ img.avatar { object-fit: cover; }
 
 /* v2 components (mockup v6, D-29). Other lanes build on these names; do not rename. */
 .eyebrow { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.card { background: var(--card); border-radius: 24px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.card { background: var(--card); border-radius: var(--r-card); padding: 16px; box-shadow: var(--shadow); min-width: 0; }
 .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -6px; }
 .sec-h a, .link { color: var(--link); font-weight: 600; font-size: 13px; text-decoration: none; background: none; border: 0; padding: 0; }
 .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 18px; border-radius: 999px; border: 0; font-size: 15px; font-weight: 600; background: var(--card2); color: var(--ink); }
@@ -97,14 +95,12 @@ img.avatar { object-fit: cover; }
 .pill.block { width: 100%; min-height: 52px; font-size: 16px; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--card2); font-size: 13px; font-weight: 600; border: 0; white-space: nowrap; color: var(--ink); }
 .tile { width: 56px; height: 56px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; color: var(--green); border: 0; flex: none; }
-:root[data-theme="dark"] .tile { color: var(--ink); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tile { color: var(--ink); } }
 .list { display: grid; }
 .list > * { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); min-width: 0; }
 .list > *:first-child { border-top: 0; padding-top: 2px; }
 .list > *:last-child { padding-bottom: 2px; }
-.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--card2); border-radius: 999px; padding: 4px; gap: 0; margin: 0; }
-.seg button { border: 0; background: none; border-radius: 999px; min-height: var(--tap); font-weight: 600; color: var(--muted); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--card2); border-radius: 12px; padding: 4px; gap: 0; margin: 0; }
+.seg button { border: 0; background: none; border-radius: 10px; min-height: var(--tap); font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 .switch { width: 54px; height: var(--tap); background: none; border: 0; position: relative; flex: none; padding: 0; }
 .switch::before { content: ""; position: absolute; left: 2px; right: 2px; top: 9px; height: 30px; border-radius: 15px; background: var(--card2); box-shadow: inset 0 0 0 2px var(--muted); transition: background-color var(--dur-base) var(--ease-out); }
@@ -115,7 +111,7 @@ img.avatar { object-fit: cover; }
 .chk[aria-checked="true"] { background: var(--green2); }
 .chk[aria-checked="true"]::after { content: ""; width: 10px; height: 6px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
 .sheet-wrap { position: fixed; inset: 0; background: rgba(10,15,10,.4); z-index: 15; display: flex; align-items: flex-end; justify-content: center; }
-.sheet { background: var(--card); width: 100%; max-width: 520px; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; }
+.sheet { background: var(--glass-sheet); width: 100%; max-width: 520px; border-radius: 30px 30px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px; }
 .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
 .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); color: var(--ink); padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 600; z-index: 20; max-width: calc(100vw - 32px); transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out); }
 @starting-style { .toast { opacity: 0; translate: 0 10px; } }
