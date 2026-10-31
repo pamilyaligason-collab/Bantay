@@ -66,3 +66,19 @@ test.describe('S4', () => {
     expect(await noSideways(page)).toBe(true)
   })
 })
+
+// ---- S5 Hazards ----
+test.describe('S5', () => {
+  test('hazards: Dampas readings, layer switch changes the caption only, NOAH and HazardHunterPH links', async ({ page }) => {
+    await page.goto('/#safety/hazards')
+    await expect(page.getByTestId('hazards-zone')).toContainText('Dampas')
+    await expect(page.getByTestId('layer-caption')).toContainText('No flood map')
+    await page.getByRole('button', { name: 'Landslide' }).click()
+    await expect(page.getByTestId('layer-caption')).toContainText('Low')
+    await expect(page.locator('.leaflet-container')).toHaveCount(1)
+    await expect(page.getByRole('link', { name: /Open in NOAH/ })).toHaveAttribute('href', 'https://noah.up.edu.ph/')
+    await expect(page.getByRole('link', { name: /Open HazardHunterPH/ })).toBeVisible()
+    expect(await targets44(page)).toEqual([])
+    expect(await noSideways(page)).toBe(true)
+  })
+})
