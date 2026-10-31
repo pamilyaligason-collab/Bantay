@@ -3,13 +3,13 @@ import { openChat, skipOnboarding } from './helpers'
 
 test.use({ viewport: { width: 375, height: 812 } })
 
-test('Jack is a 56 px floating button above the tab bar (not a tab), and the open sheet does not scroll sideways', async ({ page }) => {
+test('Jack is a 62 px floating button above the tab bar (not a tab), and the open sheet does not scroll sideways', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/')
-  const fab = page.getByRole('button', { name: 'Ask Bantay' })
+  const fab = page.getByTestId('jack')
   const f = (await fab.boundingBox())!
-  expect(f.width).toBe(56)
-  expect(f.height).toBe(56)
+  expect(f.width).toBe(62)
+  expect(f.height).toBe(62)
   expect(await page.locator('.as-fab').count()).toBe(0)
   const nav = page.getByRole('navigation', { name: 'Main' })
   expect(await nav.getByRole('button').count()).toBe(5)

@@ -86,25 +86,24 @@ test('Jack: on the five tabs, off on full views and own-header pages', async ({ 
   }
 })
 
-test('Jack is 56 px, a tap opens the chat, Back closes it, a hold opens the Ask sheet', async ({ page }) => {
+test('Jack is 62 px, a tap opens the Jack sheet, Back closes it, Chat opens the assistant', async ({ page }) => {
   await page.goto('/#today')
-  const jack = page.getByRole('button', { name: 'Ask Bantay' })
+  const jack = page.getByTestId('jack')
   const b = (await jack.boundingBox())!
-  expect([b.width, b.height]).toEqual([56, 56])
+  expect([b.width, b.height]).toEqual([62, 62])
   await jack.click()
+  const sheet = page.getByRole('dialog', { name: 'Jack' })
+  await expect(sheet).toBeVisible()
+  await page.goBack()
+  await expect(sheet).toHaveCount(0)
+  await expect(jack).toBeFocused() // focus comes back to the button that opened the sheet
+  await jack.click()
+  await page.getByTestId('jack-chat').click()
   const chat = page.getByRole('dialog', { name: 'Ask Bantay' })
   await expect(chat).toBeVisible()
-  await expect(chat.getByRole('button', { name: 'Back' })).toBeVisible()
   await chat.getByRole('button', { name: 'Back' }).click()
   await expect(chat).toHaveCount(0)
-  await expect(jack).toBeFocused() // focus comes back to the button that opened Jack
-  const c = (await jack.boundingBox())!
-  await page.mouse.move(c.x + 28, c.y + 28)
-  await page.mouse.down()
-  await page.waitForTimeout(700)
-  await page.mouse.up()
-  await expect(page.getByRole('dialog', { name: 'What would you like to do?' })).toBeVisible()
-  await expect(chat).toHaveCount(0) // the release did not also open Jack
+  await expect(jack).toBeFocused()
 })
 
 test('Simple mode has no Jack button and no tab bar', async ({ page }) => {

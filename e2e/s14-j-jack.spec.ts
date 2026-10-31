@@ -30,7 +30,7 @@ const sideways = (page: Page) => page.evaluate(() => document.documentElement.sc
 /** A Jack picture on the screen: loaded, a fixed width and height, and an alt attribute (empty when decorative). */
 async function expectJack(page: Page, alt: string | null | 'named', size: number) {
   // docs/session-14/contracts.md (orchestrator decision): the Ask button's Jack head (JackFab) is button chrome and does not count toward "one Jack per screen"; it has its own test below.
-  const img = page.locator('img.jack:not([aria-label="Ask Bantay"] img)')
+  const img = page.locator('img.jack:not([aria-label="Jack: help, scan, chat"] img)')
   await expect(img).toHaveCount(1) // at most one non-FAB Jack, and a placement that renders none fails here
   await expect(img).toBeVisible()
   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
@@ -59,7 +59,7 @@ for (const p of PLACES) {
       await page.waitForFunction((hash) => location.hash === hash, p.hash)
       if (p.ready === 'mv-page') await expect(page.locator('.mv-page')).toBeVisible()
       else await expect(page.getByTestId(p.ready).first()).toBeVisible()
-      await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
+      await page.locator('img.jack:not([aria-label="Jack: help, scan, chat"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
       await expectJack(page, p.alt, p.size)
       expect(await sideways(page)).toBe(0)
       if (zoom === 100) await shot(page, p.name)
@@ -80,9 +80,9 @@ test('cook mode shows a small decorative Jack in the top row (56 px, the smalles
   expect(await sideways(page)).toBe(0)
 })
 
-test('the Ask button wears the Jack head, decorative, 56 px (the smallest Jack size), still named Ask Bantay', async ({ page }) => {
+test('the Ask button wears the Jack head, decorative, 56 px (the smallest Jack size), named Jack: help, scan, chat', async ({ page }) => {
   await page.goto('/#today')
-  const fab = page.getByRole('button', { name: 'Ask Bantay' })
+  const fab = page.getByTestId('jack')
   await expect(fab).toBeVisible()
   const img = fab.locator('img')
   await expect(img).toHaveCount(1)
