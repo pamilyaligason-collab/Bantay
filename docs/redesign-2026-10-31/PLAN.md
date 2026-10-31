@@ -51,7 +51,7 @@ Gate 1 per lane: tsc 0, vitest green, lane Playwright specs (v13 budgets), shots
 | A Alerts | PHIVOLCS bulletin reader, NASA EONET, PAGASA CAP display, tiered rules (urgent = tsunami, signal 3+, M6+ PH, red flood, volcano 3+), FCM push via `@capacitor-firebase/messaging`, 7 AM digest | APK 2.8 (plugin), deploy |
 | G World | World panels (Manage panels), GDELT digest, EONET map layer | deploy |
 | P Family feed | `family_posts` + per-category sharing (labs, BP, photos, status) with RLS; feed aggregation of check-ins, readings, memories | migration apply |
-| Q Air quality + nowcast | Open-Meteo air quality in Weather; 15-min interpolated nowcast; "remind before rain" | none |
+| Q Weather blend + air quality + nowcast | Server-side weather blend in an edge function (key `OPEN_WEATHER_API_KEY` as a Supabase secret, never in the app): OpenWeather (minutely rain, alerts, air pollution) + Open-Meteo + other free sources (research running), cached per ~1 km cell, bias-checked against METAR stations; air quality; "remind before rain" | secret set, deploy |
 
 ### Phase 3 - Assets, licences, release
 - 3.1 Z-Anatomy layered renders in Blender (install Blender, exclude NC parts, Credits page) (D-106).
