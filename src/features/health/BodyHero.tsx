@@ -13,7 +13,7 @@ const lock = 'You can see this person but not log for them.'
 
 /** Health's scene hero (D-101, version B): the frosted figure with its organs, a glow on any result that needs a look, the 7 metric points, and the 7-day averages as links.
  *  `blank` = nobody has a reading yet: a faint figure with no glows, one line and the same two actions. `canLog` / `canEdit` gate + Reading and Scan (D-99 lock). */
-export function BodyHero({ nodes, blank, canLog, canEdit, onAdd, lockReason = lock }: { nodes: NodeView[]; blank: boolean; canLog: boolean; canEdit: boolean; onAdd: () => void; lockReason?: string }) {
+export function BodyHero({ nodes, blank, canLog, canEdit, onAdd, lockReason = lock, viewOnly }: { nodes: NodeView[]; blank: boolean; canLog: boolean; canEdit: boolean; onAdd: () => void; lockReason?: string; viewOnly?: { name: string; reason: string } }) {
   const uid = 'bh' + useId().replace(/\W/g, '')
   const add: CardAction = canLog ? { label: '+ Reading', onClick: onAdd } : { label: '+ Reading', disabled: true, lockReason }
   const scan: CardAction = canEdit ? { label: 'Scan', href: '#scan' } : { label: 'Scan', disabled: true }
@@ -44,26 +44,27 @@ export function BodyHero({ nodes, blank, canLog, canEdit, onAdd, lockReason = lo
       </svg>
     </div>
   )
+  const stats = (
+    <div className="bh-stats">
+      {SHOWN.map((id) => nodes.find((n) => n.id === id)).map((n) => n && (
+        <a key={n.id} className="bh-stat press" href={`#health/metric/${n.code}`} data-node={n.id}>
+          <span className="bh-l">{n.label}</span>{" "}
+          <b className="bh-v">{n.value}</b>{" "}
+          <span className="hv-sr">{n.empty ? 'No data yet' : n.note}</span>
+        </a>
+      ))}
+    </div>
+  )
   return (
     <div className={`bh${blank ? ' bh-blank' : ''}`}>
       <SceneHero
         compact
         testId="bodyhero"
         scene={fig}
-        title={blank ? 'No readings yet' : <>Body <span className="bh-sub">7-day averages</span></>}
-        body={blank ? <p className="bh-line">Add one or scan a lab paper.</p> : (
-          <div className="bh-stats">
-            {SHOWN.map((id) => nodes.find((n) => n.id === id)).map((n) => n && (
-              <a key={n.id} className="bh-stat press" href={`#health/metric/${n.code}`} data-node={n.id}>
-                <span className="bh-l">{n.label}</span>{" "}
-                <b className="bh-v">{n.value}</b>{" "}
-                <span className="hv-sr">{n.empty ? 'No data yet' : n.note}</span>
-              </a>
-            ))}
-          </div>
-        )}
-        action={add}
-        secondary={scan}
+        title={viewOnly ? <>{viewOnly.name} <span className="bh-badge" data-testid="bodyhero-viewonly">View only</span></> : blank ? 'No readings yet' : <>Body <span className="bh-sub">7-day averages</span></>}
+        body={viewOnly ? <>{blank ? <p className="bh-line">No readings yet for {viewOnly.name}.</p> : stats}<p className="sub bh-reason">{viewOnly.reason}</p></> : blank ? <p className="bh-line">Add one or scan a lab paper.</p> : stats}
+        action={viewOnly ? undefined : add}
+        secondary={viewOnly ? undefined : scan}
       />
     </div>
   )

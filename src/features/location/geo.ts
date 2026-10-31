@@ -3,7 +3,9 @@ export interface LatLon {
   lon: number
 }
 export interface Loc extends LatLon {
-  source: 'gps' | 'home'
+  source: 'gps' | 'last' | 'home'
+  /** when the fix was taken (source 'last') */
+  at?: number
 }
 
 /** D-11 fallback: Barangay Dampas, Tagbilaran City, Bohol. */

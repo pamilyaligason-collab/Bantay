@@ -21,3 +21,24 @@ describe('resolvePlace (D-33)', () => {
   })
   it('PH box', () => { expect(inPhilippines(TAG)).toBe(true); expect(inPhilippines(TOKYO)).toBe(false) })
 })
+
+describe('resolvePlace last known fix (D-105)', () => {
+  it('a stale fix is source last, still weather and zone from the fix', () => {
+    expect(resolvePlace({ gps: { lat: 9.65, lon: 123.85, stale: true }, lastZone: 'conel' })).toEqual({ source: 'last', zone: 'dampas', weather: { lat: 9.65, lon: 123.85 } })
+  })
+  it('alertRef treats last like gps', () => {
+    expect(alertRef(resolvePlace({ gps: { lat: 9.65, lon: 123.85, stale: true }, lastZone: 'conel' }))).toEqual({ lat: 9.65, lon: 123.85 })
+  })
+})
+
+describe('stale fix abroad', () => {
+  it('is ignored: the zone is used', () => {
+    expect(resolvePlace({ gps: { ...TOKYO, stale: true }, lastZone: 'conel' }).source).toBe('zone')
+  })
+})
+
+describe('stale fix abroad', () => {
+  it('is ignored: the zone is used', () => {
+    expect(resolvePlace({ gps: { ...TOKYO, stale: true }, lastZone: 'conel' }).source).toBe('zone')
+  })
+})

@@ -9,6 +9,7 @@ import './styles/tokens.css'
 import './styles/app.css'
 import './styles/glass.css'
 import './styles/narrow.css'
+import './styles/safearea.css'
 import { watchNarrow } from './styles/narrowMode'
 import { installErrorLogging } from './features/monitor/errors'
 

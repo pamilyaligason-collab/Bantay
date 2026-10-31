@@ -183,6 +183,8 @@
 .bh-blank .sc-body { padding-left: 56px; }
 .bh .hv-glow.warn { animation-duration: 3s; }
 .bh-line { margin: 0; }
+.bh-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; background: var(--card2); color: var(--muted); font-size: 13px; font-weight: 700; vertical-align: middle; }
+.bh-reason { margin: 6px 0 0; }
 .bh-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .bh-stat { display: flex; flex-direction: column-reverse; min-height: 44px; color: var(--ink); text-decoration: none; position: relative; }
 .bh-v { font-size: 20px; line-height: 24px; font-weight: 700; overflow-wrap: anywhere; }

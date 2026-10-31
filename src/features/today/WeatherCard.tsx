@@ -48,7 +48,17 @@ function slots(wx: Wx, now: Date) {
 }
 
 /** N-2: say when the weather is for the saved zone because the phone did not share its position (not while it is still looking). */
-const whereOf = (place: Parameters<typeof placeNameOf>[0]) => (place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (saved zone)` : placeNameOf(place))
+const agoOf = (at?: number) => {
+  const m = at ? Math.max(0, Math.round((Date.now() - at) / 60_000)) : null
+  return m == null ? '' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
+}
+const whereOf = (place: Parameters<typeof placeNameOf>[0]) => {
+  if (place?.source === 'last') {
+    const ago = agoOf(place.fixAt)
+    return `${placeNameOf(place).replace(' · last known', '')} (last known${ago ? `, ${ago}` : ''})`
+  }
+  return place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (no location yet, set your home in Settings)` : placeNameOf(place)
+}
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
