@@ -154,6 +154,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .jk-head .lk-x { flex: none; }
 .jk-sos .sos-simple { display: flex; flex-direction: column; }
 .jk-sos .sos-simple-btn { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 16px; border-radius: 20px; background: var(--danger-bg); color: #fff; text-align: left; width: 100%; border: 0; font: inherit; touch-action: none; }
+.jk-sos .sos-simple-btn.holding { background: #8E1B14; }
 .jk-sos .sos-simple-btn::before { content: "SOS"; width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.16); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; }
 .jk-sos .sos-simple-btn > span { font-size: 20px; font-weight: 700; }
 .jk-sos .sos-simple-sub { color: var(--muted); font-size: 15px; margin: 8px 4px 0; }

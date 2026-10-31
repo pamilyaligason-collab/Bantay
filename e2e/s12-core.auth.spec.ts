@@ -130,9 +130,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Mark these taken' }).click()
     await expect(page.getByText('Marked Metformin taken')).toBeVisible()
     expect(await count(page, 'bantay-log', 'meds')).toBe(1) // one row, not two
-    const sos = page.getByRole('button', { name: 'Hold to call and text your family' })
-    await sos.scrollIntoViewIfNeeded()
-    await expect(sos).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Hold to call and text your family' })).toHaveCount(0) // SOS lives in the Jack sheet now
     await settle(page)
     await shot(page, 'today-sos', scheme)
     await noSideways(page)

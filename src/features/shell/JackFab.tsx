@@ -89,7 +89,8 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const onClose = useCallback(() => setSheet(false), [])
   const onSos = useCallback(() => { setSheet(false); setSos(true) }, [])
 
-  if (!visible) return null
+  const sosScreen = sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body) // outlives the button: a warning or Simple mode hiding Jack must not end a running SOS
+  if (!visible) return sosScreen || null
   return (
     <>
       <button
@@ -100,7 +101,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
       </button>
       {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits ? undefined : { visibility: 'hidden' }}>Help, scan or chat</p>}
       {sheet && <JackSheet onClose={onClose} onSos={onSos} firstName={firstOf(name)} />}
-      {sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body)}
+      {sosScreen}
     </>
   )
 }

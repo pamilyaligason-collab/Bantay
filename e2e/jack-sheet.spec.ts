@@ -21,7 +21,7 @@ test('Chat opens the assistant; Escape closes the sheet; a 3 s hold opens the SO
   await page.getByTestId('jack').click()
   const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
   await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true }); await page.waitForTimeout(3100)
-  await expect(page.getByTestId('sos-full')).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible()
   await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
 })
 test('reduced motion: the sheet still opens and closes', async ({ page }) => {
