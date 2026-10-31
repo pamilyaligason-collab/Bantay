@@ -42,17 +42,14 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-iconbtn .sh-badge { position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
 
 /* tab bar: glass fill and edge come from glass.css (D-71). The pill slides behind the active tab. Five slots (Today, Health, Discover, Family, Safety), so --slot is the tab index 0..4. */
-.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(var(--tabbar-gap) + var(--sab)); height: var(--tabbar-h); border-radius: 28px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
-.tabbar.sh-tabs::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 22px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
-.sh-tabs button { position: relative; background: none; border: 0; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 600; color: var(--ink); min-height: 56px; min-width: 0; }
+.tabbar.sh-tabs { position: absolute; left: 12px; right: 12px; bottom: calc(var(--tabbar-gap) + var(--sab)); height: var(--tabbar-h); border-radius: 32px; box-shadow: var(--shadow-float); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; z-index: 5; overflow: visible; }
+.tabbar.sh-tabs::before { content: ""; position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc((100% - 12px) / 5); border-radius: 26px; background: var(--fill); transform: translateX(calc(var(--slot, 0) * 100%)); opacity: var(--pill, 0); transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-base) var(--ease-out); pointer-events: none; }
+.sh-tabs button { position: relative; background: none; border: 0; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); min-height: 52px; min-width: 0; }
 @media (hover: hover) { .sh-tabs button:not([aria-current="page"]):hover { background: var(--fill); } }
-.sh-tabs button[aria-current="page"] { color: var(--ink); background: none; }
-.sh-tabs button[aria-current="page"] .sh-ic { color: var(--green2); }
+.sh-tabs button[aria-current="page"], .sh-tabs button[aria-current="page"] .sh-ic { color: var(--green); background: none; }
 .sh-tabs button > span:not(.sh-tabbadge) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 200% text on a small phone: five labels cannot fit 35px slots, so keep icons (each button has an aria-label) and the active tab's label (UI-3) */
 :root[data-narrow] .sh-tabs button:not([aria-current="page"]) > span:not(.sh-tabbadge) { display: none; }
-:root[data-theme="dark"] .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-tabs button[aria-current="page"] .sh-ic { color: var(--amber); } }
 
 /* Scrolling content ends above the tab bar: one global rule, the `.scroll::after` spacer (height from var(--tabbar-clear)) in app.css. */
 
