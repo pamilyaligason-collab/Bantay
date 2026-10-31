@@ -2,15 +2,16 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
+  // S16: Plan is a sub-screen of Family (Back + title header), reached from the Plan row on the Family root
   await page.goto('/#family/plan')
+  await expect(page.locator('h1')).toHaveText('Plan')
+  await page.getByRole('link', { name: 'Back to Family' }).click()
   await expect(page.locator('h1')).toHaveText('Family')
-  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Home' }).click()
-  await expect(page.getByRole('button', { name: 'Home', pressed: true })).toBeVisible()
-  await expect(page.locator('h1')).toHaveText('Family')
+  await expect(page.getByRole('button', { name: 'Family', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page).toHaveURL(/#family$/)
   await page.goBack()
-  await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
+  await expect(page.locator('h1')).toHaveText('Plan')
+  await expect(page).toHaveURL(/#family\/plan$/)
 })
 
 test('installable: manifest fields and service worker', async ({ page }) => {
@@ -70,9 +71,9 @@ test('sub-pages show only their own header; tab roots keep the top bar', async (
 test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await page.getByRole('link', { name: /Me and settings/ }).click()
+  await page.getByRole('link', { name: /Settings/ }).click()
   await expect(page).toHaveURL(/#me$/)
-  await expect(page.locator('h1')).toHaveText('Me')
+  await expect(page.locator('h1')).toHaveText('Settings')
   await page.goto('/#today')
   await page.getByRole('link', { name: /Notifications/ }).click()
   await expect(page).toHaveURL(/#notif$/)
@@ -82,7 +83,7 @@ test('avatar opens Me and bell opens notifications', async ({ page }) => {
 
 test('Me: sharing is the server list (#sharing), no tab is active, Family no longer shows phone settings', async ({ page }) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/family')
   await expect(page.getByRole('link', { name: /Who can see my records/ })).toHaveAttribute('href', '#sharing')
   await expect(page.getByRole('switch', { name: 'Share readings' })).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Main' }).locator('[aria-current="page"]')).toHaveCount(0)

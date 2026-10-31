@@ -6,7 +6,7 @@ import '../m7a.css'
 
 type View = { s: 'loading' } | { s: 'ok'; topic: Topic; old: boolean } | { s: 'none' } | { s: 'offline' }
 
-/** #health/library/<key>: one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
+/** #discover/learn/library/<key> (was #health/library/<key>): one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
 export default function Article({ rawKey }: { rawKey: string }) {
   const key = parseKey(rawKey)
   const [view, setView] = useState<View>({ s: 'loading' })
@@ -30,7 +30,7 @@ export default function Article({ rawKey }: { rawKey: string }) {
   const heading = view.s === 'ok' ? view.topic.title : key ? key.text.replace(/\b\w/g, (c) => c.toUpperCase()) : 'Article'
   return (
     <>
-      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to the library" />
+      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
       <article className="card ar-art" data-testid="article">
         <h2 className="ar-h">{heading}</h2>
         {view.s === 'loading' && <p className="sub" role="status">Loading...</p>}

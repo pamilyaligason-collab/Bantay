@@ -61,7 +61,7 @@
 .sos-resume { width: 100%; box-sizing: border-box; flex: none; }
 .sos-simple { display: grid; gap: 10px; justify-items: stretch; text-align: center; }
 .sos-simple-btn { min-height: 84px; border: 0; border-radius: 42px; background: var(--danger-bg); color: #fff; font: inherit; font-size: 22px; font-weight: 800; padding: 0 20px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.sos-simple-btn.holding { background: var(--red); }
+.sos-simple-btn.holding { background: #8E1B14; } /* white text 9:1 in both themes (the dark --red was 3.2:1) */
 .sos-simple-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
 .sos-simple-sub { margin: 0; font-size: 16px; }
 .sos-911-btn { border: 0; font: inherit; font-weight: 700; width: 100%; box-sizing: border-box; }

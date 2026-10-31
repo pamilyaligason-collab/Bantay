@@ -6,7 +6,7 @@ import type { Reading } from '../health/ranges'
 import { bpDoctorOf, type BpArg } from '../health/verdict'
 import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingPersonId } from '../viewas/viewAs'
 import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeekLogic'
 import { useSeenDaily } from './seen'
 import { dayKey } from '../discover/play/score'
@@ -63,7 +63,7 @@ function TileView({ t }: { t: Tile }) {
 
 /** Today's "My week": the signed-in person's last 7 days as tiles. No data for a tile: it is not drawn. No data at all: the card is not drawn. */
 export default function MyWeek() {
-  const personId = useSelfPersonId() ?? ''
+  const personId = useActingPersonId() ?? ''
   const { readings, takes, doctor } = useWeekData(personId)
   const activity = useActivity(personId, DAYS + 1)
   const meds = useMedications(personId)

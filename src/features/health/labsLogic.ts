@@ -97,23 +97,23 @@ export function lastThree(readings: Reading[], test: string, family?: Range | nu
 
 // ---- static text: what a test measures and questions to ask. FOR CLINICIAN REVIEW (docs/session-8/CLINICAL-REVIEW.md). ----
 // Plain-language wording follows MedlinePlus lab-test pages (https://medlineplus.gov/lab-tests/); nothing here diagnoses.
-export interface LabInfo { measures: string; questions: string[] }
+export interface LabInfo { measures: string; short: string; questions: string[] }
 const INFO: Record<string, LabInfo> = {
-  ldl: { measures: 'LDL is the cholesterol that can build up in the walls of blood vessels.', questions: ['Is my LDL where you want it for me?', 'Should I change what I eat, or my medicines, because of this?'] },
-  hdl: { measures: 'HDL is the cholesterol that helps carry other cholesterol away from the blood.', questions: ['Is my HDL a concern for me?', 'Would more walking or activity help?'] },
-  total_cholesterol: { measures: 'Total cholesterol adds up the different kinds of cholesterol in your blood.', questions: ['What should my cholesterol numbers be for me?', 'When should I have this checked again?'] },
-  triglycerides: { measures: 'Triglycerides are a type of fat in the blood. Eating before the test can raise them.', questions: ['Was this test taken fasting, and does that matter?', 'What could lower my triglycerides?'] },
-  hba1c: { measures: 'HbA1c shows your average blood sugar over about the last three months.', questions: ['What HbA1c should I aim for?', 'Do my medicines or meals need to change?'] },
-  fasting_glucose: { measures: 'Fasting glucose is the sugar in your blood after not eating for several hours.', questions: ['Is my fasting sugar where you want it?', 'How often should I check at home?'] },
-  egfr: { measures: 'eGFR is an estimate of how well your kidneys are filtering your blood.', questions: ['What does my kidney score mean for me?', 'Are any of my medicines a concern for my kidneys?'] },
-  creatinine: { measures: 'Creatinine is a waste product that the kidneys remove from the blood.', questions: ['Is my creatinine a concern for my kidneys?', 'Should I drink more water, or take anything differently?'] },
-  hemoglobin: { measures: 'Hemoglobin is the part of red blood cells that carries oxygen around the body.', questions: ['Could my hemoglobin be why I feel tired?', 'Do I need any other test to find the reason?'] },
-  platelets: { measures: 'Platelets are small blood cells that help the blood to clot.', questions: ['Is my platelet count a concern for me?', 'Should I avoid any medicines because of it?'] },
-  wbc: { measures: 'White blood cells help the body fight infection.', questions: ['Is my white blood cell count a concern for me?', 'Should this be repeated, and when?'] },
-  uric_acid: { measures: 'Uric acid is a waste product. Too much can collect in joints.', questions: ['Is my uric acid a concern for my joints or kidneys?', 'Are there foods I should limit?'] }
+  ldl: { short: 'Cholesterol that can build up in blood vessels', measures: 'LDL is the cholesterol that can build up in the walls of blood vessels.', questions: ['Is my LDL where you want it for me?', 'Should I change what I eat, or my medicines, because of this?'] },
+  hdl: { short: 'Cholesterol that carries other cholesterol away', measures: 'HDL is the cholesterol that helps carry other cholesterol away from the blood.', questions: ['Is my HDL a concern for me?', 'Would more walking or activity help?'] },
+  total_cholesterol: { short: 'All the cholesterol in your blood', measures: 'Total cholesterol adds up the different kinds of cholesterol in your blood.', questions: ['What should my cholesterol numbers be for me?', 'When should I have this checked again?'] },
+  triglycerides: { short: 'A type of fat in the blood', measures: 'Triglycerides are a type of fat in the blood. Eating before the test can raise them.', questions: ['Was this test taken fasting, and does that matter?', 'What could lower my triglycerides?'] },
+  hba1c: { short: 'Average sugar over about 3 months', measures: 'HbA1c shows your average blood sugar over about the last three months.', questions: ['What HbA1c should I aim for?', 'Do my medicines or meals need to change?'] },
+  fasting_glucose: { short: 'Blood sugar after not eating for hours', measures: 'Fasting glucose is the sugar in your blood after not eating for several hours.', questions: ['Is my fasting sugar where you want it?', 'How often should I check at home?'] },
+  egfr: { short: 'How well the kidneys filter your blood', measures: 'eGFR is an estimate of how well your kidneys are filtering your blood.', questions: ['What does my kidney score mean for me?', 'Are any of my medicines a concern for my kidneys?'] },
+  creatinine: { short: 'A waste product the kidneys remove', measures: 'Creatinine is a waste product that the kidneys remove from the blood.', questions: ['Is my creatinine a concern for my kidneys?', 'Should I drink more water, or take anything differently?'] },
+  hemoglobin: { short: 'Carries oxygen in red blood cells', measures: 'Hemoglobin is the part of red blood cells that carries oxygen around the body.', questions: ['Could my hemoglobin be why I feel tired?', 'Do I need any other test to find the reason?'] },
+  platelets: { short: 'Small cells that help blood clot', measures: 'Platelets are small blood cells that help the blood to clot.', questions: ['Is my platelet count a concern for me?', 'Should I avoid any medicines because of it?'] },
+  wbc: { short: 'Cells that help fight infection', measures: 'White blood cells help the body fight infection.', questions: ['Is my white blood cell count a concern for me?', 'Should this be repeated, and when?'] },
+  uric_acid: { short: 'A waste product that can collect in joints', measures: 'Uric acid is a waste product. Too much can collect in joints.', questions: ['Is my uric acid a concern for my joints or kidneys?', 'Are there foods I should limit?'] }
 }
 const ALIAS: Record<string, string> = { hdlcholesterol: 'hdl', ldlcholesterol: 'ldl', cholesterol: 'total_cholesterol', totalcholesterol: 'total_cholesterol', glucose: 'fasting_glucose', fbs: 'fasting_glucose', hgb: 'hemoglobin', haemoglobin: 'hemoglobin', plt: 'platelets', platelet: 'platelets', whitebloodcell: 'wbc', uricacid: 'uric_acid', crea: 'creatinine' }
-const NEUTRAL: LabInfo = { measures: 'A test from your lab results. Your doctor can explain what it shows for you.', questions: ['What does this result mean for me?', 'Do I need to do anything about it, or repeat the test?'] }
+const NEUTRAL: LabInfo = { short: 'A test from your lab results', measures: 'A test from your lab results. Your doctor can explain what it shows for you.', questions: ['What does this result mean for me?', 'Do I need to do anything about it, or repeat the test?'] }
 export function labInfo(test: string): LabInfo & { known: boolean } {
   const t = test.toLowerCase()
   const hit = INFO[t] ?? INFO[ALIAS[t.replace(/[^a-z0-9]/g, '')] ?? '']

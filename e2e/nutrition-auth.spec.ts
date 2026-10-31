@@ -68,8 +68,9 @@ for (const scheme of ['light', 'dark'] as const) {
       test.setTimeout(120_000) // long flow with five axe runs; 30 s is not enough on a busy PC
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.getByRole('button')).toHaveCount(6)
-      for (const b of await row.getByRole('button').all()) {
+      await expect(row.locator('.td-q')).toHaveCount(6) // v12: six tiles in a 3 x 2 grid; the How are you? tile also holds the small I'm OK button
+      await expect(row.getByRole('button', { name: "I'm OK" })).toBeVisible()
+      for (const b of await row.locator('.td-q').all()) {
         const box = (await b.boundingBox())!
         expect(box.height).toBeGreaterThanOrEqual(72)
         expect(box.width).toBeGreaterThanOrEqual(44)
@@ -175,7 +176,7 @@ for (const scheme of ['light', 'dark'] as const) {
         { personId: 'me', takenAt: at(2, 8), test: 'bp_systolic', value: 132, unit: 'mmHg' }
       ])
       await page.reload()
-      await page.evaluate(() => { location.hash = '#health' })
+      await page.evaluate(() => { location.hash = '#health/move' }) // S16: Food is the row under Move
       const link = page.getByRole('link', { name: /^Food/ })
       await expect(link).toBeVisible()
       expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(56)

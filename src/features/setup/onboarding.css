@@ -1,0 +1,21 @@
+/* Onboarding screens 1-5 (S16 L8, mockup v12 onboard-1..5-done). Dots only; every screen fits one phone screen (D-102: <= 700 px). */
+.ob-dots { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 24px; }
+.ob-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--sep); transition: background-color var(--dur-fast, .15s) var(--ease-out, ease-out); }
+.ob-dots i.on { background: var(--btn, var(--act)); width: 14px; height: 14px; }
+.ob-top { display: flex; justify-content: flex-end; }
+.ob-skip { min-width: 72px; min-height: 48px; border: 0; background: transparent; color: var(--act); font-size: 17px; font-weight: 600; border-radius: 12px; }
+.ob-page { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; }
+.ob-page > * { min-width: 0; }
+.ob-grow { flex: 1; }
+.ob-center { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.ob-center h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; overflow-wrap: anywhere; }
+.ob-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ob-note { margin: 0; font-size: 14px; color: var(--ink2); }
+.ob-consent { margin: 0; font-size: 14px; color: var(--ink2); text-align: center; }
+.ob-actions { display: grid; gap: 10px; }
+.ob-actions .btn, .ob-actions .btn2 { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ob-bad { margin: 0; font-size: 15px; font-weight: 600; color: var(--red, var(--danger)); }
+@media (prefers-reduced-motion: no-preference) { .ob-slide { animation: ob-in .24s var(--ease-out, ease-out); } }
+@keyframes ob-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+/* Each screen is as tall as its content, at least 640 px, so it stays within the 700 px budget on any phone (D-102). */
+.scroll.ob-main { flex: 0 1 auto; min-height: 640px; }

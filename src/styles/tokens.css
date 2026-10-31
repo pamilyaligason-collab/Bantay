@@ -13,6 +13,7 @@
   --c1: #2B6CC4; --c2: #C2610F; --band: rgba(43,108,196,0.12);
   --orange: #C93400; --indigo: #5856D6; --teal: #0071A4; --purple: #8E44B8;
   --c-medicine: var(--green2); --c-vitals: #2F6F86; --c-labs: #5B4B8A; --c-weather: #3B6EA5; --c-safety: #4A5BA8; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--green2);
+  --hue-blue: #DCEBF0; --hue-blue-ic: #1F5A6E; --hue-green: #DCE5D8; --hue-green-ic: #2E5A3F; --hue-lilac: #E6E0F0; --hue-lilac-ic: #4F3F80; --hue-amber: #F3E4CC; --hue-amber-ic: #7A4E05; --hue-terra: #F6DFD6; --hue-terra-ic: #9A3B22;
   --glass-bg: rgb(255 252 246 / .72); --glass-sheet: rgb(255 252 246 / .9); --glass-edge: rgb(255 255 255 / .6); --glass-blur: blur(20px) saturate(160%);
   --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
@@ -32,6 +33,7 @@
   --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
   --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
   --c-medicine: var(--ok); --c-vitals: #7CB8CF; --c-labs: #B3A6E0; --c-weather: #8DB4E2; --c-safety: #A5B0F0; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--ink);
+  --hue-blue: var(--card); --hue-blue-ic: #8CC6DA; --hue-green: var(--card); --hue-green-ic: #8FD1A6; --hue-lilac: var(--card); --hue-lilac-ic: #C2B5EA; --hue-amber: var(--card); --hue-amber-ic: #F0B54C; --hue-terra: var(--card); --hue-terra-ic: #F2A58F;
   --glass-bg: rgb(24 35 28 / .70); --glass-sheet: rgb(24 35 28 / .70); --glass-edge: rgb(255 255 255 / .10);
   color-scheme: dark;
 }
@@ -50,6 +52,7 @@
     --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
     --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
     --c-medicine: var(--ok); --c-vitals: #7CB8CF; --c-labs: #B3A6E0; --c-weather: #8DB4E2; --c-safety: #A5B0F0; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--ink);
+    --hue-blue: var(--card); --hue-blue-ic: #8CC6DA; --hue-green: var(--card); --hue-green-ic: #8FD1A6; --hue-lilac: var(--card); --hue-lilac-ic: #C2B5EA; --hue-amber: var(--card); --hue-amber-ic: #F0B54C; --hue-terra: var(--card); --hue-terra-ic: #F2A58F;
     --glass-bg: rgb(24 35 28 / .70); --glass-sheet: rgb(24 35 28 / .70); --glass-edge: rgb(255 255 255 / .10);
     color-scheme: dark;
   }

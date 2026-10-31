@@ -191,3 +191,130 @@ Separately, C-5 offers `exitViewAs()` inside `auth/session.ts` (`:350`). That br
 - r-4 `viewas` importing `admin/desk/viewAsData.ts` also pulls `admin/api` (`viewAsData.ts:2`) into the main bundle. Lazy-import it inside `enterViewAs` / `useViewedVisibleIds`.
 
 Not checked: the mockup frames, and the full direct-RPC write inventory beyond the files named in R-1 and R-2.
+
+---
+
+# Re-review 2 (Opus, 2026-10-30, PLAN.md Revision 3: D-98, D-99 look and act, D-100, L8, L9)
+
+## Verdict: NO_GO for section 1.6 as written; everything else is GO_WITH_CHANGES
+
+Two blockers remain, and both are in the act-as plumbing, not in the D-99 rules. The rules themselves are right and checked against the migrations:
+- `meds_taken`, `readings`, `activity`: self-or-writer only (`0003:88-98`, `0001:115`).
+- `raise_mood_alert`: person or can_write carer, once per person per day (`0030:75-82`).
+- `rollcall_set`: self-or-writer; `user_id = auth.uid()` (`0041:67-73`).
+- Nutrition allows admins (`0024:77`).
+- `marked_by` is set by trigger (`0039:21`), and the plan correctly says `saveProfile` adopts (`profile.ts:85`).
+
+Fix B2-1 and B2-2 in 1.6/C-5, then Opus re-reviews only 1.6 and the L6 brief. The majors can go straight into the briefs.
+
+## Blockers
+
+### B2-1 The `db.ts enqueue` backstop breaks SOS and silently loses the admin's own writes
+Design at `PLAN:245-264`. Checked against the code:
+- **SOS refused offline.** The SOS rule compares against `selfIdNow()`. Offline that returns null: `getMember()`'s `people` query fails, so `personId` is null (`auth/session.ts:19-27`, `profile.ts:236-238`). SosScreen takes its id from `selfIdOrCached()` (cached, `SosScreen.tsx:112`), so `pid !== null` throws `acting:sos-not-self`. `ok` becomes false and the SOS is not recorded (`SosScreen.tsx:119-125`). SOS must never be refused (`0031_sos.sql:50`). `selfIdNow()` also costs two network round-trips on every acting write, inside the 3 s SOS budget.
+- **SOS follow-ups and acks refused.** `sos_events_update` (SMS opened, cancel) and `sos_acks` (`family/IncomingSos.tsx`) are in neither set, so `acting:unknown-table` fires. While acting, the admin cannot cancel his own SOS or acknowledge a family member's real SOS. `phone_health` (`phonecheck/report.ts`), `push_subscriptions` (`notify/subscribe.ts`), `nutrition_goals` and `safety_overrides` fail the same way.
+- **Silent data loss.** "Refuse the admin's own self rows" plus local-first writes loses data. `log/store.ts:73,79,92` writes the local Dexie row first and then calls `enqueue`. A throw leaves a local row that never syncs. Several legitimate background writes for the admin's own person run while he is acting:
+  - Health Connect sync (`sensors/health.ts:236-237`): dedupe then skips the steps forever.
+  - Dose reminder "Taken" from the admin's own notification (`health/reminderActions.ts:41-60`): his dose looks taken on the phone and missed on the server, so carers get `dose_missed`.
+  - Move log (`exercise/actions.ts:11-14`).
+  - The pulse from a BP reply (`nudge/bpReminder.ts:111-114`).
+  - A dependant's reminder "Taken" for someone other than the acting member is refused as `acting:mismatch`.
+
+  The "every queued row is for the member" invariant (C-6, `PLAN:379`) is wrong. While acting, the admin is still a person whose phone keeps working.
+
+**Change:** drop the person check from the backstop entirely. Correctness comes from explicit ids at the named UI entry points plus the import allowlist (already in 1.6). Keep one narrow guard: refuse `people_profile` where `payload.id === acting` (the member's profile must never be adopted). Put it in `saveProfile` before its local write, or in a guard registered with `db.ts`. Do not import `viewas` or `sync/profile` into `db.ts`: `db.ts` ← `sync/profile.ts:1` and `setup/useProfile.ts:3` would form an import cycle at app start. Add tests:
+- SOS enqueues while acting, online and offline;
+- `sos_acks` and `sos_events_update` pass;
+- a sensors sync and a reminder Taken for the admin while acting both reach the outbox.
+
+### B2-2 A global acting id inside `asPerson` logs the admin's own notification replies into the member's record
+C-5 (`PLAN:375`) makes `today/actions.ts asPerson` return `getActingPersonId() ?? selfIdOrCached()`. `asPerson` is shared by non-UI paths. `nudge/bpReminder.ts:7` imports `logBp` from it. When the admin replies "130/85" to **his own** BP reminder notification while acting, the BP goes into **Mama's** readings, while the pulse goes to him (`bpReminder.ts:111-114`, explicit `selfIdOrCached`). That is wrong-person health data.
+
+This also contradicts 1.6's own rule: "writes pass the viewed person id explicitly" (D-99).
+
+**Change:** `asPerson` stays `selfIdOrCached()`. Each exported logger (`checkIn`, `logFeeling`, `takeDose`, `takeMedication`, `logBp`, `logSugar`, `logWeight`) gets an optional `personId` parameter. Only the UI entry points pass `useActingPersonId()`: QuickLog, NextUp, SimpleToday, the Today I'm OK, the FacesRow I'm OK, StormCard. Drop the `asPerson` row from C-5. Extend the allowlist test so `getActingPersonId` is not imported by `today/actions.ts`.
+
+## Majors
+
+### M2-1 The queued "Unwell" is one slot for the whole phone, so one person's later mood drops another's alert
+`today/actions.ts:49` deletes `mood.unsent` on any non-Unwell mood, and `queueUnsent` (`:58-60`) keeps a single `{ personId }`. Offline:
+1. The admin logs Unwell for Mama; it is queued.
+2. The admin logs his own "Great"; Mama's queued alert is deleted.
+3. Mama's carers are never told.
+
+**Change (L6, `actions.ts`):** key it `mood.unsent.<personId>`. Only the same person's later mood supersedes it. `retryOnce` sends every key. Add a test.
+
+### M2-2 Write paths in the plan's own table have no owner, and one is missing
+- The nutrition row (`PLAN:236`) changes `nutrition/actions.ts:21` (`selfIdOrCached`), `PlateSheet.tsx:25`, `WaterSheet.tsx:9` and `SaltSummary.tsx:72`. None of these is in L2's file list (`PLAN:386`), nor in any other lane.
+- `exercise/actions.ts:11` (Move) and `exercise/data.ts:45` are not in the write table at all. Rev 2 said Move "shows yourself", and rev 3 is silent.
+
+**Change:** add `nutrition/{actions.ts,PlateSheet,WaterSheet,SaltSummary,NutritionScreen}.tsx` to L2 with explicit `personId`. For exercise, either add it to L2 the same way, or state that Move is "yourself only" and disable its log button while acting with a reason.
+
+### M2-3 The animated sky and Aurora sit behind the SOS screen
+`Sky` is mounted once at the App root (`App.tsx` `<Sky state="clear" />`), behind every screen. SosScreen replaces only Today's content (`Today.tsx:66`). Section 8 puts the WebGL2 Aurora in `look/Sky.tsx` (`PLAN:453-454`) with no SOS rule. A WebGL context loss or a jank spike while GPS, the call and SMS are starting is a risk on the one path that must not fail.
+
+**Change (L9, C-6):** `Sky` renders static, with no WebGL canvas, whenever the SOS screen, Simple mode SOS or a live `IncomingSos` is up, and on `#safety*`. Add an `s16-motion` case: hold SOS with Aurora enabled → no `<canvas>` in the DOM.
+
+### M2-4 The consent and sharing copy overclaims privacy (ML-12) and points to the wrong screen
+The onboarding screen 5, Wizard and StartDone copy (`PLAN:280,282`) says "Your records stay private until you share them and the person accepts … Change this in Settings > Privacy." Two problems:
+- Admins can also offer a viewer for any member. The member is told only at offer time (`0037_sharing.sql:12-13,113-115`; D-80, D-82).
+- "Who can see my records" lives in Settings > **Family and sharing** (`PLAN:199`), not Privacy.
+
+**Change:** "Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing."
+
+### M2-5 Lanes built in parallel need L9 components that do not exist in their base
+- L1 renders `<BreathOrb>` (C-5 `PLAN:378`).
+- L8's First success uses `CheckDraw` (`PLAN:280`).
+- Both are L9 files (`PLAN:393`), and the L1 and L8 worktrees start from L0, where neither exists. `tsc` fails in those lanes, the same class as M-4 in the first review.
+- `look/index.ts` is L0's, so L9 cannot export from it.
+
+**Change:** L0 stubs `look/BreathOrb.tsx` (static disc + label) and `look/CheckDraw.tsx` (static tick) with their final props. L9 replaces them. Other lanes import by file path, not via `index.ts`.
+
+## Minors
+- m2-1 `useActingCan` (`PLAN:226`) reads `listCarers()` live. It does not say what happens offline or on a failed read. Cache the result at `enterActing` time, which is online anyway, and fail closed to "View only" only when there is no cache.
+- m2-2 The test reminder (`PLAN:280`): `setup/steps.ts:121 scheduleTest` uses the default channel, so it may not "ring". Reuse `phonecheck/probe.ts:55 scheduleTestAlarm(5)` (alarm channel, permission check, `'no-permission'` result) (ML-10). If step 3 was skipped, step 5 shows "Turn on reminders first" instead of a test.
+- m2-3 POST_NOTIFICATIONS on Android 13+ works: manifest `:66`, targetSdk 36, `steps.turnOnReminders:66-72`. After two denials Android stops prompting, so step 3 and the Today alerts-off card need an "Open app settings" fallback. USE_EXACT_ALARM is auto-granted on 33+ (`:68`). Location `resolveLocation(true)` with the Geolocation plugin is fine (`useLocation.ts:36-56`).
+- m2-4 Dark contrast recomputed on `--card #18231C`:
+  - ink 14.11 and muted 7.26: these hold.
+  - Icons on card: 8.14-9.13. On the actual 18% chip they are 5.67 (terra) to 6.10 (green), which still holds.
+  - `contrast.test.ts` must test the icon against the chip colour, its real background (ML-39), not against `--card`.
+- m2-5 Ponytail: `look/motionBudget.ts` overlaps `look/useReducedMotion.ts` and `look/motion.ts`, which already exist, so extend those. `scripts/size-budget.mjs` does not exist and has no owner; give it to L9 or drop it for a `vite build` chunk-size check in the L9 test.
+- m2-6 A mood alert raised by the acting admin also reaches the admin himself, since `notify_family` excludes only the owner (`0030:60`). Messages sent while acting go out as Lloyd. Say both in the bar or the toast copy ("Sent as Lloyd").
+- m2-7 Section 4 (`PLAN:339`) says RLS refuses an admin without a link "for … roll call". True, but `rollcall_set` also needs `is_family_member()` (`0041:71`), so state both conditions in `useActingCan.rollcall`.
+
+## Ownership spot-check
+L8 and L9 do not collide with L1-L7. `setup/steps.ts` is L8's, and L0 adds the `useSetupLeft` stub before branching, which is fine. ML-38 fixed clocks are kept per lane, and ML-41 is covered by C-7.
+
+Not checked: the DESIGN-AUDIT wording items W-1..W-52 one by one, the mockup v11 frames, and the visits/appointments write path (no outbox table found for it).
+
+---
+
+# Re-review 3 (Opus, 2026-10-30, PLAN.md Revision 4: section 1.6, L6, B2-1, B2-2, M2-1..M2-5)
+
+## Verdict: GO
+
+No blockers or majors remain. The four minors below go into the L6 and L9 briefs as written; they do not need another review.
+
+## Checked against the code
+- **B2-1 fixed.** `db.ts enqueue` is unchanged (`PLAN:266`, C-6 `:388`), and L6 "does not touch `db.ts`" (`:399`).
+  - SOS, `sos_events_update`, `sos_acks`, `phone_health`, `push_subscriptions`, Health Connect (`sensors/health.ts:236`), the admin's own reminder Taken (`reminderActions.ts:41-60`), Move and the BP pulse all queue as before.
+  - `actingWrites.test.ts` pins this, including offline SOS with `getMember` rejecting.
+  - The profile guard runs before `adoptPerson` and before the local write (`:269`).
+- **B2-2 fixed.** `asPerson` stays `selfIdOrCached()` (`:250`, C-5 `:382`).
+  - The loggers get an optional trailing `personId`; `nudge/bpReminder.ts:7` passes none, so its BP and its pulse both go to the admin.
+  - The allowlist names `today/actions.ts`, `nudge/**` and `health/reminder*` as forbidden importers (`:275`).
+  - `markDue`/`markTaken` already take explicit people (`reminderActions.ts:50-53`), so NextUp and SimpleToday need no global.
+- **M2-1 fixed.** `mood.unsent.<personId>`, `retryUnsentMood` sends every key, and the test covers "Mama queued, own Great, Mama's still sent" (`:253,275`).
+- **M2-2 fixed.** The nutrition files are in L2 with an explicit `personId`. Exercise is "yourself only", with the Move log button off while acting (`:255-256,395`).
+- **M2-3 fixed in design.** Sky goes static with no canvas during SOS, a live IncomingSos and `#safety*` (`:387,458`), with an `s16-motion` canvas check. See r3-2 for the owner gap.
+- **M2-4 fixed.** The copy names the admin path and "Settings > Family and sharing" (`:287`), consistent with `0037_sharing.sql:12-13`.
+- **M2-5 fixed.** L0 stubs `BreathOrb` and `CheckDraw` with their final props, and L1/L8 import them by path (`:356,385-386`).
+- **Also verified:** m2-1 (carers cached at enter, fail closed offline), m2-7 (`rollcall = family member && log`) and m2-2 (`scheduleTestAlarm(5)`) are applied.
+
+## Minors (fold into briefs)
+- **r3-1 Guard placement.** `savePhoto` (`profile.ts:146`) also calls `adoptPerson` directly, and so does `applyPulledProfiles` (`:106`, self only). Put the one guard line in **`adoptPerson`** (`profile.ts:27`) instead of `saveProfile`. That is the single choke point for `saveProfile` (`:85`), `savePhoto` and pulls, and it is still before any local write. It is not reachable today, because `DetailsSheet` is mounted only from `Me.tsx:234` with the admin's own id and ✎ is off while acting. It costs the same one line.
+- **r3-2 SOS flag owner.** The "module flag the SOS screens set" (`PLAN:458`) has no owner. `SosScreen` is mounted in four places: `Today.tsx:66`, `SimpleToday.tsx:76`, `Safety.tsx:49` and `assistant/Assistant.tsx:372`. `useSosActive` (`family/sosActive.ts:11`) covers only an *incoming* family SOS. Give L9 one hook line in `sos/SosScreen.tsx`: a mount/unmount effect that sets the Sky flag (an import from `look/`, not `viewas`, so C-6 is not affected). This covers all four, including Jack's SOS, which no lane owns.
+- **r3-3 Import cycle.** The plan's "no cycle" claim (`:271`) is not quite true. `sync/profile.ts` would import `viewas/viewAs.ts`, which imports `setup/useProfile.ts`, which imports `sync/profile.ts` (`useProfile.ts:4`). It is harmless today, because all three modules only define functions at top level, but it is fragile. Put `getActingPersonId` and the subscribe set in a dependency-free `viewas/store.ts`, imported by `profile.ts`, and keep the hooks in `viewAs.ts`.
+- **r3-4 Acting as yourself.** The picker lists people "sorted self-first" (`:230`), but `getActingPersonId` is "never the admin's own id" (`:236`). `enterActing(ownPersonId)` must return false and the picker must leave out self. Otherwise the guard would block the admin's own profile edits.
+
+Not re-checked: sections outside 1.6 and the L6 brief, and the items of earlier rounds beyond those listed above.

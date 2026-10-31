@@ -38,7 +38,16 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode has no Jack button, so its hint must not count as seen
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const held = useRef(false) // a hold opened the sheet; the click that follows the release must not also open Jack
-  const visible = tab !== null && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
+  const [nofab, setNofab] = useState(false) // a storm or quake warning on screen marks itself data-nofab (D-91): nothing but the warning's own buttons
+  useEffect(() => {
+    const root = document.querySelector('.bt') ?? document.body
+    const check = () => setNofab(!!document.querySelector('[data-nofab]'))
+    check()
+    const mo = new MutationObserver(check)
+    mo.observe(root, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [hash])
+  const visible = tab !== null && !nofab && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
   const hint = visible && loaded && !seen && !sheet && tab === 'today'
   const hintRef = useRef<HTMLParagraphElement>(null)
   const [fits, setFits] = useState(false) // the hint is measured before it shows; it stays hidden while it would cover text
@@ -54,13 +63,15 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     const check = () => { const r = hintRef.current?.getBoundingClientRect(); if (r) setFits(!coversText(r)) }
     check()
     const scroller = document.querySelector('.bt .scroll')
+    const bt = document.querySelector('.bt')
+    bt?.setAttribute('data-hint', '') // the page end makes room for the coach mark too, so it has a clear spot at the bottom (shell.css)
     let raf = 0
     const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(check) } // cards load after first paint, so re-measure when the page changes too
     const mo = new MutationObserver(later)
     if (scroller) mo.observe(scroller, { childList: true, subtree: true, characterData: true })
     scroller?.addEventListener('scroll', later, { passive: true })
     window.addEventListener('resize', later)
-    return () => { cancelAnimationFrame(raf); mo.disconnect(); scroller?.removeEventListener('scroll', later); window.removeEventListener('resize', later) }
+    return () => { bt?.removeAttribute('data-hint'); cancelAnimationFrame(raf); mo.disconnect(); scroller?.removeEventListener('scroll', later); window.removeEventListener('resize', later) }
   }, [hint])
   useEffect(() => { // the coach mark shows once: it counts as seen after 8 seconds on screen, so it never sits on the page again
     if (!hint || !fits) return

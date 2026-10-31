@@ -71,4 +71,4 @@ export function parseKey(raw: string): { kinds: TopicKind[]; text: string } | nu
   if (!m || !m[2]!.trim()) return null
   return { kinds: m[1] === 'c' ? ['condition'] : m[1] === 'm' ? ['medicine'] : ['condition', 'medicine'], text: m[2]!.trim() }
 }
-export const articleHref = (prefix: 'c' | 'm' | 's', text: string) => `#health/library/${encodeURIComponent(`${prefix}:${text}`)}`
+export const articleHref = (prefix: 'c' | 'm' | 's', text: string) => `#discover/learn/library/${encodeURIComponent(`${prefix}:${text}`)}`

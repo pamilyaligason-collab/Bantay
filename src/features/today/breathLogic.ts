@@ -53,9 +53,12 @@ export const MOODS = [
   { v: 1, emoji: '😞', word: 'Low' }, { v: 2, emoji: '🙁', word: 'Down' }, { v: 3, emoji: '😐', word: 'Okay' },
   { v: 4, emoji: '🙂', word: 'Good' }, { v: 5, emoji: '😊', word: 'Great' }
 ] as const
-export interface SelfCareEntry { at: string; pattern: Pattern['id']; minutes: number; mood: number | null }
+/** W-16: the sheet asks Worse / Same / Better. They are stored on the same 1-5 scale as before (1, 3, 5), so older entries still read. */
+export const MOOD3 = [{ v: 1, word: 'Worse' }, { v: 3, word: 'Same' }, { v: 5, word: 'Better' }] as const
+export const moodWord = (v: number | null): string => (v == null ? '' : (MOOD3.find((m) => m.v === v) ?? MOODS[v - 1])?.word ?? '')
+export interface SelfCareEntry { at: string; pattern: Pattern['id']; minutes: number; mood: number | null; personId?: string | null }
 /** Keeps the newest 60 and only valid fields: the log lives in this phone's storage and is never sent anywhere. */
 export function addEntry(log: unknown, e: SelfCareEntry): SelfCareEntry[] {
   const old = Array.isArray(log) ? (log as SelfCareEntry[]).filter((x) => x && typeof x.at === 'string' && typeof x.minutes === 'number') : []
-  return [...old, { ...e, mood: typeof e.mood === 'number' && e.mood >= 1 && e.mood <= 5 ? e.mood : null }].slice(-60)
+  return [...old, { ...e, personId: typeof e.personId === 'string' ? e.personId : null, mood: typeof e.mood === 'number' && e.mood >= 1 && e.mood <= 5 ? e.mood : null }].slice(-60)
 }

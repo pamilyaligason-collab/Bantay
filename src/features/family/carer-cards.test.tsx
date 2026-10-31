@@ -76,6 +76,12 @@ describe('pickSos', () => {
 })
 
 describe('IncomingSos (lock-sos)', () => {
+  // IncomingSos fires ack() on mount and does not await it. Unmounting does not cancel it, so a late ack from one test could write 'sos.acked' after the next beforeEach cleared it and make the next test's ack look already sent. Wait for every row's ack to land before moving on.
+  afterEach(async () => {
+    cleanup()
+    const refs = (h.rows as AlertRow[]).map((r) => r.ref).filter((x): x is string => !!x)
+    if (refs.length) await waitFor(async () => { const v = (await db.kv.get('sos.acked'))?.value; expect(refs.every((r) => Array.isArray(v) && v.includes(r))).toBe(true) }, { timeout: 8000 })
+  })
   it('shows nothing without a family SOS row', () => {
     const { container } = render(<IncomingSos placement="today" />)
     expect(container.firstChild).toBeNull()
@@ -118,7 +124,11 @@ describe('IncomingSos (lock-sos)', () => {
   it('opening it writes one sos_acks row for the event, and a second open writes no more', async () => {
     h.rows = [row('r1', {})]
     const a = render(<IncomingSos placement="today" />)
-    await waitFor(async () => expect((await db.outbox.toArray()).filter((o) => o.table === 'sos_acks')).toHaveLength(1))
+    // settled = the outbox row AND the remembered id are both written (ack() does them in two steps); the 1 s default is too short when the whole suite runs at once
+    await waitFor(async () => {
+      expect((await db.outbox.toArray()).filter((o) => o.table === 'sos_acks')).toHaveLength(1)
+      expect((await db.kv.get('sos.acked'))?.value).toEqual(['e1'])
+    }, { timeout: 8000 })
     const sent = (await db.outbox.toArray()).find((o) => o.table === 'sos_acks')!
     expect(sent.op).toBe('insert')
     expect(sent.payload).toMatchObject({ eventId: 'e1' })
@@ -126,6 +136,17 @@ describe('IncomingSos (lock-sos)', () => {
     render(<IncomingSos placement="family" />)
     await screen.findByRole('alert')
     expect((await db.outbox.toArray()).filter((o) => o.table === 'sos_acks')).toHaveLength(1)
+  })
+  it('a real second SOS (new event id) gets its own ack even after the first was acked', async () => {
+    h.rows = [row('r1', {})]
+    const a = render(<IncomingSos placement="today" />)
+    await waitFor(async () => expect((await db.kv.get('sos.acked'))?.value).toEqual(['e1']), { timeout: 8000 })
+    a.unmount()
+    h.rows = [row('r2', { ref: 'e2' })]
+    render(<IncomingSos placement="today" />)
+    await waitFor(async () => expect((await db.kv.get('sos.acked'))?.value).toEqual(['e1', 'e2']), { timeout: 8000 })
+    const acks = (await db.outbox.toArray()).filter((o) => o.table === 'sos_acks').map((o) => (o.payload as { eventId: string }).eventId)
+    expect(acks).toEqual(['e1', 'e2'])
   })
   it('D-78 copy: never promises a notification or a lock screen', async () => {
     h.rows = [row('r1', {})]

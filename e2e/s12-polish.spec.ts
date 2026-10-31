@@ -80,11 +80,13 @@ const endGap = async (page: Page) => {
   await expect(page.locator('nav[aria-label="Main"]')).toBeVisible()
   return page.evaluate(async () => {
   const main = document.querySelector('main.scroll') as HTMLElement
+  // the body of a closed <details> (Official sources on Weather) keeps a layout box but is not painted: it is not an item
+  const closedDetails = (e: HTMLElement) => { const d = e.closest('details'); return !!d && !d.open && !e.closest('summary') }
   // settled = the scroll height stops growing across two animation frames (late-rendering cards), then pin to the end
   let last = -1
   for (let i = 0; i < 60 && main.scrollHeight !== last; i++) { last = main.scrollHeight; await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))) }
   main.scrollTop = main.scrollHeight
-  const items = Array.from(main.querySelectorAll<HTMLElement>('*')).filter((e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.position !== 'fixed' && cs.visibility !== 'hidden' })
+  const items = Array.from(main.querySelectorAll<HTMLElement>('*')).filter((e) => { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.position !== 'fixed' && cs.visibility !== 'hidden' && !closedDetails(e) })
   const bottom = Math.max(...items.map((e) => e.getBoundingClientRect().bottom))
   const over = Math.min(document.querySelector('nav[aria-label="Main"]')!.getBoundingClientRect().top, document.querySelector('.sh-tabs .sh-bub')?.getBoundingClientRect().top ?? Infinity)
   return { bottom, over, scrolls: main.scrollHeight > main.clientHeight }
@@ -120,9 +122,9 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test(`S2: the temperature on the weather card is white on the dark sky, and no empty plan card (${scheme})`, async ({ page }) => {
       await open(page, 'today')
-      const card = page.locator('section[aria-label="Weather"] .wxs-host')
+      const card = page.getByTestId('weather-hero') // S16: the scene hero (SceneHero) replaced the old .wxs-host card
       await expect(card).toBeVisible()
-      for (const sel of ['.td-wx-t, .td-wxh-t', '.td-k, .td-wx-row b']) {
+      for (const sel of ['.td-wxh-t', '.sc-kicker']) {
         const color = await card.locator(sel).first().evaluate((e) => getComputedStyle(e).color)
         expect(color, sel).toBe('rgb(255, 255, 255)') // white on SKY + SCRIM, which scene.test.ts proves is at least 4.5:1
       }
@@ -131,16 +133,14 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, `today-${scheme}`)
     })
 
-    test(`S6, S7: Health with old readings only has one empty state, a proper-case name and one Lab results row (${scheme})`, async ({ page }) => {
+    test(`S6, S7: Health with old readings only has one empty hero and one Labs tile (${scheme})`, async ({ page }) => {
       await open(page, 'health')
-      await expect(page.getByTestId('no-vitals')).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'No vitals yet for Loyd' })).toBeVisible()
+      await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
       await expect(page.getByTestId('insight')).toHaveCount(0)
       await expect(page.getByTestId('nudge')).toHaveCount(0)
-      await expect(page.getByTestId('no-vitals').locator('.empty-state')).toHaveCount(1) // the h2 above it is its screen-reader heading
-      const labs = page.getByTestId('labs-row') // S14: the overview keeps one row, the list lives on #health/labs
+      const labs = page.getByTestId('glance-labs') // S14: the overview keeps one tile, the list lives on #health/labs
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs).toContainText('Last paper')
+      await expect(labs).toHaveAttribute('href', '#health/labs')
       await shot(page, `health-labs-${scheme}`)
     })
 
@@ -160,15 +160,21 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(roll).toContainText('Last OK 3 days ago')
       await expect(roll).toContainText('No check-in yet')
       await expect(roll).not.toContainText('💤')
-      await roll.getByRole('button', { name: 'Message Papa' }).click() // non-carers still reach Messages from the bubble (ML-13)
-      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
+      await roll.getByRole('button', { name: /Papa Ben/ }).click() // S16: a face opens a sheet with the two things you can do (Faces row)
+      const sheet = page.getByRole('dialog', { name: 'Papa' })
+      await expect(sheet).toBeVisible()
       await page.keyboard.press('Escape')
-      await expect(page.getByRole('dialog', { name: 'Message Papa' })).toHaveCount(0)
+      await expect(sheet).toHaveCount(0)
       await roll.getByRole('button', { name: /Papa Ben/ }).click()
+      await sheet.getByRole('link', { name: 'Send a message' }).click() // non-carers still reach Messages from the face (ML-13)
+      await expect(page).toHaveURL(/#family\/messages$/)
+      await page.goto('/#family')
+      await roll.getByRole('button', { name: /Papa Ben/ }).click()
+      await sheet.getByRole('link', { name: 'See their stats' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')
       await expect(roll).toContainText('Last OK 3 days ago') // the roll call is back (it reloads after the page change) before the shot
-      await expect(roll.getByRole('button', { name: 'Message Papa' })).toBeVisible()
+      await expect(roll.getByRole('button', { name: /Papa Ben/ })).toBeVisible()
       await shot(page, `family-${scheme}`)
     })
   })

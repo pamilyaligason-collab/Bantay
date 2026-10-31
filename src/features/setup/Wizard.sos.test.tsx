@@ -22,6 +22,7 @@ describe('SOS contacts are one value', () => {
     await screen.findByDisplayValue('09179998888')
     const wizard = read()
     cleanup()
+    location.hash = '#me/family' // S16: the SOS row lives in Settings > Family and sharing
     render(<Me />)
     await userEvent.click(await screen.findByRole('button', { name: /Who gets your SOS text/ }))
     await screen.findByDisplayValue('09179998888')

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import type { Meal } from '../log/store'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingCan, useActingPersonId } from '../viewas/viewAs'
 import { Icon } from '../shell/Icon'
 import { FAIL_TEXT } from '../today/actions'
 import { logPlate, logSameAsYesterday } from './actions'
@@ -21,8 +21,11 @@ const amt = (n: number | null | undefined, unit: string, d = 0) => (n == null ? 
  * salty extras and "add your own" if the dish is not on the list. Every dish on the plate has its own half / 1 / 1½ / 2 stepper, and the
  * summary under it shows the salt of this plate against today's limit and the key nutrients, live. Salt is part of the meal, not a separate log.
  */
-export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
-  const personId = useSelfPersonId() ?? ''
+export default function PlateSheet({ onDone, personId: forPerson }: { onDone(msg: string): void; personId?: string }) {
+  const acting = useActingPersonId() ?? ''
+  const personId = forPerson ?? acting // an explicit person (Food screen, carer logging for Ma) beats the signed-in one
+  const can = useActingCan()
+  const locked = !!can && !can.log && personId === acting // the acting lock is about the member, not another picked person
   const history = useFood(personId, 30)
   const goal = useGoal(personId)
   const [meal, setMeal] = useState<Meal>(() => mealAt(new Date()))
@@ -53,17 +56,17 @@ export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
   }))
   const fail = (r: 'signedout' | 'failed') => setErr(FAIL_TEXT[r])
   const save = async () => {
-    if (busy || !plate.length) return
+    if (busy || locked || !plate.length) return
     setBusy(true)
-    const r = await logPlate(plate.map((p) => ({ food: p.food, portion: p.portion })), meal)
+    const r = await logPlate(plate.map((p) => ({ food: p.food, portion: p.portion })), meal, new Date(), personId || undefined)
     setBusy(false)
     if (r === 'ok') onDone(`Saved ${plate.length} ${plate.length === 1 ? 'food' : 'foods'} for ${mealName.en.toLowerCase()}`)
     else fail(r)
   }
   const same = async () => {
-    if (busy) return
+    if (busy || locked) return
     setBusy(true)
-    const { result, added } = await logSameAsYesterday(meal)
+    const { result, added } = await logSameAsYesterday(meal, new Date(), personId || undefined)
     setBusy(false)
     if (result !== 'ok') return fail(result)
     if (added) onDone(`Saved yesterday's ${mealName.en.toLowerCase()} again`)
@@ -156,7 +159,7 @@ export default function PlateSheet({ onDone }: { onDone(msg: string): void }) {
                     <b>{PORTIONS.find((x) => x.value === p.portion)?.label}<span className="hv-sr"> {portionWord(p.portion)}</span></b>
                     <button type="button" onClick={() => step(p.id, 1)} disabled={p.portion === PORTIONS[PORTIONS.length - 1]!.value} aria-label={`More ${p.food.tl}`}>+</button>
                   </span>
-                  <button type="button" className="nu-x" onClick={() => setPlate((l) => l.filter((x) => x.id !== p.id))} aria-label={`Remove ${p.food.tl}`}><Icon name="close" size={18} /></button>
+                  <button type="button" className="nu-x" onClick={() => setPlate((l) => l.filter((x) => x.id !== p.id))} aria-label={`Remove ${p.food.tl}`}><Icon name="close" size={20} /></button>
                 </li>
               ))}
             </ul>

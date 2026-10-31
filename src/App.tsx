@@ -27,6 +27,8 @@ import { useSavedTheme } from './features/shell/theme'
 import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
 import { OfflineBar } from './features/sync/OfflineBar'
+import ViewAsBanner from './features/viewas/ViewAsBanner' // S16-L0
+import { useActing } from './features/viewas/viewAs'
 import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { watchPushForSession } from './features/notify/fcm'
@@ -46,6 +48,7 @@ const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
 }
 
 export default function App() {
+  const { acting } = useActing()
   const [route, setRoute] = useState(() => parseHash(location.hash))
   const [hash, setHash] = useState(location.hash)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -63,7 +66,7 @@ export default function App() {
       const w = webAdminUrl(location.hash)
       if (w) { location.replace(w); return } // the dashboard moved to its own page, /admin
       const c = canonicalHash(location.hash)
-      if (c !== location.hash) { location.replace(c); return } // old #records / #family/records links land on Health > Papers
+      if (c !== location.hash) { location.replace(c); return } // moved links (#records, #health/library, #family/people ...) land on their new screen (C-3)
       setRoute(parseHash(location.hash)); setHash(location.hash)
     }
     on()
@@ -83,13 +86,14 @@ export default function App() {
   const ptr = usePullToRefresh<HTMLElement>(requestRefresh, isTabView && (tab === 'today' || tab === 'safety'))
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
-  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#health/papers' ? 'records' : tab) : view!)
+  // S16-L0: #family/papers is the Records screen
+  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
-  const title = view === 'me' ? 'Me' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
+  const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current
@@ -110,9 +114,11 @@ export default function App() {
       <Sky state="clear" />
       {isTabView && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
+      {/* S16-L0 */}
+      <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />

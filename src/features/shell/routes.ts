@@ -2,13 +2,25 @@ export type Tab = 'today' | 'health' | 'discover' | 'family' | 'safety'
 export const TABS: Tab[] = ['today', 'health', 'discover', 'family', 'safety']
 const VIEWS = new Set(['me', 'notif', 'admin', 'scan', 'privacy', 'sharing'])
 
-/** Old Records links (#records, #family/records) now open Health > Papers. Callers replace the hash with this when it differs. */
-export const canonicalHash = (h: string) => (h === '#records' || h === '#family/records' ? '#health/papers' : h)
+/** Old links that moved (S16 C-3). The first matching rule wins; callers replace the hash with the result when it differs. */
+const REDIRECT: [RegExp, string][] = [
+  [/^#(records|family\/records|health\/papers)$/, '#family/papers'],
+  [/^#health\/library$/, '#discover/learn/library'],
+  [/^#health\/library\/(.+)$/, '#discover/learn/library/$1'],
+  [/^#health\/videos$/, '#discover/watch'],
+  [/^#family\/people$/, '#family'],
+  [/^#people$/, '#family']
+]
+export const canonicalHash = (h: string) => {
+  for (const [re, to] of REDIRECT) if (re.test(h)) return h.replace(re, to)
+  return h
+}
 
 export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   const k = canonicalHash(h).replace(/^#/, '')
-  if (k === 'plan' || k === 'people') return { tab: 'family', view: k }
-  if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/people, #family/people/<id>
+  if (k === 'plan') return { tab: 'family', view: k }
+  if (k.startsWith('me/')) return { tab: null, view: 'me' } // #me/<group>: a Settings group, drawn by Me
+  if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/papers, #family/people/<id>
   if (k === 'weather' || k.startsWith('weather?')) return { tab: 'today', view: 'weather' } // #weather, #weather?from=action
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   // sub-screens of Safety, drawn by Safety itself; #medid/<personId> comes from a member page

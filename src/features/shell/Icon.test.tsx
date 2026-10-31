@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
-import { Icon, strokeFor, type IconName } from './Icon'
+import { Icon, ICON_SIZES, strokeFor, type IconName } from './Icon'
 import { IconKidney, IconStomach, IconQuake, IconTyphoon } from './icons/custom'
 import src from './Icon.tsx?raw'
 
@@ -9,25 +9,32 @@ const sw = (c: HTMLElement) => c.querySelector('svg')!.getAttribute('stroke-widt
 
 describe('Icon', () => {
   it('derives the stroke from the size', () => {
-    for (const [s, w] of [[16, 2.1], [20, 1.9], [22, 1.8], [26, 1.7], [32, 1.5], [48, 1.5]]) expect(strokeFor(s)).toBe(w)
-    expect(strokeFor(24)).toBeGreaterThan(1.7)
-    expect(strokeFor(24)).toBeLessThan(1.8)
-    expect(sw(render(<Icon name="home" size={26} />).container)).toBe('1.7')
-    expect(sw(render(<Icon name="home" size={26} stroke={2.5} />).container)).toBe('2.5')
+    for (const [s, w] of [[16, 2.1], [20, 1.9], [24, 1.75], [32, 1.5], [48, 1.5], [12, 2.1]]) expect(strokeFor(s)).toBe(w)
+    expect(sw(render(<Icon name="home" />).container)).toBe('1.75') // default size 24
+    expect(render(<Icon name="home" />).container.querySelector('svg')!.getAttribute('width')).toBe('24')
+    expect(sw(render(<Icon name="home" size={32} />).container)).toBe('1.5')
+    expect(sw(render(<Icon name="home" size={20} stroke={2.5} />).container)).toBe('2.5')
+    expect([...ICON_SIZES]).toEqual([16, 20, 24, 32])
   })
-  it('boxed wraps the glyph in a tone box 1.75x the size', () => {
-    const { container } = render(<Icon name="pill" size={20} tone="medicine" boxed />)
+  it('boxed is a 40 px chip holding a 20 px glyph, whatever size is passed', () => {
+    const { container } = render(<Icon name="pill" size={24} tone="medicine" boxed />)
     const box = container.querySelector('span.sh-icbox.sh-t-medicine') as HTMLElement
-    expect(box.style.width).toBe('35px')
-    expect(box.querySelector('svg')).toBeTruthy()
+    expect(box.style.width).toBe('40px')
+    expect(box.style.height).toBe('40px')
+    expect(box.querySelector('svg')!.getAttribute('width')).toBe('20')
+    expect(box.querySelector('svg')!.getAttribute('stroke-width')).toBe('1.9')
     expect(render(<Icon name="pill" boxed />).container.querySelector('.sh-t-neutral')).toBeTruthy()
   })
   it('active swaps to the filled twin or thickens the stroke', () => {
     expect(render(<Icon name="home" active />).container.querySelector('svg')!.classList.contains('sh-ic-f')).toBe(true)
     const c = render(<Icon name="walk" active />).container
-    expect(sw(c)).toBe('2')
+    expect(sw(c)).toBe('1.95')
     expect(c.querySelector('svg')!.classList.contains('sh-ic-f')).toBe(false)
   })
+  it('a listening mic and a play button never get a filled twin (D-103 rule 4)', () => {
+    for (const n of ['mic', 'play'] as const) expect(render(<Icon name={n} active />).container.querySelector('svg')!.classList.contains('sh-ic-f'), n).toBe(false)
+  })
+  it('has the language icon (F9)', () => { expect(names).toContain('language') })
   it('label makes it an image, otherwise hidden', () => {
     const a = render(<Icon name="check" label="Done" />).container.querySelector('svg')!
     expect(a.getAttribute('role')).toBe('img')

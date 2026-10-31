@@ -11,9 +11,6 @@
 
 /* Today's pick and the season card. */
 .dc-grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.dc-pick { display: flex; align-items: center; gap: 12px; min-height: 72px; color: var(--ink); text-decoration: none; }
-.dc-eyebrow { font-size: 13px; font-weight: 600; color: var(--green2); letter-spacing: .02em; }
-.dc-pick-t { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
 .dc-season { display: flex; flex-direction: column; gap: 8px; }
 .dc-lines { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 16px; line-height: 1.45; }
 .dc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
@@ -36,3 +33,54 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* s14 J: Jack Jack art (D-91), fixed boxes, no entrance animation */
 .s14j-art { display: flex; justify-content: center; margin: 0; }
 .s14j-row { display: flex; align-items: center; gap: 10px; }
+
+/* S16 overview: pick hero (amber Scene hero), season row, 2-column tiles (L3). */
+.dc-hero .sc { min-height: 160px; }
+.dc-pickscene { position: absolute; inset: 0; background: var(--hue-amber); }
+.dc-pick-sub { display: inline-flex; align-items: center; gap: 4px; color: var(--ink2); }
+.dc-hero .sc-kicker { color: var(--hue-amber-ic); }
+:root[data-theme="dark"] .dc-hero .sc { border-top: 3px solid var(--hue-amber-ic); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-hero .sc { border-top: 3px solid var(--hue-amber-ic); } }
+.dc-hero .sc-jack { will-change: transform; }
+
+.dc-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
+.dc-tiles > * { min-width: 0; }
+.dc-tiles > :last-child, .dc-wide, .dc-odd > a:last-of-type { grid-column: 1 / -1; }
+.dc-wide { display: block; }
+.dc-tiles .tl { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: 8px 12px; min-height: 96px; }
+.dc-tiles .tl-txt { display: contents; }
+.dc-tiles .tl-label { align-self: center; }
+.dc-tiles .tl-value { grid-column: 1 / -1; white-space: normal; overflow: visible; }
+.dc-jackrow { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+.dc-jackrow .sub { margin: 0; }
+
+/* Season row: a tinted card with a decorative layer behind the Row (rain streaks, candle glow). */
+.dc-season-row { position: relative; overflow: hidden; padding: 0 16px; isolation: isolate; }
+.dc-season-row .rw { position: relative; z-index: 1; }
+.dc-season-row .rw-sub { -webkit-line-clamp: 1; }
+.dc-sea-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.dc-sea-bg[data-s="typhoon"] { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 14%, transparent)); }
+.dc-sea-bg .wxs-rain i { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 42%, transparent)); }
+.dc-sea-bg[data-s="undas"] { background: radial-gradient(ellipse 70% 120% at 92% 110%, rgb(240 181 76 / .55), transparent 70%); animation: dc-flicker 3.2s ease-in-out infinite alternate; }
+@keyframes dc-flicker { from { opacity: .75; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dc-sea-bg { animation: none !important; } }
+.dc-season-row .rw-lead, .dc-prows .rw-lead { background: rgb(255 255 255 / .55); color: var(--h-ic); }
+:root[data-theme="dark"] .dc-season-row .rw-lead, :root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-season-row .rw-lead, :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }
+
+/* Watch: poster row scrolls inside itself, then the player and one row per topic. */
+.dc-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
+.dc-sh h2 { margin: 0; }
+.dc-posters { list-style: none; margin: 0 -16px; padding: 0 16px 4px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-left: 16px; overscroll-behavior-x: contain; scrollbar-width: none; }
+.dc-posters::-webkit-scrollbar { display: none; }
+.dc-posters > li { flex: none; scroll-snap-align: start; }
+.dc-poster { position: relative; display: block; width: 160px; height: 90px; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, var(--hue-terra), var(--card2)); color: var(--ink); font: inherit; text-align: left; box-shadow: var(--shadow); }
+.dc-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dc-poster[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--hue-terra-ic), var(--shadow); }
+.dc-poster:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.dc-poster-cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 8px 6px; font-size: 13px; line-height: 1.25; color: #fff; background: linear-gradient(to top, rgb(0 0 0 / .8), rgb(0 0 0 / 0)); }
+.dc-poster-cap b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 600; }
+.dc-poster[data-thumb="off"] .dc-poster-cap { background: none; color: var(--ink); top: 0; justify-content: flex-end; }
+.dc-player { display: grid; gap: 4px; }
+.dc-prows { padding: 0 16px; }
+.dc-prows > .rw + .rw { border-top: 1px solid var(--line); }

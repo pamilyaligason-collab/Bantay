@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 import { parseHash } from './routes'
 import { useOwnAvatar } from '../setup/useProfile'
 import './shell.css'
+import '../settings/topbar.css'
 
 const greeting = (d: Date) => (d.getHours() < 12 ? 'Good morning' : d.getHours() < 18 ? 'Good afternoon' : 'Good evening')
 const dateLine = (d: Date) => new Intl.DateTimeFormat('en-PH', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Asia/Manila' }).format(d)
@@ -61,7 +62,7 @@ export function TopBar({ unread = 0 }: { unread?: number }) {
   const first = firstName(name)
   return (
     <div className="topbar sh sh-top" data-scrolled={scrolled} data-compact={scrolled || sub || !today}>
-      <a className="sh-me-btn" href="#me" aria-label="Me and settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0) || <Icon name="users" />)}</a>
+      <a className="sh-me-btn" href="#me" aria-label="Settings">{photo ? <img src={photo} alt="" /> : (first.charAt(0) || <Icon name="users" />)}</a>
       <div className="sh-top-text">
         {today && <span className="sh-top-date">{dateLine(now)}{where && where !== 'where you are' && ` · ${where}`}</span>}
         {today && <span className="sh-top-greet">{greeting(now)}{first && `, ${first}`}</span>}

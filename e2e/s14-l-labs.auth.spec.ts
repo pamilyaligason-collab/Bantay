@@ -87,8 +87,8 @@ for (const scheme of ['light', 'dark'] as const) {
     const list = page.getByTestId('labs-list')
     await expect(list.locator('a.lr-card')).toHaveCount(5)
     const src = page.getByTestId('lab-source')
-    await expect(src).toContainText('Source: GenSan Medical Lab, 2 Oct 2026')
-    await expect(src.getByRole('link', { name: /Open original \(labs\.pdf\)/ })).toHaveAttribute('href', 'https://drive.google.com/file/d/abc123/view')
+    await expect(src).toContainText('GenSan Medical Lab · 2 Oct 2026') // v12: the whole card is the link (D-100)
+    await expect(src).toHaveAttribute('href', '#family/papers') // Papers moved to Family (D-100); the paper itself opens there
     await expect(list.locator('[data-testid="lab-date"]')).toHaveText(['2 Oct', '2 Oct', '2 Oct', '2 Oct', '2 Oct'])
     const hba = list.locator('[data-test="hba1c"]')
     await expect(hba).toContainText('High')
@@ -138,24 +138,21 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`empty: one sentence and one button (${scheme})`, async ({ page }) => {
     await open(page, '#health/labs', scheme, [])
     await expect(page.getByRole('heading', { name: 'No lab papers yet' })).toBeVisible()
-    await expect(page.getByText("Snap a lab paper. A person checks it first.")).toBeVisible()
+    await expect(page.getByText('A person checks every number.')).toBeVisible()
     await shot(page, 'health-labs-empty', scheme)
     await page.getByRole('button', { name: 'Scan a paper' }).click()
-    await expect(page).toHaveURL(/#health\/papers$/)
+    await expect(page).toHaveURL(/#scan$/) // the empty state opens the scan flow
   })
 }
 
 test('Overview shows one Lab results row that opens the screen; the Labs tile does too', async ({ page }) => {
   await open(page, '#health', 'light')
-  const row = page.getByTestId('labs-row')
-  await expect(row).toHaveText('Lab resultsLast paper 2 Oct 2026')
+  const row = page.getByTestId('glance-labs')
+  await expect(row).toContainText('2 Oct')
   await expect(page.getByTestId('labs-list')).toHaveCount(0)
   await row.scrollIntoViewIfNeeded()
   await shot(page, 'health-overview-labsrow', 'light')
   await row.click()
-  await expect(page).toHaveURL(/#health\/labs$/)
-  await page.goBack()
-  await page.locator('[data-browse="labs"]').click()
   await expect(page).toHaveURL(/#health\/labs$/)
 })
 

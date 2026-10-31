@@ -19,9 +19,9 @@ const seed = (page: Page) =>
   })
 
 // Scoped to main: the L0 tab bar active-state contrast (axe color-contrast on button[aria-current]) is an L0 shell issue.
-for (const tab of ['health', 'records']) {
+for (const tab of ['health']) { // Papers (old #health/papers) is the Family lane's now
   test(`${tab}: no axe violations, empty and with data`, async ({ page }) => {
-    await page.goto(tab === 'records' ? '/#health/papers' : `/#${tab}`)
+    await page.goto(`/#${tab}`)
     await expect(page.locator('h1')).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
     await seed(page)
@@ -31,7 +31,6 @@ for (const tab of ['health', 'records']) {
       await page.goto('/#health/metric/ldl') // session 14: the lab detail names whose range it uses (D-9)
       await expect(page.getByTestId('lab-range')).toBeVisible()
     }
-    else if (tab === 'records') await expect(page.locator('.uplot canvas').first()).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
   })
 }

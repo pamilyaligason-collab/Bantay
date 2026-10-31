@@ -1,5 +1,52 @@
+import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react'
 import { loadGsap } from './gsap'
 import { prefersReducedMotion as reduced } from './useReducedMotion'
+
+// ---- S16 L9: one place that says whether decorative motion may run ----
+let sosOpen = false
+const sosSubs = new Set<() => void>()
+/** SosScreen sets this on mount and clears it on unmount (all four mounts). While true no scene animates and no canvas mounts (D-91, M2-3). */
+export const setSosScreenOpen = (open: boolean) => { if (open !== sosOpen) { sosOpen = open; sosSubs.forEach((f) => f()) } }
+export const useSosScreenOpen = () => useSyncExternalStore((cb) => { sosSubs.add(cb); return () => { sosSubs.delete(cb) } }, () => sosOpen, () => false)
+
+/** Decorative motion may run right now: reduced motion off, page visible, no SOS screen. */
+export const motionOk = () => !reduced() && !(typeof document !== 'undefined' && document.hidden) && !sosOpen
+
+const hashSub = (cb: () => void) => { addEventListener('hashchange', cb); return () => removeEventListener('hashchange', cb) }
+/** true on `#safety*`: no scene animation and no canvas there. */
+export const useSafetyHash = () => useSyncExternalStore(hashSub, () => location.hash.startsWith('#safety'), () => false)
+
+/** true on Today (empty hash or #today); re-renders on hashchange so a canvas never keeps running after a move to Today. */
+export const useTodayHash = () => useSyncExternalStore(hashSub, () => /^#?(today)?$/.test(location.hash), () => true)
+
+const visSub = (cb: () => void) => { document.addEventListener('visibilitychange', cb); return () => document.removeEventListener('visibilitychange', cb) }
+export const usePageVisible = () => useSyncExternalStore(visSub, () => !document.hidden, () => true)
+
+/** true while the element is on screen; true when IntersectionObserver is missing (never pause by mistake). */
+export function useOnScreen(ref: RefObject<Element | null>): boolean {
+  const [on, setOn] = useState(true)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver !== 'function') return
+    const io = new IntersectionObserver((es) => { const e = es[es.length - 1]; if (e) setOn(e.isIntersecting) })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [ref])
+  return on
+}
+
+/** WebGL2 present and the phone is not low-end (hardwareConcurrency >= 4, deviceMemory >= 4 when known). Aurora gate (D-99). */
+export function webgl2Capable(): boolean {
+  if (typeof document === 'undefined') return false
+  const nav = navigator as Navigator & { deviceMemory?: number }
+  if ((nav.hardwareConcurrency ?? 0) < 4) return false
+  if (nav.deviceMemory != null && nav.deviceMemory < 4) return false
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2')
+    gl?.getExtension('WEBGL_lose_context')?.loseContext() // release the throwaway context
+    return !!gl
+  } catch { return false }
+}
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)'
 

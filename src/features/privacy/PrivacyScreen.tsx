@@ -4,6 +4,7 @@ import { SubHeader } from '../shell/SubHeader'
 import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
 import { consentDate, ensureConsent } from './consent'
+import { ConsentNotice } from './ConsentNotice'
 import { AI_KEY } from './ai'
 import { ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } from './data'
 import '../shell/shell.css'
@@ -21,7 +22,7 @@ export const PROCESSORS: { name: string; what: string }[] = [
 const dayLabel = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) }
 
 /** Mockup start-privacy. Reached from Me > Privacy (#privacy). */
-export default function PrivacyScreen() {
+export default function PrivacyScreen({ acting = false }: { acting?: boolean }) { // acting comes from App: privacy paths never import viewas (C-6)
   const personId = useSelfPersonId()
   const [agreed, setAgreed] = useState<string | null | undefined>(undefined) // undefined = still reading
   const [ai, setAi] = useKv<boolean>(AI_KEY, true)
@@ -31,11 +32,11 @@ export default function PrivacyScreen() {
   const [note, setNote] = useState('')
 
   useEffect(() => {
-    if (!personId) { setAgreed(null); return }
+    if (!personId || acting) { setAgreed(null); return } // no consent write while acting (C-9)
     let live = true
     void ensureConsent(personId).then((c) => { if (live) setAgreed(c.at) })
     return () => { live = false }
-  }, [personId])
+  }, [personId, acting])
 
   const download = async () => {
     setBusy(true); setNote('')
@@ -64,7 +65,8 @@ export default function PrivacyScreen() {
 
   return (
     <div className="sh sh-me pv">
-      <SubHeader title="Privacy" backHref="#me" backLabel="Back to Me" />
+      <SubHeader title="Privacy" backHref="#me" backLabel="Back to Settings" />
+      {!acting && <ConsentNotice />} {/* S16-L5: ensureConsent writes people.consent_at, so never while acting */}
 
       <div className="sh-card sh-row pv-quiet">
         <span className="pv-tick"><Icon name="check" size={18} /></span>

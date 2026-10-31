@@ -16,9 +16,10 @@ const send = (table: 'food_entries' | 'water_entries', row: { id?: number; clien
   return enqueue(table, 'upsert', { ...rest, client_id: row.clientId, deletedAt })
 }
 
-async function asSelf(fn: (personId: string) => Promise<unknown>): Promise<LogResult> {
+/** Runs `fn` for `forPerson` when the caller names one (S16: Health acting / a writer carer; the server RLS decides), else for the signed-in person. This file never reads the acting id itself (C-6). */
+async function asSelf(fn: (personId: string) => Promise<unknown>, forPerson?: string): Promise<LogResult> {
   try {
-    const id = await selfIdOrCached()
+    const id = forPerson || await selfIdOrCached()
     if (!id) return 'signedout'
     await fn(id)
     return 'ok'
@@ -34,14 +35,14 @@ async function addFood(e: FoodEntry) {
 }
 
 /** Log one or more foods (each with a portion) for the signed-in person. One meal_logged event per plate. */
-export const logPlate = (items: { food: Food; portion: number }[], meal: Meal, now = new Date()) =>
+export const logPlate = (items: { food: Food; portion: number }[], meal: Meal, now = new Date(), forPerson?: string) =>
   asSelf(async (personId) => {
     for (const { food, portion } of items) await addFood(snapshot(food, portion, meal, personId, now, newId()))
     void track('action', 'meal_logged')
-  })
+  }, forPerson)
 
 /** "Same as yesterday": copy what this person ate at `meal` yesterday. Returns how many rows were added (0 when yesterday had none). */
-export async function logSameAsYesterday(meal: Meal, now = new Date()): Promise<{ result: LogResult; added: number }> {
+export async function logSameAsYesterday(meal: Meal, now = new Date(), forPerson?: string): Promise<{ result: LogResult; added: number }> {
   let added = 0
   const result = await asSelf(async (personId) => {
     const since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2).toISOString()
@@ -50,7 +51,7 @@ export async function logSameAsYesterday(meal: Meal, now = new Date()): Promise<
     for (const c of copies) await addFood(c)
     added = copies.length
     if (added) void track('action', 'meal_logged')
-  })
+  }, forPerson)
   return { result, added }
 }
 
@@ -62,23 +63,23 @@ export async function removeFood(e: FoodEntry): Promise<void> {
 }
 
 /** One tap of water: 250 ml by default. */
-export const logWater = (ml = ML_PER_TAP, now = new Date()) =>
+export const logWater = (ml = ML_PER_TAP, now = new Date(), forPerson?: string) =>
   asSelf(async (personId) => {
     const row: WaterEntry = { clientId: newId(), personId, drunkAt: now.toISOString(), ml }
     await ldb.water.add(row)
     await send('water_entries', row, null)
     void track('action', 'water_logged')
-  })
+  }, forPerson)
 
 /** Undo the latest glass logged today by this person. */
-export const undoWater = (now = new Date()) =>
+export const undoWater = (now = new Date(), forPerson?: string) =>
   asSelf(async (personId) => {
     const today = dayKey(now)
     const last = (await ldb.water.where('personId').equals(personId).filter((w) => dayKey(w.drunkAt) === today).toArray()).sort((a, b) => b.drunkAt.localeCompare(a.drunkAt))[0]
     if (!last) return
     await ldb.water.delete(last.id!)
     await send('water_entries', last, new Date().toISOString())
-  })
+  }, forPerson)
 
 /** Save a person's salt and water limits. Anyone who may write for the person (self, writer carer) can call this; the server decides. */
 export async function saveGoal(personId: string, patch: { sodiumMg?: number; waterMl?: number; potassiumMg?: number | null; sex?: 'female' | 'male' | null }): Promise<LogResult> {

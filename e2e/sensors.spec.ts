@@ -29,9 +29,9 @@ test.describe('movement on Today (web, no step counter)', () => {
   })
 })
 
-test('Me shows the phone health explainer on the web', async ({ page }) => {
+test('Settings > Phone shows the phone health explainer on the web', async ({ page }) => {
   await skipOnboarding(page)
-  await page.goto('/#me') // round 3: phone health data moved from Family to Me
+  await page.goto('/#me/phone') // phone health data lives in Settings > Phone
   await expect(page.getByRole('heading', { name: 'Phone health data' })).toBeVisible()
   await expect(page.getByText(/need the Bantay app/)).toBeVisible()
 })

@@ -41,9 +41,21 @@ describe('AlertCardToday', () => {
     render(<AlertCardToday />)
     expect(screen.getByText('Please check on Mama Rosa')).toBeTruthy()
     expect(screen.getByText('Open Bantay to see more.')).toBeTruthy()
-    const open = screen.getByRole('link', { name: 'Open' })
+    const open = screen.getByRole('link', { name: /Please check on Mama Rosa/ })
     expect(open.getAttribute('href')).toBe('#health')
     fireEvent.click(open)
     expect(h.markSeen).toHaveBeenCalledWith('r1')
+  })
+  it('the close button marks it seen without opening anything', () => {
+    h.rows = [row('r2', { kind: 'reading_high', template: 'reading_high' })]
+    render(<AlertCardToday />)
+    fireEvent.click(screen.getByRole('button', { name: /Dismiss this family alert/ }))
+    expect(h.markSeen).toHaveBeenCalledWith('r2')
+  })
+  it('is one row with no Jack art (D-91)', () => {
+    h.rows = [row('r3', { kind: 'sos', template: 'family_sos' })]
+    const { container } = render(<AlertCardToday />)
+    expect(container.querySelectorAll('img.jack, .jack').length).toBe(0)
+    expect(screen.getAllByRole('region', { name: 'Family alert' }).length).toBe(1)
   })
 })

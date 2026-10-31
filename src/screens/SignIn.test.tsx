@@ -118,14 +118,14 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     render(<SignIn />)
     expect(screen.getByRole('heading', { name: "Hi! I'm Jack Jack." })).toBeTruthy()
     expect(screen.getByAltText('Jack Jack waving hello')).toBeTruthy()
-    expect(screen.getByText(/I watch over the family's health and safety\. Who are you\?/)).toBeTruthy()
+    expect(screen.getByText('Tap your name.')).toBeTruthy()
     const list = screen.getByLabelText('Who are you?')
     expect(within(list).getAllByRole('button').map((b) => b.textContent)).toEqual(['LRLola Rosa', 'KBKuya Ben'])
     expect(screen.queryByRole('combobox')).toBeNull()
     choose('Kuya Ben')
     expect(screen.getByRole('heading', { name: 'Hi Kuya' })).toBeTruthy()
     expect(pad()).not.toBeNull()
-    expect(screen.queryByAltText('Jack Jack, the Bantay dog')).toBeNull() // the picked person's card has no mascot unless returning
+    expect(screen.queryByAltText('Jack Jack')).toBeNull() // the picked person's card has no Jack unless returning
   })
 
   it('no admin label anywhere in the welcome list (D-76: nobody is the only one who can help)', () => {
@@ -136,10 +136,10 @@ describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
     expect(document.body.textContent).not.toMatch(/admin/i)
   })
 
-  it('remembered person: only that person, mascot, PIN pad at once, no dropdown, no other names', () => {
+  it('remembered person: only that person, Jack, PIN pad at once, no dropdown, no other names', () => {
     localStorage.setItem('bantay.lastPerson', 'p-kuya')
     render(<SignIn />)
-    expect(screen.getByAltText('Jack Jack, the Bantay dog')).toBeTruthy()
+    expect(screen.getByAltText('Jack Jack')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Hi Kuya' })).toBeTruthy()
     expect(pad()).not.toBeNull()
     expect(screen.queryByLabelText('Who are you?')).toBeNull()
@@ -343,20 +343,20 @@ describe('SignIn: #join invite links', () => {
     render(<SignIn joinPort={null} />)
     expect(await screen.findByRole('heading', { name: /Jack Jack/ })).toBeTruthy() // the fresh-phone picker, from family-names without the token
     expect(h.names).toHaveBeenCalledWith()
-    expect(screen.queryByRole('heading', { name: 'Is this you?' })).toBeNull()
+    expect(screen.queryByRole('img', { name: 'Step 1 of 5' })).toBeNull() // no join screen without a join port
     choose('Mama')
     expect(pad()).not.toBeNull() // tap a name, type the PIN that was set for it
   })
 
   it('the default build has the live join port (D-81): the link opens start-who with the invite token', async () => {
     render(<SignIn />)
-    expect(await screen.findByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: 'Step 1 of 5' })).toBeTruthy()
     expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
   })
 
   it('with a join port the same link opens start-who with the invite token', async () => {
     render(<SignIn joinPort={async () => ({ ok: true })} />)
-    expect(await screen.findByRole('heading', { name: 'Is this you?' })).toBeTruthy()
+    expect(await screen.findByRole('img', { name: 'Step 1 of 5' })).toBeTruthy()
     expect(h.names).toHaveBeenCalledWith('abcd1234efgh')
   })
 })

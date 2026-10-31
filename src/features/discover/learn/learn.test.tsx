@@ -67,9 +67,27 @@ describe('Learn screen and the learn.medcards flag', () => {
   it('flag off (default): recipes show, medicine wiki is hidden, and a direct medicine link falls back to home', async () => {
     location.hash = '#discover/learn/med/losartan'
     render(<Screen />)
-    expect(await screen.findByText('Healthy recipes')).toBeTruthy()
+    expect(await screen.findByText('Recipes')).toBeTruthy()
     expect(screen.queryByText('Medicine wiki')).toBeNull()
     expect(screen.queryByTestId('medcard')).toBeNull()
+  })
+  it('flag off: Recipes, Library, Learn together and a full-width Your benefits tile, each a link to its screen (no Medicine wiki)', async () => {
+    location.hash = '#discover/learn'
+    render(<Screen />)
+    const hrefs = Object.fromEntries(['recipes', 'library', 'together', 'benefits'].map((k) => [k, screen.getByTestId('learn-' + k).getAttribute('href')]))
+    expect(hrefs).toEqual({ recipes: '#discover/learn/recipes', library: '#discover/learn/library', together: '#discover/learn/together', benefits: '#discover/learn/benefits' })
+    expect(screen.queryByTestId('learn-meds')).toBeNull()
+    expect(screen.getByTestId('learn-recipes').textContent).toContain('20 low-salt recipes') // counted by hand in src/data/learn/recipes.json
+    expect(screen.getByTestId('learn-benefits').textContent).toContain('PhilHealth Konsulta')
+    expect(screen.getByTestId('learn-benefits').parentElement!.className).toContain('dc-wide')
+  })
+  it('Your benefits page: only the two named benefits, each an outside link with its source and checked date', () => {
+    location.hash = '#discover/learn/benefits'
+    render(<Screen />)
+    const links = screen.getAllByRole('link').filter((a) => a.getAttribute('target') === '_blank')
+    expect(links.map((a) => a.textContent)).toEqual([expect.stringContaining('PhilHealth Konsulta'), expect.stringContaining('Senior citizen discount')])
+    expect(screen.getByTestId('benefits').textContent).toContain('checked 2026-10-28')
+    expect(screen.getByRole('link', { name: 'Back to Learn' }).getAttribute('href')).toBe('#discover/learn')
   })
   it('flag on: medicine wiki and the card open', async () => {
     await db.kv.put({ key: 'learn.medcards', value: true })
@@ -80,6 +98,7 @@ describe('Learn screen and the learn.medcards flag', () => {
     location.hash = '#discover/learn'
     render(<Screen />)
     expect(await screen.findByText('Medicine wiki')).toBeTruthy()
+    expect(screen.getByTestId('learn-meds').getAttribute('href')).toBe('#discover/learn/meds')
   })
   it('recipes and cook mode show with the flag off', async () => {
     location.hash = '#discover/learn/recipe/sinigang-isda'

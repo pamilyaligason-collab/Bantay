@@ -24,7 +24,7 @@ const NONE: MedTaken[] = []
 const TOAST_MS = 3500
 const UNDO_MS = 6000
 const label = (m: Pick<Medication, 'name' | 'strength'>) => [m.name, m.strength].filter(Boolean).join(' ')
-const GLYPH: Record<CellState, string> = { taken: '✓', missed: '×', 'not-due': '–', pending: '…' }
+const GLYPH: Partial<Record<CellState, 'check' | 'close'>> = { taken: 'check', missed: 'close' } // other cells stay an empty disc; the cell's aria-label says the state
 const SAYS: Record<CellState, string> = { taken: 'taken', missed: 'missed', 'not-due': 'not due', pending: 'not yet' }
 
 /** The medications row for a route id (server id, else client id, else local id). undefined while loading, null when there is none (deleted or never here). */
@@ -144,7 +144,7 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
         <>
           <div className="md-sech"><h2 className="hd">Reminders</h2></div>
           {((native && ringsHere !== undefined) || writerCarer) && <div className="card md-rem" data-testid="med-reminders">
-            {native && ringsHere === true && alarmsOk === false && <a className="md-phone" href="#me" data-testid="med-alarms-off"><Icon name="phone" size={22} /><span className="grow"><b>Alarms are not set on this phone</b><span className="sub md-sub">Open Me to check the phone</span></span></a>}
+            {native && ringsHere === true && alarmsOk === false && <a className="md-phone" href="#me/alerts" data-testid="med-alarms-off"><Icon name="phone" size={22} /><span className="grow"><b>Alarms are not set on this phone</b><span className="sub md-sub">Open Me to check the phone</span></span></a>}
             {native && ringsHere !== undefined && (ringsHere ? alarmsOk === true : true) && (ringsHere
               ? <div className="md-phone" data-testid="med-rings"><Icon name="phone" size={22} /><span className="grow"><b>This phone</b><span className="sub md-sub">Rings at {times.join(', ')}, with Taken and Snooze</span></span></div>
               : <div className="md-phone" data-testid="med-no-ring"><Icon name="phone" size={22} /><span className="grow"><b>No alarm on this phone for {whom}</b></span></div>)}
@@ -171,10 +171,10 @@ export default function MedDetail({ medicationId }: { medicationId: string }) {
           <div className="card md-week" data-testid="med-week">
             <ol className="md-strip">
               {week.cells.map((c) => (
-                <li key={c.day} data-state={c.state} aria-label={`${c.label}: ${SAYS[c.state]}`}><span className="md-dn">{c.label}</span><i aria-hidden="true">{GLYPH[c.state]}</i></li>
+                <li key={c.day} data-state={c.state} aria-label={`${c.label}: ${SAYS[c.state]}`}><span className="md-dn">{c.label}</span><i aria-hidden="true">{GLYPH[c.state] && <Icon name={GLYPH[c.state]!} size={16} />}</i></li>
               ))}
             </ol>
-            <p className="sub md-legend">{'✓'} taken &nbsp; {'×'} missed &nbsp; {'–'} not due</p>
+            <p className="sub md-legend"><Icon name="check" size={16} /> taken &nbsp; <Icon name="close" size={16} /> missed &nbsp; empty: not due</p>
             {miss && <p className="sub md-miss" data-testid="med-miss">{miss}</p>}
           </div>
         </>

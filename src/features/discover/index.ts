@@ -1,9 +1,10 @@
 export type DiscoverSub = 'learn' | 'listen' | 'play' | 'watch' | 'news'
+// Tile and pill order (S16): Learn, Watch, Listen, Play, News, so no two neighbouring hues repeat.
 export const DISCOVER_SUBS: { id: DiscoverSub; label: string; soon: string }[] = [
   { id: 'learn', label: 'Learn', soon: 'Short health reads, recipes and a medicine guide.' },
+  { id: 'watch', label: 'Watch', soon: 'Checked videos you can play here or open in YouTube.' },
   { id: 'listen', label: 'Listen', soon: 'Articles read out loud, and calm sounds.' },
   { id: 'play', label: 'Play', soon: 'Easy games with no timer.' },
-  { id: 'watch', label: 'Watch', soon: 'Videos and live TV that open outside the app.' },
   { id: 'news', label: 'News', soon: 'Good news and fun facts.' }
 ]
 

@@ -6,7 +6,7 @@ import StartDone from '../features/setup/StartDone'
 
 const flagged = () => { try { return localStorage.getItem('bantay.onboarded') === '1' } catch { return false } }
 
-/** First launch after joining: one last screen (start-done). Everything else (photo, medicines, SOS contacts, sharing...) is on the Today checklist,
+/** First launch after joining: three screens (3 to 5: reminders, where you are, first test). Everything else (photo, medicines, SOS contacts, sharing...) is on the Today checklist,
  *  so whatever the member skips stays there. */
 export function Onboarding({ onDone }: { onDone: () => void }) {
   const finish = async () => {

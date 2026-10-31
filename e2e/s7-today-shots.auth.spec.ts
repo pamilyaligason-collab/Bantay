@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`today-full with a family alert ${scheme}`, async ({ page }) => {
     await open(page, scheme, (p) => seed(p, 'bantay-alerts', 'alerts', [{ id: 'a1', personId: 'ma', kind: 'dose_missed', template: 'dose_missed', ref: 'a1', createdAt: new Date().toISOString(), pushedAt: null, seenAt: null, expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString() }]))
     await expect(page.getByRole('region', { name: 'Family alert' })).toBeVisible()
-    await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // folded into How are you?
+    await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you?
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     await shot(page, 'today-full', scheme)
   })

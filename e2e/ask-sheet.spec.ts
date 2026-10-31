@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { deflateSync } from 'node:zlib'
 import { skipOnboarding } from './helpers'
 
@@ -23,6 +23,17 @@ function png(w: number, h: number) {
   const ihdr = Buffer.alloc(13)
   ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))])
+}
+
+/** The coach mark never sits on text (UI-1). Today's quick-log row is under its spot at the top of the page at every phone height, so it shows once the page is scrolled
+ *  to the end (the clear-at-scroll-end state assertJackClear checks). Re-scroll until the page has finished growing: no sleep (ML-25). */
+const hintAtScrollEnd = async (page: Page) => {
+  const hint = page.getByText(/Ask me anything/)
+  await expect(async () => {
+    await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = el.scrollHeight })
+    await expect(hint).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 15_000 })
+  return hint
 }
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -86,19 +97,19 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page).toHaveURL(/#today$/)
     })
 
-    test('PDF line goes to Health > Papers', async ({ page }) => {
+    test('PDF line goes to Family > Papers', async ({ page }) => {
       await skipOnboarding(page)
       await page.goto('/#today')
       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
-      await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
-      await expect(page).toHaveURL(/#health\/papers/)
+      await page.getByRole('link', { name: /For PDF files use Family > Papers/ }).click()
+      await expect(page).toHaveURL(/#family\/papers/)
     })
 
     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 }) // the hint shows only where it covers no text (UI-1); this size has a clear spot
       await skipOnboarding(page)
       await page.goto('/#today')
-      await expect(page.getByText(/Ask me anything/)).toBeVisible()
+      await hintAtScrollEnd(page)
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').include('.sh-jackfab').include('.sh-hint').analyze()
       expect(res.violations).toEqual([])
     })
@@ -137,16 +148,23 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.setViewportSize({ width: 375, height: 667 })
       await skipOnboarding(page)
       await page.goto('/#today')
-      const hint = page.getByText(/Ask me anything/)
-      await expect(hint).toBeVisible()
+      const hint = await hintAtScrollEnd(page)
       const h = (await hint.boundingBox())!
       const a = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
       expect(h.y + h.height).toBeLessThanOrEqual(a.y) // the bubble sits above the button, clear of the SOS caption (UI-1)
       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
       await page.keyboard.press('Escape')
       await expect(hint).toHaveCount(0)
+      // the "seen" flag is written to IndexedDB after the screen updates; reload only once it is stored, or the reload can cut the write (ML-25)
+      await expect.poll(() => page.evaluate(() => new Promise((res) => {
+        const r = indexedDB.open('bantay')
+        r.onerror = () => res(null)
+        r.onsuccess = () => { const q = r.result.transaction('kv').objectStore('kv').get('askHintSeen'); q.onsuccess = () => { r.result.close(); res(q.result?.value ?? null) }; q.onerror = () => res(null) }
+      }))).toBe(true)
       await page.reload()
-      await page.waitForTimeout(300)
+      await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible() // Today has loaded; the scroll end is where the mark would show
+      await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = el.scrollHeight })
+      await expect(page.getByRole('button', { name: 'Ask Bantay' })).toBeVisible()
       await expect(page.getByText(/Ask me anything/)).toHaveCount(0)
     })
   })

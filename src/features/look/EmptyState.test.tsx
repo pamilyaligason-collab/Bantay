@@ -9,7 +9,7 @@ describe('EmptyState art (D-91)', () => {
     const imgs = container.querySelectorAll('img')
     expect(imgs).toHaveLength(1)
     expect(imgs[0]!.alt).toBe(JACK_ALT['empty-list'])
-    expect(imgs[0]!.getAttribute('width')).toBe('88')
+    expect(imgs[0]!.getAttribute('width')).toBe('96')
   })
 
   it('shows the chosen pose, decorative, when no icon is given (UI-10)', () => {
@@ -17,7 +17,7 @@ describe('EmptyState art (D-91)', () => {
     const imgs = container.querySelectorAll('img')
     expect(imgs).toHaveLength(1)
     expect(imgs[0]!.getAttribute('alt')).toBe('')
-    expect(imgs[0]!.getAttribute('width')).toBe('88')
+    expect(imgs[0]!.getAttribute('width')).toBe('96')
     expect(container.querySelector('svg')).toBeNull()
   })
 

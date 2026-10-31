@@ -27,7 +27,10 @@ test('weather: action line first, place toggle, forecast sections', async ({ pag
   expect(a!.y).toBeLessThan(h!.y)
   await expect(page.locator('.wx-temp')).toHaveText('33°')
   await expect(page.getByRole('region', { name: 'Details' })).toContainText('UV today')
+  await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(5)
+  await page.getByRole('button', { name: 'Show all 10 days' }).click()
   await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(10)
+  await page.getByText('Official sources').click() // the three links sit behind one tap (D-102 budget)
   await expect(page.getByRole('link', { name: /^PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
   await expect(page.getByText('Your rounded location is sent only to the weather service.')).toBeVisible()
   expect(seen[0]).toContain('timezone=auto')
@@ -104,9 +107,9 @@ test('today weather card: from=action only when an action line shows, and it is 
   await skipOnboarding(page)
   await mockForecast(page) // 33 C at 70% humidity: Danger, so an action line shows
   await page.goto('/#today')
-  const card = page.getByRole('region', { name: 'Weather' }).getByRole('link')
-  await expect(card).toHaveAttribute('href', '#weather?from=action')
-  await expect(card).toContainText('Stay indoors 11 AM-3 PM')
+  const hero = page.getByRole('region', { name: 'Weather' })
+  await expect(hero.getByRole('link')).toHaveAttribute('href', '#weather?from=action')
+  await expect(hero).toContainText('Stay indoors 11 AM-3 PM')
 })
 
 test('weather: rain card shows hourly bars + PAGASA radar link, chips switch to storm track, no map provider loads', async ({ page }) => {

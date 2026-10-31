@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 import { shotPath } from './shotPath'
+import { adminWriter, mockActing, openPicker } from './fixtures/s16/acting'
 
 // Runs in the "auth" project (build WITH Supabase env). Everything on the wire is mocked; synthetic data only.
 const API = 'https://bantay-test.supabase.test'
@@ -99,3 +100,25 @@ for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) 
     })
   }
 }
+
+// S16 L6 (D-99): the in-app View as. The admin acts for Mama; the bar shows on every tab, one audit call, Exit and reload return to yourself.
+test.describe('in-app View as (acting)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+  test('enter: one audit RPC, the bar on five tabs, Exit clears it, a reload is yourself', async ({ page }) => {
+    const seen = await mockActing(page, adminWriter)
+    await openPicker(page)
+    await page.getByRole('dialog', { name: 'View as' }).getByRole('button', { name: 'Mama' }).click()
+    await expect(page.getByTestId('viewas-bar').first()).toContainText('Acting as Mama') // the switch happens only after the audit RPC returned
+    expect(seen.audits).toEqual([{ p_person: 'p-mama' }])
+    for (const hash of ['#today', '#health', '#discover', '#family', '#safety']) {
+      await page.evaluate((h) => { location.hash = h }, hash)
+      await expect(page.getByTestId('viewas-bar').first()).toContainText('Acting as Mama')
+    }
+    await page.getByTestId('viewas-bar').first().getByRole('button', { name: 'Exit' }).click()
+    await expect(page.getByTestId('viewas-bar')).toHaveCount(0)
+    await page.reload()
+    await expect(page.getByTestId('viewas-bar')).toHaveCount(0)
+  })
+  // Need L1 (callers pass the acting id), L5 (row) and L9 (SOS screen) merged; asserted on the merged branch.
+  test.fixme('Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = Lloyd', async () => { /* written after the L1 merge */ })
+})

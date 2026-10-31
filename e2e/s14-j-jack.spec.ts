@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
 const sideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
 
 /** A Jack picture on the screen: loaded, a fixed width and height, and an alt attribute (empty when decorative). */
-async function expectJack(page: Page, alt: string | null, size: number) {
+async function expectJack(page: Page, alt: string | null | 'named', size: number) {
   // docs/session-14/contracts.md (orchestrator decision): the Ask button's Jack head (JackFab) is button chrome and does not count toward "one Jack per screen"; it has its own test below.
   const img = page.locator('img.jack:not([aria-label="Ask Bantay"] img)')
   await expect(img).toHaveCount(1) // at most one non-FAB Jack, and a placement that renders none fails here
@@ -37,14 +37,16 @@ async function expectJack(page: Page, alt: string | null, size: number) {
   expect(await img.getAttribute('width')).toBe(String(size))
   expect(await img.getAttribute('height')).toBe(String(size))
   if (alt === null) expect(await img.getAttribute('alt')).toBe('')
+  else if (alt === 'named') expect((await img.getAttribute('alt'))!.length).toBeGreaterThan(0)
   else expect(await img.getAttribute('alt')).toBe(alt)
 }
 
-const PLACES: { name: string; hash: string; ready: string; alt: string | null; size: number }[] = [
-  { name: 'reading', hash: '#discover/learn', ready: 'learn-home', alt: 'Jack Jack reading a book', size: 96 },
+const PLACES: { name: string; hash: string; ready: string; alt: string | null | 'named'; size: number }[] = [
+  { name: 'reading', hash: '#discover/learn', ready: 'learn-home', alt: null, size: 56 }, // S16: a small decorative Jack in the Learn header row (L3)
   { name: 'cooking-recipes', hash: '#discover/learn/recipes', ready: 'recipe-card', alt: 'Jack Jack in an apron beside a pot of soup', size: 96 },
   { name: 'listening', hash: '#discover/listen', ready: 'listen', alt: 'Jack Jack sitting with one paw raised, listening', size: 96 },
-  { name: 'watching', hash: '#discover/watch', ready: 'watch', alt: 'Jack Jack watching a laptop', size: 96 },
+  // S16: the Watch screen is the poster row and draws no Jack; the 'watching' art is the Discover pick hero (96 px, right), which is checked here instead
+  { name: 'discover-pick', hash: '#discover', ready: 'pick', alt: 'named', size: 96 },
   { name: 'playing', hash: '#discover/play', ready: 'play-hub', alt: 'Jack Jack playing with a ball', size: 96 },
   { name: 'walking', hash: '#health/move', ready: 'mv-page', alt: 'Jack Jack trotting in a harness on a leash', size: 96 },
 ]
@@ -65,7 +67,7 @@ for (const p of PLACES) {
   }
 }
 
-test('cook mode shows a small decorative Jack in the top row', async ({ page }) => {
+test('cook mode shows a small decorative Jack in the top row (56 px, the smallest size)', async ({ page }) => {
   await page.goto('/#discover/learn/recipes')
   await page.getByTestId('recipe-card').first().click()
   await page.getByRole('link', { name: /Cook mode/ }).click()
@@ -74,18 +76,18 @@ test('cook mode shows a small decorative Jack in the top row', async ({ page }) 
   const img = cook.locator('img.jack')
   await expect(img).toHaveCount(1)
   expect(await img.getAttribute('alt')).toBe('')
-  expect(await img.getAttribute('width')).toBe('48')
+  expect(await img.getAttribute('width')).toBe('56')
   expect(await sideways(page)).toBe(0)
 })
 
-test('the Ask button wears the Jack head, decorative, 48 px, still named Ask Bantay', async ({ page }) => {
+test('the Ask button wears the Jack head, decorative, 56 px (the smallest Jack size), still named Ask Bantay', async ({ page }) => {
   await page.goto('/#today')
   const fab = page.getByRole('button', { name: 'Ask Bantay' })
   await expect(fab).toBeVisible()
   const img = fab.locator('img')
   await expect(img).toHaveCount(1)
   expect(await img.getAttribute('alt')).toBe('')
-  expect(await img.getAttribute('width')).toBe('48')
+  expect(await img.getAttribute('width')).toBe('56')
   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
   expect(await sideways(page)).toBe(0)
   await shot(page, 'ask-button')

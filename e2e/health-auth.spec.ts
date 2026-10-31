@@ -12,17 +12,13 @@ test.beforeEach(async ({ page }) => {
   await mock(page)
 })
 
-test('signed in: Papers is reachable from the Health overview with a papers progress line', async ({ page }) => {
+test('signed in: Health has no Papers door (D-100) and the old Papers link lands under Family', async ({ page }) => {
   await page.goto('/#health')
   await expect(page.locator('h1')).toHaveText('Health')
-  const papers = page.getByRole('link', { name: /^Papers/ })
-  await expect(papers).toBeVisible()
-  await expect(papers).toContainText(/Add your first paper|\d+ of \d+ papers? checked/)
-  await expect(papers).toHaveAttribute('href', '#health/papers')
-  await papers.click()
-  await expect(page).toHaveURL(/#health\/papers$/)
-  await expect(page.locator('h1')).toHaveText('Papers')
-  await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
+  await expect(page.getByTestId('browse')).toBeVisible()
+  await expect(page.getByRole('link', { name: /^Papers/ })).toHaveCount(0)
+  await page.goto('/#health/papers')
+  await expect(page).toHaveURL(/#family\/papers$/)
 })
 
 test('signed in: Add reading previews the colour and line, and the reading lands in the chart list', async ({ page }) => {

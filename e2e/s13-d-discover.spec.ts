@@ -46,24 +46,23 @@ test('sub-nav: one pill, moved by transform, none under reduced motion', async (
   expect(await pill.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s')
 })
 
-test('Learn: pick above the sub-nav, shelves, benefits open outside', async ({ page }) => {
-  await page.clock.setFixedTime(UNDAS)
+test('Learn: 2x2 tiles plus Your benefits, benefits open outside', async ({ page }) => {
   await page.goto('/#discover/learn')
-  const pick = page.getByTestId('pick')
-  const subs = page.getByRole('group', { name: 'Discover sections' })
-  await expect(pick).toBeVisible()
-  expect((await pick.boundingBox())!.y).toBeLessThan((await subs.boundingBox())!.y)
-  await expect(page.getByTestId('season')).toContainText('Undas')
-  for (const h of ['Recipes', 'Health reads', 'Your benefits']) await expect(page.getByRole('heading', { name: h })).toBeVisible()
+  await expect(page.getByTestId('learn-home')).toBeVisible()
+  await expect(page.getByTestId('pick')).toHaveCount(0)
+  for (const k of ['recipes', 'library', 'together', 'benefits']) await expect(page.getByTestId('learn-' + k)).toBeVisible()
+  await page.getByTestId('learn-benefits').click()
+  await expect(page.getByRole('heading', { name: 'Your benefits' })).toBeVisible()
   await expect(page.getByRole('link', { name: /PhilHealth Konsulta/ })).toHaveAttribute('href', /philhealth\.gov\.ph/)
   await expect(page.getByRole('link', { name: /Senior citizen discount/ })).toHaveAttribute('target', '_blank')
-  await page.getByRole('link', { name: /Healthy recipes/ }).click()
+  await page.goto('/#discover/learn')
+  await page.getByTestId('learn-recipes').click()
   await expect(page.getByTestId('pick')).toHaveCount(0)
 })
 
 test('Today pick (trivia on 28 Oct) opens the same question Play asks, and back lands on the Play hub', async ({ page }) => {
   await page.clock.setFixedTime(UNDAS)
-  await page.goto('/#discover/learn')
+  await page.goto('/#discover')
   const q = 'The first jeepneys were made from old what?' // hand-computed: trivia #16 for 2026-10-28
   await expect(page.getByTestId('pick')).toContainText(q)
   await page.getByTestId('pick').click()
@@ -74,13 +73,15 @@ test('Today pick (trivia on 28 Oct) opens the same question Play asks, and back 
   await expect(page.getByTestId('trivia')).toContainText(q)
 })
 
-test('the season card sits above the sub-nav on every sub', async ({ page }) => {
+test('the season is one row on the overview that opens the season page', async ({ page }) => {
   await page.clock.setFixedTime(UNDAS)
-  for (const s of ['learn', 'listen', 'play', 'watch', 'news']) {
-    await page.goto('/#discover/' + s)
-    await expect(page.getByTestId('season')).toContainText('Undas')
-    expect((await page.getByTestId('season').boundingBox())!.y).toBeLessThan((await page.getByRole('group', { name: 'Discover sections' }).boundingBox())!.y)
-  }
+  await page.goto('/#discover')
+  await expect(page.getByTestId('season-row')).toContainText('Undas')
+  await page.getByTestId('season-row').getByRole('link').click()
+  await expect(page.getByTestId('season')).toContainText('Undas')
+  await expect(page.getByTestId('season')).toContainText('Source:')
+  await page.goto('/#discover/watch')
+  await expect(page.getByTestId('season-row')).toHaveCount(0)
 })
 
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
@@ -97,12 +98,16 @@ test('Listen: one at a time, and leaving the sub stops the voice', async ({ page
   await expect(page.getByRole('button', { name: /^Stop / })).toHaveCount(0)
 })
 
-test('Watch: every video is an outside link, none is embedded', async ({ page }) => {
+test('Watch: posters scroll inside their row, a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
   await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
-  expect(await page.locator('[data-testid="watch"] a[target="_blank"][href^="https://www.youtube.com/watch?v="]').count()).toBe(12)
+  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(12)
   await expect(page.locator('iframe')).toHaveCount(0)
-  await expect(page.getByText('Live TV is coming.')).toBeVisible()
+  await expect(page.getByTestId('live-tv')).toContainText('Coming soon')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.getByRole('button', { name: /^Choose Hands-only CPR/ }).click()
+  await expect(page.getByRole('link', { name: /Open in YouTube/ })).toHaveAttribute('href', /youtube\.com\/watch\?v=M4ACYp75mjU/)
+  await expect(page.locator('iframe')).toHaveCount(0)
 })
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -111,20 +116,20 @@ for (const scheme of ['light', 'dark'] as const) {
     test('discover root, undas', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
       await page.goto('/#discover')
-      await expect(page.getByTestId('season')).toContainText('Undas')
+      await expect(page.getByTestId('season-row')).toContainText('Undas')
       await shot(page, 'discover-undas', scheme)
     })
     test('discover root, hot season', async ({ page }) => {
       await page.clock.setFixedTime(HEAT)
       await page.goto('/#discover')
-      await expect(page.getByTestId('season')).toContainText('Hot season')
+      await expect(page.getByTestId('season-row')).toContainText('Hot season')
       await shot(page, 'discover-heat', scheme)
     })
     test('learn shelves', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
       await page.goto('/#discover/learn')
-      await expect(page.getByRole('heading', { name: 'Your benefits' })).toBeVisible()
-      await shot(page, 'learn-shelves', scheme, '[aria-label="Health reads"]')
+      await expect(page.getByTestId('learn-benefits')).toBeVisible()
+      await shot(page, 'learn-shelves', scheme)
     })
     test('listen, one playing', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)

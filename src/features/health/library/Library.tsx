@@ -12,7 +12,7 @@ import '../m7a.css'
 const NO_DRAFTS: Record<string, number> = {}
 const title = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase())
 
-/** #health/library: articles for this person's conditions and medicines (MedlinePlus), plus a search. Opening one makes one request. */
+/** #discover/learn/library (was #health/library): articles for this person's conditions and medicines (MedlinePlus), plus a search. Opening one makes one request. */
 export default function Library() {
   const { people, ownId, personId, setPersonId } = useHealthPerson()
   const profile = useProfile(personId)
@@ -36,7 +36,7 @@ export default function Library() {
 
   return (
     <>
-      <SubHeader title="Health library" backHref="#health" backLabel="Back to Health" />
+      <SubHeader title="Health library" backHref="#discover/learn" backLabel="Back to Learn" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
         <label htmlFor="lb-q" className="hv-sr">Search conditions, medicines, tests</label>

@@ -1,0 +1,2810 @@
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/sync/sync.ts is dynamically imported by src/features/family/messagesApi.ts, src/features/safety/rollcall.ts, src/features/sos/SosScreen.tsx but also statically imported by src/App.tsx, src/features/sync/SyncStatus.tsx, src/features/update/PwaBanner.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/health/reminderActions.ts is dynamically imported by src/features/today/NextUp.tsx but also statically imported by src/features/health/reminders.ts, dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/health/reminders.ts is dynamically imported by src/features/today/NextUp.tsx but also statically imported by src/App.tsx, src/features/health/MedDetail.tsx, src/features/phonecheck/AlarmHealthRow.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+
+[WebServer] 
+[WebServer]  WARN  inlineDynamicImports option is deprecated, please use codeSplitting: false instead.
+[WebServer] 
+
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/sync/sync.ts is dynamically imported by src/features/family/messagesApi.ts, src/features/safety/rollcall.ts, src/features/sos/SosScreen.tsx but also statically imported by src/App.tsx, src/features/sync/SyncStatus.tsx, src/features/update/PwaBanner.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/health/reminderActions.ts is dynamically imported by src/features/today/NextUp.tsx but also statically imported by src/features/health/reminders.ts, dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/features/health/reminders.ts is dynamically imported by src/features/today/NextUp.tsx but also statically imported by src/App.tsx, src/features/health/MedDetail.tsx, src/features/phonecheck/AlarmHealthRow.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+
+[WebServer] 
+[WebServer]  WARN  inlineDynamicImports option is deprecated, please use codeSplitting: false instead.
+[WebServer] 
+
+
+Running 807 tests using 4 workers
+
+[1/807] [chromium] › e2e\assistant-layout.spec.ts:6:1 › Jack is a 56 px floating button above the tab bar (not a tab), and the open sheet does not scroll sideways
+[2/807] [chromium] › e2e\assistant.spec.ts:43:1 › button opens a dialog, Esc closes it, focus returns
+[3/807] [chromium] › e2e\admin.spec.ts:6:1 › setup tells members what the admin can see
+[4/807] [chromium] › e2e\ask-sheet.spec.ts:32:5 › light › sheet opens with three 76px rows, axe clean, Escape closes
+[5/807] [chromium] › e2e\assistant.spec.ts:55:1 › focus stays inside the sheet and the Back gesture closes it
+[6/807] [chromium] › e2e\assistant-layout.spec.ts:29:1 › with the keyboard open the composer sits directly above it, and the caution line is the new one
+[7/807] [chromium] › e2e\ask-sheet.spec.ts:49:5 › light › backdrop covers the whole viewport, tap outside / Cancel / Back close it, page behind stays out of reach
+[8/807] [chromium] › e2e\assistant.spec.ts:70:3 › with a mocked webhook › Confirm saves one record, Discard saves none
+[9/807] [chromium] › e2e\assistant.spec.ts:107:3 › with a mocked webhook › open_screen navigates by hash
+[10/807] [chromium] › e2e\assistant.spec.ts:122:3 › with a mocked webhook › server limit shows a friendly message
+[11/807] [chromium] › e2e\docs.spec.ts:73:1 › open #docs, upload front then back, view full screen, then use it with the server unreachable
+[12/807] [chromium] › e2e\family-messages.spec.ts:39:5 › light › Today: the Self-care card runs a breath, then asks how I feel
+[13/807] [chromium] › e2e\ask-sheet.spec.ts:79:5 › light › leaving via Scan leaves one Back press to return
+[14/807] [chromium] › e2e\ask-sheet.spec.ts:89:5 › light › PDF line goes to Health > Papers
+[15/807] [chromium] › e2e\docs.spec.ts:126:1 › dark mode: list, upload sheet and viewer
+  1) [chromium] › e2e\ask-sheet.spec.ts:89:5 › light › PDF line goes to Health > Papers ────────────
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /#health\/papers/
+    Received string:  "http://localhost:4431/#family/papers"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        13 × locator resolved to <html lang="en">…</html>
+           - unexpected value "http://localhost:4431/#family/papers"
+
+
+      92 |       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
+      93 |       await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
+    > 94 |       await expect(page).toHaveURL(/#health\/papers/)
+         |                          ^
+      95 |     })
+      96 |
+      97 |     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:94:26
+
+    Error Context: test-results\ask-sheet-light-PDF-line-goes-to-Health-Papers-chromium\error-context.md
+
+
+  2) [chromium] › e2e\admin.spec.ts:6:1 › setup tells members what the admin can see ───────────────
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /^Next: / })
+
+
+       7 |   await skipOnboarding(page)
+       8 |   await page.goto('/#me')
+    >  9 |   await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
+         |                                                       ^
+      10 |   await page.getByRole('button', { name: /: Sharing$/ }).click()
+      11 |   await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Sharing')
+      12 |   await expect(page.getByText('Your admin can see which screens you use, never your health values.')).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\admin.spec.ts:9:55
+
+    Error Context: test-results\admin-setup-tells-members-what-the-admin-can-see-chromium\error-context.md
+
+
+[16/807] [chromium] › e2e\admin.spec.ts:15:1 › app still opens normally without an admin session
+[17/807] [chromium] › e2e\ask-sheet.spec.ts:97:5 › light › one-time hint, Jack button and tab bar pass axe
+[18/807] [chromium] › e2e\docs.spec.ts:147:1 › the mock refuses an on_conflict target with no unique index (guards 0008)
+[19/807] [chromium] › e2e\docs.spec.ts:155:1 › no horizontal scroll at 390 wide
+[20/807] [chromium] › e2e\family-plan.spec.ts:63:5 › light › Plan: add an event, a task and a note offline, they survive a reload, and the page is accessible
+[21/807] [chromium] › e2e\admin.spec.ts:24:1 › #admin is not reachable without an admin session
+[22/807] [chromium] › e2e\family-report.spec.ts:60:3 › people list: neutral flag line with no health numbers (light)
+  3) [chromium] › e2e\family-messages.spec.ts:39:5 › light › Today: the Self-care card runs a breath, then asks how I feel 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByTestId('selfcare').getByRole('button', { name: /Calm/ })
+
+
+      43 |       await card.scrollIntoViewIfNeeded()
+      44 |       if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-selfcare-${scheme}.png` })
+    > 45 |       await card.getByRole('button', { name: /Calm/ }).click()
+         |                                                        ^
+      46 |       await expect(card.getByRole('link', { name: /Harvard/ })).toBeVisible()
+      47 |       await card.getByRole('button', { name: '1 min' }).click()
+      48 |       await card.getByRole('button', { name: 'Start' }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\family-messages.spec.ts:45:56
+
+    Error Context: test-results\family-messages-light-Toda-08018-breath-then-asks-how-I-feel-chromium\error-context.md
+
+
+  4) [chromium] › e2e\ask-sheet.spec.ts:97:5 › light › one-time hint, Jack button and tab bar pass axe 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText(/Ask me anything/)
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Ask me anything/) with timeout 5000ms
+      - waiting for getByText(/Ask me anything/)
+        10 × locator resolved to <p role="status" class="sh-hint">Ask me anything. Hold for more.</p>
+           - unexpected value "hidden"
+
+
+       99 |       await skipOnboarding(page)
+      100 |       await page.goto('/#today')
+    > 101 |       await expect(page.getByText(/Ask me anything/)).toBeVisible()
+          |                                                       ^
+      102 |       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').include('.sh-jackfab').include('.sh-hint').analyze()
+      103 |       expect(res.violations).toEqual([])
+      104 |     })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:101:55
+
+    Error Context: test-results\ask-sheet-light-one-time-h-985c7-button-and-tab-bar-pass-axe-chromium\error-context.md
+
+
+[23/807] [chromium] › e2e\family-messages.spec.ts:58:5 › light › Today: with reduced motion the circle does not move and the countdown carries it
+[24/807] [chromium] › e2e\family-report.spec.ts:71:3 › member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (light)
+[25/807] [chromium] › e2e\ask-sheet.spec.ts:106:5 › light › Talk reaches the chat
+[26/807] [chromium] › e2e\ask-sheet.spec.ts:114:5 › light › Scan & Capture reaches the web crop flow
+[27/807] [chromium] › e2e\family-plan.spec.ts:115:5 › light › People: status bubbles, messages, member page, and the phone health switches moved to Me
+[28/807] [chromium] › e2e\ask-sheet.spec.ts:124:5 › light › Upload a photo has a file input and a chosen photo lands in the crop step
+[29/807] [chromium] › e2e\family-report.spec.ts:99:3 › memories is off by default, then says what is missing instead of failing (light)
+  5) [chromium] › e2e\family-messages.spec.ts:58:5 › light › Today: with reduced motion the circle does not move and the countdown carries it 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('sc-run').locator('.sc-count')
+    Expected pattern: /^[1-4]$/
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByTestId('sc-run').locator('.sc-count') with timeout 5000ms
+      - waiting for getByTestId('sc-run').locator('.sc-count')
+
+
+      60 |       await page.goto('/')
+      61 |       await page.getByTestId('selfcare').getByRole('button', { name: 'Start' }).click()
+    > 62 |       await expect(page.getByTestId('sc-run').locator('.sc-count')).toHaveText(/^[1-4]$/)
+         |                                                                     ^
+      63 |       expect(await page.locator('.sc-circle').evaluate((e) => (e as HTMLElement).style.transform)).toBe('')
+      64 |     })
+      65 |
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\family-messages.spec.ts:62:69
+
+    Error Context: test-results\family-messages-light-Toda-0b65b-nd-the-countdown-carries-it-chromium\error-context.md
+
+
+[30/807] [chromium] › e2e\ask-sheet.spec.ts:136:5 › light › the one-time hint shows, never covers the Jack button, and is gone after the first open
+[31/807] [chromium] › e2e\family-messages.spec.ts:66:5 › light › Family: bubbles carry the status emoji; a bubble opens the person page
+[32/807] [chromium] › e2e\family-plan.spec.ts:63:5 › dark › Plan: add an event, a task and a note offline, they survive a reload, and the page is accessible
+  6) [chromium] › e2e\ask-sheet.spec.ts:136:5 › light › the one-time hint shows, never covers the Jack button, and is gone after the first open 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText(/Ask me anything/)
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Ask me anything/) with timeout 5000ms
+      - waiting for getByText(/Ask me anything/)
+        11 × locator resolved to <p role="status" class="sh-hint">Ask me anything. Hold for more.</p>
+           - unexpected value "hidden"
+
+
+      139 |       await page.goto('/#today')
+      140 |       const hint = page.getByText(/Ask me anything/)
+    > 141 |       await expect(hint).toBeVisible()
+          |                          ^
+      142 |       const h = (await hint.boundingBox())!
+      143 |       const a = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
+      144 |       expect(h.y + h.height).toBeLessThanOrEqual(a.y) // the bubble sits above the button, clear of the SOS caption (UI-1)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:141:26
+
+    Error Context: test-results\ask-sheet-light-the-one-ti-5d412-s-gone-after-the-first-open-chromium\error-context.md
+
+
+[33/807] [chromium] › e2e\family-report.spec.ts:60:3 › people list: neutral flag line with no health numbers (dark)
+[34/807] [chromium] › e2e\ask-sheet.spec.ts:32:5 › dark › sheet opens with three 76px rows, axe clean, Escape closes
+[35/807] [chromium] › e2e\family-messages.spec.ts:39:5 › dark › Today: the Self-care card runs a breath, then asks how I feel
+[36/807] [chromium] › e2e\family-report.spec.ts:71:3 › member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (dark)
+  7) [chromium] › e2e\ask-sheet.spec.ts:32:5 › dark › sheet opens with three 76px rows, axe clean, Escape closes 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 58
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    +     "help": "Elements must meet minimum color contrast ratio thresholds",
+    +     "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+    +     "id": "color-contrast",
+    +     "impact": "serious",
+    +     "nodes": Array [
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#3b7350",
+    +               "contrastRatio": 3.19,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#0d1a12",
+    +               "fontSize": "11.3pt (15px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.19 (foreground color: #0d1a12, background color: #3b7350, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<button type=\"button\" class=\"td-ok press\">",
+    +                 "target": Array [
+    +                   ".td-ok",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.19 (foreground color: #0d1a12, background color: #3b7350, font size: 11.3pt (15px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<button type=\"button\" class=\"td-ok press\">",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".td-ok",
+    +         ],
+    +       },
+    +     ],
+    +     "tags": Array [
+    +       "cat.color",
+    +       "wcag2aa",
+    +       "wcag143",
+    +       "TTv5",
+    +       "TT13.c",
+    +       "EN-301-549",
+    +       "EN-9.1.4.3",
+    +       "ACT",
+    +       "RGAAv4",
+    +       "RGAA-3.2.1",
+    +     ],
+    +   },
+    + ]
+
+      42 |       }
+      43 |       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
+    > 44 |       expect(res.violations).toEqual([])
+         |                              ^
+      45 |       await page.keyboard.press('Escape')
+      46 |       await expect(dlg).toHaveCount(0)
+      47 |     })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:44:30
+
+    Error Context: test-results\ask-sheet-dark-sheet-opens-3946b-ows-axe-clean-Escape-closes-chromium\error-context.md
+
+
+[37/807] [chromium] › e2e\family-plan.spec.ts:115:5 › dark › People: status bubbles, messages, member page, and the phone health switches moved to Me
+[38/807] [chromium] › e2e\ask-sheet.spec.ts:49:5 › dark › backdrop covers the whole viewport, tap outside / Cancel / Back close it, page behind stays out of reach
+[39/807] [chromium] › e2e\family-report.spec.ts:99:3 › memories is off by default, then says what is missing instead of failing (dark)
+[40/807] [chromium] › e2e\ask-sheet.spec.ts:79:5 › dark › leaving via Scan leaves one Back press to return
+[41/807] [chromium] › e2e\ask-sheet.spec.ts:89:5 › dark › PDF line goes to Health > Papers
+[42/807] [chromium] › e2e\family-plan.spec.ts:139:1 › Family root has Messages and Plan rows; Records moved to Family > Papers
+[43/807] [chromium] › e2e\family-report.spec.ts:117:1 › the print sheet drops the tab bar and top bar and keeps the report
+[44/807] [chromium] › e2e\firstaid.spec.ts:12:3 › Safety: IDs row under Medical ID, Act early grid (light, axe)
+[45/807] [chromium] › e2e\family-report.spec.ts:127:1 › a person this phone has no data for gets an empty report, not zeros
+  8) [chromium] › e2e\ask-sheet.spec.ts:89:5 › dark › PDF line goes to Health > Papers ─────────────
+
+    Error: expect(page).toHaveURL(expected) failed
+
+    Expected pattern: /#health\/papers/
+    Received string:  "http://localhost:4431/#family/papers"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveURL" with timeout 5000ms
+        13 × locator resolved to <html lang="en">…</html>
+           - unexpected value "http://localhost:4431/#family/papers"
+
+
+      92 |       await page.getByRole('button', { name: 'Ask Bantay' }).click({ button: 'right' })
+      93 |       await page.getByRole('link', { name: /For PDF files use Health > Papers/ }).click()
+    > 94 |       await expect(page).toHaveURL(/#health\/papers/)
+         |                          ^
+      95 |     })
+      96 |
+      97 |     test('one-time hint, Jack button and tab bar pass axe', async ({ page }) => {
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:94:26
+
+    Error Context: test-results\ask-sheet-dark-PDF-line-goes-to-Health-Papers-chromium\error-context.md
+
+
+  9) [chromium] › e2e\family-messages.spec.ts:39:5 › dark › Today: the Self-care card runs a breath, then asks how I feel 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByTestId('selfcare').getByRole('button', { name: /Calm/ })
+
+
+      43 |       await card.scrollIntoViewIfNeeded()
+      44 |       if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-selfcare-${scheme}.png` })
+    > 45 |       await card.getByRole('button', { name: /Calm/ }).click()
+         |                                                        ^
+      46 |       await expect(card.getByRole('link', { name: /Harvard/ })).toBeVisible()
+      47 |       await card.getByRole('button', { name: '1 min' }).click()
+      48 |       await card.getByRole('button', { name: 'Start' }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\family-messages.spec.ts:45:56
+
+    Error Context: test-results\family-messages-dark-Today-0c762-breath-then-asks-how-I-feel-chromium\error-context.md
+
+
+[46/807] [chromium] › e2e\get.spec.ts:8:1 › Android visitor sees 4 steps and the APK link
+[47/807] [chromium] › e2e\get.spec.ts:19:1 › iPhone visitor gets Add to Home Screen, no APK
+[48/807] [chromium] › e2e\firstaid.spec.ts:33:3 › Act early opens a topic, no YouTube before play (light, axe)
+[49/807] [chromium] › e2e\get.spec.ts:28:1 › Messenger in-app browser is told to open Chrome
+[50/807] [chromium] › e2e\get.spec.ts:36:1 › shows version, size and checksum when latest.json is readable
+[51/807] [chromium] › e2e\ask-sheet.spec.ts:97:5 › dark › one-time hint, Jack button and tab bar pass axe
+[52/807] [chromium] › e2e\get.spec.ts:50:1 › iPadOS (Mac user agent with touch) gets the iPhone steps
+[53/807] [chromium] › e2e\family-messages.spec.ts:58:5 › dark › Today: with reduced motion the circle does not move and the countdown carries it
+[54/807] [chromium] › e2e\get.spec.ts:59:1 › latest.json missing: no Download button, a not-ready note instead
+[55/807] [chromium] › e2e\health-a11y.spec.ts:23:3 › health: no axe violations, empty and with data
+[56/807] [chromium] › e2e\firstaid.spec.ts:12:3 › Safety: IDs row under Medical ID, Act early grid (dark, axe)
+  10) [chromium] › e2e\ask-sheet.spec.ts:97:5 › dark › one-time hint, Jack button and tab bar pass axe 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText(/Ask me anything/)
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Ask me anything/) with timeout 5000ms
+      - waiting for getByText(/Ask me anything/)
+        11 × locator resolved to <p role="status" class="sh-hint">Ask me anything. Hold for more.</p>
+           - unexpected value "hidden"
+
+
+       99 |       await skipOnboarding(page)
+      100 |       await page.goto('/#today')
+    > 101 |       await expect(page.getByText(/Ask me anything/)).toBeVisible()
+          |                                                       ^
+      102 |       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).include('nav[aria-label="Main"]').include('.sh-jackfab').include('.sh-hint').analyze()
+      103 |       expect(res.violations).toEqual([])
+      104 |     })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:101:55
+
+    Error Context: test-results\ask-sheet-dark-one-time-hi-e478f-button-and-tab-bar-pass-axe-chromium\error-context.md
+
+
+  11) [chromium] › e2e\family-messages.spec.ts:58:5 › dark › Today: with reduced motion the circle does not move and the countdown carries it 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByTestId('sc-run').locator('.sc-count')
+    Expected pattern: /^[1-4]$/
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" getByTestId('sc-run').locator('.sc-count') with timeout 5000ms
+      - waiting for getByTestId('sc-run').locator('.sc-count')
+
+
+      60 |       await page.goto('/')
+      61 |       await page.getByTestId('selfcare').getByRole('button', { name: 'Start' }).click()
+    > 62 |       await expect(page.getByTestId('sc-run').locator('.sc-count')).toHaveText(/^[1-4]$/)
+         |                                                                     ^
+      63 |       expect(await page.locator('.sc-circle').evaluate((e) => (e as HTMLElement).style.transform)).toBe('')
+      64 |     })
+      65 |
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\family-messages.spec.ts:62:69
+
+    Error Context: test-results\family-messages-dark-Today-5684f-nd-the-countdown-carries-it-chromium\error-context.md
+
+
+[57/807] [chromium] › e2e\health-a11y.spec.ts:38:1 › family (People view): no axe violations, light and dark
+[58/807] [chromium] › e2e\firstaid.spec.ts:33:3 › Act early opens a topic, no YouTube before play (dark, axe)
+[59/807] [chromium] › e2e\ask-sheet.spec.ts:106:5 › dark › Talk reaches the chat
+[60/807] [chromium] › e2e\family-messages.spec.ts:66:5 › dark › Family: bubbles carry the status emoji; a bubble opens the person page
+[61/807] [chromium] › e2e\ask-sheet.spec.ts:114:5 › dark › Scan & Capture reaches the web crop flow
+[62/807] [chromium] › e2e\firstaid.spec.ts:65:1 › a topic with no video (dengue) shows no player
+[63/807] [chromium] › e2e\health-labs.spec.ts:40:3 › labs list groups out-of-range first, with verdict words and a number line (light)
+[64/807] [chromium] › e2e\health-overview.spec.ts:54:1 › My KPIs show the latest reading and time; the Vitals toggle switches Latest, Average and Normal
+[65/807] [chromium] › e2e\ask-sheet.spec.ts:124:5 › dark › Upload a photo has a file input and a chosen photo lands in the crop step
+[66/807] [chromium] › e2e\ask-sheet.spec.ts:136:5 › dark › the one-time hint shows, never covers the Jack button, and is gone after the first open
+[67/807] [chromium] › e2e\health-overview.spec.ts:79:3 › KPI tiles keep every child inside the tile at 390px
+[68/807] [chromium] › e2e\health-labs.spec.ts:61:3 › lab detail shows what it measures, the last 3 values and questions, and adds them to the visit list (light)
+[69/807] [chromium] › e2e\health-overview.spec.ts:79:3 › KPI tiles keep every child inside the tile at 360px
+[70/807] [chromium] › e2e\health-v6.spec.ts:44:1 › overview: body map, Previous switch, medicines; metric detail; axe light and dark
+  12) [chromium] › e2e\ask-sheet.spec.ts:136:5 › dark › the one-time hint shows, never covers the Jack button, and is gone after the first open 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText(/Ask me anything/)
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Ask me anything/) with timeout 5000ms
+      - waiting for getByText(/Ask me anything/)
+        10 × locator resolved to <p role="status" class="sh-hint">Ask me anything. Hold for more.</p>
+           - unexpected value "hidden"
+
+
+      139 |       await page.goto('/#today')
+      140 |       const hint = page.getByText(/Ask me anything/)
+    > 141 |       await expect(hint).toBeVisible()
+          |                          ^
+      142 |       const h = (await hint.boundingBox())!
+      143 |       const a = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
+      144 |       expect(h.y + h.height).toBeLessThanOrEqual(a.y) // the bubble sits above the button, clear of the SOS caption (UI-1)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\ask-sheet.spec.ts:141:26
+
+    Error Context: test-results\ask-sheet-dark-the-one-tim-73805-s-gone-after-the-first-open-chromium\error-context.md
+
+
+[71/807] [chromium] › e2e\health-labs.spec.ts:40:3 › labs list groups out-of-range first, with verdict words and a number line (dark)
+[72/807] [chromium] › e2e\health-overview.spec.ts:88:1 › Latest / Average / Normal switch fits on one line at 360px
+[73/807] [chromium] › e2e\jack-gate.spec.ts:17:5 › light › ask-emergency: the 911 card shows on this phone and no request leaves it
+[74/807] [chromium] › e2e\health-overview.spec.ts:99:1 › a whole vital row is the link, 44px tall, with one tab stop
+[75/807] [chromium] › e2e\health-labs.spec.ts:61:3 › lab detail shows what it measures, the last 3 values and questions, and adds them to the visit list (dark)
+[76/807] [chromium] › e2e\jack-gate.spec.ts:33:5 › light › ask-offline: says so, lists what still works, keeps the question; an emergency still gets the card
+[77/807] [chromium] › e2e\health-overview.spec.ts:109:1 › refill rows give the text the full row width at 360px
+[78/807] [chromium] › e2e\health-overview.spec.ts:120:1 › a lab result opens as a dated list: no period, time-of-day or monthly average controls
+[79/807] [chromium] › e2e\health-labs.spec.ts:78:1 › lab list and detail do not scroll sideways at 200% text zoom (195px wide)
+[80/807] [chromium] › e2e\jack-gate.spec.ts:17:5 › dark › ask-emergency: the 911 card shows on this phone and no request leaves it
+[81/807] [chromium] › e2e\look.spec.ts:6:1 › v2 look: cream ground, frosted tab bar (D-71), self-hosted fonts
+[82/807] [chromium] › e2e\health-overview.spec.ts:131:1 › More in Health links to Readings, Body wiki, Move and Visits; the Labs tile opens its own screen
+[83/807] [chromium] › e2e\health-v6.spec.ts:104:1 › medicines list shows and is read-only when nobody is signed in
+[84/807] [chromium] › e2e\jack-gate.spec.ts:33:5 › dark › ask-offline: says so, lists what still works, keeps the question; an emergency still gets the card
+[85/807] [chromium] › e2e\look.spec.ts:15:1 › shell frame: top bar turns to glass only after content scrolls under it, sub-page header is one row
+[86/807] [chromium] › e2e\look.spec.ts:28:1 › reduced motion stops the sky animation
+[87/807] [chromium] › e2e\health-v6.spec.ts:119:1 › Health shows the body hero for the chosen person, and the old Papers link lands under Family
+[88/807] [chromium] › e2e\health-overview.spec.ts:142:1 › refill rows still read their stock line
+[89/807] [chromium] › e2e\media.spec.ts:10:3 › Discover > Watch: no YouTube request before the tap, then the no-cookie player (light, axe)
+[90/807] [chromium] › e2e\look.spec.ts:34:1 › tab title follows the tab
+[91/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › today: no sideways scroll
+[92/807] [chromium] › e2e\look.spec.ts:51:3 › touch › touch swipe left moves to the next tab and focuses the heading
+[93/807] [chromium] › e2e\health-overview.spec.ts:148:3 › screens: readings, vitals modes, metric, add reading, refill, explore (light, axe)
+[94/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › health: no sideways scroll
+[95/807] [chromium] › e2e\look.spec.ts:59:3 › touch › a swipe that starts at the screen edge is left to the OS
+[96/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › discover: no sideways scroll
+[97/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › discover/play: no sideways scroll
+[98/807] [chromium] › e2e\look.spec.ts:66:3 › touch › mouse drags do not change tab
+[99/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › records: no sideways scroll
+[100/807] [chromium] › e2e\offline.spec.ts:4:1 › offline bar appears when the phone goes offline and goes when it is back
+[101/807] [chromium] › e2e\media.spec.ts:10:3 › Discover > Watch: no YouTube request before the tap, then the no-cookie player (dark, axe)
+[102/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › family: no sideways scroll
+[103/807] [chromium] › e2e\onboarding.spec.ts:46:3 › onboarding screens 3 to 5 after joining › first launch asks for reminders in context, with dots and Skip, no switches
+[104/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 375x812 › safety: no sideways scroll
+[105/807] [chromium] › e2e\onboarding.spec.ts:55:3 › onboarding screens 3 to 5 after joining › Skip on 3, 4 and 5 opens Today with the consent line on screen 5, and remembers it
+[106/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › today: no sideways scroll
+[107/807] [chromium] › e2e\onboarding.spec.ts:70:3 › onboarding screens 3 to 5 after joining › a zone chip saves the zone
+[108/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › health: no sideways scroll
+[109/807] [chromium] › e2e\onboarding.spec.ts:81:3 › setup steps from the checklist › walks every step with Skip and Finish, then closes
+[110/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › discover: no sideways scroll
+[111/807] [chromium] › e2e\phone-warnings.spec.ts:10:3 › android phone › safety card: android steps only, self-report survives reload
+[112/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › discover/play: no sideways scroll
+[113/807] [chromium] › e2e\health-overview.spec.ts:148:3 › screens: readings, vitals modes, metric, add reading, refill, explore (dark, axe)
+[114/807] [chromium] › e2e\phone-warnings.spec.ts:26:5 › android phone › no sideways scroll at 375px, axe clean
+[115/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › records: no sideways scroll
+[116/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › family: no sideways scroll
+[117/807] [chromium] › e2e\no-sideways-scroll.spec.ts:13:7 › 1280x800 › safety: no sideways scroll
+[118/807] [chromium] › e2e\phone-warnings.spec.ts:26:5 › android phone › no sideways scroll at 320px, axe clean
+[119/807] [chromium] › e2e\records.spec.ts:24:1 › empty states
+[120/807] [chromium] › e2e\phone-warnings.spec.ts:37:1 › the setup wizard has the phone warnings step, and it can be passed
+  13) [chromium] › e2e\records.spec.ts:24:1 › empty states ─────────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('No results yet')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('No results yet') with timeout 5000ms
+      - waiting for getByText('No results yet')
+
+
+      26 |   await expect(page.getByText('No records yet')).toBeVisible()
+      27 |   await page.goto('/#health')
+    > 28 |   await expect(page.getByText('No results yet')).toBeVisible()
+         |                                                  ^
+      29 | })
+      30 |
+      31 | test('Papers lives under Family; the old #records, #family/records and #health/papers links land there', async ({ page }) => {
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\records.spec.ts:28:50
+
+    Error Context: test-results\records-empty-states-chromium\error-context.md
+
+
+[121/807] [chromium] › e2e\records.spec.ts:31:1 › Papers lives under Family; the old #records, #family/records and #health/papers links land there
+[122/807] [chromium] › e2e\s1-alerts-shots.spec.ts:47:3 › alert list light
+[123/807] [chromium] › e2e\records.spec.ts:46:1 › timeline, trend chart and latest vs normal from seeded data
+[124/807] [chromium] › e2e\s1-alerts-shots.spec.ts:63:3 › family tab badge and bell light
+[125/807] [chromium] › e2e\s12-f3-shots.spec.ts:49:5 › light › fun-play hub
+  14) [chromium] › e2e\onboarding.spec.ts:81:3 › setup steps from the checklist › walks every step with Skip and Finish, then closes 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:82:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-d29c4-Skip-and-Finish-then-closes-chromium\error-context.md
+
+
+[126/807] [chromium] › e2e\s1-alerts-shots.spec.ts:71:3 › today alert card and switch banner light
+[127/807] [chromium] › e2e\s12-f3-shots.spec.ts:58:5 › light › fun-memory in progress
+[128/807] [chromium] › e2e\onboarding.spec.ts:92:3 › setup steps from the checklist › Back and the step dots move between steps
+[129/807] [chromium] › e2e\s1-alerts-shots.spec.ts:47:3 › alert list dark
+[130/807] [chromium] › e2e\s1-alerts-shots.spec.ts:63:3 › family tab badge and bell dark
+[131/807] [chromium] › e2e\s1-alerts-shots.spec.ts:71:3 › today alert card and switch banner dark
+  15) [chromium] › e2e\phone-warnings.spec.ts:37:1 › the setup wizard has the phone warnings step, and it can be passed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: /^Next: / })
+
+
+      38 |   await skipOnboarding(page)
+      39 |   await page.goto('/#me')
+    > 40 |   await page.getByRole('button', { name: /^Next: / }).click() // since S6a first launch is start-done; the setup steps open from the setup card on Me
+         |                                                       ^
+      41 |   await page.getByRole('button', { name: /: Your phone's warnings$/ }).click()
+      42 |   await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText("Your phone's warnings")
+      43 |   await expect(page.getByText('Phone warnings check')).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\phone-warnings.spec.ts:40:55
+
+    Error Context: test-results\phone-warnings-the-setup-w-c55c6-s-step-and-it-can-be-passed-chromium\error-context.md
+
+
+[132/807] [chromium] › e2e\s12-f3-shots.spec.ts:83:5 › light › fun-wordsearch with words found
+[133/807] [chromium] › e2e\s12-play.spec.ts:25:1 › Play hub: the games, the legal line, and a played game shows in Played today
+[134/807] [chromium] › e2e\s12-learn.spec.ts:44:1 › flag off: Learn shows recipes only, and a medicine link falls back to the Learn home
+[135/807] [chromium] › e2e\s12-learn.spec.ts:56:1 › recipes to a recipe to cook mode: big steps, a one tap timer, wake lock asked and let go
+[136/807] [chromium] › e2e\s12-play.spec.ts:53:1 › Word search: tap first and last letter, switch language, new puzzle; fits at 360 px
+[137/807] [chromium] › e2e\s12-play.spec.ts:71:1 › Alam mo ba?: any answer is kind, the right one is marked, and there is no "wrong"
+[138/807] [chromium] › e2e\s12-learn.spec.ts:79:1 › flag on: medicine wiki lists the cards and a card ends with Talk to your doctor first
+[139/807] [chromium] › e2e\s12-f3-shots.spec.ts:105:5 › light › fun-trivia answered
+[140/807] [chromium] › e2e\s12-play.spec.ts:83:1 › Fun facts: On this day card with the CC BY-SA credit and a Wikipedia link, and a Philippine fact
+[141/807] [chromium] › e2e\s12-f3-shots.spec.ts:113:5 › light › fun-facts
+[142/807] [chromium] › e2e\s12-learn.spec.ts:91:1 › Learn pages fit at 360 px without sideways scroll
+[143/807] [chromium] › e2e\s12-f3-shots.spec.ts:120:5 › light › fun-news
+[144/807] [chromium] › e2e\s12-play.spec.ts:94:1 › News: official advisories are pinned first, headlines link out, saved headlines show offline
+[145/807] [chromium] › e2e\s12-learn.spec.ts:108:3 › shots light
+[146/807] [chromium] › e2e\s12-learn.spec.ts:108:3 › shots dark
+[147/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: today ends with room above the tab bar
+[148/807] [chromium] › e2e\s12-shell.spec.ts:35:1 › five tabs in order; Discover opens with its five sub-tabs; Watch is registered and draws its own screen
+[149/807] [chromium] › e2e\s12-f3-shots.spec.ts:49:5 › dark › fun-play hub
+  16) [chromium] › e2e\onboarding.spec.ts:92:3 › setup steps from the checklist › Back and the step dots move between steps 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:93:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-21adb-tep-dots-move-between-steps-chromium\error-context.md
+
+
+[150/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: health ends with room above the tab bar
+[151/807] [chromium] › e2e\s12-f3-shots.spec.ts:58:5 › dark › fun-memory in progress
+[152/807] [chromium] › e2e\onboarding.spec.ts:101:3 › setup steps from the checklist › a step whose flag is already set leaves the list
+[153/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: family ends with room above the tab bar
+  17) [chromium] › e2e\s12-shell.spec.ts:35:1 › five tabs in order; Discover opens with its five sub-tabs; Watch is registered and draws its own screen 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('group', { name: 'Discover sections' }).getByRole('button')
+    Expected: 5
+    Received: 0
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('group', { name: 'Discover sections' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Discover sections' }).getByRole('button')
+        13 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      43 |   await expect(nav.getByRole('button', { name: 'Discover' })).toHaveAttribute('aria-current', 'page')
+      44 |   const subs = page.getByRole('group', { name: 'Discover sections' })
+    > 45 |   await expect(subs.getByRole('button')).toHaveCount(5)
+         |                                          ^
+      46 |   expect(await subs.getByRole('button').allTextContents()).toEqual(['Learn', 'Listen', 'Play', 'Watch', 'News'])
+      47 |   await expect(page.getByTestId('learn-home')).toBeVisible() // Learn (lane F2) is the default sub
+      48 |   await subs.getByRole('button', { name: 'Watch' }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-shell.spec.ts:45:42
+
+    Error Context: test-results\s12-shell-five-tabs-in-ord-d1c4a-ed-and-draws-its-own-screen-chromium\error-context.md
+
+
+[154/807] [chromium] › e2e\s12-shell.spec.ts:56:1 › Discover sub-tabs fit at 360 px without sideways scroll
+[155/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: safety ends with room above the tab bar
+[156/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: health/meds ends with room above the tab bar
+[157/807] [chromium] › e2e\s12-f3-shots.spec.ts:83:5 › dark › fun-wordsearch with words found
+  18) [chromium] › e2e\onboarding.spec.ts:101:3 › setup steps from the checklist › a step whose flag is already set leaves the list 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: /left to set up/ })
+    Expected substring: "8 things left"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: /left to set up/ }) with timeout 5000ms
+      - waiting for getByRole('region', { name: /left to set up/ })
+
+
+      102 |     await skipOnboarding(page)
+      103 |     await page.goto('/#me')
+    > 104 |     await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length} things left`)
+          |                                                                        ^
+      105 |     await kvSet(page, 'profile.photo', 'data:image/jpeg;base64,AA==')
+      106 |     await page.reload()
+      107 |     await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left`)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:104:72
+
+    Error Context: test-results\onboarding-setup-steps-fro-a0aaf-already-set-leaves-the-list-chromium\error-context.md
+
+
+[158/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: family/plan ends with room above the tab bar
+  19) [chromium] › e2e\s12-shell.spec.ts:56:1 › Discover sub-tabs fit at 360 px without sideways scroll 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('group', { name: 'Discover sections' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('group', { name: 'Discover sections' }) with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Discover sections' })
+
+
+      58 |   await page.goto('/#discover')
+      59 |   const subs = page.getByRole('group', { name: 'Discover sections' })
+    > 60 |   await expect(subs).toBeVisible()
+         |                      ^
+      61 |   const over = await page.evaluate(() => {
+      62 |     const s = document.querySelector('[aria-label="Discover sections"]')!
+      63 |     return [s.scrollWidth > s.clientWidth, document.scrollingElement!.scrollWidth > document.scrollingElement!.clientWidth, ...Array.from(s.querySelectorAll('button')).map((b) => b.getBoundingClientRect().right > window.innerWidth)]
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-shell.spec.ts:60:22
+
+    Error Context: test-results\s12-shell-Discover-sub-tab-11aea--px-without-sideways-scroll-chromium\error-context.md
+
+
+[159/807] [chromium] › e2e\onboarding.spec.ts:110:3 › setup steps from the checklist › about me: pick suggestions, add your own, None is exclusive
+[160/807] [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: weather ends with room above the tab bar
+[161/807] [chromium] › e2e\s12-shell.spec.ts:68:1 › Jack: on the five tabs, off on full views and own-header pages
+  20) [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: weather ends with room above the tab bar ──────
+
+    Error: weather: last item bottom 963.546875 vs tab bar top 766
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 758
+    Received:    963.546875
+
+       99 |     await open(page, hash)
+      100 |     const g = await endGap(page)
+    > 101 |     expect(g.bottom, `${hash}: last item bottom ${g.bottom} vs tab bar top ${g.over}`).toBeLessThanOrEqual(g.over - 8)
+          |                                                                                        ^
+      102 |   })
+      103 | }
+      104 |
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-polish.spec.ts:101:88
+
+    Error Context: test-results\s12-polish-S3-weather-ends-with-room-above-the-tab-bar-chromium\error-context.md
+
+
+[162/807] [chromium] › e2e\s12-f3-shots.spec.ts:105:5 › dark › fun-trivia answered
+[163/807] [chromium] › e2e\s12-shell.spec.ts:80:1 › Jack is 56 px, a tap opens the chat, Back closes it, a hold opens the Ask sheet
+[164/807] [chromium] › e2e\s12-polish.spec.ts:105:1 › S3: the spacer is a flex item, so a webview that drops padding-bottom still clears the bar
+[165/807] [chromium] › e2e\s12-f3-shots.spec.ts:113:5 › dark › fun-facts
+[166/807] [chromium] › e2e\s12-f3-shots.spec.ts:120:5 › dark › fun-news
+[167/807] [chromium] › e2e\s12-shell.spec.ts:101:1 › Simple mode has no Jack button and no tab bar
+[168/807] [chromium] › e2e\s12-polish.spec.ts:121:5 › light › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (light)
+[169/807] [chromium] › e2e\s12-shell.spec.ts:111:1 › PIN approval sheet shows on any tab for a pin_approve row; Not Mama marks it seen and closes it
+[170/807] [chromium] › e2e\s13-d-discover.spec.ts:36:1 › sub-nav: one pill, moved by transform, none under reduced motion
+[171/807] [chromium] › e2e\s13-d-discover.spec.ts:49:1 › Learn: 2x2 tiles plus Your benefits, benefits open outside
+[172/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 375 px: one Jack, an alt, no sideways scroll
+  21) [chromium] › e2e\onboarding.spec.ts:110:3 › setup steps from the checklist › about me: pick suggestions, add your own, None is exclusive 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:111:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-12883--your-own-None-is-exclusive-chromium\error-context.md
+
+
+[173/807] [chromium] › e2e\s13-d-discover.spec.ts:63:1 › Today pick (trivia on 28 Oct) opens the same question Play asks, and back lands on the Play hub
+  22) [chromium] › e2e\s12-polish.spec.ts:121:5 › light › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (light) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('section[aria-label="Weather"] .wxs-host')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('section[aria-label="Weather"] .wxs-host') with timeout 5000ms
+      - waiting for locator('section[aria-label="Weather"] .wxs-host')
+
+
+      122 |       await open(page, 'today')
+      123 |       const card = page.locator('section[aria-label="Weather"] .wxs-host')
+    > 124 |       await expect(card).toBeVisible()
+          |                          ^
+      125 |       for (const sel of ['.td-wx-t, .td-wxh-t', '.td-k, .td-wx-row b']) {
+      126 |         const color = await card.locator(sel).first().evaluate((e) => getComputedStyle(e).color)
+      127 |         expect(color, sel).toBe('rgb(255, 255, 255)') // white on SKY + SCRIM, which scene.test.ts proves is at least 4.5:1
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-polish.spec.ts:124:26
+
+    Error Context: test-results\s12-polish-light-S2-the-te-cf5d2-d-no-empty-plan-card-light--chromium\error-context.md
+
+
+  23) [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 375 px: one Jack, an alt, no sideways scroll 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "96"
+    Received: "56"
+
+      35 |   await expect(img).toBeVisible()
+      36 |   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+    > 37 |   expect(await img.getAttribute('width')).toBe(String(size))
+         |                                           ^
+      38 |   expect(await img.getAttribute('height')).toBe(String(size))
+      39 |   if (alt === null) expect(await img.getAttribute('alt')).toBe('')
+      40 |   else expect(await img.getAttribute('alt')).toBe(alt)
+        at expectJack (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:37:43)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:61:7
+
+    Error Context: test-results\s14-j-jack-reading-at-375--ff29e-k-an-alt-no-sideways-scroll-chromium\error-context.md
+
+
+[174/807] [chromium] › e2e\s13-d-discover.spec.ts:76:1 › the season is one row on the overview that opens the season page
+[175/807] [chromium] › e2e\s13-d-discover.spec.ts:87:1 › Listen: one at a time, and leaving the sub stops the voice
+[176/807] [chromium] › e2e\onboarding.spec.ts:129:3 › setup steps from the checklist › notifications step: rows are off and the test reminder waits for permission
+[177/807] [chromium] › e2e\s13-d-discover.spec.ts:101:1 › Watch: posters scroll inside their row, a poster picks a video, nothing is embedded before the tap
+[178/807] [chromium] › e2e\s12-polish.spec.ts:134:5 › light › S6, S7: Health with old readings only has one empty hero and one Labs tile (light)
+[179/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[180/807] [chromium] › e2e\s13-d-discover.spec.ts:116:5 › shots light › discover root, undas
+[181/807] [chromium] › e2e\s13-d-discover.spec.ts:122:5 › shots light › discover root, hot season
+[182/807] [chromium] › e2e\s12-polish.spec.ts:145:5 › light › S7: the Lab results screen shows one decimal, never the raw stored value (light)
+[183/807] [chromium] › e2e\s13-d-discover.spec.ts:128:5 › shots light › learn shelves
+[184/807] [chromium] › e2e\s13-d-discover.spec.ts:134:5 › shots light › listen, one playing
+  24) [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "96"
+    Received: "56"
+
+      35 |   await expect(img).toBeVisible()
+      36 |   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+    > 37 |   expect(await img.getAttribute('width')).toBe(String(size))
+         |                                           ^
+      38 |   expect(await img.getAttribute('height')).toBe(String(size))
+      39 |   if (alt === null) expect(await img.getAttribute('alt')).toBe('')
+      40 |   else expect(await img.getAttribute('alt')).toBe(alt)
+        at expectJack (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:37:43)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:61:7
+
+    Error Context: test-results\s14-j-jack-reading-at-195--7e8be-k-an-alt-no-sideways-scroll-chromium\error-context.md
+
+
+[185/807] [chromium] › e2e\s12-polish.spec.ts:154:5 › light › S9: People bubbles say the last check-in in words, with no sleep icon (light)
+[186/807] [chromium] › e2e\s13-d-discover.spec.ts:141:5 › shots light › watch
+[187/807] [chromium] › e2e\s13-d-discover.spec.ts:116:5 › shots dark › discover root, undas
+[188/807] [chromium] › e2e\s13-d-discover.spec.ts:122:5 › shots dark › discover root, hot season
+[189/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › cooking-recipes at 375 px: one Jack, an alt, no sideways scroll
+[190/807] [chromium] › e2e\s13-d-discover.spec.ts:128:5 › shots dark › learn shelves
+[191/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › cooking-recipes at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[192/807] [chromium] › e2e\s13-d-discover.spec.ts:134:5 › shots dark › listen, one playing
+  25) [chromium] › e2e\onboarding.spec.ts:129:3 › setup steps from the checklist › notifications step: rows are off and the test reminder waits for permission 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:130:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-4c7c1-minder-waits-for-permission-chromium\error-context.md
+
+
+[193/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › listening at 375 px: one Jack, an alt, no sideways scroll
+[194/807] [chromium] › e2e\s13-d-discover.spec.ts:141:5 › shots dark › watch
+[195/807] [chromium] › e2e\s15-l1-shell.spec.ts:30:3 › Ask hint stays clear of the SOS caption and page text at 375x600
+[196/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › listening at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[197/807] [chromium] › e2e\onboarding.spec.ts:136:3 › setup steps from the checklist › SOS contacts step: two contact slots, no calling prompt on the web
+[198/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 375 px: one Jack, an alt, no sideways scroll
+[199/807] [chromium] › e2e\s15-l1-shell.spec.ts:30:3 › Ask hint stays clear of the SOS caption and page text at 375x667
+  26) [chromium] › e2e\s12-polish.spec.ts:154:5 › light › S9: People bubbles say the last check-in in words, with no sleep icon (light) 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('list', { name: 'Family roll call' }).getByRole('button', { name: 'Message Papa' })
+
+
+      159 |       await expect(roll).toContainText('No check-in yet')
+      160 |       await expect(roll).not.toContainText('💤')
+    > 161 |       await roll.getByRole('button', { name: 'Message Papa' }).click() // non-carers still reach Messages from the bubble (ML-13)
+          |                                                                ^
+      162 |       await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
+      163 |       await page.keyboard.press('Escape')
+      164 |       await expect(page.getByRole('dialog', { name: 'Message Papa' })).toHaveCount(0)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-polish.spec.ts:161:64
+
+    Error Context: test-results\s12-polish-light-S9-People-477df-s-with-no-sleep-icon-light--chromium\error-context.md
+
+
+[200/807] [chromium] › e2e\s15-l1-shell.spec.ts:30:3 › Ask hint stays clear of the SOS caption and page text at 360x640
+[201/807] [chromium] › e2e\s15-l1-shell.spec.ts:30:3 › Ask hint stays clear of the SOS caption and page text at 375x800
+[202/807] [chromium] › e2e\s12-polish.spec.ts:121:5 › dark › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (dark)
+[203/807] [chromium] › e2e\s15-l1-shell.spec.ts:43:3 › shell at 375px light
+[204/807] [chromium] › e2e\s15-l1-shell.spec.ts:43:3 › shell at 375px dark
+[205/807] [chromium] › e2e\s15-l1-shell.spec.ts:43:3 › shell at 195px light
+[206/807] [chromium] › e2e\s15-l1-shell.spec.ts:43:3 › shell at 195px dark
+  27) [chromium] › e2e\s12-polish.spec.ts:121:5 › dark › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (dark) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('section[aria-label="Weather"] .wxs-host')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('section[aria-label="Weather"] .wxs-host') with timeout 5000ms
+      - waiting for locator('section[aria-label="Weather"] .wxs-host')
+
+
+      122 |       await open(page, 'today')
+      123 |       const card = page.locator('section[aria-label="Weather"] .wxs-host')
+    > 124 |       await expect(card).toBeVisible()
+          |                          ^
+      125 |       for (const sel of ['.td-wx-t, .td-wxh-t', '.td-k, .td-wx-row b']) {
+      126 |         const color = await card.locator(sel).first().evaluate((e) => getComputedStyle(e).color)
+      127 |         expect(color, sel).toBe('rgb(255, 255, 255)') // white on SKY + SCRIM, which scene.test.ts proves is at least 4.5:1
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-polish.spec.ts:124:26
+
+    Error Context: test-results\s12-polish-dark-S2-the-tem-c36d7-nd-no-empty-plan-card-dark--chromium\error-context.md
+
+
+[207/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #today: no button wraps at 360
+[208/807] [chromium] › e2e\s12-polish.spec.ts:134:5 › dark › S6, S7: Health with old readings only has one empty hero and one Labs tile (dark)
+[209/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #weather: no button wraps at 360
+  28) [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 375 px: one Jack, an alt, no sideways scroll 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.scrollIntoViewIfNeeded: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('img.jack:not([aria-label="Ask Bantay"] img)')
+
+
+      58 |       if (p.ready === 'mv-page') await expect(page.locator('.mv-page')).toBeVisible()
+      59 |       else await expect(page.getByTestId(p.ready).first()).toBeVisible()
+    > 60 |       await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
+         |                                                                         ^
+      61 |       await expectJack(page, p.alt, p.size)
+      62 |       expect(await sideways(page)).toBe(0)
+      63 |       if (zoom === 100) await shot(page, p.name)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:60:73
+
+    Error Context: test-results\s14-j-jack-watching-at-375-a695a-k-an-alt-no-sideways-scroll-chromium\error-context.md
+
+
+[210/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health: no button wraps at 360
+  29) [chromium] › e2e\onboarding.spec.ts:136:3 › setup steps from the checklist › SOS contacts step: two contact slots, no calling prompt on the web 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:137:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-0360a-o-calling-prompt-on-the-web-chromium\error-context.md
+
+
+[211/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/meds: no button wraps at 360
+[212/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/labs: no button wraps at 360
+[213/807] [chromium] › e2e\s12-polish.spec.ts:145:5 › dark › S7: the Lab results screen shows one decimal, never the raw stored value (dark)
+[214/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[215/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/body: no button wraps at 360
+[216/807] [chromium] › e2e\onboarding.spec.ts:143:3 › setup steps from the checklist › location step has no prefilled barangay, and saves the one typed
+[217/807] [chromium] › e2e\s12-polish.spec.ts:154:5 › dark › S9: People bubbles say the last check-in in words, with no sleep icon (dark)
+[218/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/visits: no button wraps at 360
+[219/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/move: no button wraps at 360
+[220/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/nutrition: no button wraps at 360
+[221/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #health/refill: no button wraps at 360
+[222/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover: no button wraps at 360
+[223/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/learn: no button wraps at 360
+[224/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/learn/library: no button wraps at 360
+[225/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/learn/together: no button wraps at 360
+[226/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/watch: no button wraps at 360
+[227/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/listen: no button wraps at 360
+  30) [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.scrollIntoViewIfNeeded: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('img.jack:not([aria-label="Ask Bantay"] img)')
+
+
+      58 |       if (p.ready === 'mv-page') await expect(page.locator('.mv-page')).toBeVisible()
+      59 |       else await expect(page.getByTestId(p.ready).first()).toBeVisible()
+    > 60 |       await page.locator('img.jack:not([aria-label="Ask Bantay"] img)').scrollIntoViewIfNeeded() // the tab bar can cover a low Jack (Play)
+         |                                                                         ^
+      61 |       await expectJack(page, p.alt, p.size)
+      62 |       expect(await sideways(page)).toBe(0)
+      63 |       if (zoom === 100) await shot(page, p.name)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:60:73
+
+    Error Context: test-results\s14-j-jack-watching-at-195-748f6-k-an-alt-no-sideways-scroll-chromium\error-context.md
+
+
+  31) [chromium] › e2e\onboarding.spec.ts:143:3 › setup steps from the checklist › location step has no prefilled barangay, and saves the one typed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:144:5
+
+    Error Context: test-results\onboarding-setup-steps-fro-2367a-gay-and-saves-the-one-typed-chromium\error-context.md
+
+
+[228/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/play: no button wraps at 360
+  32) [chromium] › e2e\s12-polish.spec.ts:154:5 › dark › S9: People bubbles say the last check-in in words, with no sleep icon (dark) 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('list', { name: 'Family roll call' }).getByRole('button', { name: 'Message Papa' })
+
+
+      159 |       await expect(roll).toContainText('No check-in yet')
+      160 |       await expect(roll).not.toContainText('💤')
+    > 161 |       await roll.getByRole('button', { name: 'Message Papa' }).click() // non-carers still reach Messages from the bubble (ML-13)
+          |                                                                ^
+      162 |       await expect(page.getByRole('dialog', { name: 'Message Papa' })).toBeVisible()
+      163 |       await page.keyboard.press('Escape')
+      164 |       await expect(page.getByRole('dialog', { name: 'Message Papa' })).toHaveCount(0)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-polish.spec.ts:161:64
+
+    Error Context: test-results\s12-polish-dark-S9-People--7e824-ds-with-no-sleep-icon-dark--chromium\error-context.md
+
+
+[229/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #discover/news: no button wraps at 360
+[230/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › playing at 375 px: one Jack, an alt, no sideways scroll
+[231/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #family: no button wraps at 360
+[232/807] [chromium] › e2e\onboarding.spec.ts:165:3 › notifications already allowed › the notifications step leaves the list
+[233/807] [chromium] › e2e\s16-discover.spec.ts:27:5 › light › overview: hero, season row, five tiles within 800 px, each tile opens its sub
+[234/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #family/papers: no button wraps at 360
+[235/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #family/messages: no button wraps at 360
+[236/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › playing at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[237/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #family/plan: no button wraps at 360
+[238/807] [chromium] › e2e\s16-discover.spec.ts:51:5 › light › rainy season row: six slow streaks that stop under reduced motion
+[239/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › walking at 375 px: one Jack, an alt, no sideways scroll
+  33) [chromium] › e2e\onboarding.spec.ts:165:3 › notifications already allowed › the notifications step leaves the list 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: /left to set up/ })
+    Expected substring: "7 things left"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: /left to set up/ }) with timeout 5000ms
+      - waiting for getByRole('region', { name: /left to set up/ })
+
+
+      169 |     await page.goto('/#me')
+      170 |     const card = page.getByRole('region', { name: /left to set up/ })
+    > 171 |     await expect(card).toContainText(`${STEPS.length - 1} things left`)
+          |                        ^
+      172 |     await card.getByRole('button', { name: 'See all' }).click()
+      173 |     await expect(card.getByRole('button', { name: 'Reminders and alerts', exact: true })).toHaveCount(0)
+      174 |   })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:171:24
+
+    Error Context: test-results\onboarding-notifications-a-de036-ations-step-leaves-the-list-chromium\error-context.md
+
+
+[240/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #safety: no button wraps at 360
+[241/807] [chromium] › e2e\s16-discover.spec.ts:63:5 › light › learn: 2x2 tiles + Your benefits, Library at #discover/learn/library
+[242/807] [chromium] › e2e\s14-j-jack.spec.ts:54:5 › walking at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll
+[243/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #safety/warnings: no button wraps at 360
+[244/807] [chromium] › e2e\s16-discover.spec.ts:83:5 › light › watch: poster row scrolls inside itself, page stays within 800 px
+[245/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #safety/storms: no button wraps at 360
+[246/807] [chromium] › e2e\s14-j-jack.spec.ts:68:1 › cook mode shows a small decorative Jack in the top row
+[247/807] [chromium] › e2e\onboarding.spec.ts:178:3 › Me checklist › lists the same count as the wizard and each item opens its own step
+[248/807] [chromium] › e2e\s16-discover.spec.ts:27:5 › dark › overview: hero, season row, five tiles within 800 px, each tile opens its sub
+[249/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #safety/hazards: no button wraps at 360
+[250/807] [chromium] › e2e\s16-discover.spec.ts:51:5 › dark › rainy season row: six slow streaks that stop under reduced motion
+  34) [chromium] › e2e\s14-j-jack.spec.ts:68:1 › cook mode shows a small decorative Jack in the top row 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "48"
+    Received: "56"
+
+      75 |   await expect(img).toHaveCount(1)
+      76 |   expect(await img.getAttribute('alt')).toBe('')
+    > 77 |   expect(await img.getAttribute('width')).toBe('48')
+         |                                           ^
+      78 |   expect(await sideways(page)).toBe(0)
+      79 | })
+      80 |
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:77:43
+
+    Error Context: test-results\s14-j-jack-cook-mode-shows-451fc-orative-Jack-in-the-top-row-chromium\error-context.md
+
+
+[251/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #safety/cards: no button wraps at 360
+[252/807] [chromium] › e2e\s16-discover.spec.ts:63:5 › dark › learn: 2x2 tiles + Your benefits, Library at #discover/learn/library
+[253/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me: no button wraps at 360
+[254/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/alerts: no button wraps at 360
+[255/807] [chromium] › e2e\s16-discover.spec.ts:83:5 › dark › watch: poster row scrolls inside itself, page stays within 800 px
+  35) [chromium] › e2e\onboarding.spec.ts:178:3 › Me checklist › lists the same count as the wizard and each item opens its own step 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByRole('region', { name: /left to set up/ })
+    Expected substring: "8 things left"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" getByRole('region', { name: /left to set up/ }) with timeout 5000ms
+      - waiting for getByRole('region', { name: /left to set up/ })
+
+
+      180 |     await page.goto('/#me')
+      181 |     const card = page.getByRole('region', { name: /left to set up/ })
+    > 182 |     await expect(card).toContainText(`${STEPS.length} things left`)
+          |                        ^
+      183 |     await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
+      184 |     await card.getByRole('button', { name: 'See all' }).click()
+      185 |     await card.getByRole('button', { name: "Your phone's warnings" }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:182:24
+
+    Error Context: test-results\onboarding-Me-checklist-li-0bd34-ach-item-opens-its-own-step-chromium\error-context.md
+
+
+[256/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/display: no button wraps at 360
+[257/807] [chromium] › e2e\s16-discover.spec.ts:100:1 › old hashes land on Discover
+[258/807] [chromium] › e2e\s14-j-jack.spec.ts:81:1 › the Ask button wears the Jack head, decorative, 48 px, still named Ask Bantay
+[259/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/family: no button wraps at 360
+[260/807] [chromium] › e2e\s16-discover.spec.ts:109:1 › at 360 px no button wraps and nothing scrolls sideways
+[261/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/phone: no button wraps at 360
+[262/807] [chromium] › e2e\s16-helpers.spec.ts:8:1 › assertBudget measures the scroller: passes above the real height, fails below it
+[263/807] [chromium] › e2e\onboarding.spec.ts:189:3 › Me checklist › a finished step leaves the list
+  36) [chromium] › e2e\s14-j-jack.spec.ts:81:1 › the Ask button wears the Jack head, decorative, 48 px, still named Ask Bantay 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "48"
+    Received: "56"
+
+      86 |   await expect(img).toHaveCount(1)
+      87 |   expect(await img.getAttribute('alt')).toBe('')
+    > 88 |   expect(await img.getAttribute('width')).toBe('48')
+         |                                           ^
+      89 |   await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+      90 |   expect(await sideways(page)).toBe(0)
+      91 |   await shot(page, 'ask-button')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack.spec.ts:88:43
+
+    Error Context: test-results\s14-j-jack-the-Ask-button--ffd04-8-px-still-named-Ask-Bantay-chromium\error-context.md
+
+
+[264/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/signin: no button wraps at 360
+[265/807] [chromium] › e2e\s16-helpers.spec.ts:21:1 › assertJackClear passes on #today and fails when a control sits under the Jack button
+[266/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #me/about: no button wraps at 360
+[267/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #privacy: no button wraps at 360
+[268/807] [chromium] › e2e\s14-j-jack.spec.ts:94:1 › the offline band carries a small decorative Jack and keeps its words
+[269/807] [chromium] › e2e\s16-motion.spec.ts:17:3 › Today with WebGL disabled: scene renders, no canvas, within budget light
+[270/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #sharing: no button wraps at 360
+  37) [chromium] › e2e\onboarding.spec.ts:189:3 › Me checklist › a finished step leaves the list ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('region', { name: /left to set up/ })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('region', { name: /left to set up/ }) with timeout 5000ms
+      - waiting for getByRole('region', { name: /left to set up/ })
+
+
+      190 |     await skipOnboarding(page)
+      191 |     await page.goto('/#me')
+    > 192 |     await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
+          |                                                                        ^
+      193 |     await kvSet(page, 'setup.sharing', true)
+      194 |     await page.reload()
+      195 |     await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length - 1} things left`)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:192:72
+
+    Error Context: test-results\onboarding-Me-checklist-a-finished-step-leaves-the-list-chromium\error-context.md
+
+
+[271/807] [chromium] › e2e\s16-motion.spec.ts:17:3 › Today with WebGL disabled: scene renders, no canvas, within budget dark
+[272/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #medid: no button wraps at 360
+[273/807] [chromium] › e2e\s5-alerts.spec.ts:56:3 › storm mode light
+[274/807] [chromium] › e2e\s16-buttons-360.spec.ts:9:3 › #notif: no button wraps at 360
+[275/807] [chromium] › e2e\s16-motion.spec.ts:30:1 › reduced motion: the scene is still (static positions, 8 streaks, no flash, nothing animates)
+[276/807] [chromium] › e2e\s5-alerts.spec.ts:71:3 › warnings list light
+[277/807] [chromium] › e2e\onboarding.spec.ts:201:3 › iPhone in Safari › notifications step shows Add to Home Screen, and no Health Connect step
+[278/807] [chromium] › e2e\s6a-get-shots.spec.ts:10:3 › get page: start-get and start-iphone, light
+[279/807] [chromium] › e2e\s16-motion.spec.ts:39:1 › moving: rain falls and the clouds drift at two depths
+[280/807] [chromium] › e2e\s16-motion.spec.ts:47:1 › Safety: no canvas, and no moving scene once Safety is up (scene rendered first, so the count is not vacuous)
+[281/807] [chromium] › e2e\s5-alerts.spec.ts:81:3 › hub shows Phone alerts only while a setting needs fixing light
+[282/807] [chromium] › e2e\s16-motion.spec.ts:58:1 › hold SOS with Aurora allowed: the SOS screen opens and there is no canvas and no moving scene
+[283/807] [chromium] › e2e\s6a-get-shots.spec.ts:10:3 › get page: start-get and start-iphone, dark
+[284/807] [chromium] › e2e\s5-alerts.spec.ts:56:3 › storm mode dark
+[285/807] [chromium] › e2e\s5-alerts.spec.ts:71:3 › warnings list dark
+[286/807] [chromium] › e2e\safety.spec.ts:18:1 › dark mode: Safety tile icons >= 3:1 and the top-bar avatar initial >= 4.5:1
+[287/807] [chromium] › e2e\safety.spec.ts:29:1 › safety hub (D-68): nine tiles with a status line, each opens its page and goes back
+[288/807] [chromium] › e2e\scan.spec.ts:70:1 › photo, crop, two pages, form, Save: pages queue, upload in order, the server is asked to read
+[289/807] [chromium] › e2e\s5-alerts.spec.ts:81:3 › hub shows Phone alerts only while a setting needs fixing dark
+[290/807] [chromium] › e2e\safety.spec.ts:44:1 › warnings page: none now; quick dial: only confirmed numbers, the rest collapsed; maps load only on request
+[291/807] [chromium] › e2e\scan.spec.ts:134:1 › offline: Save keeps the pages queued and nothing is sent
+[292/807] [chromium] › e2e\s5-alerts.spec.ts:108:3 › fresh alerts say how old they are light
+[293/807] [chromium] › e2e\safety.spec.ts:76:1 › adding a pin gives a Go button that survives reload (offline store)
+[294/807] [chromium] › e2e\scan.spec.ts:155:1 › two people: a paper is not filed under anyone until a person is picked
+[295/807] [chromium] › e2e\s5-alerts.spec.ts:121:3 › old check shows the amber line even when no row is stale light
+[296/807] [chromium] › e2e\scan.spec.ts:177:1 › two people: a device reading shows no numbers to save until a person is picked
+[297/807] [chromium] › e2e\safety.spec.ts:88:1 › an alert in Dexie shows on Safety and Today with depth on expand
+  38) [chromium] › e2e\onboarding.spec.ts:201:3 › iPhone in Safari › notifications step shows Add to Home Screen, and no Health Connect step 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: /left to set up/ }).getByRole('button', { name: 'See all' })
+
+
+      38 |   await page.goto('/#me')
+      39 |   const card = page.getByRole('region', { name: /left to set up/ })
+    > 40 |   await card.getByRole('button', { name: 'See all' }).click()
+         |                                                       ^
+      41 |   await card.getByRole('button', { name: title, exact: true }).click()
+      42 |   await expect(page.locator('.wz-ov h1')).toHaveText(title)
+      43 | }
+        at openStep (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:40:55)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\onboarding.spec.ts:202:5
+
+    Error Context: test-results\onboarding-iPhone-in-Safar-cb3b2--and-no-Health-Connect-step-chromium\error-context.md
+
+
+[298/807] [chromium] › e2e\scan.spec.ts:207:5 › device reading, light › photo, Device reading, numbers shown to confirm, edit one, Save writes readings and no document
+[299/807] [chromium] › e2e\safety.spec.ts:112:5 › Near me on the maps switcher › location allowed on tap › Near me asks on tap, then centres the map and header on the phone
+[300/807] [chromium] › e2e\s5-alerts.spec.ts:136:3 › Today band shows a quake beyond its felt radius, with the steps light
+[301/807] [chromium] › e2e\safety.spec.ts:138:5 › Near me on the maps switcher › location denied › Near me is offered, explains, and keeps the previous place
+[302/807] [chromium] › e2e\scan.spec.ts:238:5 › device reading, light › over the daily limit (429): the limit note shows, fields are empty, nothing is saved
+[303/807] [chromium] › e2e\safety.spec.ts:160:1 › Safety order (D-68): SOS, Call 911 + Medical ID, then the tile grid
+[304/807] [chromium] › e2e\onboarding.spec.ts:208:1 › skipOnboarding helper goes straight to the app at /
+[305/807] [chromium] › e2e\s5-alerts.spec.ts:148:3 › warnings list shows every ingested row with its distance line (D-88) light
+[306/807] [chromium] › e2e\scan.spec.ts:249:5 › device reading, light › the server could not read it: fields are empty (not 0) and the person types the numbers
+[307/807] [chromium] › e2e\safety.spec.ts:178:1 › Safety groups: five headings in order, each holding its own tiles
+[308/807] [chromium] › e2e\s5-alerts.spec.ts:169:3 › hazard card explains Intensity VIII in plain words light
+[309/807] [chromium] › e2e\onboarding.spec.ts:214:1 › a deep link skips onboarding
+[310/807] [chromium] › e2e\safety.spec.ts:190:1 › SOS: the confirm button opens the flow, finds the place, shows the steps, one text button per contact, and cancel
+[311/807] [chromium] › e2e\scan.spec.ts:207:5 › device reading, dark › photo, Device reading, numbers shown to confirm, edit one, Save writes readings and no document
+[312/807] [chromium] › e2e\onboarding.spec.ts:221:3 › 375px › onboarding has no sideways scroll
+[313/807] [chromium] › e2e\onboarding.spec.ts:231:3 › alerts-off card on Today › is not clipped at 375px
+[314/807] [chromium] › e2e\safety.spec.ts:217:1 › SOS with no contacts still offers 911 and asks for contacts
+[315/807] [chromium] › e2e\s5-alerts.spec.ts:108:3 › fresh alerts say how old they are dark
+[316/807] [chromium] › e2e\scan.spec.ts:238:5 › device reading, dark › over the daily limit (429): the limit note shows, fields are empty, nothing is saved
+[317/807] [chromium] › e2e\safety.spec.ts:225:1 › Medical ID and Go-bag screens open from Safety and go back
+[318/807] [chromium] › e2e\s5-alerts.spec.ts:121:3 › old check shows the amber line even when no row is stale dark
+[319/807] [chromium] › e2e\sensors.spec.ts:15:3 › movement on Today (web, no step counter) › signed out: a tap logs nothing and says to sign in
+[320/807] [chromium] › e2e\scan.spec.ts:249:5 › device reading, dark › the server could not read it: fields are empty (not 0) and the person types the numbers
+[321/807] [chromium] › e2e\safety.spec.ts:240:1 › zone pick reaches zone data (D-33): Conel has no Tagbilaran places or Dampas hazards
+[322/807] [chromium] › e2e\sensors.spec.ts:20:3 › movement on Today (web, no step counter) › signed out: custom minutes log nothing either
+[323/807] [chromium] › e2e\s5-alerts.spec.ts:136:3 › Today band shows a quake beyond its felt radius, with the steps dark
+[324/807] [chromium] › e2e\shell.spec.ts:4:1 › tab hash deep-link and back button
+[325/807] [chromium] › e2e\safety.spec.ts:252:1 › hazards at my location: four level cards with what to do, HazardHunterPH link, source behind i
+[326/807] [chromium] › e2e\sensors.spec.ts:26:3 › movement on Today (web, no step counter) › Today has no serious accessibility violations with the walk sheet open
+[327/807] [chromium] › e2e\s5-alerts.spec.ts:148:3 › warnings list shows every ingested row with its distance line (D-88) dark
+[328/807] [chromium] › e2e\safety.spec.ts:264:1 › storm tracker, safety cards and past SOS pages open
+  39) [chromium] › e2e\shell.spec.ts:4:1 › tab hash deep-link and back button ──────────────────────
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('h1')
+    Expected: "Family"
+    Received: "Plan"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('h1') with timeout 5000ms
+      - waiting for locator('h1')
+        12 × locator resolved to <h1>Plan</h1>
+           - unexpected value "Plan"
+
+
+      4 | test('tab hash deep-link and back button', async ({ page }) => {
+      5 |   await page.goto('/#family/plan')
+    > 6 |   await expect(page.locator('h1')).toHaveText('Family')
+        |                                    ^
+      7 |   await expect(page.getByRole('button', { name: 'Plan', pressed: true })).toBeVisible()
+      8 |   await page.getByRole('button', { name: 'Home' }).click()
+      9 |   await expect(page.getByRole('button', { name: 'Home', pressed: true })).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\shell.spec.ts:6:36
+
+    Error Context: test-results\shell-tab-hash-deep-link-and-back-button-chromium\error-context.md
+
+
+[329/807] [chromium] › e2e\safety.spec.ts:274:1 › live weather: layer switch only changes overlay, storm tracker and links
+[330/807] [chromium] › e2e\s5-alerts.spec.ts:169:3 › hazard card explains Intensity VIII in plain words dark
+[331/807] [chromium] › e2e\safety.spec.ts:302:1 › quick dial at the home zone: Tagbilaran set first, then national, OFW and teleconsult
+[332/807] [chromium] › e2e\sensors.spec.ts:32:1 › Settings > Phone shows the phone health explainer on the web
+[333/807] [chromium] › e2e\shell.spec.ts:16:1 › installable: manifest fields and service worker
+[334/807] [chromium] › e2e\s5-alerts.spec.ts:179:1 › hub has no Phone alerts tile when the phone check is clean or missing
+[335/807] [chromium] › e2e\safety.spec.ts:321:1 › quick dial rows are one horizontal line each at 390px: no vertical text, Call never clipped, 44px targets
+[336/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #weather: no top bar, a Back control
+[337/807] [chromium] › e2e\safety.spec.ts:345:1 › quick dial in Davao by GPS: only the Davao set, then national
+[338/807] [chromium] › e2e\sync.spec.ts:20:1 › no session: badge is silent and nothing is sent
+[339/807] [chromium] › e2e\sync.spec.ts:31:1 › signed in: a queued reading is posted once with a client_id, then the badge goes quiet
+[340/807] [chromium] › e2e\sync.spec.ts:49:1 › server offline then back: waiting, then quiet; badge has no accessibility violations
+[341/807] [chromium] › e2e\sync.spec.ts:65:1 › a 401 pauses sync and shows the queue waiting
+[342/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › today: the last element ends above the tab bar
+[343/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #medid: no top bar, a Back control
+[344/807] [chromium] › e2e\safety.spec.ts:352:1 › quick dial in the Philippines outside every list: national first, with the reason
+[345/807] [chromium] › e2e\shell.spec.ts:39:1 › tab bar has five equal slots (Today, Health, Discover, Family, Safety); Jack floats above it
+[346/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › health: the last element ends above the tab bar
+[347/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #gobag: no top bar, a Back control
+[348/807] [chromium] › e2e\safety.spec.ts:359:1 › quick dial in Texas: the Texas set and OFW, no Philippine national
+[349/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › discover: the last element ends above the tab bar
+[350/807] [chromium] › e2e\shell.spec.ts:53:1 › component button rules beat the .bt reset: tab labels are 13px/600
+[351/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/dial: no top bar, a Back control
+[352/807] [chromium] › e2e\safety.spec.ts:367:1 › quick dial abroad (not Texas): OFW numbers and a link to an official list, no guessed local number
+[353/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › family: the last element ends above the tab bar
+[354/807] [chromium] › e2e\shell.spec.ts:61:1 › sub-pages show only their own header; tab roots keep the top bar
+[355/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/warnings: no top bar, a Back control
+[356/807] [chromium] › e2e\safety.spec.ts:377:1 › Safety hub abroad (not Texas): no red Call 911, a Local emergency number link instead; Texas keeps 911
+[357/807] [chromium] › e2e\shell.spec.ts:70:1 › avatar opens Me and bell opens notifications
+[358/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › safety: the last element ends above the tab bar
+[359/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/hazards: no top bar, a Back control
+[360/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › me: the last element ends above the tab bar
+[361/807] [chromium] › e2e\shell.spec.ts:83:1 › Me: sharing is the server list (#sharing), no tab is active, Family no longer shows phone settings
+[362/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/storms: no top bar, a Back control
+[363/807] [chromium] › e2e\safety.spec.ts:389:1 › storm tracker map is centred on my place, not 12N 128E
+[364/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › weather: the last element ends above the tab bar
+[365/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/cards: no top bar, a Back control
+[366/807] [chromium] › e2e\today.spec.ts:33:1 › Today follows Lloyd's order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list
+[367/807] [chromium] › e2e\safety.spec.ts:398:1 › footer has an in-app Sources link, not a repo path; the Hazards title wraps
+[368/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › safety/dial: the last element ends above the tab bar
+[369/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/sources: no top bar, a Back control
+[370/807] [chromium] › e2e\safety.spec.ts:412:1 › rescue map away from our areas says to ask the barangay or call 911 and invents nothing
+[371/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › safety/warnings: the last element ends above the tab bar
+[372/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/meds: no top bar, a Back control
+[373/807] [chromium] › e2e\visits.spec.ts:36:1 › visits: next visit, follow-up due, Bring checklist stays ticked, summary page
+[374/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/visits: no top bar, a Back control
+[375/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › health/meds: the last element ends above the tab bar
+[376/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/summary: no top bar, a Back control
+[377/807] [chromium] › e2e\tabbar-overlap.spec.ts:32:1 › family plan: the Add button sits above the tab bar
+[378/807] [chromium] › e2e\today.spec.ts:62:1 › How are you? signed out says to sign in and does not claim the family will see it
+[379/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/papers: no top bar, a Back control
+  40) [chromium] › e2e\visits.spec.ts:36:1 › visits: next visit, follow-up due, Bring checklist stays ticked, summary page 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('insight')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('insight') with timeout 5000ms
+      - waiting for getByTestId('insight')
+
+
+      39 |   await page.setViewportSize({ width: 390, height: 844 })
+      40 |   await page.goto('/#health')
+    > 41 |   await expect(page.getByTestId('insight')).toBeVisible() // the health database exists once the screen has read it
+         |                                             ^
+      42 |   await seed(page, 1)
+      43 |   await page.reload()
+      44 |   await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\visits.spec.ts:41:45
+
+    Error Context: test-results\visits-visits-next-visit-f-36e0b-t-stays-ticked-summary-page-chromium\error-context.md
+
+
+[380/807] [chromium] › e2e\tabbar-overlap.spec.ts:44:1 › greeting shows on Today only
+[381/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/refill: no top bar, a Back control
+[382/807] [chromium] › e2e\today.spec.ts:70:1 › Nothing next: no Next up card and no All clear card, and the quick-log Dose and Mood buttons open their sheets
+[383/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/library: no top bar, a Back control
+[384/807] [chromium] › e2e\tabbar-overlap.spec.ts:54:1 › Ask: the composer sits at the bottom of the screen with no gap under it
+[385/807] [chromium] › e2e\today.spec.ts:80:1 › Today's plan ticks a task off in place and the progress follows
+[386/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/body: no top bar, a Back control
+[387/807] [chromium] › e2e\tabbar-overlap.spec.ts:89:5 › Jack button at 360px › today: the SOS hold never sits under Jack at any scroll position
+[388/807] [chromium] › e2e\today.spec.ts:92:1 › the warning band shows only while an official warning is active
+[389/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/videos: no top bar, a Back control
+[390/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 390
+[391/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene clear night
+[392/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › today: Jack sits above the tab bar and below the last item of the page
+[393/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › health: Jack sits above the tab bar and below the last item of the page
+[394/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene partly night
+  41) [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/videos: no top bar, a Back control ────
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('.sh-top')
+    Expected: 0
+    Received: 1
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('.sh-top') with timeout 5000ms
+      - waiting for locator('.sh-top')
+        12 × locator resolved to 1 element
+           - unexpected value "1"
+
+
+      15 |     await page.goto(`/${h}`)
+      16 |     await expect(page.locator('main')).toBeVisible()
+    > 17 |     await expect(page.locator('.sh-top')).toHaveCount(0)
+         |                                           ^
+      18 |     await expect(page.locator('a[aria-label^="Back"], button[aria-label^="Back"]').first()).toBeVisible()
+      19 |   })
+      20 | }
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\subpage-header.spec.ts:17:43
+
+    Error Context: test-results\subpage-header--health-videos-no-top-bar-a-Back-control-chromium\error-context.md
+
+
+[395/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › discover: Jack sits above the tab bar and below the last item of the page
+[396/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene overcast night
+  42) [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 390 ──────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('nudge')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+
+
+      37 |         await page.goto('/#health')
+      38 |         await page.reload()
+    > 39 |         await expect(page.getByTestId('nudge')).toBeVisible()
+         |                                                 ^
+      40 |         await expect(page.getByTestId('nudge')).not.toContainText(/(?<![\d/])0(?![\d/])/)
+      41 |         if (mode === 'empty') await expect(page.getByTestId('nudge')).toContainText('0/3')
+      42 |         if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Great week')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.spec.ts:39:49
+
+    Error Context: test-results\w2-health-shots-nudge-empty-390-chromium\error-context.md
+
+
+[397/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › discover/play: Jack sits above the tab bar and below the last item of the page
+[398/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene fog night
+[399/807] [chromium] › e2e\weather.spec.ts:15:1 › weather: action line first, place toggle, forecast sections
+[400/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › family: Jack sits above the tab bar and below the last item of the page
+[401/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene drizzle night
+[402/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge some 390
+[403/807] [chromium] › e2e\weather.spec.ts:48:1 › weather: the live map stays closed behind "Open live map"
+[404/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 360px › safety: Jack sits above the tab bar and below the last item of the page
+[405/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene rain night
+[406/807] [chromium] › e2e\weather.spec.ts:58:1 › safety weather tile opens #weather; the old page keeps maps behind Open live map
+[407/807] [chromium] › e2e\tabbar-overlap.spec.ts:89:5 › Jack button at 390px › today: the SOS hold never sits under Jack at any scroll position
+[408/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene storm night
+[409/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 390
+[410/807] [chromium] › e2e\weather.spec.ts:70:1 › weather: no sideways scroll at 390px, and the hourly strip scrolls on its own
+[411/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › today: Jack sits above the tab bar and below the last item of the page
+[412/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene clear dawn
+[413/807] [chromium] › e2e\weather.spec.ts:85:1 › weather offline: the cached forecast shows "as of"
+[414/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › health: Jack sits above the tab bar and below the last item of the page
+[415/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene partly dawn
+[416/807] [chromium] › e2e\weather.spec.ts:97:1 › weather: the live map and Zoom Earth follow my place (Home 2 = Conel), not 12N 128E
+  43) [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 390 ───────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('nudge')
+    Expected substring: "Great week"
+    Received string:    "Log what you ate - 1 minuteBP 3/3 3 of 3 days this weekMeals 0/4 Not yet this weekMove 0/150 Not yet this weekThis week · Logging streak 4 days"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+        13 × locator resolved to <section class="card nr" data-hue="blue" data-testid="nudge">…</section>
+           - unexpected value "Log what you ate - 1 minuteBP 3/3 3 of 3 days this weekMeals 0/4 Not yet this weekMove 0/150 Not yet this weekThis week · Logging streak 4 days"
+
+
+      40 |         await expect(page.getByTestId('nudge')).not.toContainText(/(?<![\d/])0(?![\d/])/)
+      41 |         if (mode === 'empty') await expect(page.getByTestId('nudge')).toContainText('0/3')
+    > 42 |         if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Great week')
+         |                                                                      ^
+      43 |         await page.screenshot({ path: `${SHOTS}/health-nudge-${mode}-${w}-${scheme}.png` })
+      44 |       }
+      45 |     })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.spec.ts:42:70
+
+    Error Context: test-results\w2-health-shots-nudge-done-390-chromium\error-context.md
+
+
+[417/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › discover: Jack sits above the tab bar and below the last item of the page
+[418/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene overcast dawn
+[419/807] [chromium] › e2e\weather.spec.ts:106:1 › today weather card: from=action only when an action line shows, and it is the Weather screen line
+[420/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › discover/play: Jack sits above the tab bar and below the last item of the page
+[421/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene fog dawn
+[422/807] [chromium] › e2e\weather.spec.ts:115:1 › weather: rain card shows hourly bars + PAGASA radar link, chips switch to storm track, no map provider loads
+[423/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › family: Jack sits above the tab bar and below the last item of the page
+[424/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene drizzle dawn
+[425/807] [chromium] › e2e\weather.spec.ts:128:1 › today weather card: a calm day opens plain #weather
+[426/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 360
+[427/807] [chromium] › e2e\tabbar-overlap.spec.ts:119:7 › Jack button at 390px › safety: Jack sits above the tab bar and below the last item of the page
+[428/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene rain dawn
+[429/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene storm dawn
+[430/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene clear day
+[431/807] [auth] › e2e\admin-desk-files.auth.spec.ts:84:3 › files page 1280x800
+  44) [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 360 ──────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('nudge')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+
+
+      37 |         await page.goto('/#health')
+      38 |         await page.reload()
+    > 39 |         await expect(page.getByTestId('nudge')).toBeVisible()
+         |                                                 ^
+      40 |         await expect(page.getByTestId('nudge')).not.toContainText(/(?<![\d/])0(?![\d/])/)
+      41 |         if (mode === 'empty') await expect(page.getByTestId('nudge')).toContainText('0/3')
+      42 |         if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Great week')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.spec.ts:39:49
+
+    Error Context: test-results\w2-health-shots-nudge-empty-360-chromium\error-context.md
+
+
+[432/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene partly day
+[433/807] [auth] › e2e\admin-desk-members.auth.spec.ts:79:3 › members list, member page and tabs (1280x800)
+[434/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene overcast day
+[435/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge some 360
+[436/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene fog day
+[437/807] [auth] › e2e\admin-desk-files.auth.spec.ts:90:3 › ids page 1280x800
+[438/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene drizzle day
+[439/807] [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 360
+[440/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene rain day
+[441/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene storm day
+  45) [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 360 ───────────────────────────────
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('nudge')
+    Expected substring: "Great week"
+    Received string:    "Log what you ate - 1 minuteBP 3/3 3 of 3 days this weekMeals 0/4 Not yet this weekMove 0/150 Not yet this weekThis week · Logging streak 4 days"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+        13 × locator resolved to <section class="card nr" data-hue="blue" data-testid="nudge">…</section>
+           - unexpected value "Log what you ate - 1 minuteBP 3/3 3 of 3 days this weekMeals 0/4 Not yet this weekMove 0/150 Not yet this weekThis week · Logging streak 4 days"
+
+
+      40 |         await expect(page.getByTestId('nudge')).not.toContainText(/(?<![\d/])0(?![\d/])/)
+      41 |         if (mode === 'empty') await expect(page.getByTestId('nudge')).toContainText('0/3')
+    > 42 |         if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('Great week')
+         |                                                                      ^
+      43 |         await page.screenshot({ path: `${SHOTS}/health-nudge-${mode}-${w}-${scheme}.png` })
+      44 |       }
+      45 |     })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.spec.ts:42:70
+
+    Error Context: test-results\w2-health-shots-nudge-done-360-chromium\error-context.md
+
+
+[442/807] [auth] › e2e\admin-desk-files.auth.spec.ts:98:3 › history page 1280x800
+[443/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene clear dusk
+[444/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene partly dusk
+[445/807] [auth] › e2e\admin-desk-records.auth.spec.ts:117:3 › records, queue and duplicates at 1280x800: no sideways scroll, targets, axe
+[446/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene overcast dusk
+[447/807] [auth] › e2e\admin-desk-members.auth.spec.ts:79:3 › members list, member page and tabs (820x1180)
+[448/807] [auth] › e2e\admin-desk-files.auth.spec.ts:84:3 › files page 390x844
+[449/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene fog dusk
+[450/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene drizzle dusk
+[451/807] [auth] › e2e\admin-desk-files.auth.spec.ts:90:3 › ids page 390x844
+[452/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene rain dusk
+[453/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › light › scene storm dusk
+[454/807] [chromium] › e2e\weather-scene.spec.ts:37:5 › light › hot clear day: heat tint, one feels-like on card and screen; hero repeats no danger label
+[455/807] [auth] › e2e\admin-desk-files.auth.spec.ts:98:3 › history page 390x844
+[456/807] [chromium] › e2e\weather-scene.spec.ts:50:5 › light › weather screen rain night
+[457/807] [auth] › e2e\admin-desk-members.auth.spec.ts:79:3 › members list, member page and tabs (390x844)
+[458/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene clear night
+[459/807] [auth] › e2e\admin-desk-records.auth.spec.ts:117:3 › records, queue and duplicates at 390x844: no sideways scroll, targets, axe
+[460/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene partly night
+[461/807] [auth] › e2e\admin-desk-files.auth.spec.ts:84:3 › files page 820x1180
+[462/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene overcast night
+[463/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene fog night
+[464/807] [auth] › e2e\admin-desk-files.auth.spec.ts:90:3 › ids page 820x1180
+[465/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene drizzle night
+[466/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene rain night
+[467/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene storm night
+[468/807] [auth] › e2e\admin-desk-members.auth.spec.ts:140:1 › account actions call admin-members with the right body
+[469/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene clear dawn
+[470/807] [auth] › e2e\admin-desk-files.auth.spec.ts:98:3 › history page 820x1180
+[471/807] [auth] › e2e\admin-desk-members.auth.spec.ts:170:1 › unsaved profile changes ask before leaving
+[472/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene partly dawn
+[473/807] [auth] › e2e\admin-desk-members.auth.spec.ts:188:1 › dark mode at 1280: list, profile and account have no axe violations
+[474/807] [auth] › e2e\admin-desk-records.auth.spec.ts:117:3 › records, queue and duplicates at 820x1180: no sideways scroll, targets, axe
+[475/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene overcast dawn
+[476/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene fog dawn
+[477/807] [auth] › e2e\admin-desk-files.auth.spec.ts:109:1 › files: Retry asks first, then resets the scan
+[478/807] [auth] › e2e\admin-desk-files.auth.spec.ts:120:1 › ids: masked by default, Show reveals for 30 s then hides
+[479/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene drizzle dawn
+[480/807] [auth] › e2e\admin-desk-files.auth.spec.ts:154:1 › ids: with no person, lists IDs ending within 60 days across people
+[481/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene rain dawn
+[482/807] [auth] › e2e\admin-system.auth.spec.ts:84:3 › system health page (390x844, light)
+[483/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene storm dawn
+[484/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene clear day
+[485/807] [auth] › e2e\admin-desk-members.auth.spec.ts:204:3 › archive, reactivate and give a sign-in (1280x800)
+[486/807] [auth] › e2e\admin-system.auth.spec.ts:106:3 › dashboard home with the seen line (390x844, light)
+[487/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene partly day
+[488/807] [auth] › e2e\admin-system.auth.spec.ts:120:3 › broadcast copy on the phone admin (390x844, light)
+[489/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene overcast day
+[490/807] [auth] › e2e\admin-system.auth.spec.ts:84:3 › system health page (390x844, dark)
+[491/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene fog day
+[492/807] [auth] › e2e\admin-desk-records.auth.spec.ts:139:1 › queue: bulk confirm sends the checked ids only; Undo restores
+[493/807] [auth] › e2e\admin-system.auth.spec.ts:106:3 › dashboard home with the seen line (390x844, dark)
+[494/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene drizzle day
+[495/807] [auth] › e2e\admin-system.auth.spec.ts:120:3 › broadcast copy on the phone admin (390x844, dark)
+[496/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene rain day
+[497/807] [auth] › e2e\admin-desk-records.auth.spec.ts:170:1 › records: row opens the panel, Confirm then Undo
+[498/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene storm day
+[499/807] [auth] › e2e\admin-desk-members.auth.spec.ts:204:3 › archive, reactivate and give a sign-in (820x1180)
+[500/807] [auth] › e2e\admin-system.auth.spec.ts:134:1 › system health: the sidebar dot shows a red job, the page is reachable by g then s, and alert reach says not available before 0030
+[501/807] [auth] › e2e\admin-desk-records.auth.spec.ts:188:1 › duplicates: Keep this one rejects the other copy and its draft rows
+[502/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene clear dusk
+[503/807] [auth] › e2e\admin-view-as.auth.spec.ts:59:5 › view as member (1440x900 light)
+[504/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene partly dusk
+[505/807] [auth] › e2e\admin-desk-records.auth.spec.ts:208:3 › records tabs at 1280x800: every tab, no sideways scroll, targets, axe
+[506/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene overcast dusk
+[507/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene fog dusk
+[508/807] [auth] › e2e\admin-view-as.auth.spec.ts:59:5 › view as member (1440x900 dark)
+[509/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene drizzle dusk
+[510/807] [auth] › e2e\admin-desk-members.auth.spec.ts:204:3 › archive, reactivate and give a sign-in (390x844)
+[511/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene rain dusk
+[512/807] [auth] › e2e\admin-view-as.auth.spec.ts:59:5 › view as member (390x844 light)
+[513/807] [chromium] › e2e\weather-scene.spec.ts:27:9 › dark › scene storm dusk
+[514/807] [chromium] › e2e\weather-scene.spec.ts:37:5 › dark › hot clear day: heat tint, one feels-like on card and screen; hero repeats no danger label
+[515/807] [auth] › e2e\admin-view-as.auth.spec.ts:59:5 › view as member (390x844 dark)
+[516/807] [chromium] › e2e\weather-scene.spec.ts:50:5 › dark › weather screen rain night
+[517/807] [chromium] › e2e\weather-scene.spec.ts:58:1 › reduced motion: static streaks, no lightning flash, nothing animates
+[518/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 1440 light
+[519/807] [chromium] › e2e\weather-scene.spec.ts:67:1 › no sideways scroll with the scene on Today and Weather
+[520/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 1440 dark
+[521/807] [auth] › e2e\admin-view-as.auth.spec.ts:107:3 › in-app View as (acting) › enter: one audit RPC, the bar on five tabs, Exit clears it, a reload is yourself
+[522/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 390 light
+[523/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 390 dark
+[524/807] [auth] › e2e\admin-view-as.auth.spec.ts:123:8 › in-app View as (acting) › Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = Lloyd
+[525/807] [auth] › e2e\admin-web-home.auth.spec.ts:62:3 › dashboard home (1280x800)
+[526/807] [auth] › e2e\admin-desk-members.auth.spec.ts:279:1 › phone More menu closes on Escape and on an outside click
+[527/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:59:3 › calendar month, week and agenda (1280x800)
+[528/807] [auth] › e2e\auth.spec.ts:62:1 › signed out shows sign-in; wrong PIN gives the generic error; right PIN lands on Today
+[529/807] [auth] › e2e\auth.spec.ts:88:1 › Continue with Google starts OAuth back to the app origin
+[530/807] [auth] › e2e\auth.spec.ts:101:3 › sign-in at 375px: no sideways scroll
+[531/807] [auth] › e2e\admin-web-home.auth.spec.ts:62:3 › dashboard home (820x1180)
+[532/807] [auth] › e2e\auth.spec.ts:101:3 › sign-in at 1280px: no sideways scroll
+[533/807] [auth] › e2e\admin-desk-records.auth.spec.ts:208:3 › records tabs at 390x844: every tab, no sideways scroll, targets, axe
+[534/807] [auth] › e2e\auth.spec.ts:116:3 › quick login (D-24) › fresh phone: no family names anywhere, one-line promise, axe clean
+[535/807] [auth] › e2e\admin-web-home.auth.spec.ts:62:3 › dashboard home (390x844)
+[536/807] [auth] › e2e\auth.spec.ts:125:3 › quick login (D-24) › trusted phone: picker, PIN pad signs in with the chosen handle, wrong PIN is generic
+[537/807] [auth] › e2e\admin-web-home.auth.spec.ts:91:1 › dashboard home in dark mode (1280x800)
+[538/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:59:3 › calendar month, week and agenda (820x1180)
+[539/807] [auth] › e2e\auth.spec.ts:144:3 › quick login (D-24) › five wrong PINs show the one-minute wait screen with the 911 button and Forgot PIN?, no admin
+[540/807] [auth] › e2e\admin-web-home.auth.spec.ts:102:1 › phone: theme is reachable in the account menu and changes the theme
+[541/807] [auth] › e2e\admin-web-home.auth.spec.ts:122:3 › danger confirm button keeps AA contrast (light, 390x844)
+[542/807] [auth] › e2e\auth.spec.ts:161:3 › quick login (D-24) › fresh phone: first names come from the server (D-41); a right PIN signs in; nothing is cached before sign-in
+[543/807] [auth] › e2e\admin-web-home.auth.spec.ts:122:3 › danger confirm button keeps AA contrast (dark, 390x844)
+[544/807] [auth] › e2e\bp-guided.auth.spec.ts:40:1 › vitals page: Above target for 134/84, the five words, the Guided check button; no axe violations
+[545/807] [auth] › e2e\auth.spec.ts:178:3 › quick login (D-24) › fresh phone, no signal: No signal line and the handle and PIN form still work
+[546/807] [auth] › e2e\auth.spec.ts:192:3 › quick login (D-24) › Forgot PIN? from the PIN pad: family approval asks for a new PIN twice
+  46) [auth] › e2e\bp-guided.auth.spec.ts:40:1 › vitals page: Above target for 134/84, the five words, the Guided check button; no axe violations 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('insight')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('insight') with timeout 5000ms
+      - waiting for getByTestId('insight')
+
+
+      33 |   await page.goto('/#health')
+      34 |   await expect(page.locator('h1')).toHaveText('Health')
+    > 35 |   await expect(page.getByTestId('insight')).toBeVisible()
+         |                                             ^
+      36 |   await seed(page)
+      37 |   await page.reload()
+      38 | })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\bp-guided.auth.spec.ts:35:45
+
+    Error Context: test-results\bp-guided.auth-vitals-page-0ca4f-ck-button-no-axe-violations-auth\error-context.md
+
+
+[547/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:59:3 › calendar month, week and agenda (390x844)
+[548/807] [auth] › e2e\auth.spec.ts:209:3 › quick login (D-24) › trusted phone: Google member goes to Google
+[549/807] [auth] › e2e\bp-guided.auth.spec.ts:59:1 › guided check: first reading, a minute of rest, second reading, average and 7-day number
+[550/807] [auth] › e2e\admin-desk-records.auth.spec.ts:208:3 › records tabs at 820x1180: every tab, no sideways scroll, targets, axe
+[551/807] [auth] › e2e\auth.spec.ts:219:3 › quick login (D-24) › OAuth error in the query string is shown and the URL is cleaned
+[552/807] [auth] › e2e\auth.spec.ts:226:3 › quick login (D-24) › OAuth error in the hash is shown and the URL is cleaned
+[553/807] [auth] › e2e\auth.spec.ts:233:3 › quick login (D-24) › fingerprint first: flagged person starts the prompt at once; failure shows the PIN pad and does not loop
+  47) [auth] › e2e\bp-guided.auth.spec.ts:59:1 › guided check: first reading, a minute of rest, second reading, average and 7-day number 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('insight')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('insight') with timeout 5000ms
+      - waiting for getByTestId('insight')
+
+
+      33 |   await page.goto('/#health')
+      34 |   await expect(page.locator('h1')).toHaveText('Health')
+    > 35 |   await expect(page.getByTestId('insight')).toBeVisible()
+         |                                             ^
+      36 |   await seed(page)
+      37 |   await page.reload()
+      38 | })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\bp-guided.auth.spec.ts:35:45
+
+    Error Context: test-results\bp-guided.auth-guided-chec-d6b09-ng-average-and-7-day-number-auth\error-context.md
+
+
+[554/807] [auth] › e2e\auth.spec.ts:253:3 › quick login (D-24) › fingerprint prompt: Use PIN instead is one tap away
+[555/807] [auth] › e2e\bp-guided.auth.spec.ts:87:1 › a dangerous reading asks about symptoms first, then shows the 911 dial link
+[556/807] [auth] › e2e\auth.spec.ts:278:3 › quick login (D-24) › passkey hidden when the browser cannot do it
+[557/807] [auth] › e2e\auth.spec.ts:288:3 › quick login (D-24) › Me > This phone: switch person keeps the picker; forget this phone clears it
+[558/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:101:1 › calendar in dark mode passes axe (1280x800)
+  48) [auth] › e2e\bp-guided.auth.spec.ts:87:1 › a dangerous reading asks about symptoms first, then shows the 911 dial link 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('insight')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('insight') with timeout 5000ms
+      - waiting for getByTestId('insight')
+
+
+      33 |   await page.goto('/#health')
+      34 |   await expect(page.locator('h1')).toHaveText('Health')
+    > 35 |   await expect(page.getByTestId('insight')).toBeVisible()
+         |                                             ^
+      36 |   await seed(page)
+      37 |   await page.reload()
+      38 | })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\bp-guided.auth.spec.ts:35:45
+
+    Error Context: test-results\bp-guided.auth-a-dangerous-5fe77-hen-shows-the-911-dial-link-auth\error-context.md
+
+
+[559/807] [auth] › e2e\exercise-auth.spec.ts:56:5 › light › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean
+  49) [auth] › e2e\auth.spec.ts:288:3 › quick login (D-24) › Me > This phone: switch person keeps the picker; forget this phone clears it 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Signed in as Lola Rosa')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Signed in as Lola Rosa') with timeout 5000ms
+      - waiting for getByText('Signed in as Lola Rosa')
+
+
+      295 |     await expect(page.locator('h1')).toHaveText('Today')
+      296 |     await page.goto('/#me')
+    > 297 |     await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
+          |                                                            ^
+      298 |     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
+      299 |     await expect.poll(() => logouts.at(-1)).toBe('local')
+      300 |     await expect(page.getByLabel('Who are you?')).toBeVisible() // Switch person lands on the welcome list, not the returning screen
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\auth.spec.ts:297:60
+
+    Error Context: test-results\auth-quick-login-D-24-Me-T-f12d2-forget-this-phone-clears-it-auth\error-context.md
+
+
+[560/807] [auth] › e2e\auth.spec.ts:310:3 › quick login (D-24) › remembered person: a PIN sign-in remembers them; the next visit shows only the mascot and their name
+[561/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:114:1 › add event sends the right insert and offers Undo
+  50) [auth] › e2e\exercise-auth.spec.ts:56:5 › light › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('group', { name: 'Quick log' }).getByRole('button')
+    Expected: 6
+    Received: 7
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('group', { name: 'Quick log' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Quick log' }).getByRole('button')
+        2 × locator resolved to 0 elements
+          - unexpected value "0"
+        9 × locator resolved to 7 elements
+          - unexpected value "7"
+
+
+      57 |       await page.goto('/')
+      58 |       const row = page.getByRole('group', { name: 'Quick log' })
+    > 59 |       await expect(row.getByRole('button')).toHaveCount(6)
+         |                                             ^
+      60 |       await row.getByRole('button', { name: 'More things to log' }).click()
+      61 |       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
+      62 |       const sheet = page.getByRole('dialog', { name: 'Move' })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\exercise-auth.spec.ts:59:45
+
+    Error Context: test-results\exercise-auth-light-Today--3ae3a--Done-logs-a-move-axe-clean-auth\error-context.md
+
+
+[562/807] [auth] › e2e\health-auth.spec.ts:15:1 › signed in: Health has no Papers door (D-100) and the old Papers link lands under Family
+[563/807] [auth] › e2e\exercise-auth.spec.ts:86:5 › light › Move v2: chips and sitting filter, a video move shows its preview, minutes are logged; shots; axe clean
+[564/807] [auth] › e2e\health-auth.spec.ts:24:1 › signed in: Add reading previews the colour and line, and the reading lands in the chart list
+[565/807] [auth] › e2e\medicines.spec.ts:63:3 › mark taken, edit to twice a day, delete and undo (light)
+[566/807] [auth] › e2e\admin-desk-records.auth.spec.ts:232:1 › records tabs in dark mode: axe
+[567/807] [auth] › e2e\exercise-auth.spec.ts:119:5 › light › Health has a Move card that opens the Move screen; axe clean
+  51) [auth] › e2e\auth.spec.ts:310:3 › quick login (D-24) › remembered person: a PIN sign-in remembers them; the next visit shows only the mascot and their name 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Not you? Switch person' })
+
+
+      318 |     await expect.poll(() => page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBe('p-lola')
+      319 |     await page.goto('/#me')
+    > 320 |     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
+          |                                                                        ^
+      321 |     await expect(page.getByLabel('Who are you?')).toBeVisible()
+      322 |     expect(await page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBeNull()
+      323 |   })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\auth.spec.ts:320:72
+
+    Error Context: test-results\auth-quick-login-D-24-reme-0e35a-y-the-mascot-and-their-name-auth\error-context.md
+
+
+[568/807] [auth] › e2e\exercise-auth.spec.ts:56:5 › dark › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean
+[569/807] [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 375px: mascot, one name, no sideways scroll, axe clean
+[570/807] [auth] › e2e\admin-desk-records.auth.spec.ts:246:1 › records: tab badges, person select routes, bulk confirm sends the ticked ids and Undo restores
+[571/807] [auth] › e2e\admin-desk-records.auth.spec.ts:273:3 › queue: a load error shows Retry, not "Nothing to confirm."
+  52) [auth] › e2e\exercise-auth.spec.ts:56:5 › dark › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('group', { name: 'Quick log' }).getByRole('button')
+    Expected: 6
+    Received: 7
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('group', { name: 'Quick log' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Quick log' }).getByRole('button')
+        3 × locator resolved to 0 elements
+          - unexpected value "0"
+        9 × locator resolved to 7 elements
+          - unexpected value "7"
+
+
+      57 |       await page.goto('/')
+      58 |       const row = page.getByRole('group', { name: 'Quick log' })
+    > 59 |       await expect(row.getByRole('button')).toHaveCount(6)
+         |                                             ^
+      60 |       await row.getByRole('button', { name: 'More things to log' }).click()
+      61 |       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
+      62 |       const sheet = page.getByRole('dialog', { name: 'Move' })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\exercise-auth.spec.ts:59:45
+
+    Error Context: test-results\exercise-auth-dark-Today-M-a803b--Done-logs-a-move-axe-clean-auth\error-context.md
+
+
+[572/807] [auth] › e2e\medicines.spec.ts:63:3 › mark taken, edit to twice a day, delete and undo (dark)
+[573/807] [auth] › e2e\admin-desk-records.auth.spec.ts:273:3 › duplicates: a load error shows Retry, not "No duplicate papers."
+  53) [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 375px: mascot, one name, no sideways scroll, axe clean 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByAltText('Jack Jack, the Bantay dog')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByAltText('Jack Jack, the Bantay dog') with timeout 5000ms
+      - waiting for getByAltText('Jack Jack, the Bantay dog')
+
+
+      330 |       await page.addInitScript(() => localStorage.setItem('bantay.lastPerson', 'p-lola'))
+      331 |       await page.goto('/')
+    > 332 |       await expect(page.getByAltText('Jack Jack, the Bantay dog')).toBeVisible()
+          |                                                                    ^
+      333 |       await expect(page.getByRole('heading', { name: 'Hi Lola' })).toBeVisible()
+      334 |       await expect(page.locator('body')).not.toContainText('Ate Maria')
+      335 |       await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\auth.spec.ts:332:68
+
+    Error Context: test-results\auth-quick-login-D-24-retu-5fe20-o-sideways-scroll-axe-clean-auth\error-context.md
+
+
+[574/807] [auth] › e2e\admin-desk-records.auth.spec.ts:273:3 › records/p1/lab: a load error shows Retry, not "No laboratory for these filters"
+[575/807] [auth] › e2e\exercise-auth.spec.ts:86:5 › dark › Move v2: chips and sitting filter, a video move shows its preview, minutes are logged; shots; axe clean
+[576/807] [auth] › e2e\admin-desk-records.auth.spec.ts:284:1 › queue: source paper beside the values at 1440, below at 1024; sticky Confirm
+[577/807] [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 1280px: mascot, one name, no sideways scroll, axe clean
+[578/807] [auth] › e2e\admin-desk-records.auth.spec.ts:301:1 › queue at 390: rows are cards and Fix is on screen
+[579/807] [auth] › e2e\admin-desk-records.auth.spec.ts:317:1 › queue: #/queue/<personId> shows that person only
+  54) [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 1280px: mascot, one name, no sideways scroll, axe clean 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByAltText('Jack Jack, the Bantay dog')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByAltText('Jack Jack, the Bantay dog') with timeout 5000ms
+      - waiting for getByAltText('Jack Jack, the Bantay dog')
+
+
+      330 |       await page.addInitScript(() => localStorage.setItem('bantay.lastPerson', 'p-lola'))
+      331 |       await page.goto('/')
+    > 332 |       await expect(page.getByAltText('Jack Jack, the Bantay dog')).toBeVisible()
+          |                                                                    ^
+      333 |       await expect(page.getByRole('heading', { name: 'Hi Lola' })).toBeVisible()
+      334 |       await expect(page.locator('body')).not.toContainText('Ate Maria')
+      335 |       await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\auth.spec.ts:332:68
+
+    Error Context: test-results\auth-quick-login-D-24-retu-f5b5d-o-sideways-scroll-axe-clean-auth\error-context.md
+
+
+[580/807] [auth] › e2e\exercise-auth.spec.ts:119:5 › dark › Health has a Move card that opens the Move screen; axe clean
+[581/807] [auth] › e2e\admin-desk-records.auth.spec.ts:326:1 › records: nine tabs scroll with a More button at 1024
+[582/807] [auth] › e2e\auth.spec.ts:347:5 › quick login (D-24) › picker and PIN pad at 375px: no sideways scroll
+[583/807] [auth] › e2e\admin-desk-records.auth.spec.ts:337:1 › shots: queue, records and duplicates, light and dark, 1440 and 390
+[584/807] [auth] › e2e\auth.spec.ts:358:5 › quick login (D-24) › fingerprint prompt screen at 375px: no sideways scroll
+[585/807] [auth] › e2e\auth.spec.ts:347:5 › quick login (D-24) › picker and PIN pad at 1280px: no sideways scroll
+[586/807] [auth] › e2e\nutrition-auth.spec.ts:67:5 › light › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean
+[587/807] [auth] › e2e\auth.spec.ts:358:5 › quick login (D-24) › fingerprint prompt screen at 1280px: no sideways scroll
+[588/807] [auth] › e2e\profile-auth.spec.ts:63:3 › Me: My details shows the server row and saves edits as a PATCH (light)
+[589/807] [auth] › e2e\medicines.spec.ts:119:1 › review: Yes clears the line, Stopped moves the medicine to Past
+  55) [auth] › e2e\nutrition-auth.spec.ts:67:5 › light › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('group', { name: 'Quick log' }).getByRole('button')
+    Expected: 6
+    Received: 7
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('group', { name: 'Quick log' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Quick log' }).getByRole('button')
+        3 × locator resolved to 0 elements
+          - unexpected value "0"
+        10 × locator resolved to 7 elements
+           - unexpected value "7"
+
+
+      69 |       await page.goto('/')
+      70 |       const row = page.getByRole('group', { name: 'Quick log' })
+    > 71 |       await expect(row.getByRole('button')).toHaveCount(6)
+         |                                             ^
+      72 |       for (const b of await row.getByRole('button').all()) {
+      73 |         const box = (await b.boundingBox())!
+      74 |         expect(box.height).toBeGreaterThanOrEqual(72)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\nutrition-auth.spec.ts:71:45
+
+    Error Context: test-results\nutrition-auth-light-Quick-9c1a6-alty-extras-water-axe-clean-auth\error-context.md
+
+
+[590/807] [auth] › e2e\records-db.spec.ts:67:3 › name on paper: another name warns and blocks Confirm until acknowledged (light, 390x844)
+[591/807] [auth] › e2e\profile-auth.spec.ts:91:3 › SOS picker fills a family member's phone from their profile (light)
+[592/807] [auth] › e2e\nutrition-auth.spec.ts:164:5 › light › Health > Food and nutrients: the card, the limit (2000 or 1500), the week next to blood pressure; axe clean
+[593/807] [auth] › e2e\s12-core.auth.spec.ts:101:1 › Unwell offline is told once when the phone is back online (exactly 1 raise_mood_alert)
+[594/807] [auth] › e2e\records-db.spec.ts:67:3 › name on paper: another name warns and blocks Confirm until acknowledged (dark, 390x844)
+[595/807] [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (light)
+[596/807] [auth] › e2e\records-db.spec.ts:95:3 › queue, confirm sheet and record detail (light, 390x844)
+[597/807] [auth] › e2e\s12-core.auth.spec.ts:119:3 › today-full: two medicines, per-medicine checklist, SOS hold light
+[598/807] [auth] › e2e\nutrition-auth.spec.ts:212:5 › light › Health > Food and nutrients: targets by age and sex, food vs supplement segments, unknown stays unknown; axe clean
+[599/807] [auth] › e2e\s12-core.auth.spec.ts:141:3 › family-member light
+[600/807] [auth] › e2e\s12-core.auth.spec.ts:164:3 › simple-today with a dose and nothing due light
+[601/807] [auth] › e2e\records-db.spec.ts:95:3 › queue, confirm sheet and record detail (dark, 390x844)
+[602/807] [auth] › e2e\s12-core.auth.spec.ts:177:3 › simple-today nothing due keeps Medicines and the BP tile light
+[603/807] [auth] › e2e\nutrition-auth.spec.ts:67:5 › dark › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean
+  56) [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (light) 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Open Today' })
+
+
+      108 |     await mock(page, reqs, scheme, [{ id: 'p1', display_name: 'Test Person', phone: null, birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }])
+      109 |     await page.goto('/')
+    > 110 |     await page.getByRole('button', { name: 'Open Today' }).click() // first launch is start-done since S6a; setup opens from the card on Me
+          |                                                            ^
+      111 |     await page.goto('/#me/phone')
+      112 |     await page.getByRole('button', { name: /^Next: / }).click()
+      113 |     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\profile-auth.spec.ts:110:60
+
+    Error Context: test-results\profile-auth-wizard-about--f4e6c-te-to-the-person-row-light--auth\error-context.md
+
+
+[604/807] [auth] › e2e\s12-core.auth.spec.ts:119:3 › today-full: two medicines, per-medicine checklist, SOS hold dark
+[605/807] [auth] › e2e\profile-auth.spec.ts:63:3 › Me: My details shows the server row and saves edits as a PATCH (dark)
+  57) [auth] › e2e\nutrition-auth.spec.ts:67:5 › dark › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  getByRole('group', { name: 'Quick log' }).getByRole('button')
+    Expected: 6
+    Received: 7
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveCount" getByRole('group', { name: 'Quick log' }).getByRole('button') with timeout 5000ms
+      - waiting for getByRole('group', { name: 'Quick log' }).getByRole('button')
+        4 × locator resolved to 0 elements
+          - unexpected value "0"
+        8 × locator resolved to 7 elements
+          - unexpected value "7"
+
+
+      69 |       await page.goto('/')
+      70 |       const row = page.getByRole('group', { name: 'Quick log' })
+    > 71 |       await expect(row.getByRole('button')).toHaveCount(6)
+         |                                             ^
+      72 |       for (const b of await row.getByRole('button').all()) {
+      73 |         const box = (await b.boundingBox())!
+      74 |         expect(box.height).toBeGreaterThanOrEqual(72)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\nutrition-auth.spec.ts:71:45
+
+    Error Context: test-results\nutrition-auth-dark-Quick--8f973-alty-extras-water-axe-clean-auth\error-context.md
+
+
+[606/807] [auth] › e2e\s12-join.auth.spec.ts:46:3 › join: one name, then the PIN, light
+[607/807] [auth] › e2e\s12-core.auth.spec.ts:141:3 › family-member dark
+[608/807] [auth] › e2e\nutrition-auth.spec.ts:164:5 › dark › Health > Food and nutrients: the card, the limit (2000 or 1500), the week next to blood pressure; axe clean
+[609/807] [auth] › e2e\profile-auth.spec.ts:91:3 › SOS picker fills a family member's phone from their profile (dark)
+[610/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link used, light
+[611/807] [auth] › e2e\s12-core.auth.spec.ts:164:3 › simple-today with a dose and nothing due dark
+[612/807] [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (dark)
+[613/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link ended, light
+[614/807] [auth] › e2e\s12-core.auth.spec.ts:177:3 › simple-today nothing due keeps Medicines and the BP tile dark
+[615/807] [auth] › e2e\s12-marked-by.auth.spec.ts:52:3 › medicines: taken by someone else says so light
+[616/807] [auth] › e2e\nutrition-auth.spec.ts:212:5 › dark › Health > Food and nutrients: targets by age and sex, food vs supplement segments, unknown stays unknown; axe clean
+[617/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link tries, light
+[618/807] [auth] › e2e\s12-marked-by.auth.spec.ts:71:3 › me: the 8 PM summary switch light
+[619/807] [auth] › e2e\s12-marked-by.auth.spec.ts:52:3 › medicines: taken by someone else says so dark
+[620/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link bad, light
+[621/807] [auth] › e2e\s12-marked-by.auth.spec.ts:71:3 › me: the 8 PM summary switch dark
+[622/807] [auth] › e2e\s12-nudge.auth.spec.ts:65:3 › hub: entry tile, recap numbers, counts-only share, pillbox, pixels light
+[623/807] [auth] › e2e\s12-join.auth.spec.ts:80:3 › admin: Invite link copy sheet, light
+[624/807] [auth] › e2e\s12-join.auth.spec.ts:46:3 › join: one name, then the PIN, dark
+[625/807] [auth] › e2e\s12-sharing.auth.spec.ts:79:3 › share with Rhea, see "Waiting for Rhea to accept", cancel it, stop Ate Joy light
+[626/807] [auth] › e2e\s12-sharing.auth.spec.ts:79:3 › share with Rhea, see "Waiting for Rhea to accept", cancel it, stop Ate Joy dark
+[627/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link used, dark
+[628/807] [auth] › e2e\s12-nudge.auth.spec.ts:117:3 › pillbox tap logs once and kudos heart is sent about that person light
+[629/807] [auth] › e2e\s12-sharing.auth.spec.ts:117:1 › Me has the Who can see my records row and no sharing switches; Privacy opens the same list
+  58) [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (dark) 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Open Today' })
+
+
+      108 |     await mock(page, reqs, scheme, [{ id: 'p1', display_name: 'Test Person', phone: null, birthdate: null, blood_type: null, allergies: [], conditions: [], medicines: [], photo_path: null, updated_at: '2026-10-10T10:00:00Z' }])
+      109 |     await page.goto('/')
+    > 110 |     await page.getByRole('button', { name: 'Open Today' }).click() // first launch is start-done since S6a; setup opens from the card on Me
+          |                                                            ^
+      111 |     await page.goto('/#me/phone')
+      112 |     await page.getByRole('button', { name: /^Next: / }).click()
+      113 |     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\profile-auth.spec.ts:110:60
+
+    Error Context: test-results\profile-auth-wizard-about--b161d-ite-to-the-person-row-dark--auth\error-context.md
+
+
+[630/807] [auth] › e2e\s12-nudge.auth.spec.ts:65:3 › hub: entry tile, recap numbers, counts-only share, pillbox, pixels dark
+[631/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link ended, dark
+[632/807] [auth] › e2e\s12-shell.auth.spec.ts:91:3 › Today at 360px: the Taken pill and the Jack button never overlap
+  59) [auth] › e2e\s12-sharing.auth.spec.ts:117:1 › Me has the Who can see my records row and no sharing switches; Privacy opens the same list 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Me' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Me' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Me' })
+
+
+      119 |   await open(page, 'light', calls)
+      120 |   await page.goto('/#me')
+    > 121 |   await expect(page.getByRole('heading', { name: 'Me' })).toBeVisible()
+          |                                                           ^
+      122 |   const row = page.getByRole('link', { name: /Who can see my records/ })
+      123 |   await expect(row).toHaveAttribute('href', '#sharing')
+      124 |   await expect(page.getByRole('switch', { name: /^Share / })).toHaveCount(0)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-sharing.auth.spec.ts:121:59
+
+    Error Context: test-results\s12-sharing.auth-Me-has-th-ba012-Privacy-opens-the-same-list-auth\error-context.md
+
+
+[633/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link tries, dark
+[634/807] [auth] › e2e\s12-nudge.auth.spec.ts:117:3 › pillbox tap logs once and kudos heart is sent about that person dark
+[635/807] [auth] › e2e\s12-sharing.auth.spec.ts:132:1 › a load that fails says so and never claims nobody has access
+[636/807] [auth] › e2e\s12-join.auth.spec.ts:66:5 › join: link bad, dark
+[637/807] [auth] › e2e\s12-shell.auth.spec.ts:91:3 › Today at 390px: the Taken pill and the Jack button never overlap
+[638/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:88:3 › safety-storm with the roll call light
+[639/807] [auth] › e2e\s13-f-shots.auth.spec.ts:84:5 › light › people: rings, I'm OK before and after
+[640/807] [auth] › e2e\s12-join.auth.spec.ts:80:3 › admin: Invite link copy sheet, dark
+[641/807] [auth] › e2e\s12-shell.auth.spec.ts:120:3 › today-full: five tabs and Jack light
+[642/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:98:3 › today-storm light
+[643/807] [auth] › e2e\s13-h-shots.auth.spec.ts:54:3 › health overview: body hero, At a glance, More in Health (light)
+[644/807] [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell light
+[645/807] [auth] › e2e\s13-f-shots.auth.spec.ts:97:5 › light › sheet: mid-drag follows the pointer, a long drag closes it
+[646/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:106:3 › family-home storm roll call light
+[647/807] [auth] › e2e\s13-h-shots.auth.spec.ts:74:3 › health overview: a person with nothing logged (light)
+[648/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:88:3 › safety-storm with the roll call dark
+[649/807] [auth] › e2e\s13-h-shots.auth.spec.ts:83:3 › health overview: labs only has one empty hero, the Labs tile and More in Health (light)
+  60) [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell light ─────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('learn-home')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('learn-home') with timeout 5000ms
+      - waiting for getByTestId('learn-home')
+
+
+      130 |     await open(page, scheme, 390, 'discover')
+      131 |     await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
+    > 132 |     await expect(page.getByTestId('learn-home')).toBeVisible()
+          |                                                  ^
+      133 |     await page.waitForTimeout(600)
+      134 |     await shot(page, 'learn-home', scheme)
+      135 |   })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-shell.auth.spec.ts:132:50
+
+    Error Context: test-results\s12-shell.auth-learn-home-Discover-shell-light-auth\error-context.md
+
+
+[650/807] [auth] › e2e\s13-f-shots.auth.spec.ts:84:5 › dark › people: rings, I'm OK before and after
+[651/807] [auth] › e2e\s13-h-shots.auth.spec.ts:54:3 › health overview: body hero, At a glance, More in Health (dark)
+[652/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:98:3 › today-storm dark
+[653/807] [auth] › e2e\s12-shell.auth.spec.ts:137:3 › start-approve-req: PIN approval sheet over Health light
+[654/807] [auth] › e2e\s12-storm-shots.auth.spec.ts:106:3 › family-home storm roll call dark
+[655/807] [auth] › e2e\s13-f-shots.auth.spec.ts:97:5 › dark › sheet: mid-drag follows the pointer, a long drag closes it
+[656/807] [auth] › e2e\s13-h-shots.auth.spec.ts:74:3 › health overview: a person with nothing logged (dark)
+[657/807] [auth] › e2e\s12-shell.auth.spec.ts:145:3 › simple-today: no Jack, no tab bar light
+[658/807] [auth] › e2e\s13-h-shots.auth.spec.ts:83:3 › health overview: labs only has one empty hero, the Labs tile and More in Health (dark)
+[659/807] [auth] › e2e\s13-t-today.auth.spec.ts:61:3 › dose card: Taken morphs in place, then the card collapses light
+[660/807] [auth] › e2e\s12-shell.auth.spec.ts:120:3 › today-full: five tabs and Jack dark
+[661/807] [auth] › e2e\s14-f2-family.auth.spec.ts:67:5 › light › Messages and Plan are rows on the root; their hashes open them with a Back link
+[662/807] [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 375 px: Jack waves hello, an alt, no sideways scroll
+[663/807] [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell dark
+  61) [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 375 px: Jack waves hello, an alt, no sideways scroll 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "150"
+    Received: "112"
+
+      27 |     await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+      28 |     expect(await img.getAttribute('alt')).toBe('Jack Jack waving hello')
+    > 29 |     expect(await img.getAttribute('width')).toBe('150')
+         |                                             ^
+      30 |     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+      31 |     if (process.env.S14_SHOTS && width === 375) {
+      32 |       mkdirSync(process.env.S14_SHOTS, { recursive: true })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack-welcome.auth.spec.ts:29:45
+
+    Error Context: test-results\s14-j-jack-welcome.auth-we-731f1-o-an-alt-no-sideways-scroll-auth\error-context.md
+
+
+[664/807] [auth] › e2e\s13-t-today.auth.spec.ts:79:3 › reduced motion: no height collapse, a 150 ms cross-fade only light
+[665/807] [auth] › e2e\s14-f2-family.auth.spec.ts:84:5 › light › a quick reply sends the words
+[666/807] [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 195 px: Jack waves hello, an alt, no sideways scroll
+[667/807] [auth] › e2e\s14-f2-family.auth.spec.ts:90:5 › light › after I'm OK focus is on the check-in card, with Jack Jack beside it
+[668/807] [auth] › e2e\s13-t-today.auth.spec.ts:95:3 › today full: first-week My week empty state, More heading light
+  62) [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 195 px: Jack waves hello, an alt, no sideways scroll 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "150"
+    Received: "112"
+
+      27 |     await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+      28 |     expect(await img.getAttribute('alt')).toBe('Jack Jack waving hello')
+    > 29 |     expect(await img.getAttribute('width')).toBe('150')
+         |                                             ^
+      30 |     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+      31 |     if (process.env.S14_SHOTS && width === 375) {
+      32 |       mkdirSync(process.env.S14_SHOTS, { recursive: true })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-j-jack-welcome.auth.spec.ts:29:45
+
+    Error Context: test-results\s14-j-jack-welcome.auth-we-c0b58-o-an-alt-no-sideways-scroll-auth\error-context.md
+
+
+[669/807] [auth] › e2e\s14-f2-family.auth.spec.ts:101:5 › light › 200% text zoom (195 px wide): no sideways scroll on Home, Messages and Plan
+  63) [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell dark ──────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('learn-home')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('learn-home') with timeout 5000ms
+      - waiting for getByTestId('learn-home')
+
+
+      130 |     await open(page, scheme, 390, 'discover')
+      131 |     await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
+    > 132 |     await expect(page.getByTestId('learn-home')).toBeVisible()
+          |                                                  ^
+      133 |     await page.waitForTimeout(600)
+      134 |     await shot(page, 'learn-home', scheme)
+      135 |   })
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s12-shell.auth.spec.ts:132:50
+
+    Error Context: test-results\s12-shell.auth-learn-home-Discover-shell-dark-auth\error-context.md
+
+
+[670/807] [auth] › e2e\s13-t-today.auth.spec.ts:109:3 › after the first week an empty My week draws nothing light
+[671/807] [auth] › e2e\s14-f2-family.auth.spec.ts:111:5 › light › 200% text zoom (195 px wide): the done check-in card with Jack does not overflow, its tile stays 44 px and Jack does not cover the text
+[672/807] [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (light)
+[673/807] [auth] › e2e\s12-shell.auth.spec.ts:137:3 › start-approve-req: PIN approval sheet over Health dark
+[674/807] [auth] › e2e\s13-t-today.auth.spec.ts:117:5 › weather card clear light
+[675/807] [auth] › e2e\s14-f2-family.auth.spec.ts:67:5 › dark › Messages and Plan are rows on the root; their hashes open them with a Back link
+[676/807] [auth] › e2e\s13-t-today.auth.spec.ts:117:5 › weather card storm light
+[677/807] [auth] › e2e\s14-f2-family.auth.spec.ts:84:5 › dark › a quick reply sends the words
+[678/807] [auth] › e2e\s12-shell.auth.spec.ts:145:3 › simple-today: no Jack, no tab bar dark
+  64) [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (light) 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('lab-source')
+    Expected substring: "Source: GenSan Medical Lab, 2 Oct 2026"
+    Received string:    "GenSan Medical Lab · 2 Oct 2026Where the paper prints no range, a general guide is used and named on the result."
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByTestId('lab-source') with timeout 5000ms
+      - waiting for getByTestId('lab-source')
+        - locator resolved to <a href="#family/papers" class="grp lb-src press" data-testid="lab-source">…</a>
+        - unexpected value "Lab paper · 2 Oct 2026Where the paper prints no range, a general guide is used and named on the result."
+        11 × locator resolved to <a href="#family/papers" class="grp lb-src press" data-testid="lab-source">…</a>
+           - unexpected value "GenSan Medical Lab · 2 Oct 2026Where the paper prints no range, a general guide is used and named on the result."
+
+
+      88 |     await expect(list.locator('a.lr-card')).toHaveCount(5)
+      89 |     const src = page.getByTestId('lab-source')
+    > 90 |     await expect(src).toContainText('Source: GenSan Medical Lab, 2 Oct 2026')
+         |                       ^
+      91 |     await expect(src.getByRole('link', { name: /Open original \(labs\.pdf\)/ })).toHaveAttribute('href', 'https://drive.google.com/file/d/abc123/view')
+      92 |     await expect(list.locator('[data-testid="lab-date"]')).toHaveText(['2 Oct', '2 Oct', '2 Oct', '2 Oct', '2 Oct'])
+      93 |     const hba = list.locator('[data-test="hba1c"]')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-l-labs.auth.spec.ts:90:23
+
+    Error Context: test-results\s14-l-labs.auth-list-sourc-fa29c-sult-previous-switch-light--auth\error-context.md
+
+
+[679/807] [auth] › e2e\s13-t-today.auth.spec.ts:125:3 › weather card compact with a dose due light
+[680/807] [auth] › e2e\s14-f2-family.auth.spec.ts:90:5 › dark › after I'm OK focus is on the check-in card, with Jack Jack beside it
+[681/807] [auth] › e2e\s14-m-meds.auth.spec.ts:57:1 › list rows show stock, open the detail, and the edit sheet opens from inside it
+[682/807] [auth] › e2e\s14-l-labs.auth.spec.ts:114:3 › detail: top card with value, bar, range and date; last 3 with trend; one Add per question; no readings, source or tips blocks (light)
+[683/807] [auth] › e2e\s13-t-today.auth.spec.ts:61:3 › dose card: Taken morphs in place, then the card collapses dark
+[684/807] [auth] › e2e\s14-f2-family.auth.spec.ts:101:5 › dark › 200% text zoom (195 px wide): no sideways scroll on Home, Messages and Plan
+[685/807] [auth] › e2e\s14-m-meds.auth.spec.ts:104:1 › list and detail do not scroll sideways at 200% text zoom (195px wide)
+[686/807] [auth] › e2e\s14-f2-family.auth.spec.ts:111:5 › dark › 200% text zoom (195 px wide): the done check-in card with Jack does not overflow, its tile stays 44 px and Jack does not cover the text
+[687/807] [auth] › e2e\s13-t-today.auth.spec.ts:79:3 › reduced motion: no height collapse, a 150 ms cross-fade only dark
+[688/807] [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (light)
+[689/807] [auth] › e2e\s14-t2-today.auth.spec.ts:56:1 › In 10 min hides the late dose card, it stays hidden after a reload, and comes back at the time
+[690/807] [auth] › e2e\s16-family.auth.spec.ts:18:5 › light › family root: ID card, faces with rings and legend, Messages and Plan rows, week calendar, within budget
+[691/807] [auth] › e2e\s13-t-today.auth.spec.ts:95:3 › today full: first-week My week empty state, More heading dark
+  65) [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (light) ──────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Snap a lab paper. A person checks it first.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Snap a lab paper. A person checks it first.') with timeout 5000ms
+      - waiting for getByText('Snap a lab paper. A person checks it first.')
+
+
+      139 |     await open(page, '#health/labs', scheme, [])
+      140 |     await expect(page.getByRole('heading', { name: 'No lab papers yet' })).toBeVisible()
+    > 141 |     await expect(page.getByText("Snap a lab paper. A person checks it first.")).toBeVisible()
+          |                                                                                 ^
+      142 |     await shot(page, 'health-labs-empty', scheme)
+      143 |     await page.getByRole('button', { name: 'Scan a paper' }).click()
+      144 |     await expect(page).toHaveURL(/#health\/papers$/)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-l-labs.auth.spec.ts:141:81
+
+    Error Context: test-results\s14-l-labs.auth-empty-one-sentence-and-one-button-light--auth\error-context.md
+
+
+[692/807] [auth] › e2e\s13-t-today.auth.spec.ts:109:3 › after the first week an empty My week draws nothing dark
+[693/807] [auth] › e2e\s14-t2-today.auth.spec.ts:75:1 › the card comes back by itself when the 10 minutes pass (no reload)
+[694/807] [auth] › e2e\s16-family.auth.spec.ts:49:5 › light › empty needs: Needs you now is not drawn at all, within the 1500 budget
+[695/807] [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (dark)
+[696/807] [auth] › e2e\s13-t-today.auth.spec.ts:117:5 › weather card clear dark
+[697/807] [auth] › e2e\s16-family.auth.spec.ts:59:5 › light › a face sheet offers Send a message and the chat opens with @name ready; Papers lives at #family/papers
+[698/807] [auth] › e2e\s14-t2-today.auth.spec.ts:86:1 › Meals is not on Today (one salt line is); the line opens Health > Food where Log a meal lives
+[699/807] [auth] › e2e\s13-t-today.auth.spec.ts:117:5 › weather card storm dark
+[700/807] [auth] › e2e\s16-family.auth.spec.ts:71:5 › light › no button wraps at 360
+[701/807] [auth] › e2e\s14-t2-today.auth.spec.ts:100:1 › My week is a See the week link that opens the same tiles; SOS hold and Self-care stay
+[702/807] [auth] › e2e\s13-t-today.auth.spec.ts:125:3 › weather card compact with a dose due dark
+  66) [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (dark) 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: getByTestId('lab-source')
+    Expected substring: "Source: GenSan Medical Lab, 2 Oct 2026"
+    Received string:    "GenSan Medical Lab · 2 Oct 2026Where the paper prints no range, a general guide is used and named on the result."
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" getByTestId('lab-source') with timeout 5000ms
+      - waiting for getByTestId('lab-source')
+        12 × locator resolved to <a href="#family/papers" class="grp lb-src press" data-testid="lab-source">…</a>
+           - unexpected value "GenSan Medical Lab · 2 Oct 2026Where the paper prints no range, a general guide is used and named on the result."
+
+
+      88 |     await expect(list.locator('a.lr-card')).toHaveCount(5)
+      89 |     const src = page.getByTestId('lab-source')
+    > 90 |     await expect(src).toContainText('Source: GenSan Medical Lab, 2 Oct 2026')
+         |                       ^
+      91 |     await expect(src.getByRole('link', { name: /Open original \(labs\.pdf\)/ })).toHaveAttribute('href', 'https://drive.google.com/file/d/abc123/view')
+      92 |     await expect(list.locator('[data-testid="lab-date"]')).toHaveText(['2 Oct', '2 Oct', '2 Oct', '2 Oct', '2 Oct'])
+      93 |     const hba = list.locator('[data-test="hba1c"]')
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-l-labs.auth.spec.ts:90:23
+
+    Error Context: test-results\s14-l-labs.auth-list-sourc-d4462-esult-previous-switch-dark--auth\error-context.md
+
+
+[703/807] [auth] › e2e\s16-family.auth.spec.ts:18:5 › dark › family root: ID card, faces with rings and legend, Messages and Plan rows, week calendar, within budget
+[704/807] [auth] › e2e\s14-t2-today.auth.spec.ts:112:1 › 200% text zoom (195px wide): the late card, In 10 min, the salt line and See the week do not scroll sideways
+[705/807] [auth] › e2e\s16-health.auth.spec.ts:19:1 › full: body hero, At a glance, nudge row, More in Health, in that order, within 1250 px
+[706/807] [auth] › e2e\s14-l-labs.auth.spec.ts:114:3 › detail: top card with value, bar, range and date; last 3 with trend; one Add per question; no readings, source or tips blocks (dark)
+[707/807] [auth] › e2e\s16-family.auth.spec.ts:49:5 › dark › empty needs: Needs you now is not drawn at all, within the 1500 budget
+[708/807] [auth] › e2e\s16-health.auth.spec.ts:37:3 › full (light): shots and no wrapped buttons at 360
+[709/807] [auth] › e2e\s16-narrow-text.auth.spec.ts:44:3 › no letter-per-line text at 195 px, light
+[710/807] [auth] › e2e\s16-family.auth.spec.ts:59:5 › dark › a face sheet offers Send a message and the chat opens with @name ready; Papers lives at #family/papers
+[711/807] [auth] › e2e\s16-health.auth.spec.ts:46:3 › empty (light): one hero and the More grid, within 700 px
+[712/807] [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (dark)
+[713/807] [auth] › e2e\s16-health.auth.spec.ts:37:3 › full (dark): shots and no wrapped buttons at 360
+[714/807] [auth] › e2e\s16-family.auth.spec.ts:71:5 › dark › no button wraps at 360
+[715/807] [auth] › e2e\s16-health.auth.spec.ts:46:3 › empty (dark): one hero and the More grid, within 700 px
+  67) [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (dark) ───────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Snap a lab paper. A person checks it first.')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('Snap a lab paper. A person checks it first.') with timeout 5000ms
+      - waiting for getByText('Snap a lab paper. A person checks it first.')
+
+
+      139 |     await open(page, '#health/labs', scheme, [])
+      140 |     await expect(page.getByRole('heading', { name: 'No lab papers yet' })).toBeVisible()
+    > 141 |     await expect(page.getByText("Snap a lab paper. A person checks it first.")).toBeVisible()
+          |                                                                                 ^
+      142 |     await shot(page, 'health-labs-empty', scheme)
+      143 |     await page.getByRole('button', { name: 'Scan a paper' }).click()
+      144 |     await expect(page).toHaveURL(/#health\/papers$/)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s14-l-labs.auth.spec.ts:141:81
+
+    Error Context: test-results\s14-l-labs.auth-empty-one-sentence-and-one-button-dark--auth\error-context.md
+
+
+[716/807] [auth] › e2e\s16-onboarding.auth.spec.ts:15:3 › screens 3, 4 and 5 fit one screen, no wrapped buttons, light
+[717/807] [auth] › e2e\s16-health.auth.spec.ts:59:1 › the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food
+[718/807] [auth] › e2e\s16-narrow-text.auth.spec.ts:44:3 › no letter-per-line text at 195 px, dark
+[719/807] [auth] › e2e\s14-l-labs.auth.spec.ts:148:1 › Overview shows one Lab results row that opens the screen; the Labs tile does too
+  68) [auth] › e2e\s16-health.auth.spec.ts:59:1 › the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food 
+
+    Error: page.evaluate: NotFoundError: Failed to execute 'transaction' on 'IDBDatabase': One of the specified object stores was not found.
+        at eval (eval at evaluate (:370:30), <anonymous>:8:17)
+        at async <anonymous>:396:30
+        at eval (eval at evaluate (:370:30), <anonymous>:8:17)
+        at async <anonymous>:396:30
+        at seed (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\fixtures\s16\health.ts:10:8)
+        at full (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\fixtures\s16\health.ts:40:9)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16-health.auth.spec.ts:60:3
+
+    Error Context: test-results\s16-health.auth-the-seven--0fbe9-edicines-Move-links-to-Food-auth\error-context.md
+
+
+[720/807] [auth] › e2e\s16-onboarding.auth.spec.ts:15:3 › screens 3, 4 and 5 fit one screen, no wrapped buttons, dark
+[721/807] [auth] › e2e\s16-health.auth.spec.ts:72:1 › labs keep the v9 design: eyebrow, source card link, previous switch, v9 footer, short sub line
+[722/807] [auth] › e2e\s14-l-labs.auth.spec.ts:159:1 › list and detail do not scroll sideways at 200% text zoom (195px wide)
+[723/807] [auth] › e2e\s16-settings.auth.spec.ts:17:3 › overview: every row reaches its screen, within budget (light)
+[724/807] [auth] › e2e\s16-health.auth.spec.ts:85:1 › the nudge row link does not cover the overview: a glance tile still opens its own screen
+[725/807] [auth] › e2e\s16-onboarding.auth.spec.ts:39:1 › screen 3 with a dose on file fits the 700 px budget at 390 px
+[726/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › calm light: budget, order, buttons, Jack clear
+[727/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/alerts: own Back and title, one screen, back lands on #me (light)
+  69) [auth] › e2e\s16-health.auth.spec.ts:85:1 › the nudge row link does not cover the overview: a glance tile still opens its own screen 
+
+    Error: page.evaluate: NotFoundError: Failed to execute 'transaction' on 'IDBDatabase': One of the specified object stores was not found.
+        at eval (eval at evaluate (:370:30), <anonymous>:8:17)
+        at async <anonymous>:396:30
+        at eval (eval at evaluate (:370:30), <anonymous>:8:17)
+        at async <anonymous>:396:30
+        at seed (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\fixtures\s16\health.ts:10:8)
+        at full (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\fixtures\s16\health.ts:40:9)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16-health.auth.spec.ts:86:3
+
+    Error Context: test-results\s16-health.auth-the-nudge--33b7b--still-opens-its-own-screen-auth\error-context.md
+
+
+[728/807] [auth] › e2e\s16-onboarding.auth.spec.ts:50:1 › after two refusals the button opens the app settings
+[729/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/display: own Back and title, one screen, back lands on #me (light)
+[730/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › calm dark: budget, order, buttons, Jack clear
+[731/807] [auth] › e2e\s16-health.auth.spec.ts:91:1 › a carer who picks Ma logs the meal for Ma, not for themself
+[732/807] [auth] › e2e\s16-onboarding.auth.spec.ts:63:3 › reminders allowed › the test reminder rings in 5 seconds, the check draws, Open Today lands on Today
+[733/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/family: own Back and title, one screen, back lands on #me (light)
+[734/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/phone: own Back and title, one screen, back lands on #me (light)
+[735/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff light: budget, order, buttons, Jack clear
+[736/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/signin: own Back and title, one screen, back lands on #me (light)
+[737/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:7:1 › a member account has no View as row, no bar, and sees themselves
+[738/807] [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones light
+  70) [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff light: budget, order, buttons, Jack clear 
+
+    Error: page height 1226 px over the 1150 px budget
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1150
+    Received:    1226
+
+       at s16.ts:46
+
+      44 |     return el.scrollHeight - (parseFloat(getComputedStyle(el, '::after').height) || 0)
+      45 |   })
+    > 46 |   expect(h, `page height ${h} px over the ${max} px budget`).toBeLessThanOrEqual(max)
+         |                                                              ^
+      47 | }
+      48 |
+      49 | /** At the end of the scroll no interactive element (button, a, input, [role=button]) sits under the Jack button. */
+        at assertBudget (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16.ts:46:62)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16-today.auth.spec.ts:20:7
+
+    Error Context: test-results\s16-today.auth-alertsOff-l-f4259-et-order-buttons-Jack-clear-auth\error-context.md
+
+
+[739/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/about: own Back and title, one screen, back lands on #me (light)
+[740/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:18:1 › an admin with no carer link gets the one reason sentence on the bar, and the audit row is written once
+[741/807] [auth] › e2e\s16-settings.auth.spec.ts:50:3 › Display: the Theme choice sheet is a radiogroup and Back closes it (light)
+[742/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff dark: budget, order, buttons, Jack clear
+[743/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:32:1 › the acting id is memory only: a reload returns to yourself and nothing is stored
+[744/807] [auth] › e2e\s16-settings.auth.spec.ts:17:3 › overview: every row reaches its screen, within budget (dark)
+[745/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/alerts: own Back and title, one screen, back lands on #me (dark)
+[746/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:47:1 › Exit on the bar ends it, and the bar has no horizontal overflow at 360
+  71) [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones light ─────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Phones' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Phones' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Phones' })
+
+
+      112 |
+      113 |     await page.getByRole('button', { name: "Fix Papa's phone" }).click()
+    > 114 |     await expect(page.getByRole('heading', { name: 'Phones' })).toBeVisible()
+          |                                                                 ^
+      115 |     await expect(page.getByText('Battery saver is stopping alarms')).toBeVisible()
+      116 |     await page.getByRole('button', { name: 'Needs fixing' }).click()
+      117 |     await expect(page.getByLabel("Fix Papa's phone")).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s4-carer.auth.spec.ts:114:65
+
+    Error Context: test-results\s4-carer.auth-family-home-answer-for-Papa-phones-light-auth\error-context.md
+
+
+[747/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/display: own Back and title, one screen, back lands on #me (dark)
+  72) [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff dark: budget, order, buttons, Jack clear 
+
+    Error: page height 1229 px over the 1150 px budget
+
+    expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 1150
+    Received:    1229
+
+       at s16.ts:46
+
+      44 |     return el.scrollHeight - (parseFloat(getComputedStyle(el, '::after').height) || 0)
+      45 |   })
+    > 46 |   expect(h, `page height ${h} px over the ${max} px budget`).toBeLessThanOrEqual(max)
+         |                                                              ^
+      47 | }
+      48 |
+      49 | /** At the end of the scroll no interactive element (button, a, input, [role=button]) sits under the Jack button. */
+        at assertBudget (D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16.ts:46:62)
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s16-today.auth.spec.ts:20:7
+
+    Error Context: test-results\s16-today.auth-alertsOff-d-c3d1a-et-order-buttons-Jack-clear-auth\error-context.md
+
+
+[748/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/family: own Back and title, one screen, back lands on #me (dark)
+[749/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:60:3 › 390 px bar and picker shots (light)
+[750/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:60:3 › 390 px bar and picker shots (dark)
+[751/807] [auth] › e2e\s16-viewas-privacy.auth.spec.ts:74:6 › an admin with no carer link sees View only on Take and cannot log for Mama
+[752/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:53:3 › join: start-who and start-pin, light
+[753/807] [auth] › e2e\s4-carer.auth.spec.ts:121:3 › SOS banner on Family light
+[754/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/phone: own Back and title, one screen, back lands on #me (dark)
+[755/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › quake light: budget, order, buttons, Jack clear
+[756/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/signin: own Back and title, one screen, back lands on #me (dark)
+[757/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:67:3 › sign-in: start-pinpad, start-wrong, start-forgot, start-approve-wait, light
+[758/807] [auth] › e2e\s4-carer.auth.spec.ts:134:3 › medicines: still taking it, I stopped it asks first light
+[759/807] [auth] › e2e\s16-settings.auth.spec.ts:34:5 › #me/about: own Back and title, one screen, back lands on #me (dark)
+[760/807] [auth] › e2e\s16-settings.auth.spec.ts:50:3 › Display: the Theme choice sheet is a radiogroup and Back closes it (dark)
+[761/807] [auth] › e2e\s16-settings.auth.spec.ts:70:1 › no button wraps at 360 on the overview or any group
+[762/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › quake dark: budget, order, buttons, Jack clear
+[763/807] [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones dark
+[764/807] [auth] › e2e\s16-settings.auth.spec.ts:81:1 › Family phones is a route of the Phone group: one Back, and the hardware Back returns to Phone
+[765/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:104:3 › start-done after the first sign-in, light
+[766/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › storm light: budget, order, buttons, Jack clear
+[767/807] [auth] › e2e\s16-settings.auth.spec.ts:93:1 › a member sees no admin rows
+[768/807] [auth] › e2e\s16-settings.auth.spec.ts:101:1 › the top bar greeting wraps and never ends in an ellipsis (Today)
+[769/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:53:3 › join: start-who and start-pin, dark
+[770/807] [auth] › e2e\s16-today.auth.spec.ts:17:5 › storm dark: budget, order, buttons, Jack clear
+[771/807] [auth] › e2e\s6c-lock.auth.spec.ts:76:3 › fingerprint lock and its Medical ID light
+  73) [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones dark ──────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('heading', { name: 'Phones' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('heading', { name: 'Phones' }) with timeout 5000ms
+      - waiting for getByRole('heading', { name: 'Phones' })
+
+
+      112 |
+      113 |     await page.getByRole('button', { name: "Fix Papa's phone" }).click()
+    > 114 |     await expect(page.getByRole('heading', { name: 'Phones' })).toBeVisible()
+          |                                                                 ^
+      115 |     await expect(page.getByText('Battery saver is stopping alarms')).toBeVisible()
+      116 |     await page.getByRole('button', { name: 'Needs fixing' }).click()
+      117 |     await expect(page.getByLabel("Fix Papa's phone")).toBeVisible()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\s4-carer.auth.spec.ts:114:65
+
+    Error Context: test-results\s4-carer.auth-family-home-answer-for-Papa-phones-dark-auth\error-context.md
+
+
+[772/807] [auth] › e2e\s6c-lock.auth.spec.ts:97:3 › Me, update sheet light
+[773/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:67:3 › sign-in: start-pinpad, start-wrong, start-forgot, start-approve-wait, dark
+[774/807] [auth] › e2e\s16-today.auth.spec.ts:38:1 › closing a warning hides it on Today, a reload keeps it hidden, and the roll call survives a storm close
+[775/807] [auth] › e2e\s6c-lock.auth.spec.ts:118:3 › Me as a member light
+[776/807] [auth] › e2e\s4-carer.auth.spec.ts:121:3 › SOS banner on Family dark
+[777/807] [auth] › e2e\s6c-lock.auth.spec.ts:133:3 › privacy light
+[778/807] [auth] › e2e\s6c-lock.auth.spec.ts:76:3 › fingerprint lock and its Medical ID dark
+[779/807] [auth] › e2e\s16-today.auth.spec.ts:49:1 › storm: the roll-call pair, Do now rows and links; closing keeps the roll call
+[780/807] [auth] › e2e\s4-carer.auth.spec.ts:134:3 › medicines: still taking it, I stopped it asks first dark
+[781/807] [auth] › e2e\s6c-lock.auth.spec.ts:97:3 › Me, update sheet dark
+[782/807] [auth] › e2e\s6a-onboard-shots.auth.spec.ts:104:3 › start-done after the first sign-in, dark
+[783/807] [auth] › e2e\s16-today.auth.spec.ts:60:1 › Next up: Take, Snooze and Skip; the More tile opens the log sheet; the breath row opens the sheet and back closes it
+[784/807] [auth] › e2e\s6c-lock.auth.spec.ts:118:3 › Me as a member dark
+[785/807] [auth] › e2e\s6c-lock.auth.spec.ts:133:3 › privacy dark
+[786/807] [auth] › e2e\s7-today-shots.auth.spec.ts:73:3 › today-full with a family alert light
+[787/807] [auth] › e2e\today-auth.spec.ts:98:35 › signed in at 2026-10-30T23:30:00+08:00: Next up for me and Ma, weather action, My week tiles, self-care card, and Taken logs the dose
+[788/807] [auth] › e2e\s16-today.auth.spec.ts:77:1 › the whole stack in order: hero, alerts-off, warning, family notice, Next up, quick log, SOS, breathing (PLAN 1.1 rows 2-9)
+[789/807] [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, light
+[790/807] [auth] › e2e\s7-today-shots.auth.spec.ts:81:3 › today-log sheets light
+[791/807] [auth] › e2e\today-auth.spec.ts:98:35 › signed in at 2026-10-31T00:30:00+08:00: Next up for me and Ma, weather action, My week tiles, self-care card, and Taken logs the dose
+  74) [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, light ───
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('nudge')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+
+
+      20 |     await expect(page.locator('h1')).toHaveText('Health')
+      21 |     const nudge = page.getByTestId('nudge')
+    > 22 |     await expect(nudge).toBeVisible()
+         |                         ^
+      23 |     await expect(nudge.getByRole('button', { name: 'Log' })).toBeVisible()
+      24 |     await page.screenshot({ path: `${SHOTS}/health-home-nudge-buttons-${scheme}.png` })
+      25 |     await nudge.getByRole('button', { name: 'Log' }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.auth.spec.ts:22:25
+
+    Error Context: test-results\w2-health-shots.auth-nudge-1de0f--and-the-Add-BP-sheet-light-auth\error-context.md
+
+
+[792/807] [auth] › e2e\s16-today.auth.spec.ts:87:1 › a family notice opens what it is about; its close button marks it seen
+[793/807] [auth] › e2e\s7-today-shots.auth.spec.ts:94:3 › simple-today, simple-mood, simple-taken light
+[794/807] [auth] › e2e\today-auth.spec.ts:123:3 › screenshots light
+[795/807] [auth] › e2e\s16-today.auth.spec.ts:97:3 › Weather screen light: budget, place switcher, hero, heat strip, tiles, Season and sun
+[796/807] [auth] › e2e\today-auth.spec.ts:123:3 › screenshots dark
+[797/807] [auth] › e2e\today-auth.spec.ts:161:3 › simple mode: SOS button inside the viewport before scroll at 390x844
+[798/807] [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, dark
+[799/807] [auth] › e2e\s7-today-shots.auth.spec.ts:114:3 › today-storm light
+[800/807] [auth] › e2e\s16-today.auth.spec.ts:97:3 › Weather screen dark: budget, place switcher, hero, heat strip, tiles, Season and sun
+[801/807] [auth] › e2e\today-auth.spec.ts:161:3 › simple mode: SOS button inside the viewport before scroll at 360x640
+[802/807] [auth] › e2e\s7-today-shots.auth.spec.ts:121:3 › today-offline light
+  75) [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, dark ────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('nudge')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('nudge') with timeout 5000ms
+      - waiting for getByTestId('nudge')
+
+
+      20 |     await expect(page.locator('h1')).toHaveText('Health')
+      21 |     const nudge = page.getByTestId('nudge')
+    > 22 |     await expect(nudge).toBeVisible()
+         |                         ^
+      23 |     await expect(nudge.getByRole('button', { name: 'Log' })).toBeVisible()
+      24 |     await page.screenshot({ path: `${SHOTS}/health-home-nudge-buttons-${scheme}.png` })
+      25 |     await nudge.getByRole('button', { name: 'Log' }).click()
+        at D:\Claude\Bantay\.claude\worktrees\family-bantay-session-16-6fa7b5\e2e\w2-health-shots.auth.spec.ts:22:25
+
+    Error Context: test-results\w2-health-shots.auth-nudge-buttons-and-the-Add-BP-sheet-dark-auth\error-context.md
+
+
+[803/807] [auth] › e2e\s7-today-shots.auth.spec.ts:73:3 › today-full with a family alert dark
+[804/807] [auth] › e2e\s7-today-shots.auth.spec.ts:81:3 › today-log sheets dark
+[805/807] [auth] › e2e\s7-today-shots.auth.spec.ts:94:3 › simple-today, simple-mood, simple-taken dark
+[806/807] [auth] › e2e\s7-today-shots.auth.spec.ts:114:3 › today-storm dark
+[807/807] [auth] › e2e\s7-today-shots.auth.spec.ts:121:3 › today-offline dark
+  75 failed
+    [chromium] › e2e\admin.spec.ts:6:1 › setup tells members what the admin can see ────────────────
+    [chromium] › e2e\ask-sheet.spec.ts:89:5 › light › PDF line goes to Health > Papers ─────────────
+    [chromium] › e2e\ask-sheet.spec.ts:97:5 › light › one-time hint, Jack button and tab bar pass axe 
+    [chromium] › e2e\ask-sheet.spec.ts:136:5 › light › the one-time hint shows, never covers the Jack button, and is gone after the first open 
+    [chromium] › e2e\ask-sheet.spec.ts:32:5 › dark › sheet opens with three 76px rows, axe clean, Escape closes 
+    [chromium] › e2e\ask-sheet.spec.ts:89:5 › dark › PDF line goes to Health > Papers ──────────────
+    [chromium] › e2e\ask-sheet.spec.ts:97:5 › dark › one-time hint, Jack button and tab bar pass axe 
+    [chromium] › e2e\ask-sheet.spec.ts:136:5 › dark › the one-time hint shows, never covers the Jack button, and is gone after the first open 
+    [chromium] › e2e\family-messages.spec.ts:39:5 › light › Today: the Self-care card runs a breath, then asks how I feel 
+    [chromium] › e2e\family-messages.spec.ts:58:5 › light › Today: with reduced motion the circle does not move and the countdown carries it 
+    [chromium] › e2e\family-messages.spec.ts:39:5 › dark › Today: the Self-care card runs a breath, then asks how I feel 
+    [chromium] › e2e\family-messages.spec.ts:58:5 › dark › Today: with reduced motion the circle does not move and the countdown carries it 
+    [chromium] › e2e\onboarding.spec.ts:81:3 › setup steps from the checklist › walks every step with Skip and Finish, then closes 
+    [chromium] › e2e\onboarding.spec.ts:92:3 › setup steps from the checklist › Back and the step dots move between steps 
+    [chromium] › e2e\onboarding.spec.ts:101:3 › setup steps from the checklist › a step whose flag is already set leaves the list 
+    [chromium] › e2e\onboarding.spec.ts:110:3 › setup steps from the checklist › about me: pick suggestions, add your own, None is exclusive 
+    [chromium] › e2e\onboarding.spec.ts:129:3 › setup steps from the checklist › notifications step: rows are off and the test reminder waits for permission 
+    [chromium] › e2e\onboarding.spec.ts:136:3 › setup steps from the checklist › SOS contacts step: two contact slots, no calling prompt on the web 
+    [chromium] › e2e\onboarding.spec.ts:143:3 › setup steps from the checklist › location step has no prefilled barangay, and saves the one typed 
+    [chromium] › e2e\onboarding.spec.ts:165:3 › notifications already allowed › the notifications step leaves the list 
+    [chromium] › e2e\onboarding.spec.ts:178:3 › Me checklist › lists the same count as the wizard and each item opens its own step 
+    [chromium] › e2e\onboarding.spec.ts:189:3 › Me checklist › a finished step leaves the list ─────
+    [chromium] › e2e\onboarding.spec.ts:201:3 › iPhone in Safari › notifications step shows Add to Home Screen, and no Health Connect step 
+    [chromium] › e2e\phone-warnings.spec.ts:37:1 › the setup wizard has the phone warnings step, and it can be passed 
+    [chromium] › e2e\records.spec.ts:24:1 › empty states ───────────────────────────────────────────
+    [chromium] › e2e\s12-polish.spec.ts:98:3 › S3: weather ends with room above the tab bar ────────
+    [chromium] › e2e\s12-polish.spec.ts:121:5 › light › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (light) 
+    [chromium] › e2e\s12-polish.spec.ts:154:5 › light › S9: People bubbles say the last check-in in words, with no sleep icon (light) 
+    [chromium] › e2e\s12-polish.spec.ts:121:5 › dark › S2: the temperature on the weather card is white on the dark sky, and no empty plan card (dark) 
+    [chromium] › e2e\s12-polish.spec.ts:154:5 › dark › S9: People bubbles say the last check-in in words, with no sleep icon (dark) 
+    [chromium] › e2e\s12-shell.spec.ts:35:1 › five tabs in order; Discover opens with its five sub-tabs; Watch is registered and draws its own screen 
+    [chromium] › e2e\s12-shell.spec.ts:56:1 › Discover sub-tabs fit at 360 px without sideways scroll 
+    [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 375 px: one Jack, an alt, no sideways scroll 
+    [chromium] › e2e\s14-j-jack.spec.ts:54:5 › reading at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll 
+    [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 375 px: one Jack, an alt, no sideways scroll 
+    [chromium] › e2e\s14-j-jack.spec.ts:54:5 › watching at 195 px (200% text, house convention): one Jack, an alt, no sideways scroll 
+    [chromium] › e2e\s14-j-jack.spec.ts:68:1 › cook mode shows a small decorative Jack in the top row 
+    [chromium] › e2e\s14-j-jack.spec.ts:81:1 › the Ask button wears the Jack head, decorative, 48 px, still named Ask Bantay 
+    [chromium] › e2e\shell.spec.ts:4:1 › tab hash deep-link and back button ────────────────────────
+    [chromium] › e2e\subpage-header.spec.ts:14:3 › #health/videos: no top bar, a Back control ──────
+    [chromium] › e2e\visits.spec.ts:36:1 › visits: next visit, follow-up due, Bring checklist stays ticked, summary page 
+    [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 390 ────────────────────────────────
+    [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 390 ─────────────────────────────────
+    [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge empty 360 ────────────────────────────────
+    [chromium] › e2e\w2-health-shots.spec.ts:29:5 › nudge done 360 ─────────────────────────────────
+    [auth] › e2e\auth.spec.ts:288:3 › quick login (D-24) › Me > This phone: switch person keeps the picker; forget this phone clears it 
+    [auth] › e2e\auth.spec.ts:310:3 › quick login (D-24) › remembered person: a PIN sign-in remembers them; the next visit shows only the mascot and their name 
+    [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 375px: mascot, one name, no sideways scroll, axe clean 
+    [auth] › e2e\auth.spec.ts:326:5 › quick login (D-24) › returning screen at 1280px: mascot, one name, no sideways scroll, axe clean 
+    [auth] › e2e\bp-guided.auth.spec.ts:40:1 › vitals page: Above target for 134/84, the five words, the Guided check button; no axe violations 
+    [auth] › e2e\bp-guided.auth.spec.ts:59:1 › guided check: first reading, a minute of rest, second reading, average and 7-day number 
+    [auth] › e2e\bp-guided.auth.spec.ts:87:1 › a dangerous reading asks about symptoms first, then shows the 911 dial link 
+    [auth] › e2e\exercise-auth.spec.ts:56:5 › light › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean 
+    [auth] › e2e\exercise-auth.spec.ts:56:5 › dark › Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean 
+    [auth] › e2e\nutrition-auth.spec.ts:67:5 › light › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean 
+    [auth] › e2e\nutrition-auth.spec.ts:67:5 › dark › Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean 
+    [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (light) 
+    [auth] › e2e\profile-auth.spec.ts:105:3 › wizard: about, medicines and photo write to the person row (dark) 
+    [auth] › e2e\s12-sharing.auth.spec.ts:117:1 › Me has the Who can see my records row and no sharing switches; Privacy opens the same list 
+    [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell light ───────────────────
+    [auth] › e2e\s12-shell.auth.spec.ts:129:3 › learn-home: Discover shell dark ────────────────────
+    [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 375 px: Jack waves hello, an alt, no sideways scroll 
+    [auth] › e2e\s14-j-jack-welcome.auth.spec.ts:21:3 › welcome at 195 px: Jack waves hello, an alt, no sideways scroll 
+    [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (light) 
+    [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (light) ────────
+    [auth] › e2e\s14-l-labs.auth.spec.ts:85:3 › list: source card, a date and whose range on every result, previous switch (dark) 
+    [auth] › e2e\s14-l-labs.auth.spec.ts:138:3 › empty: one sentence and one button (dark) ─────────
+    [auth] › e2e\s16-health.auth.spec.ts:59:1 › the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food 
+    [auth] › e2e\s16-health.auth.spec.ts:85:1 › the nudge row link does not cover the overview: a glance tile still opens its own screen 
+    [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff light: budget, order, buttons, Jack clear ─
+    [auth] › e2e\s16-today.auth.spec.ts:17:5 › alertsOff dark: budget, order, buttons, Jack clear ──
+    [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones light ───────────
+    [auth] › e2e\s4-carer.auth.spec.ts:92:3 › family home, answer for Papa, phones dark ────────────
+    [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, light ─────
+    [auth] › e2e\w2-health-shots.auth.spec.ts:17:3 › nudge buttons and the Add BP sheet, dark ──────
+  17 skipped
+  715 passed (26.3m)
+pw exit 1

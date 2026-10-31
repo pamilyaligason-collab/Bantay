@@ -36,31 +36,40 @@ for (const scheme of ['light', 'dark'] as const) {
     test.use({ colorScheme: scheme })
     test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
-    test('Today: the Self-care card runs a breath, then asks how I feel', async ({ page }) => {
+    test('Today: the Self-care row opens the breath sheet, which runs a breath, then asks how I feel', async ({ page }) => {
       await page.goto('/')
       const card = page.getByTestId('selfcare')
       await expect(card.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
       await card.scrollIntoViewIfNeeded()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-selfcare-${scheme}.png` })
-      await card.getByRole('button', { name: /Calm/ }).click()
-      await expect(card.getByRole('link', { name: /Harvard/ })).toBeVisible()
-      await card.getByRole('button', { name: '1 min' }).click()
-      await card.getByRole('button', { name: 'Start' }).click()
-      await expect(card.getByRole('status')).toHaveText('Breathe in')
-      await expect(page.getByTestId('sc-run')).toBeVisible()
+      await card.getByRole('button', { name: 'Start breathing' }).click() // v12: the row only opens the sheet (BreathSheet)
+      const sheet = page.getByRole('dialog', { name: 'Take a breath' })
+      await sheet.getByRole('button', { name: /Calm/ }).click()
+      await expect(sheet.getByRole('link', { name: /Harvard/ })).toBeVisible()
+      await sheet.getByRole('button', { name: '1 min' }).click()
+      await sheet.getByRole('button', { name: 'Start', exact: true }).click()
+      await expect(page.getByTestId('sc-run').locator('.bo-word')).toHaveText('Breathe in')
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-selfcare-running-${scheme}.png` })
       expect(await axe(page)).toEqual([])
       expect(await noSideways(page)).toBe(true)
-      await card.getByRole('button', { name: 'End early' }).click()
-      await expect(card.getByRole('button', { name: 'Start' })).toBeVisible()
+      await sheet.getByRole('button', { name: 'End early' }).click()
+      await expect(sheet.getByRole('button', { name: 'Start', exact: true })).toBeVisible()
     })
 
-    test('Today: with reduced motion the circle does not move and the countdown carries it', async ({ page }) => {
+    test('Today: with reduced motion the orb does not move and the countdown carries it', async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
       await page.goto('/')
-      await page.getByTestId('selfcare').getByRole('button', { name: 'Start' }).click()
-      await expect(page.getByTestId('sc-run').locator('.sc-count')).toHaveText(/^[1-4]$/)
-      expect(await page.locator('.sc-circle').evaluate((e) => (e as HTMLElement).style.transform)).toBe('')
+      await page.getByTestId('selfcare').getByRole('button', { name: 'Start breathing' }).click()
+      const sheet = page.getByRole('dialog', { name: 'Take a breath' })
+      await sheet.getByRole('button', { name: 'Start', exact: true }).click()
+      const count = page.getByTestId('sc-run').locator('.bo-count')
+      await expect(count).toHaveText(/^[1-4]$/)
+      await expect(page.locator('.bo')).toHaveAttribute('data-reduced', 'true')
+      const orb = page.locator('.bo-orb')
+      const first = await orb.evaluate((e) => (e as HTMLElement).style.transform)
+      const c0 = await count.textContent()
+      await expect(count).not.toHaveText(c0!) // the number moves on; the orb holds one size for the whole phase (no tween)
+      expect(await orb.evaluate((e) => (e as HTMLElement).style.transform)).toBe(first)
     })
 
     test('Family: bubbles carry the status emoji; a bubble opens the person page', async ({ page }) => {
@@ -73,7 +82,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       const roll = page.getByRole('list', { name: 'Family roll call' })
       await expect(roll.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
-      await expect(roll.getByTestId('bubble-badge')).toHaveCount(2)
+      await expect(roll.getByTestId('bubble-badge')).toHaveCount(3)
       for (const b of await roll.getByRole('button').all()) {
         const box = await b.boundingBox()
         expect(box!.height).toBeGreaterThanOrEqual(48)
@@ -85,6 +94,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
       // S9: a bubble opens the person's page. The Messages sheet is no longer reached from the bubble (its sheet tests live in Messages.test.tsx); lane K's member page owns the entry to it.
       await roll.getByRole('button', { name: /Lola Remy/ }).click()
+      await page.getByRole('link', { name: 'See their stats' }).click()
       await expect(page).toHaveURL(/#family\/people\/p3$/)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])

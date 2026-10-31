@@ -65,7 +65,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'dose-before', scheme)
     await page.clock.install({ time: NOW }) // from here the app's timers run only when advanced, so the morph cannot race the shot
     await page.clock.pauseAt(new Date(NOW.getTime() + 1000))
-    await page.getByRole('button', { name: 'Taken', exact: true }).click()
+    await page.getByRole('button', { name: 'Take, mark as taken' }).click()
     const done = page.getByRole('button', { name: /^Taken \d{1,2}:\d{2}/ })
     await expect(done).toBeVisible()
     await expect(card).not.toHaveClass(/leaving/) // the morph holds first, the collapse comes after
@@ -85,7 +85,7 @@ for (const scheme of ['light', 'dark'] as const) {
         if (e && !w.__leave) { const c = getComputedStyle(e); w.__leave = { rows: c.gridTemplateRows, dur: c.transitionDuration } }
       }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] })
     })
-    await page.getByRole('button', { name: 'Taken', exact: true }).click()
+    await page.getByRole('button', { name: 'Take, mark as taken' }).click()
     await expect(page.locator('.td-next')).toHaveCount(0, { timeout: 3000 })
     const leave = await page.evaluate(() => (window as unknown as { __leave?: { rows: string; dur: string } }).__leave)
     expect(leave?.dur).toBe('0.15s')

@@ -37,11 +37,11 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
   await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
   for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
   const row = page.getByRole('group', { name: 'Quick log' })
-  await expect(row.getByRole('button')).toHaveCount(6)
+  await expect(row.getByRole('button')).toHaveCount(7) // six tiles plus the small I'm OK
   await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined)))) // the reveal motion is done: measure settled boxes
   // All six boxes are read in one page call (a late layout shift cannot land between two reads) and polled until Today has stopped moving.
   const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
-  const measure = () => page.getByRole('group', { name: 'Quick log' }).evaluate((el) => [...el.querySelectorAll('button')].map((b) => { const r = b.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } }))
+  const measure = () => page.getByRole('group', { name: 'Quick log' }).evaluate((el) => [...el.querySelectorAll('.td-q')].map((b) => { const r = b.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } }))
   await expect.poll(async () => { const b = await measure(); return b.length === 6 && near(b.slice(0, 3).map((q) => q.y)) && near(b.slice(3).map((q) => q.y)) }).toBe(true) // two rows of three
   const boxes = await measure()
   for (const box of boxes) {
@@ -60,7 +60,7 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
 })
 
 test('How are you? signed out says to sign in and does not claim the family will see it', async ({ page }) => {
-  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // folded into How are you?
+  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you?
   await page.getByRole('button', { name: 'Log how you feel' }).click()
   await page.getByRole('button', { name: 'Unwell' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Sign in first' })).toBeVisible()

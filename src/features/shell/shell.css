@@ -139,7 +139,8 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-jackfab img { width: 48px; height: 48px; border-radius: 50%; background: var(--on-green); object-fit: cover; pointer-events: none; }
 .sh-jackfab:active { transform: scale(.94); }
 .sh-jackfab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-.bt[data-jack] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 8px); } /* the spacer grows, not the padding: a webview that drops padding-bottom still clears Jack (S3) */
+.bt[data-jack] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 8px); }
+.bt[data-jack][data-hint] .scroll::after { height: calc(var(--tabbar-clear) + 56px + 12px + 56px); } /* while the one-time coach mark waits: room for it above Jack at the page end (D-104) */ /* the spacer grows, not the padding: a webview that drops padding-bottom still clears Jack (S3) */
 /* The SOS hold scrolls past the Jack button's height too. Keep the hold centred (D-88): equal space on both sides of the button only, wide enough that its right edge
    (56px + 14px margin + 6px air = 76px from the screen edge, less the page gutter) stays clear of Jack. The sentence under it keeps the full width. */
 .bt[data-jack] .sos-simple-btn { margin-inline: 62px; }

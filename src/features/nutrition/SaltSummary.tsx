@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingPersonId } from '../viewas/viewAs'
 import { Icon, type IconName } from '../shell/Icon'
 import type { FoodEntry } from '../log/store'
 import { useFood, useGoal } from './hooks'
@@ -69,7 +69,7 @@ export function saltLineText(entries: FoodEntry[], goalMg: number): string {
 /** Today's one salt line (the Meals card moved to Health > Food, D-62 / mockup v8): this phone's member, "Salt 1,300 of 1,500 mg today", a link to Health > Food and nutrients.
  *  Nothing until signed in. With nothing logged, or meals without a salt number, it says so instead of a made-up 0. */
 export default function SaltLine() {
-  const personId = useSelfPersonId() ?? ''
+  const personId = useActingPersonId() ?? ''
   const now = useNow()
   const food = useFood(personId, 2)
   const goal = useGoal(personId)

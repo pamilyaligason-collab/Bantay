@@ -56,7 +56,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean', async ({ page }) => {
       await page.goto('/')
       const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.getByRole('button')).toHaveCount(6)
+      await expect(row.locator('.td-q')).toHaveCount(6) // v12: six tiles; the How are you? tile also holds the small I'm OK button
       await row.getByRole('button', { name: 'More things to log' }).click()
       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
       const sheet = page.getByRole('dialog', { name: 'Move' })

@@ -5,6 +5,8 @@ import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { isLive, parseSchedule } from '../health/meds'
 import { hdb } from '../records/store'
+import { getActingState } from '../viewas/store'
+import { useActing, useActingPersonId } from '../viewas/viewAs'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import { nextDoses, type DuePerson } from './nextPick'
 
@@ -37,8 +39,10 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
     return () => { live = false; off(); a.unsubscribe(); k.unsubscribe(); b.unsubscribe(); clearInterval(t) }
   }, [])
 
-  const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === selfId || ok.has(m.personId)) }, [allMeds, known, selfId])
-  const targets = useMemo(() => people.filter((p) => p.id === selfId && canMarkFor(p.id, selfId, writable)).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable])
+  const target = useActingPersonId() // S16 L6: the acting member while an admin acts for them, else me. The card stays visible when `useActingCan().log` is false; the caller locks its buttons.
+  const { acting } = useActing()
+  const meds = useMemo(() => { const ok = new Set(known); return allMeds.filter((m) => m.personId === target || ok.has(m.personId)) }, [allMeds, known, target])
+  const targets = useMemo(() => people.filter((p) => p.id === target && (acting || canMarkFor(p.id, selfId ?? '', writable))).map((p) => ({ personId: p.id, name: p.name, isMe: p.isMe })), [people, selfId, writable, target, acting])
   const due = useMemo(() => nextDoses(targets, meds, takes, tick), [targets, meds, takes, tick])
   const review = useMemo(() => {
     const ids = new Set(targets.map((t) => t.personId))
@@ -49,6 +53,8 @@ export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
 
 /** Marks every dose of this group taken (or skipped) for the person, each with its medication id and slot. Resolves to false if storage failed. */
 export async function markDue(d: DuePerson, skipped = false): Promise<boolean> {
+  const a = getActingState()
+  if (a && a.personId === d.personId && !a.can.log) return false // the card shows Mama's doses read-only; RLS would refuse the row at sync and local state would show a dose the server never got
   try {
     for (const s of d.slots) await logDose({ personId: d.personId, name: s.name, serverId: s.medicationId ?? undefined }, s.slot, { skipped })
     return true
@@ -70,6 +76,8 @@ export function recentlyTaken(takes: Pick<MedTaken, 'personId' | 'medicationId' 
  *  Reads the same local tables the Next up card is drawn from, so the ticks and the rows agree. */
 export async function markTaken(personId: string, medIds: string[]): Promise<number> {
   if (!medIds.length) return 0
+  const a = getActingState()
+  if (a && a.personId === personId && !a.can.log) return 0 // same refusal as markDue: read-only acting writes nothing, not even locally
   try {
     const [meds, takes] = await Promise.all([ldb.medications.toArray(), ldb.meds.where('takenAt').aboveOrEqual(startOfYesterday().toISOString()).toArray()])
     const d = nextDoses([{ personId, name: '', isMe: false }], meds, takes, new Date())[0]

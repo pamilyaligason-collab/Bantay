@@ -81,23 +81,21 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
     })
 
-    test('people: rings, I\'m OK before and after, learn together', async ({ page }) => {
+    test('people: rings, I\'m OK before and after', async ({ page }) => {
       await expect(page.getByRole('button', { name: /^Lola Remy,.*Needs a look/ })).toBeVisible()
       await shot(page, 'people-before', scheme)
-      const ring = await page.locator('.fm-bubble[data-k="ok"] .fm-av').first().evaluate((e) => getComputedStyle(e).boxShadow)
-      expect(ring).toContain('0px 0px 0px 5px') // the 5px outer ring
+      const ring = await page.locator('.fm2-ring[data-k="ok"]').first().evaluate((e) => getComputedStyle(e).borderTopWidth)
+      expect(ring).toBe('3px') // the 3px status ring
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
       await expect(page.getByText(/^You're OK · /)).toBeVisible()
       await shot(page, 'im-ok-after', scheme)
-      await expect(page.getByText("Today's check-in")).toHaveCount(0) // the card turns into You're OK and stays
       await shot(page, 'people-after', scheme)
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 8000 }) // the note clears itself; a shot must not catch it
-      await expect(page.getByTestId('learn-hub')).toBeVisible()
-      await shot(page, 'learn-together', scheme, '[data-testid="learn-hub"]')
+      // Learn together moved to Discover (PLAN 1.4, L3); its shot is taken there
     })
 
     test('sheet: mid-drag follows the pointer, a long drag closes it', async ({ page }) => {
-      await page.getByRole('button', { name: 'Plan' }).click()
+      await page.getByTestId('planrow').getByRole('link').click()
       await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
       await shot(page, 'plan-empty', scheme)
       await page.getByRole('button', { name: 'Add', exact: true }).first().click()

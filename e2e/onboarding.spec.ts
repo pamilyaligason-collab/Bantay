@@ -32,44 +32,47 @@ const kvSet = (page: Page, key: string, value: unknown) =>
 
 const STEPS = ['Your photo', 'About me', 'Your medicines', 'Reminders and alerts', 'Where you are', "Your phone's warnings", 'SOS text contacts', 'Sharing']
 
-/** Setup lives on the checklist now (Me shows the full card, Today only nudges). Opens the wizard overlay at one step. */
+/** Setup lives on the checklist: Settings > Phone (#me/phone) shows the full card, Today has a one-line setup row (v12). Opens the wizard overlay at one step. */
 const openStep = async (page: Page, title: string) => {
   await skipOnboarding(page)
-  await page.goto('/#me')
+  await page.goto('/#me/phone')
   const card = page.getByRole('region', { name: /left to set up/ })
   await card.getByRole('button', { name: 'See all' }).click()
   await card.getByRole('button', { name: title, exact: true }).click()
   await expect(page.locator('.wz-ov h1')).toHaveText(title)
 }
 
-test.describe('start-done: the one screen after joining (3 of 3)', () => {
-  test('first launch shows "You\'re in", the consent notice and two off switches, then Today', async ({ page }) => {
+test.describe('onboarding screens 3 to 5 after joining', () => {
+  test('first launch asks for reminders in context, with dots and Skip, no switches', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1')).toHaveText("You're in")
-    await expect(page.getByText('Step 3 of 3 · then Today')).toBeVisible()
-    await expect(page.getByText(/By using Bantay you agree to share your health records with your family/)).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(0) // a notice, never a question
-    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'false')
-    await expect(page.getByRole('switch', { name: 'Simple mode' })).toHaveAttribute('aria-checked', 'false')
+    await expect(page.locator('h1')).toHaveText('Medicine reminders')
+    await expect(page.getByRole('img', { name: 'Step 3 of 5' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible()
+    await expect(page.getByRole('switch')).toHaveCount(0) // Bigger text and Simple mode live in Settings > Display
     await expect(page.locator('body')).not.toContainText(/admin/i)
-    await page.getByRole('button', { name: 'Open Today' }).click()
+  })
+
+  test('Skip on 3, 4 and 5 opens Today with the consent line on screen 5, and remembers it', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect(page.locator('h1')).toHaveText('Where are you most days?')
+    await expect(page.getByLabel(/latitude|longitude/i)).toHaveCount(0)
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await expect(page.locator('h1')).toHaveText("Let's test it.")
+    await expect(page.getByText(/Family admins can see them. Change this in Settings > Family and sharing./)).toBeVisible()
+    await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.locator('h1')).toHaveText('Today')
     expect(await kv(page, 'onboarded')).toBe(true)
     await page.reload()
     await expect(page.locator('h1')).toHaveText('Today')
   })
 
-  test('Bigger text is saved from the switch', async ({ page }) => {
+  test('a zone chip saves the zone', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('switch', { name: 'Bigger text' }).click()
-    await expect(page.getByRole('switch', { name: 'Bigger text' })).toHaveAttribute('aria-checked', 'true')
-    await expect.poll(() => kv(page, 'look.textsize')).toBe('large')
-  })
-
-  test('no phone tick on the web: unknown is never "all good"', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.locator('h1')).toHaveText("You're in")
-    await expect(page.getByText('Alarms, phone and text apps')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Skip' }).click()
+    await page.getByRole('button', { name: 'Conel, GenSan' }).click()
+    await expect(page.locator('h1')).toHaveText("Let's test it.")
+    expect(await kv(page, 'loc.zone')).toBe('conel')
   })
 })
 
@@ -97,7 +100,7 @@ test.describe('setup steps from the checklist', () => {
 
   test('a step whose flag is already set leaves the list', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     await expect(page.getByRole('region', { name: /left to set up/ })).toContainText(`${STEPS.length} things left`)
     await kvSet(page, 'profile.photo', 'data:image/jpeg;base64,AA==')
     await page.reload()
@@ -163,7 +166,7 @@ test.describe('notifications already allowed', () => {
     // Headless Chromium grants the permission but still reports Notification.permission as "denied", which the web plugin reads.
     await page.addInitScript(() => Object.defineProperty(Notification, 'permission', { get: () => 'granted' }))
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length - 1} things left`)
     await card.getByRole('button', { name: 'See all' }).click()
@@ -174,7 +177,7 @@ test.describe('notifications already allowed', () => {
 test.describe('Me checklist', () => {
   test('lists the same count as the wizard and each item opens its own step', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     const card = page.getByRole('region', { name: /left to set up/ })
     await expect(card).toContainText(`${STEPS.length} things left`)
     await expect(card.getByRole('button', { name: /^Next: / })).toBeVisible() // compact: one next step, the rest behind See all
@@ -185,7 +188,7 @@ test.describe('Me checklist', () => {
   })
   test('a finished step leaves the list', async ({ page }) => {
     await skipOnboarding(page)
-    await page.goto('/#me')
+    await page.goto('/#me/phone')
     await expect(page.getByRole('region', { name: /left to set up/ })).toBeVisible()
     await kvSet(page, 'setup.sharing', true)
     await page.reload()
@@ -215,7 +218,7 @@ test('a deep link skips onboarding', async ({ page }) => {
 
 test.describe('375px', () => {
   test.use({ viewport: { width: 375, height: 812 } })
-  test('start-done has no sideways scroll', async ({ page }) => {
+  test('onboarding has no sideways scroll', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('h1')).toBeVisible()
     const root = await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)
@@ -230,7 +233,6 @@ test.describe("alerts-off card on Today", () => {
     await page.goto("/")
     const card = page.getByRole("region", { name: "Alerts are off" })
     await expect(card).toBeVisible()
-    await page.waitForTimeout(1500)
     await card.scrollIntoViewIfNeeded() // the card sits in the "More" group, below the fold on a 812px phone by design (D-50 order)
     expect(await card.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true)
     await expect(card.getByRole("button", { name: "Turn on alerts" })).toBeInViewport()

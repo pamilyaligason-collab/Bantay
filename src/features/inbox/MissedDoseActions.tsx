@@ -4,6 +4,8 @@ import { useTakenToday } from '../health/useActivity'
 import { useMedications } from '../health/useMedications'
 import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import { logDose } from '../log/store'
+import { Icon } from '../shell/Icon'
+import { useActingCan, useActingPersonId } from '../viewas/viewAs'
 import type { MyTake } from '../today/useMyTakes'
 import { shortName } from './build'
 
@@ -21,6 +23,9 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   const name = shortName(person?.name) ?? 'them'
   const meds = useMedications(personId ?? '')
   const takes = useTakenToday(personId ?? '', { includeSkipped: true }) as MyTake[]
+  const can = useActingCan()
+  const actingId = useActingPersonId()
+  const viewOnly = can != null && !can.log && personId === actingId // viewing as a member the admin cannot log for (RLS would refuse): say so instead of failing
   const [ask, setAsk] = useState(false)
   const [done, setDone] = useState(false)
   const { day, slot } = doseRef(refText)
@@ -39,7 +44,9 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
         : personId ? <a className="btn in-act" href={`#family/people/${personId}`}>Open {name}</a> : null}
       {done
         ? <span className="sh-sub" role="status">Marked as taken</span>
-        : open.length > 0 && !ask && <button type="button" className="btn in-act" onClick={() => setAsk(true)}>Mark taken for {name}</button>}
+        : open.length > 0 && !ask && (viewOnly
+          ? <button type="button" className="btn in-act" disabled title={can?.reason ?? undefined}><Icon name="lock" size={16} /> Mark taken for {name} · View only</button>
+          : <button type="button" className="btn in-act" onClick={() => setAsk(true)}>Mark taken for {name}</button>)}
       <a className="btn in-act" href="#family/messages">Message the family</a>
       {ask && (
         <div className="in-confirm" role="alertdialog" aria-label="Confirm">

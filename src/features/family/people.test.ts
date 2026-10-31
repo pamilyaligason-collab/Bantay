@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lastCheckInWords } from './People'
+import { lastCheckInWords } from './FacesRow'
 
 // Local-time dates, so the day maths does not depend on the machine's zone. now = Tue 27 Oct 2026, 10:00.
 const NOW = new Date(2026, 9, 27, 10, 0)
@@ -16,5 +16,14 @@ describe('lastCheckInWords (S9)', () => {
     expect(lastCheckInWords(undefined, NOW)).toBe('No check-in yet')
     expect(lastCheckInWords('not a date', NOW)).toBe('No check-in yet')
     expect(lastCheckInWords(at(9, 28), NOW)).toBe('No check-in yet') // a future time is not a check-in
+  })
+
+  it('around midnight (ML-38): a 22:15 check-in is "today" at 23:30 and "yesterday" at 00:30 the next day, in any zone', () => {
+    const lateTue = new Date(2026, 9, 27, 22, 15).toISOString()
+    expect(lastCheckInWords(lateTue, new Date(2026, 9, 27, 23, 30))).toMatch(/^OK 10:15/)
+    expect(lastCheckInWords(lateTue, new Date(2026, 9, 28, 0, 30))).toBe('Last OK yesterday')
+    const justAfter = new Date(2026, 9, 28, 0, 20).toISOString()
+    expect(lastCheckInWords(justAfter, new Date(2026, 9, 28, 0, 30))).toMatch(/^OK 12:20/)
+    expect(lastCheckInWords(justAfter, new Date(2026, 9, 27, 23, 30))).toBe('No check-in yet') // not yet happened
   })
 })

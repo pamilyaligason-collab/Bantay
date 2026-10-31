@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { SOS_ACTIVE_KEY, SOS_CONTACTS_KEY, startSos } from './active'
 import SosScreen from './SosScreen'
+import { motionOk } from '../look/motion'
 
 const h = vi.hoisted(() => ({
   sync: vi.fn(async (_f?: boolean) => undefined),
@@ -41,6 +42,13 @@ const goAway = () => act(() => { h.listeners.forEach((l) => l({ isActive: false 
 const comeBack = () => act(() => { h.listeners.forEach((l) => l({ isActive: true })) })
 
 describe('SosScreen flow', () => {
+  it('mounting the screen stops decorative motion (scene, Aurora) and unmounting restores it', () => {
+    expect(motionOk()).toBe(true)
+    const { unmount } = render(<SosScreen onClose={() => undefined} />)
+    expect(motionOk()).toBe(false)
+    unmount()
+    expect(motionOk()).toBe(true)
+  })
   it('records the SOS, calls the first contact, never prompts for the call permission, then opens ONE text for the first contact when the app is back', async () => {
     await db.kv.put({ key: SOS_CONTACTS_KEY, value: two })
     const s = startSos()

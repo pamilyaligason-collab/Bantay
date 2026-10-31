@@ -42,6 +42,7 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
   }
   return (
     <>
+      <p className="sub lb-short" data-testid="lab-short">{info.short}</p>
       {latest && row && (
         <section className="grp lb-top" aria-label="Latest result" data-testid="lab-top">
           <span className="lr-top">
@@ -54,7 +55,7 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
             <span className="lr-date" data-testid="lab-date">{labDate(latest.takenAt, true)}</span>
           </span>
           {paper ? <span className="sub">Source: {paper.facility || 'lab paper'}, {labDate(paper.docDate ?? latest.takenAt, true)}</span> : <span className="sub">Source: lab paper, {labDate(latest.takenAt, true)}</span>}
-          {paper ? <OriginalLink file={paper.file} /> : <a className="rx-open" href="#health/papers">Open Papers</a>}
+          {paper ? <OriginalLink file={paper.file} /> : <a className="rx-open" href="#family/papers">Open Papers</a>}
         </section>
       )}
       <section aria-labelledby="ld-what" data-testid="lab-measures">

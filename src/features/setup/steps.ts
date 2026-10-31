@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { LocalNotifications } from '@capacitor/local-notifications'
@@ -5,7 +6,7 @@ import { db } from '../../db'
 import { loadFamily } from '../auth/family'
 import { enableAlerts } from '../notify/alerts'
 import { sosDone } from '../sos/contacts'
-import { batteryStatus, isNativeAndroid, nativeStatus, requestBatteryExemption } from '../safety/settingsOpener'
+import { batteryStatus, isNativeAndroid, nativeStatus, openFix, requestBatteryExemption } from '../safety/settingsOpener'
 import { PW_KEY, detectPlatform, osKey, statusOf, type Rec } from '../safety/PhoneWarnings'
 import { hdb } from '../records/store'
 import { ldb } from '../log/store'
@@ -122,3 +123,31 @@ export const scheduleTest = () =>
   LocalNotifications.schedule({
     notifications: [{ id: 9001, title: 'Bantay test', body: 'Reminders work on this phone.', schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true } }]
   })
+
+/** One or two words per step for the Today setup row ("2 left: SOS contacts, Photo"). */
+export const SETUP_LABEL: Record<StepId, string> = {
+  photo: 'Photo', about: 'About me', medicines: 'Medicines', notifications: 'Reminders', location: 'Where you are',
+  health: 'Health data', warnings: 'Phone warnings', sos: 'SOS contacts', sharing: 'Sharing'
+}
+
+/** The setup steps still to do, as short labels, for the setup row on Today (NoticeStack). Re-reads when the app comes back to the front.
+ *  A step skipped in onboarding stays here because it records nothing; the probe is the only source (A-28). */
+export function useSetupLeft(): { left: string[] } {
+  const [left, setLeft] = useState<string[]>([])
+  useEffect(() => {
+    let live = true
+    const run = () => { void probe().then((p) => { if (live) setLeft(remaining(p, currentPlatform()).map((s) => SETUP_LABEL[s])) }).catch(() => undefined) }
+    run()
+    const off = onResume(run)
+    return () => { live = false; off() }
+  }, [])
+  return { left }
+}
+
+const DENIALS = 'setup.notifDenials'
+/** After this many refusals Android stops showing the permission prompt (m2-3): the button then opens the app's own settings. */
+export const DENIALS_BEFORE_SETTINGS = 2
+export const notifyDenials = async (): Promise<number> => (await get<number>(DENIALS)) ?? 0
+export const bumpNotifyDenials = async (): Promise<number> => { const n = (await notifyDenials()) + 1; await put(DENIALS, n); return n }
+/** The app's notification settings (the fallback when the prompt no longer appears). False when no settings screen could be opened (web, old shell). */
+export const openAppSettings = async (): Promise<boolean> => (await openFix('notifications')).opened !== null

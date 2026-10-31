@@ -30,13 +30,13 @@ describe('tab shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health'))
   })
 
-  it('old #records and #family/records links land on Health > Papers', async () => {
+  it('old #records and #family/records links land on Family > Papers', async () => {
     for (const old of ['#records', '#family/records']) {
       location.hash = old
       const { unmount } = render(<App />)
-      await waitFor(() => expect(location.hash).toBe('#health/papers'))
+      await waitFor(() => expect(location.hash).toBe('#family/papers'))
       await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Papers'))
-      expect(screen.getByRole('button', { name: 'Health' }).getAttribute('aria-current')).toBe('page')
+      expect(screen.getByRole('button', { name: 'Family' }).getAttribute('aria-current')).toBe('page')
       unmount()
     }
   })
@@ -58,7 +58,7 @@ describe('tab shell', () => {
   it('Discover is the third tab: its sub-tabs show, the tab is current, and Jack stays on it', async () => {
     location.hash = '#discover/play'
     render(<App />)
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover'))
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Play'))
     expect(screen.getByRole('button', { name: 'Discover' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: 'Play' }).getAttribute('aria-pressed')).toBe('true')
     expect(await screen.findByRole('button', { name: 'Ask Bantay' })).toBeTruthy()
