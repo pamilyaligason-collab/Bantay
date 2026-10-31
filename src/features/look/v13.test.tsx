@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { GroupedList, LargeTitle, Row, Section } from './index'
+import { Carousel, GroupedList, LargeTitle, PreviewTile, Row, Section } from './index'
 afterEach(cleanup)
 
 describe('LargeTitle', () => {
@@ -45,5 +45,16 @@ describe('GroupedList + Row', () => {
     expect(screen.getByText('Minor, far away').className).toContain('rw-badge')
     expect(screen.getByText('100%').className).toContain('rw-value')
     expect(screen.getByRole('button', { name: 'on' }).closest('.rw-main')).toBeNull() // control outside the link
+  })
+})
+describe('PreviewTile + Carousel', () => {
+  it('a tile is one link with kicker, value, sub and action text', () => {
+    render(<PreviewTile kicker="Blood pressure" tint="blue" value="--/--" sub="None this week" action="Log now" href="#health/readings" testId="bp" />)
+    const a = screen.getByRole('link', { name: /Blood pressure.*Log now/ })
+    expect(a.getAttribute('href')).toBe('#health/readings'); expect(a.getAttribute('data-tint')).toBe('blue')
+  })
+  it('a carousel is a named group that lists its items', () => {
+    render(<Carousel label="First aid"><a href="#a">A</a><a href="#b">B</a></Carousel>)
+    expect(within(screen.getByRole('group', { name: 'First aid' })).getAllByRole('link')).toHaveLength(2)
   })
 })

@@ -21,3 +21,17 @@ section.sec > .sec-h { display: flex; align-items: baseline; justify-content: sp
 section.sec > .sec-h h2 { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; letter-spacing: -.01em; }
 section.sec > .sec-h a, section.sec > .sec-h button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; margin: -13px -6px; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-decoration: none; font-family: inherit; }
 section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
+
+/* PreviewTile + Carousel */
+.card.pt { display: flex; flex-direction: column; min-height: 150px; padding: 14px; text-decoration: none; color: var(--ink); box-sizing: border-box; }
+.pt-k { font-size: 13px; font-weight: 600; color: var(--tint-ink, var(--ink)); }
+.pt-v { font-size: 26px; font-weight: 700; letter-spacing: -.02em; margin-top: 10px; }
+.pt[data-size="md"] .pt-v { font-size: 20px; }
+.pt-s { font-size: 13px; color: var(--muted); line-height: 18px; }
+.pt-a { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; color: var(--green); min-height: 24px; }
+.pt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+:root[data-narrow] .pt-grid { grid-template-columns: minmax(0, 1fr); }
+.carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.carousel > * { flex: none; scroll-snap-align: start; }
+.carousel::-webkit-scrollbar { display: none; }
+:root[data-narrow] .carousel { padding: 0 12px; margin: 0 -12px; }
