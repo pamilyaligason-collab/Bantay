@@ -1,4 +1,4 @@
-/* S16 card set (C-1, C-2). Light: tint fill. Dark: no fill (--hue-* = --card), a 3 px top edge and an 18% icon chip in the family icon colour. Scale 4/8/12/16/24/32 only. */
+/* S16 card set (C-1, C-2), v13 tints: the --hue-* aliases point at the --tint-* tokens, which have real fills in light and dark. Scale 4/8/12/16/24/32 only. */
 .card[data-hue="blue"], .rg[data-hue="blue"] { --h: var(--hue-blue); --h-ic: var(--hue-blue-ic); }
 .card[data-hue="green"], .rg[data-hue="green"] { --h: var(--hue-green); --h-ic: var(--hue-green-ic); }
 .card[data-hue="lilac"], .rg[data-hue="lilac"] { --h: var(--hue-lilac); --h-ic: var(--hue-lilac-ic); }
@@ -6,13 +6,7 @@
 .card[data-hue="terra"], .rg[data-hue="terra"] { --h: var(--hue-terra); --h-ic: var(--hue-terra-ic); }
 .card[data-hue="none"], .rg[data-hue="none"] { --h: var(--card); --h-ic: var(--c-neutral); } /* light green2, dark ink: >= 3:1 on the card and on the chip in both themes */
 .card[data-hue] { background: var(--h); }
-.hc-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: var(--h-ic); background: rgb(255 255 255 / .55); }
-:root[data-theme="dark"] .card[data-hue]:not([data-hue="none"]) { border-top: 3px solid var(--h-ic); }
-:root[data-theme="dark"] .hc-ic { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .card[data-hue]:not([data-hue="none"]) { border-top: 3px solid var(--h-ic); }
-  :root:not([data-theme="light"]) .hc-ic { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
-}
+.hc-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; color: var(--h-ic); background: color-mix(in srgb, var(--card) 55%, transparent); }
 
 /* the whole card is the link: the title anchor stretches over the card; actions and close sit above it */
 .hc, .sc, .tl { position: relative; }
@@ -60,15 +54,19 @@
 .rg-track { stroke: color-mix(in srgb, var(--h-ic, var(--green2)) 22%, transparent); }
 .rg-val { stroke: var(--h-ic, var(--green2)); }
 
-/* Row */
-.rw { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+/* Row (v13): 56 px, 32 px tint icon box, 17/500 title, 13 px sub, right value and pill badge. Hairline between rows is in app.css (.grp .row) and here (.grp .rw). */
+.rw { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; }
 .rw > :not(.rw-main) { flex: none; width: auto; }
-.rw-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
-.rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--soft); color: var(--c-neutral); overflow: hidden; }
-.rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.rw-title { font-size: 17px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rw-sub { font-size: 15px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.rw-badge { flex: none; min-width: 24px; height: 24px; padding: 0 8px; border-radius: 12px; background: var(--red); color: #fff; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; }
+.rw-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
+.rw-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); overflow: hidden; }
+.rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
+.rw-title { font-size: 17px; font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rw-sub { font-size: 13px; line-height: 18px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rw-value { margin-left: auto; font-size: 15px; color: var(--muted); white-space: nowrap; }
+.rw-badge { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 13px; font-weight: 700; line-height: 18px; background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); }
+.rw-badge[data-tint="red-solid"] { min-width: 24px; box-sizing: border-box; text-align: center; background: var(--danger-bg); color: #fff; }
+.grp .rw + .rw::before { content: ""; position: absolute; top: 0; left: 14px; right: 0; border-top: .5px solid var(--hair); }
+.grp.ic .rw + .rw::before { left: 58px; }
 
 /* Alert */
 .ac { padding: 16px; }
