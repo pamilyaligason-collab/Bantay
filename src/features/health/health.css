@@ -202,3 +202,13 @@
 .rd-list { display: grid; gap: 8px; margin-top: 12px; }
 .hv-insight2 { margin: 12px 4px 0; font-size: 17px; line-height: 1.3; font-weight: 600; overflow-wrap: anywhere; }
 .hv-insight2.watch { color: var(--warn); }
+
+/* v13 attention hero */
+.ah-line { margin: 0; }
+.ah .hc-body { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.ah-val { margin: 8px 0 0; font-size: 34px; line-height: 38px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
+.ah-val small { font-size: 16px; font-weight: 500; color: var(--muted); }
+.ah .lr-track { align-self: stretch; }
+.ah-foot { margin: 0; overflow-wrap: anywhere; }
+.ah .cd-act { width: 100%; min-height: 44px; margin-top: 8px; }
+.ps-pill { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; min-width: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }

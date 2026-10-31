@@ -3,7 +3,7 @@ import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
 import MetricScreen from '../features/health/MetricScreen'
-import { insightHeadline, type NodeId } from '../features/health/model'
+import type { NodeId } from '../features/health/model'
 import type { IconName } from '../features/shell/Icon'
 import { latestByTest } from '../features/health/ranges'
 import { Kpis } from '../features/health/Kpis'
@@ -18,11 +18,14 @@ import MedDetail from '../features/health/MedDetail'
 import Visits from '../features/health/Visits'
 import VisitSummary from '../features/health/VisitSummary'
 import { averageNodes } from '../features/health/vitals'
-import { BodyHero } from '../features/health/BodyHero'
+import { AttentionHero } from '../features/health/AttentionHero'
+import { pickAttention } from '../features/health/attention'
+import { PersonSwitcher } from '../features/health/PersonSwitcher'
+import { useActingPersonId } from '../features/viewas/viewAs'
 import { GlanceGrid, NudgeRow } from '../features/health/GlanceGrid'
 import { HealthBrowse } from '../features/health/HealthBrowse'
 import { useHealthPerson } from '../features/health/useHealthPerson'
-import { Row, Skeleton } from '../features/look'
+import { LargeTitle, Row, Section, Skeleton } from '../features/look'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
 import { SubHeader } from '../features/shell/SubHeader'
@@ -58,23 +61,25 @@ export default function Health() {
 }
 
 function Overview() {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds, reload, canMark: canLog, canEdit, lockReason } = useHealthPerson()
+  const { ready, people, ownId, personId, setPersonId, readings, thresholds, reload, canMark: canLog, canEdit, lockReason, acting } = useHealthPerson()
+  const actingId = useActingPersonId()
+  const meId = (acting ? actingId : ownId) ?? ''
   const [adding, setAdding] = useState<'bp' | 'fasting_glucose' | null>(null)
   const [saved, setSaved] = useState('')
   const acts = useActivity(personId)
   const latest = latestByTest(readings)
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
-  const head = insightHeadline(latest, new Date(), familyOf)
+  const attention = useMemo(() => pickAttention(latest, familyOf, new Date()), [readings, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const blank = ready && nodes.every((n) => n.empty)
   const name = properName(people.find((p) => p.id === personId)?.name ?? '')
-  const showHead = ready && readings.length > 0 && (!blank || head.tone === 'watch') // labs-only: only a lab out of range warns
+  useEffect(() => { // someone else's health is their own view-only page
+    const to = `#health/member/${personId}`
+    if (ready && meId && personId && personId !== meId && location.hash !== to) location.replace(to)
+  }, [ready, meId, personId])
   return (
     <>
-      <div className="hdr">
-        <h1>Health</h1>
-      </div>
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <LargeTitle kicker="Summary" title="Health" actions={<PersonSwitcher people={people} meId={meId} personId={personId} setPersonId={setPersonId} />} />
       {!ready && (
         <section className="hv-load" aria-busy="true" aria-label="Health" data-testid="health-loading">
           <span className="hv-sr">Loading</span>
@@ -82,9 +87,12 @@ function Overview() {
           <Skeleton lines={4} />
         </section>
       )}
-      {showHead && <p className={`hv-insight2${head.tone === 'watch' ? ' watch' : ''}`} data-testid="insight">{head.title}</p>}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
-      {ready && <BodyHero nodes={nodes} blank={blank} canLog={canLog} canEdit={canEdit} onAdd={() => setAdding('bp')} lockReason={lockReason ?? undefined} viewOnly={!canLog && personId && ownId ? { name, reason: lockReason ?? 'You can see this person but not log for them.' } : undefined} />}
+      {ready && (
+        <Section title="Needs attention">
+          <AttentionHero attention={attention} family={attention ? familyOf(attention.reading) : undefined} canLog={canLog} canEdit={canEdit} lockReason={lockReason} onAdd={() => setAdding('bp')} />
+        </Section>
+      )}
       {ready && personId && readings.length > 0 && <GlanceGrid personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && !blank && <NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {ready && personId && <HealthBrowse personId={personId} />}
