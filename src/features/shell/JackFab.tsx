@@ -12,10 +12,8 @@ const HOLD_MS = 500
 type Box = { left: number; right: number; top: number; bottom: number }
 const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
 
-/** True when the coach mark would sit on the SOS section or on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
+/** True when the coach mark would sit on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
 function coversText(hint: Box): boolean {
-  const sos = document.querySelector('.td-sos')?.getBoundingClientRect()
-  if (sos && hits(hint, sos)) return true
   const root = document.querySelector('.bt .scroll')
   if (!root) return false
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
