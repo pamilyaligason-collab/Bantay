@@ -141,7 +141,7 @@ test('offline: Save keeps the pages queued and nothing is sent', async ({ page, 
   await expect(page.getByRole('button', { name: 'Me' })).toBeVisible() // the family list came while there was signal
   await context.setOffline(true)
   await page.getByRole('button', { name: 'Save' }).click()
-  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#health/papers')
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#family/papers') // papers live under Family (D-100)
   const queued = await page.evaluate(() => new Promise<{ page: number; pages: number; kind: string }[]>((res) => {
     const r = indexedDB.open('bantay-docs')
     r.onsuccess = () => { const q = r.result.transaction('queue').objectStore('queue').getAll(); q.onsuccess = () => res(q.result) }

@@ -63,13 +63,15 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     const check = () => { const r = hintRef.current?.getBoundingClientRect(); if (r) setFits(!coversText(r)) }
     check()
     const scroller = document.querySelector('.bt .scroll')
+    const bt = document.querySelector('.bt')
+    bt?.setAttribute('data-hint', '') // the page end makes room for the coach mark too, so it has a clear spot at the bottom (shell.css)
     let raf = 0
     const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(check) } // cards load after first paint, so re-measure when the page changes too
     const mo = new MutationObserver(later)
     if (scroller) mo.observe(scroller, { childList: true, subtree: true, characterData: true })
     scroller?.addEventListener('scroll', later, { passive: true })
     window.addEventListener('resize', later)
-    return () => { cancelAnimationFrame(raf); mo.disconnect(); scroller?.removeEventListener('scroll', later); window.removeEventListener('resize', later) }
+    return () => { bt?.removeAttribute('data-hint'); cancelAnimationFrame(raf); mo.disconnect(); scroller?.removeEventListener('scroll', later); window.removeEventListener('resize', later) }
   }, [hint])
   useEffect(() => { // the coach mark shows once: it counts as seen after 8 seconds on screen, so it never sits on the page again
     if (!hint || !fits) return
