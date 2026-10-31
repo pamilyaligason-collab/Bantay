@@ -41,3 +41,19 @@ describe('BodyHero', () => {
     expect(screen.queryByRole('link', { name: 'Scan' })).toBeNull()
   })
 })
+
+describe('BodyHero view only (P0-4)', () => {
+  it('draws the name, a View only badge and no log buttons', () => {
+    render(<BodyHero nodes={[]} blank canLog={false} canEdit={false} onAdd={() => {}} viewOnly={{ name: 'Ma', reason: 'You can see Ma but not log for her.' }} />)
+    expect(screen.getByTestId('bodyhero-viewonly').textContent).toContain('View only')
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('Ma')
+    expect(screen.getByTestId('bodyhero').textContent).toContain('You can see Ma but not log for her.')
+    expect(screen.queryByRole('button', { name: /Reading/ })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Scan' })).toBeNull()
+  })
+  it('without viewOnly and with canLog the two actions exist', () => {
+    render(<BodyHero nodes={NODES} blank={false} {...props} />)
+    expect(screen.getByRole('button', { name: /Reading/ })).not.toBeNull()
+    expect(screen.getByRole('link', { name: 'Scan' })).not.toBeNull()
+  })
+})
