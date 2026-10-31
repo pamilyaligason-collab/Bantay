@@ -13,7 +13,21 @@ const quake = (mag: number, km: number) => a('q', 'quake', { title: `M ${mag}`, 
 
 describe('feltLine', () => {
   it('far quake: too far to feel', () => {
-    expect(feltLine(quake(4.6, 272), here, 'Tagbilaran')).toBe('Too far to feel in Tagbilaran. Nothing to do now.')
+    expect(feltLine(quake(4.6, 272), here, 'Tagbilaran')).toBe('About 272 km away. You may not have felt it. If you felt shaking, follow the steps below.')
+  })
+  it('never says nothing to do or no action needed', () => {
+    for (const t of [feltLine(quake(4.6, 272), here, 'X'), feltLine(quake(7, 900), here, 'X'), feltLine(quake(5, 150), here, 'X')]) expect(t).not.toMatch(/nothing to do|no action/i)
+  })
+  it('M7 at 900 km is beyond the radius and still carries the tsunami line', () => {
+    const t = feltLine(quake(7, 900), here, 'Tagbilaran')
+    expect(t).toContain('About 900 km away. You may not have felt it.')
+    expect(t).toContain('watch for a tsunami warning')
+  })
+  it('unknown magnitude: 100 km radius, no tsunami line', () => {
+    const q = a('q', 'quake', { title: 'Quake', level: null, lat: here.lat + 300 / 111.2, lon: here.lon })
+    const t = feltLine(q, here, 'Tagbilaran')
+    expect(t).toContain('About 300 km away.')
+    expect(t).not.toContain('tsunami')
   })
   it('inside the felt radius: may have felt it', () => {
     expect(feltLine(quake(5.0, 150), here, 'Tagbilaran')).toBe('You may have felt this in Tagbilaran. If you did, follow the steps below.')

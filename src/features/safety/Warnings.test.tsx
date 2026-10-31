@@ -22,15 +22,21 @@ describe('Warnings', () => {
     render(<Warnings place={place} />)
     const hero = screen.getByTestId('warn-hero')
     expect(hero.textContent).toContain('M4.6')
-    expect(hero.textContent).toContain('Too far to feel in Dampas')
+    expect(hero.textContent).toContain('You may not have felt it')
     expect(hero.textContent).toContain('km from you, in Dampas')
     expect(screen.getByRole('region', { name: /Map of the warning/ })).toBeTruthy()
   })
   it('no alerts: empty card, no map', () => {
     rows.list = []
     render(<Warnings place={place} />)
-    expect(screen.getByTestId('warn-hero').textContent).toBe('No active warnings for your area right now. Official bulletins always come first.')
+    expect(screen.getByTestId('warn-hero').textContent).toBe('No warnings on this phone. Last check: never.') // zero rows means no check time to trust
     expect(screen.queryByRole('region', { name: /Map of the warning/ })).toBeNull()
+  })
+  it('stale or never checked: amber line and an honest empty text', () => {
+    rows.list = []
+    render(<Warnings place={place} />)
+    expect(screen.getByTestId('warn-hero').textContent).toBe('No warnings on this phone. Last check: never.')
+    expect(screen.getAllByText(/They may be out of date/).length).toBe(1)
   })
   it('shaking row is collapsed until pressed; sources rows carry freshness', () => {
     rows.list = [quake]

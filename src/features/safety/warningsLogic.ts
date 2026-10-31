@@ -1,15 +1,19 @@
-import { affectsUs, freshness, freshText, newestChecked, quakeFeltKm, quakeMag, type Alert, type LatLon } from './alerts'
+import { affectsUs, distanceKm, freshness, freshText, newestChecked, quakeFeltKm, quakeMag, type Alert, type LatLon } from './alerts'
 
 const TSUNAMI_MAG = 6.5 // same cut-off as affectsUs
 const TSUNAMI_TAIL = ' If you live near the sea, watch for a tsunami warning.'
 
-/** The calibrated line under the hero: how far, and whether anyone could have felt it. */
+/** The calibrated line under the hero. Never reassures: the felt radius is a rough strong-shaking figure, so beyond it we say "may not have felt it", not "nothing to do". */
 export function feltLine(a: Alert, here: LatLon | null, placeName: string): string {
   const f = affectsUs(a, here)
-  if (a.kind !== 'quake' || f.km === null) return f.line
-  if (f.km > quakeFeltKm(a)) return `Too far to feel in ${placeName}. Nothing to do now.`
+  if (a.kind !== 'quake' || f.km === null || a.lat == null || a.lon == null) return f.line
   const mag = quakeMag(a)
-  return `You may have felt this in ${placeName}. If you did, follow the steps below.${mag !== null && mag >= TSUNAMI_MAG ? TSUNAMI_TAIL : ''}`
+  const tail = mag !== null && mag >= TSUNAMI_MAG ? TSUNAMI_TAIL : ''
+  const radius = quakeFeltKm(a)
+  const away = here ? Math.round(distanceKm(here, { lat: a.lat, lon: a.lon })) : f.km
+  if (away <= radius) return `You may have felt this in ${placeName}. If you did, follow the steps below.${tail}`
+  if (f.line.startsWith('Near home')) return f.line // a home zone is the near one: affectsUs words it
+  return `About ${away} km away. You may not have felt it. If you felt shaking, follow the steps below.${tail}`
 }
 
 /** "11 h ago" from an ISO time. */

@@ -3,7 +3,7 @@ import { alertRef } from '../location/place'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { GroupedList, Row, Section } from '../look'
 import { Icon } from '../shell/Icon'
-import { ALERTS_KEY, NOT_A_SIREN, affectsUs, quakeMag, rankAlerts, type Alert } from './alerts'
+import { ALERTS_KEY, NOT_A_SIREN, distanceKm, freshness, newestChecked, outdatedLine, quakeMag, rankAlerts, type Alert } from './alerts'
 import { FLAGS } from './flags'
 import LazyMap from './LazyMap'
 import NewsTop5 from './NewsTop5'
@@ -48,12 +48,15 @@ export default function Warnings({ place }: { place: Place }) {
   const top = rankAlerts(all, here)[0]
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const name = zone.name.split(',')[0]!
-  const km = top ? affectsUs(top, here).km : null
   const mag = top?.kind === 'quake' ? quakeMag(top) : null
   const red = !!top && (top.kind === 'tsunami' || (top.kind === 'tcws' && (signalOf(top) ?? 0) >= 3))
   const point = top && top.lat != null && top.lon != null ? ([top.lat, top.lon] as [number, number]) : null
+  const km = point ? Math.round(distanceKm(here, { lat: point[0], lon: point[1] })) : null // from where you are, not the nearer home zone
+  const checked = newestChecked(all)
+  const stale = freshness(checked, now).tone !== 'ok'
   return (
     <div className="wn">
+      {stale && <p className="sf-note" role="status">{outdatedLine(checked)}</p>}
       {top ? (
         <section className="wn-hero" data-testid="warn-hero" data-tone={red ? 'red' : 'amber'} aria-label="Top warning">
           <div className="wn-hero-top"><span className="wn-kind">{KIND[top.kind].toUpperCase()}</span><span className="wn-ago">{top.source} · {agoText(top.issuedAt, now)}</span></div>
@@ -64,7 +67,7 @@ export default function Warnings({ place }: { place: Place }) {
           {top.where && <div className="wn-where">{top.where}</div>}
           {km !== null && <div className="wn-km">{km} km from you, in {name}</div>}
         </section>
-      ) : <p className="wn-empty" role="status" data-testid="warn-hero">No active warnings for your area right now. Official bulletins always come first.</p>}
+      ) : <p className="wn-empty" role="status" data-testid="warn-hero">{stale ? `No warnings on this phone. Last check: ${checked ? agoText(checked, now) : 'never'}.` : 'No active warnings for your area right now. Official bulletins always come first.'}</p>}
       {top && point && (
         <LazyMap height={180} center={point} zoom={6} depKey={`${top.id}|${here.lat}|${here.lon}`} label="Map of the warning and your place" testId="warn-map"
           setup={(L, m) => {

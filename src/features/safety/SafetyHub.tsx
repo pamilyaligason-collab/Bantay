@@ -7,7 +7,7 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, freshText, newestChecked, quakeFeltKm, rankAlerts, type LatLon } from './alerts'
+import { ALERTS_KEY, type Alert, affectsUs, freshness, freshText, newestChecked, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, type LatLon } from './alerts'
 import { useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
@@ -72,21 +72,24 @@ const ALERT_ICON: Partial<Record<Alert['kind'], IconName>> = { quake: 'quake', t
 const signalOf = (level: string | null) => Number(/(\d)/.exec(level ?? '')?.[1] ?? 0)
 
 /** The "Right now" list: up to three ranked alerts, then weather, storms, hazards, rescue map. No "none" row: an empty list is the empty state. */
-export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx | null | undefined; storms: Alert[]; hazard: string; pins: number }): HomeRow[] {
+export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx | null | undefined; storms: Alert[]; hazard: string; pins: number; stale?: boolean }): HomeRow[] {
   const alerts = rankAlerts(p.alerts, p.here).slice(0, 3).map((a): HomeRow => {
     const f = affectsUs(a, p.here)
     const red = (a.kind === 'tcws' && signalOf(a.level) >= 3) || a.kind === 'tsunami'
     // shortcut: "felt" wording only for quakes; other kinds say Near you / Far away
-    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : 'Minor, far away') : 'Near you'
+    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : (quakeMag(a) ?? 0) >= 6 ? 'May be felt' : 'Far away') : 'Near you'
     return {
       href: '#safety/warnings', icon: ALERT_ICON[a.kind] ?? 'warn', tint: red ? 'red' : 'amber', title: a.title,
       sub: [a.where, f.km === null ? null : `${f.km} km`, a.source].filter(Boolean).join(' · '), badge
     }
   })
   const n = p.storms.length
+  const active = p.alerts.length
   return [
+    // always first, so Warnings is reachable with zero alerts
+    { href: '#safety/warnings', icon: 'warn', tint: active ? 'amber' : 'green', title: 'Warnings', value: active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined },
     ...alerts,
-    { href: '#weather', icon: 'rain', tint: 'blue', title: rainLine(p.wx), value: p.wx?.rainPct != null ? `${Math.round(p.wx.rainPct)}%` : undefined },
+    { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? `${Math.round(p.wx.rainPct)}%` : undefined },
     { href: '#safety/storms', icon: 'typhoon', tint: n ? 'amber' : 'blue', title: 'Storm tracker', value: n ? `${stormName(p.storms[0]!)}${n > 1 ? ` and ${n - 1} more` : ''}` : 'No storms' },
     { href: '#safety/hazards', icon: 'flood', tint: 'amber', title: 'Hazards at my location', sub: p.hazard },
     { href: '#safety/map', icon: 'pin', tint: 'green', title: 'Rescue map', value: p.pins ? plural(p.pins, 'place') : 'Shelters, help' }
@@ -106,8 +109,8 @@ export function readyRows(p: { dial: number; cards: number; ids: number | null; 
   return rows
 }
 
-/** "CHECKED 6 MIN AGO", "NEVER CHECKED". */
-export const kickerOf = (checkedAt: string | null | undefined, now: Date | number = Date.now()) => freshText(freshness(checkedAt, now)).toUpperCase()
+/** "Checked 6 min ago", "Never checked" (the head CSS upper-cases it). */
+export const kickerOf = (checkedAt: string | null | undefined, now: Date | number = Date.now()) => freshText(freshness(checkedAt, now))
 
 const asRow = (r: HomeRow) => <Row key={r.title} href={r.href} icon={r.icon} tint={r.tint} title={r.title} sub={r.sub} value={r.value} badge={r.badge} badgeTint={r.tint} />
 
@@ -116,7 +119,7 @@ function RightNow({ place }: { place: Place }) {
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const wx = useWeather(place.weather)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
-  const rows = rightNowRows({ alerts, here: alertRef(place), wx, storms: cyclones(alerts), hazard: hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null), pins })
+  const rows = rightNowRows({ alerts, here: alertRef(place), wx, storms: cyclones(alerts), hazard: hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null), pins, stale: freshness(newestChecked(alerts)).tone !== 'ok' })
   return (
     <Section title="Right now" link={{ href: '#safety/sources', label: 'Sources' }}>
       <GroupedList icons label="Right now" testId="right-now">{rows.map(asRow)}</GroupedList>
@@ -158,14 +161,16 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
   const abroad = !!place && pickLocalSet(place.weather).where === 'abroad'
   if (sos) return <SosScreen onClose={() => setSos(false)} />
   const chip = <ZonePicker loc={l} />
+  const stale = freshness(newestChecked(alerts), now).tone !== 'ok'
   return (
     <>
       <SafetyHead view="near" kicker={kickerOf(newestChecked(alerts), now)} actions={place?.source === 'last' ? <span data-testid="place-last">{chip}</span> : chip} />
+      {stale && <p className="sf-note" role="status">{outdatedLine(newestChecked(alerts))}</p>}
       <StormCard />
       <section className="card sf-hero" data-hero data-testid="safety-hero" aria-label="Emergency">
         <div className="sf-hero-row">
           <SosButton onSend={() => setSos(true)} />
-          <div className="sf-hero-t"><b>Emergency</b><span className="sub">Calls your first family contact and texts your place. Everyone sees it in Bantay.</span></div>
+          <div className="sf-hero-t"><b>Emergency</b></div>
         </div>
         <div className="sf-pair">
           {abroad

@@ -10,28 +10,34 @@ const alert = (over: Partial<Alert> = {}): Alert => ({
 const base = { alerts: [] as Alert[], here: DAMPAS, wx: null, storms: [] as Alert[], hazard: 'Earthquake: can have very destructive shaking', pins: 0 }
 
 describe('rightNowRows', () => {
-  it('with no alerts the first row is weather, then storms, hazards, rescue map', () => {
+  it('with no alerts the first row is Warnings (None now), then weather, storms, hazards, rescue map', () => {
     const r = rightNowRows(base)
-    expect(r.map((x) => x.href)).toEqual(['#weather', '#safety/storms', '#safety/hazards', '#safety/map'])
-    expect(r[1]!.value).toBe('No storms')
-    expect(r[2]!.sub).toBe(base.hazard)
-    expect(r[3]!.value).toBe('Shelters, help')
+    expect(r.map((x) => x.href)).toEqual(['#safety/warnings', '#weather', '#safety/storms', '#safety/hazards', '#safety/map'])
+    expect(r[0]!.value).toBe('None now')
+    expect(r[0]!.badge).toBeUndefined()
+    expect(r[2]!.value).toBe('No storms')
+    expect(r[3]!.sub).toBe(base.hazard)
+    expect(r[4]!.value).toBe('Shelters, help')
   })
   it('ranks at most three alerts first, with icon, tint and a felt badge', () => {
     const many = [alert({ id: 'a' }), alert({ id: 'b' }), alert({ id: 'c' }), alert({ id: 'd' })]
     const r = rightNowRows({ ...base, alerts: many })
-    expect(r.filter((x) => x.href === '#safety/warnings')).toHaveLength(3)
-    const q = r[0]!
+    expect(r.filter((x) => x.href === '#safety/warnings')).toHaveLength(4) // Warnings row + three alerts
+    expect(r[0]!.title).toBe('Warnings')
+    expect(r[0]!.value).toBe('4 now')
+    const q = r[1]!
     expect(q.icon).toBe('quake')
     expect(q.tint).toBe('amber')
     expect(q.title).toBe('M4.6 quake')
     expect(q.sub).toMatch(/^Siquijor · \d+ km · USGS$/)
     expect(q.badge).toBe('You may feel it')
   })
-  it('a far quake is minor; a signal 3 is red; no point omits the km', () => {
-    const far = rightNowRows({ ...base, alerts: [alert({ lat: 14.6, lon: 121 })] })[0]!
-    expect(far.badge).toBe('Minor, far away')
-    const t = rightNowRows({ ...base, alerts: [alert({ kind: 'tcws', level: 'Signal No. 3', title: 'Signal 3', lat: null, lon: null })] })[0]!
+  it('a far quake says Far away (or May be felt from M6);  a signal 3 is red; no point omits the km', () => {
+    const far = rightNowRows({ ...base, alerts: [alert({ lat: 14.6, lon: 121 })] })[1]!
+    expect(far.badge).toBe('Far away')
+    const big = rightNowRows({ ...base, alerts: [alert({ level: 'M6.4', title: 'M6.4 quake', lat: 14.6, lon: 121 })] })[1]!
+    expect(big.badge).toBe('May be felt')
+    const t = rightNowRows({ ...base, alerts: [alert({ kind: 'tcws', level: 'Signal No. 3', title: 'Signal 3', lat: null, lon: null })] })[1]!
     expect(t.tint).toBe('red')
     expect(t.icon).toBe('typhoon')
     expect(t.sub).toBe('Siquijor · USGS')
@@ -41,6 +47,12 @@ describe('rightNowRows', () => {
     const r = rightNowRows({ ...base, storms: s, pins: 2 })
     expect(r.find((x) => x.href === '#safety/storms')!.value).toMatch(/ and 1 more$/)
     expect(r.find((x) => x.href === '#safety/map')!.value).toBe('2 places')
+  })
+})
+
+describe('Warnings row staleness', () => {
+  it('shows May be out of date only when stale', () => {
+    expect(rightNowRows({ ...base, stale: true })[0]!.badge).toBe('May be out of date')
   })
 })
 
@@ -63,9 +75,9 @@ describe('readyRows', () => {
 })
 
 describe('kickerOf', () => {
-  it('upper-cases the freshness line', () => {
+  it('says the freshness line (CSS upper-cases it)', () => {
     const now = Date.parse('2026-11-01T08:06:00Z')
-    expect(kickerOf('2026-11-01T08:00:00Z', now)).toBe('CHECKED 6 MIN AGO')
-    expect(kickerOf(null, now)).toBe('NEVER CHECKED')
+    expect(kickerOf('2026-11-01T08:00:00Z', now)).toBe('Checked 6 min ago')
+    expect(kickerOf(null, now)).toBe('Never checked')
   })
 })
