@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Carousel, GroupedList, LargeTitle, PreviewTile, Row, Section } from './index'
+import { Carousel, GroupedList, LargeTitle, PreviewTile, Row, Section, Segmented } from './index'
 afterEach(cleanup)
 
 describe('LargeTitle', () => {
@@ -56,5 +56,16 @@ describe('PreviewTile + Carousel', () => {
   it('a carousel is a named group that lists its items', () => {
     render(<Carousel label="First aid"><a href="#a">A</a><a href="#b">B</a></Carousel>)
     expect(within(screen.getByRole('group', { name: 'First aid' })).getAllByRole('link')).toHaveLength(2)
+  })
+})
+describe('Segmented', () => {
+  it('links carry aria-current, buttons aria-pressed and call onChange', () => {
+    const on = vi.fn()
+    const { rerender } = render(<Segmented label="Show" value="near" options={[{ id: 'near', label: 'Near me', href: '#safety' }, { id: 'world', label: 'World', href: '#safety/world' }]} />)
+    expect(screen.getByRole('link', { name: 'Near me' }).getAttribute('aria-current')).toBe('page')
+    rerender(<Segmented label="Range" value="week" onChange={on} options={[{ id: 'week', label: 'This week' }, { id: 'month', label: 'This month' }]} />)
+    screen.getByRole('button', { name: 'This month' }).click()
+    expect(on).toHaveBeenCalledWith('month')
+    expect(screen.getByRole('button', { name: 'This week' }).getAttribute('aria-pressed')).toBe('true')
   })
 })

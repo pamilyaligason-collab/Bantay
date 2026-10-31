@@ -35,3 +35,9 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .carousel > * { flex: none; scroll-snap-align: start; }
 .carousel::-webkit-scrollbar { display: none; }
 :root[data-narrow] .carousel { padding: 0 12px; margin: 0 -12px; }
+
+/* Segmented */
+.segd { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card2); border-radius: 12px; padding: 3px; gap: 2px; }
+.segd > * { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--ink); background: none; border: 0; text-decoration: none; font-family: inherit; }
+.segd > [aria-current="page"], .segd > [aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(40,30,10,.14); font-weight: 600; }
+:root[data-narrow] .segd { grid-auto-flow: row; }
