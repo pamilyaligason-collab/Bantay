@@ -58,7 +58,7 @@
 .rw { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; }
 .rw > :not(.rw-main) { flex: none; width: auto; }
 .rw-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
-.rw-ic { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); overflow: hidden; }
+.rw-ic, .rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); overflow: hidden; }
 .rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .rw-title { font-size: 17px; font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rw-sub { font-size: 13px; line-height: 18px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

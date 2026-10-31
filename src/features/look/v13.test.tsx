@@ -96,3 +96,9 @@ describe('Sheet', () => {
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'B' }), { key: 'Escape' }); expect(b).toHaveBeenCalled()
   })
 })
+describe('Row outside a list', () => {
+  it('claims no listitem role without a GroupedList parent', () => {
+    render(<Row title="Alone" testId="alone" />)
+    expect(screen.getByTestId('alone').getAttribute('role')).toBeNull()
+  })
+})

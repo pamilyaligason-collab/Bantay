@@ -7,7 +7,7 @@ import './v13.css'
 /** v13 bottom sheet (contract 4), the family/Sheet behaviour on the look/ classes. Portal into .bt so it sits above the tab bar; Escape, the dim area, the close button and Back (a history entry) close it; focus returns on close; one open at a time.
  *  Closing plays the 200ms exit (data-closing, v13.css) first. With reduced motion, or without matchMedia, it closes at once and nothing follows the finger.
  *  Drag down from the grab handle, or from the body when it is scrolled to the top: the sheet follows the finger 1:1, resists when pulled up, and on release keeps its momentum (family/sheetDrag.ts) to decide between closing and springing back. */
-let current: (() => void) | null = null // the open sheet's "close me now"; a second sheet calls it
+let current: { close: () => void; prev: HTMLElement | null } | null = null // the open sheet: "close me now" and who to give focus back to; a second sheet closes it and inherits the opener
 
 /** Pop the sheet's history entry (one Back press afterwards, no dead entry), then run `then` once the pop has landed. */
 export function leaveSheet(then: () => void) {
@@ -32,16 +32,17 @@ export function Sheet({ title, onClose, children, focusTitle = false, hideTitle 
     timer.current = window.setTimeout(() => onCloseRef.current(), 200)
   }
   useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null
+    const prev = current ? current.prev : document.activeElement as HTMLElement | null // a superseding sheet returns focus to the first opener
     const mine = () => { window.clearTimeout(timer.current); timer.current = -1; onCloseRef.current() } // superseded: gone at once, no exit over the new sheet
-    if (current && current !== mine) current()
-    current = mine
+    const entry = { close: mine, prev }
+    current?.close()
+    current = entry
     if (!history.state?.bantaySheet) history.pushState({ bantaySheet: 1 }, '') // StrictMode runs effects twice in dev: one entry only
     const pop = () => close(true)
     window.addEventListener('popstate', pop)
     const first = focusTitle ? box.current?.querySelector<HTMLElement>('h2') : box.current?.querySelector<HTMLElement>('input:not([type=checkbox]), textarea, select, button:not(.lk-x)') // an existing item: start at the title, not in a field
     ;(first ?? box.current)?.focus()
-    return () => { window.removeEventListener('popstate', pop); if (current === mine) current = null; window.clearTimeout(timer.current); prev?.focus?.() }
+    return () => { window.removeEventListener('popstate', pop); window.clearTimeout(timer.current); if (current === entry) { current = null; prev?.focus?.() } }
   }, [])
   useEffect(() => { // data-fit (touch-action:none, family.css) only while nothing scrolls; re-measured when the sheet or any child resizes (keyboard, child state), not just on render
     const el = box.current

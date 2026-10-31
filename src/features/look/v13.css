@@ -19,7 +19,7 @@
 section.sec { display: flex; flex-direction: column; gap: 10px; margin: 0; font-size: inherit; color: var(--ink); }
 section.sec > .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 2px 0; }
 section.sec > .sec-h h2 { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; letter-spacing: -.01em; }
-section.sec > .sec-h a, section.sec > .sec-h button { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; margin: -13px -6px; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-decoration: none; font-family: inherit; }
+section.sec > .sec-h a, section.sec > .sec-h button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 6px; margin: -13px -6px; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-decoration: none; font-family: inherit; }
 section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 
 /* PreviewTile + Carousel */
