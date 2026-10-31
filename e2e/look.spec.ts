@@ -18,11 +18,10 @@ test('shell frame: top bar turns to glass only after content scrolls under it, s
   await expect(top).toHaveAttribute('data-scrolled', 'false')
   await expect(top).toHaveCSS('backdrop-filter', 'none')
   await page.goto('/#safety/hazards')
-  const h = page.locator('.hdr.sf-subhdr')
+  const h = page.locator('.lt')
   await expect(h).toBeVisible()
   expect((await h.locator('h1').boundingBox())!.height).toBeLessThan(80)
-  const [back, title] = await Promise.all([h.locator('a').first().boundingBox(), h.locator('h1').boundingBox()])
-  expect(Math.abs(back!.y - title!.y)).toBeLessThan(40) // same row
+  await expect(h.locator('a').first()).toBeVisible() // back link and h1 share the .lt header (v13 stacks Back above the title)
 })
 
 test('reduced motion stops the sky animation', async ({ page }) => {
