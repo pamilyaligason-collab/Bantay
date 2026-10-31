@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import SafetyHub, { IdsRow } from '../features/safety/SafetyHub'
 import { ActEarly, FirstAidPage, topicOf } from '../features/safety/FirstAid'
+import Cpr from '../features/safety/Cpr'
 import SafetySub, { subOf } from '../features/safety/SafetyPages'
 import GoBag from '../features/gobag/GoBag'
 import MedicalId from '../features/medid/MedicalId'
@@ -36,6 +37,7 @@ function SafetyRoute({ hash }: { hash: string }) {
   const place = usePlaceFrom(l)
   const sub = subOf(hash)
   const fa = topicOf(hash)
+  if (hash === '#safety/firstaid/cpr') return <Cpr />
   if (fa) return <FirstAidPage topic={fa} />
   return sub ? <SafetySub sub={sub} l={l} place={place} /> : <SafetyHome l={l} place={place} />
 }

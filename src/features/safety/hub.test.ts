@@ -4,7 +4,8 @@ import hotlines from '../../data/safety/hotlines.json'
 import { CHECK_LABEL, coversHere, needsCheck, planDial, splitDial } from './dial'
 import type { Entry } from './entries'
 import { hazardsFor, hazardStatus, quakeMeaning, toneOf } from './hazardCards'
-import { parseHash } from '../shell/routes'
+import { hasOwnHeader, parseHash } from '../shell/routes'
+import { subOf } from './SafetyPages'
 
 const e = (id: string, group: string, phone: string | null): Entry => ({ id, group, name: id, phone, status: 'CONFIRMED', source: 's', sourceUrl: null, date: 'd' })
 
@@ -103,5 +104,20 @@ describe('coversHere: per-area data only where it was gathered', () => {
     expect(coversHere({ weather: { lat: 9.65, lon: 123.86 }, source: 'gps', zone: 'dampas' })).toBe(true)
     expect(coversHere({ weather: { lat: 7.07, lon: 125.61 }, source: 'gps', zone: 'conel' })).toBe(false)
     expect(coversHere({ weather: { lat: 29.76, lon: -95.37 }, source: 'gps-abroad', zone: 'dampas' })).toBe(false)
+  })
+})
+
+describe('v13 routes', () => {
+  it('new sub pages resolve; unknown is null', () => {
+    expect(subOf('#safety/world')).toBe('world')
+    expect(subOf('#safety/firstaid')).toBe('firstaid')
+    expect(subOf('#safety/offline')).toBe('offline')
+    expect(subOf('#safety/alerts')).toBe('alerts')
+    expect(subOf('#safety/nope')).toBeNull()
+  })
+  it('World keeps the top bar like the Safety root; other sub pages draw their own head', () => {
+    expect(parseHash('#safety/world')).toEqual({ tab: 'safety', view: 'safety' })
+    expect(hasOwnHeader('#safety/world')).toBe(false)
+    expect(hasOwnHeader('#safety/warnings')).toBe(true)
   })
 })
