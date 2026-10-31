@@ -13,7 +13,7 @@
 .cpr-dot { width: 96px; height: 96px; border-radius: 50%; background: var(--tint-red); border: 4px solid var(--tint-red-ink); box-sizing: border-box; transition: transform 120ms var(--ease-out), background-color 120ms; }
 .cpr-dot[data-on="true"] { transform: scale(1.25); background: var(--tint-red-ink); }
 @media (prefers-reduced-motion: reduce) { .cpr-dot { transition: none; } .cpr-dot[data-on="true"] { transform: none; } }
-.cpr-sw { width: 44px; height: 44px; margin: 0; accent-color: var(--green); }
+.cpr-sw, .rw > .cpr-sw { flex: none; width: 44px; height: 44px; margin: 0; accent-color: var(--green); }
 .cpr-note { padding: 14px; }
 .cpr .fa-steps { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
 .cpr .fa-steps li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; }

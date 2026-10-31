@@ -85,7 +85,7 @@ export default function HazardPage({ place }: { place: Place }) {
         <Section title="Closest help">
           <div className="card hz-help">
             <div className="rw-txt"><b className="hz-name">{help.name}</b>{help.note && <span className="rw-sub">{help.note}</span>}</div>
-            <a className="btn2" href="#safety/map">See on Rescue map</a>
+            <a className="btn2 hz-map" href="#safety/map">See on Rescue map</a>
           </div>
         </Section>
       )}

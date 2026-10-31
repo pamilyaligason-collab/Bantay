@@ -33,7 +33,7 @@ function Actions({ s, pin }: { s: Spot; pin?: Pin }) {
   return (
     <div className="rm-act">
       {pin && <a className="btn" href={googleGo(pin.lat, pin.lon)} target="_blank" rel="noopener noreferrer">Directions</a>}
-      {s.phone && <a className="btn2" href={telHref(s.phone)}>Call<span className="lv-sr"> {s.phone}</span></a>}
+      {s.phone && <a className="btn2" href={telHref(s.phone)} aria-label={`Call ${s.phone}`}>Call</a>}
     </div>
   )
 }

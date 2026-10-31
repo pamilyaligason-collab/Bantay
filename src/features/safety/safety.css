@@ -110,7 +110,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .fa-911 h2 { margin: 0 0 8px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .fa-911 ul { font-size: 17px; line-height: 1.4; }
 .fa-links { list-style: none; padding: 0 !important; }
-.sf .fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
+.fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
 .fa-foot { margin: 0 4px; font-size: 14px; }
 
 
@@ -161,3 +161,9 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-bar::-moz-progress-bar { background: var(--green); border-radius: 4px; }
 .sf-foot { margin: 16px 4px 0; font-size: 13px; color: var(--muted); }
 .sf-foot a { color: var(--focus); display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+
+/* S10: 44 px text links the e2e target check found (Rescue map source link, Hazards meta at 195 px) */
+.sf-src a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+:root[data-narrow] section.sec > .sec-h { flex-wrap: wrap; }
+:root[data-narrow] section.sec > .sec-h .sec-meta { min-width: 0; overflow-wrap: anywhere; }
+:root[data-narrow] .hz-map { padding: 0 10px; font-size: 14px; white-space: nowrap; }
