@@ -22,3 +22,31 @@ for (const h of ['#safety/firstaid', '#safety/firstaid/cpr', '#safety/world', '#
     await expect(page.locator('a[aria-label^="Back"], [role=group][aria-label="Show"]').first()).toBeVisible()
   })
 }
+
+// ---- S3 Warnings ----
+test.describe('S3', () => {
+  const seedQuake = (page: Page) => page.evaluate(async () => {
+    const q = { id: 'q-s3', kind: 'quake', level: 'M4.6', title: 'M 4.6 - 7 km NE of Tago', what: 'Moderate quake.', where: '7 km NE of Tago, Surigao del Sur', when: 'now', doNow: 'Drop, cover and hold on.', source: 'USGS', sourceUrl: null, issuedAt: new Date(Date.now() - 11 * 3_600_000).toISOString(), lat: 12.1, lon: 123.88, bulletin: 'x', checkedAt: new Date().toISOString() }
+    await new Promise<void>((res, rej) => {
+      const o = indexedDB.open('bantay')
+      o.onerror = () => rej(o.error)
+      o.onsuccess = () => { const tx = o.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put({ key: 'safety.alerts', value: [q] }); tx.oncomplete = () => { o.result.close(); res() } }
+    })
+  })
+  test('warnings: empty state, then a seeded far quake shows Too far to feel, map, sources and a collapsed shaking row', async ({ page }) => {
+    await page.goto('/#safety/warnings')
+    await expect(page.getByTestId('warn-hero')).toContainText('No active warnings')
+    await seedQuake(page)
+    await page.reload()
+    await expect(page.getByTestId('warn-hero')).toContainText('Too far to feel')
+    await expect(page.getByRole('region', { name: /Map of the warning/ })).toBeVisible()
+    await expect(page.locator('.leaflet-container')).toHaveCount(1)
+    await expect(page.getByRole('list', { name: 'Sources' })).toContainText('Checked')
+    const shake = page.getByRole('button', { name: /If you ever feel shaking/ })
+    await expect(shake).toHaveAttribute('aria-expanded', 'false')
+    await shake.click()
+    await expect(shake).toHaveAttribute('aria-expanded', 'true')
+    expect(await targets44(page)).toEqual([])
+    expect(await noSideways(page)).toBe(true)
+  })
+})
