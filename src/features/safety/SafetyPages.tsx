@@ -6,7 +6,7 @@ import places from '../../data/safety/places.json'
 import { HOME_ZONES } from '../location/geo'
 import type { useLocation, usePlaceFrom } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle } from '../look'
 import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { getMember, onAuthChange } from '../auth/session'
@@ -227,7 +227,7 @@ export default function SafetySub({ sub, l, place }: { sub: Sub; l: Loc; place: 
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [sub])
   return (
     <>
-      <SubHeader title={TITLES[sub]} backHref="#safety" backLabel="Back to Safety" trailing={<ZonePicker loc={l} />} className="sf-hdr sf-subhdr" />
+      {sub !== 'world' && <LargeTitle title={TITLES[sub]} back={{ href: '#safety', label: 'Safety' }} actions={<ZonePicker loc={l} />} />}
       {place && <Body sub={sub} l={l} place={place} />}
     </>
   )
