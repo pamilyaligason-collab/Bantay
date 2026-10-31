@@ -81,3 +81,18 @@ describe('MapCard', () => {
     unmount(); expect(cleanup).toHaveBeenCalled()
   })
 })
+describe('Sheet', () => {
+  it('dialog named by title, grabber, close button, Escape closes, focus returns, one at a time', async () => {
+    const { Sheet } = await import('./Sheet')
+    const a = vi.fn(), b = vi.fn()
+    const opener = document.createElement('button'); document.body.appendChild(opener); opener.focus()
+    const { rerender } = render(<><Sheet title="Jack" onClose={a}><button type="button">one</button></Sheet></>)
+    const dlg = screen.getByRole('dialog', { name: 'Jack' })
+    expect(dlg.querySelector('.lk-grab')).not.toBeNull()
+    expect(document.activeElement?.textContent).toBe('one')
+    screen.getByRole('button', { name: 'Close' }).click(); expect(a).toHaveBeenCalledTimes(1) // jsdom has no matchMedia: reduced path, closes at once
+    rerender(<><Sheet title="A" onClose={a}><button type="button">a</button></Sheet><Sheet title="B" onClose={b}><button type="button">b</button></Sheet></>)
+    expect(a).toHaveBeenCalledTimes(2) // the second sheet closed the first
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'B' }), { key: 'Escape' }); expect(b).toHaveBeenCalled()
+  })
+})

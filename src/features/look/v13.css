@@ -50,3 +50,20 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .mapc img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mapc-credit { padding: 8px 14px; font-size: 13px; color: var(--muted); }
 .mapc-re { position: absolute; right: 10px; bottom: 46px; width: 44px; height: 44px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-float); border: 0; color: var(--green); display: grid; place-items: center; }
+
+/* Sheet: glass fill and blur come from glass.css (.lk-sheet in its lists). Keyframes are duplicated from shell.css so look/ does not depend on shell/. */
+@keyframes lk-sheet-in { from { transform: translateY(100%); } }
+@keyframes lk-fade-in { from { opacity: 0; } }
+@keyframes lk-sheet-out { to { transform: translateY(100%); } }
+@keyframes lk-fade-out { to { opacity: 0; } }
+.lk-sheet-wrap { position: absolute; inset: 0; z-index: 30; background: rgba(28, 27, 25, calc(.38 * var(--lk-dim, 1))); display: flex; align-items: flex-end; animation: lk-fade-in var(--dur-base) var(--ease-out); }
+.lk-sheet { width: 100%; max-height: 90%; overflow-y: auto; border-radius: 30px 30px 0 0; padding: 8px 16px calc(28px + var(--sab)); box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; color: var(--ink); animation: lk-sheet-in var(--dur-sheet) var(--ease-sheet); outline: none; }
+.lk-sheet[data-fit] { touch-action: none; }
+.lk-grab-zone { height: 32px; margin: -4px -16px -12px; display: grid; place-items: center; touch-action: none; cursor: grab; flex: none; }
+.lk-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--hair); margin: 0 auto; }
+.lk-sheet-h { display: flex; align-items: center; gap: 12px; }
+.lk-sheet-h h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
+.lk-x { width: 44px; height: 44px; border-radius: 50%; background: var(--card2); border: 0; color: var(--ink); display: grid; place-items: center; }
+.lk-sheet-wrap[data-closing="true"] { animation: lk-fade-out var(--dur-base) var(--ease-out) forwards; pointer-events: none; }
+.lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: lk-sheet-out var(--dur-base) var(--ease-sheet) forwards; }
+@media (prefers-reduced-motion: reduce) { .lk-sheet-wrap, .lk-sheet, .lk-sheet-wrap[data-closing="true"], .lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: none; } }
