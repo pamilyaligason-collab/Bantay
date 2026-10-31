@@ -123,6 +123,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`SOS block ${scheme}: label and hold line never intersect (390, 360, 195), holding line contrast >= 4.5`, async ({ page }) => {
     await startToday(page, 'alertsOff', { scheme })
     await setScheme(page, scheme)
+    await expect(page.locator('.bt[data-jack]')).toHaveCount(1) // the overlap this guards came from the Jack margin, so Jack must be shown
     const btn = page.locator('.td-sos .sos-simple-btn')
     const gap = () => page.evaluate(() => {
       const b = document.querySelector('.td-sos .sos-simple-btn')!
