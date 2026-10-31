@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { LatestList } from '../features/health/LatestList'
 import { Medicines } from '../features/health/Medicines'
@@ -27,7 +27,6 @@ import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
 import { SubHeader } from '../features/shell/SubHeader'
 import { PersonChips } from '../features/records/PersonChips'
-import { loadAll } from '../features/records/store'
 import { properName } from '../features/health/medName'
 import NudgeHub from '../features/nudge/NudgeHub'
 
@@ -59,22 +58,10 @@ export default function Health() {
 }
 
 function Overview() {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds, reload, canMark: canLog, canEdit, acting, lockReason } = useHealthPerson()
+  const { ready, people, ownId, personId, setPersonId, readings, thresholds, reload, canMark: canLog, canEdit, lockReason } = useHealthPerson()
   const [adding, setAdding] = useState<'bp' | 'fasting_glucose' | null>(null)
   const [saved, setSaved] = useState('')
   const acts = useActivity(personId)
-  // Default person: the signed-in user; with nobody signed in, the first person who has readings (not just the first name). A tap on a chip wins.
-  const picked = useRef(false)
-  useEffect(() => {
-    if (!ready || picked.current || ownId || acting || readings.length > 0) return
-    let live = true
-    void loadAll().then((d) => {
-      const withData = d.people.find((p) => d.readings.some((r) => r.personId === p.id)) ?? null
-      if (live && !picked.current && withData) setPersonId(withData.id)
-    }).catch(() => {})
-    return () => { live = false }
-  }, [ready, ownId, acting, readings.length, setPersonId])
-  const pick = (id: string) => { picked.current = true; setPersonId(id) }
   const latest = latestByTest(readings)
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
   const head = insightHeadline(latest, new Date(), familyOf)
@@ -87,7 +74,7 @@ function Overview() {
       <div className="hdr">
         <h1>Health</h1>
       </div>
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={pick} />
+      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {!ready && (
         <section className="hv-load" aria-busy="true" aria-label="Health" data-testid="health-loading">
           <span className="hv-sr">Loading</span>

@@ -18,6 +18,7 @@ export function useHealthData() {
   const [data, setData] = useState<Data>(empty)
   const [ready, setReady] = useState(false)
   const [member, setMember] = useState<Member | null>(null)
+  const [memberReady, setMemberReady] = useState(false) // ready only once we know who "me" is, or that nobody is signed in
   const [tick, setTick] = useState(0)
   const picked = useSyncExternalStore(subscribe, () => chosen)
   const stored = usePeople(data.people) // live: sync may pull people after the screen opened
@@ -33,7 +34,7 @@ export function useHealthData() {
   }, [tick])
   useEffect(() => {
     let live = true
-    getMember().then(async (m) => { const mm = m && !m.personId ? { ...m, personId: (await selfIdOrCached().catch(() => null)) ?? null } : m; if (live) setMember(mm) }).catch(() => {}) // not signed in or no auth: no "me"
+    getMember().then(async (m) => { const mm = m && !m.personId ? { ...m, personId: (await selfIdOrCached().catch(() => null)) ?? null } : m; if (live) setMember(mm) }).catch(() => {}).finally(() => live && setMemberReady(true)) // not signed in or no auth: no "me"
     return () => {
       live = false
     }
@@ -42,13 +43,14 @@ export function useHealthData() {
   // "Me" first, then the rest by name, so the picker reads the same on every screen.
   const people = [...stored].sort((a, b) => (a.id === ownId ? -1 : b.id === ownId ? 1 : a.name.localeCompare(b.name)))
   const known = (id: string) => !!id && (people.some((p) => p.id === id) || data.readings.some((r) => r.personId === id))
-  // chosen person, else the signed-in member's own person, else the first one (Dexie order is arbitrary, hence the sort above)
-  const personId = known(picked) ? picked : known(ownId) ? ownId : (people[0]?.id ?? data.readings[0]?.personId ?? '')
+  const firstWithData = people.find((p) => data.readings.some((r) => r.personId === p.id))?.id ?? people[0]?.id ?? data.readings[0]?.personId ?? ''
+  // chosen person, else the signed-in member's own person, else the first one with readings (Dexie order is arbitrary, hence the sort above)
+  const personId = known(picked) ? picked : known(ownId) ? ownId : firstWithData
   const setPersonId = useCallback((id: string) => setChosen(id), [])
   const reload = useCallback(() => setTick((t) => t + 1), [])
   const readings = data.readings.filter((r) => r.personId === personId)
   const consults = data.consults.filter((c) => c.personId === personId)
-  return { ...data, people, ready, member, ownId, personId, setPersonId, readings, consults, reload }
+  return { ...data, people, ready: ready && memberReady, member, ownId, personId, setPersonId, readings, consults, reload }
 }
 
 /** Test helper: forget the shared choice. */

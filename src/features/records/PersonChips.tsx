@@ -8,7 +8,7 @@ export function PersonChips({ people, ownId, personId, drafts, onPick }: {
 }) {
   if (people.length < 2) return null
   return (
-    <div className="chips" role="group" aria-label="Whose records">
+    <div className="chips" data-testid="person-chips" role="group" aria-label="Whose records">
       {people.map((p) => {
         const n = drafts[p.id] ?? 0
         const name = p.id === ownId ? 'Me' : firstName(p.name)
