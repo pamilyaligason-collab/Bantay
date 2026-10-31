@@ -8,7 +8,8 @@ import { useNow } from '../safety/AlertCard'
 import { StormBlock } from '../safety/StormCard'
 import { liveSignals, signalOf, stormTitle } from '../safety/stormMode'
 import { putKv, useKv } from '../safety/store'
-import type { IconName } from '../shell/Icon'
+import { Icon, type IconName } from '../shell/Icon'
+import { quakeRow } from './alertRow'
 import { zoneAlert } from './heroCards'
 import { ACK_KEY, ackWarning, isAcked, type AckMap } from './warnAck'
 import './today.css'
@@ -47,6 +48,14 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
     <>
       {hazard && !isAcked(acks, hazard) && (() => {
         const who = affectsUs(hazard, ref)
+        const row = quakeRow(hazard, who, clock)
+        if (row) return (
+          <section role="region" aria-label="Nearby report" data-testid="warning-card" className="card td-arow" data-tint="amber">
+            <span className="td-arow-ic"><Icon name="quake" size={18} /></span>
+            <span className="td-grow"><b>{row.title}</b><span>{row.sub}</span></span>
+            <a className="btn2 td-arow-go" href="#safety/warnings">Details</a>
+          </section>
+        )
         return (
           <section role="region" aria-label="Active warning" data-testid="warning-card" data-nofab={hazard.kind === 'quake' || hazard.kind === 'tcws' ? '' : undefined}>
             <AlertCard
