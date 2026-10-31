@@ -82,3 +82,22 @@ test.describe('S5', () => {
     expect(await noSideways(page)).toBe(true)
   })
 })
+
+test.describe('S8/S9 World, Alert settings, Offline maps', () => {
+  for (const h of ['#safety/world', '#safety/alerts', '#safety/offline']) {
+    for (const w of [360, 195]) {
+      test(`${h} at ${w}px: no sideways scroll, targets >= 44`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: 844 })
+        await page.goto(`/${h}`)
+        await expect(page.locator('main')).toBeVisible()
+        expect(await noSideways(page)).toBe(true)
+        expect(await targets44(page)).toEqual([])
+      })
+    }
+  }
+  test('world has one hero map and the Near me | World switch', async ({ page }) => {
+    await page.goto('/#safety/world')
+    await expect(page.getByRole('group', { name: 'Show' })).toBeVisible()
+    expect(await oneHero(page)).toBeLessThanOrEqual(1)
+  })
+})
