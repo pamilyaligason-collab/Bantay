@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
 import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, FIXED_CLOCKS, setScheme } from './v13'
-import { empty, full } from './fixtures/s16/health'
+import { empty, full, seed } from './fixtures/s16/health'
 
 declare const process: { env: Record<string, string | undefined> }
 
@@ -55,6 +55,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await assertJackClear(page)
   })
 }
+
+test('the admin lands on Me, even when another person has readings (v13 0.4: no pre-pick before the member is known)', async ({ page }) => {
+  await full(page)
+  await seed(page, 'bantay-health', { readings: [{ personId: 'ma', takenAt: new Date().toISOString(), test: 'weight', value: 55, unit: 'kg' }] })
+  await page.reload()
+  await expect(page.getByTestId('health-loading')).toHaveCount(0)
+  await expect(page.getByTestId('person-chips').getByRole('button', { pressed: true })).toHaveText(/Me/)
+})
 
 test('the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food', async ({ page }) => {
   await full(page)
