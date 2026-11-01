@@ -1,10 +1,13 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import 'fake-indexeddb/auto'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { db } from '../../db'
+import { MEDCARDS, RECIPES } from './learn/data'
 import { playable, VIDEOS } from '../health/library/videosLogic'
 import { featured } from './today/featured'
 import Overview from './Overview'
 
-beforeEach(() => { location.hash = '#discover'; sessionStorage.clear() })
+beforeEach(async () => { location.hash = '#discover'; sessionStorage.clear(); await db.kv.clear() })
 afterEach(cleanup)
 
 const now = new Date(2026, 9, 28, 10, 20)
@@ -59,5 +62,41 @@ describe('Overview head, hero, video cards, season', () => {
     fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.pt')[1]!)
     expect(sessionStorage.getItem('dc.watch')).toBe(more[1]!.id)
     expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(3)
+  })
+})
+
+const rows = (id: string) => Array.from(screen.getByTestId(id).querySelectorAll('.rw')).map((r) => ({ t: r.querySelector('.rw-title')!.textContent, s: r.querySelector('.rw-sub')?.textContent, h: r.querySelector('a')!.getAttribute('href'), tint: r.querySelector('.rw-ic')!.getAttribute('data-tint') }))
+
+describe('Learn and Listen', () => {
+  it('Learn: Recipes and Topics by default, link to All topics', () => {
+    render(<Overview now={now} />)
+    const sec = screen.getByTestId('dc-learn')
+    expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Learn')
+    expect(within(sec).getByRole('link', { name: 'All topics' }).getAttribute('href')).toBe('#discover/learn')
+    expect(rows('dc-learn')).toEqual([
+      { t: 'Recipes', s: RECIPES.length + ' low-salt recipes', h: '#discover/learn/recipes', tint: 'amber' },
+      { t: 'Topics', s: 'Plain reads on health topics', h: '#discover/learn/library', tint: 'purple' }
+    ])
+  })
+  it('Medicines row and the Medicine cards listen row only with the flag on', async () => {
+    await db.kv.put({ key: 'learn.medcards', value: true })
+    render(<Overview now={now} />)
+    await waitFor(() => expect(rows('dc-learn').length).toBe(3))
+    expect(rows('dc-learn')[0]).toEqual({ t: 'Medicines', s: 'What each medicine is for', h: '#discover/learn/meds', tint: 'green' })
+    expect(rows('dc-listen').map((r) => r.s)).toEqual([RECIPES.length + ' read out loud', MEDCARDS.length + ' read out loud'])
+  })
+  it('Listen: lead line, See all, rows all open the one Listen screen', () => {
+    render(<Overview now={now} />)
+    const sec = screen.getByTestId('dc-listen')
+    expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Listen')
+    expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/listen')
+    expect(within(sec).getByText('Read aloud by your phone')).toBeTruthy()
+    expect(rows('dc-listen')).toEqual([{ t: 'Recipes', s: RECIPES.length + ' read out loud', h: '#discover/listen', tint: 'teal' }])
+  })
+  it('sections come in order: videos, season, learn, listen', () => {
+    render(<Overview now={now} />)
+    const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-learn', 'dc-listen']
+    const els = ids.map((i) => screen.getByTestId(i))
+    els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })
 })

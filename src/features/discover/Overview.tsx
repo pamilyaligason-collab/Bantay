@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { EmptyState, LargeTitle, PreviewTile } from '../look'
+import { EmptyState, GroupedList, LargeTitle, PreviewTile, Row, Section } from '../look'
+import { useKv } from '../shell/useKv'
+import { MEDCARDS, RECIPES } from './learn/data'
+import { MEDCARDS_FLAG } from './learn/Screen'
 import { SeasonRow } from './today/Cards'
 import { featured } from './today/featured'
 import { WATCH_PICK } from './watch/Screen'
@@ -25,6 +28,7 @@ const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
 /** #discover (v13): large title, the video of the day, two more videos, then the season row. */
 export default function Overview({ now = new Date() }: { now?: Date }) {
   const vids = VIDEOS.filter(playable)
+  const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const { hero, more } = featured<Video>(now, vids)
   return (
     <>
@@ -40,6 +44,20 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
         </div>
       )}
       <SeasonRow now={now} />
+      <Section title="Learn" link={{ href: '#discover/learn', label: 'All topics' }} testId="dc-learn">
+        <GroupedList icons>
+          {medcards && <Row icon="pill" tint="green" title="Medicines" sub="What each medicine is for" href="#discover/learn/meds" />}
+          <Row icon="meal" tint="amber" title="Recipes" sub={`${RECIPES.length} low-salt recipes`} href="#discover/learn/recipes" />
+          <Row icon="file" tint="purple" title="Topics" sub="Plain reads on health topics" href="#discover/learn/library" />
+        </GroupedList>
+      </Section>
+      <Section title="Listen" link={{ href: '#discover/listen', label: 'See all' }} testId="dc-listen">
+        <p className="sub dc-lead">Read aloud by your phone</p>
+        <GroupedList icons>
+          <Row icon="mic" tint="teal" title="Recipes" sub={`${RECIPES.length} read out loud`} href="#discover/listen" />
+          {medcards && <Row icon="mic" tint="teal" title="Medicine cards" sub={`${MEDCARDS.length} read out loud`} href="#discover/listen" />}
+        </GroupedList>
+      </Section>
     </>
   )
 }
