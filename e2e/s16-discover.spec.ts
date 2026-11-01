@@ -24,27 +24,14 @@ test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(scheme, () => {
-    test('overview: hero, season row, five tiles, each tile opens its sub', async ({ page }) => {
+    // v13 lane D: the overview (hero, order, links, targets, contrast) is checked in e2e/v13-discover.spec.ts. Kept here: every sub still opens.
+    test('every Discover sub opens', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
-      await page.goto('/#discover')
-      await setScheme(page, scheme)
-      await expect(page.getByTestId('pick')).toBeVisible()
-      await expect(page.getByTestId('season-row')).toBeVisible()
-      await expect(page.getByTestId('discover-tiles').getByRole('link')).toHaveCount(5)
-      await shot(page, 'discover', scheme)
-      await assertTargets(page); await assertTextContrast(page)
-      await assertJackClear(page)
-      await assertNoWrappedButtons(page)
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-      // one Jack on the screen besides the Jack button: the pick art, and it never overlaps a link text box
-      const jack = (await page.locator('[data-testid="pick"] .sc-jack img').boundingBox())!
-      const title = (await page.locator('[data-testid="pick"] .sc-title').boundingBox())!
-      expect(jack.x).toBeGreaterThanOrEqual(title.x + title.width - 1)
-      expect(jack.width).toBeLessThanOrEqual(96)
       for (const sub of ['learn', 'watch', 'listen', 'play', 'news']) {
-        await page.goto('/#discover')
-        await page.getByTestId('tile-' + sub).click()
+        await page.goto(`/#discover/${sub}`)
+        await setScheme(page, scheme)
         await expect(page).toHaveURL(new RegExp(`#discover/${sub}$`))
+        await expect(page.locator('h1').first()).toBeVisible()
       }
     })
 

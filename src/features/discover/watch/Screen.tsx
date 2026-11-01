@@ -17,7 +17,7 @@ function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
     <li>
       <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} minutes` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
         {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
-        <span className="dc-poster-cap"><b>{v.title}</b>{v.minutes ? <span>{v.minutes} min</span> : null}</span>
+        <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <span>{v.minutes} min</span> : null}</span>
       </button>
     </li>
   )
