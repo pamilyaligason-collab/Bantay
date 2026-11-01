@@ -509,3 +509,4 @@
 .td-calm { flex-wrap: wrap; }
 .td-calm .td-grow { flex: 1 1 8em; }
 .td-wxs-empty { overflow-wrap: anywhere; }
+.td-todo-go { text-decoration: none; }
