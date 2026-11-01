@@ -35,4 +35,9 @@ describe('selfIdOrCached', () => {
     auth.member = member('u1', null)
     expect(await selfIdOrCached()).toBeNull()
   })
+  it("sign-out drops the last exact position, so it is never the next person's Last known", async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 6.1, lon: 125.2, at: 1 } })
+    await forgetSelf()
+    expect(await db.kv.get('loc.last')).toBeUndefined()
+  })
 })

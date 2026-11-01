@@ -14,6 +14,8 @@ vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 import Plan from './Plan'
 import Family, { parseFamily } from '../../screens/Family'
+import { chartPeople } from './ActivityCard'
+import type { FamilyPerson } from './roster'
 import MemberPage from './MemberPage'
 import Messages from './Messages'
 import { fdb } from './store'
