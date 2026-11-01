@@ -4,6 +4,7 @@ import type { Reading } from '../health/ranges'
 import { ldb } from '../log/store'
 import { EmptyState, LargeTitle, Segmented } from '../look'
 import { hdb } from '../records/store'
+import { useActing } from '../viewas/viewAs'
 import { useVisiblePeople } from './useFocuses'
 import { buildFeed, feedFilter, type FeedFilter } from './feedLogic'
 import FmAvatar from './FmAvatar'
@@ -25,6 +26,7 @@ const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.g
 export default function FamilyFeed() {
   const { selfId } = useFamilyPeople()
   const people = useVisiblePeople()
+  const { acting } = useActing()
   const [f, setF] = useState<FeedFilter>('all')
   const [d, setD] = useState<{ checkins: { personId: string; kind: string; startedAt: string }[]; readings: Reading[]; thresholds: { key: string; high?: number | null }[] } | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -42,7 +44,9 @@ export default function FamilyFeed() {
     void listMessages(20).then((r) => { if (live && r.ok) setMsgs(r.data) })
     return () => { live = false; sub.unsubscribe() }
   }, [key])
-  const items = useMemo(() => feedFilter(buildFeed({ checkins: d?.checkins ?? [], readings: d?.readings ?? [], photos, msgs, selfId, now: new Date(), thresholds: d?.thresholds ?? [] }), f), [d, photos, msgs, selfId, f])
+  const seen = new Set(people.map((p) => p.id))
+  // while acting: photos carry no author so they are dropped, and chat text only from people the viewed person can see
+  const items = useMemo(() => feedFilter(buildFeed({ checkins: d?.checkins ?? [], readings: d?.readings ?? [], photos: acting ? [] : photos, msgs: acting ? msgs.filter((m) => m.senderPersonId && seen.has(m.senderPersonId)) : msgs, selfId, now: new Date(), thresholds: d?.thresholds ?? [] }), f), [d, photos, msgs, selfId, f, acting, key]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <LargeTitle back={{ href: '#family', label: 'Family' }} title="Family feed" />

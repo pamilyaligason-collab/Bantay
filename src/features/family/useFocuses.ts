@@ -9,7 +9,7 @@ import { todayView } from './MemberPage'
 import { personFocus, sortByFocus, type Focus } from './personFocus'
 import { checkInLabel, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
 
-export interface PersonFocus { person: FamilyPerson; focus: Focus; missedDoses: { med: Medication; slot: string }[]; asks: ReviewAsk[] }
+export interface PersonFocus { person: FamilyPerson; focus: Focus; missedDoses: { med: Medication; slot: string; time: string }[]; asks: ReviewAsk[]; alertIds: string[] }
 type D = { meds: Medication[]; takes: MedTaken[]; activity: { personId: string; kind: string; startedAt: string }[]; readings: never[]; thresholds: { key: string; high?: number | null }[] }
 const EMPTY: D = { meds: [], takes: [], activity: [], readings: [], thresholds: [] }
 
@@ -40,7 +40,7 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
     const items = people.map((person): PersonFocus => {
       const tv = todayView({ ...d, personId: person.id, now })
       const missed = tv.doses.filter((x) => x.word === 'Missed')
-      const asks = reviewAsks(d.meds, [person], now)
+      const asks = !acting && writable.includes(person.id) ? reviewAsks(d.meds, [person], now) : [] // answering needs write access, never for yourself
       const focus = personFocus(person, {
         unwell: unwell.has(person.id), missed, due: tv.doses.filter((x) => x.word === 'Due now'), later: tv.doses.filter((x) => x.word === 'Later').length,
         asks, checkIn: last[person.id], canMark: !acting && writable.includes(person.id), now
@@ -48,9 +48,10 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
       const missedDoses = missed.flatMap((m) => {
         const [k, slot] = m.key.split('|')
         const med = d.meds.find((x) => x.personId === person.id && (x.serverId ?? x.clientId ?? String(x.id ?? x.name)) === k)
-        return med && slot ? [{ med, slot }] : []
+        return med && slot ? [{ med, slot, time: m.time }] : []
       })
-      return { person, focus, missedDoses, asks }
+      const alertIds = alerts.filter((a) => a.kind === 'dose_missed' && a.seenAt == null && a.personId === person.id).map((a) => a.id)
+      return { person, focus, missedDoses, asks, alertIds }
     })
     return { loaded: true, items: sortByFocus(items), rollOk: people.filter((p) => checkInLabel(last[p.id], now).ok).length }
   }, [d, last, alerts, writable, acting, people, now])

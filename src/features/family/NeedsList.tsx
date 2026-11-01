@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Medication } from '../log/store'
 import { GroupedList, Row, Section } from '../look'
 import { markSeen } from '../notify/store'
@@ -19,9 +19,10 @@ export function NeedsList({ fx, people, selfName }: { fx: ReturnType<typeof useF
   const [answering, setAnswering] = useState<{ name: string; med: Medication } | null>(null)
   const [note, setNote] = useState('')
   const control = (a: NeedRow['action']) =>
-    a.kind === 'answer' ? <button type="button" className="pc-btn rw-ctl" onClick={() => setAnswering({ name: shortName(a.ask.person.name) ?? 'them', med: a.ask.med })}>Answer</button>
-    : a.kind === 'phone' ? <a className="pc-btn rw-ctl" href="#me/phone/phones" onClick={() => { void markSeen(a.alertId).catch(() => undefined) }}>Fix phone</a>
+    a.kind === 'answer' ? <button type="button" className="pc-btn rw-ctl" onClick={() => setAnswering({ name: shortName(a.ask.person.name) ?? 'them', med: a.ask.med })} aria-label={`Answer for ${shortName(a.ask.person.name) ?? 'them'}`}>Answer</button>
+    : a.kind === 'phone' ? <a className="pc-btn rw-ctl" href="#me/phone/phones" onClick={() => { void markSeen(a.alertId).catch(() => undefined) }} aria-label="Fix phone">Fix phone</a>
     : <a className="pc-btn rw-ctl" href={a.href}>Open</a>
+  useEffect(() => { if (!note) return; const t = setTimeout(() => setNote(''), 4000); return () => clearTimeout(t) }, [note])
   if (acting || !fx.loaded) return null
   const rows = needsRows(fx.items, phones, people)
   if (!rows.length) return null

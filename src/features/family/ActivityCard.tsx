@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Reading } from '../health/ranges'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 import { EmptyState, Section, Segmented } from '../look'
@@ -31,7 +31,8 @@ export function ActivityCard() {
   const key = people.map((p) => p.id).join(',')
   const [d, setD] = useState<D | null>(null)
   const [metric, setMetric] = useState<Metric>('bp')
-  const now = useMemo(() => new Date(), [d]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(t) }, []) // the 7-day window moves at midnight
   useEffect(() => {
     const ids = key ? key.split(',') : []
     const sub = liveQuery(async () => ({
