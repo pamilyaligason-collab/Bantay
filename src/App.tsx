@@ -17,6 +17,7 @@ import WeatherScreen from './features/weather/WeatherScreen'
 import PrivacyScreen from './features/privacy/PrivacyScreen'
 import { getMember, onAuthChange } from './features/auth/session'
 import { canonicalHash, hasOwnHeader, parseHash, TABS, type Tab } from './features/shell/routes'
+import { useForgetPersonOutsideHealth } from './features/records/useHealthData'
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
@@ -82,6 +83,7 @@ export default function App() {
   const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing')
   const tab: Tab = route.tab ?? 'today'
   const idx = TABS.indexOf(tab)
+  useForgetPersonOutsideHealth(tab)
   const swiped = useRef(false)
   // Swipes replace the history entry so Back does not step through every tab.
   const go = (i: number) => { const t = TABS[i]; if (t && isTabView) { swiped.current = true; location.replace('#' + t) } }

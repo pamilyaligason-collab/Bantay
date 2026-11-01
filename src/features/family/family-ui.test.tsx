@@ -264,3 +264,15 @@ describe('Member page', () => {
     expect(location.hash).toBe('#family')
   })
 })
+
+describe('chartPeople (who the Activity chart may name)', () => {
+  const p = (id: string, isMe = false) => ({ id, name: id, isMe }) as FamilyPerson
+  const all = [p('me', true), p('ma'), p('pa')]
+  it('you and the people you care for, not everyone an admin can read', () => {
+    expect(chartPeople(all, null, ['ma']).map((x) => x.id)).toEqual(['me', 'ma'])
+    expect(chartPeople(all, null, []).map((x) => x.id)).toEqual(['me'])
+  })
+  it('while viewing as someone, the people they can see', () => {
+    expect(chartPeople(all, new Set(['pa']), ['ma']).map((x) => x.id)).toEqual(['pa'])
+  })
+})

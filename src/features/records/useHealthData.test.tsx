@@ -9,7 +9,7 @@ vi.mock('../auth/session', () => ({
 }))
 vi.mock('./useRecordsServer', () => ({ usePeople: (p: unknown[]) => p }))
 import { hdb } from './store'
-import { resetPersonChoice, useHealthData } from './useHealthData'
+import { resetPersonChoice, useForgetPersonOutsideHealth, useHealthData } from './useHealthData'
 
 function Probe() { const d = useHealthData(); return <p data-testid="who">{d.ready ? d.personId || '(none)' : 'loading'}</p> }
 beforeEach(async () => {
@@ -38,5 +38,25 @@ describe('useHealthData default person', () => {
     who.hang = true
     render(<Probe />)
     await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('ma'), { timeout: 6000 })
+  })
+})
+
+describe('useForgetPersonOutsideHealth', () => {
+  function Both({ tab }: { tab: string }) {
+    const d = useHealthData()
+    useForgetPersonOutsideHealth(tab)
+    return <><p data-testid="who">{d.ready ? d.personId : 'loading'}</p><button onClick={() => d.setPersonId('aa')}>pick</button></>
+  }
+  it('keeps the pick between Health screens and drops it when the tab leaves Health', async () => {
+    const { rerender } = render(<Both tab="health" />)
+    await waitFor(() => expect(who.gate).not.toBeNull())
+    act(() => who.gate!())
+    await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('me'))
+    act(() => screen.getByText('pick').click())
+    expect(screen.getByTestId('who').textContent).toBe('aa')
+    rerender(<Both tab="health" />)
+    expect(screen.getByTestId('who').textContent).toBe('aa')
+    rerender(<Both tab="today" />)
+    await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('me'))
   })
 })

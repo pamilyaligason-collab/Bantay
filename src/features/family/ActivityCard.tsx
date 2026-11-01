@@ -1,12 +1,15 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
+import { supabase } from '../auth/client'
+import { getMember } from '../auth/session'
 import type { Reading } from '../health/ranges'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 import { EmptyState, Section, Segmented } from '../look'
 import { hdb } from '../records/store'
 import { useViewedVisibleIds } from '../viewas/viewAs'
 import { faceName } from './FacesRow'
-import { useFamilyPeople } from './roster'
+import { loadCarerOf, type CarerClient } from './reportData'
+import { useFamilyPeople, type FamilyPerson } from './roster'
 import { seriesColor, WeekChart } from './WeekChart'
 import { bpSeries, doseSeries, legendWord, stepSeries, type Metric } from './weekSeries'
 import './v13-family.css'
@@ -23,11 +26,22 @@ const EMPTY_BODY: Record<Metric, string> = {
   meds: 'Doses show here once a medicine has times and is marked.'
 }
 
+/** Who the chart may name (Lloyd 2026-11-01): you and the people you care for, never everyone an admin role can read. While viewing as someone, the people they can see. */
+export function chartPeople(all: FamilyPerson[], visible: Set<string> | null | undefined, carerOf: string[]): FamilyPerson[] {
+  return all.filter((p) => (visible ? visible.has(p.id) : p.isMe || carerOf.includes(p.id)))
+}
+
 /** Activity (board): BP | Steps | Medicines for the people this phone can see, last 7 days, from the readings, steps and doses already on this phone. Nothing is invented: no data = an empty state. */
 export function ActivityCard() {
   const { people: all } = useFamilyPeople()
   const visible = useViewedVisibleIds()
-  const people = visible ? all.filter((p) => visible.has(p.id)) : all
+  const [carerOf, setCarerOf] = useState<string[]>([]) // only you until the links are read, so nobody else flashes up
+  useEffect(() => {
+    let live = true
+    void getMember().catch(() => null).then((m) => (m ? loadCarerOf(supabase as CarerClient | null, m.userId) : [])).then((ids) => { if (live) setCarerOf(ids) })
+    return () => { live = false }
+  }, [])
+  const people = chartPeople(all, visible, carerOf)
   const key = people.map((p) => p.id).join(',')
   const [d, setD] = useState<D | null>(null)
   const [metric, setMetric] = useState<Metric>('bp')

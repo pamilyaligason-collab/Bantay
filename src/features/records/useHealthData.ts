@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { getMember, type Member } from '../auth/session'
 import { labName } from '../../lib/labFormat'
 import { selfIdOrCached } from '../sync/profile'
@@ -55,7 +55,17 @@ export function useHealthData() {
   return { ...data, people, ready: ready && memberReady, member, ownId, personId, setPersonId, readings, consults, reload }
 }
 
-/** Test helper: forget the shared choice. */
+/** Forget the shared choice (sign-out, leaving Health, tests). */
 export const resetPersonChoice = () => setChosen('')
+
+/** The choice belongs to the Health tab: leaving it for another tab goes back to me, so a number logged from Today never lands under someone viewed in Health.
+ *  Moving between Health screens keeps it. */
+export function useForgetPersonOutsideHealth(tab: string) {
+  const was = useRef(tab)
+  useEffect(() => {
+    if (was.current === 'health' && tab !== 'health') resetPersonChoice()
+    was.current = tab
+  }, [tab])
+}
 
 export const testLabel = (key: string, guide: Record<string, { label: string }>) => guide[key]?.label ?? labName(key)
