@@ -24,6 +24,11 @@ for (const variant of ['calm', 'alertsOff', 'quake', 'storm'] as Variant[]) {
       expect(await page.locator('.wxs').count()).toBe(1) // the scene renders in both themes, no pale tint
       // a live red card hides Jack, so hold-for-help must sit on Today itself; a calm Today leaves SOS to the Jack sheet
       await expect(page.getByTestId('warning-sos').getByRole('button', { name: 'Hold to call and text your family' })).toHaveCount(variant === 'quake' || variant === 'storm' ? 1 : 0)
+      if (variant === 'quake' || variant === 'storm') { // on the first screen, above the tab bar, without scrolling
+        const hold = (await page.getByTestId('warning-sos').boundingBox())!
+        const bar = (await page.getByTestId('tabbar').boundingBox())!
+        expect(hold.y + hold.height).toBeLessThanOrEqual(bar.y)
+      }
       await page.setViewportSize({ width: 360, height: 800 })
       await assertNoWrappedButtons(page)
       await page.setViewportSize({ width: 390, height: 844 })

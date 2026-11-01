@@ -51,6 +51,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
 
   return (
     <>
+      {nofab && <NofabSos />} {/* above the cards: a storm card is taller than the screen, and Jack is hidden while it shows */}
       {hazard && !isAcked(acks, hazard) && (() => {
         const who = affectsUs(hazard, ref)
         const row = quakeRow(hazard, who, clock)
@@ -105,7 +106,6 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
           />
         </section>
       ))}
-      {nofab && <NofabSos />}
     </>
   )
 }
