@@ -43,6 +43,7 @@ describe('MemberHealth (view only)', () => {
     st.canMark = true
     rerender(<MemberHealth id="ma" />)
     expect(screen.queryByTestId('member-footer')).toBeNull()
+    expect(screen.getByTestId('member-bar').textContent).toContain('Viewing Ma · you can log for them') // the rows open screens where they can log
   })
   it('taken and skipped read as words', () => {
     today.doses = [{ key: 'a', name: 'Aspirin', slot: '08:00', state: 'taken' }, { key: 'b', name: 'Candesartan', slot: '08:00', state: 'skipped' }]

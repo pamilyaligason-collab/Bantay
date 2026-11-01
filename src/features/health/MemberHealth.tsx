@@ -8,7 +8,7 @@ import { toCheck } from './MedReview'
 import { useToday } from './Medicines'
 import { useHealthPerson } from './useHealthPerson'
 
-/** #health/member/<id>: someone else's health, strictly view only (no Take, Skip or Add anywhere). */
+/** #health/member/<id>: someone else's health. The page itself has no Take, Skip or Add; the rows open screens where a carer with logging shared can log, so the bar says view only only when they cannot. */
 export function MemberHealth({ id }: { id: string }) {
   const { ready, people, ownId, acting, personId, setPersonId, readings, thresholds, canMark, lockReason } = useHealthPerson()
   const actingId = useActingPersonId()
@@ -23,7 +23,7 @@ export function MemberHealth({ id }: { id: string }) {
   return (
     <>
       <LargeTitle kicker="Summary" title="Health" />
-      <div className="mh-bar" data-testid="member-bar"><span className="grow">Viewing {name} · view only</span>{back}</div>
+      <div className="mh-bar" data-testid="member-bar"><span className="grow">Viewing {name} · {canMark ? 'you can log for them' : 'view only'}</span>{back}</div>
       {here && <MemberBody personId={id} name={name} readings={readings} thresholds={thresholds} />}
       {here && !canMark && <p className="sub mh-foot" data-testid="member-footer">{lockReason ?? `${name} has not shared logging with you, so you can look but not add. Ask them in Family to share.`}</p>}
     </>

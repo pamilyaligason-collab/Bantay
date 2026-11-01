@@ -48,13 +48,13 @@ test('overview: no sideways scroll or small targets at 195 px (200% text zoom)',
   await assertNarrow(page)
 })
 
-test('Me switcher opens the member page, which is view only; Back to me returns', async ({ page }) => {
+test('Me switcher opens the member page, which has no Take, Skip or Add; Back to me returns', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await page.locator('.ps-pill').click()
   await expect(page.getByRole('dialog', { name: 'Whose health' })).toBeVisible()
   await page.getByRole('dialog', { name: 'Whose health' }).getByRole('button', { name: /Ma/ }).click()
   await expect(page).toHaveURL(/#health\/member\/ma$/)
-  await expect(page.getByTestId('member-bar')).toContainText('view only')
+  await expect(page.getByTestId('member-bar')).toContainText(/view only|you can log for them/) // the bar follows whether logging is shared
   await expect(page.getByRole('button', { name: /^(Take|Skip)\b/ })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /^(Take|Skip)\b/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Reading|Add/ })).toHaveCount(0)
