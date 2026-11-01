@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const kv: Record<string, unknown> = {}
 vi.mock('../shell/useKv', () => ({ useKv: (key: string, init: unknown) => [key in kv ? kv[key] : init, vi.fn(), true] }))
 vi.mock('../today/BreathSheet', () => ({ default: () => <div role="dialog">sheet</div> }))
+vi.mock('../shell/JackSheet', () => ({ JackSheet: ({ onClose, onSos }: { onClose: () => void; onSos: () => void }) => <div role="dialog" data-testid="jack-sheet"><button onClick={onClose}>x</button><button onClick={onSos}>sos</button></div> }))
+vi.mock('../sos/SosScreen', () => ({ default: () => <div data-testid="sos-screen" /> }))
+vi.mock('../auth/session', async (orig) => ({ ...(await orig<object>()), getMember: () => Promise.resolve(null) }))
 afterEach(() => { cleanup(); for (const k of Object.keys(kv)) delete kv[k] })
 
 import CalmScreen from './CalmScreen'
@@ -35,5 +38,24 @@ describe('hero', () => {
     expect(screen.getByText('Done once today')).toBeTruthy()
     cleanup(); kv['selfcare.log'] = []; render(<CalmScreen />)
     expect(screen.getByText('Not done yet today')).toBeTruthy()
+  })
+})
+
+describe('Ask Jack', () => {
+  it('opens the Jack sheet; closing it returns focus to the Ask Jack button', () => {
+    render(<CalmScreen />)
+    const ask = screen.getByRole('button', { name: 'Ask Jack' })
+    fireEvent.click(ask)
+    expect(screen.getByTestId('jack-sheet')).toBeTruthy()
+    fireEvent.click(screen.getByText('x'))
+    expect(screen.queryByTestId('jack-sheet')).toBeNull()
+    expect(document.activeElement).toBe(ask)
+  })
+  it('the sheet SOS opens the full SOS screen', () => {
+    render(<CalmScreen />)
+    fireEvent.click(screen.getByRole('button', { name: 'Ask Jack' }))
+    fireEvent.click(screen.getByText('sos'))
+    expect(screen.queryByTestId('jack-sheet')).toBeNull()
+    expect(screen.getByTestId('sos-full').querySelector('[data-testid="sos-screen"]')).not.toBeNull()
   })
 })

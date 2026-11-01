@@ -14,3 +14,4 @@
 .cm-tg[aria-checked="true"] i { background: var(--on-green); }
 .cm-done { margin: 0; font-weight: 600; font-size: 15px; }
 @media (prefers-reduced-motion: reduce) { .cm * { transition: none !important; } }
+.cm-ask { min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--green); font: inherit; font-size: 15px; font-weight: 600; }

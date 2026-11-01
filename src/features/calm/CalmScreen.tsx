@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReducedMotion } from '../look'
 import { BreathOrb } from '../look/BreathOrb'
 import { LargeTitle } from '../look/LargeTitle'
+import { loadFamily } from '../auth/family'
+import { getMember } from '../auth/session'
+import { JackSheet } from '../shell/JackSheet'
+import { firstName } from '../shell/TopBar'
 import { useKv } from '../shell/useKv'
+import SosScreen from '../sos/SosScreen'
 import BreathSheet from '../today/BreathSheet'
 import { cycleSecs, momentAt, SHOWN_PATTERNS, type SelfCareEntry } from '../today/breathLogic'
 import './calm.css'
@@ -39,12 +45,26 @@ function Hero() {
   )
 }
 
-/** #calm: the Calm page pushed under Today (v13 lane C). */
+/** #calm: the Calm page pushed under Today (v13 lane C). Its header Ask Jack is the only Jack entry here (the shell button is off on own-header routes). */
 export default function CalmScreen() {
+  const [jack, setJack] = useState(false)
+  const [sos, setSos] = useState(false)
+  const [name, setName] = useState('')
+  const ask = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    let live = true
+    void getMember().then((m) => {
+      const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''
+      if (live && n) setName(n)
+    })
+    return () => { live = false }
+  }, [])
   return (
     <div className="cm" data-testid="calm">
-      <LargeTitle back={{ href: '#today', label: 'Today' }} title="Calm" />
+      <LargeTitle back={{ href: '#today', label: 'Today' }} title="Calm" actions={<button ref={ask} type="button" className="cm-ask" aria-haspopup="dialog" onClick={() => setJack(true)}>Ask Jack</button>} />
       <Hero />
+      {jack && <JackSheet onClose={() => { setJack(false); ask.current?.focus() }} onSos={() => { setJack(false); setSos(true) }} firstName={firstName(name)} />}
+      {sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body)}
     </div>
   )
 }
