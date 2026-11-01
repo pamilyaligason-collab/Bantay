@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { JackFab } from './JackFab'
+import { openSos } from '../sos/openSos'
+
+vi.mock('../sos/SosScreen', () => ({ default: () => <div data-testid="sos-screen" /> }))
 
 vi.mock('./JackSheet', () => ({ JackSheet: ({ onClose }: { onClose: () => void }) => <div role="dialog" aria-label="Jack"><button onClick={onClose}>x</button></div> }))
 // fake-indexeddb schedules its work with setTimeout, so faking the clock would stall Dexie. The kv is a plain in-memory map here, always loaded.
@@ -118,5 +121,20 @@ describe('JackFab coach mark', () => {
     fireEvent.click(fab()!)
     expect(store.get('askHintSeen')).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('JackFab owns the SOS screen opened from a warning card', () => {
+  it('opens on the sos event and stays while the warning (data-nofab) comes and goes', async () => {
+    render(<JackFab tab="today" hash="#today" />)
+    const warn = document.createElement('section')
+    warn.setAttribute('data-nofab', '')
+    await act(async () => { document.body.appendChild(warn); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).toBeNull()) // Jack is hidden, yet the event still opens SOS
+    act(() => openSos())
+    expect(screen.getByTestId('sos-screen')).toBeTruthy()
+    await act(async () => { warn.remove(); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).not.toBeNull())
+    expect(screen.getByTestId('sos-screen')).toBeTruthy()
   })
 })

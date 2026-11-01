@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { JackArt } from '../look'
 import SosScreen from '../sos/SosScreen'
+import { OPEN_SOS_EVENT } from '../sos/openSos'
 import { loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
 import { isDiscoverSubRoot } from '../discover'
@@ -37,6 +38,11 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode has no Jack button, so its hint must not count as seen
   const [sos, setSos] = useState(false) // the full SOS screen, opened by a 3 s hold in the sheet
   const [name, setName] = useState('')
+  useEffect(() => { // the warning card's hold opens the SOS screen here, the one owner
+    const on = () => { setSheet(false); setSos(true) }
+    window.addEventListener(OPEN_SOS_EVENT, on)
+    return () => window.removeEventListener(OPEN_SOS_EVENT, on)
+  }, [])
   const [nofab, setNofab] = useState(false) // a storm or quake warning on screen marks itself data-nofab (D-91): nothing but the warning's own buttons
   useEffect(() => {
     const root = document.querySelector('.bt') ?? document.body
