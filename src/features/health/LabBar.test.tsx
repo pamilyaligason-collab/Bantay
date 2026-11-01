@@ -49,3 +49,15 @@ describe('LabBar zone labels', () => {
     expect(t).toContain('High')
   })
 })
+
+describe('LabBar with a converted unit (1.H14)', () => {
+  it('mmol/L glucose: no mg/dL numbers beside the 6.1 mmol/L value', () => {
+    const row = labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'fasting_glucose', value: 6.1, unit: 'mmol/L' })
+    const { container } = render(<LabBar row={row} />)
+    const t = container.querySelector('.lr-zones')?.textContent ?? ''
+    expect(t).toContain('Normal')
+    expect(t).not.toMatch(/\d/)
+    expect(container.querySelector('.lr-tick')).toBeNull()
+    expect(container.querySelector('.lr-you')).toBeTruthy() // the bar itself still draws
+  })
+})

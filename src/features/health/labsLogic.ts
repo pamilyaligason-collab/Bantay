@@ -63,10 +63,10 @@ export function labNum(value: number | null | undefined): string {
   return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
 }
 
-/** One plain sentence on where a value sits against the usual range. '' without a range (never a guess). */
-export function plainWords(value: number, range: Range | null): string {
+/** One plain sentence on where a value sits against the usual range. '' without a range (never a guess). `value` is judged against the range; `shown` is the number printed (the reading as the person sees it, which may be in another unit). */
+export function plainWords(value: number, range: Range | null, shown: string = labNum(value)): string {
   if (!range || !Number.isFinite(value)) return ''
-  const n = labNum(value)
+  const n = shown
   if (range.high != null && value > range.high) {
     const ratio = range.high > 0 ? value / range.high : Infinity
     return ratio < 1.5 ? `${n} is a little over the top of normal.` : `${n} is about ${Math.round(ratio)} times the top of normal.`

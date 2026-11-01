@@ -50,7 +50,7 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
             <VerdictChip row={row} />
           </span>
           <LabBar row={row} />
-          {row.pos !== 'none' && <p className="lr-say">{plainWords(row.rv?.value ?? latest.value, row.range)}</p>}
+          {row.pos !== 'none' && <p className="lr-say">{plainWords(row.rv?.value ?? latest.value, row.range, labNum(latest.value))}</p>}
           {(row.pos === 'above' || row.pos === 'below') && <a className="btn" href="#health/visits">Ask at next visit</a>}
           <span className="lr-foot">
             <span className="lr-rng" data-testid="lab-range">{src ? src.text : 'No range printed on the paper'}</span>

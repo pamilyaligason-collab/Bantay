@@ -152,6 +152,14 @@ describe('s14 L: rangeSource, previousResult, trendOfLastThree', () => {
   })
 })
 
+describe('labRow glucose in mmol/L (1.H14)', () => {
+  it('judges the converted value but keeps the shown reading', () => {
+    const row = labRow(r('fasting_glucose', 6.1, { unit: 'mmol/L' }))
+    expect(row.rv?.unit).toBe('mg/dL')
+    expect(plainWords(row.rv!.value, row.range, labNum(row.reading.value))).toBe('6.1 is a little over the top of normal.')
+  })
+})
+
 describe('plainWords', () => {
   it('says how far a value sits from the usual range, in a sentence', () => {
     expect(plainWords(115, { low: null, high: 55 })).toBe('115 is about 2 times the top of normal.')
@@ -159,6 +167,7 @@ describe('plainWords', () => {
     expect(plainWords(3.1, { low: 3.5, high: null })).toBe('3.1 is a little under the bottom of normal.')
     expect(plainWords(60, { low: null, high: 55 })).toBe('60 is a little over the top of normal.')
     expect(plainWords(5, null)).toBe('')
+    expect(plainWords(110, { low: 70, high: 100 }, '6.1')).toBe('6.1 is a little over the top of normal.') // judged on 110 mg/dL, printed as the shown 6.1 mmol/L
     expect(plainWords(5, { low: null, high: null })).toBe('')
   })
 })

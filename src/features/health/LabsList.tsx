@@ -22,19 +22,20 @@ export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null })
     else prev = b.edge === 'high' ? p0.you - 8 : p0.you + 8
   }
   const { low, high } = range
-  const normal = low != null && high != null ? `${labNum(low)}-${labNum(high)}` : high != null ? `up to ${labNum(high)}` : `${labNum(low)} or more`
+  const same = rv.unit === row.reading.unit // converted: the range numbers are in another unit than the shown value, so print none
+  const normal = !same ? '' : low != null && high != null ? `${labNum(low)}-${labNum(high)}` : high != null ? `up to ${labNum(high)}` : `${labNum(low)} or more`
   return (
     <>
     <span className="lr-track" aria-hidden="true">
       <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
       {prev != null && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${prev}%` }} />}
       <i className={`lr-you ${pos}`} style={{ left: `${you}%` }}><b>You</b></i>
-      {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
-      {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
+      {same && b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
+      {same && b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
     </span>
     <span className="lr-zones" aria-hidden="true">
       {low != null && <i style={{ width: `${b.band.from}%` }}>Low</i>}
-      <i className="n" style={{ width: `${b.band.to - b.band.from}%` }}>Normal {normal}</i>
+      <i className="n" style={{ width: `${b.band.to - b.band.from}%` }}>Normal{normal && ` ${normal}`}</i>
       {high != null && <i style={{ width: `${100 - b.band.to}%` }}>High</i>}
     </span>
     </>
@@ -54,7 +55,7 @@ function LabCard({ row, all, family, showPrev }: { row: LabRow; all: Reading[]; 
   const src = rangeSource(r, family)
   const prev = previousResult(all, r.test, family)
   const ask = pos === 'above' || pos === 'below'
-  const say = pos === 'none' ? '' : plainWords(row.rv?.value ?? r.value, row.range)
+  const say = pos === 'none' ? '' : plainWords(row.rv?.value ?? r.value, row.range, labNum(r.value))
   return (
     <div className="lr-wrap">
     <a className="grp lr-card press" href={`#health/metric/${r.test}`} data-test={r.test}>
