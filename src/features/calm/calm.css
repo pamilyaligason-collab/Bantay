@@ -1,0 +1,2 @@
+/* v13 lane C: Calm page. Tokens only. */
+.cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
