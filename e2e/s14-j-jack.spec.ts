@@ -45,8 +45,7 @@ const PLACES: { name: string; hash: string; ready: string; alt: string | null | 
   { name: 'reading', hash: '#discover/learn', ready: 'learn-home', alt: null, size: 56 }, // S16: a small decorative Jack in the Learn header row (L3)
   { name: 'cooking-recipes', hash: '#discover/learn/recipes', ready: 'recipe-card', alt: 'Jack Jack in an apron beside a pot of soup', size: 96 },
   { name: 'listening', hash: '#discover/listen', ready: 'listen', alt: 'Jack Jack sitting with one paw raised, listening', size: 96 },
-  // S16: the Watch screen is the poster row and draws no Jack; the 'watching' art is the Discover pick hero (96 px, right), which is checked here instead
-  { name: 'discover-pick', hash: '#discover', ready: 'pick', alt: 'named', size: 96 },
+  // v13: the Watch screen and the Discover overview draw no Jack art
   { name: 'playing', hash: '#discover/play', ready: 'play-hub', alt: 'Jack Jack playing with a ball', size: 96 },
   { name: 'walking', hash: '#health/move', ready: 'mv-page', alt: 'Jack Jack trotting in a harness on a leash', size: 96 },
 ]

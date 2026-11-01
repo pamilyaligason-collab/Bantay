@@ -1,51 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react'
-import { SceneHero, Row, useReducedMotion, type Hue, type JackName } from '../../look'
-import { Icon, type IconName } from '../../shell/Icon'
-import { pickOfDay, pickView, type PickKind } from './pick'
+import type { ReactNode } from 'react'
+import { Row, type Hue } from '../../look'
+import type { IconName } from '../../shell/Icon'
 import { seasonFor, type Season } from './season'
-import { dayKey } from '../play/score'
 import '../../weather/scene.css' // wxs-rain streaks, reused by the rainy-season row
 import '../discover.css'
-
-const JACK: Record<PickKind, JackName> = { recipe: 'cooking', video: 'watching', trivia: 'reading', fact: 'reading' }
-
-/** Today's pick: one item per local day, a Scene hero (amber) with Jack art by pick type. The whole card is the link; a video leaves the app (new tab, or the in-app browser on the phone).
- *  Jack drifts up to 8 px as the page scrolls (R19); still under reduced motion. */
-export function PickCard({ now = new Date() }: { now?: Date }) {
-  const p = pickOfDay(dayKey(now))
-  const v = pickView(p)
-  const box = useRef<HTMLDivElement>(null)
-  const reduced = useReducedMotion()
-  useEffect(() => {
-    const jack = box.current?.querySelector<HTMLElement>('.sc-jack')
-    const sc = box.current?.closest<HTMLElement>('.scroll')
-    if (!jack || !sc || reduced) return
-    let raf = 0
-    const on = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { jack.style.transform = `translateY(${Math.min(8, sc.scrollTop * 0.08).toFixed(1)}px)` }) }
-    sc.addEventListener('scroll', on, { passive: true })
-    return () => { sc.removeEventListener('scroll', on); cancelAnimationFrame(raf); jack.style.transform = '' }
-  }, [reduced])
-  const link = (
-    <a className="hc-link" href={v.href} {...(v.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-      {v.title}
-      {v.external && <span className="dc-sr"> (opens YouTube)</span>}
-    </a>
-  )
-  return (
-    <div ref={box} className="dc-hero">
-      <SceneHero
-        testId="pick"
-        compact
-        scene={<div className="dc-pickscene" />}
-        kicker={`Today's pick · ${v.eyebrow}`}
-        title={link}
-        body={<span className="dc-pick-sub">{v.sub}<Icon name={v.external ? 'out' : 'chev'} size={16} /></span>}
-        jack={JACK[p.kind]}
-        jackSize={96}
-      />
-    </div>
-  )
-}
 
 const SEASON_LOOK: Record<string, { hue: Hue; icon: IconName }> = {
   undas: { hue: 'terra', icon: 'flame' },

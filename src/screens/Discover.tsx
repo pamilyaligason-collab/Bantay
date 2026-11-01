@@ -12,7 +12,7 @@ import '../features/discover/discover.css'
 
 const safeDecode = (x: string) => { try { return decodeURIComponent(x) } catch { return x } }
 
-/** Discover tab. `#discover` is the overview (pick hero, season row, five tiles); `#discover/<sub>` is that sub's screen under a pill row (Learn, Watch, Listen, Play, News).
+/** Discover tab. `#discover` is the overview (video hero and two more videos, season row, Learn, Listen, Play, the fact of the day, News); `#discover/<sub>` is that sub's screen under a pill row (Learn, Watch, Listen, Play, News).
  *  A sub that no lane has registered yet shows a short "Coming in this update" card. The hash is the source of truth, so Back and deep links work. */
 export default function Discover() {
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
