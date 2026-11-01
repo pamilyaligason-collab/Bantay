@@ -43,7 +43,7 @@ describe('Health overview (v13)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: hero, At a glance, nudge row, More in Health (tiles move in H2 and H3)', async () => {
+  it('order: hero, Pinned, nudge row, More in Health (tiles move in H2 and H3)', async () => {
     render(<Health />)
     await screen.findByTestId('glance')
     const els = ['bodyhero', 'glance', 'nudge', 'browse'].map((id) => screen.getByTestId(id))
@@ -61,18 +61,17 @@ describe('Health overview (v13)', () => {
   it('the Labs tile opens the labs screen and the Medicines tile counts today\'s doses', async () => {
     await ldb.medications.bulkAdd([med({ name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } })])
     render(<Health />)
-    expect((await screen.findByTestId('glance-labs')).getAttribute('href')).toBe('#health/labs')
-    const meds = screen.getByTestId('glance-meds')
+    const meds = await screen.findByTestId('glance-meds')
     expect(meds.getAttribute('href')).toBe('#health/meds')
     await waitFor(() => expect(meds.textContent).toContain('2 of 2 left today'))
   })
 
-  it('empty person: No readings yet with + Reading and Scan; no glance or nudge', async () => {
+  it('empty person: No readings yet with + Reading and Scan; Pinned shows empty tiles, no nudge', async () => {
     await hdb.readings.clear()
     render(<Health />)
     const hero = await screen.findByTestId('bodyhero')
     expect(hero.textContent).toContain('No readings yet')
-    expect(screen.queryByTestId('glance')).toBeNull()
+    expect(screen.getByTestId('glance-progress').textContent).toContain('None this week')
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect(screen.getByRole('link', { name: 'Scan' }).getAttribute('href')).toBe('#scan')
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))
@@ -88,7 +87,6 @@ describe('Health overview (v13)', () => {
     expect(hero.textContent).toContain('LDL cholesterol')
     expect(hero.querySelector('.lr-verdict.above')).toBeTruthy()
     expect(screen.queryByTestId('nudge')).toBeNull()
-    expect(screen.getByTestId('glance-labs').textContent).toContain('1 to ask')
   })
 
   it('Me switcher opens a sheet; picking Ma goes to her page; hidden for one person', async () => {

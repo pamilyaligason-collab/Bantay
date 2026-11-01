@@ -22,7 +22,8 @@ import { AttentionHero } from '../features/health/AttentionHero'
 import { pickAttention } from '../features/health/attention'
 import { PersonSwitcher } from '../features/health/PersonSwitcher'
 import { useActingPersonId } from '../features/viewas/viewAs'
-import { GlanceGrid, NudgeRow } from '../features/health/GlanceGrid'
+import { NudgeRow } from '../features/health/GlanceGrid'
+import { PinnedTiles } from '../features/health/PinnedTiles'
 import { HealthBrowse } from '../features/health/HealthBrowse'
 import { useHealthPerson } from '../features/health/useHealthPerson'
 import { LargeTitle, Row, Section, Skeleton } from '../features/look'
@@ -93,7 +94,7 @@ function Overview() {
           <AttentionHero attention={attention} family={attention ? familyOf(attention.reading) : undefined} canLog={canLog} canEdit={canEdit} lockReason={lockReason} onAdd={() => setAdding('bp')} />
         </Section>
       )}
-      {ready && personId && readings.length > 0 && <GlanceGrid personId={personId} readings={readings} thresholds={thresholds} />}
+      {ready && personId && <PinnedTiles personId={personId} readings={readings} />}
       {ready && personId && !blank && <NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
       {ready && personId && <HealthBrowse personId={personId} />}
       {adding && personId && (() => {
