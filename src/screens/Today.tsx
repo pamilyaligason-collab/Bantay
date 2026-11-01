@@ -70,7 +70,7 @@ export default function Today() {
       </>} />
       <AlarmFixedToast />
       <IncomingSos placement="today" />
-      <WeatherCard expanded review={0} noJack storm={!!warn.storm} />
+      <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
       <AlertsOffCard />
       <WarningCard notify={notify} />
       <AlertCardToday />

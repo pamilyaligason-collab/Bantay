@@ -493,3 +493,19 @@
 .td-me { background: var(--green); color: var(--on-green); font-weight: 700; font-size: 17px; text-decoration: none; overflow: hidden; }
 .td-me img { width: 100%; height: 100%; object-fit: cover; }
 .td-root > .sec { margin-top: 6px; }
+
+/* v13: hero slot before the forecast is known */
+.td-wxs-empty { display: flex; flex-direction: column; gap: 4px; padding: 18px; min-height: 96px; justify-content: center; border-radius: var(--r-hero); background: var(--card2); color: var(--ink); text-decoration: none; }
+.td-wxs-empty b { font-size: 17px; font-weight: 600; }
+.td-wxs-empty span { font-size: 15px; color: var(--muted); }
+
+/* v13 narrow (195 px): nothing may push the page wider */
+.td-root, .td-root > * { min-width: 0; }
+.td-root .lt-row { min-width: 0; gap: 8px; }
+.td-root .lt-kicker { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-root .lt-actions { flex: none; }
+.td-todo .td-grow { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.td-todo-go { flex: none; }
+.td-calm { flex-wrap: wrap; }
+.td-calm .td-grow { flex: 1 1 8em; }
+.td-wxs-empty { overflow-wrap: anywhere; }
