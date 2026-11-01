@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { AcceptCard } from '../features/sharing/AcceptCard'
 import { ActivityCard } from '../features/family/ActivityCard'
 import FamilyFeed from '../features/family/FamilyFeed'
+import Calendar from '../features/family/Calendar'
 import FamilyMessages from '../features/family/FamilyMessages'
 import { familyFeedOn } from '../features/family/flags'
 import { IncomingSos } from '../features/family/IncomingSos'
@@ -79,6 +80,6 @@ export default function Family() {
   if (seg === 'feed') return familyFeedOn() ? <FamilyFeed /> : null
   if (seg === 'memories') return (<><LargeTitle back={{ href: '#family', label: 'Family' }} title="Memories" /><Memories /></>)
   if (seg === 'messages') return (<><SubHeader title="Messages" backHref="#family" backLabel="Back to Family" /><FamilyMessages /></>)
-  if (seg === 'plan') return (<><SubHeader title="Plan" backHref="#family" backLabel="Back to Family" /><Plan /></>)
+  if (seg === 'plan') return (<><SubHeader title="Plan" backHref="#family" backLabel="Back to Family" /><Calendar /><Plan /></>)
   return <Root />
 }

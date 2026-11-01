@@ -61,7 +61,7 @@ export function personFocus(p: Pick<FamilyPerson, 'id' | 'name' | 'isMe' | 'phon
     return { kind: 'due', tint: 'amber', line: `${plural(d.due.length, 'medicine')} at ${first.time}`, body: `Due now. ${d.later > 0 ? `${plural(d.later, 'more dose')} later today.` : ''}`.trim(), action: open }
   }
   const c = checkInLabel(d.checkIn, d.now)
-  if (!c.ok) return { kind: 'nocheck', tint: 'none', line: 'No check-in today', body: lastCheckInWords(d.checkIn, d.now), action: p.isMe ? open : dial(p.phone) ? { label: 'Message', kind: 'message' } : open }
+  if (!c.ok) return { kind: 'nocheck', tint: 'none', line: 'No check-in today', body: lastCheckInWords(d.checkIn, d.now), action: p.isMe ? open : { label: 'Message', kind: 'message' } }
   return { kind: 'ok', tint: 'none', line: c.text, body: 'Nothing waiting.', action: open }
 }
 

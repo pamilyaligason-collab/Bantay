@@ -1,4 +1,3 @@
-import Calendar from './Calendar'
 import { useMemo, useState } from 'react'
 import { dayKey, isMine, timeLabel } from './events'
 import { NoteSheet, ItemSheet } from './PlanSheets'
@@ -53,7 +52,6 @@ export default function Plan() {
 
   return (
     <>
-      <Calendar />
       <div className="fm-days" role="group" aria-label="Day of this week">
         {strip.map((d) => (
           <button type="button" key={d.day} aria-pressed={view === d.day} onClick={() => setView(d.day)}>
