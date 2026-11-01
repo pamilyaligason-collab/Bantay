@@ -127,7 +127,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, scheme, false)
     await seed(page, 'bantay-log', 'medications', [med('los2', 'ma', 'Vitamin D', '1000 IU', ['10:00'])]) // a second missed slot: a mark-all bug would write two
     await page.reload()
-    const mama = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed a medicine/ })
+    const mama = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed 2 medicines/ })
     await mama.getByRole('button', { name: 'Mark taken for Mama' }).click()
     await mama.getByRole('button', { name: 'Yes, I saw' }).click()
     await expect(page.getByText('Marked as taken for Mama.')).toBeVisible()
