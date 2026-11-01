@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId('bodyhero')).toBeVisible() // the health database exists once the screen has read it
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
+  await expect(page.getByTestId('browse-visits')).toBeVisible() // the log and visits databases exist once a person is on screen
   await seed(page, 2)
   await page.goto('/#health/readings') // S16: the KPIs, the seven numbers and Latest | Average | Normal live on Readings
   await page.reload()
@@ -128,15 +128,15 @@ test('a lab result opens as a dated list: no period, time-of-day or monthly aver
   await expect(page.getByRole('group', { name: 'Time of day' })).toBeVisible()
 })
 
-test('More in Health links to Readings, Body wiki, Move and Visits; the Labs tile opens its own screen', async ({ page }) => {
+test('Browse links to Readings, Labs, Move and Visits', async ({ page }) => {
   await page.goto('/#health')
-  await expect(page.getByTestId('browse-readings')).toHaveAttribute('href', '#health/readings')
-  await expect(page.getByTestId('browse-move')).toHaveAttribute('href', '#health/move')
-  await expect(page.getByTestId('browse-visits')).toHaveAttribute('href', '#health/visits')
-  await expect(page.getByTestId('glance-labs')).toHaveAttribute('href', '#health/labs')
+  await expect(page.getByTestId('browse-readings').getByRole('link')).toHaveAttribute('href', '#health/readings')
+  await expect(page.getByTestId('browse-move').getByRole('link')).toHaveAttribute('href', '#health/move')
+  await expect(page.getByTestId('browse-visits').getByRole('link')).toHaveAttribute('href', '#health/visits')
+  await expect(page.getByTestId('browse-labs').getByRole('link')).toHaveAttribute('href', '#health/labs')
   await expect(page.getByRole('link', { name: /^(Library|Videos|Papers)/ })).toHaveCount(0)
   await page.goto('/#health/meds')
-  await expect(page.getByTestId('refills-door').getByRole('link')).toContainText('Refills')
+  await expect(page.getByTestId('refills-door').getByRole('link')).toContainText('Refill')
 })
 
 test('refill rows still read their stock line', async ({ page }) => {

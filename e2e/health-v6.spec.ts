@@ -45,7 +45,6 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
   test.setTimeout(120_000) // two colour schemes, each with screenshots and two axe runs
   await page.goto('/#health')
   await expect(page.locator('h1')).toHaveText('Health')
-  await expect(page.getByTestId('insight')).toHaveCount(0) // one empty hero, no headline above it
   await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
@@ -53,14 +52,14 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
   }
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByTestId('insight')).toContainText('this week')
+  await expect(page.getByTestId('glance-progress')).toContainText('This week')
   await seed(page, 2)
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#health')
     await page.reload()
-    await expect(page.getByTestId('insight')).toContainText('this week')
-    await expect(page.getByRole('link', { name: /^BP 130\/84/ })).toBeVisible()
+    await expect(page.getByTestId('glance-progress')).toContainText('This week')
+    await expect(page.getByTestId('glance-progress')).toContainText('124/79')
     await expect(page.getByTestId('glance-meds')).toContainText('3 of 3 left today')
     await page.goto('/#health/readings')
     await expect(page.getByTestId('node-steps')).toContainText('2,100')
@@ -80,11 +79,11 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
     await expect(page.getByTestId('meds-today')).toContainText('Metformin 500 mg')
     await page.screenshot({ path: `${SHOTS}/medicines-screen-${scheme}.png` })
     await page.getByRole('link', { name: 'Back to Health' }).click()
-    await expect(page.getByTestId('insight')).toBeVisible()
+    await expect(page.getByTestId('bodyhero')).toBeVisible()
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, 0))
     expect((await new AxeBuilder({ page }).include('main').analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
 
-    await page.getByRole('link', { name: /^BP 130\/84/ }).click()
+    await page.getByTestId('glance-progress').click()
     await expect(page).toHaveURL(/#health\/metric\/bp_systolic$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Blood pressure, top number' })).toBeVisible()
     await page.getByRole('button', { name: 'This month' }).click()
@@ -97,7 +96,7 @@ test('overview: body map, Previous switch, medicines; metric detail; axe light a
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, 0))
     expect((await new AxeBuilder({ page }).include('main').analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
     await page.getByRole('link', { name: 'Back to Health' }).click()
-    await expect(page.getByTestId('insight')).toBeVisible()
+    await expect(page.getByTestId('bodyhero')).toBeVisible()
   }
 })
 
@@ -106,7 +105,7 @@ test('medicines list shows and is read-only when nobody is signed in', async ({ 
   await expect(page.locator('h1')).toBeVisible()
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByTestId('insight')).toContainText('this week')
+  await expect(page.getByTestId('glance-progress')).toContainText('This week')
   await seed(page, 2)
   await page.reload()
   // Signed out in the no-auth e2e build: nobody is "me", so the dose is read-only here and says so.
@@ -121,7 +120,7 @@ test('Health shows the body hero for the chosen person, and the old Papers link 
   await expect(page.locator('h1')).toHaveText('Health')
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByTestId('bodyhero')).toContainText('7-day averages')
+  await expect(page.getByTestId('bodyhero')).toBeVisible()
   await page.goto('/#health/papers')
   await expect(page).toHaveURL(/#family\/papers$/)
   await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Family' })).toHaveAttribute('aria-current', 'page')
