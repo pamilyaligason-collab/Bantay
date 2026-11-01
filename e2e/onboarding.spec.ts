@@ -61,10 +61,10 @@ test.describe('onboarding screens 3 to 5 after joining', () => {
     await expect(page.locator('h1')).toHaveText("Let's test it.")
     await expect(page.getByText(/Family admins can see them. Change this in Settings > Family and sharing./)).toBeVisible()
     await page.getByRole('button', { name: 'Skip' }).click()
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     expect(await kv(page, 'onboarded')).toBe(true)
     await page.reload()
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   })
 
   test('a zone chip saves the zone', async ({ page }) => {
@@ -208,7 +208,7 @@ test.describe('iPhone in Safari', () => {
 test('skipOnboarding helper goes straight to the app at /', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('Today')
+  await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
 })
 
 test('a deep link skips onboarding', async ({ page }) => {

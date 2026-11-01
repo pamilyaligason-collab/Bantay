@@ -15,7 +15,7 @@ test('setup tells members what the admin can see', async ({ page }) => {
 test('app still opens normally without an admin session', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('Today')
+  await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   // no admin entry point is shown to a normal member
   await expect(page.getByRole('button', { name: 'Admin' })).toHaveCount(0)
 })
@@ -24,7 +24,7 @@ test('app still opens normally without an admin session', async ({ page }) => {
 test('#admin is not reachable without an admin session', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#admin')
-  await expect(page.locator('h1')).toHaveText('Today')
+  await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   await expect(page.getByRole('heading', { name: 'Safety broadcast' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Admin' })).toHaveCount(0)
 })

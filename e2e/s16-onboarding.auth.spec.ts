@@ -72,6 +72,6 @@ test.describe('reminders allowed', () => {
     await expect(page.getByText(/Change this in Settings > Family and sharing\./)).toBeVisible()
     await expect(page.locator('img.jack')).toHaveCount(0) // success is the check alone (D-103)
     await page.getByRole('button', { name: 'Open Today' }).click()
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   })
 })

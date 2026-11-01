@@ -80,7 +80,7 @@ test('signed out shows sign-in; wrong PIN gives the generic error; right PIN lan
 
   await pin.fill('480193')
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-  await expect(page.locator('h1')).toHaveText('Today')
+  await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   expect(seen.pins).toEqual(['000001', '480193'])
   expect(seen.rpc).toBe(1)
 })
@@ -137,7 +137,7 @@ test.describe('quick login (D-24)', () => {
     await keys(page, '000001')
     await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left.')
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     expect(seen.pins).toEqual(['000001', '480193'])
   })
 
@@ -171,7 +171,7 @@ test.describe('quick login (D-24)', () => {
     await keys(page, '000001')
     await expect(page.getByRole('alert')).toHaveText('That PIN did not work. 4 tries left.')
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     expect(seen.pins).toEqual(['000001', '480193'])
   })
 
@@ -186,7 +186,7 @@ test.describe('quick login (D-24)', () => {
     await page.getByLabel('Name').fill('lola')
     await page.getByLabel('PIN').fill('480193')
     await page.getByRole('button', { name: 'Sign in', exact: true }).click()
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   })
 
   test('Forgot PIN? from the PIN pad: family approval asks for a new PIN twice', async ({ page }) => {
@@ -247,7 +247,7 @@ test.describe('quick login (D-24)', () => {
     await page.waitForTimeout(500)
     expect(passkeyCalls).toBe(after) // no automatic second prompt
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
   })
 
   test('fingerprint prompt: Use PIN instead is one tap away', async ({ page }) => {
@@ -269,10 +269,10 @@ test.describe('quick login (D-24)', () => {
     await page.getByRole('button', { name: 'Use PIN instead' }).click()
     await expect(page.getByRole('button', { name: '5', exact: true })).toBeVisible()
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     expect(await page.evaluate(() => (window as unknown as { __abortedPrompt: boolean }).__abortedPrompt)).toBe(true) // the prompt was aborted, not left open
     await page.waitForTimeout(500)
-    await expect(page.locator('h1')).toHaveText('Today') // and the PIN session survived
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting // and the PIN session survived
   })
 
   test('passkey hidden when the browser cannot do it', async ({ page }) => {
@@ -292,7 +292,7 @@ test.describe('quick login (D-24)', () => {
     await page.goto('/')
     await who(page, 'Lola Rosa')
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     await page.goto('/#me/about') // S16: "Signed in as" lives in Settings > About, Switch person and Forget this phone in Settings > Sign-in
     await expect(page.getByText('Signed in as Lola Rosa')).toBeVisible()
     await page.goto('/#me/signin')
@@ -315,7 +315,7 @@ test.describe('quick login (D-24)', () => {
     await page.goto('/')
     await who(page, 'Lola Rosa')
     await keys(page, '480193')
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     await expect.poll(() => page.evaluate(() => localStorage.getItem('bantay.lastPerson'))).toBe('p-lola')
     await page.goto('/#me/signin')
     await page.getByRole('button', { name: 'Not you? Switch person' }).click()
