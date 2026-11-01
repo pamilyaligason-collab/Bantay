@@ -95,7 +95,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const onClose = useCallback(() => setSheet(false), [])
   const onSos = useCallback(() => { setSheet(false); setSos(true) }, [])
 
-  const sosScreen = sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body) // outlives the button: a warning or Simple mode hiding Jack must not end a running SOS
+  const sosScreen = sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body, 'sos') // outlives the button: a warning or Simple mode hiding Jack must not end a running SOS. The key keeps it one instance across the two returns below; a remount would start a new SOS
   if (!visible) return sosScreen || null
   return (
     <>
