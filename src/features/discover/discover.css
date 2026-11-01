@@ -88,3 +88,4 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* v13 overview: a 16:9 still picture inside a PreviewTile. */
 .dc-thumb { display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--tint-fill, var(--card2)); margin-top: 8px; }
 .dc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dc-pick { display: contents; }

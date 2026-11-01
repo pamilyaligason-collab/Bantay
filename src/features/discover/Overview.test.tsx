@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { playable, VIDEOS } from '../health/library/videosLogic'
 import { featured } from './today/featured'
@@ -51,5 +51,13 @@ describe('Overview head, hero, video cards, season', () => {
     expect(v.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.queryByTestId('discover-tiles')).toBeNull()
     expect(screen.queryByTestId('pick')).toBeNull()
+  })
+  it('tapping the hero or a small card stores that video for Watch', () => {
+    const { container } = render(<Overview now={now} />)
+    fireEvent.click(screen.getByTestId('dc-hero').querySelector('a')!)
+    expect(sessionStorage.getItem('dc.watch')).toBe(hero!.id)
+    fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.pt')[1]!)
+    expect(sessionStorage.getItem('dc.watch')).toBe(more[1]!.id)
+    expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(3)
   })
 })

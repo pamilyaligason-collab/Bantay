@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { EmptyState, LargeTitle, PreviewTile } from '../look'
 import { SeasonRow } from './today/Cards'
 import { featured } from './today/featured'
+import { WATCH_PICK } from './watch/Screen'
 import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
 import './discover.css'
 
@@ -16,6 +17,11 @@ function Thumb({ id }: { id: string }) {
   )
 }
 
+/** The anchor keeps its href (keyboard, middle-click); the click bubbles here and hands the video to Watch. */
+const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
+  <span className="dc-pick" onClick={() => { try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
+)
+
 /** #discover (v13): large title, the video of the day, two more videos, then the season row. */
 export default function Overview({ now = new Date() }: { now?: Date }) {
   const vids = VIDEOS.filter(playable)
@@ -25,12 +31,12 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
       <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" />
       <div data-hero data-testid="dc-hero">
         {hero
-          ? <PreviewTile kicker={`Watch · ${vids.length} checked videos`} tint="blue" value={hero.title} valueSize="md" sub="Plays in privacy mode after you tap" action="Watch" href="#discover/watch" media={<Thumb id={hero.id} />} />
+          ? <Pick id={hero.id}><PreviewTile kicker={`Watch · ${vids.length} checked videos`} tint="blue" value={hero.title} valueSize="md" sub="Plays in privacy mode after you tap" action="Watch" href="#discover/watch" media={<Thumb id={hero.id} />} /></Pick>
           : <EmptyState icon="play" title="No checked videos yet" />}
       </div>
       {more.length > 0 && (
         <div className="pt-grid" data-testid="dc-videos">
-          {more.map((v, i) => <PreviewTile key={v.id} kicker={v.topic} tint={i ? 'purple' : 'teal'} value={v.title} valueSize="md" action="Watch" href="#discover/watch" media={<Thumb id={v.id} />} />)}
+          {more.map((v, i) => <Pick key={v.id} id={v.id}><PreviewTile kicker={v.topic} tint={i ? 'purple' : 'teal'} value={v.title} valueSize="md" action="Watch" href="#discover/watch" media={<Thumb id={v.id} />} /></Pick>)}
         </div>
       )}
       <SeasonRow now={now} />
