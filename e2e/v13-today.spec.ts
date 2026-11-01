@@ -49,6 +49,7 @@ test('Your numbers: empty tiles are honest, and the radio row is off by default'
   await expect(nums.getByText('--/--')).toBeVisible()
   await expect(nums.getByText('Log now').first()).toBeVisible()
   await expect(page.getByText('Relaxing radio')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Open Calm' })).toHaveAttribute('href', '#calm') // the only way into the Calm page
 })
 
 test('Calm card opens the breath sheet', async ({ page }) => {
