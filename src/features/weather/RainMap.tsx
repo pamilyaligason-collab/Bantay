@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { LatLon } from '../location/geo'
 import type { Alert } from '../safety/alerts'
+import { Segmented } from '../look/Segmented'
 import { Icon } from '../shell/Icon'
 import { savedLine, type Forecast } from './forecast'
 import { PAGASA_RADAR_HREF, rainBars, rainMode } from './rainBars'
@@ -19,9 +20,7 @@ export default function RainMap({ fc, point, placeName, alerts }: { fc: Forecast
   return (
     <section aria-label="Rain and storm map" className="card wx-rain">
       <div className="wx-sech"><h2 className="wx-h">Rain map</h2><span className="wx-sub"><Icon name="dl" size={16} /> {savedLine(fc)}</span></div>
-      <div className="wx-seg" role="group" aria-label="Map layer">
-        {LAYERS.map(([id, label]) => <button key={id} type="button" aria-pressed={layer === id} onClick={() => setLayer(id)}>{label}</button>)}
-      </div>
+      <Segmented<Layer> label="Map layer" value={layer} onChange={setLayer} options={LAYERS.map(([id, label]) => ({ id, label }))} />
       {layer === 'rain' && (rainMode() === 'bars' ? (
         <>
           {bars.length === 0 ? <p className="wx-note">No hourly rain data is saved yet.</p> : (

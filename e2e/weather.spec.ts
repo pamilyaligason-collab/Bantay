@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { skipOnboarding } from './helpers'
+import { seed } from './fixtures/s16/today'
 
 // Made-up forecast, no network: every Open-Meteo call is answered here. 33 C at 70% humidity is a heat index of about 43 C (PAGASA Danger).
 async function mockForecast(page: Page, seen: string[] = []) {
@@ -12,7 +13,7 @@ async function mockForecast(page: Page, seen: string[] = []) {
 
 test.use({ viewport: { width: 390, height: 844 } })
 
-test('weather: action line first, place toggle, forecast sections', async ({ page }) => {
+test('weather: hero first, place toggle, forecast sections', async ({ page }) => {
   const seen: string[] = []
   await skipOnboarding(page)
   await mockForecast(page, seen)
@@ -21,16 +22,15 @@ test('weather: action line first, place toggle, forecast sections', async ({ pag
   const action = page.getByRole('region', { name: 'What to do' })
   await expect(action).toContainText('Stay indoors 11 AM-3 PM')
   await expect(action).toContainText(/Heat index 4\d° · Danger/)
-  // the action line is above the hero card
+  // v13: the hero card is above the action line
   const a = await action.boundingBox()
   const h = await page.getByRole('region', { name: 'Now' }).boundingBox()
-  expect(a!.y).toBeLessThan(h!.y)
+  expect(h!.y).toBeLessThan(a!.y)
   await expect(page.locator('.wx-temp')).toHaveText('33°')
   await expect(page.getByRole('region', { name: 'Details' })).toContainText('UV today')
   await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(5)
   await page.getByRole('button', { name: 'Show all 10 days' }).click()
   await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(10)
-  await page.getByText('Official sources').click() // the three links sit behind one tap (D-102 budget)
   await expect(page.getByRole('link', { name: /^PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
   await expect(page.getByText('Your rounded location is sent only to the weather service.')).toBeVisible()
   expect(seen[0]).toContain('timezone=auto')
@@ -41,7 +41,8 @@ test('weather: action line first, place toggle, forecast sections', async ({ pag
   await expect(page.getByRole('button', { name: 'Home 1' })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'Home 2' }).click()
   await expect(page.getByRole('button', { name: 'Home 2' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText(/^Conel · updated/)).toBeVisible()
+  await expect(page.locator('.wx-k')).toContainText('Conel')
+  await expect(page.getByText(/Updated \d/)).toBeVisible()
   expect(seen.some((u) => u.includes('latitude=6.2&'))).toBe(true)
 })
 
@@ -49,6 +50,9 @@ test('weather: the live map stays closed behind "Open live map"', async ({ page 
   await skipOnboarding(page)
   await mockForecast(page)
   await page.goto('/#weather')
+  await expect(page.locator('.wx-temp')).toBeVisible()
+  await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } }])
+  await page.reload()
   await expect(page.locator('.wx-temp')).toBeVisible()
   await expect(page.locator('iframe')).toHaveCount(0)
   await page.getByRole('button', { name: 'Open live map' }).click()
@@ -94,11 +98,13 @@ test('weather offline: the cached forecast shows "as of"', async ({ page, contex
   await expect(page.getByText(/as of \d{1,2}:\d\d [AP]M/)).toBeVisible()
 })
 
-test('weather: the live map and Zoom Earth follow my place (Home 2 = Conel), not 12N 128E', async ({ page }) => {
+test('weather: the live map and Zoom Earth follow my last fix (Conel here), not 12N 128E', async ({ page }) => {
   await skipOnboarding(page)
   await mockForecast(page)
   await page.goto('/#weather')
-  await page.getByRole('button', { name: 'Home 2' }).click()
+  await expect(page.locator('.wx-temp')).toBeVisible()
+  await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { lat: 6.2, lon: 125.19, at: Date.now() } }])
+  await page.reload()
   await page.getByRole('button', { name: 'Open live map' }).click()
   await expect(page.getByRole('link', { name: /Zoom Earth/ })).toHaveAttribute('href', /#view=6\.20,125\.19,5z/)
 })
