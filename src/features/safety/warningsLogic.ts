@@ -3,7 +3,7 @@ import { affectsUs, distanceKm, freshness, freshText, newestChecked, quakeFeltKm
 const TSUNAMI_MAG = 6.5 // same cut-off as affectsUs
 const TSUNAMI_TAIL = ' If you live near the sea, watch for a tsunami warning.'
 
-/** The calibrated line under the hero. Never reassures: the felt radius is a rough strong-shaking figure, so beyond it we say "may not have felt it", not "nothing to do". */
+/** The calibrated line under the hero. Inside the felt radius: "You may have felt this". Beyond it: affectsUs's own line, as on Today. Never reassures: the radius is a rough strong-shaking figure. */
 export function feltLine(a: Alert, here: LatLon | null, placeName: string): string {
   const f = affectsUs(a, here)
   if (a.kind !== 'quake' || f.km === null || a.lat == null || a.lon == null) return f.line
@@ -12,8 +12,7 @@ export function feltLine(a: Alert, here: LatLon | null, placeName: string): stri
   const radius = quakeFeltKm(a)
   const away = here ? Math.round(distanceKm(here, { lat: a.lat, lon: a.lon })) : f.km
   if (away <= radius) return `You may have felt this in ${placeName}. If you did, follow the steps below.${tail}`
-  if (f.line.startsWith('Near home')) return f.line // a home zone is the near one: affectsUs words it
-  return `About ${away} km away. You may not have felt it. If you felt shaking, follow the steps below.${tail}`
+  return f.line // beyond the radius: the same D-88 wording Today uses (affectsUs), including a home zone that is the near one
 }
 
 /** "11 h ago" from an ISO time. */
