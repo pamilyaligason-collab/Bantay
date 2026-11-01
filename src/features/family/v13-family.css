@@ -15,3 +15,16 @@
 .pc-primary { flex: 1; background: var(--green); color: var(--on-green); }
 .pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
+.ac { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+.ac-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ac-h b { font-size: 15px; font-weight: 600; }
+.wk { display: block; }
+.wk-band { fill: var(--tint-green); stroke: none; }
+.wk-grid { stroke: var(--line); stroke-width: 1; }
+.wk-t { font-size: 11px; fill: var(--muted); stroke: none; }
+.wk-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.wk-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink); }
+.wk-leg li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.wk-leg i { width: 14px; height: 0; border-top: 3px solid; flex: none; }
+.wk-leg li[data-empty="true"] { color: var(--muted); }
+.wk-leg li[data-empty="true"] i { border-top-style: dotted; }
