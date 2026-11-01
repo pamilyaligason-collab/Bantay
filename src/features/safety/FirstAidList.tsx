@@ -1,4 +1,5 @@
 import { Icon } from '../shell/Icon'
+import { Call911 } from './Call911'
 import { Section } from '../look'
 import { FLAGS } from './flags'
 import { ICON, TOPICS } from './FirstAid'
@@ -10,7 +11,7 @@ export default function FirstAidList() {
   const cpr = TOPICS.find((t) => t.id === 'cpr')
   return (
     <div className="fl">
-      <a href="tel:911" className="btn fa-call"><Icon name="phone" size={22} />Call 911</a>
+      <Call911 />
       {cpr && (
         <Section title="Most urgent">
           <a className="card fa-hero" href={PREFIX + 'cpr'}>
@@ -20,8 +21,8 @@ export default function FirstAidList() {
           </a>
         </Section>
       )}
-      <Section title="All 17 topics">
-        <ul className="pt-grid fa-grid" aria-label="All 17 topics">
+      <Section title={`All ${TOPICS.length} topics`}>
+        <ul className="pt-grid fa-grid" aria-label={`All ${TOPICS.length} topics`}>
           {TOPICS.map((t) => (
             <li key={t.id}>
               <a className="card fa-tc" href={PREFIX + t.id}>

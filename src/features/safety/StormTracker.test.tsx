@@ -43,7 +43,7 @@ describe('StormTracker', () => {
   it('pause switch reflects the saved pref', () => {
     kv.alerts = []; kv.pref = false
     render(<StormTracker place={place} />)
-    expect(screen.getByRole('switch', { name: 'Pause live layer on mobile data' }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByRole('switch', { name: 'Pause on mobile data' }).getAttribute('aria-checked')).toBe('false')
     kv.pref = true
   })
   it('one GDACS storm: name and since row', () => {

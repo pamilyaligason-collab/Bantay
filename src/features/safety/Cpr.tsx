@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { LargeTitle, Row, Section } from '../look'
-import { prefersReducedMotion } from '../look/useReducedMotion'
+import { Call911 } from './Call911'
 import { LiteVideo } from '../media/LiteVideo'
 import { Icon } from '../shell/Icon'
 import { CPR_BPM, cueOf, makeClick, metronome } from './cprBeat'
@@ -25,11 +25,10 @@ export default function Cpr() {
 
   useEffect(() => {
     if (!run) { setDot(false); return }
-    const cue = cueOf({ reduced: prefersReducedMotion() })
+    const cue = cueOf()
     let off = 0
     const beat = () => {
-      if (cue.pulse === 'step') setDot((d) => !d)
-      else { setDot(true); clearTimeout(off); off = window.setTimeout(() => setDot(false), 150) }
+      setDot(true); clearTimeout(off); off = window.setTimeout(() => setDot(false), 150)
       if (cue.click && opt.current.click) sound.current?.()
       if (cue.buzz && opt.current.buzz) navigator.vibrate?.(40)
     }
@@ -45,11 +44,12 @@ export default function Cpr() {
     <>
       <LargeTitle title="CPR (hands-only)" back={{ href: '#safety/firstaid', label: 'First aid' }} />
       <div className="cpr">
+        <Call911 />
         <div className="card cpr-beat" data-testid="cpr-beat">
           <span className="cpr-dot" data-on={dot} aria-hidden="true" />
           <h2>Push hard and fast</h2>
-          <p>100 to 120 per minute. Push each time the dot grows.</p>
-          <button type="button" className="btn" aria-pressed={run} onClick={start}>{run ? 'Stop' : 'Start'}</button>
+          <p>100 to 120 per minute. Push each time the dot flashes.</p>
+          <button type="button" className="btn" onClick={start}>{run ? 'Stop' : 'Start'}</button>
           <div className="grp" role="list" aria-label="Beat cues">
             <Row title="Click" control={<Switch label="Click" on={click} set={setClick} />} />
             <Row title="Buzz" control={<Switch label="Buzz" on={buzz} set={setBuzz} />} />
@@ -70,7 +70,6 @@ export default function Cpr() {
           </ul>
         </Section>
         <p className="sub">Beat is {CPR_BPM} per minute.</p>
-        <a href="tel:911" className="btn fa-call"><Icon name="phone" size={22} />Call 911</a>
       </div>
     </>
   )

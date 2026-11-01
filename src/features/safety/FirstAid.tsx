@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import data from './firstaid.json'
 import { Icon, type IconName } from '../shell/Icon'
 import { LargeTitle } from "../look"
+import { Call911 } from './Call911'
 import { LiteVideo } from '../media/LiteVideo'
 import './safety.css'
 
@@ -25,7 +26,7 @@ export function FirstAidPage({ topic }: { topic: FirstAidTopic }) {
     <>
       <LargeTitle title={topic.title} back={{ href: "#safety/firstaid", label: "First aid" }} />
       <div className="sf fa">
-        <a href="tel:911" className="btn fa-call"><Icon name="phone" size={22} />Call 911</a>
+        <Call911 />
         <ol className="fa-steps" aria-label="Steps">
           {topic.steps.map((s, i) => (
             <li key={i}><span className="fa-n" aria-hidden="true">{i + 1}</span><span>{s}</span></li>

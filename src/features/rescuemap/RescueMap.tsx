@@ -6,6 +6,7 @@ import { KINDS, kmLabel, sourceLine, spotsFor, splitSpots, type Kind, type Pin, 
 import './rescuemap.css'
 import { Icon } from '../shell/Icon'
 import { Section, Sheet } from '../look'
+import { useAbroad } from '../safety/Call911'
 
 const MapView = lazy(() => import('./MapView'))
 const NONE: Overrides = {}
@@ -25,7 +26,7 @@ function useOnline() {
 
 function Badge({ s }: { s: Spot }) {
   const ok = s.status === 'CONFIRMED'
-  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? 'Confirmed by barangay' : 'Not confirmed'}</span>
+  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? 'Confirmed' : 'Not confirmed'}</span>
 }
 
 function Actions({ s, pin }: { s: Spot; pin?: Pin }) {
@@ -40,6 +41,7 @@ function Actions({ s, pin }: { s: Spot; pin?: Pin }) {
 
 /** Map of the nearest help. Position comes from the caller; the last one seen is kept so the list still works with no signal. */
 export function RescueMap(props: { lat: number; lon: number; zoneName?: string }) {
+  const abroad = useAbroad()
   const cached = useKv<{ lat: number; lon: number } | null>(LAST_KEY, null)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE)
   const online = useOnline()
@@ -118,7 +120,7 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
         <p>Not official: schools, covered courts, barangay hall. Ask your barangay which centre is official.</p>
       </details>
       <a className="card rm-link" href="#safety/dial">Hotlines</a>
-      <p className="sub rm-foot">No current national list of evacuation centres exists. Bantay lists what families and barangays confirm. Call 911 first.</p>
+      <p className="sub rm-foot">No current national list of evacuation centres exists. Bantay lists what families and barangays confirm. {abroad ? 'Use the local emergency number first.' : 'Call 911 first.'}</p>
 
       {pick && (
         <Sheet title={pick.name} onClose={() => setPick(null)}>

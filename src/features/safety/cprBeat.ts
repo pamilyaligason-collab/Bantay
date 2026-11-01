@@ -7,8 +7,8 @@ export function metronome(onBeat: () => void, bpm: number = CPR_BPM): () => void
   return () => clearInterval(id)
 }
 
-/** What each beat does. Reduced motion swaps the smooth scale for a plain on/off step; click and buzz stay (the beat must not be lost). */
-export const cueOf = (o: { reduced: boolean }) => ({ pulse: o.reduced ? ('step' as const) : true, click: true, buzz: true })
+/** What each beat does. Every beat flashes the dot for 150 ms; reduced motion only drops the scale (CSS), so the dot never looks like half the rate. Click and buzz stay. */
+export const cueOf = (_o?: { reduced: boolean }) => ({ pulse: true as const, click: true, buzz: true })
 
 /** A 40 ms 880 Hz click. Create it from the Start tap (browsers block audio before a gesture); null where WebAudio is missing. */
 export function makeClick(): (() => void) | null {

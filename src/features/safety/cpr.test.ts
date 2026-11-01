@@ -18,8 +18,8 @@ describe('cpr beat', () => {
     vi.advanceTimersByTime(3000)
     expect(f).toHaveBeenCalledTimes(11)
   })
-  it('reduced motion toggles the dot per step and keeps the click and buzz', () => {
+  it('every beat flashes the dot, reduced motion or not, and click and buzz stay', () => {
     expect(cueOf({ reduced: false })).toEqual({ pulse: true, click: true, buzz: true })
-    expect(cueOf({ reduced: true })).toEqual({ pulse: 'step', click: true, buzz: true })
+    expect(cueOf({ reduced: true })).toEqual({ pulse: true, click: true, buzz: true })
   })
 })

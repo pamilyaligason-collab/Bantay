@@ -89,8 +89,8 @@ export default function StormTracker({ place }: { place: Place }) {
         </div>
         <p className="st-note">Live · Windy</p>
         <GroupedList label="Windy options">
-          <Row title="Pause live layer on mobile data" sub="Phones that cannot report their connection always load it." control={
-            <button type="button" role="switch" aria-checked={pref} aria-label="Pause live layer on mobile data" className="st-sw" onClick={() => void putKv(PAUSE_KEY, !pref)}><span /></button>
+          <Row title="Pause on mobile data" sub="Phones that cannot report their connection always load it." control={
+            <button type="button" role="switch" aria-checked={pref} aria-label="Pause on mobile data" className="st-sw" onClick={() => void putKv(PAUSE_KEY, !pref)}><span /></button>
           } />
         </GroupedList>
       </section>
