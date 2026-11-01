@@ -105,7 +105,7 @@ export default function WeatherScreen() {
       {fix ? <LiveMapToggle loc={fix} /> : (
         <section aria-label="Live weather map" className="card wx-map wx-map-empty">
           <p>Your position is not known yet, so the map has nothing to centre on.</p>
-          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Use my location'}</button>
+          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Find me'}</button>
         </section>
       )}
       <Section title="Official sources">

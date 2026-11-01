@@ -163,7 +163,7 @@ describe('WeatherScreen', () => {
     await screen.findByText('Partly cloudy')
     expect(screen.queryByRole('button', { name: 'Open live map' })).toBeNull()
     const map = within(screen.getByRole('region', { name: 'Live weather map' }))
-    expect(map.getByRole('button', { name: 'Use my location' })).toBeTruthy()
+    expect(map.getByRole('button', { name: 'Find me' })).toBeTruthy()
     expect(map.getByText('Your position is not known yet, so the map has nothing to centre on.')).toBeTruthy()
     expect(document.querySelector('iframe')).toBeNull()
   })
