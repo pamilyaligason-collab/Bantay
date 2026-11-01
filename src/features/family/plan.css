@@ -34,10 +34,10 @@
 .fm-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .fm-row + .fm-row { border-top: 1px solid var(--line); }
 .fm-row .done { text-decoration: line-through; color: var(--muted); }
-.bt .fm-chk { position: relative; width: 32px; height: 32px; flex: none; border-radius: 10px; border: 2.5px solid var(--green2); background: none; padding: 0; display: grid; place-items: center; }
-.bt .fm-chk::before { content: ""; position: absolute; inset: -8px; } /* 48px tap area around the 32px box */
-.bt .fm-chk[aria-checked="true"] { background: var(--green2); }
-.bt .fm-chk[aria-checked="true"]::after { content: ""; width: 18px; height: 18px; background: #fff; -webkit-mask: var(--tick) center/contain no-repeat; mask: var(--tick) center/contain no-repeat; }
+.bt .fm-chk { position: relative; width: 44px; height: 44px; margin: -6px; flex: none; border: 0; background: none; padding: 0; display: grid; place-items: center; } /* 44px target, laid out as 32px */
+.bt .fm-chk::before { content: ""; position: absolute; inset: 6px; border-radius: 10px; border: 2.5px solid var(--green2); } /* the visible 32px box */
+.bt .fm-chk[aria-checked="true"]::before { background: var(--green2); }
+.bt .fm-chk[aria-checked="true"]::after { content: ""; position: relative; width: 18px; height: 18px; background: #fff; -webkit-mask: var(--tick) center/contain no-repeat; mask: var(--tick) center/contain no-repeat; }
 .bt .fm-chk { --tick: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M4 12.5l5 5L20 6.5%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%273.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E"); }
 .bt[data-jack] .fm-fab-wrap { padding-right: 76px; } /* keep Add clear of the Jack button (fixed right 14px, 56px wide) */
 .fm-fab-wrap { position: static; margin-top: 12px; /* at the list end: never under the tab bar, never over a row (sections have their own Add) */ display: flex; justify-content: flex-end; z-index: 3; pointer-events: none; }

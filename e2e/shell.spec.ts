@@ -71,7 +71,7 @@ test('sub-pages show only their own header; tab roots keep the top bar', async (
 test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await page.getByRole('link', { name: /Settings/ }).click()
+  await page.getByRole('link', { name: /settings/i }).click() // v13 Today: 'You and settings'
   await expect(page).toHaveURL(/#me$/)
   await expect(page.locator('h1')).toHaveText('Settings')
   await page.goto('/#today')

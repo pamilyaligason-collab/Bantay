@@ -44,10 +44,10 @@ test('family plan: the Add button sits above the tab bar', async ({ page }) => {
 test('greeting shows on Today only', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await expect(page.locator('.sh-top-greet')).toBeVisible()
+  await expect(page.getByTestId('today-head')).toBeVisible()
   for (const t of ['health', 'discover', 'family', 'safety']) {
     await page.goto('/#' + t)
-    await expect(page.locator('.sh-top-greet')).toHaveCount(0)
+    await expect(page.getByTestId('today-head')).toHaveCount(0)
   }
 })
 
