@@ -11,10 +11,12 @@ import { faceName } from './FacesRow'
 import { loadCarerOf, type CarerClient } from './reportData'
 import { useFamilyPeople, type FamilyPerson } from './roster'
 import { seriesColor, WeekChart } from './WeekChart'
+import { bpDoctorOf } from '../health/verdict'
 import { bpSeries, doseSeries, legendWord, stepSeries, type Metric } from './weekSeries'
 import './v13-family.css'
 
-type D = { readings: Reading[]; acts: Activity[]; meds: Medication[]; takes: MedTaken[] }
+type Thresholds = Parameters<typeof bpDoctorOf>[0]
+type D = { readings: Reading[]; acts: Activity[]; meds: Medication[]; takes: MedTaken[]; thresholds: Thresholds }
 const TITLES: Record<Metric, { t: string; u: string; label: string }> = {
   bp: { t: 'Top number (systolic)', u: 'mmHg', label: 'Blood pressure over 7 days' },
   steps: { t: 'Steps a day', u: 'steps', label: 'Steps over 7 days' },
@@ -53,8 +55,9 @@ export function ActivityCard() {
       readings: await hdb.readings.where('personId').anyOf(ids).toArray(),
       acts: (await ldb.activity.where('personId').anyOf(ids).toArray()).filter((a) => a.kind === 'steps'),
       meds: await ldb.medications.where('personId').anyOf(ids).toArray(),
-      takes: await ldb.meds.where('personId').anyOf(ids).toArray()
-    })).subscribe({ next: setD, error: () => setD({ readings: [], acts: [], meds: [], takes: [] }) })
+      takes: await ldb.meds.where('personId').anyOf(ids).toArray(),
+      thresholds: await hdb.thresholds.toArray() // the doctor's targets, so this legend says what Health says
+    })).subscribe({ next: setD, error: () => setD({ readings: [], acts: [], meds: [], takes: [], thresholds: [] }) })
     return () => sub.unsubscribe()
   }, [key])
   const ids = people.map((p) => p.id)
@@ -72,7 +75,7 @@ export function ActivityCard() {
             <div className="ac-h"><b>{TITLES[metric].t}</b><span className="sub">{TITLES[metric].u}</span></div>
             <WeekChart metric={metric} series={series} now={now} label={`${TITLES[metric].label} for ${series.map((s) => nameOf(s.personId)).join(', ')}`} />
             <ul className="wk-leg" aria-label="Who is who">
-              {series.map((s, i) => <li key={s.personId} data-empty={s.empty}><i style={{ borderTopColor: seriesColor(i) }} aria-hidden="true" />{nameOf(s.personId)} · {legendWord(metric, s)}</li>)}
+              {series.map((s, i) => <li key={s.personId} data-empty={s.empty}><i style={{ borderTopColor: seriesColor(i) }} aria-hidden="true" />{nameOf(s.personId)} · {legendWord(metric, s, d ? bpDoctorOf(d.thresholds, s.personId) : undefined)}</li>)}
             </ul>
             {metric === 'bp' && <p className="sub">Green band = healthy range.</p>}
           </>

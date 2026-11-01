@@ -1,6 +1,6 @@
 import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import { GUIDE, type Reading } from '../health/ranges'
-import { BP_WORDS, bpLevel } from '../health/verdict'
+import { BP_WORDS, bpPairLevel, type BpArg } from '../health/verdict'
 import type { Activity, MedTaken, Medication } from '../log/store'
 
 /** The 7 days the Family Activity chart draws, per person (pure; `now` is passed in, ML-32). Gaps are null, never 0. */
@@ -51,10 +51,10 @@ export const BAND: Record<Metric, [number, number] | null> = {
 }
 
 /** The legend word after the name: "148 high", "3,120", "80%", or "no readings". */
-export function legendWord(metric: Metric, s: Series): string {
+export function legendWord(metric: Metric, s: Series, doctor?: BpArg['doctor']): string {
   if (s.latest == null) return 'no readings'
   if (metric === 'steps') return s.latest.toLocaleString('en-US')
   if (metric === 'meds') return `${s.latest}%`
-  const lv = bpLevel(s.latest, null)
+  const lv = bpPairLevel(s.latest, null, doctor) // the person's doctor target lifts the word, as on Health
   return `${s.latest} ${lv && lv !== 'in' ? BP_WORDS[lv].word.toLowerCase() : 'in range'}`
 }

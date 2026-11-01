@@ -37,6 +37,7 @@ describe('weekSeries', () => {
     expect(legendWord('bp', s(null))).toBe('no readings')
     expect(legendWord('bp', s(148))).toBe('148 high')
     expect(legendWord('bp', s(110))).toBe('110 in range')
+    expect(legendWord('bp', s(118), { top: { high: 110 } })).toBe('118 above target') // the doctor's target counts
     expect(legendWord('steps', s(3120))).toBe('3,120')
     expect(legendWord('meds', s(80))).toBe('80%')
   })
