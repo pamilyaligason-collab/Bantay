@@ -11,7 +11,7 @@ Vite + React + TS PWA. Design source: `design/Prototype.dc.html` (v5).
 
 ## Fast checks while iterating
 
-The full Vitest suite takes about 4 minutes. Run only what your change touches, then the full suite once before a push or release.
+The full Vitest suite takes about 1.5 to 2 minutes (vmThreads pool, see `vite.config.ts`). Run only what your change touches, then the full suite once before a push or release.
 
 | Script | Runs |
 | --- | --- |
