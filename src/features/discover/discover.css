@@ -34,14 +34,7 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .s14j-art { display: flex; justify-content: center; margin: 0; }
 .s14j-row { display: flex; align-items: center; gap: 10px; }
 
-/* S16 overview: pick hero (amber Scene hero), season row, 2-column tiles (L3). */
-.dc-hero .sc { min-height: 160px; }
-.dc-pickscene { position: absolute; inset: 0; background: var(--hue-amber); }
-.dc-pick-sub { display: inline-flex; align-items: center; gap: 4px; color: var(--ink2); }
-.dc-hero .sc-kicker { color: var(--hue-amber-ic); }
-:root[data-theme="dark"] .dc-hero .sc { border-top: 3px solid var(--hue-amber-ic); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-hero .sc { border-top: 3px solid var(--hue-amber-ic); } }
-.dc-hero .sc-jack { will-change: transform; }
+/* Learn's 2-column tiles. */
 
 .dc-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; min-width: 0; }
 .dc-tiles > * { min-width: 0; }

@@ -1,10 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isDiscoverSubRoot, registerSub, subOf } from '../features/discover'
-import { PickCard, SeasonRow } from '../features/discover/today/Cards'
-import { pickOfDay } from '../features/discover/today/pick'
-import { dayKey } from '../features/discover/play/score'
-import { JACK_ALT } from '../features/look'
+import { SeasonRow } from '../features/discover/today/Cards'
 import Discover from './Discover'
 
 beforeEach(() => { location.hash = '#discover' })
@@ -13,37 +10,19 @@ afterEach(cleanup)
 const day = (m: number, d: number) => new Date(2026, m - 1, d, 10, 20)
 
 describe('Discover overview (#discover)', () => {
-  it('draws the large title and one hero; no tile grid, no pill row', () => {
+  it('draws the large title and one hero, then season, Learn and the rest in order; no tile grid, no pill row', () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(day(10, 28)) // Undas, so the season row shows
     const { container } = render(<Discover />)
+    vi.useRealTimers()
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(screen.getByTestId('dc-head')).toBeTruthy()
     expect(container.querySelectorAll('[data-hero]').length).toBe(1)
+    const ids = ['dc-hero', 'season-row', 'dc-learn']
+    const els = ids.map((i) => screen.getByTestId(i))
+    els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
     expect(screen.queryByTestId('discover-tiles')).toBeNull()
+    expect(screen.queryByTestId('pick')).toBeNull()
     expect(screen.queryByRole('group', { name: 'Discover sections' })).toBeNull()
-  })
-  it('the pick hero carries Jack by pick type: recipe cooking, video watching, trivia and fact reading; the whole card is one link', () => {
-    const seen = new Map<string, string>()
-    for (let d = 1; d <= 28 && seen.size < 3; d++) {
-      const kind = pickOfDay(dayKey(day(11, d))).kind
-      const k = kind === 'fact' ? 'trivia' : kind
-      if (seen.has(k)) continue
-      const { container } = render(<PickCard now={day(11, d)} />)
-      seen.set(k, container.querySelector('img.jack')!.getAttribute('alt')!)
-      expect(container.querySelectorAll('a').length).toBe(1)
-      cleanup()
-    }
-    expect(seen.get('recipe')).toBe(JACK_ALT.cooking)
-    expect(seen.get('video')).toBe(JACK_ALT.watching)
-    expect(seen.get('trivia')).toBe(JACK_ALT.reading)
-  })
-  it('a video pick leaves the app in a new tab; a recipe stays inside', () => {
-    let video: Date | undefined, recipe: Date | undefined
-    for (let d = 1; d <= 28; d++) { const k = pickOfDay(dayKey(day(11, d))).kind; if (k === 'video') video ??= day(11, d); if (k === 'recipe') recipe ??= day(11, d) }
-    render(<PickCard now={video!} />)
-    expect(screen.getByRole('link').getAttribute('target')).toBe('_blank')
-    cleanup()
-    render(<PickCard now={recipe!} />)
-    expect(screen.getByRole('link').getAttribute('href')).toMatch(/^#discover\/learn\/recipe\//)
   })
   it('the season is one row that opens #discover/season; rain streaks in the rainy season, a candle glow at Undas, nothing outside a season', () => {
     const { container } = render(<SeasonRow now={day(7, 20)} />) // rainy and typhoon season
