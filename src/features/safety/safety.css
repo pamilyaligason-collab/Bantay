@@ -50,21 +50,8 @@ button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px
 .sf-hdr .zp { min-width: 0; }
 .sf-hdr .zp .sf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; border-radius: 22px; padding: 0 14px; }
 .sf-hdr .zp .sf-chip::before { content: ""; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--pin) center/contain no-repeat; mask: var(--pin) center/contain no-repeat; }
-.sf-hdr { --pin: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath d=%27M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zm0-9a3 3 0 1 1 0-6 3 3 0 0 1 0 6z%27/%3E%3C/svg%3E"); }
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
 .sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; padding: 0 8px; white-space: nowrap; } /* S16-L0: "Medical ID" wrapped in the 160 px cell at 360 */
-
-/* D-68 hub: solid tiles in v6 tokens (D-71: glass is for the frame only) */
-.sf-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.sf-tile { display: flex; flex-direction: column; gap: 4px; min-height: 124px; min-width: 0; box-sizing: border-box; padding: 14px; border-radius: 20px; text-decoration: none; color: var(--ink);
-  background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.sf-tile:active { transform: scale(.98); }
-.sf-tile:focus-visible, .sf-i:focus-visible, .sf-call:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.sf-tile > .sh-icbox { margin-bottom: 4px; }
-.sf-tile-t { font-weight: 700; font-size: 16px; line-height: 1.2; overflow-wrap: anywhere; }
-.sf-tile-s { font-size: 14px; color: var(--ink2); line-height: 1.25; overflow-wrap: anywhere; }
-@media (prefers-reduced-motion: no-preference) { .sf-tile { transition: transform .12s ease; } }
-@media (prefers-reduced-motion: reduce) { .sf-tile:active { transform: none; } }
 
 /* sub-pages */
 .hdr.sf-subhdr { flex-wrap: nowrap; justify-content: flex-start; }
@@ -114,17 +101,8 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-storm-line.watch { background: var(--warn-bg); border-color: color-mix(in srgb, var(--amber) 55%, var(--line)); }
 
 /* IDs and insurance row, Act early grid, first-aid pages (session 8) */
-.sf-ids { display: flex; align-items: center; gap: 12px; min-height: 72px; box-sizing: border-box; padding: 12px 14px; border-radius: 20px; text-decoration: none; color: var(--ink); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.sf-ids:focus-visible, .fa-call:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-.sf-ids-t { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.sf-ids-t b { font-size: 17px; }
-.sf-ids-t span { font-size: 14px; color: var(--ink2); overflow-wrap: anywhere; }
-.sf-act-note { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 18px; background: var(--red-soft); color: var(--ink); font-size: 16px; line-height: 1.35; }
-.sf-tile.sf-wide { grid-column: 1 / -1; min-height: 88px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-content: center; }
-.sf-wide > .sh-icbox { grid-row: span 2; margin: 0; }
-.sf-tiles > .sf-tile:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 0; }
 .fa { gap: 16px; }
-.sf a.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; gap: 8px; }
+.sf a.fa-call, a.btn.fa-call { min-height: 64px; display: flex; align-items: center; justify-content: center; text-decoration: none; background: var(--danger-bg); color: #fff; font-size: 19px; box-sizing: border-box; gap: 8px; }
 .fa-steps { list-style: none; padding: 0 !important; gap: 12px !important; }
 .fa-steps li { display: flex; gap: 14px; align-items: flex-start; font-size: 17px; line-height: 1.4; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow-wrap: anywhere; }
 .fa-n { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 20px; font-weight: 700; background: var(--btn); color: var(--btn-fg); }
@@ -132,20 +110,9 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .fa-911 h2 { margin: 0 0 8px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .fa-911 ul { font-size: 17px; line-height: 1.4; }
 .fa-links { list-style: none; padding: 0 !important; }
-.sf .fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
+.fa-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; font-weight: 600; text-decoration: underline; color: var(--link); overflow-wrap: anywhere; }
 .fa-foot { margin: 0 4px; font-size: 14px; }
 
-/* Safety sections (W2): each group has its own tint from tokens; text stays var(--ink) on the tint, tiles stay on var(--card). */
-.sf-grp { --tint: var(--card2); --edge: var(--muted); display: flex; flex-direction: column; gap: 12px; padding: 14px 8px; border-radius: 24px; background: var(--tint); border: 1px solid color-mix(in srgb, var(--edge) 28%, transparent); border-left: 4px solid var(--edge); }
-.sf-grp-emergency { --tint: color-mix(in srgb, var(--red) 12%, var(--card)); --edge: var(--red); }
-.sf-grp-aid { --tint: color-mix(in srgb, var(--ok) 12%, var(--card)); --edge: var(--ok); }
-.sf-grp-alerts { --tint: color-mix(in srgb, var(--c-weather) 12%, var(--card)); --edge: var(--c-weather); }
-.sf-grp-hotlines { --tint: color-mix(in srgb, var(--amber) 16%, var(--card)); --edge: var(--warn); }
-.sf-grp-ready { --tint: var(--card2); --edge: var(--green2); }
-.sf-grp-h { padding: 0 6px; }
-.sf-grp-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
-.sf-grp-h p { margin: 2px 0 0; font-size: 16px; color: var(--ink); opacity: .85; }
-.sf-grp .sf-act-note { background: var(--card); }
 
 /* S5: storm mode card (StormCard) and the phone alerts page */
 .sf-stormcard { display: grid; gap: 12px; }
@@ -170,3 +137,35 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-prow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line, var(--sep)); }
 .sf-prow:last-child { border-bottom: 0; }
 .sf-prow-t { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+
+/* v13 Safety home (S2): hero, First aid carousel, Go-bag card. Colours from tokens only. */
+.sf-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: var(--r-card); }
+.sf-hero-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; min-width: 0; }
+.sf-hero-row > .sos-wrap { flex: none; }
+:root[data-narrow] .sf-hero-row > .sos-wrap { flex: 1 1 100%; min-width: 0; } /* S10: flex:none let the SOS sentence set a 651 px box at 195 px */
+.sf-hero-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sf-hero-t b { font-size: 20px; font-weight: 700; color: var(--ink); }
+.sf-hero-t .sub { font-size: 14px; color: var(--muted); }
+.sf-fa { flex: none; width: 150px; min-height: 140px; box-sizing: border-box; padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); scroll-snap-align: start; }
+.sf-fa b { font-size: 17px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.sf-fa .sub { font-size: 13px; color: var(--muted); }
+.sf-fa:focus-visible, .sf-bag:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sf-911 { margin: 10px 4px 0; font-size: 14px; color: var(--muted); }
+.sf-bag { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; min-height: 44px; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--r-card); text-decoration: none; color: var(--ink); }
+.sf-bag-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sf-bag-t b { font-size: 17px; font-weight: 600; }
+.sf-bag-a { font-size: 15px; font-weight: 600; color: var(--focus); }
+.sf-bar { grid-column: 1 / -1; width: 100%; height: 8px; border: 0; border-radius: 4px; appearance: none; background: var(--card2); overflow: hidden; }
+.sf-bar::-webkit-progress-bar { background: var(--card2); }
+.sf-bar::-webkit-progress-value { background: var(--green); border-radius: 4px; }
+.sf-bar::-moz-progress-bar { background: var(--green); border-radius: 4px; }
+.sf-foot { margin: 16px 4px 0; font-size: 13px; color: var(--muted); }
+.sf-foot a { color: var(--focus); display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+
+/* S10: 44 px text links the e2e target check found (Rescue map source link, Hazards meta at 195 px) */
+.sf-src a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+:root[data-narrow] section.sec > .sec-h { flex-wrap: wrap; }
+:root[data-narrow] section.sec > .sec-h .sec-meta { min-width: 0; overflow-wrap: anywhere; }
+:root[data-narrow] .hz-map { padding: 0 10px; font-size: 14px; white-space: nowrap; }
+
+.rw-lead:empty { display: none; } /* Row draws an empty 32 px lead box when it has no icon */

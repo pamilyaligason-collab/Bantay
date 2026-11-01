@@ -15,8 +15,8 @@ export default function MapView({ me, pins, onPick, focus }: { me: LatLon; pins:
 
   useEffect(() => {
     if (!box.current) return
-    const m = L.map(box.current, { center: [me.lat, me.lon], zoom: 15, zoomControl: true })
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors' }).addTo(m)
+    const m = L.map(box.current, { center: [me.lat, me.lon], zoom: 15, zoomControl: false, attributionControl: false })
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(m)
     L.marker([me.lat, me.lon], { icon: dot('me'), keyboard: false, interactive: false, zIndexOffset: 1000 }).addTo(m)
     layer.current = L.layerGroup().addTo(m)
     map.current = m

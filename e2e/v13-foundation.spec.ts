@@ -15,7 +15,6 @@ test.beforeEach(async ({ page }) => {
 // Known until a Phase 1 lane lands (listed in TESTING.md): the root test is fixme, never deleted.
 const KNOWN: Record<string, string> = {
   today: 'until lane T: the Today hero ([data-hero]) is built in Phase 1',
-  safety: 'until lane S: the "Sources" link is 45x17 and is restyled in Phase 1',
 }
 
 for (const root of ['today', 'health', 'safety', 'me']) {
@@ -35,7 +34,6 @@ for (const root of ['today', 'health', 'safety', 'me']) {
   }
 
   test(`#${root}: holds at 195 px`, async ({ page }) => {
-    test.fixme(root === 'safety', KNOWN.safety)
     await page.goto(`/#${root}`)
     await expect(page.locator('h1').first()).toBeVisible()
     await assertNarrow(page)

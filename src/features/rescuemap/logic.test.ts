@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../safety/entries'
-import { driveUrl, kindOf, kmLabel, spotsFor, splitSpots, type Kind } from './logic'
+import { driveUrl, kindOf, kmLabel, sourceLine, spotsFor, splitSpots, type Kind } from './logic'
 
 const e = (id: string, group: string, name: string, lat?: number, lon?: number): Entry => ({ id, group, name, phone: null, lat, lon, status: 'UNKNOWN', source: '', sourceUrl: null, date: '' })
 const all = new Set<Kind>(['evac', 'health', 'police', 'fire'])
@@ -52,4 +52,12 @@ describe('labels', () => {
     expect(kmLabel(3.14)).toBe('3.1 km away')
   })
   it('builds a driving link', () => expect(driveUrl(9.6, 123.8)).toBe('https://www.google.com/maps/dir/?api=1&destination=9.6,123.8&travelmode=driving'))
+})
+
+describe('sourceLine', () => {
+  it('names the source, and the confirmation date only when confirmed', () => {
+    const base = { ...e('x', 'Evacuation centres', 'X'), source: 'Barangay Dampas', date: '2026-10-01' }
+    expect(sourceLine({ ...base, status: 'CONFIRMED' })).toBe('Source: Barangay Dampas. Last confirmed: 2026-10-01')
+    expect(sourceLine({ ...base, status: 'LISTED' })).toBe('Source: Barangay Dampas. Last confirmed: not yet')
+  })
 })
