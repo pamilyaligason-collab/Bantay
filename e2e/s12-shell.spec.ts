@@ -41,13 +41,13 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   await expect(page).toHaveURL(/#discover$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
   await expect(nav.getByRole('button', { name: 'Discover' })).toHaveAttribute('aria-current', 'page')
-  // S16: the overview is a hero, a season row and five tiles (one link each); the sub-tab pills live on the sub screens
-  const tiles = page.getByTestId('discover-tiles').getByRole('link')
-  await expect(tiles).toHaveCount(5)
-  const names = await tiles.allTextContents()
-  const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // tile and pill order of S16, so no two neighbouring hues repeat
-  expect(ORDER.map((l, i) => names[i]!.startsWith(l))).toEqual([true, true, true, true, true])
-  await page.getByTestId('tile-watch').click()
+  // v13: the overview is the video hero plus Section links; the sub-tab pills live on the sub screens
+  await expect(page.getByTestId('dc-hero')).toBeVisible()
+  const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // pill order of S16, so no two neighbouring hues repeat
+  for (const [label, hash] of [['All topics', 'learn'], ['See all', 'listen'], ['See all', 'news'], ['All games', 'play']] as const) {
+    await expect(page.locator(`a[href="#discover/${hash}"]`).filter({ hasText: label })).toHaveCount(1)
+  }
+  await page.getByTestId('dc-hero').getByRole('link').click()
   await expect(page).toHaveURL(/#discover\/watch$/)
   await expect(page.getByTestId('watch')).toBeVisible() // session 13 registered Watch
   const subs = page.getByRole('group', { name: 'Discover sections' })

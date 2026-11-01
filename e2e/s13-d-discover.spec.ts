@@ -49,7 +49,7 @@ test('sub-nav: one pill, moved by transform, none under reduced motion', async (
 test('Learn: 2x2 tiles plus Your benefits, benefits open outside', async ({ page }) => {
   await page.goto('/#discover/learn')
   await expect(page.getByTestId('learn-home')).toBeVisible()
-  await expect(page.getByTestId('pick')).toHaveCount(0)
+  await expect(page.getByTestId('dc-hero')).toHaveCount(0)
   for (const k of ['recipes', 'library', 'together', 'benefits']) await expect(page.getByTestId('learn-' + k)).toBeVisible()
   await page.getByTestId('learn-benefits').click()
   await expect(page.getByRole('heading', { name: 'Your benefits' })).toBeVisible()
@@ -57,20 +57,17 @@ test('Learn: 2x2 tiles plus Your benefits, benefits open outside', async ({ page
   await expect(page.getByRole('link', { name: /Senior citizen discount/ })).toHaveAttribute('target', '_blank')
   await page.goto('/#discover/learn')
   await page.getByTestId('learn-recipes').click()
-  await expect(page.getByTestId('pick')).toHaveCount(0)
+  await expect(page.getByTestId('dc-hero')).toHaveCount(0)
 })
 
-test('Today pick (trivia on 28 Oct) opens the same question Play asks, and back lands on the Play hub', async ({ page }) => {
+test('Alam mo ba? (trivia on 28 Oct) asks the hand-computed question, and back lands on the Play hub', async ({ page }) => {
   await page.clock.setFixedTime(UNDAS)
-  await page.goto('/#discover')
+  await page.goto('/#discover/play')
   const q = 'The first jeepneys were made from old what?' // hand-computed: trivia #16 for 2026-10-28
-  await expect(page.getByTestId('pick')).toContainText(q)
-  await page.getByTestId('pick').click()
+  await page.getByRole('button', { name: /Alam mo ba/ }).click()
   await expect(page.getByTestId('trivia')).toContainText(q)
   await page.getByRole('button', { name: 'Back to Play' }).click()
   await expect(page.getByTestId('play-hub')).toBeVisible()
-  await page.getByRole('button', { name: /Alam mo ba/ }).click()
-  await expect(page.getByTestId('trivia')).toContainText(q)
 })
 
 test('the season is one row on the overview that opens the season page', async ({ page }) => {
