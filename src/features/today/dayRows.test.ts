@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bpRow, checkInRow, countLeft, waterRow } from './myDay'
+import { bpRow, checkInRow, countLeft, waterRow } from './dayRows'
 const now = new Date(2026, 9, 31, 18)
 describe('myDay rows', () => {
   it('bp: none this week, then one this week', () => {
