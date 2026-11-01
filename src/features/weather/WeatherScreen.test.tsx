@@ -93,6 +93,24 @@ describe('WeatherScreen', () => {
     expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas')
   })
 
+  it('blend plug points: absent by default; with bantay.flag.wx.blend two empty states and no numbers', async () => {
+    render(<WeatherScreen />)
+    await screen.findByText('Partly cloudy')
+    expect(screen.queryByRole('heading', { name: 'Next 2 hours' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Air quality' })).toBeNull()
+    cleanup()
+    localStorage.setItem('bantay.flag.wx.blend', '1')
+    try {
+      render(<WeatherScreen />)
+      await screen.findByText('Partly cloudy')
+      for (const n of ['Next 2 hours', 'Air quality']) {
+        const card = screen.getByRole('heading', { level: 2, name: n }).closest('section')!.querySelector('.empty-state')!
+        expect(card.textContent).not.toMatch(/\d/)
+        expect(card.textContent!.length).toBeGreaterThan(0)
+      }
+    } finally { localStorage.removeItem('bantay.flag.wx.blend') }
+  })
+
   it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')

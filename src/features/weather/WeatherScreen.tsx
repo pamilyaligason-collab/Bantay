@@ -4,6 +4,7 @@ import { useLocation, usePlaceFrom } from '../location/useLocation'
 import { track } from '../admin/events'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
+import { EmptyState } from '../look/EmptyState'
 import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
 import { LargeTitle } from '../look/LargeTitle'
@@ -14,6 +15,7 @@ import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
 import { HEAT_BANDS, heatBand, heatIndexC } from './heatIndex'
+import { wxFlag } from './flags'
 import { condOf, feelsLike, isHot, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import LiveMapToggle from './LiveMapToggle'
@@ -170,6 +172,9 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
         ) : <b className="wx-act-t calm">Nothing to act on now. No heat, rain or strong sun to plan around.</b>}
       </section>
 
+      {/* plug: useBlendedWeather (branch claude/weather-blend-89aa47) fills next2h and aqi here; until it merges the flag stays off */}
+      {wxFlag('blend') && <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>}
+
       {hi != null && (
         <div className="wx-scale" role="img" aria-label={`Heat levels: ${HEAT_BANDS.map((b) => `${b.label} ${b.min}${b.max === Infinity ? ' and up' : ` to ${b.max}`}`).join(', ')}. Now: ${band?.label ?? 'below Caution'}.`}>
           {HEAT_BANDS.map((b) => (
@@ -184,6 +189,8 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
       </section>
+
+      {wxFlag('blend') && <Section title="Air quality"><EmptyState title="Not shown yet" body="Air quality needs a second feed." /></Section>}
 
       <RainMap fc={fc} point={point} placeName={name} alerts={alerts} />
 
