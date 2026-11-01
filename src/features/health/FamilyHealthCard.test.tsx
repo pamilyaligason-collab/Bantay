@@ -5,6 +5,8 @@ const person = (id: string, name: string, isMe = false) => ({ id, name, photoPat
 const state = { people: [person('p1', 'Maria Sample', true), person('p2', 'Ma Sample'), person('p3', 'Pa Sample')], last: null as Record<string, string> | null }
 vi.mock('../family/roster', async (orig) => ({ ...(await orig<object>()), useFamilyPeople: () => ({ people: state.people, selfId: 'p1' }), useCheckInsLoaded: () => state.last }))
 vi.mock('../family/reportData', () => ({ useFlagLines: () => ({ p2: '2 to check' }) }))
+const act = { acting: false }
+vi.mock('../viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActing: () => ({ acting: act.acting, personId: null, name: '' }) }))
 const photos = vi.fn()
 const msgs = vi.fn()
 vi.mock('../family/memoriesApi', () => ({ listPhotos: (...a: unknown[]) => photos(...a) }))
@@ -15,6 +17,7 @@ import { FamilyHealthCard } from './FamilyHealthCard'
 const now = new Date().toISOString()
 beforeEach(() => {
   state.people = [person('p1', 'Maria Sample', true), person('p2', 'Ma Sample'), person('p3', 'Pa Sample')]
+  act.acting = false
   state.last = { p1: now, p2: now }
   photos.mockResolvedValue({ ok: true, data: [{ id: 'a' }, { id: 'b' }] })
   msgs.mockResolvedValue({ ok: true, data: [{ createdAt: now }, { createdAt: now }, { createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString() }] })
@@ -23,7 +26,7 @@ afterEach(cleanup)
 
 describe('FamilyHealthCard', () => {
   it('header counts check-ins; doors to messages and the feed', async () => {
-    render(<FamilyHealthCard />)
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
     const c = screen.getByTestId('family-health')
     expect(c.textContent).toContain('2 of 3 checked in today')
     expect(within(c).getByRole('link', { name: 'Share yours' }).getAttribute('href')).toBe('#family/messages')
@@ -31,18 +34,18 @@ describe('FamilyHealthCard', () => {
     expect(c.querySelectorAll('.fh-av .fm-av').length).toBeLessThanOrEqual(3)
   })
   it('a row per flagged person, Memories when online, messages in the last 24 h', async () => {
-    render(<FamilyHealthCard />)
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
     const c = screen.getByTestId('family-health')
     expect(c.textContent).toContain('Ma Sample')
     expect(c.textContent).toContain('2 to check')
-    await waitFor(() => expect(c.textContent).toContain('Memories'))
+    await waitFor(() => expect(c.textContent).toContain('Recent photos'))
     await waitFor(() => expect(c.textContent).toContain('2 messages today'))
     expect(c.querySelector('input, textarea, button')).toBeNull() // read-only
   })
   it('offline: only the check-in line and Share yours, nothing invented', async () => {
     photos.mockResolvedValue({ ok: false, error: 'unavailable' })
     msgs.mockResolvedValue({ ok: false, error: 'unavailable' })
-    render(<FamilyHealthCard />)
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
     const c = screen.getByTestId('family-health')
     await waitFor(() => expect(photos).toHaveBeenCalled())
     expect(c.textContent).not.toContain('Memories')
@@ -51,7 +54,25 @@ describe('FamilyHealthCard', () => {
   })
   it('hidden for one person', () => {
     state.people = [person('p1', 'Maria Sample', true)]
-    render(<FamilyHealthCard />)
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
     expect(screen.queryByTestId('family-health')).toBeNull()
+  })
+  it('only the people in ids appear: names, roll call, flag lines (1.H13)', async () => {
+    render(<FamilyHealthCard ids={['p1', 'p3']} />)
+    const c = screen.getByTestId('family-health')
+    expect(c.textContent).toContain('1 of 2 checked in today')
+    expect(c.textContent).not.toContain('Ma Sample') // p2 is hidden and flagged
+    expect(c.textContent).not.toContain('2 to check')
+  })
+  it('hidden when the filter leaves only me', () => {
+    render(<FamilyHealthCard ids={['p1']} />)
+    expect(screen.queryByTestId('family-health')).toBeNull()
+  })
+  it('while acting, Share yours is a view-only note, not a link', () => {
+    act.acting = true
+    render(<FamilyHealthCard ids={['p1', 'p2']} />)
+    const c = screen.getByTestId('family-health')
+    expect(within(c).queryByRole('link', { name: 'Share yours' })).toBeNull()
+    expect(c.textContent).toContain('View only')
   })
 })

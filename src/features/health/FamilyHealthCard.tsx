@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import FmAvatar from '../family/FmAvatar'
 import { listPhotos } from '../family/memoriesApi'
 import { listMessages } from '../family/messagesApi'
 import { useFlagLines } from '../family/reportData'
 import { rollCall, useCheckInsLoaded, useFamilyPeople } from '../family/roster'
+import { useActing } from '../viewas/viewAs'
 import { GroupedList, Row, Section } from '../look'
 import './health.css'
 
@@ -11,8 +12,11 @@ const DAY = 86_400_000
 
 /** Family health (read-only): who checked in, a neutral flag line per person, and online counts for Memories and messages. Writes live in Family.
  *  shortcut: flag lines, not numbers, for other people (reportData keeps numbers behind useReportAccess); upgrade when lane F's feed defines shared readings. */
-export function FamilyHealthCard() {
-  const { people } = useFamilyPeople()
+export function FamilyHealthCard({ ids }: { ids: string[] }) {
+  const { people: all } = useFamilyPeople()
+  const { acting } = useActing()
+  const key = ids.join()
+  const people = useMemo(() => all.filter((p) => key.split(',').includes(p.id)), [all, key]) // only who the viewer (or the person being acted as) can see
   const last = useCheckInsLoaded()
   const flags = useFlagLines(people)
   const [photos, setPhotos] = useState<number | null>(null) // null: offline or not set up, so no row
@@ -32,12 +36,12 @@ export function FamilyHealthCard() {
         <div className="fh-top">
           <span className="fh-av">{people.slice(0, 3).map((p) => <FmAvatar key={p.id} name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />)}</span>
           <b className="fh-line">{rc ? `${rc.ok} of ${rc.total} checked in today` : 'Checking in...'}</b>
-          <a className="btn2 fh-share" href="#family/messages">Share yours</a>
+          {acting ? <span className="sub fh-share">View only</span> : <a className="btn2 fh-share" href="#family/messages">Share yours</a>}
         </div>
         {(flagged.length > 0 || photos != null || msgs != null) && (
           <GroupedList icons>
             {flagged.map((p) => <Row key={p.id} avatar={<FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />} title={p.name} sub={flags[p.id]} href="#family" />)}
-            {photos != null && <Row icon="heart" tint="amber" title="Memories" sub={`${photos} recent ${photos === 1 ? 'photo' : 'photos'}`} href="#family" />}
+            {photos != null && <Row icon="heart" tint="amber" title="Memories" sub="Recent photos" href="#family" />}
             {msgs != null && msgs > 0 && <Row icon="msg" tint="blue" title={`${msgs} ${msgs === 1 ? 'message' : 'messages'} today`} href="#family/messages" />}
           </GroupedList>
         )}

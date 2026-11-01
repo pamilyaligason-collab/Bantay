@@ -95,7 +95,7 @@ function Overview() {
         </Section>
       )}
       {ready && personId && <PinnedTiles personId={personId} readings={readings} />}
-      {ready && personId && <FamilyHealthCard />}
+      {ready && personId && <FamilyHealthCard ids={people.map((p) => p.id)} />}
       {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}
       {adding && personId && (() => {
