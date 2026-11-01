@@ -63,6 +63,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(row.locator('.rw-value')).toHaveText(/^\d+ to check$/)
     const text = (await row.innerText()).replace(/\d+ to check/, '')
     expect(text).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/)
+    const cards = page.getByTestId('person-card')
+    expect(await cards.count()).toBeGreaterThan(0)
+    expect((await cards.allInnerTexts()).join(' ')).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/) // the roll-call cards say no numbers either
     await expect(page.getByTestId('people-row').filter({ hasText: 'Pedro' })).not.toContainText('to check') // no data: no claim either way
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)

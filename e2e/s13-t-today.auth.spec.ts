@@ -92,23 +92,20 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(leave?.rows).not.toBe('0px') // 1fr stays: no height animation, opacity only
   })
 
-  test(`today full: first-week My week empty state, More heading ${scheme}`, async ({ page }) => {
+  test(`today full: no My week or See the week (v13), More heading ${scheme}`, async ({ page }) => {
     await start(page, scheme)
     await shot(page, 'today-full', scheme)
-    await page.getByRole('button', { name: 'See the week' }).click() // S14: My week is behind the See the week link
-    await expect(page.getByRole('heading', { name: 'My week' })).toBeVisible()
-    await expect(page.getByText('Your week will show here')).toBeVisible()
-    await page.getByRole('heading', { name: 'My week' }).scrollIntoViewIfNeeded()
-    await page.locator('section[aria-labelledby="t-myweek"]').screenshot({ path: `${SHOTS}/today-myweek-empty-${scheme}.png`, animations: 'disabled' }) // element shots: the scrolled top bar and tab bar glass flicker
+    await expect(page.getByRole('button', { name: 'See the week' })).toHaveCount(0) // v13: Your numbers replaced My week
+    await expect(page.getByRole('heading', { name: 'My week' })).toHaveCount(0)
     const more = page.getByRole('heading', { name: 'More', exact: true })
     await expect(more).toBeVisible() // the alerts-off card is in the group on the web build
     await page.locator('.td-more-g').screenshot({ path: `${SHOTS}/today-more-${scheme}.png`, animations: 'disabled' })
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
   })
 
-  test(`after the first week an empty My week draws nothing ${scheme}`, async ({ page }) => {
+  test(`a first-week phone and an older one both draw no My week ${scheme}`, async ({ page }) => {
     await start(page, scheme, { since: '2026-10-01' })
-    await page.getByRole('button', { name: 'See the week' }).click()
+    await expect(page.getByRole('button', { name: 'See the week' })).toHaveCount(0)
     await expect(page.getByText('Your week will show here')).toHaveCount(0)
     await expect(page.getByRole('heading', { name: 'My week' })).toHaveCount(0)
   })

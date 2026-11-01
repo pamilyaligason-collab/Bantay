@@ -451,7 +451,7 @@
 .td-arow-ic { width: 32px; height: 32px; border-radius: var(--r-ic); display: grid; place-items: center; background: var(--card); color: var(--tint-amber-ink); flex: none; }
 .td-arow b { display: block; font-size: 15px; font-weight: 600; }
 .td-arow .td-grow { min-width: 0; flex: 1; }
-.td-arow .td-grow > span { font-size: 13px; }
+.td-arow .td-grow > span { display: block; font-size: 13px; }
 .td-arow-go { background: var(--card); color: var(--tint-amber-ink); font-size: 13px; padding: 0 12px; }
 
 /* v13 T2: sky hero per board Main */

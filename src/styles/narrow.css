@@ -47,5 +47,7 @@
   /* v13 rows and cards: the control, value and chevron drop under the text instead of squeezing it to a letter per line, or pushing past the edge */
   :root[data-narrow] :is(.td-todo, .rw-main) { flex-wrap: wrap; }
   :root[data-narrow] :is(.td-todo .td-grow, .rw-txt) { flex: 1 1 96px; }
+  :root[data-narrow] .rw { flex-wrap: wrap; }
+  :root[data-narrow] .rw-title { white-space: normal; } /* a long title wraps at 195 px instead of being cut with an ellipsis */
   :root[data-narrow] .sf-bag { grid-template-columns: minmax(min-content, 1fr) minmax(0, auto); }
   :root[data-narrow] .sf-bag-t b { white-space: nowrap; }

@@ -58,6 +58,18 @@ describe('WarningCard', () => {
     expect(screen.queryByRole('button', { name: /Hide this warning/ })).toBeNull()
   })
 
+  it('the compact quake row says when the feed is stale, and not when it is fresh', async () => {
+    const far = { ...quake, level: 'Magnitude 4.6', what: 'Magnitude 4.6.', where: 'Tago', lat: 9.2, lon: 126.2 }
+    await db.kv.put({ key: ALERTS_KEY, value: [{ ...far, checkedAt: new Date(Date.now() - 3 * 3600_000).toISOString() }] })
+    const { unmount } = render(<WarningCard />)
+    const row = await screen.findByRole('region', { name: 'Nearby report' })
+    expect(row.textContent).toContain('They may be out of date')
+    unmount()
+    await db.kv.put({ key: ALERTS_KEY, value: [{ ...far, checkedAt: new Date().toISOString() }] })
+    render(<WarningCard />)
+    expect((await screen.findByRole('region', { name: 'Nearby report' })).textContent).not.toContain('out of date')
+  })
+
   it('a higher level shows a closed warning again', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...quake, level: 'Magnitude 6.0' }] })
     await db.kv.put({ key: ACK_KEY, value: { q1: ackStamp(quake) } })

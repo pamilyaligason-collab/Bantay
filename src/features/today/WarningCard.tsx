@@ -52,7 +52,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
         if (row) return (
           <section role="region" aria-label="Nearby report" data-testid="warning-card" className="card td-arow" data-tint="amber">
             <span className="td-arow-ic"><Icon name="quake" size={18} /></span>
-            <span className="td-grow"><b>{row.title}</b><span>{row.sub}</span></span>
+            <span className="td-grow"><b>{row.title}</b><span>{row.sub}</span>{f.tone !== 'ok' && <span role="status">{outdatedLine(newestChecked(alerts))}</span>}</span> {/* a stale feed must still say so on a compact row, as the red card does */}
             <a className="btn2 td-arow-go" href="#safety/warnings">Details</a>
           </section>
         )
