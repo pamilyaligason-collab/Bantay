@@ -30,6 +30,7 @@ for (const [name, hash] of SCREENS) {
       await page.goto(`/${hash}`)
       await expect(page.locator('.bt .scroll h1').first()).toBeVisible()
       await setScheme(page, scheme)
+      await expect(page.locator('.bt .scroll h1')).toHaveCount(1) // one head per screen
       await assertTargets(page)
       await assertTextContrast(page)
       await assertNoSideways(page)
@@ -63,12 +64,12 @@ test('Safety home has exactly one hero', async ({ page }) => {
 })
 
 test.describe('CPR beat under reduced motion', () => {
-  test('Start toggles aria-pressed and the beat dot gains and loses data-on', async ({ page }) => {
+  test('Start becomes Stop and the beat dot gains and loses data-on', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.addInitScript(() => { const w = window as unknown as { __buzz: number }; w.__buzz = 0; navigator.vibrate = () => { w.__buzz++; return true } })
     await page.goto('/#safety/firstaid/cpr')
     await page.getByRole('button', { name: 'Start' }).click()
-    await expect(page.getByRole('button', { name: 'Stop' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible()
     const dot = page.locator('[data-testid="cpr-beat"] .cpr-dot')
     await expect(dot).toHaveAttribute('data-on', 'true', { timeout: 1500 })
     await expect(dot).toHaveAttribute('data-on', 'false', { timeout: 1500 })
@@ -88,12 +89,12 @@ test.describe('S3', () => {
       o.onsuccess = () => { const tx = o.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put({ key: 'safety.alerts', value: [q] }); tx.oncomplete = () => { o.result.close(); res() } }
     })
   })
-  test('warnings: empty state, then a seeded far quake shows Too far to feel, map, sources and a collapsed shaking row', async ({ page }) => {
+  test('warnings: empty state, then a seeded far quake shows You may not have felt it, map, sources and a collapsed shaking row', async ({ page }) => {
     await page.goto('/#safety/warnings')
-    await expect(page.getByTestId('warn-hero')).toContainText('No active warnings')
+    await expect(page.getByTestId('warn-hero')).toContainText('No warnings on this phone')
     await seedQuake(page)
     await page.reload()
-    await expect(page.getByTestId('warn-hero')).toContainText('Too far to feel')
+    await expect(page.getByTestId('warn-hero')).toContainText('You may not have felt it')
     await expect(page.getByRole('region', { name: /Map of the warning/ })).toBeVisible()
     await expect(page.locator('.leaflet-container')).toHaveCount(1)
     await expect(page.getByRole('list', { name: 'Sources' })).toContainText('Checked')

@@ -47,7 +47,7 @@ test('safety home (v13): head with Near me | World, hero first, Right now rows, 
 
 test('warnings page: none now; quick dial: only confirmed numbers, the rest collapsed; maps load only on request', async ({ page }) => {
   await page.goto('/#safety/warnings')
-  await expect(page.getByText('No active warnings for your area')).toBeVisible()
+  await expect(page.getByText('No warnings on this phone')).toBeVisible()
   await page.goto('/#safety/dial')
   await expect(page.getByRole('link', { name: /Call National emergency, 911/ })).toHaveAttribute('href', 'tel:911')
   await expect(page.getByRole('link', { name: /Call Philippine Red Cross, 143/ })).toBeVisible()
@@ -91,7 +91,7 @@ test('adding a pin gives a Go button that survives reload (offline store)', asyn
 
 test('an alert in Dexie shows on Safety and Today with depth on expand', async ({ page }) => {
   await page.goto('/#safety/warnings')
-  await expect(page.getByText('No active warnings')).toBeVisible()
+  await expect(page.getByText('No warnings on this phone')).toBeVisible()
   await page.evaluate(async (alert) => {
     await new Promise<void>((res, rej) => {
       const open = indexedDB.open('bantay')

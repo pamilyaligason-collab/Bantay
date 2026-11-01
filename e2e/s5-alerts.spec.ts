@@ -122,6 +122,8 @@ for (const scheme of ['light', 'dark'] as const) {
     const old = { ...GDACS_RAW, checkedAt: hoursAgo(1.25), stale: false } // 75 minutes
     await open(page, '#safety', scheme, [{ key: 'safety.alerts', value: [old] }])
     await expect(page.getByText('Checked 1 h ago')).toBeVisible() // the head kicker (v13)
+    await expect(page.getByText(/Alerts last checked .*They may be out of date\. Check PAGASA or listen to the radio\./)).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Right now' }).getByRole('link', { name: /^Warnings/ })).toContainText('May be out of date')
     await expect(page.getByRole('list', { name: 'Right now' }).getByRole('link', { name: /CHAMPI-26/ }).first()).toHaveAttribute('href', '#safety/warnings')
     await page.goto('/#safety/warnings')
     await expect(page.getByRole('list', { name: 'Sources' })).toContainText('Checked') // the full source sentence is no longer on screen (v13 Warnings lists sources as rows)

@@ -48,7 +48,7 @@ describe('World', () => {
   it('the digest card shows the saved time and links to the settings', async () => {
     await db.kv.put({ key: ALERT_KEY, value: { digestTime: '06:30' } })
     render(<World />)
-    await waitFor(() => expect(screen.getByText('Every day at 06:30')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Daily digest (coming) · 06:30')).toBeTruthy())
     expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('#safety/alerts')
   })
 })

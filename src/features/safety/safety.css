@@ -167,3 +167,5 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 :root[data-narrow] section.sec > .sec-h { flex-wrap: wrap; }
 :root[data-narrow] section.sec > .sec-h .sec-meta { min-width: 0; overflow-wrap: anywhere; }
 :root[data-narrow] .hz-map { padding: 0 10px; font-size: 14px; white-space: nowrap; }
+
+.rw-lead:empty { display: none; } /* Row draws an empty 32 px lead box when it has no icon */

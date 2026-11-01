@@ -26,9 +26,17 @@ function Rows({ rows, empty, label }: { rows: WorldRow[]; empty: string; label: 
 }
 
 /** Safety, World half: a map of real alert pins, three lists, and the digest card. Feeds that do not exist yet sit behind FLAGS.worldFeeds and show empty states. */
-export default function World() {
+export default function World(p: { l?: ReturnType<typeof useLocation>; place?: ReturnType<typeof usePlaceFrom> }) {
+  return p.l ? <WorldView l={p.l} place={p.place ?? null} /> : <WorldOwn />
+}
+
+/** Standalone use (tests, deep links): reads its own position. SafetySub passes the one it already holds. */
+function WorldOwn() {
   const l = useLocation()
-  const place = usePlaceFrom(l)
+  return <WorldView l={l} place={usePlaceFrom(l)} />
+}
+
+function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: ReturnType<typeof usePlaceFrom> }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
   const prefs = readPrefs(useKv<unknown>(ALERT_KEY, undefined))
   const [filter, setFilter] = useState<Filter>('all')
@@ -67,7 +75,7 @@ export default function World() {
       )}
       <Section title="Daily digest">
         <div className="card wd-digest">
-          <b>Every day at {prefs.digestTime}</b>
+          <b>Daily digest (coming) · {prefs.digestTime}</b>
           <a href="#safety/alerts">Settings</a>
         </div>
       </Section>

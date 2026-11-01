@@ -6,3 +6,5 @@
 .lm-par { stroke: var(--tint-amber-ink); stroke-width: 2.5; stroke-dasharray: 7 5; fill: var(--amber); fill-opacity: .08; }
 .lm-storm { stroke: var(--card); stroke-width: 2; fill: var(--tint-red-ink); fill-opacity: 1; }
 .lm-zone { stroke: var(--card); stroke-width: 3; fill: var(--tint-blue-ink); fill-opacity: 1; }
+
+.lm-fail { display: grid; place-items: center; height: 100%; margin: 0; padding: 16px; text-align: center; color: var(--muted); }

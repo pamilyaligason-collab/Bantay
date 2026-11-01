@@ -15,6 +15,8 @@ export default function LazyMap(p: { height: number; center: [number, number]; z
     // shortcut: jsdom has no layout, so Leaflet is skipped there; Playwright covers the real map
     if (/jsdom/i.test(navigator.userAgent)) return () => {}
     let dead = false
+    const fail = () => { if (dead) return; const m = document.createElement('p'); m.className = 'lm-fail'; m.setAttribute('role', 'status'); m.textContent = `${navigator.onLine ? 'Map could not load.' : 'Maps need internet.'} The list below still works.`; el.replaceChildren(m) }
+    if (!navigator.onLine) { fail(); return () => { dead = true } }
     void Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([m]) => {
       if (dead) return
       const L = (m.default ?? m) as Leaflet
@@ -23,7 +25,7 @@ export default function LazyMap(p: { height: number; center: [number, number]; z
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(lm)
       map.current = lm
       p.setup?.(L, lm)
-    })
+    }).catch(fail)
     return () => { dead = true; map.current?.remove(); map.current = null }
   }, [p.depKey]) // eslint-disable-line react-hooks/exhaustive-deps -- rebuild only when depKey changes
   return (

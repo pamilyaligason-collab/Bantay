@@ -188,7 +188,7 @@ function PastSos() {
   return Array.isArray(raw) && raw.length ? <SosHistory /> : <p className="sf-empty" role="status">No SOS sent from this phone yet.</p>
 }
 
-function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
+function Body({ sub, l, place }: { sub: Exclude<Sub, 'firstaid' | 'world' | 'offline' | 'alerts'>; l: Loc; place: Place }) {
   switch (sub) {
     case 'warnings': return <Warnings place={place} />
     case 'weather':
@@ -215,10 +215,6 @@ function Body({ sub, l, place }: { sub: Sub; l: Loc; place: Place }) {
     case 'sos': return <PastSos />
     case 'sources': return <Sources />
     case 'phonewarn': return <PhoneAlertsPage />
-    case 'firstaid': return <FirstAidList />
-    case 'world': return <World />
-    case 'offline': return <OfflineMaps />
-    case 'alerts': return <AlertSettings />
   }
 }
 
@@ -227,8 +223,9 @@ export default function SafetySub({ sub, l, place }: { sub: Sub; l: Loc; place: 
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [sub])
   return (
     <>
-      {sub !== 'world' && <LargeTitle title={TITLES[sub]} back={{ href: '#safety', label: 'Safety' }} actions={<ZonePicker loc={l} />} />}
-      {place && <Body sub={sub} l={l} place={place} />}
+      {/* world, offline and alerts draw their own head; first aid, offline, alerts and world do not wait for the place */}
+      {sub !== 'world' && sub !== 'offline' && sub !== 'alerts' && <LargeTitle title={TITLES[sub]} back={{ href: '#safety', label: 'Safety' }} actions={<ZonePicker loc={l} />} />}
+      {sub === 'firstaid' ? <FirstAidList /> : sub === 'world' ? <World l={l} place={place} /> : sub === 'offline' ? <OfflineMaps /> : sub === 'alerts' ? <AlertSettings /> : place && <Body sub={sub} l={l} place={place} />}
     </>
   )
 }

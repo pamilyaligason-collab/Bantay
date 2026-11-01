@@ -19,7 +19,7 @@ export default function AlertSettings() {
   return (
     <>
       <LargeTitle title="World alerts" back={{ href: '#safety/world', label: 'World' }} />
-      <p className="wal-note">Saved on this phone. Push delivery arrives with lane A.</p>
+      <p className="wal-note">Saved on this phone. Bantay does not send these alerts yet. Your choices are saved for when it does.</p>
       <Section title="Instant">
         <GroupedList label="Instant alerts">
           {sw('nearFamily', 'Hazards near family', 'Dampas and Conel')}
