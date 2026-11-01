@@ -12,6 +12,8 @@
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsc.tsbuildinfo",
     "types": ["vite/client", "vite-plugin-pwa/client"]
   },
   "include": ["src", "e2e", "supabase/functions/_shared", "vite.config.ts", "playwright.config.ts"]
