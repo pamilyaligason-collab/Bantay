@@ -3,6 +3,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { MEDCARDS, RECIPES } from './learn/data'
+import { phFactOf } from './facts/onThisDay'
+import { dayKey } from './play/score'
 import { playable, VIDEOS } from '../health/library/videosLogic'
 import { featured } from './today/featured'
 import Overview from './Overview'
@@ -98,5 +100,29 @@ describe('Learn and Listen', () => {
     const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-learn', 'dc-listen']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  })
+})
+
+describe('Play and Did you know', () => {
+  it('two game cards with deep links, All games link', () => {
+    render(<Overview now={now} />)
+    const sec = screen.getByTestId('dc-play')
+    expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Play')
+    expect(within(sec).getByRole('link', { name: 'All games' }).getAttribute('href')).toBe('#discover/play')
+    const cards = Array.from(sec.querySelectorAll('a.pt'))
+    expect(cards.map((c) => [c.querySelector('.pt-v')!.textContent, c.querySelector('.pt-s')!.textContent, c.getAttribute('href'), c.getAttribute('data-tint')])).toEqual([
+      ['Memory', 'Match the pairs', '#discover/play/memory', 'blue'],
+      ['Word search', 'Fill in the letters', '#discover/play/wordsearch', 'red']
+    ])
+  })
+  it('the fact of the day opens the fun facts', () => {
+    render(<Overview now={now} />)
+    const f = screen.getByTestId('dc-fact')
+    expect(f.tagName).toBe('A')
+    expect(f.querySelector('.pt-k')!.textContent).toBe('Did you know?')
+    expect(f.querySelector('.pt-v')!.textContent).toBe(phFactOf(dayKey(now)))
+    expect(f.querySelector('.pt-a')!.textContent).toBe('More fun facts')
+    expect(f.getAttribute('href')).toBe('#discover/play/facts')
+    expect(f.getAttribute('data-tint')).toBe('green')
   })
 })

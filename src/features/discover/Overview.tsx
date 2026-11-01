@@ -3,6 +3,8 @@ import { EmptyState, GroupedList, LargeTitle, PreviewTile, Row, Section } from '
 import { useKv } from '../shell/useKv'
 import { MEDCARDS, RECIPES } from './learn/data'
 import { MEDCARDS_FLAG } from './learn/Screen'
+import { phFactOf } from './facts/onThisDay'
+import { dayKey } from './play/score'
 import { SeasonRow } from './today/Cards'
 import { featured } from './today/featured'
 import { WATCH_PICK } from './watch/Screen'
@@ -58,6 +60,13 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
           {medcards && <Row icon="mic" tint="teal" title="Medicine cards" sub={`${MEDCARDS.length} read out loud`} href="#discover/listen" />}
         </GroupedList>
       </Section>
+      <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">
+        <div className="pt-grid">
+          <PreviewTile kicker="Game" tint="blue" value="Memory" valueSize="md" sub="Match the pairs" action="Play" href="#discover/play/memory" />
+          <PreviewTile kicker="Game" tint="red" value="Word search" valueSize="md" sub="Fill in the letters" action="Play" href="#discover/play/wordsearch" />
+        </div>
+      </Section>
+      <PreviewTile kicker="Did you know?" tint="green" value={phFactOf(dayKey(now))} valueSize="md" action="More fun facts" href="#discover/play/facts" testId="dc-fact" />
     </>
   )
 }
