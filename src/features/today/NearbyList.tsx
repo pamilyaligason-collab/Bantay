@@ -5,7 +5,7 @@ import { useKv } from '../safety/store'
 import { liveSignals } from '../safety/stormMode'
 import { zoneAlert } from './heroCards'
 import { slotPool } from './WarningCard'
-import { ACK_KEY, type AckMap } from './warnAck'
+import { ACK_KEY, isAcked, type AckMap } from './warnAck'
 
 const NONE: Alert[] = []
 const NO_ACK: AckMap = {}
@@ -18,8 +18,10 @@ export default function NearbyList() {
   const all = useKv<Alert[]>(ALERTS_KEY, NONE)
   const ref = place ? alertRef(place) : null
   const acks = useKv<AckMap>(ACK_KEY, NO_ACK)
-  const top = zoneAlert(slotPool(all, acks, !!liveSignals(all)[0]), ref)
-  const rest = rankAlerts(all.filter((a) => a.id !== top?.id), ref)
+  const storm = liveSignals(all)[0]
+  const top = zoneAlert(slotPool(all, acks, !!storm), ref)
+  // a closed warning stays out of the list too (it is "Hidden here"), and a live storm already has its own card
+  const rest = rankAlerts(all.filter((a) => a.id !== top?.id && a.id !== storm?.id && !isAcked(acks, a)), ref)
   if (!rest.length) return null
   return (
     <section aria-label="Other notices for your area" data-reveal>

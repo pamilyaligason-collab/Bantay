@@ -59,13 +59,14 @@ export function useHealthData() {
 export const resetPersonChoice = () => setChosen('')
 
 /** The choice belongs to the Health tab: leaving it for another tab goes back to me, so a number logged from Today never lands under someone viewed in Health.
- *  Moving between Health screens keeps it. */
-export function useForgetPersonOutsideHealth(tab: string) {
-  const was = useRef(tab)
+ *  Moving between Health screens keeps it. Papers (#family/papers) is where the lab screens link to, so it counts as Health: viewing Lola's labs then tapping Papers must show Lola's papers. */
+export function useForgetPersonOutsideHealth(tab: string, hash = '') {
+  const inHealth = tab === 'health' || /^#?family\/papers(\?|$)/.test(hash)
+  const was = useRef(inHealth)
   useEffect(() => {
-    if (was.current === 'health' && tab !== 'health') resetPersonChoice()
-    was.current = tab
-  }, [tab])
+    if (was.current && !inHealth) resetPersonChoice()
+    was.current = inHealth
+  }, [inHealth])
 }
 
 export const testLabel = (key: string, guide: Record<string, { label: string }>) => guide[key]?.label ?? labName(key)

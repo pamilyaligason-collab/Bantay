@@ -45,7 +45,7 @@ export default function Warnings({ place }: { place: Place }) {
   const all = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const here = alertRef(place)
   const now = Date.now()
-  const top = urgentFirst(rankAlerts(all, here))[0]
+  const top = urgentFirst(rankAlerts(all, here), here, now)[0]
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const name = zone.name.split(',')[0]!
   const mag = top?.kind === 'quake' ? quakeMag(top) : null

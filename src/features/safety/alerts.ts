@@ -141,10 +141,21 @@ export function quakeMag(a: Pick<Alert, 'level' | 'what' | 'title'>): number | n
   const m = /(?:magnitude|M)\s*([0-9]+(?:\.[0-9]+)?)/i.exec(`${a.level ?? ''} ${a.title ?? ''} ${a.what ?? ''}`)
   return m && Number.isFinite(Number(m[1])) ? Number(m[1]) : null
 }
-/** A tsunami, or a quake of M6 or more: it outranks every other warning on every list that shows a "top" alert. */
-export const urgent = (a: Alert): boolean => a.kind === 'tsunami' || (a.kind === 'quake' && (quakeMag(a) ?? 0) >= 6)
+const DAY_MS = 86_400_000
+/** A tsunami, or a quake of M6 or more, under 24 h old: it outranks every other warning on every list that shows a "top" alert.
+ *  A quake must also be inside its felt radius of `here` or the nearest home zone (the ingest keeps M6+ out to 1,500 km, which is not "urgent" for a local flood). */
+export function urgent(a: Alert, here: LatLon | null, now = Date.now()): boolean {
+  const age = now - Date.parse(a.issuedAt)
+  if (Number.isFinite(age) && age > DAY_MS) return false
+  if (a.kind === 'tsunami') return true
+  if (a.kind !== 'quake' || (quakeMag(a) ?? 0) < 6) return false
+  if (a.lat == null || a.lon == null) return true // no point: it covers the whole area, as affectsUs counts it
+  const p = { lat: a.lat, lon: a.lon }
+  const d = Math.min(here ? distanceKm(here, p) : Infinity, ...HOME_ZONES.map((z) => distanceKm(z, p)))
+  return d <= quakeFeltKm(a)
+}
 /** The urgent alerts first, the rest in their ranked order. */
-export const urgentFirst = (list: Alert[]): Alert[] => [...list.filter(urgent), ...list.filter((a) => !urgent(a))]
+export const urgentFirst = (list: Alert[], here: LatLon | null, now = Date.now()): Alert[] => [...list.filter((a) => urgent(a, here, now)), ...list.filter((a) => !urgent(a, here, now))]
 /** How far strong shaking from a quake of this size is often felt (D-87 table). Unknown size counts as 100 km. */
 export function quakeFeltKm(a: Pick<Alert, 'level' | 'what' | 'title'>): number {
   const mag = quakeMag(a)

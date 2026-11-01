@@ -7,6 +7,7 @@ import type { Range, Reading } from '../health/ranges'
 import { useMedications } from '../health/useMedications'
 import { ldb, type Medication, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
+import { SELF_USER } from '../sync/profile'
 import { canViewReport, flagLine, type Report, buildReport } from './reportLogic'
 import type { FamilyPerson } from './roster'
 
@@ -24,6 +25,14 @@ export async function loadCarerOf(client: CarerClient | null, userId: string): P
     await db.kv.put({ key: KEY, value: { userId, ids } }).catch(() => {})
     return ids
   } catch { return cached() }
+}
+
+/** The signed-in user's id for the carer cache: the live member, else (expired token, no network) the user this phone last saw signed in. Nobody known: null, so the cache is never read blind. */
+export async function carerUserId(): Promise<string | null> {
+  const m = await getMember().catch(() => null)
+  if (m) return m.userId
+  const v = (await db.kv.get(SELF_USER).catch(() => undefined))?.value
+  return typeof v === 'string' && v ? v : null
 }
 
 /** null while loading; then whether this user may see this person's health report. */

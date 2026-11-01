@@ -1,14 +1,13 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
-import { getMember } from '../auth/session'
 import type { Reading } from '../health/ranges'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 import { EmptyState, Section, Segmented } from '../look'
 import { hdb } from '../records/store'
 import { useViewedVisibleIds } from '../viewas/viewAs'
 import { faceName } from './FacesRow'
-import { loadCarerOf, type CarerClient } from './reportData'
+import { carerUserId, loadCarerOf, type CarerClient } from './reportData'
 import { useFamilyPeople, type FamilyPerson } from './roster'
 import { seriesColor, WeekChart } from './WeekChart'
 import { bpDoctorOf } from '../health/verdict'
@@ -40,7 +39,7 @@ export function ActivityCard() {
   const [carerOf, setCarerOf] = useState<string[]>([]) // only you until the links are read, so nobody else flashes up
   useEffect(() => {
     let live = true
-    void getMember().catch(() => null).then((m) => (m ? loadCarerOf(supabase as CarerClient | null, m.userId) : [])).then((ids) => { if (live) setCarerOf(ids) })
+    void carerUserId().then((u) => (u ? loadCarerOf(supabase as CarerClient | null, u) : [])).then((ids) => { if (live) setCarerOf(ids) })
     return () => { live = false }
   }, [])
   const people = chartPeople(all, visible, carerOf)

@@ -12,6 +12,7 @@ describe('ScreenBoundary', () => {
     expect(screen.getByText('tabs')).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toContain('did not load')
     expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('open the Safety tab') // Jack is hidden in Simple mode and on some screens, so the message must not promise it
   })
   it('clears when the route key changes', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -30,6 +31,17 @@ describe('reloadOnPreloadError', () => {
     window.dispatchEvent(new Event('vite:preloadError'))
     expect(reload).toHaveBeenCalledTimes(1)
     off()
+    vi.unstubAllGlobals()
+  })
+  it('does not reload while an SOS screen is up', () => {
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...window.location, reload })
+    document.body.insertAdjacentHTML('beforeend', '<div class="sos-bare"></div>')
+    const off = reloadOnPreloadError()
+    window.dispatchEvent(new Event('vite:preloadError'))
+    expect(reload).not.toHaveBeenCalled()
+    off()
+    document.querySelector('.sos-bare')?.remove()
     vi.unstubAllGlobals()
   })
 })
