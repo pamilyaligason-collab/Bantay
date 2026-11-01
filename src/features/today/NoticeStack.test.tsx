@@ -57,7 +57,8 @@ describe('NoticeStack', () => {
     h.left = ['SOS contacts', 'Photo']
     render(<NoticeStack />)
     const row = screen.getByTestId('setup-row')
-    expect(row.textContent).toContain('2 left: SOS contacts, Photo')
-    expect(row.querySelector('a')!.getAttribute('href')).toBe('#me')
+    expect(row.textContent).toContain('Finish setup · 2 left')
+    expect(row.textContent).toContain('SOS contacts, Photo')
+    expect(row.querySelector('a')!.getAttribute('href')).toBe('#me/phone')
   })
 })

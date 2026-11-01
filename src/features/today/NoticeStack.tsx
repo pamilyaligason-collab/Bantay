@@ -51,7 +51,7 @@ export default function NoticeStack() {
   return (
     <div className="td-more-g" role="group" aria-labelledby="t-more">
       <h2 id="t-more" className="td-more-h">More</h2>
-      {left.length > 0 && <Row icon="check" title={`${left.length} left: ${left.join(', ')}`} sub="Set up" href="#me" testId="setup-row" />}
+      {left.length > 0 && <Row title={`Finish setup · ${left.length} left`} sub={left.join(', ')} href="#me/phone" testId="setup-row" />}
       <AlertsBanner />
       <UpdateCard />
       <PwaBanner />

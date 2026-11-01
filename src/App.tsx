@@ -26,6 +26,7 @@ import ApprovePinSheet from './features/setup/ApprovePinSheet'
 import { useSavedTheme } from './features/shell/theme'
 import { useSavedTextSize } from './features/shell/textSize'
 import { TopBar } from './features/shell/TopBar'
+import { UnreadContext } from './features/today/unread'
 import { OfflineBar } from './features/sync/OfflineBar'
 import ViewAsBanner from './features/viewas/ViewAsBanner' // S16-L0
 import { useActing } from './features/viewas/viewAs'
@@ -112,13 +113,13 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      {isTabView && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
+      {isTabView && !(tab === 'today' && view === null) && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       {/* S16-L0 */}
       <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <Tabbed />}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />

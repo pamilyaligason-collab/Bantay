@@ -15,12 +15,11 @@ vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
 vi.mock('../features/today/WeatherCard', () => ({ default: ({ expanded, review, noJack }: { expanded?: boolean; review?: number; noJack?: boolean }) => <div data-testid="weather" data-expanded={String(!!expanded)} data-review={review} data-nojack={String(!!noJack)} /> }))
 vi.mock('../features/family/IncomingSos', () => ({ IncomingSos: () => (sosb.on ? <div data-testid="incoming-sos" /> : null) }))
 vi.mock('../features/family/sosActive', () => ({ useSosActive: () => sosb.on }))
-vi.mock('../features/today/SeeWeek', () => stub('seeweek'))
-vi.mock('../features/today/SelfCare', () => stub('selfcare'))
-vi.mock('../features/today/NearbyList', () => stub('nearby'))
-vi.mock('../features/today/NextUp', () => stub('nextup'))
-vi.mock('../features/today/PlanToday', () => stub('plan'))
+vi.mock('../features/today/MyDay', () => stub('myday'))
+vi.mock('../features/today/CalmCard', () => stub('calm'))
+vi.mock('../features/today/YourNumbers', () => stub('numbers'))
 vi.mock('../features/today/QuickLog', () => stub('quicklog'))
+vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../features/setup/useProfile')>()), useSelfPersonId: () => 'me' }))
@@ -36,14 +35,14 @@ afterEach(cleanup)
 describe('Today simple mode', () => {
   it('off: the full page', async () => {
     render(<Today />)
-    await screen.findByTestId('quicklog')
-    for (const id of ['alertband', 'nextup', 'weather', 'seeweek', 'selfcare', 'plan', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
+    await screen.findByTestId('myday')
+    for (const id of ['alertband', 'weather', 'myday', 'calm', 'numbers', 'week']) expect(screen.getByTestId(id)).toBeTruthy()
     for (const id of ['news', 'video', 'movement', 'walk']) expect(screen.queryByTestId(id)).toBeNull() // News lives in Safety; walk is a sheet from the quick-log row
     expect(screen.queryByRole('button', { name: /^SOS/ })).toBeNull()
   })
   it('off: the SOS hold is not on Today any more (Jack sheet and Safety carry it)', async () => {
     const { container } = render(<Today />)
-    await screen.findByTestId('quicklog')
+    await screen.findByTestId('myday')
     expect(container.querySelector('.td-sos')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hold to call and text your family' })).toBeNull()
   })
@@ -64,7 +63,7 @@ describe('Today simple mode', () => {
     unmount()
     await db.kv.put({ key: 'mode.simple', value: false })
     render(<Today />)
-    await screen.findByTestId('quicklog')
+    await screen.findByTestId('myday')
     expect(screen.getByTestId('incoming-sos')).toBeTruthy()
     expect(screen.getByTestId('weather').getAttribute('data-nojack')).toBe('true')
   })
@@ -75,25 +74,18 @@ describe('Today simple mode', () => {
     expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
-  it('full page order: weather, family alert card, Next up, quick log, self-care, plan, See the week, then More; no OK card, How are you? is the check-in', async () => {
+  it('full page order: weather, warning, family alert card, My day, Calm, Your numbers, then More', async () => {
     const { container } = render(<Today />)
-    await screen.findByTestId('quicklog')
+    await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['weather', 'alertband', 'alertcard', 'nextup', 'quicklog', 'selfcare', 'plan', 'seeweek', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'myday', 'calm', 'numbers', 'quicklog', 'alerts', 'nearby', 'week'])
   })
-  it('a dose due: Next up comes first and the weather card stays compact', async () => {
-    render(<Today />)
-    await screen.findByTestId('quicklog')
-    expect(screen.getByTestId('weather').getAttribute('data-expanded')).toBe('false')
-  })
-  it('calm: no Next up card, the weather card is expanded and gets the medicines count; no empty card in between', async () => {
+  it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3
-    const { container } = render(<Today />)
-    await screen.findByTestId('quicklog')
-    expect(screen.queryByTestId('nextup')).toBeNull()
+    render(<Today />)
+    await screen.findByTestId('myday')
     expect(screen.getByTestId('weather').getAttribute('data-expanded')).toBe('true')
-    expect(screen.getByTestId('weather').getAttribute('data-review')).toBe('3')
-    expect([...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).slice(0, 4)).toEqual(['weather', 'alertband', 'alertcard', 'quicklog'])
+    expect(screen.getByTestId('weather').getAttribute('data-review')).toBe('0')
   })
   it('on, calm: the expanded weather card replaces the empty Next up card; no Taken button', async () => {
     meds.due = false
@@ -120,13 +112,13 @@ describe('Today simple mode', () => {
     const buttons = await screen.findAllByRole('button', { name: /^Exit/ })
     expect(buttons.map((b) => b.textContent)).toEqual(['Exit', 'Exit simple mode'])
     fireEvent.click(buttons[1]!)
-    await screen.findByTestId('quicklog') // the full page is back
+    await screen.findByTestId('myday') // the full page is back
     expect((await db.kv.get('mode.simple'))?.value).toBe(false)
     unmount()
     await db.kv.put({ key: 'mode.simple', value: true })
     render(<Today />)
     fireEvent.click((await screen.findAllByRole('button', { name: /^Exit/ }))[0]!)
-    await screen.findByTestId('quicklog')
+    await screen.findByTestId('myday')
   })
   it('on: the next dose with a big I took it, Hold for help, Call 911, How are you? and a family number', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
@@ -137,7 +129,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: 'Hold to call and text your family' })).toBeTruthy() // the real hold button, not a link
     expect(screen.getByRole('button', { name: /^Call 911/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['quicklog', 'nextup', 'plan', 'week', 'nearby', 'seeweek', 'selfcare']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['myday', 'calm', 'numbers', 'quicklog', 'week', 'nearby']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on: the warning band and a storm within 500 km are not lost', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

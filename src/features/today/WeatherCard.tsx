@@ -85,10 +85,16 @@ const offlineNote = (wx: Wx) => (wx.offline ? ', may be out of date' : '')
  *  the feels-like pill, then (expanded) the action box with Jack and a 3-slot hourly strip. The whole card links to the Weather screen.
  *  A PAGASA warning never shows here (N-8, it has its own card); `storm` draws the night storm scene with no Jack (R11); `noJack` drops Jack when another is on screen (D-91).
  *  Nothing is drawn until a temperature is known (never a made-up 0). */
-export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean }) {
+export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false, hero = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean; hero?: boolean }) {
   const place = usePlace()
   const wx = useWeather(place?.weather ?? null)
-  if (!wx || wx.temp == null || !place) return null
+  if (!wx || wx.temp == null || !place) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
+    return hero ? (
+      <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">
+        <b>Weather</b><span>Finding your weather. Open for the full forecast.</span>
+      </a>
+    ) : null
+  }
   const now = new Date()
   const line = storm ? null : weatherActionLine(wx, now, null)
   const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(wx, now) ?? line.text : line?.text ?? null
