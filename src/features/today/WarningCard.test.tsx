@@ -49,6 +49,15 @@ describe('WarningCard', () => {
     expect((await db.kv.get(ALERTS_KEY))?.value).toEqual([quake]) // still in Safety
   })
 
+  it('v13: a quake beyond its felt radius is one compact amber row with Details and no Hide button', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [{ ...quake, level: 'Magnitude 4.6', what: 'Magnitude 4.6.', where: 'Tago', lat: 9.2, lon: 126.2 }] })
+    render(<WarningCard />)
+    const row = await screen.findByRole('region', { name: 'Nearby report' })
+    expect(row.textContent).toContain('too far to feel here')
+    expect(screen.getByRole('link', { name: 'Details' }).getAttribute('href')).toBe('#safety/warnings')
+    expect(screen.queryByRole('button', { name: /Hide this warning/ })).toBeNull()
+  })
+
   it('a higher level shows a closed warning again', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...quake, level: 'Magnitude 6.0' }] })
     await db.kv.put({ key: ACK_KEY, value: { q1: ackStamp(quake) } })
