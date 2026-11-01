@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const kv: Record<string, unknown> = {}
@@ -57,5 +57,27 @@ describe('Ask Jack', () => {
     fireEvent.click(screen.getByText('sos'))
     expect(screen.queryByTestId('jack-sheet')).toBeNull()
     expect(screen.getByTestId('sos-full').querySelector('[data-testid="sos-screen"]')).not.toBeNull()
+  })
+})
+
+describe('Listen and watch and crisis', () => {
+  it('Listen and watch is absent with the flag off', () => {
+    render(<CalmScreen />)
+    expect(screen.queryByTestId('calm-media')).toBeNull()
+  })
+  it('shows three outside links and the checked video with flag.calm.radio on', () => {
+    kv['flag.calm.radio'] = true
+    render(<CalmScreen />)
+    const media = screen.getByTestId('calm-media')
+    const links = within(within(media).getByRole('group', { name: 'Listen and watch' })).getAllByRole('link')
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://somafm.com/groovesalad/', 'https://somafm.com/dronezone/', 'https://www.tarabrach.com/podcasts/'])
+    for (const a of links) { expect(a.getAttribute('target')).toBe('_blank'); expect(a.getAttribute('rel')).toBe('noopener noreferrer') }
+    expect(within(media).getByRole('button', { name: /Play Steps for Stress/ })).toBeTruthy()
+  })
+  it('the crisis card calls 1553 first and names its source', () => {
+    render(<CalmScreen />)
+    expect(screen.getByRole('link', { name: 'Call 1553' }).getAttribute('href')).toBe('tel:1553')
+    expect(screen.getByTestId('calm-crisis').textContent).toMatch(/ncmh\.gov\.ph/)
+    expect(screen.getByRole('link', { name: 'Call 0919-057-1553' }).getAttribute('href')).toBe('tel:09190571553')
   })
 })

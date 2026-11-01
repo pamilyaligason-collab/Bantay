@@ -20,3 +20,15 @@
 .cm-faces { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .cm-face { min-height: 56px; min-width: 0; border: 0; border-radius: 16px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; padding: 0 4px; overflow-wrap: anywhere; }
 @media (max-width: 300px) { .cm-faces { grid-template-columns: repeat(2, 1fr); } }
+.cm-crisis { display: grid; gap: 8px; }
+.cm-crisis-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
+.cm-nums { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.cm-nums .btn2 { min-width: 0; padding: 0 8px; }
+.cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
+@media (max-width: 300px) { .cm-nums { grid-template-columns: 1fr; } }
+.cm-media { flex: none; width: 240px; min-height: 150px; display: grid; align-content: start; gap: 4px; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; }
+.cm-media b { font-size: 17px; }
+.cm-media-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--tint-teal); color: var(--tint-teal-ink); }
+.cm-k { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.cm-video { padding: 0; overflow: hidden; }
