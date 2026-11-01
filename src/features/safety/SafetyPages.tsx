@@ -18,6 +18,7 @@ import LiveMapToggle from '../weather/LiveMapToggle'
 import MapsPanel from './MapsPanel'
 import PhoneAlertsPage from './PhoneAlertsPage'
 import FirstAidList from './FirstAidList'
+import { useAbroad } from './Call911'
 import HazardPage from './HazardsPage'
 import OfflineMaps from './OfflineMaps'
 import StormTracker from './StormTracker'
@@ -188,6 +189,12 @@ function PastSos() {
   return Array.isArray(raw) && raw.length ? <SosHistory /> : <p className="sf-empty" role="status">No SOS sent from this phone yet.</p>
 }
 
+/** Map page away from our home areas: no list, and the right emergency instruction (911 does not work everywhere). */
+export function OutsideCover() {
+  const abroad = useAbroad()
+  return <p className="sf-empty" role="status">Nearest hospitals: {abroad ? 'ask locally or use the local emergency number' : 'ask your barangay or call 911'}. We have no verified list for where you are yet.</p>
+}
+
 function Body({ sub, l, place }: { sub: Exclude<Sub, 'firstaid' | 'world' | 'offline' | 'alerts'>; l: Loc; place: Place }) {
   switch (sub) {
     case 'warnings': return <Warnings place={place} />
@@ -201,7 +208,7 @@ function Body({ sub, l, place }: { sub: Exclude<Sub, 'firstaid' | 'world' | 'off
     case 'storms': return <StormTracker place={place} />
     case 'map': {
       // Our places are listed per home area. Away from that area (another city, abroad) we show no list rather than a far one.
-      if (!coversHere(place)) return <p className="sf-empty" role="status">Nearest hospitals: ask your barangay or call 911. We have no verified list for where you are yet.</p>
+      if (!coversHere(place)) return <OutsideCover />
       return (
         <>
           <RescueMap lat={place.weather.lat} lon={place.weather.lon} zoneName={HOME_ZONES.find((z) => z.id === place.zone)?.name} />
