@@ -43,10 +43,11 @@ describe('Health overview (v13)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: hero, Pinned, Browse, For you (Family health joins in H4)', async () => {
+  it('order: hero, Pinned, Family health, Browse, For you', async () => {
+    await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
     render(<Health />)
-    await screen.findByTestId('for-you')
-    const els = ['bodyhero', 'glance', 'browse', 'for-you'].map((id) => screen.getByTestId(id))
+    await screen.findByTestId('family-health')
+    const els = ['bodyhero', 'glance', 'family-health', 'browse', 'for-you'].map((id) => screen.getByTestId(id))
     els.slice(1).forEach((el, i) => expect(els[i]!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })
 

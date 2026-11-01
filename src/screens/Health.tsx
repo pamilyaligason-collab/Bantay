@@ -22,6 +22,7 @@ import { AttentionHero } from '../features/health/AttentionHero'
 import { pickAttention } from '../features/health/attention'
 import { PersonSwitcher } from '../features/health/PersonSwitcher'
 import { useActingPersonId } from '../features/viewas/viewAs'
+import { FamilyHealthCard } from '../features/health/FamilyHealthCard'
 import { ForYou } from '../features/health/ForYou'
 import { PinnedTiles } from '../features/health/PinnedTiles'
 import { HealthBrowse } from '../features/health/HealthBrowse'
@@ -92,6 +93,7 @@ function Overview() {
         </Section>
       )}
       {ready && personId && <PinnedTiles personId={personId} readings={readings} />}
+      {ready && personId && <FamilyHealthCard />}
       {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}
       {adding && personId && (() => {
