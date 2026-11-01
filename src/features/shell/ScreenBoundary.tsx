@@ -11,7 +11,7 @@ export class ScreenBoundary extends Component<{ children: ReactNode; resetKey?: 
     return (
       <section className="card" role="alert" style={{ margin: 16, padding: 16 }}>
         <h2 style={{ margin: '0 0 8px' }}>This page did not load</h2>
-        <p>Something went wrong here. Reload to try again. The tab bar and the help button still work.</p>
+        <p>Something went wrong here. Reload to try again. The tab bar still works. For help, open the Safety tab.</p>
         <button type="button" className="btn" onClick={() => location.reload()}>Reload</button>
       </section>
     )
@@ -22,6 +22,7 @@ const RELOADED = 'preloadReloaded'
 /** A new deploy removes old chunk files: a lazy import then fails with vite:preloadError. Reload once to pick up the new build; the sessionStorage flag stops a loop. */
 export function reloadOnPreloadError(): () => void {
   const on = () => {
+    if (document.querySelector('.sos-bare')) return // a running SOS must not be ended by a reload
     try { if (sessionStorage.getItem(RELOADED)) return; sessionStorage.setItem(RELOADED, '1') } catch { return }
     location.reload()
   }
