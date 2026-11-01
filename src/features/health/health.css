@@ -234,3 +234,15 @@
 .rh-now .sub { flex-basis: 100%; }
 .rh-empty { margin: 0; padding: 12px 4px; }
 .rh .mc { width: 100%; height: auto; }
+
+/* H6 Labs: zone labels under the track, plain-words line, summary hero */
+.lr-zones { display: flex; margin: -4px 6px 10px; font-size: 13px; font-style: normal; color: var(--ink2); }
+.lr-zones i { font-style: normal; text-align: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lr-zones i.n { color: var(--green); font-weight: 600; }
+.lr-say { margin: 4px 0 0; font-size: 15px; color: var(--ink); }
+.lr-wrap { display: block; margin-bottom: 10px; }
+.lr-wrap .lr-card { margin-bottom: 0; }
+.lr-wrap .btn { margin-top: 8px; }
+.lb-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; padding: 14px; border-radius: 20px; background: var(--card); text-align: center; }
+.lb-sum b { display: block; font-family: "Fraunces", serif; font-size: 28px; line-height: 1.1; }
+.lb-sum span { font-size: 14px; color: var(--ink2); }

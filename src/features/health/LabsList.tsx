@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { latestByTest, type Range, type Reading } from './ranges'
-import { groupLabs, labBand, labDate, labNum, labRow, labVerdict, previousResult, rangeSource, type LabRow, type LabSource } from './labsLogic'
+import { groupLabs, labBand, labDate, labNum, labRow, labVerdict, plainWords, previousResult, rangeSource, type LabRow, type LabSource } from './labsLogic'
 import { metricLabel } from './model'
 import { isVital } from './vitals'
 import { Icon } from '../shell/Icon'
 import { EmptyState } from '../look/EmptyState'
+import { Segmented } from '../look/Segmented'
 
 /** The number line of one lab: the usual range as a band, "You" on the latest value and, with the Previous switch on, a hollow mark for the one before (D-38). */
 export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null }) {
@@ -20,7 +21,10 @@ export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null })
     if (prevOutermost) you = b.edge === 'high' ? b.you - 8 : b.you + 8
     else prev = b.edge === 'high' ? p0.you - 8 : p0.you + 8
   }
+  const { low, high } = range
+  const normal = low != null && high != null ? `${labNum(low)}-${labNum(high)}` : high != null ? `up to ${labNum(high)}` : `${labNum(low)} or more`
   return (
+    <>
     <span className="lr-track" aria-hidden="true">
       <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
       {prev != null && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${prev}%` }} />}
@@ -28,6 +32,12 @@ export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null })
       {b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
       {b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
     </span>
+    <span className="lr-zones" aria-hidden="true">
+      {low != null && <i style={{ width: `${b.band.from}%` }}>Low</i>}
+      <i className="n" style={{ width: `${b.band.to - b.band.from}%` }}>Normal {normal}</i>
+      {high != null && <i style={{ width: `${100 - b.band.to}%` }}>High</i>}
+    </span>
+    </>
   )
 }
 
@@ -44,7 +54,9 @@ function LabCard({ row, all, family, showPrev }: { row: LabRow; all: Reading[]; 
   const src = rangeSource(r, family)
   const prev = previousResult(all, r.test, family)
   const ask = pos === 'above' || pos === 'below'
+  const say = pos === 'none' ? '' : plainWords(row.rv?.value ?? r.value, row.range)
   return (
+    <div className="lr-wrap">
     <a className="grp lr-card press" href={`#health/metric/${r.test}`} data-test={r.test}>
       <span className="lr-top">
         <span className="lr-name">{metricLabel(r.test)}</span>
@@ -55,12 +67,15 @@ function LabCard({ row, all, family, showPrev }: { row: LabRow; all: Reading[]; 
         <span className="lr-date" data-testid="lab-date">{labDate(r.takenAt)}</span>
       </span>
       <LabBar row={row} prevAt={showPrev ? prev?.prevAt : null} />
+      {say && <span className="lr-say" style={{ display: 'block' }}>{say}</span>}
       <span className="lr-foot">
         <span className="lr-rng" data-testid="lab-range">{src ? src.text : 'No range printed on the paper'}</span>
         {ask ? <span className="lr-ask">Ask about it</span> : null}
       </span>
       {showPrev && <span className="sub hv-before" data-testid="lab-before">{prev ? prev.line : 'Before: no earlier result'}</span>}
     </a>
+    {ask && <a className="btn" href="#health/visits">Ask at next visit</a>}
+    </div>
   )
 }
 
@@ -83,20 +98,21 @@ export function LabsList({ readings, thresholds, ready, sources }: { readings: R
   const paperDate = labDate(src?.docDate ?? newest.takenAt, true)
   const allLab = rows.every((x) => !x.range || rangeSource(x.reading, thresholds.find((t) => t.key === `${x.reading.personId}:${x.reading.test}`))?.kind === 'lab')
   const anyPrev = rows.some((x) => previousResult(labs, x.reading.test))
-  const chip = (id: Filter, label: string, n: number) => <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(id)}>{label} {n}</button>
+
   return (
     <section aria-label="Lab results" data-testid="labs-list">
+      <section className="lb-sum" data-hero data-testid="lab-summary" aria-label="Summary">
+        <div><b>{g.ask.length}</b><span>To ask about</span></div>
+        <div><b>{g.usual.length}</b><span>In range</span></div>
+        <div><b>{g.noRange.length}</b><span>No range</span></div>
+      </section>
       <a className="grp lb-src press" href="#family/papers" data-testid="lab-source">
         <span className="hc-ic"><Icon name="file" size={20} /></span>
         <span className="grow"><b>{src?.facility ? `${src.facility} · ` : 'Lab paper · '}{paperDate}</b>
           <span className="sub">{allLab ? "Ranges are the lab's own printed ranges, not Bantay's." : 'Where the paper prints no range, a general guide is used and named on the result.'}</span></span>
         <Icon name="chev" size={20} />
       </a>
-      <div className="lb-chips" role="group" aria-label="Show">
-        {chip('all', 'All', ordered.length)}
-        {chip('ask', 'To ask about', g.ask.length)}
-        {chip('in', 'In range', g.usual.length)}
-      </div>
+      <Segmented<Filter> label="Show" value={filter} onChange={setFilter} options={[{ id: 'all', label: `All ${ordered.length}` }, { id: 'ask', label: `To ask about ${g.ask.length}` }, { id: 'in', label: `In range ${g.usual.length}` }]} />
       <div className="grp lb-sw">
         <span className="grow"><b>Show previous result</b><span className="sub">{anyPrev ? 'A hollow mark on each bar' : 'No earlier result yet'}</span></span>
         <button type="button" className="hv-sw" role="switch" aria-checked={anyPrev && showPrev} aria-label="Show previous result" disabled={!anyPrev} onClick={() => setShowPrev((p) => !p)}><span className="hv-sw-t" aria-hidden="true" /></button>

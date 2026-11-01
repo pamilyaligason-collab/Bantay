@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle } from '../look/LargeTitle'
 import { PersonChips } from '../records/PersonChips'
 import { useConfirmedDocs } from '../records/useRecordsServer'
 import { LabsList } from './LabsList'
@@ -19,7 +19,7 @@ export default function LabsScreen() {
   return (
     <>
       <p className="eyebrow lb-eyebrow">from the lab's own paper</p>
-      <SubHeader title="Lab results" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Labs" actions={<a className="btn" href="#family/papers">Papers</a>} />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)}</p>}
       <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} />

@@ -30,3 +30,22 @@ describe('LabBar mark positions', () => {
     expect(b.you).toBe(b.prev + 8)
   })
 })
+
+describe('LabBar zone labels', () => {
+  const zones = (extra: object) => {
+    const row = labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'x_test', value: 92, unit: 'mg/dL', ...extra })
+    const { container } = render(<LabBar row={row} />)
+    return container.querySelector('.lr-zones')?.textContent ?? ''
+  }
+  it('Low | Normal 70-100 | High under the track', () => {
+    const t = zones({ labLow: 70, labHigh: 100 })
+    expect(t).toContain('Low')
+    expect(t).toContain('Normal 70-100')
+    expect(t).toContain('High')
+  })
+  it('a range with no low limit has no Low label', () => {
+    const t = zones({ labHigh: 100 })
+    expect(t).not.toContain('Low')
+    expect(t).toContain('High')
+  })
+})
