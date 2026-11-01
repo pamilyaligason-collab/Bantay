@@ -4,7 +4,6 @@
 .cm-hero .bo-orb i { border-color: var(--tint-teal-ink); }
 .cm-hero-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-sub { color: var(--muted); font-size: 15px; margin: 0; }
-.cm-hero .cm-sub { color: var(--ink); }
 .cm-start { min-height: 56px; font-size: 19px; }
 .cm-buzz { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 44px; text-align: left; }
 .cm-buzz > span { display: grid; min-width: 0; }
@@ -23,10 +22,10 @@
 .cm-crisis { display: grid; gap: 8px; }
 .cm-crisis-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-nums { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.cm-nums .btn2 { min-width: 0; padding: 0 8px; }
+.cm-call { min-height: 44px; min-width: 0; box-sizing: border-box; padding: 6px 10px; border-radius: 22px; background: var(--green-tint); color: var(--green); font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere; } /* a number may wrap at 195 px; it is not a .btn2 so it is not held to one line */
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
 @media (max-width: 300px) { .cm-nums { grid-template-columns: 1fr; } }
-.cm-media { flex: none; width: 240px; min-height: 150px; display: grid; align-content: start; gap: 4px; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; }
+.cm-media { position: relative; flex: none; width: 240px; min-height: 150px; display: grid; align-content: start; gap: 4px; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; }
 .cm-media b { font-size: 17px; }
 .cm-media-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--tint-teal); color: var(--tint-teal-ink); }
 .cm-k { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }

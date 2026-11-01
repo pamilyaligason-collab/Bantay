@@ -15,7 +15,7 @@ export default function CrisisCard() {
       <p className="cm-sub">NCMH Crisis Hotline, free to call, 24/7</p>
       <a className="btn block cm-start" href={telHref(first)}>Call {first}</a>
       <div className="cm-nums">
-        {rest.map((n) => <a key={n} className="btn2" href={telHref(n)}>Call {n}</a>)}
+        {rest.map((n) => <a key={n} className="cm-call" href={telHref(n)}>Call {n}</a>)}
       </div>
       <p className="cm-sub">Source: <a href={src.sourceUrl} target="_blank" rel="noopener noreferrer" className="cm-src">{new URL(src.sourceUrl).hostname.replace(/^www\./, '')}</a>, listed {src.date}</p>
     </section>
