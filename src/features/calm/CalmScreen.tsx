@@ -11,6 +11,7 @@ import { useKv } from '../shell/useKv'
 import SosScreen from '../sos/SosScreen'
 import BreathSheet from '../today/BreathSheet'
 import { cycleSecs, momentAt, SHOWN_PATTERNS, type SelfCareEntry } from '../today/breathLogic'
+import MoodCheck from './MoodCheck'
 import './calm.css'
 
 /** The one hero: an idle breathing orb (same loop as today/CalmCard) that opens the existing breath sheet. */
@@ -63,6 +64,7 @@ export default function CalmScreen() {
     <div className="cm" data-testid="calm">
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Calm" actions={<button ref={ask} type="button" className="cm-ask" aria-haspopup="dialog" onClick={() => setJack(true)}>Ask Jack</button>} />
       <Hero />
+      <MoodCheck />
       {jack && <JackSheet onClose={() => { setJack(false); ask.current?.focus() }} onSos={() => { setJack(false); setSos(true) }} firstName={firstName(name)} />}
       {sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body)}
     </div>
