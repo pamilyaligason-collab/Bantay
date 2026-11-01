@@ -9,9 +9,12 @@ import './styles/tokens.css'
 import './styles/app.css'
 import './styles/glass.css'
 import './styles/narrow.css'
+import './styles/safearea.css'
+import { reloadOnPreloadError } from './features/shell/ScreenBoundary'
 import { watchNarrow } from './styles/narrowMode'
 import { installErrorLogging } from './features/monitor/errors'
 
+reloadOnPreloadError() // a failed lazy chunk after a deploy: one reload
 watchNarrow() // 200% text on the phone: see narrowMode.ts
 installErrorLogging() // hashed client error counter (S8); no stack, no URL, no values
 

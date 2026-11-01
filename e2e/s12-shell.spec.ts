@@ -41,13 +41,13 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   await expect(page).toHaveURL(/#discover$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Discover' })).toBeVisible()
   await expect(nav.getByRole('button', { name: 'Discover' })).toHaveAttribute('aria-current', 'page')
-  // S16: the overview is a hero, a season row and five tiles (one link each); the sub-tab pills live on the sub screens
-  const tiles = page.getByTestId('discover-tiles').getByRole('link')
-  await expect(tiles).toHaveCount(5)
-  const names = await tiles.allTextContents()
-  const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // tile and pill order of S16, so no two neighbouring hues repeat
-  expect(ORDER.map((l, i) => names[i]!.startsWith(l))).toEqual([true, true, true, true, true])
-  await page.getByTestId('tile-watch').click()
+  // v13: the overview is the video hero plus Section links; the sub-tab pills live on the sub screens
+  await expect(page.getByTestId('dc-hero')).toBeVisible()
+  const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // pill order of S16, so no two neighbouring hues repeat
+  for (const [label, hash] of [['All topics', 'learn'], ['See all', 'listen'], ['See all', 'news'], ['All games', 'play']] as const) {
+    await expect(page.locator(`a[href="#discover/${hash}"]`).filter({ hasText: label })).toHaveCount(1)
+  }
+  await page.getByTestId('dc-hero').getByRole('link').click()
   await expect(page).toHaveURL(/#discover\/watch$/)
   await expect(page.getByTestId('watch')).toBeVisible() // session 13 registered Watch
   const subs = page.getByRole('group', { name: 'Discover sections' })
@@ -86,25 +86,24 @@ test('Jack: on the five tabs, off on full views and own-header pages', async ({ 
   }
 })
 
-test('Jack is 56 px, a tap opens the chat, Back closes it, a hold opens the Ask sheet', async ({ page }) => {
+test('Jack is 62 px, a tap opens the Jack sheet, Back closes it, Chat opens the assistant', async ({ page }) => {
   await page.goto('/#today')
-  const jack = page.getByRole('button', { name: 'Ask Bantay' })
+  const jack = page.getByTestId('jack')
   const b = (await jack.boundingBox())!
-  expect([b.width, b.height]).toEqual([56, 56])
+  expect([b.width, b.height]).toEqual([62, 62])
   await jack.click()
+  const sheet = page.getByRole('dialog', { name: 'Jack' })
+  await expect(sheet).toBeVisible()
+  await page.goBack()
+  await expect(sheet).toHaveCount(0)
+  await expect(jack).toBeFocused() // focus comes back to the button that opened the sheet
+  await jack.click()
+  await page.getByTestId('jack-chat').click()
   const chat = page.getByRole('dialog', { name: 'Ask Bantay' })
   await expect(chat).toBeVisible()
-  await expect(chat.getByRole('button', { name: 'Back' })).toBeVisible()
   await chat.getByRole('button', { name: 'Back' }).click()
   await expect(chat).toHaveCount(0)
-  await expect(jack).toBeFocused() // focus comes back to the button that opened Jack
-  const c = (await jack.boundingBox())!
-  await page.mouse.move(c.x + 28, c.y + 28)
-  await page.mouse.down()
-  await page.waitForTimeout(700)
-  await page.mouse.up()
-  await expect(page.getByRole('dialog', { name: 'What would you like to do?' })).toBeVisible()
-  await expect(chat).toHaveCount(0) // the release did not also open Jack
+  await expect(jack).toBeFocused()
 })
 
 test('Simple mode has no Jack button and no tab bar', async ({ page }) => {

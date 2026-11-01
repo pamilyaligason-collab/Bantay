@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Family feed</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding-right:12px;font-size:17px;font-weight:500;text-decoration:none;margin-left:-6px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+h1{margin:2px 0 0;font-size:34px;font-weight:700;letter-spacing:-0.02em}
+
+.fp{background:#FFF8F1;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06);padding:14px 16px 8px;margin-top:12px}
+.rb{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-family:inherit;cursor:pointer}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.live{animation:pulse 2.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.live{animation:none}}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+</style>
+</helmet>
+<div class="ph" style="height: 2060px;">
+<div class="pad" style="padding-top: 20px;">
+<div style="display:flex;align-items:center;justify-content:space-between;min-height:44px;"><a href="Health.dc.html" class="back" style="color:#9A4A17;"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Health</a></div><h1>Family feed</h1>
+<div class="card" style="background:#FFF8F1;padding:16px;margin-top:14px;">
+<div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#1E6B4E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">L</span><div style="font-size:19px;font-weight:700;">Share with the family</div></div>
+<div class="scroller" style="margin-top:12px;"><button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"></rect><circle cx="12" cy="12.5" r="3.5"></circle></svg>Photo</button><button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"></path></svg>Reading (BP, sugar)</button><button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"></path></svg>Lab result</button><button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12.5 3 3 5-6"></path></svg>Status &quot;I&#39;m OK&quot;</button><button type="button" style="flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:0;background:#FBE3D0;color:#9A4A17;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Voice note</button></div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:10px;color:#6B675F;font-size:13px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>You choose who sees it</div>
+</div>
+<div style="display:flex;gap:4px;padding:3px;border-radius:15px;background:#EDE3D8;margin-top:16px;" role="group" aria-label="Filter the feed"><button type="button" aria-pressed="true" style="flex:1;min-height:44px;border:0;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:#fff;color:#9A4A17;box-shadow:0 1px 3px rgba(40,30,10,.15);">All</button><button type="button" aria-pressed="false" style="flex:1;min-height:44px;border:0;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:#6B675F;">Health</button><button type="button" aria-pressed="false" style="flex:1;min-height:44px;border:0;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:#6B675F;">Photos</button><button type="button" aria-pressed="false" style="flex:1;min-height:44px;border:0;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:transparent;color:#6B675F;">Check-ins</button></div>
+<div class="s" style="margin:14px 0 0;font-weight:600;">Sample posts in this mockup</div>
+
+<div class="fp"><div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#C2562B;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">M</span><div style="min-width:0;"><div style="font-size:17px;font-weight:600;line-height:22px;">Ma</div><div class="s">Dampas, Tagbilaran &middot; 8:12</div></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;"><div style="font-size:15px;font-weight:600;">Shared a blood pressure reading</div><span class="chip" style="background:#FBE7E4;color:#B42318;">High</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px;"><div style="font-size:40px;font-weight:700;letter-spacing:-0.03em;">148/90 <span style="font-size:15px;font-weight:500;color:#6B675F;">mmHg</span></div>
+<svg width="120" height="44" viewBox="0 0 120 44" role="img" aria-label="Sample trend, rising"><polyline points="4,34 24,30 44,32 64,22 84,24 104,10" fill="none" stroke="#B42318" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="104" cy="10" r="4" fill="#B42318"></circle></svg></div>
+<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="rb" aria-label="Send a care heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg><span style="font-size:15px;font-weight:600;">2</span></button><button type="button" class="rb" aria-label="Reply"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"></path></svg><span style="font-size:15px;font-weight:600;">Reply</span></button></div>
+<div class="s" style="margin:6px 0 6px 0;padding:8px 12px;border-radius:12px;background:#fff;"><b style="color:#1C1B19;">David</b> &middot; Please rest, we will call you tonight.</div>
+</div>
+
+<div class="fp"><div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#2459C7;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">J</span><div style="min-width:0;"><div style="font-size:17px;font-weight:600;line-height:22px;">Joshua</div><div class="s">Tagbilaran &middot; 7:40</div></div></div>
+<div style="margin-top:12px;height:170px;border-radius:14px;background:linear-gradient(135deg,#F6D7C3,#E7B9A4);display:flex;align-items:flex-end;padding:10px 12px;box-sizing:border-box;color:#5C2E1F;font-size:15px;font-weight:600;">[Family photo]</div>
+<div style="font-size:17px;margin-top:10px;">Swimming class done</div>
+<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="rb" aria-label="Send a care heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg><span style="font-size:15px;font-weight:600;">5</span></button><button type="button" class="rb" aria-label="Reply"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"></path></svg><span style="font-size:15px;font-weight:600;">Reply</span></button></div></div>
+
+<div class="fp"><div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#0F766E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">R</span><div style="min-width:0;"><div style="font-size:17px;font-weight:600;line-height:22px;">Rosalino</div><div class="s">Public market &middot; 7:05</div></div></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:#E3EFE8;color:#1E6B4E;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12.5 3 3 5-6"></path></svg><div><div style="font-size:15px;font-weight:700;">I&#39;m OK</div><div style="font-size:17px;color:#1C1B19;">At the market, all good</div></div></div>
+<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="rb" aria-label="Send a care heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg><span style="font-size:15px;font-weight:600;">1</span></button><button type="button" class="rb" aria-label="Reply"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"></path></svg><span style="font-size:15px;font-weight:600;">Reply</span></button></div></div>
+
+<div class="fp"><div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#6D4BC2;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">S</span><div style="min-width:0;"><div style="font-size:17px;font-weight:600;line-height:22px;">Sevilla</div><div class="s">Dampas, Tagbilaran &middot; Yesterday</div></div></div>
+<div style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#fff;">
+<div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:15px;font-weight:600;">Shared a lab result</div><span class="chip" style="background:#EEE9FA;color:#6D4BC2;">Lab paper</span></div>
+<div style="font-size:17px;margin-top:6px;">Cholesterol <b>[value]</b></div>
+<div class="s">[placeholder] No number is shown in this mockup</div></div>
+<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="rb" aria-label="Send a care heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg></button><a href="Labs.dc.html" class="btn" style="background:#FBE3D0;color:#9A4A17;">Ask a question</a></div></div>
+
+<div class="fp"><div style="display:flex;align-items:center;gap:10px;"><span style="width:40px;height:40px;border-radius:50%;background:#B4531F;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;">Mf</span><div style="min-width:0;"><div style="font-size:17px;font-weight:600;line-height:22px;">Marifel</div><div class="s">Conel, General Santos &middot; Yesterday</div></div></div>
+<div style="display:flex;align-items:center;gap:12px;margin-top:12px;padding:6px 12px 6px 6px;border-radius:999px;background:#fff;">
+<button type="button" aria-label="Play voice note, 0:24" style="width:44px;height:44px;border-radius:50%;border:0;background:#C2562B;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#fff"></path></svg></button>
+<div style="display:flex;align-items:center;gap:3px;height:40px;flex:1;" aria-hidden="true"><span class="wv" style="width:3px;height:8px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:18px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:26px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:14px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:30px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:22px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:12px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:28px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:34px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:20px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:10px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:24px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:30px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:16px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:8px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:22px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:28px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:14px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:20px;border-radius:2px;background:#C9824F;"></span><span class="wv" style="width:3px;height:10px;border-radius:2px;background:#C9824F;"></span></div><span class="s" style="font-weight:600;">0:24</span></div>
+<div style="display:flex;gap:8px;margin-top:8px;"><button type="button" class="rb" aria-label="Send a care heart"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path></svg><span style="font-size:15px;font-weight:600;">3</span></button><button type="button" class="rb" aria-label="Reply"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"></path></svg><span style="font-size:15px;font-weight:600;">Reply</span></button></div></div>
+
+<div class="fp" style="background:#fff;border:1px solid #F2D9C2;">
+<div style="display:flex;align-items:center;gap:10px;"><span class="ic" style="background:#FDF1DC;color:#8A4B06;border-radius:50%;width:40px;height:40px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>
+<div style="flex:1;"><div style="font-size:17px;font-weight:600;line-height:22px;">Joshua missed a medicine at 8:00</div><div class="s">Sea water nasal spray &middot; Bantay reminder</div></div></div>
+<div style="margin:10px 0 6px;"><a href="Family.dc.html" class="btn bp">Mark taken</a></div></div>
+
+<div style="margin-top:24px;padding:14px 16px;border-radius:16px;border:1.5px dashed #D9B79B;color:#6B675F;font-size:13px;line-height:19px;"><b style="color:#9A4A17;">New:</b> needs a family feed. Today these live in Messages, Memories and check-ins.</div>
+
+</div>
+<a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+<nav class="tabs" aria-label="Tabs">
+<a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a href="Health.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+<a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+<a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+<a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2060}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

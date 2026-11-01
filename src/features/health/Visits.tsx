@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import { PersonChips } from '../records/PersonChips'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle, Section } from '../look'
 import { useHealthPerson } from './useHealthPerson'
 import { useVisits } from './useVisits'
 import { bringList, monthDay, type Visit } from './visitsLogic'
@@ -53,7 +53,7 @@ export default function Visits() {
 
   return (
     <>
-      <SubHeader title="Doctor visits" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Visits" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
 
       {next && nd ? (
@@ -62,18 +62,23 @@ export default function Visits() {
           <span className="grow"><b>{next.title}</b><span className="sub">{next.sub}</span></span>
         </section>
       ) : (
-        <div className="card rf-hero" data-testid="no-visit"><b>No visit booked</b><span className="sub">Visits from your doctor&apos;s papers show here. You can still prepare a summary any time.</span></div>
+        <div className="card rf-hero" data-testid="no-visit">
+          <b>No visit booked</b>
+          <span className="sub">Pick a date in Plan and Bantay will remind you. Visits from your doctor&apos;s papers show here too.</span>
+          <span className="vs-acts">
+            <a className="btn" href="#family/plan">Plan a visit</a>
+            {questions.length > 0 && <span className="vs-chip">{questions.length} {questions.length === 1 ? 'question' : 'questions'} ready</span>}
+          </span>
+        </div>
       )}
 
       {list.followUps.length > 0 && (
-        <section aria-labelledby="vs-fu" data-testid="follow-ups">
-          <h2 className="hd" id="vs-fu">Follow-ups</h2>
+        <Section title="Follow-ups" testId="follow-ups">
           <ul className="grp">{list.followUps.map((v) => <VisitRow key={v.key} v={v} />)}</ul>
-        </section>
+        </Section>
       )}
 
-      <section aria-labelledby="vs-bring">
-        <h2 className="hd" id="vs-bring">Bring</h2>
+      <Section title="Bring">
         <ul className="grp vs-bring">
           {items.map((b) => (
             <li key={b.id} className="row">
@@ -89,22 +94,20 @@ export default function Visits() {
             <button type="button" className="btn2 wz-sm" onClick={addQuestion}>Add</button>
           </span>
         </div>
-      </section>
+      </Section>
 
       <a className="btn vs-prep" href="#health/summary">Prepare visit summary</a>
 
-      {list.upcoming.length > 1 && (
-        <section aria-labelledby="vs-up">
-          <h2 className="hd" id="vs-up">Coming up</h2>
-          <ul className="grp">{list.upcoming.slice(1).map((v) => <VisitRow key={v.key} v={v} />)}</ul>
-        </section>
-      )}
-      {list.past.length > 0 && (
-        <section aria-labelledby="vs-past">
-          <h2 className="hd" id="vs-past">Past visits</h2>
-          <ul className="grp">{list.past.map((v) => <VisitRow key={v.key} v={v} />)}</ul>
-        </section>
-      )}
+      <Section title="Coming up">
+        {list.upcoming.length > 1
+          ? <ul className="grp">{list.upcoming.slice(1).map((v) => <VisitRow key={v.key} v={v} />)}</ul>
+          : <div className="card rf-hero"><b>Nothing booked</b><span className="sub">Planned visits and follow-ups show here.</span></div>}
+      </Section>
+      <Section title="Past visits">
+        {list.past.length > 0
+          ? <ul className="grp">{list.past.map((v) => <VisitRow key={v.key} v={v} />)}</ul>
+          : <div className="card rf-hero"><b>No past visits yet</b><span className="sub">Finished visits and what you asked are kept here.</span></div>}
+      </Section>
     </>
   )
 }

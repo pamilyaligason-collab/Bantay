@@ -65,7 +65,7 @@ async function open(page: Page, needs: boolean): Promise<void> {
   await seed(page, 'bantay-family', 'tasks', [{ clientId: 't1', title: 'Buy rice', due: '2026-10-27', assigneePersonId: 'ma', done: false }])
   if (needs) await seed(page, 'bantay-alerts', 'alerts', [NEED])
   await page.reload()
-  await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
+  await expect(page.locator('h1')).toHaveText('Family') // v13: the faces row is gone from the root
 }
 
 /** `full`: open #family with a missed dose waiting under the ID card (budget 1650), the check-ins and a week of plan items seeded. */

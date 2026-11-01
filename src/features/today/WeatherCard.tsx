@@ -48,7 +48,17 @@ function slots(wx: Wx, now: Date) {
 }
 
 /** N-2: say when the weather is for the saved zone because the phone did not share its position (not while it is still looking). */
-const whereOf = (place: Parameters<typeof placeNameOf>[0]) => (place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (saved zone)` : placeNameOf(place))
+const agoOf = (at?: number) => {
+  const m = at ? Math.max(0, Math.round((Date.now() - at) / 60_000)) : null
+  return m == null ? '' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
+}
+const whereOf = (place: Parameters<typeof placeNameOf>[0]) => {
+  if (place?.source === 'last') {
+    const ago = agoOf(place.fixAt)
+    return `${placeNameOf(place).replace(' · last known', '')} (last known${ago ? `, ${ago}` : ''})`
+  }
+  return place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (no location yet, set your home in Settings)` : placeNameOf(place)
+}
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
@@ -75,10 +85,16 @@ const offlineNote = (wx: Wx) => (wx.offline ? ', may be out of date' : '')
  *  the feels-like pill, then (expanded) the action box with Jack and a 3-slot hourly strip. The whole card links to the Weather screen.
  *  A PAGASA warning never shows here (N-8, it has its own card); `storm` draws the night storm scene with no Jack (R11); `noJack` drops Jack when another is on screen (D-91).
  *  Nothing is drawn until a temperature is known (never a made-up 0). */
-export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean }) {
+export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false, hero = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean; hero?: boolean }) {
   const place = usePlace()
   const wx = useWeather(place?.weather ?? null)
-  if (!wx || wx.temp == null || !place) return null
+  if (!wx || wx.temp == null || !place) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
+    return hero ? (
+      <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">
+        <b>Weather</b><span>Finding your weather. Open for the full forecast.</span>
+      </a>
+    ) : null
+  }
   const now = new Date()
   const line = storm ? null : weatherActionLine(wx, now, null)
   const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(wx, now) ?? line.text : line?.text ?? null
@@ -103,10 +119,11 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
     <span className="td-act-box"><Icon name="therm" size={24} /><b>{text}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>
   )
   return (
-    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-testid="weather-hero" style={VEIL}>
+    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-hero data-contrast-bg="#0B1636" data-testid="weather-hero" style={VEIL}>
       <SceneHero
         scene={scene}
         inkOnScene
+        contrastBg="#0B1636"
         compact={!expanded}
         kicker={kicker}
         title={<span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><span className="td-wxh-c">{cond}</span>{range && <span className="td-wxh-hl">{range}</span>}</span>}

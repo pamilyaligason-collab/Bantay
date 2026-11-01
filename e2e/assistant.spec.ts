@@ -42,7 +42,7 @@ test.beforeEach(async ({ page }) => {
 
 test('button opens a dialog, Esc closes it, focus returns', async ({ page }) => {
   await page.goto('/')
-  const fab = page.getByRole('button', { name: 'Ask Bantay' })
+  const fab = page.getByTestId('jack')
   await expect(fab).toBeVisible()
   await openChat(page)
   await expect(page.getByRole('dialog', { name: 'Ask Bantay' })).toBeVisible()
@@ -61,7 +61,7 @@ test('focus stays inside the sheet and the Back gesture closes it', async ({ pag
   }
   await page.goBack()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page.locator('h1')).toHaveText('Today')
+  await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
 })
 
 test.describe('with a mocked webhook', () => {

@@ -1,11 +1,10 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const acting = vi.hoisted(() => ({ on: false }))
 vi.mock('../features/auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../features/viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActing: () => ({ acting: acting.on, personId: acting.on ? 'p9' : null, name: 'Mama' }) }))
-vi.mock('../features/family/NeedYouNow', () => ({ default: () => <div data-testid="needyounow" /> }))
 vi.mock('../features/family/Memories', () => ({ default: () => <div data-testid="memories-body" /> }))
 import type { FamilyPerson } from '../features/family/roster'
 import type { Msg } from '../features/family/messagesApi'
@@ -61,31 +60,31 @@ describe('messagesPreview', () => {
 })
 
 describe('Family root', () => {
-  it('draws Needs you now when not acting, and not at all while acting as someone', async () => {
-    location.hash = '#family'
-    const first = render(<Family />)
-    expect(await screen.findByTestId('needyounow')).toBeTruthy()
-    first.unmount()
+  it('shows View only instead of the I am OK button, and no Needs you now, while acting as someone', async () => {
     acting.on = true
+    location.hash = '#family'
     render(<Family />)
     await screen.findByTestId('msgs')
-    expect(screen.queryByTestId('needyounow')).toBeNull()
+    expect(screen.queryByTestId('needs')).toBeNull()
+    expect(screen.getByRole('button', { name: "I'm OK, view only" })).toBeTruthy()
   })
 
-  it('Memories is one button with one expanded state, drawn with icons (no text glyph), and opens the photos in place', async () => {
+  it('Together lists Plan, Messages, Papers and Memories, each a link to its own page', async () => {
     location.hash = '#family'
     render(<Family />)
-    const row = await screen.findByTestId('memoriesrow')
-    const btn = row.querySelector('button.rw-main') as HTMLButtonElement
-    expect(row.querySelectorAll('button')).toHaveLength(1)
-    expect(btn.getAttribute('aria-expanded')).toBe('false')
-    expect(btn.textContent).not.toMatch(/[–+]/)
-    expect(screen.queryByTestId('memories-body')).toBeNull()
-    fireEvent.click(btn)
-    expect(btn.getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByTestId('memories-body')).toBeTruthy()
-    expect(document.getElementById(btn.getAttribute('aria-controls')!)).toBeTruthy()
-    fireEvent.click(btn)
-    expect(screen.queryByTestId('memories-body')).toBeNull()
+    const list = await screen.findByTestId('together-list')
+    const hrefs = [...list.querySelectorAll('a')].map((a) => a.getAttribute('href'))
+    expect(hrefs).toEqual(['#family/plan', '#family/messages', '#family/papers', '#family/memories'])
+  })
+
+  it('#family/memories is a pushed page with a Back to Family link; #family/feed is off by default and returns to Family', async () => {
+    location.hash = '#family/memories'
+    const first = render(<Family />)
+    expect(await screen.findByTestId('memories-body')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Back to Family' })).toBeTruthy()
+    first.unmount()
+    location.hash = '#family/feed'
+    render(<Family />)
+    await vi.waitFor(() => expect(location.hash).toBe('#family'))
   })
 })

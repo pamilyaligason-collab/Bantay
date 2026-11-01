@@ -11,7 +11,8 @@ import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
   effectiveRange, metricLabel, monthlyAverages, rangeLine, shortDate, type Period, type Point
 } from './model'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle } from '../look/LargeTitle'
+import { Segmented } from '../look/Segmented'
 import { useActivity } from './useActivity'
 import { isVital } from './vitals'
 import BpCheckButton from './bpcheck/BpCheckButton'
@@ -69,7 +70,7 @@ export default function MetricScreen({ code }: { code: string }) {
 
   return (
     <>
-      <SubHeader title={label} backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title={label} />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
 
       {!ready ? null : !known || (pts.length === 0 && !part) ? (
@@ -102,16 +103,10 @@ export default function MetricScreen({ code }: { code: string }) {
           {bpCode && canMark && personId && <BpCheckButton personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} onSaved={(m) => { setSaved(m); reload() }} className="btn mc-add" />}
           {saved && <p className="sub" role="status">{saved}</p>}
           {!lab && (
-            <div className="seg" role="group" aria-label="Period">
-              <button type="button" aria-pressed={period === 'week'} onClick={() => setPeriod('week')}>This week</button>
-              <button type="button" aria-pressed={period === 'month'} onClick={() => setPeriod('month')}>This month</button>
-            </div>
+            <Segmented<Period> label="Period" value={period} onChange={setPeriod} options={[{ id: 'week', label: 'This week' }, { id: 'month', label: 'This month' }]} />
           )}
           {!activity && !lab && (
-            <div className="seg mc-part" role="group" aria-label="Time of day">
-              <button type="button" aria-pressed={part === 'am'} onClick={() => setPart(part === 'am' ? null : 'am')}>Morning</button>
-              <button type="button" aria-pressed={part === 'pm'} onClick={() => setPart(part === 'pm' ? null : 'pm')}>Evening</button>
-            </div>
+            <Segmented<'am' | 'pm' | 'all'> label="Time of day" value={part ?? 'all'} onChange={(id) => setPart(id === 'all' || part === id ? null : id)} options={[{ id: 'am', label: 'Morning' }, { id: 'pm', label: 'Evening' }]} />
           )}
           {!lab && <div className="grp hv-graph">
             {shown.length === 0 ? (

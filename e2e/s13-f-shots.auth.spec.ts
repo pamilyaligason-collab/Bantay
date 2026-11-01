@@ -78,14 +78,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await seed(page, 'bantay-health', 'readings', [{ id: 1, personId: 'lo', takenAt: at(7, 40), test: 'bp_systolic', value: 150, unit: 'mmHg' }, { id: 2, personId: 'lo', takenAt: at(7, 40), test: 'bp_diastolic', value: 95, unit: 'mmHg' }])
       await seed(page, 'bantay-log', 'activity', [{ personId: 'pa', kind: 'check-in', minutes: null, steps: null, startedAt: at(6, 55), source: 'manual' }, { personId: 'lo', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' }])
       await page.reload()
-      await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
+      await expect(page.getByTestId('person-card').first()).toBeVisible() // v13: person cards replaced the faces row
     })
 
-    test('people: rings, I\'m OK before and after', async ({ page }) => {
-      await expect(page.getByRole('button', { name: /^Lola Remy,.*Needs a look/ })).toBeVisible()
+    test("people: I'm OK before and after", async ({ page }) => {
       await shot(page, 'people-before', scheme)
-      const ring = await page.locator('.fm2-ring[data-k="ok"]').first().evaluate((e) => getComputedStyle(e).borderTopWidth)
-      expect(ring).toBe('3px') // the 3px status ring
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
       await expect(page.getByText(/^You're OK · /)).toBeVisible()
       await shot(page, 'im-ok-after', scheme)
@@ -96,7 +93,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('sheet: mid-drag follows the pointer, a long drag closes it', async ({ page }) => {
       await page.getByTestId('planrow').getByRole('link').click()
-      await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
+      await expect(page.getByText(/^Add a reminder for /).first()).toBeVisible()
       await shot(page, 'plan-empty', scheme)
       await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       const dlg = page.getByRole('dialog')

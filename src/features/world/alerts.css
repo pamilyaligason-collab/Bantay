@@ -1,0 +1,11 @@
+.wsw { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; padding: 0; flex: none; cursor: pointer; }
+.wsw-track { position: relative; width: 51px; height: 31px; border-radius: 16px; background: var(--muted); transition: background var(--dur-base) var(--ease-out); }
+.wsw[aria-checked="true"] .wsw-track { background: var(--btn); }
+.wsw-thumb { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 14px; background: var(--card); box-shadow: var(--shadow); transition: transform var(--dur-base) var(--ease-out); }
+.wsw[aria-checked="true"] .wsw-thumb { transform: translateX(20px); }
+.wsw:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { .wsw-track, .wsw-thumb { transition: none; } }
+.wal-note, .wal-foot { color: var(--muted); font-size: 13px; line-height: 18px; margin: 8px 4px 0; overflow-wrap: anywhere; }
+.wal-time { min-height: 44px; min-width: 44px; max-width: 100%; font: inherit; font-size: 17px; color: var(--ink); background: var(--card2); border: 0; border-radius: 12px; padding: 0 10px; }
+.wal-confirm p { margin: 0 0 16px; font-size: 17px; line-height: 24px; }
+.wal-confirm .wal-btns { display: flex; flex-wrap: wrap; gap: 12px; }

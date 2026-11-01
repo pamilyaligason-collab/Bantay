@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
@@ -11,7 +11,7 @@ vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
 import Health from '../../screens/Health'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { resetPersonChoice } from '../records/useHealthData'
+import { resetPersonChoice, useHealthData } from '../records/useHealthData'
 
 const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
 const bp = (sys: number, dia: number, ago: number) => [
@@ -29,81 +29,93 @@ beforeEach(async () => {
 })
 afterEach(cleanup)
 
-describe('Health overview (S16 version B)', () => {
-  it('shows the headline, the body hero with 7-day averages as links, and the At a glance tiles', async () => {
+describe('Health overview (v13)', () => {
+  it('leads with one Needs-attention hero: number line, verdict chip, and the two doors', async () => {
     render(<Health />)
-    await waitFor(() => expect(screen.getByTestId('insight').textContent).toBe('Blood pressure needs a look this week'))
-    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 Above target/ })
-    expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
-    expect(screen.getByTestId('bodyhero').textContent).toMatch(/7-day averages/)
-    expect(document.querySelectorAll('[data-testid="bodyhero"] .hv-pt')).toHaveLength(7) // the 7 metric points stay on the figure
-    expect(document.querySelector('[data-testid="bodyhero"] .hv-glow.warn')).toBeTruthy() // BP above the guide glows
-    for (const k of ['progress', 'meds', 'labs', 'video']) expect(screen.getByTestId(`glance-${k}`)).toBeTruthy()
-    expect(screen.getByTestId('glance-progress').textContent).toContain('BP near guide 0/7') // 124/79 yesterday and 136/88 are both over the 120 guide
+    const hero = await screen.findByTestId('bodyhero')
+    expect(hero.hasAttribute('data-hero')).toBe(true)
+    expect(document.querySelectorAll('[data-hero]')).toHaveLength(1)
+    expect(hero.querySelector('.lr-track')).toBeTruthy()
+    expect(hero.querySelector('.lr-verdict.above')).toBeTruthy() // 124/79 is over the 120 guide
+    expect(hero.textContent).toContain('124/79')
+    expect(within(hero).getByRole('link', { name: 'What it means' }).getAttribute('href')).toBe('#health/metric/bp_systolic')
+    expect(within(hero).getByRole('link', { name: 'Ask at next visit' }).getAttribute('href')).toBe('#health/visits')
+    expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: body hero, At a glance, nudge row, More in Health', async () => {
+  it('order: hero, Pinned, Family health, Browse, For you', async () => {
+    await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
     render(<Health />)
-    await screen.findByTestId('glance')
-    const ids = ['bodyhero', 'glance', 'nudge', 'browse']
-    const els = ids.map((id) => screen.getByTestId(id))
+    await screen.findByTestId('family-health')
+    const els = ['bodyhero', 'glance', 'family-health', 'browse', 'for-you'].map((id) => screen.getByTestId(id))
     els.slice(1).forEach((el, i) => expect(els[i]!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
-    expect(screen.getByTestId('nudge').textContent).toMatch(/This week/)
   })
 
-  it('More in Health: Readings, Body wiki, Move & food and Visits; no Papers, Library or Videos door', async () => {
+  it('More in Health still opens Body wiki', async () => {
     render(<Health />)
-    const grid = await screen.findByTestId('browse')
-    const hrefs = Array.from(grid.querySelectorAll('a')).map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual(['#health/readings', '#health/body', '#health/move', '#health/visits'])
-    expect(screen.queryByRole('link', { name: /^(Papers|Library|Videos)/ })).toBeNull()
+    await screen.findByTestId('browse')
     location.hash = '#health/body'
     fireEvent(window, new HashChangeEvent('hashchange'))
-    expect(await screen.findByRole('heading', { name: 'Explore your body' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Body wiki' })).toBeTruthy()
   })
 
   it('the Labs tile opens the labs screen and the Medicines tile counts today\'s doses', async () => {
     await ldb.medications.bulkAdd([med({ name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } })])
     render(<Health />)
-    expect((await screen.findByTestId('glance-labs')).getAttribute('href')).toBe('#health/labs')
-    const meds = screen.getByTestId('glance-meds')
+    const meds = await screen.findByTestId('glance-meds')
     expect(meds.getAttribute('href')).toBe('#health/meds')
     await waitFor(() => expect(meds.textContent).toContain('2 of 2 left today'))
   })
 
-  it('empty person: one hero with + Reading and Scan, then More in Health; no headline, glance or nudge', async () => {
+  it('empty person: No readings yet with + Reading and Scan; Pinned shows empty tiles, no nudge', async () => {
     await hdb.readings.clear()
     render(<Health />)
     const hero = await screen.findByTestId('bodyhero')
     expect(hero.textContent).toContain('No readings yet')
-    expect(hero.textContent).toContain('Add one or scan a lab paper.')
-    expect(hero.querySelector('.hv-glow')).toBeNull() // faint figure, no glows
-    expect(screen.queryByTestId('insight')).toBeNull()
-    expect(screen.queryByTestId('glance')).toBeNull()
+    expect((await screen.findByTestId('glance-progress')).textContent).toContain('None this week')
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')
-    expect(screen.getByTestId('browse')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))
     expect(await screen.findByText(/^Add blood pressure/)).toBeTruthy()
   })
 
-  it('a lab out of range this week still warns when there are no vitals; a "SURNAME, Given" name does not break the page', async () => {
+  it('a lab out of range leads; a "SURNAME, Given" name does not break the page', async () => {
     await hdb.people.put({ id: 'p1', name: 'SEVILLA, Loyd' })
     await hdb.readings.clear()
     await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2) })
     render(<Health />)
-    expect((await screen.findByTestId('insight')).textContent).toBe('LDL cholesterol needs a look this week')
-    expect(screen.getByTestId('bodyhero').textContent).toContain('No readings yet')
-    expect(screen.queryByTestId('nudge')).toBeNull()
-    expect(screen.getByTestId('glance-labs').textContent).toContain('1 to ask')
+    const hero = await screen.findByTestId('bodyhero')
+    expect(hero.textContent).toContain('LDL cholesterol')
+    expect(hero.querySelector('.lr-verdict.above')).toBeTruthy()
+    expect(screen.getByTestId('browse-labs').textContent).toContain('1 to ask')
   })
 
-  it('labs-only old readings: no headline when nothing is out of range this week', async () => {
-    await hdb.readings.clear()
-    await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 3.1, unit: 'mmol/L', takenAt: day(60) })
+  it('Me switcher opens a sheet; picking Ma goes to her page; hidden for one person', async () => {
     render(<Health />)
     await screen.findByTestId('bodyhero')
-    expect(screen.queryByTestId('insight')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Me/ })).toBeNull()
+    cleanup()
+    await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
+    render(<Health />)
+    const pill = await screen.findByRole('button', { name: /^Me/ })
+    expect(pill.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(pill)
+    expect(pill.getAttribute('aria-expanded')).toBe('true')
+    const sheet = await screen.findByRole('dialog', { name: 'Whose health' })
+    fireEvent.click(within(sheet).getByRole('button', { name: /Ma/ }))
+    await waitFor(() => expect(location.hash).toBe('#health/member/p2'))
+  })
+
+  it('a leftover choice of someone else resets to me; the overview never redirects (1.H12)', async () => {
+    await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
+    const h = renderHook(() => useHealthData())
+    await waitFor(() => expect(h.result.current.ready).toBe(true))
+    act(() => h.result.current.setPersonId('p2'))
+    h.unmount()
+    render(<Health />)
+    await screen.findByTestId('bodyhero')
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Me/ })).toBeTruthy())
+    expect(location.hash).toBe('#health')
   })
 })
 
@@ -166,9 +178,21 @@ const med = (over: Record<string, unknown>) => ({ clientId: `c-${over.name}`, se
 describe('Medicines screen', () => {
   beforeEach(async () => { location.hash = '#health/meds'; await ldb.medications.clear() })
 
-  it('has a Refills door under the list', async () => {
+  it('has a Medicines title with a Health back link and a Refill door in Your lists', async () => {
     render(<Health />)
-    expect((await screen.findByTestId('refills-door')).querySelector('a')?.getAttribute('href')).toBe('#health/refill')
+    expect((await screen.findByRole('heading', { level: 1, name: 'Medicines' })).textContent).toBe('Medicines')
+    expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
+    const door = await screen.findByTestId('refills-door')
+    expect(door.querySelector('a')?.getAttribute('href')).toBe('#health/refill')
+    expect(door.textContent).toContain('Refill')
+    expect(door.textContent).toContain('Nothing to refill')
+    expect(screen.getByRole('heading', { name: 'Your lists' })).toBeTruthy()
+  })
+
+  it('the Refill door shows the lowest days left', async () => {
+    await ldb.medications.add(med({ name: 'Metformin', stockQty: 6, stockSetAt: new Date().toISOString(), schedule: { v: 1, times: ['08:00', '20:00'] } }))
+    render(<Health />)
+    await waitFor(() => expect(screen.getByTestId('refills-door').textContent).toMatch(/3 days/))
   })
 
   it('has Today, Active, Paused and Past sections, grouped by status', async () => {
@@ -247,7 +271,9 @@ describe('Medicines screen', () => {
 
   it('empty state says how to add one', async () => {
     render(<Health />)
-    expect(await screen.findByRole('button', { name: 'Add a medicine' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Add by hand' })).toBeTruthy()
+    expect(screen.getByText('No medicines yet')).toBeTruthy()
+    expect(screen.queryByText(/Preview|Example/)).toBeNull() // no sample cards
   })
 })
 

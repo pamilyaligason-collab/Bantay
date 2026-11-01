@@ -64,7 +64,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByTestId('planrow').getByRole('link').click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
-      await expect(page.getByText(/^Add a reminder for /)).toBeVisible()
+      await expect(page.getByText(/^Add a reminder for /).first()).toBeVisible() // the calendar and the plan list both say it
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-empty-${scheme}.png` })
       await page.getByRole('button', { name: 'Add', exact: true }).first().click()
       await page.getByRole('button', { name: 'Event', exact: true }).click()
@@ -84,8 +84,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('dialog')).toHaveCount(0)
       await context.setOffline(false) // the writes above all happened offline; a reload needs the page itself
       await page.reload()
-      await expect(page.getByText('Family dinner at Lola')).toBeVisible()
-      await expect(page.getByText('Gate code 1234')).toBeVisible()
+      await expect(page.getByText('Family dinner at Lola').first()).toBeVisible() // the calendar and the plan list both show it
+      await expect(page.getByText('Gate code 1234').first()).toBeVisible()
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-plan-today-${scheme}.png` })
       expect(await fabClear(page)).toEqual([]) // short list, at rest
       await scrollEnd(page)
@@ -114,15 +114,14 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('People: status bubbles, messages, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
-      await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
-      await expect(page.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible() // a known row first: the status lines wait for the check-ins to load
-      await expect(page.getByRole('button', { name: /^Lola Remy, No check-in today/ })).toBeVisible()
+      const cards = page.getByRole('group', { name: 'Family roll call' }) // v13: person cards replaced the bubbles
+      await expect(cards.getByRole('article', { name: /^Papa Ben\. OK / })).toBeVisible() // a known card first: the status lines wait for the check-ins to load
+      await expect(cards.getByRole('article', { name: /^Lola Remy\. No check-in today/ })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Phone health data' })).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
-      await page.getByRole('button', { name: /Papa Ben/ }).click() // a face opens a sheet; See their stats opens the person's page
-      await page.getByRole('link', { name: 'See their stats' }).click()
+      await cards.getByRole('link', { name: 'Open Papa' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')
       await expect(page.getByRole('link', { name: 'Call Papa' })).toHaveAttribute('href', 'tel:+639171234567')
@@ -131,7 +130,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const m = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(m.violations.map(brief)).toEqual([])
       await page.getByRole('button', { name: /Back to People/ }).click()
-      await expect(page.getByRole('list', { name: 'Family roll call' })).toBeVisible()
+      await expect(page.getByRole('group', { name: 'Family roll call' })).toBeVisible()
     })
   })
 }

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Family</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:62px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none;background:#EFECE6;color:#4A463F}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.pc{flex:none;width:250px;padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;min-height:196px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:#ECE8E1;border-radius:10px;padding:2px}
+.seg button{min-height:44px;border:0;border-radius:8px;background:transparent;font-family:inherit;font-size:15px;font-weight:500;color:#3D3A35}
+.seg button[aria-pressed="true"]{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(40,30,10,.14)}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+</style>
+</helmet>
+<div class="ph" style="height: 2080px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;">
+      <div style="font-size: 13px; font-weight: 600; color: #6B675F; letter-spacing: 0.04em;">10 PEOPLE</div>
+      <a href="#add" class="btn" aria-label="Add a family member" style="width: 44px; padding: 0; background: #fff; color: #1C1B19;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Family</h1>
+
+    <div class="sh" style="margin-top: 18px;"><h2>Today</h2><span class="s" style="font-size: 15px;">1 of 10 checked in</span></div>
+    <div class="scroller">
+      <div class="card pc" style="background: #FFF4F2;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="av" style="width: 44px; height: 44px; background: #FBE7E4; color: #B42318; font-size: 15px;">JB</span><div><div style="font-size: 17px; font-weight: 700;">Joshua</div><div class="s" style="color: #B42318; font-weight: 600;">Missed a medicine</div></div></div>
+        <div style="font-size: 15px; line-height: 20px; color: #3D3A35;">Sea water nasal spray was due 8:00 AM, 12 h ago. The 2:00 PM and 8:00 PM doses are not marked yet either.</div>
+        <div style="display: flex; gap: 8px; margin-top: auto;"><button class="btn bp" style="flex: 1; min-height: 44px; padding: 0 10px;">Mark taken</button><a href="#joshua" class="btn bt" style="min-height: 44px; padding: 0 14px;">Open</a></div>
+      </div>
+      <div class="card pc" style="background: #FFF8EC;">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="av" style="width: 44px; height: 44px; background: #FDF1DC; color: #8A4B06; font-size: 15px;">ML</span><div><div style="font-size: 17px; font-weight: 700;">Ma</div><div class="s" style="color: #8A4B06; font-weight: 600;">4 medicines at 8:00</div></div></div>
+        <div style="font-size: 15px; line-height: 20px; color: #3D3A35;">0 of 4 taken today. 5 questions about old medicines are waiting.</div>
+        <div style="display: flex; gap: 8px; margin-top: auto;"><button class="btn bp" style="flex: 1; min-height: 44px; padding: 0 10px;">Send a nudge</button><a href="HealthMember.dc.html" class="btn bt" style="min-height: 44px; padding: 0 14px;">Open</a></div>
+      </div>
+      <div class="card pc">
+        <div style="display: flex; align-items: center; gap: 10px;"><span class="av" style="width: 44px; height: 44px; font-size: 15px;">SL</span><div><div style="font-size: 17px; font-weight: 700;">Sevilla</div><div class="s" style="font-weight: 600;">5 questions waiting</div></div></div>
+        <div style="font-size: 15px; line-height: 20px; color: #3D3A35;">"Still taking Cefixime?" and 4 more, asked 11 days ago.</div>
+        <div style="display: flex; gap: 8px; margin-top: auto;"><button class="btn bt" style="flex: 1; min-height: 44px;">Answer</button></div>
+      </div>
+    </div>
+
+    <div class="sh"><h2>Activity</h2><a href="#week">This week</a></div>
+    <div class="card" style="padding: 14px 14px 12px;">
+      <div class="seg" role="group" aria-label="Show"><button aria-pressed="true">BP</button><button aria-pressed="false">Steps</button><button aria-pressed="false">Medicines</button></div>
+      <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 14px;"><div style="font-size: 15px; font-weight: 600;">Top number (systolic)</div><div class="s">mmHg</div></div>
+      <svg width="100%" height="170" viewBox="0 0 330 170" role="img" aria-label="Blood pressure over 7 days for Ma, Rosalino and you" style="display: block; margin-top: 6px;">
+        <rect x="28" y="40" width="300" height="52" fill="#EAF4EE"></rect>
+        <g stroke="rgba(60,55,45,.12)" stroke-width="1"><line x1="28" y1="20" x2="328" y2="20"></line><line x1="28" y1="66" x2="328" y2="66"></line><line x1="28" y1="112" x2="328" y2="112"></line><line x1="28" y1="150" x2="328" y2="150"></line></g>
+        <g font-size="11" fill="#6B675F" font-family="inherit"><text x="0" y="24">160</text><text x="0" y="70">130</text><text x="0" y="116">100</text></g>
+        <polyline fill="none" stroke="#C2410C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="40,30 88,36 136,26 184,40 232,34 280,44 320,38"></polyline>
+        <polyline fill="none" stroke="#2459C7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="40,70 88,62 136,74 184,66 232,60 280,68 320,64"></polyline>
+        <polyline fill="none" stroke="#1E6B4E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 6" points="40,80 320,80"></polyline>
+        <circle cx="320" cy="38" r="4" fill="#C2410C"></circle><circle cx="320" cy="64" r="4" fill="#2459C7"></circle>
+        <g font-size="11" fill="#6B675F" font-family="inherit" text-anchor="middle"><text x="40" y="166">Sun</text><text x="88" y="166">Mon</text><text x="136" y="166">Tue</text><text x="184" y="166">Wed</text><text x="232" y="166">Thu</text><text x="280" y="166">Fri</text><text x="320" y="166">Sat</text></g>
+      </svg>
+      <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-top: 6px; font-size: 13px; color: #3D3A35;">
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; border-radius: 2px; background: #C2410C;"></span>Ma · 148 high</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 3px; border-radius: 2px; background: #2459C7;"></span>Rosalino · 128</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 0; border-top: 3px dotted #1E6B4E;"></span>You · no readings</span>
+      </div>
+      <div class="s" style="margin-top: 8px;">Green band = healthy range. Numbers in this mockup are samples.</div>
+    </div>
+
+    <div class="sh"><h2>Needs you now</h2><a href="#all">See all 7</a></div>
+    <div class="grp">
+      <div class="row"><span class="av">SL</span><div style="flex: 1; min-width: 0;"><div class="t">Sevilla: 5 questions</div><div class="s">"Still taking …?" · 11 days</div></div><button class="btn bt" style="min-height: 44px; padding: 0 14px;">Answer</button></div>
+      <div class="row"><span class="av" style="background: #FBE7E4; color: #B42318;">JB</span><div style="flex: 1; min-width: 0;"><div class="t">Joshua: 1 question</div><div class="s">"Still taking sea water spray?"</div></div><button class="btn bt" style="min-height: 44px; padding: 0 14px;">Answer</button></div>
+    </div>
+
+    <div class="sh"><h2>People</h2><a href="#map">Full map</a></div>
+    <div class="card" style="overflow: hidden;">
+      <svg width="100%" height="190" viewBox="0 0 358 190" role="img" aria-label="Map with family in Tagbilaran and General Santos" style="display: block; background: #E8EEE4;">
+        <path d="M0 140 C60 120 90 150 150 130 S260 90 358 110 V190 H0z" fill="#CFE0EC"></path>
+        <path d="M-10 60 C80 40 140 80 220 60 S320 30 370 50" fill="none" stroke="#fff" stroke-width="6"></path>
+        <path d="M70 0 C90 60 60 110 100 190" fill="none" stroke="#fff" stroke-width="5"></path>
+        <path d="M250 0 C240 60 280 100 260 140" fill="none" stroke="#fff" stroke-width="4"></path>
+        <g font-family="inherit" font-size="11" font-weight="600" fill="#4A463F"><text x="104" y="98">Dampas, Tagbilaran</text><text x="236" y="170">Conel, GenSan</text></g>
+        <g><circle cx="120" cy="58" r="17" fill="#fff"></circle><circle cx="120" cy="58" r="14" fill="#FBE7E4"></circle><text x="120" y="62" font-size="10" font-weight="700" text-anchor="middle" fill="#B42318">JB</text></g>
+        <g><circle cx="152" cy="70" r="17" fill="#fff"></circle><circle cx="152" cy="70" r="14" fill="#FDF1DC"></circle><text x="152" y="74" font-size="10" font-weight="700" text-anchor="middle" fill="#8A4B06">ML</text></g>
+        <g><circle cx="98" cy="74" r="17" fill="#fff"></circle><circle cx="98" cy="74" r="14" fill="#1E6B4E"></circle><text x="98" y="78" font-size="10" font-weight="700" text-anchor="middle" fill="#fff">L</text></g>
+        <g><circle cx="268" cy="146" r="17" fill="#fff"></circle><circle cx="268" cy="146" r="14" fill="#EFECE6"></circle><text x="268" y="150" font-size="10" font-weight="700" text-anchor="middle" fill="#4A463F">RL</text></g>
+        <g><circle cx="300" cy="134" r="15" fill="#1C1B19"></circle><text x="300" y="138" font-size="10" font-weight="700" text-anchor="middle" fill="#fff">+6</text></g>
+      </svg>
+      <div>
+        <a href="#joshua" class="row"><span class="av" style="background: #FBE7E4; color: #B42318;">JB</span><div style="flex: 1;"><div class="t">Joshua</div><div class="s">Dampas · 12 min ago</div></div><span class="s" style="color: #B42318; font-weight: 600;">Needs a look</span></a>
+        <a href="HealthMember.dc.html" class="row"><span class="av" style="background: #FDF1DC; color: #8A4B06;">ML</span><div style="flex: 1;"><div class="t">Ma</div><div class="s">Dampas · 1 h ago</div></div><span class="s" style="color: #8A4B06; font-weight: 600;">5 to check</span></a>
+        <a href="#rosalino" class="row"><span class="av">RL</span><div style="flex: 1;"><div class="t">Rosalino</div><div class="s">Conel, GenSan · 7:05 AM</div></div><span class="s" style="color: #1E6B4E; font-weight: 600;">OK today</span></a>
+      </div>
+      <div class="s" style="padding: 0 14px 12px;">Places are samples in this mockup. Shows only people who share their place.</div>
+    </div>
+
+    <div class="sh"><h2>Together</h2><a href="FamilyFeed.dc.html">Updates</a></div>
+    <div class="grp">
+      <a href="FamilyFeed.dc.html" class="row"><div class="ic" style="background: #E3EFE8; color: #1E6B4E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></div><div class="t">Plan and calendar</div><div class="v">7 doses today</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="#messages" class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></div><div class="t">Messages</div><div class="v">Say hello</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="#papers" class="row"><div class="ic" style="background: #EEE9FA; color: #6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"></path><path d="M14 3v5h5"></path></svg></div><div class="t">Papers</div><div class="v">1 to confirm</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="#memories" class="row"><div class="ic" style="background: #FDF1DC; color: #8A4B06;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="m21 16-5-5-8 8"></path></svg></div><div class="t">Memories</div><div class="v">Private photos</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+    </div>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

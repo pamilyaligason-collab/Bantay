@@ -12,7 +12,10 @@ configure({ asyncUtilTimeout: 6000 })
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
+import Plan from './Plan'
 import Family, { parseFamily } from '../../screens/Family'
+import { chartPeople } from './ActivityCard'
+import type { FamilyPerson } from './roster'
 import MemberPage from './MemberPage'
 import Messages from './Messages'
 import { fdb } from './store'
@@ -52,7 +55,7 @@ describe('Family routes', () => {
 describe('Plan', () => {
   it('adds a task offline, ticks it, assigns a person, and writes an outbox row each time', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Add' }))[0]!)
     fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Buy rice' } })
     expect(within(screen.getByRole('group', { name: 'When?' })).getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('true') // the quick pick starts on Today
@@ -73,7 +76,7 @@ describe('Plan', () => {
 
   it('repeat daily adds one reminder per day, each with an outbox row', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Add' }))[0]!)
     fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Take vitamins' } })
     fireEvent.click(screen.getByRole('button', { name: 'Every day' }))
@@ -85,7 +88,7 @@ describe('Plan', () => {
 
   it('teaches on an empty tab and the Add button is always there', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     const hint = await screen.findByText(/^Add a reminder for /)
     expect(hint.textContent).not.toMatch(/Lola/) // names a real family member, never a made-up one
     await waitFor(() => expect(screen.getByText(/^Add a reminder for /).textContent).toMatch(/^Add a reminder for (Kuya|Lloyd)'s check-up.$/))
@@ -98,7 +101,7 @@ describe('Plan', () => {
 
   it('refuses an empty title with a plain message and saves nothing', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Add' }))[0]!)
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Type a name first.')
@@ -107,7 +110,7 @@ describe('Plan', () => {
 
   it('adds an event on the chosen day and the Mine layer hides someone else\'s', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Add' }))[0]!)
     fireEvent.click(screen.getByRole('button', { name: 'Event' }))
     fireEvent.change(screen.getByLabelText('What is happening?'), { target: { value: 'Family dinner' } })
@@ -131,7 +134,7 @@ describe('Plan', () => {
 
   it('adds, pins and edits a note', async () => {
     location.hash = '#family/plan'
-    render(<Family />)
+    render(<Plan />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Add' }))[0]!)
     fireEvent.click(screen.getByRole('button', { name: 'Note' }))
     fireEvent.change(screen.getByLabelText('Note for the family'), { target: { value: 'Gate code 1234' } })
@@ -152,33 +155,31 @@ describe('Faces row', () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
-    const roll = await screen.findByRole('list', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getByRole('button', { name: /^Lloyd Roc \(you\), OK 7:40/ })).toBeTruthy())
-    expect(within(roll).getByRole('button', { name: /^Kuya Ben, No check-in today/ })).toBeTruthy()
-    expect(within(roll).getAllByTestId('face-ring').map((e) => e.getAttribute('data-k')).sort()).toEqual(['none', 'ok'])
-    expect(within(roll).getAllByTestId('bubble-badge').length).toBe(2) // colour plus shape on every face
+    const roll = await screen.findByRole('group', { name: 'Family roll call' })
+    await waitFor(() => expect(within(roll).getByRole('article', { name: /^Lloyd Roc \(you\)\. OK 7:40/ })).toBeTruthy())
+    expect(within(roll).getByRole('article', { name: /^Kuya Ben\. No check-in today/ })).toBeTruthy()
+    expect(within(roll).getAllByTestId('person-card').map((e) => e.getAttribute('data-kind')).sort()).toEqual(['nocheck', 'ok'])
     expect(within(roll).getByText('No check-in yet')).toBeTruthy()
-    expect(screen.getByLabelText('Legend').textContent).toBe('OK todayNeeds a lookNo news')
     expect(screen.queryByText('Phone health data')).toBeNull()
   })
 
   it('I\'m OK writes a check-in activity row and turns into "You\'re OK" with focus kept', async () => {
     location.hash = '#family'
     render(<Family />)
-    await screen.findByRole('list', { name: 'Family roll call' })
+    await screen.findByRole('group', { name: 'Family roll call' })
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
     expect(await screen.findByText(/^You're OK · /)).toBeTruthy()
     expect((await screen.findByText('The family can see you are OK.')).getAttribute('role')).toBe('status')
     expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(document.activeElement?.classList.contains('fm2-fh')).toBe(true)
+    expect(document.activeElement?.classList.contains('td-h')).toBe(true)
     expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
   })
 
   it("I'm OK that fails to save shows the failure text and never the done state", async () => {
     location.hash = '#family'
     render(<Family />)
-    await screen.findByRole('list', { name: 'Family roll call' })
+    await screen.findByRole('group', { name: 'Family roll call' })
     await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
     const add = vi.spyOn(ldb.activity, 'add').mockRejectedValueOnce(new Error('disk full'))
     fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
@@ -192,8 +193,8 @@ describe('Faces row', () => {
     location.hash = '#family'
     const { container } = render(<Family />)
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
-    await screen.findByRole('list', { name: 'Family roll call' })
-    expect(container.querySelector('.fm2-faces [aria-busy="true"]')).toBeNull()
+    await screen.findByRole('group', { name: 'Family roll call' })
+    expect(container.querySelector('[data-testid="facesrow"] [aria-busy="true"]')).toBeNull()
   })
 
   it("the I'm OK morph only animates inside the no-preference media block, so reduced motion is instant", () => {
@@ -223,14 +224,11 @@ describe('Faces row', () => {
     expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy()
   })
 
-  it('tapping a face opens a sheet whose Send a message link opens the one chat with @name ready', async () => {
+  it('a person with no check-in and no phone gets a Message button that opens the one chat with @name ready', async () => {
     location.hash = '#family'
     const { unmount } = render(<Family />)
-    fireEvent.click(await screen.findByRole('button', { name: /Kuya Ben, No check-in today/ }))
-    const dlg = await screen.findByRole('dialog', { name: 'Kuya Ben' })
-    const send = within(dlg).getByRole('link', { name: 'Send a message' })
-    expect(send.getAttribute('href')).toBe('#family/messages')
-    fireEvent.click(send)
+    const card = await screen.findByRole('article', { name: /^Kuya Ben\. No check-in today/ })
+    fireEvent.click(within(card).getByRole('button', { name: 'Message' }))
     unmount()
     location.hash = '#family/messages'
     render(<Family />)
@@ -266,5 +264,17 @@ describe('Member page', () => {
     expect(await screen.findByText(/could not find this person/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Back to People/ }))
     expect(location.hash).toBe('#family')
+  })
+})
+
+describe('chartPeople (who the Activity chart may name)', () => {
+  const p = (id: string, isMe = false) => ({ id, name: id, isMe }) as FamilyPerson
+  const all = [p('me', true), p('ma'), p('pa')]
+  it('you and the people you care for, not everyone an admin can read', () => {
+    expect(chartPeople(all, null, ['ma']).map((x) => x.id)).toEqual(['me', 'ma'])
+    expect(chartPeople(all, null, []).map((x) => x.id)).toEqual(['me'])
+  })
+  it('while viewing as someone, the people they can see', () => {
+    expect(chartPeople(all, new Set(['pa']), ['ma']).map((x) => x.id)).toEqual(['pa'])
   })
 })

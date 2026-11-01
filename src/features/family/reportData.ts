@@ -7,14 +7,15 @@ import type { Range, Reading } from '../health/ranges'
 import { useMedications } from '../health/useMedications'
 import { ldb, type Medication, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
+import { SELF_USER } from '../sync/profile'
 import { canViewReport, flagLine, type Report, buildReport } from './reportLogic'
 import type { FamilyPerson } from './roster'
 
-type Client = { from: (t: string) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
+export type CarerClient = { from: (t: string) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
 const KEY = 'carers.all'
 
 /** Person ids the user is a carer of (read-only or writer): the same set the readings read policy lets through. Cached in kv; offline or on error the cache is used. */
-export async function loadCarerOf(client: Client | null, userId: string): Promise<string[]> {
+export async function loadCarerOf(client: CarerClient | null, userId: string): Promise<string[]> {
   const cached = async () => { try { const v = (await db.kv.get(KEY))?.value as { userId?: string; ids?: string[] } | undefined; return v?.userId === userId ? (v.ids ?? []) : [] } catch { return [] } }
   if (!client) return cached()
   try {
@@ -26,6 +27,14 @@ export async function loadCarerOf(client: Client | null, userId: string): Promis
   } catch { return cached() }
 }
 
+/** The signed-in user's id for the carer cache: the live member, else (expired token, no network) the user this phone last saw signed in. Nobody known: null, so the cache is never read blind. */
+export async function carerUserId(): Promise<string | null> {
+  const m = await getMember().catch(() => null)
+  if (m) return m.userId
+  const v = (await db.kv.get(SELF_USER).catch(() => undefined))?.value
+  return typeof v === 'string' && v ? v : null
+}
+
 /** null while loading; then whether this user may see this person's health report. */
 export function useReportAccess(personId: string): boolean | null {
   const [state, setState] = useState<{ member: Member | null; carers: string[] } | null>(null)
@@ -33,7 +42,7 @@ export function useReportAccess(personId: string): boolean | null {
     let live = true
     void (async () => {
       const member = await getMember().catch(() => null)
-      const carers = member ? await loadCarerOf(supabase as Client | null, member.userId) : []
+      const carers = member ? await loadCarerOf(supabase as CarerClient | null, member.userId) : []
       if (live) setState({ member, carers })
     })()
     return () => { live = false }

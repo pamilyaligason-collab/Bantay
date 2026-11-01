@@ -3,7 +3,12 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../../db'
 import type { NewsItem } from '../../safety/news'
-import { ago, CACHE_MAX_BYTES, capBytes, isOfficial, loadFeed, NewsList, pinFirst } from './Screen'
+import { pickLocalSet } from '../../location/geo'
+import { usePlace } from '../../location/useLocation'
+import { ago, CACHE_MAX_BYTES, capBytes, isOfficial, loadFeed, NewsList, pinFirst, useNewsZone } from './Screen'
+
+vi.mock('../../location/useLocation', () => ({ usePlace: vi.fn() }))
+vi.mock('../../location/geo', async (orig) => ({ ...(await orig<typeof import('../../location/geo')>()), pickLocalSet: vi.fn() }))
 
 const NOW = Date.parse('2026-10-28T10:20:00Z')
 const row = (id: string, o: Partial<NewsItem> = {}): NewsItem => ({ id, title: `Headline ${id}`, url: `https://news.test/${id}`, source: 'PNA', kind: 'article', published_at: '2026-10-28T09:20:00Z', zone: null, ...o })
@@ -96,5 +101,20 @@ describe('NewsList screen', () => {
     expect(within(pin).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
       'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin', 'https://www.phivolcs.dost.gov.ph/'
     ])
+  })
+})
+
+describe('useNewsZone', () => {
+  it('undefined with no place, null outside an area, the area id inside one', () => {
+    const seen: unknown[] = []
+    const Probe = () => { seen.push(useNewsZone()); return null }
+    vi.mocked(usePlace).mockReturnValue(undefined as never)
+    render(<Probe />)
+    vi.mocked(usePlace).mockReturnValue({ weather: { lat: 6, lon: 125 } } as never)
+    vi.mocked(pickLocalSet).mockReturnValue({ where: 'ph' } as never)
+    render(<Probe />)
+    vi.mocked(pickLocalSet).mockReturnValue({ where: 'area', area: { id: 'gensan' } } as never)
+    render(<Probe />)
+    expect(seen).toEqual([undefined, null, 'gensan'])
   })
 })

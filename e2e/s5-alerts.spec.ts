@@ -80,7 +80,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`hub shows Phone alerts only while a setting needs fixing ${scheme}`, async ({ page }) => {
     await open(page, '#safety', scheme, [PHONE_CHECK])
-    const tiles = page.getByRole('navigation', { name: /Safety topics/ })
+    const tiles = page.getByRole('list', { name: 'Be ready' })
     await expect(tiles.getByRole('link', { name: /Phone alerts/ })).toContainText('1 needs fixing')
     await page.screenshot({ path: `${SHOTS}/safety-hub-${scheme}.png` })
     await tiles.getByRole('link', { name: /Phone alerts/ }).click()
@@ -114,6 +114,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText(/They may be out of date/)).toHaveCount(0)
     const quake = page.getByRole('article', { name: /Pondaguitan/ })
     await expect(quake.getByText(/About 89 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
+    await expect(quake.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/warnings-fresh-${scheme}.png` })
   })
@@ -121,27 +122,26 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`old check shows the amber line even when no row is stale ${scheme}`, async ({ page }) => {
     const old = { ...GDACS_RAW, checkedAt: hoursAgo(1.25), stale: false } // 75 minutes
     await open(page, '#safety', scheme, [{ key: 'safety.alerts', value: [old] }])
-    const hub = page.getByRole('region', { name: 'Alerts and official sources' })
-    await expect(hub.getByText('Checked 1 h ago')).toBeVisible()
-    await expect(hub.getByText(/Alerts last checked .*They may be out of date\. Check PAGASA or listen to the radio\./)).toBeVisible()
-    await expect(hub.getByRole('link', { name: /Warnings/ })).toContainText('may be out of date')
-    await hub.getByText('Sources', { exact: true }).click()
-    await expect(hub.getByText(/Quakes: USGS\./)).toBeVisible()
-    await expect(hub.getByText(/Air quality: Open-Meteo/)).toBeVisible()
+    await expect(page.getByText('Checked 1 h ago')).toBeVisible() // the head kicker (v13)
+    await expect(page.getByText(/Alerts last checked .*They may be out of date\. Check PAGASA or listen to the radio\./)).toBeVisible()
+    await expect(page.getByRole('list', { name: 'Right now' }).getByRole('link', { name: /^Warnings/ })).toContainText('May be out of date')
+    await expect(page.getByRole('list', { name: 'Right now' }).getByRole('link', { name: /CHAMPI-26/ }).first()).toHaveAttribute('href', '#safety/warnings')
+    await page.goto('/#safety/warnings')
+    await expect(page.getByRole('list', { name: 'Sources' })).toContainText('Checked') // the full source sentence is no longer on screen (v13 Warnings lists sources as rows)
     await expect(page.getByText(/from PAGASA, PHIVOLCS and NDRRMC/)).toHaveCount(0)
-    await hub.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })
   })
 
-  test(`Today band shows a quake beyond its felt radius, with the steps ${scheme}`, async ({ page }) => {
+  test(`Today shows a quake beyond its felt radius as a compact Nearby report row, not the red band ${scheme}`, async ({ page }) => {
+    // v13 lane T: a far quake is a compact amber row (alertRow.ts); the steps and the full distance line live on Warnings (covered below).
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
-    const band = page.getByRole('region', { name: 'Active warning' })
-    await expect(band.getByText('About 89 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeVisible()
+    const row = page.getByRole('region', { name: 'Nearby report' })
+    await expect(row.getByText('Earthquake M3 near Pondaguitan, Philippines')).toBeVisible()
+    await expect(row.getByText(/89 km away · you may not feel it · 30 min ago/)).toBeVisible()
+    await expect(row.getByRole('link', { name: 'Details' })).toHaveAttribute('href', '#safety/warnings')
+    await expect(page.getByRole('region', { name: 'Active warning' })).toHaveCount(0)
     await expect(page.getByText(/no action needed/i)).toHaveCount(0)
-    await expect(band.getByText(/\(89 km away\)/)).toBeVisible()
-    await expect(band.getByText('Checked 6 min ago')).toBeVisible()
-    await expect(band.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
-    await band.scrollIntoViewIfNeeded()
+    await row.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/today-band-far-${scheme}.png` })
   })
 
@@ -168,7 +168,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`hazard card explains Intensity VIII in plain words ${scheme}`, async ({ page }) => {
     await open(page, '#safety/hazards', scheme, [])
-    const card = page.getByRole('article', { name: 'Earthquake' })
+    const card = page.getByRole('list', { name: 'Ground and shaking' })
     await expect(card.getByText(/very destructive shaking \(Intensity VIII\)/)).toBeVisible()
     await expect(card.getByText(/Drop, cover and hold on when it shakes/)).toBeVisible()
     await card.scrollIntoViewIfNeeded()
@@ -178,6 +178,6 @@ for (const scheme of ['light', 'dark'] as const) {
 
 test('hub has no Phone alerts tile when the phone check is clean or missing', async ({ page }) => {
   await open(page, '#safety', 'light', [{ ...PHONE_CHECK, value: { ...PHONE_CHECK.value, battery_ok: true } }])
-  await expect(page.getByRole('link', { name: /Phone alerts/ })).toHaveCount(0)
+  await expect(page.getByRole('list', { name: 'Be ready' }).getByRole('link', { name: /Phone alerts/ })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Storm mode' })).toHaveCount(0)
 })

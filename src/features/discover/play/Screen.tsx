@@ -10,8 +10,8 @@ import './play.css'
 
 type Page = 'hub' | 'memory' | 'wordsearch' | 'trivia' | 'facts'
 
-/** `#discover/play/trivia` and `#discover/play/facts` open that page directly (Today's pick links there). */
-const pageOf = (hash: string): Page => (/^#?discover\/play\/(trivia|facts)$/.exec(hash)?.[1] as Page | undefined) ?? 'hub'
+/** `#discover/play/<page>` opens that game directly (the Discover overview links there). */
+const pageOf = (hash: string): Page => (/^#?discover\/play\/(memory|wordsearch|trivia|facts)$/.exec(hash)?.[1] as Page | undefined) ?? 'hub'
 
 /** Discover > Play: three games made inside the app (no timer, no score, no loser), Alam mo ba?, and Fun facts. Games are local only: nothing is sent anywhere. */
 export default function PlayScreen() {

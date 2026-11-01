@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Storm tracker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:16px;font-size:17px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;gap:8px}
+.fa{flex:none;width:132px;height:132px;padding:14px;box-sizing:border-box;display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+@keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes rdrift{from{transform:translate(-26px,6px)}to{transform:translate(40px,-14px)}}
+@keyframes wflow{from{transform:translateX(-30px)}to{transform:translateX(30px)}}
+@keyframes lpulse{0%{transform:scale(.6);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+.sm{position:relative;height:330px;overflow:hidden;border-radius:16px;margin-top:14px;background:#CFE3EF}
+.stg{position:absolute;left:-34px;top:-20px;width:390px;height:390px}
+.stg img{position:absolute;left:0;top:0;width:390px;height:390px;max-width:none}
+.sm2{position:relative;height:150px;overflow:hidden;border-radius:14px;margin-top:12px;background:#CFE3EF}
+.sm2 img{position:absolute;left:-2px;top:-129px;width:380px;height:380px;max-width:none}
+.cd{position:absolute;border-radius:50%;filter:blur(8px);background:radial-gradient(ellipse,rgba(255,255,255,.7) 0%,rgba(255,255,255,.3) 50%,rgba(255,255,255,0) 74%);animation:rdrift 16s ease-in-out infinite alternate}
+.wl{animation:wflow 5s ease-in-out infinite alternate}
+.lpd{position:absolute;left:177px;top:264px;width:0;height:0}
+.lpd b{position:absolute;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;background:rgba(36,89,199,.45);animation:lpulse 2.4s ease-out infinite}
+.lpd i{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;background:#2459C7;border:3px solid #fff;box-sizing:border-box;box-shadow:0 1px 4px rgba(10,26,64,.5)}
+.mchip{min-height:44px;padding:0 14px;border-radius:999px;border:0;font-family:inherit;font-size:14px;font-weight:600;background:rgba(255,255,255,.94);color:#1C1B19;cursor:pointer;box-shadow:0 1px 3px rgba(10,26,64,.25)}
+.mchip.on{background:#2459C7;color:#fff}
+.mp{position:absolute;display:inline-flex;align-items:center;border-radius:999px;background:rgba(255,255,255,.94);color:#1C1B19;font-size:11px;font-weight:600;padding:0 9px;min-height:22px;box-shadow:0 1px 3px rgba(40,30,10,.25)}
+.lg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:13px;line-height:18px;color:#4A463F}
+.lg span{display:inline-flex;align-items:center;gap:6px}
+@media (prefers-reduced-motion: reduce){.cd,.wl,.lpd b{animation:none}}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+</style>
+</helmet>
+<div class="ph" style="height: 1716px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;"><a href="Safety.dc.html" aria-label="Back to Safety" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 17px; font-weight: 500; text-decoration: none;"><svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="#1E6B4E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10l8 8"></path></svg>Safety</a></div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Storm tracker</h1>
+
+    <div class="card" style="margin-top: 18px; padding: 18px; border-radius: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #1E6B4E; flex: none;"></span>
+        <div style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em;">No storms now</div>
+      </div>
+      <div class="s" style="margin-top: 4px;">Nothing is moving through the Philippine area.</div>
+      <div class="sm" role="img" aria-label="Map of the whole Philippine Area of Responsibility with a dashed amber boundary. A live wind layer is on. Your location, Tagbilaran, is pinned. No storms are showing.">
+        <div class="stg">
+          <img src="/_blob/b8e8056ad069198511127f1ef21ad22b" alt="">
+          <svg viewBox="0 0 390 390" width="390" height="390" aria-hidden="true" style="position:absolute;left:0;top:0;">
+            <polygon points="76,317 76,201 133,130 133,80 304,80 304,317" fill="#E0A23A" fill-opacity=".08" stroke="#fff" stroke-width="5" stroke-linejoin="round"></polygon>
+            <polygon points="76,317 76,201 133,130 133,80 304,80 304,317" fill="none" stroke="#8A4B06" stroke-width="2.5" stroke-dasharray="7 5" stroke-linejoin="round"></polygon>
+          </svg>
+          <div class="cd" style="left:90px;top:100px;width:120px;height:60px;" aria-hidden="true"></div>
+          <div class="cd" style="left:200px;top:190px;width:130px;height:70px;animation-duration:20s;animation-delay:-7s;" aria-hidden="true"></div>
+          <svg viewBox="0 0 390 390" width="390" height="390" aria-hidden="true" style="position:absolute;left:0;top:0;">
+            <g class="wl" stroke="#fff" stroke-opacity=".85" stroke-width="2" stroke-linecap="round" fill="none"><path d="M110 150h40M150 150c8 0 8-8 0-8"></path><path d="M220 120h50M270 120c8 0 8-8 0-8"></path><path d="M230 220h44M274 220c8 0 8-8 0-8"></path><path d="M100 290h46M146 290c8 0 8-8 0-8"></path><path d="M180 180h36"></path></g>
+          </svg>
+          <div class="lpd" aria-hidden="true"><b></b><i></i></div>
+        </div>
+        <span class="mp" style="left:134px;top:254px;" aria-hidden="true">You</span>
+        <span class="mp" style="left:48px;top:268px;font-size:10px;min-height:20px;padding:0 7px;">PAR (Philippine Area of Responsibility)</span>
+        <div style="position:absolute;left:8px;top:8px;display:flex;gap:6px;"><button class="mchip" aria-pressed="false">Rain</button><button class="mchip on" aria-pressed="true">Wind</button><button class="mchip" aria-pressed="false">Clouds</button></div>
+        <span class="mp" style="left:8px;top:56px;min-height:26px;padding:0 12px;background:#0A1A40;color:#fff;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:#5FE0A0;display:inline-block;margin-right:6px;"></span>Live &middot; Windy</span>
+        <span class="mp" style="left:8px;bottom:8px;font-weight:500;">&copy; OpenStreetMap contributors</span>
+        <button aria-label="Centre map on my location" style="position:absolute;right:8px;bottom:8px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.95);color:#2459C7;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(40,30,10,.3);cursor:pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg></button>
+      </div>
+      <div class="lg"><span><i style="width:12px;height:12px;border-radius:50%;background:#2459C7;border:2px solid #fff;box-shadow:0 0 0 1px #2459C7;box-sizing:border-box;display:inline-block;"></i>You</span><span><svg width="22" height="6" viewBox="0 0 22 6" aria-hidden="true"><path d="M0 3h22" stroke="#8A4B06" stroke-width="2.5" stroke-dasharray="5 3"></path></svg>PAR boundary (approx.)</span></div>
+      <div class="s" style="margin-top: 8px;">Live layer from Windy needs internet. Layer shown is a sample.</div>
+      <div class="s" style="margin-top: 10px;">No storms now &middot; checked 6 min ago &middot; GDACS</div>
+    </div>
+
+    <div class="sh"><h2>When a storm comes</h2></div>
+    <div class="card" style="padding: 16px; border: 1.5px dashed #D3CCBC; background: #FBFAF7;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="padding: 3px 10px; border-radius: 999px; background: #F1EDE6; color: #4A463F; font-size: 13px; font-weight: 700;">Example</span>
+        <span class="s">Not a real storm</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;">
+        <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.01em;">[STORM NAME]</div>
+        <span style="padding: 4px 12px; border-radius: 999px; background: #FBE7E4; color: #B42318; font-size: 15px; font-weight: 700;">Signal [No. 2]</span>
+      </div>
+      <div class="sm2" role="img" aria-label="Example storm track with a cone of uncertainty heading toward your area, drawn on a crop of the Visayas map">
+        <img src="/_blob/f42aa83c6baf655aef31a6b705232684" alt="">
+        <svg viewBox="0 0 326 150" width="326" height="150" aria-hidden="true" style="position:absolute;left:0;top:0;">
+          <polygon points="292,22 148,96 178,126" fill="#E0A23A" fill-opacity=".38"></polygon>
+          <path d="M292 22 163 108" stroke="#fff" stroke-width="5.5" stroke-linecap="round" fill="none"></path>
+          <path d="M292 22 163 108" stroke="#8A4B06" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round" fill="none"></path>
+          <circle cx="292" cy="22" r="8" fill="#B42318" stroke="#fff" stroke-width="2"></circle>
+          <circle cx="161" cy="110" r="8" fill="#2459C7" stroke="#fff" stroke-width="3"></circle>
+        </svg>
+        <span class="mp" style="left:161px;top:122px;transform:translateX(-50%);">You</span>
+        <span class="mp" style="right:8px;top:36px;">[Sample track]</span>
+        <span class="mp" style="left:8px;top:8px;font-weight:500;font-size:10px;">&copy; OpenStreetMap contributors</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px;">
+        <div class="ic" style="background: #FDF1DC; color: #8A4B06;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+        <div><div class="t">Expected near you</div><div class="s">[ETA, e.g. Sat 6 AM]</div></div>
+      </div>
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 0.5px solid rgba(60,55,45,.16);">
+        <div style="font-size: 17px; font-weight: 600;">Roll call: are you safe?</div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px;">
+          <button class="btn" style="background: #E3EFE8; color: #1E6B4E;">I&#39;m OK</button>
+          <button class="btn" style="background: #FBE7E4; color: #B42318;">I need help</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sh"><h2>Get ready</h2></div>
+    <div class="grp">
+      <a href="#gobag" class="row"><div class="ic" style="background: #E3EFE8; color: #1E6B4E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="13" rx="3"></rect><path d="M9 8V6a3 3 0 0 1 6 0v2M9 13h6"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">Go-bag</div><div class="s">Water, torch, papers, medicines</div></div><div class="v">0 of 14</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+      <a href="#dial" class="row"><div class="ic" style="background: #E5EDFB; color: #2459C7;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></div><div class="t">Hotlines</div><div class="v">27 numbers</div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+    </div>
+
+    <div class="sh"><h2>Official</h2></div>
+    <div class="grp">
+      <a href="https://www.pagasa.dost.gov.ph" class="row"><div class="ic" style="background: #DDF1EE; color: #0F766E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0M5 5c4-2 9-1 11 3M19 19c-4 2-9 1-11-3"></path></svg></div><div style="flex: 1; min-width: 0;"><div class="t">PAGASA tropical cyclone bulletin</div><div class="s">Opens the official page</div></div><svg width="8" height="14" viewBox="0 0 8 14" aria-hidden="true"><path d="m1 1 6 6-6 6" fill="none" stroke="#B8B2A7" stroke-width="2" stroke-linecap="round"></path></svg></a>
+    </div>
+    <p class="s" style="margin: 16px 4px 0;">GDACS, PAGASA · checked every 10 min · Bantay is not a siren</p>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1716}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

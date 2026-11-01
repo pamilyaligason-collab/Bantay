@@ -1,59 +1,70 @@
-/* Family Bantay v2 palette (D-29), from mockup v6. The old iOS token names stay as aliases (bottom of each block) so untouched screens still render.
-   --c1/--c2 are the validated chart colour pair. Contrast of the pairs is enforced in src/features/look/contrast.test.ts. */
+/* Family Bantay v13 palette (D-108), contract docs/redesign-2026-10-31/contracts-phase0.md section 2. Hex literals so the tests can parse them; the legacy aliases at the end of each block keep untouched screens rendering.
+   Pair contrast is computed in src/features/look/contrast.test.ts (never by eye). */
 :root {
-  --ground: #F6F1E7; --card: #FFFCF6; --card2: #EFE8DA; --green: #1F3D2B; --green2: #2E5A3F; --soft: #DCE5D8;
-  --amber: #E8A93A; --amber-ink: #7A4E05; --ink: #1D1F1C; --muted: #5E625B; --line: #E4DCCB; --on-green: #F6F1E7;
-  --red: #C2362B; --red-soft: #F7DEDA; --ok: #2A7449; --warn: #8A5A0C;
-  --shadow: 0 1px 2px rgba(31,61,43,.06), 0 8px 24px rgba(31,61,43,.08);
-  --link: var(--green2); --act: var(--green2); --focus: var(--amber-ink); --danger-bg: #C2362B;
-  --fill: rgba(31,61,43,0.08);
-  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
-  --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
-  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+  --ground: #F5F3EF; --card: #FFFFFF; --card2: #EFECE6; --ink: #1C1B19; --muted: #6B675F; --hair: rgba(60,55,45,.16);
+  --green: #1E6B4E; --green-tint: #E3EFE8; --on-green: #FFFFFF; --btn: #1E6B4E;
+  --tint-blue: #E5EDFB; --tint-blue-ink: #2459C7; --tint-red: #FBE7E4; --tint-red-ink: #B42318; --tint-amber: #FDF1DC; --tint-amber-ink: #8A4B06;
+  --tint-teal: #DDF1EE; --tint-teal-ink: #0F766E; --tint-purple: #EEE9FA; --tint-purple-ink: #6D4BC2; --tint-green: #E3EFE8; --tint-green-ink: #1E6B4E;
+  --red: #B42318; --danger-bg: #C8372D; --amber: #D97706; --focus: #8A4B06;
+  --shadow: 0 1px 2px rgba(40,30,10,.06); --shadow-float: 0 8px 24px rgba(40,30,10,.12);
+  --glass-bg: rgb(255 255 255 / .80); --glass-sheet: rgb(245 243 239 / .96); --glass-edge: rgb(255 255 255 / .6); --glass-blur: blur(20px) saturate(160%);
+  --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
   --c1: #2B6CC4; --c2: #C2610F; --band: rgba(43,108,196,0.12);
-  --orange: #C93400; --indigo: #5856D6; --teal: #0071A4; --purple: #8E44B8;
-  --c-medicine: var(--green2); --c-vitals: #2F6F86; --c-labs: #5B4B8A; --c-weather: #3B6EA5; --c-safety: #4A5BA8; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--green2);
-  --hue-blue: #DCEBF0; --hue-blue-ic: #1F5A6E; --hue-green: #DCE5D8; --hue-green-ic: #2E5A3F; --hue-lilac: #E6E0F0; --hue-lilac-ic: #4F3F80; --hue-amber: #F3E4CC; --hue-amber-ic: #7A4E05; --hue-terra: #F6DFD6; --hue-terra-ic: #9A3B22;
-  --glass-bg: rgb(255 252 246 / .72); --glass-sheet: rgb(255 252 246 / .9); --glass-edge: rgb(255 255 255 / .6); --glass-blur: blur(20px) saturate(160%);
   --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+  /* legacy aliases: untouched screens still render; Phase 1 lanes delete their uses */
+  --green2: #1E6B4E; --soft: #E3EFE8; --line: rgba(60,55,45,.16); --amber-ink: #8A4B06; --red-soft: var(--tint-red); --ok: #1E6B4E; --warn: #8A4B06;
+  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+  --link: var(--green); --act: var(--green); --fill: rgba(30,107,78,.10);
+  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line); --btn-fg: #FFFFFF; --danger: var(--red);
+  --orange: var(--amber); --indigo: var(--tint-purple-ink); --teal: var(--tint-teal-ink); --purple: var(--tint-purple-ink);
+  --c-medicine: var(--green); --c-vitals: var(--tint-blue-ink); --c-labs: var(--tint-purple-ink); --c-weather: var(--tint-blue-ink); --c-safety: var(--tint-red-ink); --c-family: var(--tint-amber-ink); --c-alert: var(--tint-red-ink); --c-neutral: var(--green);
+  --hue-blue: var(--tint-blue); --hue-blue-ic: var(--tint-blue-ink); --hue-green: var(--tint-green); --hue-green-ic: var(--tint-green-ink); --hue-lilac: var(--tint-purple); --hue-lilac-ic: var(--tint-purple-ink); --hue-amber: var(--tint-amber); --hue-amber-ic: var(--tint-amber-ink); --hue-terra: var(--tint-red); --hue-terra-ic: var(--tint-red-ink);
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
-  --amber: #F0B54C; --amber-ink: #F0B54C; --ink: #EEF0EA; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7;
-  --red: #E8685C; --red-soft: #3A1F1C; --ok: #6CC08E; --warn: #E3A848;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-  --link: var(--amber); --act: var(--amber); --focus: var(--amber); --danger-bg: #B3261E;
-  --fill: rgba(238,240,234,0.10);
-  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
-  --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
-  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+  --ground: #121110; --card: #1E1D1A; --card2: #2A2824; --ink: #F2F0EB; --muted: #A8A39A; --hair: rgba(255,255,255,.14);
+  --green: #4FA37F; --green-tint: #15302A; --on-green: #0E1A14; --btn: #27795A;
+  --tint-blue: #16213A; --tint-blue-ink: #7FA6F0; --tint-red: #3A1A17; --tint-red-ink: #F08A80; --tint-amber: #3A2A10; --tint-amber-ink: #E8B04E;
+  --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
+  --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+  --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
+  --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
   --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
-  --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
-  --c-medicine: var(--ok); --c-vitals: #7CB8CF; --c-labs: #B3A6E0; --c-weather: #8DB4E2; --c-safety: #A5B0F0; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--ink);
-  --hue-blue: var(--card); --hue-blue-ic: #8CC6DA; --hue-green: var(--card); --hue-green-ic: #8FD1A6; --hue-lilac: var(--card); --hue-lilac-ic: #C2B5EA; --hue-amber: var(--card); --hue-amber-ic: #F0B54C; --hue-terra: var(--card); --hue-terra-ic: #F2A58F;
-  --glass-bg: rgb(24 35 28 / .70); --glass-sheet: rgb(24 35 28 / .70); --glass-edge: rgb(255 255 255 / .10);
+  --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+  --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
+  --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+  --link: var(--green); --act: var(--green); --fill: rgba(79,163,127,.10);
+  --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line); --btn-fg: #FFFFFF; --danger: var(--red);
+  --orange: var(--amber); --indigo: var(--tint-purple-ink); --teal: var(--tint-teal-ink); --purple: var(--tint-purple-ink);
+  --c-medicine: var(--green); --c-vitals: var(--tint-blue-ink); --c-labs: var(--tint-purple-ink); --c-weather: var(--tint-blue-ink); --c-safety: var(--tint-red-ink); --c-family: var(--tint-amber-ink); --c-alert: var(--tint-red-ink); --c-neutral: var(--green);
+  --hue-blue: var(--tint-blue); --hue-blue-ic: var(--tint-blue-ink); --hue-green: var(--tint-green); --hue-green-ic: var(--tint-green-ink); --hue-lilac: var(--tint-purple); --hue-lilac-ic: var(--tint-purple-ink); --hue-amber: var(--tint-amber); --hue-amber-ic: var(--tint-amber-ink); --hue-terra: var(--tint-red); --hue-terra-ic: var(--tint-red-ink);
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #0F1712; --card: #18231C; --card2: #1F2C24; --green: #2B5A3D; --green2: #3B7350; --soft: #22352A;
-    --amber: #F0B54C; --amber-ink: #F0B54C; --ink: #EEF0EA; --muted: #A7B0A6; --line: #2A3A30; --on-green: #F6F1E7;
-    --red: #E8685C; --red-soft: #3A1F1C; --ok: #6CC08E; --warn: #E3A848;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-    --link: var(--amber); --act: var(--amber); --focus: var(--amber); --danger-bg: #B3261E;
-    --fill: rgba(238,240,234,0.10);
-    --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line);
-    --btn: var(--green); --btn-fg: var(--on-green); --danger: var(--red);
-    --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+    --ground: #121110; --card: #1E1D1A; --card2: #2A2824; --ink: #F2F0EB; --muted: #A8A39A; --hair: rgba(255,255,255,.14);
+    --green: #4FA37F; --green-tint: #15302A; --on-green: #0E1A14; --btn: #27795A;
+    --tint-blue: #16213A; --tint-blue-ink: #7FA6F0; --tint-red: #3A1A17; --tint-red-ink: #F08A80; --tint-amber: #3A2A10; --tint-amber-ink: #E8B04E;
+    --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
+    --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+    --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
+    --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
     --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
-    --orange: #FF9F0A; --indigo: #9A98FF; --teal: #5AC8F5; --purple: #DA8FFF;
-    --c-medicine: var(--ok); --c-vitals: #7CB8CF; --c-labs: #B3A6E0; --c-weather: #8DB4E2; --c-safety: #A5B0F0; --c-family: var(--warn); --c-alert: var(--red); --c-neutral: var(--ink);
-    --hue-blue: var(--card); --hue-blue-ic: #8CC6DA; --hue-green: var(--card); --hue-green-ic: #8FD1A6; --hue-lilac: var(--card); --hue-lilac-ic: #C2B5EA; --hue-amber: var(--card); --hue-amber-ic: #F0B54C; --hue-terra: var(--card); --hue-terra-ic: #F2A58F;
-    --glass-bg: rgb(24 35 28 / .70); --glass-sheet: rgb(24 35 28 / .70); --glass-edge: rgb(255 255 255 / .10);
+    --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+    --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+    --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
+    --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
+    --link: var(--green); --act: var(--green); --fill: rgba(79,163,127,.10);
+    --bg: var(--ground); --cell: var(--card); --ink2: var(--muted); --sep: var(--line); --btn-fg: #FFFFFF; --danger: var(--red);
+    --orange: var(--amber); --indigo: var(--tint-purple-ink); --teal: var(--tint-teal-ink); --purple: var(--tint-purple-ink);
+    --c-medicine: var(--green); --c-vitals: var(--tint-blue-ink); --c-labs: var(--tint-purple-ink); --c-weather: var(--tint-blue-ink); --c-safety: var(--tint-red-ink); --c-family: var(--tint-amber-ink); --c-alert: var(--tint-red-ink); --c-neutral: var(--green);
+    --hue-blue: var(--tint-blue); --hue-blue-ic: var(--tint-blue-ink); --hue-green: var(--tint-green); --hue-green-ic: var(--tint-green-ink); --hue-lilac: var(--tint-purple); --hue-lilac-ic: var(--tint-purple-ink); --hue-amber: var(--tint-amber); --hue-amber-ic: var(--tint-amber-ink); --hue-terra: var(--tint-red); --hue-terra-ic: var(--tint-red-ink);
     color-scheme: dark;
   }
 }

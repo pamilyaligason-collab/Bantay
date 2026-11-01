@@ -29,7 +29,7 @@ const seed = (page: Page, db: string, store: string, rows: unknown[]) =>
 
 // label-content-name-mismatch is off: the roll call buttons already carry a 'Name, status. Open page' label that other specs match on (it fails the same way without this lane's flag line).
 const axe = async (page: Page) => (await new AxeBuilder({ page }).include('main').disableRules(['label-content-name-mismatch']).analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
-const noSideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth && Array.from(document.querySelectorAll('main, main *')).every((el) => el.getBoundingClientRect().right <= document.documentElement.clientWidth + 1))
+const noSideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth && Array.from(document.querySelectorAll('main, main *')).every((el) => el.closest('.carousel') || el.getBoundingClientRect().right <= document.documentElement.clientWidth + 1)) // boxes inside the person-card carousel scroll inside it
 
 const seedAll = async (page: Page) => {
   const now = Date.now()
@@ -53,25 +53,27 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Family' })).toBeVisible()
   await seedAll(page)
   await page.reload()
-  await expect(page.getByLabel('Family roll call')).toBeVisible()
+  await expect(page.getByTestId('people-list')).toBeVisible() // v13: People rows (the roll call is a card carousel)
 })
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`people list: neutral flag line with no health numbers (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    const row = page.getByLabel('Family roll call').locator('li', { hasText: 'Maria' })
-    await expect(row.getByTestId('flag-line')).toHaveText(/^\d+ to check$/)
+    const row = page.getByTestId('people-row').filter({ hasText: 'Maria' })
+    await expect(row.locator('.rw-value')).toHaveText(/^\d+ to check$/)
     const text = (await row.innerText()).replace(/\d+ to check/, '')
     expect(text).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/)
-    await expect(page.getByLabel('Family roll call').locator('li', { hasText: 'Pedro' }).getByTestId('flag-line')).toHaveCount(0) // no data: no claim either way
+    const cards = page.getByTestId('person-card')
+    expect(await cards.count()).toBeGreaterThan(0)
+    expect((await cards.allInnerTexts()).join(' ')).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/) // the roll-call cards say no numbers either
+    await expect(page.getByTestId('people-row').filter({ hasText: 'Pedro' })).not.toContainText('to check') // no data: no claim either way
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)
   })
 
   test(`member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByRole('button', { name: /Maria Sample/ }).click() // a face opens a sheet; See their stats opens the person's page
-    await page.getByRole('link', { name: 'See their stats' }).click()
+    await page.getByTestId('people-row').filter({ hasText: 'Maria' }).getByRole('link').click()
     await page.getByRole('link', { name: 'Full report' }).click()
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()
@@ -98,7 +100,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`memories is off by default, then says what is missing instead of failing (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByTestId('memoriesrow').getByRole('button', { expanded: false }).click() // Memories is a row that opens in place
+    await page.getByTestId('memoriesrow').getByRole('link').click() // v13: Memories is a pushed page
+    await expect(page).toHaveURL(/#family\/memories$/)
     const m = page.getByTestId('memories')
     await m.scrollIntoViewIfNeeded()
     await expect(m.getByRole('button', { name: 'Turn on Memories' })).toBeVisible()
@@ -109,7 +112,6 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(m.getByRole('button', { name: 'Turn Memories off on this phone' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.reload()
-    await page.getByTestId('memoriesrow').getByRole('button', { expanded: false }).click()
     await expect(page.getByTestId('memories').getByTestId('mem-state')).toBeVisible() // the choice is remembered on this phone
   })
 }

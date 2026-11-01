@@ -42,10 +42,10 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
   await expect(page.getByTestId('bodyhero')).toBeVisible() // the health database exists once the screen has read it (the headline needs a reading)
   await seed(page, 1)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Visits/ })).toBeVisible() // the log and visits databases exist once a person is on screen
+  await expect(page.getByTestId('browse-visits')).toBeVisible() // the log and visits databases exist once a person is on screen
   await seed(page, 2)
   await page.reload()
-  await expect(page.getByRole('link', { name: /^Visits/ })).toContainText('Next visit:')
+  await expect(page.getByTestId('browse-visits')).toContainText('9:00 AM') // the Browse row shows the next visit's date and time
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#health/visits')

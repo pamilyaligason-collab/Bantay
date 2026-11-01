@@ -36,16 +36,6 @@ export async function assertNoWrappedButtons(page: Page): Promise<void> {
   expect(wrapped, 'buttons that wrap to a second line').toEqual([])
 }
 
-/** Content height of the tab page (390 px wide, set the viewport first) <= its D-102 budget. The app scrolls inside `.bt .scroll`, not the document, and budgets exclude the bottom
- *  clearance (`.scroll::after`: tab bar + Jack button), so we measure scrollHeight minus that spacer. Top bars above the scroller are not counted. */
-export async function assertBudget(page: Page, max: number): Promise<void> {
-  const h = await page.evaluate(() => {
-    const el = document.querySelector('.bt .scroll') as HTMLElement
-    return el.scrollHeight - (parseFloat(getComputedStyle(el, '::after').height) || 0)
-  })
-  expect(h, `page height ${h} px over the ${max} px budget`).toBeLessThanOrEqual(max)
-}
-
 /** At the end of the scroll no interactive element (button, a, input, [role=button]) sits under the Jack button. */
 export async function assertJackClear(page: Page): Promise<void> {
   const hits = await page.evaluate(async () => {
@@ -68,9 +58,6 @@ export async function setScheme(page: Page, s: 'light' | 'dark'): Promise<void> 
   await page.emulateMedia({ colorScheme: s })
   await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), s)
 }
-
-/** Live 2.6.1 reference shot for a tab (C-8). */
-export const liveShot = (tab: string, s: 'light' | 'dark') => `docs/session-16/shots/live/${tab}-${s}.png`
 
 /** Fixed clocks for anything that depends on the day (ML-38): just before and just after local midnight (Manila). */
 export const FIXED_CLOCKS = ['2026-10-30T23:30:00+08:00', '2026-10-31T00:30:00+08:00'] as const

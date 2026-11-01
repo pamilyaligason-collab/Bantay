@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Offline maps</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:8px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding-right:12px;font-size:17px;font-weight:500;text-decoration:none;color:#1E6B4E}
+.chip{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:#fff;font-size:15px;font-weight:600;color:#1C1B19;text-decoration:none;box-shadow:0 1px 2px rgba(40,30,10,.06);font-family:inherit;border:0;cursor:pointer}
+.chip.on{background:#1E6B4E;color:#fff}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:700;text-decoration:none}
+.lbl{font-size:13px;font-weight:600;letter-spacing:0.04em;color:#6B675F;margin:18px 0 6px}
+.bl{display:flex;gap:10px;font-size:15px;line-height:22px;margin-top:6px}
+.bl i{flex:none;width:6px;height:6px;border-radius:50%;margin-top:8px}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+.tg{flex:none;position:relative;width:56px;min-height:44px;border:0;background:transparent;padding:0;cursor:pointer}
+.tg::before{content:"";position:absolute;left:2px;top:6.5px;width:51px;height:31px;border-radius:16px;background:#8E897F}
+.tg.on::before{background:#1E6B4E}
+.tg i{position:absolute;left:4px;top:8.5px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg.on i{left:26px}
+.bar{height:8px;border-radius:4px;background:#E6E1D8;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:#1E6B4E}
+.pc{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700}
+</style>
+</helmet>
+<div class="ph" style="height: 1530px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;min-height:44px;">
+      <a href="Safety.dc.html" class="back"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Safety</a>
+      <span style="font-size:13px;font-weight:600;color:#6B675F;letter-spacing:0.04em;">SIZES ARE PLACEHOLDERS</span>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Offline maps</h1>
+
+    <div class="card" style="margin-top:18px;padding:18px;border-radius:24px;">
+      <div style="display:flex;gap:14px;align-items:center;">
+        <div style="position:relative;flex:none;width:76px;height:76px;border-radius:18px;overflow:hidden;background:#F2EFE9;" role="img" aria-label="Thumbnail of the downloaded Dampas map">
+          <img src="/_blob/8d672ce8ae47253d08315139abe79aa9" alt="" style="position:absolute;left:-157px;top:-170px;width:390px;height:450px;max-width:none;">
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="flex:none;width:26px;height:26px;border-radius:50%;background:#1E6B4E;display:flex;align-items:center;justify-content:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span><div style="font-size:22px;line-height:26px;font-weight:700;letter-spacing:-0.01em;">Your area is ready offline</div></div>
+          <div class="s" style="margin-top:6px;">Bohol &middot; [size] &middot; downloaded today 9:10 PM</div>
+        </div>
+      </div>
+      <div class="bar" style="margin-top:16px;" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Bohol download"><i style="width:100%;"></i></div>
+      <div class="s" style="margin-top:8px;">Streets, evacuation centres and your route work without signal.</div>
+    </div>
+
+    <div class="sh"><h2>Whole Philippines</h2></div>
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;"><div class="t">Rest of the country</div><div style="font-size:15px;font-weight:700;color:#4A463F;">0%</div></div>
+      <div class="bar" style="margin-top:10px;" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Philippines download"><i style="width:0%;"></i></div>
+      <div class="s" style="margin-top:8px;">Starts after 24 hours, on Wi-Fi only, while charging.</div>
+      <div style="display:flex;align-items:center;gap:12px;min-height:56px;margin-top:10px;padding-top:6px;border-top:0.5px solid rgba(60,55,45,.16);"><div class="t" style="flex:1;font-size:16px;">Download the rest of the Philippines</div><button class="tg on" role="switch" aria-checked="true" aria-label="Download the rest of the Philippines"><i></i></button></div>
+    </div>
+
+    <div class="sh"><h2>Regions</h2></div>
+    <div class="grp">
+      <div class="row" style="min-height:68px;"><div style="flex:1;min-width:0;"><div class="t">Bohol</div><div class="s">Your area &middot; ready</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="pc" style="background:#E3EFE8;color:#1E6B4E;">Ready</span><span class="s">[size]</span></div></div>
+      <div class="row" style="min-height:68px;"><div style="flex:1;min-width:0;"><div class="t">Mindanao</div><div class="s">Includes General Santos (home zone Conel)</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="pc" style="background:#E5EDFB;color:#2459C7;">Next</span><span class="s">[size]</span></div></div>
+      <div class="row" style="min-height:68px;"><div style="flex:1;min-width:0;"><div class="t">Rest of the Visayas</div><div class="s">Cebu, Negros, Panay, Leyte, Samar</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="pc" style="background:#F1EDE6;color:#4A463F;">Queued</span><span class="s">[size]</span></div></div>
+      <div class="row" style="min-height:68px;"><div style="flex:1;min-width:0;"><div class="t">Luzon</div><div class="s">Waiting in line</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><span class="pc" style="background:#F1EDE6;color:#4A463F;">Queued</span><span class="s">[size]</span></div></div>
+    </div>
+    <p class="s" style="margin:8px 4px 0;">Your area comes first, then your other home zone, then the rest, one region at a time.</p>
+
+    <div class="sh"><h2>Storage</h2></div>
+    <div class="card" style="padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><div class="t">Using [size] of phone storage</div></div>
+      <div class="bar" style="margin-top:10px;" role="presentation"><i style="width:12%;background:#2459C7;"></i></div>
+      <div class="s" style="margin-top:6px;">Bar is a sample in this mockup.</div>
+      <a href="#remove" class="btn" style="margin-top:12px;background:#FBE7E4;color:#B42318;">Remove maps</a>
+    </div>
+
+    <div class="sh"><h2>Settings</h2></div>
+    <div class="grp">
+      <div class="row" style="min-height:60px;"><div style="flex:1;min-width:0;"><div class="t">Wi-Fi only</div><div class="s">Never use mobile data for maps</div></div><button class="tg on" role="switch" aria-checked="true" aria-label="Wi-Fi only"><i></i></button></div>
+      <div class="row" style="min-height:60px;"><div style="flex:1;min-width:0;"><div class="t">Update maps monthly</div><div class="s">Keeps roads and places fresh</div></div><button class="tg on" role="switch" aria-checked="true" aria-label="Update maps monthly"><i></i></button></div>
+    </div>
+    <p class="s" style="margin:16px 4px 0;">Maps &copy; OpenStreetMap contributors, hosted by Bantay (Protomaps). Offline maps work without signal; the live weather layer needs internet.</p>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1530}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

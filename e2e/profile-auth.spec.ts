@@ -112,7 +112,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('heading', { name: h })).toBeVisible()
       await page.getByRole('button', { name: 'Skip' }).click()
     }
-    await expect(page.locator('h1')).toHaveText('Today')
+    await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     await page.goto('/#me/phone')
     await page.getByRole('button', { name: /^Next: / }).click()
     await expect(page.getByRole('dialog', { name: 'Finish setting up' }).locator('h1')).toHaveText('Your photo')

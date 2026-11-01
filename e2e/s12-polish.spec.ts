@@ -133,14 +133,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, `today-${scheme}`)
     })
 
-    test(`S6, S7: Health with old readings only has one empty hero and one Labs tile (${scheme})`, async ({ page }) => {
+    test(`S6, S7: Health with old readings only has one lead card and one Labs row (${scheme})`, async ({ page }) => {
       await open(page, 'health')
-      await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
-      await expect(page.getByTestId('insight')).toHaveCount(0)
-      await expect(page.getByTestId('nudge')).toHaveCount(0)
-      const labs = page.getByTestId('glance-labs') // S14: the overview keeps one tile, the list lives on #health/labs
+      await expect(page.getByTestId('bodyhero')).toBeVisible() // v13: the lead card shows the newest lab result (LDL here) even when old
+      const labs = page.getByTestId('browse-labs') // v13: Browse keeps one Labs row, the list lives on #health/labs
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs).toHaveAttribute('href', '#health/labs')
+      await expect(labs.getByRole('link')).toHaveAttribute('href', '#health/labs')
       await shot(page, `health-labs-${scheme}`)
     })
 
@@ -155,26 +153,20 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test(`S9: People bubbles say the last check-in in words, with no sleep icon (${scheme})`, async ({ page }) => {
       await open(page, 'family')
-      const roll = page.getByRole('list', { name: 'Family roll call' })
+      // v13: cards carry the words; the Open link is the way to the person's page, Message is the way to Messages (ML-13).
+      const roll = page.getByRole('group', { name: 'Family roll call' })
       await expect(roll).toBeVisible()
       await expect(roll).toContainText('Last OK 3 days ago')
       await expect(roll).toContainText('No check-in yet')
       await expect(roll).not.toContainText('💤')
-      await roll.getByRole('button', { name: /Papa Ben/ }).click() // S16: a face opens a sheet with the two things you can do (Faces row)
-      const sheet = page.getByRole('dialog', { name: 'Papa' })
-      await expect(sheet).toBeVisible()
-      await page.keyboard.press('Escape')
-      await expect(sheet).toHaveCount(0)
-      await roll.getByRole('button', { name: /Papa Ben/ }).click()
-      await sheet.getByRole('link', { name: 'Send a message' }).click() // non-carers still reach Messages from the face (ML-13)
+      await roll.getByRole('article', { name: /^Papa Ben\./ }).getByRole('button', { name: 'Message' }).click()
       await expect(page).toHaveURL(/#family\/messages$/)
       await page.goto('/#family')
-      await roll.getByRole('button', { name: /Papa Ben/ }).click()
-      await sheet.getByRole('link', { name: 'See their stats' }).click()
+      await roll.getByRole('link', { name: 'Open Papa' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')
       await expect(roll).toContainText('Last OK 3 days ago') // the roll call is back (it reloads after the page change) before the shot
-      await expect(roll.getByRole('button', { name: /Papa Ben/ })).toBeVisible()
+      await expect(roll.getByRole('article', { name: /^Papa Ben\./ })).toBeVisible()
       await shot(page, `family-${scheme}`)
     })
   })

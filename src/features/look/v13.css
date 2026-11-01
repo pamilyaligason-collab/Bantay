@@ -1,0 +1,69 @@
+/* v13 shared components (contract 3 and 4). Tint wiring is one rule block; each component only reads --tint-fill / --tint-ink. */
+.rw-ic[data-tint], .pt[data-tint], .jk-tile[data-tint] { --tint-fill: var(--card2); --tint-ink: var(--ink); }
+.rw-ic[data-tint="blue"], .pt[data-tint="blue"], .jk-tile[data-tint="blue"], .rw-badge[data-tint="blue"] { --tint-fill: var(--tint-blue); --tint-ink: var(--tint-blue-ink); }
+.rw-ic[data-tint="red"], .pt[data-tint="red"], .jk-tile[data-tint="red"], .rw-badge[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
+.rw-ic[data-tint="amber"], .pt[data-tint="amber"], .jk-tile[data-tint="amber"], .rw-badge[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
+.rw-ic[data-tint="teal"], .pt[data-tint="teal"], .jk-tile[data-tint="teal"], .rw-badge[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
+.rw-ic[data-tint="purple"], .pt[data-tint="purple"], .jk-tile[data-tint="purple"], .rw-badge[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.rw-ic[data-tint="green"], .pt[data-tint="green"], .jk-tile[data-tint="green"], .rw-badge[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
+
+/* LargeTitle. section.sec / .sec-h are also old caption classes (app.css): the element-qualified selectors below out-rank them. */
+.lt { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 0; min-width: 0; }
+.lt-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; gap: 8px; }
+.lt-kicker { font-size: 13px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.lt-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px 0 0; color: var(--green); font-size: 17px; font-weight: 500; text-decoration: none; }
+.lt-title { margin: 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.lt-actions { display: flex; gap: 10px; align-items: center; }
+
+/* Section */
+section.sec { display: flex; flex-direction: column; gap: 10px; margin: 0; font-size: inherit; color: var(--ink); }
+section.sec > .sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 2px 0; }
+section.sec > .sec-h h2 { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; letter-spacing: -.01em; }
+section.sec > .sec-h a, section.sec > .sec-h button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 6px; margin: -13px -6px; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-decoration: none; font-family: inherit; }
+section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
+
+/* PreviewTile + Carousel */
+.card.pt { display: flex; flex-direction: column; min-height: 150px; padding: 14px; text-decoration: none; color: var(--ink); box-sizing: border-box; }
+.pt-k { font-size: 13px; font-weight: 600; color: var(--tint-ink, var(--ink)); }
+.pt-v { font-size: 26px; font-weight: 700; letter-spacing: -.02em; margin-top: 10px; }
+.pt[data-size="md"] .pt-v { font-size: 20px; }
+.pt-s { font-size: 13px; color: var(--muted); line-height: 18px; }
+.pt-a { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; color: var(--green); min-height: 24px; }
+.pt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+:root[data-narrow] .pt-grid { grid-template-columns: minmax(0, 1fr); }
+.carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.carousel > * { flex: none; scroll-snap-align: start; }
+.carousel::-webkit-scrollbar { display: none; }
+:root[data-narrow] .carousel { padding: 0 12px; margin: 0 -12px; }
+
+/* Segmented */
+.segd { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card2); border-radius: 12px; padding: 3px; gap: 2px; }
+.segd > * { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--ink); background: none; border: 0; text-decoration: none; font-family: inherit; }
+.segd > [aria-current="page"], .segd > [aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(40,30,10,.14); font-weight: 600; }
+:root[data-narrow] .segd { grid-auto-flow: row; }
+
+/* MapCard */
+.mapc { padding: 0; overflow: hidden; position: relative; }
+.mapc-t { margin: 0; padding: 12px 14px 0; font-size: 17px; font-weight: 600; }
+.mapc-link { display: block; color: inherit; text-decoration: none; }
+.mapc-layer { height: var(--h, 200px); background: var(--card2); }
+.mapc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mapc-credit { padding: 8px 14px; font-size: 13px; color: var(--muted); }
+.mapc-re { position: absolute; right: 10px; bottom: 46px; width: 44px; height: 44px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-float); border: 0; color: var(--green); display: grid; place-items: center; }
+
+/* Sheet: glass fill and blur come from glass.css (.lk-sheet in its lists). Keyframes are duplicated from shell.css so look/ does not depend on shell/. */
+@keyframes lk-sheet-in { from { transform: translateY(100%); } }
+@keyframes lk-fade-in { from { opacity: 0; } }
+@keyframes lk-sheet-out { to { transform: translateY(100%); } }
+@keyframes lk-fade-out { to { opacity: 0; } }
+.lk-sheet-wrap { position: absolute; inset: 0; z-index: 30; background: rgba(28, 27, 25, calc(.38 * var(--lk-dim, 1))); display: flex; align-items: flex-end; animation: lk-fade-in var(--dur-base) var(--ease-out); }
+.lk-sheet { width: 100%; max-height: 90%; overflow-y: auto; border-radius: 30px 30px 0 0; padding: 8px 16px calc(28px + var(--sab)); box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; color: var(--ink); animation: lk-sheet-in var(--dur-sheet) var(--ease-sheet); outline: none; }
+.lk-sheet[data-fit] { touch-action: none; }
+.lk-grab-zone { height: 32px; margin: -4px -16px -12px; display: grid; place-items: center; touch-action: none; cursor: grab; flex: none; }
+.lk-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--hair); margin: 0 auto; }
+.lk-sheet-h { display: flex; align-items: center; gap: 12px; }
+.lk-sheet-h h2 { flex: 1; margin: 0; font-size: 22px; font-weight: 700; }
+.lk-x { width: 44px; height: 44px; border-radius: 50%; background: var(--card2); border: 0; color: var(--ink); display: grid; place-items: center; }
+.lk-sheet-wrap[data-closing="true"] { animation: lk-fade-out var(--dur-base) var(--ease-out) forwards; pointer-events: none; }
+.lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: lk-sheet-out var(--dur-base) var(--ease-sheet) forwards; }
+@media (prefers-reduced-motion: reduce) { .lk-sheet-wrap, .lk-sheet, .lk-sheet-wrap[data-closing="true"], .lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: none; } }

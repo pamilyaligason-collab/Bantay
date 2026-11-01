@@ -107,11 +107,10 @@ for (const clock of FIXED_CLOCKS) test(`signed in at ${clock}: Next up for me an
   await expect(page.getByRole('heading', { name: /Losartan/ }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: /1 medicine to check/ })).toHaveAttribute('href', '#health/meds')
   await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
-  await page.getByRole('button', { name: 'See the week' }).click() // S14: My week sits behind the See the week link
-  const week = page.getByRole('region', { name: 'My week' }).or(page.locator('section[aria-labelledby="t-myweek"]'))
-  await expect(week.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
-  await expect(week.getByRole('link', { name: /Steps a day/ })).toContainText('goal 6,000')
-  await expect(week.getByRole('link', { name: /Doses on time/ })).toHaveAttribute('href', '#health')
+  await expect(page.getByRole('button', { name: 'See the week' })).toHaveCount(0) // v13: My week is gone; Your numbers (latest BP, sugar, newest lab) is always on Today
+  const nums = page.getByTestId('numbers')
+  await expect(nums.getByRole('link', { name: /Blood pressure/ })).toHaveAttribute('href', '#health/metric/bp_systolic')
+  await expect(nums.getByRole('link', { name: /Sugar/ })).toHaveAttribute('href', '#health/metric/fasting_glucose')
   await expect(page.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
   await page.getByRole('button', { name: 'Taken' }).click()
   await expect(page.getByRole('status').filter({ hasText: /taken/ })).toBeVisible()

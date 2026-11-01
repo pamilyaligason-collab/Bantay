@@ -97,24 +97,21 @@ test('Meals is not on Today (one salt line is); the line opens Health > Food whe
   await shot(page, 'health-food')
 })
 
-test('My week is a See the week link that opens the same tiles; SOS hold and Self-care stay', async ({ page }) => {
+test('My week and See the week are gone (v13 Your numbers replaced them); Self-care stays, SOS is not on Today', async ({ page }) => {
   await start(page)
   await expect(page.getByRole('heading', { name: 'My week' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Hold to call and text your family' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Hold to call and text your family' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Take a breath' })).toBeVisible()
-  const link = page.getByRole('button', { name: 'See the week' })
-  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48)
-  await link.click()
-  await expect(page.getByRole('heading', { name: 'My week' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Hide the week' })).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('button', { name: 'See the week' })).toHaveCount(0)
+  await expect(page.getByTestId('numbers').getByRole('heading', { name: 'Your numbers' })).toBeVisible()
 })
 
-test('200% text zoom (195px wide): the late card, In 10 min, the salt line and See the week do not scroll sideways', async ({ page }) => {
+test('200% text zoom (195px wide): the late card, In 10 min, the salt line and Your numbers do not scroll sideways', async ({ page }) => {
   await start(page)
   await page.setViewportSize({ width: 195, height: 844 })
   await expect(page.locator('.td-next').getByRole('button', { name: 'In 10 min' })).toBeVisible()
   await expect(page.getByTestId('salt-line')).toBeVisible()
-  await page.getByRole('button', { name: 'See the week' }).scrollIntoViewIfNeeded()
+  await page.getByTestId('numbers').scrollIntoViewIfNeeded()
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
   await shot(page, 'today-zoom')
 })

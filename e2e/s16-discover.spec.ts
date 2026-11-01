@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertBudget, assertJackClear, assertNoWrappedButtons, setScheme } from './s16'
+import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, setScheme } from './v13'
 
 // Session 16 lane L3: Discover overview, Learn 2x2, Watch posters, old-hash redirects. Shots (390 px, light and dark) only when S16_SHOTS is set (ML-32).
 test.use({ viewport: { width: 390, height: 844 } })
@@ -24,27 +24,14 @@ test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(scheme, () => {
-    test('overview: hero, season row, five tiles within 800 px, each tile opens its sub', async ({ page }) => {
+    // v13 lane D: the overview (hero, order, links, targets, contrast) is checked in e2e/v13-discover.spec.ts. Kept here: every sub still opens.
+    test('every Discover sub opens', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
-      await page.goto('/#discover')
-      await setScheme(page, scheme)
-      await expect(page.getByTestId('pick')).toBeVisible()
-      await expect(page.getByTestId('season-row')).toBeVisible()
-      await expect(page.getByTestId('discover-tiles').getByRole('link')).toHaveCount(5)
-      await shot(page, 'discover', scheme)
-      await assertBudget(page, 800)
-      await assertJackClear(page)
-      await assertNoWrappedButtons(page)
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-      // one Jack on the screen besides the Jack button: the pick art, and it never overlaps a link text box
-      const jack = (await page.locator('[data-testid="pick"] .sc-jack img').boundingBox())!
-      const title = (await page.locator('[data-testid="pick"] .sc-title').boundingBox())!
-      expect(jack.x).toBeGreaterThanOrEqual(title.x + title.width - 1)
-      expect(jack.width).toBeLessThanOrEqual(96)
       for (const sub of ['learn', 'watch', 'listen', 'play', 'news']) {
-        await page.goto('/#discover')
-        await page.getByTestId('tile-' + sub).click()
+        await page.goto(`/#discover/${sub}`)
+        await setScheme(page, scheme)
         await expect(page).toHaveURL(new RegExp(`#discover/${sub}$`))
+        await expect(page.locator('h1').first()).toBeVisible()
       }
     })
 
@@ -64,7 +51,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#discover/learn')
       await setScheme(page, scheme)
       await expect(page.getByTestId('learn-home')).toBeVisible()
-      await assertBudget(page, 800)
+      await assertTargets(page); await assertTextContrast(page)
       await assertJackClear(page)
       const r = await page.evaluate(() => ['recipes', 'library', 'together', 'benefits'].map((k) => { const b = document.querySelector(`[data-testid="learn-${k}"]`)!.getBoundingClientRect(); return [Math.round(b.x), Math.round(b.y), Math.round(b.width)] }))
       expect(r[0]![1]).toBe(r[1]![1]) // Recipes and Library share a row
@@ -80,12 +67,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('heading', { level: 1, name: 'Learn together' })).toBeVisible()
     })
 
-    test('watch: poster row scrolls inside itself, page stays within 800 px', async ({ page }) => {
+    test('watch: poster row scrolls inside itself, page does not scroll sideways', async ({ page }) => {
       await page.goto('/#discover/watch')
       await setScheme(page, scheme)
       await expect(page.getByTestId('watch')).toBeVisible()
       await shot(page, 'watch', scheme)
-      await assertBudget(page, 800)
+      await assertTargets(page); await assertTextContrast(page)
       await assertJackClear(page)
       await assertNoWrappedButtons(page)
       const row = page.getByRole('list', { name: 'Checked videos' })

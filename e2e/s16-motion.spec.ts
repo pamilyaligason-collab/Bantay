@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { skipOnboarding } from './helpers'
-import { assertBudget, assertJackClear } from './s16'
+import { assertTargets, assertTextContrast, assertJackClear } from './v13'
 
 // S16 L9: Today renders with WebGL off, reduced motion is a still picture, Safety draws no scene and no canvas.
 test.use({ viewport: { width: 390, height: 844 } })
@@ -14,14 +14,14 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`Today with WebGL disabled: scene renders, no canvas, within budget ${scheme}`, async ({ page }) => {
+  test(`Today with WebGL disabled: scene renders, no canvas, targets and contrast ${scheme}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     await page.addInitScript(() => { HTMLCanvasElement.prototype.getContext = () => null })
     await page.goto('/#today')
     const scene = page.locator('section[aria-label="Weather"] .wxs')
     await expect(scene).toHaveAttribute('data-cond', 'rain')
     await expect(page.locator('canvas')).toHaveCount(0)
-    await assertBudget(page, 1900)
+    await assertTargets(page); await assertTextContrast(page)
     await assertJackClear(page)
     if (process.env.S16_SHOTS) await page.screenshot({ path: `docs/session-16/shots/L9/today-${scheme}.png` })
   })
@@ -58,6 +58,7 @@ test('Safety: no canvas, and no moving scene once Safety is up (scene rendered f
 test('hold SOS with Aurora allowed: the SOS screen opens and there is no canvas and no moving scene', async ({ page }) => {
   await page.goto('/#today')
   await expect(page.locator('.wxs:not([data-still])').first()).toBeVisible() // the scene is up before the hold
+  await page.getByTestId('jack').click()
   const btn = page.getByRole('button', { name: 'Hold to call and text your family' })
   const c = (await btn.boundingBox())!
   await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2)

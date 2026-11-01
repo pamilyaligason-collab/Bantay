@@ -78,7 +78,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#plan')
       await expect(page.getByRole('link', { name: 'Back to Family' })).toBeVisible()
       await page.goto('/#family/people')
-      await expect(page.getByTestId('profilecard')).toBeVisible()
+      await expect(page.locator('h1').first()).toHaveText('Family') // v13: the roster is on the root; the ID card moved to #medid
     })
 
     test('a quick reply sends the words', async ({ page }) => {
@@ -87,13 +87,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect.poll(() => sent.map((r) => r.body), { timeout: 15_000 }).toContain('All good')
     })
 
-    test("after I'm OK focus is on the check-in card, with Jack Jack beside it", async ({ page }) => {
+    test("after I'm OK the card says so", async ({ page }) => {
       await page.goto('/#family')
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
-      const done = page.locator('.fm2-fh')
-      await expect(done).toContainText(/You're OK · /)
-      await expect(done).toBeFocused()
-      await expect(done.locator('img.jack')).toBeVisible()
+      await expect(page.getByText(/You're OK · /)).toBeVisible()
       await shot(page, 'im-ok', scheme)
     })
 
@@ -108,21 +105,14 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('200% text zoom (195 px wide): the done check-in card with Jack does not overflow, its tile stays 44 px and Jack does not cover the text', async ({ page }) => {
+    test('200% text zoom (195 px wide): the done check-in card does not overflow', async ({ page }) => {
       await page.setViewportSize({ width: 195, height: 844 })
       await page.goto('/#family')
       await page.getByRole('button', { name: "I'm OK", exact: true }).click()
-      const card = page.locator('.fm2-fh')
-      await expect(card).toContainText(/You're OK · /)
+      await expect(page.getByText(/You're OK · /)).toBeVisible()
       await settle(page)
-      expect(await card.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+      expect(await page.getByTestId('person-card').first().evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
-      const jack = await card.locator('img.jack').boundingBox()
-      const text = await card.locator('.fm2-okwrap b').boundingBox()
-      const box = await card.boundingBox()
-      expect(jack!.x + jack!.width).toBeLessThanOrEqual(box!.x + box!.width + 1)
-      const apart = jack!.x >= text!.x + text!.width - 1 || jack!.y >= text!.y + text!.height - 1 || jack!.y + jack!.height <= text!.y + 1 // beside it or wrapped below it, never on top
-      expect(apart).toBe(true)
     })
   })
 }

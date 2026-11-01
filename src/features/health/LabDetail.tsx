@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../db'
 import { formatNumber } from '../../lib/labFormat'
-import { labDate, labInfo, labNum, labRow, labVerdict, lastThree, rangeSource, sourceIndex, trendOfLastThree } from './labsLogic'
+import { labDate, labInfo, labNum, labRow, labVerdict, lastThree, plainWords, rangeSource, sourceIndex, trendOfLastThree } from './labsLogic'
 import { LabBar, VerdictChip } from './LabsList'
 import { metricLabel } from './model'
 import { articleHref } from './library/medline'
@@ -50,6 +50,8 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
             <VerdictChip row={row} />
           </span>
           <LabBar row={row} />
+          {row.pos !== 'none' && <p className="lr-say">{plainWords(row.rv?.value ?? latest.value, row.range, labNum(latest.value))}</p>}
+          {(row.pos === 'above' || row.pos === 'below') && <a className="btn" href="#health/visits">Ask at next visit</a>}
           <span className="lr-foot">
             <span className="lr-rng" data-testid="lab-range">{src ? src.text : 'No range printed on the paper'}</span>
             <span className="lr-date" data-testid="lab-date">{labDate(latest.takenAt, true)}</span>

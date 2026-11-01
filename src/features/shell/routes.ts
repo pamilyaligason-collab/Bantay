@@ -22,6 +22,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k.startsWith('me/')) return { tab: null, view: 'me' } // #me/<group>: a Settings group, drawn by Me
   if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/papers, #family/people/<id>
   if (k === 'weather' || k.startsWith('weather?')) return { tab: 'today', view: 'weather' } // #weather, #weather?from=action
+  if (k === 'calm') return { tab: 'today', view: 'calm' } // #calm: the Calm page under Today (lane C)
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   // sub-screens of Safety, drawn by Safety itself; #medid/<personId> comes from a member page
   if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k }
@@ -37,5 +38,6 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
 /** Routes whose screen draws its own Back + title header, so the avatar/bell top bar stays off. Tab roots and #family/plan|people|messages keep it. */
 export const hasOwnHeader = (h: string) => {
   const k = canonicalHash(h).replace(/^#/, '')
-  return k === 'privacy' || k === 'sharing' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people|messages)$/.test(k))
+  if (k === 'safety/world') return false // World is the other half of the Safety root switch
+  return k === 'privacy' || k === 'sharing' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k === 'calm' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people|messages)$/.test(k))
 }

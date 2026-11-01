@@ -60,7 +60,7 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
 })
 
 test('How are you? signed out says to sign in and does not claim the family will see it', async ({ page }) => {
-  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you?
+  await expect(page.getByRole('group', { name: 'Quick log' }).getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you? (v13 MyDay has its own I'm OK row too)
   await page.getByRole('button', { name: 'Log how you feel' }).click()
   await page.getByRole('button', { name: 'Unwell' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Sign in first' })).toBeVisible()
@@ -99,4 +99,12 @@ test('the warning band shows only while an official warning is active', async ({
   const band = page.getByRole('region', { name: 'Active warning' })
   await expect(band).toContainText('Drop, cover and hold on.')
   await expect(band.getByRole('link', { name: 'What to do' })).toHaveAttribute('href', '#safety/warnings')
+})
+
+test('My day I\'m OK signed out says to sign in first and never claims it saved', async ({ page }) => {
+  const day = page.getByTestId('myday')
+  await expect(day.getByText('Lets the family know you are fine')).toHaveCount(0)
+  await day.getByRole('button', { name: "I'm OK" }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Sign in first' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toHaveCount(0)
 })

@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ASK_EVENT } from '../assistant/Assistant'
 import { JackFab } from './JackFab'
+import { openSos } from '../sos/openSos'
 
-vi.mock('./AskSheet', () => ({ AskSheet: () => <div role="dialog" aria-label="Ask sheet" /> }))
+const sosMounts = vi.hoisted(() => ({ n: 0 }))
+vi.mock('../sos/SosScreen', async () => {
+  const { useEffect } = await import('react')
+  return { default: () => { useEffect(() => { sosMounts.n++ }, []); return <div data-testid="sos-screen" /> } }
+})
+
+vi.mock('./JackSheet', () => ({ JackSheet: ({ onClose }: { onClose: () => void }) => <div role="dialog" aria-label="Jack"><button onClick={onClose}>x</button></div> }))
 // fake-indexeddb schedules its work with setTimeout, so faking the clock would stall Dexie. The kv is a plain in-memory map here, always loaded.
 const store = vi.hoisted(() => new Map<string, unknown>())
 vi.mock('./useKv', () => ({
@@ -14,13 +20,11 @@ vi.mock('./useKv', () => ({
   }
 }))
 
-let asked = 0
-const onAsk = () => { asked++ }
-beforeEach(() => { store.clear(); asked = 0; window.addEventListener(ASK_EVENT, onAsk); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }) })
-afterEach(() => { cleanup(); window.removeEventListener(ASK_EVENT, onAsk); vi.clearAllTimers(); vi.useRealTimers() })
+beforeEach(() => { store.clear(); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }) })
+afterEach(() => { cleanup(); vi.clearAllTimers(); vi.useRealTimers() })
 
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms) })
-const fab = () => screen.queryByRole('button', { name: 'Ask Bantay' })
+const fab = () => screen.queryByRole('button', { name: 'Jack: help, scan, chat' })
 
 describe('JackFab visibility', () => {
   it('S16: hides while a storm or quake warning marks the screen data-nofab, and returns when it goes', async () => {
@@ -80,52 +84,28 @@ describe('JackFab visibility', () => {
 })
 
 describe('JackFab actions', () => {
-  it('a tap opens Jack (the assistant event) and not the choice sheet', () => {
+  it('a tap opens the Jack sheet; closing it removes the sheet', () => {
     render(<JackFab tab="today" hash="#today" />)
+    expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(fab()!)
-    expect(asked).toBe(1)
+    expect(screen.getByRole('dialog', { name: 'Jack' })).toBeTruthy()
+    fireEvent.click(screen.getByText('x'))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
-  it('press and hold 500 ms opens the choice sheet, and the click after the release does not also open Jack', () => {
+  it('has the test id and is one tap only: no hold timer, no context menu sheet', () => {
     render(<JackFab tab="today" hash="#today" />)
-    fireEvent.pointerDown(fab()!)
-    tick(499)
+    expect(fab()!.getAttribute('data-testid')).toBe('jack')
+    fireEvent.pointerDown(fab()!); tick(1000)
     expect(screen.queryByRole('dialog')).toBeNull()
-    tick(1)
-    expect(screen.getByRole('dialog', { name: 'Ask sheet' })).toBeTruthy()
-    fireEvent.pointerUp(fab()!)
-    fireEvent.click(fab()!)
-    expect(asked).toBe(0)
-  })
-  it('a hold whose release never reaches the button does not swallow the next tap', () => {
-    render(<JackFab tab="today" hash="#today" />)
-    fireEvent.pointerDown(fab()!)
-    tick(500) // sheet opens under the finger; no pointerup or click lands on the button
-    fireEvent.pointerDown(fab()!)
-    fireEvent.pointerUp(fab()!)
-    fireEvent.click(fab()!)
-    expect(asked).toBe(1)
-  })
-  it('a short press cancels the timer', () => {
-    render(<JackFab tab="today" hash="#today" />)
-    fireEvent.pointerDown(fab()!)
-    tick(200)
-    fireEvent.pointerUp(fab()!)
-    tick(1000)
+    fireEvent.contextMenu(fab()!)
     expect(screen.queryByRole('dialog')).toBeNull()
-  })
-  it('right click (and the Android long-press menu) opens the choice sheet', () => {
-    render(<JackFab tab="today" hash="#today" />)
-    expect(fireEvent.contextMenu(fab()!)).toBe(false) // default prevented: no browser menu
-    expect(screen.getByRole('dialog', { name: 'Ask sheet' })).toBeTruthy()
-    expect(asked).toBe(0)
   })
 })
 
 describe('JackFab coach mark', () => {
-  it('shows "Ask me anything" and the hold hint on Today; seen only once exactly 8 s have passed', () => {
+  it('shows "Help, scan or chat" on Today; seen only once exactly 8 s have passed', () => {
     render(<JackFab tab="today" hash="#today" />)
-    expect(screen.getByRole('status').textContent).toBe('Ask me anything. Hold for more.')
+    expect(screen.getByRole('status').textContent).toBe('Help, scan or chat')
     tick(7999)
     expect(store.get('askHintSeen')).toBeUndefined()
     expect(screen.queryByRole('status')).not.toBeNull()
@@ -145,5 +125,25 @@ describe('JackFab coach mark', () => {
     fireEvent.click(fab()!)
     expect(store.get('askHintSeen')).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('JackFab owns the SOS screen opened from a warning card', () => {
+  it('opens on the sos event and stays while the warning (data-nofab) comes and goes', async () => {
+    render(<JackFab tab="today" hash="#today" />)
+    const warn = document.createElement('section')
+    warn.setAttribute('data-nofab', '')
+    await act(async () => { document.body.appendChild(warn); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).toBeNull()) // Jack is hidden, yet the event still opens SOS
+    sosMounts.n = 0
+    act(() => openSos())
+    expect(screen.getByTestId('sos-screen')).toBeTruthy()
+    await act(async () => { warn.remove(); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).not.toBeNull())
+    expect(screen.getByTestId('sos-screen')).toBeTruthy()
+    await act(async () => { document.body.appendChild(warn); await Promise.resolve() })
+    await vi.waitFor(() => expect(fab()).toBeNull())
+    expect(sosMounts.n).toBe(1) // a remount would start a second SOS and alarm the family again
+    warn.remove()
   })
 })

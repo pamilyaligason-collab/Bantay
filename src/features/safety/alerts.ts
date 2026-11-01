@@ -87,6 +87,15 @@ export function freshness(checkedAt: string | null | undefined, now: Date | numb
   return { ageMin: Math.floor(ms / 60_000), tone: ms > FRESH_RED_MIN * 60_000 ? 'red' : ms > FRESH_AMBER_MIN * 60_000 ? 'amber' : 'ok' }
 }
 
+/** Dexie kv key: when the last successful pull finished. A pull that returns zero rows has no row to carry a time, so this keeps a quiet day from reading "never checked". */
+export const CHECKED_KEY = 'alerts:checkedAt'
+/** The later of the saved pull time and the newest row time (ISO), or null when neither is readable. */
+export function lastCheck(alerts: Alert[], saved: unknown): string | null {
+  const s = typeof saved === 'string' && !Number.isNaN(Date.parse(saved)) ? saved : null
+  const n = newestChecked(alerts)
+  return s && (!n || Date.parse(s) > Date.parse(n)) ? s : n
+}
+
 /** The newest `checkedAt` in the list (ISO), or null when no row has one. */
 export function newestChecked(alerts: Alert[]): string | null {
   let best: string | null = null
@@ -116,7 +125,7 @@ export function outdatedLine(checkedAt: string | null | undefined): string {
 export function placeLabel(place: { source: string; zone: string }): string {
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const name = zone.name.split(',')[0]!
-  return place.source === 'gps' ? `Near you · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
+  return place.source === 'gps' ? `Near you · ${name}` : place.source === 'last' ? `Last known · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
 }
 
 // shortcut: flat radii for everything but quakes, and a rough strong-shaking radius by magnitude for quakes; upgrade when the ingest sends a shake model.
@@ -125,13 +134,28 @@ const NEAR_KM = 150 // a storm, flood, tsunami or volcano this close is "near yo
 /** D-88: storm, flood, tsunami, volcano and GDACS rows count as affecting the family out to the ingest's own limit (GDACS_MAX_KM in alerts-ingest). */
 export const WIDE_KM = 1000
 const LOCAL_KINDS = new Set<AlertKind>(['air', 'utility', 'local'])
-const TSUNAMI_MAG = 6.5
+export const TSUNAMI_MAG = 6.5
 const TSUNAMI_LINE = ' If you live near the sea, watch for a tsunami warning.'
 /** The magnitude written in a quake row, or null when none is readable (never guessed). */
 export function quakeMag(a: Pick<Alert, 'level' | 'what' | 'title'>): number | null {
   const m = /(?:magnitude|M)\s*([0-9]+(?:\.[0-9]+)?)/i.exec(`${a.level ?? ''} ${a.title ?? ''} ${a.what ?? ''}`)
   return m && Number.isFinite(Number(m[1])) ? Number(m[1]) : null
 }
+const DAY_MS = 86_400_000
+/** A tsunami, or a quake of M6 or more, under 24 h old: it outranks every other warning on every list that shows a "top" alert.
+ *  A quake must also be inside its felt radius of `here` or the nearest home zone (the ingest keeps M6+ out to 1,500 km, which is not "urgent" for a local flood). */
+export function urgent(a: Alert, here: LatLon | null, now = Date.now()): boolean {
+  const age = now - Date.parse(a.issuedAt)
+  if (Number.isFinite(age) && age > DAY_MS) return false
+  if (a.kind === 'tsunami') return true
+  if (a.kind !== 'quake' || (quakeMag(a) ?? 0) < 6) return false
+  if (a.lat == null || a.lon == null) return true // no point: it covers the whole area, as affectsUs counts it
+  const p = { lat: a.lat, lon: a.lon }
+  const d = Math.min(here ? distanceKm(here, p) : Infinity, ...HOME_ZONES.map((z) => distanceKm(z, p)))
+  return d <= quakeFeltKm(a)
+}
+/** The urgent alerts first, the rest in their ranked order. */
+export const urgentFirst = (list: Alert[], here: LatLon | null, now = Date.now()): Alert[] => [...list.filter((a) => urgent(a, here, now)), ...list.filter((a) => !urgent(a, here, now))]
 /** How far strong shaking from a quake of this size is often felt (D-87 table). Unknown size counts as 100 km. */
 export function quakeFeltKm(a: Pick<Alert, 'level' | 'what' | 'title'>): number {
   const mag = quakeMag(a)

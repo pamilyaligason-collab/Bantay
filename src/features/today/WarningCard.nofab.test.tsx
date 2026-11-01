@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import WarningCard from './WarningCard'
+import { ACK_KEY, ackWarning } from './warnAck'
 
 // S16 D-91: the Jack button hides while a quake or storm warning is on screen. WarningCard marks itself data-nofab; JackFab hides on [data-nofab].
 // This pins the real marking (the JackFab unit test only appends a hand-made element).
@@ -58,5 +59,46 @@ describe('WarningCard data-nofab', () => {
     await new Promise((r) => setTimeout(r, 60))
     expect(screen.queryByRole('region', { name: 'Active warning' })).toBeNull()
     expect(nofab(container)).toBe(0)
+  })
+  // D-91 hides Jack under these cards, so SOS must stay on Today as a hold button (same component as the Jack sheet).
+  it('shows a SOS hold under a red quake card', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [quake] })
+    render(<WarningCard />)
+    await screen.findByRole('region', { name: 'Active warning' })
+    expect(screen.getByRole('button', { name: /hold to call and text your family/i })).toBeTruthy()
+    expect(screen.getAllByTestId('warning-sos')).toHaveLength(1)
+  })
+  it('shows a SOS hold under the storm card', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [storm] })
+    render(<WarningCard />)
+    await screen.findByRole('region', { name: 'Storm mode' })
+    expect(screen.getAllByTestId('warning-sos')).toHaveLength(1)
+  })
+  it('shows no SOS hold when there is no nofab card (calm, heat)', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [heat] })
+    render(<WarningCard />)
+    await screen.findByRole('region', { name: 'Active warning' })
+    expect(screen.queryByTestId('warning-sos')).toBeNull()
+  })
+  it('shows no SOS hold on a calm Today', async () => {
+    render(<WarningCard />)
+    await new Promise((r) => setTimeout(r, 60))
+    expect(screen.queryByTestId('warning-sos')).toBeNull()
+  })
+  it('shows both the storm card and an urgent M6.8 quake, with one SOS', async () => {
+    const big: Alert = { ...quake, id: 'q68', level: 'Magnitude 6.8', title: 'Earthquake M6.8' }
+    await db.kv.put({ key: ALERTS_KEY, value: [storm, big] })
+    render(<WarningCard />)
+    await screen.findByRole('region', { name: 'Storm mode' })
+    expect(await screen.findByRole('region', { name: 'Active warning' })).toBeTruthy()
+    expect(screen.getAllByTestId('warning-sos')).toHaveLength(1)
+  })
+  it('closing a flood advisory reveals the M6.8 quake behind it', async () => {
+    const flood: Alert = { ...base, id: 'f1', kind: 'rainfall', level: 'Orange', title: 'Rainfall advisory' }
+    const big: Alert = { ...quake, id: 'q68', level: 'Magnitude 6.8', title: 'Earthquake M6.8' }
+    await db.kv.put({ key: ALERTS_KEY, value: [flood, big] })
+    await db.kv.put({ key: ACK_KEY, value: ackWarning({}, flood, [flood, big]) })
+    render(<WarningCard />)
+    expect((await screen.findByRole('region', { name: 'Active warning' })).textContent).toContain('M6.8')
   })
 })

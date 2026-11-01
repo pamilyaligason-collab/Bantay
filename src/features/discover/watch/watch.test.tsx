@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable, VIDEOS } from '../../health/library/videosLogic'
-import Watch from './Screen'
+import Watch, { WATCH_PICK } from './Screen'
 
 afterEach(cleanup)
 
@@ -44,6 +44,25 @@ describe('Watch', () => {
     fireEvent.error(container.querySelector('img')!)
     expect(container.querySelector('.dc-poster[data-thumb="off"]')).toBeTruthy()
     expect(container.querySelectorAll('img').length).toBe(11)
+  })
+})
+
+describe('Watch opened from the overview', () => {
+  it('opens the stored video on mount (player, no iframe) and clears the key', () => {
+    const v = VIDEOS.filter(playable)[3]!
+    sessionStorage.setItem(WATCH_PICK, v.id)
+    const { container } = render(<Watch />)
+    expect(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })).toBeTruthy()
+    expect(container.querySelector('iframe')).toBeNull()
+    expect(sessionStorage.getItem(WATCH_PICK)).toBeNull()
+  })
+  it('shows no player without the key or with an unknown id', () => {
+    render(<Watch />)
+    expect(screen.queryByTestId('watch-player')).toBeNull()
+    cleanup()
+    sessionStorage.setItem(WATCH_PICK, 'zzzzzzzzzzz')
+    render(<Watch />)
+    expect(screen.queryByTestId('watch-player')).toBeNull()
   })
 })
 

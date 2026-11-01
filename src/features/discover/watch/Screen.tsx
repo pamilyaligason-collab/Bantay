@@ -1,10 +1,14 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Row } from '../../look'
 import type { IconName } from '../../shell/Icon'
 import { LiteVideo } from '../../media/LiteVideo'
 import { playable, VIDEOS, type Video } from '../../health/library/videosLogic'
 
 const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal' }
+
+/** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
+export const WATCH_PICK = 'dc.watch'
+const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch { return null } }
 
 /** A 160 x 90 still picture (i.ytimg.com, no cookies). If it cannot load, the drawn tile and the title stand in. Tapping it picks the video; nothing else loads from YouTube. */
 function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
@@ -13,7 +17,7 @@ function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
     <li>
       <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} minutes` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
         {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
-        <span className="dc-poster-cap"><b>{v.title}</b>{v.minutes ? <span>{v.minutes} min</span> : null}</span>
+        <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <span>{v.minutes} min</span> : null}</span>
       </button>
     </li>
   )
@@ -25,8 +29,10 @@ export default function Watch() {
   const all = VIDEOS.filter(playable)
   const topics = [...new Set(all.map((v) => v.topic))]
   const [topic, setTopic] = useState<string | null>(null)
-  const [sel, setSel] = useState<string | null>(null)
+  const [sel, setSel] = useState<string | null>(readPick)
   const player = useRef<HTMLDivElement>(null)
+  // shortcut: sessionStorage carries the tapped video because #discover/watch/<id> would fall off the sub-root header rule; upgrade when Discover routes grow a param
+  useEffect(() => { try { sessionStorage.removeItem(WATCH_PICK) } catch { /* private mode */ } }, [])
   const list = topic ? all.filter((v) => v.topic === topic) : all
   const chosen = list.find((v) => v.id === sel)
   const pick = (id: string) => { setSel(id); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }

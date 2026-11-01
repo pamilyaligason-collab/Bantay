@@ -24,7 +24,7 @@ const BUCKET = 'avatars'
 // These kv keys are per phone, not per person. The phone's cache belongs to SELF_ID; when a different person
 // signs in, the old person's cache (photo, pending upload, wizard answers, migration flag) is dropped so it can
 // never be shown to, or uploaded for, someone else. Their unsent edits stay in the outbox (those carry their own id).
-const PHONE_KEYS = ['profile.photo', PHOTO_UP, PHOTO_AT, MIGRATED, MIGRATING, MIGRATE_TRIES, 'profile.about', 'profile.medicines', 'profile.photoPath']
+const PHONE_KEYS = ['profile.photo', PHOTO_UP, PHOTO_AT, MIGRATED, MIGRATING, MIGRATE_TRIES, 'profile.about', 'profile.medicines', 'profile.photoPath', 'loc.last', 'rescuemap.last'] // loc.last (useLocation.ts): the last exact position is one person's, never the next person's "Last known"; rescuemap.last (RescueMap.tsx) is the same position for the map. sos.history stays: a resumed live SOS reads its position there (SosScreen.tsx:99)
 export async function adoptPerson(personId: string): Promise<void> {
   if (personId === getActingPersonId()) throw new Error('acting:profile') // S16-L6: the member's profile is never adopted while an admin acts for them (D-99); before any local write
   const owner = (await db.kv.get(SELF_ID))?.value as string | undefined

@@ -63,6 +63,21 @@ export function labNum(value: number | null | undefined): string {
   return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
 }
 
+/** One plain sentence on where a value sits against the usual range. '' without a range (never a guess). `value` is judged against the range; `shown` is the number printed (the reading as the person sees it, which may be in another unit). */
+export function plainWords(value: number, range: Range | null, shown: string = labNum(value)): string {
+  if (!range || !Number.isFinite(value)) return ''
+  const n = shown
+  if (range.high != null && value > range.high) {
+    const ratio = range.high > 0 ? value / range.high : Infinity
+    return ratio < 1.5 ? `${n} is a little over the top of normal.` : `${n} is about ${Math.round(ratio)} times the top of normal.`
+  }
+  if (range.low != null && value < range.low) {
+    const ratio = value > 0 ? range.low / value : Infinity
+    return ratio < 1.5 ? `${n} is a little under the bottom of normal.` : `${n} is well under the bottom of normal.`
+  }
+  return range.low == null && range.high == null ? '' : `${n} is inside the normal range.`
+}
+
 const distance = (v: number, r: Range) => (r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
 export type CloserKind = 'in' | 'crossed' | 'same' | 'closer' | 'further'
 /** Direction depends on the side of the range, not on up or down: 8.1 after 9.4 with a top limit of 7 is closer; 4.0 after 5.5 with a bottom limit of 5 is further. Null without a range. */

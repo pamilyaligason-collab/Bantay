@@ -24,16 +24,17 @@ export function useProfiles(): Record<string, ProfileRow> {
   return map
 }
 
-/** The signed-in person's id; falls back to the one cached on this phone when offline. */
-export function useSelfPersonId(): string | null {
-  const [id, setId] = useState<string | null>(null)
+/** The signed-in person's id (falls back to the one cached on this phone when offline), and whether that has been looked up yet: null with ready=false is "still loading", not "signed out". */
+export function useSelfPerson(): { id: string | null; ready: boolean } {
+  const [s, setS] = useState<{ id: string | null; ready: boolean }>({ id: null, ready: false })
   useEffect(() => {
     let live = true
-    void selfIdOrCached().then((v) => { if (live) setId(v) })
+    void selfIdOrCached().then((v) => { if (live) setS({ id: v, ready: true }) })
     return () => { live = false }
   }, [])
-  return id
+  return s
 }
+export const useSelfPersonId = (): string | null => useSelfPerson().id
 
 /** A photo URL for a path, or null while loading / when there is none. */
 function useSigned(path: string | null | undefined): string | null {

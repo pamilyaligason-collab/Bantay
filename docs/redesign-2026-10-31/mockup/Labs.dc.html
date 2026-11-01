@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bantay Labs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6B4E}a:hover{color:#14503A}
+.ph{width:390px;box-sizing:border-box;background:#F5F3EF;color:#1C1B19;font-family:-apple-system,"SF Pro Text",Inter,system-ui,sans-serif;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}
+.pad{padding:0 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:28px 0 10px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-0.01em;margin:0}
+.sh a{font-size:15px;font-weight:500;text-decoration:none}
+.card{background:#fff;border-radius:20px;box-shadow:0 1px 2px rgba(40,30,10,.06)}
+.grp{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(40,30,10,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:56px;box-sizing:border-box;text-decoration:none;color:inherit;position:relative}
+.row + .row::before{content:"";position:absolute;top:0;left:58px;right:0;border-top:0.5px solid rgba(60,55,45,.16)}
+.ic{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-size:17px;line-height:22px;font-weight:500}
+.s{font-size:13px;line-height:18px;color:#6B675F}
+.v{font-size:15px;color:#6B675F;margin-left:auto;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:999px;font-size:15px;font-weight:600;border:0;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap}
+.bp{background:#1E6B4E;color:#fff}
+.bt{background:#E3EFE8;color:#1E6B4E}
+.tabs{position:absolute;left:12px;right:12px;bottom:14px;height:64px;border-radius:32px;background:rgba(255,255,255,.80);backdrop-filter:blur(20px) saturate(1.6);box-shadow:0 8px 24px rgba(40,30,10,.12);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;padding:0 6px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:52px;border-radius:26px;font-size:11px;font-weight:600;color:#6B675F;text-decoration:none}
+.tab.on{color:#1E6B4E;background:rgba(30,107,78,.10)}
+.jack{position:absolute;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(40,30,10,.22);overflow:hidden;border:3px solid #fff;display:block}
+.jack img{width:100%;height:100%;object-fit:cover}
+.scroller{display:flex;gap:12px;overflow-x:auto;padding:0 16px;margin:0 -16px;scrollbar-width:none}
+.back{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding-right:12px;text-decoration:none;font-size:17px;font-weight:500;color:#B42318}
+.seg{display:flex;gap:2px;padding:3px;border-radius:13px;background:#EEEAE3}
+.seg button{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;font-family:inherit;font-size:15px;font-weight:600;color:#6B675F;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#fff;color:#1C1B19;box-shadow:0 1px 3px rgba(40,30,10,.14)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.sample{display:inline-block;padding:2px 8px;border-radius:6px;background:#F1EDE6;color:#6B675F;font-size:11px;font-weight:700;letter-spacing:.06em}
+.bar{position:relative;height:10px;border-radius:5px;background:#F1EDE6;margin-top:14px}
+.ask{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;text-decoration:none;color:#1E6B4E}
+.sh a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;margin:-13px -6px}
+.hero3{display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:16px 6px}
+.hero3>div{text-align:center;position:relative}
+.hero3>div+div::before{content:"";position:absolute;left:0;top:8px;bottom:8px;border-left:0.5px solid rgba(60,55,45,.18)}
+.hero3 b{display:block;font-size:40px;line-height:44px;font-weight:700;letter-spacing:-0.03em}
+.hero3 span{display:block;font-size:13px;font-weight:600;color:#6B675F;margin-top:2px}
+.rc{padding:18px}
+.rc h3{margin:0;font-size:20px;line-height:24px;font-weight:700;letter-spacing:-0.01em}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap}
+.val{font-size:44px;line-height:48px;font-weight:700;letter-spacing:-0.03em;margin-top:12px}
+.val small{font-size:17px;font-weight:500;color:#6B675F;letter-spacing:0}
+.rng{position:relative;margin-top:44px;height:14px}
+.trk{display:flex;gap:2px;height:14px;border-radius:7px;overflow:hidden}
+.trk i{display:block;height:100%}
+.mk{position:absolute;top:-5px;width:24px;height:24px;border-radius:50%;box-shadow:0 0 0 4px #fff,0 2px 6px rgba(40,30,10,.3)}
+.bub{position:absolute;bottom:26px;padding:4px 10px;border-radius:10px;color:#fff;font-size:14px;font-weight:700;white-space:nowrap}
+.zl{display:flex;gap:2px;margin-top:10px;font-size:13px;font-weight:700}
+.tk{position:relative;height:18px;margin-top:2px;font-size:13px;color:#6B675F}
+.tk span{position:absolute;top:0}
+.say{margin:12px 0 0;font-size:16px;line-height:22px;font-weight:500}
+.src{margin-top:2px;font-size:13px;line-height:18px;color:#6B675F}
+.trend{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 12px;border-radius:14px;background:#F5F3EF;font-size:13px;line-height:18px;color:#6B675F}
+.acts{display:flex;gap:8px;margin-top:14px}
+.acts .btn{flex:1;padding:0 10px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="ph" style="height: 2150px;">
+  <div class="pad" style="padding-top: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px;">
+      <a href="Health.dc.html" class="back" aria-label="Back to Health"><svg width="12" height="20" viewBox="0 0 12 20" aria-hidden="true"><path d="M10 2 2 10l8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>Health</a>
+      <a href="#papers" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; font-size: 17px; font-weight: 600; text-decoration: none; color: #B42318;">Papers</a>
+    </div>
+    <h1 style="margin: 2px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em;">Labs</h1>
+
+    <div class="card hero3" style="margin-top:14px;" role="group" aria-label="Summary">
+      <div><b style="color:#B42318;">1</b><span>To ask about</span></div>
+      <div><b style="color:#8A4B06;">0</b><span>Low</span></div>
+      <div><b style="color:#1E6B4E;">0</b><span>Normal</span></div>
+    </div>
+    <div class="s" style="margin:6px 4px 0;">Counts include your real results only.</div>
+
+    <div style="margin-top: 16px;" class="seg" role="group" aria-label="Filter results">
+      <button type="button" aria-pressed="true">All</button>
+      <button type="button" aria-pressed="false">To ask about</button>
+      <button type="button" aria-pressed="false">In range</button>
+    </div>
+
+    <div class="sh"><h2>Results</h2><span class="s">6 Oct 2026</span></div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div class="card rc" id="alt">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div><h3>ALT</h3><div class="s">ALT · liver enzyme</div></div>
+        <span class="pill" style="background:#FBE7E4;color:#B42318;"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 11V1M2 5l4-4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>High</span>
+      </div>
+      <div class="val">115 <small>U/L</small></div>
+      <div class="rng">
+        <div class="bub" style="right:-4px;background:#B42318;">You 115 › 2× normal</div>
+        <div class="trk" role="img" aria-label="115 U/L, normal is up to 55, so this is high"><i style="width:50%;background:#8CCBA9;"></i><i style="flex:1;background:#F3B8B1;"></i></div>
+        <div class="mk" style="right:0;background:#B42318;"></div>
+      </div>
+      <div class="zl"><span style="width:50%;color:#1E6B4E;">Normal up to 55</span><span style="flex:1;color:#B42318;text-align:right;">High</span></div>
+      <div class="tk"><span style="left:0;">0</span><span style="left:50%;transform:translateX(-50%);">55</span><span style="right:0;">110+</span></div>
+      <p class="say">115 is about 2 times the top of normal.</p>
+      <div class="src">Lab paper · 6 Oct 2026</div>
+      <div class="trend"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="6" fill="#B42318" stroke="#fff" stroke-width="2"></circle></svg><span>First result. Next test will show a trend.</span></div>
+      <div class="acts">
+        <a href="#alt-means" class="btn bt">What it means</a>
+        <a href="Visits.dc.html" class="btn bp">Ask at next visit</a>
+      </div>
+    </div>
+    <div class="card rc">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div><h3>[Test name]</h3><div class="s">[Plain-words subtitle]</div></div>
+        <span class="pill" style="background:#E3EFE8;color:#1E6B4E;"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.500l3 3L10 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Sample</span>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;"><div class="val">92 <small>mg/dL</small></div><span class="sample">SAMPLE</span></div>
+      <div class="rng">
+        <div class="bub" style="left:57.8%;transform:translateX(-50%);background:#1E6B4E;">You 92</div>
+        <div class="trk" role="img" aria-label="92 mg/dL, normal is 70 to 100"><i style="width:33.3%;background:#F6D9A8;"></i><i style="flex:1;background:#8CCBA9;"></i><i style="width:33.3%;background:#F3B8B1;"></i></div>
+        <div class="mk" style="left:calc(57.8% - 12px);background:#1E6B4E;"></div>
+      </div>
+      <div class="zl"><span style="width:33.3%;color:#8A4B06;">Low</span><span style="flex:1;color:#1E6B4E;">Normal 70–100</span><span style="width:33.3%;color:#B42318;text-align:right;">High</span></div>
+      <div class="tk"><span style="left:0;">40</span><span style="left:33.3%;transform:translateX(-50%);">70</span><span style="left:66.7%;transform:translateX(-50%);">100</span><span style="right:0;">130+</span></div>
+      <p class="say">92 is inside the normal range.</p>
+      <div class="src">Sample numbers · Lab paper · 6 Oct 2026</div>
+      <div class="trend"><svg width="64" height="28" viewBox="0 0 64 28" aria-hidden="true"><path d="M6 20 32 12 58 8" fill="none" stroke="#8CCBA9" stroke-width="2.500" stroke-linecap="round"></path><circle cx="6" cy="20" r="4" fill="#1E6B4E"></circle><circle cx="32" cy="12" r="4" fill="#1E6B4E"></circle><circle cx="58" cy="8" r="5" fill="#1E6B4E" stroke="#fff" stroke-width="2"></circle></svg><span>Last 3 results (sample). Steady.</span></div>
+    </div>
+    <div class="card rc">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div><h3>[Test name]</h3><div class="s">[Plain-words subtitle]</div></div>
+        <span class="pill" style="background:#E3EFE8;color:#1E6B4E;"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.500l3 3L10 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Sample</span>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;"><div class="val">4.8 <small>mmol/L</small></div><span class="sample">SAMPLE</span></div>
+      <div class="rng">
+        <div class="bub" style="left:46.7%;transform:translateX(-50%);background:#1E6B4E;">You 4.8</div>
+        <div class="trk" role="img" aria-label="4.8 mmol/L, normal is 3.5 to 5.1"><i style="width:25.0%;background:#F6D9A8;"></i><i style="flex:1;background:#8CCBA9;"></i><i style="width:48.3%;background:#F3B8B1;"></i></div>
+        <div class="mk" style="left:calc(46.7% - 12px);background:#1E6B4E;"></div>
+      </div>
+      <div class="zl"><span style="width:25.0%;color:#8A4B06;">Low</span><span style="flex:1;color:#1E6B4E;">Normal 3.5–5.1</span><span style="width:48.3%;color:#B42318;text-align:right;">High</span></div>
+      <div class="tk"><span style="left:0;">2</span><span style="left:25.0%;transform:translateX(-50%);">3.5</span><span style="left:51.7%;transform:translateX(-50%);">5.1</span><span style="right:0;">8+</span></div>
+      <p class="say">4.8 is inside the normal range.</p>
+      <div class="src">Sample numbers · Lab paper · 6 Oct 2026</div>
+      <div class="trend"><svg width="64" height="28" viewBox="0 0 64 28" aria-hidden="true"><path d="M6 20 32 12 58 8" fill="none" stroke="#8CCBA9" stroke-width="2.500" stroke-linecap="round"></path><circle cx="6" cy="20" r="4" fill="#1E6B4E"></circle><circle cx="32" cy="12" r="4" fill="#1E6B4E"></circle><circle cx="58" cy="8" r="5" fill="#1E6B4E" stroke="#fff" stroke-width="2"></circle></svg><span>Last 3 results (sample). Steady.</span></div>
+    </div>
+    </div>
+
+    <div class="sh"><h2>Source</h2></div>
+    <div class="grp">
+      <a href="#papers" class="row"><div class="ic" style="background: #EEE9FA; color: #6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4M9 12h6M9 16h6"></path></svg></div><div><div class="t">From your lab paper, 6 Oct</div><div class="s">Read from your scan. Check it against the paper.</div></div><div class="v" style="color: #1E6B4E; font-weight: 600;">Open Papers</div></a>
+    </div>
+
+    <div class="sh"><h2>Questions to ask your doctor</h2></div>
+    <div class="grp">
+      <div class="row"><div class="ic" style="background:#EEE9FA;color:#6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.700.400-1 .900-1 1.700M12 17h.01"></path></svg></div><div style="flex:1;"><div class="t" style="font-size:16px;line-height:21px;">What could make my ALT high?</div></div><a href="#add-q1" class="btn bt">Add</a></div>
+      <div class="row"><div class="ic" style="background:#EEE9FA;color:#6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.700.400-1 .900-1 1.700M12 17h.01"></path></svg></div><div style="flex:1;"><div class="t" style="font-size:16px;line-height:21px;">Should I repeat this test, and when?</div></div><a href="#add-q2" class="btn bt">Add</a></div>
+      <div class="row"><div class="ic" style="background:#EEE9FA;color:#6D4BC2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.700.400-1 .900-1 1.700M12 17h.01"></path></svg></div><div style="flex:1;"><div class="t" style="font-size:16px;line-height:21px;">Do my medicines or food affect it?</div></div><a href="#add-q3" class="btn bt">Add</a></div>
+    </div>
+    <div class="s" style="margin: 8px 4px 0;">Added questions are shared with Visits. <a href="Visits.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 8px;font-weight: 600;">Open Visits</a></div>
+  </div>
+
+  <a href="JackSheet.dc.html" class="jack" aria-label="Jack: help, scan, chat"><img src="/_blob/6e274754172d6319fa63b8d376425ae6" alt=""></a>
+  <nav class="tabs" aria-label="Tabs">
+    <a href="Main.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+    <a href="Health.dc.html" class="tab on" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z"></path><path d="M7 12h3l1.5-2.5 2 4L15 12h2"></path></svg>Health</a>
+    <a href="Discover.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></svg>Discover</a>
+    <a href="Family.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6"></path></svg>Family</a>
+    <a href="Safety.dc.html" class="tab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path></svg>Safety</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2150}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

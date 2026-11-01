@@ -4,7 +4,7 @@ import { track } from '../admin/events'
 import { supabase } from '../auth/client'
 import { getAccessToken, onAuthChange } from '../auth/session'
 import { drainQueue } from '../docs/api'
-import { ALERTS_KEY, type Alert } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, type Alert } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
 import { ldb } from '../log/store'
@@ -317,6 +317,7 @@ async function pullAlerts(url: string, key: string, token: string) {
   }
   if (!Array.isArray(rows)) return
   await db.kv.put({ key: ALERTS_KEY, value: rows.map(toAlert).filter((a): a is Alert => a !== null) })
+  await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
 }
 
 // Salt and water goals (0024): one small row per person the member may see. A goal edited here and not yet sent wins over the server copy.

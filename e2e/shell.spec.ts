@@ -46,23 +46,23 @@ test('tab bar has five equal slots (Today, Health, Discover, Family, Safety); Ja
   await expect(nav.getByRole('button', { name: 'Ask Bantay' })).toHaveCount(0)
   const widths = await nav.getByRole('button').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)))
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1)
-  const jack = (await page.getByRole('button', { name: 'Ask Bantay' }).boundingBox())!
+  const jack = (await page.getByTestId('jack').boundingBox())!
   const bar = (await nav.boundingBox())!
   expect(jack.y + jack.height).toBeLessThanOrEqual(bar.y) // floats above the bar, not inside it
 })
 
-test('component button rules beat the .bt reset: tab labels are 13px/600', async ({ page }) => {
+test('component button rules beat the .bt reset: tab labels are 12px/600', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
   const b = page.locator('.sh-tabs button').first()
   await expect(b).toBeVisible()
-  expect(await b.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['13px', '600'])
+  expect(await b.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['12px', '600'])
 })
 
 test('sub-pages show only their own header; tab roots keep the top bar', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#weather')
-  await expect(page.locator('.sh-back')).toBeVisible()
+  await expect(page.locator('a[aria-label="Back to Today"]')).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCount(0)
   await page.goto('/#health')
   await expect(page.locator('.topbar')).toHaveCount(1)
@@ -71,7 +71,7 @@ test('sub-pages show only their own header; tab roots keep the top bar', async (
 test('avatar opens Me and bell opens notifications', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
-  await page.getByRole('link', { name: /Settings/ }).click()
+  await page.getByRole('link', { name: /settings/i }).click() // v13 Today: 'You and settings'
   await expect(page).toHaveURL(/#me$/)
   await expect(page.locator('h1')).toHaveText('Settings')
   await page.goto('/#today')

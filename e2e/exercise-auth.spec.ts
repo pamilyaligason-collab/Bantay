@@ -33,7 +33,7 @@ async function mock(page: Page) {
   })
 }
 
-const serious = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations.map((v) => `${v.id}: ${v.nodes.length}`)
+const serious = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()).violations.map((v) => `${v.id}: ${v.nodes.length} ${v.nodes.map((n) => `${n.target.join(' ')} [${(n.any[0]?.message ?? '').slice(0, 150)}]`).join(' | ')}`)
 const exRows = (page: Page) => page.evaluate(() => new Promise<{ kind: string; minutes: number }[]>((res, rej) => {
   const open = indexedDB.open('bantay-log')
   open.onerror = () => rej(open.error)
