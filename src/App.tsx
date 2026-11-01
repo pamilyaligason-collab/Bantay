@@ -84,7 +84,7 @@ export default function App() {
   const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing')
   const tab: Tab = route.tab ?? 'today'
   const idx = TABS.indexOf(tab)
-  useForgetPersonOutsideHealth(tab)
+  useForgetPersonOutsideHealth(tab, hash)
   const swiped = useRef(false)
   // Swipes replace the history entry so Back does not step through every tab.
   const go = (i: number) => { const t = TABS[i]; if (t && isTabView) { swiped.current = true; location.replace('#' + t) } }

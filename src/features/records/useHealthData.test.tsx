@@ -42,9 +42,9 @@ describe('useHealthData default person', () => {
 })
 
 describe('useForgetPersonOutsideHealth', () => {
-  function Both({ tab }: { tab: string }) {
+  function Both({ tab, hash }: { tab: string; hash?: string }) {
     const d = useHealthData()
-    useForgetPersonOutsideHealth(tab)
+    useForgetPersonOutsideHealth(tab, hash)
     return <><p data-testid="who">{d.ready ? d.personId : 'loading'}</p><button onClick={() => d.setPersonId('aa')}>pick</button></>
   }
   it('keeps the pick between Health screens and drops it when the tab leaves Health', async () => {
@@ -55,6 +55,8 @@ describe('useForgetPersonOutsideHealth', () => {
     act(() => screen.getByText('pick').click())
     expect(screen.getByTestId('who').textContent).toBe('aa')
     rerender(<Both tab="health" />)
+    expect(screen.getByTestId('who').textContent).toBe('aa')
+    rerender(<Both tab="family" hash="#family/papers" />) // the labs screens link here: still the person picked in Health
     expect(screen.getByTestId('who').textContent).toBe('aa')
     rerender(<Both tab="today" />)
     await waitFor(() => expect(screen.getByTestId('who').textContent).toBe('me'))
