@@ -64,13 +64,7 @@ const whereOf = (place: Parameters<typeof placeNameOf>[0]) => {
 export function WeatherStrip() {
   const place = usePlace()
   const wx = useWeather(place?.weather ?? null)
-  if (!wx || wx.temp == null || !place) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
-    return hero ? (
-      <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">
-        <b>Weather</b><span>Finding your weather. Open for the full forecast.</span>
-      </a>
-    ) : null
-  }
+  if (!wx || wx.temp == null || !place) return null
   const rain = wx.rainPct == null ? null : `Rain chance ${Math.round(wx.rainPct)}%`
   return (
     <a className="card td-wx" href={WEATHER_HREF} aria-label="Weather">
