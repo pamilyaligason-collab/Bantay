@@ -21,6 +21,7 @@ import { useForgetPersonOutsideHealth } from './features/records/useHealthData'
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
+import { ScreenBoundary } from './features/shell/ScreenBoundary'
 import { JackFab } from './features/shell/JackFab'
 import CalmJack from './features/calm/CalmJack'
 import { isDiscoverSubRoot } from './features/discover'
@@ -123,7 +124,9 @@ export default function App() {
       <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
+        <ScreenBoundary resetKey={hash}>
         {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'calm' ? <Suspense fallback={null}><CalmScreen /></Suspense> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
+        </ScreenBoundary>
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />
