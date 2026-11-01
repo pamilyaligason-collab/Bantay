@@ -11,8 +11,8 @@
 .pc[data-tint="amber"] .pc-line { color: var(--tint-amber-ink); }
 .pc-body { margin: 0; font-size: 15px; line-height: 20px; color: var(--ink); overflow-wrap: anywhere; }
 .pc-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
-.pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
-.pc-primary { flex: 1; background: var(--green); color: var(--on-green); }
+.pc .pc-btn, .rw .pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
+.pc .pc-primary { flex: 1; background: var(--green); color: var(--on-green); }
 .pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
 .ac { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
