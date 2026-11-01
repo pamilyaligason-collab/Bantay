@@ -194,7 +194,7 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
             )
           })}
         </Carousel>
-        <p className="sub sf-911">Call 911 first if someone cannot breathe, speak or wake up.</p>
+        <p className="sub sf-911">{abroad ? 'Call the local emergency number first' : 'Call 911 first'} if someone cannot breathe, speak or wake up.</p>
       </Section>
       {place && <BeReady place={place} />}
       <p className="sub sf-foot">Bantay is not an earthquake or tsunami siren. From PAGASA, {FLAGS.phivolcs ? 'PHIVOLCS, ' : ''}USGS, GDACS, DOH and Red Cross. <a href="#safety/sources">Sources</a></p>
