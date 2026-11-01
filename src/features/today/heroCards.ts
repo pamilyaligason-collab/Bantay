@@ -1,6 +1,7 @@
 import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { affectsUs, distanceKm, rankAlerts, tierOf, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
+import { quakeRow } from './alertRow'
 import { actionLine, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
 
@@ -119,7 +120,8 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
   const refs: LatLon[] = ref ? [ref] : [...HOME_ZONES]
   const near = (a: Alert) => a.kind === 'quake' || a.lat == null || a.lon == null || refs.some((r) => distanceKm(r, { lat: a.lat!, lon: a.lon! }) <= ALERT_RADIUS_KM)
   const hits = rankAlerts(alerts.filter((a) => tierOf(a.kind) <= 1 && near(a)), ref)
-  return [...hits.filter((a) => affectsUs(a, ref).affects), ...hits.filter((a) => !affectsUs(a, ref).affects)][0] ?? null
+  const full = (a: Alert) => quakeRow(a, affectsUs(a, ref), 0) === null // a quake that needs the red card must not lose the one hazard slot to a quiet row
+  return [...hits.filter((a) => affectsUs(a, ref).affects), ...hits.filter(full), ...hits][0] ?? null
 }
 
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */

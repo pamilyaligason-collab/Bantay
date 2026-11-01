@@ -58,6 +58,16 @@ describe('WarningCard', () => {
     expect(screen.queryByRole('button', { name: /Hide this warning/ })).toBeNull()
   })
 
+  it('an acked nearer quake does not blank the slot: the stronger one further away still shows', async () => {
+    const near = { ...quake, id: 'qn' }
+    const big = { ...quake, id: 'qb', level: 'Magnitude 6.8', what: 'Magnitude 6.8.', where: 'Far sea', lat: 9.0, lon: 125.2 }
+    await db.kv.put({ key: ALERTS_KEY, value: [near, big] })
+    await db.kv.put({ key: ACK_KEY, value: { qn: ackStamp(near) } })
+    render(<WarningCard />)
+    const card = await screen.findByRole('region', { name: 'Active warning' })
+    expect(card.textContent).toContain('Far sea')
+  })
+
   it('the compact quake row says when the feed is stale, and not when it is fresh', async () => {
     const far = { ...quake, level: 'Magnitude 4.6', what: 'Magnitude 4.6.', where: 'Tago', lat: 9.2, lon: 126.2 }
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...far, checkedAt: new Date(Date.now() - 3 * 3600_000).toISOString() }] })

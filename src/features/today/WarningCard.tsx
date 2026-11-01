@@ -26,7 +26,7 @@ export function useWarnings(now?: number) {
   const acks = useKv<AckMap>(ACK_KEY, NO_ACK)
   const ref = place ? alertRef(place) : null
   const storm = liveSignals(alerts, now)[0] ?? null
-  const zone = zoneAlert(alerts, ref)
+  const zone = zoneAlert(alerts.filter((a) => !(a.kind === 'quake' && isAcked(acks, a))), ref) // an acked quake must not hold the slot and hide a stronger one
   const hazard = zone && !(storm && zone.kind === 'tcws') ? zone : null // a storm signal is shown by the storm variant, never twice
   const onScreen = (!!hazard && !isAcked(acks, hazard)) || !!storm
   return { alerts, acks, ref, storm, hazard, onScreen }

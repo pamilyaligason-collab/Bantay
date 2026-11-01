@@ -94,6 +94,9 @@ describe('zoneAlert quakes (D-88)', () => {
   it('within a tier the nearer quake leads', () => {
     expect(zoneAlert([quake('far', 2.7), quake('near', 0.27)], conel)?.id).toBe('near')
   })
+  it('a strong quake keeps the one slot against a nearer quiet row (M4.6 at 272 km vs M6.8 at 300 km)', () => {
+    expect(zoneAlert([quake('quiet', 2.45), quake('big', 2.7, { level: 'Magnitude 6.8' })], conel)?.id).toBe('big')
+  })
 })
 
 describe('heroCards priority', () => {

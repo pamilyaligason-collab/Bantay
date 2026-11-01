@@ -40,6 +40,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const lockMood = !!can && !can.mood
   const [busy, setBusy] = useState(false)
   const now = new Date()
+  const today = now.toDateString() // the memo below must refresh when the day changes (phone left on Today overnight)
   const { readings } = useWeekData(personId)
   const water = useWater(personId, 2)
   const goal = useGoal(personId)
@@ -49,7 +50,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
     const ci = checkInRow(activity, now, !!self), bp = bpRow(readings, now), wa = waterRow(water, goal.waterMl, now)
     const breathed = breaths.some((b) => new Date(b.at).toDateString() === now.toDateString())
     return { ci, bp, wa, list: [ci, bp, wa, { done: breathed }, ...(item.kind === 'dose' ? [{ done: false }] : [])] }
-  }, [activity, readings, water, goal.waterMl, breaths, item.kind, self]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activity, readings, water, goal.waterMl, breaths, item.kind, self, today]) // eslint-disable-line react-hooks/exhaustive-deps
   const c = countLeft(rows.list)
   const run = async (p: Promise<'ok' | keyof typeof FAIL_TEXT>, done: string) => {
     if (busy) return
@@ -70,7 +71,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
         {next.review > 0 && <MedsCheck review={next.review} />}
         <Todo icon="smile" tint="green" title={rows.ci.title} sub={rows.ci.sub}>
           {rows.ci.done ? (
-            <b className="td-todo-done"><Icon name="check" size={20} />You're OK</b>
+            <b className="td-todo-done"><Icon name="check" size={20} />Checked in</b>
           ) : (
             <button type="button" className="btn td-todo-go" disabled={busy || lockMood} aria-label={lockMood ? "I'm OK, view only" : undefined}
               onClick={() => void run(checkIn(self ?? undefined), can ? 'Saved for them. Their family can see they are OK.' : 'Saved. Your family can see you are OK.')}>I'm OK</button>

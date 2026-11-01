@@ -21,7 +21,28 @@ describe('MyDay I am OK row', () => {
     m.activity = [{ kind: 'check-in', startedAt: new Date().toISOString() }]
     render(<MyDay notify={() => undefined} />)
     expect(screen.queryByRole('button', { name: "I'm OK" })).toBeNull()
-    expect(screen.getByText("You're OK")).toBeTruthy()
+    expect(screen.getByText('Checked in')).toBeTruthy()
+  })
+  it("Unwell writes mood-low and check-in: the row says Checked in, never You're OK", () => {
+    m.self = 'me'
+    const at = new Date().toISOString()
+    m.activity = [{ kind: 'mood-low', startedAt: at }, { kind: 'check-in', startedAt: at }]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByText('Checked in')).toBeTruthy()
+    expect(screen.queryByText("You're OK")).toBeNull()
+  })
+  it("crossing midnight brings the I'm OK button back", () => {
+    vi.useFakeTimers()
+    try {
+      m.self = 'me'
+      vi.setSystemTime(new Date(2026, 5, 10, 23, 59))
+      m.activity = [{ kind: 'check-in', startedAt: new Date().toISOString() }]
+      const { rerender } = render(<MyDay notify={() => undefined} />)
+      expect(screen.getByText('Checked in')).toBeTruthy()
+      vi.setSystemTime(new Date(2026, 5, 11, 0, 1))
+      rerender(<MyDay notify={() => undefined} />)
+      expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
+    } finally { vi.useRealTimers() }
   })
   it('signed out, the row does not promise the family will know', () => {
     m.activity = []; m.self = null
