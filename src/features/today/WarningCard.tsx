@@ -11,6 +11,7 @@ import { putKv, useKv } from '../safety/store'
 import { Icon, type IconName } from '../shell/Icon'
 import { quakeRow } from './alertRow'
 import { zoneAlert } from './heroCards'
+import NofabSos from './NofabSos'
 import { ACK_KEY, ackWarning, isAcked, type AckMap } from './warnAck'
 import './today.css'
 
@@ -19,6 +20,9 @@ const NO_ACK: AckMap = {}
 const ICON: Record<string, IconName> = { tcws: 'typhoon', quake: 'quake', rainfall: 'flood', thunderstorm: 'storm', heat: 'therm', tsunami: 'flood' }
 export const HIDDEN_TOAST = 'Hidden here. Still in Safety.'
 
+/** The warnings that may fill Today's one hazard slot: a closed warning must not hold it (the next one shows), and a live storm signal is drawn by the storm card, so tcws never takes the slot twice. */
+export const slotPool = (alerts: Alert[], acks: AckMap, storm: boolean): Alert[] => alerts.filter((a) => !isAcked(acks, a) && !(storm && a.kind === 'tcws'))
+
 /** What Today shows for warnings right now: the hazard and the storm signal, and whether any warning card is on screen (the weather hero goes compact then). */
 export function useWarnings(now?: number) {
   const place = usePlace()
@@ -26,9 +30,8 @@ export function useWarnings(now?: number) {
   const acks = useKv<AckMap>(ACK_KEY, NO_ACK)
   const ref = place ? alertRef(place) : null
   const storm = liveSignals(alerts, now)[0] ?? null
-  const zone = zoneAlert(alerts.filter((a) => !(a.kind === 'quake' && isAcked(acks, a))), ref) // an acked quake must not hold the slot and hide a stronger one
-  const hazard = zone && !(storm && zone.kind === 'tcws') ? zone : null // a storm signal is shown by the storm variant, never twice
-  const onScreen = (!!hazard && !isAcked(acks, hazard)) || !!storm
+  const hazard = zoneAlert(slotPool(alerts, acks, !!storm), ref)
+  const onScreen = !!hazard || !!storm
   return { alerts, acks, ref, storm, hazard, onScreen }
 }
 
@@ -43,6 +46,8 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
     notify?.(HIDDEN_TOAST)
   }, [acks, alerts, notify])
   const f = freshness(newestChecked(alerts), clock)
+  const red = !!hazard && !isAcked(acks, hazard) && !quakeRow(hazard, affectsUs(hazard, ref), clock) && (hazard.kind === 'quake' || hazard.kind === 'tcws')
+  const nofab = red || (!!storm && !isAcked(acks, storm)) // the cards that carry data-nofab hide Jack
 
   return (
     <>
@@ -100,6 +105,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
           />
         </section>
       ))}
+      {nofab && <NofabSos />}
     </>
   )
 }

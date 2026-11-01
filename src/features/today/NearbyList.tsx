@@ -2,9 +2,13 @@ import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { ALERTS_KEY, rankAlerts, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
+import { liveSignals } from '../safety/stormMode'
 import { zoneAlert } from './heroCards'
+import { slotPool } from './WarningCard'
+import { ACK_KEY, type AckMap } from './warnAck'
 
 const NONE: Alert[] = []
+const NO_ACK: AckMap = {}
 const SHOW = 3
 
 /** Other notices for the member's area (power, water, air, smaller warnings) under the hero. The alert already on the hero card is left out.
@@ -13,7 +17,8 @@ export default function NearbyList() {
   const place = usePlace()
   const all = useKv<Alert[]>(ALERTS_KEY, NONE)
   const ref = place ? alertRef(place) : null
-  const top = zoneAlert(all, ref)
+  const acks = useKv<AckMap>(ACK_KEY, NO_ACK)
+  const top = zoneAlert(slotPool(all, acks, !!liveSignals(all)[0]), ref)
   const rest = rankAlerts(all.filter((a) => a.id !== top?.id), ref)
   if (!rest.length) return null
   return (

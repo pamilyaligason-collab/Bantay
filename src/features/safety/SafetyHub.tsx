@@ -7,7 +7,7 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, CHECKED_KEY, type Alert, affectsUs, freshness, freshText, lastCheck, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, type LatLon } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, type Alert, affectsUs, freshness, freshText, lastCheck, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, urgentFirst, type LatLon } from './alerts'
 import { useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
@@ -73,7 +73,7 @@ const signalOf = (level: string | null) => Number(/(\d)/.exec(level ?? '')?.[1] 
 
 /** The "Right now" list: up to three ranked alerts, then weather, storms, hazards, rescue map. No "none" row: an empty list is the empty state. */
 export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx | null | undefined; storms: Alert[]; hazard: string; pins: number; stale?: boolean }): HomeRow[] {
-  const alerts = rankAlerts(p.alerts, p.here).slice(0, 3).map((a): HomeRow => {
+  const alerts = urgentFirst(rankAlerts(p.alerts, p.here)).slice(0, 3).map((a): HomeRow => {
     const f = affectsUs(a, p.here)
     const red = (a.kind === 'tcws' && signalOf(a.level) >= 3) || a.kind === 'tsunami'
     // shortcut: "felt" wording only for quakes; other kinds say Near you / Far away

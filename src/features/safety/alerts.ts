@@ -141,6 +141,10 @@ export function quakeMag(a: Pick<Alert, 'level' | 'what' | 'title'>): number | n
   const m = /(?:magnitude|M)\s*([0-9]+(?:\.[0-9]+)?)/i.exec(`${a.level ?? ''} ${a.title ?? ''} ${a.what ?? ''}`)
   return m && Number.isFinite(Number(m[1])) ? Number(m[1]) : null
 }
+/** A tsunami, or a quake of M6 or more: it outranks every other warning on every list that shows a "top" alert. */
+export const urgent = (a: Alert): boolean => a.kind === 'tsunami' || (a.kind === 'quake' && (quakeMag(a) ?? 0) >= 6)
+/** The urgent alerts first, the rest in their ranked order. */
+export const urgentFirst = (list: Alert[]): Alert[] => [...list.filter(urgent), ...list.filter((a) => !urgent(a))]
 /** How far strong shaking from a quake of this size is often felt (D-87 table). Unknown size counts as 100 km. */
 export function quakeFeltKm(a: Pick<Alert, 'level' | 'what' | 'title'>): number {
   const mag = quakeMag(a)

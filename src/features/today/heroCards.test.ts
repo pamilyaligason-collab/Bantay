@@ -168,3 +168,15 @@ describe('weatherAction (Today and Simple mode action line)', () => {
     expect(weatherAction(null)).toBeNull()
   })
 })
+
+describe('zoneAlert: urgent hazards take the slot', () => {
+  const flood = alert({ id: 'f', kind: 'rainfall', level: 'Orange', title: 'Rainfall advisory', lat: null, lon: null })
+  const quake68 = alert({ id: 'q', kind: 'quake', level: 'Magnitude 6.8', title: 'Earthquake M6.8', source: 'PHIVOLCS' })
+  it('shows an M6.8 quake over a flood advisory', () => expect(zoneAlert([flood, quake68], null)?.id).toBe('q'))
+  it('shows a tsunami over heat', () => {
+    const heat = alert({ id: 'h', kind: 'heat', level: 'Danger', title: 'Heat', lat: null, lon: null })
+    const tsu = alert({ id: 't', kind: 'tsunami', level: 'Warning', title: 'Tsunami' })
+    expect(zoneAlert([heat, tsu], null)?.id).toBe('t')
+  })
+  it('shows the quake once the flood is closed out of the pool', () => expect(zoneAlert([quake68], null)?.id).toBe('q'))
+})

@@ -3,7 +3,7 @@ import { alertRef } from '../location/place'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { GroupedList, Row, Section } from '../look'
 import { Icon } from '../shell/Icon'
-import { ALERTS_KEY, NOT_A_SIREN, CHECKED_KEY, distanceKm, freshness, lastCheck, outdatedLine, quakeMag, rankAlerts, type Alert } from './alerts'
+import { ALERTS_KEY, NOT_A_SIREN, CHECKED_KEY, distanceKm, freshness, lastCheck, outdatedLine, quakeMag, rankAlerts, urgentFirst, type Alert } from './alerts'
 import { FLAGS } from './flags'
 import LazyMap from './LazyMap'
 import NewsTop5 from './NewsTop5'
@@ -45,7 +45,7 @@ export default function Warnings({ place }: { place: Place }) {
   const all = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const here = alertRef(place)
   const now = Date.now()
-  const top = rankAlerts(all, here)[0]
+  const top = urgentFirst(rankAlerts(all, here))[0]
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
   const name = zone.name.split(',')[0]!
   const mag = top?.kind === 'quake' ? quakeMag(top) : null
