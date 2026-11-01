@@ -22,7 +22,7 @@ import { AttentionHero } from '../features/health/AttentionHero'
 import { pickAttention } from '../features/health/attention'
 import { PersonSwitcher } from '../features/health/PersonSwitcher'
 import { useActingPersonId } from '../features/viewas/viewAs'
-import { NudgeRow } from '../features/health/GlanceGrid'
+import { ForYou } from '../features/health/ForYou'
 import { PinnedTiles } from '../features/health/PinnedTiles'
 import { HealthBrowse } from '../features/health/HealthBrowse'
 import { useHealthPerson } from '../features/health/useHealthPerson'
@@ -67,12 +67,9 @@ function Overview() {
   const meId = (acting ? actingId : ownId) ?? ''
   const [adding, setAdding] = useState<'bp' | 'fasting_glucose' | null>(null)
   const [saved, setSaved] = useState('')
-  const acts = useActivity(personId)
   const latest = latestByTest(readings)
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
   const attention = useMemo(() => pickAttention(latest, familyOf, new Date()), [readings, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
-  const nodes = useMemo(() => averageNodes(readings, acts, new Date(), familyOf), [readings, acts, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
-  const blank = ready && nodes.every((n) => n.empty)
   const name = properName(people.find((p) => p.id === personId)?.name ?? '')
   useEffect(() => { // someone else's health is their own view-only page
     const to = `#health/member/${personId}`
@@ -95,8 +92,8 @@ function Overview() {
         </Section>
       )}
       {ready && personId && <PinnedTiles personId={personId} readings={readings} />}
-      {ready && personId && !blank && <NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={setAdding} />}
-      {ready && personId && <HealthBrowse personId={personId} />}
+      {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
+      {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
         return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null

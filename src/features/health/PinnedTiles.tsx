@@ -18,7 +18,7 @@ export function bpThisWeek(readings: Reading[], now = new Date()): string | null
 }
 
 /** Saved questions for the next visit (the Visits screen's own list). */
-function useQuestionCount(personId: string): number {
+export function useQuestionCount(personId: string): number {
   const [n, setN] = useState(0)
   useEffect(() => {
     let live = true

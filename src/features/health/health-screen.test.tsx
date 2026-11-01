@@ -43,10 +43,10 @@ describe('Health overview (v13)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: hero, Pinned, nudge row, More in Health (tiles move in H2 and H3)', async () => {
+  it('order: hero, Pinned, Browse, For you (Family health joins in H4)', async () => {
     render(<Health />)
-    await screen.findByTestId('glance')
-    const els = ['bodyhero', 'glance', 'nudge', 'browse'].map((id) => screen.getByTestId(id))
+    await screen.findByTestId('for-you')
+    const els = ['bodyhero', 'glance', 'browse', 'for-you'].map((id) => screen.getByTestId(id))
     els.slice(1).forEach((el, i) => expect(els[i]!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })
 
@@ -86,7 +86,7 @@ describe('Health overview (v13)', () => {
     const hero = await screen.findByTestId('bodyhero')
     expect(hero.textContent).toContain('LDL cholesterol')
     expect(hero.querySelector('.lr-verdict.above')).toBeTruthy()
-    expect(screen.queryByTestId('nudge')).toBeNull()
+    expect(screen.getByTestId('browse-labs').textContent).toContain('1 to ask')
   })
 
   it('Me switcher opens a sheet; picking Ma goes to her page; hidden for one person', async () => {

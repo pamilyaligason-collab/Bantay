@@ -1,31 +1,48 @@
-import { Tile } from '../look/Tile'
-import type { Hue } from '../look/cardParts'
+import { GroupedList, Row, Section, type Tint } from '../look'
 import type { IconName } from '../shell/Icon'
-import { nextVisitLine } from './visitsLogic'
+import { weekProgress } from '../exercise/weekly'
+import { labsLine, useDoseLine } from './GlanceGrid'
+import type { Activity } from './model'
+import { bpThisWeek, useQuestionCount } from './PinnedTiles'
+import type { Range, Reading } from './ranges'
+import { useActivity } from './useActivity'
 import { useVisits } from './useVisits'
+import { nextVisitLine } from './visitsLogic'
 import './health.css'
 
-export interface Door { key: string; hue: Hue; icon: IconName; label: string; sub: string; href: string }
-
-/** The doors, in grid order. Two columns, so a hue is never the neighbour of itself (HealthBrowse.test). Papers moved to Family (D-100); Library and Videos to Discover. */
-export function doors(visit: string | null): Door[] {
-  return [
-    { key: 'readings', hue: 'blue', icon: 'gauge', label: 'Readings', sub: 'BP, sugar, weight', href: '#health/readings' },
-    { key: 'body', hue: 'green', icon: 'heart', label: 'Body wiki', sub: 'How parts work', href: '#health/body' },
-    { key: 'move', hue: 'green', icon: 'move', label: 'Move & food', sub: 'Moves, meals and salt', href: '#health/move' },
-    { key: 'visits', hue: 'blue', icon: 'calendar', label: 'Visits', sub: visit ?? 'What to bring', href: '#health/visits' }
-  ]
+/** "12 min this week" from the last 7 days of walks and moves, or "No walks yet". */
+export function moveLine(acts: Activity[]): string {
+  const m = weekProgress(acts).minutes
+  return m > 0 ? `${m} min this week` : 'No walks yet'
 }
 
-/** "More in Health" (W-24): 2-column tiles, no Papers door. Refills sit on the Medicines screen, Food on the Move screen. */
-export function HealthBrowse({ personId }: { personId: string }) {
+const DOORS: { key: string; icon: IconName; tint: Tint; title: string; href: string }[] = [
+  { key: 'readings', icon: 'gauge', tint: 'blue', title: 'Readings', href: '#health/readings' },
+  { key: 'labs', icon: 'flask', tint: 'red', title: 'Labs', href: '#health/labs' },
+  { key: 'meds', icon: 'pill', tint: 'green', title: 'Medicines', href: '#health/meds' },
+  { key: 'visits', icon: 'calendar', tint: 'purple', title: 'Visits', href: '#health/visits' },
+  { key: 'move', icon: 'move', tint: 'teal', title: 'Move & food', href: '#health/move' },
+  { key: 'body', icon: 'heart', tint: 'amber', title: 'Body wiki', href: '#health/body' }
+]
+
+/** Browse: one grouped list, six doors, each with its live value (Body wiki has none). Papers live in Family (D-100). */
+export function HealthBrowse({ personId, readings, thresholds }: { personId: string; readings: Reading[]; thresholds: (Range & { key: string })[] }) {
+  const doses = useDoseLine(personId)
   const visit = nextVisitLine(useVisits(personId))
+  const asks = useQuestionCount(personId)
+  const acts = useActivity(personId)
+  const value: Record<string, string | undefined> = {
+    readings: bpThisWeek(readings) ?? 'None this week',
+    labs: labsLine(readings, thresholds).split(' · ')[0],
+    meds: doses ?? undefined,
+    visits: visit ? visit.text.replace(/^Next visit: /, '') : asks ? `${asks} to ask` : 'Not booked',
+    move: moveLine(acts)
+  }
   return (
-    <section aria-labelledby="hb-h" data-testid="browse">
-      <h2 className="hd" id="hb-h">More in Health</h2>
-      <div className="gl-grid more">
-        {doors(visit?.text ?? null).map((d) => <Tile key={d.key} testId={`browse-${d.key}`} hue={d.hue} icon={d.icon} label={d.label} value={d.sub} href={d.href} />)}
-      </div>
-    </section>
+    <Section title="Browse" testId="browse">
+      <GroupedList icons>
+        {DOORS.map((d) => <Row key={d.key} testId={`browse-${d.key}`} icon={d.icon} tint={d.tint} title={d.title} value={value[d.key]} href={d.href} />)}
+      </GroupedList>
+    </Section>
   )
 }
