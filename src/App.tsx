@@ -21,6 +21,7 @@ import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { JackFab } from './features/shell/JackFab'
+import CalmJack from './features/calm/CalmJack'
 import { isDiscoverSubRoot } from './features/discover'
 import ApprovePinSheet from './features/setup/ApprovePinSheet'
 import { useSavedTheme } from './features/shell/theme'
@@ -124,6 +125,7 @@ export default function App() {
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />
+      <CalmJack />
       <Assistant />
       <ApprovePinSheet />
       <RequiresUpdate />

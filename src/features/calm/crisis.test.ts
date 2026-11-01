@@ -3,12 +3,16 @@ import hotlines from '../../data/safety/hotlines.json'
 import { crisisLines, telHref } from './crisis'
 
 describe('crisis lines', () => {
-  it('keeps only verified PH mental-health rows, never UNVERIFIED', () => {
+  it('keeps only listed or confirmed PH mental-health rows, never UNVERIFIED or UNKNOWN', () => {
     const rows = crisisLines(hotlines)
     expect(rows.map((r) => r.id)).toEqual(['hl-ncmh', 'hl-ncmh-globe', 'hl-ncmh-smart'])
-    expect(rows.every((r) => r.status !== 'UNVERIFIED' && r.zone === 'ph')).toBe(true)
     const ncmh = hotlines.find((r) => r.id === 'hl-ncmh')!
-    expect(crisisLines([{ ...ncmh, status: 'UNVERIFIED' }])).toEqual([])
+    for (const status of ['UNVERIFIED', 'UNKNOWN', 'FAMILY']) expect(crisisLines([{ ...ncmh, status }])).toEqual([])
+    expect(crisisLines([{ ...ncmh, status: 'CONFIRMED' }])).toHaveLength(1)
+  })
+  it('skips a row with no phone', () => {
+    const ncmh = hotlines.find((r) => r.id === 'hl-ncmh')!
+    expect(crisisLines([{ ...ncmh, phone: null }])).toEqual([])
   })
   it('splits "a / b" phones into tel: links with digits only', () => {
     expect(crisisLines(hotlines)[0]!.numbers).toEqual(['1553', '1800-1888-1553'])

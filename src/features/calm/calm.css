@@ -2,9 +2,10 @@
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
 .cm-hero { background: var(--tint-teal); color: var(--ink); text-align: center; padding: 18px 16px 20px; display: grid; justify-items: center; gap: 8px; }
 .cm-hero .bo-orb i { border-color: var(--tint-teal-ink); }
+.cm-orb { display: contents; } /* the aria-hidden wrapper must not change the hero grid */
 .cm-hero-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-sub { color: var(--muted); font-size: 15px; margin: 0; }
-.cm-start { min-height: 56px; font-size: 19px; }
+.cm-start { text-decoration: none; min-height: 56px; font-size: 19px; }
 .cm-buzz { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 44px; text-align: left; }
 .cm-buzz > span { display: grid; min-width: 0; }
 .cm-tg { flex: none; width: 52px; height: 44px; padding: 0; border: 0; border-radius: 999px; background: var(--card); display: flex; align-items: center; justify-content: flex-start; padding-inline: 4px; box-sizing: border-box; }
@@ -16,13 +17,15 @@
 .cm-ask { min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--green); font: inherit; font-size: 15px; font-weight: 600; }
 .cm-mood { display: grid; gap: 10px; }
 .cm-q { margin: 0; font-size: 17px; font-weight: 600; }
-.cm-faces { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.cm-faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
 .cm-face { min-height: 56px; min-width: 0; border: 0; border-radius: 16px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; padding: 0 4px; overflow-wrap: anywhere; }
-@media (max-width: 300px) { .cm-faces { grid-template-columns: repeat(2, 1fr); } }
 .cm-crisis { display: grid; gap: 8px; }
 .cm-crisis-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-nums { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .cm-call { min-height: 44px; min-width: 0; box-sizing: border-box; padding: 6px 10px; border-radius: 22px; background: var(--green-tint); color: var(--green); font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere; } /* a number may wrap at 195 px; it is not a .btn2 so it is not held to one line */
+.cm-911 { min-height: 56px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
+.cm-net { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
+.cm-call { flex-direction: column; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
 @media (max-width: 300px) { .cm-nums { grid-template-columns: 1fr; } }
 .cm-media { position: relative; flex: none; width: 240px; min-height: 150px; display: grid; align-content: start; gap: 4px; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; }

@@ -5,11 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const kv: Record<string, unknown> = {}
 vi.mock('../shell/useKv', () => ({ useKv: (key: string, init: unknown) => [key in kv ? kv[key] : init, vi.fn(), true] }))
 vi.mock('../today/BreathSheet', () => ({ default: () => <div role="dialog">sheet</div> }))
-vi.mock('../shell/JackSheet', () => ({ JackSheet: ({ onClose, onSos }: { onClose: () => void; onSos: () => void }) => <div role="dialog" data-testid="jack-sheet"><button onClick={onClose}>x</button><button onClick={onSos}>sos</button></div> }))
-vi.mock('../sos/SosScreen', () => ({ default: () => <div data-testid="sos-screen" /> }))
-vi.mock('../auth/session', async (orig) => ({ ...(await orig<object>()), getMember: () => Promise.resolve(null) }))
 afterEach(() => { cleanup(); for (const k of Object.keys(kv)) delete kv[k] })
 
+import { CALM_JACK_EVENT } from './CalmJack'
 import CalmScreen from './CalmScreen'
 
 describe('hero', () => {
@@ -42,21 +40,25 @@ describe('hero', () => {
 })
 
 describe('Ask Jack', () => {
-  it('opens the Jack sheet; closing it returns focus to the Ask Jack button', () => {
-    render(<CalmScreen />)
-    const ask = screen.getByRole('button', { name: 'Ask Jack' })
-    fireEvent.click(ask)
-    expect(screen.getByTestId('jack-sheet')).toBeTruthy()
-    fireEvent.click(screen.getByText('x'))
-    expect(screen.queryByTestId('jack-sheet')).toBeNull()
-    expect(document.activeElement).toBe(ask)
-  })
-  it('the sheet SOS opens the full SOS screen', () => {
+  it('only dispatches the Calm Jack event (CalmJack, mounted at App level, owns the sheet and SOS)', () => {
+    const on = vi.fn()
+    window.addEventListener(CALM_JACK_EVENT, on)
     render(<CalmScreen />)
     fireEvent.click(screen.getByRole('button', { name: 'Ask Jack' }))
-    fireEvent.click(screen.getByText('sos'))
+    window.removeEventListener(CALM_JACK_EVENT, on)
+    expect(on).toHaveBeenCalledTimes(1)
     expect(screen.queryByTestId('jack-sheet')).toBeNull()
-    expect(screen.getByTestId('sos-full').querySelector('[data-testid="sos-screen"]')).not.toBeNull()
+  })
+})
+
+describe('arrival', () => {
+  it('scrolls the page scroller to the top on mount', () => {
+    const sc = document.createElement('main'); sc.className = 'scroll'
+    const bt = document.createElement('div'); bt.className = 'bt'; bt.appendChild(sc); document.body.appendChild(bt)
+    const to = vi.fn(); sc.scrollTo = to as never
+    render(<CalmScreen />)
+    expect(to).toHaveBeenCalledWith(0, 0)
+    bt.remove()
   })
 })
 
@@ -78,6 +80,6 @@ describe('Listen and watch and crisis', () => {
     render(<CalmScreen />)
     expect(screen.getByRole('link', { name: 'Call 1553' }).getAttribute('href')).toBe('tel:1553')
     expect(screen.getByTestId('calm-crisis').textContent).toMatch(/ncmh\.gov\.ph/)
-    expect(screen.getByRole('link', { name: 'Call 0919-057-1553' }).getAttribute('href')).toBe('tel:09190571553')
+    expect(screen.getByRole('link', { name: /Call 0919-057-1553/ }).getAttribute('href')).toBe('tel:09190571553')
   })
 })
