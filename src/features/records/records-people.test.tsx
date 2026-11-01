@@ -76,13 +76,13 @@ describe('person picker', () => {
     expect(screen.queryByText(/To check \(/)).toBeNull() // me has nothing waiting
   })
 
-  it('picking Lola shows her to-check row, and Health follows the same choice', async () => {
+  it('picking Lola shows her to-check row; the Health root still opens on Me (v13 0.4), sub-screens follow the choice', async () => {
     render(<Records />)
     fireEvent.click(await screen.findByRole('button', { name: 'Lola, 4 to check' }))
     expect(await screen.findByRole('button', { name: /To check \(4\)/ })).toBeTruthy()
     cleanup()
     render(<Health />)
-    await waitFor(() => expect(document.querySelector('.ps-pill')?.textContent).toBe('Lola')) // v13: the Me switcher pill shows the shared choice
+    await waitFor(() => expect(document.querySelector('.ps-pill')?.textContent).toBe('Me')) // the Lola sub-screen case is below (confirm -> readings)
   })
 
   it('a member with no person of their own falls back to the first person', async () => {

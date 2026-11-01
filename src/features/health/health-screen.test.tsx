@@ -72,7 +72,7 @@ describe('Health overview (v13)', () => {
     render(<Health />)
     const hero = await screen.findByTestId('bodyhero')
     expect(hero.textContent).toContain('No readings yet')
-    expect(screen.getByTestId('glance-progress').textContent).toContain('None this week')
+    expect((await screen.findByTestId('glance-progress')).textContent).toContain('None this week')
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))

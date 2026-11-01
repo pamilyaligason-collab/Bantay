@@ -20,12 +20,12 @@ export class ScreenBoundary extends Component<{ children: ReactNode; resetKey?: 
 
 const RELOADED = 'preloadReloaded'
 /** A new deploy removes old chunk files: a lazy import then fails with vite:preloadError. Reload once to pick up the new build; the sessionStorage flag stops a loop. */
-export function reloadOnPreloadError(): () => void {
+export function reloadOnPreloadError(reload: () => void = () => location.reload()): () => void {
   const on = () => {
     if (document.querySelector('.sos-bare')) return // a running SOS must not be ended by a reload
     if (navigator.onLine === false) return // a reload with no connection can land on the browser's error page; the screen boundary shows its message instead
     try { if (sessionStorage.getItem(RELOADED)) return; sessionStorage.setItem(RELOADED, '1') } catch { return }
-    location.reload()
+    reload()
   }
   window.addEventListener('vite:preloadError', on)
   return () => window.removeEventListener('vite:preloadError', on)
