@@ -158,11 +158,12 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
   const [sos, setSos] = useState(false)
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const now = useNow()
+  const savedCheck = useKv<unknown>(CHECKED_KEY, null)
+  const checked = lastCheck(alerts, savedCheck)
   // 911 only works in the Philippines and the US (Texas). Elsewhere abroad point at the official list instead.
   const abroad = !!place && pickLocalSet(place.weather).where === 'abroad'
   if (sos) return <SosScreen onClose={() => setSos(false)} />
   const chip = <ZonePicker loc={l} />
-  const checked = lastCheck(alerts, useKv<unknown>(CHECKED_KEY, null))
   const stale = freshness(checked, now).tone !== 'ok'
   return (
     <>
