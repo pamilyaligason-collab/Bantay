@@ -309,7 +309,7 @@ assertHero(page)                  // exactly one [data-hero] in .bt .scroll; its
 assertOrder(page, testIds[])      // each listed id present and lower than the previous (the old order checks, kept)
 assertTargets(page)               // every visible a/button/input/[role=button] inside .bt (not aria-hidden): box >= 44x44, or >= 44 tall and >= 88 wide (text links); failures listed by name
 assertNoSideways(page)            // .bt .scroll scrollWidth <= clientWidth and no descendant box past the right edge (the no-sideways-scroll spec logic, callable per page)
-assertTextContrast(page, min=4.5) // every visible text node inside .bt: computed color vs the nearest ancestor with an opaque background (walks up, composites rgba over the found colour); glass ancestors use their --glass-bg over --ground; skips nodes with aria-hidden or font-size 0; threshold 3 for font-size >= 24px bold / 32px; failures listed with text, colours and ratio
+assertTextContrast(page, min=4.5) // every visible text node inside .bt: computed color vs the nearest ancestor with an opaque background (walks up, composites rgba over the found colour); glass ancestors use their --glass-bg over --ground; skips nodes with aria-hidden or font-size 0; threshold 3 for large text per WCAG (font-size >= 24px, or >= 18.66px bold); failures listed with text, colours and ratio
 assertJackClear(page)             // kept from s16.ts (selector .sh-jackfab)
 assertNoWrappedButtons(page)      // kept from s16.ts (.btn, .btn2)
 assertNarrow(page)                // set viewport 195x800, reload, assertNoSideways + assertTargets(min width relaxed to 44) + assertNoWrappedButtons

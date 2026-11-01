@@ -55,11 +55,11 @@ test('weather: the live map stays closed behind "Open live map"', async ({ page 
   await expect(page.getByRole('group', { name: 'Weather layer' })).toBeVisible()
 })
 
-test('safety weather tile opens #weather; the old page keeps maps behind Open live map', async ({ page }) => {
+test('safety Right now weather row opens #weather; the old page keeps maps behind Open live map', async ({ page }) => {
   await skipOnboarding(page)
   await mockForecast(page)
   await page.goto('/#safety')
-  await page.getByRole('navigation', { name: 'Safety topics' }).getByRole('link', { name: /^Weather/ }).click()
+  await page.getByRole('list', { name: 'Right now' }).getByRole('link', { name: /rain|Rain|clouds/ }).click()
   await expect(page).toHaveURL(/#weather$/)
   await expect(page.locator('.wx-temp')).toBeVisible()
   await page.goto('/#safety/weather')

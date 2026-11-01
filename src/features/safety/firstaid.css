@@ -1,0 +1,21 @@
+.fl, .cpr { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.fa-hero { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 14px; color: var(--ink); text-decoration: none; }
+.fa-hero-t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.fa-hero-t span, .fa-tc-s { color: var(--muted); font-size: 14px; }
+.fa-chip { padding: 4px 10px; border-radius: 12px; background: var(--tint-green); color: var(--tint-green-ink); font-size: 13px; font-weight: 700; }
+.fa-grid { list-style: none; margin: 0; padding: 0; }
+.fa-tc { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 96px; height: 100%; box-sizing: border-box; padding: 12px; color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.fa-tc-t { font-weight: 600; font-size: 16px; }
+.cpr-beat { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 16px; text-align: center; }
+.cpr-beat h2 { margin: 0; font-size: 22px; }
+.cpr-beat p { margin: 0; color: var(--muted); }
+.cpr-beat .grp { align-self: stretch; }
+.cpr-dot { width: 96px; height: 96px; border-radius: 50%; background: var(--tint-red); border: 4px solid var(--tint-red-ink); box-sizing: border-box; transition: transform 120ms var(--ease-out), background-color 120ms; }
+.cpr-dot[data-on="true"] { transform: scale(1.25); background: var(--tint-red-ink); }
+@media (prefers-reduced-motion: reduce) { .cpr-dot { transition: none; } .cpr-dot[data-on="true"] { transform: none; } }
+.cpr-sw, .rw > .cpr-sw { flex: none; appearance: none; -webkit-appearance: none; width: 56px; height: 44px; margin: 0; border-radius: 22px; background: radial-gradient(circle at 20px 50%, #fff 0 11px, transparent 12px) var(--card2); box-shadow: inset 0 0 0 1px var(--line); }
+.cpr-sw:checked, .rw > .cpr-sw:checked { background: radial-gradient(circle at calc(100% - 20px) 50%, #fff 0 11px, transparent 12px) var(--green); }
+.cpr-sw:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cpr-note { padding: 14px; }
+.cpr .fa-steps { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.cpr .fa-steps li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; }

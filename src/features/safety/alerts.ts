@@ -87,6 +87,15 @@ export function freshness(checkedAt: string | null | undefined, now: Date | numb
   return { ageMin: Math.floor(ms / 60_000), tone: ms > FRESH_RED_MIN * 60_000 ? 'red' : ms > FRESH_AMBER_MIN * 60_000 ? 'amber' : 'ok' }
 }
 
+/** Dexie kv key: when the last successful pull finished. A pull that returns zero rows has no row to carry a time, so this keeps a quiet day from reading "never checked". */
+export const CHECKED_KEY = 'alerts:checkedAt'
+/** The later of the saved pull time and the newest row time (ISO), or null when neither is readable. */
+export function lastCheck(alerts: Alert[], saved: unknown): string | null {
+  const s = typeof saved === 'string' && !Number.isNaN(Date.parse(saved)) ? saved : null
+  const n = newestChecked(alerts)
+  return s && (!n || Date.parse(s) > Date.parse(n)) ? s : n
+}
+
 /** The newest `checkedAt` in the list (ISO), or null when no row has one. */
 export function newestChecked(alerts: Alert[]): string | null {
   let best: string | null = null

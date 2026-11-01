@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { VIDEO_ID } from '../health/library/videosLogic'
+import { beatMs, CPR_BPM } from './cprBeat'
 import { FOOTER, TOPICS, topicOf } from './FirstAid'
 import { idsLine } from './SafetyHub'
 
@@ -37,5 +38,13 @@ describe('firstaid.json', () => {
     expect(idsLine(3)).toBe('3 saved')
     expect(idsLine(0)).toBe('Add your PhilHealth, Senior ID, HMO')
     expect(idsLine(null)).toBe('Add your PhilHealth, Senior ID, HMO')
+  })
+})
+
+describe('cpr topic', () => {
+  it('has at least 4 steps and a 110/min beat', () => {
+    expect(TOPICS.find((t) => t.id === 'cpr')!.steps.length).toBeGreaterThanOrEqual(4)
+    expect(CPR_BPM).toBe(110)
+    expect(beatMs(110)).toBe(545)
   })
 })

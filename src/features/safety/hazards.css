@@ -1,0 +1,12 @@
+/* Hazards (S5): tokens only. */
+.hz { display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+.hz-zone { padding: 18px; border-radius: var(--r-hero); border-top: 4px solid var(--tint-red-ink); display: flex; flex-direction: column; gap: 12px; }
+.hz-zone-top { display: flex; align-items: center; gap: 12px; }
+.hz-name { display: block; font-size: 22px; line-height: 26px; font-weight: 700; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.hz-status { margin: 0; padding: 12px 14px; border-radius: 14px; font-size: 17px; line-height: 22px; font-weight: 600; background: var(--tint-red); color: var(--tint-red-ink); }
+.hz-status[data-tone="good"] { background: var(--tint-green); color: var(--tint-green-ink); }
+.hz-cap { margin: 0 4px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 15px; line-height: 22px; color: var(--ink); }
+.hz-cap > span { flex: 1 1 200px; min-width: 0; }
+.hz-help { padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 10px; }
+.hz-help .hz-name { font-size: 17px; line-height: 22px; font-weight: 600; }
+.hz-foot { margin: 0 4px; font-size: 13px; line-height: 18px; color: var(--muted); }

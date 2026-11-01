@@ -1,21 +1,42 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertBudget, assertJackClear } from './s16'
+import { assertHero, assertJackClear, assertNoSideways, assertTargets, assertTextContrast } from './v13'
 
-// Self-test of the S16 helpers: they must FAIL on a bad page, otherwise every lane gate is vacuous.
+// Self-test of the v13 helpers: each must FAIL on a bad page, otherwise every lane gate is vacuous.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
 
-test('assertBudget measures the scroller: passes above the real height, fails below it', async ({ page }) => {
-  await skipOnboarding(page)
-  await page.goto('/#today')
-  await expect(page.locator('h1').first()).toBeVisible()
-  const measure = () => page.evaluate(() => { const el = document.querySelector('.bt .scroll') as HTMLElement; return el.scrollHeight - (parseFloat(getComputedStyle(el, '::after').height) || 0) })
-  let h = 0
-  await expect.poll(async () => { const n = await measure(); const same = n === h; h = n; return same }, { timeout: 10_000 }).toBe(true) // the page has stopped growing
-  await assertBudget(page, h)
-  await expect(assertBudget(page, h - 1)).rejects.toThrow(/over the/)
-  await page.evaluate(() => { const d = document.createElement('div'); d.style.height = '2000px'; document.querySelector('.bt .scroll')!.prepend(d) })
-  await expect(assertBudget(page, h + 1000)).rejects.toThrow(/over the/)
+const page$ = (inner: string) => `<style>body{margin:0;background:#fff;font:17px sans-serif;color:#1c1b19}.bt{width:390px;height:844px;position:relative}.scroll{height:844px;overflow:auto;position:relative}</style><div class="bt"><main class="scroll">${inner}</main></div>`
+const CLEAN = '<div data-hero><h1>Title</h1></div><button type="button" style="height:48px;width:120px">Okay</button><p>Body text</p>'
+const load = (page: Page, inner: string) => page.setContent(page$(inner))
+
+test('assertTargets names a 30 px button and passes a 48 px one', async ({ page }) => {
+  await load(page, '<button type="button" style="height:30px;width:120px">Tiny</button>')
+  await expect(assertTargets(page)).rejects.toThrow(/Tiny 120x30/)
+  await load(page, CLEAN); await assertTargets(page)
+})
+
+test('assertTextContrast fails muted-on-white at 3.9:1 and passes ink; data-contrast-bg overrides a gradient', async ({ page }) => {
+  await load(page, '<p style="color:#818181">Faint line</p>')
+  await expect(assertTextContrast(page)).rejects.toThrow(/Faint line.*3\.9/)
+  await load(page, CLEAN); await assertTextContrast(page)
+  await load(page, '<div data-contrast-bg="#1C2F57" style="background:linear-gradient(#fff,#fff)"><p style="color:#fff">On the sky</p></div>'); await assertTextContrast(page)
+  await load(page, '<div style="background:rgb(255 255 255 / .8)"><p style="color:#818181">Over glass</p></div>')
+  await expect(assertTextContrast(page)).rejects.toThrow(/Over glass/)
+  await load(page, '<div style="background:color-mix(in srgb,#D97706 22%,#fff)"><p style="color:#1c1b19">Mix</p></div>'); await assertTextContrast(page)
+})
+
+test('assertNoSideways fails an element 20 px past the right edge', async ({ page }) => {
+  await load(page, '<div style="position:absolute;left:0;top:0;width:410px;height:10px;background:red">wide</div>')
+  await expect(assertNoSideways(page)).rejects.toThrow(/past the right edge/)
+  await load(page, CLEAN); await assertNoSideways(page)
+})
+
+test('assertHero fails with two [data-hero] or none, passes with one', async ({ page }) => {
+  await load(page, '<div data-hero>a</div><div data-hero>b</div>')
+  await expect(assertHero(page)).rejects.toThrow(/exactly one/)
+  await load(page, '<p>none</p>')
+  await expect(assertHero(page)).rejects.toThrow(/exactly one/)
+  await load(page, CLEAN); await assertHero(page)
 })
 
 test('assertJackClear passes on #today and fails when a control sits under the Jack button', async ({ page }) => {

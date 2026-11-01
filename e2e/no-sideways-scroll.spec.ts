@@ -19,7 +19,7 @@ for (const size of SIZES) {
           if (root.scrollWidth > root.clientWidth) out.push('document')
           for (const el of Array.from(document.querySelectorAll('*'))) {
             const cs = getComputedStyle(el)
-            if (/(auto|scroll)/.test(cs.overflowY) && el.scrollWidth > el.clientWidth) {
+            if (/(auto|scroll)/.test(cs.overflowY) && el.scrollWidth > el.clientWidth && !el.classList.contains('carousel')) { // a Carousel is a deliberate horizontal scroller (Safety First aid row)
               out.push(`${el.tagName.toLowerCase()}.${el.className}`)
             }
           }
