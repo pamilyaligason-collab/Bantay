@@ -60,7 +60,7 @@ test('Today follows Lloyd\'s order: weather (Next up only when something is next
 })
 
 test('How are you? signed out says to sign in and does not claim the family will see it', async ({ page }) => {
-  await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you?
+  await expect(page.getByRole('group', { name: 'Quick log' }).getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you? (v13 MyDay has its own I'm OK row too)
   await page.getByRole('button', { name: 'Log how you feel' }).click()
   await page.getByRole('button', { name: 'Unwell' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Sign in first' })).toBeVisible()

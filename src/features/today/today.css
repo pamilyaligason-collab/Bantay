@@ -334,10 +334,10 @@
 .sf-do-rows li { display: flex; align-items: center; gap: 8px; font-size: 15px; min-height: 24px; }
 .sf-block .sf-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .sf-block .sf-roll { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; white-space: nowrap; }
-.sf-block .sf-roll-help { background: var(--red); color: #fff; }
+.sf-block .sf-roll-help { background: var(--danger-bg); color: var(--btn-fg); } /* --red is a text colour; in dark it is too light for white text */
 .sf-tally, .sf-said { margin: 0; font-size: 13px; }
 .sf-src-line { margin: 0; font-size: 15px; font-weight: 600; }
-.sf-src-line a { color: var(--link); }
+.sf-src-line a { color: var(--link); display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; } /* 44 px target inside the line */
 .sf-links { display: flex; flex-direction: column; }
 .sf-link-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 15px; border-top: 1px solid var(--line); }
 

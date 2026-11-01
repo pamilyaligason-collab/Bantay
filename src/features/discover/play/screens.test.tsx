@@ -14,6 +14,19 @@ import { makePuzzle, newMemory, pickWords, playedToday, triviaIndex, type Trivia
 beforeEach(async () => { await db.kv.clear() })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
+describe('Play deep links', () => {
+  it.each([['memory', 'memory'], ['wordsearch', 'wordsearch'], ['trivia', 'trivia'], ['facts', 'facts']])('#discover/play/%s opens %s', (h, id) => {
+    location.hash = '#discover/play/' + h
+    render(<PlayScreen />)
+    expect(screen.getByTestId(id)).toBeTruthy()
+  })
+  it('#discover/play is the hub', () => {
+    location.hash = '#discover/play'
+    render(<PlayScreen />)
+    expect(screen.getByTestId('play-hub')).toBeTruthy()
+  })
+})
+
 describe('Play hub', () => {
   it('shows the games, the legal line, and no memory or dementia claim; a game opens and Back returns', async () => {
     render(<PlayScreen />)

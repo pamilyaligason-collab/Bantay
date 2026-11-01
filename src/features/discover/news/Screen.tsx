@@ -111,10 +111,16 @@ export function NewsList({ zone, now = Date.now() }: { zone: string | null; now?
   )
 }
 
-/** Discover > News. The zone is the hotline area id the n8n feed tags items with (same rule as Safety's news list). */
-export default function NewsScreen() {
+/** The hotline area id the n8n feed tags items with (same rule as Safety's news list). undefined = place not known yet, null = outside any area. */
+export function useNewsZone(): string | null | undefined {
   const place = usePlace()
-  if (!place) return null
+  if (!place) return undefined
   const set = pickLocalSet(place.weather)
-  return <NewsList zone={set.where === 'area' ? set.area.id : null} />
+  return set.where === 'area' ? set.area.id : null
+}
+
+/** Discover > News. */
+export default function NewsScreen() {
+  const zone = useNewsZone()
+  return zone === undefined ? null : <NewsList zone={zone} />
 }

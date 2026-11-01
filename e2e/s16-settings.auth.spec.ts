@@ -98,14 +98,15 @@ test('a member sees no admin rows', async ({ page }) => {
   await expect(page.getByText('Family admin tools')).toHaveCount(0)
 })
 
-test('the top bar greeting wraps and never ends in an ellipsis (Today)', async ({ page }) => {
+test('the Today greeting heading wraps and never ends in an ellipsis', async ({ page }) => {
   await member(page)
   await page.setViewportSize({ width: 360, height: 800 })
   await page.goto('/#today')
-  const greet = page.locator('.sh-top-greet')
+  const greet = page.getByTestId('today-head').getByRole('heading', { level: 1 }) // v13: the top bar is off on the Today root, the greeting is the large title
   await expect(greet).toContainText('Magdalena')
-  const r = await greet.evaluate((el) => ({ clamp: getComputedStyle(el).webkitLineClamp, over: el.scrollHeight - el.clientHeight, size: getComputedStyle(el).fontSize }))
+  const r = await greet.evaluate((el) => { const s = getComputedStyle(el); return { clamp: s.webkitLineClamp, te: s.textOverflow, ov: s.overflowY, over: el.scrollHeight - el.clientHeight, size: s.fontSize } })
   expect(r.clamp).toBe('none')
-  expect(r.over).toBeLessThanOrEqual(1)
-  expect(r.size).toBe('22px')
+  expect(r.te).not.toBe('ellipsis')
+  expect(r.ov === 'visible' || r.over <= 1, `clipped by ${r.over} px`).toBe(true) // nothing is cut off: overflow is visible, or the box fits
+  expect(r.size).toBe('34px')
 })

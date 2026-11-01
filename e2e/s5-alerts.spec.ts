@@ -131,15 +131,16 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.screenshot({ path: `${SHOTS}/hub-amber-${scheme}.png` })
   })
 
-  test(`Today band shows a quake beyond its felt radius, with the steps ${scheme}`, async ({ page }) => {
+  test(`Today shows a quake beyond its felt radius as a compact Nearby report row, not the red band ${scheme}`, async ({ page }) => {
+    // v13 lane T: a far quake is a compact amber row (alertRow.ts); the steps and the full distance line live on Warnings (covered below).
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
-    const band = page.getByRole('region', { name: 'Active warning' })
-    await expect(band.getByText('About 89 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeVisible()
+    const row = page.getByRole('region', { name: 'Nearby report' })
+    await expect(row.getByText('Earthquake M3 near Pondaguitan, Philippines')).toBeVisible()
+    await expect(row.getByText(/89 km away · too far to feel here · 30 min ago/)).toBeVisible()
+    await expect(row.getByRole('link', { name: 'Details' })).toHaveAttribute('href', '#safety/warnings')
+    await expect(page.getByRole('region', { name: 'Active warning' })).toHaveCount(0)
     await expect(page.getByText(/no action needed/i)).toHaveCount(0)
-    await expect(band.getByText(/\(89 km away\)/)).toBeVisible()
-    await expect(band.getByText('Checked 6 min ago')).toBeVisible()
-    await expect(band.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
-    await band.scrollIntoViewIfNeeded()
+    await row.scrollIntoViewIfNeeded()
     await page.screenshot({ path: `${SHOTS}/today-band-far-${scheme}.png` })
   })
 

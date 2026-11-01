@@ -62,7 +62,7 @@ test('component button rules beat the .bt reset: tab labels are 12px/600', async
 test('sub-pages show only their own header; tab roots keep the top bar', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#weather')
-  await expect(page.locator('.sh-back')).toBeVisible()
+  await expect(page.locator('a[aria-label="Back to Today"]')).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCount(0)
   await page.goto('/#health')
   await expect(page.locator('.topbar')).toHaveCount(1)

@@ -82,8 +82,7 @@ describe('person picker', () => {
     expect(await screen.findByRole('button', { name: /To check \(4\)/ })).toBeTruthy()
     cleanup()
     render(<Health />)
-    const lola = await screen.findByRole('button', { name: 'Lola' })
-    await waitFor(() => expect(lola.getAttribute('aria-pressed')).toBe('true'))
+    await waitFor(() => expect(document.querySelector('.ps-pill')?.textContent).toBe('Lola')) // v13: the Me switcher pill shows the shared choice
   })
 
   it('a member with no person of their own falls back to the first person', async () => {
@@ -109,8 +108,8 @@ describe('confirm -> readings', () => {
     cleanup()
     location.hash = '#health/labs' // S14: the labs list is its own screen; the overview keeps one row
     render(<Health />) // same choice, no re-pick
-    const row = await screen.findByText(/95/)
-    expect(row.closest('[data-test="ldl"]')).toBeTruthy()
+    const hits = await screen.findAllByText(/95/) // v13 Labs also shows the value outside the row
+    expect(hits.some((h) => h.closest('[data-test="ldl"]'))).toBe(true)
     location.hash = ''
   })
 })
