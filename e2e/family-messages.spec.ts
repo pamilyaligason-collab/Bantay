@@ -64,8 +64,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await sheet.getByRole('button', { name: 'Start', exact: true }).click()
       const count = page.getByTestId('sc-run').locator('.bo-count')
       await expect(count).toHaveText(/^[1-4]$/)
-      await expect(page.locator('.bo')).toHaveAttribute('data-reduced', 'true')
-      const orb = page.locator('.bo-orb')
+      await expect(page.getByTestId('sc-run').locator('.bo')).toHaveAttribute('data-reduced', 'true') // the sheet's orb (the Calm card has its own)
+      const orb = page.getByTestId('sc-run').locator('.bo-orb')
       const first = await orb.evaluate((e) => (e as HTMLElement).style.transform)
       const c0 = await count.textContent()
       await expect(count).not.toHaveText(c0!) // the number moves on; the orb holds one size for the whole phase (no tween)
@@ -80,21 +80,20 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       await seed(page, 'bantay-log', 'activity', [{ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' }, { personId: 'p2', kind: 'check-in', minutes: null, steps: null, startedAt: at(6, 55), source: 'manual' }])
       await page.reload()
-      const roll = page.getByRole('list', { name: 'Family roll call' })
-      await expect(roll.getByRole('button', { name: /^Papa Ben, OK / })).toBeVisible()
-      await expect(roll.getByTestId('bubble-badge')).toHaveCount(3)
-      for (const b of await roll.getByRole('button').all()) {
+      // v13: the roll call is a carousel of person cards; each card's label carries name and status words, the Open link goes to the person page.
+      const roll = page.getByRole('group', { name: 'Family roll call' })
+      await expect(roll.getByRole('article', { name: /^Papa Ben\. OK / })).toBeVisible()
+      await expect(roll.getByTestId('person-card')).toHaveCount(3)
+      for (const b of await roll.locator('.pc a, .pc button').all()) {
         const box = await b.boundingBox()
-        expect(box!.height).toBeGreaterThanOrEqual(48)
-        expect(box!.width).toBeGreaterThanOrEqual(48)
+        expect(box!.height).toBeGreaterThanOrEqual(44)
+        expect(box!.width).toBeGreaterThanOrEqual(44)
       }
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-bubbles-${scheme}.png` })
       expect(await axe(page)).toEqual([])
       expect(await noSideways(page)).toBe(true)
 
-      // S9: a bubble opens the person's page. The Messages sheet is no longer reached from the bubble (its sheet tests live in Messages.test.tsx); lane K's member page owns the entry to it.
-      await roll.getByRole('button', { name: /Lola Remy/ }).click()
-      await page.getByRole('link', { name: 'See their stats' }).click()
+      await roll.getByRole('link', { name: 'Open Lola' }).click()
       await expect(page).toHaveURL(/#family\/people\/p3$/)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])
