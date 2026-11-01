@@ -9,6 +9,8 @@ import { useSelf } from '../sos/useSelf'
 import { EmptyState } from '../look/EmptyState'
 import { lastDays } from '../today/myWeekLogic'
 import { stockInfo, weekCounter } from './medDetailLogic'
+import { stockRows } from './stock'
+import { Row, Section, GroupedList } from '../look'
 import { answeredBy, dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
@@ -97,7 +99,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </div>
       )}
       {empty && (
-        <EmptyState jack="medicine" title="No medicines yet" body={canEdit ? 'Add one, or scan a prescription.' : 'Nothing has been added for them yet.'} action={canEdit ? { label: 'Add a medicine', onClick: () => open() } : undefined} />
+        <EmptyState jack="medicine" title="No medicines yet" body={canEdit ? 'Add your medicines, get reminders. Family gets told if a dose is missed after 30 minutes.' : 'Nothing has been added for them yet.'} action={canEdit ? { label: 'Add by hand', onClick: () => open() } : undefined} />
       )}
 
       {doses.length > 0 && (
@@ -200,6 +202,20 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
         </div>
       )}
     </section>
+  )
+}
+
+/** "Your lists": the door to Refill, valued by the fewest days of medicine left (or "Nothing to refill"). */
+export function YourLists({ personId }: { personId: string }) {
+  const meds = useMedicationRows(personId)
+  const low = stockRows(meds ?? [], personId, new Date())[0]
+  const value = !low ? 'Nothing to refill' : low.days <= 0 ? 'Runs out today' : `${low.days} ${low.days === 1 ? 'day' : 'days'} left`
+  return (
+    <Section title="Your lists">
+      <GroupedList icons>
+        <Row icon="clock" tint="amber" title="Refill" sub="Days left per medicine" value={value} href="#health/refill" testId="refills-door" />
+      </GroupedList>
+    </Section>
   )
 }
 

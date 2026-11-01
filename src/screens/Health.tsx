@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import { LatestList } from '../features/health/LatestList'
-import { Medicines } from '../features/health/Medicines'
+import { Medicines, YourLists } from '../features/health/Medicines'
 import MetricScreen from '../features/health/MetricScreen'
 import type { NodeId } from '../features/health/model'
 import type { IconName } from '../features/shell/Icon'
@@ -33,7 +33,6 @@ import { useHealthPerson } from '../features/health/useHealthPerson'
 import { LargeTitle, Row, Section, Skeleton } from '../features/look'
 import { useActivity } from '../features/health/useActivity'
 import '../features/health/health.css'
-import { SubHeader } from '../features/shell/SubHeader'
 import { PersonChips } from '../features/records/PersonChips'
 import { properName } from '../features/health/medName'
 import NudgeHub from '../features/nudge/NudgeHub'
@@ -152,11 +151,11 @@ function MedsPage() {
   const name = people.find((p) => p.id === personId)?.name ?? ''
   return (
     <>
-      <SubHeader title="Medicines" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Medicines" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="who-chip"><span className="who-av" aria-hidden="true">{name.charAt(0).toUpperCase()}</span><span>{name}</span></p>}
       {personId && <Medicines personId={personId} mine={personId === ownId} canMark={canMark} canEdit={canEdit} />}
-      <Row icon="clock" title="Refills" sub="Days of medicine left" href="#health/refill" testId="refills-door" />
+      {personId && <YourLists personId={personId} />}
     </>
   )
 }

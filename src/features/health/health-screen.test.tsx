@@ -163,9 +163,21 @@ const med = (over: Record<string, unknown>) => ({ clientId: `c-${over.name}`, se
 describe('Medicines screen', () => {
   beforeEach(async () => { location.hash = '#health/meds'; await ldb.medications.clear() })
 
-  it('has a Refills door under the list', async () => {
+  it('has a Medicines title with a Health back link and a Refill door in Your lists', async () => {
     render(<Health />)
-    expect((await screen.findByTestId('refills-door')).querySelector('a')?.getAttribute('href')).toBe('#health/refill')
+    expect((await screen.findByRole('heading', { level: 1, name: 'Medicines' })).textContent).toBe('Medicines')
+    expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
+    const door = await screen.findByTestId('refills-door')
+    expect(door.querySelector('a')?.getAttribute('href')).toBe('#health/refill')
+    expect(door.textContent).toContain('Refill')
+    expect(door.textContent).toContain('Nothing to refill')
+    expect(screen.getByRole('heading', { name: 'Your lists' })).toBeTruthy()
+  })
+
+  it('the Refill door shows the lowest days left', async () => {
+    await ldb.medications.add(med({ name: 'Metformin', stockQty: 6, stockSetAt: new Date().toISOString(), schedule: { v: 1, times: ['08:00', '20:00'] } }))
+    render(<Health />)
+    await waitFor(() => expect(screen.getByTestId('refills-door').textContent).toMatch(/3 days/))
   })
 
   it('has Today, Active, Paused and Past sections, grouped by status', async () => {
@@ -244,7 +256,9 @@ describe('Medicines screen', () => {
 
   it('empty state says how to add one', async () => {
     render(<Health />)
-    expect(await screen.findByRole('button', { name: 'Add a medicine' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Add by hand' })).toBeTruthy()
+    expect(screen.getByText('No medicines yet')).toBeTruthy()
+    expect(screen.queryByText(/Preview|Example/)).toBeNull() // no sample cards
   })
 })
 
