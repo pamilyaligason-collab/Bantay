@@ -4,12 +4,13 @@ import { GUIDE, toCanonicalReading } from '../health/ranges'
 import { useHealthPerson } from '../health/useHealthPerson'
 import { PersonChips } from '../records/PersonChips'
 import { Icon } from '../shell/Icon'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle } from '../look'
 import { FAIL_TEXT } from '../today/actions'
 import NutrientsToday from './NutrientsToday'
 import { removeFood, saveGoal } from './actions'
 import { useFood, useGoal, useWater } from './hooks'
 import { dailySodium, fmt, foodByKey, GOAL_NOTE, onDay, portionWord, saltGrams, SODIUM_OPTIONS, WHO_SALT_URL, MEALS } from './logic'
+import { NOTE_LINK_STYLE } from './noteLink'
 import { SaltSummary } from './SaltSummary'
 import PlateSheet from './PlateSheet'
 import WaterPanel from './WaterPanel'
@@ -52,7 +53,7 @@ export default function NutritionScreen() {
 
   return (
     <>
-      <SubHeader title="Food and nutrients" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health/move', label: 'Move and food' }} title="Food and nutrients" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="who-chip"><span className="hv-sr">Showing </span><span aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>{name}</p>}
       {ready && personId && (
@@ -78,7 +79,7 @@ export default function NutritionScreen() {
             ) : <p className="nu-sub">Only {name ? name.split(' ')[0] : 'this person'} or a carer who can write for them can change the limit.</p>}
             {msg && <p className="nu-sub" role="status">{msg}</p>}
             <p className="nu-note">{GOAL_NOTE}. The WHO says adults should have less than 2000 mg of sodium a day (about 5 g of salt).{' '}
-              <a href={WHO_SALT_URL} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>WHO fact sheet<span className="hv-sr"> (opens in new tab)</span></a>
+              <a href={WHO_SALT_URL} target="_blank" rel="noreferrer" style={NOTE_LINK_STYLE}>WHO fact sheet<span className="hv-sr"> (opens in new tab)</span></a>
             </p>
           </section>
 

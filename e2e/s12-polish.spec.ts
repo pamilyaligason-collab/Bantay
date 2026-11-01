@@ -133,14 +133,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, `today-${scheme}`)
     })
 
-    test(`S6, S7: Health with old readings only has one empty hero and one Labs tile (${scheme})`, async ({ page }) => {
+    test(`S6, S7: Health with old readings only has one lead card and one Labs row (${scheme})`, async ({ page }) => {
       await open(page, 'health')
-      await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
-      await expect(page.getByTestId('insight')).toHaveCount(0)
-      await expect(page.getByTestId('nudge')).toHaveCount(0)
-      const labs = page.getByTestId('glance-labs') // S14: the overview keeps one tile, the list lives on #health/labs
+      await expect(page.getByTestId('bodyhero')).toBeVisible() // v13: the lead card shows the newest lab result (LDL here) even when old
+      const labs = page.getByTestId('browse-labs') // v13: Browse keeps one Labs row, the list lives on #health/labs
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs).toHaveAttribute('href', '#health/labs')
+      await expect(labs.getByRole('link')).toHaveAttribute('href', '#health/labs')
       await shot(page, `health-labs-${scheme}`)
     })
 

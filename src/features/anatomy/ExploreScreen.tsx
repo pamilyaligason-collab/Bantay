@@ -9,8 +9,7 @@ import { DRUG_NUDGE_NOTE, medicinesActingHere, SYSTEM_INFO, yourNumbers } from '
 import content from './content.json'
 import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
 import { systemCounts, systemStatus, type SystemCount } from './status'
-import { Icon, type IconName } from '../shell/Icon'
-import { SubHeader } from '../shell/SubHeader'
+import { Carousel, GroupedList, LargeTitle, Row } from '../look'
 import './anatomy.css'
 
 export interface Part { id: string; system: string; name: string; what: string; illnesses: string[]; warnings: string[]; prevention: string[] }
@@ -18,8 +17,6 @@ const PARTS = content.parts as Part[]
 const SYSTEMS = content.systems
 const NONE: SystemCount = { total: 0, flagged: 0, ok: 0 }
 
-// Rail glyph per body system: Tabler where one exists, hand-drawn kidney and stomach, else the nearest plain icon.
-const RAIL: Record<string, IconName> = { skeleton: 'cross', muscles: 'walk', heart: 'heart', lungs: 'lungs', brain: 'brain', digestion: 'stomach', kidneys: 'kidney', skin: 'drop', hormones: 'flask' }
 
 function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
   const { ref, onKeyDown } = useDialog(onClose)
@@ -71,8 +68,20 @@ export default function ExploreScreen() {
 
   return (
     <>
-      <SubHeader title="Explore your body" backHref="#health" backLabel="Back to Health" />
-      <p className="sub an-hint">Pick a system, then tap a dot</p>
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Body wiki" />
+      <p className="sub an-hint">Tap a spot to learn how that part works.</p>
+      <Carousel label="Body systems" testId="body-systems">
+        {SYSTEMS.map((s) => {
+          const c = counts[s.id] ?? NONE
+          const n = c.flagged || c.total
+          return (
+            <button key={s.id} type="button" className="an-chip" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
+              {s.label}
+              {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
+            </button>
+          )
+        })}
+      </Carousel>
       <div className="an-top">
         <h2 className="an-sys">{label}</h2>
         {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
@@ -96,18 +105,6 @@ export default function ExploreScreen() {
         </section>
       )}
       <div className="an-main">
-        <div className="an-rail" role="group" aria-label="Body systems">
-          {SYSTEMS.map((s) => {
-            const c = counts[s.id] ?? NONE
-            const n = c.flagged || c.total
-            return (
-              <button key={s.id} type="button" className="an-rb" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
-                <Icon name={RAIL[s.id] ?? 'heart'} size={24} tone="vitals" />
-                {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
-              </button>
-            )
-          })}
-        </div>
         <div className="an-stage" data-sys={sysId}>
           <div className="an-fig" style={{ '--vw': vw, '--vh': vh, aspectRatio: `${vw} / ${vh}` } as CSSProperties}>
           <svg className={vh < 300 ? 'an-svg an-crop' : 'an-svg'} viewBox={`${vx} ${vy} ${vw} ${vh}`} role="group" aria-label={`${label}, tap a dot`}>
@@ -138,11 +135,9 @@ export default function ExploreScreen() {
         </div>
       </div>
       <h2 className="an-h2">Parts you can open</h2>
-      <div className="grp an-list">
-        {parts.map((p) => (
-          <button key={p.id} type="button" className="an-row" onClick={() => setOpen(p)}>{p.name}<Icon name="chev" size={20} /></button>
-        ))}
-      </div>
+      <GroupedList label="Parts you can open">
+        {parts.map((p) => <Row key={p.id} title={p.name} onClick={() => setOpen(p)} />)}
+      </GroupedList>
       <p className="an-note">{content.credits}</p>
       <p className="an-note">{content.art}</p>
       <p className="an-note">{content.disclaimer}</p>

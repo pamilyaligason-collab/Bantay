@@ -145,14 +145,14 @@ for (const scheme of ['light', 'dark'] as const) {
   })
 }
 
-test('Overview shows one Lab results row that opens the screen; the Labs tile does too', async ({ page }) => {
+test('Overview Browse shows one Labs row that opens the screen', async ({ page }) => {
   await open(page, '#health', 'light')
-  const row = page.getByTestId('glance-labs')
-  await expect(row).toContainText('2 Oct')
+  const row = page.getByTestId('browse-labs')
+  await expect(row).toBeVisible()
   await expect(page.getByTestId('labs-list')).toHaveCount(0)
   await row.scrollIntoViewIfNeeded()
   await shot(page, 'health-overview-labsrow', 'light')
-  await row.click()
+  await row.getByRole('link').click()
   await expect(page).toHaveURL(/#health\/labs$/)
 })
 

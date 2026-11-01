@@ -68,6 +68,23 @@ describe('LabsList (mockup v8 health-labs)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'In range 1' }))
     expect(Array.from(container.querySelectorAll('a.lr-card')).map((c) => c.getAttribute('data-test'))).toEqual(['creatinine'])
   })
+  it('summary hero counts To ask about / In range / No range', () => {
+    render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
+    const sum = screen.getByTestId('lab-summary')
+    expect(sum.hasAttribute('data-hero')).toBe(true)
+    expect(sum.textContent).toBe('2To ask about1In range1No range')
+  })
+  it('each card says it in plain words; Ask at next visit is a link outside the card, only for out-of-range', () => {
+    const { container } = render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
+    const hb = container.querySelector('[data-test="hba1c"]') as HTMLElement
+    expect(within(hb).getByText(/^6\.8 is about \d times the top of normal\.$|^6\.8 is a little over the top of normal\.$/)).toBeTruthy()
+    const ask = screen.getAllByRole('link', { name: 'Ask at next visit' })
+    expect(ask).toHaveLength(2)
+    expect(ask[0]!.getAttribute('href')).toBe('#health/visits')
+    expect(ask.every((a) => !a.closest('a.lr-card'))).toBe(true)
+    expect(ask[0]!.closest('.lr-wrap')).toBeTruthy()
+    expect(within(container.querySelector('[data-test="creatinine"]') as HTMLElement).getByText('0.9 is inside the normal range.')).toBeTruthy()
+  })
   it('with no earlier result the switch stays but is off and says so; the source card is the link to Papers', () => {
     render(<LabsList readings={[rd('ldl', 162)]} thresholds={[]} ready sources={none} />)
     const sw = screen.getByRole('switch', { name: 'Show previous result' }) as HTMLButtonElement

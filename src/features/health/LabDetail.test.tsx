@@ -22,3 +22,11 @@ describe('LabDetail Add', () => {
     await waitFor(async () => expect((await db.kv.get('visits.questions.p1'))?.value).toEqual(qs))
   })
 })
+
+describe('LabDetail plain words', () => {
+  it('says where the value sits and offers Ask at next visit when out of range', () => {
+    const { container } = render(<LabDetail code="creatinine" readings={[{ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'creatinine', value: 2.6, unit: 'mg/dL', labLow: 0.6, labHigh: 1.3 }]} personId="p1" />)
+    expect(container.querySelector('.lr-say')?.textContent).toBe('2.6 is about 2 times the top of normal.')
+    expect(screen.getByRole('link', { name: 'Ask at next visit' }).getAttribute('href')).toBe('#health/visits')
+  })
+})

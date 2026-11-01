@@ -81,6 +81,9 @@
 .vs-row { list-style: none; align-items: center; gap: 12px; }
 .grp > .vs-row { display: flex; }
 .vs-bring { list-style: none; padding: 0; }
+.vs-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
+.vs-acts .btn { margin-top: 0; }
+.vs-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--tint-purple); color: var(--tint-purple-ink); font-size: 14px; font-weight: 600; }
 .vs-bring .row { align-items: center; gap: 12px; }
 .vs-done { text-decoration: line-through; color: var(--ink2); }
 .vs-q { display: grid; gap: 6px; margin: 12px 0 0; }

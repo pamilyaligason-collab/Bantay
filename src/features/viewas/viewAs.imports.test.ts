@@ -9,7 +9,7 @@ const ALLOWED: RegExp[] = [
   /^\/src\/screens\/(Today|Health|Family)\.tsx$/,
   /^\/src\/features\/today\/(QuickLog|NextUp|SimpleToday|useDueMeds|useMyTakes|MyWeek)\.tsx?$/,
   /^\/src\/features\/safety\/StormCard\.tsx$/,
-  /^\/src\/features\/health\/(useHealthPerson|AddReadingSheet|LabsScreen)\.tsx?$/,
+  /^\/src\/features\/health\/(useHealthPerson|AddReadingSheet|LabsScreen|MemberHealth)\.tsx?$/,
   /^\/src\/features\/nutrition\/(PlateSheet|WaterSheet|SaltSummary|NutritionScreen)\.tsx$/,
   /^\/src\/features\/exercise\/MoveScreen\.tsx$/,
   /^\/src\/features\/family\/(ProfileCard|FacesRow|Calendar)\.tsx$/,

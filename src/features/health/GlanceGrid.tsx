@@ -1,11 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
-import Sheet from '../family/Sheet'
 import { ldb, type Activity, type FoodEntry, type MedTaken, type WaterEntry } from '../log/store'
 import { Ring } from '../look/Ring'
-import { Tile } from '../look/Tile'
-import { LiteVideo } from '../media/LiteVideo'
-import { videoOfTheDay } from '../today/videos'
 import { lastDays } from '../today/myWeekLogic'
 import { labDate, groupLabs, labRow } from './labsLogic'
 import { dayOf, matchDoses, slotsFor } from './meds'
@@ -13,7 +9,6 @@ import { localDay, readingPosition } from './model'
 import { computeNudge, type Goal } from './nudgeLogic'
 import { latestByTest, type Range, type Reading } from './ranges'
 import { isVital } from './vitals'
-import { playable, VIDEOS } from './library/videosLogic'
 import { useMedicationRows } from './useMedicationRows'
 import { useMedications } from './useMedications'
 import './health.css'
@@ -47,7 +42,7 @@ export function labsLine(readings: Reading[], thresholds: Thresholds): string {
 }
 
 /** Today's doses done over due, live. Null until the medicines are read; "No medicines yet" when none. */
-function useDoseLine(personId: string): string | null {
+export function useDoseLine(personId: string): string | null {
   const meds = useMedicationRows(personId)
   const [takes, setTakes] = useState<MedTaken[]>([])
   useEffect(() => {
@@ -63,29 +58,6 @@ function useDoseLine(personId: string): string | null {
     if (!doses.length) return meds.length ? 'Nothing due today' : 'No medicines yet'
     return `${doses.filter((d) => d.state === 'pending').length} of ${doses.length} left today`
   }, [meds, takes, personId])
-}
-
-/** At a glance: four 2-column tiles in N-14 order. Hues never repeat side by side. Every tile is one target with visible text (ML-40). */
-export function GlanceGrid({ personId, readings, thresholds }: { personId: string; readings: Reading[]; thresholds: Thresholds }) {
-  const now = useMemo(() => new Date(), [])
-  const doses = useDoseLine(personId)
-  const [playing, setPlaying] = useState(false)
-  const bp = useMemo(() => bpNearGuide(readings, now, thresholds.find((t) => t.key === `${personId}:bp_systolic`)), [readings, thresholds, personId, now])
-  const clip = useMemo(() => { const list = VIDEOS.filter(playable); return list.length ? videoOfTheDay(now, list) : null }, [now])
-  return (
-    <section aria-labelledby="gl-h" data-testid="glance">
-      <h2 className="hd" id="gl-h">At a glance</h2>
-      <div className="gl-grid">
-        <Tile testId="glance-progress" hue="blue" icon="flame" label="Progress" value={bp.logged ? `BP near guide ${bp.near}/7` : 'No BP this week'} ring={bp.near / 7} href="#health/metric/bp_systolic" />
-        <Tile testId="glance-meds" hue="green" icon="pill" label="Medicines" value={doses ?? ' '} href="#health/meds" />
-        <Tile testId="glance-labs" hue="lilac" icon="flask" label="Labs" value={labsLine(readings, thresholds)} href="#health/labs" />
-        {clip
-          ? <Tile testId="glance-video" hue="terra" icon="play" label="Video" value={`${clip.title}${clip.minutes != null ? ` · ${clip.minutes} min` : ''}`} onClick={() => setPlaying(true)} />
-          : <Tile testId="glance-video" hue="terra" icon="play" label="Video" value="Checked videos" href="#discover/watch" />}
-      </div>
-      {playing && clip && <Sheet title={clip.title} onClose={() => setPlaying(false)}><LiteVideo id={clip.id} title={clip.title} minutes={clip.minutes} /></Sheet>}
-    </section>
-  )
 }
 
 /** The week's goals and streak (nudgeLogic), live. Same data the old NudgeCard read. */
