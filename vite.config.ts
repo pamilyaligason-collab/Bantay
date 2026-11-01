@@ -8,6 +8,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 // A production build without Supabase env would open the app with no sign-in. Fail it, unless the e2e test build opts out.
 const allowNoAuth = process.env.BANTAY_ALLOW_NO_AUTH === '1'
 
+// Test files that stub window.location: they need the forks pool (see test.projects below). Each project sets its own include: extends:true concatenates arrays.
+const FORKS_ONLY = ['src/features/sos/call.test.ts', 'src/features/sos/sosFlow.test.tsx']
+
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   if (command === 'build' && !allowNoAuth && !(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_PUBLISHABLE_KEY)) {
@@ -45,8 +48,16 @@ export default defineConfig(({ command, mode }) => {
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     css: true, // so `tokens.css?raw` returns the real file in chart.test.ts
-    include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/**/*.test.ts'],
-    testTimeout: 15000 // ponytail: parallel lanes load the PC; raise only if a real test needs more
+    vmMemoryLimit: '300MB', // root-only option; ignored inside a project (see below)
+    testTimeout: 15000, // ponytail: parallel lanes load the PC; raise only if a real test needs more
+    // vmThreads makes one jsdom per worker instead of one per file (jsdom setup was 48% of the forks run).
+    // Each file still gets a fresh module graph and globals. vmThreads leaks memory per file, so a worker is recycled at 300 MB
+    // (4-core run: peak 1.3-1.6 GB, 86 s; uncapped 4.4 GB, 69 s; forks 1.1 GB, 251 s). Files that redefine window.location cannot run there
+    // (jsdom's real location is non-configurable), so they stay on forks.
+    projects: [
+      { extends: true, test: { name: 'unit', pool: 'vmThreads', include: ['src/**/*.test.{ts,tsx}', 'supabase/functions/**/*.test.ts'], exclude: FORKS_ONLY } },
+      { extends: true, test: { name: 'forks', pool: 'forks', include: FORKS_ONLY } }
+    ]
   }
 }
 })
