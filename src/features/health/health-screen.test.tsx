@@ -56,7 +56,7 @@ describe('Health overview (v13)', () => {
     await screen.findByTestId('browse')
     location.hash = '#health/body'
     fireEvent(window, new HashChangeEvent('hashchange'))
-    expect(await screen.findByRole('heading', { name: 'Explore your body' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Body wiki' })).toBeTruthy()
   })
 
   it('the Labs tile opens the labs screen and the Medicines tile counts today\'s doses', async () => {

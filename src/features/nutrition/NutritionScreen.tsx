@@ -4,7 +4,7 @@ import { GUIDE, toCanonicalReading } from '../health/ranges'
 import { useHealthPerson } from '../health/useHealthPerson'
 import { PersonChips } from '../records/PersonChips'
 import { Icon } from '../shell/Icon'
-import { SubHeader } from '../shell/SubHeader'
+import { LargeTitle } from '../look'
 import { FAIL_TEXT } from '../today/actions'
 import NutrientsToday from './NutrientsToday'
 import { removeFood, saveGoal } from './actions'
@@ -52,7 +52,7 @@ export default function NutritionScreen() {
 
   return (
     <>
-      <SubHeader title="Food and nutrients" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health/move', label: 'Move and food' }} title="Food and nutrients" />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {name && <p className="who-chip"><span className="hv-sr">Showing </span><span aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>{name}</p>}
       {ready && personId && (

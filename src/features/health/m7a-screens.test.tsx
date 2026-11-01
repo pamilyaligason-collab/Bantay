@@ -152,7 +152,7 @@ describe('Explore your body', () => {
     await ldb.medications.add(med({ name: 'Amlodipine', strength: '5 mg' }))
     go('#health/body')
     render(<Health />)
-    await screen.findByRole('heading', { name: 'Explore your body' })
+    await screen.findByRole('heading', { name: 'Body wiki' })
     fireEvent.click(screen.getByRole('button', { name: 'Heart and blood' }))
     const panel = await screen.findByTestId('system-info')
     expect(panel.textContent).toMatch(/pumps blood/)
