@@ -22,6 +22,7 @@ describe('CalmHero with the real useKv', () => {
       await db.kv.put({ key: 'selfcare.buzz', value: false })
     })
     fireEvent.click(screen.getByText('close'))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Start' })) // BreathSheet does not return focus itself
     await waitFor(() => expect(screen.getByText('Done once today')).toBeTruthy())
     expect(screen.getByRole('switch', { name: 'Gentle buzz' }).getAttribute('aria-checked')).toBe('false')
   })

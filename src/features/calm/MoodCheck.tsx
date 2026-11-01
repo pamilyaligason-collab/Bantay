@@ -15,7 +15,10 @@ export default function MoodCheck() {
   const answer = async (f: Feeling) => {
     if (busy || lockMood) return
     setBusy(true)
-    try { setSaid(feelingToast(await logFeeling(f, self ?? undefined))) } finally { setBusy(false) }
+    try {
+      const r = await logFeeling(f, self ?? undefined)
+      setSaid(r === 'told' && f !== 'unwell' && !writer ? moodLine(writer) : feelingToast(r)) // 'told' promises the family sees it; without a writer carer they do not
+    } finally { setBusy(false) }
   }
   return (
     <Section title="Mood check" testId="calm-mood">
@@ -26,7 +29,7 @@ export default function MoodCheck() {
         </div>
         {lockMood && can?.reason && <p className="cm-sub">View only. {can.reason}</p>}
         {said && <p role="status" className="cm-sub">{said}</p>}
-        <p className="cm-sub">{moodLine(writer)}</p>
+        {!said && <p className="cm-sub">{moodLine(writer)}</p>}
       </div>
     </Section>
   )

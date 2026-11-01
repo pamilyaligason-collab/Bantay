@@ -33,6 +33,19 @@ describe('MoodCheck', () => {
     expect(screen.getByText(moodLine(undefined))).toBeTruthy()
     expect(screen.queryByText(/tells your family/)).toBeNull()
   })
+  it('never says the family will see it when no writer carer exists, and shows one line after the tap', async () => {
+    render(<MoodCheck />)
+    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe(moodLine(undefined)))
+    expect(screen.getByTestId('calm-mood').textContent).not.toMatch(/will see it/)
+    expect(screen.getAllByText(moodLine(undefined))).toHaveLength(1)
+  })
+  it('with a writer carer the told toast stands', async () => {
+    writer.v = true
+    render(<MoodCheck />)
+    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe(feelingToast('told')))
+  })
   it('viewing as someone writes for the viewed person', async () => {
     acting.id = 'rel-1'
     render(<MoodCheck />)

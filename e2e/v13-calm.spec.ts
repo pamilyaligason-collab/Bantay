@@ -89,7 +89,7 @@ test('arriving from a scrolled Today starts Calm at the top', async ({ page }) =
 
 test('a mood face logs and the status line says so', async ({ page }) => {
   await page.getByTestId('calm-mood').getByRole('button', { name: 'Great', exact: true }).click()
-  await expect(page.getByTestId('calm-mood').getByRole('status')).toContainText(/\S/) // signed out here, so the answer is the sign-in line; the point is that the tap gets an answer
+  await expect(page.getByTestId('calm-mood').getByRole('status')).toHaveText('Sign in first, then try again.') // this spec runs signed out; the write path is in MoodCheck.test
 })
 
 test('Start opens the breath sheet', async ({ page }) => {

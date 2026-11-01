@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '../look'
 import { BreathOrb } from '../look/BreathOrb'
 import { useKv } from '../shell/useKv'
@@ -25,6 +25,7 @@ function HeroState() {
 /** The one hero: an idle breathing orb (same loop as today/CalmCard) that opens the existing breath sheet. */
 export default function CalmHero() {
   const p = SHOWN_PATTERNS[0]!
+  const start = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [round, setRound] = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -40,9 +41,9 @@ export default function CalmHero() {
       <div aria-hidden="true" className="cm-orb"><BreathOrb moment={momentAt(p, 1, elapsed)} reduced={reduced} size={210} /></div>
       <h2 id="cm-h" className="cm-hero-t">Breathe in… out</h2>
       <p className="cm-sub">{p.tag}</p>
-      <button type="button" className="btn block cm-start" onClick={() => setOpen(true)}>Start</button>
+      <button ref={start} type="button" className="btn block cm-start" onClick={() => setOpen(true)}>Start</button>
       <HeroState key={round} />
-      {open && <BreathSheet onClose={() => { setOpen(false); setRound((r) => r + 1) }} />}
+      {open && <BreathSheet onClose={() => { setOpen(false); setRound((r) => r + 1); start.current?.focus() }} />}
     </section>
   )
 }

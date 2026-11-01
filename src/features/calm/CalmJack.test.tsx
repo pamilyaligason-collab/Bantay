@@ -12,8 +12,8 @@ import CalmJack, { CALM_JACK_EVENT } from './CalmJack'
 const open = () => act(() => { window.dispatchEvent(new Event(CALM_JACK_EVENT)) })
 
 describe('CalmJack', () => {
-  it('opens on the event and closing returns focus to the opener', () => {
-    render(<><button>opener</button><CalmJack /></>)
+  it('opens on the event and closing returns focus to Ask Jack', () => {
+    render(<><button className="cm-ask">opener</button><CalmJack /></>)
     const opener = screen.getByRole('button', { name: 'opener' })
     opener.focus(); open()
     expect(screen.getByTestId('jack-sheet')).toBeTruthy()
