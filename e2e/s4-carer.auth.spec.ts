@@ -21,14 +21,14 @@ const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString()
 const later = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString()
 const alert = (id: string, person: string, kind: string, template: string, ref: string, min: number): Row => ({ id, person_id: person, kind, template, ref, created_at: ago(min), pushed_at: null, seen_at: null, expires_at: later(7) })
 
-async function mock(page: Page, opts: { sos: boolean }, posts: Post[]) {
+async function mock(page: Page, opts: { sos: boolean; carer?: boolean }, posts: Post[]) {
   const alerts: Row[] = [
     alert('a-dose', 'ma', 'dose_missed', 'dose_missed', `ma:${day()}:09:00`, 70),
     alert('a-phone', 'pa', 'phone_health', 'phone_health', `u-pa:${day()}`, 120),
     ...(opts.sos ? [alert('a-sos', 'ma', 'sos', 'family_sos', 'e1', 5)] : [])
   ]
   await page.addInitScript(([token, u, fam]) => {
-    localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: u }))
+    localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 172800, expires_at: Math.floor(Date.now() / 1000) + 172800, user: u }))
     localStorage.setItem('bantay.family', JSON.stringify(fam))
   }, [jwt(), user, FAMILY] as const)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ current: { time: '2026-10-20T10:00', temperature_2m: 34.2, relative_humidity_2m: 70, weather_code: 2 }, daily: { precipitation_probability_max: [70] }, hourly: { time: [], precipitation_probability: [] } }) }))
@@ -44,7 +44,7 @@ async function mock(page: Page, opts: { sos: boolean }, posts: Post[]) {
     if (req.method() !== 'GET') return route.fulfill({ status: 204, headers: cors })
     if (t === 'people') return reply(url.searchParams.has('auth_user_id') ? [{ id: 'me' }] : PEOPLE) // maybeSingle() asks for a list and takes the first row
     if (t === 'app_roles') return reply([{ role: 'member', handle: null }])
-    if (t === 'carers') return reply([{ person_id: 'pa' }, { person_id: 'ma' }])
+    if (t === 'carers') return reply(opts.carer === false ? [] : [{ person_id: 'pa' }, { person_id: 'ma' }])
     if (t === 'carer_alerts') return reply(alerts)
     if (t === 'sos_events') return reply([{ id: 'e1', person_id: 'ma', at: ago(5), lat: 6.1164, lon: 125.1716, gps: true, cancelled_at: null }])
     if (t === 'phone_health') return reply([
@@ -77,15 +77,15 @@ const MEDS: Row[] = [
   med('aml', 'me', 'Amlodipine', '5 mg', ['08:00'], { schedule: { v: 1, times: ['08:00'], review: true, review_since: day(1) } })
 ]
 
-async function open(page: Page, scheme: 'light' | 'dark', sos: boolean, posts: Post[] = []) {
+async function open(page: Page, scheme: 'light' | 'dark', sos: boolean, posts: Post[] = [], carer = true) {
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
-  const t = new Date(); t.setHours(16, 0, 0, 0); await page.clock.setFixedTime(t) // 'Missed' shows 2 h after a dose: pin the clock past Metformin 13:00 + 2 h so the spec does not depend on the hour
-  await mock(page, { sos }, posts)
+  await mock(page, { sos, carer }, posts)
   await page.goto('/#family')
   await expect(page.getByRole('heading', { name: 'Family' })).toBeVisible()
   await seed(page, 'bantay-log', 'medications', MEDS)
+  const t = new Date(); t.setHours(16, 0, 0, 0); await page.clock.setFixedTime(t) // 'Missed' shows 2 h after a dose: pin the clock past Metformin 13:00 + 2 h so the spec does not depend on the hour. Set after the seed: a clock pinned before the first load stalled the IndexedDB seed
   await page.reload() // raw IndexedDB writes do not notify live queries
 }
 
@@ -121,6 +121,27 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Needs fixing' }).click()
     await expect(page.getByLabel("Fix Papa's phone")).toBeVisible()
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-phones-${scheme}.png` })
+  })
+
+  test(`Mark taken for Mama writes exactly one dose (ML-13) ${scheme}`, async ({ page }) => {
+    await open(page, scheme, false)
+    const mama = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed a medicine/ })
+    await mama.getByRole('button', { name: 'Mark taken for Mama' }).click()
+    await mama.getByRole('button', { name: 'Yes, I saw' }).click()
+    await expect(page.getByText('Marked as taken for Mama.')).toBeVisible()
+    const doses = () => page.evaluate(() => new Promise<{ name: string; personId: string; slot: string }[]>((res, rej) => {
+      const o = indexedDB.open('bantay-log')
+      o.onerror = () => rej(o.error)
+      o.onsuccess = () => { const r = o.result.transaction('meds').objectStore('meds').getAll(); r.onsuccess = () => { o.result.close(); res(r.result) }; r.onerror = () => rej(r.error) }
+    }))
+    await expect.poll(async () => (await doses()).length).toBe(1)
+    expect(await doses()).toMatchObject([{ name: 'Losartan', personId: 'ma', slot: '09:00' }])
+  })
+
+  test(`a family member who is not a carer gets no Mark taken or Answer buttons ${scheme}`, async ({ page }) => {
+    await open(page, scheme, false, [], false)
+    await expect(page.getByRole('button', { name: /^Mark taken for/ })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /^Answer for/ })).toHaveCount(0)
   })
 
   test(`SOS banner on Family ${scheme}`, async ({ page }) => {

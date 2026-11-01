@@ -114,6 +114,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText(/They may be out of date/)).toHaveCount(0)
     const quake = page.getByRole('article', { name: /Pondaguitan/ })
     await expect(quake.getByText(/About 89 km away\. You may feel it\. If you feel shaking, follow the steps below\. \(89 km\)/)).toBeVisible()
+    await expect(quake.getByText(/If you feel shaking: drop, cover and hold on/)).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/warnings-fresh-${scheme}.png` })
   })
