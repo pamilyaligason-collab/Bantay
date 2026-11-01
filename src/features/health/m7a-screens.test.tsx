@@ -122,15 +122,14 @@ describe('Health library (moved to Discover, S16; the components are tested wher
 })
 
 describe('Video of the day', () => {
-  it('is a tile in At a glance that opens the player in a sheet', async () => {
+  it('is a link card in For you that opens the Videos page', async () => {
     await hdb.readings.add({ personId: 'p1', test: 'weight', value: 61, unit: 'kg', takenAt: day(1) })
     go('#health')
     render(<Health />)
     const tile = await screen.findByTestId('glance-video')
-    expect(tile.tagName).toBe('BUTTON')
-    expect(document.querySelector('iframe')).toBeNull() // nothing loads until a tap
-    fireEvent.click(tile)
-    expect(await screen.findByRole('button', { name: /^Play / })).toBeTruthy()
+    expect(tile.tagName).toBe('A')
+    expect(tile.getAttribute('href')).toBe('#discover/watch')
+    expect(document.querySelector('iframe')).toBeNull() // nothing loads until the Videos page
   })
 })
 
