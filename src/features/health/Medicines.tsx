@@ -48,7 +48,7 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 }
 
 /** Today's doses for one person, shared by the screen and the Health summary. */
-function useToday(personId: string) {
+export function useToday(personId: string) {
   const meds = useMedicationRows(personId)
   const day = dayOf(new Date())
   const week = useTakesSince(personId, lastDays(new Date())[0]!)

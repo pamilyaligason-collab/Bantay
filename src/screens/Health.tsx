@@ -6,6 +6,7 @@ import MetricScreen from '../features/health/MetricScreen'
 import type { NodeId } from '../features/health/model'
 import type { IconName } from '../features/shell/Icon'
 import { latestByTest } from '../features/health/ranges'
+import { MemberHealth } from '../features/health/MemberHealth'
 import { Kpis } from '../features/health/Kpis'
 import { ReadingsHero } from '../features/health/ReadingsHero'
 import { MORE_INFO } from '../features/health/model'
@@ -39,6 +40,7 @@ import NudgeHub from '../features/nudge/NudgeHub'
 
 const NO_DRAFTS: Record<string, number> = {}
 const METRIC = /^#health\/metric\/([\w-]+)$/
+const MEMBER = /^#health\/member\/([\w-]+)$/
 const MED = /^#health\/med\/([\w-]+)$/ // session 13: medicine detail (lane M); #health/labs is lane L's labs screen
 
 export default function Health() {
@@ -50,7 +52,9 @@ export default function Health() {
   }, [])
   const code = METRIC.exec(hash)?.[1]
   const medId = MED.exec(hash)?.[1]
+  const memberId = MEMBER.exec(hash)?.[1]
   if (hash === '#health/labs') return <LabsScreen />
+  if (memberId) return <MemberHealth id={memberId} />
   if (medId) return <MedDetail medicationId={medId} />
   if (hash === '#health/body') return <ExploreScreen />
   if (hash === '#health/meds') return <MedsPage />
