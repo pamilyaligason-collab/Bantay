@@ -54,7 +54,7 @@ export function todayView(i: { meds: Medication[]; takes: Pick<MedTaken, 'name' 
   }
 }
 const EMPTY = { meds: [] as Medication[], takes: [] as MedTaken[], activity: [] as ActRow[], readings: [] as Reading[], thresholds: [] as { key: string; high?: number | null }[] }
-function useToday(personId: string): TodayView {
+export function useToday(personId: string): TodayView {
   const [d, setD] = useState(EMPTY)
   const [tick, setTick] = useState(() => new Date())
   useEffect(() => {

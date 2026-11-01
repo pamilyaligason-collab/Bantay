@@ -1,0 +1,17 @@
+/* Family tab (v13 lane F). Tokens only; the board's 250 px cards shrink on a 195 px screen. */
+.td-h { display: flex; align-items: center; min-height: 44px; outline: none; }
+.pc { width: min(250px, calc(100vw - 48px)); min-height: 196px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
+.pc[data-tint="red"] { background: var(--tint-red); }
+.pc[data-tint="amber"] { background: var(--tint-amber); }
+.pc-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pc-who { display: flex; flex-direction: column; min-width: 0; }
+.pc-who b { font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.pc-line { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--muted); }
+.pc[data-tint="red"] .pc-line { color: var(--tint-red-ink); }
+.pc[data-tint="amber"] .pc-line { color: var(--tint-amber-ink); }
+.pc-body { margin: 0; font-size: 15px; line-height: 20px; color: var(--ink); overflow-wrap: anywhere; }
+.pc-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+.pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
+.pc-primary { flex: 1; background: var(--green); color: var(--on-green); }
+.pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+.btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
