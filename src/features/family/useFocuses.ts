@@ -38,7 +38,7 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
     if (!d || !last) return { loaded: false, items: [], rollOk: 0 }
     const unwell = new Set(alerts.filter((a) => a.kind === 'mood_unwell' && a.seenAt == null && a.personId).map((a) => a.personId))
     const items = people.map((person): PersonFocus => {
-      const tv = todayView({ ...d, personId: person.id, now })
+      const tv = todayView({ ...d, takes: d.takes.filter((t) => t.personId === person.id), personId: person.id, now }) // a name-only take of one person must not clear another person's dose
       const missed = tv.doses.filter((x) => x.word === 'Missed')
       const asks = !acting && writable.includes(person.id) ? reviewAsks(d.meds, [person], now) : [] // answering needs write access, never for yourself
       const focus = personFocus(person, {

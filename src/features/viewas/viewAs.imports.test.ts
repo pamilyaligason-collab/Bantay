@@ -13,6 +13,7 @@ const ALLOWED: RegExp[] = [
   /^\/src\/features\/nutrition\/(PlateSheet|WaterSheet|SaltSummary|NutritionScreen)\.tsx$/,
   /^\/src\/features\/exercise\/MoveScreen\.tsx$/,
   /^\/src\/features\/family\/(ProfileCard|FacesRow|Calendar|ActivityCard|useFocuses)\.tsx?$/,
+  /^\/src\/features\/calm\/MoodCheck\.tsx$/,
   /^\/src\/features\/settings\//,
   /^\/src\/features\/inbox\/MissedDoseActions\.tsx$/,
   /^\/src\/features\/scan\/ScanFlow\.tsx$/,
