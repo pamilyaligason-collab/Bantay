@@ -50,3 +50,6 @@ export const kmLabel = (km: number | null) => (km === null || !Number.isFinite(k
 
 /** Google Maps turn-by-turn by car (D-68). */
 export const driveUrl = (lat: number, lon: number) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`
+
+/** Where a place's details come from, and when a barangay last confirmed them. */
+export const sourceLine = (s: Pick<Spot, 'source' | 'status' | 'date'>) => `Source: ${s.source}. Last confirmed: ${s.status === 'CONFIRMED' && s.date ? s.date : 'not yet'}`
