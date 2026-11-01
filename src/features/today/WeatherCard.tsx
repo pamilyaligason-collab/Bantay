@@ -123,6 +123,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
       <SceneHero
         scene={scene}
         inkOnScene
+        contrastBg="#0B1636"
         compact={!expanded}
         kicker={kicker}
         title={<span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><span className="td-wxh-c">{cond}</span>{range && <span className="td-wxh-hl">{range}</span>}</span>}
