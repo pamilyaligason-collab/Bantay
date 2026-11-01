@@ -42,14 +42,14 @@ describe('WeatherScreen', () => {
     expect(screen.getByRole('group', { name: 'Official sources' })).toBeTruthy()
     expect(screen.getByText('Today')).toBeTruthy()
     for (const n of ['PAGASA', 'Project NOAH', 'PANaHON']) expect(screen.getByText(n)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Open live map' })).toBeTruthy()
+    expect(screen.getByText(/nothing to centre on/)).toBeTruthy() // no fix: the prompt, never a home-zone map
     expect(screen.getByText('Forecast: Open-Meteo. Your rounded location is sent only to the weather service.')).toBeTruthy()
   })
 
   it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Use my location' })[0]!)
     expect(await screen.findByText(/Location is off for Bantay/)).toBeTruthy() // no GPS in the test: the tap says why instead of doing nothing (m-1)
     expect(screen.getByRole('button', { name: 'Home 1' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Home 2' }))
@@ -84,11 +84,32 @@ describe('WeatherScreen', () => {
   })
 
   it('live maps stay closed until asked', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } })
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     expect(document.querySelector('iframe')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Open live map' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open live map' }))
     expect(screen.getByRole('button', { name: 'Hide live map' })).toBeTruthy()
+  })
+
+  it('live map: without any fix there is no map toggle, only the prompt', async () => {
+    render(<WeatherScreen />)
+    await screen.findByText('Partly cloudy')
+    expect(screen.queryByRole('button', { name: 'Open live map' })).toBeNull()
+    const map = within(screen.getByRole('region', { name: 'Live weather map' }))
+    expect(map.getByRole('button', { name: 'Use my location' })).toBeTruthy()
+    expect(map.getByText('Your position is not known yet, so the map has nothing to centre on.')).toBeTruthy()
+    expect(document.querySelector('iframe')).toBeNull()
+  })
+
+  it('live map: the last real fix centres the map', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } })
+    render(<WeatherScreen />)
+    expect((await screen.findByTestId('place-last')).textContent).toContain('last known')
+    fireEvent.click(screen.getByRole('button', { name: 'Open live map' }))
+    const src = document.querySelector('iframe')!.getAttribute('src')!
+    expect(src).toMatch(/lat=10\.32/)
+    expect(src).not.toMatch(/lat=9\.65/)
   })
 })
 

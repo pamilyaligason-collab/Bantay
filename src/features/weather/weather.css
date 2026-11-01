@@ -61,5 +61,6 @@
 .wx .grp .row .sub { font-size: 14px; }
 .wx-out { color: var(--muted); flex: none; display: inline-flex; }
 .wx-map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.wx-map-empty { padding: 16px; display: grid; gap: 10px; }
 .wx-foot { margin: 0 4px; font-size: 13px; color: var(--muted); }
 .wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }

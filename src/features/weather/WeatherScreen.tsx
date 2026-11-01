@@ -55,13 +55,14 @@ function useOnlineNow() {
 export default function WeatherScreen() {
   const l = useLocation()
   const place = usePlaceFrom(l)
-  const gps: LatLon | null = l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon } : null
+  // never a home zone: the map follows the person, the forecast may follow a chosen home
+  const fix: LatLon | null = l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon } : null
   const [pick, setPick] = useState<Sel | null>(null)
   const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
   const [locOff, setLocOff] = useState(false)
   const homeSel: Sel = place?.zone === HOME_ZONES[1].id ? 'h2' : 'h1'
-  const sel: Sel = pick ?? (gps ? 'me' : homeSel)
-  const point: LatLon | null = sel === 'me' ? gps ?? place?.weather ?? null : HOME_ZONES[sel === 'h1' ? 0 : 1]
+  const sel: Sel = pick ?? (fix ? 'me' : homeSel)
+  const point: LatLon | null = sel === 'me' ? fix ?? place?.weather ?? null : HOME_ZONES[sel === 'h1' ? 0 : 1]
   const name = sel === 'me' ? 'My location' : HOME_ZONES[sel === 'h1' ? 0 : 1].name.split(',')[0]!
   const { fc, offline, loading } = useForecast(point)
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
@@ -76,24 +77,31 @@ export default function WeatherScreen() {
   }, [])
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [])
 
+  const askLoc = async () => {
+    if (fix && l.source === 'gps') return setPick('me') // an old fix is tried again
+    setFinding(true); setLocOff(false)
+    const got = (await l.ask().catch(() => null))?.source === 'gps'
+    setFinding(false); if (got) setPick('me'); else setLocOff(true)
+  }
+
   return (
     <div className="wx">
       <SubHeader title="Weather" backHref="#today" backLabel="Back to Today" />
       <div className="wx-seg" role="group" aria-label="Place">
-        <button type="button" aria-pressed={sel === 'me'} disabled={finding} onClick={async () => {
-          if (gps && l.source === 'gps') return setPick('me') // an old fix is tried again
-          setFinding(true); setLocOff(false)
-          const got = (await l.ask().catch(() => null))?.source === 'gps'
-          setFinding(false); if (got) setPick('me'); else setLocOff(true)
-        }}>{gps && l.source === 'gps' ? 'My location' : gps ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location'}</button>
+        <button type="button" aria-pressed={sel === 'me'} disabled={finding} onClick={askLoc}>{fix && l.source === 'gps' ? 'My location' : fix ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location'}</button>
         <button type="button" aria-pressed={sel === 'h1'} onClick={() => setPick('h1')}>Home 1</button>
         <button type="button" aria-pressed={sel === 'h2'} onClick={() => setPick('h2')}>Home 2</button>
       </div>
-      {locOff && !gps && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={name} point={point} alerts={alerts} offline={offline || !online} /> : (
+      {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
+      {fc && point ? <Body fc={fc} name={name} lastKnown={sel === 'me' && l.source === 'last'} point={point} alerts={alerts} offline={offline || !online} /> : (
         <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
       )}
-      {point && <LiveMapToggle loc={point} />}
+      {fix ? <LiveMapToggle loc={fix} /> : (
+        <section aria-label="Live weather map" className="card wx-map wx-map-empty">
+          <p>Your position is not known yet, so the map has nothing to centre on.</p>
+          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Use my location'}</button>
+        </section>
+      )}
       <details className="wx-src">
         <summary><h2 className="wx-h">Official sources</h2><Icon name="down" size={20} /></summary>
         <div className="grp" role="group" aria-label="Official sources">
@@ -107,7 +115,7 @@ export default function WeatherScreen() {
   )
 }
 
-function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string; point: LatLon; alerts: Alert[]; offline: boolean }) {
+function Body({ fc, name, lastKnown, point, alerts, offline }: { fc: Forecast; name: string; lastKnown: boolean; point: LatLon; alerts: Alert[]; offline: boolean }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -151,7 +159,7 @@ function Body({ fc, name, point, alerts, offline }: { fc: Forecast; name: string
 
       <section aria-label="Now" className="card wx-hero wxs-host">
         <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
-        <div className="wx-k">{name} · {offline ? `as of ${asOf}, offline` : `updated ${asOf}`}</div>
+        <div className="wx-k">{name}{lastKnown && <span data-testid="place-last"> · last known</span>} · {offline ? `as of ${asOf}, offline` : `updated ${asOf}`}</div>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
         <span className="wx-sub">Feels like {deg(fl.value)} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
