@@ -1,32 +1,39 @@
-import { PickCard, SeasonRow } from './today/Cards'
-import { Tile, type Hue } from '../look'
-import type { IconName } from '../shell/Icon'
-import { DISCOVER_SUBS, type DiscoverSub } from './index'
-import { playable, VIDEOS } from '../health/library/videosLogic'
+import { useState } from 'react'
+import { EmptyState, LargeTitle, PreviewTile } from '../look'
+import { SeasonRow } from './today/Cards'
+import { featured } from './today/featured'
+import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
 import './discover.css'
 
-// Icon names are the shell set; book / ear / game / news icons are an L9 request (see needs).
-const LOOK: Record<DiscoverSub, { hue: Hue; icon: IconName; value: () => string }> = {
-  learn: { hue: 'amber', icon: 'file', value: () => 'Medicines, recipes, topics' },
-  watch: { hue: 'terra', icon: 'play', value: () => `${VIDEOS.filter(playable).length} checked videos` },
-  listen: { hue: 'green', icon: 'mic', value: () => 'Articles read out loud' },
-  play: { hue: 'lilac', icon: 'smile', value: () => 'Memory, word games' },
-  news: { hue: 'blue', icon: 'info', value: () => 'Good news and fun facts' }
+/** A still picture (i.ytimg.com, no cookies, no referrer), the same one Watch's poster row loads. If it cannot load it hides itself and the tile keeps its text. */
+function Thumb({ id }: { id: string }) {
+  const [off, setOff] = useState(false)
+  if (off) return null
+  return (
+    <span className="dc-thumb">
+      <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />
+    </span>
+  )
 }
 
-/** #discover: the pick hero, the season row, then five tiles (Learn, Watch, Listen, Play, News). Whole cards are the links. */
-export default function Overview() {
+/** #discover (v13): large title, the video of the day, two more videos, then the season row. */
+export default function Overview({ now = new Date() }: { now?: Date }) {
+  const vids = VIDEOS.filter(playable)
+  const { hero, more } = featured<Video>(now, vids)
   return (
     <>
-      <div className="hdr"><h1>Discover</h1></div>
-      <PickCard />
-      <SeasonRow />
-      <div className="dc-tiles" data-testid="discover-tiles">
-        {DISCOVER_SUBS.map((s) => {
-          const l = LOOK[s.id]
-          return <Tile key={s.id} hue={l.hue} icon={l.icon} label={s.label} value={l.value()} href={'#discover/' + s.id} testId={'tile-' + s.id} />
-        })}
+      <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" />
+      <div data-hero data-testid="dc-hero">
+        {hero
+          ? <PreviewTile kicker={`Watch · ${vids.length} checked videos`} tint="blue" value={hero.title} valueSize="md" sub="Plays in privacy mode after you tap" action="Watch" href="#discover/watch" media={<Thumb id={hero.id} />} />
+          : <EmptyState icon="play" title="No checked videos yet" />}
       </div>
+      {more.length > 0 && (
+        <div className="pt-grid" data-testid="dc-videos">
+          {more.map((v, i) => <PreviewTile key={v.id} kicker={v.topic} tint={i ? 'purple' : 'teal'} value={v.title} valueSize="md" action="Watch" href="#discover/watch" media={<Thumb id={v.id} />} />)}
+        </div>
+      )}
+      <SeasonRow now={now} />
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { isDiscoverSubRoot, registerSub, subOf } from '../features/discover'
 import { PickCard, SeasonRow } from '../features/discover/today/Cards'
@@ -13,16 +13,13 @@ afterEach(cleanup)
 const day = (m: number, d: number) => new Date(2026, m - 1, d, 10, 20)
 
 describe('Discover overview (#discover)', () => {
-  it('draws the h1, the pick hero and five tiles in order Learn, Watch, Listen, Play, News, each a link to its sub; no pill row', () => {
-    render(<Discover />)
+  it('draws the large title and one hero; no tile grid, no pill row', () => {
+    const { container } = render(<Discover />)
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
-    expect(screen.getByTestId('pick')).toBeTruthy()
-    const tiles = within(screen.getByTestId('discover-tiles')).getAllByRole('link')
-    expect(tiles.map((a) => a.getAttribute('href'))).toEqual(['#discover/learn', '#discover/watch', '#discover/listen', '#discover/play', '#discover/news'])
-    expect(tiles.map((a) => a.querySelector('.tl-label')!.textContent)).toEqual(['Learn', 'Watch', 'Listen', 'Play', 'News'])
+    expect(screen.getByTestId('dc-head')).toBeTruthy()
+    expect(container.querySelectorAll('[data-hero]').length).toBe(1)
+    expect(screen.queryByTestId('discover-tiles')).toBeNull()
     expect(screen.queryByRole('group', { name: 'Discover sections' })).toBeNull()
-    expect(tiles.map((a) => a.getAttribute('data-hue'))).toEqual(['amber', 'terra', 'green', 'lilac', 'blue']) // no two neighbours share a hue
-    expect(screen.getByTestId('tile-watch').textContent).toContain('12 checked videos') // 12 playable entries, counted by hand in src/data/videos.json
   })
   it('the pick hero carries Jack by pick type: recipe cooking, video watching, trivia and fact reading; the whole card is one link', () => {
     const seen = new Map<string, string>()
