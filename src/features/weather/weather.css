@@ -63,3 +63,6 @@
 .wx-made h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .wx-made p { margin: 0; }
 .wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }
+/* Place picker: columns fit their label so "Use my location" stays on one line at 360 (review W must-fix) */
+.wx .segd { grid-auto-columns: auto; }
+.wx .segd > * { white-space: nowrap; padding: 0 10px; }

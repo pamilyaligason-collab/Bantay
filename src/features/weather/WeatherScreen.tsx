@@ -94,7 +94,7 @@ export default function WeatherScreen() {
     <div className="wx">
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<span className="wx-src-pill">Open-Meteo</span>} />
       <Segmented<Sel> label="Place" value={sel} onChange={(id) => (id === 'me' ? void askLoc() : setPick(id))} options={[
-        { id: 'me', label: fix && l.source === 'gps' ? 'My location' : fix ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location' },
+        { id: 'me', label: fix ? 'My location' : finding ? 'Finding you…' : 'Use my location' },
         { id: 'h1', label: 'Home 1' },
         { id: 'h2', label: 'Home 2' }
       ]} />
@@ -102,7 +102,7 @@ export default function WeatherScreen() {
       {fc && point ? <Body fc={fc} name={name} where={sel === 'me' ? (l.source === 'last' ? 'last' : 'gps') : null} point={point} alerts={alerts} offline={offline || !online} /> : (
         <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
       )}
-      {fix ? <LiveMapToggle loc={fix} /> : (
+      {fix ? <LiveMapToggle loc={fix} /> : l.source === 'pending' ? null : (
         <section aria-label="Live weather map" className="card wx-map wx-map-empty">
           <p>Your position is not known yet, so the map has nothing to centre on.</p>
           <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Find me'}</button>
@@ -158,7 +158,7 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
       </section>
 
       <GroupedList icons>
-        <Row icon="warn" tint={warn ? 'red' : 'green'} title="Official" sub={warn ? warn.title : `PAGASA: no warning near ${name === 'My location' ? 'you' : name}`} href="#safety/warnings" />
+        <Row icon="warn" tint={warn ? 'red' : 'green'} title="Official" sub={warn ? warn.title : `PAGASA: no warning near ${where === 'last' ? 'your last known place' : where === 'gps' ? 'you' : name}`} href="#safety/warnings" />
       </GroupedList>
 
       <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'}>

@@ -29,17 +29,35 @@ test('hero first, one [data-hero], Now above Official above What to do', async (
   expect(official).toBeLessThan(todo)
 })
 
+// Each Place option on one line: one line box is under 1.5x the font size.
+const assertPlaceOneLine = async (page: Page) => {
+  for (const b of await page.locator('.wx .segd > button').all()) {
+    const [h, fs] = await b.evaluate((el) => { const r = document.createRange(); r.selectNodeContents(el); return [r.getBoundingClientRect().height, parseFloat(getComputedStyle(el).fontSize)] })
+    expect(h, `${await b.textContent()} wraps`).toBeLessThan(fs * 1.5)
+  }
+}
+
 for (const [w, h] of [[390, 844], [360, 740]] as const) {
-  test(`44 px targets and no sideways scroll at ${w}`, async ({ page }) => {
-    await page.setViewportSize({ width: w, height: h })
-    await assertTargets(page)
-    await assertNoSideways(page)
-    await assertNoWrappedButtons(page)
-  })
+  for (const fix of [false, true]) {
+    test(`44 px targets, no sideways scroll, Place on one line at ${w}${fix ? ' with a last fix' : ''}`, async ({ page }) => {
+      if (fix) { await seedLast(page); await page.reload(); await expect(page.getByTestId('place-last')).toBeVisible() }
+      await page.setViewportSize({ width: w, height: h })
+      await assertTargets(page)
+      await assertNoSideways(page)
+      await assertNoWrappedButtons(page)
+      await assertPlaceOneLine(page)
+    })
+  }
 }
 
 test('195 px (200% text zoom)', async ({ page }) => {
   await assertNarrow(page)
+})
+
+test('195 px with a last fix', async ({ page }) => {
+  await seedLast(page)
+  await assertNarrow(page)
+  await expect(page.getByTestId('place-last')).toBeVisible()
 })
 
 test('contrast, light and dark', async ({ page }) => {

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
@@ -34,6 +34,7 @@ describe('WeatherScreen', () => {
     expect(heroes).toHaveLength(1)
     expect(heroes[0]).toBe(screen.getByRole('region', { name: 'Now' }))
     expect(heroes[0]!.getAttribute('data-contrast-bg')).toBe('#0B1636')
+    await screen.findByRole('region', { name: 'Live weather map' }) // appears once the position is known
     const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent)
     expect(regions.slice(0, 8)).toEqual(['Now', 'What to do', 'Details', 'Rain and storm map', 'Next 48 hours', '10 days', 'Season and sun', 'Live weather map'])
     expect(document.querySelector('.wx-temp')?.textContent).toBe('33°')
@@ -83,9 +84,10 @@ describe('WeatherScreen', () => {
     render(<WeatherScreen />)
     const k = (await screen.findByTestId('place-last')).closest('.wx-k')!
     expect(k.textContent).toBe('My location · last known')
-    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^Updated \d{1,2}:\d\d [AP]M$/)).toBeTruthy()
-    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^Feels like \d+°$/)).toBeTruthy()
-    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^H:\d+°\s+L:\d+°$/)).toBeTruthy()
+    await waitFor(() => { // the forecast for the last fix replaces the first one, so read the settled hero
+      const now = within(screen.getByRole('region', { name: 'Now' }))
+      now.getByText(/^Updated \d{1,2}:\d\d [AP]M$/); now.getByText(/^Feels like \d+°$/); now.getByText(/^H:\d+°\s+L:\d+°$/)
+    }, { timeout: 5000 })
     cleanup()
     await db.kv.clear()
     render(<WeatherScreen />)
@@ -114,7 +116,7 @@ describe('WeatherScreen', () => {
   it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    fireEvent.click(screen.getAllByRole('button', { name: 'Use my location' })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }))
     expect(await screen.findByText(/Location is off for Bantay/)).toBeTruthy() // no GPS in the test: the tap says why instead of doing nothing (m-1)
     expect(screen.getByRole('button', { name: 'Home 1' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'Home 2' }))
@@ -162,7 +164,7 @@ describe('WeatherScreen', () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     expect(screen.queryByRole('button', { name: 'Open live map' })).toBeNull()
-    const map = within(screen.getByRole('region', { name: 'Live weather map' }))
+    const map = within(await screen.findByRole('region', { name: 'Live weather map' })) // hidden while the position is pending, so it never flashes
     expect(map.getByRole('button', { name: 'Find me' })).toBeTruthy()
     expect(map.getByText('Your position is not known yet, so the map has nothing to centre on.')).toBeTruthy()
     expect(document.querySelector('iframe')).toBeNull()
