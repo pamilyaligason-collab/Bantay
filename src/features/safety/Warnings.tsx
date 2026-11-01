@@ -3,7 +3,7 @@ import { alertRef } from '../location/place'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { GroupedList, Row, Section } from '../look'
 import { Icon } from '../shell/Icon'
-import { ALERTS_KEY, NOT_A_SIREN, distanceKm, freshness, newestChecked, outdatedLine, quakeMag, rankAlerts, type Alert } from './alerts'
+import { ALERTS_KEY, NOT_A_SIREN, CHECKED_KEY, distanceKm, freshness, lastCheck, outdatedLine, quakeMag, rankAlerts, type Alert } from './alerts'
 import { FLAGS } from './flags'
 import LazyMap from './LazyMap'
 import NewsTop5 from './NewsTop5'
@@ -52,7 +52,7 @@ export default function Warnings({ place }: { place: Place }) {
   const red = !!top && (top.kind === 'tsunami' || (top.kind === 'tcws' && (signalOf(top) ?? 0) >= 3))
   const point = top && top.lat != null && top.lon != null ? ([top.lat, top.lon] as [number, number]) : null
   const km = point ? Math.round(distanceKm(here, { lat: point[0], lon: point[1] })) : null // from where you are, not the nearer home zone
-  const checked = newestChecked(all)
+  const checked = lastCheck(all, useKv<unknown>(CHECKED_KEY, null))
   const stale = freshness(checked, now).tone !== 'ok'
   return (
     <div className="wn">

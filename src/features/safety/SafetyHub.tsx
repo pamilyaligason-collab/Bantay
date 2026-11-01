@@ -7,7 +7,7 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, freshText, newestChecked, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, type LatLon } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, type Alert, affectsUs, freshness, freshText, lastCheck, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, type LatLon } from './alerts'
 import { useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
@@ -117,9 +117,10 @@ const asRow = (r: HomeRow) => <Row key={r.title} href={r.href} icon={r.icon} tin
 function RightNow({ place }: { place: Place }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
+  const savedCheck = useKv<unknown>(CHECKED_KEY, null)
   const wx = useWeather(place.weather)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
-  const rows = rightNowRows({ alerts, here: alertRef(place), wx, storms: cyclones(alerts), hazard: hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null), pins, stale: freshness(newestChecked(alerts)).tone !== 'ok' })
+  const rows = rightNowRows({ alerts, here: alertRef(place), wx, storms: cyclones(alerts), hazard: hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null), pins, stale: freshness(lastCheck(alerts, savedCheck)).tone !== 'ok' })
   return (
     <Section title="Right now" link={{ href: '#safety/sources', label: 'Sources' }}>
       <GroupedList icons label="Right now" testId="right-now">{rows.map(asRow)}</GroupedList>
@@ -161,11 +162,12 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
   const abroad = !!place && pickLocalSet(place.weather).where === 'abroad'
   if (sos) return <SosScreen onClose={() => setSos(false)} />
   const chip = <ZonePicker loc={l} />
-  const stale = freshness(newestChecked(alerts), now).tone !== 'ok'
+  const checked = lastCheck(alerts, useKv<unknown>(CHECKED_KEY, null))
+  const stale = freshness(checked, now).tone !== 'ok'
   return (
     <>
-      <SafetyHead view="near" kicker={kickerOf(newestChecked(alerts), now)} actions={place?.source === 'last' ? <span data-testid="place-last">{chip}</span> : chip} />
-      {stale && <p className="sf-note" role="status">{outdatedLine(newestChecked(alerts))}</p>}
+      <SafetyHead view="near" kicker={kickerOf(checked, now)} actions={place?.source === 'last' ? <span data-testid="place-last">{chip}</span> : chip} />
+      {stale && <p className="sf-note" role="status">{outdatedLine(checked)}</p>}
       <StormCard />
       <section className="card sf-hero" data-hero data-testid="safety-hero" aria-label="Emergency">
         <div className="sf-hero-row">

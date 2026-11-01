@@ -89,12 +89,12 @@ test.describe('S3', () => {
       o.onsuccess = () => { const tx = o.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put({ key: 'safety.alerts', value: [q] }); tx.oncomplete = () => { o.result.close(); res() } }
     })
   })
-  test('warnings: empty state, then a seeded far quake shows You may not have felt it, map, sources and a collapsed shaking row', async ({ page }) => {
+  test('warnings: empty state, then a seeded far quake shows You may feel it, map, sources and a collapsed shaking row', async ({ page }) => {
     await page.goto('/#safety/warnings')
     await expect(page.getByTestId('warn-hero')).toContainText('No warnings on this phone')
     await seedQuake(page)
     await page.reload()
-    await expect(page.getByTestId('warn-hero')).toContainText('You may not have felt it')
+    await expect(page.getByTestId('warn-hero')).toContainText('You may feel it')
     await expect(page.getByRole('region', { name: /Map of the warning/ })).toBeVisible()
     await expect(page.locator('.leaflet-container')).toHaveCount(1)
     await expect(page.getByRole('list', { name: 'Sources' })).toContainText('Checked')
