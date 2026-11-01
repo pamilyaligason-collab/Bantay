@@ -459,3 +459,17 @@
 .td-wxs[data-size="expanded"] .sc { min-height: 0; }
 .td-wxs .td-wxh-t { font-family: var(--f-ui); font-size: 64px; font-weight: 300; letter-spacing: -.04em; }
 .td-wxs .td-wxh-c { font-size: 17px; font-weight: 600; }
+
+/* v13 T4: My day card */
+.td-day { padding: 16px 16px 4px; }
+.td-day-h { display: flex; align-items: center; gap: 16px; padding-bottom: 12px; }
+.td-day-t { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.td-todo { display: flex; align-items: center; gap: 12px; padding: 10px 0; min-height: 56px; border-top: .5px solid var(--hair); }
+.td-todo-ic { width: 32px; height: 32px; border-radius: var(--r-ic); display: grid; place-items: center; flex: none; background: var(--tint-green); color: var(--tint-green-ink); }
+.td-todo-ic[data-tint="blue"] { background: var(--tint-blue); color: var(--tint-blue-ink); }
+.td-todo-ic[data-tint="teal"] { background: var(--tint-teal); color: var(--tint-teal-ink); }
+.td-todo-ic[data-tint="red"] { background: var(--tint-red); color: var(--tint-red-ink); }
+.td-todo-go { min-height: 44px; padding: 0 16px; }
+.td-todo-plus { width: 44px; padding: 0; font-size: 22px; }
+.td-day .td-nu, .td-day .td-sc, .td-day .td-plan { padding-left: 0; padding-right: 0; box-shadow: none; background: none; border-radius: 0; border-top: .5px solid var(--hair); }
+.td-day .td-mc { margin: 0 0 8px; }

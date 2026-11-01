@@ -18,7 +18,7 @@ const NO_READINGS: Reading[] = []
 const NO_TAKES: MedTaken[] = []
 
 /** This person's readings and dose takes from the last 7 days (plus a day of slack for time zones), live. */
-function useWeekData(personId: string) {
+export function useWeekData(personId: string) {
   const [readings, setReadings] = useState(NO_READINGS)
   const [takes, setTakes] = useState(NO_TAKES)
   const [doctor, setDoctor] = useState<BpArg['doctor']>()
