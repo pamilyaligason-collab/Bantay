@@ -34,6 +34,7 @@ describe('Overview head, hero, video cards, season', () => {
     const h = within(screen.getByTestId('dc-hero'))
     expect(screen.getByTestId('dc-hero').hasAttribute('data-hero')).toBe(true)
     expect(h.getByText(`Watch · ${vids.length} checked videos`)).toBeTruthy()
+    expect(h.getByText('Watch · 12 checked videos')).toBeTruthy()
     expect(h.getByText(hero!.title)).toBeTruthy()
     expect(h.getByText('Plays in privacy mode after you tap')).toBeTruthy()
     const a = screen.getByTestId('dc-hero').querySelector('a')!
@@ -69,6 +70,11 @@ describe('Overview head, hero, video cards, season', () => {
     fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.pt')[1]!)
     expect(sessionStorage.getItem('dc.watch')).toBe(more[1]!.id)
     expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(3)
+  })
+  it('a new-tab click (ctrl, meta or shift) does not hand the video over', () => {
+    render(<Overview now={now} />)
+    const a = screen.getByTestId('dc-hero').querySelector('a')!
+    for (const k of ['ctrlKey', 'metaKey', 'shiftKey']) { fireEvent.click(a, { [k]: true }); expect(sessionStorage.getItem('dc.watch')).toBeNull() }
   })
 })
 
@@ -117,7 +123,7 @@ describe('Play and Did you know', () => {
     const cards = Array.from(sec.querySelectorAll('a.pt'))
     expect(cards.map((c) => [c.querySelector('.pt-v')!.textContent, c.querySelector('.pt-s')!.textContent, c.getAttribute('href'), c.getAttribute('data-tint')])).toEqual([
       ['Memory', 'Match the pairs', '#discover/play/memory', 'blue'],
-      ['Word search', 'Fill in the letters', '#discover/play/wordsearch', 'red']
+      ['Word search', 'Find the hidden words', '#discover/play/wordsearch', 'red']
     ])
   })
   it('the fact of the day opens the fun facts', () => {
@@ -147,6 +153,18 @@ describe('News', () => {
     links.forEach((a) => { expect(a.getAttribute('target')).toBe('_blank'); expect(a.getAttribute('rel')).toBe('noopener noreferrer') })
     expect(links[0]!.textContent).toContain('Headline a')
     expect(links[0]!.textContent).toContain('PNA')
+    expect(links[0]!.textContent).toContain('(opens the news site)')
+    expect(links[0]!.querySelector('.dc-sr')).toBeTruthy()
+  })
+  it('reloads the headlines on bantay:refresh', async () => {
+    feed([hl('a', 'PNA')])
+    render(<Overview now={now} />)
+    await screen.findByText('Headline a')
+    feed([hl('z', 'GMA')])
+    let done: Promise<unknown> = Promise.resolve()
+    window.dispatchEvent(new CustomEvent('bantay:refresh', { detail: { waitUntil: (p: Promise<unknown>) => { done = p } } }))
+    await done
+    expect(await screen.findByText('Headline z')).toBeTruthy()
   })
   it('says so when the feed is empty or not connected', async () => {
     feed([])

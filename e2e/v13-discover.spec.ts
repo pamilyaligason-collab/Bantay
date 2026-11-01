@@ -29,6 +29,8 @@ test('order: video, two videos, season, Learn, Listen, Play, fact, News', async 
 test('the hero opens Watch and nothing reaches YouTube before a second tap', async ({ page }) => {
   const yt: string[] = []
   page.on('request', (r) => { if (/youtube/.test(r.url())) yt.push(r.url()) })
+  await page.reload() // beforeEach already loaded the root; reload so the listener sees that load too
+  await expect(page.getByTestId('dc-news')).toBeVisible()
   const hero = page.getByTestId('dc-hero').getByRole('link')
   await expect(hero).toHaveAttribute('href', '#discover/watch')
   await hero.click()

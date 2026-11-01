@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { EmptyState, GroupedList, LargeTitle, PreviewTile, Row, Section } from '../look'
+import type { RefreshDetail } from '../look/refresh'
 import { useKv } from '../shell/useKv'
 import { MEDCARDS, RECIPES } from './learn/data'
 import { MEDCARDS_FLAG } from './learn/Screen'
@@ -31,8 +32,11 @@ function NewsPreview() {
   useEffect(() => {
     if (zone === undefined) return
     let live = true
-    void loadFeed(zone).then((r) => { if (live) setFeed(r) })
-    return () => { live = false }
+    const load = () => loadFeed(zone).then((r) => { if (live) setFeed(r) })
+    void load()
+    const onRefresh = (e: Event) => (e as CustomEvent<RefreshDetail>).detail.waitUntil(load()) // pull-to-refresh contract (look/refresh.ts)
+    window.addEventListener('bantay:refresh', onRefresh)
+    return () => { live = false; window.removeEventListener('bantay:refresh', onRefresh) }
   }, [zone])
   if (!feed) return <p className="sub" role="status">Loading headlines</p>
   const top = pinFirst(feed.items ?? []).rest.slice(0, 2)
@@ -41,7 +45,7 @@ function NewsPreview() {
     <div className="fp-hls">
       {top.map((n) => (
         <a key={n.id} className="fp-hl" href={n.url} target="_blank" rel="noopener noreferrer">
-          <b>{n.title}</b>
+          <b>{n.title}<span className="dc-sr"> (opens the news site)</span></b>
           <span className="fp-meta"><span>{n.source}</span></span>
         </a>
       ))}
@@ -51,7 +55,7 @@ function NewsPreview() {
 
 /** The anchor keeps its href (keyboard, middle-click); the click bubbles here and hands the video to Watch. */
 const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
-  <span className="dc-pick" onClick={() => { try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
+  <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
 )
 
 /** #discover (v13): large title, the video of the day, two more videos, then the season row. */
@@ -90,7 +94,7 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">
         <div className="pt-grid">
           <PreviewTile kicker="Game" tint="blue" value="Memory" valueSize="md" sub="Match the pairs" action="Play" href="#discover/play/memory" />
-          <PreviewTile kicker="Game" tint="red" value="Word search" valueSize="md" sub="Fill in the letters" action="Play" href="#discover/play/wordsearch" />
+          <PreviewTile kicker="Game" tint="red" value="Word search" valueSize="md" sub="Find the hidden words" action="Play" href="#discover/play/wordsearch" />
         </div>
       </Section>
       <PreviewTile kicker="Did you know?" tint="green" value={phFactOf(dayKey(now))} valueSize="md" action="More fun facts" href="#discover/play/facts" testId="dc-fact" />
