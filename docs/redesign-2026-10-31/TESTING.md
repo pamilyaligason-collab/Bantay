@@ -59,6 +59,6 @@ e2e/tabbar-overlap.spec.ts e2e/subpage-header.spec.ts e2e/s16-*.spec.ts` green (
 
 Gate 0 run 2026-11-01 (PW_PORT 4440, chromium, workers 1, on 098583a): 19 passed, 8 failed. Resolved and recorded:
 - Narrow 195 px: the five tabs measured 32x52. Five 44 px tabs cannot fit in 195 px, so `assertNarrow` gives the tab bar the WCAG 2.2 AA floor of 24 px at narrow widths only (`assertTargets(page, { tabFloor })`); 44 px still applies to the tab bar at 390 and 360 px and to everything else at every width.
-- `#today` light/dark: `tab roots carry exactly one [data-hero]` received 0. `test.fixme` until lane T builds the Today hero.
+- `#today` light/dark: resolved by lane T (T2/T8): the weather card is the one `[data-hero]` and the fixme is removed.
 - `#safety` light/dark and 195 px: `Sources 45x17` under 44 px. Resolved by lane S (S10): the footer link is a 44 px target and the fixme is removed.
 Each lane removes its fixme when it lands.

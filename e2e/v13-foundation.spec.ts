@@ -14,7 +14,6 @@ test.beforeEach(async ({ page }) => {
 
 // Known until a Phase 1 lane lands (listed in TESTING.md): the root test is fixme, never deleted.
 const KNOWN: Record<string, string> = {
-  today: 'until lane T: the Today hero ([data-hero]) is built in Phase 1',
 }
 
 for (const root of ['today', 'health', 'safety', 'me']) {
