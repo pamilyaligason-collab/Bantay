@@ -20,7 +20,7 @@ for (const variant of ['calm', 'alertsOff', 'quake', 'storm'] as Variant[]) {
       const order = (await ids(page)).filter((i) => ['weather-hero', 'alerts-off', 'warning-card', 'warning-card-storm', 'family-notice', 'selfcare'].includes(i ?? ''))
       expect(order).toEqual({ calm: ['weather-hero', 'selfcare'], alertsOff: ['weather-hero', 'alerts-off', 'selfcare'], quake: ['weather-hero', 'warning-card', 'selfcare'], storm: ['weather-hero', 'warning-card-storm', 'selfcare'], offline: ['weather-hero', 'selfcare'] }[variant])
       const hero = await page.getByTestId('weather-hero').getAttribute('data-size')
-      expect(hero).toBe(variant === 'calm' ? 'expanded' : 'compact')
+      expect(hero).toBe('expanded') // v13 Today: the weather hero is always the full card, warnings sit under it
       expect(await page.locator('.wxs').count()).toBe(1) // the scene renders in both themes, no pale tint
       await page.setViewportSize({ width: 360, height: 800 })
       await assertNoWrappedButtons(page)
@@ -71,13 +71,13 @@ test('Next up: Take, Snooze and Skip; the More tile opens the log sheet; the bre
   await expect(page.getByRole('dialog', { name: 'Take a breath' })).toHaveCount(0)
 })
 
-test('the whole stack in order: hero, alerts-off, warning, family notice, Next up, quick log, breathing (SOS moved to the Jack sheet, v13 0.3)', async ({ page }) => {
+test('the whole stack in order: hero, alerts-off, warning, family notice, Next up, breathing, quick log (SOS moved to the Jack sheet, v13 0.3)', async ({ page }) => {
   await startToday(page, 'quake', { dose: true, notice: true, alertsOff: true })
-  const sels = ['[data-testid=weather-hero]', '[data-testid=alerts-off]', '[data-testid=warning-card]', '[data-testid=family-notice]', '.td-next', '.td-quick', '[data-testid=selfcare]']
+  const sels = ['[data-testid=weather-hero]', '[data-testid=alerts-off]', '[data-testid=warning-card]', '[data-testid=family-notice]', '.td-next', '[data-testid=selfcare]', '.td-quick']
   const tops = await page.evaluate((list) => list.map((q) => { const el = document.querySelector(q); return el ? el.getBoundingClientRect().top + (document.querySelector('main.scroll')?.scrollTop ?? 0) : null }), sels)
   expect(tops.every((t) => t != null), `missing: ${sels.filter((_, i) => tops[i] == null)}`).toBe(true)
   for (let i = 1; i < tops.length; i++) expect(tops[i]!, `${sels[i]} must sit below ${sels[i - 1]}`).toBeGreaterThan(tops[i - 1]!)
-  await expect(page.getByTestId('weather-hero')).toHaveAttribute('data-size', 'compact')
+  await expect(page.getByTestId('weather-hero')).toHaveAttribute('data-size', 'expanded')
   await assertJackClear(page)
 })
 
