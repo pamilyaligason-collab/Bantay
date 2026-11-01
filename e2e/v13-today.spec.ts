@@ -26,9 +26,9 @@ test('header: the greeting is the h1, the date is the kicker, bell and avatar ar
   await expect(page.locator('.sh-top')).toHaveCount(0) // the shell top bar is off on the Today root
 })
 
-test('order: hero, My day, Calm, Your numbers; no SOS pill, no quick-log grid, no family feed', async ({ page }) => {
+test('order: hero, My day, Calm, Your numbers; no SOS pill, no family feed', async ({ page }) => {
   await assertOrder(page, ['weather-hero', 'myday', 'calm', 'numbers'])
-  await expect(page.locator('.td-sos, .td-quick, [data-testid="family-feed"]')).toHaveCount(0)
+  await expect(page.locator('.td-sos, [data-testid="family-feed"]')).toHaveCount(0)
 })
 
 test('the hero is one link to Weather', async ({ page }) => {

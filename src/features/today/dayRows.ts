@@ -17,7 +17,8 @@ export function bpRow(readings: Pick<Reading, 'test' | 'value' | 'takenAt'>[], n
 
 export function waterRow(rows: { drunkAt: string; ml: number }[], goalMl: number, now: Date): Row {
   const glasses = Math.round(onDay(rows, now).reduce((s, r) => s + r.ml, 0) / ML_PER_TAP)
-  return { title: 'Water', sub: `${glasses} of ${Math.max(1, Math.round(goalMl / ML_PER_TAP))} glasses`, done: false }
+  const goal = Math.max(1, Math.round(goalMl / ML_PER_TAP))
+  return { title: 'Water', sub: `${glasses} of ${goal} glasses`, done: glasses >= goal }
 }
 
 export const checkInRow = (activity: { kind: string; startedAt: string }[], now: Date): Row =>

@@ -134,7 +134,7 @@ const NEAR_KM = 150 // a storm, flood, tsunami or volcano this close is "near yo
 /** D-88: storm, flood, tsunami, volcano and GDACS rows count as affecting the family out to the ingest's own limit (GDACS_MAX_KM in alerts-ingest). */
 export const WIDE_KM = 1000
 const LOCAL_KINDS = new Set<AlertKind>(['air', 'utility', 'local'])
-const TSUNAMI_MAG = 6.5
+export const TSUNAMI_MAG = 6.5
 const TSUNAMI_LINE = ' If you live near the sea, watch for a tsunami warning.'
 /** The magnitude written in a quake row, or null when none is readable (never guessed). */
 export function quakeMag(a: Pick<Alert, 'level' | 'what' | 'title'>): number | null {

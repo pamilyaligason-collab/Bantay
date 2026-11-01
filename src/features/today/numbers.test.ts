@@ -14,4 +14,9 @@ describe('numberTiles', () => {
     expect(t[1]!.value).toBe('96')
     expect(t[2]).toMatchObject({ value: '115', tint: 'red', href: '#health/labs' })
   })
+  it('a lab with no known range is never called in range', () => {
+    const t = numberTiles([r('alt', 40, new Date(2026, 9, 6))], now)
+    expect(t[2]!.sub).toContain('No range')
+    expect(t[2]!.tint).not.toBe('green')
+  })
 })

@@ -9,6 +9,7 @@ import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
 import { retryToast, retryUnsentMood } from '../features/today/actions'
 import { LargeTitle, Skeleton, wireMotion } from '../features/look'
+import QuickLog from '../features/today/QuickLog'
 import MyDay from '../features/today/MyDay'
 import CalmCard from '../features/today/CalmCard'
 import YourNumbers from '../features/today/YourNumbers'
@@ -77,6 +78,7 @@ export default function Today() {
       <MyDay notify={notify} />
       <CalmCard />
       <YourNumbers />
+      <QuickLog notify={notify} /> {/* kept: the mood faces (Unwell reaches the family) and Move/Salt have no other home on Today */}
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

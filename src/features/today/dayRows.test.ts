@@ -10,6 +10,7 @@ describe('myDay rows', () => {
   it('water: glasses today over the goal in glasses', () => {
     expect(waterRow([{ ml: 250, drunkAt: now.toISOString() }], 1500, now)).toEqual({ title: 'Water', sub: '1 of 6 glasses', done: false })
     expect(waterRow([], 2000, now).sub).toBe('0 of 8 glasses')
+    expect(waterRow([{ ml: 1500, drunkAt: now.toISOString() }], 1500, now).done).toBe(true)
   })
   it('check-in is done only when one is today', () => {
     expect(checkInRow([{ kind: 'check-in', startedAt: now.toISOString() }], now).done).toBe(true)

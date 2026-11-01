@@ -1,4 +1,4 @@
-import { quakeFeltKm, quakeMag, type Affects, type Alert } from '../safety/alerts'
+import { quakeFeltKm, quakeMag, TSUNAMI_MAG, type Affects, type Alert } from '../safety/alerts'
 
 export const agoShort = (at: number, now: number) => {
   const m = Math.max(0, Math.round((now - at) / 60_000))
@@ -9,5 +9,6 @@ export const agoShort = (at: number, now: number) => {
 export function quakeRow(a: Alert, who: Affects, now: number): { title: string; sub: string } | null {
   if (a.kind !== 'quake' || who.km == null || who.km <= quakeFeltKm(a)) return null
   const mag = quakeMag(a)
+  if (mag !== null && mag >= TSUNAMI_MAG) return null // a tsunami-size quake keeps the red card and its tsunami line
   return { title: `Earthquake${mag !== null ? ` M${mag}` : ''} near ${a.where}`, sub: `${who.km} km away · too far to feel here · ${agoShort(Date.parse(a.issuedAt), now)}` }
 }

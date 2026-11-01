@@ -18,6 +18,7 @@ vi.mock('../features/family/sosActive', () => ({ useSosActive: () => sosb.on }))
 vi.mock('../features/today/MyDay', () => stub('myday'))
 vi.mock('../features/today/CalmCard', () => stub('calm'))
 vi.mock('../features/today/YourNumbers', () => stub('numbers'))
+vi.mock('../features/today/QuickLog', () => stub('quicklog'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
 vi.mock('../features/today/WeekLine', () => stub('week'))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
@@ -77,7 +78,7 @@ describe('Today simple mode', () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'myday', 'calm', 'numbers', 'alerts', 'nearby', 'week'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'myday', 'calm', 'numbers', 'quicklog', 'alerts', 'nearby', 'week'])
   })
   it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3
@@ -128,7 +129,7 @@ describe('Today simple mode', () => {
     expect(screen.getByRole('button', { name: 'Hold to call and text your family' })).toBeTruthy() // the real hold button, not a link
     expect(screen.getByRole('button', { name: /^Call 911/ })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Add a family number' }).getAttribute('href')).toBe('#safety') // no SOS contact saved yet
-    for (const id of ['myday', 'calm', 'numbers', 'week', 'nearby']) expect(screen.queryByTestId(id)).toBeNull()
+    for (const id of ['myday', 'calm', 'numbers', 'quicklog', 'week', 'nearby']) expect(screen.queryByTestId(id)).toBeNull()
   })
   it('on: the warning band and a storm within 500 km are not lost', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })
