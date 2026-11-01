@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { EmptyState, GroupedList, LargeTitle, PreviewTile, Row, Section } from '../look'
 import { useKv } from '../shell/useKv'
 import { MEDCARDS, RECIPES } from './learn/data'
@@ -7,8 +7,10 @@ import { phFactOf } from './facts/onThisDay'
 import { dayKey } from './play/score'
 import { SeasonRow } from './today/Cards'
 import { featured } from './today/featured'
+import { loadFeed, pinFirst, useNewsZone } from './news/Screen'
 import { WATCH_PICK } from './watch/Screen'
 import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
+import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 
 /** A still picture (i.ytimg.com, no cookies, no referrer), the same one Watch's poster row loads. If it cannot load it hides itself and the tile keeps its text. */
@@ -19,6 +21,31 @@ function Thumb({ id }: { id: string }) {
     <span className="dc-thumb">
       <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />
     </span>
+  )
+}
+
+/** The latest two non-official headlines from the real news_items feed (the same loader as the News tab). */
+function NewsPreview() {
+  const zone = useNewsZone()
+  const [feed, setFeed] = useState<Awaited<ReturnType<typeof loadFeed>> | undefined>(undefined)
+  useEffect(() => {
+    if (zone === undefined) return
+    let live = true
+    void loadFeed(zone).then((r) => { if (live) setFeed(r) })
+    return () => { live = false }
+  }, [zone])
+  if (!feed) return <p className="sub" role="status">Loading headlines</p>
+  const top = pinFirst(feed.items ?? []).rest.slice(0, 2)
+  if (!top.length) return <p className="sub">{feed.items === null ? 'The news feed is not connected yet.' : 'No headlines saved yet. They load when you have signal.'}</p>
+  return (
+    <div className="fp-hls">
+      {top.map((n) => (
+        <a key={n.id} className="fp-hl" href={n.url} target="_blank" rel="noopener noreferrer">
+          <b>{n.title}</b>
+          <span className="fp-meta"><span>{n.source}</span></span>
+        </a>
+      ))}
+    </div>
   )
 }
 
@@ -67,6 +94,9 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
         </div>
       </Section>
       <PreviewTile kicker="Did you know?" tint="green" value={phFactOf(dayKey(now))} valueSize="md" action="More fun facts" href="#discover/play/facts" testId="dc-fact" />
+      <Section title="News" link={{ href: '#discover/news', label: 'See all' }} testId="dc-news">
+        <NewsPreview />
+      </Section>
     </>
   )
 }

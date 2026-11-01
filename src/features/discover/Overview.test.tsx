@@ -1,6 +1,8 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NewsItem } from '../safety/news'
+import { loadFeed } from './news/Screen'
 import { db } from '../../db'
 import { MEDCARDS, RECIPES } from './learn/data'
 import { phFactOf } from './facts/onThisDay'
@@ -9,7 +11,10 @@ import { playable, VIDEOS } from '../health/library/videosLogic'
 import { featured } from './today/featured'
 import Overview from './Overview'
 
-beforeEach(async () => { location.hash = '#discover'; sessionStorage.clear(); await db.kv.clear() })
+vi.mock('./news/Screen', async (orig) => ({ ...(await orig<typeof import('./news/Screen')>()), useNewsZone: () => null, loadFeed: vi.fn() }))
+const feed = (items: NewsItem[] | null) => vi.mocked(loadFeed).mockResolvedValue({ items, savedAt: null, offline: false })
+
+beforeEach(async () => { feed([]); location.hash = '#discover'; sessionStorage.clear(); await db.kv.clear() })
 afterEach(cleanup)
 
 const now = new Date(2026, 9, 28, 10, 20)
@@ -124,5 +129,36 @@ describe('Play and Did you know', () => {
     expect(f.querySelector('.pt-a')!.textContent).toBe('More fun facts')
     expect(f.getAttribute('href')).toBe('#discover/play/facts')
     expect(f.getAttribute('data-tint')).toBe('green')
+  })
+})
+
+const hl = (id: string, source: string): NewsItem => ({ id, title: 'Headline ' + id, url: 'https://news.test/' + id, source, kind: 'article', published_at: '2026-10-28T09:20:00Z', zone: null })
+
+describe('News', () => {
+  it('first two non-official headlines as external links, See all to the News tab', async () => {
+    feed([hl('o', 'PAGASA'), hl('a', 'PNA'), hl('b', 'Rappler'), hl('c', 'GMA')])
+    render(<Overview now={now} />)
+    const sec = screen.getByTestId('dc-news')
+    expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('News')
+    expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/news')
+    await waitFor(() => expect(sec.querySelectorAll('a.fp-hl').length).toBe(2))
+    const links = Array.from(sec.querySelectorAll('a.fp-hl'))
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://news.test/a', 'https://news.test/b'])
+    links.forEach((a) => { expect(a.getAttribute('target')).toBe('_blank'); expect(a.getAttribute('rel')).toBe('noopener noreferrer') })
+    expect(links[0]!.textContent).toContain('Headline a')
+    expect(links[0]!.textContent).toContain('PNA')
+  })
+  it('says so when the feed is empty or not connected', async () => {
+    feed([])
+    const { unmount } = render(<Overview now={now} />)
+    expect(await screen.findByText('No headlines saved yet. They load when you have signal.')).toBeTruthy()
+    unmount()
+    feed(null)
+    render(<Overview now={now} />)
+    expect(await screen.findByText('The news feed is not connected yet.')).toBeTruthy()
+  })
+  it('comes after the fact card', () => {
+    render(<Overview now={now} />)
+    expect(screen.getByTestId('dc-fact').compareDocumentPosition(screen.getByTestId('dc-news')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })
