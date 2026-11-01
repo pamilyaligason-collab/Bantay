@@ -10,6 +10,7 @@ import NutrientsToday from './NutrientsToday'
 import { removeFood, saveGoal } from './actions'
 import { useFood, useGoal, useWater } from './hooks'
 import { dailySodium, fmt, foodByKey, GOAL_NOTE, onDay, portionWord, saltGrams, SODIUM_OPTIONS, WHO_SALT_URL, MEALS } from './logic'
+import { NOTE_LINK_STYLE } from './noteLink'
 import { SaltSummary } from './SaltSummary'
 import PlateSheet from './PlateSheet'
 import WaterPanel from './WaterPanel'
@@ -78,7 +79,7 @@ export default function NutritionScreen() {
             ) : <p className="nu-sub">Only {name ? name.split(' ')[0] : 'this person'} or a carer who can write for them can change the limit.</p>}
             {msg && <p className="nu-sub" role="status">{msg}</p>}
             <p className="nu-note">{GOAL_NOTE}. The WHO says adults should have less than 2000 mg of sodium a day (about 5 g of salt).{' '}
-              <a href={WHO_SALT_URL} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>WHO fact sheet<span className="hv-sr"> (opens in new tab)</span></a>
+              <a href={WHO_SALT_URL} target="_blank" rel="noreferrer" style={NOTE_LINK_STYLE}>WHO fact sheet<span className="hv-sr"> (opens in new tab)</span></a>
             </p>
           </section>
 
