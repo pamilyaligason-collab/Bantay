@@ -81,7 +81,7 @@ describe('Health overview (S16 version B)', () => {
     expect(screen.queryByTestId('insight')).toBeNull()
     expect(screen.queryByTestId('glance')).toBeNull()
     expect(screen.queryByTestId('nudge')).toBeNull()
-    expect(screen.getByRole('link', { name: 'Scan' }).getAttribute('href')).toBe('#scan')
+    expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')
     expect(screen.getByTestId('browse')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))
     expect(await screen.findByText(/^Add blood pressure/)).toBeTruthy()
