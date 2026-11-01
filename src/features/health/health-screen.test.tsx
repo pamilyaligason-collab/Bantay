@@ -74,7 +74,7 @@ describe('Health overview (v13)', () => {
     expect(hero.textContent).toContain('No readings yet')
     expect(screen.getByTestId('glance-progress').textContent).toContain('None this week')
     expect(screen.queryByTestId('nudge')).toBeNull()
-    expect(screen.getByRole('link', { name: 'Scan' }).getAttribute('href')).toBe('#scan')
+    expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))
     expect(await screen.findByText(/^Add blood pressure/)).toBeTruthy()
   })

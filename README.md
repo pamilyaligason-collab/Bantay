@@ -9,6 +9,20 @@ Vite + React + TS PWA. Design source: `design/Prototype.dc.html` (v5).
 5. `npx playwright install chromium` once, then `npm run e2e` (builds, serves on port 4317)
 6. Copy `.env.example` to `.env.local` and add the publishable key. Never commit it.
 
+## Fast checks while iterating
+
+The full Vitest suite takes about 1.5 to 2 minutes (vmThreads pool, see `vite.config.ts`). Run only what your change touches, then the full suite once before a push or release.
+
+| Script | Runs |
+| --- | --- |
+| `npm run test:affected` | Test files that import (directly or through other files) anything changed since `origin/main`, committed or not. Run `git fetch origin main` first so the base is current |
+| `npm run test:changed` | Same, but only for uncommitted changes |
+| `npm run test:related -- src/lib/labFormat.ts` | Test files that depend on the files you name |
+| `npm run typecheck` | `tsc --noEmit`, incremental (cache in `node_modules/.cache/tsc.tsbuildinfo`) |
+| `npm run e2e:changed` | Only Playwright spec files changed since `origin/main` (the specs drive the built app, so a `src/` change alone selects none: use `npm run e2e` for that) |
+
+Caches (all local, all under `node_modules`, nothing to configure): Vitest keeps transformed modules in `node_modules/.vitest-cache` and run results in `node_modules/.vite/vitest` (failed and slow files run first). `npx vitest --clearCache` resets both. A change to `src/test-setup.ts`, `vite.config.ts` or `package.json` makes `test:affected` run the whole suite, which is correct.
+
 ## Setup
 
 - Sign-in, Supabase SQL (migrations 0001 to 0005 in order), secrets and function deploys: [docs/AUTH.md](docs/AUTH.md)
