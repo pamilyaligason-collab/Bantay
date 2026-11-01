@@ -473,3 +473,15 @@
 .td-todo-plus { width: 44px; padding: 0; font-size: 22px; }
 .td-day .td-nu, .td-day .td-sc, .td-day .td-plan { padding-left: 0; padding-right: 0; box-shadow: none; background: none; border-radius: 0; border-top: .5px solid var(--hair); }
 .td-day .td-mc { margin: 0 0 8px; }
+
+/* v13 T5/T6: Calm card and Your numbers */
+.td-calm { display: flex; align-items: center; gap: 18px; padding: 18px; background: var(--tint-teal); color: var(--tint-teal-ink); border: 0; text-align: left; width: 100%; font: inherit; }
+.td-calm b { display: block; font-size: 20px; font-weight: 700; color: var(--ink); }
+.td-calm .td-grow { flex: 1; min-width: 0; }
+.td-calm .td-grow > span { font-size: 15px; }
+.td-calm .bo-label { display: none; }
+.td-calm .bo-orb i { border-color: var(--tint-teal-ink); }
+.td-num { flex: none; width: 168px; }
+
+/* v13 T7: Finish setup row */
+[data-testid="setup-row"] { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); border-radius: var(--r-card); }
