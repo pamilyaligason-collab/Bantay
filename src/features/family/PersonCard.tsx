@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { logDose } from '../log/store'
 import { markSeen } from '../notify/store'
+import { useKvValue } from '../phonecheck/useKvValue'
+import { LAST_ONLINE_KEY } from '../sync/useOffline'
+import { agoShort } from '../today/alertRow'
 import { shortName } from '../inbox/build'
 import { shortMedName } from '../health/medName'
 import FamilyAnswer from './FamilyAnswer'
@@ -10,6 +13,12 @@ import { messagePrefill } from './Messages'
 import { dial } from './roster'
 import type { PersonFocus } from './useFocuses'
 import './v13-family.css'
+
+/** Missed is judged from what this phone holds, so a take that has not synced still reads as missed: say how old the data is. */
+function SyncedLine() {
+  const at = useKvValue<number>(LAST_ONLINE_KEY)
+  return <p className="pc-sync" data-testid="pc-sync">{typeof at === 'number' ? `Last synced ${agoShort(at, Date.now())}` : 'Not synced yet on this phone'}</p>
+}
 
 /** One person in the Today carousel: face, the one thing to know, and one action. aria-label keeps the roll-call words (name, check-in, status) for screen readers. */
 export function PersonCard({ item, selfName, onNote }: { item: PersonFocus; selfName: string; onNote: (t: string) => void }) {
@@ -40,6 +49,7 @@ export function PersonCard({ item, selfName, onNote }: { item: PersonFocus; self
         <div className="pc-who"><b>{name}</b><span className="pc-line">{f.line}</span></div>
       </div>
       <p className="pc-body">{f.body}</p>
+      {f.kind === 'missed' && <SyncedLine />}
       {ask ? (
         <div className="pc-confirm" role="alertdialog" aria-label="Confirm">
           <b>Did you see {shortName(p.name) ?? name} take {item.missedDoses[0] ? `${shortMedName(item.missedDoses[0].med.name)} at ${item.missedDoses[0].time}` : 'it'}?</b>

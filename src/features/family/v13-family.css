@@ -9,6 +9,7 @@
 .pc-line { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--muted); }
 .pc[data-tint="red"] .pc-line { color: var(--tint-red-ink); }
 .pc[data-tint="amber"] .pc-line { color: var(--tint-amber-ink); }
+.pc-sync { margin: 0; font-size: 13px; line-height: 18px; color: var(--ink); }
 .pc-body { margin: 0; font-size: 15px; line-height: 20px; color: var(--ink); overflow-wrap: anywhere; }
 .pc-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
 .pc .pc-btn, .rw .pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
