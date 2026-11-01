@@ -7,12 +7,7 @@
 .wx-sub { font-size: 14px; color: var(--muted); }
 .wx-note { margin: 0 4px; color: var(--muted); font-size: 16px; }
 
-/* place toggle */
-.wx-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--fill); }
-.wx-seg button { min-height: 48px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font-size: 15px; font-weight: 600; padding: 0 6px; overflow-wrap: anywhere; }
-.wx-seg button[aria-pressed="true"] { background: var(--card); box-shadow: var(--shadow); }
-.wx-seg button:disabled { color: var(--muted); opacity: .6; }
-.wx-seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wx-src-pill { font-size: 13px; color: var(--muted); }
 
 /* action line */
 .wx-action { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); border-left: 6px solid var(--line); }
@@ -33,6 +28,7 @@
 .wx-k { font-size: 14px; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
 .wx-temp { font-family: var(--f-display); font-size: 72px; line-height: 1; font-weight: 500; letter-spacing: -.02em; }
 .wx-cond { font-size: 20px; }
+.bt .wx .wx-temp { font-size: 72px }
 
 .wx-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .wx-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }

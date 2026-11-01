@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { parseHash } from '../shell/routes'
 import { openMeteoFixture } from './fixture'
 import WeatherScreen from './WeatherScreen'
@@ -23,12 +24,18 @@ beforeEach(async () => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('WeatherScreen', () => {
-  it('draws the action line first, then the hero, 4 tiles, the strip, 5 of the 10 days (all on a tap), the live map toggle, then sources and the footer', async () => {
+  it('v13: Large Title with Back to Today, hero first, then action line, 4 tiles, the strip, 5 of the 10 days (all on a tap), the live map prompt, then sources and the footer', async () => {
     render(<WeatherScreen />)
     expect(await screen.findByText(/Stay indoors 11 AM-3 PM/)).toBeTruthy() // 33 C at 70% is a heat index in the Danger band
     expect(screen.getByText(/Heat index 4\d° · Danger/)).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Weather' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Back to Today' }).getAttribute('href')).toBe('#today')
+    const heroes = document.querySelectorAll('[data-hero]')
+    expect(heroes).toHaveLength(1)
+    expect(heroes[0]).toBe(screen.getByRole('region', { name: 'Now' }))
+    expect(heroes[0]!.getAttribute('data-contrast-bg')).toBe('#0B1636')
     const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
-    expect(regions.slice(0, 8)).toEqual(['What to do', 'Now', 'Details', 'Rain and storm map', 'Next 48 hours', '10 days', 'Season and sun', 'Live weather map'])
+    expect(regions.slice(0, 8)).toEqual(['Now', 'What to do', 'Details', 'Rain and storm map', 'Next 48 hours', '10 days', 'Season and sun', 'Live weather map'])
     expect(document.querySelector('.wx-temp')?.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     const details = within(screen.getByRole('region', { name: 'Details' }))
@@ -40,10 +47,38 @@ describe('WeatherScreen', () => {
     expect(within(screen.getByRole('region', { name: '10 days' })).getAllByRole('listitem')).toHaveLength(10)
     expect(screen.getByRole('button', { name: 'Show fewer days' }).getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('group', { name: 'Official sources' })).toBeTruthy()
-    expect(screen.getByText('Today')).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: '10 days' })).getByText('Today')).toBeTruthy()
     for (const n of ['PAGASA', 'Project NOAH', 'PANaHON']) expect(screen.getByText(n)).toBeTruthy()
     expect(screen.getByText(/nothing to centre on/)).toBeTruthy() // no fix: the prompt, never a home-zone map
     expect(screen.getByText('Forecast: Open-Meteo. Your rounded location is sent only to the weather service.')).toBeTruthy()
+  })
+
+  it('Official row: PAGASA all clear near the place, else the alert title; links to the warnings page', async () => {
+    render(<WeatherScreen />)
+    await screen.findByText('Partly cloudy')
+    const row = screen.getByRole('link', { name: /Official/ })
+    expect(row.getAttribute('href')).toBe('#safety/warnings')
+    expect(row.textContent).toContain('PAGASA: no warning near Dampas')
+    cleanup()
+    const alert: Alert = { id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Signal No. 2 for Bohol', what: '', where: 'Bohol', when: '', doNow: 'Stay home.', source: 'PAGASA', sourceUrl: null, issuedAt: new Date().toISOString(), lat: 9.645705, lon: 123.877951, bulletin: '' }
+    await db.kv.put({ key: ALERTS_KEY, value: [alert] })
+    render(<WeatherScreen />)
+    expect(await screen.findByText('Signal No. 2 for Bohol', { selector: '.rw-sub' })).toBeTruthy()
+  })
+
+  it('hero kicker: near you for a GPS fix, last known for the last fix, the name alone for a home pick; Updated on its own line', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } })
+    render(<WeatherScreen />)
+    const k = (await screen.findByTestId('place-last')).closest('.wx-k')!
+    expect(k.textContent).toBe('My location · last known')
+    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^Updated \d{1,2}:\d\d [AP]M$/)).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^Feels like \d+°$/)).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Now' })).getByText(/^H:\d+°\s+L:\d+°$/)).toBeTruthy()
+    cleanup()
+    await db.kv.clear()
+    render(<WeatherScreen />)
+    await screen.findByText('Partly cloudy')
+    expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas')
   })
 
   it('place toggle: Home 1 and Home 2 fetch their own forecast; without GPS the first button offers to use the location (N-2)', async () => {
@@ -55,7 +90,8 @@ describe('WeatherScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Home 2' }))
     expect(screen.getByRole('button', { name: 'Home 2' }).getAttribute('aria-pressed')).toBe('true')
     await vi.waitFor(() => expect(calls.some((u) => u.includes('latitude=6.2&'))).toBe(true))
-    expect(await screen.findByText(/^Conel · updated/)).toBeTruthy()
+    expect(await screen.findByText('Conel')).toBeTruthy()
+    expect(await screen.findByText(/^Updated \d/)).toBeTruthy()
   })
 
   it('offline: the cached forecast shows with "as of HH:MM"', async () => {

@@ -5,7 +5,10 @@ import { track } from '../admin/events'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { Icon, type IconName } from '../shell/Icon'
-import { SubHeader } from '../shell/SubHeader'
+import { GroupedList } from '../look/GroupedList'
+import { LargeTitle } from '../look/LargeTitle'
+import { Row } from '../look/Row'
+import { Segmented } from '../look/Segmented'
 import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
@@ -17,7 +20,6 @@ import RainMap from './RainMap'
 import { weatherWarning } from './warning'
 import './weather.css'
 import './wxs7w.css'
-import '../today/today.css' // S16-L1: the Weather screen's D-102 budget trims (scoped under .wx) live with the lane's other styles
 
 type Sel = 'me' | 'h1' | 'h2'
 const NONE_A: Alert[] = []
@@ -78,6 +80,7 @@ export default function WeatherScreen() {
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [])
 
   const askLoc = async () => {
+    if (finding) return
     if (fix && l.source === 'gps') return setPick('me') // an old fix is tried again
     setFinding(true); setLocOff(false)
     const got = (await l.ask().catch(() => null))?.source === 'gps'
@@ -86,14 +89,14 @@ export default function WeatherScreen() {
 
   return (
     <div className="wx">
-      <SubHeader title="Weather" backHref="#today" backLabel="Back to Today" />
-      <div className="wx-seg" role="group" aria-label="Place">
-        <button type="button" aria-pressed={sel === 'me'} disabled={finding} onClick={askLoc}>{fix && l.source === 'gps' ? 'My location' : fix ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location'}</button>
-        <button type="button" aria-pressed={sel === 'h1'} onClick={() => setPick('h1')}>Home 1</button>
-        <button type="button" aria-pressed={sel === 'h2'} onClick={() => setPick('h2')}>Home 2</button>
-      </div>
+      <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<span className="wx-src-pill">Open-Meteo</span>} />
+      <Segmented<Sel> label="Place" value={sel} onChange={(id) => (id === 'me' ? void askLoc() : setPick(id))} options={[
+        { id: 'me', label: fix && l.source === 'gps' ? 'My location' : fix ? 'My location (last known)' : finding ? 'Finding you…' : 'Use my location' },
+        { id: 'h1', label: 'Home 1' },
+        { id: 'h2', label: 'Home 2' }
+      ]} />
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={name} lastKnown={sel === 'me' && l.source === 'last'} point={point} alerts={alerts} offline={offline || !online} /> : (
+      {fc && point ? <Body fc={fc} name={name} where={sel === 'me' ? (l.source === 'last' ? 'last' : 'gps') : null} point={point} alerts={alerts} offline={offline || !online} /> : (
         <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
       )}
       {fix ? <LiveMapToggle loc={fix} /> : (
@@ -115,7 +118,7 @@ export default function WeatherScreen() {
   )
 }
 
-function Body({ fc, name, lastKnown, point, alerts, offline }: { fc: Forecast; name: string; lastKnown: boolean; point: LatLon; alerts: Alert[]; offline: boolean }) {
+function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name: string; where: 'gps' | 'last' | null; point: LatLon; alerts: Alert[]; offline: boolean }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -138,6 +141,20 @@ function Body({ fc, name, lastKnown, point, alerts, offline }: { fc: Forecast; n
 
   return (
     <>
+      <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-contrast-bg="#0B1636">
+        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
+        <div className="wx-k">{name}{where === 'gps' && ' · near you'}{where === 'last' && <span data-testid="place-last"> · last known</span>}</div>
+        <span className="wx-sub">{offline ? `as of ${asOf}, offline` : `Updated ${asOf}`}</span>
+        <div className="wx-temp">{deg(c.temp)}</div>
+        <b className="wx-cond">{cap(conditionWords(c.code))}</b>
+        <span className="wx-sub">Feels like {deg(fl.value)}</span>
+        <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
+      </section>
+
+      <GroupedList icons>
+        <Row icon="warn" tint={warn ? 'red' : 'green'} title="Official" sub={warn ? warn.title : `PAGASA: no warning near ${name === 'My location' ? 'you' : name}`} href="#safety/warnings" />
+      </GroupedList>
+
       <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'}>
         {main ? (
           <>
@@ -156,14 +173,6 @@ function Body({ fc, name, lastKnown, point, alerts, offline }: { fc: Forecast; n
           ))}
         </div>
       )}
-
-      <section aria-label="Now" className="card wx-hero wxs-host">
-        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
-        <div className="wx-k">{name}{lastKnown && <span data-testid="place-last"> · last known</span>} · {offline ? `as of ${asOf}, offline` : `updated ${asOf}`}</div>
-        <div className="wx-temp">{deg(c.temp)}</div>
-        <b className="wx-cond">{cap(conditionWords(c.code))}</b>
-        <span className="wx-sub">Feels like {deg(fl.value)} · High {deg(today?.max ?? null)} · Low {deg(today?.min ?? null)}</span>
-      </section>
 
       <section aria-label="Details" className="wx-tiles">
         <div className="wx-tile"><span className="eyebrow">Rain next 6 h</span><b>{rain6 == null ? 'n/a' : `${Math.round(rain6)}%`}</b><span className="wx-sub">{rain6 == null ? 'No data' : rainWord(rain6)}</span></div>
