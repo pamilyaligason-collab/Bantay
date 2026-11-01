@@ -93,24 +93,28 @@ for (const scheme of ['light', 'dark'] as const) {
     const posts: Post[] = []
     await open(page, scheme, false, posts)
     await expect(page.getByText('Needs you now')).toBeVisible()
-    await expect(page.getByText('Mama missed a medicine')).toBeVisible()
-    await expect(page.getByText(/Losartan 50 mg was due 9:00 AM|Losartan was due 9:00 AM/)).toBeVisible()
-    await expect(page.getByText('Papa has not answered')).toBeVisible()
+    // v13 lane F: each person's top item is their card; Needs holds only what the cards do not say (Papa's phone)
+    const roll = page.getByRole('group', { name: 'Family roll call' })
+    const mama = roll.getByRole('article', { name: /^Mama\. Missed a medicine/ })
+    await expect(mama).toBeVisible()
+    await expect(mama.getByText(/Losartan 50 mg was due 9:00 AM|Losartan was due 9:00 AM/)).toBeVisible()
+    const papa = page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' }) // Papa's card says the missed dose, so his question goes to the Needs list
+    await expect(papa).toBeVisible()
     await expect(page.getByText("Papa's phone may miss alarms")).toBeVisible()
     await expect(page.getByRole('alert', { name: /needs help/ })).toHaveCount(0) // no SOS in this scenario
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-home-${scheme}.png` })
 
-    await page.getByRole('button', { name: 'Answer for Papa' }).click()
+    await papa.getByRole('button', { name: 'Answer for Papa' }).click()
     const sheet = page.getByRole('dialog', { name: 'Answer for Papa' })
     await expect(sheet.getByText('Still taking Metformin 500 mg?')).toBeVisible()
     await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished))) // the sheet slide-in has finished
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-answer-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Send answer' }).click()
-    await expect(page.getByText('Papa has not answered')).toHaveCount(0)
+    await expect(page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' })).toHaveCount(0)
     await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Metformin' && JSON.stringify(p.body.schedule).includes('"answered_by":"Lloyd"'))).toBe(true)
 
-    await page.getByRole('button', { name: "Fix Papa's phone" }).click()
+    await page.getByTestId('need-row').filter({ hasText: "Papa's phone may miss alarms" }).getByRole('link', { name: 'Fix phone' }).click() // v13: a Needs row link (was a button)
     await expect(page.getByRole('heading', { name: 'Family phones' })).toBeVisible() // v12: Fix goes straight to Settings > Phone > Family phones (#me/phone/phones)
     await expect(page.getByText('Battery saver is stopping alarms')).toBeVisible()
     await page.getByRole('button', { name: 'Needs fixing' }).click()
