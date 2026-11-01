@@ -11,8 +11,8 @@ export const MOVE_LOCK = 'Move logs are yours only. Exit to log.'
 
 /** Steps today from the phone's own step rows; null when none were ever synced (nothing is invented). */
 function useStepsToday(): number | null {
-  const { personId } = useHealthPerson()
-  const acts = useActivity(personId)
+  const { ownId } = useHealthPerson() // the phone's steps are the viewer's own, whoever the Health picker shows
+  const acts = useActivity(ownId)
   return useMemo(() => {
     const rows = acts.filter((a) => a.kind === 'steps' && typeof a.steps === 'number')
     if (!rows.length) return null

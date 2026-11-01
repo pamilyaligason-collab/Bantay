@@ -16,7 +16,7 @@ export function PersonSwitcher({ people, meId, personId, setPersonId }: { people
   })
   return (
     <>
-      <button type="button" className="ps-pill press" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+      <button type="button" className="ps-pill press" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
         <span>{cur ? nameOf(cur) : 'Me'}</span><Icon name="chev" size={16} />
       </button>
       {open && (
