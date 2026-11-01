@@ -6,6 +6,7 @@ const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
   source: 'PAGASA', sourceUrl: null, issuedAt: '2026-10-18T01:00:00Z', lat: 9.7, lon: 123.9, bulletin: 'b', ...o
 })
+const baseAlert = alert
 const wx: Wx = { temp: 29.4, rainPct: 70, words: 'rainy', at: '2026-10-18T08:10:00Z' }
 const at = (h: number, m = 0) => new Date(2026, 9, 18, h, m)
 const base = { alerts: [] as Alert[], ref: null, doses: [] }
@@ -170,6 +171,7 @@ describe('weatherAction (Today and Simple mode action line)', () => {
 })
 
 describe('zoneAlert: urgent hazards take the slot', () => {
+  const alert = (o: Partial<Alert>) => baseAlert({ issuedAt: new Date().toISOString(), ...o }) // urgent means under 24 h old
   const flood = alert({ id: 'f', kind: 'rainfall', level: 'Orange', title: 'Rainfall advisory', lat: null, lon: null })
   const quake68 = alert({ id: 'q', kind: 'quake', level: 'Magnitude 6.8', title: 'Earthquake M6.8', source: 'PHIVOLCS' })
   it('shows an M6.8 quake over a flood advisory', () => expect(zoneAlert([flood, quake68], null)?.id).toBe('q'))
@@ -177,6 +179,15 @@ describe('zoneAlert: urgent hazards take the slot', () => {
     const heat = alert({ id: 'h', kind: 'heat', level: 'Danger', title: 'Heat', lat: null, lon: null })
     const tsu = alert({ id: 't', kind: 'tsunami', level: 'Warning', title: 'Tsunami' })
     expect(zoneAlert([heat, tsu], null)?.id).toBe('t')
+  })
+  it('a far M6 (about 1,400 km) does not take the slot from a local flood; a near M6 does; a day-old M6 does not', () => {
+    const lf = alert({ id: 'lf', kind: 'rainfall', level: 'Orange', title: 'Rainfall advisory', lat: 6.2, lon: 125.19 })
+    const far = alert({ id: 'far', kind: 'quake', level: 'Magnitude 6.1', title: 'Earthquake M6.1', source: 'PHIVOLCS', lat: 18.5, lon: 122 })
+    const near = alert({ id: 'near', kind: 'quake', level: 'Magnitude 6.1', title: 'Earthquake M6.1', source: 'PHIVOLCS', lat: 6.5, lon: 125.4 })
+    const old = { ...near, id: 'old', issuedAt: new Date(Date.now() - 25 * 3_600_000).toISOString() }
+    expect(zoneAlert([lf, far], null)?.id).toBe('lf')
+    expect(zoneAlert([lf, near], null)?.id).toBe('near')
+    expect(zoneAlert([lf, old], null)?.id).toBe('lf')
   })
   it('shows the quake once the flood is closed out of the pool', () => expect(zoneAlert([quake68], null)?.id).toBe('q'))
 })

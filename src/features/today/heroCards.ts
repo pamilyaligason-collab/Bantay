@@ -124,7 +124,7 @@ export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
   const first = base[0]
   const full = (a: Alert) => quakeRow(a, affectsUs(a, ref), 0) === null // needs the red card
   // The slot holds one hazard: a quiet quake row must not hide a quake that needs the full card (ranking never looks at magnitude). Other hazards keep their rank.
-  return base.find(urgent) ?? (first && !full(first) ? base.find((a) => a.kind === 'quake' && full(a)) : undefined) ?? first ?? null
+  return base.find((a) => urgent(a, ref)) ?? (first && !full(first) ? base.find((a) => a.kind === 'quake' && full(a)) : undefined) ?? first ?? null
 }
 
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
