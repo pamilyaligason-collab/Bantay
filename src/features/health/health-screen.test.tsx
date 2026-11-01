@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
@@ -11,7 +11,7 @@ vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
 import Health from '../../screens/Health'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
-import { resetPersonChoice } from '../records/useHealthData'
+import { resetPersonChoice, useHealthData } from '../records/useHealthData'
 
 const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
 const bp = (sys: number, dia: number, ago: number) => [
@@ -101,6 +101,18 @@ describe('Health overview (v13)', () => {
     const sheet = await screen.findByRole('dialog', { name: 'Whose health' })
     fireEvent.click(within(sheet).getByRole('button', { name: /Ma/ }))
     await waitFor(() => expect(location.hash).toBe('#health/member/p2'))
+  })
+
+  it('a leftover choice of someone else resets to me; the overview never redirects (1.H12)', async () => {
+    await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
+    const h = renderHook(() => useHealthData())
+    await waitFor(() => expect(h.result.current.ready).toBe(true))
+    act(() => h.result.current.setPersonId('p2'))
+    h.unmount()
+    render(<Health />)
+    await screen.findByTestId('bodyhero')
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Me/ })).toBeTruthy())
+    expect(location.hash).toBe('#health')
   })
 })
 

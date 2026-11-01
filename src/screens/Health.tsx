@@ -77,10 +77,7 @@ function Overview() {
   const familyOf = (r: { personId: string; test: string }) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`)
   const attention = useMemo(() => pickAttention(latest, familyOf, new Date()), [readings, thresholds]) // eslint-disable-line react-hooks/exhaustive-deps
   const name = properName(people.find((p) => p.id === personId)?.name ?? '')
-  useEffect(() => { // someone else's health is their own view-only page
-    const to = `#health/member/${personId}`
-    if (ready && meId && personId && personId !== meId && location.hash !== to) location.replace(to)
-  }, [ready, meId, personId])
+  useEffect(() => { if (ready && meId && personId !== meId) setPersonId(meId) }, [ready, meId, personId, setPersonId]) // someone else's page is reached only by the switcher
   return (
     <>
       <LargeTitle kicker="Summary" title="Health" actions={<PersonSwitcher people={people} meId={meId} personId={personId} setPersonId={setPersonId} />} />
