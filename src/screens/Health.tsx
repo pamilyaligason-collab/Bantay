@@ -7,6 +7,8 @@ import type { NodeId } from '../features/health/model'
 import type { IconName } from '../features/shell/Icon'
 import { latestByTest } from '../features/health/ranges'
 import { Kpis } from '../features/health/Kpis'
+import { ReadingsHero } from '../features/health/ReadingsHero'
+import { MORE_INFO } from '../features/health/model'
 import AddReadingSheet from '../features/health/AddReadingSheet'
 import { entrySpec } from '../features/health/readingPreview'
 import { bpDoctorOf } from '../features/health/verdict'
@@ -118,19 +120,21 @@ function ReadingsPage() {
   const spec = entrySpec('bp_systolic')
   return (
     <>
-      <SubHeader title="Readings" backHref="#health" backLabel="Back to Health" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Readings" actions={canMark && spec ? <button type="button" className="btn" onClick={() => setAdding(true)}>Add</button> : undefined} />
       <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
       {ready && personId && (
         <>
+          <ReadingsHero readings={readings} thresholds={thresholds} personId={personId} />
+          <Kpis personId={personId} readings={readings} thresholds={thresholds} />
           <section aria-labelledby="rd-h" data-testid="seven">
             <h2 className="hd" id="rd-h">7-day averages</h2>
             <div className="rd-list">
               {nodes.map((n) => <Row key={n.id} icon={NODE_ICON[n.id]} title={`${n.label} ${n.value}`} sub={n.note} href={`#health/metric/${n.code}`} testId={`node-${n.id}`} />)}
             </div>
           </section>
-          <Kpis personId={personId} readings={readings} thresholds={thresholds} />
           <LatestList readings={readings} thresholds={thresholds} ready={ready} onAdd={canMark ? () => setAdding(true) : undefined} />
+          <a className="btn" href={MORE_INFO.url} target="_blank" rel="noreferrer" data-testid="readings-tips" style={{ marginTop: 12 }}>{MORE_INFO.text}<span className="hv-sr"> (opens in new tab)</span></a>
         </>
       )}
       {adding && personId && spec && <AddReadingSheet spec={spec} personId={personId} forName={properName(people.find((p) => p.id === personId)?.name ?? '')} bpDoctor={bpDoctorOf(thresholds, personId)} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
