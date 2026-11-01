@@ -26,7 +26,7 @@
 /* hero: numbers only */
 .wx-hero { display: flex; flex-direction: column; gap: 4px; }
 .wx-k { font-size: 14px; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
-.wx-temp { font-family: var(--f-display); font-size: 72px; line-height: 1; font-weight: 500; letter-spacing: -.02em; }
+.wx-temp { font-size: 72px; line-height: 1; font-weight: 500; letter-spacing: -.02em; }
 .wx-cond { font-size: 20px; }
 .bt .wx .wx-temp { font-size: 72px }
 
@@ -58,5 +58,7 @@
 .wx-out { color: var(--muted); flex: none; display: inline-flex; }
 .wx-map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .wx-map-empty { padding: 16px; display: grid; gap: 10px; }
-.wx-foot { margin: 0 4px; font-size: 13px; color: var(--muted); }
+.wx-made { display: grid; gap: 6px; }
+.wx-made h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.wx-made p { margin: 0; }
 .wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }

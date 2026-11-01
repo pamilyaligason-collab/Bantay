@@ -8,6 +8,7 @@ import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
 import { LargeTitle } from '../look/LargeTitle'
 import { Row } from '../look/Row'
+import { Section } from '../look/Section'
 import { Segmented } from '../look/Segmented'
 import { placeTimezone } from '../location/place'
 import { actionLines } from './actionLine'
@@ -105,15 +106,18 @@ export default function WeatherScreen() {
           <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Use my location'}</button>
         </section>
       )}
-      <details className="wx-src">
-        <summary><h2 className="wx-h">Official sources</h2><Icon name="down" size={20} /></summary>
+      <Section title="Official sources">
         <div className="grp" role="group" aria-label="Official sources">
           {LINKS.map(([n, sub, url]) => (
             <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer"><span className="grow"><b>{n}</b><span className="sub">{sub}</span></span><span className="wx-out"><Icon name="out" size={20} /></span></a>
           ))}
         </div>
-        <p className="wx-foot">Forecast: Open-Meteo. Your rounded location is sent only to the weather service.</p>
-      </details>
+        <div className="card wx-made">
+          <h3>How this is made</h3>
+          <p className="wx-sub">Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.</p>
+          <p className="wx-sub">Your rounded location is sent only to the weather service.</p>
+        </div>
+      </Section>
     </div>
   )
 }
@@ -183,8 +187,7 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
 
       <RainMap fc={fc} point={point} placeName={name} alerts={alerts} />
 
-      {strip.length > 0 && <section aria-label="Next 48 hours">
-        <div className="wx-sech"><h2 className="wx-h">Next 48 hours</h2><span className="wx-sub">every 3 hours · swipe for more</span></div>
+      {strip.length > 0 && <Section title="Next 48 hours" meta="every 3 hours · swipe for more">
         <div className="card wx-stripbox">
           <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
             {strip.map((h, i) => (
@@ -192,10 +195,9 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
             ))}
           </ul>
         </div>
-      </section>}
+      </Section>}
 
-      {days.length > 0 && <section aria-label="10 days">
-        <h2 className="wx-h">10 days</h2>
+      {days.length > 0 && <Section title="10 days">
         <ul className="card wx-days">
           {(allDays ? days : days.slice(0, 5)).map((d, i) => (
             <li key={d.date}>
@@ -209,13 +211,14 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
           ))}
         </ul>
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
-      </section>}
+      </Section>}
 
-      <section aria-label="Season and sun" className="card wx-season">
-        <h2 className="wx-h">Season and sun</h2>
-        {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
-        <p className="wx-sub">Monthly outlook: see PAGASA (link below). Typhoon season: June to November.</p>
-      </section>
+      <Section title="Season and sun">
+        <div className="card wx-season">
+          {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
+          <p className="wx-sub">Monthly outlook: see PAGASA (link below). Typhoon season: June to November.</p>
+        </div>
+      </Section>
     </>
   )
 }

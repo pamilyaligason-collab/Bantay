@@ -34,7 +34,7 @@ describe('WeatherScreen', () => {
     expect(heroes).toHaveLength(1)
     expect(heroes[0]).toBe(screen.getByRole('region', { name: 'Now' }))
     expect(heroes[0]!.getAttribute('data-contrast-bg')).toBe('#0B1636')
-    const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+    const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent)
     expect(regions.slice(0, 8)).toEqual(['Now', 'What to do', 'Details', 'Rain and storm map', 'Next 48 hours', '10 days', 'Season and sun', 'Live weather map'])
     expect(document.querySelector('.wx-temp')?.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
@@ -50,7 +50,19 @@ describe('WeatherScreen', () => {
     expect(within(screen.getByRole('region', { name: '10 days' })).getByText('Today')).toBeTruthy()
     for (const n of ['PAGASA', 'Project NOAH', 'PANaHON']) expect(screen.getByText(n)).toBeTruthy()
     expect(screen.getByText(/nothing to centre on/)).toBeTruthy() // no fix: the prompt, never a home-zone map
-    expect(screen.getByText('Forecast: Open-Meteo. Your rounded location is sent only to the weather service.')).toBeTruthy()
+    expect(screen.getByText('Your rounded location is sent only to the weather service.')).toBeTruthy()
+  })
+
+  it('sections: h2 headings, sources open without a tap and leave the app, How this is made', async () => {
+    render(<WeatherScreen />)
+    await screen.findByText('Partly cloudy')
+    for (const n of ['Rain map', 'Next 48 hours', '10 days', 'Season and sun', 'Official sources']) expect(screen.getByRole('heading', { level: 2, name: n })).toBeTruthy()
+    const links = within(screen.getByRole('group', { name: 'Official sources' })).getAllByRole('link')
+    expect(links).toHaveLength(3)
+    for (const a of links) expect(a.getAttribute('target')).toBe('_blank')
+    expect(document.querySelector('details')).toBeNull()
+    expect(screen.getByText('How this is made')).toBeTruthy()
+    expect(screen.getByText('Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.')).toBeTruthy()
   })
 
   it('Official row: PAGASA all clear near the place, else the alert title; links to the warnings page', async () => {
