@@ -87,7 +87,7 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx |
   const active = p.alerts.length
   return [
     // always first, so Warnings is reachable with zero alerts
-    { href: '#safety/warnings', icon: 'warn', tint: active ? 'amber' : 'green', title: 'Warnings', value: active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined },
+    { href: '#safety/warnings', icon: 'warn', tint: active ? 'amber' : 'green', title: 'Warnings', value: p.stale ? undefined : active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined },
     ...alerts,
     { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? `${Math.round(p.wx.rainPct)}%` : undefined },
     { href: '#safety/storms', icon: 'typhoon', tint: n ? 'amber' : 'blue', title: 'Storm tracker', value: n ? `${stormName(p.storms[0]!)}${n > 1 ? ` and ${n - 1} more` : ''}` : 'No storms' },

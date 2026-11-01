@@ -53,6 +53,7 @@ describe('rightNowRows', () => {
 describe('Warnings row staleness', () => {
   it('shows May be out of date only when stale', () => {
     expect(rightNowRows({ ...base, stale: true })[0]!.badge).toBe('May be out of date')
+    expect(rightNowRows({ ...base, stale: true })[0]!.value).toBeUndefined()
   })
 })
 
