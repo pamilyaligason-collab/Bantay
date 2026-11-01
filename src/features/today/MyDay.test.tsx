@@ -1,10 +1,11 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-const m = vi.hoisted(() => ({ activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null }))
+const m = vi.hoisted(() => ({ activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null, ready: true }))
 vi.mock('./useNext', () => ({ useNext: () => ({ item: { kind: 'calm', key: 'calm' }, review: 0 }) }))
 vi.mock('./MyWeek', () => ({ useWeekData: () => ({ readings: [] }) }))
 vi.mock('../health/useActivity', () => ({ useActivity: () => m.activity }))
 vi.mock('../nutrition/hooks', () => ({ useWater: () => [], useGoal: () => ({ waterMl: 1500 }) }))
+vi.mock('../setup/useProfile', () => ({ useSelfPerson: () => ({ id: m.self, ready: m.ready }) }))
 vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => m.self, useActingCan: () => null }))
 vi.mock('./NextUp', () => ({ default: () => null, MedsCheck: () => null }))
 vi.mock('./PlanToday', () => ({ default: () => null }))
@@ -44,9 +45,12 @@ describe('MyDay I am OK row', () => {
       expect(screen.getByRole('button', { name: "I'm OK" })).toBeTruthy()
     } finally { vi.useRealTimers() }
   })
-  it('signed out, the row does not promise the family will know', () => {
-    m.activity = []; m.self = null
-    render(<MyDay notify={() => undefined} />)
+  it('signed out, the row does not promise the family will know, and says nothing while the lookup is still running', () => {
+    m.activity = []; m.self = null; m.ready = false
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    expect(screen.queryByText('Sign in to let the family know')).toBeNull()
+    m.ready = true
+    rerender(<MyDay notify={() => undefined} />)
     expect(screen.queryByText('Lets the family know you are fine')).toBeNull()
     expect(screen.getByText('Sign in to let the family know')).toBeTruthy()
   })

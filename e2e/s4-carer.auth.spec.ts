@@ -125,6 +125,8 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`Mark taken for Mama writes exactly one dose (ML-13) ${scheme}`, async ({ page }) => {
     await open(page, scheme, false)
+    await seed(page, 'bantay-log', 'medications', [med('los2', 'ma', 'Vitamin D', '1000 IU', ['10:00'])]) // a second missed slot: a mark-all bug would write two
+    await page.reload()
     const mama = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed a medicine/ })
     await mama.getByRole('button', { name: 'Mark taken for Mama' }).click()
     await mama.getByRole('button', { name: 'Yes, I saw' }).click()
@@ -140,6 +142,11 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`a family member who is not a carer gets no Mark taken or Answer buttons ${scheme}`, async ({ page }) => {
     await open(page, scheme, false, [], false)
+    const carers = page.waitForResponse(/rest\/v1\/carers/) // asserting an absence right after a reload passes before the cards render: wait for the answer, then the card
+    await page.reload()
+    await carers
+    const card = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed a medicine/ })
+    await expect(card).toBeVisible()
     await expect(page.getByRole('button', { name: /^Mark taken for/ })).toHaveCount(0)
     await expect(page.getByRole('button', { name: /^Answer for/ })).toHaveCount(0)
   })

@@ -3,6 +3,7 @@ import { Icon, type IconName } from '../shell/Icon'
 import { Section } from '../look'
 import { Ring } from '../look/Ring'
 import { useKv } from '../shell/useKv'
+import { useSelfPerson } from '../setup/useProfile'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs'
 import { useActivity } from '../health/useActivity'
 import { logWater } from '../nutrition/actions'
@@ -35,6 +36,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const item = held ?? next.item
   const self = useActingPersonId()
   const personId = self ?? ''
+  const { ready } = useSelfPerson()
   const can = useActingCan()
   const lockLog = !!can && !can.log
   const lockMood = !!can && !can.mood
@@ -47,10 +49,10 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const activity = useActivity(personId, 2)
   const [breaths] = useKv<SelfCareEntry[]>('selfcare.log', [])
   const rows = useMemo(() => {
-    const ci = checkInRow(activity, now, !!self), bp = bpRow(readings, now), wa = waterRow(water, goal.waterMl, now)
+    const ci = checkInRow(activity, now, !!self || !ready), bp = bpRow(readings, now), wa = waterRow(water, goal.waterMl, now)
     const breathed = breaths.some((b) => new Date(b.at).toDateString() === now.toDateString())
     return { ci, bp, wa, list: [ci, bp, wa, { done: breathed }, ...(item.kind === 'dose' ? [{ done: false }] : [])] }
-  }, [activity, readings, water, goal.waterMl, breaths, item.kind, self, today]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activity, readings, water, goal.waterMl, breaths, item.kind, self, ready, today]) // eslint-disable-line react-hooks/exhaustive-deps
   const c = countLeft(rows.list)
   const run = async (p: Promise<'ok' | keyof typeof FAIL_TEXT>, done: string) => {
     if (busy) return

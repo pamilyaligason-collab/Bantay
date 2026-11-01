@@ -48,6 +48,10 @@
   :root[data-narrow] :is(.td-todo, .rw-main) { flex-wrap: wrap; }
   :root[data-narrow] :is(.td-todo .td-grow, .rw-txt) { flex: 1 1 96px; }
   :root[data-narrow] .rw { flex-wrap: wrap; }
+  :root[data-narrow] .rw > .rw-main { flex: 1 1 100%; } /* .rw-main is flex:1 with min-width:0, so it never wrapped; full width puts the controls on their own line */
+  :root[data-narrow] .rw:has(> :not(.rw-main)) { padding-bottom: 10px; }
+  :root[data-narrow] .td-arow { flex-wrap: wrap; }
+  :root[data-narrow] .td-arow .td-grow { flex: 1 1 96px; }
   :root[data-narrow] .rw-title { white-space: normal; } /* a long title wraps at 195 px instead of being cut with an ellipsis */
   :root[data-narrow] .sf-bag { grid-template-columns: minmax(min-content, 1fr) minmax(0, auto); }
   :root[data-narrow] .sf-bag-t b { white-space: nowrap; }

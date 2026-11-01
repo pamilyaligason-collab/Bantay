@@ -1,7 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 let synced: number | undefined
+const logDose = vi.hoisted(() => vi.fn())
+vi.mock('../log/store', () => ({ logDose }))
+vi.mock('../notify/store', () => ({ markSeen: vi.fn(async () => undefined) }))
 vi.mock('../phonecheck/useKvValue', () => ({ useKvValue: () => synced }))
 
 import { PersonCard } from './PersonCard'
@@ -30,5 +33,22 @@ describe('PersonCard last synced line', () => {
     synced = Date.now()
     render(<PersonCard item={item('ok')} selfName="Me" onNote={() => {}} />)
     expect(screen.queryByTestId('pc-sync')).toBeNull()
+  })
+})
+
+describe('PersonCard Yes, I saw', () => {
+  it('a double tap writes one dose', async () => {
+    let done!: () => void
+    logDose.mockReset(); logDose.mockImplementation(() => new Promise<void>((r) => { done = r }))
+    const it0 = item('missed') as unknown as { focus: { action: unknown }; missedDoses: unknown[] }
+    it0.focus.action = { label: 'Mark taken', kind: 'mark' }
+    it0.missedDoses = [{ med: { name: 'Losartan' }, slot: '09:00', time: '9:00 AM' }]
+    render(<PersonCard item={it0 as unknown as PersonFocus} selfName="Me" onNote={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /^Mark taken for/ }))
+    const yes = screen.getByRole('button', { name: 'Yes, I saw' })
+    fireEvent.click(yes); fireEvent.click(yes)
+    done()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Yes, I saw' })).toBeNull())
+    expect(logDose).toHaveBeenCalledTimes(1)
   })
 })

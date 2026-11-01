@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { logDose } from '../log/store'
 import { markSeen } from '../notify/store'
 import { useKvValue } from '../phonecheck/useKvValue'
@@ -27,16 +27,19 @@ export function PersonCard({ item, selfName, onNote }: { item: PersonFocus; self
   const [answering, setAnswering] = useState(false)
   const name = p.isMe ? 'You' : faceName(p.name)
   const open = `#family/people/${p.id}`
+  const marking = useRef(false) // a fast double tap on "Yes, I saw" must write one dose, not two
   const mark = async () => {
+    if (marking.current) return
     const d = item.missedDoses[0]
     if (!d) return setAsk(false)
+    marking.current = true
     try {
       await logDose(d.med, d.slot) // one tap marks ONE dose (ML-13)
       if (item.missedDoses.length === 1) for (const id of item.alertIds) void markSeen(id).catch(() => undefined)
       onNote(`Marked as taken for ${shortName(p.name) ?? name}.`)
     } catch {
       onNote('Could not save on this phone. Try again.')
-    }
+    } finally { marking.current = false }
     setAsk(false)
   }
   const talk = () => { if (!p.isMe) messagePrefill.text = `@${faceName(p.name)} `; location.hash = 'family/messages' }
