@@ -16,6 +16,10 @@ describe('myDay rows', () => {
     expect(checkInRow([{ kind: 'check-in', startedAt: now.toISOString() }], now).done).toBe(true)
     expect(checkInRow([{ kind: 'check-in', startedAt: new Date(2026, 9, 30, 9).toISOString() }], now).done).toBe(false)
   })
+  it('check-in sub does not promise the family signed out', () => {
+    expect(checkInRow([], now, true).sub).toBe('Lets the family know you are fine')
+    expect(checkInRow([], now, false).sub).toBe('Sign in to let the family know')
+  })
   it('countLeft wording', () => {
     expect(countLeft([{ done: false }, { done: true }, { done: false }])).toEqual({ left: 2, total: 3, title: '2 things left today' })
     expect(countLeft([{ done: true }]).title).toBe('All done for today')

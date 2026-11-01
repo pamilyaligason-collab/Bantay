@@ -510,3 +510,4 @@
 .td-calm .td-grow { flex: 1 1 8em; }
 .td-wxs-empty { overflow-wrap: anywhere; }
 .td-todo-go { text-decoration: none; }
+.td-todo-done { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-weight: 600; }

@@ -6,10 +6,10 @@ const q = (level: string, extra: Partial<Alert> = {}) => ({ id: 'q', kind: 'quak
 const who = (km: number | null) => ({ affects: true, km, line: '', steps: true })
 describe('quakeRow', () => {
   it('M4.6 at 272 km is too far to feel', () => {
-    expect(quakeRow(q('Magnitude 4.6'), who(272), now)).toEqual({ title: 'Earthquake M4.6 near Tago', sub: '272 km away · too far to feel here · 11 h ago' })
+    expect(quakeRow(q('Magnitude 4.6'), who(272), now)).toEqual({ title: 'Earthquake M4.6 near Tago', sub: '272 km away · you may not feel it · 11 h ago' })
   })
   it('M6.0 at 272 km is inside its radius: red card', () => expect(quakeRow(q('Magnitude 6.0'), who(272), now)).toBeNull())
-  it('a tsunami-size quake never becomes the quiet row', () => expect(quakeRow(q('Magnitude 6.8'), who(450), now)).toBeNull())
+  it('a quake of M6.0 or more never becomes the quiet row', () => { expect(quakeRow(q('Magnitude 6.8'), who(450), now)).toBeNull(); expect(quakeRow(q('Magnitude 6.0'), who(900), now)).toBeNull() })
   it('area-wide and non-quake are never a row', () => {
     expect(quakeRow(q('Magnitude 4.6'), who(null), now)).toBeNull()
     expect(quakeRow(q('Orange', { kind: 'gdacs' }), who(900), now)).toBeNull()

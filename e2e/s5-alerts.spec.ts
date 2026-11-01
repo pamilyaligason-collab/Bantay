@@ -136,7 +136,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
     const row = page.getByRole('region', { name: 'Nearby report' })
     await expect(row.getByText('Earthquake M3 near Pondaguitan, Philippines')).toBeVisible()
-    await expect(row.getByText(/89 km away · too far to feel here · 30 min ago/)).toBeVisible()
+    await expect(row.getByText(/89 km away · you may not feel it · 30 min ago/)).toBeVisible()
     await expect(row.getByRole('link', { name: 'Details' })).toHaveAttribute('href', '#safety/warnings')
     await expect(page.getByRole('region', { name: 'Active warning' })).toHaveCount(0)
     await expect(page.getByText(/no action needed/i)).toHaveCount(0)

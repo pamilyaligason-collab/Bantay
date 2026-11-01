@@ -100,3 +100,11 @@ test('the warning band shows only while an official warning is active', async ({
   await expect(band).toContainText('Drop, cover and hold on.')
   await expect(band.getByRole('link', { name: 'What to do' })).toHaveAttribute('href', '#safety/warnings')
 })
+
+test('My day I\'m OK signed out says to sign in first and never claims it saved', async ({ page }) => {
+  const day = page.getByTestId('myday')
+  await expect(day.getByText('Lets the family know you are fine')).toHaveCount(0)
+  await day.getByRole('button', { name: "I'm OK" }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Sign in first' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toHaveCount(0)
+})

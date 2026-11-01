@@ -8,7 +8,7 @@ const API = 'https://bantay-test.supabase.test'
 const UID = '55555555-5555-4555-8555-555555555555'
 const SHOTS = process.env.S4_SHOTS // shots are written only when S4_SHOTS=docs/session-10/shots/s4 is set, so a gate rerun leaves the tree clean (ML-32)
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
+const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 172800 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
 const PEOPLE = [{ id: 'me', display_name: 'Lloyd', auth_user_id: UID }, { id: 'pa', display_name: 'Papa', auth_user_id: 'u-pa' }, { id: 'ma', display_name: 'Mama', auth_user_id: 'u-ma' }]
@@ -81,6 +81,7 @@ async function open(page: Page, scheme: 'light' | 'dark', sos: boolean, posts: P
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ colorScheme: scheme })
+  const t = new Date(); t.setHours(16, 0, 0, 0); await page.clock.setFixedTime(t) // 'Missed' shows 2 h after a dose: pin the clock past Metformin 13:00 + 2 h so the spec does not depend on the hour
   await mock(page, { sos }, posts)
   await page.goto('/#family')
   await expect(page.getByRole('heading', { name: 'Family' })).toBeVisible()

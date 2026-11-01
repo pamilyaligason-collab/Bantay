@@ -21,8 +21,8 @@ export function waterRow(rows: { drunkAt: string; ml: number }[], goalMl: number
   return { title: 'Water', sub: `${glasses} of ${goal} glasses`, done: glasses >= goal }
 }
 
-export const checkInRow = (activity: { kind: string; startedAt: string }[], now: Date): Row =>
-  ({ title: 'How are you?', sub: 'Lets the family know you are fine', done: activity.some((a) => a.kind === 'check-in' && sameDay(a.startedAt, now)) })
+export const checkInRow = (activity: { kind: string; startedAt: string }[], now: Date, signedIn = true): Row =>
+  ({ title: 'How are you?', sub: signedIn ? 'Lets the family know you are fine' : 'Sign in to let the family know', done: activity.some((a) => a.kind === 'check-in' && sameDay(a.startedAt, now)) })
 
 export function countLeft(rows: { done: boolean }[]) {
   const left = rows.filter((r) => !r.done).length

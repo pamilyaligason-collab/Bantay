@@ -53,7 +53,7 @@ describe('WarningCard', () => {
     await db.kv.put({ key: ALERTS_KEY, value: [{ ...quake, level: 'Magnitude 4.6', what: 'Magnitude 4.6.', where: 'Tago', lat: 9.2, lon: 126.2 }] })
     render(<WarningCard />)
     const row = await screen.findByRole('region', { name: 'Nearby report' })
-    expect(row.textContent).toContain('too far to feel here')
+    expect(row.textContent).toContain('you may not feel it')
     expect(screen.getByRole('link', { name: 'Details' }).getAttribute('href')).toBe('#safety/warnings')
     expect(screen.queryByRole('button', { name: /Hide this warning/ })).toBeNull()
   })
