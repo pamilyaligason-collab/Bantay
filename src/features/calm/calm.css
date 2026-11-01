@@ -1,6 +1,6 @@
 /* v13 lane C: Calm page. Tokens only. */
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
-.cm-hero { background: var(--tint-teal); color: var(--ink); text-align: center; padding: 18px 16px 20px; display: grid; justify-items: center; gap: 8px; }
+.cm-hero { background: var(--tint-teal); color: var(--ink); text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
 .cm-hero .bo-orb i { border-color: var(--tint-teal-ink); }
 .cm-orb { display: contents; } /* the aria-hidden wrapper must not change the hero grid */
 .cm-hero-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }

@@ -33,6 +33,20 @@ describe('reloadOnPreloadError', () => {
     off()
     vi.unstubAllGlobals()
   })
+  it('does not reload while offline, and can still reload once back online', () => {
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...location, reload })
+    const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    sessionStorage.clear()
+    const stop = reloadOnPreloadError()
+    window.dispatchEvent(new Event('vite:preloadError'))
+    expect(reload).not.toHaveBeenCalled()
+    online.mockReturnValue(true)
+    window.dispatchEvent(new Event('vite:preloadError'))
+    expect(reload).toHaveBeenCalledTimes(1)
+    stop(); online.mockRestore(); vi.unstubAllGlobals()
+  })
+
   it('does not reload while an SOS screen is up', () => {
     const reload = vi.fn()
     vi.stubGlobal('location', { ...window.location, reload })

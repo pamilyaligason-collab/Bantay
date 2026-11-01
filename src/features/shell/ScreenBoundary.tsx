@@ -23,6 +23,7 @@ const RELOADED = 'preloadReloaded'
 export function reloadOnPreloadError(): () => void {
   const on = () => {
     if (document.querySelector('.sos-bare')) return // a running SOS must not be ended by a reload
+    if (navigator.onLine === false) return // a reload with no connection can land on the browser's error page; the screen boundary shows its message instead
     try { if (sessionStorage.getItem(RELOADED)) return; sessionStorage.setItem(RELOADED, '1') } catch { return }
     location.reload()
   }
