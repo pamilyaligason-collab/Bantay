@@ -2,23 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { Carousel, JackArt, Section, Skeleton } from '../look'
 import { Icon } from '../shell/Icon'
 import { checkIn, FAIL_TEXT } from '../today/actions'
-import { useActing, useViewedVisibleIds } from '../viewas/viewAs'
+import { useActing } from '../viewas/viewAs'
 import { PersonCard } from './PersonCard'
-import { checkInLabel, useCheckInsLoaded, useFamilyPeople } from './roster'
+import { checkInLabel, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
 import { useSosActive } from './sosActive'
-import { useFocuses } from './useFocuses'
+import type { useFocuses } from './useFocuses'
 import './family.css'
 import './v13-family.css'
 
 /** Today (board): "N of M checked in", the I'm OK button (moved here from the old Faces card, same words and toast), and a carousel of person cards sorted red first. */
-export function TodayCarousel() {
+export function TodayCarousel({ people, fx }: { people: FamilyPerson[]; fx: ReturnType<typeof useFocuses> }) {
   const { people: all, selfId } = useFamilyPeople()
-  const visible = useViewedVisibleIds()
-  const people = visible ? all.filter((p) => visible.has(p.id)) : all // while acting: only who the viewed person can see (fails closed)
   const acting = useActing()
   const sos = useSosActive()
   const loaded = useCheckInsLoaded()
-  const { loaded: ready, items, rollOk } = useFocuses(people)
+  const { loaded: ready, items, rollOk } = fx
   const [okAt, setOkAt] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const head = useRef<HTMLDivElement>(null)

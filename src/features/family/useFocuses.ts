@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { ldb, type MedTaken, type Medication } from '../log/store'
 import { hdb } from '../records/store'
 import { useAlertRows } from '../notify/useAlerts'
-import { useActing } from '../viewas/viewAs'
+import { useActing, useViewedVisibleIds } from '../viewas/viewAs'
 import { reviewAsks, useCarerIds, type ReviewAsk } from './CarerCards'
 import { todayView } from './MemberPage'
 import { personFocus, sortByFocus, type Focus } from './personFocus'
-import { checkInLabel, useCheckInsLoaded, type FamilyPerson } from './roster'
+import { checkInLabel, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
 
 export interface PersonFocus { person: FamilyPerson; focus: Focus; missedDoses: { med: Medication; slot: string }[]; asks: ReviewAsk[] }
 type D = { meds: Medication[]; takes: MedTaken[]; activity: { personId: string; kind: string; startedAt: string }[]; readings: never[]; thresholds: { key: string; high?: number | null }[] }
@@ -54,4 +54,11 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
     })
     return { loaded: true, items: sortByFocus(items), rollOk: people.filter((p) => checkInLabel(last[p.id], now).ok).length }
   }, [d, last, alerts, writable, acting, people, now])
+}
+
+/** Everyone the screen may show: all of the family, or while acting only who the viewed person can see (fails closed). */
+export function useVisiblePeople(): FamilyPerson[] {
+  const { people } = useFamilyPeople()
+  const visible = useViewedVisibleIds()
+  return useMemo(() => (visible ? people.filter((p) => visible.has(p.id)) : people), [people, visible])
 }
