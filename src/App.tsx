@@ -21,6 +21,7 @@ import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
 import { TabBar } from './features/shell/TabBar'
 import { JackFab } from './features/shell/JackFab'
+import CalmJack from './features/calm/CalmJack'
 import { isDiscoverSubRoot } from './features/discover'
 import ApprovePinSheet from './features/setup/ApprovePinSheet'
 import { useSavedTheme } from './features/shell/theme'
@@ -36,6 +37,7 @@ import { watchPushForSession } from './features/notify/fcm'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 
+const CalmScreen = lazy(() => import('./features/calm/CalmScreen')) // #calm (lane C)
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
 
 const SharingScreen = lazy(() => import('./features/sharing/SharingScreen'))
@@ -88,13 +90,13 @@ export default function App() {
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
   // S16-L0: #family/papers is the Records screen
-  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' || view === 'calm' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
-  const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
+  const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'calm' ? 'Calm' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current
@@ -119,10 +121,11 @@ export default function App() {
       <ViewAsBanner />
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'calm' ? <Suspense fallback={null}><CalmScreen /></Suspense> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
       </main>
       <TabBar active={isTabView ? tab : null} />
       <JackFab tab={isTabView ? tab : null} hash={hash} />
+      <CalmJack />
       <Assistant />
       <ApprovePinSheet />
       <RequiresUpdate />
