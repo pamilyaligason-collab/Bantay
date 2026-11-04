@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { setScheme } from './v13'
+import { assertTargets, setScheme } from './v13'
 test.use({ viewport: { width: 390, height: 844 } })
 test.beforeEach(async ({ page }) => { await skipOnboarding(page); await page.goto('/#today') })
 test('tap Jack: the sheet opens with Help, Scan, Chat; Back closes it; Today has no SOS block', async ({ page }) => {
@@ -14,6 +14,22 @@ test('tap Jack: the sheet opens with Help, Scan, Chat; Back closes it; Today has
   await page.goBack(); await expect(sheet).toHaveCount(0)
   await expect(page.getByTestId('jack')).toBeFocused()
 })
+test('Open Safety in the Cannot hold sentence closes the sheet and lands on #safety with Call 911', async ({ page }) => {
+  await page.getByTestId('jack').click()
+  await page.getByTestId('jack-safety').getByRole('link', { name: 'Open Safety' }).click()
+  await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
+  await expect(page).toHaveURL(/#safety/)
+  await expect(page.getByText(/Call 911/).first()).toBeVisible()
+})
+test('the SOS block keeps its height while held', async ({ page }) => {
+  await page.getByTestId('jack').click()
+  const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
+  const idle = (await hold.boundingBox())!.height
+  await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+  await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
+  expect(Math.abs((await hold.boundingBox())!.height - idle), 'height while holding').toBeLessThanOrEqual(1)
+  await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+})
 test('Chat opens the assistant; Escape closes the sheet; a 3 s hold opens the SOS screen', async ({ page }) => {
   await page.getByTestId('jack').click(); await page.getByTestId('jack-chat').click()
   await expect(page.getByRole('dialog', { name: /Jack Jack|Ask/ })).toBeVisible()
@@ -25,9 +41,28 @@ test('Chat opens the assistant; Escape closes the sheet; a 3 s hold opens the SO
   await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible()
   await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
 })
+test('J1: Try saying chips prefill the box, no Upload row, targets >= 44 inside the sheet, a ring shows during a hold', async ({ page }) => {
+  await page.getByTestId('jack').click()
+  const sheet = page.getByRole('dialog', { name: 'Jack' }); await expect(sheet).toBeVisible()
+  await assertTargets(page)
+  await expect(page.getByTestId('jack-upload')).toHaveCount(0) // Scan takes a gallery photo; board JackSheet has no Upload row
+  const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
+  await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+  await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
+  await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+  await expect(page.getByTestId('jack-sos-ring')).toHaveCount(0)
+  await sheet.getByRole('button', { name: 'Log my BP' }).click()
+  await expect(page.getByRole('dialog', { name: /Jack Jack|Ask/ })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: /Jack Jack|Ask/ }).locator('input')).toHaveValue('Log my blood pressure')
+})
 test('reduced motion: the sheet still opens and closes', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await page.getByTestId('jack').click()
-  await expect(page.getByRole('dialog', { name: 'Jack' })).toBeVisible(); await page.getByTestId('jack-close').click()
+  await expect(page.getByRole('dialog', { name: 'Jack' })).toBeVisible()
+  await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+  await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
+  expect(await page.getByRole('dialog', { name: 'Jack' }).evaluate((d) => d.getAnimations({ subtree: true }).length)).toBe(0)
+  await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+  await page.getByTestId('jack-close').click()
   await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
 })
 
@@ -44,7 +79,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await btn.scrollIntoViewIfNeeded()
       const geo = () => page.evaluate(() => {
         const b = document.querySelector('[data-testid="jack-sos"] .sos-simple-btn')!
-        const label = b.querySelector('span')!.getBoundingClientRect()
+        const label = b.querySelector('.sos-simple-tx > span:first-child')!.getBoundingClientRect()
         const r = document.createRange(); r.selectNodeContents(document.querySelector('[data-testid="jack-sos"] .sos-simple-sub')!)
         const sub = r.getBoundingClientRect(); const bb = b.getBoundingClientRect()
         return { overlap: label.bottom > sub.top && sub.bottom > label.top, subTop: sub.top, subBottom: sub.bottom, labelBottom: label.bottom, btnTop: bb.top, btnBottom: bb.bottom }

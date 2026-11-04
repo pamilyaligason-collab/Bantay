@@ -1,6 +1,6 @@
 # P1 Shell, Look, Sign-in, Setup Implementation Plan
 
-**Goal:** Ship the v2 app shell in the D-29 look with the v6 sign-in, setup wizard and location rules, so a fresh APK goes install -> name -> PIN -> fingerprint -> wizard -> Today on Lloyd's phone.
+**Goal:** Ship the v2 app shell in the D-29 look with the v6 sign-in, setup wizard and location rules, so a fresh APK goes install -> name -> PIN -> fingerprint -> wizard -> Today on the owner's phone.
 
 **Architecture:** Keep Vite + React 19 + hash routes. Replace the iOS-glass tokens with the cream/green/amber token set from mockup v6 and self-hosted Fraunces + Plus Jakarta Sans. The shell (App.tsx) gets the 5-slot tab bar with the raised Ask button, a top bar with avatar (Me) and bell (inbox). Sign-in keeps the Supabase PIN Edge Function and adds error/lockout/forgot states; the APK unlocks a stored session with a native BiometricPrompt plugin; Google sign-in for admins comes from branch claude/jovial-wescoff-31c410. A pure `resolvePlace()` replaces every Dampas default. The wizard is data-driven: each step has an async `isDone()` probe, so satisfied steps are skipped and the rest become the Today checklist.
 
@@ -206,7 +206,7 @@ it('shows the Chrome waiting screen while Google sign-in is pending', async () =
   expect(screen.getByRole('button', { name: "I'm back" })).toBeVisible()
 })
 ```
-- [ ] **Step 4:** Lloyd step (orchestrator hands him the block at merge time): add `ph.bantay.family://auth-callback` to Supabase Auth Redirect URLs.
+- [ ] **Step 4:** The owner step (orchestrator hands him the block at merge time): add `ph.bantay.family://auth-callback` to Supabase Auth Redirect URLs.
 - [ ] **Step 5: Commit.**
 
 ---
@@ -287,7 +287,7 @@ describe('unlockMode', () => {
 })
 ```
   and a second describe with `isNativePlatform: () => true` and a plugin mock returning `{available:true,enrolled:false}` -> `'enrol-first'`, `{available:true,enrolled:true}` -> `'fingerprint'`.
-- [ ] **Step 2:** FAIL. **Step 3:** implement `unlockMode` + `promptFingerprint()` wrapper with `registerPlugin('Biometric')`. Java plugin ~60 lines using `androidx.biometric.BiometricPrompt` on the activity's main executor. **Step 4:** PASS. **Step 5:** `cd android && ./gradlew assembleDebug` compiles (orchestrator runs on Lloyd's PC if the lane machine has no SDK). **Step 6: Commit.**
+- [ ] **Step 2:** FAIL. **Step 3:** implement `unlockMode` + `promptFingerprint()` wrapper with `registerPlugin('Biometric')`. Java plugin ~60 lines using `androidx.biometric.BiometricPrompt` on the activity's main executor. **Step 4:** PASS. **Step 5:** `cd android && ./gradlew assembleDebug` compiles (orchestrator runs on the owner's PC if the lane machine has no SDK). **Step 6: Commit.**
 
 ---
 
@@ -424,8 +424,8 @@ it('lists only the warnings that need fixing', async () => {
 2. Gates on the merged branch: tsc 0, vitest all, Playwright all, `./gradlew assembleDebug`.
 3. Screenshots 390x844 light + dark: welcome, pin (wrong + locked), finger, each wizard step, Today with checklist, Me, Safety zone picker, tab bar. Review against mockup v6 before push.
 4. Fable 5.1 review of Lane C (auth) and Lane D (permissions); Opus 5.5 for A, B, E.
-5. Push main (orchestrator), Pages deploys; debug APK built and installed by Lloyd (one PowerShell block).
-6. **P1 acceptance (Lloyd's phone):** fresh APK install -> pick name -> PIN (wrong once, see tries left) -> fingerprint -> wizard skips what is already on -> test reminder arrives -> Today; reopen = photo + fingerprint; Lloyd's Google sign-in returns to the app; Safety shows GenSan data when the phone is in GenSan.
+5. Push main (orchestrator), Pages deploys; debug APK built and installed by the owner (one PowerShell block).
+6. **P1 acceptance (the owner's phone):** fresh APK install -> pick name -> PIN (wrong once, see tries left) -> fingerprint -> wizard skips what is already on -> test reminder arrives -> Today; reopen = photo + fingerprint; the owner's Google sign-in returns to the app; Safety shows GenSan data when the phone is in GenSan.
 
 ## Self-review
 
@@ -433,7 +433,7 @@ it('lists only the warnings that need fixing', async () => {
 - No placeholders: UI tasks reference exact mockup screen ids for layout and carry their own tests.
 - Types: `Tab`, `FamilySeg`, `StepId`, `Probe`, `ZoneId` used consistently.
 
-## Later phases noted from Lloyd's 2026-10-18 refinements
+## Later phases noted from the owner's 2026-10-18 refinements
 
 - D-63 IDs and insurance screen + upload: built by the records lane (session records-db, branch claude/records-db-cf8e91) as part of its document storage.
 - D-64 Video of the day: P3 Today task (curated `daily_videos` table, admin list, daily pick by zone risk and season, link-out card, hidden offline).

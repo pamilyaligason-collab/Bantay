@@ -1,6 +1,6 @@
 # P2 Distribution and Updater Implementation Plan
 
-**Goal:** Lloyd installs Bantay 2.0.0 from bantay.pages.dev/get, and publishing 2.0.1 shows "Update ready" in the app and installs in one or two taps; the old web app tells Android users to switch and iPhone users to stay.
+**Goal:** The owner installs Bantay 2.0.0 from bantay.pages.dev/get, and publishing 2.0.1 shows "Update ready" in the app and installs in one or two taps; the old web app tells Android users to switch and iPhone users to stay.
 
 **Architecture:** Signed release APKs and a `latest.json` live on GitHub Releases of pamilyaligason-collab/Bantay (served as application/vnd.android.package-archive with Content-Disposition attachment; Cloudflare Pages has a 25 MiB per-file limit, so APKs never go on Pages). A Java Capacitor plugin `AppUpdater` downloads to the app cache, checks SHA-256, and installs with a PackageInstaller session (handles STATUS_PENDING_USER_ACTION; asks for "Install unknown apps" for Bantay on the first update). The web layer compares the shell version with `latest.json` and with the minimum shell a feature needs. `/get` is a static page on Pages with an Android and an iPhone branch.
 
@@ -29,7 +29,7 @@ Lane G codes against the plugin interface in Task 1 Step 3 (contract); Lane F im
 **Files:** Modify `android/app/build.gradle`; Create `android/keystore.properties.example`; `.gitignore` (+ `android/keystore.properties`, `*.jks`).
 
 - [ ] **Step 1:** build.gradle: read `keystore.properties` if present; `signingConfigs { release { storeFile file(p['storeFile']); storePassword p['storePassword']; keyAlias p['keyAlias']; keyPassword p['keyPassword'] } }`; `buildTypes.release.signingConfig signingConfigs.release`; `versionCode` and `versionName` from `-PversionCode` / `-PversionName` with defaults 2000000 / "2.0.0" (versionCode = major*1_000_000 + minor*1_000 + patch).
-- [ ] **Step 2:** Lloyd step (one PowerShell block from the orchestrator): `keytool -genkeypair -v -keystore D:\Claude\Bantay-keys\bantay-release.jks -alias bantay -keyalg RSA -keysize 4096 -validity 10000`, write `android/keystore.properties` pointing at it, back the .jks up offline (losing it means members must uninstall to update). The key and passwords never enter the repo, chat or vault (FACTS secrets policy: names only).
+- [ ] **Step 2:** The owner step (one PowerShell block from the orchestrator): `keytool -genkeypair -v -keystore D:\Claude\Bantay-keys\bantay-release.jks -alias bantay -keyalg RSA -keysize 4096 -validity 10000`, write `android/keystore.properties` pointing at it, back the .jks up offline (losing it means members must uninstall to update). The key and passwords never enter the repo, chat or vault (FACTS secrets policy: names only).
 - [ ] **Step 3:** `./gradlew assembleRelease -PversionCode=2000000 -PversionName=2.0.0` -> `app-release.apk`; `apksigner verify --print-certs` shows the bantay certificate.
 - [ ] **Step 4: Commit** (no secrets) `git commit -m "android: release signing from keystore.properties, version from gradle props"`
 
@@ -77,7 +77,7 @@ public class AppUpdaterLogicTest {
   - `install`: `PackageInstaller.SessionParams(MODE_FULL_INSTALL)`; on API 31+ `setRequireUserAction(SessionParams.USER_ACTION_NOT_REQUIRED)`; copy the APK into `session.openWrite`, `fsync`, commit with a `PendingIntent.getBroadcast(..., FLAG_MUTABLE | FLAG_UPDATE_CURRENT)` to a receiver registered at runtime (`RECEIVER_NOT_EXPORTED` on API 33+). In the receiver: `STATUS_PENDING_USER_ACTION` -> start the `EXTRA_INTENT` activity (Android shows its own Update box) and resolve `pending_user`; `STATUS_SUCCESS` -> `success` (the app restarts on update); other -> `failure` with `EXTRA_STATUS_MESSAGE`.
   - `info`: `PackageInfoCompat.getLongVersionCode`, `versionName`, `canRequestPackageInstalls()`.
 - [ ] **Step 4:** `./gradlew testDebugUnitTest assembleDebug` -> PASS.
-- [ ] **Step 5: Device test (Lloyd's phone, orchestrator guides):** install 2.0.0 release; publish a 2.0.1 test release (Task 6 script); first update shows the "Allow Bantay to install updates" explainer then Android's permission screen, then the Update box; second update (2.0.2) needs 1 or 2 taps. Record the real tap counts in the vault (research note said UNVERIFIED whether NOT_REQUIRED skips the box).
+- [ ] **Step 5: Device test (the owner's phone, orchestrator guides):** install 2.0.0 release; publish a 2.0.1 test release (Task 6 script); first update shows the "Allow Bantay to install updates" explainer then Android's permission screen, then the Update box; second update (2.0.2) needs 1 or 2 taps. Record the real tap counts in the vault (research note said UNVERIFIED whether NOT_REQUIRED skips the box).
 - [ ] **Step 6: Commit** `git commit -m "android: AppUpdater plugin (GitHub-only download, SHA-256, PackageInstaller session)"`
 
 ---
@@ -213,7 +213,7 @@ test('Messenger in-app browser is told to open Chrome', async ({ browser }) => {
 
 **Files:** Create `scripts/release-apk.ps1`, `docs/RELEASE.md`.
 
-One PowerShell 5.1 block (Lloyd's standing order: stops at the first failure, labels each step): parse `-Version 2.0.1 [-MinShell 2000000] -Notes "..."`; compute versionCode; `npm ci`; `npx tsc --noEmit`; `npm test`; `npx cap sync android`; `.\gradlew.bat assembleRelease -PversionCode=... -PversionName=...`; copy to `bantay-<v>.apk` and `bantay.apk`; `Get-FileHash -Algorithm SHA256`; write `latest.json` (Task 3 shape); `gh release create v<v> bantay-<v>.apk bantay.apk latest.json --repo pamilyaligason-collab/Bantay --title "Bantay <v>" --notes "<notes>"` using the pamilyaligason-collab gh account (FACTS: repo-local credential helper). Each native command followed by `if ($LASTEXITCODE -ne 0) { throw "step N failed" }`; `$ErrorActionPreference='Stop'`. Test: run with `-DryRun` (skips `gh release create`, prints the latest.json) in CI-less local check; the orchestrator runs the dry run, Lloyd runs the real one.
+One PowerShell 5.1 block (the owner's standing order: stops at the first failure, labels each step): parse `-Version 2.0.1 [-MinShell 2000000] -Notes "..."`; compute versionCode; `npm ci`; `npx tsc --noEmit`; `npm test`; `npx cap sync android`; `.\gradlew.bat assembleRelease -PversionCode=... -PversionName=...`; copy to `bantay-<v>.apk` and `bantay.apk`; `Get-FileHash -Algorithm SHA256`; write `latest.json` (Task 3 shape); `gh release create v<v> bantay-<v>.apk bantay.apk latest.json --repo pamilyaligason-collab/Bantay --title "Bantay <v>" --notes "<notes>"` using the pamilyaligason-collab gh account (FACTS: repo-local credential helper). Each native command followed by `if ($LASTEXITCODE -ne 0) { throw "step N failed" }`; `$ErrorActionPreference='Stop'`. Test: run with `-DryRun` (skips `gh release create`, prints the latest.json) in CI-less local check; the orchestrator runs the dry run, the owner runs the real one.
 
 - [ ] Steps: write script -> `powershell -File scripts/release-apk.ps1 -Version 2.0.0 -Notes "First v2" -DryRun` prints a valid latest.json that `parseLatest` accepts (add a vitest that reads `scripts/fixtures/latest.sample.json` written by the dry run) -> commit.
 
@@ -247,7 +247,7 @@ describe('shouldShowPwaBanner', () => {
 
 1. Merge F, then G, then H. Gates: tsc, vitest, Playwright, `./gradlew testDebugUnitTest assembleRelease`.
 2. Fable 5.1 review of AppUpdaterPlugin (URL allow-list, redirect handling, checksum before install, PendingIntent flags, receiver export).
-3. Lloyd: keystore block (Task 1 Step 2), then the release block for 2.0.0, install from /get on his phone (count the taps), then release 2.0.1 and update from the Today card (count the taps). Record both in the vault BASELINE.
+3. The owner: keystore block (Task 1 Step 2), then the release block for 2.0.0, install from /get on his phone (count the taps), then release 2.0.1 and update from the Today card (count the taps). Record both in the vault BASELINE.
 4. Register a free Android developer account with limited distribution (<= 20 devices) before 2027 (D-50); not needed for 2026 installs in the Philippines.
 
 ## Self-review

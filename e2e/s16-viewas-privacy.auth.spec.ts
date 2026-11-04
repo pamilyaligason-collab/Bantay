@@ -21,7 +21,7 @@ test('an admin with no carer link gets the one reason sentence on the bar, and t
   const sheet = page.getByRole('dialog', { name: 'View as' })
   await expect(sheet.getByText('Needs internet to switch')).toBeVisible()
   await expect(sheet.getByText('Every view is recorded in the family history.')).toBeVisible()
-  await expect(sheet.getByRole('button', { name: 'Lloyd' })).toHaveCount(0) // you cannot act as yourself
+  await expect(sheet.getByRole('button', { name: 'Rey' })).toHaveCount(0) // you cannot act as yourself
   await sheet.getByRole('button', { name: 'Mama' }).click()
   const bar = page.getByTestId('viewas-bar').first()
   await expect(bar).toContainText('Acting as Mama')

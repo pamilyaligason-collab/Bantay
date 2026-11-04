@@ -26,8 +26,8 @@ beforeEach(async () => {
   h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null }
   h.log.mockReset(); h.log.mockResolvedValue(true)
   h.carers.mockReset(); h.carers.mockResolvedValue({ ok: true, data: [] })
-  h.people = [{ id: 'p-admin', name: 'Lloyd', isMe: true }, { id: 'p-mama', name: 'Mama', isMe: false }, { id: 'p-cache', name: 'Cached Only', isMe: false }]
-  await hdb.people.clear(); await hdb.people.bulkPut([{ id: 'p-admin', name: 'Lloyd' }, { id: 'p-mama', name: 'Mama' }])
+  h.people = [{ id: 'p-admin', name: 'Rey', isMe: true }, { id: 'p-mama', name: 'Mama', isMe: false }, { id: 'p-cache', name: 'Cached Only', isMe: false }]
+  await hdb.people.clear(); await hdb.people.bulkPut([{ id: 'p-admin', name: 'Rey' }, { id: 'p-mama', name: 'Mama' }])
 })
 afterEach(() => { cleanup(); exitActing() })
 
@@ -43,7 +43,7 @@ describe('ViewAsRow in isolation', () => {
     fireEvent.click(within(await screen.findByTestId('viewas-row')).getByRole('button'))
     const sheet = await screen.findByRole('dialog', { name: 'View as' })
     expect(within(sheet).getByText('Needs internet to switch. Every view is recorded in the family history.')).toBeTruthy()
-    expect(within(sheet).queryByRole('button', { name: 'Lloyd' })).toBeNull()
+    expect(within(sheet).queryByRole('button', { name: 'Rey' })).toBeNull()
     await waitFor(() => expect(within(sheet).getByRole('button', { name: 'Mama' })).toBeTruthy())
     expect(within(sheet).queryByRole('button', { name: 'Cached Only' })).toBeNull() // only in the sign-in cache: acting would end at once
     fireEvent.click(within(sheet).getByRole('button', { name: 'Mama' }))

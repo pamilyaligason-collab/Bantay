@@ -51,12 +51,14 @@ export const enqueue = (table: string, op: string, payload: unknown) =>
 /** Send queued rows oldest first. A row is deleted only after sendFn resolves.
  *  On reject: tries += 1 and draining stops, so write order is kept and an offline phone makes one call.
  *  `only` (optional) skips rows it rejects: they stay queued, are not sent and not counted.
+ *  `first` rows go ahead of the rest, id order kept inside each group. `max` caps this drain; the rest wait for the next one.
  *  Returns how many rows were sent.
  *  ponytail: one poison row blocks the queue; callers can read `tries` and drop it. */
-export async function drain(sendFn: (row: OutboxRow) => Promise<unknown>, only?: (row: OutboxRow) => boolean): Promise<number> {
+export async function drain(sendFn: (row: OutboxRow) => Promise<unknown>, only?: (row: OutboxRow) => boolean, { first, max = Infinity }: { first?: (row: OutboxRow) => boolean; max?: number } = {}): Promise<number> {
   let sent = 0
-  for (const row of await db.outbox.orderBy('id').toArray()) {
-    if (only && !only(row)) continue // rows the caller will not send stay queued, untouched
+  const rows = (await db.outbox.orderBy('id').toArray()).filter((r) => !only || only(r)) // rows the caller will not send stay queued, untouched
+  const queue = first ? [...rows.filter(first), ...rows.filter((r) => !first(r))] : rows
+  for (const row of queue.slice(0, max)) {
     try {
       await sendFn(row)
     } catch {

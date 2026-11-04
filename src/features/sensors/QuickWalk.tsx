@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useKv } from '../safety/store'
 import { logActivity } from '../log/store'
 import { isNative } from './bridge'
 import { currentPersonId, STATE_KEY } from './health'
 
 const CHIPS = [10, 20, 30, 45]
-const NO_STATE = { enabled: [] as string[] }
+const NO_STATE = { enabled: [] as string[], owner: undefined as string | undefined }
 
 /** One-tap walk log for the PWA, and for the app until step sync is on. A phone browser has no step counter,
  *  so the person tells us. Logs source 'manual'. Hidden once the app is reading steps from Health Connect or HealthKit.
@@ -18,7 +18,10 @@ export default function QuickWalk({ native = isNative(), embedded = false, onSav
   const [done, setDone] = useState<number | null>(null)
   const [failed, setFailed] = useState(false)
   const [signedOut, setSignedOut] = useState(false)
-  if (native && st.enabled.includes('steps')) return null
+  const [me, setMe] = useState<string | null>(null)
+  useEffect(() => { void currentPersonId().then(setMe, () => undefined) }, [])
+  // Steps are read for the phone's owner only: anyone else signed in still logs by hand.
+  if (native && st.enabled.includes('steps') && (!st.owner || !me || st.owner === me)) return null
 
   const log = async (minutes: number) => {
     if (busy || !Number.isFinite(minutes) || minutes < 1 || minutes > 600) return

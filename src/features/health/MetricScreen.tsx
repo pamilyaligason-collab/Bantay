@@ -1,7 +1,8 @@
+import { properName } from './medName'
 import { useMemo, useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { CHIP, GUIDE, latestVsNormal, rangeState, toCanonicalReading, type Reading } from './ranges'
-import { PersonChips } from '../records/PersonChips'
+import { WhoLine } from './WhoLine'
 import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
@@ -20,7 +21,6 @@ import BpWords from './bpcheck/BpWords'
 import { BpWord } from './bpcheck/BpCheck'
 import { bpDoctorOf, kindOf, type BpArg } from './verdict'
 
-const NO_DRAFTS: Record<string, number> = {}
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
 const ACT_LABEL: Record<string, { label: string; unit: string }> = { steps: { label: 'Steps', unit: 'steps' }, sleep: { label: 'Sleep', unit: 'hours' }, mood: { label: 'Mood', unit: '' } }
 
@@ -32,7 +32,7 @@ export function bpHeadlineArg(readings: Reading[], code: string, latest: Reading
 }
 
 export default function MetricScreen({ code }: { code: string }) {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds, canMark, reload } = useHealthPerson()
+  const { ready, people, personId, readings, thresholds, canMark, reload } = useHealthPerson()
   const acts = useActivity(personId)
   const [period, setPeriod] = useState<Period>('month')
   const [part, setPart] = useState<'am' | 'pm' | null>(null)
@@ -71,7 +71,7 @@ export default function MetricScreen({ code }: { code: string }) {
   return (
     <>
       <LargeTitle back={{ href: '#health', label: 'Health' }} title={label} />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <WhoLine />
 
       {!ready ? null : !known || (pts.length === 0 && !part) ? (
         <div className="grp" style={{ marginTop: 12 }}>
@@ -100,7 +100,7 @@ export default function MetricScreen({ code }: { code: string }) {
 
           {lab && latest && <LabDetail code={code} readings={readings} family={family} personId={personId} />}
           {spec && canMark && personId && <button type="button" className="btn mc-add" onClick={() => setAdding(true)}>Add reading</button>}
-          {bpCode && canMark && personId && <BpCheckButton personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} onSaved={(m) => { setSaved(m); reload() }} className="btn mc-add" />}
+          {bpCode && canMark && personId && <BpCheckButton personId={personId} forName={properName(people.find((x) => x.id === personId)?.name ?? '')} onSaved={(m) => { setSaved(m); reload() }} className="btn mc-add" />}
           {saved && <p className="sub" role="status">{saved}</p>}
           {!lab && (
             <Segmented<Period> label="Period" value={period} onChange={setPeriod} options={[{ id: 'week', label: 'This week' }, { id: 'month', label: 'This month' }]} />
@@ -142,7 +142,7 @@ export default function MetricScreen({ code }: { code: string }) {
                     {!v.lab.text && (v.guide || v.family || v.general) && <span className="sub">Lab range: not printed</span>}
                     {v.guide && (
                       <span className="sub">
-                        <a href={v.guide.url} target="_blank" rel="noreferrer" style={{ color: 'var(--act)' }}>
+                        <a href={v.guide.url} target="_blank" rel="noreferrer" className="mc-guide">
                           {v.guide.source}, {v.guide.year}
                           <span style={HIDDEN}> (opens in new tab)</span>
                         </a>
@@ -188,7 +188,7 @@ export default function MetricScreen({ code }: { code: string }) {
           </div>}
         </>
       )}
-      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={people.find((x) => x.id === personId)?.name ?? ''} family={bpCode ? undefined : family} bpDoctor={bpCode ? bpDoctor : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
+      {adding && spec && <AddReadingSheet spec={spec} personId={personId} forName={properName(people.find((x) => x.id === personId)?.name ?? '')} family={bpCode ? undefined : family} bpDoctor={bpCode ? bpDoctor : undefined} onClose={() => setAdding(false)} onSaved={(m) => { setSaved(m); reload() }} />}
     </>
   )
 }

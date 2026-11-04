@@ -37,9 +37,9 @@ reset request.jwt.claim.sub;
 insert into public.meds_taken (client_id, person_id, name, taken_at, marked_by) values
  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-0000000000b1', 'Statin', now(), '00000000-0000-0000-0000-0000000000d1');
 select pg_temp.ok((select marked_by::text from public.meds_taken where client_id = '20000000-0000-0000-0000-000000000003') = '00000000-0000-0000-0000-0000000000d1', 'a caller with no auth.uid() keeps the marked_by it sends');
-update public.people set display_name = 'Roco, Lloyd Jr' where id = '10000000-0000-0000-0000-0000000000c1';
+update public.people set display_name = 'Villar, Rey Jr' where id = '10000000-0000-0000-0000-0000000000c1';
 insert into public.meds_taken (client_id, person_id, name, taken_at, marked_by) values ('20000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-0000000000b1', 'Comma', now(), '00000000-0000-0000-0000-0000000000c1');
-select pg_temp.ok((select marked_by_name from public.meds_taken where client_id = '20000000-0000-0000-0000-000000000005') = 'Lloyd', 'a "Surname, Given" display name gives the given name (ML-35)');
+select pg_temp.ok((select marked_by_name from public.meds_taken where client_id = '20000000-0000-0000-0000-000000000005') = 'Rey', 'a "Surname, Given" display name gives the given name (ML-35)');
 update public.people set display_name = 'Lola' where id = '10000000-0000-0000-0000-0000000000c1';
 insert into public.meds_taken (client_id, person_id, name, taken_at) values ('20000000-0000-0000-0000-000000000004','10000000-0000-0000-0000-0000000000b1', 'Old', now());
 select pg_temp.ok((select marked_by from public.meds_taken where client_id = '20000000-0000-0000-0000-000000000004') is null, 'unknown stays null (old rows and imports)');

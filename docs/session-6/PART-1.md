@@ -1,13 +1,13 @@
 # Session 6, Part 1: what the app does now, and what we may use
 
 As of 2026-10-20. No app code in this phase. Public repo, so there are no real names, health values or screenshots here.
-Members are anonymised. Lloyd approves this part before Part 2 starts.
+Members are anonymised. The owner approves this part before Part 2 starts.
 
 ## 1. Headline
 - **Medicines cannot be reminded or logged.** 19 prescriptions (31 items, 5 people) were imported, but `medications` has 0 rows and
   `meds_taken` has 0 rows. None of the items has a generic name, and 8 are unclear. The newest prescription is from 2024-11; none is
   from the last 180 days.
-- **Fix #1 (Lloyd, D1): auto-convert every prescription item into a scheduled medicine, with edit, pause and delete.**
+- **Fix #1 (the owner, D1): auto-convert every prescription item into a scheduled medicine, with edit, pause and delete.**
   Stale items are handled by a "Still taking it?" review (PART-3 1.3). A generic name is needed before any label lookup
   (openFDA, DailyMed, MedlinePlus).
 - Usage tracking is only 4 days old (see HANDOFF.md), so the habit baseline is thin.
@@ -56,8 +56,8 @@ but never sent. Natural homes: `logMedTaken`, `logReading`, `SosScreen`. SOS onl
 none for the second. There is no nearby-hospital lookup. The storm map is pinned to 12°N 128°E. This explains the
 "wrong island / other province" findings in the screenshots.
 
-## 4. Reference: weather screens in Lloyd's other two apps
-Lloyd shared 5 shots (2026-10-20) from a house app and a rental app. They set the bar Bantay's weather should meet.
+## 4. Reference: weather screens in the owner's other two apps
+The owner shared 5 shots (2026-10-20) from a house app and a rental app. They set the bar Bantay's weather should meet.
 
 What they do well:
 1. **One hero card**: place name, big temperature, condition plus feels-like, then a 2x3 or 2x4 tile grid (wind, gusts, rain next 6 h, feels like, humidity, UV, air quality).
@@ -115,7 +115,7 @@ Risks:
 - There are no published evacuation-centre lists for the family's two areas. Ask the local DRRMO.
 - YouTube and openFDA rows were re-checked on 2026-10-20 by web search (the official pages are blocked from the cloud session).
 
-## 7. Decisions (Lloyd, 2026-10-20; see MASTER-PLAN.md)
+## 7. Decisions (the owner, 2026-10-20; see MASTER-PLAN.md)
 1. D1: auto-convert all prescription items, with manual edit, pause and delete.
 2. D2: one hero card, an action line first, hourly then 7 days, weather shown once.
 3. D3: Safety localisation planned in Part 3 (map, news, hospital follow the member's place).

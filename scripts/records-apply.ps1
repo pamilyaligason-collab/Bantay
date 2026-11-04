@@ -1,4 +1,4 @@
-# Family Bantay - apply migration 0008 (records database, D-53, D-63). Lloyd runs this once. Windows PowerShell 5.1.
+# Family Bantay - apply migration 0008 (records database, D-53, D-63). The owner runs this once. Windows PowerShell 5.1.
 # Run from a clean checkout that holds the reviewed 0008 (records branch or main):
 #   powershell -ExecutionPolicy Bypass -File scripts\records-apply.ps1
 # No database password needed: it uses the Supabase CLI sign-in on this PC (Management API).

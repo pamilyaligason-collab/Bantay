@@ -110,7 +110,7 @@ describe('SignIn: fingerprint first (D-27)', () => {
   })
 })
 
-describe('SignIn: dropdown and remembered person (Lloyd 2026-10-18)', () => {
+describe('SignIn: dropdown and remembered person (the owner 2026-10-18)', () => {
   beforeEach(() => { localStorage.clear(); h.pk.mockReset(); localStorage.setItem('bantay.family', JSON.stringify(FAMILY)) })
   afterEach(() => cleanup())
 

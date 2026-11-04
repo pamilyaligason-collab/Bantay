@@ -51,28 +51,16 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId('kpis')).toBeVisible()
 })
 
-test('My KPIs show the latest reading and time; the Vitals toggle switches Latest, Average and Normal', async ({ page }) => {
+test('My KPIs show the latest reading and time; Averages say the days they used; Last readings has no toggle', async ({ page }) => {
   const kpi = page.getByTestId('kpis').locator('[data-kpi="bp_systolic"]')
   await expect(kpi).toContainText('124/79')
   await expect(kpi).toContainText('today')
   await expect(page.getByTestId('kpis').locator('[data-kpi="steps"]')).toContainText('4,210')
-  await expect(page.getByRole('link', { name: /^BP 130\/84/ })).toBeVisible() // the body map is the 7-day average
-  await expect(page.getByTestId('seven')).toContainText('7-day averages')
-
+  await expect(page.getByTestId('node-bp')).toContainText('130/84') // the average tile
+  await expect(page.getByTestId('node-bp')).toContainText(/Average of [0-9]+ days?|7-day average/)
   const row = page.locator('[data-test="bp_systolic"]')
-  await expect(page.getByRole('button', { name: 'Latest' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(row).toContainText('124')
-  await page.getByRole('button', { name: 'Average' }).click()
-  await expect(page.getByRole('button', { name: 'Average' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(row).toContainText('130')
-  await expect(row).toContainText('7-day average')
-  await page.getByRole('button', { name: 'Normal' }).click()
-  const normal = page.getByTestId('normal-rows')
-  await expect(normal).toContainText('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')
-  await expect(normal).toContainText('60 to 100 bpm')
-  await expect(normal).toContainText('Normal is under 120 over 80')
-  await page.getByRole('button', { name: 'Latest' }).click()
-  await expect(row).toContainText('124')
+  await expect(row).toContainText('124') // Last readings: the latest
+  await expect(page.getByRole('button', { name: 'Average' })).toHaveCount(0)
 })
 
 for (const width of [390, 360]) {
@@ -84,17 +72,6 @@ for (const width of [390, 360]) {
     expect(over).toEqual([])
   })
 }
-
-test('Latest / Average / Normal switch fits on one line at 360px', async ({ page }) => {
-  await page.setViewportSize({ width: 360, height: 844 })
-  await page.reload()
-  const btns = page.locator('.hv-modes button')
-  await expect(btns).toHaveCount(3)
-  const boxes = await btns.evaluateAll((bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return { h: Math.round(r.height), w: Math.round(r.width), lines: Math.round(r.height / parseFloat(getComputedStyle(b).lineHeight || '20')) } }))
-  expect(new Set(boxes.map((b) => b.h)).size).toBe(1)
-  expect(boxes.every((b) => b.h <= 48)).toBe(true)
-  expect(Math.max(...boxes.map((b) => b.w)) - Math.min(...boxes.map((b) => b.w))).toBeLessThanOrEqual(1)
-})
 
 test('a whole vital row is the link, 44px tall, with one tab stop', async ({ page }) => {
   const row = page.locator('.hv-row[data-test="bp_systolic"]')
@@ -153,11 +130,8 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'health-top', scheme)
     expect(await axe(page)).toEqual([])
     await scrollTop(page, 900)
-    for (const m of ['Latest', 'Average', 'Normal']) {
-      await page.getByRole('button', { name: m }).click()
-      await page.getByRole('heading', { name: 'Vitals' }).scrollIntoViewIfNeeded()
-      await shot(page, `vitals-${m.toLowerCase()}`, scheme)
-    }
+    await page.getByRole('heading', { name: 'Last readings' }).scrollIntoViewIfNeeded()
+    await shot(page, 'vitals-latest', scheme)
     expect(await axe(page)).toEqual([])
 
     await page.goto('/#health/metric/bp_systolic')

@@ -1,10 +1,10 @@
 # Bantay design audit (2026-10-31, live app, before the Apple-style refresh)
 
-⚠️ DEGRADED: single-context. Lloyd's phone screenshots exist only in the main chat, so the review and the detector ran in one context.
+⚠️ DEGRADED: single-context. The owner's phone screenshots exist only in the main chat, so the review and the detector ran in one context.
 
-Sources: the live site bantay.pages.dev (main b5937d4), signed in as Loyd (admin), 375x812 dark. Lloyd's 4 phone shots (light, 19:04-19:05). Detector `impeccable detect.mjs` over today/health/family/discover/safety/shell/look: 13 findings. Apple HIG notes from the vault (2026-10-13 lesson, read in full) and an Apple-pattern research pass (Apple Support 102262, Apple Newsroom 2025-06 Liquid Glass).
+Sources: the live site bantay.pages.dev (main b5937d4), signed in as Rey (admin), 375x812 dark. The owner's 4 phone shots (light, 19:04-19:05). Detector `impeccable detect.mjs` over today/health/family/discover/safety/shell/look: 13 findings. Apple HIG notes from the vault (2026-10-13 lesson, read in full) and an Apple-pattern research pass (Apple Support 102262, Apple Newsroom 2025-06 Liquid Glass).
 
-Scope: layout and template only. Lloyd: "current features are already ok, issue is the template design and app layout".
+Scope: layout and template only. The owner: "current features are already ok, issue is the template design and app layout".
 
 ## 1. Verdict
 
@@ -34,7 +34,7 @@ Fix direction: one hero that answers "what do I need to do today", then glanceab
 
 ### P0-2 SOS competes for attention and is in the wrong place
 A red pill in the middle of Today (phone shot 1, live dark shot) pulls the eye away from the day. It also sits where a thumb scrolls. Apple keeps SOS out of app content: it is a hardware gesture plus Medical ID (Apple Support 102262).
-Fix direction (Lloyd's idea): Jack becomes the one action button. Tapping it opens a sheet with Help (hold), Scan and Chat. The Safety tab keeps the full emergency screen. Today loses the pill.
+Fix direction (the owner's idea): Jack becomes the one action button. Tapping it opens a sheet with Help (hold), Scan and Chat. The Safety tab keeps the full emergency screen. Today loses the pill.
 
 ### P0-3 Health opens on another member for the admin
 Live and phone: the picker lands on "Ma" (selected chip at the far right, partly off screen) instead of "Me". Code: `useHealthData` picks `chosen`, else the signed-in person, else the first person. Something sets `chosen` before the admin's own id is known (root cause to be found in the build, `src/features/records/useHealthData.ts:46`).
@@ -46,7 +46,7 @@ Fix direction: a separate read-only state. A name header with a "View only" badg
 
 ### P0-5 Location defaults to Dampas
 The Today header says "Saturday, Oct 31 · Dampas" and weather says "Dampas (saved zone)" (phone shot 3). `resolveLocation` falls back to the saved zone, default Dampas, whenever GPS is not already granted or times out (`src/features/location/useLocation.ts:36`).
-Fix direction: decide with Lloyd (Q&A). Options: phone location first with an honest "Location off" state, or no default zone.
+Fix direction: decide with the owner (Q&A). Options: phone location first with an honest "Location off" state, or no default zone.
 
 ### P0-6 Sub-page header sits under the status bar
 Phone shot 2 (ALT lab page): the back button and the "ALT" title overlap 19:05 and the signal icons. The safe-area top inset is missing on detail pages.
@@ -55,7 +55,7 @@ Phone shot 2 (ALT lab page): the back button and the "ALT" title overlap 19:05 a
 
 **Today**: see P0-1, P0-2, P0-5. Tiles: BP, Sugar and Weight are log buttons that look like stats but show no value. "How are you?" + I'm OK is a different control inside the same grid. The salt line floats with no container. "See the week" and "Your week" are two rows for one idea. The setup list ("2 left: Health data, SOS contacts") is fine but should be a dismissible banner at the top or live in Settings. "Family alerts also show here." is an empty-state sentence shown as a card.
 
-**Health**: see P0-3, P0-4. "At a glance" is 4 pastel tiles (Progress, Medicines, Labs, Video) with one grey line each. They hold real data ("4 of 4 left today", "4 to ask · 6 Oct") but present it as captions. "More in Health" is 4 more tiles of the same size, so the summary and the menu look identical. Video is content, not health status. The 10-chip person row (Me, David ... Susana, "pamilya") is a scroller with no sign of more. The detail page (ALT) is good: a big number, a range bar and a High badge. Keep that pattern and make it the model for the summary.
+**Health**: see P0-3, P0-4. "At a glance" is 4 pastel tiles (Progress, Medicines, Labs, Video) with one grey line each. They hold real data ("4 of 4 left today", "4 to ask · 6 Oct") but present it as captions. "More in Health" is 4 more tiles of the same size, so the summary and the menu look identical. Video is content, not health status. The 10-chip person row (Me, Danilo ... Sonia, "pamilya") is a scroller with no sign of more. The detail page (ALT) is good: a big number, a range bar and a High badge. Keep that pattern and make it the model for the summary.
 
 **Discover**: Today's pick with the Jack art is the one place with a real hero. Good. Below, Learn, Watch, Listen, Play and News are 5 equal tiles with no preview (no thumbnail, no first item). "Undas" is a strong seasonal row but reads as a tip, not a feature.
 

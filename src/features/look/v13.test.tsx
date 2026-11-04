@@ -5,8 +5,8 @@ afterEach(cleanup)
 
 describe('LargeTitle', () => {
   it('kicker, 34 px h1 and right actions', () => {
-    render(<LargeTitle kicker="Saturday, Oct 31" title="Good evening, Loyd" actions={<a href="#me" aria-label="You and settings">L</a>} testId="head" />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Good evening, Loyd' }).className).toContain('lt-title')
+    render(<LargeTitle kicker="Saturday, Oct 31" title="Good evening, Rey" actions={<a href="#me" aria-label="You and settings">L</a>} testId="head" />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Good evening, Rey' }).className).toContain('lt-title')
     expect(screen.getByTestId('head').textContent).toContain('Saturday, Oct 31')
     expect(screen.getByRole('link', { name: 'You and settings' })).not.toBeNull()
   })
@@ -14,6 +14,10 @@ describe('LargeTitle', () => {
     render(<LargeTitle title="Labs" back={{ href: '#health', label: 'Health' }} />)
     const back = screen.getByRole('link', { name: 'Back to Health' })
     expect(back.getAttribute('href')).toBe('#health'); expect(back.textContent).toContain('Health')
+  })
+  it('a bare "Back" label is not read as "Back to Back"', () => {
+    render(<LargeTitle title="Scan" back={{ href: '#x', label: 'Back' }} />)
+    expect(screen.getByRole('link', { name: 'Back' })).not.toBeNull()
   })
 })
 describe('Section', () => {
@@ -79,6 +83,14 @@ describe('MapCard', () => {
     rerender(<MapCard render={render_} credit="Windy" />)
     expect(render_).toHaveBeenCalledTimes(1)
     unmount(); expect(cleanup).toHaveBeenCalled()
+  })
+})
+describe('MapCard overlay', () => {
+  it('draws the overlay node inside the card, and nothing without it', () => {
+    const { container, rerender } = render(<MapCard image={{ src: '/m.jpg', alt: 'Map' }} credit="c" overlay={<button type="button">Rain</button>} testId="map" />)
+    expect(container.querySelector('[data-testid=map] .mapc-ov')?.textContent).toBe('Rain')
+    rerender(<MapCard image={{ src: '/m.jpg', alt: 'Map' }} credit="c" testId="map" />)
+    expect(container.querySelector('.mapc-ov')).toBeNull()
   })
 })
 describe('Sheet', () => {

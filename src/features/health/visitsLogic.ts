@@ -70,13 +70,14 @@ export function nextVisitLine(l: VisitList): { text: string; sub: string } | nul
   return f ? { text: `Follow-up due: ${dayWords(f.day)}`, sub: 'No visit booked yet' } : null
 }
 
-export interface BringItem { id: string; label: string }
+export interface BringItem { id: string; label: string; sub?: string }
 /** What to take to the visit: the 30-day readings, the medicine list, papers, then the person's own questions. */
-export function bringList(i: { hasReadings: boolean; questions: string[] }): BringItem[] {
+export function bringList(i: { hasReadings: boolean; questions: string[]; readingCount?: number; medCount?: number; paperDate?: string | null }): BringItem[] {
+  const n = i.readingCount ?? 0
   return [
-    { id: 'readings', label: i.hasReadings ? 'BP and sugar log (last 30 days)' : 'Your home readings, if you have them' },
-    { id: 'meds', label: 'Medicine list' },
-    { id: 'papers', label: 'Recent lab results and prescriptions' },
-    ...i.questions.map((q, n) => ({ id: `q${n}`, label: `Question: ${q}` }))
+    { id: 'readings', label: i.hasReadings ? 'BP and sugar log (last 30 days)' : 'Your home readings, if you have them', sub: i.hasReadings ? `${n} reading${n === 1 ? '' : 's'} in the last 30 days` : 'No readings in the last 30 days' },
+    { id: 'meds', label: 'Medicine list', sub: i.medCount ? `${i.medCount} medicine${i.medCount === 1 ? '' : 's'}` : 'None added yet' },
+    { id: 'papers', label: 'Recent lab results and prescriptions', sub: i.paperDate ? `Lab paper · ${i.paperDate}` : 'No lab paper yet' },
+    ...i.questions.map((q, k) => ({ id: `q:${q}${i.questions.indexOf(q) === k ? '' : `#${k}`}`, label: `Question: ${q}` })) // keyed by the words, not the position: answering one question must not tick another
   ]
 }

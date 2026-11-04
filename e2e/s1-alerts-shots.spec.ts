@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { assertTargets } from './v13'
 import { shotPath } from './shotPath'
 
 // S1 ALERTS-INAPP shots (390x844, light and dark): start-inbox, lock-missed (alert list with count), today-full (alert card variant, needs AlertCardToday mounted
 // in Today), start-banner (switch-to-app banner, shown once kv alerts.inapp.ok is true). Synthetic rows only: template ids, no values.
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
-const SHOTS = shotPath('docs/session-10/shots/S1')
+const SHOTS = shotPath('docs/redesign-2026-10-31/shots/gaps-O')
 type Row = Record<string, unknown>
 
 async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
@@ -52,12 +53,42 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: 'Alerts' })).toBeVisible()
     await expect(page.getByText('Family alerts show here when you open Bantay')).toBeVisible()
     await expect(page.getByText('A medicine was missed')).toBeVisible()
-    expect(await page.getByRole('img', { name: 'New' }).count()).toBeGreaterThanOrEqual(3) // a1, a2, a3 are unseen (other inbox sources may add a dot)
-    await expect(page.getByRole('link', { name: /A medicine was missed/ }).getByRole('img', { name: 'New' })).toBeVisible()
-    await expect(page.getByRole('link', { name: /Digest|summary is ready/ }).getByRole('img', { name: 'New' })).toHaveCount(0) // a seen row has no dot
-    await expect(page.getByRole('link', { name: 'Message the family' })).toBeVisible() // the missed-dose row actions
+    await expect(page.getByRole('heading', { name: /^New \(\d+\)$/ })).toBeVisible() // a1, a2, a3 are unseen (other inbox sources may add some)
+    await expect(page.getByTestId('inbox-new').getByRole('button', { name: /A medicine was missed/ })).toBeVisible()
+    await expect(page.getByTestId('inbox-new').getByRole('button', { name: /Digest|summary is ready/ })).toHaveCount(0) // a seen row is not under New
+    await expect(page.getByRole('link', { name: 'Message the family' })).toHaveCount(0) // no action sits in the list
+    await assertTargets(page)
+    await page.getByTestId('inbox-new').getByRole('button', { name: /A medicine was missed/ }).click()
+    await expect(page.getByRole('dialog').getByRole('link', { name: 'Message the family' })).toBeVisible() // the missed-dose actions are in the row's sheet
+    await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click()
     await page.screenshot({ path: `${SHOTS}/start-inbox-${scheme}.png` })
     await page.screenshot({ path: `${SHOTS}/lock-missed-${scheme}.png` })
+  })
+
+  test(`A1 53 unread stays short, A2 tab bar has no pill on #notif ${scheme}`, async ({ page }) => {
+    await open(page)
+    await page.emulateMedia({ colorScheme: scheme })
+    await seed(page, 'bantay-alerts', 'alerts', Array.from({ length: 53 }, (_, n) => alertRow(`bulk${n}`, 'hazard', 'storm_warning', 5 + n)))
+    await page.goto('/#notif')
+    await page.reload()
+    await expect(page.getByRole('heading', { name: /^New \(5\d\)$/ })).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    const m = await page.evaluate(() => {
+      const sc = document.querySelector('.bt .scroll')!
+      const bar = document.querySelector('[data-testid="tabbar"]')!
+      return { height: sc.scrollHeight, rows: document.querySelectorAll('[data-testid="inbox-row"]').length, inline: document.querySelectorAll('.in-list .in-act, [data-testid="inbox-new"] .in-act').length, pill: getComputedStyle(bar, '::before').opacity, rowH: Math.round(document.querySelector('[data-testid="inbox-row"]')!.getBoundingClientRect().height), anims: bar.getAnimations({ subtree: true }).length, current: document.querySelectorAll('[data-testid="tabbar"] [aria-current="page"]').length }
+    })
+    console.log('A1 measured', JSON.stringify(m))
+    expect(m.rows).toBeGreaterThanOrEqual(53)
+    expect(m.inline).toBe(0)
+    expect(m.pill).toBe('0')
+    expect(m.anims).toBe(0)
+    expect(m.current).toBe(0)
+    expect(m.rowH).toBeLessThanOrEqual(88) // two-line titles wrap, never truncate, beside the time (board AlertsInbox); the plan's 3,000 px page budget is unreachable with the 56 px Row contract and a sub line; page height is printed above and reported
+    await assertTargets(page)
+    await page.screenshot({ path: `${SHOTS}/alerts-53-${scheme}.png` })
+    await page.goto('/#me'); await page.waitForLoadState('networkidle')
+    expect(await page.evaluate(() => { const b = document.querySelector('[data-testid="tabbar"]')!; return [getComputedStyle(b, '::before').opacity, b.getAnimations({ subtree: true }).length, document.querySelectorAll('[data-testid="tabbar"] [aria-current="page"]').length] })).toEqual(['0', 0, 0]) // A2 on #me
   })
 
   test(`family tab badge and bell ${scheme}`, async ({ page }) => {

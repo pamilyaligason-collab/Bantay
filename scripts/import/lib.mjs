@@ -116,7 +116,7 @@ export const PROMPT_IDENTITY =
 
 export function assertAllowed(argv, env) {
   if (!env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY is not set')
-  if (!argv.includes('--i-am-lloyd')) throw new Error('Refusing to run without --i-am-lloyd')
+  if (!argv.includes('--i-am-owner')) throw new Error('Refusing to run without --i-am-owner')
   if (!env.OPENROUTER_MODEL) throw new Error('OPENROUTER_MODEL is not set')
 }
 

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
-import { Row, LargeTitle, Section, Skeleton } from '../look'
+import { Row, LargeTitle, Section, Skeleton, GroupedList } from '../look'
+import { HeadActions } from '../shell/HeadActions'
+import { PersonSwitcher } from './PersonSwitcher'
 import { useActingPersonId } from '../viewas/viewAs'
 import { clock12 } from './medActions'
 import { givenName, shortMedName } from './medName'
@@ -22,7 +24,7 @@ export function MemberHealth({ id }: { id: string }) {
   const here = personId === id // the data below is the member's only once the choice has moved
   return (
     <>
-      <LargeTitle kicker="Summary" title="Health" />
+      <LargeTitle kicker="Summary" title="Health" actions={<HeadActions><PersonSwitcher people={people} meId={meId} personId={personId} setPersonId={setPersonId} /></HeadActions>} />
       <div className="mh-bar" data-testid="member-bar"><span className="grow">Viewing {name} · {canMark ? 'you can log for them' : 'view only'}</span>{back}</div>
       {here && <MemberBody personId={id} name={name} readings={readings} thresholds={thresholds} />}
       {here && !canMark && <p className="sub mh-foot" data-testid="member-footer">{lockReason ?? `${name} has not shared logging with you, so you can look but not add. Ask them in Family to share.`}</p>}
@@ -47,11 +49,13 @@ function MemberBody({ personId, name, readings, thresholds }: { personId: string
           ))}</div>}
       </Section>
       <Section title="Summary">
-        <div className="mh-list">
-          <Row icon="gauge" title="Readings" sub={readings.length ? `${readings.length} on record` : 'None yet'} href="#health/readings" />
-          <Row icon="flask" title="Labs" sub={labsLine(readings, thresholds)} href="#health/labs" />
-          <Row icon="msg" title="Questions waiting" sub={check ? `${check} to check` : 'Nothing to check'} href="#health/meds" />
-        </div>
+        <GroupedList label="Summary">
+          <Row icon="gauge" tint="blue" title="Readings" sub={readings.length ? `${readings.length} on record` : 'None yet'} value={readings.length ? String(readings.length) : undefined} href="#health/readings" />
+          <Row icon="flask" tint="red" title="Labs" sub={labsLine(readings, thresholds)} href="#health/labs" />
+          <Row icon="msg" tint="purple" title="Questions waiting" sub={check ? `${check} to check` : 'Nothing to check'} value={check ? String(check) : undefined} href="#health/meds" />
+          <Row icon="meal" title="Food and salt" sub="Meals, salt and nutrients" href="#health/nutrition" />
+          <Row icon="flame" title="Progress" sub="Pillbox and past days" href="#health/nudge" />
+        </GroupedList>
       </Section>
     </>
   )

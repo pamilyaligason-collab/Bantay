@@ -4,7 +4,7 @@ import { useFamilyPeople } from '../family/roster'
 import { canMarkFor, useWritableIds } from '../health/useCanMark'
 import { useMedications } from '../health/useMedications'
 import { ldb, type MedTaken } from '../log/store'
-import { PersonChips } from '../records/PersonChips'
+import { WhoLine } from '../health/WhoLine'
 import { useHealthData } from '../records/useHealthData'
 import { SubHeader } from '../shell/SubHeader'
 import { Kudos } from './Kudos'
@@ -14,12 +14,11 @@ import { Recap } from './Recap'
 import { ReminderCard } from './ReminderCard'
 import './nudgeHub.css'
 
-const NO_DRAFTS: Record<string, number> = {}
 const NONE: MedTaken[] = []
 
 /** Health > My progress (#health/nudge): your week recap, the pillbox, the year in pixels, kudos for the family and the reply reminder. */
 export default function NudgeHub() {
-  const { people, member, ownId, personId, setPersonId, readings } = useHealthData()
+  const { member, ownId, personId, readings } = useHealthData()
   const { people: family } = useFamilyPeople()
   const writable = useWritableIds(member?.userId)
   const meds = useMedications(personId)
@@ -33,8 +32,8 @@ export default function NudgeHub() {
   const mine = !!personId && personId === ownId
   return (
     <>
-      <SubHeader title="My progress" backHref="#health" backLabel="Back to Health" />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <SubHeader title={mine ? "My progress" : "Progress"} backHref="#health" backLabel="Back to Health" />
+      <WhoLine />
       <div className="nu-stack" data-s="nudge-home">
         {mine && <Recap personId={personId} readings={readings} meds={meds} takes={takes} />}
         {personId && <Pillbox personId={personId} meds={meds} takes={takes} canMark={canMarkFor(personId, ownId, writable)} />}

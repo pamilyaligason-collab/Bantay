@@ -5,7 +5,7 @@ Tags: **[V]** checked against a source today. **[E]** my estimate from first pri
 
 ## Verdict (read this first)
 
-**Do not run BioMistral-7B for "Talk to Jack" / Ask.** It fails both of Lloyd's goals:
+**Do not run BioMistral-7B for "Talk to Jack" / Ask.** It fails both of the owner's goals:
 
 - **Accuracy:** about 50% on MedQA. Current hosted models score 80 to 96%.
 - **Speed:** on CPU it would take about 30 to 90 s before the first word, then 2 to 8 words a second.
@@ -195,7 +195,7 @@ Body:    { screen: 'today'|'health'|'records'|'family'|'safety', messages: [{ ro
 
 **Step list** (about 2 sessions, plan-before-code gate applies):
 
-1. Lloyd approves this design (option d, model tier, edge function instead of n8n). Record it in `02-DECISIONS`.
+1. The owner approves this design (option d, model tier, edge function instead of n8n). Record it in `02-DECISIONS`.
 2. Write the emergency gate as a pure function with a test table of 40+ phrases (EN, TL, Taglish; positives and near-misses).
 3. Write the edge function `assistant`: auth, cap RPC, validate, gate, retrieval, OpenRouter with fallback and timeouts, post-check. Reuse the `records-extract` helpers and their tests' style.
 4. Add the `vetted_snippets` table, the RLS read policy and a seed script for MedlinePlus / NHS / WHO / DOH pages.
@@ -203,7 +203,7 @@ Body:    { screen: 'today'|'health'|'records'|'family'|'safety', messages: [{ ro
 6. Deploy the function and set its secrets. Point `VITE_ASSISTANT_URL` at it. Leave the n8n assistant inactive as rollback for 2 weeks, then remove it from the VPS.
 7. Smoke test on live data with a real family account; confirm no health text appears in the function logs.
 
-## What to check on the VPS (if Lloyd still wants a self-host trial)
+## What to check on the VPS (if the owner still wants a self-host trial)
 
 - `nproc`, `free -h`, and `lscpu`: shared or dedicated vCPU, AVX2 / AVX-512 support.
 - Current load from n8n and Caddy (`uptime`, `docker stats`).

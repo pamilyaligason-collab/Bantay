@@ -5,7 +5,7 @@ import type { Entry } from '../safety/entries'
 import { wxLocal, type Wx } from './heroCards'
 import WeatherCard from './WeatherCard'
 
-const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true } as unknown, wx: null as unknown }))
+const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false } as unknown, wx: null as unknown }))
 vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
 vi.mock('../safety/store', () => ({ useKv: () => [] }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Dampas \((no location yet, set your home in Settings)\) · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas · your home area · as of /)).toBeTruthy()
     expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
@@ -87,13 +87,13 @@ describe('Today weather card, expanded', () => {
   const hours = (n: number) => {
     const t0 = new Date(`${wxLocal(base, new Date()).slice(0, 13)}:00:00Z`).getTime()
     const time = Array.from({ length: n }, (_, i) => new Date(t0 + i * 3600_000).toISOString().slice(0, 16))
-    return { time, prob: time.map((_, i) => 10 * i), code: time.map(() => 61) }
+    return { time, prob: time.map((_, i) => 10 * i), code: time.map(() => 61), temp: time.map(() => 27) }
   }
   it('is the hero: eyebrow with place and as-of, big temperature, condition, range, three slots, one link to #weather', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Dampas \((no location yet, set your home in Settings)\) · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas · your home area · as of /)).toBeTruthy()
     expect(screen.getByText('33°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
@@ -101,13 +101,48 @@ describe('Today weather card, expanded', () => {
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
     expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
-    expect(screen.getAllByRole('link')).toHaveLength(1)
-    expect(screen.getByRole('link').getAttribute('href')).toBe('#weather?from=action')
+    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['#weather', '#weather?from=action']) // Full forecast row, then the cover link
+    expect(screen.getByRole('link', { name: /Full forecast/ })).toBeTruthy()
+    expect([...container.querySelectorAll('.td-wxh-hrs li')].every((li) => li.textContent!.includes('27°'))).toBe(true) // every slot shows its temperature
+    expect(container.querySelector('.td-act-box svg')).toBeNull() // T7: no icon on the rain pill
     expect(container.querySelector('.td-act-box')).toBeTruthy()
     expect(screen.queryByText(/medicines/)).toBeNull()
   })
+  it('T16: under a storm the hero title, slots and line agree: storm icons, none under 60%', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
+    m.wx = { ...base, temp: 27, words: 'cloudy', code: 3, high: 30, low: 25, hourly: { ...hours(24), prob: hours(24).time.map(() => 10), code: hours(24).time.map(() => 3) } }
+    const { container } = render(<WeatherCard expanded review={0} storm />)
+    expect(screen.getByText('Thunderstorm')).toBeTruthy()
+    expect(screen.getByText('Rain and strong wind.')).toBeTruthy()
+    expect(screen.getByText('High 30° · Low 25°')).toBeTruthy() // the range stays under a storm
+    expect(screen.queryByText('10%')).toBeNull()
+    const li = [...container.querySelectorAll('.td-wxh-hrs li')]
+    expect(li).toHaveLength(3)
+    expect(li.every((x) => x.textContent!.includes('60%'))).toBe(true)
+  })
+  it('T5: 55% this evening gives the hero its own rain line', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-20T08:00:00Z')) // 4 PM at the place
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
+    const t = hours(24).time
+    m.wx = { ...base, temp: 27, words: 'cloudy', code: 3, hourly: { time: t, prob: t.map((x) => (x.slice(11, 13) === '19' ? 55 : 0)), code: t.map(() => 3) } }
+    render(<WeatherCard expanded review={0} />)
+    expect(screen.queryByText('Rain 55% this evening')).toBeTruthy()
+    vi.useRealTimers()
+  })
+  it('a heat danger line is never replaced by a 40% rain mention', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-20T04:00:00Z')) // noon at the place
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
+    const t = hours(24).time
+    m.wx = { ...base, temp: 34, humidity: 70, hourly: { time: t, prob: t.map((x) => (x.slice(11, 13) === '19' ? 40 : 0)), code: t.map(() => 2) } }
+    render(<WeatherCard expanded review={0} />)
+    expect(screen.getByText(/^Stay indoors/)).toBeTruthy()
+    expect(screen.queryByText(/^Rain 40%/)).toBeNull()
+    vi.useRealTimers()
+  })
   it('compact keeps the 3-slot hourly strip but drops the range and the action box (PLAN 1.1 row 2)', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard />)
     expect(container.querySelector('[data-size="compact"]')).toBeTruthy()
@@ -116,7 +151,7 @@ describe('Today weather card, expanded', () => {
     expect(container.querySelector('.td-act-box')).toBeNull()
   })
   it('a slot with no rain chance draws no dash glyph (D-103 rule 1)', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     const h = hours(24)
     m.wx = { ...base, temp: 33, humidity: 68, hourly: { ...h, prob: h.prob.map(() => null) } as never }
     const { container } = render(<WeatherCard expanded />)
@@ -130,7 +165,7 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText(/as of 12:00 AM/)).toBeTruthy()
   })
   it('quiet medicines row with the count, linking to the medicines screen', () => {
-    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true }
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = base
     render(<WeatherCard expanded review={2} />)
     const a = screen.getByRole('link', { name: /Nothing due right now · 2 medicines to check/ })

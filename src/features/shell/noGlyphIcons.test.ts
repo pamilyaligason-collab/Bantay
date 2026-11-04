@@ -11,7 +11,8 @@ const GRAPHICS = [
   '/src/features/health/LatestList.tsx', // sparkline
   '/src/features/weather/WeatherScene.tsx', // weather scene cloud
   '/src/features/look/Tile.tsx', // tile sparkline (S16)
-  '/src/features/look/CheckDraw.tsx' // the self-drawing check mark graphic (S16)
+  '/src/features/look/CheckDraw.tsx', // the self-drawing check mark graphic (S16)
+  '/src/features/calm/MoodCheck.tsx' // the five mood faces (board art, not a UI icon)
 ]
 
 // Status marks drawn as text (check, cross, dash, circle) drift like text arrows do (ICON-JACK-AUDIT rule, D-103). Files owned by other lanes that still have one wait here

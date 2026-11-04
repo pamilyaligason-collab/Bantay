@@ -1,5 +1,6 @@
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
+import { useNow } from '../safety/AlertCard'
 import { ALERTS_KEY, rankAlerts, type Alert } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { liveSignals } from '../safety/stormMode'
@@ -14,6 +15,7 @@ const SHOW = 3
 /** Other notices for the member's area (power, water, air, smaller warnings) under the hero. The alert already on the hero card is left out.
  *  Nothing to show: nothing is drawn (the hero says all is calm). Rows open the Safety tab. */
 export default function NearbyList() {
+  useNow() // the slot changes when a quake passes its first hour, so this list must redraw with it
   const place = usePlace()
   const all = useKv<Alert[]>(ALERTS_KEY, NONE)
   const ref = place ? alertRef(place) : null

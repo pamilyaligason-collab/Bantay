@@ -112,7 +112,7 @@ export function useActingCan(): ActingCan | null {
   return useState_()?.can ?? null
 }
 
-/** The signed-in admin's own first name, for "Sent as Lloyd" and "This SOS is from Lloyd" (m2-6). 'you' until it is known. */
+/** The signed-in admin's own first name, for "Sent as Rey" and "This SOS is from Rey" (m2-6). 'you' until it is known. */
 export function useActorName(): string {
   const own = useSelfPersonId()
   const [n, setN] = useState('you')

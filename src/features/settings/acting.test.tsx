@@ -8,7 +8,7 @@ vi.mock('../privacy/ConsentNotice', () => ({ ConsentNotice: () => <p>consent not
 vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => ({ userId: 'u0', personId: 'p0', role: 'member' }) }))
 import Me from '../../screens/Me'
 
-beforeEach(async () => { await db.kv.clear(); localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'p0', displayName: 'Lloyd', handle: null, provider: 'pin' }])) })
+beforeEach(async () => { await db.kv.clear(); localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'p0', displayName: 'Rey', handle: null, provider: 'pin' }])) })
 afterEach(() => { cleanup(); localStorage.clear(); location.hash = '' })
 
 describe('Settings while an admin is acting (W-28)', () => {

@@ -51,8 +51,10 @@ export const noMeds = async (page: Page): Promise<void> => { await mockServer(pa
 /** Screen 3 after Android stopped prompting: two refusals are already counted (m2-3). Call after the app has opened once so the database exists. */
 export const deniedTwice = (page: Page) => kvPut(page, 'setup.notifDenials', 2)
 /** Screen 3 with a dose on file (medicines live in the 'bantay-log' database). Call after the app has opened once so Dexie has made the database, then reload. */
-export const withMeds = (page: Page) =>
-  page.evaluate(() => new Promise<void>((res, rej) => {
+export const withMeds = async (page: Page): Promise<void> => {
+  // wait for the app's own database: opening a missing one here makes an empty one and the put hangs on the missing store
+  await page.waitForFunction(async () => (await indexedDB.databases()).some((d) => d.name === 'bantay-log'))
+  await page.evaluate(() => new Promise<void>((res, rej) => {
     const r = indexedDB.open('bantay-log')
     r.onerror = () => rej(r.error)
     r.onsuccess = () => {
@@ -61,3 +63,4 @@ export const withMeds = (page: Page) =>
       t.oncomplete = () => res()
     }
   }))
+}

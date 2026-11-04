@@ -8,8 +8,10 @@ import Cook from './Cook'
 import MedCard from './MedCard'
 import Meds from './Meds'
 import Recipe from './Recipe'
+import ReadyTopic from './ReadyTopic'
 import Recipes from './Recipes'
 import { RECIPES } from './data'
+import { READY_TOPICS, countLine } from './ready'
 import benefits from '../../../data/discover/benefits.json'
 import './learn.css'
 
@@ -31,6 +33,8 @@ export default function Screen() {
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const [, , view, id] = useHash().replace(/^#/, '').split('/')
   if (view === 'recipes') return <Recipes />
+  const topic = READY_TOPICS.find((t) => t.id === view)
+  if (topic) return <ReadyTopic id={topic.id} />
   if (view === 'recipe' && id) return <Recipe id={id} />
   if (view === 'cook' && id) return <Cook id={id} />
   if (medcards && view === 'meds') return <Meds />
@@ -58,7 +62,8 @@ export default function Screen() {
     ...(medcards ? [{ id: 'meds', hue: 'green' as Hue, icon: 'pill' as IconName, label: 'Medicine wiki', value: 'What each medicine is for', href: ROOT + '/meds' }] : []),
     { id: 'recipes', hue: 'amber', icon: 'meal', label: 'Recipes', value: `${RECIPES.length} low-salt recipes`, href: ROOT + '/recipes' },
     { id: 'library', hue: 'amber', icon: 'file', label: 'Library', value: 'Plain reads on health topics', href: ROOT + '/library' },
-    { id: 'together', hue: 'green', icon: 'users', label: 'Learn together', value: 'Short lessons to share', href: ROOT + '/together' }
+    { id: 'together', hue: 'green', icon: 'users', label: 'Learn together', value: 'Short lessons to share', href: ROOT + '/together' },
+    ...READY_TOPICS.map((t): LearnTile => ({ id: t.id, hue: t.id === 'prepping' ? 'green' : 'amber', icon: t.id === 'prepping' ? 'bag' : 'home', label: t.title, value: countLine(t), href: ROOT + '/' + t.id }))
   ]
   return (
     <div className="lr" data-testid="learn-home">

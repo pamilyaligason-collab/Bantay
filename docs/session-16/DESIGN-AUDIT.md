@@ -1,8 +1,8 @@
 # Session 16 design and assumptions audit (read-only)
 
-2026-10-30. Inputs: `PLAN.md` (rev 2), `mockup-v10.html` (v10 frames, measured live in a browser at 390x844, light and dark), Lloyd's notes N-1..N-23 and refs 3, 8, 10, 11, Lloyd's feedback today plus his dark Medical ID screenshot, D-98, `ANDROID-RULES.md`, and the code under `src/` (onboarding: `screens/SignIn.tsx`, `screens/Onboarding.tsx`, `features/setup/*`). No Supabase access; data claims come from code and vault docs only.
+2026-10-30. Inputs: `PLAN.md` (rev 2), `mockup-v10.html` (v10 frames, measured live in a browser at 390x844, light and dark), the owner's notes N-1..N-23 and refs 3, 8, 10, 11, the owner's feedback today plus his dark Medical ID screenshot, D-98, `ANDROID-RULES.md`, and the code under `src/` (onboarding: `screens/SignIn.tsx`, `screens/Onboarding.tsx`, `features/setup/*`). No Supabase access; data claims come from code and vault docs only.
 
-Severity: **H** = fix before Lloyd approves v10 or before lanes start; **M** = fix in v11 or the lane brief; **L** = polish.
+Severity: **H** = fix before the owner approves v10 or before lanes start; **M** = fix in v11 or the lane brief; **L** = polish.
 
 How space was measured: every v10 frame was rendered and each card's height read from the DOM. A 390x844 phone shows about 700 px between the top bar and the tab bar.
 
@@ -20,7 +20,7 @@ How space was measured: every v10 frame was rendered and each card's height read
 
 Card heights below were measured in the mockup. "Proposed" heights are estimates on the rules in section 5.
 
-### F-1 (H) family-s16: Medical ID card (Lloyd's screenshot)
+### F-1 (H) family-s16: Medical ID card (the owner's screenshot)
 **Measured:** 497 px tall. It has a 48 px boxed-icon header with only the kicker "MAMA · MEDICAL ID", a 96x120 photo block that shows only the letter "M", six label/value pairs stacked as 12 lines (273 px), a full-width "Show to a doctor" button, then two 155 px ghost buttons. "Scan a paper" wraps to two lines and "Papers · 2 to check" wraps to two lines. The ghost buttons use `--card` on the tinted card, which puts a card inside a card.
 **What wastes space:** the photo square (a placeholder for an initial), one label per line for values that are 2-12 characters long, the header row that carries only a kicker, and the wrapping 2-up buttons.
 **What is wrong, not only big:** the card drops **Conditions** and the emergency **Call** numbers, which the real Medical ID shows (`medid/MedicalId.tsx:31-39`). In their place it shows **Carers** and **Last check-in**, which a doctor does not need. PLAN 1.4 acceptance says "profile card shows the same fields as Medical ID (vitest compares the two renders)", so the mockup and the plan disagree.
@@ -42,7 +42,7 @@ Card heights below were measured in the mockup. "Proposed" heights are estimates
 - Button labels "Scan" and "Papers" with a count badge, so neither wraps at 360 px (see rule L-6).
 - The header row goes. "Medical ID" becomes the accessible name of the card and the label of the doctor button.
 
-### F-2 (H) Dark-mode section tints are muddy (Lloyd's screenshot)
+### F-2 (H) Dark-mode section tints are muddy (the owner's screenshot)
 The dark tints Family `#3A3016`, Learn `#3A2D16` and Watch `#3A231C` are low-chroma browns. They sit on a green-black ground (`--ground #0F1712`, `--card #18231C`) and read as olive or mud. Light mode has a second problem: several tints are hard to tell apart. Body `#E4ECE8` is identical to Calm `#E4ECE8`, Meds `#DCE5D8` is close to Live `#E2EEDD`, and Family `#F6E9C8` is close to Learn `#F3E4CC`. Colour therefore does not separate sections, which was the point of D-96.
 **Change:**
 1. **Dark mode:** do not fill whole cards with a tint. Cards use `--card`. The section colour appears only on the icon chip (tint-ic at about 18% alpha behind the icon in `--tint-*-ic`), on a 3 px top edge of the card, and on the kicker text. Contrast is unchanged because the ink sits on `--card`, which already passes. The brown fills go away, and so do the "full-colour cards" that D-96 rejected.
@@ -81,9 +81,9 @@ The 2-column pattern grid is the right use of space and should stay. On the mood
 | Body hero | 381 | Kicker "Mama · 7-day averages", title "Her body this week" (says nothing), 4 stat rows stacked as sub-cards (card in card), full-width Add + a Scan link | Body figure 88x140 on the left. On the right a 2x2 stat grid (BP 132/84, Sugar 118, Weight 61, Pulse 74): value 20 px, label 13 px. Below it, 2-up "+ Reading" / "Scan". Title "7-day averages". ~232 |
 | Progress / Medicines / Labs heroes | 278 + 210 + 182 | Each has a 48 px icon box, a kicker, a serif title, a body sentence and a full-width button whose label repeats the kicker ("Medicines" → button "Medicines", "Lab results" → button "Lab results") | One **"At a glance" 2x2 tile grid**, each tile 171x104, whole tile tappable: **Progress** "BP near guide 5/7 days" + sparkline, **Medicines** "2 of 4 left today", **Labs** "4 to ask · 2 Oct", **Video** (see next row). Order kept: progress, medicines, labs (N-14). ~216 for all three plus video |
 | Nudge | 138 | A full-width "Log it" for one reading | A 64 px row: "Morning BP not logged" plus trailing "Log" |
-| Video hero | 433 (largest card) | A poster with a play glyph **and** a separate Play button **and** a "More videos" link | Default: the 4th tile of the glance grid, opening the inline player sheet. If Lloyd holds N-18 as a hero: a 16:9 poster 358x200 with the play overlay and title on it, no Play button, no link (~260). |
+| Video hero | 433 (largest card) | A poster with a play glyph **and** a separate Play button **and** a "More videos" link | Default: the 4th tile of the glance grid, opening the inline player sheet. If the owner holds N-18 as a hero: a 16:9 poster 358x200 with the play overlay and title on it, no Play button, no link (~260). |
 | Browse (4 cards) | 203 + 203 + 203 + 142 | Each card shows a status that lists its own links ("Readings, labs, papers, visits"), then a full-width button, then the same links again. Medicines and Labs repeat the heroes above. | "More in Health": a 2-column tile grid, 3 rows of 80 px: Readings, Medicines & refills, Labs & papers, Visits, Move & food, Body wiki. ~256 |
-Result: ~1000 px. **This changes N-14/N-18 from stacked heroes to a grid. Show Lloyd both versions in v11** (his new instruction is to maximise space; his older note asked for hero cards).
+Result: ~1000 px. **This changes N-14/N-18 from stacked heroes to a grid. Show the owner both versions in v11** (his new instruction is to maximise space; his older note asked for hero cards).
 
 ### F-9 (M) health-s16-empty and health-s16-viewas
 Empty: the body hero, 2 empty heroes, the nudge and the video all draw for a person with no data (2628 px). **Change:** one empty-state hero ("No readings yet" + Reading / Scan / Add a medicine) and the More grid; nothing else.
@@ -135,7 +135,7 @@ Context is kept only where it prevents a mistake (safety, medicine, privacy). Th
 | W-7 | quake | "Checked 2 min ago · Hide on Today. Still listed under Safety." | "Checked 2 min ago"; toast after close: "Hidden here. Still in Safety." |
 | W-8 | quake | "Felt Intensity IV … Check for cracks. Stay away from tall shelves." | **keep** (safety) |
 | W-9 | family notice | kicker "From the family" + "Dr. Santos, Thu 5 Nov, 3:00 PM. Kuya Ben will drive." + "Open" | "Ate Joy added a visit" / "Dr. Santos · Thu 5 Nov, 3 PM · Kuya Ben drives" |
-| W-10 | storm | "Answered so far: Lloyd, Papa. Still waiting: Mama, Lola. Hiding the warning keeps this answer row." | "OK: Lloyd, Papa · Waiting: Mama, Lola" (the last sentence is a designer note, not app copy) |
+| W-10 | storm | "Answered so far: the owner, Papa. Still waiting: Mama, Lola. Hiding the warning keeps this answer row." | "OK: the owner, Papa · Waiting: Mama, Lola" (the last sentence is a designer note, not app copy) |
 | W-11 | storm | "I'm safe" | "I'm OK" (D-43) |
 | W-12 | storm Do now | "Charge your phone and a power bank" / "Keep your medicines and papers in one bag" / "Stay indoors until the signal is lifted" | "Charge phone and power bank" / "Medicines and papers in one bag" / "Stay indoors until the signal is lifted" (**keep**) |
 | W-13 | breathe-pick | "Pick a pattern. Breathe in through your nose, out slowly. Go gently." | "Pick a pattern." |
@@ -154,7 +154,7 @@ Context is kept only where it prevents a mistake (safety, medicine, privacy). Th
 | W-26 | health empty | "Start with one number" / "Record your latest vitals or scan a lab paper. Tap the body to read how each part works." | "No readings yet" / "Add one or scan a lab paper." |
 | W-27 | health empty labs | "Take a photo of a lab paper and a person checks it." | "A person checks every number." (**keep**, trust) |
 | W-28 | view as (every disabled control) | "Viewing only. Exit to act as yourself." | lock icon + "View only" (the banner carries the rest once) |
-| W-29 | labs footer | "A result outside the range is a question for your doctor, not a diagnosis. Tap a test to see what it means and the last 3 results." | "Outside the range? Ask your doctor. Not a diagnosis." (**keep the safety half**. This conflicts with N-19 "restore v9 copy", so Lloyd should pick.) |
+| W-29 | labs footer | "A result outside the range is a question for your doctor, not a diagnosis. Tap a test to see what it means and the last 3 results." | "Outside the range? Ask your doctor. Not a diagnosis." (**keep the safety half**. This conflicts with N-19 "restore v9 copy", so the owner should pick.) |
 | W-30 | labs source | "Ranges are the lab's own printed ranges, not Bantay's." | **keep** (prevents misreading, B-6) |
 | W-31 | discover | eyebrow "Something good for today" | (drop) |
 | W-32 | discover pick | "A tasty soup with a third less salt. 25 minutes. Good for pressure." + "Open the pick" | "⅓ less salt · 25 min" |
@@ -166,13 +166,13 @@ Context is kept only where it prevents a mistake (safety, medicine, privacy). Th
 | W-38 | ID card | "Scan a paper" / "Papers · 2 to check" | "Scan" / "Papers" + badge 2 |
 | W-39 | faces | "Swipe sideways inside this card. Tap a face to see more." | (drop) |
 | W-40 | calendar | "October 2026" + "Family calendar" | "Calendar · October" |
-| W-41 | view-as faces | "A chart tag means Mama can read their records. Papa, Kuya Ben and Joshua Zian are not listed: she cannot see them." | "Showing only who Mama can see." (**keep**, privacy, one line) |
+| W-41 | view-as faces | "A chart tag means Mama can read their records. Papa, Kuya Ben and Jomar Zane are not listed: she cannot see them." | "Showing only who Mama can see." (**keep**, privacy, one line) |
 | W-42 | papers | "Photos and PDFs, read by Bantay, checked by a person" | "Read by Bantay, checked by a person" (**keep**) |
 | W-43 | settings | "Admin · looks after the family" / "Edit name and photo" | "Admin" / ✎ icon (aria "Edit name and photo") |
 | W-44 | settings | "View as · Admin only · off" | "View as · See the app as a family member" |
 | W-45 | view-as pick | "Needs internet to switch" x6 | once, at the top |
 | W-46 | view-as pick | "Every view is recorded in the family history." | **keep** (privacy) |
-| W-47 | view-as SOS | "This SOS is from Lloyd, not Mama." | **keep** (safety) |
+| W-47 | view-as SOS | "This SOS is from the owner, not Mama." | **keep** (safety) |
 | W-48 | JoinFlow step 1 | "I am Jack Jack. You are invited to Family Bantay. Tap your name to choose a PIN." | "Tap your name." (Jack already introduced himself on the welcome screen) |
 | W-49 | onboarding eyebrow | "Step 1 of 3 · then Today" + dots | "1 of 4" + dots |
 | W-50 | StartDone | "Jack will remind you about your medicines and help you call your family if you need help." | Remove. At this point no reminder can ring (no medicines entered and the notification permission is not asked, see O-2). |
@@ -187,25 +187,25 @@ Legend: **V** verified (source cited), **U** unverified, **X** wrong or contradi
 
 | # | Assumption | Status | Evidence / consequence |
 |---|---|---|---|
-| A-1 | The person on Today and Family is an elder ("Magandang umaga, Mama") using her own phone | **U, leans X** | D-94: Lloyd is the can_write carer of **5 no-login members**, and "only Lloyd is a write-carer live". FACTS: 6-8 users. The heaviest real user is the admin or carer, so the layouts must work for "me + people I care for", not only for the elder. Confirm with Lloyd who has a login today. |
+| A-1 | The person on Today and Family is an elder ("Magandang umaga, Mama") using her own phone | **U, leans X** | D-94: the owner is the can_write carer of **5 no-login members**, and "only the owner is a write-carer live". FACTS: 6-8 users. The heaviest real user is the admin or carer, so the layouts must work for "me + people I care for", not only for the elder. Confirm with the owner who has a login today. |
 | A-2 | Elders understand serif hero cards, 11 tints and kicker labels | **U** | No user test recorded in the vault. Ref 8's own advice is "Use simple visuals and clear copy". |
 | A-3 | Users read English | **U** | `lib/i18n.ts:4-8`: `'en'` and `'fil'` exist, but only the medicine reminder is wired. The greeting is Filipino and the rest is English. The Settings "Language" row implies a full translation that does not exist. |
 | A-4 | All phones are Android | **V** | 01-FACTS: "all Android today (2026-10-17)". |
-| A-5 | 195 px (200% text) is a design target | **X** | D-98 (Lloyd today). The plan still has it in shared rules (sec 1), C-1, C-4, every acceptance list, the per-lane shots ("195×844"), and 7 mockup frames. See P-1. |
-| A-6 | View as should be read-only | **U** | This is a plan decision ("Decided, not asked", sec 6). Lloyd's N-7 wording: "switches the whole app to exactly that member's profile and content". As the write carer of 5 dependants, he may expect to log for them from that view. Ask once. |
+| A-5 | 195 px (200% text) is a design target | **X** | D-98 (the owner today). The plan still has it in shared rules (sec 1), C-1, C-4, every acceptance list, the per-lane shots ("195×844"), and 7 mockup frames. See P-1. |
+| A-6 | View as should be read-only | **U** | This is a plan decision ("Decided, not asked", sec 6). The owner's N-7 wording: "switches the whole app to exactly that member's profile and content". As the write carer of 5 dependants, he may expect to log for them from that view. Ask once. |
 | A-7 | The profile card shows the same fields as Medical ID | **X** | The mockup drops Conditions and Call and adds Carers and Last check-in (F-1). Code: `medid/MedicalId.tsx:31-39`. |
 | A-8 | Members have blood type, allergies, birthdate and photos filled in | **U** | Code has "Not added" / "Birthday not added" paths (`MedicalId.tsx:8,27`). Without the DB this cannot be checked. The mockup shows full data, so the layout must also be checked half-empty (design the "Not added" state as a chip "Add blood type"). |
-| A-9 | The body hero has 7-day averages | **U** | It depends on readings. Health Connect only just got its N-1 fix and has not been live-checked (G-2). For dependants, readings exist only if Lloyd logs them. |
+| A-9 | The body hero has 7-day averages | **U** | It depends on readings. Health Connect only just got its N-1 fix and has not been live-checked (G-2). For dependants, readings exist only if the owner logs them. |
 | A-10 | Push / closed-app alerts reach people (family notices, roll-call ask "lands on a Today", Needs you now) | **X today** | `push_tokens = 0` (G-3, HANDOFF S16). Until Firebase is set up these work only when the app is open. The plan should not lean on push for roll call. |
 | A-11 | Location comes from GPS | **U** | The N-2 fix adds a GPS-first plugin call, but onboarding never asks for location, so a new user lands on Dampas until they open Weather or Settings (O-3). |
-| A-12 | Lloyd wants a colour per section | **V** | D-96, N-17. But "full-colour cards rejected", and the dark fills read as full-colour mud (F-2). |
-| A-13 | Lloyd wants stacked hero cards on Health | **V then superseded in part** | N-13/N-14 ask for heroes in order. Today's feedback ("maximise use of space") favours a grid. Offer both (F-8). |
+| A-12 | The owner wants a colour per section | **V** | D-96, N-17. But "full-colour cards rejected", and the dark fills read as full-colour mud (F-2). |
+| A-13 | The owner wants stacked hero cards on Health | **V then superseded in part** | N-13/N-14 ask for heroes in order. Today's feedback ("maximise use of space") favours a grid. Offer both (F-8). |
 | A-14 | Skipped setup steps stay "on the Today checklist" | **X** | `screens/Onboarding.tsx:8-9` says so, but `SetupCard` is mounted only in `screens/Me.tsx:198` and `ChecklistCard` is mounted nowhere (grep). SetupCard also hides itself once half the steps are done (`today/SetupCard.tsx:40`), so the rest become invisible. |
 | A-15 | The sharing default is clear | **X (contradiction)** | StartDone: "By using Bantay you agree to share your health records with your family." Wizard Sharing step: "Sharing is off until you turn it on in Me." Both are shipped copy. One is wrong. Decide which, then fix both (privacy). |
 | A-16 | The onboarding promise "Jack will remind you about your medicines" holds at the end of onboarding | **X** | No medicines step and no notification permission ask in the 3-step flow. `turnOnReminders` only runs from the wizard in Me. The PhoneCheckCard shows only when the probe returns a known failure. |
 | A-17 | Elders can type latitude and longitude | **X** | `features/setup/Wizard.tsx` Location "home" state asks for Barangay / Latitude / Longitude. Replace with zone chips (HOME_ZONES in `location/geo.ts`). |
 | A-18 | The Me screen has 22 rows | **U** | The mockup note says "All 22 old rows". The plan says count on the base sha. Keep the plan's wording and drop the number from the mockup. |
-| A-19 | The Discover feature cards will spark curiosity (N-20) | **U** | `usage_events` exists and could show what is opened, but it needs a read-only query with Lloyd's OK (not done here). |
+| A-19 | The Discover feature cards will spark curiosity (N-20) | **U** | `usage_events` exists and could show what is opened, but it needs a read-only query with the owner's OK (not done here). |
 | A-20 | "Calls Ate Joy" on the SOS hold | **U** | It depends on SOS contacts, which are set only in the Me wizard. Show the empty state ("No one set · Add") in the mockup. |
 | A-21 | The "Bigger text" switch in onboarding is helpful | **U / conflicts** | ANDROID-RULES: "Respect system settings (text size …) instead of overriding them." D-98: the system magnifier covers this. Move it to Settings > Display only. |
 | A-22 | "I'm safe" wording in the storm card | **X** | D-43: "I'm OK" is the only word. Code `StormCard.tsx:72` and mockup v10 use "I'm safe". |
@@ -283,7 +283,7 @@ Skip on 3-5 records nothing and keeps the step on the Today setup row. Progress 
 - **P-2 (H)** PLAN 1.4 ProfileCard: fields = Medical ID fields (name, age, blood type, allergies, conditions, medicines, call), as in F-1; drop Carers and Last check-in from the card.
 - **P-3 (H)** PLAN 1.1: NoticeStack ranks "phone alerts off" first and lifts it under the weather card (F-4).
 - **P-4 (H)** PLAN 1.4: Needs you now goes above the calendar when it has items; the week strip is the default and the month grid opens on a toggle at all widths (F-12).
-- **P-5 (M)** PLAN 1.2: add the grid variant (F-8) for Lloyd to pick against the stacked heroes.
+- **P-5 (M)** PLAN 1.2: add the grid variant (F-8) for the owner to pick against the stacked heroes.
 - **P-6 (M)** PLAN section 3: dark-mode tint rule (F-2 / L-9) and 5 hue families.
-- **P-7 (H)** New lane or L7 scope: the onboarding flow in section 4 (`JoinFlow`, `SetPin`, `StartDone`, `Onboarding.tsx`, a Today setup row, Wizard location chips). Fix the A-15 consent and sharing contradiction first; this needs Lloyd's decision.
+- **P-7 (H)** New lane or L7 scope: the onboarding flow in section 4 (`JoinFlow`, `SetPin`, `StartDone`, `Onboarding.tsx`, a Today setup row, Wizard location chips). Fix the A-15 consent and sharing contradiction first; this needs the owner's decision.
 - **P-8 (L)** Change "I'm safe" to "I'm OK" in StormCard and WarningCard (D-43).

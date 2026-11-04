@@ -34,9 +34,9 @@ describe('Play hub', () => {
     expect(screen.getByText(/No claim about memory or dementia/)).toBeTruthy()
     for (const n of ['Memory match', 'Word search', 'Alam mo ba?', 'Fun facts today']) expect(screen.getByText(n)).toBeTruthy()
     fireEvent.click(screen.getByText('Memory match'))
-    expect(screen.getByTestId('memory')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Play' }))
-    expect(screen.getByTestId('play-hub')).toBeTruthy()
+    expect(await screen.findByTestId('memory')).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Back to Play' }))
+    expect(await screen.findByTestId('play-hub')).toBeTruthy()
   })
   it('the "Played today" line comes from the local count', async () => {
     await db.kv.put({ key: 'play.day', value: { day: new Date().toLocaleDateString('sv-SE'), n: 2, games: ['Memory match', 'Alam mo ba?'], days: {} } })

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AlertRow } from '../notify/store'
 import { buildInbox, countUnread, familyItems, shortName, type InboxSources } from './build'
@@ -53,14 +53,17 @@ describe('family alert rows in the alert list (D-78)', () => {
     render(<Inbox inbox={{ items, unread: 1, seen: [], markAllRead: vi.fn(), openRow }} now={NOW} />)
     expect(screen.getByText('Family alerts show here when you open Bantay')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Alerts' })).toBeTruthy()
-    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
-    fireEvent.click(screen.getByRole('link', { name: /Someone in your family needs help/ }))
+    expect(screen.getByRole('heading', { name: 'New (1)' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Someone in your family needs help/ }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Open' }))
     expect(openRow).toHaveBeenCalledWith('a')
   })
-  it('only a missed-dose row gets the Call / Mark taken / Message actions; a seen row has no dot', () => {
+  it('only a missed-dose row gets the Call / Mark taken / Message actions, inside its sheet; a seen row is not under New', () => {
     const items = buildInbox({ ...base, now: NOW, familyAlerts: [row('a'), row('b', { kind: 'digest', template: 'digest', seenAt: '2026-10-26T01:50:00Z' })], nameOf: names })
     render(<Inbox inbox={{ items, unread: 1, seen: [], markAllRead: vi.fn() }} now={NOW} />)
+    expect(screen.queryAllByTestId('actions')).toHaveLength(0) // none inline
+    expect(screen.getByRole('heading', { name: 'New (1)' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /medicine was missed/i }))
     expect(screen.getAllByTestId('actions')).toHaveLength(1)
-    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
   })
 })

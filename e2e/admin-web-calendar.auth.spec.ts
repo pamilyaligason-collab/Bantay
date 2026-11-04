@@ -90,7 +90,7 @@ for (const size of SIZES) {
     if (size.width !== 820) await page.screenshot({ path: `test-results/calendar-week-${size.width}.png`, fullPage: true })
 
     await page.getByRole('link', { name: 'Agenda', exact: true }).click()
-    await expect(page.getByRole('heading', { name: /^Today/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /^Today/, level: 3 })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Test chore' })).toBeVisible()
     expect(await sideways(page)).toBe(true)
     expect(await short(page, min)).toEqual([])

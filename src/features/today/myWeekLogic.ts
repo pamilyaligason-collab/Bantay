@@ -1,6 +1,6 @@
 import { formatNumber } from '../../lib/labFormat'
 import { countDoses, ON_TIME_MIN } from '../health/doseCount'
-import { dayOf, isLive, normaliseDrug } from '../health/meds'
+import { dayOf } from '../health/meds'
 import { readingPosition } from '../health/model'
 import { rangeState, toCanonicalReading, type RangeState } from '../health/ranges'
 import type { Position, Reading } from '../health/ranges'
@@ -95,10 +95,10 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
     })
   }
 
-  // steps a day, against the goal
+  // steps a day, against the goal. A 0 row is true data, the same as Move, the KPI and the 7-day average
   const steps = new Map<string, number[]>()
   for (const a of i.activity) {
-    if ((a.personId != null && a.personId !== i.personId) || a.kind !== 'steps' || !isNum(a.steps) || a.steps <= 0) continue
+    if ((a.personId != null && a.personId !== i.personId) || a.kind !== 'steps' || !isNum(a.steps) || a.steps < 0) continue
     const d = dayOf(a.startedAt)
     if (days.includes(d)) steps.set(d, [...(steps.get(d) ?? []), a.steps])
   }
@@ -130,19 +130,4 @@ export function sparkPoints(spark: (number | null)[], w: number, h: number, pad 
   const hi = Math.max(...pts.map((p) => p.v))
   const span = hi - lo || 1
   return pts.map((p) => ({ x: pad + (p.i / Math.max(1, spark.length - 1)) * (w - 2 * pad), y: hi === lo ? h / 2 : h - pad - ((p.v - lo) / span) * (h - 2 * pad) }))
-}
-
-const BP_DRUGS = ['losartan', 'amlodipine', 'valsartan', 'telmisartan', 'lisinopril', 'enalapril', 'atenolol', 'metoprolol', 'carvedilol', 'bisoprolol', 'nifedipine', 'hydrochlorothiazide', 'candesartan', 'irbesartan', 'olmesartan', 'captopril', 'perindopril', 'ramipril', 'clonidine', 'indapamide', 'felodipine', 'methyldopa'] // nudge only (H6): a reading reminder, never a dose rule
-const SUGAR_DRUGS = ['metformin', 'gliclazide', 'glimepiride', 'glibenclamide', 'sitagliptin', 'vildagliptin', 'linagliptin', 'pioglitazone', 'empagliflozin', 'dapagliflozin', 'insulin', 'glipizide', 'acarbose', 'canagliflozin']
-const has = (name: string, list: string[]) => { const n = normaliseDrug(name) ?? ''; return list.some((d) => n.includes(d)) }
-
-/** H6 nudge: "Next reading due: blood pressure" when this person takes a blood pressure (or sugar) medicine and logged no such reading in the last 7 days. null otherwise. */
-export function nextReadingDue(i: { personId: string; readings: Reading[]; meds: Medication[]; now: Date }): string | null {
-  const live = i.meds.filter((m) => m.personId === i.personId && isLive(m))
-  const days = lastDays(i.now)
-  const seen = (tests: string[]) => i.readings.some((r) => r.personId === i.personId && tests.includes(r.test) && days.includes(dayOf(r.takenAt)))
-  const due: string[] = []
-  if (live.some((m) => has(m.name, BP_DRUGS) || has(m.genericName ?? '', BP_DRUGS)) && !seen(['bp_systolic', 'bp_diastolic'])) due.push('blood pressure')
-  if (live.some((m) => has(m.name, SUGAR_DRUGS) || has(m.genericName ?? '', SUGAR_DRUGS)) && !seen(['fasting_glucose', 'glucose'])) due.push('blood sugar')
-  return due.length ? `Next reading due: ${due.join(' and ')}` : null
 }

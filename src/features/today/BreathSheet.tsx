@@ -15,13 +15,13 @@ const buzz = () => { try { navigator.vibrate?.(15) } catch { /* no vibration on 
 
 /** The breathing sheet (N-12, F-7, W-13..W-16, R10): pick a real pattern (with its why and source), the orb run on a breathing backdrop, then Worse / Same / Better with Jack well-done (Jack OR a tick, never both: D-103 rule 8).
  *  Back closes it: one history entry (`bantayBreathe`). The log stays on this phone (kv selfcare.log, with the person's id). */
-export default function BreathSheet({ onClose }: { onClose: () => void }) {
+export default function BreathSheet({ onClose, initial }: { onClose: () => void; initial?: { pattern: Pattern['id']; minutes: number } }) { // `initial` (Calm page, lane C): start straight into that pattern and length
   const [log, setLog] = useKv<SelfCareEntry[]>('selfcare.log', [])
   const [buzzOn, setBuzzOn] = useKv<boolean>('selfcare.buzz', true)
   const self = useSelfPersonId()
-  const [pat, setPat] = useState<Pattern>(SHOWN_PATTERNS[0]!)
-  const [mins, setMins] = useState<number>(3)
-  const [stage, setStage] = useState<Stage>({ s: 'pick' })
+  const [pat, setPat] = useState<Pattern>(SHOWN_PATTERNS.find((p) => p.id === initial?.pattern) ?? SHOWN_PATTERNS[0]!)
+  const [mins, setMins] = useState<number>(initial?.minutes ?? 3)
+  const [stage, setStage] = useState<Stage>(initial ? { s: 'run' } : { s: 'pick' })
   const [elapsed, setElapsed] = useState(0)
   const lastPhase = useRef<Phase | null>(null)
   const closeRef = useRef(onClose)

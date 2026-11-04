@@ -98,7 +98,7 @@ test('Listen: one at a time, and leaving the sub stops the voice', async ({ page
 test('Watch: posters scroll inside their row, a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
   await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(12)
+  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(26)
   await expect(page.locator('iframe')).toHaveCount(0)
   await expect(page.getByTestId('live-tv')).toContainText('Coming soon')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

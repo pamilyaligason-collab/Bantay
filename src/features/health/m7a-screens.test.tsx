@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
 vi.mock('../auth/client', () => ({ supabase: null }))
-vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+vi.mock('../auth/session', () => ({ getAccessToken: async () => null, getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
 vi.mock('./summaryImage', () => ({ renderSummaryImage: async () => new Blob(['x'], { type: 'image/png' }), shareSummary: async () => 'unsupported' })); // jsdom has no canvas
 (URL as unknown as { createObjectURL: () => string }).createObjectURL = () => 'blob:test';
@@ -71,11 +71,11 @@ describe('Doctor visits', () => {
     expect(next.textContent).toMatch(/Check-up/)
     expect(next.textContent).toMatch(/9:00 AM/)
     expect((await screen.findByTestId('follow-ups')).textContent).toMatch(/Follow-up due/)
-    const box = screen.getByRole('checkbox', { name: 'Medicine list' })
+    const box = screen.getByRole('checkbox', { name: /^Medicine list/ })
     fireEvent.click(box)
     expect(box.getAttribute('aria-checked')).toBe('true')
     await waitFor(async () => expect((await db.kv.get('visits.bring.p1'))?.value).toEqual(['meds']))
-    expect(screen.getByRole('link', { name: 'Prepare visit summary' }).getAttribute('href')).toBe('#health/summary')
+    expect(screen.getByTestId('vs-summary').querySelector('a')!.getAttribute('href')).toBe('#health/summary')
     expect(await db.outbox.where('table').anyOf('appointments', 'prescriptions').count()).toBe(0)
   })
 
@@ -126,7 +126,7 @@ describe('Video of the day', () => {
     await hdb.readings.add({ personId: 'p1', test: 'weight', value: 61, unit: 'kg', takenAt: day(1) })
     go('#health')
     render(<Health />)
-    const tile = await screen.findByTestId('glance-video')
+    const tile = await screen.findByTestId('foryou-video')
     expect(tile.tagName).toBe('A')
     expect(tile.getAttribute('href')).toBe('#discover/watch')
     expect(document.querySelector('iframe')).toBeNull() // nothing loads until the Videos page

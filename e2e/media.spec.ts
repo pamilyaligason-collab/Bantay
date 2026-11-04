@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
 // Learn media: Discover > Watch (was Health > Videos; #health/videos redirects here). Before a tap only the still picture (i.ytimg.com) may load; no YouTube page or player request. Synthetic data only.
-// The Today "Video of the day" card is not mounted on Today (Lloyd's Today order, e2e/today.spec.ts), so it is covered by src/features/media/media.test.tsx.
+// The Today "Video of the day" card is not mounted on Today (the owner's Today order, e2e/today.spec.ts), so it is covered by src/features/media/media.test.tsx.
 test.use({ viewport: { width: 390, height: 844 } })
 
 for (const scheme of ['light', 'dark'] as const) {

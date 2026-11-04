@@ -10,6 +10,8 @@ import WeatherScene from '../weather/WeatherScene'
 import { rainOutlook, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
 import { placeNameOf } from './placeName'
+import { heroRainLine } from './heroRain'
+import { stormSlots, type Slot } from './stormView'
 
 import { useWeather } from './weather'
 
@@ -38,27 +40,16 @@ const deg = (n: number) => `${Math.round(n)}°`
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 
 /** The next three 3-hour slots from the current place-local hour: time, sky icon, rain chance. Empty without hourly data. */
-function slots(wx: Wx, now: Date) {
+function slots(wx: Wx, now: Date): Slot[] {
   const h = wx.hourly
   if (!h) return []
   const at = wxLocal(wx, now).slice(0, 13)
   const from = h.time.findIndex((t) => t.slice(0, 13) >= at)
   if (from < 0) return []
-  return [0, 3, 6].map((k) => from + k).filter((i) => i < h.time.length).map((i) => ({ time: hourLabel(h.time[i]!), kind: kindOf(h.code?.[i] ?? null), pct: h.prob[i] }))
+  return [0, 3, 6].map((k) => from + k).filter((i) => i < h.time.length).map((i) => ({ time: hourLabel(h.time[i]!), kind: kindOf(h.code?.[i] ?? null), pct: h.prob[i] ?? null, temp: h.temp?.[i] ?? null }))
 }
 
-/** N-2: say when the weather is for the saved zone because the phone did not share its position (not while it is still looking). */
-const agoOf = (at?: number) => {
-  const m = at ? Math.max(0, Math.round((Date.now() - at) / 60_000)) : null
-  return m == null ? '' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
-}
-const whereOf = (place: Parameters<typeof placeNameOf>[0]) => {
-  if (place?.source === 'last') {
-    const ago = agoOf(place.fixAt)
-    return `${placeNameOf(place).replace(' · last known', '')} (last known${ago ? `, ${ago}` : ''})`
-  }
-  return place?.source === 'zone' && place.settled ? `${placeNameOf(place)} (no location yet, set your home in Settings)` : placeNameOf(place)
-}
+const whereOf = (place: Parameters<typeof placeNameOf>[0]) => placeNameOf(place) // S4: one wording, location/placeWords
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
@@ -87,8 +78,9 @@ const offlineNote = (wx: Wx) => (wx.offline ? ', may be out of date' : '')
  *  Nothing is drawn until a temperature is known (never a made-up 0). */
 export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false, hero = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean; hero?: boolean }) {
   const place = usePlace()
-  const wx = useWeather(place?.weather ?? null)
-  if (!wx || wx.temp == null || !place) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
+  const ready = !!place && place.settled !== false // X7: no forecast for the home zone while the first position is still being found
+  const wx = useWeather(ready ? place.weather : null)
+  if (!wx || wx.temp == null || !place || !ready) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
     return hero ? (
       <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">
         <b>Weather</b><span>Finding your weather. Open for the full forecast.</span>
@@ -97,7 +89,8 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   }
   const now = new Date()
   const line = storm ? null : weatherActionLine(wx, now, null)
-  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(wx, now) ?? line.text : line?.text ?? null
+  const rainHero = !storm && wx.hourly ? heroRainLine(wx.hourly.time.map((time, i) => ({ time, prob: wx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
+  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(wx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
   // Jack only on an everyday rain or heat tip, in the expanded card. Never on a storm, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack`.
   const jack: JackName | null = noJack || storm || !expanded ? null : line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 80 ? 'drink-water' : null
   const href = line ? WEATHER_ACTION_HREF : WEATHER_HREF
@@ -108,38 +101,38 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const feels = storm ? (fl.value != null ? `Feels ${deg(fl.value)}` : null) : feelsOn ? [`Feels ${deg(fl.value!)}`, fl.label].filter(Boolean).join(' · ') : null
   const drink = !storm && !!fl.label // N5: "Drink water" from Extreme caution up
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
-  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(wx.code)} hot={!storm && isHot(wx.temp, wx.humidity)} />
-  const next = slots(wx, now) // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
+  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(wx.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
+  const next = storm ? stormSlots(slots(wx, now)) : slots(wx, now) // T16: under a storm the slots agree with the title // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
   const kicker = `${whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`
-  const range = expanded && !storm ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
+  const range = expanded ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
   const pills = (feels || drink) && (
     <span className="td-wxh-pills">{feels && <span className="td-wxh-pill">{feels}</span>}{drink && <span className="td-wxh-pill">Drink water</span>}</span>
   )
   const box = expanded && text && (
-    <span className="td-act-box"><Icon name="therm" size={24} /><b>{text}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>
+    <span className="td-act-box"><b>{text}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>
   )
   return (
-    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-hero data-contrast-bg="#0B1636" data-testid="weather-hero" style={VEIL}>
+    <section aria-label="Weather" className="td-wxs" data-size={expanded ? 'expanded' : 'compact'} data-hero data-contrast-bg="#1C2F57" data-testid="weather-hero" style={VEIL}>
       <SceneHero
         scene={scene}
         inkOnScene
-        contrastBg="#0B1636"
+        contrastBg="#1C2F57"
         compact={!expanded}
         kicker={kicker}
-        title={<span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><span className="td-wxh-c">{cond}</span>{range && <span className="td-wxh-hl">{range}</span>}</span>}
+        title={<span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><span className="td-wxh-r"><span className="td-wxh-c">{cond}</span>{(range || pills) && <span className="td-wxh-sub">{range && <span className="td-wxh-hl">{range}</span>}{pills}</span>}</span></span>}
         body={(
           <>
             {!expanded && text && <span className="td-wxh-line">{text}</span>}
-            {pills}
             {box}
             {next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span>{s.time}</span><Icon name={s.kind} size={24} />{s.pct != null && <span>{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
           </>
         )}
       >
+        {expanded && <a className="td-wxh-full" href={WEATHER_HREF}>Full forecast<Icon name="chev" size={20} /></a>}
         <a className="td-wx-cover" href={href} aria-label={`Weather in ${placeNameOf(place)}, ${deg(wx.temp)}, ${cond}. Open the weather.`} />
         <span className="td-wx-chev" aria-hidden="true"><Icon name="chev" size={24} /></span>
       </SceneHero>

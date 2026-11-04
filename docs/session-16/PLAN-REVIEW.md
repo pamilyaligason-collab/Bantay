@@ -1,6 +1,6 @@
 # Session 16 plan review (read-only, Opus, 2026-10-30)
 
-Reviewed: `docs/session-16/PLAN.md` against `src/` and `supabase/` on commit 0cadb58 (+ uncommitted D-95 work), LLOYD-NOTES N-5..N-23, D-66/82/84/91/92/94-97, ANDROID-RULES, IA-INVENTORY, multi-lane CHECKLIST (ML-01..ML-41).
+Reviewed: `docs/session-16/PLAN.md` against `src/` and `supabase/` on commit 0cadb58 (+ uncommitted D-95 work), OWNER-NOTES N-5..N-23, D-66/82/84/91/92/94-97, ANDROID-RULES, IA-INVENTORY, multi-lane CHECKLIST (ML-01..ML-41).
 
 ## Verdict: NO_GO as written
 
@@ -12,7 +12,7 @@ The screens, tokens and IA parts are sound and need only the changes below. Sect
 
 ### B-1 View as through `selfIdOrCached` writes as the viewed member (privacy, SOS, consent)
 Evidence: `selfIdOrCached` (`src/features/sync/profile.ts:227`) is the person id used by **writers**, not only readers:
-- SOS: `sos/SosScreen.tsx:112` (`pidP = selfIdOrCached()`) and `sos/useSelf.ts:7` → `enqueue('sos_events', … personId: pid)` (:121). An admin who holds SOS while viewing as Mama raises Mama's SOS. RLS `sos_events_insert` (`0031_sos.sql:49`) needs `is_self or is_writer_of`. If Lloyd is her writer, it is silently accepted. If he is not, the row dead-letters and **his own SOS is lost**.
+- SOS: `sos/SosScreen.tsx:112` (`pidP = selfIdOrCached()`) and `sos/useSelf.ts:7` → `enqueue('sos_events', … personId: pid)` (:121). An admin who holds SOS while viewing as Mama raises Mama's SOS. RLS `sos_events_insert` (`0031_sos.sql:49`) needs `is_self or is_writer_of`. If the owner is her writer, it is silently accepted. If he is not, the row dead-letters and **his own SOS is lost**.
 - Own-profile sync: `syncOwnProfile` (`profile.ts:216-223`) runs on every pull, does `adoptPerson(viewedId)` and so wipes the admin's `PHONE_KEYS` (`profile.ts:26,30`): his pending photo upload and wizard answers. It also sets `SELF_ID` = the viewed id, then runs `migrateKv` / `flushPhoto` with the viewed id (`profile.ts:156-166` uploads `profile.photo` as `<viewedId>.jpg`).
 - Consent: `ConsentNotice` (`Me.tsx:117`) and `PrivacyScreen.tsx:25,36` call `ensureConsent(personId)`. That **writes `people.consent_at` for the viewed member** with `consent_by = admin` (`privacy/consent.ts:26-27`) just by opening Settings.
 - Logging: `today/actions.ts:17` (checkIn, mood, doses, readings), `exercise/actions.ts:11`, `nutrition/actions.ts:21`, `PlateSheet/WaterSheet/SaltSummary`, `nudge/bpReminder.ts:111` (a notification reply), `MedicineEditor.tsx:20`, `Wizard.tsx:42,78` (profile save), `StormCard.tsx:24,39` (roll-call "I'm safe" for the member), `SharingScreen.tsx:17,29` (removes **the member's** shares).
@@ -75,8 +75,8 @@ Evidence: these touch moved routes or removed cards and are in no lane: `s13-f-s
 **Change:** add the six Today and alert specs to L1 and `s13-f-shots.auth` to L4 (or L7).
 
 ### M-6 N-23 "ingest" and parts of People.tsx are not placed
-Evidence: LLOYD-NOTES N-23 asks for "One full 'ingest and review' tab". The Family root (PLAN:147-153) has no scan or add-paper action; Papers sits only in a sub-screen. People.tsx is deleted (PLAN:155), but it also mounts `CarerCards` (review asks, missed doses: `People.tsx:16`) and `Memories` (:14), and neither is placed.
-**Change:** ProfileCard (or a row under it) gets "Scan a paper" (`#scan`) plus a "Papers · N to check" link to `#family/papers`. Put CarerCards inside NeedYouNow, and Memories under the calendar or in a named sub-screen (or drop it with Lloyd's yes). "See their stats" in the faces sheet only appears when the user can read that member's records (D-82: `visibleTo(...).records`).
+Evidence: OWNER-NOTES N-23 asks for "One full 'ingest and review' tab". The Family root (PLAN:147-153) has no scan or add-paper action; Papers sits only in a sub-screen. People.tsx is deleted (PLAN:155), but it also mounts `CarerCards` (review asks, missed doses: `People.tsx:16`) and `Memories` (:14), and neither is placed.
+**Change:** ProfileCard (or a row under it) gets "Scan a paper" (`#scan`) plus a "Papers · N to check" link to `#family/papers`. Put CarerCards inside NeedYouNow, and Memories under the calendar or in a named sub-screen (or drop it with the owner's yes). "See their stats" in the faces sheet only appears when the user can read that member's records (D-82: `visibleTo(...).records`).
 
 ### M-7 Contract C-5 lists hooks that are not needed or do not exist, and misses one needed stub
 Evidence: there is no `records` template (`notify/templates.ts:11-36`; tab values are only today/health/family/safety), and templates are mirrored server-side in `supabase/functions/_shared/templates.ts`. `Assistant.tsx:259` sets `location.hash = tab`, so `records` already lands on the `#records` redirect: no Assistant change is needed. L2 (PersonChips hidden) and L4 (ProfileCard "View as = that member") need `useViewAs`, but L0 stubs only `ViewAsRow` and `ViewAsBanner`.
@@ -86,7 +86,7 @@ Evidence: there is no `records` template (`notify/templates.ts:11-36`; tab value
 
 ## Minors
 
-- m-1 IncomingSos and AlarmFixedToast sit above weather (PLAN:53), a deviation from N-9 "always the top-most card". Put it to Lloyd as a stated deviation (ML-04).
+- m-1 IncomingSos and AlarmFixedToast sit above weather (PLAN:53), a deviation from N-9 "always the top-most card". Put it to the owner as a stated deviation (ML-04).
 - m-2 `#today/breathe` makes `hasOwnHeader` true (any `/`, `routes.ts:28`) and hides the TopBar under the sheet. Use the existing history-state pattern (`history.state.bantayAssistant`, `Assistant.tsx:257`) for back-closes instead of a new route, which removes the parseHash change too.
 - m-3 ConsentNotice (`Me.tsx:117`) is not in any Settings group. Place it in Privacy, and keep it off while viewing (B-1).
 - m-4 ML-38 fixed clocks (23:30 / 00:30) are also needed for the L2 ProgressHero "this week", the L6 `useDueMeds.test`, and the L1 NoticeStack/WarningCard "checked N min ago".
@@ -103,7 +103,7 @@ Ink `#1D1F1C` / muted `#5E625B` light, `#EEF0EA` / `#A7B0A6` dark:
 - Every other row also recomputes within ±0.05 of the table. The tightest is muted on Meds light (4.81) and Labs light (4.83), above 4.5 with little margin. The table test (PLAN:252) must assert ≥ 4.5 exactly, never round up.
 
 ## Coverage (N-5..N-23)
-All notes are placed and match Lloyd's wording except:
+All notes are placed and match the owner's wording except:
 - N-7: write leak (B-1..B-3) and member visibility (M-1).
 - N-8: Simple mode still doubled (M-2).
 - N-9: SOS above weather (m-1).
@@ -279,7 +279,7 @@ The onboarding screen 5, Wizard and StartDone copy (`PLAN:280,282`) says "Your r
   - Icons on card: 8.14-9.13. On the actual 18% chip they are 5.67 (terra) to 6.10 (green), which still holds.
   - `contrast.test.ts` must test the icon against the chip colour, its real background (ML-39), not against `--card`.
 - m2-5 Ponytail: `look/motionBudget.ts` overlaps `look/useReducedMotion.ts` and `look/motion.ts`, which already exist, so extend those. `scripts/size-budget.mjs` does not exist and has no owner; give it to L9 or drop it for a `vite build` chunk-size check in the L9 test.
-- m2-6 A mood alert raised by the acting admin also reaches the admin himself, since `notify_family` excludes only the owner (`0030:60`). Messages sent while acting go out as Lloyd. Say both in the bar or the toast copy ("Sent as Lloyd").
+- m2-6 A mood alert raised by the acting admin also reaches the admin himself, since `notify_family` excludes only the owner (`0030:60`). Messages sent while acting go out as the owner. Say both in the bar or the toast copy ("Sent as the owner").
 - m2-7 Section 4 (`PLAN:339`) says RLS refuses an admin without a link "for … roll call". True, but `rollcall_set` also needs `is_family_member()` (`0041:71`), so state both conditions in `useActingCan.rollcall`.
 
 ## Ownership spot-check

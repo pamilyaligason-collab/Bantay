@@ -59,13 +59,14 @@ test('component button rules beat the .bt reset: tab labels are 12px/600', async
   expect(await b.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['12px', '600'])
 })
 
-test('sub-pages show only their own header; tab roots keep the top bar', async ({ page }) => {
+test('sub-pages show only their own header; tab roots draw bell and avatar in the title row (no top bar)', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#weather')
   await expect(page.locator('a[aria-label="Back to Today"]')).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCount(0)
   await page.goto('/#health')
-  await expect(page.locator('.topbar')).toHaveCount(1)
+  await expect(page.locator('.topbar')).toHaveCount(0)
+  await expect(page.getByTestId('head-bell')).toBeVisible()
 })
 
 test('avatar opens Me and bell opens notifications', async ({ page }) => {

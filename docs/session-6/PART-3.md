@@ -1,6 +1,6 @@
 # Session 6, Part 3: information architecture plan
 
-As of 2026-10-20. Implements Lloyd's decisions D1-D3 (MASTER-PLAN.md). Ordered by build priority.
+As of 2026-10-20. Implements the owner's decisions D1-D3 (MASTER-PLAN.md). Ordered by build priority.
 File references are to the current code (PART-1 section 3). Gaps found by the audit are folded in (AUDIT.md).
 
 ## 0. Navigation (unchanged shape, fixed behaviour)
@@ -26,7 +26,7 @@ The database only accepts `confirmed_source` `user` or `auto`, and re-stamps it 
 | Profile medicine text | One-time copy in migration 0014 (0 people have any today) | `profile` | same |
 | Added by hand | Edit sheet Add button | `manual` | `user` (signed-in editor) |
 
-### 1.2 Auto-convert (migration `0014_medications_live.sql`, applied by Lloyd; reversible)
+### 1.2 Auto-convert (migration `0014_medications_live.sql`, applied by the owner; reversible)
 Where it runs: one SQL function `rx_to_medications(p_person uuid default null)`, called once by the migration for
 everyone, and by a trigger when a `prescription_items` row is inserted or confirmed (future imports). Not in the client.
 
@@ -41,7 +41,7 @@ everyone, and by a trigger when a `prescription_items` row is inserted or confir
 3. **Status.** Course with an end in the past -> `stopped` (`stopped_on` set). Everything else -> `active`, with
    `review = true` (1.3).
 4. **Unclear items** keep `drug_raw` as the name and get `needs_check = true`.
-5. **Visibility (decided by D1, Lloyd may reverse).** Converted rows are written `status = 'confirmed'`,
+5. **Visibility (decided by D1, the owner may reverse).** Converted rows are written `status = 'confirmed'`,
    `confirmed_source = 'auto'`, `confidence = 1`, `origin = 'rx'`, so read-only carers see them (they only see
    confirmed rows, `0008:21,537`); the source item keeps its own status.
 6. **Idempotent.** Partial unique index on (person, normalised name) where `deleted_at is null`; rows with
@@ -56,11 +56,11 @@ Times are local clock strings; the app converts to minutes (`model.ts:243`) in o
 New columns on `medications`: `origin`, `deleted_at`, `edited_at`. New table `medication_changes(medication_id, by, at, field,
 old, new)` for history (B-7: stored in the database, never sent in notifications).
 
-### 1.3 "Still taking it?" review (Lloyd confirmed "keep", 2026-10-20)
+### 1.3 "Still taking it?" review (the owner confirmed "keep", 2026-10-20)
 The newest prescription is about 11 months old and 6 have no date, so every converted active medicine carries
 `review = true`:
 - It shows "From a prescription dated MMM YYYY. Still taking it?" with **Yes / Change / Stopped**.
-- **Default: reminders stay on for reviewed-or-timed medicines** (Lloyd chose auto-convert). If a review is still
+- **Default: reminders stay on for reviewed-or-timed medicines** (the owner chose auto-convert). If a review is still
   open 3 days after `review_since`, the reminder for that medicine pauses and Today shows "N medicines to check" to the person and
   their carers.
 - Today shows one card "N medicines to check" until the list is reviewed.
@@ -87,7 +87,7 @@ The newest prescription is about 11 months old and 6 have no date, so every conv
   setting "Remind me for ..."); notification text stays generic (B-7). Id range widened from 31000-31099.
 - Events: the single list is PART-2 section 4. Adherence is measured from `meds_taken`, not events.
 
-## 2. Today (priority 2; order set by Lloyd 2026-10-20)
+## 2. Today (priority 2; order set by the owner 2026-10-20)
 1. **Next up + medicines to check**: one card. The next dose due in 3 hours (or missed in the last 2) with Taken /
    Skip; a footer row "N medicines to check" when reviews are open.
 2. **Weather** card: temp, condition, place, rain window, and the action line; opens `#weather`. An alert band for my
@@ -155,10 +155,10 @@ Everything follows `resolvePlace()` (GPS, else chosen home zone). Zones stay in 
 | Footer | shows `docs/SOURCES.md` | "Sources" link to an in-app page. |
 | Hazards title | truncated | Allow wrap. |
 
-**Data Lloyd must supply (ping):** zone 2 hotlines and nearest hospitals; confirm zone 2 area name. Until then
+**Data the owner must supply (ping):** zone 2 hotlines and nearest hospitals; confirm zone 2 area name. Until then
 the zone 2 view shows national numbers plus "Add local numbers" for admins.
 
-### 4.1 Quick dial: one local set (Lloyd 2026-10-20)
+### 4.1 Quick dial: one local set (the owner 2026-10-20)
 Six local sets ship as defaults: **General Santos, Tagbilaran, Davao, Cebu City, Manila, Texas (USA)**, plus
 **Philippine national**, **OFW** and **Teleconsult** sets. Numbers and sources: `HOTLINES.md` and
 `hotlines-proposed.json` in this folder (each row has a source URL, status CONFIRMED or UNVERIFIED, and a read date).
@@ -220,7 +220,7 @@ screen lists each feature as Kept, Improved, Moved or New and taps through to it
 | Ask, Me, other | Me settings, Inbox, Docs, Admin, sign-in, wizard, sync, updates | Ask history, keyboard gap | | |
 Only duplicates go: weather inside Next up, the second weather panel in Safety, the family list on Today.
 
-## 8. New features (Lloyd 2026-10-20: "more comprehensive"), priority 7
+## 8. New features (the owner 2026-10-20: "more comprehensive"), priority 7
 All use tables that already exist; no new external services.
 | Feature | What the user sees | Data | Persona |
 |---|---|---|---|

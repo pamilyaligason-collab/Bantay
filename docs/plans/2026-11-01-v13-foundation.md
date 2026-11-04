@@ -12,7 +12,7 @@ plan: `docs/redesign-2026-10-31/PLAN.md` tasks 0.1-0.5. Audit: `AUDIT.md` P0-1..
 lane; the `auth` project runs on `PW_PORT+500` and matches `*.auth.spec.ts`), Dexie 4, Capacitor 8.
 
 **Rules every lane follows:** plan approved before code (this file); Sonnet builds, Opus reviews each lane
-before merge; nothing in Phase 0 needs a migration, deploy or Lloyd's OK; 44 px targets; contrast computed (never
+before merge; nothing in Phase 0 needs a migration, deploy or the owner's OK; 44 px targets; contrast computed (never
 by eye); reduced motion honoured on every animation; px type sizes that survive 195 px (`narrow.css`); every new
 token in both themes; no new dependency; commit after every green step with the message given; never commit a
 red test.
@@ -155,8 +155,8 @@ afterEach(cleanup)
 
 describe('LargeTitle', () => {
   it('kicker, 34 px h1 and right actions', () => {
-    render(<LargeTitle kicker="Saturday, Oct 31" title="Good evening, Loyd" actions={<a href="#me" aria-label="You and settings">L</a>} testId="head" />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Good evening, Loyd' })).toHaveClass('lt-title')
+    render(<LargeTitle kicker="Saturday, Oct 31" title="Good evening, Rey" actions={<a href="#me" aria-label="You and settings">L</a>} testId="head" />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Good evening, Rey' })).toHaveClass('lt-title')
     expect(screen.getByTestId('head')).toHaveTextContent('Saturday, Oct 31')
     expect(screen.getByRole('link', { name: 'You and settings' })).toBeInTheDocument()
   })
@@ -378,7 +378,7 @@ import { resetPersonChoice, useHealthData } from './useHealthData'
 
 function Probe() { const d = useHealthData(); return <p data-testid="who">{d.ready ? d.personId || '(none)' : 'loading'}</p> }
 beforeEach(async () => { resetPersonChoice(); who.gate = null; await hdb.people.clear(); await hdb.readings.clear()
-  await hdb.people.bulkPut([{ id: 'ma', name: 'Ma' }, { id: 'me', name: 'Loyd' }])
+  await hdb.people.bulkPut([{ id: 'ma', name: 'Ma' }, { id: 'me', name: 'Rey' }])
   await hdb.readings.put({ id: 'r1', personId: 'ma', test: 'bp_systolic', value: 140, unit: 'mmHg', takenAt: new Date().toISOString() } as never) })
 afterEach(cleanup)
 
@@ -564,12 +564,12 @@ vi.mock('../sos/active', () => ({ startSos: vi.fn() }))
 import { ASK_EVENT } from '../assistant/Assistant'
 import { JackSheet } from './JackSheet'
 afterEach(cleanup)
-const mount = () => { document.body.innerHTML = '<div class="bt"></div>'; const onClose = vi.fn(), onSos = vi.fn(); render(<JackSheet onClose={onClose} onSos={onSos} firstName="Loyd" />); return { onClose, onSos } }
+const mount = () => { document.body.innerHTML = '<div class="bt"></div>'; const onClose = vi.fn(), onSos = vi.fn(); render(<JackSheet onClose={onClose} onSos={onSos} firstName="Rey" />); return { onClose, onSos } }
 
 describe('JackSheet', () => {
   it('greets by name, offers Help (hold), Safety link, Scan, Chat and Upload, all >= 44 px by class', () => {
     mount()
-    expect(screen.getByRole('dialog', { name: 'Jack' }).textContent).toContain('Hi Loyd, what do you need?')
+    expect(screen.getByRole('dialog', { name: 'Jack' }).textContent).toContain('Hi Rey, what do you need?')
     expect(screen.getByTestId('jack-sos').querySelector('.sos-simple-btn')).not.toBeNull()
     expect(screen.getByTestId('jack-safety').querySelector('a')?.getAttribute('href')).toBe('#safety')
     for (const id of ['jack-scan', 'jack-chat', 'jack-upload', 'jack-close']) expect(screen.getByTestId(id)).not.toBeNull()

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
 vi.mock('../auth/client', () => ({ supabase: null }))
-vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+vi.mock('../auth/session', () => ({ getAccessToken: async () => null, getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../records/trend', () => ({ trendChart: () => ({ destroy() {}, setSize() {} }) })) // uPlot needs a canvas
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
 
@@ -80,7 +80,7 @@ describe('Health overview (v13)', () => {
   })
 
   it('a lab out of range leads; a "SURNAME, Given" name does not break the page', async () => {
-    await hdb.people.put({ id: 'p1', name: 'SEVILLA, Loyd' })
+    await hdb.people.put({ id: 'p1', name: 'VILLAR, Rey' })
     await hdb.readings.clear()
     await hdb.readings.add({ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2) })
     render(<Health />)
@@ -124,9 +124,9 @@ describe('Health > Readings', () => {
 
   it('lists all seven numbers, with Sleep unknown staying unknown, and My numbers', async () => {
     render(<Health />)
-    const bpNode = await screen.findByRole('link', { name: /^BP 130\/84 Above target/ })
-    expect(bpNode.getAttribute('href')).toBe('#health/metric/bp_systolic')
-    expect(screen.getByRole('link', { name: /^Sleep -- No data yet/ })).toBeTruthy()
+    const bpNode = await screen.findByTestId('node-bp')
+    expect(bpNode.querySelector('a')!.getAttribute('href')).toBe('#health/metric/bp_systolic')
+    expect(screen.getByTestId('node-sleep').textContent).toContain('None this week')
     for (const id of ['sleep', 'mood', 'bp', 'pulse', 'sugar', 'weight', 'steps']) expect(screen.getByTestId(`node-${id}`)).toBeTruthy()
     const tile = (await screen.findByTestId('kpis')).querySelector('[data-kpi="bp_systolic"]') as HTMLElement
     expect(within(tile).getByText('124/79')).toBeTruthy()
@@ -145,26 +145,19 @@ describe('Health > Readings', () => {
     expect(row.querySelector('.hv-dot.prev')).toBeTruthy()
   })
 
-  it('Vitals has a Latest | Average | Normal toggle that changes what is shown', async () => {
+  it('Averages say the days they used; Last readings has no mode toggle', async () => {
     render(<Health />)
-    await screen.findByRole('link', { name: /^BP 130/ })
-    const row = () => document.querySelector('[data-test="bp_systolic"]') as HTMLElement
-    expect(screen.getByRole('button', { name: 'Latest' }).getAttribute('aria-pressed')).toBe('true')
-    expect(within(row()).getByText('124')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Average' }))
-    expect(within(row()).getByText('130')).toBeTruthy() // average of 124 and 136
-    expect(within(row()).getByText('7-day average')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Normal' }))
-    const normal = screen.getByTestId('normal-rows')
-    expect(within(normal).getByText('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')).toBeTruthy()
-    expect(within(normal).getByText(/Normal is under 120 over 80/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Latest' }))
-    expect(within(row()).getByText('124')).toBeTruthy()
+    await screen.findByTestId('node-bp')
+    const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
+    expect(within(row).getByText('124')).toBeTruthy() // Last readings: the latest
+    expect(screen.queryByRole('button', { name: 'Average' })).toBeNull()
+    expect(screen.getByTestId('node-bp').textContent).toMatch(/Average of 2 days/) // two days of readings, so it says so
+    expect(within(screen.getByTestId('node-sleep')).queryByText(/average/i)).toBeNull() // no data: no average claimed
   })
 
   it('list rows keep the status and a sparkline; range text lives on the metric screen', async () => {
     render(<Health />)
-    await screen.findByRole('link', { name: /^BP 130\/84/ })
+    await screen.findByTestId('rd-last')
     const row = document.querySelector('[data-test="bp_systolic"]') as HTMLElement
     expect(within(row).getByText('A little raised')).toBeTruthy()
     expect(row.querySelector('.hv-state.above')?.textContent).toContain('Above range')
@@ -274,6 +267,9 @@ describe('Medicines screen', () => {
     expect(await screen.findByRole('button', { name: 'Add by hand' })).toBeTruthy()
     expect(screen.getByText('No medicines yet')).toBeTruthy()
     expect(screen.queryByText(/Preview|Example/)).toBeNull() // no sample cards
+    const box = screen.getByTestId('meds-empty') // both ways in live inside the card
+    expect(within(box).getByRole('link', { name: 'Scan a prescription' }).getAttribute('href')).toBe('#scan')
+    expect(within(box).getByRole('button', { name: 'Add by hand' })).toBeTruthy()
   })
 })
 

@@ -3,49 +3,65 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const { h, stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }), h: { storm: null as null | { title: string; body: string }, feel: vi.fn(), result: 'told' as string, checkIn: vi.fn(), act: vi.fn(), read: vi.fn(), take: vi.fn(), meds: [] as unknown[], can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } } }))
-vi.mock('./useStorm', () => ({ useStorm: () => h.storm }))
+
 vi.mock('./useMyTakes', () => ({ useMyMedications: () => h.meds, useMyDoseRows: () => [] }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p1' }))
 vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => 'p1', useActingCan: () => h.can }))
 vi.mock('../log/store', async (orig) => ({ ...(await orig<typeof import('../log/store')>()), logActivity: (a: unknown) => { h.act(a); return Promise.resolve(1) }, logReading: (r: unknown) => { h.read(r); return Promise.resolve(1) } }))
 vi.mock('../sensors/QuickWalk', () => stub('walk'))
-vi.mock('../exercise/MovePanel', () => stub('move'))
+vi.mock('../exercise/MovePanel', () => ({ default: (p: { lockLog?: string; hideRing?: boolean }) => <div data-testid="move" data-lock={p.lockLog ?? ''} data-other={String(!!p.hideRing)} /> }))
 vi.mock('../nutrition/PlateSheet', () => stub('meal'))
 vi.mock('../nutrition/SaltSummary', () => stub('salt'))
 vi.mock('../nutrition/WaterSheet', () => stub('water'))
 vi.mock('../health/bpcheck/BpCheckButton', () => ({ default: () => <button type="button">Guided check</button> }))
 vi.mock('./actions', async (orig) => ({ ...(await orig<typeof import('./actions')>()), logFeeling: (f: string, id?: string) => { h.feel(f, id); return Promise.resolve(h.result) }, checkIn: (id?: string) => { h.checkIn(id); return Promise.resolve('ok') }, takeMedication: (m: unknown, _t: unknown, id?: string) => { h.take(m, id); return Promise.resolve('ok') } }))
-import QuickLog from './QuickLog'
+import { MoodSheet, MoreSheet } from './QuickLog'
+const mood = (notify: (m: string) => void = () => undefined) => render(<MoodSheet onClose={() => undefined} notify={notify} />)
+const more = (notify: (m: string) => void = () => undefined) => render(<MoreSheet onClose={() => undefined} notify={notify} />)
 
 afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.can = null; h.meds = []; for (const f of [h.feel, h.checkIn, h.act, h.read, h.take]) f.mockReset() })
 
-describe('QuickLog (today-log)', () => {
-  it("six tiles plus the small I'm OK beside How are you?", () => {
-    render(<QuickLog notify={() => undefined} />)
-    const tiles = screen.getByRole('group', { name: 'Quick log' }).querySelectorAll('button')
-    expect([...tiles].map((b) => b.textContent)).toEqual(['BP', 'Sugar', 'Weight', 'How are you?', "I'm OK", 'Water', 'More'])
-  })
-  it('in a storm the mood tile reads Is everyone safe?', () => {
-    h.storm = { title: 'Pepito is near', body: 'about 300 km east' }
-    render(<QuickLog notify={() => undefined} />)
-    expect(screen.getByRole('button', { name: 'Log how you feel' }).textContent).toBe('Is everyone safe?')
-  })
-  it('More holds Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood and Water; each opens its sheet', () => {
-    render(<QuickLog notify={() => undefined} />)
-    fireEvent.click(screen.getByRole('button', { name: 'More things to log' }))
-    expect([...screen.getByRole('dialog', { name: 'More' }).querySelectorAll('button.td-opt')].map((b) => b.textContent)).toEqual(['Dose taken', 'Food', 'Walk', 'Move', 'Pain', 'Sleep', 'Temperature', 'Mood', 'Water'])
+describe('log sheets (MoodSheet, MoreSheet)', () => {
+  it('More holds the readings that lost their tile, then Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood and Water; each opens its sheet', () => {
+    more()
+    expect([...screen.getByRole('dialog', { name: 'More' }).querySelectorAll('button.td-opt')].map((b) => b.textContent)).toEqual(['Blood pressure', 'Sugar', 'Weight', 'Dose taken', 'Food', 'Walk', 'Move', 'Pain', 'Sleep', 'Temperature', 'Mood', 'Water'])
     fireEvent.click(screen.getByRole('button', { name: 'Food' }))
     expect(screen.getByRole('dialog', { name: 'Meal' })).toBeTruthy()
   })
+  it('acting with log rights, More > Move is locked as on the Move screen: Done would log to the admin', () => {
+    h.can = { log: true, edit: true, rollcall: true, mood: true, reason: null }
+    more()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    expect(screen.getByTestId('move').getAttribute('data-lock')).toBe('Move logs are yours only. Exit to log.')
+    expect(screen.getByTestId('move').getAttribute('data-other')).toBe('true')
+  })
+  it('acting with log rights, More > Walk is locked: it logs to the signed-in person, so the walk logger is not offered', () => {
+    h.can = { log: true, edit: true, rollcall: true, mood: true, reason: null }
+    more()
+    fireEvent.click(screen.getByRole('button', { name: 'Walk' }))
+    expect(screen.queryByTestId('walk')).toBeNull()
+    expect(screen.getByRole('status').textContent).toBe('Walk logs are yours only. Exit to log.')
+  })
+  it('your own More > Walk has the walk logger and no lock', () => {
+    more()
+    fireEvent.click(screen.getByRole('button', { name: 'Walk' }))
+    expect(screen.getByTestId('walk')).toBeTruthy()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+  it('your own More > Move is not locked', () => {
+    more()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    expect(screen.getByTestId('move').getAttribute('data-lock')).toBe('')
+    expect(screen.getByTestId('move').getAttribute('data-other')).toBe('false')
+  })
   it('the BP sheet offers the guided check', () => {
-    render(<QuickLog notify={() => undefined} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Log blood pressure' }))
+    more()
+    fireEvent.click(screen.getByRole('button', { name: 'Blood pressure' }))
     expect(screen.getByRole('button', { name: 'Guided check' })).toBeTruthy()
   })
   it('a face logs once and the toast says the family will see it in Bantay', async () => {
     const notify = vi.fn()
-    render(<QuickLog notify={notify} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Log how you feel' }))
+    mood(notify)
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Saved. Your family will see it in Bantay.'))
     expect(h.feel).toHaveBeenCalledTimes(1)
@@ -55,24 +71,15 @@ describe('QuickLog (today-log)', () => {
   it('an Unwell alert that did not reach the server is not reported as told', async () => {
     h.result = 'untold'
     const notify = vi.fn()
-    render(<QuickLog notify={notify} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Log how you feel' }))
+    mood(notify)
     fireEvent.click(screen.getByRole('button', { name: 'Unwell' }))
     await waitFor(() => expect(notify).toHaveBeenCalled())
     expect(notify.mock.calls[0]![0]).toMatch(/We will tell them when you are online/)
   })
-  it("I'm OK checks in for the viewed person and says so (D-100)", async () => {
-    const notify = vi.fn()
-    render(<QuickLog notify={notify} />)
-    fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('Saved. Your family can see you are OK.'))
-    expect(h.checkIn).toHaveBeenCalledWith('p1')
-  })
   it('Temperature, Sleep and Pain write the reading or activity for the viewed person, and a bad number writes nothing', async () => {
     const notify = vi.fn()
-    render(<QuickLog notify={notify} />)
-    const more = () => fireEvent.click(screen.getByRole('button', { name: 'More things to log' }))
-    more(); fireEvent.click(screen.getByRole('button', { name: 'Temperature' }))
+    more(notify)
+    fireEvent.click(screen.getByRole('button', { name: 'Temperature' }))
     fireEvent.change(screen.getByLabelText('Temperature (°C)'), { target: { value: '52' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(screen.getByRole('alert').textContent).toMatch(/30 to 45/)
@@ -81,28 +88,25 @@ describe('QuickLog (today-log)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Saved temperature 37.5 °C'))
     expect(h.read).toHaveBeenCalledWith(expect.objectContaining({ personId: 'p1', test: 'temperature', value: 37.5, unit: '°C' }))
-    more(); fireEvent.click(screen.getByRole('button', { name: 'Sleep' }))
+    cleanup(); more(notify); fireEvent.click(screen.getByRole('button', { name: 'Sleep' }))
     fireEvent.change(screen.getByLabelText('Hours slept last night'), { target: { value: '6.5' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(h.act).toHaveBeenCalledWith(expect.objectContaining({ personId: 'p1', kind: 'sleep', minutes: 390 })))
-    more(); fireEvent.click(screen.getByRole('button', { name: 'Pain' }))
+    cleanup(); more(notify); fireEvent.click(screen.getByRole('button', { name: 'Pain' }))
     fireEvent.click(screen.getByRole('button', { name: 'Moderate' }))
     await waitFor(() => expect(h.act).toHaveBeenCalledWith(expect.objectContaining({ personId: 'p1', kind: 'pain-5' })))
   })
   it("Dose taken logs the medicine under the medicine's own person, never the admin", async () => {
     h.meds = [{ id: 1, serverId: 's9', personId: 'mama', name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['08:00'] } }]
-    render(<QuickLog notify={() => undefined} />)
-    fireEvent.click(screen.getByRole('button', { name: 'More things to log' }))
+    more()
     fireEvent.click(screen.getByRole('button', { name: 'Dose taken' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Losartan' }))
     await waitFor(() => expect(h.take).toHaveBeenCalledWith(expect.objectContaining({ name: 'Losartan' }), 'mama'))
   })
-  it('acting without the log right: tiles are locked with View only and the reason; the mood tile follows the mood right', () => {
+  it('acting without the log right: the More items are locked with View only, Mood stays open', () => {
     h.can = { log: false, edit: false, rollcall: false, mood: true, reason: 'You can see Mama but not log for her.' }
-    render(<QuickLog notify={() => undefined} />)
-    expect((screen.getByRole('button', { name: 'Log blood pressure, view only' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: 'More things to log, view only' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: 'Log how you feel' }) as HTMLButtonElement).disabled).toBe(false)
-    expect(screen.getByText(/View only\. You can see Mama but not log for her\./)).toBeTruthy()
+    more()
+    expect((screen.getByRole('button', { name: 'Blood pressure, view only' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Mood' }) as HTMLButtonElement).disabled).toBe(false)
   })
 })

@@ -41,6 +41,20 @@ describe('useHealthData default person', () => {
   })
 })
 
+describe('H6: no stranger frame', () => {
+  it('personId is empty until the member is known, then Me: the first ready render is already Me', async () => {
+    const seen: string[] = []
+    function Rec() { const d = useHealthData(); seen.push(d.ready ? d.personId : `loading:${d.personId}`); return null }
+    render(<Rec />)
+    await waitFor(() => expect(who.gate).not.toBeNull())
+    await new Promise((r) => setTimeout(r, 300))
+    act(() => who.gate!())
+    await waitFor(() => expect(seen.at(-1)).toBe('me'))
+    expect(seen.filter((x) => !x.startsWith('loading:')).every((x) => x === 'me')).toBe(true)
+    expect(seen.filter((x) => x.startsWith('loading:')).every((x) => x === 'loading:')).toBe(true)
+  })
+})
+
 describe('useForgetPersonOutsideHealth', () => {
   function Both({ tab, hash }: { tab: string; hash?: string }) {
     const d = useHealthData()

@@ -1,4 +1,4 @@
-# Family Bantay - go-live for waves 3-6 (Safety, Health, Family Plan, Ask, inbox). Lloyd runs it from this worktree:
+# Family Bantay - go-live for waves 3-6 (Safety, Health, Family Plan, Ask, inbox). The owner runs it from this worktree:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-w36.ps1
 # Order matters: 0012 before the web push (family_* sync rows would dead-letter otherwise). Stops at the first failure.
 param([switch]$DryRun)

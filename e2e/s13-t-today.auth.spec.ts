@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { mock } from './health-auth-mock'
-import { skipOnboarding } from './helpers'
+import { signedIn, skipOnboarding } from './helpers'
 import { shotPath } from './shotPath'
 
 // Session 13 lane T (Today): dose done-morph, first-week My week, More heading, weather cards. Auth project (test Supabase env, PostgREST mocked, invented data).
@@ -39,20 +39,21 @@ async function seed(page: Page, dbName: string, store: string, rows: Row[]) {
 async function start(page: Page, scheme: 'light' | 'dark', o: { code?: number; dose?: boolean; since?: string; reduced?: boolean } = {}) {
   await page.clock.setFixedTime(NOW)
   await skipOnboarding(page)
-  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Lloyd' }])))
+  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])))
   await mock(page)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: NOW, temp: 31, humidity: 60, feels: 33, code: o.code ?? 0, hourlyProb: () => 10 }) }))
   await page.emulateMedia({ colorScheme: scheme, reducedMotion: o.reduced ? 'reduce' : 'no-preference' })
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
   if (o.dose) await seed(page, 'bantay-log', 'medications', [{ clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', dose: '50 mg', schedule: { v: 1, times: ['09:45'] }, startedOn: '2026-10-01', medStatus: 'active' }])
   if (o.since) await seed(page, 'bantay', 'kv', [{ key: 'today.myweek.since', value: o.since }])
   if (o.dose || o.since) await page.reload() // raw IndexedDB writes do not notify live queries
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
   // The mocked server never takes the app's own writes, so the sync pill and the bell dot come and go with timing; they are not what this lane shows.
   await page.addStyleTag({ content: '.sync-status, .sh-badge { display: none !important; }' })
   await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible() // the forecast answers after the first paint
-  await expect(page.getByTestId('salt-line')).toBeVisible() // appears once sign-in finished: wait so a rerun draws the same page (ML-25, ML-32)
+  await expect(page.getByTestId('myday-checkin')).toBeVisible()
+  await signedIn(page) // the member lookup finished: wait so a rerun draws the same page (ML-25, ML-32)
 }
 // The tab bar is masked: its glass blurs whatever scrolls under it and flickers a few pixels between runs (ML-32). tabbar-overlap.spec.ts covers the bar itself.
 const shot = (page: Page, name: string, scheme: string) => page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png`, animations: 'disabled', mask: [page.locator('nav.tabbar')] })

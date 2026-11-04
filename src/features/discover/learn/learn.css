@@ -22,13 +22,13 @@
 .lr .sh-pill { box-sizing: border-box; max-width: 100%; text-decoration: none; }
 .lr-stack { display: flex; flex-direction: column; gap: 8px; }
 .lr-dish { color: var(--ink); text-decoration: none; }
-.lr-big { font-size: 28px; font-family: var(--f-display, Georgia, serif); }
+.lr-big { font-size: 28px; }
 .lr-bar { height: 10px; border-radius: 5px; background: var(--card2); overflow: hidden; }
 .lr-bar i { display: block; height: 100%; border-radius: 5px; background: var(--green2); }
 .lr-bar i.w { background: var(--amber); }
 .lr-sec { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; }
 .lr-sec p { margin: 0; }
-.lr-h { font-family: var(--f-display, Georgia, serif); font-size: 20px; font-weight: 600; }
+.lr-h { font-size: 20px; font-weight: 600; }
 .lr-ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .lr-key, .lr-stop { display: flex; flex-direction: column; gap: 6px; border-radius: 20px; padding: 14px 16px; }
 .lr-key { background: var(--soft); }
@@ -45,7 +45,7 @@
 .lr-cook:focus { outline: none; }
 .lr-cook > * { flex-shrink: 0; min-width: 0; }
 .lr-cookstep { display: flex; flex-direction: column; gap: 10px; flex: 1; justify-content: center; }
-.lr-cookstep p { margin: 0; font-family: var(--f-display, Georgia, serif); font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; }
+.lr-cookstep p { margin: 0; font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; }
 .lr-cookstep .sub { font-size: 17px; }
 .lr-prog { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
 .lr-prog i { display: block; height: 100%; background: var(--green2); transition: width var(--dur-base) var(--ease-out); }
@@ -55,3 +55,6 @@
 .lr-exit { align-self: center; min-height: var(--tap, 48px); display: inline-flex; align-items: center; color: var(--muted); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .lr-prog i { transition: none; } }
 .lr a:focus-visible, .lr button:focus-visible, .lr-cook a:focus-visible, .lr-cook button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+/* D-117 topic page: the player on top, its source line under it */
+.card.ry-video { display: flex; flex-direction: column; gap: 8px; padding: 12px; }

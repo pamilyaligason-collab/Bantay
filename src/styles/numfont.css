@@ -1,0 +1,3 @@
+/* D-115 A2: the temperature is weight 200 (plan T4/X1). System fonts differ (Segoe maps 200 to Light, Roboto to Thin), so only the digits come from Inter ExtraLight 200 (OFL), subset to 0-9 ° - . / % and dashes (1.7 KB, inlined by vite). Everything else stays on the system stack (D-108). */
+@font-face { font-family: "Bantay Num"; font-weight: 200; font-style: normal; font-display: swap; src: url(../assets/fonts/inter-200-num.woff2) format("woff2"); }
+.td-wxs[data-size="expanded"] .td-wxh-t, .wx .wx-hero .wx-temp { font-family: "Bantay Num", var(--f-ui); }

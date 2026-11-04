@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { EmptyState, GroupedList, LargeTitle, PreviewTile, Row, Section } from '../look'
+import { EmptyState, GroupedList, JackArt, LargeTitle, PreviewTile, Row, Section } from '../look'
+import { HeadActions } from '../shell/HeadActions'
 import type { RefreshDetail } from '../look/refresh'
+import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
-import { MEDCARDS, RECIPES } from './learn/data'
+import { RECIPES } from './learn/data'
 import { MEDCARDS_FLAG } from './learn/Screen'
 import { phFactOf } from './facts/onThisDay'
 import { dayKey } from './play/score'
@@ -10,7 +12,10 @@ import { SeasonRow } from './today/Cards'
 import { featured } from './today/featured'
 import { loadFeed, pinFirst, useNewsZone } from './news/Screen'
 import { WATCH_PICK } from './watch/Screen'
-import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
+import { canSpeak } from './listen/speech'
+import { useReadAloud } from './listen/useReadAloud'
+import { playable, type Video } from '../health/library/videosLogic'
+import { DISCOVER_VIDEOS, READY_TOPICS, countLine } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 
@@ -58,46 +63,104 @@ const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
   <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
 )
 
+/** A full-width tinted Learn card per the board: icon tile, title, one line, chevron. */
+const LearnCard = (p: { tint: 'green' | 'amber' | 'purple'; icon: 'pill' | 'meal' | 'file'; title: string; sub: string; href: string; testId: string }) => (
+  <div className="card dc-lcard" data-tint={p.tint}><Row icon={p.icon} tint={p.tint} title={p.title} sub={p.sub} href={p.href} testId={p.testId} /></div>
+)
+
+const minutes = (v: Video) => (v.minutes ? ` · ${v.minutes} min` : '')
+
+/** Read-aloud rows: the first three items of the Listen list, each with its own 44 px play button. */
+function ListenRows() {
+  const { items, playing, toggle } = useReadAloud()
+  if (!canSpeak()) return <p className="sub dc-lead">Reading aloud is not on this phone yet.</p>
+  return (
+    <>
+      <p className="sub dc-lead">Read aloud by your phone</p>
+      <GroupedList icons>
+        {items.slice(0, 3).map((it) => {
+          const on = playing === it.id
+          return (
+            <Row key={it.id} icon="mic" tint="teal" title={it.title} sub={it.sub} href="#discover/listen" testId={`dc-listen-${it.id}`}
+              control={<button type="button" className="sh-iconbtn dc-play" aria-pressed={on} aria-label={`${on ? 'Stop' : 'Play'} ${it.title}`} onClick={() => void toggle(it.id)}><Icon name={on ? 'pause' : 'play'} size={20} /></button>} />
+          )
+        })}
+      </GroupedList>
+    </>
+  )
+}
+
 /** #discover (v13): large title, the video of the day, two more videos, then the season row. */
 export default function Overview({ now = new Date() }: { now?: Date }) {
-  const vids = VIDEOS.filter(playable)
+  const vids = DISCOVER_VIDEOS.filter(playable)
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const { hero, more } = featured<Video>(now, vids)
   return (
     <>
-      <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" />
+      <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" actions={<HeadActions><a className="sh-iconbtn dc-search" href="#discover/learn/library" aria-label="Search health topics" data-testid="dc-search"><Icon name="search" size={22} /></a></HeadActions>} />
+      <div className="dc-top">
       <div data-hero data-testid="dc-hero">
         {hero
-          ? <Pick id={hero.id}><PreviewTile kicker={`Watch · ${vids.length} checked videos`} tint="blue" value={hero.title} valueSize="md" sub="Plays in privacy mode after you tap" action="Watch" href="#discover/watch" media={<Thumb id={hero.id} />} /></Pick>
+          ? (
+            <Pick id={hero.id}>
+              <a className="card dc-herocard" href="#discover/watch">
+                <span className="dc-poster-box">
+                  <Thumb id={hero.id} />
+                  <span className="dc-hchip">Watch · {vids.length} checked videos</span>
+                  <span className="dc-hero-play" aria-hidden="true"><Icon name="play" size={28} /></span>
+                </span>
+                <span className="dc-hero-body">
+                  <span className="dc-hero-k">{hero.topic}{minutes(hero)}</span>
+                  <span className="dc-hero-t">{hero.title}</span>
+                  <span className="dc-hero-s">Plays in privacy mode after you tap</span>
+                </span>
+              </a>
+            </Pick>
+          )
           : <EmptyState icon="play" title="No checked videos yet" />}
       </div>
       {more.length > 0 && (
         <div className="pt-grid" data-testid="dc-videos">
-          {more.map((v, i) => <Pick key={v.id} id={v.id}><PreviewTile kicker={v.topic} tint={i ? 'purple' : 'teal'} value={v.title} valueSize="md" action="Watch" href="#discover/watch" media={<Thumb id={v.id} />} /></Pick>)}
+          {more.map((v, i) => (
+            <Pick key={v.id} id={v.id}>
+              <a className="card dc-vc" href="#discover/watch" data-tint={i ? 'purple' : 'teal'}>
+                <span className="dc-vc-pic"><Thumb id={v.id} /><span className="dc-vc-play" aria-hidden="true"><Icon name="play" size={18} /></span></span>
+                <span className="dc-vc-body"><span className="dc-vc-k">{v.topic}</span><span className="dc-vc-t">{v.title}</span></span>
+              </a>
+            </Pick>
+          ))}
         </div>
       )}
       <SeasonRow now={now} />
+      </div>
       <Section title="Learn" link={{ href: '#discover/learn', label: 'All topics' }} testId="dc-learn">
-        <GroupedList icons>
-          {medcards && <Row icon="pill" tint="green" title="Medicines" sub="What each medicine is for" href="#discover/learn/meds" />}
-          <Row icon="meal" tint="amber" title="Recipes" sub={`${RECIPES.length} low-salt recipes`} href="#discover/learn/recipes" />
-          <Row icon="file" tint="purple" title="Topics" sub="Plain reads on health topics" href="#discover/learn/library" />
-        </GroupedList>
+        <div className="dc-lcards">
+          {medcards && <LearnCard tint="green" icon="pill" title="Medicines" sub="What each medicine is for" href="#discover/learn/meds" testId="dc-learn-meds" />}
+          <LearnCard tint="amber" icon="meal" title="Recipes" sub={`${RECIPES.length} low-salt recipes`} href="#discover/learn/recipes" testId="dc-learn-recipes" />
+          <LearnCard tint="purple" icon="file" title="Topics" sub="Plain reads on health topics" href="#discover/learn/library" testId="dc-learn-topics" />
+        </div>
       </Section>
       <Section title="Listen" link={{ href: '#discover/listen', label: 'See all' }} testId="dc-listen">
-        <p className="sub dc-lead">Read aloud by your phone</p>
+        <ListenRows />
+      </Section>
+      <Section title="Ready at home" testId="dc-ready">
+        <p className="sub dc-lead">Checked videos and reads, calm and practical</p>
         <GroupedList icons>
-          <Row icon="mic" tint="teal" title="Recipes" sub={`${RECIPES.length} read out loud`} href="#discover/listen" />
-          {medcards && <Row icon="mic" tint="teal" title="Medicine cards" sub={`${MEDCARDS.length} read out loud`} href="#discover/listen" />}
+          {READY_TOPICS.map((t) => (
+            <Row key={t.id} icon={t.id === 'prepping' ? 'bag' : 'home'} tint={t.id === 'prepping' ? 'green' : 'amber'} title={t.title} sub={countLine(t)} href={'#discover/learn/' + t.id} testId={'dc-ready-' + t.id} />
+          ))}
         </GroupedList>
       </Section>
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">
         <div className="pt-grid">
-          <PreviewTile kicker="Game" tint="blue" value="Memory" valueSize="md" sub="Match the pairs" action="Play" href="#discover/play/memory" />
-          <PreviewTile kicker="Game" tint="red" value="Word search" valueSize="md" sub="Find the hidden words" action="Play" href="#discover/play/wordsearch" />
+          <PreviewTile tint="blue" value="Memory" valueSize="md" sub="Match the pairs" href="#discover/play/memory" media={<span className="dc-glyph dc-glyph-mem" aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>} />
+          <PreviewTile tint="red" value="Word search" valueSize="md" sub="Find the hidden words" href="#discover/play/wordsearch" media={<span className="dc-glyph dc-glyph-word" aria-hidden="true">B_NT_Y</span>} />
         </div>
       </Section>
-      <PreviewTile kicker="Did you know?" tint="green" value={phFactOf(dayKey(now))} valueSize="md" action="More fun facts" href="#discover/play/facts" testId="dc-fact" />
+      <a className="card dc-fact" href="#discover/play/facts" data-tint="green" data-testid="dc-fact">
+        <JackArt name="thinking" size={56} decorative />
+        <span className="dc-grow"><span className="dc-fact-k">Did you know?</span><span className="dc-fact-t">{phFactOf(dayKey(now))}</span></span>
+      </a>
       <Section title="News" link={{ href: '#discover/news', label: 'See all' }} testId="dc-news">
         <NewsPreview />
       </Section>

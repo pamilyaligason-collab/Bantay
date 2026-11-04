@@ -1,4 +1,5 @@
 import { distanceKm, type Alert, type LatLon } from '../safety/alerts'
+import type { Kind } from '../weather/forecast'
 import { cyclones } from '../safety/LiveMaps'
 
 export type Storm = Alert & { lat: number; lon: number }
@@ -41,3 +42,8 @@ export function mapView(s: LatLon, from: LatLon | null): { lat: number; lon: num
   const zoom = km > 2500 ? 3 : km > 1200 ? 4 : km > 600 ? 5 : km > 300 ? 6 : km > 150 ? 7 : 8
   return { lat: (s.lat + from.lat) / 2, lon: (s.lon + from.lon) / 2, zoom }
 }
+
+export interface Slot { time: string; kind: Kind; pct: number | null; temp: number | null }
+export const STORM_FLOOR_PCT = 60
+/** Under a live storm signal the hero's slots agree with its title: every slot shows the storm icon and at least 60% rain. */
+export const stormSlots = (slots: Slot[]): Slot[] => slots.map((s) => ({ ...s, kind: 'storm', pct: Math.max(s.pct ?? 0, STORM_FLOOR_PCT) }))

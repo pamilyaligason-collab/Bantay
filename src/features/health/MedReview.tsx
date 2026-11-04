@@ -16,7 +16,7 @@ export type ReviewAnswer = 'yes' | 'stopped' | 'doctor'
 const QUESTIONS_MAX = 20
 const questionKey = (personId: string) => `visits.questions.${personId}` // the list Health > Doctor visits shows under "A question for the doctor"
 
-/** The medicine with who answered and when written into its schedule (answered_by, answered_at), so the family sees "Answered by Lloyd". Nothing is added for the person themself. */
+/** The medicine with who answered and when written into its schedule (answered_by, answered_at), so the family sees "Answered by Rey". Nothing is added for the person themself. */
 function withAnswer(m: Medication, by?: string): Medication {
   const name = by?.trim().slice(0, 40)
   if (!name) return m

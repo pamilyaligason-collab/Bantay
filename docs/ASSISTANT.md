@@ -20,11 +20,11 @@ Webhook -> verify JWT (`GET {SUPABASE_URL}/auth/v1/user`, 401 if invalid) -> dai
 - A daily slot is used even if the model call fails. If the cap RPC gives no answer (misconfigured), the webhook returns 503 `{error:'unavailable'}` and the app shows the generic failure message.
 - Models: `google/gemini-3.5-flash-lite`, fallback `anthropic/claude-haiku-5.5` (checked on OpenRouter 2026-10-17). Provider `{zdr:true, data_collection:'deny'}`. No `:free` model ever.
 - Execution data: success, error and manual saving are all off, so prompts never sit in n8n. The workflow does not log bodies.
-- OpenRouter: in the OpenRouter UI set a hard monthly spend limit on this key (Lloyd), and turn on the account-wide ZDR-only setting.
+- OpenRouter: in the OpenRouter UI set a hard monthly spend limit on this key (the owner), and turn on the account-wide ZDR-only setting.
 
 ### Supabase
 
-The `assistant_usage` table and `assistant_take(int)` function live in `supabase/migrations/0005_news_assistant.sql` (security definer, pinned search_path, Asia/Manila day, execute only for `authenticated`). Applied by Lloyd after review, not by this repo.
+The `assistant_usage` table and `assistant_take(int)` function live in `supabase/migrations/0005_news_assistant.sql` (security definer, pinned search_path, Asia/Manila day, execute only for `authenticated`). Applied by the owner after review, not by this repo.
 
 ## Safety rules (system prompt)
 
@@ -35,7 +35,7 @@ No diagnosis, no dosing beyond what the family logged, urgent means 911 or the d
 Replaces the n8n workflow so Bantay no longer runs anything on the Alfred VPS (B-9). The app request and reply are unchanged: `POST {messages, screen}` -> `{reply, tool_calls}`; 401 `{error:'unauthorized'}`, 429 `{error:'limit'}`, 503 `{error:'unavailable'}`, 400 `{error:'bad_input'}`. New optional reply fields the current app ignores: `sources: [{title,url}]` (for "From MedlinePlus" chips) and `emergency: {kind, call:['911'|'1553']}` (for a one-tap call button).
 
 ### Switch (default stays n8n)
-- `VITE_ASSISTANT_PROVIDER` = `n8n` (default) or `edge`. `edge` posts to `${VITE_SUPABASE_URL}/functions/v1/ask`; otherwise `VITE_ASSISTANT_URL` is used as before. Lloyd flips it at build time. Roll back by unsetting it; keep the n8n workflow inactive for 2 weeks.
+- `VITE_ASSISTANT_PROVIDER` = `n8n` (default) or `edge`. `edge` posts to `${VITE_SUPABASE_URL}/functions/v1/ask`; otherwise `VITE_ASSISTANT_URL` is used as before. The owner flips it at build time. Roll back by unsetting it; keep the n8n workflow inactive for 2 weeks.
 - Deploy with `--no-verify-jwt` (the function checks the JWT itself, like records-extract). Secrets: `OPENROUTER_CHAT_KEY` (its own key with a spend limit; NOT `OPENROUTER_API_KEY`, the scan key), `ALLOWED_ORIGIN`; optional `OPENROUTER_CHAT_MODEL` (default `anthropic/claude-haiku-5.5`), `OPENROUTER_CHAT_FALLBACK` (default `google/gemini-3.5-flash-lite`). A `:free` model id makes the function answer 503.
 - Needs migration 0025 (`search_knowledge`). Without it the knowledge read returns nothing and the answer still works.
 
@@ -58,7 +58,7 @@ One line per request: status, emergency kind, language, model id, fallback yes/n
 ### Tests
 `supabase/functions/ask/ask.test.ts` (vitest, node, the repo's pattern for functions): gate (positives in English, Tagalog, Taglish and near-misses), request checks, cap, fallback, context assembly, MedlinePlus cache, post-check, tool whitelist. Run `npx vitest run supabase/functions/ask`.
 
-### Not done / for Lloyd
+### Not done / for the owner
 - Review of the gate phrase list and the Cebuano phrases (docs/session-8/CLINICAL-REVIEW.md, "Ask edge function").
 - Live check that OpenRouter accepts `reasoning {effort:'none'}` for both models; if not, use `{enabled:false}`.
 - Privacy notice line: the assistant processes data abroad (RA 10173).

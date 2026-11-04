@@ -342,7 +342,7 @@
 .sf-link-row { display: flex; align-items: center; justify-content: space-between; min-height: 48px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 15px; border-top: 1px solid var(--line); }
 
 /* Next up card (green hue): Take + Snooze 2-up, Skip as a 48 px text button */
-.td-nu { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.card.td-nu { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
 .td-nu h3 { margin: 0; font-size: 18px; font-weight: 600; }
 .td-nu p { margin: 0; font-size: 15px; }
 .td-nu-k { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
@@ -375,7 +375,7 @@
 .td-wxs .td-wxh-hrs { padding-top: 8px; margin-top: 0; }
 .td-wxs .td-wxh-hrs li { flex-direction: row; justify-content: center; align-items: center; gap: 4px; font-size: 14px; white-space: nowrap; }
 .td-wxh-hl { margin-left: auto; font-size: 13px; font-weight: 600; text-shadow: 0 1px 6px rgba(0, 0, 0, .55); }
-.td-nu { gap: 2px; padding: 6px 16px; }
+.card.td-nu { gap: 2px; padding: 6px 16px; }
 .td-nu h3 { line-height: 1.25; }
 .td-saved { margin: 0; }
 .bt .td-sc { padding: 8px 16px; min-height: 72px; }
@@ -387,7 +387,7 @@
 .ac-body p { margin: 0 0 4px; }
 .sf-links { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
 .sf-links .sf-link-row:nth-child(2) { grid-column: 1 / -1; order: 3; }
-.td-ao { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--warn-bg); color: var(--ink); border-radius: 24px; border-inline-start: 4px solid var(--warn); box-sizing: border-box; }
+.card.td-ao { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--warn-bg); color: var(--ink); border-radius: 24px; border-inline-start: 4px solid var(--warn); box-sizing: border-box; }
 .td-ao-ic { flex: none; display: inline-flex; color: var(--warn); }
 .td-ao-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .td-ao-t b { font-size: 17px; font-weight: 600; line-height: 1.3; }
@@ -401,7 +401,7 @@
 .td-more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .bt .td-more-t { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px; padding: 4px; text-align: center; font-size: 15px; }
 /* FamilyNotice (S16 L1): a 72 px row, red edge, the whole row is the link, close sits beside it (never inside the link). */
-.al-row { display: flex; align-items: center; gap: 4px; min-height: 72px; padding: 8px 4px 8px 16px; box-sizing: border-box; border-inline-start: 4px solid var(--red); }
+.card.al-row { display: flex; align-items: center; gap: 4px; min-height: 72px; padding: 8px 4px 8px 16px; box-sizing: border-box; border-inline-start: 4px solid var(--red); }
 .al-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; color: var(--ink); text-decoration: none; }
 .al-av { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--soft); overflow: hidden; }
 .al-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -444,10 +444,9 @@
 .bt .td-saltline { padding-block: 0; }
 .td-more-g [data-testid="setup-row"] .rw-main { padding-block: 0; }
 .bt .td-week { padding-block: 4px; min-height: 56px; }
-.card.td-ao { padding: 8px 16px; } /* the .td-ao rule above lost to .card (16 px all round): 80 -> 64 px */
 
 /* v13 T3: compact amber row for a quake beyond its felt radius */
-.td-arow { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; background: var(--tint-amber); color: var(--tint-amber-ink); }
+.card.td-arow { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; background: var(--tint-amber); color: var(--tint-amber-ink); }
 .td-arow-ic { width: 32px; height: 32px; border-radius: var(--r-ic); display: grid; place-items: center; background: var(--card); color: var(--tint-amber-ink); flex: none; }
 .td-arow b { display: block; font-size: 15px; font-weight: 600; }
 .td-arow .td-grow { min-width: 0; flex: 1; }
@@ -461,7 +460,7 @@
 .td-wxs .td-wxh-c { font-size: 17px; font-weight: 600; }
 
 /* v13 T4: My day card */
-.td-day { padding: 16px 16px 4px; }
+.card.td-day { padding: 16px 16px 4px; }
 .td-day-h { display: flex; align-items: center; gap: 16px; padding-bottom: 12px; }
 .td-day-t { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
 .td-todo { display: flex; align-items: center; gap: 12px; padding: 10px 0; min-height: 56px; border-top: .5px solid var(--hair); }
@@ -470,12 +469,11 @@
 .td-todo-ic[data-tint="teal"] { background: var(--tint-teal); color: var(--tint-teal-ink); }
 .td-todo-ic[data-tint="red"] { background: var(--tint-red); color: var(--tint-red-ink); }
 .td-todo-go { min-height: 44px; padding: 0 16px; }
-.td-todo-plus { width: 44px; padding: 0; font-size: 22px; }
 .td-day .td-nu, .td-day .td-sc, .td-day .td-plan { padding-left: 0; padding-right: 0; box-shadow: none; background: none; border-radius: 0; border-top: .5px solid var(--hair); }
 .td-day .td-mc { margin: 0 0 8px; }
 
 /* v13 T5/T6: Calm card and Your numbers */
-.td-calm { display: flex; align-items: center; gap: 18px; padding: 18px; background: var(--tint-teal); color: var(--tint-teal-ink); border: 0; text-align: left; width: 100%; font: inherit; }
+.card.td-calm { display: flex; align-items: center; gap: 18px; padding: 18px; background: var(--tint-teal); color: var(--tint-teal-ink); border: 0; text-align: left; width: 100%; font: inherit; }
 .td-calm b { display: block; font-size: 20px; font-weight: 700; color: var(--ink); }
 .td-calm .td-grow { flex: 1; min-width: 0; }
 .td-calm .td-grow > span { font-size: 15px; }
@@ -486,12 +484,6 @@
 /* v13 T7: Finish setup row */
 [data-testid="setup-row"] { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); border-radius: var(--r-card); }
 
-/* v13 T1: header actions */
-.td-bell, .td-me { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
-.td-bell { background: var(--card); color: var(--ink); box-shadow: var(--shadow); position: relative; }
-.td-bell-dot { position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; border-radius: 50%; background: var(--amber); border: 2px solid var(--card); }
-.td-me { background: var(--green); color: var(--on-green); font-weight: 700; font-size: 17px; text-decoration: none; overflow: hidden; }
-.td-me img { width: 100%; height: 100%; object-fit: cover; }
 .td-root > .sec { margin-top: 6px; }
 
 /* v13: hero slot before the forecast is known */
@@ -506,8 +498,119 @@
 .td-root .lt-actions { flex: none; }
 .td-todo .td-grow { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .td-todo-go { flex: none; }
-.td-calm { flex-wrap: wrap; }
+.card.td-calm { flex-wrap: wrap; }
 .td-calm .td-grow { flex: 1 1 8em; }
 .td-wxs-empty { overflow-wrap: anywhere; }
 .td-todo-go { text-decoration: none; }
 .td-todo-done { flex: none; display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-weight: 600; }
+
+/* ---- v13 gaps lane T (T4 T7 T8 T9 T10 T11 T13 T14 T15 T17) ---- */
+/* T4: hero per board Main: kicker, a 76/200 temperature, condition then High and Low stacked under it; the height comes from the content */
+.td-wxs[data-size="expanded"] .sc { padding: 18px 18px 8px; }
+.td-wxh-top { flex-direction: column; align-items: flex-start; gap: 2px; }
+.td-wxs[data-size="expanded"] .td-wxh-t { font-size: 76px; font-weight: 200; line-height: 1; letter-spacing: -.04em; }
+.td-wxs .td-wxh-c { font-size: 17px; font-weight: 600; }
+.td-wxs .td-wxh-hl { margin-left: 0; font-size: 13px; font-weight: 600; }
+/* T5: slots with their temperature, a Full forecast row; 12 px between slots, label and chance stack at 360 */
+.td-wxs .td-wxh-hrs { gap: 12px; }
+.td-wxs .td-wxh-hrs li { flex-direction: column; gap: 2px; white-space: normal; }
+.td-wxh-st { opacity: .85; }
+.td-wxh-sp { font-weight: 700; }
+.td-wxh-sd { font-size: 13px; }
+.td-wxh-full { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; min-height: 44px; margin-top: 4px; color: #fff; font-size: 15px; font-weight: 600; text-decoration: none; border-top: 1px solid rgb(255 255 255 / .22); }
+/* T7: the rain sentence is a see-through pill, no icon */
+.td-wxs .td-act-box { background: rgb(255 255 255 / .16); color: #fff; border-radius: 999px; padding: 8px 16px; }
+.td-wxs .td-act-box b { text-shadow: 0 1px 6px rgb(0 0 0 / .45); }
+/* T8: no left bar on notice rows: a tint fill instead */
+.card.al-row { border-inline-start: 0; background: var(--tint-red); }
+.card.td-ao { border-inline-start: 0; }
+.al-txt b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; }
+.td-ao-t b { overflow-wrap: anywhere; }
+/* T9 My day header */
+.td-day-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.td-day-s { font-size: 15px; color: var(--muted); }
+.td-todo h2.rw-title { margin: 0; font-size: inherit; }
+/* T10 / T14 / T17: every row is one Todo; the Water plus is the row's first control (44 px hit area, 22 px glyph, a 32 px tile like the others) and the count sits at the end */
+.td-todo-plus { position: relative; width: 44px; height: 44px; margin: -6px; padding: 0; border: 0; background: none; border-radius: var(--r-ic); display: grid; place-items: center; flex: none; color: var(--tint-teal-ink); }
+.td-todo-plus::before { content: ""; position: absolute; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-teal); }
+.td-todo-plus > svg { position: relative; }
+.td-todo-count { flex: none; font-size: 17px; font-weight: 700; }
+.td-todo-ic[data-tint="none"] { background: var(--card2); color: var(--muted); }
+.td-more-wrap { border-top: .5px solid var(--hair); } /* the divider is the wrapper's, full width, though the row beside Jack is narrower */
+.td-todo-more { width: 100%; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.td-todo-more .rw-title { font-weight: 600; }
+/* T11: Calm is a deep teal card with the 84 px orb on its 10 s breath */
+.card.td-calm { background: #1F3B45; color: #fff; }
+.td-calm b { color: #fff; }
+.td-calm .td-grow > span { color: rgb(255 255 255 / .86); }
+.td-calm .bo-orb i { border-color: #fff; }
+/* T13: the setup row is at least 56 px, its sub line one line */
+[data-testid="setup-row"] .rw-main { min-height: 56px; }
+[data-testid="setup-row"] .rw-sub { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+/* T15: the Hold pill keeps its place; only its font was the wrong one */
+.td-sos .sos-simple-btn, .td-sos .sos-simple-sub { font-family: var(--f-ui); }
+.td-sos .sos-simple-btn { font-size: 17px; font-weight: 700; }
+/* hero compaction: Feels beside the range, slots on two lines, tight gaps */
+.td-wxs[data-size="expanded"] .sc { padding: 14px 18px 0; }
+.td-wxs .sc-txt { gap: 4px; }
+.td-wxh-top { gap: 0; }
+.td-wxh-sub { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 0; }
+.td-wxs .td-wxh-pills { gap: 12px; font-size: 13px; }
+.td-wxs .td-wxh-hrs { padding-top: 6px; margin-top: 4px; gap: 12px; }
+.td-wxs .td-wxh-hrs li { display: grid; grid-template-columns: auto auto auto; grid-template-areas: "t t t" "i p d"; justify-content: center; align-items: center; column-gap: 6px; row-gap: 0; }
+.td-wxh-st { grid-area: t; text-align: center; }
+.td-wxh-sd { font-size: 14px; }
+.td-todo-main { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 44px; }
+/* T6: clouds drift in the right half only, below the kicker, so no cloud runs through the words (still sky included) */
+.td-wxs .wxs-cloud { left: 56%; animation-name: td-cloud; }
+.td-wxs .wxs[data-still] .wxs-cloud { left: 56%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 64%; }
+@keyframes td-cloud { from { transform: translateX(0); } to { transform: translateX(260%); } }
+.td-wxs .td-act-box b { font-size: 15px; }
+.td-wxs .td-act-box { padding: 6px 16px; }
+/* T17 / S3: Jack sits bottom right at scroll 0; the row controls keep a lane clear of him so none is ever under his button or tip */
+.bt[data-jack] .td-day .td-todo-go, .bt[data-jack] .td-day .td-todo-done { margin-right: 52px; }
+.bt[data-jack] .td-day .td-todo-more { padding-right: 52px; }
+.bt[data-jack] .td-day .td-nu-acts { padding-right: 52px; } /* R11: with the card's own padding the late-dose row Skip sat under Jack at rest */
+@media (max-width: 389px) { .bt[data-jack] .td-day .td-nu-acts:not(.td-nu-lock) { grid-template-columns: 1fr 1fr; } } /* R12: at 360 the three actions (262 px) overran the 244 px lane and Skip ended 9 px under Jack; Skip drops to a second row under Take */
+/* review fixes: the plus keeps only its 32 px tile, a disabled plus looks disabled, inline text inside a button */
+.td-todo-plus.td-todo-ic { background: none; }
+.td-todo-plus:disabled { opacity: .5; }
+.td-blk { display: block; }
+/* T17: Log something else stays in the left part of the row while Jack and his tip sit bottom right; every My day row is the same height */
+.bt[data-jack] .td-day .td-todo-more { width: fit-content; max-width: max(calc(100% - 170px), 152px); padding-right: 0; } /* 152 px: icon, gap and the longest word ("something") at 320 px */
+.bt[data-jack] .td-day .td-todo-more .td-grow { overflow-wrap: normal; } /* break between words only, never inside one */
+.bt[data-jack] .td-day .td-todo-more .rw-title { white-space: normal; text-overflow: clip; } /* wraps between words instead of ending in an ellipsis */
+.bt[data-jack] .td-day .td-todo-more > svg:last-child { display: none; }
+:root[data-narrow] .bt[data-jack] .td-day .td-todo-more { max-width: 100%; } /* 195 px: 100% - 170 px is nothing, so the row keeps the whole width (Jack's tip may overlap it there) */
+.td-day .td-todo { min-height: 80px; }
+
+/* ---- VS (visual round): hero per board Main, My day sub lines ---- */
+/* Temperature left; condition, High/Low and Feels right-aligned beside it, bottom-aligned with the number. Weight 400: the board loads Inter 400-700 only, so its 200 is drawn as regular. */
+.td-wxs .td-wxh-top { flex-direction: row; flex-wrap: nowrap; align-items: flex-end; justify-content: space-between; gap: 8px; width: 100%; }
+.td-wxs[data-size="expanded"] .td-wxh-t { flex: none; } /* weight stays 200 (D-115 A2): numfont.css loads the face */
+.td-wxh-r { display: flex; flex-direction: column; align-items: flex-end; text-align: right; min-width: 0; padding-bottom: 6px; }
+.td-wxs .td-wxh-sub { justify-content: flex-end; column-gap: 8px; }
+.td-wxs .td-wxh-pills { gap: 8px; }
+/* three stacked columns: time, sky icon beside the temperature, rain chance */
+.td-wxs .td-wxh-hrs li { grid-template-columns: auto auto; grid-template-areas: "t t" "i d" "p p"; justify-items: center; column-gap: 6px; }
+.td-wxh-hrs li > svg { grid-area: i; width: 18px; height: 18px; }
+.td-wxs .td-wxh-sd { grid-area: d; font-size: 15px; font-weight: 600; }
+.td-wxs .td-wxh-sp { grid-area: p; font-size: 13px; font-weight: 400; }
+.td-wxs .td-act-box { border-radius: 14px; padding: 8px 12px; }
+.td-wxs .wxs-cloud { max-width: 56px; margin-top: 6px; } /* plan T6 keeps them small: no cloud crosses the words (e2e T6); the board's 180 px clouds would run through the condition line */
+/* My day: a sub line is two lines at most (the blood pressure sub took three at 360) */
+.td-todo .rw-sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ---- CT (comply round, D-115): the hero as board Main ---- */
+/* three plain columns: time, temperature, rain chance (no sky icon on the board) */
+.td-wxs .td-wxh-hrs li { grid-template-columns: auto; grid-template-areas: "t" "d" "p"; row-gap: 2px; }
+.td-wxs .td-wxh-sd { margin: 0; }
+/* Full forecast: a plain 13 px line with the chevron, no divider; the 44 px hit area grows upward (the hero clips below) */
+.td-wxh-full { min-height: 0; border-top: 0; margin: -13px 0 0; padding: 17px 0 9px; font-size: 13px; font-weight: 400; color: rgb(213 222 238); }
+.td-wxh-full svg { width: 16px; height: 16px; }
+/* Calm: the idle orb is one glowing teal disc with a soft halo, not rings (board Main .orb) */
+.td-calm .bo-orb i { display: none; }
+.td-calm .bo-orb b { inset: 0; background: radial-gradient(circle at 40% 35%, #B9E4DA, #3E8C7E); box-shadow: 0 0 0 10px rgb(62 140 126 / .12); }
+/* Log something else: 15 px (two lines at most beside the coach mark; one line when it fits) */
+.td-todo-more .rw-title { font-size: 15px; }
+[data-testid^="myday-missed-"] .rw-title { white-space: normal; } /* CL: "Ma missed a medicine" is never cut to "Ma missed a me..." beside Open */

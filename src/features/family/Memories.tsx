@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { EmptyState } from '../look'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import { addPhoto, listPhotos, removePhoto, type Photo } from './memoriesApi'
@@ -14,14 +15,9 @@ export default function Memories() {
   const [on, setOn, loaded] = useKv<boolean>('family.memories.on', false)
   if (!loaded) return null
   return (
-    <section aria-labelledby="mem-h" data-testid="memories">
-      <h2 className="hd" id="mem-h">Memories</h2>
+    <section aria-label="Memories" data-testid="memories">
       {on ? <MemoriesOn turnOff={() => setOn(false)} /> : (
-        <div className="card mem-off">
-          <p className="mem-lead">Share family photos in one private place. Off for now.</p>
-          <p className="sub">Only family sees these. Photo location is removed.</p>
-          <button type="button" className="btn2 mem-btn" onClick={() => setOn(true)}><Icon name="photo" size={22} />Turn on Memories</button>
-        </div>
+        <EmptyState icon="photo" title="Memories is off" body="Share family photos in one private place. Only family sees them, and photo location is removed." action={{ label: 'Turn on Memories', onClick: () => setOn(true) }} />
       )}
     </section>
   )

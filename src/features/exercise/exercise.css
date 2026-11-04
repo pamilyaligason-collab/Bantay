@@ -1,13 +1,16 @@
 /* Move: gentle exercise picks. v6 tokens only; body 16-17px, targets 44px+, main actions 56px. */
 .mv { display: flex; flex-direction: column; gap: 14px; font-size: 16px; color: var(--ink); }
 .mv p { margin: 0; }
-.mv-week { display: flex; align-items: center; gap: 16px; background: var(--card2); border-radius: 20px; padding: 14px 16px; }
-.mv-ring { --mv-pct: 0%; width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center; background: conic-gradient(var(--green2) var(--mv-pct), var(--line) 0); position: relative; }
-.mv-ring::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--card2); }
-.mv-ring span { position: relative; font-weight: 700; font-size: 15px; }
-.mv-week-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mv-week-t b { font-size: 20px; font-family: var(--f-display); font-weight: 600; }
+.mv-week { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; background: linear-gradient(135deg, var(--soft), var(--card2)); border-radius: 24px; padding: 20px 18px; }
+.mv-ring { --mv-pct: 0%; width: 120px; height: 120px; border-radius: 50%; flex: none; display: grid; place-items: center; background: conic-gradient(var(--green2) var(--mv-pct), var(--line) 0); position: relative; }
+.mv-ring::before { content: ''; position: absolute; inset: 11px; border-radius: 50%; background: var(--card); }
+.mv-ring-n { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.mv-ring-n b { font-family: var(--f-display); font-size: 40px; font-weight: 700; }
+.mv-ring-n small { font-size: 13px; color: var(--muted); }
+.mv-week-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 120px; } /* at 195 px the ring and its words stack instead of pushing the page wide */
+.mv-week-t b { font-size: 22px; line-height: 1.15; font-family: var(--f-display); font-weight: 600; }
 .mv-week-t span { font-size: 15px; color: var(--muted); }
+.mv-kick { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--green2); }
 .mv-n { font-size: 16px; color: var(--ink); background: var(--warn-bg); border-radius: 14px; padding: 10px 14px; }
 .mv-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .mv-card, .mv-back, .mv-sec { font: inherit; color: var(--ink); cursor: pointer; }
@@ -34,8 +37,7 @@
 .mv-card:focus-visible, .mv-big:focus-visible, .mv-sec:focus-visible, .mv-back:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .mv-card { transition: background .15s; } }
 
-.mv-page .mv-card, .mv-page .mv-week { background: var(--card); box-shadow: var(--shadow); }
-.mv-page .mv-ring::before { background: var(--card); }
+.mv-page .mv-card { background: var(--card); box-shadow: var(--shadow); }
 
 /* Move v2: plan headings, category chips, minutes stepper. */
 .mv-h { margin: 6px 0 0; font-family: var(--f-display); font-size: 20px; font-weight: 600; }
@@ -51,3 +53,33 @@
 /* s14 J: Jack Jack art (D-91), fixed boxes, no entrance animation */
 .s14j-art { display: flex; justify-content: center; margin: 0; }
 .s14j-row { display: flex; align-items: center; gap: 10px; }
+
+/* H15 carousel and doctor row */
+.mv-ccard { flex: none; width: 240px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; }
+.mv-card[aria-disabled="true"]:not(.mv-ccard) { opacity: .6; }
+/* Locked card: every word keeps full contrast (Start measured 2.8:1 at opacity .6). It reads locked by the lock glyph, the "after the doctor OK" words, a muted picture panel and no press effect. */
+.mv-ccard[aria-disabled="true"] .mv-pic { opacity: .55; }
+.mv-ccard[aria-disabled="true"] { cursor: default; }
+.mv-ccard[aria-disabled="true"] .mv-start { color: var(--ink2); }
+.mv-start { font-weight: 700; color: var(--act); min-height: 24px; }
+.mv-doc { margin-top: 8px; }
+.mv-stopif { display: block; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 10px; background: var(--warn-bg); color: var(--ink); font-size: 14px; line-height: 19px; }
+.mv-stopif b { color: var(--warn); }
+.mv-911 { margin: 0; padding: 0 4px; font-size: 16px; line-height: 22px; font-weight: 700; color: var(--red); }
+
+/* Move at 360: the Doctor OK reason and the salt and water lines wrap whole; they are health words and are never cut */
+[data-testid="doctor-ok"] .rw-sub { -webkit-line-clamp: 5; }
+[data-testid="salt-row"] .rw-title, [data-testid="water-row"] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; line-height: 22px; }
+
+/* Board MoveFood: picture panel on top of each move card, then title, amount, chips, Stop if, Start. */
+.mv-ccard { padding: 0; overflow: hidden; gap: 0; width: 250px; min-height: 0; }
+.mv-pic { display: flex; align-items: center; justify-content: center; align-self: stretch; height: 96px; background: var(--tint-green); color: var(--tint-teal-ink); }
+.mv-pic[data-group="balance"] { background: var(--tint-blue); }
+.mv-pic[data-group="strength"] { background: var(--tint-amber); }
+.mv-pic[data-group="stretch"], .mv-pic[data-group="breathe"] { background: var(--tint-purple); }
+.mv-pic[data-group="walk"] { background: var(--tint-teal); }
+.mv-cbody { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; align-self: stretch; padding: 12px 14px 14px; }
+.mv-chp { display: flex; flex-wrap: wrap; gap: 6px; }
+.mv-chp span { padding: 3px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 13px; font-weight: 600; }
+.mv-start { display: inline-flex; align-items: center; gap: 4px; }
+.mv-start small { font-weight: 600; font-size: 13px; }

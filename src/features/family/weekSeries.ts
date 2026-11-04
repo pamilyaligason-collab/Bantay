@@ -58,3 +58,14 @@ export function legendWord(metric: Metric, s: Series, doctor?: BpArg['doctor']):
   const lv = bpPairLevel(s.latest, null, doctor) // the person's doctor target lifts the word, as on Health
   return `${s.latest} ${lv && lv !== 'in' ? BP_WORDS[lv].word.toLowerCase() : 'in range'}`
 }
+
+export const METRIC_WORD: Record<Metric, string> = { bp: 'blood pressure', steps: 'step', meds: 'medicine' }
+const join = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
+/** Why a chart is empty, in one honest sentence: the people not linked yet are named first (nothing can show for them), else who has no readings (F5). */
+export function emptyWords(metric: Metric, names: string[], unlinked: string[]): string {
+  if (unlinked.length && names.length <= 1) return `Links needed: ask ${join(unlinked)} to share.`
+  const who = names.map((n, i) => (i === 0 ? n : n === 'You' ? 'you' : n))
+  return who.length ? `No ${METRIC_WORD[metric]} readings for ${join(who)} in 7 days.` : `No ${METRIC_WORD[metric]} readings in 7 days.`
+}
+/** The tab to open on: the first metric that has a line for anyone, else blood pressure. */
+export const firstWithData = (by: Record<Metric, Series[]>): Metric => (['bp', 'steps', 'meds'] as const).find((m) => by[m].some((s) => !s.empty)) ?? 'bp'

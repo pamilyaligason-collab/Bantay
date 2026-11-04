@@ -14,7 +14,7 @@ import './safety.css'
 
 const NONE: Alert[] = []
 const FACES: { label: string; feeling: Feeling }[] = [
-  { label: 'Great', feeling: 'great' }, { label: 'OK', feeling: 'ok' }, { label: 'Not great', feeling: 'notgreat' }, { label: 'Unwell', feeling: 'unwell' }
+  { label: 'Good', feeling: 'great' }, { label: 'Okay', feeling: 'ok' }, { label: 'Low', feeling: 'notgreat' }, { label: 'Unwell', feeling: 'unwell' }
 ]
 
 /** Storm mode (mockup safety-storm, S5; mounted on Today by S7): shows only while PAGASA has a wind signal for a home zone.

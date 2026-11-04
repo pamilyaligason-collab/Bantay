@@ -17,7 +17,7 @@ import AdminScreen from './AdminScreen'
 import { sendBroadcast } from './broadcast'
 
 const members = [
-  { userId: 'u1', personId: 'p1', displayName: 'Lloyd', handle: null, role: 'admin', disabled: false, lastSignInAt: '2026-10-17T01:00:00Z', provider: 'google', profile: null },
+  { userId: 'u1', personId: 'p1', displayName: 'Rey', handle: null, role: 'admin', disabled: false, lastSignInAt: '2026-10-17T01:00:00Z', provider: 'google', profile: null },
   { userId: 'u2', personId: 'p2', displayName: 'Lola', handle: 'lola', role: 'member', disabled: false, lastSignInAt: null, provider: 'pin', profile: { photoPath: null, phone: '0917 111 2222', birthdate: '1948-03-09', bloodType: 'O+', allergies: ['Penicillin'], conditions: [], medicines: ['Losartan'] } }
 ]
 const chain = (data: unknown) => ({ select: () => ({ order: () => ({ limit: async () => ({ data, error: null }) }) }) })

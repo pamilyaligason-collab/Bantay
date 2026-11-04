@@ -1,17 +1,11 @@
 import type { ReactNode } from 'react'
-import { Row, type Hue } from '../../look'
+import { Row } from '../../look'
 import type { IconName } from '../../shell/Icon'
 import { seasonFor, type Season } from './season'
 import '../../weather/scene.css' // wxs-rain streaks, reused by the rainy-season row
 import '../discover.css'
 
-const SEASON_LOOK: Record<string, { hue: Hue; icon: IconName }> = {
-  undas: { hue: 'terra', icon: 'flame' },
-  newyear: { hue: 'lilac', icon: 'flame' },
-  christmas: { hue: 'green', icon: 'meal' },
-  heat: { hue: 'terra', icon: 'sun' },
-  typhoon: { hue: 'blue', icon: 'rain' }
-}
+const SEASON_ICON: Record<string, IconName> = { undas: 'flame', newyear: 'flame', christmas: 'meal', heat: 'sun', typhoon: 'rain' }
 const STREAKS = [8, 24, 41, 58, 74, 90]
 
 /** Decorative layer behind the season row: rainy season = 6 slow rain streaks, Undas = a candle glow. Both stop under reduced motion (scene.css and discover.css). */
@@ -25,11 +19,10 @@ function SeasonBg({ id }: { id: string }) {
 export function SeasonRow({ now = new Date() }: { now?: Date }) {
   const s = seasonFor(now)
   if (!s) return null
-  const look = SEASON_LOOK[s.id] ?? { hue: 'amber' as Hue, icon: 'info' as IconName }
   return (
-    <div className="card dc-season-row" data-hue={look.hue} data-testid="season-row">
+    <div className="card dc-season-row" data-testid="season-row">
       <SeasonBg id={s.id} />
-      <Row icon={look.icon} title={s.title} sub={s.lines[0]} href="#discover/season" />
+      <Row icon={SEASON_ICON[s.id] ?? 'info'} tint="amber" title={s.title} sub={s.lines[0]} href="#discover/season" />
     </div>
   )
 }

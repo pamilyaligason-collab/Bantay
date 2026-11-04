@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { dayKey, isMine, timeLabel } from './events'
 import { NoteSheet, ItemSheet } from './PlanSheets'
-import { addDay, dayLabel, midSentence, dayRows, dayStrip, emptyHint, groupPlan, progressOf, type PlanRow } from './planList'
+import { addDay, dayLabel, midSentence, dayRows, dayStrip, emptyHint, groupPlan, progressOf, planTitle, type PlanRow } from './planList'
 import { useFamilyPeople } from './roster'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
@@ -86,7 +86,7 @@ export default function Plan() {
       ) : (
         <ul className="card fm-list fm-rows" aria-label={heading}>
           {rows.map((r) => {
-            const title = r.kind === 'task' ? r.task.title : r.kind === 'event' ? r.event.title : r.note.body.split('\n')[0]!
+            const title = planTitle(r.kind === 'task' ? r.task.title : r.kind === 'event' ? r.event.title : r.note.body.split('\n')[0]!)
             const done = r.kind === 'task' && r.task.done
             return (
               <li key={r.key} className="fm-row">

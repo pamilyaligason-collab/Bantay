@@ -2,7 +2,7 @@
 
 A scheduled Edge Function (`alerts-ingest`) pulls public alert feeds into `public.safety_alerts`. The app's sync copies the active rows into
 the phone (Dexie kv `safety.alerts`), so alerts show offline. Bantay is not a siren: no copy promises advance warning.
-Done by Lloyd. About 15 minutes. Nothing here is applied by the build.
+Done by the owner. About 15 minutes. Nothing here is applied by the build.
 
 ## 1. Apply the SQL
 

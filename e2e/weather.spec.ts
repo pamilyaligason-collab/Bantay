@@ -37,10 +37,9 @@ test('weather: hero first, place toggle, forecast sections', async ({ page }) =>
   expect(seen[0]).toContain('forecast_days=10')
   expect(seen[0]).toContain('latitude=9.65')
 
-  // place toggle: Home 2 is Conel
-  await expect(page.getByRole('button', { name: 'Home 1' })).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('button', { name: 'Home 2' }).click()
-  await expect(page.getByRole('button', { name: 'Home 2' })).toHaveAttribute('aria-pressed', 'true')
+  // the zone chip: Conel is the second home zone
+  await page.getByRole('button', { name: /^Place: / }).click()
+  await page.getByRole('button', { name: 'Conel' }).click()
   await expect(page.locator('.wx-k')).toContainText('Conel')
   await expect(page.getByText(/Updated \d/)).toBeVisible()
   expect(seen.some((u) => u.includes('latitude=6.2&'))).toBe(true)
@@ -114,20 +113,19 @@ test('today weather card: from=action only when an action line shows, and it is 
   await mockForecast(page) // 33 C at 70% humidity: Danger, so an action line shows
   await page.goto('/#today')
   const hero = page.getByRole('region', { name: 'Weather' })
-  await expect(hero.getByRole('link')).toHaveAttribute('href', '#weather?from=action')
+  await expect(hero.getByRole('link', { name: /Open the weather/ })).toHaveAttribute('href', '#weather?from=action') // the cover link; the Full forecast row beside it is plain #weather
   await expect(hero).toContainText('Stay indoors 11 AM-3 PM')
 })
 
-test('weather: rain card shows hourly bars + PAGASA radar link, chips switch to storm track, no map provider loads', async ({ page }) => {
+test('weather: rain card shows hourly bars + PAGASA radar link, no layer tabs, no map provider loads', async ({ page }) => {
   await skipOnboarding(page)
   await mockForecast(page)
   await page.goto('/#weather')
-  const card = page.getByRole('region', { name: 'Rain and storm map' })
+  const card = page.getByRole('region', { name: 'Rain chance' })
   await expect(card).toContainText('Saved for offline · updated')
   await expect(card.getByRole('list', { name: 'Chance of rain, next 12 hours' }).getByRole('listitem')).toHaveCount(12)
   await expect(card.getByRole('link', { name: /Radar images from PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
-  await card.getByRole('button', { name: 'Storm track' }).click()
-  await expect(card).toContainText('From GDACS and Open-Meteo')
+  await expect(card.getByRole('button')).toHaveCount(0) // no Rain/Wind/Storm tabs; a storm block shows only while one is listed
   await expect(page.locator('iframe')).toHaveCount(0)
 })
 
@@ -135,5 +133,5 @@ test('today weather card: a calm day opens plain #weather', async ({ page }) => 
   await skipOnboarding(page)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: new Date(), temp: 26, humidity: 50, hourlyProb: () => 5, uvMax: 3 }) }))
   await page.goto('/#today')
-  await expect(page.getByRole('region', { name: 'Weather' }).getByRole('link')).toHaveAttribute('href', '#weather')
+  await expect(page.getByRole('region', { name: 'Weather' }).getByRole('link', { name: /Open the weather/ })).toHaveAttribute('href', '#weather')
 })

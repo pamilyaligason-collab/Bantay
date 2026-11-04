@@ -14,7 +14,7 @@ describe('ReadingsHero', () => {
     render(<ReadingsHero readings={[...bp(130, 84, 1), ...bp(124, 79, 3, 20)]} thresholds={[]} personId="p1" />)
     expect(screen.getByTestId('metric-chart')).toBeTruthy()
     expect(document.querySelector('svg[data-testid=metric-chart] rect.mc-band')).toBeTruthy()
-    expect(screen.getByTestId('readings-hero').textContent).toContain('130/84')
+    expect(screen.getByTestId('rd-hero').textContent).toContain('130/84')
     expect(document.querySelector('.hv-state')).toBeTruthy()
   })
   it('Period and Time of day are segmented with aria-pressed', () => {

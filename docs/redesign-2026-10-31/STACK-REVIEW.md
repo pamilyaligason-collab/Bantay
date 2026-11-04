@@ -1,6 +1,6 @@
 # Bantay data and map stack: is it the best available? (2026-10-31)
 
-Question from Lloyd: "verify and make sure that the current implementation is the best out there including resources and open repos."
+Question from the owner: "verify and make sure that the current implementation is the best out there including resources and open repos."
 Method: read the app code (src/features), fetched the live feeds and official terms pages on 2026-10-31. UNVERIFIED marks a claim not confirmed from a fetched page.
 
 ## Verdict per area

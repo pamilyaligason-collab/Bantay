@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { PersonChips } from '../../records/PersonChips'
+import { WhoLine } from '../WhoLine'
 import { SubHeader } from '../../shell/SubHeader'
 import { useProfile } from '../../setup/useProfile'
 import { isLive, normaliseDrug } from '../meds'
@@ -9,16 +9,14 @@ import { articleHref, SOURCE_LINE } from './medline'
 import '../health.css'
 import '../m7a.css'
 
-const NO_DRAFTS: Record<string, number> = {}
 const title = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase())
 
 /** #discover/learn/library (was #health/library): articles for this person's conditions and medicines (MedlinePlus), plus a search. Opening one makes one request. */
 export default function Library() {
-  const { people, ownId, personId, setPersonId } = useHealthPerson()
+  const { personId } =useHealthPerson()
   const profile = useProfile(personId)
   const meds = useMedications(personId)
   const [q, setQ] = useState('')
-  const name = people.find((p) => p.id === personId)?.name ?? ''
   const items = useMemo(() => {
     const seen = new Set<string>()
     const out: { kind: 'c' | 'm'; text: string; label: string; sub: string }[] = []
@@ -37,13 +35,12 @@ export default function Library() {
   return (
     <>
       <SubHeader title="Health library" backHref="#discover/learn" backLabel="Back to Learn" />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <WhoLine />
       <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
         <label htmlFor="lb-q" className="hv-sr">Search conditions, medicines, tests</label>
         <input id="lb-q" type="search" placeholder="Search conditions, medicines" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
         <button type="submit" className="btn2 wz-sm">Search</button>
       </form>
-      {name && <p className="sub" style={{ margin: '4px 4px 0' }}>For <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
       {items.length === 0 ? (
         <div className="card rf-hero" data-testid="library-empty"><b>Nothing to suggest yet</b><span className="sub">Add a medicine or a condition to the profile and its articles show here. You can still search above.</span></div>
       ) : (

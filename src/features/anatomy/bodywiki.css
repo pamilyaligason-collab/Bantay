@@ -1,0 +1,35 @@
+/* Body wiki to the board (BodyWiki.dc.html): pill under the figure, marker colour per system, one card of lists. */
+.an-stage { --sc: var(--green); row-gap: 6px; }
+.an-stage[data-sys="heart"], .an-info[data-sys="heart"] { --sc: #B42318; }
+.an-stage[data-sys="lungs"], .an-info[data-sys="lungs"] { --sc: #2459C7; }
+.an-stage[data-sys="brain"], .an-info[data-sys="brain"] { --sc: #6D4BC2; }
+.an-stage[data-sys="digestion"], .an-info[data-sys="digestion"] { --sc: #8A4B06; }
+.an-stage[data-sys="kidneys"], .an-info[data-sys="kidneys"] { --sc: #0F766E; }
+.an-stage[data-sys="skeleton"], .an-info[data-sys="skeleton"] { --sc: #7A5A2E; }
+.an-stage[data-sys="muscles"], .an-info[data-sys="muscles"] { --sc: #A63D33; }
+.an-stage[data-sys="hormones"], .an-info[data-sys="hormones"] { --sc: #1E6B4E; }
+.an-stage[data-sys="skin"], .an-info[data-sys="skin"] { --sc: #9A5A2B; }
+.an-info { --sc: var(--green); }
+.an-hit::after { border-color: var(--sc); }
+.an-stage .an-pill { justify-self: center; min-height: 44px; padding: 0 16px; }
+.an-src-tag { font-size: 13px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink2); }
+section.an-info { display: block; padding: 18px; margin: 0; gap: 0; }
+.an-info-h { display: flex; align-items: center; gap: 12px; }
+.an-ic { width: 40px; height: 40px; border-radius: 12px; background: color-mix(in srgb, var(--sc) 16%, var(--card)); display: grid; place-items: center; flex: none; }
+.an-ic::after { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--sc); }
+.an-info .an-sys { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; text-align: left; }
+.an-lbl { margin: 18px 0 6px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink2); }
+.an-lbl.an-red { color: var(--red); }
+.an-lbl.an-amber { color: var(--focus); }
+.an-info .an-what { font-size: 17px; line-height: 24px; }
+.an-none { margin: 0; font-size: 17px; color: var(--ink2); }
+.an-nums { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; padding: 0 14px; border-radius: 14px; background: var(--soft); color: var(--ink); font-size: 17px; font-weight: 600; text-decoration: none; }
+.an-nums[data-tone="warn"] { background: var(--warn-bg); }
+.an-bl { list-style: none; margin: 0; padding: 0; }
+.an-bl li { display: flex; gap: 10px; font-size: 15px; line-height: 22px; margin-top: 6px; }
+.an-bl i { flex: none; width: 6px; height: 6px; border-radius: 50%; margin-top: 8px; background: #6D4BC2; }
+.an-bl[data-kind="911"] i { background: var(--danger-bg); }
+.an-bl[data-kind="doctor"] i { background: var(--focus); }
+.an-bl[data-kind="prevent"] i { background: var(--green); }
+.an-info .an-line { margin: 12px 0 0; }
+.an-foot .an-note { text-align: center; }

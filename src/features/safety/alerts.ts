@@ -1,4 +1,5 @@
 import { HOME_ZONES } from '../location/geo'
+import { placeWords, type PlaceLike } from '../location/placeWords'
 
 export interface LatLon { lat: number; lon: number }
 export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air'
@@ -96,6 +97,19 @@ export function lastCheck(alerts: Alert[], saved: unknown): string | null {
   return s && (!n || Date.parse(s) > Date.parse(n)) ? s : n
 }
 
+/** Dexie kv key: the newest quake row and newest cyclone row the pull ever saw, kept after they expire (Last event, Last storm). */
+export const LAST_SEEN_KEY = 'alerts:lastSeen'
+/** Dexie kv key: every source with a stale row, expired rows too, and its newest fetched_at (the ingest's source names: USGS, GDACS, PAGASA, Open-Meteo). Empty when all are healthy. */
+export const STALE_KEY = 'alerts:staleSources'
+export type StaleSources = Record<string, string | null>
+export const NO_STALE: StaleSources = {}
+/** One test for every all-clear: true when there is no fresh check of the official feeds (over an hour old, never, or a source the ingest marked stale). Say "not checked", never "none". */
+export const feedStale = (alerts: Alert[], saved: unknown, down: StaleSources, now: Date | number = Date.now()): boolean =>
+  freshness(lastCheck(alerts, saved), now).tone !== 'ok' || alerts.some((a) => a.stale) || Object.keys(down).length > 0
+/** The check time to print: while a source is down, the oldest last good run among the down sources (another feed's fresh row must not read as a check of it), else lastCheck. */
+export const shownCheck = (alerts: Alert[], saved: unknown, down: StaleSources): string | null =>
+  Object.values(down).filter((t): t is string => !!t).sort()[0] ?? lastCheck(alerts, saved)
+
 /** The newest `checkedAt` in the list (ISO), or null when no row has one. */
 export function newestChecked(alerts: Alert[]): string | null {
   let best: string | null = null
@@ -121,16 +135,12 @@ export function outdatedLine(checkedAt: string | null | undefined): string {
   return `Alerts last checked ${t.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' })}. ${tail}`
 }
 
-/** Same string on Today, the Safety header and the alert band (S10). Twin of the chip text in ZonePicker. */
-export function placeLabel(place: { source: string; zone: string }): string {
-  const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
-  const name = zone.name.split(',')[0]!
-  return place.source === 'gps' ? `Near you · ${name}` : place.source === 'last' ? `Last known · ${name}` : place.source === 'gps-abroad' ? `Away · ${name}` : name
-}
+/** Same string on Today, the Safety header and the alert band (S4): the one wording lives in location/placeWords. */
+export const placeLabel = (place: PlaceLike): string => placeWords(place).title
 
 // shortcut: flat radii for everything but quakes, and a rough strong-shaking radius by magnitude for quakes; upgrade when the ingest sends a shake model.
 export const LOCAL_KM = 50 // an air reading or utility notice only matters close by
-const NEAR_KM = 150 // a storm, flood, tsunami or volcano this close is "near you"; further out it is "about N km away"
+export const NEAR_KM = 150 // a storm, flood, tsunami or volcano this close is "near you"; further out it is "about N km away"
 /** D-88: storm, flood, tsunami, volcano and GDACS rows count as affecting the family out to the ingest's own limit (GDACS_MAX_KM in alerts-ingest). */
 export const WIDE_KM = 1000
 const LOCAL_KINDS = new Set<AlertKind>(['air', 'utility', 'local'])
@@ -162,12 +172,34 @@ export function quakeFeltKm(a: Pick<Alert, 'level' | 'what' | 'title'>): number 
   if (mag === null) return 100
   return mag >= 7 ? 800 : mag >= 6 ? 400 : mag >= 5 ? 200 : mag >= 4 ? 100 : 50
 }
-/** steps: show the do-now steps. A quake always shows them (people may have felt it however far it is), and so does any hazard row inside the wide radius. Bantay never says "no action needed". */
+/** steps: show the do-now steps. A quake shows them unless quietQuakeWords says otherwise, and so does any hazard row inside the wide radius. */
 export interface Affects { affects: boolean; km: number | null; line: string; steps: boolean }
 
+/** A quake beyond its felt radius whose size is known and under M6. Unknown size or distance is never "far". */
+function quakeTooFar(a: Alert, km: number | null): boolean {
+  const mag = quakeMag(a)
+  return a.kind === 'quake' && km !== null && km > quakeFeltKm(a) && mag !== null && mag < 6
+}
+export const RECENT_MS = 3_600_000
+const LIVE_FIX_MS = 30 * 60_000 // the browser may hand back a fix up to 10 min older than this stamp (gpsOpts)
+/** Far, small and over an hour old (an unreadable time counts as recent). A quiet row may lead a list only when nothing else is on it. */
+export const quakeQuiet = (a: Alert, km: number | null, now = Date.now()): boolean => quakeTooFar(a, km) && Date.parse(a.issuedAt) < now - RECENT_MS
+/** Every listed row is a quiet quake: nothing worse is listed. Only then may a surface pass `place` to affectsUs, so "No action needed" never sits beside a worse row. */
+export const allQuiet = (list: Alert[], here: LatLon | null, now = Date.now()): boolean => list.every((a) => quakeQuiet(a, affectsUs(a, here, now).km, now))
+/** The one rule for a quiet quake's words. "No action needed" is said only from a live phone position (not a home zone, not an old last fix) in an area we can name: the radius is a strong-shaking figure measured from there.
+ *  Everywhere else the soft line, true in every location state, with the steps. Null: not a quiet quake. */
+export function quietQuakeWords(a: Alert, km: number | null, place: PlaceLike | null | undefined, now = Date.now()): { line: string; steps: boolean } | null {
+  if (!quakeQuiet(a, km, now)) return null
+  const live = place?.source === 'gps' && place.fixAt != null && Math.abs(now - place.fixAt) <= LIVE_FIX_MS
+  const name = live ? placeWords(place).title : 'where you are'
+  return name === 'where you are'
+    ? { line: 'Probably too far to feel strongly. If you felt shaking, follow the steps below.', steps: true }
+    : { line: `Too far to feel in ${name}. No action needed.`, steps: false }
+}
 /** Does this alert touch the family? `here` is where warnings are ranked from (the phone in the Philippines, else the zone); the two home zones always count too.
- *  An alert with no point covers the whole area. Every quake the ingest kept counts (D-88): it is only on the list because it was big enough for its distance. */
-export function affectsUs(a: Alert, here: LatLon | null): Affects {
+ *  An alert with no point covers the whole area. Every quake the ingest kept counts (D-88): it is only on the list because it was big enough for its distance.
+ *  `place`: pass it only on a surface that prints the line beside no "Warning" label, and only when allQuiet holds for its list; left out, a quiet quake gets the soft line. */
+export function affectsUs(a: Alert, here: LatLon | null, now = Date.now(), place?: PlaceLike | null): Affects {
   if (a.lat == null || a.lon == null) return { affects: true, km: null, line: 'Covers your area. Follow the steps below.', steps: true }
   const p = { lat: a.lat, lon: a.lon }
   const quake = a.kind === 'quake'
@@ -180,6 +212,8 @@ export function affectsUs(a: Alert, here: LatLon | null): Affects {
   const near = quake ? quakeFeltKm(a) : local ? LOCAL_KM : NEAR_KM
   if (dHere <= near) return { affects: true, km: Math.round(dHere), line: 'Near you. Follow the steps below.' + tail, steps: true }
   if (zone.d <= near) return { affects: true, km: Math.round(zone.d), line: `Near home (${zone.z.name.split(',')[0]}). Follow the steps below.` + tail, steps: true }
+  const quiet = quietQuakeWords(a, km, place, now)
+  if (quiet) return { affects: true, km, ...quiet }
   if (quake) return { affects: true, km, line: `About ${km} km away. You may feel it. If you feel shaking, follow the steps below.` + tail, steps: true }
   // heat is a city reading: it counts near you (NEAR_KM), never 1,000 km away
   if (!local && a.kind !== 'heat' && km <= WIDE_KM) return { affects: true, km, line: `About ${km} km away. Follow the steps below.`, steps: true }

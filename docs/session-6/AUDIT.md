@@ -16,7 +16,7 @@ in PART-3.md or the build plan; the "Handled in" column says where.
 1. Schedule shape: SQL comment uses `["08:00"]` (`0008_records.sql:229`), app uses minutes (`model.ts:243`). -> versioned shape, PART-3 1.2.
 2. No item contains a clock time; frequency text must be mapped. -> mapping table, PART-3 1.2.
 3. 13 untimed items must not get invented times. -> `needs_time`, no reminder, PART-3 1.2.
-4. Stale courses: newest Rx about 11 months old; 6 have no `rx_date`. -> default in PART-3 1.3 (Lloyd: keep).
+4. Stale courses: newest Rx about 11 months old; 6 have no `rx_date`. -> default in PART-3 1.3 (the owner: keep).
 5. 5 person+drug groups repeat across prescriptions; `source_item_id` is single. -> newest wins + `medication_sources` link table, PART-3 1.2.
 6. Draft items are invisible to read-only carers (`0008:21,537`). -> converted rows written confirmed (`auto`, confidence 1) under D1, reversible, PART-3 1.2.
 7. Admin may edit records but not log doses (`0003:88-89`). -> kept as is, PART-3 1.5.
@@ -26,7 +26,7 @@ in PART-3.md or the build plan; the "Handled in" column says where.
 11. Profile text still written by wizard, MemberPage, import loader; Medical ID reads it. -> single source, PART-3 1.1.
 12. Only unique index is `client_id`; deletes would be recreated on re-import. -> partial unique index + tombstone, PART-3 1.2.
 13. No edit history. -> `medication_changes` audit table, PART-3 1.5.
-14. Where conversion runs. -> reversible migration Lloyd applies + trigger on confirm, PART-3 1.2.
+14. Where conversion runs. -> reversible migration the owner applies + trigger on confirm, PART-3 1.2.
 
 ## C. Weather gaps
 - Open-Meteo call (`weather.ts:15`) lacks humidity, apparent temperature, UV, wind, daily min/max; `forecast_days=2`.
@@ -55,7 +55,7 @@ reviewed, `no-sideways-scroll.spec.ts`, no medicine names in notifications (B-7)
 
 ## G. Risks
 1. Part 1 text contradicted D1 (fixed).
-2. Stale-course default confirmed by Lloyd as "keep" (PART-3 1.3); carer visibility decided by D1, reversible (PART-3 1.2).
+2. Stale-course default confirmed by the owner as "keep" (PART-3 1.3); carer visibility decided by D1, reversible (PART-3 1.2).
 3. PAGASA bands and zone 2 safety data need outside input.
 4. Mockups use made-up names and numbers.
-5. Writing `medications` rows is a production change Lloyd applies; it must be a reversible, idempotent migration.
+5. Writing `medications` rows is a production change the owner applies; it must be a reversible, idempotent migration.

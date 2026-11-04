@@ -1,6 +1,6 @@
 # Session 10 build plan: wave 2 fix round, safety wave, Discover + fun logging
 
-**Status:** rev 4, for Lloyd's approval (D-77: plan before code). Nothing in this file is built, applied, deployed or pushed.
+**Status:** rev 4, for the owner's approval (D-77: plan before code). Nothing in this file is built, applied, deployed or pushed.
 **Written:** 2026-10-26 by the planner (Fable 5.1, writing-plans skill); rev 2 applied the Opus 5.5 review (`docs/session-10/PLAN-REVIEW.md`); rev 3 applies **D-78** (in-app alerts only; SOS through the phone's own call and SMS apps; no Firebase, no SMS gateway, no native SMS sender, Sentry dropped for now); rev 4 applies the Opus re-check of rev 3 (`docs/session-10/PLAN-REVIEW-rev3.md`).
 **UI contract:** mockup v6, `D:/ObsidianVault/20-projects/family-bantay/mockups/bantay-complete-mockup.html` (135 screens, `data-s` ids quoted per lane). Per D-78 the three lock-screen push screens (`lock-missed`, `lock-sos`, `lock-storm`) are built as in-app alert views; the orchestrator updates their mockup notes. Every lane ships 390x844 light + dark shots beside the matching screen before merge (D-66, D-67).
 
@@ -21,7 +21,7 @@
 | (1) No Firebase/FCM, no SMS gateway, no native SEND_SMS; alerts in-app; web push only where it exists | Architecture + trade-off above; 3.1 contracts (`carer_alerts` kept, `push_tokens`/`push_deliveries`/`register_push_token`/FCM sender removed; Realtime publication added); S1a/S1b replaced by **S1 ALERTS-INAPP**; `sendToUsers` is now Web-Push-only `pushWeb` inside dose-watch; `templates.ts` stays client-side; S1a's native channels, `release-apk.yml` step, `google-services` and the FCM device tests removed |
 | (2) SOS = record the event, dial the first family contact (or 911), open the SMS app pre-written; offline works | S2 rewritten: `sos_events` insert through the outbox + trigger that writes family `carer_alerts` rows; `tel:` via auto-dial plugin (ACTION_CALL, CALL_PHONE) by default with the dial screen as fallback, reasons in 3.1 "SOS"; `sms:` composer per contact with name, time, maps link; no `sos` edge function, no `sos_contacts` table, no Semaphore; Q32 (auto-dial vs dial screen) |
 | (3) Local alarms stay; carers told after 3 tries = in-app row (elder-phone SMS to the carer default no) | S3 unchanged (+10/+20 repeats, self-heal, battery guide); the 30-min carer row comes from dose-watch (S4 logic) into `carer_alerts`; Q34 (window), Q35 (SMS to carer from the elder's phone, default no) |
-| (4) No Firebase / Semaphore / `GOOGLE_SERVICES` setup; Sentry dropped for now | 3.4 Lloyd list reduced to apply, deploy, APK, device tests, reviews; S8 keeps `job_runs` + System health + weekly KPIs and adds a tiny client error counter (no third party); Q36 (Sentry later) |
+| (4) No Firebase / Semaphore / `GOOGLE_SERVICES` setup; Sentry dropped for now | 3.4 the owner list reduced to apply, deploy, APK, device tests, reviews; S8 keeps `job_runs` + System health + weekly KPIs and adds a tiny client error counter (no third party); Q36 (Sentry later) |
 | (5) Lanes, migrations, device tests, effort, risks, rollback, questions re-cut | 3.2a-3.6, section 6 (dropped: second-carer escalation, SMS provider, failed-job push, FCM banner wording; added Q32 auto-dial, Q35 SMS to carer, Q36 Sentry; kept Q33 fingerprint deferral, Q34 window, Q37 consent backfill), section 7 (Phase 2 now 3-4 sessions + ~2 days of device tests) |
 | Rev 2 items that stand | C1 preview test window (only when a native change ships), C2 feature detection, C5 PIN reset protocol (approval prompt is in-app + web push), C6 trigger rules, H1 ownership table + pre-commit, H2 repeats, H6/H7 BP table + crisis copy, H8 `ref` dedupe, H10 RLS, M1 RainViewer, M2 native TTS in Phase 3, M4 mark-taken rule, M5 Jack gate script, M6 family-names dual mode, M7 privacy items, M8 no PAGASA scraping, M9 rollbacks, M11 Phase 3 contracts, M12 hazards |
 
@@ -51,23 +51,23 @@
 
 ## 0. Principal-engineer pre-flight
 
-**(1) Reframe and critique.** The deep review found the app's promises exceed what it does: carers on the APK get no push, SOS only opens an SMS composer, dose alarms die on force-stop and drift in Doze and never repeat, "Still taking it?" silently stops both safety layers, official storm bulletins are never pushed, nothing monitors errors, and real use is near zero. Rev 2 answered that with Firebase, an SMS gateway and native SMS; Lloyd simplified (D-78): alerts live in the app, SOS uses the phone's own apps. That is a smaller, cheaper, offline-friendly build with one honest limit: carers see alerts when they open Bantay. The plan therefore (a) makes the app say that everywhere a push was implied, (b) keeps the carer channel as data (`carer_alerts`) so a push sender can be added later without redesign, (c) keeps the elder-side safety that needs no server (local alarms with repeats, the dial and SMS intents, Medical ID on the lock screen), (d) puts the Family tab and the bell where carers will look, with a badge on the tab bar when unseen rows exist, and (e) still fixes the structural bugs (wrong worktree bases, unapplied migrations, verdict table, PIN-reset security).
+**(1) Reframe and critique.** The deep review found the app's promises exceed what it does: carers on the APK get no push, SOS only opens an SMS composer, dose alarms die on force-stop and drift in Doze and never repeat, "Still taking it?" silently stops both safety layers, official storm bulletins are never pushed, nothing monitors errors, and real use is near zero. Rev 2 answered that with Firebase, an SMS gateway and native SMS; the owner simplified (D-78): alerts live in the app, SOS uses the phone's own apps. That is a smaller, cheaper, offline-friendly build with one honest limit: carers see alerts when they open Bantay. The plan therefore (a) makes the app say that everywhere a push was implied, (b) keeps the carer channel as data (`carer_alerts`) so a push sender can be added later without redesign, (c) keeps the elder-side safety that needs no server (local alarms with repeats, the dial and SMS intents, Medical ID on the lock screen), (d) puts the Family tab and the bell where carers will look, with a badge on the tab bar when unseen rows exist, and (e) still fixes the structural bugs (wrong worktree bases, unapplied migrations, verdict table, PIN-reset security).
 
 **(2) Data and context read first (done, read-only).** D-34/35/36/41/42/43/45/51/62/64/65/66/67/68/73/76/77/**78**; 04-HANDOFF top entries and NEXT-CHAT-PROMPT-session-10; deep review V1, V2, C-hazards, A-features; mockup notes for all 135 screens, CANON, CONTRACT, R-discover, R-nudge, REVIEW2; session 9 PLAN.md and the 8 wave-2 review files; main a2f4e52 code; the 8 lane diffs; multi-lane PLAYBOOK + CHECKLIST; PLAN-REVIEW.md.
 
-**(3) Tools and methods.** `multi-lane-build.js` workflow for every wave (Sonnet code lanes in worktrees from a named base sha, Opus 5.5 audit per lane, `args.contract` = `docs/session-10/contracts.md`, `args.base` = the integration tip after the orchestrator pre-commit). Fix rounds as new workflow runs with only the failing lanes. Merge queue one lane at a time with tier-0 smoke after each. WSL psql rehearsal for every migration. Playwright with the 600 s webServer timeout. `npx -y supabase@2.122.0` for apply and deploy (Lloyd). GitHub Actions `release-apk.yml` builds and signs the APK (`ANDROID_KEYSTORE_BASE64`); Lloyd triggers it. Haiku only for read-only research lanes (R1-R3) and grep gates.
+**(3) Tools and methods.** `multi-lane-build.js` workflow for every wave (Sonnet code lanes in worktrees from a named base sha, Opus 5.5 audit per lane, `args.contract` = `docs/session-10/contracts.md`, `args.base` = the integration tip after the orchestrator pre-commit). Fix rounds as new workflow runs with only the failing lanes. Merge queue one lane at a time with tier-0 smoke after each. WSL psql rehearsal for every migration. Playwright with the 600 s webServer timeout. `npx -y supabase@2.122.0` for apply and deploy (the owner). GitHub Actions `release-apk.yml` builds and signs the APK (`ANDROID_KEYSTORE_BASE64`); the owner triggers it. Haiku only for read-only research lanes (R1-R3) and grep gates.
 
-**(4) Independent verification.** Opus 5.5 reviews every lane and the whole branch before each PR. Gates run bare with exit codes quoted: `npx tsc --noEmit`, `npx vitest run`, `npx playwright test`, screenshot compare per `data-s`, migration rehearsal ALL PASS, `scripts/check-manifest.mjs` after any Android change, `scripts/jack-gate-live.mjs` before the Jack flip. Live checks after Lloyd's apply: `select version from supabase_migrations.schema_migrations order by 1 desc limit 8`, `select kind, count(*) from carer_alerts group by 1`, `select job, ran_at, ok from job_runs order by ran_at desc limit 5`. Device tests (Lloyd, 3.4) are gates: force-stop re-arm, Doze day-2 and day-3 delivery, SOS with data off (call + SMS composer) and on (family sees it in the app), PIN reset by family approval, old shell on the new web. Retro after each release.
+**(4) Independent verification.** Opus 5.5 reviews every lane and the whole branch before each PR. Gates run bare with exit codes quoted: `npx tsc --noEmit`, `npx vitest run`, `npx playwright test`, screenshot compare per `data-s`, migration rehearsal ALL PASS, `scripts/check-manifest.mjs` after any Android change, `scripts/jack-gate-live.mjs` before the Jack flip. Live checks after the owner's apply: `select version from supabase_migrations.schema_migrations order by 1 desc limit 8`, `select kind, count(*) from carer_alerts group by 1`, `select job, ran_at, ok from job_runs order by ran_at desc limit 5`. Device tests (the owner, 3.4) are gates: force-stop re-arm, Doze day-2 and day-3 delivery, SOS with data off (call + SMS composer) and on (family sees it in the app), PIN reset by family approval, old shell on the new web. Retro after each release.
 
 **(5) Revised numbered plan = task counter (Tasks 0/31).**
-1. Lloyd approves this plan; answers to section 6 recorded as D-79+ for Phase 1 and 2 questions (defaults apply to the rest).
+1. The owner approves this plan; answers to section 6 recorded as D-79+ for Phase 1 and 2 questions (defaults apply to the rest).
 2. P1: commit the wave-2 review files + `docs/session-10/contracts.md` (Phase 1 part) to the integration branch; launch the 8 fix lanes.
 3. P1: merge the 8 lanes onto `claude/cache-ttl-cost-39e7cd`; smoke + duplicate scan after each.
 4. P1: gates (tsc, vitest, full e2e incl. the 8 wave-1 failures triaged).
 5. P1: Opus release review of the whole diff; fix round if needed.
 6. P1: tag `pre-s10-p1` on main; push; one PR to main.
-7. P1 gate (Lloyd): `apply` 0025, 0026, 0027, 0029; deploy `records-extract`, `ask`; verify.
-8. P1 gate (Lloyd): `merge`; confirm live bundle; `jack-gate-live.mjs` exit 0; flip `VITE_ASSISTANT_PROVIDER=edge`.
+7. P1 gate (the owner): `apply` 0025, 0026, 0027, 0029; deploy `records-extract`, `ask`; verify.
+8. P1 gate (the owner): `merge`; confirm live bundle; `jack-gate-live.mjs` exit 0; flip `VITE_ASSISTANT_PROVIDER=edge`.
 9. P1: retro.mjs; handoff.
 10. P2: Haiku research R1 (PAGASA machine feeds + terms), R2 (OEM battery/autostart intents), R3 (RainViewer PH coverage); results into contracts.md.
 11. P2: orchestrator pre-commit (3.2b) = Phase 2 base sha; contracts.md Phase 2 part (the mockup's D-78 notes for `lock-*` screens are already approved text and are read, not rewritten); launch 13 lanes in two batches.
@@ -75,20 +75,20 @@
 13. P2: migrations 0030-0035 rehearsed in order on WSL.
 14. P2: gates + screenshot compare for 52 screens; Opus release review; tag `pre-s10-p2`.
 15. P2 test window (only because the auto-dial plugin and OEM intents are native): Pages branch preview origin added to `ALLOWED_ORIGIN` and Supabase redirect URLs; CI builds APK 2.3.0-rc against it (`CAP_SERVER_URL`); sideload to the test phone. Skipped if Q32 = dial screen and S3's OEM intents are deferred (then no new APK in Phase 2).
-16. P2 gate (Lloyd): device tests (3.4) over about 2 calendar days pass.
-17. P2 gate (Lloyd): clinician signs the S9 thresholds + crisis copy and the S4 review rule; Lloyd reviews `privacypolicy.html` + breach plan.
-18. P2 gate (Lloyd): apply 0030-0035 + cron files; deploy functions; merge PR; CI builds APK 2.3.0 against production; family roll-out; remove the preview origin; raise the minimum versionCode after roll-out; retro.
-19. P3 prep (Lloyd): YouTube playlist list, NASA API key, Red Cross / FNRI emails, answers to the Phase 3 questions recorded.
+16. P2 gate (the owner): device tests (3.4) over about 2 calendar days pass.
+17. P2 gate (the owner): clinician signs the S9 thresholds + crisis copy and the S4 review rule; the owner reviews `privacypolicy.html` + breach plan.
+18. P2 gate (the owner): apply 0030-0035 + cron files; deploy functions; merge PR; CI builds APK 2.3.0 against production; family roll-out; remove the preview origin; raise the minimum versionCode after roll-out; retro.
+19. P3 prep (the owner): YouTube playlist list, NASA API key, Red Cross / FNRI emails, answers to the Phase 3 questions recorded.
 20. P3: content build (MedlinePlus XML -> topics.json, medicine cards, 20 recipes) and size budget check; Haiku licence-string sweep.
 21. P3: pre-commit (TTS plugin dep); contracts.md Phase 3 part; launch 11 lanes.
 22. P3: audits, fix round, merge queue.
 23. P3: migrations 0036-0038 rehearsed; n8n news-feed ops file validated (never applied by a lane).
 24. P3: gates + screenshot compare for 55 screens; Opus release review; tag `pre-s10-p3`.
-25. P3 gates (Lloyd): clinician review of medicine/supplement cards and recipe tags; native Tagalog read; apply 0036-0038; n8n apply; deploy `discover-daily`; merge; APK 2.4.0.
+25. P3 gates (the owner): clinician review of medicine/supplement cards and recipe tags; native Tagalog read; apply 0036-0038; n8n apply; deploy `discover-daily`; merge; APK 2.4.0.
 26. P3: retro; handoff.
 27. Family setup day + usability script (gap 5) after P2 ships: 3 elders, time-to-SOS, time-to-log-BP; results into 02-DECISIONS.
 28. Deferred-hazard review at the Phase 3 release review: J3 explain_term-from-knowledge, red-team rerun.
-29. Parked (D-78): FCM push sender reading `carer_alerts` (needs Firebase project; re-plan when Lloyd wants it).
+29. Parked (D-78): FCM push sender reading `carer_alerts` (needs Firebase project; re-plan when the owner wants it).
 30. Parked (D-78): SMS gateway for SOS/carer texts.
 31. Parked: Sentry (Q36).
 
@@ -105,9 +105,9 @@
 - **Shots:** `docs/session-10/shots/<lane>/<data-s>-{light,dark}.png` at 390x844 (admin: 1440x900 + 390x844), compared by the auditor against the mockup section with the same `data-s`.
 - **Tests:** vitest for logic (hand-computed expected values, ML-17), one Playwright spec per lane for the screens it changes, axe on each new screen, no `sleep` (ML-25).
 - **Copy:** plain words; one BP table (In range / A little raised / Above target 130-134 or 80-84 / High 135/85+ / Low) owned by S9; no "I'm OK" anywhere; no admin gates; no brain-health or outcome claims; B-7 (no health values in notifications or alert rows: rows carry a template id and a first name only).
-- **Migrations:** `NNNN_name.sql` + `.down.sql` + `supabase/tests/<name>_rehearsal.sql`; idempotent; full grants restated (ML-21); RLS policies per the contract. Written only; Lloyd applies in the order given.
-- **Secrets:** named in `needs`, never printed. Deploys, pushes, applies, n8n activations, CI runs: orchestrator and Lloyd only.
-- **Status reply format:** every status to Lloyd shows **Tasks n/31** and the list above.
+- **Migrations:** `NNNN_name.sql` + `.down.sql` + `supabase/tests/<name>_rehearsal.sql`; idempotent; full grants restated (ML-21); RLS policies per the contract. Written only; the owner applies in the order given.
+- **Secrets:** named in `needs`, never printed. Deploys, pushes, applies, n8n activations, CI runs: orchestrator and the owner only.
+- **Status reply format:** every status to the owner shows **Tasks n/31** and the list above.
 
 ---
 
@@ -162,7 +162,7 @@ Every fix lane: `git reset --hard <its commit>`; lanes 1 and 4 first run `git me
 **F5 W2-JACK** (worktree -5, base d9ad15c, critical). Files: `supabase/functions/ask/*`, `src/features/assistant/client.ts`, `README.md`, `scripts/jack-gate-live.mjs`, `docs/ASSISTANT.md` only (never `Assistant.tsx`; the client gate and 911 card are Phase 2 S10).
 - Blocker: `supabase/functions/ask/index.ts:27` add `.is('deleted_at', null)`; Reader test with a tombstoned row in `ask.test.ts`. Minor 3: BP regex requires a symptom or `presyon|bp|blood pressure` within 20 chars. Minor 5: README env row `VITE_ASSISTANT_PROVIDER`.
 - `scripts/jack-gate-live.mjs <ask-url> <jwt>` posts 30 emergency phrases (10 English, 10 Tagalog, 10 Taglish/Cebuano) and exits 1 unless every reply carries `emergency.call === '911'` and the `x-bantay-model-called: 0` header the function adds in this lane.
-- Acceptance: `npx vitest run supabase/functions/ask src/features/assistant` 0; the script runs against `supabase functions serve` locally or is documented as Lloyd's live step. Review: Opus.
+- Acceptance: `npx vitest run supabase/functions/ask src/features/assistant` 0; the script runs against `supabase functions serve` locally or is documented as the owner's live step. Review: Opus.
 
 **F6 ADM-BE** (worktree -6, base 62020b6)
 - Commit the 3 modified adm-a shots. Issue 2: vitest for the Calendar month "Meds N" collapse, `listExpiringIds` (sort, skip rejected, error on any failure), 12 px axis minimum. Minors: `Ids.tsx` empty state for zero people; one rule for the Home tile and the list (0-60 days ahead, skip rejected, expired flagged separately); Active delta reports unknown at the 20k cap; `isExpired` uses `todayManila()`. ADM-BE #7: `dk-cardtab` keeps `role="table" | "row" | "cell"` so semantics survive `display:block`; axe at 390 in the spec.
@@ -182,9 +182,9 @@ Every fix lane: `git reset --hard <its commit>`; lanes 1 and 4 first run `git me
 3. Opus 5.5 whole-branch release review (`/code-review` on fc9450c..tip). Fix round as a new workflow run with only the lanes named.
 4. `git tag pre-s10-p1 origin/main`; push the branch; one PR "Session 9 wave 2 + fix round"; PR body lists the apply order below and the rollback block 2.5.
 
-### 2.4 Lloyd's gates (Tasks 7-8), one PowerShell 5.1 block each, stops at the first failure
+### 2.4 the owner's gates (Tasks 7-8), one PowerShell 5.1 block each, stops at the first failure
 **`apply`** (before merge; the W1 outbox sends 0026 columns): 0025_knowledge -> 0026_nutrition_v2 -> 0027_family_messages -> 0029_admin_view_as, each `npx -y supabase@2.122.0 db query --linked -f supabase\migrations\NNNN_x.sql` then the `schema_migrations` insert (pattern `scripts/golive-w1.ps1`). Then `functions deploy records-extract --no-verify-jwt`, `functions deploy ask --no-verify-jwt`; secrets `OPENROUTER_CHAT_KEY` (set 10-22), `ALLOWED_ORIGIN=https://bantay.pages.dev`. Verify: `select count(*) from supabase_migrations.schema_migrations where version in ('0025','0026','0027','0029')` = 4; a count of the 0026 `food_entries` columns (the lane lists the exact names) = all present; `select count(*) from storage.buckets where id='family-messages' and not public` = 1; `select count(*) from pg_constraint where conname='audit_log_action_check' and pg_get_constraintdef(oid) like '%view%'` = 1.
-**`merge`**: merge the PR; confirm `bantay.pages.dev` serves the new bundle hash; open Health, Family > Messages, Scan & Capture on Lloyd's phone (browser). `node scripts/jack-gate-live.mjs <ask url> <Lloyd's jwt>` exit 0; only then set `VITE_ASSISTANT_PROVIDER=edge` in Cloudflare Pages env and redeploy. Until S10 ships, the client cap (`Assistant.tsx:267`) still runs before the server gate; acceptable because the limit reply itself says "call 911".
+**`merge`**: merge the PR; confirm `bantay.pages.dev` serves the new bundle hash; open Health, Family > Messages, Scan & Capture on the owner's phone (browser). `node scripts/jack-gate-live.mjs <ask url> <the owner's jwt>` exit 0; only then set `VITE_ASSISTANT_PROVIDER=edge` in Cloudflare Pages env and redeploy. Until S10 ships, the client cap (`Assistant.tsx:267`) still runs before the server gate; acceptable because the limit reply itself says "call 911".
 Rule that bit: apply a migration before merging app code that reads it.
 
 ### 2.5 Phase 1 rollback
@@ -338,7 +338,7 @@ Hook lines (owner adds): `App.tsx` (S1: `alertsLive` start, Privacy route for S6
 
 **S6b AUTH-SERVER (critical).** 0034 + the C5 protocol in `pin-login`, `family-names` dual mode (M6), `erase` function (after `cancel_until`: deletes readings, medications, meds_taken, activity, documents + storage objects, push rows, messages by that user, carer_alerts, sos rows; keeps `audit_log`; `people.erased_at`; Drive copies are the family folder owner's to remove, D-46), `ops/sql/erasure_cron.sql`, `export_my_data()`. Acceptance: function tests for every C5 rule, rehearsal ALL PASS incl. the revoke on `request_pin_reset`.
 
-**S6c LOCK + ME + PRIVACY (critical for privacy copy).** `start-finger` (Jack, greeting, date, weather glance from the cached forecast, ridge mark with a slow scan line, Use PIN / Not you, Call 911 (dial screen), Medical ID without unlock showing allergies, conditions, who to call only), `start-me` (text size, Simple mode, "I also look after someone", Family admin tools, Privacy row, `AlarmHealthRow`, "Hold for help can call for you" permission row), `start-privacy` ("Agreed when you joined, <consent_at>", AI switch, Download my data, Delete my data with the 7-day undo, processors list: Supabase, Open-Meteo and RainViewer (coordinates rounded to 1 km), OpenRouter with zero-data-retention, Google Drive (family-owned folder), Cloudflare Pages (hosting); no Firebase, Sentry or SMS gateway in this build), `public/privacypolicy.html` rewritten (Lloyd reviews before "Draft" is dropped, Task 17), `public/breach-plan.html`, `start-update` checked against the live updater, consent backfill rule (Q37). Acceptance: shots `start-finger`, `start-me`, `start-privacy`, `start-update`, `safety-medid` (lock variant), vitest for the FingerGate states.
+**S6c LOCK + ME + PRIVACY (critical for privacy copy).** `start-finger` (Jack, greeting, date, weather glance from the cached forecast, ridge mark with a slow scan line, Use PIN / Not you, Call 911 (dial screen), Medical ID without unlock showing allergies, conditions, who to call only), `start-me` (text size, Simple mode, "I also look after someone", Family admin tools, Privacy row, `AlarmHealthRow`, "Hold for help can call for you" permission row), `start-privacy` ("Agreed when you joined, <consent_at>", AI switch, Download my data, Delete my data with the 7-day undo, processors list: Supabase, Open-Meteo and RainViewer (coordinates rounded to 1 km), OpenRouter with zero-data-retention, Google Drive (family-owned folder), Cloudflare Pages (hosting); no Firebase, Sentry or SMS gateway in this build), `public/privacypolicy.html` rewritten (the owner reviews before "Draft" is dropped, Task 17), `public/breach-plan.html`, `start-update` checked against the live updater, consent backfill rule (Q37). Acceptance: shots `start-finger`, `start-me`, `start-privacy`, `start-update`, `safety-medid` (lock variant), vitest for the FingerGate states.
 
 **S7 TODAY.** `today-full` (weather card first with greeting, bell + badge and M inside; advisory row; `AlertCardToday`; `IncomingSos` banner hook; late dose; quick log; Plan today; `GreetingBand` deleted; `AlarmFixedToast`, `StormCard` hooks), `today-log` (six big tiles; How are you? row = `logMood` + `checkIn`; `unwell` calls the `raise_mood_alert(person)` RPC, the only alert an app caller may raise (Q4); More row; `BpCheckButton` hook), `simple-today` (`WeatherStrip`, I took it, How are you? -> `simple-mood`, `SosHold`, `Call911`, Call Ate Joy), `simple-taken`, `today-storm`, `today-offline`. Acceptance: `today.spec.ts`, `today-auth.spec.ts`, `Today.simple.test.tsx` updated; shots for the 7 screens.
 
@@ -359,13 +359,13 @@ S1: `start-inbox`, `lock-missed` (alert list with count), `start-banner`, `today
 `today-week`, `health-labs`, `health-labs-empty`, `health-labdetail`, `health-meddetail`, `health-medsheet`, `health-refill`, `health-visits`, `health-move`, `health-movedetail`, `health-food`, `health-plate`, `health-med-pause`, `health-body`, `ask-answer`, `ask-scan-paper`, `safety-hotlines`, `safety-gobag`, `safety-ids`, `family-plan`, `family-add`, `family-member`, `family-report`, `family-memories`, `admin-calendar` (F6 only), `admin-members` (F8 only), `admin-dups` (F7 only), `admin-files` (F6 only). Phase 3 changes `health-library`, `health-home` (nudge entry), `ask-home`, `safety-firstaid*`, `learn-*`, `fun-*`, `nudge-*`.
 
 ### 3.4 What needs what
-- **Native Android work (APK 2.3.0):** S2 `CallPlugin` + `CALL_PHONE` (only if Q32 = auto-dial); S3 OEM intents in `SettingsOpenerPlugin`. Nothing else. If Lloyd picks the dial screen (Q32) and accepts deferring the OEM intents to 2.4.0, Phase 2 ships with **no new APK** and Task 15 is skipped. `scripts/check-manifest.mjs` must still pass after `cap sync`.
-- **APK test window (C1, Task 15, only when a native change ships):** Pages branch preview URL added by Lloyd to `ALLOWED_ORIGIN` (comma list; S1 makes `_shared/http.ts` accept it) and Supabase Auth > Redirect URLs; CI builds `2.3.0-rc` with `CAP_SERVER_URL=<preview>`; sideload; preview origin removed after roll-out.
+- **Native Android work (APK 2.3.0):** S2 `CallPlugin` + `CALL_PHONE` (only if Q32 = auto-dial); S3 OEM intents in `SettingsOpenerPlugin`. Nothing else. If the owner picks the dial screen (Q32) and accepts deferring the OEM intents to 2.4.0, Phase 2 ships with **no new APK** and Task 15 is skipped. `scripts/check-manifest.mjs` must still pass after `cap sync`.
+- **APK test window (C1, Task 15, only when a native change ships):** Pages branch preview URL added by the owner to `ALLOWED_ORIGIN` (comma list; S1 makes `_shared/http.ts` accept it) and Supabase Auth > Redirect URLs; CI builds `2.3.0-rc` with `CAP_SERVER_URL=<preview>`; sideload; preview origin removed after roll-out.
 - **Migrations:** 0030 (S1) -> 0031 (S2) -> 0032 (S3) -> 0033 (S8) -> 0034 (S6b) -> 0035 (S9). Rehearsed on WSL in that order.
 - **Edge functions to deploy:** dose-watch, broadcast, alerts-ingest, records-extract, pin-login, family-names, erase (new), ask (only if S10 changed `gate.ts` export). No `sos`, no `system-status`.
-- **Cron files (Lloyd applies):** `ops/sql/alerts_cron.sql`, `ops/sql/erasure_cron.sql`, `ops/sql/dose_watch_cron.sql` only if its body changed.
-- **Secrets and prerequisites (Lloyd):** `ERASE_CRON_SECRET`; `ALLOWED_ORIGIN` list during the test window; the vault secret `dose_watch_cron_secret` that `ops/sql/dose_watch_cron.sql` requires must exist live before 0031 and 0035 are applied (their pg_net calls read it; verify: `select count(*) from vault.secrets where name = 'dose_watch_cron_secret'` = 1). Nothing else new. (Removed: Firebase, Semaphore, `GOOGLE_SERVICES_JSON_BASE64`, Sentry DSN.)
-- **Device tests (Lloyd; test phone = Papa's Xiaomi if possible; about 2 calendar days because of the Doze tests, 3 h hands-on):**
+- **Cron files (the owner applies):** `ops/sql/alerts_cron.sql`, `ops/sql/erasure_cron.sql`, `ops/sql/dose_watch_cron.sql` only if its body changed.
+- **Secrets and prerequisites (the owner):** `ERASE_CRON_SECRET`; `ALLOWED_ORIGIN` list during the test window; the vault secret `dose_watch_cron_secret` that `ops/sql/dose_watch_cron.sql` requires must exist live before 0031 and 0035 are applied (their pg_net calls read it; verify: `select count(*) from vault.secrets where name = 'dose_watch_cron_secret'` = 1). Nothing else new. (Removed: Firebase, Semaphore, `GOOGLE_SERVICES_JSON_BASE64`, Sentry DSN.)
+- **Device tests (the owner; test phone = Papa's Xiaomi if possible; about 2 calendar days because of the Doze tests, 3 h hands-on):**
   1. Carer phone (APK, app closed): open Bantay at :50 after a slot missed at :00 on the elder's phone (dose-watch runs `*/15`, so the row lands between :30 and :45); the Family tab shows the missed-dose card and the bell has the row; Mark taken for her asks "Did you see her take it?".
   2. `adb shell am force-stop ph.bantay.family`; open the app; a reminder set for +3 min still fires; Me shows "1 set again".
   3. Day 2 and day 3: the 08:00 reminder arrives within 60 s with the phone idle overnight; +10 and +20 repeats fire when not logged; a dose logged at +5 cancels them; the carer row appears at :30.
@@ -375,7 +375,7 @@ S1: `start-inbox`, `lock-missed` (alert list with count), `start-banner`, `today
   7. Hazard row: insert a fixture tier-1 row through `alerts-ingest` with the cron secret; every member in zone sees the storm card on Today and the bell row on open; a PWA member gets the push.
   8. Old shell check: the 2.2 APK on the new web shows the "Update the app" lines where a native feature is missing and no crash on Today, Me, Safety.
   9. Dangerous reading: type 185/95; the symptoms sheet appears; the carer phone shows the `reading_high` row on open.
-- **Lloyd-only gates:** apply 0030-0035 + cron files; deploy functions; test window (15, if native); device tests (16); clinician + privacy review (17); merge; APK 2.3.0 (if native) + roll-out; versionCode floor after roll-out.
+- **The owner-only gates:** apply 0030-0035 + cron files; deploy functions; test window (15, if native); device tests (16); clinician + privacy review (17); merge; APK 2.3.0 (if native) + roll-out; versionCode floor after roll-out.
 
 ### 3.5 Phase 2 merge order and release
 Merge queue: S8, S1, S3, S2, S4, S5, S9, S11, S6b, S6a, S6c, S7w, S7, S10. After each: tsc, tier-0 smoke, duplicate scan, `npx vitest run src/features/notify supabase/functions` when a server lane lands, rehearsal when SQL changed. Copy gate before the release review: `grep -rniE "will be (told|notified)|lock screen|notification" src/features/{notify,sos,family,today,health/bpcheck}` is read by the auditor; every hit must be either PWA-only copy or a local alarm. Then full gates, 52-screen shot compare, Opus release review, `git tag pre-s10-p2 origin/main`, PR "Session 10 safety wave (D-78)". Deploy order: database (0030-0035 + cron) -> functions -> web (merge) -> APK 2.3.0 if native -> roll-out -> versionCode floor. Old shells keep working on the new web through feature detection.
@@ -403,16 +403,16 @@ Merge queue: S8, S1, S3, S2, S4, S5, S9, S11, S6b, S6a, S6c, S7w, S7, S10. After
 |---|---|---|---|
 | Health library topics (offline) | MedlinePlus health-topics XML, US-government public domain; credit "Source: MedlinePlus, National Library of Medicine"; EXCLUDE ASHP drug monographs and A.D.A.M. | D2 build script; Haiku checks count + licence strings | `src/data/learn/topics.json` (about 250 topics; gzip < 1.5 MB) |
 | Encyclopedia | WikiMed mini ZIM 166 MB via the Kiwix app: link-out only | D2 | one card under Learn > More |
-| Medicine + supplement cards | Bantay-written from DailyMed/openFDA labels and NIH ODS fact sheets (public domain); RxNorm names; one MedlinePlus drug link per medicine; never ASHP text; every card ends "Talk to your doctor first"; angioedema line is red "call 911"; do-not-mix is a curated clinician-signed list per card, never "no interactions found" | D3 writes; **Lloyd gate: clinician review** | `src/data/learn/meds/*.json` (about 15 cards) |
-| Recipes | 20 original low-sodium Filipino recipes; salt per serving vs the person's limit; Pinggang Pinoy plate redrawn with FNRI credit | D4; Lloyd emails FNRI (optional) | `src/data/learn/recipes.json` |
+| Medicine + supplement cards | Bantay-written from DailyMed/openFDA labels and NIH ODS fact sheets (public domain); RxNorm names; one MedlinePlus drug link per medicine; never ASHP text; every card ends "Talk to your doctor first"; angioedema line is red "call 911"; do-not-mix is a curated clinician-signed list per card, never "no interactions found" | D3 writes; **The owner gate: clinician review** | `src/data/learn/meds/*.json` (about 15 cards) |
+| Recipes | 20 original low-sodium Filipino recipes; salt per serving vs the person's limit; Pinggang Pinoy plate redrawn with FNRI credit | D4; the owner emails FNRI (optional) | `src/data/learn/recipes.json` |
 | Studies | NIH News in Health RSS full text cached with credit; Cochrane and PH health news headline + link only | D5 via n8n news-feed (N1) | `news_items.source_kind = 'study'` |
-| Audio | Native TTS plugin `@capacitor-community/text-to-speech` (pinned) on the APK, Web Speech on the PWA; Tagalog voice tested on Mama's phone first; podcasts link-out | D2; Lloyd tests the voice | `src/features/discover/listen/tts.ts` |
+| Audio | Native TTS plugin `@capacitor-community/text-to-speech` (pinned) on the APK, Web Speech on the PWA; Tagalog voice tested on Mama's phone first; podcasts link-out | D2; the owner tests the voice | `src/features/discover/listen/tts.ts` |
 | Mindfulness | Self-built breathing circle (reuse `breathLogic.ts`), waves, candle; UCLA Mindful link-out | D5 | `src/features/discover/mind/*` |
 | Brain games | Written from scratch; our word lists; "fun mental exercise", never a dementia/memory claim | D6 | `src/features/discover/play/*`, `src/data/play/*.json` |
 | News | RSS headline + link + source (PNA, GMA, Inquirer, Rappler) | D7 + N1 | `news_items` (`zone`, `source_kind`) |
-| Fun facts | Wikipedia On This Day (CC BY-SA credit + link), NASA APOD (Lloyd's key; `copyright` field honoured), one PH fact from our list | D6 `discover-daily` | `daily_cards` (0036) |
-| Watch | Curated YouTube playlists from official channels only, deep links, never embed; official apps row; pirate aggregators never | D7; **Lloyd curates** 12 playlists | `watch_playlists` (0037) |
-| First-aid videos | Philippine Red Cross first, DOH second; link-out until written permission; offline copies only from files the Red Cross provides, never YouTube downloads | D9; **Lloyd emails PRC** | `src/data/safety/firstaid-videos.json` |
+| Fun facts | Wikipedia On This Day (CC BY-SA credit + link), NASA APOD (the owner's key; `copyright` field honoured), one PH fact from our list | D6 `discover-daily` | `daily_cards` (0036) |
+| Watch | Curated YouTube playlists from official channels only, deep links, never embed; official apps row; pirate aggregators never | D7; **The owner curates** 12 playlists | `watch_playlists` (0037) |
+| First-aid videos | Philippine Red Cross first, DOH second; link-out until written permission; offline copies only from files the Red Cross provides, never YouTube downloads | D9; **The owner emails PRC** | `src/data/safety/firstaid-videos.json` |
 
 **Offline storage budget (a vitest fails when exceeded):** bundle growth <= 8 MB; opt-in downloads in Me > Storage: first-aid videos <= 60 MB, Tagalog audio clips <= 20 MB; WikiMed lives in Kiwix. Cached feeds capped at 2 MB with a 7-day trim.
 
@@ -453,8 +453,8 @@ create table if not exists public.nudge_settings (user_id uuid primary key, time
 | D9 FIRSTAID-VIDEO | `src/data/safety/firstaid-videos.json`, `src/features/safety/FirstAid.tsx`, `safety/FirstAidDetail.tsx`, `safety/Cpr.tsx`, `safety/offlineVideos.ts`, `discover/learn/FirstAidCard.tsx` | `safety-firstaid`, `safety-firstaid-detail`, `safety-firstaid-cpr`, `learn-firstaid` |
 
 ### 4.4 Phase 3 needs
-- **Lloyd before launch:** answers to the Phase 3 questions recorded as D-8x; 12 YouTube playlists; NASA API key; Red Cross and FNRI emails (templates `docs/session-10/emails.md`); Tagalog voice check on Mama's phone.
-- **Lloyd before merge:** clinician review of medicine cards and recipe tags; native Tagalog read; apply 0036-0038; `n8n apply` of the validated news-feed patch; deploy `discover-daily`; set `NASA_API_KEY`; CI builds APK 2.4.0 and rolls it out.
+- **The owner before launch:** answers to the Phase 3 questions recorded as D-8x; 12 YouTube playlists; NASA API key; Red Cross and FNRI emails (templates `docs/session-10/emails.md`); Tagalog voice check on Mama's phone.
+- **The owner before merge:** clinician review of medicine cards and recipe tags; native Tagalog read; apply 0036-0038; `n8n apply` of the validated news-feed patch; deploy `discover-daily`; set `NASA_API_KEY`; CI builds APK 2.4.0 and rolls it out.
 - **Migrations:** 0036 (D5) -> 0037 (D7) -> 0038 (D8a). **Merge order:** D1, D2, D3, D4, D5, D6, D7, D9, D8b, D8a. **Shot compare:** 55 screens plus `today-full` with the Jack bubble.
 
 ### 4.5 Phase 3 rollback
@@ -466,12 +466,12 @@ create table if not exists public.nudge_settings (user_id uuid primary key, time
 1. Per lane: tsc 0, lane vitest 0, lane Playwright 0 (bare, exit codes quoted), shots at 390x844 light + dark, checklist returned, Opus audit pass or pass_with_issues with a fix round.
 2. Merge queue: one lane at a time, smoke + duplicate scan after each, rehearsal when SQL changed.
 3. Release: full vitest, full e2e (600 s webServer), shot compare vs mockup, Opus whole-branch review, tag, PR.
-4. Lloyd: `apply` (database + cron) -> deploy functions -> test window + device tests (when native changed) -> clinician/privacy reviews -> `merge` (web) -> APK -> roll-out -> rollback block known.
+4. The owner: `apply` (database + cron) -> deploy functions -> test window + device tests (when native changed) -> clinician/privacy reviews -> `merge` (web) -> APK -> roll-out -> rollback block known.
 5. Retro: `retro.mjs` with each run's journal; promote checklist items (orchestrator only).
 
 ---
 
-## 6. Open questions for Lloyd (35; defaults apply if unanswered; answers recorded as D-79+ before the phase launches; numbering kept stable across revisions, so Phase 2 questions are 1-11 and 32-38, Phase 3 questions 12-28)
+## 6. Open questions for the owner (35; defaults apply if unanswered; answers recorded as D-79+ before the phase launches; numbering kept stable across revisions, so Phase 2 questions are 1-11 and 32-38, Phase 3 questions 12-28)
 
 Blocking Phase 1 / interim:
 1. **Switch-to-app banner (`start-banner`):** hide now (F2), re-enable in Phase 2 with the honest line "Family alerts show when you open the app; the browser app also gets notifications"? Default: yes.
@@ -509,7 +509,7 @@ Blocking Phase 3:
 22. **Studies sources:** Default: NIH News in Health full text + PH health headlines (links).
 23. **Tagalog narration:** Default: phone voice (native TTS plugin); record 20 clips only if Mama's phone has no Filipino voice.
 24. **First-aid video storage and sources:** Default: link-out until the Red Cross answers; then their files offline on carers' phones by default, elders opt-in.
-25. **Who adds playlists:** Default: Lloyd via the admin web page.
+25. **Who adds playlists:** Default: the owner via the admin web page.
 26. **News sources:** Default: PNA, GMA, Inquirer, Rappler.
 27. **Fun-fact sharing:** Default: straight to the one family chat.
 28. **Scoreboard:** Default: games played, not scores.
@@ -522,14 +522,14 @@ Skipped as cosmetic (the plan picks): hint count in Memory (unlimited), Tagalog-
 
 ## 7. Effort and risks
 
-| Phase | Agent sessions | Wall clock | Lloyd time |
+| Phase | Agent sessions | Wall clock | The owner time |
 |---|---|---|---|
 | 1 Wave 2 fix round + release | 1 | 8-10 h | 45 min (apply, merge, gate script, env flip) |
 | 2 Safety wave (D-78) | 3-4 | 28-34 h (research 1 h, pre-commit 1 h, build 10-12 h in two batches, audits + fix round 7-8 h, merge + gates 7 h, release 2 h) | about 2 calendar days of device tests (3 h hands-on) + 1 h apply/deploy/APK + clinician + privacy review + 1 h roll-out; no Firebase, Semaphore or Sentry setup |
 | 3 Discover + fun logging | 3-4 | 32-38 h (content 6 h, build 12 h, audits + fix 8 h, merge + gates 6 h) | 3 h (playlists, emails, voice test, answers) + clinician review + APK 2.4.0 roll-out |
 
 Risks and what we do about them:
-- **Carers do not open the app, so alerts go unseen (the D-78 trade-off).** Tab badge, Today alert card, Family cards, honest copy; System health shows unseen alerts by kind so Lloyd can see whether the family actually opens Bantay; FCM parked (Task 29) with `carer_alerts` as its ready input.
+- **Carers do not open the app, so alerts go unseen (the D-78 trade-off).** Tab badge, Today alert card, Family cards, honest copy; System health shows unseen alerts by kind so the owner can see whether the family actually opens Bantay; FCM parked (Task 29) with `carer_alerts` as its ready input.
 - **Auto-dial on a sideloaded APK:** `CALL_PHONE` is a runtime permission the family grants once; OEMs may block background calls, so the call is placed from the foreground SOS screen only; fallback is the dial screen. False calls to family are possible after an accidental 3-second hold; 911 is never auto-dialled.
 - **Group MMS and SMS composer differences per OEM:** one composer per contact; device test 4 on the test phone; the composer-opened flag is all the app can know.
 - **Doze/force-stop behaviour differs per OEM:** one-shot 7-day alarms tested on one phone over 2-3 days; `phone_health.alarms_rearmed` on System health; the plugin patch stays in reserve.
@@ -543,7 +543,7 @@ Risks and what we do about them:
 - **e2e flakes under load:** rerun alone with `--repeat-each 2`; 600 s webServer.
 - **Worktree bases and file collisions:** ownership tables + pre-commit; `git reset --hard <sha>` first.
 - **WSL Postgres crash-loops:** keep one `wsl` process alive; never restart it from a lane (ML-14).
-- **No third-party error monitoring:** `client_errors` catches hashed messages only; a silent white screen on an elder's phone still depends on the family telling Lloyd; Sentry can be added later (Q36).
+- **No third-party error monitoring:** `client_errors` catches hashed messages only; a silent white screen on an elder's phone still depends on the family telling the owner; Sentry can be added later (Q36).
 - **Content licences (Phase 3):** only public-domain or Bantay-written text bundled; a vitest greps for forbidden markers; offline videos only from Red Cross files.
 - **Clinician and Tagalog reviews are external:** medicine cards, 4-7-8 breathing and the S9 copy sit behind flags/gates so merges do not wait, releases do.
 - **Jack live flip** only after `jack-gate-live.mjs` passes; n8n stays as rollback for one release.
@@ -551,10 +551,10 @@ Risks and what we do about them:
 ---
 
 ## 8. Self-review (writing-plans skill, rev 4)
-- **Spec coverage:** D-78 items 1-5 and the rev 3 re-check's 10-item edit list plus every A/B/C finding are applied (tables at the top). Brief items 1-7 remain covered: pre-flight (0), Phase 1 unchanged, Phase 2 re-cut to in-app alerts + phone-app SOS with outbox-safe writes and fail-open triggers, Phase 3 unchanged except the APK 2.4.0 note, lanes with files/model/acceptance/`data-s`/review, migrations 0030-0038 sequenced with named triggers and reverse-order downs, deploy order, Lloyd gates, 35 questions with defaults, effort + risks, rollback per phase. The trade-off is stated at the top, in 3.7 and in the risks.
+- **Spec coverage:** D-78 items 1-5 and the rev 3 re-check's 10-item edit list plus every A/B/C finding are applied (tables at the top). Brief items 1-7 remain covered: pre-flight (0), Phase 1 unchanged, Phase 2 re-cut to in-app alerts + phone-app SOS with outbox-safe writes and fail-open triggers, Phase 3 unchanged except the APK 2.4.0 note, lanes with files/model/acceptance/`data-s`/review, migrations 0030-0038 sequenced with named triggers and reverse-order downs, deploy order, the owner gates, 35 questions with defaults, effort + risks, rollback per phase. The trade-off is stated at the top, in 3.7 and in the risks.
 - **Placeholders:** the rev 3 unresolved PIN text is gone; the SQL blocks use `$$ ... $$` only where the body is specified in the surrounding comment lines (notify_family, raise_mood_alert, the four triggers), which the lane writes in full with the rehearsal. Research-dependent items (R1-R3) have named fallbacks.
 - **Type consistency:** `carer_alerts.kind` values match the templates and their writers (S1 `dose_missed`/`phone_health`, S4 `review_open`/`digest`, S7 `mood_unwell` via `raise_mood_alert`, S9 `reading_high`, 0031 triggers `sos`/`sos_cancel` with templates `family_sos`/`sos_late`/`sos_cancel`, S5 `hazard`, S8 `system` with null `person_id`, `pin-login` `pin_approve`/`pin_changed`); scopes `carers | family | self`; `carerRow`, `flushWebPush`, `notify_family`, `raise_mood_alert`, `callPermission`, `requestCallPermission`, the three outbox specs and the four trigger names are used consistently; no reference to `push_tokens`, `sendToUsers`, FCM, Semaphore or Sentry remains in any lane brief.
 - **One owner per file:** 3.2a and 4.3 assign every file named in any brief (B6 holes closed: `http.ts`, `App.tsx` hooks, `notify/store.ts`, `settingsOpener.ts*`, `admin/broadcast.ts`, `AdminScreen.tsx`, `dose-watch/index.test.ts`); shared dependencies are pre-committed; hook lines listed with their owner; `src/db.ts` is edited by nobody.
 - **Question references checked:** Q1 (S1, F2), Q4 (S4, S7), Q15 (S4 digest), Q32 (S2, 3.2b, 3.4), Q33 (S6b), Q34 (rev 3 table, dose-watch window), Q37 (S6c), Q38 (S2).
 
-Skipped / not checked: nothing was run (no tsc, no SQL, no device, no network); Realtime-with-RLS behaviour, OEM handling of `ACTION_CALL` (dual-SIM chooser, MIUI confirm), whether `dose_watch_cron.sql` and its vault secret are applied live, and RainViewer/PAGASA availability are settled by the research lanes, the Lloyd prerequisite check and the device tests.
+Skipped / not checked: nothing was run (no tsc, no SQL, no device, no network); Realtime-with-RLS behaviour, OEM handling of `ACTION_CALL` (dual-SIM chooser, MIUI confirm), whether `dose_watch_cron.sql` and its vault secret are applied live, and RainViewer/PAGASA availability are settled by the research lanes, the the owner prerequisite check and the device tests.

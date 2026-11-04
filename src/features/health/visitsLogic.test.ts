@@ -45,7 +45,21 @@ describe('visit list', () => {
     expect(nextVisitLine(visitList([], [], 'p1', NOW))).toBeNull()
   })
   it('bring list: readings, medicines, papers, then questions', () => {
-    expect(bringList({ hasReadings: true, questions: ['Is the LDL high?'] }).map((b) => b.id)).toEqual(['readings', 'meds', 'papers', 'q0'])
+    expect(bringList({ hasReadings: true, questions: ['Is the LDL high?'] }).map((b) => b.id)).toEqual(['readings', 'meds', 'papers', 'q:Is the LDL high?'])
     expect(bringList({ hasReadings: false, questions: [] })[0]!.label).toMatch(/home readings/)
+  })
+  it('bring list sub-lines come from real counts and dates, never invented', () => {
+    const sub = (i: Parameters<typeof bringList>[0]) => bringList(i).map((b) => b.sub)
+    expect(sub({ hasReadings: true, questions: [], readingCount: 1, medCount: 1, paperDate: '14 Oct 2026' })).toEqual(['1 reading in the last 30 days', '1 medicine', 'Lab paper · 14 Oct 2026'])
+    expect(sub({ hasReadings: true, questions: [], readingCount: 12, medCount: 3, paperDate: null })).toEqual(['12 readings in the last 30 days', '3 medicines', 'No lab paper yet'])
+    expect(sub({ hasReadings: false, questions: [] })).toEqual(['No readings in the last 30 days', 'None added yet', 'No lab paper yet'])
+    expect(bringList({ hasReadings: false, questions: ['A'] })[3]!.sub).toBeUndefined()
+  })
+  it('a tick is keyed by the question words: removing the first question leaves the second one\'s id unchanged', () => {
+    const both = bringList({ hasReadings: false, questions: ['First?', 'Second?'] }).map((b) => b.id)
+    const after = bringList({ hasReadings: false, questions: ['Second?'] }).map((b) => b.id)
+    expect(both.at(-1)).toBe('q:Second?')
+    expect(after.at(-1)).toBe('q:Second?')
+    expect(new Set(bringList({ hasReadings: false, questions: ['Same?', 'Same?'] }).map((b) => b.id)).size).toBe(5)
   })
 })

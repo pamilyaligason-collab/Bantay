@@ -3,6 +3,7 @@ import { db } from '../../db'
 import { supabase } from '../auth/client'
 import { getMember } from '../auth/session'
 import { loadCarerOf } from '../family/reportData'
+import { SwitchRow } from '../settings/Group'
 
 type Client = { from: (t: string) => any; rpc: (fn: string, args: object) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
 const KEY = 'digest.on' // { userId, on }: a cache only. The server row (carer_prefs, 0039) decides; no row = on.
@@ -50,11 +51,9 @@ export default function DigestToggle() {
   }
   return (
     <>
-      <div className="sh-card sh-list" data-testid="digest-toggle">
-        <div>
-          <div className="sh-grow"><b>8 PM summary</b><div className="sh-sub">One calm note at 8 PM about who still has medicine to take.</div></div>
-          <button type="button" className="sh-switch" role="switch" aria-checked={state.on} aria-label="8 PM summary" onClick={() => void set(!state.on)} />
-        </div>
+      <div className="st-h"><h2>For carers</h2></div>
+      <div className="sh-card sh-list st-list" data-testid="digest-toggle">
+        <SwitchRow icon="file" tint="blue" title="8 PM summary" sub="One calm note at 8 PM about who still has medicine to take." on={state.on} onChange={(v) => void set(v)} />
       </div>
       <p className="sh-sub sh-note">Turning this off never stops missed-medicine or Unwell alerts.</p>
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}

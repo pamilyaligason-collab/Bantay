@@ -42,7 +42,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#weather')
       await expect(page.getByRole('region', { name: 'Now' })).toContainText(/Feels like 4\d°/)
       await expect(page.getByRole('region', { name: 'Now' })).not.toContainText('Danger')
-      await expect(page.getByText(/Danger/)).toHaveCount(2) // action line band and heat scale chip; the hero adds none
+      await expect(page.getByText(/Danger/)).toHaveCount(1) // the action line band only (X5 removed the heat strip); the hero adds none
       await expect(page.getByRole('region', { name: 'Now' }).locator('.wxs')).toHaveAttribute('data-tod', 'day')
       await page.screenshot({ path: `${SHOTS}/weather-hot-day-${scheme}.png` })
     })

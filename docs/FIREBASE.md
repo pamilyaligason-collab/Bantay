@@ -1,6 +1,6 @@
 # Firebase setup and live check for push to the APK (session 12, lane E, APK 2.4.0)
 
-Family alerts reach the Android app through Firebase Cloud Messaging (FCM). This needs a one-time setup that only Lloyd can do (about 40 minutes), then a live check on two phones. Nothing here is a secret in the repo: the two key files stay on Lloyd's PC and in GitHub and Supabase secrets.
+Family alerts reach the Android app through Firebase Cloud Messaging (FCM). This needs a one-time setup that only the owner can do (about 40 minutes), then a live check on two phones. Nothing here is a secret in the repo: the two key files stay on the owner's PC and in GitHub and Supabase secrets.
 
 Until this is done the app still works: it shows family alerts when it is open, as in 2.3.0. Without `FIREBASE_SERVICE_ACCOUNT_B64` the `dose-watch` and `broadcast` functions send web push only.
 

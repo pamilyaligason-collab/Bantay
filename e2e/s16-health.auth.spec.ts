@@ -45,7 +45,7 @@ test('the admin lands on Me, even when another person has readings (v13 0.4: no 
   await seed(page, 'bantay-health', { readings: [{ personId: 'ma', takenAt: new Date().toISOString(), test: 'weight', value: 55, unit: 'kg' }] })
   await page.reload()
   await expect(page.getByTestId('health-loading')).toHaveCount(0)
-  await expect(page.locator('.ps-pill')).toHaveText(/^Me/) // v13: the Me switcher pill replaced the person chips
+  await expect(page.locator('.ps-pill')).toHaveText(/Me$/) // v13: the Me switcher pill replaced the person chips
 })
 
 test('the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food', async ({ page }) => {
@@ -64,7 +64,7 @@ test('the seven numbers, Kpis and the Latest list live on Readings; Refills on M
 test('labs keep the v9 design: eyebrow, source card link, previous switch, v9 footer, short sub line', async ({ page }) => {
   await full(page)
   await page.goto('/#health/labs')
-  await expect(page.getByText("from the lab's own paper")).toBeVisible()
+  await expect(page.getByText("from the lab's own paper")).toHaveCount(0) // H12: the stray line above the back row is gone
   await expect(page.getByTestId('lab-source')).toHaveAttribute('href', '#family/papers')
   await expect(page.getByTestId('lab-source')).toContainText("Ranges are the lab's own printed ranges, not Bantay's.")
   await expect(page.getByRole('switch', { name: 'Show previous result' })).toBeVisible()
@@ -82,8 +82,8 @@ test('the nudge row link does not cover the overview: a glance tile still opens 
 
 test('a carer who picks Ma logs the meal for Ma, not for themself', async ({ page }) => {
   await full(page)
-  await page.goto('/#health/nutrition')
-  await page.getByRole('button', { name: /Ma/ }).first().click()
+  await page.goto('/#health/member/ma')
+  await page.getByRole('link', { name: /^Food and salt/ }).click()
   await page.getByRole('button', { name: /Log a meal/ }).click()
   await page.getByRole('group', { name: 'Salty extras on this meal' }).getByRole('button', { name: /^Add Toyo/ }).click()
   await page.getByRole('button', { name: 'Save meal' }).click()

@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core'
-import type { HealthBridge, HealthDiag, Platform, SensorType } from './health'
+import type { HealthBridge, HealthDiag, Platform, RawSample, SensorType } from './health'
 
 export const platform = (): Platform => {
   const p = Capacitor.getPlatform()
@@ -14,6 +14,9 @@ export const within = <T>(p: Promise<T>, ms = HC_TIMEOUT_MS): Promise<T> =>
     const t = setTimeout(() => no(new Error(`Health Connect did not answer in ${Math.round(ms / 1000)} s`)), ms)
     p.then((v) => { clearTimeout(t); ok(v) }, (e) => { clearTimeout(t); no(e) })
   })
+
+const PAGE = 1000
+const MAX_PAGES = 20 // a window with more rows than this continues on the next sync, from `more`
 
 /** The real bridge, over @capgo/capacitor-health. The plugin loads only when a method is called on a phone. */
 export function capgoBridge(): HealthBridge {
@@ -66,7 +69,34 @@ export function capgoBridge(): HealthBridge {
       return (await traced('check', () => p.checkAuthorization({ read: [type] }))).readAuthorized.includes(type)
     },
     granted: async (type: SensorType) => (await within(((await plugin()).h).checkAuthorization({ read: [type] }))).readAuthorized.includes(type),
-    read: async (type: SensorType, sinceIso: string) =>
-      (await ((await plugin()).h).readSamples({ dataType: type, startDate: sinceIso, endDate: new Date().toISOString(), limit: 1000, ascending: true })).samples
+    // Health Connect's own sum: apps that overlap count once, and there is no row cap. Buckets are cut from startDate, so align it to the hour or an hour would change its start between syncs (Android; iOS bucket anchoring is unverified).
+    // null = this phone's plugin or Health Connect has no such method (sync falls back to raw samples). Any other failure, a timeout included, is thrown so sync leaves the cursor alone and retries.
+    readSteps: async (sinceIso: string) => {
+      const h = (await plugin()).h
+      const startDate = new Date(Math.floor(Date.parse(sinceIso) / 3_600_000) * 3_600_000).toISOString()
+      try {
+        return (await within(h.queryAggregated({ dataType: 'steps', startDate, endDate: new Date().toISOString(), bucket: 'hour', aggregation: 'sum' }))).samples
+      } catch (e) {
+        if (typeof h.queryAggregated !== 'function' || (e as { code?: unknown } | null)?.code === 'UNIMPLEMENTED') return null
+        throw e
+      }
+    },
+    // The plugin returns at most one page. Page on from the last start (rows repeat at the seam: dropped by value) until a short page, no new rows, or the page limit.
+    read: async (type: SensorType, sinceIso: string) => {
+      const h = (await plugin()).h
+      const endDate = new Date().toISOString()
+      const out: RawSample[] = []
+      const seen = new Set<string>()
+      let from = sinceIso
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const { samples } = await within(h.readSamples({ dataType: type, startDate: from, endDate, limit: PAGE, ascending: true }))
+        const before = out.length
+        for (const s of samples) if (!seen.has(JSON.stringify(s))) { seen.add(JSON.stringify(s)); out.push(s) }
+        if (samples.length < PAGE || out.length === before) return out
+        from = samples[samples.length - 1].startDate
+      }
+      return Object.assign(out, { more: from })
+    }
   }
 }
+

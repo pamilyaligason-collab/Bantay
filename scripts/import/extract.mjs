@@ -1,5 +1,5 @@
-// Batch extraction via paid OpenRouter (zdr, no data collection). Run only with Lloyd present.
-// Usage: node scripts/import/extract.mjs --i-am-lloyd [--limit N] [--delay MS]
+// Batch extraction via paid OpenRouter (zdr, no data collection). Run only with the owner present.
+// Usage: node scripts/import/extract.mjs --i-am-owner [--limit N] [--delay MS]
 // Reads import/manifest.json + import/files/<id>; writes import/drafts/<id>.json. Prints counts only.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'

@@ -88,8 +88,35 @@ test('arriving from a scrolled Today starts Calm at the top', async ({ page }) =
 })
 
 test('a mood face logs and the status line says so', async ({ page }) => {
-  await page.getByTestId('calm-mood').getByRole('button', { name: 'Great', exact: true }).click()
+  await page.getByTestId('calm-mood').getByRole('button', { name: 'Good', exact: true }).click()
   await expect(page.getByTestId('calm-mood').getByRole('status')).toHaveText('Sign in first, then try again.') // this spec runs signed out; the write path is in MoodCheck.test
+})
+
+test('C1: the page is the deep teal, the orb is 220 px, text passes on it', async ({ page }) => {
+  await expect(page.getByTestId('calm')).toHaveCSS('background-color', 'rgb(31, 59, 69)')
+  await expect(page.getByTestId('calm')).toHaveCSS('color', 'rgb(255, 255, 255)')
+  const box = await page.getByTestId('calm-hero').locator('.bo').boundingBox()
+  expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([220, 220])
+  await assertTextContrast(page)
+})
+
+test('C2: Calm box + 5 min on the page, then Start runs that pattern', async ({ page }) => {
+  const hero = page.getByTestId('calm-hero')
+  await expect(hero.getByRole('button', { name: 'Sleep 4-7-8 · coming' })).toBeDisabled() // 4-7-8 waits for the clinician gate: the pill only says so
+  await hero.getByRole('button', { name: 'Calm box' }).click()
+  await hero.getByRole('button', { name: '5 min' }).click()
+  await page.getByRole('button', { name: 'Start' }).click()
+  const run = page.getByTestId('sc-run')
+  await expect(run).toBeVisible()
+  await expect(run).toContainText('Calm, breath 1')
+  await expect(run.locator('.bs-clock')).toHaveText(/0[45]:\d\d/) // 5 min of 16 s breaths = 19 whole breaths = 304 s, so the clock reads 05:0x or 04:5x
+})
+
+test('C3: four mood tiles, 72 px or more, and the promise line', async ({ page }) => {
+  const faces = page.getByTestId('calm-mood').locator('button[aria-label]')
+  await expect(faces).toHaveCount(4)
+  for (let i = 0; i < 4; i++) { const b = await faces.nth(i).boundingBox(); expect(b!.width).toBeGreaterThanOrEqual(72); expect(b!.height).toBeGreaterThanOrEqual(72) }
+  await expect(page.getByTestId('calm-mood')).toContainText('If you feel unwell, call your family.') // signed out in this spec, so nobody is linked
 })
 
 test('Start opens the breath sheet', async ({ page }) => {
@@ -132,9 +159,14 @@ for (const [w, h] of [[390, 844], [360, 740]] as const) {
   }
 }
 
-test('195 px: nothing sideways, 44 px targets, no wrapped buttons', async ({ page }) => {
+test('195 px: nothing sideways, 44 px targets, no wrapped buttons, the orb fits the screen', async ({ page }) => {
   await flagOn(page)
   await assertNarrow(page)
+  await expect(page.getByTestId('calm-hero')).toBeVisible() // assertNarrow reloads; wait for the page before measuring
+  const m = await page.evaluate(() => { const o = document.querySelector('[data-testid="calm-hero"] .bo')!.getBoundingClientRect(), h = document.querySelector('[data-testid="calm-hero"]')!.getBoundingClientRect(); return { w: o.width, h: o.height, right: o.right, heroRight: h.right, vw: window.innerWidth } })
+  expect(m.w).toBeLessThanOrEqual(m.vw)
+  expect(m.right).toBeLessThanOrEqual(m.heroRight - 16 + 0.5) // inside the hero's padding, not the 203 px of the old inline size
+  expect(Math.abs(m.w - m.h)).toBeLessThan(1)
 })
 
 test('reduced motion: the orb holds still', async ({ page }) => {
@@ -144,6 +176,7 @@ test('reduced motion: the orb holds still', async ({ page }) => {
   await expect(orb).toHaveAttribute('data-reduced', 'true')
   const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length)
   expect(running).toBe(0)
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0)
   const hero = page.getByTestId('calm-hero')
   const read = () => hero.evaluate((h) => ({ word: h.querySelector('.bo-word')?.textContent, t: getComputedStyle(h.querySelector('.bo-orb')!).transform }))
   const a = await read()

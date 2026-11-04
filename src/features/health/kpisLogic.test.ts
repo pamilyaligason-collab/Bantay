@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { MedTaken, Medication } from '../log/store'
 import { computeKpis, whenWords } from './kpisLogic'
+import { latestSteps } from './stepsDay'
 import type { Reading } from './ranges'
-import { GUIDE } from './ranges'
-import { averageNodes, byVitalOrder, isVital, labFlagLine, NORMAL, positionOf, weekAverages } from './vitals'
+import { averageNodes, byVitalOrder, isVital, labFlagLine, positionOf, weekAverages } from './vitals'
 
 const NOW = new Date(2026, 9, 20, 10, 0)
 const at = (daysAgo: number, h = 7, m = 30) => new Date(2026, 9, 20 - daysAgo, h, m).toISOString()
@@ -58,7 +58,7 @@ describe('units and wording', () => {
   it('glucose in mmol/L is converted (x 18.016) before judging and averaging; an unknown unit is skipped', () => {
     const g = (v: number, unit: string, h: number): Reading => ({ personId: 'p1', takenAt: at(0, h), test: 'fasting_glucose', value: v, unit })
     const k = computeKpis({ personId: 'p1', readings: [g(5.8, 'mmol/L', 8)], now: NOW, ...none })
-    expect(k[0]).toMatchObject({ value: '104.5', unit: 'mg/dL', state: { word: 'A bit high' } }) // 5.8 mmol/L is 104.5 mg/dL, not "5.8 is low"
+    expect(k[0]).toMatchObject({ value: '104.5', unit: 'mg/dL', state: { word: 'High' } }) // 5.8 mmol/L is 104.5 mg/dL, not "5.8 is low"
     expect(computeKpis({ personId: 'p1', readings: [g(5.8, 'stone', 8)], now: NOW, ...none })).toEqual([])
     const a = weekAverages([g(5.5, 'mmol/L', 7), g(100, 'mg/dL', 8), g(9, 'stone', 9)], NOW)
     expect(a).toHaveLength(1)
@@ -76,14 +76,9 @@ describe('units and wording', () => {
     const a = weekAverages([r('bp_diastolic', 79, 0, 7, 30, 'mmHg'), r('bp_diastolic', 88, 1, 7, 30, 'mmHg')], NOW)
     expect(a[0]!.value).toBe(84)
   })
-  it('Normal rows and the guide agree: the fasting sugar range text is the guide text', () => {
-    const f = NORMAL.find((n) => n.code === 'fasting_glucose')!
-    expect(f.range).toBe(GUIDE.fasting_glucose!.text)
-    expect([f.low, f.high]).toEqual([70, 99])
-  })
 })
 
-describe('7-day averages and the Normal list', () => {
+describe('7-day averages', () => {
   it('averages only the last 7 days, per test', () => {
     const a = weekAverages(readings, NOW)
     expect(a.find((x) => x.test === 'bp_systolic')!.value).toBe(134)
@@ -104,16 +99,57 @@ describe('7-day averages and the Normal list', () => {
     expect(positionOf(r('heart_rate', 55, 0))).toBe('below')
     expect(positionOf(r('heart_rate', 72, 0))).toBe('within')
   })
-  it('vitals vs labs, and the Normal list carries one plain line each', () => {
+  it('vitals vs labs', () => {
     expect(isVital('bp_systolic') && isVital('weight')).toBe(true)
     expect(isVital('hba1c') || isVital('ldl')).toBe(false)
-    expect(NORMAL.map((n) => n.code)).toEqual(['bp_systolic', 'fasting_glucose', 'heart_rate', 'weight'])
-    expect(NORMAL.find((n) => n.code === 'fasting_glucose')!.range).toBe('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')
-    expect(NORMAL.find((n) => n.code === 'heart_rate')!.range).toBe('60 to 100 bpm')
-    for (const n of NORMAL) expect(n.line.length).toBeGreaterThan(20)
   })
   it('lab flags are plain language', () => {
-    expect(labFlagLine('above', 'LDL cholesterol')).toBe('LDL cholesterol is a bit high. Ask your doctor at the next visit.')
+    expect(labFlagLine('above', 'LDL cholesterol')).toBe('LDL cholesterol is high. Ask your doctor at the next visit.')
     expect(labFlagLine('none', 'X')).toMatch(/no range/)
+  })
+})
+
+describe('a 0 from missing data never prints', () => {
+  const acts = (steps: number) => [{ personId: 'p1', kind: 'steps', steps, startedAt: at(0, 9, 0) }] as never
+  it('a 0 kg weight gives no KPI and an empty average tile', () => {
+    const rs = [r('weight', 0, 0, 7, 0, 'kg'), r('fasting_glucose', 104, 0, 6, 45, 'mg/dL')]
+    expect(computeKpis({ personId: 'p1', readings: rs, now: NOW, ...none }).map((x) => x.code)).not.toContain('weight')
+    expect(averageNodes(rs, [], NOW).find((n) => n.id === 'weight')!.empty).toBe(true)
+  })
+  it('no step rows at all: no KPI and an empty tile (no data is not a 0 day)', () => {
+    expect(computeKpis({ personId: 'p1', readings: [], now: NOW, ...none }).map((x) => x.code)).not.toContain('steps')
+    expect(averageNodes([], [], NOW).find((n) => n.id === 'steps')).toMatchObject({ empty: true, value: '--' })
+  })
+  it('a dropped 0 neither counts as a day nor sets the verdict: weight 0 yesterday, 61 the day before', () => {
+    const n = averageNodes([r('weight', 0, 1, 7, 0, 'kg'), r('weight', 61, 2, 7, 0, 'kg')], [], NOW).find((x) => x.id === 'weight')!
+    expect(n.value).toBe('61 kg')
+    expect(n.when).toBe('Average of 1 day')
+  })
+  it('pulse 0 yesterday, 72 the day before: plain In range, never "latest Low"', () => {
+    const n = averageNodes([r('heart_rate', 0, 1, 7, 0, 'bpm'), r('heart_rate', 72, 2, 7, 0, 'bpm')], [], NOW).find((x) => x.id === 'pulse')!
+    expect(n.value).toBe('72')
+    expect(n.when).toBe('Average of 1 day')
+    expect(n.sub).toBe('In range')
+  })
+  const stepDay = (daysAgo: number, steps: number) => ({ personId: 'p1', kind: 'steps', minutes: null, steps, startedAt: at(daysAgo, 9, 0) })
+  it('a real 0 steps day stays in the average: 3000, 3000, 0 is 2,000 over 3 days', () => {
+    const n = averageNodes([], [stepDay(2, 3000), stepDay(1, 3000), stepDay(0, 0)] as never, NOW).find((x) => x.id === 'steps')!
+    expect(n.value).toBe('2,000') // (3000 + 3000 + 0) / 3
+    expect(n.when).toBe('Average of 3 days')
+    expect(n.empty).toBe(false)
+  })
+  it('a 0 today and 4,210 yesterday: the KPI and Move both say 0 today', () => {
+    const activity = [stepDay(1, 4210), stepDay(0, 0)] as never
+    expect(computeKpis({ personId: 'p1', readings: [], now: NOW, ...none, activity }).find((x) => x.code === 'steps')).toMatchObject({ value: '0', when: 'today so far' })
+    expect(latestSteps(activity, NOW)).toMatchObject({ total: 0, today: true })
+  })
+  it('sleep keeps its guard: a 0 minute night is no night', () => {
+    const sleep = (daysAgo: number, minutes: number) => ({ personId: 'p1', kind: 'sleep', minutes, steps: null, startedAt: at(daysAgo, 1, 0) })
+    expect(averageNodes([], [sleep(1, 420), sleep(0, 0)] as never, NOW).find((x) => x.id === 'sleep')!.when).toBe('Average of 1 day')
+  })
+  it('real values still show beside it', () => {
+    const rs = [r('weight', 61, 0, 7, 0, 'kg')]
+    expect(computeKpis({ personId: 'p1', readings: rs, now: NOW, ...none, activity: acts(4210) }).map((x) => x.value)).toEqual(['61', '4,210'])
+    expect(averageNodes(rs, acts(4210), NOW).find((n) => n.id === 'steps')!.value).toBe('4,210')
   })
 })

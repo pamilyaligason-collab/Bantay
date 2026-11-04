@@ -58,7 +58,7 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/visits-${scheme}.png` })
     expect((await new AxeBuilder({ page }).include('main').analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
   }
-  const box = page.getByRole('checkbox', { name: 'Medicine list' })
+  const box = page.getByRole('checkbox', { name: /^Medicine list/ })
   await box.click()
   await expect(box).toHaveAttribute('aria-checked', 'true')
   await page.getByLabel('A question for the doctor').fill('Is my sugar high enough to change the dose?')
@@ -73,7 +73,7 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
     }
   }))).toBe(1)
   await page.reload()
-  await expect(page.getByRole('checkbox', { name: 'Medicine list' })).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByRole('checkbox', { name: /^Medicine list/ })).toHaveAttribute('aria-checked', 'true')
   await expect(page.getByRole('checkbox', { name: /^Question: Is my sugar/ })).toBeVisible()
 
   await page.getByRole('link', { name: 'Prepare visit summary' }).click()

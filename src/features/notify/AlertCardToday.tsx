@@ -7,8 +7,8 @@ import { renderTemplate, TEMPLATES, type NotifyKind, type TemplateId } from './t
 import { useAlertRows } from './useAlerts'
 import './notify.css'
 
-/** SOS first, then a storm call for help, then a dangerous reading, a missed dose, a hazard; the other urgent kinds after those. */
-const PRIORITY: NotifyKind[] = ['sos', 'rollcall', 'reading_high', 'dose_missed', 'hazard', 'mood_unwell', 'pin_approve', 'pin_changed', 'system']
+/** SOS first, then a storm call for help, then a dangerous reading, a hazard (a missed dose is a My day row, v13 T2); the other urgent kinds after those. */
+const PRIORITY: NotifyKind[] = ['sos', 'rollcall', 'reading_high', 'hazard', 'mood_unwell', 'pin_approve', 'pin_changed', 'system']
 
 const toneOf = (r: AlertRow) => (Object.hasOwn(TEMPLATES, r.template) ? TEMPLATES[r.template as TemplateId].tone : 'normal')
 

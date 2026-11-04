@@ -1,7 +1,7 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { LabBar } from './LabsList'
-import { labRow } from './labsLogic'
+import { labRow, labVerdict } from './labsLogic'
 
 afterEach(cleanup)
 
@@ -60,4 +60,29 @@ describe('LabBar with a converted unit (1.H14)', () => {
     expect(container.querySelector('.lr-tick')).toBeNull()
     expect(container.querySelector('.lr-you')).toBeTruthy() // the bar itself still draws
   })
+})
+
+describe('LabBar over text', () => {
+  it('twice the high end with a 0 low: "+100% over", You sits in the high zone', () => {
+    const row = labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'alt', value: 20, unit: 'U/L', labLow: 0, labHigh: 10 })
+    const { container } = render(<LabBar row={row} />)
+    expect(container.querySelector('[data-testid="lr-over"]')!.textContent).toBe('+100% over')
+    expect(parseFloat((container.querySelector('.lr-you') as HTMLElement).style.left)).toBeGreaterThan(50)
+  })
+  it('R4 451 with 150-450 rounds to 0%: no line, the verdict stays', () => {
+    const row = labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'alt', value: 451, unit: 'U/L', labLow: 150, labHigh: 450 })
+    expect(render(<LabBar row={row} />).container.querySelector('[data-testid="lr-over"]')).toBeNull()
+    expect(labVerdict(row.pos)?.word).toBe('High')
+  })
+  it('in range: no over text', () => {
+    const row = labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'alt', value: 5, unit: 'U/L', labLow: 0, labHigh: 10 })
+    expect(render(<LabBar row={row} />).container.querySelector('[data-testid="lr-over"]')).toBeNull()
+  })
+})
+
+describe('LabBar printed percent is the distance from the edge (not the range width)', () => {
+  const text = (value: number, labLow: number, labHigh: number) => render(<LabBar row={labRow({ personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'alt', value, unit: 'U/L', labLow, labHigh })} />).container.querySelector('[data-testid="lr-over"]')!.textContent
+  it('7 with 12-16: (12-7)/12 = 42% under', () => expect(text(7, 12, 16)).toBe('42% under'))
+  it('8 with 4-5.6: (8-5.6)/5.6 = 43% over', () => expect(text(8, 4, 5.6)).toBe('+43% over'))
+  it('100 with 10-40: 60/40 = 150% over', () => expect(text(100, 10, 40)).toBe('+150% over'))
 })

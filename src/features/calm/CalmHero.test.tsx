@@ -9,7 +9,8 @@ vi.mock('../today/BreathSheet', () => ({ default: ({ onClose }: { onClose: () =>
 beforeEach(async () => { await db.kv.clear() })
 afterEach(cleanup)
 
-import CalmHero from './CalmHero'
+import CalmHero, { restAt } from './CalmHero'
+import { SHOWN_PATTERNS } from '../today/breathLogic'
 
 describe('CalmHero with the real useKv', () => {
   it('after the sheet logs a session and closes, the hero says Done once today and shows the new buzz', async () => {
@@ -37,5 +38,13 @@ describe('CalmHero with the real useKv', () => {
     render(<CalmHero />)
     const orb = screen.getByTestId('calm-hero').querySelector('.bo')!
     expect(orb.closest('[aria-hidden="true"]')).not.toBeNull()
+  })
+  it('the idle orb rests near 185 px of 220 (scale about 0.84 to 0.91), never at the 121 px bottom of the breath, and shows no words before Start', () => {
+    render(<CalmHero />)
+    const hero = screen.getByTestId('calm-hero')
+    const m = /scale\(([\d.]+)\)/.exec((hero.querySelector('.bo-orb') as HTMLElement).style.transform)
+    expect(Number(m![1])).toBeGreaterThan(0.8)
+    expect(Number(m![1])).toBeLessThan(0.95)
+    expect(restAt(SHOWN_PATTERNS[0]!)).toBeCloseTo(3, 5) // Relax: 4 s in, 75%
   })
 })

@@ -14,6 +14,18 @@ vi.mock('./call', () => ({ callFirstContact: (...a: unknown[]) => h.call(...a) }
 beforeEach(async () => { await db.kv.clear(); h.call.mockClear(); takeFresh() })
 afterEach(() => { cleanup(); vi.useRealTimers() })
 
+describe('SosButton label (R1 item 6)', () => {
+  it('names the button that really follows and the keyboard confirm, and Enter still opens the confirm', () => {
+    render(<SosButton onSend={vi.fn()} />)
+    const btn = screen.getByRole('button', { name: /^SOS\./ })
+    expect(btn.getAttribute('aria-label')).not.toMatch(/Or use the button below/)
+    expect(btn.getAttribute('aria-label')).toMatch(/Cannot hold button below/)
+    expect(screen.getByRole('button', { name: 'Cannot hold? Use a button instead' })).toBeTruthy()
+    fireEvent.keyDown(btn, { key: 'Enter' })
+    expect(screen.getByRole('alertdialog', { name: 'Send SOS now?' })).toBeTruthy()
+  })
+})
+
 describe('SosButton', () => {
   it('a finished hold starts the SOS once (the screen takes it) and tells the parent; the label promises the call and the text', () => {
     vi.useFakeTimers()

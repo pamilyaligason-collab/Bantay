@@ -1,8 +1,9 @@
+import { properName } from './medName'
 import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { ldb, type MedTaken } from '../log/store'
-import { PersonChips } from '../records/PersonChips'
+import { WhoLine } from './WhoLine'
 import { SubHeader } from '../shell/SubHeader'
 import { useProfile } from '../setup/useProfile'
 import { renderSummaryImage, shareSummary } from './summaryImage'
@@ -12,12 +13,11 @@ import { buildSummary, SUMMARY_DAYS } from './visitSummaryLogic'
 import './health.css'
 import './m7a.css'
 
-const NO_DRAFTS: Record<string, number> = {}
 const NO_TAKES: MedTaken[] = []
 
 /** #health/summary: one page for the doctor, made on this phone. Shared as a picture through the system share sheet (or saved), no server. */
 export default function VisitSummary() {
-  const { people, ownId, personId, setPersonId, readings } = useHealthPerson()
+  const { people, personId, readings } = useHealthPerson()
   const profile = useProfile(personId)
   const meds = useMedications(personId)
   const [takes, setTakes] = useState(NO_TAKES)
@@ -27,7 +27,7 @@ export default function VisitSummary() {
     const sub = liveQuery(() => ldb.meds.where('personId').equals(personId).filter((m) => m.takenAt >= since).toArray()).subscribe({ next: setTakes, error: () => setTakes(NO_TAKES) })
     return () => sub.unsubscribe()
   }, [personId])
-  const name = people.find((p) => p.id === personId)?.name ?? ''
+  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
   const now = useMemo(() => new Date(), [])
   const s = useMemo(() => buildSummary({
     person: { name: name || 'Patient', birthdate: profile?.birthdate, bloodType: profile?.bloodType, allergies: profile?.allergies, conditions: profile?.conditions },
@@ -58,7 +58,7 @@ export default function VisitSummary() {
   return (
     <>
       <SubHeader title="Summary for the doctor" backHref="#health/visits" backLabel="Back to Doctor visits" />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <WhoLine />
       <article className="card vsum" aria-label="Summary page" data-testid="summary">
         <h2 className="vsum-n">{s.who}</h2>
         <p className="sub">{s.madeOn}</p>

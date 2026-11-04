@@ -47,7 +47,7 @@ export function useHealthData() {
   const known = (id: string) => !!id && (people.some((p) => p.id === id) || data.readings.some((r) => r.personId === id))
   const firstWithData = people.find((p) => data.readings.some((r) => r.personId === p.id))?.id ?? people[0]?.id ?? data.readings[0]?.personId ?? ''
   // chosen person, else the signed-in member's own person, else the first one with readings (Dexie order is arbitrary, hence the sort above)
-  const personId = known(picked) ? picked : known(ownId) ? ownId : firstWithData
+  const personId = !memberReady ? '' : known(picked) ? picked : known(ownId) ? ownId : firstWithData // H6: nobody is chosen before we know who "me" is, so a stranger's data is never drawn first
   const setPersonId = useCallback((id: string) => setChosen(id), [])
   const reload = useCallback(() => setTick((t) => t + 1), [])
   const readings = data.readings.filter((r) => r.personId === personId)

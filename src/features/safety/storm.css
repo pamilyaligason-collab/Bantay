@@ -18,3 +18,12 @@
 .st-sw[aria-checked="true"] span { background: var(--green); box-shadow: none; }
 .st-sw[aria-checked="true"] span::after { transform: translateX(24px); background: var(--on-green); }
 @media (prefers-reduced-motion: reduce) { .st-sw span, .st-sw span::after { transition: none; } }
+/* W7: the layer switch sits on the map's top-right, narrower than the map and clear of its credit line */
+.mapc-ov .segd { width: min(230px, calc(100vw - 72px)); background: color-mix(in srgb, var(--card) 88%, transparent); box-shadow: var(--shadow-float); }
+.mapc-ov .segd > * { min-width: 0; padding: 0 4px; }
+/* VR: heading and PAR map share one card (board). app.css .card padding loads after .mapc and inset the map 16 px, so the layer switch (right: 10 px of the card) stuck out past the map's right edge. */
+.st-hero { display: flex; flex-direction: column; gap: 12px; }
+.st-hero .card.mapc, .wn .card.mapc { padding: 0; }
+.st-hero .card.mapc { box-shadow: none; border-radius: var(--r-group); }
+.st-hero .mapc-credit { padding: 6px 12px; }
+.st-par { margin: 0 0 8px 8px; padding: 4px 10px; border-radius: 12px; background: color-mix(in srgb, var(--card) 90%, transparent); color: var(--ink); font-size: 13px; line-height: 18px; box-shadow: var(--shadow-float); max-width: calc(100% - 64px); }

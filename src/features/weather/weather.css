@@ -1,50 +1,57 @@
-/* Weather screen (#weather). Tokens only, so light and dark both follow the app theme. */
-.wx { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
+/* Weather screen (#weather). The page is the sky in both themes (board Weather): WeatherScreen paints the gradient on the scroll box, this file turns every token inside .wx light-on-dark. */
+.wx {
+  --ink: #fff; --muted: rgba(255,255,255,.92); --sep: rgba(255,255,255,.2); --line: rgba(255,255,255,.22); --fill: rgba(255,255,255,.2); --hair: rgba(255,255,255,.2);
+  --card: rgba(255,255,255,.14); --shadow: none; --focus: #fff; --c1: #A9CBFF; --warn: #FFD58A; --link: #fff;
+  --tint-blue-ink: #7FA6F0; --tint-teal-ink: #5CC4B8; --tint-amber-ink: #E8B04E; --tint-red-ink: #F08A80; --tint-green-ink: #7FD1AE;
+  color: var(--ink); display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px;
+}
 .wx > section, .wx ul { min-width: 0; }
+.wx .card, .wx .grp, .wx .wx-tile, .wx .wx-action { background: var(--card); border: 1px solid rgba(255,255,255,.18); box-shadow: none; -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.wx .grp .row { background: transparent; color: var(--ink); text-decoration: none; }
+.wx .grp .row .sub { font-size: 14px; color: var(--muted); }
+.wx .lt-back, .wx .lt-title, .wx .sec-t, .wx h2, .wx h3 { color: #fff; }
+.wx .lt-title { text-shadow: 0 1px 6px rgba(0,0,0,.3); }
+.wx .btn2, .wx .pill.ghost { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.1); }
 .wx-h { font-size: 20px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -.01em; }
 .wx-sech { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.wx-sech .wx-h { margin-right: 0; }
+.wx-sech .wx-h { margin: 0; }
 .wx-sub { font-size: 14px; color: var(--muted); }
 .wx-note { margin: 0 4px; color: var(--muted); font-size: 16px; }
 
-.wx-src-pill { font-size: 13px; color: var(--muted); }
-
-/* action line */
-.wx-action { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); border-left: 6px solid var(--line); }
-.wx-action.on { background: var(--warn-bg); border-left-color: var(--amber); }
-.wx-action[data-id="heat"], .wx-action[data-id="warning"] { border-left-color: var(--red); }
+/* action line: a glass banner, amber edge when there is something to do */
+.wx-action { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 20px; }
+.wx-action.on { background: rgba(240,176,80,.22); border-color: rgba(255,213,138,.55); }
+.wx-action[data-id="heat"], .wx-action[data-id="warning"] { background: rgba(240,138,128,.24); border-color: rgba(240,138,128,.6); }
 .wx-act-t { font-size: 18px; line-height: 1.3; font-weight: 700; overflow-wrap: anywhere; }
 .wx-act-t.calm { font-weight: 600; font-size: 16px; color: var(--muted); }
 .wx-band { font-size: 15px; font-weight: 600; color: var(--warn); }
 .wx-act-sub { font-size: 15px; color: var(--ink); }
+.wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }
 
-/* heat scale: text, never colour alone */
-.wx-scale { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.wx-scale span { font-size: 13px; line-height: 1.25; text-align: center; padding: 8px 2px; border-radius: 10px; background: var(--fill); color: var(--ink); overflow-wrap: anywhere; }
-.wx-scale span.on { background: var(--card); color: var(--ink); font-weight: 700; box-shadow: inset 0 0 0 2px var(--amber); }
-
-/* hero: numbers only */
-.wx-hero { display: flex; flex-direction: column; gap: 4px; }
-.wx-k { font-size: 14px; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
-.wx-temp { font-size: 72px; line-height: 1; font-weight: 500; letter-spacing: -.02em; }
-.wx-cond { font-size: 20px; }
-.bt .wx .wx-temp { font-size: 72px }
+/* hero: the page's sky shows through; temperature large and centred (board). Full bleed, no card. */
+.wx .wx-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; margin: -4px -16px 0; padding: 4px 16px 8px; border: 0; border-radius: 0; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.wx .wxs { background: none; }
+.wx .wxs-scrim, .wx .wxs-haze { display: none; } /* the page paints the veiled sky; haze here would show as a grey block behind the hero */
+.wx-k { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
+.wx .wx-hero .wx-temp { font-size: 76px; line-height: 1; font-weight: 200; letter-spacing: -.02em; }
+.wx-cond { font-size: 22px; }
+:root[data-narrow] .wx .wx-hero { margin: -4px -12px 0; }
 
 .wx-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.wx-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); min-width: 0; }
+.wx-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 20px; min-width: 0; }
 .wx-tile b { font-size: 26px; font-weight: 700; }
+.wx-tile .eyebrow { color: var(--muted); }
 
-/* next 24 hours: sideways strip with a fade on the right edge so it is clear there is more */
+/* next 48 hours: sideways strip, faded at the right edge (mask, so it works over glass) */
 .wx-stripbox { padding: 12px 0 12px 12px; position: relative; overflow: hidden; }
-.wx-stripbox::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 36px; pointer-events: none; background: linear-gradient(to right, transparent, var(--card)); }
-.wx-strip { list-style: none; margin: 0; padding: 0 40px 6px 0; display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.wx-strip { list-style: none; margin: 0; padding: 0 40px 6px 0; display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); }
 .wx-strip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .wx-strip li { flex: 0 0 62px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px; color: var(--muted); }
 .wx-strip li b { color: var(--ink); font-size: 17px; }
-.wx-rp { font-size: 14px; font-weight: 600; color: var(--c1); }
+.wx-rp { font-size: 14px; font-weight: 600; color: var(--ink); } /* white: the light blue was 3.1:1 on the day sky */
 
-/* 7 days */
-.wx-days { list-style: none; margin: 0; padding: 4px 16px; }
+/* 10 days */
+.card.wx-days { list-style: none; margin: 0; padding: 4px 16px; }
 .wx-days li { display: grid; grid-template-columns: 48px 22px 34px minmax(0, 1fr) 34px 40px; align-items: center; gap: 8px; min-height: 48px; font-size: 16px; }
 .wx-days li + li { border-top: .5px solid var(--sep); }
 .wx-lo { color: var(--muted); text-align: right; }
@@ -53,16 +60,23 @@
 .wx-range { position: relative; height: 6px; border-radius: 3px; background: var(--fill); }
 .wx-range i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--amber); }
 
-.wx .grp .row { text-decoration: none; }
-.wx .grp .row .sub { font-size: 14px; }
 .wx-out { color: var(--muted); flex: none; display: inline-flex; }
 .wx-map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.wx-map-empty { padding: 12px; display: grid; gap: 10px; }
+.card.wx-map-empty { padding: 12px; display: grid; gap: 10px; }
 .wx-map-empty .btn { padding: 0 10px; }
 .wx-made { display: grid; gap: 6px; }
 .wx-made h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .wx-made p { margin: 0; }
-.wx-action > .sh-icbox { align-self: flex-start; margin-bottom: 4px; }
-/* Place picker: columns fit their label so "Use my location" stays on one line at 360 (review W must-fix) */
+/* Place picker: columns fit their label so "Use my location" stays on one line at 360 */
 .wx .segd { grid-auto-columns: auto; }
 .wx .segd > * { white-space: nowrap; padding: 0 10px; }
+
+/* the tab bar's bottom fade takes the sky's end colour, not the cream/dark ground */
+.bt[data-wx]::after { background: linear-gradient(to bottom, transparent, var(--wx-end) 55%); }
+.bt[data-wx] .tabbar.sh-tabs { background: var(--card); }
+
+/* the page is always a dark sky, so the condition glyphs are light in both themes (the light-theme blue ink vanished on it) */
+.wx .sh-ic.sh-t-weather { color: #a9ccff; }
+
+/* the status line wraps before it reaches the sun disc at the top right (360 wide) */
+.wx-stamp { max-width: 11em; text-wrap: balance; }

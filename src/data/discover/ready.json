@@ -1,0 +1,219 @@
+{
+  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list.",
+  "topics": [
+    {
+      "id": "prepping",
+      "title": "Be prepared",
+      "video": "Be prepared"
+    },
+    {
+      "id": "repairs",
+      "title": "Repairs and improvements",
+      "video": "Repairs and improvements"
+    }
+  ],
+  "videos": [
+    {
+      "id": "oTyYzHntBxQ",
+      "placeholder": false,
+      "title": "Disaster Wais: the go bag",
+      "topic": "Be prepared",
+      "source": "Philippine Red Cross",
+      "minutes": null
+    },
+    {
+      "id": "NYRmHwmbhIk",
+      "placeholder": false,
+      "title": "Disaster Wais: acting early before a storm",
+      "topic": "Be prepared",
+      "source": "Philippine Red Cross",
+      "minutes": null
+    },
+    {
+      "id": "KKN7Ewht1DQ",
+      "placeholder": false,
+      "title": "How to build an emergency kit",
+      "topic": "Be prepared",
+      "source": "American Red Cross",
+      "minutes": null
+    },
+    {
+      "id": "o4enqHGluLI",
+      "placeholder": false,
+      "title": "How to prepare an emergency kit",
+      "topic": "Be prepared",
+      "source": "FEMA",
+      "minutes": null
+    },
+    {
+      "id": "UnwH9vxkcV0",
+      "placeholder": false,
+      "title": "In case of crisis or war: the household brochure",
+      "topic": "Be prepared",
+      "source": "Swedish Civil Defence and Resilience Agency",
+      "minutes": null
+    },
+    {
+      "id": "zplJvqDQrVw",
+      "placeholder": false,
+      "title": "When is the time to evacuate?",
+      "topic": "Be prepared",
+      "source": "PHIVOLCS",
+      "minutes": null
+    },
+    {
+      "id": "EKAhY84FPbs",
+      "placeholder": false,
+      "title": "Earthquake drill: the steps, as taught in schools (in Filipino)",
+      "topic": "Be prepared",
+      "source": "PHIVOLCS",
+      "minutes": null
+    },
+    {
+      "id": "ke2drZ-2YfU",
+      "placeholder": false,
+      "title": "Typhoon warning signals explained",
+      "topic": "Be prepared",
+      "source": "PAGASA",
+      "minutes": null
+    },
+    {
+      "id": "zMH61Yabdj0",
+      "placeholder": false,
+      "title": "How to repair a leaking faucet",
+      "topic": "Repairs and improvements",
+      "source": "This Old House",
+      "minutes": null
+    },
+    {
+      "id": "PLGmTzEGSIY",
+      "placeholder": false,
+      "title": "How to patch a drywall hole",
+      "topic": "Repairs and improvements",
+      "source": "Ask This Old House",
+      "minutes": null
+    },
+    {
+      "id": "7ePc9cz__FM",
+      "placeholder": false,
+      "title": "How to repair toilet tank parts",
+      "topic": "Repairs and improvements",
+      "source": "Ask This Old House",
+      "minutes": null
+    },
+    {
+      "id": "D32Hay6IQQQ",
+      "placeholder": false,
+      "title": "How to unclog a kitchen sink",
+      "topic": "Repairs and improvements",
+      "source": "The Home Depot",
+      "minutes": null
+    },
+    {
+      "id": "l2_kmWm3P1I",
+      "placeholder": false,
+      "title": "How to paint a room",
+      "topic": "Repairs and improvements",
+      "source": "Ask This Old House",
+      "minutes": null
+    },
+    {
+      "id": "rgQyZX1sg38",
+      "placeholder": false,
+      "title": "How to install floating shelves",
+      "topic": "Repairs and improvements",
+      "source": "This Old House",
+      "minutes": null
+    }
+  ],
+  "reads": [
+    {
+      "id": "ready-plan",
+      "topic": "prepping",
+      "title": "Make a plan",
+      "source": "Ready.gov (US FEMA)",
+      "url": "https://www.ready.gov/plan",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "ready-kit",
+      "topic": "prepping",
+      "title": "Build a kit",
+      "source": "Ready.gov (US FEMA)",
+      "url": "https://www.ready.gov/kit",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "arc-kit",
+      "topic": "prepping",
+      "title": "What to keep in an emergency kit",
+      "source": "American Red Cross",
+      "url": "https://www.redcross.org/get-help/how-to-prepare-for-emergencies/survival-kit-supplies.html",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "prc-gobag",
+      "topic": "prepping",
+      "title": "Philippine Red Cross: get your go bag ready for the rainy season",
+      "source": "Philippine Red Cross, news release 10 June 2025",
+      "url": "https://redcross.org.ph/2025/06/10/ready-for-action-ph-red-cross-activates-volunteers-assets-for-rainy-season/",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "msb-brochure",
+      "topic": "prepping",
+      "title": "In case of crisis or war: about the brochure",
+      "source": "Swedish Civil Defence and Resilience Agency",
+      "url": "https://www.mcf.se/en/advice-for-individuals/the-brochure-in-case-of-crisis-or-war/",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "uk-beready",
+      "topic": "prepping",
+      "title": "Be ready for an emergency",
+      "source": "UK Government, GOV.UK/BeReady",
+      "url": "https://beready.campaign.gov.uk/",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "toh-faucet",
+      "topic": "repairs",
+      "title": "How to repair a leaking faucet",
+      "source": "This Old House",
+      "url": "https://www.thisoldhouse.com/plumbing/how-to-repair-a-leaking-faucet",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "toh-drywall",
+      "topic": "repairs",
+      "title": "How to patch holes in drywall",
+      "source": "This Old House",
+      "url": "https://www.thisoldhouse.com/walls/how-to-patch-holes-in-drywall",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "fh-drywall",
+      "topic": "repairs",
+      "title": "Wall repair 101: fix a hole in drywall",
+      "source": "Family Handyman",
+      "url": "https://www.familyhandyman.com/project/how-to-fix-a-hole-in-drywall/",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "toh-paint",
+      "topic": "repairs",
+      "title": "How to paint a room like a pro",
+      "source": "This Old House",
+      "url": "https://www.thisoldhouse.com/painting/how-to-paint-a-room",
+      "checked": "2026-11-04"
+    },
+    {
+      "id": "toh-shelves",
+      "topic": "repairs",
+      "title": "How to install floating shelves and a mantel",
+      "source": "This Old House",
+      "url": "https://www.thisoldhouse.com/walls/how-to-install-floating-shelves-and-mantel",
+      "checked": "2026-11-04"
+    }
+  ]
+}

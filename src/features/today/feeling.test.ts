@@ -11,8 +11,8 @@ import { FEELINGS, feelingToast, logFeeling, retryToast, retryUnsentMood } from 
 beforeEach(() => { h.self = 'p1'; h.rpc.mockReset(); h.rpc.mockResolvedValue({ data: 1, error: null }); h.moods = []; h.checkins = 0 })
 
 describe('logFeeling (How are you?)', () => {
-  it('has the four faces in the mockup order', () => expect(FEELINGS.map(([, l]) => l)).toEqual(['Great', 'OK', 'Not great', 'Unwell']))
-  it('Great, OK and Not great log the mood and the check-in and raise no alert', async () => {
+  it('has the four faces in the mockup order', () => expect(FEELINGS.map(([, l]) => l)).toEqual(['Good', 'Okay', 'Low', 'Unwell']))
+  it('Good, Okay and Low log the mood and the check-in and raise no alert', async () => {
     for (const f of ['great', 'ok', 'notgreat'] as const) expect(await logFeeling(f)).toBe('told')
     expect(h.moods).toEqual(['mood-good', 'mood-ok', 'mood-low'])
     expect(h.checkins).toBe(3)

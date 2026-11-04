@@ -35,7 +35,7 @@ export const checkIn = (personId?: string) => asPerson(async (personId) => {
  *  'told' = saved (and, for Unwell, the alert call went through); 'untold' = Unwell saved here but the network was down; it is queued and retried, so the family has not seen it yet;
  *  'nobody' = Unwell saved here and the server answered, but it reached no carer (a person with a login has no writer carer by design, D-22): the family was NOT told;
  *  'refused' = Unwell saved here but the server said no (signed out, not allowed); it is NOT queued, the person must call. */
-export const FEELINGS = [['great', 'Great'], ['ok', 'OK'], ['notgreat', 'Not great'], ['unwell', 'Unwell']] as const
+export const FEELINGS = [['great', 'Good'], ['ok', 'Okay'], ['notgreat', 'Low'], ['unwell', 'Unwell']] as const
 export type Feeling = (typeof FEELINGS)[number][0]
 const MOOD: Record<Feeling, 'good' | 'ok' | 'low'> = { great: 'good', ok: 'ok', notgreat: 'low', unwell: 'low' }
 export async function logFeeling(f: Feeling, forPerson?: string): Promise<'told' | 'nobody' | 'untold' | 'refused' | Exclude<LogResult, 'ok'>> {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { groupPlan, pickDay, repeatDays, dayLabel, dayRows, dayStrip, progressOf, emptyHint, midSentence, addDay } from './planList'
+import { shortMedName } from '../health/medName'
+import { groupPlan, pickDay, repeatDays, dayLabel, dayRows, dayStrip, progressOf, emptyHint, midSentence, addDay, planTitle } from './planList'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 
 // Wed 21 Oct 2026, 10:00 on the phone's clock (Manila for this family). Its week ends Sun 25 Oct.
@@ -101,8 +102,8 @@ describe('day strip', () => {
 
 describe('emptyHint', () => {
   it('names a real family member, not me, never a hard-coded name', () => {
-    expect(emptyHint([{ name: 'Lloyd Roc', isMe: true }, { name: 'Kuya Ben', isMe: false }])).toBe("Add a reminder for Kuya's check-up.")
-    expect(emptyHint([{ name: 'Lloyd Roc', isMe: true }])).toBe("Add a reminder for Lloyd's check-up.")
+    expect(emptyHint([{ name: 'Rey Villar', isMe: true }, { name: 'Kuya Ben', isMe: false }])).toBe("Add a reminder for Kuya's check-up.")
+    expect(emptyHint([{ name: 'Rey Villar', isMe: true }])).toBe("Add a reminder for Rey's check-up.")
     expect(emptyHint([])).toBe('Add a reminder for a check-up.')
     expect(emptyHint([{ name: 'Family member', isMe: true }])).toBe('Add a reminder for a check-up.') // unnamed fallback from roster.ts
   })
@@ -113,4 +114,9 @@ describe('emptyHint', () => {
     expect(addDay('2026-10-19', '2026-10-21')).toBe('2026-10-21')
     expect(addDay('2026-10-23', '2026-10-21')).toBe('2026-10-23')
   })
+})
+
+describe('planTitle', () => {
+  it('turns a shouted import label into a proper-case name', () => expect(planTitle('AMLODIPINE BESYLATE 5MG TAB')).toBe(shortMedName('AMLODIPINE BESYLATE 5MG TAB')))
+  it('leaves typed titles alone', () => { expect(planTitle('Call the doctor')).toBe('Call the doctor'); expect(planTitle('PAY BILLS')).toBe('PAY BILLS') })
 })

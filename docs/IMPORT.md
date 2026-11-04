@@ -17,7 +17,7 @@ Requests always carry `provider: {zdr: true, data_collection: 'deny'}`.
 ## Steps
 
 1. `node scripts/import/sync.mjs` walks Drive, writes `import/manifest.json`, downloads to `import/files/<drive_file_id>`. Re-running only downloads new or changed files. Identical files get `duplicate_of` (oldest kept). IDs, passports, visas, land/home lot, funds, birth/baptismal, authorization, HMO and insurance folders are never listed or downloaded, only counted. 0-byte, `.ini`, `.picasaoriginals` and non-Doc Google types are skipped. Google Docs are exported as PDF.
-2. `node scripts/import/extract.mjs --i-am-lloyd [--limit N] [--delay MS]` writes `import/drafts/<drive_file_id>.json` for each file without a draft. PDFs with a real text layer send the text only (pdf.js, local); scans and images go as vision. 429/5xx are retried with backoff; a failing file is counted and the batch goes on. Re-run to retry failures.
+2. `node scripts/import/extract.mjs --i-am-owner [--limit N] [--delay MS]` writes `import/drafts/<drive_file_id>.json` for each file without a draft. PDFs with a real text layer send the text only (pdf.js, local); scans and images go as vision. 429/5xx are retried with backoff; a failing file is counted and the batch goes on. Re-run to retry failures.
 3. Create `import/people-map.json` mapping person folder or printed name (lower-case) to `people.id`:
    `{"<person folder>": "<uuid>", "<name as printed>": "<uuid>"}`.
    Unknown names, or a folder and printed name that disagree, give `person_id` null: the file sits in the unassigned admin queue and gets no health rows. Re-run step 4 after adding map entries.

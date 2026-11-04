@@ -35,7 +35,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   return { tab: (TABS as string[]).includes(k) ? (k as Tab) : 'today', view: null }
 }
 
-/** Routes whose screen draws its own Back + title header, so the avatar/bell top bar stays off. Tab roots and #family/plan|people|messages keep it. */
+/** Routes whose screen draws its own Back + title header, so the Jack button stays off. The avatar and bell now sit in each tab root's title row (HeadActions). */
 export const hasOwnHeader = (h: string) => {
   const k = canonicalHash(h).replace(/^#/, '')
   if (k === 'safety/world') return false // World is the other half of the Safety root switch

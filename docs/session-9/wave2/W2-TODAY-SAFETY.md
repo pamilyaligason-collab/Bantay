@@ -10,7 +10,7 @@ Builder exit claim: Late-dose state, Simple-mode SOS and tab bar, one-time coach
 4. [minor] The 8 s timer also runs in Simple mode, where the hint is hidden by CSS but `hint` is still true. That marks the coach mark as seen although the user never saw it.
 5. [minor] Dead CSS left behind. `.sf-act-sec` (safety.css:122) is no longer used now that FirstAid uses Group. `.bt .td-bigbtn.sos` (today.css:87) is no longer used now that the Simple SOS link is removed.
 6. [minor] The late-dose colours are hard-coded (#000 mix and #F5C468 in today.css:230-231), not tokens. I computed AA and it passes: late bg vs on-green text is 13.16 light / 8.23 dark, the p at .9 opacity is 10.91 / 7.03, the kicker is 9.15 / 5.72. The group tints also pass: h2 is 10.04 to 14.56, sub text at .85 opacity is 7.77 to 9.56, in both themes.
-7. [minor] Style: FirstAid.tsx puts `import { Group } from './Group'` above the react import, which does not match the file's import order. The 'Be ready' group and moving 'Past SOS' under Hotlines go beyond the four groups Lloyd named (the builder disclosed this).
+7. [minor] Style: FirstAid.tsx puts `import { Group } from './Group'` above the react import, which does not match the file's import order. The 'Be ready' group and moving 'Past SOS' under Hotlines go beyond the four groups the owner named (the builder disclosed this).
 
 ## Builder needs
 - Orchestrator merge into the wave branch. This worktree was fast-forwarded to claude/cache-ttl-cost-39e7cd (fc9450c) first, because it was cut from older main without wave 1.
@@ -21,4 +21,4 @@ Builder exit claim: Late-dose state, Simple-mode SOS and tab bar, one-time coach
 - Late-dose card shows the whole 2h on-time window; no e2e for it, only vitest.
 - Other lane D top-15 items (Quick log icons, water glyph, BP placeholder, Quick log order) were not touched. QuickLog and WeatherCard are outside this lane's file list, and the weather heat number was done in wave 1.
 - Safety tint contrast was checked by eye in screenshots plus the existing axe checks in the specs, not by a computed AA ratio.
-- Safety Past SOS moved under Hotlines and Go-bag plus Safety cards under a new Be ready section, which is my call beyond the four groups Lloyd named.
+- Safety Past SOS moved under Hotlines and Go-bag plus Safety cards under a new Be ready section, which is my call beyond the four groups the owner named.

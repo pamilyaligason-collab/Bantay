@@ -36,7 +36,7 @@ export async function full(page: Page, at: string = FIXED_CLOCKS[0]) {
   const ago = (d: number) => new Date(Date.parse(new Date().toISOString()) - d * 86_400_000).toISOString()
   const r = (test: string, value: number, unit: string, d: number, extra: Record<string, unknown> = {}) => ({ personId: 'me', takenAt: ago(d), test, value, unit, ...extra })
   await seed(page, 'bantay-health', {
-    people: [{ id: 'me', name: 'Lloyd Sample' }, { id: 'ma', name: 'Ma Sample' }],
+    people: [{ id: 'me', name: 'Rey Sample' }, { id: 'ma', name: 'Ma Sample' }],
     readings: [
       r('bp_systolic', 138, 'mmHg', 0.1), r('bp_diastolic', 88, 'mmHg', 0.1), r('bp_systolic', 126, 'mmHg', 1), r('bp_diastolic', 82, 'mmHg', 1), r('bp_systolic', 128, 'mmHg', 3), r('bp_diastolic', 80, 'mmHg', 3),
       r('fasting_glucose', 118, 'mg/dL', 2), r('weight', 61, 'kg', 3), r('heart_rate', 74, 'bpm', 0.1),

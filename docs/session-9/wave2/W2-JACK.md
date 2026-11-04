@@ -13,7 +13,7 @@ Builder exit claim: The ask edge function (gate, cap, context, OpenRouter with f
 
 ## Builder needs
 - Worktree started at main a2f4e52; I fast-forwarded it to claude/cache-ttl-cost-39e7cd so migration 0025 and the research docs are present. The orchestrator should merge from that base.
-- Lloyd secrets for deploy: OPENROUTER_CHAT_KEY (separate key with spend limit), ALLOWED_ORIGIN; optional OPENROUTER_CHAT_MODEL / OPENROUTER_CHAT_FALLBACK. Deploy with --no-verify-jwt. Needs migration 0025 applied (without it the knowledge read returns empty and answers still work).
+- The owner secrets for deploy: OPENROUTER_CHAT_KEY (separate key with spend limit), ALLOWED_ORIGIN; optional OPENROUTER_CHAT_MODEL / OPENROUTER_CHAT_FALLBACK. Deploy with --no-verify-jwt. Needs migration 0025 applied (without it the knowledge read returns empty and answers still work).
 - Build env to flip: VITE_ASSISTANT_PROVIDER=edge (default n8n).
 - Clinician and native Tagalog/Bisaya review of the gate phrases, thresholds, cards and post-check word list (added to docs/session-8/CLINICAL-REVIEW.md).
 - Live check that OpenRouter accepts reasoning {effort:'none'} on both default models; fall back to {enabled:false} if not.

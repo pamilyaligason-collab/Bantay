@@ -14,7 +14,7 @@ Builder exit claim: W2-FAMILY built and committed: Today Self-care breathing car
 8. [minor] Housekeeping: WSL Postgres crash-looped again during this audit ('the database system is starting up'); my throwaway DB bantay_audit_fam and the builder's bantay_msg are left in WSL. No live project touched.
 
 ## Builder needs
-- Orchestrator applies 0027 after Lloyd says apply (then bucket family-messages exists); until then the sheet shows 'Messages are not set up yet'.
+- Orchestrator applies 0027 after the owner says apply (then bucket family-messages exists); until then the sheet shows 'Messages are not set up yet'.
 - Clinician review of docs/session-8/CLINICAL-REVIEW.md section 'Session 9 W2-FAMILY' (4-7-8 hold for hypertensive seniors; all three source URLs were cited from memory, unfetched).
 - Rebase note: my worktree was cut from main, so I fast-forwarded it to claude/cache-ttl-cost-39e7cd (wave 1) before starting; merge is clean on that base.
 - The earlier family-plan/family-report/today-auth runs passed with the updated specs in the first Playwright run (25 passed); only the new spec failed then and passed on rerun. The full e2e suite was not run.

@@ -12,7 +12,7 @@ const sentences = (t: string) => t.split(/(?<=[.!?])\s+/).filter(Boolean).length
 
 describe('anatomy content', () => {
   it('has the nine systems, each with at least two parts', () => {
-    expect(content.systems.map((s) => s.label)).toEqual(['Skeleton', 'Muscles', 'Heart and blood', 'Lungs', 'Brain and nerves', 'Digestion', 'Kidneys and bladder', 'Skin', 'Hormones'])
+    expect(content.systems.map((s) => s.label)).toEqual(['Skeleton', 'Muscles', 'Heart and blood', 'Lungs', 'Brain and nerves', 'Digestion and liver', 'Kidneys and bladder', 'Skin', 'Hormones and sugar'])
     for (const s of content.systems) {
       expect(content.parts.filter((p) => p.system === s.id).length, s.id).toBeGreaterThanOrEqual(2)
       expect(s.url.startsWith('https://medlineplus.gov/'), s.id).toBe(true)

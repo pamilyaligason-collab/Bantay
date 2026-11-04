@@ -5,7 +5,8 @@ import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import AlertBand from './AlertBand'
 
-vi.mock('../location/useLocation', () => ({ usePlace: () => ({ weather: { lat: 6.2015121, lon: 125.1878084 }, zone: 'conel', source: 'zone' }) }))
+const loc = vi.hoisted(() => ({ place: null as unknown }))
+vi.mock('../location/useLocation', () => ({ usePlace: () => loc.place ?? ({ weather: { lat: 6.2015121, lon: 125.1878084 }, zone: 'conel', source: 'zone' }) }))
 
 const NOW = Date.parse('2026-10-27T06:00:00Z')
 const minAgo = (m: number) => new Date(NOW - m * 60_000).toISOString()
@@ -16,7 +17,7 @@ const quake = (over: Partial<Alert> = {}): Alert => ({
 })
 
 beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); await db.kv.clear() })
-afterEach(() => { cleanup(); vi.useRealTimers() })
+afterEach(() => { cleanup(); vi.useRealTimers(); loc.place = null })
 
 const show = async (rows: Alert[]) => { await db.kv.put({ key: ALERTS_KEY, value: rows }); render(<AlertBand />) }
 
@@ -47,9 +48,19 @@ describe('AlertBand: does it affect us, and how fresh', () => {
     expect(await screen.findByText('About 140 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeTruthy()
     expect(screen.getByText(/\(140 km away\)/)).toBeTruthy()
   })
-  it('Today keeps one band: a typhoon 900 km away outranks a quake because PAGASA-tier rows come first', async () => {
+  it.each([
+    ['location off', null],
+    ['even with a live position in a named area', { weather: { lat: 6.2015121, lon: 125.1878084 }, zone: 'conel', source: 'gps', fixAt: NOW - 60_000 }]
+  ])('%s: an old far M3.6 quake is the soft line with the steps, because a Warning band never says no action needed', async (_n, place) => {
+    loc.place = place
+    await show([quake({ level: 'Magnitude 3.6', title: 'Magnitude 3.6 earthquake', lat: 6.2015121 + 1.2591, issuedAt: minAgo(300) })])
+    expect(await screen.findByText('Probably too far to feel strongly. If you felt shaking, follow the steps below.')).toBeTruthy()
+    expect(screen.getByText('Drop, cover and hold on.')).toBeTruthy()
+    expect(screen.queryByText(/no action needed/i)).toBeNull()
+  })
+  it('Today keeps one band: a typhoon 900 km away waits out a live quake (D-114), then PAGASA-tier rows come first', async () => {
     const typhoon = quake({ id: 't900', kind: 'tcws', level: 'Signal No. 1', title: 'Wind Signal No. 1: Typhoon', lat: 6.2015121 - 8.1, doNow: 'Follow your local DRRMO.' })
-    await show([quake({ lat: 6.2015121 + 0.27 }), typhoon])
+    await show([quake({ lat: 6.2015121 + 0.27, issuedAt: new Date(Date.now() - 2 * 3_600_000).toISOString() }), typhoon])
     expect(await screen.findByText('Wind Signal No. 1: Typhoon')).toBeTruthy()
     expect(screen.getByText('About 901 km away. Follow the steps below.')).toBeTruthy()
     expect(screen.queryByText('Magnitude 4.6 earthquake')).toBeNull()

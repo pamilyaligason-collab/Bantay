@@ -1,5 +1,5 @@
-# Session 12 (D-86): put the Firebase files where the build and the push sender read them. Lloyd runs it once.
-# Before running, download both files in your own browser (signed in as rocloyd87@gmail.com):
+# Session 12 (D-86): put the Firebase files where the build and the push sender read them. The owner runs it once.
+# Before running, download both files in your own browser (signed in as the owner's Google account):
 #   1. https://console.firebase.google.com/project/family-bantay-1dd0a/settings/general  > Your apps > Bantay APK > google-services.json
 #   2. https://console.firebase.google.com/project/family-bantay-1dd0a/settings/serviceaccounts/adminsdk  > Generate new private key
 # Both land in Downloads. The key never enters the repo, chat or vault; this script moves it to D:\Claude\Bantay-keys.
@@ -7,7 +7,7 @@
 $ErrorActionPreference = 'Stop'
 $repo = 'pamilyaligason-collab/Bantay'
 $ref = 'wuakimpssycbtnmoexuc'
-$dl = @('D:\Downloads', (Join-Path $env:USERPROFILE 'Downloads')) | Where-Object { Test-Path $_ } # Lloyd's browser saves to D:\Downloads
+$dl = @('D:\Downloads', (Join-Path $env:USERPROFILE 'Downloads')) | Where-Object { Test-Path $_ } # the owner's browser saves to D:\Downloads
 $keys = 'D:\Claude\Bantay-keys'
 
 Write-Host '[1/5] find the two files in Downloads'

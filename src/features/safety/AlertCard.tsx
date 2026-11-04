@@ -27,6 +27,13 @@ export function useNow(everyMs = 60_000): number {
 
 const NONE: Alert[] = []
 
+/** A "now" written into the row stays true only while the event is new: later, say its real time. */
+export function whenText(a: Pick<Alert, 'when' | 'issuedAt'>, now: number): string {
+  const t = Date.parse(a.issuedAt)
+  if (!/^(just )?now$/i.test(a.when.trim()) || Number.isNaN(t) || now - t < 600_000) return a.when
+  return `${new Date(t).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' })} PH time`
+}
+
 /** "Checked n min ago" plus, when the last check is over an hour old (or never), the amber line. Works from the saved list, so it shows even when no row is marked stale. */
 export function FreshLine({ checkedAt, className }: { checkedAt?: string | null; className?: string }) {
   const saved = useKv<Alert[]>(ALERTS_KEY, NONE)
@@ -41,11 +48,12 @@ export function FreshLine({ checkedAt, className }: { checkedAt?: string | null;
   )
 }
 
-export default function AlertCard({ alert: a }: { alert: Alert }) {
+/** quietOk: false when the list this card sits in holds anything worse than a quiet quake (allQuiet), so the card keeps the soft line and its steps. */
+export default function AlertCard({ alert: a, quietOk = true }: { alert: Alert; quietOk?: boolean }) {
   const place = usePlace()
   const now = useNow()
   const fresh = freshness(a.checkedAt, now)
-  const who = affectsUs(a, place ? alertRef(place) : null)
+  const who = affectsUs(a, place ? alertRef(place) : null, now, quietOk ? place : undefined)
   const diff = diffBulletin(a.previousBulletin, a.bulletin)
   const card = CARDS.find((c) => c.id === hazardOf(a.kind))
   const centre = a.lat != null && a.lon != null ? { lat: a.lat, lon: a.lon } : HOME
@@ -61,9 +69,9 @@ export default function AlertCard({ alert: a }: { alert: Alert }) {
       <div className="grp">
         <div className="row sf-lbl"><span className="sub">What</span><span>{plainWhat(a) || a.title}</span></div>
         <div className="row sf-lbl"><span className="sub">Where</span><span>{a.where}</span></div>
-        <div className="row sf-lbl"><span className="sub">When</span><span>{a.when}</span></div>
+        <div className="row sf-lbl"><span className="sub">When</span><span>{whenText(a, now)}</span></div>
       </div>
-      <div className="sf-now"><b>Do this now</b><span>{a.doNow}</span></div>
+      {(who.steps || a.kind !== 'quake') && <div className="sf-now"><b>Do this now</b><span>{a.doNow}</span></div>}
       {(a.kind === 'quake' || a.kind === 'tsunami') && <p className="sf-note">{NOT_A_SIREN}</p>}
       <details>
         <summary>More detail</summary>

@@ -31,7 +31,7 @@ Gates run here:
   - In both cases the 300 px query is false, the multi-column grids stay, and 2x text can still break mid-word.
   - The 195 px e2e proves the CSS path, not that the phone takes it.
 - **Fix:**
-  1. On Lloyd's phone at 200% system text, run `innerWidth` and `matchMedia('(max-width: 300px)').matches` in the WebView inspector, and take a shot of #today and #weather.
+  1. On the owner's phone at 200% system text, run `innerWidth` and `matchMedia('(max-width: 300px)').matches` in the WebView inspector, and take a shot of #today and #weather.
   2. If the query is false, change the narrow rules to a container query on `main.scroll` (`container-type: inline-size`) with an em threshold, for example `@container (max-width: 19em)`. Container em scales with the font, so it tracks both textZoom and the app's zoom. Keep the e2e as is.
 
 ### m-1 minor: "Use my location" can silently do nothing

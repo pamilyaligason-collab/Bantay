@@ -26,9 +26,9 @@ describe('add reading preview', () => {
     expect(previewReading(bp, { top: '500', bottom: '80' }).state).toBe('invalid')
     expect(previewReading(sugar, { value: 'abc' }).state).toBe('invalid')
   })
-  it('sugar: colour and text come from the one guide (70 to 99), 100 is a bit high, 65 is low', () => {
+  it('sugar: colour and text come from the one guide (70 to 99), 100 is high, 65 is low', () => {
     expect(previewReading(sugar, { value: '99' }).state).toBe('within')
-    expect(previewReading(sugar, { value: '100' })).toMatchObject({ state: 'above', word: 'A bit high' })
+    expect(previewReading(sugar, { value: '100' })).toMatchObject({ state: 'above', word: 'High' })
     expect(previewReading(sugar, { value: '65' })).toMatchObject({ state: 'below', word: 'Low' })
     expect(previewReading(sugar, { value: '92' }).line).toContain('70 to 99 mg/dL (3.9 to 5.5 mmol/L)')
   })

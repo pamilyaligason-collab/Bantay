@@ -106,7 +106,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByTestId('lab-before')).toHaveCount(0)
     await expect(page.getByTestId('lr-prev')).toHaveCount(0)
     // filter chips
-    await page.getByRole('button', { name: /^To ask about/ }).click()
+    await page.getByRole('button', { name: /^To ask/ }).click()
     await expect(list.locator('a.lr-card')).toHaveCount(2)
     expect(await noSideways(page)).toBe(true)
   })

@@ -4,10 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NewsItem } from '../safety/news'
 import { loadFeed } from './news/Screen'
 import { db } from '../../db'
-import { MEDCARDS, RECIPES } from './learn/data'
+import { RECIPES } from './learn/data'
 import { phFactOf } from './facts/onThisDay'
 import { dayKey } from './play/score'
-import { playable, VIDEOS } from '../health/library/videosLogic'
+import { playable } from '../health/library/videosLogic'
+import { DISCOVER_VIDEOS } from './learn/ready'
 import { featured } from './today/featured'
 import Overview from './Overview'
 
@@ -18,7 +19,7 @@ beforeEach(async () => { feed([]); location.hash = '#discover'; sessionStorage.c
 afterEach(cleanup)
 
 const now = new Date(2026, 9, 28, 10, 20)
-const vids = VIDEOS.filter(playable)
+const vids = DISCOVER_VIDEOS.filter(playable)
 const { hero, more } = featured(now, vids)
 
 describe('Overview head, hero, video cards, season', () => {
@@ -34,17 +35,18 @@ describe('Overview head, hero, video cards, season', () => {
     const h = within(screen.getByTestId('dc-hero'))
     expect(screen.getByTestId('dc-hero').hasAttribute('data-hero')).toBe(true)
     expect(h.getByText(`Watch · ${vids.length} checked videos`)).toBeTruthy()
-    expect(h.getByText('Watch · 12 checked videos')).toBeTruthy()
+    expect(h.getByText('Watch · 26 checked videos')).toBeTruthy()
     expect(h.getByText(hero!.title)).toBeTruthy()
     expect(h.getByText('Plays in privacy mode after you tap')).toBeTruthy()
     const a = screen.getByTestId('dc-hero').querySelector('a')!
     expect(a.getAttribute('href')).toBe('#discover/watch')
-    expect(a.querySelector('.pt-a')!.textContent).toBe('Watch')
+    expect(a.querySelector('.dc-hero-play')).toBeTruthy()
+    expect(a.querySelector('.dc-poster-box')).toBeTruthy()
   })
   it('two more video cards, thumbs are still pictures with no referrer', () => {
     const { container } = render(<Overview now={now} />)
-    const cards = screen.getByTestId('dc-videos').querySelectorAll('a.pt')
-    expect(Array.from(cards).map((c) => c.querySelector('.pt-v')!.textContent)).toEqual(more.map((m) => m.title))
+    const cards = screen.getByTestId('dc-videos').querySelectorAll('a.dc-vc')
+    expect(Array.from(cards).map((c) => c.querySelector('.dc-vc-t')!.textContent)).toEqual(more.map((m) => m.title))
     expect(Array.from(cards).map((c) => c.getAttribute('href'))).toEqual(['#discover/watch', '#discover/watch'])
     const imgs = Array.from(container.querySelectorAll('.dc-thumb img'))
     expect(imgs.length).toBe(3)
@@ -67,7 +69,7 @@ describe('Overview head, hero, video cards, season', () => {
     const { container } = render(<Overview now={now} />)
     fireEvent.click(screen.getByTestId('dc-hero').querySelector('a')!)
     expect(sessionStorage.getItem('dc.watch')).toBe(hero!.id)
-    fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.pt')[1]!)
+    fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.dc-vc')[1]!)
     expect(sessionStorage.getItem('dc.watch')).toBe(more[1]!.id)
     expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(3)
   })
@@ -78,39 +80,68 @@ describe('Overview head, hero, video cards, season', () => {
   })
 })
 
-const rows = (id: string) => Array.from(screen.getByTestId(id).querySelectorAll('.rw')).map((r) => ({ t: r.querySelector('.rw-title')!.textContent, s: r.querySelector('.rw-sub')?.textContent, h: r.querySelector('a')!.getAttribute('href'), tint: r.querySelector('.rw-ic')!.getAttribute('data-tint') }))
+const tiles = (id: string) => Array.from(screen.getByTestId(id).querySelectorAll('.dc-lcard')).map((t) => ({ t: t.querySelector('.rw-title')!.textContent, s: t.querySelector('.rw-sub')?.textContent, h: t.querySelector('a')!.getAttribute('href'), tint: t.getAttribute('data-tint') }))
+const listenRows = () => Array.from(screen.getByTestId('dc-listen').querySelectorAll('.rw'))
+const speakOk = () => { vi.stubGlobal('SpeechSynthesisUtterance', class { onend: (() => void) | null = null }); Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { speak: vi.fn(), cancel: vi.fn() } }) }
+afterEach(() => { vi.unstubAllGlobals(); Reflect.deleteProperty(window, 'speechSynthesis') })
+
+describe('Discover search', () => {
+  it('the header has a search button that opens the library search', () => {
+    render(<Overview now={now} />)
+    expect(screen.getByTestId('dc-search').getAttribute('href')).toBe('#discover/learn/library')
+    expect(screen.getByRole('link', { name: 'Search health topics' })).toBeTruthy()
+  })
+})
 
 describe('Learn and Listen', () => {
-  it('Learn: Recipes and Topics by default, link to All topics', () => {
+  it('Learn: Recipes and Topics cards by default, link to All topics', () => {
     render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-learn')
     expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Learn')
     expect(within(sec).getByRole('link', { name: 'All topics' }).getAttribute('href')).toBe('#discover/learn')
-    expect(rows('dc-learn')).toEqual([
+    expect(tiles('dc-learn')).toEqual([
       { t: 'Recipes', s: RECIPES.length + ' low-salt recipes', h: '#discover/learn/recipes', tint: 'amber' },
       { t: 'Topics', s: 'Plain reads on health topics', h: '#discover/learn/library', tint: 'purple' }
     ])
   })
-  it('Medicines row and the Medicine cards listen row only with the flag on', async () => {
+  it('Medicines is the first Learn card, only with the flag on', async () => {
     await db.kv.put({ key: 'learn.medcards', value: true })
     render(<Overview now={now} />)
-    await waitFor(() => expect(rows('dc-learn').length).toBe(3))
-    expect(rows('dc-learn')[0]).toEqual({ t: 'Medicines', s: 'What each medicine is for', h: '#discover/learn/meds', tint: 'green' })
-    expect(rows('dc-listen').map((r) => r.s)).toEqual([RECIPES.length + ' read out loud', MEDCARDS.length + ' read out loud'])
+    await waitFor(() => expect(tiles('dc-learn').length).toBe(3))
+    expect(tiles('dc-learn')[0]).toEqual({ t: 'Medicines', s: 'What each medicine is for', h: '#discover/learn/meds', tint: 'green' })
   })
-  it('Listen: lead line, See all, rows all open the one Listen screen', () => {
+  it('Listen: lead line, See all, three rows each with a Play button named for its recipe', () => {
+    speakOk()
     render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-listen')
     expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Listen')
     expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/listen')
     expect(within(sec).getByText('Read aloud by your phone')).toBeTruthy()
-    expect(rows('dc-listen')).toEqual([{ t: 'Recipes', s: RECIPES.length + ' read out loud', h: '#discover/listen', tint: 'teal' }])
+    expect(listenRows().length).toBe(3)
+    RECIPES.slice(0, 3).forEach((r) => expect(within(sec).getByRole('button', { name: `Play ${r.name}` })).toBeTruthy())
   })
-  it('sections come in order: videos, season, learn, listen', () => {
+  it('Listen: a phone with no voice shows a line, not dead buttons', () => {
     render(<Overview now={now} />)
-    const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-learn', 'dc-listen']
+    expect(listenRows().length).toBe(0)
+    expect(within(screen.getByTestId('dc-listen')).getByText('Reading aloud is not on this phone yet.')).toBeTruthy()
+  })
+  it('sections come in order: videos, season, learn, listen, ready at home, play', () => {
+    render(<Overview now={now} />)
+    const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-learn', 'dc-listen', 'dc-ready', 'dc-play']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  })
+})
+
+describe('Ready at home (D-117)', () => {
+  it('two topic rows with their counts, linking to Learn', () => {
+    render(<Overview now={now} />)
+    const sec = within(screen.getByTestId('dc-ready'))
+    expect(sec.getByRole('heading', { level: 2 }).textContent).toBe('Ready at home')
+    expect(screen.getByTestId('dc-ready-prepping').querySelector('a')!.getAttribute('href')).toBe('#discover/learn/prepping')
+    expect(screen.getByTestId('dc-ready-prepping').textContent).toContain('8 videos · 6 reads') // counted by hand in src/data/discover/ready.json
+    expect(screen.getByTestId('dc-ready-repairs').querySelector('a')!.getAttribute('href')).toBe('#discover/learn/repairs')
+    expect(screen.getByTestId('dc-ready-repairs').textContent).toContain('6 videos · 5 reads')
   })
 })
 
@@ -130,9 +161,9 @@ describe('Play and Did you know', () => {
     render(<Overview now={now} />)
     const f = screen.getByTestId('dc-fact')
     expect(f.tagName).toBe('A')
-    expect(f.querySelector('.pt-k')!.textContent).toBe('Did you know?')
-    expect(f.querySelector('.pt-v')!.textContent).toBe(phFactOf(dayKey(now)))
-    expect(f.querySelector('.pt-a')!.textContent).toBe('More fun facts')
+    expect(f.querySelector('.dc-fact-k')!.textContent).toBe('Did you know?')
+    expect(f.querySelector('.dc-fact-t')!.textContent).toBe(phFactOf(dayKey(now)))
+    expect(f.querySelector('img.jack')).toBeTruthy()
     expect(f.getAttribute('href')).toBe('#discover/play/facts')
     expect(f.getAttribute('data-tint')).toBe('green')
   })

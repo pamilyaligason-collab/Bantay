@@ -8,11 +8,11 @@ Three lanes build against these fixed names. Change them only through the orches
      checks `public.invites(email)`. Anyone else is refused.
   2. **Handle + 6-digit PIN** for members without Google (elderly, kids). The admin creates the member and sets the PIN.
      Supabase user email is synthetic `m-<uuid>@members.bantay.invalid`; password = base64url(HMAC-SHA256(PIN_PEPPER, user_id + ':' + pin)),
-     derived only inside Edge Functions. PIN_PEPPER is an Edge Function secret (Lloyd sets it). Lockout: 5 wrong PINs -> 15 minutes.
+     derived only inside Edge Functions. PIN_PEPPER is an Edge Function secret (the owner sets it). Lockout: 5 wrong PINs -> 15 minutes.
 - Edge Functions (Deno, `supabase/functions/`): `pin-login` (handle+pin -> session), `admin-members` (admin only: create member,
   set/reset PIN, set handle, disable/enable, link Google email = add invite, set role). Never log PINs or derived passwords.
 - Biometrics later (D-18): WebAuthn passkey to unlock on a device after a first sign-in. Not built now.
-- First admin: Lloyd signs in with Google once, then runs one SQL line (in his deploy block) to make his user admin.
+- First admin: the owner signs in with Google once, then runs one SQL line (in his deploy block) to make his user admin.
 
 Migrations apply in order 0001 health, 0002 auth, 0003 sync, 0004 admin, 0005 news and assistant cap.
 

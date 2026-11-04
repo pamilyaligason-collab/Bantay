@@ -11,7 +11,7 @@ import { AlertCardToday, pickAlert } from './AlertCardToday'
 afterEach(() => { cleanup(); h.rows = []; h.markSeen.mockClear() })
 const row = (id: string, o: Partial<AlertRow>): AlertRow => ({ id, personId: 'p1', kind: 'dose_missed', template: 'dose_missed', ref: null, createdAt: '2026-10-26T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-02T00:00:00Z', ...o })
 
-describe('pickAlert: SOS > reading > missed dose > hazard, newest first within a kind', () => {
+describe('pickAlert: SOS > reading > hazard, newest first within a kind; a missed dose is a My day row, never this card', () => {
   const sos = row('sos', { kind: 'sos', template: 'family_sos', createdAt: '2026-10-26T00:00:00Z' })
   const reading = row('reading', { kind: 'reading_high', template: 'reading_high', createdAt: '2026-10-26T00:30:00Z' })
   const dose = row('dose', { createdAt: '2026-10-26T02:00:00Z' })
@@ -19,11 +19,12 @@ describe('pickAlert: SOS > reading > missed dose > hazard, newest first within a
   it('orders by priority even when a later kind is newer', () => {
     expect(pickAlert([hazard, dose, reading, sos])!.id).toBe('sos')
     expect(pickAlert([hazard, dose, reading])!.id).toBe('reading')
-    expect(pickAlert([hazard, dose])!.id).toBe('dose')
+    expect(pickAlert([hazard, dose])!.id).toBe('hazard')
+    expect(pickAlert([dose])).toBeNull()
     expect(pickAlert([hazard])!.id).toBe('hazard')
   })
   it('the newest of the same kind wins', () => {
-    expect(pickAlert([row('old', { createdAt: '2026-10-26T00:00:00Z' }), row('new', { createdAt: '2026-10-26T05:00:00Z' })])!.id).toBe('new')
+    expect(pickAlert([row('old', { kind: 'hazard', template: 'storm_warning', createdAt: '2026-10-26T00:00:00Z' }), row('new', { kind: 'hazard', template: 'storm_warning', createdAt: '2026-10-26T05:00:00Z' })])!.id).toBe('new')
   })
   it('seen rows and normal-tone rows never make the card', () => {
     expect(pickAlert([row('seen', { seenAt: '2026-10-26T01:10:00Z' }), row('digest', { kind: 'digest', template: 'digest' }), row('late', { kind: 'sos', template: 'sos_late' })])).toBeNull()

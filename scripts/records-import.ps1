@@ -1,4 +1,4 @@
-# Family Bantay - import the whole family folder (Medical, IDs, Insurance, Visa + Home Lot) into the records tables (docs/IMPORT.md, D-68). Lloyd runs it.
+# Family Bantay - import the whole family folder (Medical, IDs, Insurance, Visa + Home Lot) into the records tables (docs/IMPORT.md, D-68). The owner runs it.
 # Run from the repo worktree:  powershell -ExecutionPolicy Bypass -File scripts\records-import.ps1 [-DryRun]
 # Needs: import\aliases.json (git-ignored, names only; shape in scripts\import\aliases.example.json), OPENROUTER_API_KEY in the environment
 #        (paid, ZDR; ID and insurance papers go through it too), migration 0013 applied.
@@ -56,7 +56,7 @@ try {
   node scripts/import/sync.mjs; Check 3
 
   Step 4 'Extract (PDF text first, else vision; OpenRouter zdr, no data collection). Health and identity prompts by folder; visa / land never sent'
-  node scripts/import/extract.mjs --i-am-lloyd; Check 4
+  node scripts/import/extract.mjs --i-am-owner; Check 4
 } finally {
   Remove-Item Env:LOCAL_ROOT, Env:LOCAL_PATH_IDS -ErrorAction SilentlyContinue
 }

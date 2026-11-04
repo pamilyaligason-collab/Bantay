@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
 import { assertTargets, assertTextContrast, assertJackClear, assertNoWrappedButtons, setScheme } from './v13'
-import { admin, member } from './fixtures/s16/settings'
+import { admin, member, NAME } from './fixtures/s16/settings'
 
 // S16 L5: Settings overview (<= 850) and groups (<= 700), light and dark at 390, buttons at 360, no control under the Jack button, TopBar greeting wraps.
 declare const process: { env: Record<string, string | undefined> }
@@ -20,6 +20,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#me')
     await setScheme(page, scheme)
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+    expect(await page.locator('h1.lt-title').textContent()).toBe('Settings')
+    expect(await page.locator('.st-overview .sh-sub').evaluateAll((els) => els.filter((e) => e.scrollHeight > e.clientHeight + 1).map((e) => e.textContent))).toEqual([]) // M1: every sub is one line
+    expect(await page.locator('.st-list .st-row b').first().textContent()).toBe('Family admin tools') // M1: admin row first
     await expect(page.getByText('Admin', { exact: true })).toBeVisible()
     await expect(page.getByRole('switch', { name: 'Simple mode' })).toBeVisible()
     for (const [g, title] of GROUPS) await expect(page.getByRole('link', { name: new RegExp(title) })).toHaveAttribute('href', `#me/${g}`)
@@ -93,8 +96,9 @@ test('Family phones is a route of the Phone group: one Back, and the hardware Ba
 test('a member sees no admin rows', async ({ page }) => {
   await member(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/#me/about')
-  await expect(page.getByRole('heading', { name: 'About' })).toBeVisible()
+  await page.goto('/#me')
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+  await expect(page.locator('.st-account b')).toHaveText(NAME) // the member has loaded
   await expect(page.getByText('Family admin tools')).toHaveCount(0)
 })
 

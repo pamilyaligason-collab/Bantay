@@ -20,11 +20,11 @@ vi.mock('./roster', async (orig) => ({
   useFamilyPeople: () => ({
     selfId: 'p1',
     people: [
-      { id: 'p1', name: 'Lloyd Roc', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true },
-      { id: 'p2', name: 'Papa Roc', photoPath: null, thumb: null, phone: '+63 917 123 4567', birthdate: null, isMe: false },
-      { id: 'p3', name: 'Mama Roc', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false },
-      { id: 'p4', name: 'Ate Roc', photoPath: null, thumb: null, phone: '09175550000', birthdate: null, isMe: false },
-      { id: 'p5', name: 'Kuya Roc', photoPath: null, thumb: null, phone: '09175551111', birthdate: null, isMe: false }
+      { id: 'p1', name: 'Rey Villar', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true },
+      { id: 'p2', name: 'Papa Villar', photoPath: null, thumb: null, phone: '+63 917 123 4567', birthdate: null, isMe: false },
+      { id: 'p3', name: 'Mama Villar', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false },
+      { id: 'p4', name: 'Ate Villar', photoPath: null, thumb: null, phone: '09175550000', birthdate: null, isMe: false },
+      { id: 'p5', name: 'Kuya Villar', photoPath: null, thumb: null, phone: '09175551111', birthdate: null, isMe: false }
     ]
   })
 }))

@@ -4,12 +4,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { db } from '../../db'
 
 vi.mock('../auth/client', () => ({ supabase: null }))
-vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+vi.mock('../auth/session', () => ({ getAccessToken: async () => null, getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../setup/useProfile')>()), useSelfPersonId: () => 'p1' }))
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
 
 import Health from '../../screens/Health'
-import MyWeek from '../today/MyWeek'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { resetPersonChoice } from '../records/useHealthData'
@@ -34,7 +33,7 @@ const cases: [number, number, string][] = [
 describe('blood pressure verdict is always from the pair (real path)', () => {
   for (const [t, b, word] of cases) {
     it(`${t}/${b} reads ${word} on both Vitals rows and in the add preview`, () => {
-      const { container } = render(<LatestList ready readings={[R('bp_systolic', t), R('bp_diastolic', b)]} thresholds={[]} />)
+      const { container } = render(<LatestList readings={[R('bp_systolic', t), R('bp_diastolic', b)]} thresholds={[]} />)
       for (const test of ['bp_systolic', 'bp_diastolic']) {
         const row = container.querySelector(`[data-test="${test}"]`) as HTMLElement
         expect(row.querySelector('.hv-state')!.textContent).toContain(word)
@@ -57,7 +56,7 @@ describe('a doctor target lifts the PAIR, so both rows, the headline, the previe
   for (const [sh, dh, t, b, word] of cases) {
     it(`target ${sh ?? '-'}/${dh ?? '-'} with ${t}/${b} reads ${word} on both rows (LatestList with thresholds)`, () => {
       const th = [...(sh ? [TH('bp_systolic', sh)] : []), ...(dh ? [TH('bp_diastolic', dh)] : [])]
-      const { container } = render(<LatestList ready readings={[R('bp_systolic', t), R('bp_diastolic', b)]} thresholds={th} />)
+      const { container } = render(<LatestList readings={[R('bp_systolic', t), R('bp_diastolic', b)]} thresholds={th} />)
       for (const test of ['bp_systolic', 'bp_diastolic']) expect(container.querySelector(`[data-test="${test}"] .hv-state`)!.textContent).toContain(word)
       const doctor = { top: sh ? TH('bp_systolic', sh) : null, bottom: dh ? TH('bp_diastolic', dh) : null }
       expect(previewReading(entrySpec('bp')!, { top: String(t), bottom: String(b) }, null, doctor).word).toBe(word)
@@ -69,7 +68,7 @@ describe('a doctor target lifts the PAIR, so both rows, the headline, the previe
   it('a doctor low target is ignored: 118/70 with sys low 125 stays In range (helper, both rows, preview)', () => {
     const low = { key: 'p1:bp_systolic', low: 125, high: null } // 118 < 125 would be "below" if the floor were read
     expect(bpPairLevel(118, 70, { top: low, bottom: null })).toBe('in')
-    const { container } = render(<LatestList ready readings={[R('bp_systolic', 118), R('bp_diastolic', 70)]} thresholds={[low]} />)
+    const { container } = render(<LatestList readings={[R('bp_systolic', 118), R('bp_diastolic', 70)]} thresholds={[low]} />)
     for (const test of ['bp_systolic', 'bp_diastolic']) expect(container.querySelector(`[data-test="${test}"] .hv-state`)!.textContent).toContain('In range')
     expect(previewReading(entrySpec('bp')!, { top: '118', bottom: '70' }, null, { top: low }).word).toBe('In range')
   })
@@ -135,11 +134,6 @@ async function wordsOnEverySurface(top: number, bottom: number): Promise<Record<
   out.kpi = txt(document.querySelector('[data-kpi="bp_systolic"] .kp-chip'))
   cleanup()
 
-  render(<MyWeek />)
-  await waitFor(() => expect(txt(document.querySelector('.td-chip'))).not.toBe(''), SLOW)
-  out.myWeek = txt(document.querySelector('.td-chip'))
-  cleanup()
-
   for (const code of ['bp_systolic', 'bp_diastolic']) {
     render(<MetricScreen code={code} />)
     const add = await screen.findByRole('button', { name: 'Add reading' }, SLOW)
@@ -176,7 +170,7 @@ describe("one BP pair, one person's doctor targets: every surface shows the same
     it(`${c.name}, ${c.top}/${c.bottom}: every surface reads ${c.word}`, async () => {
       await seed(c.th, c.top, c.bottom)
       const words = await wordsOnEverySurface(c.top, c.bottom)
-      expect(Object.keys(words)).toHaveLength(12)
+      expect(Object.keys(words)).toHaveLength(11)
       expect(words).toEqual(Object.fromEntries(Object.keys(words).map((k) => [k, c.word])))
     }, 30_000)
   }
@@ -188,9 +182,6 @@ describe("one BP pair, one person's doctor targets: every surface shows the same
     await waitFor(() => expect(txt(document.querySelector('[data-kpi="bp_systolic"] .kp-chip'))).toBe('High'), SLOW)
     await waitFor(() => expect(txt(document.querySelector('[data-test="bp_systolic"] .hv-state'))).toMatch(/^High/), SLOW)
     expect(txt(document.querySelector('[data-test="bp_diastolic"] .hv-state'))).toMatch(/^High/)
-    cleanup()
-    render(<MyWeek />)
-    await waitFor(() => expect(txt(document.querySelector('.td-chip'))).toBe('High'), SLOW)
     cleanup()
     for (const code of ['bp_systolic', 'bp_diastolic']) {
       render(<MetricScreen code={code} />)

@@ -4,10 +4,12 @@
 .rm-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 22px; border: 2px solid var(--sep); background: transparent; color: var(--ink); font-size: 16px; font-weight: 600; }
 .rm-chip[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); border-color: var(--btn); }
 .rm-chip[aria-pressed="false"] { color: var(--muted); font-weight: 500; }
-.rm-mapc { border-radius: var(--r-card); }
+.rm-mapc { border-radius: 0; margin: 0 -16px; }
+.rm .card.mapc { padding: 0; } /* app.css .card padding loads after .mapc and inset the map */
+:root[data-narrow] .rm-mapc { margin: 0 -12px; } /* W9: the board map runs edge to edge */
 .rm-mapwrap { position: relative; isolation: isolate; }
 .rm-mapwrap .mapc-re { bottom: 12px; z-index: 500; }
-.rm-map { height: 300px; background: var(--card2); }
+.rm-map { height: 360px; background: var(--card2); }
 .rm-wait { display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .rm-pin { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--card); background: var(--tint-green-ink); color: var(--card); font: 700 16px var(--f-ui); box-shadow: var(--shadow-float); box-sizing: border-box; }
 .rm-pin.me { width: 22px; height: 22px; margin: 7px; background: var(--tint-blue-ink); }
@@ -27,7 +29,7 @@
 .rm-badge.ok { background: var(--tint-green); color: var(--tint-green-ink); }
 .rm-badge.un { background: var(--tint-amber); color: var(--tint-amber-ink); }
 .rm-act { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 12px 56px; }
-.rm-act a { flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 14px; text-decoration: none; box-sizing: border-box; }
+.rm-act a, .rm-act button { flex: 1 1 120px; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 14px; text-decoration: none; box-sizing: border-box; }
 .lk-sheet .rm-act { padding: 8px 0 0; }
 .rm-safe { padding: 0 14px; }
 .rm-safe summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; }
@@ -36,3 +38,16 @@
 .rm-foot { margin: 0; color: var(--muted); }
 .rm .leaflet-container { font-family: var(--f-ui); }
 @media (prefers-reduced-motion: reduce) { .rm .leaflet-zoom-anim .leaflet-zoom-animated, .rm .leaflet-fade-anim .leaflet-tile { transition: none; } }
+/* VR: the board's map runs full width at the top and the list rises over it as a sheet */
+.rm .rm-mapc { margin-bottom: 0; }
+.rm .rm-mapc .mapc-credit { position: absolute; left: 10px; bottom: 36px; z-index: 400; padding: 3px 8px; border-radius: 10px; background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--ink); font-size: 12px; line-height: 16px; }
+.rm-mapwrap .mapc-re { top: 12px; bottom: auto; }
+.rm-sheet { position: relative; z-index: 1; margin: -28px -16px 0; padding: 10px 16px 4px; border-radius: 22px 22px 0 0; background: var(--bg, var(--card)); box-shadow: 0 -6px 18px rgba(40, 30, 10, .10); display: flex; flex-direction: column; gap: 12px; }
+:root[data-narrow] .rm-sheet { margin: -28px -12px 0; }
+.rm-grab { align-self: center; width: 38px; height: 5px; border-radius: 3px; background: var(--hair, var(--sep)); }
+.rm-sheet .rm-list { background: none; box-shadow: none; border-radius: 0; }
+.rm-leave { color: var(--ink); font-size: 15px; line-height: 22px; }
+
+/* CS: the folded add-or-fix list */
+.rm-edit { padding: 0 14px; }
+.rm-edit summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; }

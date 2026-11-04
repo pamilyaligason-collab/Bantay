@@ -1,10 +1,39 @@
 import { expect, type Page } from '@playwright/test'
-import { assertJackClear, assertNoWrappedButtons, FIXED_CLOCKS, ROUTES, setScheme } from './s16'
+import { assertNoWrappedButtons, FIXED_CLOCKS, ROUTES, setScheme } from './s16'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
 // v13 test policy (contracts-phase0.md 8.2, docs/redesign-2026-10-31/TESTING.md): measured boxes and computed colours, never page-height budgets.
-export { assertJackClear, assertNoWrappedButtons, FIXED_CLOCKS, ROUTES, setScheme }
+export { assertNoWrappedButtons, FIXED_CLOCKS, ROUTES, setScheme }
+
+/** Settled state before any assertion (ML-25): the scroller is shown, nothing is busy, fonts are loaded. No sleeps. */
+export async function settled(page: Page): Promise<void> {
+  await expect(page.locator('.bt .scroll')).toBeVisible()
+  await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'))
+  await page.evaluate(() => document.fonts.ready)
+}
+
+/** No control (button, a, input, [role=button]) sits under the Jack button: at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Failures are prefixed "at rest:" / "at end:". */
+export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both' } = {}): Promise<void> {
+  await settled(page)
+  const at = opts.at ?? 'both'
+  for (const when of at === 'both' ? (['rest', 'end'] as const) : [at]) {
+    const hits = await page.evaluate(async (when) => {
+      const fab = document.querySelector('.sh-jackfab')
+      const el = document.querySelector('.bt .scroll') as HTMLElement
+      if (!fab) return [] as string[] // frames without the button (warning, storm, SOS ...) have nothing to clear
+      const put = () => { el.scrollTop = when === 'rest' ? 0 : el.scrollHeight }
+      put()
+      for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); put() } // late content (cards that load after first paint) moves the end
+      const f = fab.getBoundingClientRect()
+      return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
+        .filter((n) => n !== fab && !fab.contains(n))
+        .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
+        .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
+    }, when)
+    expect(hits, `at ${when}: controls under the Jack button`).toEqual([])
+  }
+}
 
 /** Exactly one `[data-hero]` in `.bt .scroll`, and its top is within 320 px of the scroll top. */
 export async function assertHero(page: Page): Promise<void> {
@@ -26,12 +55,12 @@ export async function assertOrder(page: Page, testIds: string[]): Promise<void> 
 }
 
 /** Every visible a / button / input / [role=button] inside `.bt` has a box of at least 44 x 44 (so text links are 44 tall too). Failures are listed by name and size. */
-export async function assertTargets(page: Page, opts: { tabFloor?: number } = {}): Promise<void> {
+export async function assertTargets(page: Page, opts: { tabFloor?: number; skip?: string } = {}): Promise<void> {
   const tabFloor = opts.tabFloor ?? 43.5
-  const bad = await page.evaluate((tabFloor) => {
+  const bad = await page.evaluate(({ tabFloor, skip }) => {
     const out: string[] = []
     for (const el of Array.from(document.querySelectorAll<HTMLElement>('.bt a[href], .bt button, .bt input:not([type=hidden]), .bt [role=button]'))) {
-      if (el.closest('[aria-hidden="true"], [inert]')) continue
+      if (el.closest('[aria-hidden="true"], [inert]') || (skip && el.matches(skip))) continue
       const r = el.getBoundingClientRect(); const s = getComputedStyle(el)
       if (r.width === 0 || r.height === 0 || s.visibility === 'hidden' || s.display === 'none') continue
       if (r.width <= 1 || r.height <= 1) continue // visually-hidden file inputs and skip links
@@ -39,7 +68,7 @@ export async function assertTargets(page: Page, opts: { tabFloor?: number } = {}
       if (r.width < floor || r.height < floor) out.push(`${(el.getAttribute('aria-label') || el.textContent || el.tagName).trim().slice(0, 40)} ${Math.round(r.width)}x${Math.round(r.height)}`)
     }
     return out
-  }, tabFloor)
+  }, { tabFloor, skip: opts.skip })
   expect(bad, 'tap targets under 44 px').toEqual([])
 }
 
@@ -116,6 +145,15 @@ export async function assertNarrow(page: Page): Promise<void> {
   // shortcut: five tabs cannot be 44 px wide in 195 px; the tab bar gets the WCAG 2.2 AA floor (24 px) at narrow widths only. Upgrade if the bar ever scrolls or collapses.
   await assertTargets(page, { tabFloor: 23.5 })
   await assertNoWrappedButtons(page)
+}
+
+/** The whole page at 390 wide: the app scrolls inside `.bt .scroll`, so `fullPage` only sees one screen; the viewport is grown to the scroller's height for the shot (the tab bar then sits at the bottom). */
+export async function fullPageShot(page: Page, path: string): Promise<void> {
+  const h = await page.evaluate(() => (document.querySelector('.bt .scroll') as HTMLElement | null)?.scrollHeight ?? document.documentElement.scrollHeight)
+  await page.setViewportSize({ width: 390, height: Math.min(h + 140, 6000) })
+  await page.waitForTimeout(400)
+  await page.screenshot({ path, animations: 'disabled' })
+  await page.setViewportSize({ width: 390, height: 844 })
 }
 
 /** With V13_SHOTS=<dir>: <dir>/<name>-light.png and -dark.png. Without it nothing is written (shots are evidence, not assertions). */

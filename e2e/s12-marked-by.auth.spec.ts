@@ -41,11 +41,11 @@ async function start(page: Page, scheme: 'light' | 'dark') {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.clock.setFixedTime(NOW)
   await skipOnboarding(page)
-  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Lloyd' }, { personId: 'ma', displayName: 'Ma' }])))
+  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }, { personId: 'ma', displayName: 'Ma' }])))
   await mock(page)
   await page.emulateMedia({ colorScheme: scheme })
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible() // the app has created its databases
+  await expect(page.getByTestId('myday')).toBeVisible() // the app has created its databases
 }
 
 for (const scheme of ['light', 'dark'] as const) {

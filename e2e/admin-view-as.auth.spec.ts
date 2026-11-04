@@ -120,5 +120,5 @@ test.describe('in-app View as (acting)', () => {
     await expect(page.getByTestId('viewas-bar')).toHaveCount(0)
   })
   // Need L1 (callers pass the acting id), L5 (row) and L9 (SOS screen) merged; asserted on the merged branch.
-  test.fixme('Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = Lloyd', async () => { /* written after the L1 merge */ })
+  test.fixme('Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = Rey', async () => { /* written after the L1 merge */ })
 })

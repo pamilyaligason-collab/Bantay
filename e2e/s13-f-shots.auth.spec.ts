@@ -83,9 +83,15 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test("people: I'm OK before and after", async ({ page }) => {
       await shot(page, 'people-before', scheme)
-      await page.getByRole('button', { name: "I'm OK", exact: true }).click()
-      await expect(page.getByText(/^You're OK · /)).toBeVisible()
+      await expect(page.getByTestId('person-card').first()).toBeVisible() // Family has drawn, so the count below can fail
+      await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // F4: Family has no I'm OK; it lives in My day on Today
+      await page.goto('/')
+      const row = page.getByTestId('myday-checkin')
+      await row.getByRole('button', { name: "I'm OK", exact: true }).click()
+      await expect(row.getByText('Checked in')).toBeVisible()
       await shot(page, 'im-ok-after', scheme)
+      await page.goto('/#family')
+      await expect(page.getByTestId('person-card').first()).toBeVisible()
       await shot(page, 'people-after', scheme)
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 8000 }) // the note clears itself; a shot must not catch it
       // Learn together moved to Discover (PLAN 1.4, L3); its shot is taken there

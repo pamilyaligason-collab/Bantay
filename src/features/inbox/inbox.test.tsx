@@ -1,4 +1,6 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import 'fake-indexeddb/auto'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { db } from '../../db'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from '../safety/alerts'
 import { buildInbox, countUnread, groupInbox, iconOf, type InboxSources } from './build'
@@ -61,8 +63,10 @@ describe('Inbox screen', () => {
     const items = buildInbox({ ...base, alerts: [alert({})], toCheck: 2 })
     const i = inbox(items, [items[0]!.id])
     render(<Inbox inbox={i} />)
-    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
-    expect(screen.getByRole('link', { name: /2 records to check/ }).getAttribute('href')).toBe('#family/papers')
+    expect(screen.getByRole('heading', { name: 'New (1)' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /2 records to check/ }))
+    expect(within(screen.getByRole('dialog')).getByRole('link', { name: 'Open' }).getAttribute('href')).toBe('#family/papers')
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }))
     expect(i.markAllRead).toHaveBeenCalledTimes(1)
   })
@@ -70,7 +74,41 @@ describe('Inbox screen', () => {
     const items = buildInbox({ ...base, toCheck: 1 })
     render(<Inbox inbox={inbox(items, items.map((x) => x.id))} />)
     expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull()
-    expect(screen.queryByRole('img', { name: 'New' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: /^New/ })).toBeNull()
+  })
+})
+
+describe('Inbox screen with 53 unread (A1)', () => {
+  it('groups them under New (53) as 53 rows with no inline action; a tap opens a dialog with 3 actions', () => {
+    const items = Array.from({ length: 53 }, (_, n) => ({ id: `n${n}`, kind: 'alert' as const, title: `Storm ${n}`, sub: 'Alert · Bohol', href: '#safety', at: at(9).getTime() })) // buildInbox keeps 5 weather alerts, so build the rows directly
+    const { container } = render(<Inbox inbox={{ items, unread: 53, seen: [], markAllRead: vi.fn(), markOne: vi.fn() }} now={at(10)} />)
+    expect(screen.getByRole('heading', { name: 'New (53)' })).toBeTruthy()
+    expect(container.querySelectorAll('[data-testid="inbox-row"]')).toHaveLength(53)
+    expect(container.querySelectorAll('.in-act')).toHaveLength(0)
+    fireEvent.click(screen.getAllByRole('button', { name: /Storm 3/ })[0]!)
+    const dlg = screen.getByRole('dialog')
+    expect(dlg.querySelectorAll('.in-act')).toHaveLength(3)
+  })
+})
+
+describe('Inbox intro card and times (A1)', () => {
+  const props = () => ({ items: buildInbox({ ...base, toCheck: 1 }), unread: 1, seen: [], markAllRead: vi.fn() })
+  it('shows the full card on the first visit and the one line after the screen has been left with a list on it', async () => {
+    await db.kv.delete('notif.intro')
+    const first = render(<Inbox inbox={props()} now={at(10)} />)
+    await waitFor(() => expect(screen.getByText(/appear in this list/)).toBeTruthy())
+    first.unmount()
+    await waitFor(async () => expect((await db.kv.get('notif.intro'))?.value).toBe(true))
+    render(<Inbox inbox={props()} now={at(10)} />)
+    await waitFor(() => expect(document.querySelector('.in-info1')).not.toBeNull())
+    expect(screen.queryByText(/appear in this list/)).toBeNull()
+  })
+  it('an unread alert from an earlier Manila day shows a date, one from today shows a time', () => {
+    const now = new Date('2026-10-19T02:00:00Z') // 10:00 in Manila
+    const items = [{ id: 'a', kind: 'alert' as const, title: 'Today one', sub: 's', href: '#safety', at: Date.parse('2026-10-19T01:00:00Z') }, { id: 'b', kind: 'alert' as const, title: 'Old one', sub: 's', href: '#safety', at: Date.parse('2026-10-17T01:00:00Z') }]
+    const { container } = render(<Inbox inbox={{ items, unread: 2, seen: [], markAllRead: vi.fn() }} now={now} />)
+    const vals = Array.from(container.querySelectorAll('.rw-value')).map((e) => e.textContent)
+    expect(vals).toEqual(['9:00 AM', 'Oct 17'])
   })
 })
 
@@ -108,13 +146,11 @@ describe('grouping and icons (M7b)', () => {
   it('renders the Today and Earlier headings with an icon type per row and unread dots', () => {
     const items = buildInbox({ ...base, alerts: [alert({ issuedAt: new Date(2026, 9, 17, 9).toISOString() })], toCheck: 2 })
     const { container } = render(<Inbox inbox={inbox(items, [items[0]!.id])} now={at(10)} />)
-    expect(screen.getByRole('heading', { name: 'Today' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'New (1)' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Earlier' })).toBeTruthy()
-    expect(screen.getByTestId('inbox-today').textContent).toContain('2 records to check')
+    expect(screen.getByTestId('inbox-new').textContent).toContain('2 records to check')
     expect(screen.getByTestId('inbox-earlier').textContent).toContain('Typhoon signal no. 2')
-    expect(container.querySelector('[data-icon="record"]')).toBeTruthy()
-    expect(container.querySelector('[data-icon="weather"]')).toBeTruthy()
-    expect(screen.getAllByRole('img', { name: 'New' })).toHaveLength(1)
+    expect(container.querySelectorAll('[data-testid="inbox-row"]')).toHaveLength(2)
   })
   it('shows no Earlier heading when nothing is older', () => {
     render(<Inbox inbox={inbox(buildInbox({ ...base, toCheck: 1 }))} now={at(10)} />)

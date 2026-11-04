@@ -20,6 +20,7 @@ import { SEEN, TogetherList } from '../features/family/TogetherList'
 import { TodayCarousel } from '../features/family/TodayCarousel'
 import { useFocuses, useVisiblePeople } from '../features/family/useFocuses'
 import { LargeTitle } from '../features/look'
+import { HeadActions } from '../features/shell/HeadActions'
 import { Icon } from '../features/shell/Icon'
 import { SubHeader } from '../features/shell/SubHeader'
 import { useKv } from '../features/shell/useKv'
@@ -50,7 +51,7 @@ function Root() {
   const me = all.find((p) => p.isMe)
   return (
     <>
-      <LargeTitle kicker={people.length ? `${people.length} ${people.length === 1 ? 'PERSON' : 'PEOPLE'}` : ' '} title="Family" actions={<a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a>} />
+      <LargeTitle kicker={people.length ? `${people.length} ${people.length === 1 ? 'PERSON' : 'PEOPLE'}` : ' '} title="Family" actions={<HeadActions><a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
       <AcceptCard />
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}

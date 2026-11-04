@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import { HOME_ZONES } from './geo'
+import { placeWords } from './placeWords'
 import { type useLocation, usePlaceFrom } from './useLocation'
 
 const short = (n: string) => n.split(',')[0]!
@@ -11,8 +12,8 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState<ReactNode>('')
   if (!place) return null
-  const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
-  const label = place.source === 'gps' ? `Near you · ${short(zone.name)}` : place.source === 'last' ? `Last known · ${short(zone.name)}` : place.source === 'gps-abroad' ? `Away · ${short(zone.name)}` : short(zone.name)
+  const words = placeWords(place)
+  const label = words.title
   const current = async () => {
     setMsg('')
     const l = await place.ask().catch(() => null)
@@ -28,7 +29,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   ]
   return (
     <div className="zp">
-      <button type="button" className="sf-chip" aria-expanded={open} aria-controls="zp-list" aria-label={`Place: ${label}. Change`} onClick={() => setOpen(!open)}>{label}</button>
+      <button type="button" className="sf-chip" aria-expanded={open} aria-controls="zp-list" aria-label={`Place: ${label}. Change`} data-testid={words.stale ? 'place-last' : undefined} onClick={() => setOpen(!open)}><span className="zp-t">{label}</span></button>
       {open && (
         <div id="zp-list" role="group" aria-label="Zone" className="sf-chips">
           {pills.map(([id, text, on, go]) => (

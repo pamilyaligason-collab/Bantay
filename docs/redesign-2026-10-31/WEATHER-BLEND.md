@@ -1,6 +1,6 @@
 # Weather blend for hyperlocal forecasts (research 2026-10-31)
 
-Lloyd has an OpenWeather key (`OPEN_WEATHER_API_KEY`, activating within hours; a scheduled check `bantay-openweather-activation-check` tests it every 3 h until 1 Nov 22:00 Manila and logs to the vault `research/openweather-activation-log.md`).
+The owner has an OpenWeather key (`OPEN_WEATHER_API_KEY`, activating within hours; a scheduled check `bantay-openweather-activation-check` tests it every 3 h until 1 Nov 22:00 Manila and logs to the vault `research/openweather-activation-log.md`).
 
 ## Sources (checked on the provider pages, 2026-10-31)
 | Source | Free terms | What it adds | Notes |

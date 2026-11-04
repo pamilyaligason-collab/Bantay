@@ -5,6 +5,7 @@ import { listMessages } from '../family/messagesApi'
 import { useFlagLines } from '../family/reportData'
 import { rollCall, useCheckInsLoaded, useFamilyPeople } from '../family/roster'
 import { useActing } from '../viewas/viewAs'
+import { properName } from './medName'
 import { GroupedList, Row, Section } from '../look'
 import './health.css'
 
@@ -31,16 +32,19 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
   const rc = last ? rollCall(people, last) : null
   const flagged = people.filter((p) => flags[p.id])
   return (
-    <Section title="Family health" testId="family-health" link={{ href: '#family', label: 'All updates' }}>
+    <Section title="Family health" testId="family-health">
       <div className="card fh">
         <div className="fh-top">
           <span className="fh-av">{people.slice(0, 3).map((p) => <FmAvatar key={p.id} name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />)}</span>
           <b className="fh-line">{rc ? `${rc.ok} of ${rc.total} checked in today` : 'Checking in...'}</b>
+        </div>
+        <div className="fh-acts">
           {acting ? <span className="sub fh-share">View only</span> : <a className="btn2 fh-share" href="#family/messages">Share yours</a>}
+          <a className="btn2 fh-share" href="#family">All updates</a>
         </div>
         {(flagged.length > 0 || photos != null || msgs != null) && (
           <GroupedList icons>
-            {flagged.map((p) => <Row key={p.id} avatar={<FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />} title={p.name} sub={flags[p.id]} href="#family" />)}
+            {flagged.map((p) => <Row key={p.id} avatar={<FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />} title={properName(p.name)} sub={flags[p.id]} href="#family" />)}
             {photos != null && <Row icon="heart" tint="amber" title="Memories" sub="Recent photos" href="#family" />}
             {msgs != null && msgs > 0 && <Row icon="msg" tint="blue" title={`${msgs} ${msgs === 1 ? 'message' : 'messages'} today`} href="#family/messages" />}
           </GroupedList>

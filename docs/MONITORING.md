@@ -23,6 +23,6 @@ Privacy: a client error carries a place name (`window.onerror` or `unhandledreje
 - Errors today: amber only when higher than yesterday.
 - Database updates: versions in `src/data/migrations.json` that `supabase_migrations.schema_migrations` lacks (`admin_pending_migrations(p_known)`; 0028 is always skipped). Add every new migration number to `migrations.json`; a test fails if a file is missing from it.
 
-## Apply (Lloyd)
+## Apply (the owner)
 
 `0033_job_runs.sql`, then deploy `records-extract` (plus `dose-watch` and `alerts-ingest` since they bundle `_shared/heartbeat.ts`). Check: `select job, ran_at, ok from job_runs order by ran_at desc limit 5`. Undo: `0033_job_runs.down.sql`.

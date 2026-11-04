@@ -1,17 +1,17 @@
 import type { Table } from 'dexie'
-import { db, drain, type OutboxRow } from '../../db'
+import { db, drain, enqueue, type OutboxRow } from '../../db'
 import { track } from '../admin/events'
 import { supabase } from '../auth/client'
 import { getAccessToken, onAuthChange } from '../auth/session'
 import { drainQueue } from '../docs/api'
-import { ALERTS_KEY, CHECKED_KEY, type Alert } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, LAST_SEEN_KEY, STALE_KEY, type Alert, type StaleSources } from '../safety/alerts'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
-import { ldb } from '../log/store'
+import { hourClientId, isSensorHour, ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { vdb } from '../health/visitsStore'
 import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
-import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow } from './tables'
+import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow, toSnake } from './tables'
 
 // Outbox -> Supabase REST, then the member's own rows back down. Health values only ever travel in POST bodies,
 // are never logged, and an error is reduced to a short code before it is stored or shown.
@@ -24,6 +24,8 @@ const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health'])
 const NO_TABLE = /^(PGRST205|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
+/** Rows sent in one go. A first steps sync queues about 720. A safety row queued meanwhile waits for the rest of the batch and one alerts read, or for the full pull if that batch emptied the queue, then goes first. */
+const BATCH = 50
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
 export const backoffMinutes = (fails: number) => (fails <= 0 ? 0 : Math.min(2 ** (fails - 1), 30))
 
@@ -92,34 +94,52 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   const { url, key } = env()
   // client_id is minted once and saved on the row, so every retry of this row carries the same one.
   let payload = row.payload as Record<string, unknown>
-  if (!payload.client_id) {
-    payload = { ...payload, client_id: crypto.randomUUID() }
+  const spec = TABLES[row.table]
+  const upd = row.op === 'update' ? spec.update : undefined // a changed row that is already on the server: PATCH its few editable columns by client_id
+  let cid = ''
+  if (upd) {
+    cid = ((await (localTable(row.table) as Table<{ clientId?: string }, number> | undefined)?.get(payload.id as number))?.clientId) ?? ''
+    if (!cid) return void (await db.outbox.delete(row.id!)) // the row is gone, or never reached the server: nothing to change
+  } else if (!payload.client_id) {
+    payload = { ...payload, client_id: row.table === 'activity' && isSensorHour(payload as never) ? await hourClientId(payload as never) : crypto.randomUUID() }
     await db.outbox.update(row.id!, { payload })
   }
+  const newHour = !upd && row.table === 'activity' && isSensorHour(payload as never)
   if (row.table === 'sos_events') payload = { ...payload, sentAt: new Date().toISOString() } // the server marks the row late when sentAt is long after at (same phone clock); not saved, so a retry carries its own send time
-  const spec = TABLES[row.table]
   let res: Response
   try {
+    if (upd) {
+      // Another phone of this person can hold more for this hour, and this phone cannot see that from its own row. Only ever raise it. Read first because a value never goes in a URL filter.
+      // shortcut: two phones can still cross between this read and the PATCH; a server-side rule would need a migration.
+      const read = await fetch(`${url}/rest/v1/${row.table}?select=steps&client_id=eq.${encodeURIComponent(cid)}`, { headers: { apikey: key!, Authorization: `Bearer ${token}` } })
+      // A read that may work later must not let a lower total through unchecked. A 401 or other 4xx goes on: the PATCH below answers with its own, which pauses sync or dead-letters the row.
+      if (read.status === 408 || read.status === 429 || read.status >= 500) { failed.row = row; throw new SyncError('transient', await errCode(read)) }
+      const [onServer] = (read.ok ? await read.json().catch(() => []) : []) as { steps?: number | null }[]
+      if ((onServer?.steps ?? -1) >= (payload.steps as number)) return
+    }
     const patch = spec.patch // an edit of an existing row: PATCH it by id
-    res = await fetch(patch ? `${url}/rest/v1/${patch.table}?id=eq.${encodeURIComponent(String(payload[patch.idField]))}` : `${url}/rest/v1/${row.table}?on_conflict=${spec.onConflict}`, {
-      method: patch ? 'PATCH' : 'POST',
+    res = await fetch(upd ? `${url}/rest/v1/${row.table}?client_id=eq.${encodeURIComponent(cid)}` : patch ? `${url}/rest/v1/${patch.table}?id=eq.${encodeURIComponent(String(payload[patch.idField]))}` : `${url}/rest/v1/${row.table}?on_conflict=${spec.onConflict}`, {
+      method: patch || upd ? 'PATCH' : 'POST',
       headers: {
         apikey: key!,
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        Prefer: patch ? 'return=representation' : `resolution=${spec.resolution},return=minimal`
+        Prefer: patch || upd ? 'return=representation' : `resolution=${spec.resolution},return=${newHour ? 'representation' : 'minimal'}`
       },
-      body: JSON.stringify(toRow(row.table, payload, payload.client_id as string))
+      body: JSON.stringify(upd ? Object.fromEntries(upd.fields.map((f) => [toSnake(f), payload[f]])) : toRow(row.table, payload, payload.client_id as string))
     })
-  } catch {
+  } catch (e) {
+    if (e instanceof SyncError) throw e
     failed.row = row
     throw new SyncError('net')
   }
   if (res.ok) {
     // A PATCH that RLS filters out answers 200 with no rows: treat it as refused, not saved.
-    if (spec.patch && !((await res.json().catch(() => [])) as unknown[]).length) return deadLetter({ ...row, payload }, '0rows')
+    if ((spec.patch || upd) && !((await res.json().catch(() => [])) as unknown[]).length) return deadLetter({ ...row, payload }, '0rows')
     const lt = localTable(row.table)
-    if (lt && typeof payload.id === 'number') await lt.update(payload.id, { clientId: payload.client_id } as never) // so pull recognises it
+    if (lt && !upd && typeof payload.id === 'number') await lt.update(payload.id, { clientId: payload.client_id } as never) // so pull recognises it
+    // [] = the server already had this hour from another phone, and this insert changed nothing: send this phone's total as an update, which goes up only if it is larger.
+    if (newHour && typeof payload.id === 'number' && ((await res.json().catch(() => null)) as unknown[] | null)?.length === 0) await enqueue(row.table, 'update', { id: payload.id, steps: payload.steps })
     return
   }
   const code = await errCode(res)
@@ -139,15 +159,15 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   throw new SyncError('perm', code)
 }
 
-async function push(token: string): Promise<SyncError | null> {
+/** `waiting` collects the tables the server does not have yet: left queued for this run, the other rows go on. */
+async function push(token: string, waiting: Set<string>): Promise<SyncError | null> {
   let last: SyncError | null = null
-  const waiting = new Set<string>() // tables the server does not have yet: left queued for this run, the other rows go on
   for (let pass = 0; pass < MAX_TRIES; pass++) {
     const failed: { row?: OutboxRow } = {}
     last = null
     await drain(async (row) => {
       try { await sendRow(row, token, failed) } catch (e) { last = e as SyncError; throw e }
-    }, (r) => isSyncable(r.table) && !waiting.has(r.table))
+    }, (r) => isSyncable(r.table) && !waiting.has(r.table), { first: (r) => !!TABLES[r.table].urgent, max: BATCH })
     const err = last as SyncError | null
     // Network, 401 and 5xx are not the row's fault: give back the try that drain counted.
     if (err && err.kind !== 'perm' && failed.row) await db.outbox.update(failed.row.id!, { tries: failed.row.tries })
@@ -189,7 +209,10 @@ async function merge(table: string, rows: Record<string, unknown>[], seen: { ids
     }
     seen.ids.add(cid)
   }
-  if (fresh.length) await lt.bulkAdd(fresh)
+  if (!fresh.length) return
+  // A sensor read can store this very hour while the pull is on the wire. That row's own insert lands on the same client_id, so keep it and skip the pulled copy.
+  const late = table === 'activity' ? new Set((await lt.toArray()).filter((r) => !r.clientId).map((r) => naturalKey[table](r))) : null
+  await lt.bulkAdd(late ? fresh.filter((r) => !late.has(naturalKey[table](r))) : fresh)
 }
 
 async function pull(token: string) {
@@ -316,8 +339,26 @@ async function pullAlerts(url: string, key: string, token: string) {
     return
   }
   if (!Array.isArray(rows)) return
-  await db.kv.put({ key: ALERTS_KEY, value: rows.map(toAlert).filter((a): a is Alert => a !== null) })
-  await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
+  const list = rows.map(toAlert).filter((a): a is Alert => a !== null)
+  await db.kv.put({ key: ALERTS_KEY, value: list })
+  // Last event / Last storm: pullAlerts keeps only unexpired rows, so keep the newest quake and newest cyclone separately.
+  const prev = ((await db.kv.get(LAST_SEEN_KEY))?.value as Alert[] | undefined) ?? []
+  const newest = (pick: (a: Alert) => boolean) => [...list, ...prev].filter(pick).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))[0]
+  const seen = [newest((a) => a.kind === 'quake'), newest((a) => a.kind === 'gdacs' && a.id.startsWith('gdacs-TC-'))].filter((a): a is Alert => !!a)
+  await db.kv.put({ key: LAST_SEEN_KEY, value: seen })
+  // The check time is when the ingest last wrote any row (the air row is rewritten every run), not when this phone asked: a stopped ingest must read as old.
+  // A failed or empty read leaves the stored stamp as it was. The same read covers expired rows, so a failed source's stale flag reaches the phone on a quiet day (a good run clears it on all that source's rows).
+  try {
+    const stamps = await getJson(`${url}/rest/v1/safety_alerts?select=source,fetched_at,stale&order=fetched_at.desc`, key, token)
+    if (!Array.isArray(stamps)) return
+    const at = iso(stamps[0]?.fetched_at)
+    if (at) await db.kv.put({ key: CHECKED_KEY, value: at })
+    const down: StaleSources = {}
+    for (const r of stamps) if (r.stale === true && typeof r.source === 'string') down[r.source] ??= iso(r.fetched_at) // newest first: the source's last good run
+    await db.kv.put({ key: STALE_KEY, value: down })
+  } catch (e) {
+    if (e instanceof SyncError && (e.kind === 'net' || e.kind === 'auth')) throw e
+  }
 }
 
 // Salt and water goals (0024): one small row per person the member may see. A goal edited here and not yet sent wins over the server copy.
@@ -344,22 +385,29 @@ async function pullGoals(url: string, key: string, token: string) {
 // ---- run
 let inflight: Promise<void> | null = null
 
-async function run(force: boolean) {
+/** One batch up, then official alerts while rows remain, and the full pull once none do. True when rows that could go now are still queued: over the cap, or added during this run. */
+async function run(force: boolean): Promise<boolean> {
   const { url, key } = env()
   const token = url && key ? await cfg.getToken() : null
-  if (!token) return setState({ ready: true, signedIn: false })
-  if (state.paused && token === pausedToken) return // 401 pauses sync until a new session
+  if (!token) { setState({ ready: true, signedIn: false }); return false }
+  if (state.paused && token === pausedToken) return false // 401 pauses sync until a new session
   setState({ ready: true, signedIn: true, paused: false })
   void drainQueue(supabase) // waiting ID/insurance/scan uploads go up from here too, not only while the Docs screen is open (B-78); single flight
   const bo = (await db.kv.get(BACKOFF_KEY))?.value as { fails: number; nextAt: number } | undefined
-  if (!force && bo && Date.now() < bo.nextAt) return
+  if (!force && bo && Date.now() < bo.nextAt) return false
   try {
-    const err = await push(token)
+    const waiting = new Set<string>()
+    const err = await push(token, waiting)
     if (err) throw err
-    await pull(token)
-    await db.kv.put({ key: LAST_PULL_KEY, value: Date.now() }) // when this phone last had fresh data (the offline bar says so)
+    const left = () => db.outbox.filter((r) => isSyncable(r.table) && !waiting.has(r.table)).count()
+    if (await left()) await pullAlerts(url!, key!, token) // a failing pull table must not hold back the rows behind this batch
+    else {
+      await pull(token)
+      await db.kv.put({ key: LAST_PULL_KEY, value: Date.now() }) // when this phone last had fresh data (the offline bar says so)
+    }
     await db.kv.delete(BACKOFF_KEY)
     setState({ offline: false })
+    return (await left()) > 0
   } catch (e) {
     const err = e instanceof SyncError ? e : new SyncError('net')
     // Track once per failure streak (bo unset), never for offline; perm errors back off too, so a tracked
@@ -371,15 +419,35 @@ async function run(force: boolean) {
       await db.kv.put({ key: BACKOFF_KEY, value: { fails, nextAt: Date.now() + backoffMinutes(fails) * 60_000 } })
       if (err.kind === 'net') setState({ offline: true })
     }
+    return false
   }
 }
 
-/** Run one sync now. Single flight: a call during a run joins it. `force` ignores the backoff wait (used when the network returns). */
-export const syncNow = (force = false): Promise<void> => (inflight ??= run(force).finally(() => (inflight = null)))
+/** A forced call joined a run in flight. Left set in the instant after a run ends, it forces the next one. */
+let forceJoined = false
+/** Bounds a run that keeps reporting rows it cannot send (a missing table hides the ones behind it). 2000 rows at most; the rest go on the next trigger. */
+const MAX_RUNS = 40
+
+async function runAll(force: boolean) {
+  for (let i = 0; i < MAX_RUNS || forceJoined; i++) { // a joined SOS gets its run even at the cap; each extra run needs a new forced call
+    force ||= forceJoined
+    forceJoined = false
+    // A run that ended on backoff or failure would drop the joined force, and an SOS would wait out the backoff (SosScreen).
+    if (!(await run(force)) && !(forceJoined && (await db.outbox.filter((r) => isSyncable(r.table)).count()))) break
+  }
+  forceJoined = false
+}
+
+/** Run one sync now, batch after batch until nothing that can go is left. Single flight: a call during it joins it, and a row queued meanwhile goes in the next batch. `force` ignores the backoff wait (used when the network returns), and a forced join earns one more run if this one stops short. */
+export const syncNow = (force = false): Promise<void> => {
+  if (force && inflight) forceJoined = true
+  return (inflight ??= runAll(force).finally(() => (inflight = null)))
+}
 
 /** Test helper: forget in-memory state. */
 export function resetSyncForTests() {
   inflight = null
+  forceJoined = false
   pausedToken = null
   state = { ready: false, signedIn: false, offline: false, paused: false }
 }

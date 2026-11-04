@@ -64,7 +64,7 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await page.screenshot({ path: `${SHOTS}/safety-storm-${scheme}.png` })
     // this e2e build has no sign-in, so the face says so; the saved path is covered by stormcard.test.tsx with the mood log mocked
-    await card.getByRole('button', { name: 'OK', exact: true }).click()
+    await card.getByRole('button', { name: 'Okay', exact: true }).click()
     await expect(card.getByRole('status')).toHaveText('Sign in first, then try again.')
   })
 

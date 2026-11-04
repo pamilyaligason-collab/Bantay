@@ -33,9 +33,10 @@ export default function Discover() {
   const Sub = subScreen(sub)
   const meta = DISCOVER_SUBS.find((s) => s.id === sub)!
   const at = DISCOVER_SUBS.findIndex((s) => s.id === sub)
+  // The Memory and Word search games and Fun facts draw their own Back + game-name title.
   // Learn pages below its home (recipes, a recipe, cook mode, medicine cards, benefits, together) draw their own Back + title header.
   // An unknown page, or a medicine page while the flag is off, falls through to the Discover header + pills + Learn home instead of a bare Learn home.
-  const own = /^#discover\/learn\/(?:recipes|recipe\/.+|cook\/.+|together|benefits)$/.test(location.hash) || (medcards && /^#discover\/learn\/(?:meds|med\/.+)$/.test(location.hash))
+  const own = /^#discover\/learn\/(?:recipes|recipe\/.+|cook\/.+|together|benefits)$/.test(location.hash) || /^#discover\/play\/(?:memory|wordsearch|facts)$/.test(location.hash) || (medcards && /^#discover\/learn\/(?:meds|med\/.+)$/.test(location.hash))
   if (own && Sub) return <Sub />
   return (
     <>

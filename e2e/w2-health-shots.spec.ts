@@ -39,6 +39,7 @@ for (const [w, h] of [[390, 844], [360, 780]] as const) {
           // v12 headline is the next step; only the BP goal is met by this data, so the ring says 3/3 and the next goal is Meals
           if (mode === 'done') await expect(page.getByTestId('nudge')).toContainText('BP 3/3')
         }
+        if (mode !== 'empty') await page.getByTestId('nudge').scrollIntoViewIfNeeded() // the card sits below the first screen; without this the shots showed only the top of Health
         await page.screenshot({ path: `${SHOTS}/health-nudge-${mode}-${w}-${scheme}.png` })
       }
     })

@@ -1,4 +1,4 @@
-# Family Bantay - official alerts setup (D-26). Lloyd runs this once. Windows PowerShell 5.1.
+# Family Bantay - official alerts setup (D-26). The owner runs this once. Windows PowerShell 5.1.
 # Run from the repo folder:  powershell -ExecutionPolicy Bypass -File scripts\alerts-deploy.ps1
 # Stops at the first failure. The cron secret is generated here and never printed or written to the repo.
 # Steps follow docs/ALERTS.md: migration 0007, ALERTS_CRON_SECRET, deploy alerts-ingest, Vault copy, one test call, schedule.

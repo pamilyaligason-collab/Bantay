@@ -1,30 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { HOME_ZONES, type LatLon } from '../location/geo'
-import { useLocation, usePlaceFrom } from '../location/useLocation'
+import type { LatLon } from '../location/geo'
+import { liveQuery } from 'dexie'
+import { db } from '../../db'
+import { useLocation, usePlaceFrom, ZONE_KEY } from '../location/useLocation'
 import { track } from '../admin/events'
-import { ALERTS_KEY, type Alert } from '../safety/alerts'
-import { useKv } from '../safety/store'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
+import { putKv, useKv } from '../safety/store'
 import { EmptyState } from '../look/EmptyState'
 import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
 import { LargeTitle } from '../look/LargeTitle'
 import { Row } from '../look/Row'
 import { Section } from '../look/Section'
-import { Segmented } from '../look/Segmented'
-import { placeTimezone } from '../location/place'
-import { actionLines } from './actionLine'
+import ZonePicker from '../location/ZonePicker'
+import { placeName } from '../safety/warningsLogic'
+import { placeNameOf } from '../today/placeName'
+import { adviceLine, CALM_LINE } from './advice'
+import { tempTint } from './tempTint'
+import { alertRef, placeTimezone } from '../location/place'
+import { actionLines, RAIN_WATCH_HOURS } from './actionLine'
+import StormTrack from './StormTrack'
+import { cyclones } from '../safety/LiveMaps'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
-import { HEAT_BANDS, heatBand, heatIndexC } from './heatIndex'
+import { heatIndexC } from './heatIndex'
 import { wxFlag } from './flags'
-import { condOf, feelsLike, isHot, todOf } from './scene'
+import { condOf, feelsLike, isHot, SCRIM, SKY, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import LiveMapToggle from './LiveMapToggle'
 import RainMap from './RainMap'
 import { weatherWarning } from './warning'
+import { useNow } from '../safety/AlertCard'
 import './weather.css'
 import './wxs7w.css'
 
-type Sel = 'me' | 'h1' | 'h2'
+const FOLLOW_KEY = 'wx.follow'
 const NONE_A: Alert[] = []
 const LINKS = [
   ['PAGASA', 'Warnings and typhoon bulletins', 'https://www.pagasa.dost.gov.ph/'],
@@ -42,7 +51,6 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 const dayLabel = (date: string, i: number) => (i === 0 ? 'Today' : new Date(`${date}T12:00:00Z`).toLocaleDateString('en-PH', { weekday: 'short', timeZone: 'UTC' }))
 
-const rainWord = (p: number) => (p < 30 ? 'Low chance' : p < 60 ? 'Possible' : 'Likely')
 const humidWord = (h: number) => (h < 40 ? 'Dry' : h < 60 ? 'Comfortable' : h < 75 ? 'Sticky' : 'Very humid')
 const uvWord = (u: number) => (u < 3 ? 'Low' : u < 6 ? 'Moderate' : u < 8 ? 'High' : u < 11 ? 'Very high: shade 10 AM-3 PM' : 'Extreme: shade 10 AM-3 PM')
 
@@ -56,22 +64,53 @@ function useOnlineNow() {
   return on
 }
 
+/** Re-renders once a minute and on return to the app, so the time of day and "rain next 12 h" never go stale on an open screen. */
+function useMinuteTick() {
+  const [, set] = useState(0)
+  useEffect(() => {
+    const f = () => set((n) => n + 1)
+    const t = setInterval(f, 60_000)
+    document.addEventListener('visibilitychange', f)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', f) }
+  }, [])
+}
+
 /** #weather (or #weather?from=action when opened from an action line): the one full weather view. */
 export default function WeatherScreen() {
-  const l = useLocation()
+  useMinuteTick() // the sky, the words and the card order follow the clock as well as the forecast
+  const gpsLoc = useLocation()
+  // the owner's ruling: a zone picked by hand wins over GPS on this screen until "Current" is picked again. Kept in kv so it holds on the next visit.
+  const [follow, setFollow] = useState<'zone' | 'gps' | null | undefined>(undefined) // undefined until kv answered: no forecast is fetched for a fix that the pick would override
+  useEffect(() => {
+    const sub = liveQuery(() => db.kv.get(FOLLOW_KEY)).subscribe({ next: (r) => setFollow((r?.value as 'zone' | 'gps' | undefined) ?? null), error: () => setFollow(null) })
+    return () => sub.unsubscribe()
+  }, [])
+  const hasFix = gpsLoc.source === 'gps' || gpsLoc.source === 'last'
+  const zoneWins = follow === 'zone' && hasFix
+  const l = useMemo(() => {
+    const ask = async () => { void putKv(FOLLOW_KEY, 'gps'); return gpsLoc.ask() }
+    // read as "no fix": the place, the zone chip and the forecast then all follow the picked zone
+    return zoneWins ? { ...gpsLoc, source: 'home' as const, ask } : { ...gpsLoc, ask }
+  }, [gpsLoc, zoneWins])
   const place = usePlaceFrom(l)
-  // never a home zone: the map follows the person, the forecast may follow a chosen home
-  const fix: LatLon | null = l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon } : null
-  const [pick, setPick] = useState<Sel | null>(null)
+  useEffect(() => { // a pick from the zone chip (ZONE_KEY written after this screen opened) means "follow the zone"
+    let first = true
+    const sub = liveQuery(() => db.kv.get(ZONE_KEY)).subscribe({ next: () => { if (first) first = false; else void putKv(FOLLOW_KEY, 'zone') }, error: () => {} })
+    return () => sub.unsubscribe()
+  }, [])
+  // the map follows the person, the forecast may follow a chosen home; an old fix abroad is not the person, so there both follow the zone (below)
+  const fix: LatLon | null = follow !== undefined && !zoneWins && (l.source === 'gps' || l.source === 'last') ? { lat: l.lat, lon: l.lon } : null
   const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
   const [locOff, setLocOff] = useState(false)
-  const homeSel: Sel = place?.zone === HOME_ZONES[1].id ? 'h2' : 'h1'
-  const sel: Sel = pick ?? (fix ? 'me' : homeSel)
-  const point: LatLon | null = sel === 'me' ? fix ?? place?.weather ?? null : HOME_ZONES[sel === 'h1' ? 0 : 1]
-  const name = sel === 'me' ? 'My location' : HOME_ZONES[sel === 'h1' ? 0 : 1].name.split(',')[0]!
+  // the zone chip (ZonePicker) owns the home pick; a position wins, unless the place fell back to a home zone (a fix abroad): the forecast follows the label
+  const point: LatLon | null = follow === undefined && hasFix ? null : (place?.source !== 'zone' ? fix : null) ?? place?.weather ?? null
   const { fc, offline, loading } = useForecast(point)
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const online = useOnlineNow()
+  const warnAt = place ? alertRef(place) : point // the sentences below name this place: home for a phone abroad, never its foreign position
+  const now = useNow() // a quake ages out of D-114 terms and a warning of its window while the screen stays open
+  const warn = useMemo(() => (warnAt ? weatherWarning(alerts, warnAt, false) : null), [alerts, warnAt, now])
+  const unchecked = feedStale(alerts, useKv<unknown>(CHECKED_KEY, null), useKv<StaleSources>(STALE_KEY, NO_STALE)) // no "no warning" wording or green tint without a fresh check
 
   const opened = useRef(false)
   useEffect(() => {
@@ -84,31 +123,44 @@ export default function WeatherScreen() {
 
   const askLoc = async () => {
     if (finding) return
-    if (fix && l.source === 'gps') return setPick('me') // an old fix is tried again
     setFinding(true); setLocOff(false)
     const got = (await l.ask().catch(() => null))?.source === 'gps'
-    setFinding(false); if (got) setPick('me'); else setLocOff(true)
+    setFinding(false); if (!got) setLocOff(true)
   }
 
+  // X1: the whole page is the sky (stops from scene.ts, under the same veil as the hero), cards sit on it as glass. The page gradient lives on the scroll box so it fills the screen edge to edge.
+  const [sky0, sky1] = SKY[fc ? todOf(nowLocal(fc, Date.now()), fc.daily[0]?.sunrise, fc.daily[0]?.sunset) : 'night']
+  const veil = (hex: string) => [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - SCRIM) + [5, 12, 28][(i - 1) / 2]! * SCRIM))
+  const lum = (c: number[]) => c.reduce((a, v, i) => a + [0.2126, 0.7152, 0.0722][i]! * (((v / 255 + 0.055) / 1.055) ** 2.4), 0)
+  const [c0, c1] = [veil(sky0), veil(sky1)]
+  const lit = lum(c0) > lum(c1) ? c0 : c1 // white text is worst over the lightest stop
+  const hex = (c: number[]) => `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`
+  useEffect(() => {
+    const sc = document.querySelector<HTMLElement>('.bt .scroll')
+    const bt = sc?.closest<HTMLElement>('.bt')
+    if (!sc || !bt) return
+    sc.style.backgroundImage = `linear-gradient(rgba(5,12,28,${SCRIM}), rgba(5,12,28,${SCRIM})), linear-gradient(to bottom, ${sky0}, ${sky1})`
+    bt.dataset.wx = ''; bt.style.setProperty('--wx-end', hex(c1))
+    return () => { sc.style.backgroundImage = ''; delete bt.dataset.wx; bt.style.removeProperty('--wx-end') }
+  }, [sky0, sky1]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="wx">
-      <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<span className="wx-src-pill">Open-Meteo</span>} />
-      <Segmented<Sel> label="Place" value={sel} onChange={(id) => (id === 'me' ? void askLoc() : setPick(id))} options={[
-        { id: 'me', label: fix ? 'My location' : finding ? 'Finding you…' : 'Use my location' },
-        { id: 'h1', label: 'Home 1' },
-        { id: 'h2', label: 'Home 2' }
-      ]} />
+    <div className="wx" data-testid="wx-root" data-contrast-bg={hex(lit)}>
+      <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={name} where={sel === 'me' ? (l.source === 'last' ? 'last' : 'gps') : null} point={point} alerts={alerts} offline={offline || !online} /> : (
-        <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} /> : (
+        <>
+          {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
+          {warnAt && cyclones(alerts).length > 0 && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
+          <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
+        </>
       )}
-      {fix ? <LiveMapToggle loc={fix} /> : l.source === 'pending' ? null : (
+      {fix ? <LiveMapToggle loc={place?.source === 'zone' ? place.weather : fix} /> : l.source === 'pending' ? null : (
         <section aria-label="Live weather map" className="card wx-map wx-map-empty">
-          <p>Your position is not known yet, so the map has nothing to centre on.</p>
-          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Find me'}</button>
+          <p>{hasFix ? 'The map follows your phone, not the home area you picked.' : 'Your position is not known yet, so the map has nothing to centre on.'}</p>
+          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : hasFix ? 'Use my location' : 'Find me'}</button>
         </section>
       )}
-      <Section title="Official sources">
+      <Section title="Official" testId="wx-official">
         <div className="grp" role="group" aria-label="Official sources">
           {LINKS.map(([n, sub, url]) => (
             <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer"><span className="grow"><b>{n}</b><span className="sub">{sub}</span></span><span className="wx-out"><Icon name="out" size={20} /></span></a>
@@ -124,44 +176,85 @@ export default function WeatherScreen() {
   )
 }
 
-function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name: string; where: 'gps' | 'last' | null; point: LatLon; alerts: Alert[]; offline: boolean }) {
+/** A listed storm needs no forecast either: it sits under the warning row while the forecast loads, fails, or is shown. */
+function StormCard({ alerts, point, place }: { alerts: Alert[]; point: LatLon; place: string }) {
+  return <section aria-label="Storm track" className="card wx-rain" data-testid="wx-storm"><StormTrack alerts={alerts} point={point} placeName={place} /></section>
+}
+
+/** Needs no forecast: a warning must show while the forecast is loading or could not load. */
+function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWarning>; unchecked: boolean; name: string }) {
+  return (
+    <div data-testid="wx-warn"><GroupedList icons>
+      <Row icon="warn" tint={warn ? 'red' : unchecked ? 'amber' : 'green'} title="Official warnings" sub={warn ? warn.title : unchecked ? 'Not checked lately. Open Warnings or check PAGASA.' : `PAGASA: no warning near ${name}`} href="#safety/warnings" />
+    </GroupedList></div>
+  )
+}
+
+function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
   const c = fc.current
   const hi = heatIndexC(c.temp, c.humidity)
-  const band = heatBand(hi)
   const fl = feelsLike(c.temp, c.humidity, c.feels)
-  const next6 = hoursFrom(fc, 6, now)
-  const rain6 = next6.length ? Math.max(...next6.map((h) => h.prob ?? 0)) : null
-  const warn = useMemo(() => weatherWarning(alerts, point), [alerts, point])
-  const lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
+  const nextRain = hoursFrom(fc, RAIN_WATCH_HOURS, now)
+  const known = nextRain.flatMap((h) => (h.prob == null ? [] : [h.prob]))
+  const rainNext = known.length ? Math.max(...known) : null // unknown stays unknown, never 0%
+  const cond = condOf(c.code)
+  const raining = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
+  let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
+  if (raining) { // it is falling now: never "nothing to plan around" or a strong-sun tip under a rainy hero, even when the hourly chances are low
+    lines = lines.filter((x) => x.id !== 'uv')
+    if (!lines.some((x) => x.id === 'rain')) lines = [...lines, { id: 'rain' as const, rank: 50, text: cond === 'storm' ? 'Thunderstorm now' : 'Raining now' }].sort((a, b) => b.rank - a.rank)
+  }
   const main = lines[0]
   const strip = hoursFrom(fc, 49, now).filter((_, i) => i % 3 === 0)
   const days = fc.daily.filter((d) => d.date)
   const lo = Math.min(...days.map((d) => d.min ?? Infinity))
   const hiAll = Math.max(...days.map((d) => d.max ?? -Infinity))
   const span = Math.max(1, hiAll - lo)
-  const asOf = clockIn(fc.fetchedAt, placeTimezone(point, fc.tz))
+  const dayIn = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: placeTimezone(point, fc.tz) })
+  const asOf = clockIn(fc.fetchedAt, placeTimezone(point, fc.tz)) + (dayIn(new Date(fc.fetchedAt)) === dayIn(new Date(now)) ? '' : ' yesterday') // a reading is kept at most 24 hours
   const [allDays, setAllDays] = useState(false) // 5 days first, all 10 on a tap: keeps the screen inside its D-102 budget
+
+  const daily = today?.prob ?? null
+  // "later today" must mean hours still to come: the peak of today's remaining hours, not the day's max (which may be past)
+  const leftToday = fc.hourly.filter((h) => h.time.slice(0, 10) === nl.slice(0, 10) && h.time.slice(0, 13) >= nl.slice(0, 13)).map((h) => h.prob ?? 0)
+  const advice = adviceLine(leftToday.length ? Math.max(...leftToday) : null, rainNext, lines, fc.daily[1]?.prob ?? null)
+
+  // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads and Rain next 12 h takes the Sunrise tile. Dry: the 48-hour strip leads and Sunrise stays.
+  const wet = raining || lines.some((x) => x.id === 'rain')
+  const storms = cyclones(alerts).length > 0
+  const rainCard = <RainMap key="rain" fc={fc} placeName={name} daily={daily} nextRain={rainNext} />
+  const stripCard = strip.length > 0 && (
+    <Section key="48" title="Next 48 hours" meta="every 3 h · rain chance" testId="wx-48">
+      <div className="card wx-stripbox">
+        <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
+          {strip.map((h, i) => (
+            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}%`}</span></li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  )
 
   return (
     <>
-      <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-contrast-bg="#0B1636">
+      <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
         <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
-        <div className="wx-k">{name}{where === 'gps' && ' · near you'}{where === 'last' && <span data-testid="place-last"> · last known</span>}</div>
-        <span className="wx-sub">{offline ? `as of ${asOf}, offline` : `Updated ${asOf}`}</span>
+        <div className="wx-k">{name}</div>
+        <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
         <span className="wx-sub">Feels like {deg(fl.value)}</span>
         <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
       </section>
 
-      <GroupedList icons>
-        <Row icon="warn" tint={warn ? 'red' : 'green'} title="Official" sub={warn ? warn.title : `PAGASA: no warning near ${where === 'last' ? 'your last known place' : where === 'gps' ? 'you' : name}`} href="#safety/warnings" />
-      </GroupedList>
+      <WarnRow warn={warn} unchecked={unchecked} name={name} />
 
-      <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'}>
+      {storms && <StormCard alerts={alerts} point={stormFrom} place={stormPlace} />}
+
+      <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'} data-testid="wx-advice">
         {main ? (
           <>
             {main.id === 'warning' && warn && <Icon name={WARN_ICON[warn.kind] ?? 'warn'} tone="alert" boxed size={20} />}
@@ -169,63 +262,36 @@ function Body({ fc, name, where, point, alerts, offline }: { fc: Forecast; name:
             {main.band && <span className="wx-band">{main.band}</span>}
             {lines.slice(1).map((x) => <span key={x.id} className="wx-act-sub">{x.text}</span>)}
           </>
-        ) : <b className="wx-act-t calm">Nothing to act on now. No heat, rain or strong sun to plan around.</b>}
+        ) : <b className={`wx-act-t${advice === CALM_LINE ? ' calm' : ''}`}>{advice}</b>}
       </section>
 
-      {/* plug: useBlendedWeather (branch claude/weather-blend-89aa47) fills next2h and aqi here; until it merges the flag stays off */}
+      {/* plug: useBlendedWeather (branch claude/weather-blend-89aa47) fills next2h here; until it merges the flag stays off */}
       {wxFlag('blend') && <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>}
 
-      {hi != null && (
-        <div className="wx-scale" role="img" aria-label={`Heat levels: ${HEAT_BANDS.map((b) => `${b.label} ${b.min}${b.max === Infinity ? ' and up' : ` to ${b.max}`}`).join(', ')}. Now: ${band?.label ?? 'below Caution'}.`}>
-          {HEAT_BANDS.map((b) => (
-            <span key={b.id} className={band?.id === b.id ? 'on' : undefined}>{b.label}<br />{b.max === Infinity ? `${b.min}°+` : `${b.min}-${b.max}°`}</span>
-          ))}
-        </div>
-      )}
+      {wet ? <>{rainCard}{stripCard}</> : <>{stripCard}{rainCard}</>}
 
-      <section aria-label="Details" className="wx-tiles">
-        <div className="wx-tile"><span className="eyebrow">Rain next 6 h</span><b>{rain6 == null ? 'n/a' : `${Math.round(rain6)}%`}</b><span className="wx-sub">{rain6 == null ? 'No data' : rainWord(rain6)}</span></div>
-        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
-        <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
-        <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
-      </section>
-
-      {wxFlag('blend') && <Section title="Air quality"><EmptyState title="Not shown yet" body="Air quality needs a second feed." /></Section>}
-
-      <RainMap fc={fc} point={point} placeName={name} alerts={alerts} />
-
-      {strip.length > 0 && <Section title="Next 48 hours" meta="every 3 hours · swipe for more">
-        <div className="card wx-stripbox">
-          <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
-            {strip.map((h, i) => (
-              <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={`${Math.round(h.prob ?? 0)} percent rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}%`}</span></li>
-            ))}
-          </ul>
-        </div>
-      </Section>}
-
-      {days.length > 0 && <Section title="10 days">
+      {days.length > 0 && <Section title="10 days" meta="rain chance" testId="wx-10">
         <ul className="card wx-days">
           {(allDays ? days : days.slice(0, 5)).map((d, i) => (
             <li key={d.date}>
               <b>{dayLabel(d.date, i)}</b>
               <Glyph kind={kindOf(d.code)} />
               <span className="wx-lo">{deg(d.min)}</span>
-              <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%` }} /></span>
+              <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%`, background: `linear-gradient(90deg, var(${tempTint(d.min ?? lo)}), var(${tempTint(d.max ?? hiAll)}))` }} /></span>
               <span className="wx-hi">{deg(d.max)}</span>
-              <span className="wx-rp" aria-label={`${Math.round(d.prob ?? 0)} percent rain`}>{d.prob == null ? 'n/a' : `${Math.round(d.prob)}%`}</span>
+              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : `${Math.round(d.prob)} percent chance of rain`}>{d.prob == null ? 'n/a' : `${Math.round(d.prob)}%`}</span>
             </li>
           ))}
         </ul>
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </Section>}
 
-      <Section title="Season and sun">
-        <div className="card wx-season">
-          {today?.sunrise && today.sunset && <div className="wx-sun"><b>Sunrise {clockIn(`${today.sunrise}:00Z`, 'UTC')}</b><b>Sunset {clockIn(`${today.sunset}:00Z`, 'UTC')}</b></div>}
-          <p className="wx-sub">Monthly outlook: see PAGASA (link below). Typhoon season: June to November.</p>
-        </div>
-      </Section>
+      <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
+        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
+        <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
+        <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
+        {wet ? <div className="wx-tile"><span className="eyebrow">Rain next 12 h</span><b>{rainNext == null ? 'n/a' : `${Math.round(rainNext)}%`}</b><span className="wx-sub">{rainNext == null ? 'No data' : 'Highest chance'}</span></div> : <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>}
+      </section>
     </>
   )
 }

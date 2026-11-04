@@ -67,6 +67,22 @@ class LogDB extends Dexie {
 }
 export const ldb = new LogDB()
 
+type StepsShape = Pick<Activity, 'kind' | 'source' | 'minutes' | 'startedAt'>
+const isSensorSteps = (a: Pick<Activity, 'kind' | 'source'>) => a.kind === 'steps' && (a.source === 'health-connect' || a.source === 'healthkit')
+/** Sensor steps are whole-hour rows: 60 minutes, starting on an exact UTC hour. An old sample can also last 60 minutes, so minutes alone does not tell them apart. */
+export const isSensorHour = (a: StepsShape) => isSensorSteps(a) && a.minutes === 60 && Date.parse(a.startedAt) % 3_600_000 === 0
+/** The first phone sync stored one row per sample, so two apps writing one walk doubled it. The old shape is never deleted but read as no data, so every reader (and every device that pulled them) skips it. */
+export const isOldSensorSteps = (a: StepsShape) => isSensorSteps(a) && !isSensorHour(a)
+ldb.activity.hook('reading', (a) => (a && isOldSensorSteps(a) ? { ...a, minutes: null, steps: null } : a)) // a is undefined when get() finds no row
+/** One uuid per person, source and hour, the same on every phone, so the server's unique client_id keeps one row (the insert ignores duplicates). */
+export async function hourClientId(a: Pick<Activity, 'personId' | 'source' | 'startedAt'>) {
+  const d = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${a.personId}|${a.source}|${Date.parse(a.startedAt)}`))).slice(0, 16)
+  d[6] = (d[6] & 0x0f) | 0x50
+  d[8] = (d[8] & 0x3f) | 0x80
+  const h = [...d].map((b) => b.toString(16).padStart(2, '0')).join('')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
+}
+
 /** `track: false` for bulk callers (sensors) and for the second value of a pair (blood pressure), so one log is one reading_added. */
 export async function logReading(r: Reading, opts: { track?: boolean } = {}) {
   const id = await hdb.readings.add(r)
@@ -91,4 +107,9 @@ export async function logActivity(a: Activity) {
   const id = await ldb.activity.add(a)
   await enqueue('activity', 'insert', { ...a, id })
   return id
+}
+/** A synced hour grew: change the local row and queue the new totals (sync.ts sends them as a PATCH, the only update the server grants). */
+export async function updateActivityTotals(id: number, a: Activity) {
+  await ldb.activity.update(id, { steps: a.steps })
+  await enqueue('activity', 'update', { id, steps: a.steps })
 }

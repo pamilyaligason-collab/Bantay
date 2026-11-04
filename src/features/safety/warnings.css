@@ -12,6 +12,12 @@
 .wn-felt { flex: 1 1 180px; min-width: 0; font-size: 17px; line-height: 22px; font-weight: 600; color: var(--ink); }
 .wn-where { font-size: 17px; line-height: 24px; color: var(--ink); overflow-wrap: anywhere; }
 .wn-km { font-size: 13px; line-height: 18px; color: var(--muted); }
+/* VR: board hero is one card, map on top and the event under it. The tone border is on the wrapper. */
+.wn-top { border-radius: var(--r-hero); overflow: hidden; border: 1.5px solid var(--tint-amber-ink); background: var(--card); box-shadow: var(--shadow); }
+.wn-top[data-tone="red"] { border-color: var(--tint-red-ink); }
+.wn-top .card.mapc { border-radius: 0; box-shadow: none; }
+.wn-top .mapc-credit { padding: 4px 12px; }
+.wn-top .wn-hero, .wn-top .wn-hero[data-tone="red"] { border: 0; border-radius: 0; }
 .wn-empty { margin: 0; padding: 18px; border-radius: var(--r-hero); background: var(--card); color: var(--ink); font-size: 17px; line-height: 24px; }
 .wn-shake { width: 100%; text-align: left; font-family: inherit; color: inherit; background: none; border: 0; }
 .wn-shake[aria-expanded="true"] .rw-chev { transform: rotate(90deg); }
@@ -20,3 +26,7 @@
 .wn-foot { margin: 0 4px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .wn-foot a { color: var(--green); display: inline-flex; align-items: center; min-height: 44px; }
 @media (prefers-reduced-motion: reduce) { .wn * { transition: none !important; animation: none !important; } }
+
+/* CS: the board's plain white Safety cards button under the shaking row */
+.wn-cards { display: flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 14px; border-radius: 16px; background: var(--card); color: var(--ink); font-size: 17px; font-weight: 600; text-decoration: none; box-shadow: var(--shadow); }
+.wn-cards:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

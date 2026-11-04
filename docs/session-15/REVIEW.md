@@ -27,7 +27,7 @@ Evidence files in this folder: `inventory.md`, `audit-decisions-safety.md` (DS-n
 | DS-3 | Simple mode never shows the family SOS banner | `IncomingSos` only in `screens/Today.tsx:70`, not `SimpleToday.tsx` | Simple-mode users miss a family emergency | Render `IncomingSos` in Simple Today |
 | DS-4 | Offline, MedDetail says "No alarm on this phone" for your own medicine | `records/useHealthData.ts` ownId from network `getMember()` | Wrong safety message; Edit/Pause hidden offline | Fall back to `selfIdOrCached()` |
 | DS-5 | Weather Jack shows beside a live SOS banner (and can be a 2nd Jack) | `screens/Today.tsx:73`, `weather/WeatherCard.tsx:67` | Breaks D-91 | Pass `noJack` while SOS is live / another Jack shows |
-| DS-10 | `push_tokens` = 0 rows | live SQL | Native push reaches no phone | Lloyd: install 2.5.1, finish Firebase setup |
+| DS-10 | `push_tokens` = 0 rows | live SQL | Native push reaches no phone | The owner: install 2.5.1, finish Firebase setup |
 | UI-1 | "Ask me anything" hint covers the SOS hold caption; cut at 200% | `shell/shell.css:143`; shot `docs/session-14/shots/T2/today-late.png` | SOS instructions hidden | Move hint above Jack, allow wrap |
 | UI-2 | Family Plan "+ Add" hidden under the Jack button | `family/plan.css:42`; shot `docs/session-13/shots/F/plan-empty-light.png` | Cannot add a plan item | Pad the FAB row / move Add to top row |
 | UI-3/4 | Tab labels collide and titles cut off at 200% text | `shell/shell.css:22,47,105` | Large-text users cannot read navigation | Icons-only tab bar under 300 px, 2-line titles |
@@ -41,7 +41,7 @@ SEC-2 creator keeps reading a claimed profile (latent) · SEC-3 TRUNCATE grants 
 DS-6 dose counting across midnight (`health/doseCount.ts:31-34`) · DS-7 dose-watch midnight bucketing (latent, no slots near midnight) ·
 DS-8 snooze says "I will remind you" with notifications off · DS-9 quiet-hours line wrong for Unwell pushes · DS-11 SOS waits ~7 s for GPS + id in series ·
 DS-12 Video of the day built but never shown (D-64) · UI-5..8, UI-11..15, UI-18, UI-19 · C1-C30 copy cuts (Medical ID 317 chars, Privacy, Phone warnings, Labs disclaimer...) ·
-`sos-events-prune` and `erasure` crons write no `job_runs` · `FAMILY_INVITE_TOKEN` unused by deployed code (Lloyd: unset).
+`sos-events-prune` and `erasure` crons write no `job_runs` · `FAMILY_INVITE_TOKEN` unused by deployed code (the owner: unset).
 
 ## Verified OK
 - RLS on all 61 public tables; health tables private by default (D-82/D-84); 4 storage buckets private; definer functions `search_path=''` except 2 (SEC-4/5).
@@ -51,13 +51,13 @@ DS-12 Video of the day built but never shown (D-64) · UI-5..8, UI-11..15, UI-18
 - Crons fresh (alerts-ingest 144 runs/24 h, dose-watch 96 runs/24 h, 0 failures); alarm claims honest (remindPeople + KEY_ALARM_HEALTH.ok); SOS fan-out to all family; reduced motion honoured; icon buttons named.
 
 ## Not verified
-- Live phone checks (session-12 PLAN 6.4): blocked on Lloyd installing 2.5.1; the exact manual-install error is still unknown.
+- Live phone checks (session-12 PLAN 6.4): blocked on the owner installing 2.5.1; the exact manual-install error is still unknown.
 - Mockup v9 screen-by-screen comparison: judged from session 13/14 screenshots plus code; fresh shots after the fixes.
 - Deployed web bundle vs main (no deploy workflow; bantay.pages.dev serves `main-DvtXp59Q.js`).
 - `.env.production` contents (read denied).
 
 ## Fix plan
-See `contracts.md` (9 lanes, one owner per file). Server changes (migration 0043, pin-login and dose-watch deploys) are built and tested here and wait for Lloyd's approval to apply.
+See `contracts.md` (9 lanes, one owner per file). Server changes (migration 0043, pin-login and dose-watch deploys) are built and tested here and wait for the owner's approval to apply.
 
 ## Fix results (branch claude/family-bantay-review-check-ac44fa)
 
@@ -69,7 +69,7 @@ Then a 44->48 px min tap-size sweep (82 lines, 31 CSS files) and a final whole-b
 | DS-1 | Fixed: 0 recipients -> "Saved. No one gets your alerts yet. Call your family."; family lines only when a writer carer exists; storm card keeps "hold SOS or call 911" |
 | DS-2, DS-3, DS-4, DS-5, DS-6, DS-8, DS-9, DS-11 | Fixed with tests |
 | DS-7 | Not changed: the app's `pickSlot` (`health/meds.ts:156`) tags a take with a slot of the day it was taken, and dose-watch's day bucketing mirrors it. Two attempts to change only the server created false missed-dose alerts. Needs one joint app + server change later. |
-| SEC-1..SEC-5 | Fixed in `0043_s15_security.sql` + pin-login + client copy (admin approves a PIN reset). The down migration deliberately does not re-grant TRUNCATE. **Not applied: needs Lloyd.** |
+| SEC-1..SEC-5 | Fixed in `0043_s15_security.sql` + pin-login + client copy (admin approves a PIN reset). The down migration deliberately does not re-grant TRUNCATE. **Not applied: needs the owner.** |
 | UI-1..UI-5, UI-7..UI-17, UI-19, C1-C30 | Fixed (UI-1: the Ask hint hides where it would cover text; UI-2: Plan Add sits at the list end) |
 | UI-6, DS-12 | Out of scope this round |
 

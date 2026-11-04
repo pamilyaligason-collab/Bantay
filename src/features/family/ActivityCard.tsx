@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
 import type { Reading } from '../health/ranges'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
-import { EmptyState, Section, Segmented } from '../look'
+import { Section, Segmented } from '../look'
 import { hdb } from '../records/store'
 import { useViewedVisibleIds } from '../viewas/viewAs'
 import { faceName } from './FacesRow'
@@ -11,7 +11,7 @@ import { carerUserId, loadCarerOf, type CarerClient } from './reportData'
 import { useFamilyPeople, type FamilyPerson } from './roster'
 import { seriesColor, WeekChart } from './WeekChart'
 import { bpDoctorOf } from '../health/verdict'
-import { bpSeries, doseSeries, legendWord, stepSeries, type Metric } from './weekSeries'
+import { bpSeries, doseSeries, emptyWords, firstWithData, legendWord, stepSeries, type Metric } from './weekSeries'
 import './v13-family.css'
 
 type Thresholds = Parameters<typeof bpDoctorOf>[0]
@@ -21,13 +21,8 @@ const TITLES: Record<Metric, { t: string; u: string; label: string }> = {
   steps: { t: 'Steps a day', u: 'steps', label: 'Steps over 7 days' },
   meds: { t: 'Medicines taken', u: '% taken', label: 'Medicines taken over 7 days' }
 }
-const EMPTY_BODY: Record<Metric, string> = {
-  bp: 'No readings shared with you this week. Blood pressure shows here once someone saves or shares it.',
-  steps: 'Steps show here once a phone shares them.',
-  meds: 'Doses show here once a medicine has times and is marked.'
-}
 
-/** Who the chart may name (Lloyd 2026-11-01): you and the people you care for, never everyone an admin role can read. While viewing as someone, the people they can see. */
+/** Who the chart may name (the owner 2026-11-01): you and the people you care for, never everyone an admin role can read. While viewing as someone, the people they can see. */
 export function chartPeople(all: FamilyPerson[], visible: Set<string> | null | undefined, carerOf: string[]): FamilyPerson[] {
   return all.filter((p) => (visible ? visible.has(p.id) : p.isMe || carerOf.includes(p.id)))
 }
@@ -45,7 +40,7 @@ export function ActivityCard() {
   const people = chartPeople(all, visible, carerOf)
   const key = people.map((p) => p.id).join(',')
   const [d, setD] = useState<D | null>(null)
-  const [metric, setMetric] = useState<Metric>('bp')
+  const [picked, setPicked] = useState<Metric | null>(null) // null = the first tab that has data
   const [now, setNow] = useState(() => new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(t) }, []) // the 7-day window moves at midnight
   useEffect(() => {
@@ -60,15 +55,18 @@ export function ActivityCard() {
     return () => sub.unsubscribe()
   }, [key])
   const ids = people.map((p) => p.id)
-  const series = !d ? [] : metric === 'bp' ? bpSeries(d.readings, ids, now) : metric === 'steps' ? stepSeries(d.acts, ids, now) : doseSeries(d.meds, d.takes, ids, now)
+  const by = d ? { bp: bpSeries(d.readings, ids, now), steps: stepSeries(d.acts, ids, now), meds: doseSeries(d.meds, d.takes, ids, now) } : null
+  const metric = picked ?? (by ? firstWithData(by) : 'bp')
+  const series = by ? by[metric] : []
   const allEmpty = series.every((s) => s.empty)
+  const unlinked = all.filter((p) => !p.isMe && !people.some((x) => x.id === p.id)).map((p) => faceName(p.name))
   const nameOf = (id: string) => { const p = people.find((x) => x.id === id); return p?.isMe ? 'You' : faceName(p?.name ?? 'Someone') }
   return (
     <Section title="Activity" meta="This week" testId="activity">
       <div className="card ac">
-        <Segmented label="Show" value={metric} onChange={setMetric} options={[{ id: 'bp', label: 'BP' }, { id: 'steps', label: 'Steps' }, { id: 'meds', label: 'Medicines' }]} />
+        <Segmented label="Show" value={metric} onChange={setPicked} options={[{ id: 'bp', label: 'BP' }, { id: 'steps', label: 'Steps' }, { id: 'meds', label: 'Medicines' }]} />
         {!d ? <p className="sub" aria-busy="true">Loading…</p> : allEmpty ? (
-          <EmptyState icon="heart" title="Nothing to chart yet" body={EMPTY_BODY[metric]} />
+          <p className="sub" data-testid="ac-empty">{emptyWords(metric, people.map((p) => nameOf(p.id)), unlinked)}</p>
         ) : (
           <>
             <div className="ac-h"><b>{TITLES[metric].t}</b><span className="sub">{TITLES[metric].u}</span></div>

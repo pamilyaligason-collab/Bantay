@@ -16,7 +16,7 @@ const NO_TAKES: MedTaken[] = []
 const startOfYesterday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 1); return d } // yesterday's late doses count at the midnight edge
 
 /** Medicines for Next up: the dose due soon (or just missed) for me only, from the medications table (no profile text).
- *  N-3 (Lloyd 2026-10-30): Today shows the signed-in person's own items; a carer's dependants live in Family and, for an admin, View as.
+ *  N-3 (the owner 2026-10-30): Today shows the signed-in person's own items; a carer's dependants live in Family and, for an admin, View as.
  *  `review` counts my medicines still waiting for "Still taking it?". */
 export function useDueMeds(): { due: DuePerson[]; review: number; tick: Date } {
   const { people, selfId } = useFamilyPeople()

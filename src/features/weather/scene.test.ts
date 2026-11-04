@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { CONDS, condOf, feelsLike, isHot, layersFor, LIT, litOf, SCRIM, SKY, TODS, todOf } from './scene'
+import { CONDS, condOf, feelsLike, isHot, layersFor, LIT, litOf, SCRIM, scrimFor, SKY, TODS, todOf } from './scene'
 
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
 const lum = (c: number[]) => { const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
@@ -46,6 +46,35 @@ describe('contrast (WCAG AA 4.5:1 for white text)', () => {
       const c = mix(scrim, SCRIM, lit)
       expect(1.05 / (lum(c) + 0.05)).toBeGreaterThanOrEqual(4.5)
     }
+  })
+})
+
+// T6: Today's hero shows the board's night sky and a bright moon; Weather's page keeps the full SCRIM.
+describe('lite scrim for Today at night (T6)', () => {
+  const scrim = rgb('#050C1C')
+  const board = { top: rgb('#1C2F57'), bottom: rgb('#46608A') }
+  it('only a night with a moon is lighter; day, dawn, dusk, storms and the Weather page keep SCRIM', () => {
+    expect(scrimFor('night', true, layersFor('night', 'clear').moon)).toBeLessThan(SCRIM)
+    expect(scrimFor('night', true, layersFor('night', 'partly').moon)).toBeLessThan(SCRIM)
+    expect(scrimFor('night', false, true)).toBe(SCRIM) // Weather's own hero
+    expect(scrimFor('night', true, layersFor('night', 'storm').moon)).toBe(SCRIM)
+    for (const t of ['dawn', 'day', 'dusk'] as const) expect(scrimFor(t, true, true)).toBe(SCRIM)
+  })
+  it('the night sky under the lite scrim stays within 25 per channel of the board (#1C2F57 to #46608A), unlike SCRIM', () => {
+    const a = scrimFor('night', true, true)
+    for (const [stop, want] of [[SKY.night[0], board.top], [SKY.night[1], board.bottom]] as const) {
+      const seen = mix(scrim, a, rgb(stop))
+      seen.forEach((v, i) => expect(Math.abs(v - want[i]!)).toBeLessThanOrEqual(25))
+    }
+    expect(Math.abs(mix(scrim, SCRIM, rgb(SKY.night[1]))[0]! - board.bottom[0]!)).toBeGreaterThan(25)
+  })
+  it('white text stays AA on the brightest sky stop, a night cloud (#9FB0D4 at .55)', () => {
+    const a = scrimFor('night', true, true)
+    const bright = rgb(SKY.night[1])
+    for (const lit of [bright, mix(rgb('#9FB0D4'), 0.55, bright)]) {
+      expect(1.05 / (lum(mix(scrim, a, lit)) + 0.05)).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(readFileSync('src/features/weather/scene.css', 'utf8').toUpperCase()).toContain('#9FB0D4')
   })
 })
 

@@ -10,6 +10,7 @@ import { hdb } from '../records/store'
 
 configure({ asyncUtilTimeout: 6000 })
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+vi.mock('../sync/SyncStatus', () => ({ SyncStatus: () => null })) // HeadActions (Family title row) shows it
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 import Plan from './Plan'
@@ -23,7 +24,7 @@ import { fdb } from './store'
 beforeEach(async () => {
   location.hash = ''
   await Promise.all([db.outbox.clear(), db.kv.clear(), db.profiles.clear(), fdb.tasks.clear(), fdb.events.clear(), fdb.notes.clear(), ldb.activity.clear(), hdb.people.clear()])
-  await hdb.people.bulkPut([{ id: 'p1', name: 'Lloyd Roc' }, { id: 'p2', name: 'Kuya Ben' }])
+  await hdb.people.bulkPut([{ id: 'p1', name: 'Rey Villar' }, { id: 'p2', name: 'Kuya Ben' }])
 })
 afterEach(cleanup)
 
@@ -91,7 +92,7 @@ describe('Plan', () => {
     render(<Plan />)
     const hint = await screen.findByText(/^Add a reminder for /)
     expect(hint.textContent).not.toMatch(/Lola/) // names a real family member, never a made-up one
-    await waitFor(() => expect(screen.getByText(/^Add a reminder for /).textContent).toMatch(/^Add a reminder for (Kuya|Lloyd)'s check-up.$/))
+    await waitFor(() => expect(screen.getByText(/^Add a reminder for /).textContent).toMatch(/^Add a reminder for (Kuya|Rey)'s check-up.$/))
     expect(screen.getAllByRole('button', { name: 'Add' }).length).toBe(1) // the floating Add; the empty-state action has its own name
     expect(screen.getByRole('button', { name: 'Add to the plan' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /^Later/ }))
@@ -156,37 +157,18 @@ describe('Faces row', () => {
     location.hash = '#family'
     render(<Family />)
     const roll = await screen.findByRole('group', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getByRole('article', { name: /^Lloyd Roc \(you\)\. OK 7:40/ })).toBeTruthy())
+    await waitFor(() => expect(within(roll).getByRole('article', { name: /^Rey Villar \(you\)\. OK 7:40/ })).toBeTruthy())
     expect(within(roll).getByRole('article', { name: /^Kuya Ben\. No check-in today/ })).toBeTruthy()
     expect(within(roll).getAllByTestId('person-card').map((e) => e.getAttribute('data-kind')).sort()).toEqual(['nocheck', 'ok'])
     expect(within(roll).getByText('No check-in yet')).toBeTruthy()
     expect(screen.queryByText('Phone health data')).toBeNull()
   })
 
-  it('I\'m OK writes a check-in activity row and turns into "You\'re OK" with focus kept', async () => {
+  it("has no I'm OK button: that action lives in My day on Today (F4)", async () => {
     location.hash = '#family'
     render(<Family />)
     await screen.findByRole('group', { name: 'Family roll call' })
-    await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
-    fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    expect(await screen.findByText(/^You're OK · /)).toBeTruthy()
-    expect((await screen.findByText('The family can see you are OK.')).getAttribute('role')).toBe('status')
-    expect(screen.getAllByRole('status')).toHaveLength(1)
-    expect(document.activeElement?.classList.contains('td-h')).toBe(true)
-    expect((await ldb.activity.toArray())[0]).toMatchObject({ personId: 'p1', kind: 'check-in', minutes: null, steps: null })
-  })
-
-  it("I'm OK that fails to save shows the failure text and never the done state", async () => {
-    location.hash = '#family'
-    render(<Family />)
-    await screen.findByRole('group', { name: 'Family roll call' })
-    await waitFor(() => expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false))
-    const add = vi.spyOn(ldb.activity, 'add').mockRejectedValueOnce(new Error('disk full'))
-    fireEvent.click(screen.getByRole('button', { name: "I'm OK" }))
-    expect(await screen.findByText('Could not save on this phone. Try again.')).toBeTruthy()
-    expect(screen.queryByText(/^You're OK · /)).toBeNull()
-    expect((screen.getByRole('button', { name: "I'm OK" }) as HTMLButtonElement).disabled).toBe(false) // still there to try again
-    add.mockRestore()
+    expect(screen.queryByRole('button', { name: /I'm OK/ })).toBeNull()
   })
 
   it('the roster is busy until the first read, then the faces', async () => {

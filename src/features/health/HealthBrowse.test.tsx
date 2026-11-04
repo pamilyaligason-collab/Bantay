@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
 import { HealthBrowse, moveLine } from './HealthBrowse'
+import { labDate } from './labsLogic'
 import type { Reading } from './ranges'
 import { vdb } from './visitsStore'
 
@@ -34,9 +35,9 @@ describe('Browse', () => {
     show(readings)
     const val = (k: string) => screen.getByTestId(`browse-${k}`).textContent
     expect(val('readings')).toContain('124/79')
-    expect(val('labs')).toContain('1 to ask')
+    expect(val('labs')).toContain(`1 to ask · ${labDate(day(2), true)}`) // H9: the count and the date, not the count alone
     await waitFor(() => expect(val('meds')).toContain('2 of 2 left today'))
-    await waitFor(() => expect(val('visits')).toContain('1 to ask'))
+    await waitFor(() => expect(screen.getByTestId('browse-visits').textContent).toContain('1 question ready to ask'))
     await waitFor(() => expect(val('move')).toContain('12 min this week'))
   })
   it('empty person reads honestly', async () => {

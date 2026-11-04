@@ -53,7 +53,7 @@ describe('resolveLocation(false)', () => {
   })
   it('N-2 APK plugin: OS granted reads the position from the plugin even when the WebView call fails (was Dampas)', async () => {
     h.native = true; h.plugin = true; h.pos = { coords: { latitude: 9.65, longitude: 123.85 } }; const g = setup('prompt', false)
-    expect(await resolveLocation(false)).toEqual({ lat: 9.65, lon: 123.85, source: 'gps' }); expect(g).not.toHaveBeenCalled()
+    expect(await resolveLocation(false)).toEqual({ lat: 9.65, lon: 123.85, source: 'gps', at: expect.any(Number) }); expect(g).not.toHaveBeenCalled()
   })
 })
 
@@ -69,5 +69,21 @@ describe('last known fix (D-105)', () => {
   })
   it('with no fix ever, the home zone (Dampas) is the labelled fallback', async () => {
     setup('denied'); expect((await resolveLocation(false)).source).toBe('home')
+  })
+  it('X7: a 0,0 answer is no fix: never gps, never stored', async () => {
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: (ok: (p: unknown) => void) => ok({ coords: { latitude: 0, longitude: 0 } }) }, permissions: { query: () => Promise.resolve({ state: 'granted' }) } })
+    expect((await resolveLocation(false)).source).toBe('home')
+    expect(await db.kv.get('loc.last')).toBeUndefined()
+  })
+  it('X7: a 0,0 answer keeps the earlier real fix as last', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 9.65, lon: 123.85, at: 1700000000000 } })
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: (ok: (p: unknown) => void) => ok({ coords: { latitude: 0, longitude: 0 } }) }, permissions: { query: () => Promise.resolve({ state: 'granted' }) } })
+    expect(await resolveLocation(false)).toEqual({ lat: 9.65, lon: 123.85, source: 'last', at: 1700000000000 })
+  })
+  it('X7: a stored 0,0 or off-globe fix is ignored', async () => {
+    await db.kv.put({ key: 'loc.last', value: { lat: 0, lon: 0, at: 1700000000000 } }); setup('denied')
+    expect((await resolveLocation(false)).source).toBe('home')
+    await db.kv.put({ key: 'loc.last', value: { lat: 95, lon: 10, at: 1700000000000 } })
+    expect((await resolveLocation(false)).source).toBe('home')
   })
 })

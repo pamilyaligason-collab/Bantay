@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { signedIn, skipOnboarding } from './helpers'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
@@ -54,39 +54,39 @@ const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.g
 const shot = (page: Page, name: string, scheme: string) => (SHOTS ? page.screenshot({ path: `${SHOTS}/${name}-${scheme}.png` }) : Promise.resolve(undefined))
 
 /** One medicine for me, due 15 minutes ago (the late-dose card). */
-async function open(page: Page, scheme: 'light' | 'dark', extra: (p: Page) => Promise<void> = async () => undefined, simple = false) {
+async function open(page: Page, scheme: 'light' | 'dark', extra: (p: Page) => Promise<void> = async () => undefined, simple = false, dose = true) {
   await page.setViewportSize({ width: 390, height: 844 })
   await skipOnboarding(page)
   await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Mama' }, { personId: 'ma', displayName: 'Ate Joy' }])))
   await mock(page)
   await page.emulateMedia({ colorScheme: scheme })
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible() // the app has created its databases
+  await expect(page.getByTestId('myday')).toBeVisible() // the app has created its databases
   const slot = hhmm(new Date(Date.now() - 15 * 60_000))
-  await seed(page, 'bantay-log', 'medications', [{ clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', dose: '50 mg', schedule: { v: 1, times: [slot] }, medStatus: 'active' }], 'add')
+  if (dose) await seed(page, 'bantay-log', 'medications', [{ clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', dose: '50 mg', schedule: { v: 1, times: [slot] }, medStatus: 'active' }], 'add')
   await extra(page)
   await page.reload() // raw IndexedDB writes do not notify live queries
-  await expect(simple ? page.getByRole('button', { name: 'I took it' }) : page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(simple ? page.getByRole('button', { name: 'I took it' }) : page.getByTestId('myday')).toBeVisible()
 }
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`today-full with a family alert ${scheme}`, async ({ page }) => {
-    await open(page, scheme, (p) => seed(p, 'bantay-alerts', 'alerts', [{ id: 'a1', personId: 'ma', kind: 'dose_missed', template: 'dose_missed', ref: 'a1', createdAt: new Date().toISOString(), pushedAt: null, seenAt: null, expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString() }]))
+    await open(page, scheme, (p) => seed(p, 'bantay-alerts', 'alerts', [{ id: 'a1', personId: 'ma', kind: 'reading_high', template: 'reading_high', ref: 'a1', createdAt: new Date().toISOString(), pushedAt: null, seenAt: null, expiresAt: new Date(Date.now() + 7 * 86_400_000).toISOString() }]))
     await expect(page.getByRole('region', { name: 'Family alert' })).toBeVisible()
-    await expect(page.getByRole('group', { name: 'Quick log' }).getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you? (v13 My day has its own I'm OK row)
+    await expect(page.getByTestId('myday').getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you? (v13 My day has its own I'm OK row)
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     await shot(page, 'today-full', scheme)
   })
 
   test(`today-log sheets ${scheme}`, async ({ page }) => {
     await open(page, scheme)
-    await page.getByRole('button', { name: 'Log how you feel' }).click()
+    await page.getByRole('button', { name: 'How are you? Pick a face' }).click()
     const faces = page.getByRole('dialog', { name: 'How are you feeling?' })
     await expect(faces.getByRole('button')).toHaveCount(5) // four faces and Close
     await expect(faces.getByText('Your family will see it in Bantay.')).toBeVisible()
     await shot(page, 'today-log', scheme)
     await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'More things to log' }).click()
+    await page.getByTestId('myday-more').click()
     await expect(page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Dose taken' })).toBeVisible()
     await shot(page, 'today-log-more', scheme)
   })
@@ -113,8 +113,10 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`today-storm ${scheme}`, async ({ page }) => {
     const storm = { id: 'gdacs-TC-1001', kind: 'gdacs', level: 'Orange', title: 'Tropical Cyclone PEPITO', what: 'Tropical cyclone', where: 'Philippines', when: 'Now', doNow: 'Prepare', source: 'GDACS', sourceUrl: null, issuedAt: new Date().toISOString(), lat: 9.8, lon: 126.5, bulletin: 'b' }
-    await open(page, scheme, (p) => seed(p, 'bantay', 'kv', [{ key: 'safety.alerts', value: [storm] }]))
-    await expect(page.getByRole('button', { name: 'Log how you feel' })).toContainText('Is everyone safe?')
+    await open(page, scheme, (p) => seed(p, 'bantay', 'kv', [{ key: 'safety.alerts', value: [storm] }]), false, false) // no dose: a due dose beats a storm in Next up, so without one the storm card is the settled state
+    await signedIn(page) // the member lookup finished, so a dose (there is none) could have won by now
+    await expect(page.locator('.td-next')).toContainText('Tropical Cyclone PEPITO is near') // v13: a nearby cyclone is the Next up storm card
+    await expect(page.getByTestId('myday-checkin')).toContainText('Is everyone safe?') // and the How are you? row asks it, as the old tile did
     await shot(page, 'today-storm', scheme)
   })
 
@@ -122,7 +124,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, scheme)
     await context.setOffline(true)
     await page.waitForTimeout(800)
-    await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+    await expect(page.getByTestId('myday')).toBeVisible()
     await shot(page, 'today-offline', scheme)
     await context.setOffline(false)
   })

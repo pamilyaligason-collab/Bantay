@@ -7,6 +7,12 @@ vi.mock('../safety/store', () => ({ useKv: (k: string, d: unknown) => kv.rows[k]
 afterEach(() => { cleanup(); kv.rows = {}; vi.unstubAllGlobals() })
 
 describe('RescueMap offline list', () => {
+  it('the board leave-early line sits above the list, before the first place', () => {
+    vi.stubGlobal('navigator', { ...navigator, onLine: false })
+    render(<RescueMap lat={9.6457} lon={123.878} />)
+    const line = screen.getByText('Leave early when your barangay or LGU orders evacuation. Bring your go-bag and medicines.')
+    expect(line.compareDocumentPosition(screen.getByText('Barangay Dampas evacuation centre')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
   it('lists unpinned places with the offline note, and a family pin shows distance and Go', () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })
     kv.rows = { 'safety.overrides': { 'evac-dao': { lat: 9.6557, lon: 123.878, phone: '0917 000 0000' } } }
@@ -27,6 +33,13 @@ describe('RescueMap offline list', () => {
     expect(screen.getAllByText('Not confirmed').length).toBeGreaterThan(0)
     expect(screen.getAllByRole('link', { name: 'Directions' })).toHaveLength(1)
     expect(screen.getByText('© OpenStreetMap contributors')).toBeTruthy()
+  })
+  it('Details on a place with no coordinates opens the sheet with no Directions and no distance', () => {
+    vi.stubGlobal('navigator', { ...navigator, onLine: false })
+    render(<RescueMap lat={9.6457} lon={123.878} />)
+    fireEvent.click(screen.getAllByRole('button', { name: 'Details' })[0]!)
+    const sheet = screen.getByRole('dialog')
+    expect(sheet.textContent).not.toMatch(/null|unknown|km|Directions/i)
   })
   it('a filter chip hides its kind', () => {
     vi.stubGlobal('navigator', { ...navigator, onLine: false })

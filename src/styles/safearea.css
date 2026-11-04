@@ -1,2 +1,3 @@
-/* P0-6: pushed pages have no top bar, so the scroller itself clears the status bar. */
-.bt:not(:has(.sh-top)) > .scroll { padding-top: calc(10px + var(--sat)); }
+/* P0-6 + S1: the scroller clears the status bar, and a glass band stays fixed over it, so text scrolling up never shows under the clock and icons. The band is 0 px tall in a browser (no inset). */
+.bt > .scroll { padding-top: calc(10px + var(--sat)); }
+.bt::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: var(--sat); z-index: 7; background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); pointer-events: none; }

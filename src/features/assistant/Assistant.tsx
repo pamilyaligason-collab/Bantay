@@ -232,7 +232,7 @@ export default function Assistant() {
   }, [open])
   // The floating Jack button fires this; the sheet itself lives here.
   useEffect(() => {
-    const on = () => { const a = document.activeElement as HTMLElement | null; opener.current = a === document.body ? document.querySelector<HTMLElement>('.sh-jackfab') : a; setOpen(true) }
+    const on = (e: Event) => { const t = (e as CustomEvent<{ text?: string }>).detail?.text; if (t) setText(t); const a = document.activeElement as HTMLElement | null; opener.current = a === document.body ? document.querySelector<HTMLElement>('.sh-jackfab') : a; setOpen(true) }
     window.addEventListener(ASK_EVENT, on)
     return () => window.removeEventListener(ASK_EVENT, on)
   }, [])

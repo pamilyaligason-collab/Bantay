@@ -25,5 +25,5 @@ release-out/
 /.scratch/fdc/
 tsconfig.tsbuildinfo
 
-# Firebase config for FCM (Lloyd keeps it on the PC; CI writes it from GOOGLE_SERVICES_JSON_BASE64)
+# Firebase config for FCM (the owner keeps it on the PC; CI writes it from GOOGLE_SERVICES_JSON_BASE64)
 android/app/google-services.json

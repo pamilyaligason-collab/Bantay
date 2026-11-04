@@ -41,8 +41,8 @@ describe('labsLine', () => {
 describe('nudgeTitle', () => {
   const g = (id: Goal['id'], step: string, say: string) => ({ id, step, say }) as Goal
   it('BP: asks for the reading only when none is in today, else says what is logged', () => {
-    expect(nudgeTitle(g('bp', 'x', '2 of 3 days this week'), false, false)).toBe('Morning BP not logged')
-    expect(nudgeTitle(g('bp', 'x', '2 of 3 days this week'), false, true)).toBe('BP logged today · 2 of 3 days this week')
+    expect(nudgeTitle(g('bp', 'x', '2 of 3 days this week'), false, false)).toBe('Weekly BP · 2 of 3 days this week')
+    expect(nudgeTitle(g('bp', 'x', '2 of 3 days this week'), false, true)).toBe('Weekly BP logged today · 2 of 3 days this week')
   })
   it('other goals show their own step; all met and none left have their own lines', () => {
     expect(nudgeTitle(g('meals', 'Log what you ate - 1 minute', ''), false, true)).toBe('Log what you ate - 1 minute')

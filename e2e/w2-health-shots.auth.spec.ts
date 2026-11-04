@@ -28,7 +28,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(nudge.getByRole('button', { name: 'Log' })).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/health-home-nudge-buttons-${scheme}.png` })
     await nudge.getByRole('button', { name: 'Log' }).click()
-    await expect(page.getByLabel('Top')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Top' })).toBeVisible()
     await expect(page.getByText('Example: 120 on top, 80 on the bottom.')).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/health-add-bp-sheet-${scheme}.png` })
   })

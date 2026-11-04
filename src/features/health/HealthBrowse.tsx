@@ -16,13 +16,13 @@ export function moveLine(acts: Activity[]): string {
   return m > 0 ? `${m} min this week` : 'No walks yet'
 }
 
-const DOORS: { key: string; icon: IconName; tint: Tint; title: string; href: string }[] = [
-  { key: 'readings', icon: 'gauge', tint: 'blue', title: 'Readings', href: '#health/readings' },
-  { key: 'labs', icon: 'flask', tint: 'red', title: 'Labs', href: '#health/labs' },
-  { key: 'meds', icon: 'pill', tint: 'green', title: 'Medicines', href: '#health/meds' },
-  { key: 'visits', icon: 'calendar', tint: 'purple', title: 'Visits', href: '#health/visits' },
-  { key: 'move', icon: 'move', tint: 'teal', title: 'Move & food', href: '#health/move' },
-  { key: 'body', icon: 'heart', tint: 'amber', title: 'Body wiki', href: '#health/body' }
+const DOORS: { key: string; icon: IconName; tint: Tint; title: string; sub: string; href: string }[] = [
+  { key: 'readings', icon: 'gauge', tint: 'blue', title: 'Readings', sub: 'BP, sugar, weight', href: '#health/readings' },
+  { key: 'labs', icon: 'flask', tint: 'red', title: 'Labs', sub: 'From your scans', href: '#health/labs' },
+  { key: 'meds', icon: 'pill', tint: 'green', title: 'Medicines', sub: 'Doses, refills, reminders', href: '#health/meds' },
+  { key: 'visits', icon: 'calendar', tint: 'purple', title: 'Visits', sub: 'What to bring, what to ask', href: '#health/visits' },
+  { key: 'move', icon: 'move', tint: 'teal', title: 'Move & food', sub: 'Walks, meals, salt', href: '#health/move' },
+  { key: 'body', icon: 'heart', tint: 'amber', title: 'Body wiki', sub: 'How each part works', href: '#health/body' }
 ]
 
 /** Browse: one grouped list, six doors, each with its live value (Body wiki has none). Papers live in Family (D-100). */
@@ -33,15 +33,17 @@ export function HealthBrowse({ personId, readings, thresholds }: { personId: str
   const acts = useActivity(personId)
   const value: Record<string, string | undefined> = {
     readings: bpThisWeek(readings) ?? 'None this week',
-    labs: labsLine(readings, thresholds).split(' · ')[0],
+    labs: labsLine(readings, thresholds),
     meds: doses ?? undefined,
-    visits: visit ? visit.text.replace(/^Next visit: /, '') : asks ? `${asks} to ask` : 'Not booked',
+    visits: visit ? visit.text.replace(/^Next visit: /, '') : 'Not booked',
     move: moveLine(acts)
   }
+  const sub: Record<string, string | undefined> = { visits: asks ? `${asks} ${asks === 1 ? 'question' : 'questions'} ready to ask` : undefined }
   return (
     <Section title="Browse" testId="browse">
+      <p className="sub hb-intro">Your numbers, papers and plans.</p>
       <GroupedList icons>
-        {DOORS.map((d) => <Row key={d.key} testId={`browse-${d.key}`} icon={d.icon} tint={d.tint} title={d.title} value={value[d.key]} href={d.href} />)}
+        {DOORS.map((d) => <Row key={d.key} testId={`browse-${d.key}`} icon={d.icon} tint={d.tint} title={d.title} sub={sub[d.key] ?? d.sub} value={value[d.key]} href={d.href} />)}
       </GroupedList>
     </Section>
   )

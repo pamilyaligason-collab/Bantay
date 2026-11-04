@@ -57,7 +57,7 @@
 /* Row (v13): 56 px, 32 px tint icon box, 17/500 title, 13 px sub, right value and pill badge. Hairline between rows is in app.css (.grp .row) and here (.grp .rw). */
 .rw { position: relative; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; }
 .rw > :not(.rw-main) { flex: none; width: auto; }
-.rw-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
+.rw-main { flex: 1; min-width: 0; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
 .rw-ic, .rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); overflow: hidden; }
 .rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
 .rw-title { font-size: 17px; font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -69,7 +69,7 @@
 .grp.ic .rw + .rw::before { left: 58px; }
 
 /* Alert */
-.ac { padding: 16px; }
+.card.ac { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .ac[data-tone="red"] { background: var(--red-soft); --ac: var(--red); }
 .ac[data-tone="amber"] { background: var(--warn-bg); --ac: var(--warn); }
 .ac-head { display: flex; align-items: center; gap: 12px; }

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Row } from '../../look'
 import type { IconName } from '../../shell/Icon'
 import { LiteVideo } from '../../media/LiteVideo'
-import { playable, VIDEOS, type Video } from '../../health/library/videosLogic'
+import { playable, type Video } from '../../health/library/videosLogic'
+import { DISCOVER_VIDEOS } from '../learn/ready'
 
-const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal' }
+const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal', 'Be prepared': 'bag', 'Repairs and improvements': 'home' }
 
 /** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
 export const WATCH_PICK = 'dc.watch'
@@ -26,7 +27,7 @@ function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
 /** Discover > Watch: a checked list of official videos. A poster row (scrolls inside itself), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
  *  with an "Open in YouTube" link), then one row per topic and Live TV (coming). */
 export default function Watch() {
-  const all = VIDEOS.filter(playable)
+  const all = DISCOVER_VIDEOS.filter(playable)
   const topics = [...new Set(all.map((v) => v.topic))]
   const [topic, setTopic] = useState<string | null>(null)
   const [sel, setSel] = useState<string | null>(readPick)

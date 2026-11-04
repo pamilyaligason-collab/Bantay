@@ -20,6 +20,7 @@
 .nu-cellbtn:focus-visible, .nu-time:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .nu-yr { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .nu-yrnav { display: inline-flex; align-items: center; gap: 8px; }
+.nu-yrnav .sh-pill { min-width: 44px; padding: 0; } /* S10: the 18 px arrow plus 12 px padding was 42 wide */
 .nu-grid { width: 100%; height: auto; display: block; }
 .nu-mo { font-size: 9px; fill: var(--muted); }
 .nu-none { fill: var(--line); }

@@ -1380,7 +1380,7 @@ Running 807 tests using 4 workers
 [363/807] [chromium] › e2e\safety.spec.ts:389:1 › storm tracker map is centred on my place, not 12N 128E
 [364/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › weather: the last element ends above the tab bar
 [365/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/cards: no top bar, a Back control
-[366/807] [chromium] › e2e\today.spec.ts:33:1 › Today follows Lloyd's order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list
+[366/807] [chromium] › e2e\today.spec.ts:33:1 › Today follows the owner's order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list
 [367/807] [chromium] › e2e\safety.spec.ts:398:1 › footer has an in-app Sources link, not a repo path; the Hazards title wraps
 [368/807] [chromium] › e2e\tabbar-overlap.spec.ts:23:3 › safety/dial: the last element ends above the tab bar
 [369/807] [chromium] › e2e\subpage-header.spec.ts:14:3 › #safety/sources: no top bar, a Back control
@@ -1700,7 +1700,7 @@ Running 807 tests using 4 workers
 [521/807] [auth] › e2e\admin-view-as.auth.spec.ts:107:3 › in-app View as (acting) › enter: one audit RPC, the bar on five tabs, Exit clears it, a reload is yourself
 [522/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 390 light
 [523/807] [auth] › e2e\admin-desk-members.auth.spec.ts:264:5 › members shots 390 dark
-[524/807] [auth] › e2e\admin-view-as.auth.spec.ts:123:8 › in-app View as (acting) › Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = Lloyd
+[524/807] [auth] › e2e\admin-view-as.auth.spec.ts:123:8 › in-app View as (acting) › Take a dose and I am OK for Mama write rows with person_id = Mama; SOS hold writes person_id = the owner
 [525/807] [auth] › e2e\admin-web-home.auth.spec.ts:62:3 › dashboard home (1280x800)
 [526/807] [auth] › e2e\admin-desk-members.auth.spec.ts:279:1 › phone More menu closes on Escape and on an outside click
 [527/807] [auth] › e2e\admin-web-calendar.auth.spec.ts:59:3 › calendar month, week and agenda (1280x800)

@@ -1,3 +1,4 @@
+import { shortMedName } from '../health/medName'
 import { shortName } from '../inbox/build'
 import type { AlertRow } from '../notify/store'
 import type { ReviewAsk } from './CarerCards'
@@ -14,7 +15,7 @@ export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people:
     const name = shortName(it.person.name) ?? 'Someone'
     if (it.asks.length && it.focus.kind !== 'questions') {
       const a = it.asks[0]!
-      out.push({ id: `q|${it.person.id}`, person: it.person, title: `${name}: ${it.asks.length} ${it.asks.length === 1 ? 'question' : 'questions'}`, sub: `Still taking ${a.med.name}? · ${a.days === 1 ? 'yesterday' : `${a.days} days`}`, action: { kind: 'answer', ask: a } })
+      out.push({ id: `q|${it.person.id}`, person: it.person, title: `${name}: ${it.asks.length} ${it.asks.length === 1 ? 'question' : 'questions'}`, sub: `Still taking ${shortMedName(a.med.name)}? · ${a.days === 1 ? 'yesterday' : `${a.days} days`}`, action: { kind: 'answer', ask: a } })
     }
     if (it.missedDoses.length && it.focus.kind !== 'missed') out.push({ id: `d|${it.person.id}`, person: it.person, title: `${name}: missed ${it.missedDoses.length === 1 ? 'a medicine' : `${it.missedDoses.length} doses`}`, sub: 'Open to mark it', action: { kind: 'open', href: `#family/people/${it.person.id}` } })
   }

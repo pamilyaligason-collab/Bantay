@@ -5,11 +5,11 @@ import { Icon } from '../shell/Icon'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } from '../phonecheck/keys'
 import { useKvValue } from '../phonecheck/useKvValue'
 import { SettingsOpener } from '../safety/settingsOpener'
-import { notifyDone, notifyState, turnOnReminders, useSetupLeft } from '../setup/steps'
+import { notifyDone, notifyState, turnOnReminders } from '../setup/steps'
+import { useSetupSteps } from './setupRow'
 import { UpdateCard } from '../update/UpdateCard'
 import { PwaBanner } from '../update/PwaBanner'
 import NearbyList from './NearbyList'
-import WeekLine from './WeekLine'
 import './today.css'
 
 /** F-4 / P-3: true only when the phone check says notifications are off or the alarm plan failed. Unknown is not off (ML-05). */
@@ -44,19 +44,18 @@ export function AlertsOffCard() {
   )
 }
 
-/** "More" (S16 L1, frame today-more): the setup row, one update row, the add-to-home row, then the nearby rows and the week line. Nothing to show = no heading.
+/** "More" (S16 L1, frame today-more): the setup row, one update row, the add-to-home row, then the nearby rows (the week line left Today, v13 T3). Nothing to show = no heading.
  *  D-50: the update row never sits above a warning (this group is below every alert). */
 export default function NoticeStack() {
-  const { left } = useSetupLeft()
+  const left = useSetupSteps()
   return (
     <div className="td-more-g" role="group" aria-labelledby="t-more">
       <h2 id="t-more" className="td-more-h">More</h2>
-      {left.length > 0 && <Row title={`Finish setup · ${left.length} left`} sub={left.join(', ')} href="#me/phone" testId="setup-row" />}
+      {left.length > 0 && <Row title={`Finish setup · ${left.length} left`} sub={left.map((s) => s.label).join(', ')} href={left[0]!.href} testId="setup-row" />}
       <AlertsBanner />
       <UpdateCard />
       <PwaBanner />
       <NearbyList />
-      <WeekLine />
     </div>
   )
 }

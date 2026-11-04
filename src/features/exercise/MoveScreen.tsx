@@ -1,35 +1,33 @@
 import { useMemo } from 'react'
-import { JackArt, LargeTitle, Row } from '../look'
-import { localDay } from '../health/model'
+import { LargeTitle, Row } from '../look'
+import { latestSteps } from '../health/stepsDay'
+import { FoodBlock } from '../nutrition/MoveFoodRows'
 import { useActivity } from '../health/useActivity'
 import { useHealthPerson } from '../health/useHealthPerson'
+import { WhoLine } from '../health/WhoLine'
 import { useActing } from '../viewas/viewAs'
 import MovePanel from './MovePanel'
+import { MOVE_LOCK } from './recommend'
 
-/** Move logs are yours only (M2-2): while acting as someone the Done button is off and says why. Gating only; the log itself still writes through exercise/actions.ts for the signed-in person. */
-export const MOVE_LOCK = 'Move logs are yours only. Exit to log.'
-
-/** Steps today from the phone's own step rows; null when none were ever synced (nothing is invented). */
-function useStepsToday(): number | null {
+/** The phone's own step rows: the newest day that has any, null when none were ever synced (nothing is invented, and 0 is never shown for a day without data). */
+function useSteps() {
   const { ownId } = useHealthPerson() // the phone's steps are the viewer's own, whoever the Health picker shows
   const acts = useActivity(ownId)
-  return useMemo(() => {
-    const rows = acts.filter((a) => a.kind === 'steps' && typeof a.steps === 'number')
-    if (!rows.length) return null
-    const today = localDay(new Date().toISOString())
-    return rows.filter((a) => localDay(a.startedAt) === today).reduce((s, a) => s + (a.steps as number), 0)
-  }, [acts])
+  return useMemo(() => latestSteps(acts), [acts])
 }
 
 /** Health > Move and food (#health/move): this week's move panel as the hero, then Steps and the door to Food and salt. */
 export default function MoveScreen() {
   const { acting } = useActing()
-  const steps = useStepsToday()
+  const steps = useSteps()
+  const { personId, ownId, canMark } = useHealthPerson()
   return (
     <>
-      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Move and food" />
-      <div className="mv-page" data-hero><div className="s14j-art"><JackArt name="walking" size={96} /></div><MovePanel lockLog={acting ? MOVE_LOCK : undefined} /></div>
-      <Row icon="walk" tint="teal" title="Steps" sub={steps === null ? 'Connect your phone to count steps' : 'From your phone'} value={steps === null ? 'Not connected' : `${steps.toLocaleString('en-US')} steps today`} href="#health/metric/steps" testId="steps-door" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Move and food" tone="teal" />
+      <WhoLine />
+      <div className="mv-page" data-hero><MovePanel lockLog={acting || personId !== ownId ? MOVE_LOCK : undefined} hideRing={personId !== ownId} /></div>
+      <FoodBlock personId={personId} canMark={canMark} />
+      {personId === ownId && <Row icon="walk" tint="teal" title="Steps" sub={steps === null ? 'Connect your phone to count steps' : 'From your phone'} value={steps === null ? 'Not connected' : steps.today ? `${steps.total.toLocaleString('en-US')} steps today` : `${steps.total.toLocaleString('en-US')} on ${steps.day}`} href="#health/metric/steps" testId="steps-door" />}
       <Row icon="meal" title="Food and salt" sub="Meals, salt and nutrients" href="#health/nutrition" testId="food-door" />
     </>
   )

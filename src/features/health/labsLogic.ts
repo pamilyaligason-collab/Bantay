@@ -181,6 +181,16 @@ export function trendOfLastThree(items: { value: number }[]): string {
   return d < 0 ? 'going down' : d > 0 ? 'going up' : 'steady'
 }
 
+/** How far a value sits outside its range, as a fraction: (value - high) / (high - low) above, (low - value) / (high - low) below. A one-sided range uses the known edge itself. Null in range, without a range, or when the edge is 0 (never a made-up size). */
+export function overBy(row: LabRow): number | null {
+  const { range, rv, pos } = row
+  if (!range || !rv || (pos !== 'above' && pos !== 'below')) return null
+  const edge = pos === 'above' ? range.high : range.low
+  if (edge == null) return null
+  const width = range.low != null && range.high != null ? range.high - range.low : Math.abs(edge)
+  return width > 0 ? Math.abs(rv.value - edge) / width : null
+}
+
 export interface LabSource { facility: string; docDate: string | null; file: SourceFile }
 /** Source file id -> the paper it came from (lab name, date, the file to open), from the confirmed documents. */
 export function sourceIndex(docs: DocBundle[]): Map<string, LabSource> {

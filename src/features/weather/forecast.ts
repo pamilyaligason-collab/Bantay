@@ -18,7 +18,9 @@ export interface Forecast {
 
 export const FORECAST_DAYS = 10
 const FRESH_MS = 10 * 60_000 // a reading younger than this is reused, so five screens do not make five requests
-const KEEP_MS = 24 * 3600_000 // an older cached forecast is not shown (hourly rain would be wrong)
+export const REFRESH_MS = 5 * 60_000 // timer while a screen is open: a request goes out once the reading is 10 minutes old
+export const KEEP_MS = 24 * 3600_000 // an older cached forecast is not shown (hourly rain would be wrong)
+export const FETCH_TIMEOUT_MS = 8000 // same wait as the other web fetches (onThisDay)
 const r2 = (n: number) => Math.round(n * 100) / 100 // about 1 km: all that is sent to the weather service
 
 export const forecastUrl = (p: LatLon) =>
@@ -84,7 +86,7 @@ export interface Result { fc: Forecast; fromCache: boolean } // fromCache: the n
 const inflight = new Map<string, Promise<Result>>()
 
 /** Fresh cached forecast if under 10 minutes old, else one request (shared by every caller), else the older cache, else throws. */
-export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boolean; now?: number } = {}): Promise<Result> {
+export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boolean; now?: number; timeoutMs?: number } = {}): Promise<Result> {
   const key = forecastKey(p)
   const hit = inflight.get(key)
   if (hit) return hit
@@ -92,8 +94,10 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
     const now = o.now ?? Date.now()
     const cached = await readCached(p, now)
     if (cached && !o.force && now - Date.parse(cached.fetchedAt) < FRESH_MS) return { fc: cached, fromCache: false }
+    const ctl = new AbortController() // not AbortSignal.timeout: it needs Chrome 103, so an older Android WebView would fail every refresh
+    const hung = setTimeout(() => ctl.abort(), o.timeoutMs ?? FETCH_TIMEOUT_MS)
     try {
-      const res = await f(forecastUrl(p))
+      const res = await f(forecastUrl(p), { signal: ctl.signal }) // a hung connection ends as a failure, so the screen says "could not refresh"
       if (!res.ok) throw new Error(String(res.status))
       const fc = parseForecast(await res.json(), new Date(now).toISOString())
       if (!fc) throw new Error('bad forecast')
@@ -102,6 +106,8 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
     } catch (e) {
       if (cached) return { fc: cached, fromCache: true }
       throw e
+    } finally {
+      clearTimeout(hung)
     }
   })().finally(() => inflight.delete(key))
   inflight.set(key, run)
@@ -122,13 +128,22 @@ export function useForecast(p: LatLon | null): ForecastState {
     let live = true
     setS((x) => (x.key === key ? x : { fc: null, offline: false, loading: true, key }))
     void readCached(at).then((c) => { if (live && c) setS((x) => (x.fc ? x : { fc: c, offline: false, loading: true, key })) })
-    getForecast(at).then(
+    const load = () => getForecast(at).then(
       (r) => { if (live) setS({ fc: r.fc, offline: r.fromCache, loading: false, key }) },
-      () => { if (live) setS((x) => ({ ...x, offline: !!x.fc, loading: false, key })) }
+      // a reading older than KEEP_MS is dropped, not shown as current: a screen left open and offline for a day ends on "could not load"
+      () => { if (live) setS((x) => { const fc = x.fc && Date.now() - Date.parse(x.fc.fetchedAt) < KEEP_MS ? x.fc : null; return { ...x, fc, offline: !!fc, loading: false, key } }) }
     )
-    return () => { live = false }
+    void load()
+    // stay fresh: on return to the app, when the network comes back, and on a timer while open (getForecast reuses a reading under 10 minutes old)
+    const onShow = () => { if (document.visibilityState !== 'hidden') void load() }
+    document.addEventListener('visibilitychange', onShow)
+    addEventListener('online', onShow)
+    const timer = setInterval(onShow, REFRESH_MS)
+    return () => { live = false; document.removeEventListener('visibilitychange', onShow); removeEventListener('online', onShow); clearInterval(timer) }
   }, [lat, lon])
-  return s
+  // never hand back another place's forecast for the one asked about (the effect swaps state a render late, so a picked zone flashed the old place's weather under its own name)
+  const cur = lat == null || lon == null ? '' : forecastKey({ lat, lon })
+  return s.key === cur ? s : { ...s, fc: null, offline: false, loading: true }
 }
 
 /** The place's wall clock now, "YYYY-MM-DDTHH:MM", from the phone clock and the place's UTC offset (works from a cached forecast). */

@@ -13,14 +13,7 @@
 :root[data-theme="dark"] .sh-icbox.is-active { --tint: 34%; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-icbox { --tint: 22%; } :root:not([data-theme="light"]) .sh-icbox.is-active { --tint: 34%; } }
 
-/* top bar */
-.sh-top { padding: calc(14px + var(--sat)) 16px 10px; margin-bottom: -10px; min-height: 48px; display: flex; align-items: center; gap: 12px; flex: none; }
-.sh-me-btn { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--soft); color: var(--green); border: 0; padding: 0; overflow: hidden; display: grid; place-items: center; font-weight: 700; font-size: 16px; text-decoration: none; flex: none; }
-.sh-me-btn img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 20%; }
-.sh-top-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.sh-top-date { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sh-top-greet { font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 20px; letter-spacing: -.01em; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: break-word; hyphens: auto; } /* two lines at 200% text (UI-4) */
-.sh-top .sync-status { margin-top: 2px; }
+/* head actions (HeadActions.tsx): sync pill, bell and avatar at the right of a tab root title */
 /* Sync state: nothing when all sent; an amber pill when rows wait. The pill is 13px text on a 28px chip with a 44px hit area. */
 .sync-pill { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); background: var(--card2); }
 .sync-pill[data-amber="true"] { background: var(--amber-soft, #F6E7C1); color: #5C3F00; }
@@ -29,12 +22,6 @@
 button.sync-pill { cursor: pointer; }
 button.sync-pill::before { content: ""; position: absolute; inset: -8px -4px; }
 button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
-/* Compact band: sub-pages and scrolled content keep one slim row (avatar, greeting, icons). The sync pill waits on the tab home. */
-.sh-top { transition: padding var(--dur-base) var(--ease-out); }
-.sh-top[data-compact="true"] { padding-top: calc(8px + var(--sat)); padding-bottom: 8px; }
-.sh-top[data-compact="true"] .sh-top-date, .sh-top[data-compact="true"] .sync-status { display: none; }
-.sh-top[data-compact="true"] .sh-top-greet { font-size: 17px; }
-@media (prefers-reduced-motion: reduce) { .sh-top { transition: none; } }
 .sh-iconbtn { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 .sh-iconbtn:active { transform: scale(.98); }
 @media (prefers-reduced-motion: reduce) { .sh-iconbtn { transition: none; } .sh-iconbtn:active { transform: none; } }
@@ -100,12 +87,6 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); align-self: center; }
 .sh a:focus-visible, .sh button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 
-/* Sub-page header (SubHeader.tsx): back, title, optional trailing, always one row. .hdr.sh-subhdr beats the column .hdr in app.css. */
-.hdr.sh-subhdr { flex-direction: row; align-items: center; gap: 8px; padding: 0; }
-.hdr.sh-subhdr h1 { flex: 1 1 0; min-width: 0; margin: 0; font-size: 26px; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: break-word; hyphens: auto; } /* two lines at 200% text (UI-4) */
-.hdr.sh-subhdr > :not(h1) { flex: none; }
-.hdr.sh-subhdr[data-long]:not(.sf-subhdr) h1 { font-size: 22px; white-space: normal; text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.hdr.sh-subhdr .sh-iconbtn.sh-back { width: 48px; height: 48px; margin-left: -4px; }
 .sh-me-setup:not(:has(section)) { display: none; }
 .sh-me-setup { display: flex; flex-direction: column; gap: 10px; }
 .sh-me-setup .sh-sech { margin: 6px 2px 0; }
@@ -126,9 +107,6 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
   .sh-sheet, .fm-sheet, .sf-sheet, .as-sheet, [data-closing="true"] > [role="dialog"] { animation: none; }
   .tabbar.sh-tabs::before, .sh-switch::before, .sh-switch::after { transition: none; }
 }
-/* Dark: --green on --soft is 1.6:1, so the avatar initial and icon use --ink. */
-:root[data-theme="dark"] .sh-me-btn { color: var(--ink); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sh-me-btn { color: var(--ink); } }
 
 /* Floating Jack button: 62px white disc, bottom right. It floats 14px above the tab bar and .bt[data-jack] .scroll::after adds the button's height
    to the end spacer, so the last item (the Taken pill) always ends above it. One tap opens the Jack sheet. */
@@ -156,16 +134,45 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .jk-sos .sos-simple-btn { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 16px; border-radius: 20px; background: var(--danger-bg); color: #fff; text-align: left; width: 100%; border: 0; font: inherit; touch-action: none; }
 .jk-sos .sos-simple-btn.holding { background: #8E1B14; }
 .jk-sos .sos-simple-btn::before { content: "SOS"; width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.16); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; }
-.jk-sos .sos-simple-btn > span { font-size: 20px; font-weight: 700; }
-.jk-sos .sos-simple-sub { color: var(--muted); font-size: 15px; margin: 8px 4px 0; }
-.jk-safety { font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 12px; }
+.jk-sos .sos-simple-btn { position: relative; min-height: 122px; } /* room for the two-line holding label, so the block never changes height under the finger */
+.jk-sos .sos-ring { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); } /* the hold ring runs over the SOS tile, as on the board */
+:root[data-narrow] .jk-sos .sos-simple-btn::before { display: none; }
+:root[data-narrow] .jk-sos .sos-ring { position: static; transform: none; }
+.jk-sos .sos-simple-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.jk-sos .sos-simple-tx > span:first-child { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.jk-sos .sos-simple-sub { color: #fff; font-size: 15px; line-height: 20px; font-weight: 400; margin: 2px 0 0; } /* white on --danger-bg is 5.2:1 (the board's pink was 4.2:1 on this red) */
+.jk-safety { margin: 8px 0 12px; font-size: 15px; text-align: center; color: var(--muted); }
 .jk-safety a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-weight: 600; color: var(--green); }
+.bt .jk-row { display: flex; width: 100%; min-height: 44px; height: auto; padding: 8px 16px; background: var(--fill); color: var(--ink); text-decoration: none; text-align: center; font: inherit; font-weight: 600; font-size: 15px; box-sizing: border-box; }
+.jk-try { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.jk-try { margin-top: 16px; }
+.jk-try .sub { flex: 1 0 100%; padding: 0 4px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.jk-chip { min-height: 44px; padding: 8px 14px; border: 0; border-radius: 999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); font: inherit; font-size: 15px; font-weight: 400; text-align: left; }
+.jk-sos .sos-ring { flex: none; display: grid; --h-ic: #fff; }
+.jk-sos .sos-ring .rg-track { stroke: rgba(255,255,255,.3); }
 .jk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.jk-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 150px; padding: 16px; border-radius: 20px; background: var(--card); border: 0; text-align: left; font: inherit; color: var(--ink); }
+.jk-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 150px; padding: 16px; border-radius: 20px; background: var(--card); box-shadow: inset 0 0 0 1px var(--hair); border: 0; text-align: left; font: inherit; color: var(--ink); } /* the hairline keeps the tile visible in dark, where the sheet and the tile share one fill */
 .jk-tile .big { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--tint-fill); color: var(--tint-ink); }
 .jk-tile b { font-size: 20px; font-weight: 700; }
 .jk-tile .sub { font-size: 15px; }
-.jk-upload { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; margin-top: 8px; font-size: 15px; color: var(--ink); text-decoration: underline; background: none; border: 0; font: inherit; }
 :root[data-narrow] .jk-tiles { grid-template-columns: minmax(0, 1fr); }
-.jk-sos .sos-simple-btn:focus-visible, .jk-tile:focus-visible, .jk-upload:focus-visible, .jk-safety a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.jk-sos .sos-simple-btn:focus-visible, .jk-tile:focus-visible, .jk-row:focus-visible, .jk-chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .sh-sosfull { position: absolute; inset: 0; z-index: 40; background: var(--ground); overflow: auto; display: flex; flex-direction: column; }
+
+/* HeadActions: bell and avatar are 44 px circles (S5). The sync pill and the screen's own control sit left of them. */
+.lt-actions-set { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* S5: the place chip is one line and gives way (ellipsis) before the title row wraps or overflows; the full words stay in its aria-label */
+.lt-actions .zp, .lt-actions > [data-testid="place-last"] { min-width: 0; flex: 0 1 auto; }
+.lt-actions .zp .sf-chip, .lt-below .zp .sf-chip { display: flex; align-items: center; max-width: 100%; }
+.zp-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ha-bell, .ha-me { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; text-decoration: none; overflow: hidden; }
+.ha-bell { background: var(--card); color: var(--ink); box-shadow: var(--shadow); overflow: visible; }
+.ha-dot { position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; border-radius: 50%; background: var(--amber); border: 2px solid var(--card); }
+.ha-me { background: var(--green); color: var(--on-green); font-weight: 700; font-size: 17px; }
+.ha-me img { width: 100%; height: 100%; object-fit: cover; }
+
+/* S2: the strip under the tab bar (bar bottom to screen edge) is covered, so content never shows through the gap or the home-indicator area. Under the bar (z 5) and Jack (z 6). */
+.bt[data-simple]::after { display: none; } /* Simple mode has no tab bar: nothing to fade under */
+.bt::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 12px); background: linear-gradient(to bottom, transparent, var(--ground) 55%); z-index: 4; pointer-events: none; }
+/* No tab is active (Me, Alerts): the pill has nothing to sit behind and must not slide in from the last tab. */
+.tabbar.sh-tabs[data-active="none"]::before { transition: none; opacity: 0; }

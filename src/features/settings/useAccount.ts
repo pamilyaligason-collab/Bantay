@@ -9,6 +9,7 @@ import { useOwnAvatar } from '../setup/useProfile'
 /** The signed-in person's account facts that the Settings screens share: member row, display name, fingerprint flag, who they care for. Always the admin's own account, never the acting person (C-9). */
 export function useAccount() {
   const [member, setMember] = useState<Member | null>(null)
+  const [loaded, setLoaded] = useState(false) // getMember has answered (member stays null when signed out)
   const [who, setWho] = useState('')
   const [passkey, setPasskey] = useState(false)
   const [carerOf, setCarerOf] = useState<string[]>([])
@@ -16,8 +17,10 @@ export function useAccount() {
   const { people: roster } = useFamilyPeople()
   useEffect(() => {
     let live = true
-    void getMember().then(async (m) => {
-      if (!live || !m) return
+    void getMember().catch(() => null).then(async (m) => {
+      if (!live) return
+      setLoaded(true)
+      if (!m) return
       setMember(m)
       void loadCarerOf(supabase, m.userId).then((ids) => { if (live) setCarerOf(ids) })
       if (!m.personId) return
@@ -27,5 +30,5 @@ export function useAccount() {
     })
     return () => { live = false }
   }, [])
-  return { member, who, passkey, setPasskey, carerOf, photo, roster }
+  return { member, loaded, who, passkey, setPasskey, carerOf, photo, roster }
 }

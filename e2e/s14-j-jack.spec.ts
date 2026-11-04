@@ -47,7 +47,7 @@ const PLACES: { name: string; hash: string; ready: string; alt: string | null | 
   { name: 'listening', hash: '#discover/listen', ready: 'listen', alt: 'Jack Jack sitting with one paw raised, listening', size: 96 },
   // v13: the Watch screen and the Discover overview draw no Jack art
   { name: 'playing', hash: '#discover/play', ready: 'play-hub', alt: 'Jack Jack playing with a ball', size: 96 },
-  { name: 'walking', hash: '#health/move', ready: 'mv-page', alt: 'Jack Jack trotting in a harness on a leash', size: 96 },
+  // v13: Move draws no Jack art any more (the board's ring card took its place) and no other screen shows the walking pose, so there is nothing left to check for it
 ]
 
 for (const p of PLACES) {
