@@ -12,7 +12,7 @@ const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: 4102444800 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
-const PEOPLE = [{ id: 'me', display_name: 'Lloyd' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
+const PEOPLE = [{ id: 'me', display_name: 'Rey' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
 
 type Row = Record<string, unknown>
 async function mock(page: Page) {
@@ -91,7 +91,7 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(NOW)
   await page.setViewportSize({ width: 390, height: 844 })
   await skipOnboarding(page)
-  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Lloyd' }, { personId: 'ma', displayName: 'Ma' }, { personId: 'pa', displayName: 'Pa' }])))
+  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }, { personId: 'ma', displayName: 'Ma' }, { personId: 'pa', displayName: 'Pa' }])))
   await mock(page)
 })
 
@@ -99,7 +99,7 @@ for (const clock of FIXED_CLOCKS) test(`signed in at ${clock}: Next up for me an
   NOW = new Date(clock)
   await page.clock.setFixedTime(NOW)
   await page.goto('/')
-  await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Next up' })).toHaveCount(0) // nothing next: no empty card
   await seedWeek(page)
   await page.reload()
@@ -123,7 +123,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test.skip(!SHOTS, 'set M3_SHOTS to write screenshots')
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/')
-    await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+    await expect(page.getByTestId('myday')).toBeVisible()
     await seedWeek(page)
     await page.reload()
     await expect(page.getByText(/^Stay indoors 11 AM-3 PM/)).toBeVisible()
@@ -160,7 +160,7 @@ for (const [w, h] of [[390, 844], [360, 640]] as const) {
   test(`simple mode: SOS button inside the viewport before scroll at ${w}x${h}`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h })
     await page.goto('/')
-    await expect(page.getByRole('region', { name: 'Quick log' }).or(page.getByRole('group', { name: 'Quick log' }))).toBeVisible() // the app has created its database
+    await expect(page.getByTestId('myday')).toBeVisible() // the app has created its database
     await seedWeek(page)
     await seed(page, 'bantay', 'kv', [{ key: 'mode.simple', value: true }])
     await page.reload()

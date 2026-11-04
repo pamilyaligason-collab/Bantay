@@ -14,7 +14,7 @@ describe('SelfCare row and BreathSheet', () => {
     const push = vi.spyOn(history, 'pushState')
     render(<SelfCare />)
     expect(screen.getByRole('heading', { name: 'Take a breath' })).toBeTruthy()
-    expect(screen.getByText(/In 4, out 6 · last: none yet/)).toBeTruthy()
+    expect(screen.getByText(/1 minute · in 4, out 6 · last: none yet/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Start breathing' }))
     expect(await screen.findByRole('dialog', { name: 'Take a breath' })).toBeTruthy()
     expect(push).toHaveBeenCalledWith({ bantayBreathe: true }, '')

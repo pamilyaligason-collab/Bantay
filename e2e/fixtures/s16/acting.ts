@@ -9,7 +9,7 @@ export const adminNoLink: Fixture = { role: 'admin', carerLink: 'none' }
 export const member: Fixture = { role: 'member', carerLink: 'none' }
 
 export const UID = '66666666-6666-4666-8666-666666666666'
-export const ME = { id: 'p-me', display_name: 'Lloyd' }
+export const ME = { id: 'p-me', display_name: 'Rey' }
 export const MAMA = { id: 'p-mama', display_name: 'Mama' }
 const PEOPLE = [ME, MAMA]
 const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')

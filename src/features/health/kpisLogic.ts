@@ -35,7 +35,7 @@ export function whenWords(iso: string, now: Date): string {
   return `${WD[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]}`
 }
 
-const latestOf = (rs: Reading[], test: string) => rs.filter((r) => r.test === test && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
+const latestOf = (rs: Reading[], test: string) => rs.filter((r) => r.test === test && r.value > 0 && Number.isFinite(Date.parse(r.takenAt))).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
 /** The chip word comes from the one verdict table (verdict.ts), in the same bands as the Normal text. */
 const chip = (kind: 'bp' | 'vital', pos: Position, top?: number, bottom?: number | null, doctor?: BpArg['doctor']): RangeState => rangeState(pos, kind, { top, bottom, doctor })
 const worst = (ps: string[]) => ps.find((p) => p === 'above' || p === 'below') ?? ps.find((p) => p === 'within') ?? 'none'
@@ -62,8 +62,8 @@ export function computeKpis(i: { personId: string; readings: Reading[]; activity
   const wt = latestOf(mine, 'weight')
   if (wt) out.push({ code: 'weight', href: '#health/metric/weight', label: 'Weight', value: formatNumber(wt.value), unit: wt.unit ?? 'kg', when: whenWords(wt.takenAt, i.now), sub: 'latest', spark: spark('weight') })
 
-  // steps: the newest day that has any, as a day total
-  const stepRows = i.activity.filter((a) => (a.personId == null || a.personId === i.personId) && a.kind === 'steps' && typeof a.steps === 'number' && a.steps > 0)
+  // steps: the newest day that has a row, as a day total. A 0 day is true data, the same as latestSteps on Move
+  const stepRows = i.activity.filter((a) => (a.personId == null || a.personId === i.personId) && a.kind === 'steps' && typeof a.steps === 'number' && a.steps >= 0)
   const lastDay = stepRows.map((a) => dayOf(a.startedAt)).sort().at(-1)
   if (lastDay) {
     const total = stepRows.filter((a) => dayOf(a.startedAt) === lastDay).reduce((s, a) => s + (a.steps ?? 0), 0)

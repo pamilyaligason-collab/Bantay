@@ -105,13 +105,63 @@ describe('affectsUs', () => {
   })
   const ABOUT = (km: number) => `About ${km} km away. You may feel it. If you feel shaking, follow the steps below.`
   const TSUNAMI = ' If you live near the sea, watch for a tsunami warning.'
-  it('an 89 km M3.0 quake is felt to 50 km only: it still affects the family, with the distance and the steps', () => {
-    expect(affectsUs({ ...q89, level: 'Magnitude 3.0', title: 'M 3.0 quake', what: '' }, conel)).toEqual({ affects: true, km: 89, line: ABOUT(89), steps: true })
+  const fresh = new Date().toISOString()
+  const SOFT = { affects: true, line: 'Probably too far to feel strongly. If you felt shaking, follow the steps below.', steps: true }
+  it('an 89 km M3.0 quake under an hour old is felt to 50 km only: it still affects the family, with the distance and the steps', () => {
+    expect(affectsUs({ ...q89, level: 'Magnitude 3.0', title: 'M 3.0 quake', what: '', issuedAt: fresh }, conel)).toEqual({ affects: true, km: 89, line: ABOUT(89), steps: true })
   })
   it('M3.6 at 140 km (1.2591 deg x 111.195 km) is beyond its 50 km radius: About 140 km away', () => {
-    const q = a('q140', 'quake', { level: 'Magnitude 3.6', lat: conel.lat + 1.2591, lon: conel.lon })
+    const q = a('q140', 'quake', { level: 'Magnitude 3.6', lat: conel.lat + 1.2591, lon: conel.lon, issuedAt: fresh })
     expect(Math.round(distanceKm(conel, { lat: q.lat!, lon: q.lon! }))).toBe(140)
     expect(affectsUs(q, conel)).toEqual({ affects: true, km: 140, line: ABOUT(140), steps: true })
+  })
+  it('the same far M3.6 quake hours old, with no live phone position: the soft line and the steps', () => {
+    const q = a('q140', 'quake', { level: 'Magnitude 3.6', lat: conel.lat + 1.2591, lon: conel.lon, issuedAt: new Date(Date.now() - 5 * 3_600_000).toISOString() })
+    expect(affectsUs(q, conel)).toEqual({ ...SOFT, km: 140 })
+  })
+  describe('"No action needed" needs a live, named phone position', () => {
+    const NOW = Date.parse('2026-11-01T12:00:00Z')
+    const old = '2026-11-01T07:00:00Z'
+    const davao = { lat: 7.07, lon: 125.6 }
+    // 1.2591 deg north of Davao = 140 km; beyond 50 km of M3.6, and beyond it from both home zones
+    const q = a('q', 'quake', { level: 'Magnitude 3.6', lat: davao.lat + 1.2591, lon: davao.lon, issuedAt: old })
+    const live = { source: 'gps', zone: 'conel', weather: davao, fixAt: NOW - 60_000 }
+    it('live GPS in a named area: the board wording, naming the area, no steps', () => {
+      expect(affectsUs(q, davao, NOW, live)).toEqual({ affects: true, km: 140, line: 'Too far to feel in Davao. No action needed.', steps: false })
+    })
+    it.each([
+      ['no place at all', undefined],
+      ['home zone only (location off)', { source: 'zone', zone: 'conel', weather: conel }],
+      ['an old last fix', { ...live, source: 'last' }],
+      ['GPS whose fix is 31 min old', { ...live, fixAt: NOW - 31 * 60_000 }],
+      ['GPS with no fix time', { ...live, fixAt: undefined }],
+      ['GPS outside every named area', { ...live, weather: { lat: 12, lon: 120 } }],
+      ['a phone abroad', { ...live, source: 'gps-abroad' }]
+    ])('%s: the soft line and the steps', (_n, place) => {
+      expect(affectsUs(q, davao, NOW, place)).toEqual({ ...SOFT, km: 140 })
+    })
+    it('location off, home zone far, the epicentre under the person (Surigao, 177 km from Dampas): never "no action", steps shown', () => {
+      const dampas = { lat: 9.645705, lon: 123.877951 }
+      const surigao = a('s', 'quake', { level: 'Magnitude 4.7', lat: 9.79, lon: 125.49, issuedAt: old }) // hand-computed: 1.612 deg lon x cos 9.7 x 111.2 = 176.7 km, 0.144 deg lat = 16 km: 177 km
+      const r = affectsUs(surigao, dampas, NOW, { source: 'zone', zone: 'dampas', weather: dampas })
+      expect(r).toEqual({ ...SOFT, km: 177 })
+      expect(r.line).not.toMatch(/no action/i)
+    })
+    it('a live position changes nothing for a fresh, M6 or unknown-size quake', () => {
+      for (const over of [{ issuedAt: '2026-11-01T11:30:00Z' }, { level: 'Magnitude 6.1', lat: davao.lat + 5 }, { level: null, title: 'Quake', what: '' }]) {
+        const r = affectsUs({ ...q, ...over }, davao, NOW, live)
+        expect(r.steps).toBe(true)
+        expect(r.line).not.toMatch(/no action|too far/i)
+      }
+    })
+  })
+  it('never quiet when the size is unknown, the quake is M6 or more, or its point is missing', () => {
+    const old = new Date(Date.now() - 5 * 3_600_000).toISOString()
+    const far = { lat: conel.lat + 3, lon: conel.lon, issuedAt: old }
+    expect(affectsUs(a('u', 'quake', { level: null, ...far }), conel).steps).toBe(true)
+    expect(affectsUs(a('m6', 'quake', { level: 'Magnitude 6.1', lat: conel.lat + 5, lon: conel.lon, issuedAt: old }), conel).steps).toBe(true)
+    expect(affectsUs(a('np', 'quake', { level: 'Magnitude 3.6', issuedAt: old }), conel).steps).toBe(true)
+    expect(affectsUs(a('bad', 'quake', { level: 'Magnitude 3.6', lat: conel.lat + 1.2591, lon: conel.lon, issuedAt: 'nonsense' }), conel).steps).toBe(true)
   })
   it('M7.2 at 2500 km (22.483 deg due south of Conel) says About 2500 km and adds the tsunami line', () => {
     const q = a('q2500', 'quake', { level: 'Magnitude 7.2', lat: conel.lat - 22.483, lon: conel.lon })
@@ -189,7 +239,8 @@ describe('plain words and copy', () => {
     expect(SOURCES_LINE).toBe('From PAGASA, USGS, GDACS. Checked every 10 min.')
     expect(SOURCES_FULL).toContain('Open-Meteo') // CC BY 4.0 credit stays on the Sources disclosure
     expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
-    expect(placeLabel({ source: 'gps', zone: 'dampas' })).toBe('Near you · Dampas')
+    expect(placeLabel({ source: 'gps', zone: 'dampas', weather: { lat: 6.11, lon: 125.17 } })).toBe('General Santos')
+    expect(placeLabel({ source: 'zone', zone: 'dampas', picked: false })).toBe('Dampas · your home area')
     expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
   })
 })

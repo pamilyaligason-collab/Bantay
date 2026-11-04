@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('watch')).toBeVisible()
       await shot(page, 'watch', scheme)
       await assertTargets(page); await assertTextContrast(page)
-      await assertJackClear(page)
+      await assertJackClear(page, { at: 'end' }) // seven topic rows plus Live TV (D-117) run past one screen, so a row always crosses the Jack band at rest; the end of the page must clear it
       await assertNoWrappedButtons(page)
       const row = page.getByRole('list', { name: 'Checked videos' })
       expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)

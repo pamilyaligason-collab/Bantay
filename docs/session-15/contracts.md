@@ -32,7 +32,7 @@ Each lane may also edit tests that assert the strings or behaviour it changes (g
 After merge (orchestrator): UI-17 44→48 px sweep (Haiku + grep check), fresh 375 px / 195 px light + dark shots of the touched screens vs mockup v9, full gates, final Opus review.
 
 ## Out of scope this round
-UI-6 (Today order), DS-12 (Video of the day), D-64, the cross-midnight display in `health/meds.ts:108`, new mockup screens. Live apply of 0043 / pin-login / dose-watch needs Lloyd.
+UI-6 (Today order), DS-12 (Video of the day), D-64, the cross-midnight display in `health/meds.ts:108`, new mockup screens. Live apply of 0043 / pin-login / dose-watch needs the owner.
 
 ## Gates per lane
 `npx tsc --noEmit` exit 0; `npx vitest run <changed + related test files>` exit 0; Playwright only for specs the diff can break, with a unique `PW_PORT` (S1 5401, S2 5402, X 5403, L1 5411, L2 5412, L3 5413, L4 5414, L5 5415, L6 5416). Server lane: `deno test` on the touched function tests if deno is available, else vitest where the repo runs them; SQL reviewed by reading, never applied.

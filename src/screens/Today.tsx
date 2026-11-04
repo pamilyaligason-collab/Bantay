@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertCardToday } from '../features/notify/AlertCardToday'
 import { AlarmFixedToast } from '../features/phonecheck/AlarmFixedToast'
 import { IncomingSos } from '../features/family/IncomingSos'
@@ -9,20 +9,16 @@ import SimpleToday from '../features/today/SimpleToday'
 import { useKv } from '../features/shell/useKv'
 import { retryToast, retryUnsentMood } from '../features/today/actions'
 import { LargeTitle, Skeleton, wireMotion } from '../features/look'
-import QuickLog from '../features/today/QuickLog'
 import MyDay from '../features/today/MyDay'
 import CalmCard from '../features/today/CalmCard'
 import YourNumbers from '../features/today/YourNumbers'
 import { dateKicker, greeting } from '../features/today/greeting'
-import { UnreadContext } from '../features/today/unread'
-import { Icon } from '../features/shell/Icon'
-import { firstName } from '../features/shell/TopBar'
-import { useOwnAvatar } from '../features/setup/useProfile'
+import { HeadActions } from '../features/shell/HeadActions'
 import { getMember } from '../features/auth/session'
 import { loadFamily } from '../features/auth/family'
 import '../features/today/today.css'
 
-/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), quick log (How are you? is the check-in; one salt line under it, Meals live in Health > Food), self-care breathing, today's plan, the See the week link (My week opens under it), then More (alerts setup, banners, notices, week line).
+/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), My day (How are you? opens the mood faces, Log something else opens More, breathing, the plan, a missed medicine of someone else), Calm, Your numbers, then More (alerts setup, banners, notices).
  *  News and the video live elsewhere (Safety, Health).
  *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
@@ -50,8 +46,6 @@ export default function Today() {
     return () => window.removeEventListener('online', go)
   }, [notify])
   const warn = useWarnings()
-  const unread = useContext(UnreadContext)
-  const photo = useOwnAvatar()
   const [name, setName] = useState('')
   useEffect(() => {
     let live = true
@@ -65,10 +59,7 @@ export default function Today() {
   if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
     <div ref={root} className="td-root">
-      <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), name)} actions={<>
-        <a className="td-bell" href="#notif" aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}><Icon name="bell" size={22} />{unread > 0 && <span className="td-bell-dot" />}</a>
-        <a className="td-me" href="#me" aria-label="You and settings">{photo ? <img src={photo} alt="" /> : (firstName(name).charAt(0) || <Icon name="users" size={20} />)}</a>
-      </>} />
+      <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), name)} actions={<HeadActions />} />
       <AlarmFixedToast />
       <IncomingSos placement="today" />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
@@ -78,7 +69,6 @@ export default function Today() {
       <MyDay notify={notify} />
       <CalmCard />
       <YourNumbers />
-      <QuickLog notify={notify} /> {/* kept: the mood faces (Unwell reaches the family) and Move/Salt have no other home on Today */}
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

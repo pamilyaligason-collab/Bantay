@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
-// S4 REVIEW + FAMILY-CARER (runs in the "auth" project: build WITH test Supabase env). Signed in as Lloyd, a writer carer of Papa and Mama.
+// S4 REVIEW + FAMILY-CARER (runs in the "auth" project: build WITH test Supabase env). Signed in as Rey, a writer carer of Papa and Mama.
 // PostgREST is mocked; every name and value is invented. Shots (390x844, light and dark): family-home, family-answer, family-phones, health-meds,
 // health-med-stop, lock-sos (the red banner on Family; the Today hook is S7's). Written to docs/session-10/shots/s4.
 const API = 'https://bantay-test.supabase.test'
@@ -11,8 +11,8 @@ const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 172800 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
-const PEOPLE = [{ id: 'me', display_name: 'Lloyd', auth_user_id: UID }, { id: 'pa', display_name: 'Papa', auth_user_id: 'u-pa' }, { id: 'ma', display_name: 'Mama', auth_user_id: 'u-ma' }]
-const FAMILY = [{ personId: 'me', displayName: 'Lloyd' }, { personId: 'pa', displayName: 'Papa' }, { personId: 'ma', displayName: 'Mama' }]
+const PEOPLE = [{ id: 'me', display_name: 'Rey', auth_user_id: UID }, { id: 'pa', display_name: 'Papa', auth_user_id: 'u-pa' }, { id: 'ma', display_name: 'Mama', auth_user_id: 'u-ma' }]
+const FAMILY = [{ personId: 'me', displayName: 'Rey' }, { personId: 'pa', displayName: 'Papa' }, { personId: 'ma', displayName: 'Mama' }]
 
 type Row = Record<string, unknown>
 type Post = { path: string; body: Row }
@@ -113,7 +113,7 @@ for (const scheme of ['light', 'dark'] as const) {
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-answer-${scheme}.png` })
     await sheet.getByRole('button', { name: 'Send answer' }).click()
     await expect(page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' })).toHaveCount(0)
-    await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Metformin' && JSON.stringify(p.body.schedule).includes('"answered_by":"Lloyd"'))).toBe(true)
+    await expect.poll(() => posts.some((p) => p.path === 'medications' && p.body.name === 'Metformin' && JSON.stringify(p.body.schedule).includes('"answered_by":"Rey"'))).toBe(true)
 
     await page.getByTestId('need-row').filter({ hasText: "Papa's phone may miss alarms" }).getByRole('link', { name: 'Fix phone' }).click() // v13: a Needs row link (was a button)
     await expect(page.getByRole('heading', { name: 'Family phones' })).toBeVisible() // v12: Fix goes straight to Settings > Phone > Family phones (#me/phone/phones)

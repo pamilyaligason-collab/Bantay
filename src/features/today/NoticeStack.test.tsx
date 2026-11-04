@@ -4,13 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 
-const h = vi.hoisted(() => ({ left: [] as string[] }))
-vi.mock('../setup/steps', () => ({ useSetupLeft: () => ({ left: h.left }), turnOnReminders: vi.fn(), notifyState: vi.fn(), notifyDone: vi.fn() }))
+const h = vi.hoisted(() => ({ left: [] as { label: string; href: string }[] }))
+vi.mock('./setupRow', () => ({ useSetupSteps: () => h.left }))
+vi.mock('../setup/steps', () => ({ turnOnReminders: vi.fn(), notifyState: vi.fn(), notifyDone: vi.fn() }))
 vi.mock('../notify/AlertsBanner', () => ({ default: () => null }))
 vi.mock('../update/UpdateCard', () => ({ UpdateCard: () => null }))
 vi.mock('../update/PwaBanner', () => ({ PwaBanner: () => null }))
 vi.mock('./NearbyList', () => ({ default: () => null }))
-vi.mock('./WeekLine', () => ({ default: () => null }))
 import { turnOnReminders } from '../setup/steps'
 import NoticeStack, { AlertsOffCard, alertsAreOff } from './NoticeStack'
 
@@ -54,11 +54,11 @@ describe('NoticeStack', () => {
     expect(screen.queryByTestId('setup-row')).toBeNull()
   })
   it('shows the setup row with what is left and never hides it at half done', () => {
-    h.left = ['SOS contacts', 'Photo']
+    h.left = [{ label: 'SOS contacts', href: '#me/family' }, { label: 'Photo', href: '#me' }]
     render(<NoticeStack />)
     const row = screen.getByTestId('setup-row')
     expect(row.textContent).toContain('Finish setup · 2 left')
     expect(row.textContent).toContain('SOS contacts, Photo')
-    expect(row.querySelector('a')!.getAttribute('href')).toBe('#me/phone')
+    expect(row.querySelector('a')!.getAttribute('href')).toBe('#me/family')
   })
 })

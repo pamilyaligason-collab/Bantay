@@ -95,6 +95,74 @@ describe('zoneAlert quakes (D-88)', () => {
   it('within a tier the nearer quake leads', () => {
     expect(zoneAlert([quake('far', 2.7), quake('near', 0.27)], conel)?.id).toBe('near')
   })
+  describe('a quiet quake never holds the slot over a real warning', () => {
+    const old = new Date(Date.now() - 5 * 3_600_000).toISOString()
+    const south = (km: number) => -km / 111.195 // away from the other home zone
+    it('old M4.2 at 105 km with an Orange volcano at 120 km: the volcano', () => {
+      const list = [quake('old', south(105), { level: 'Magnitude 4.2', issuedAt: old }), quake('v', south(120), { kind: 'volcano', level: 'Orange' })]
+      expect(zoneAlert(list, conel)?.id).toBe('v')
+    })
+    it('fresh M4.2 at 105 km with an Orange volcano at 120 km: the volcano, as Simple Today shows only this slot', () => {
+      const list = [quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() }), quake('v', south(120), { kind: 'volcano', level: 'Orange' })]
+      expect(zoneAlert(list, conel)?.id).toBe('v')
+    })
+    it('a fresh quake keeps the slot over a Green volcano, close or far, and over an Orange one far away', () => {
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() })
+      expect(zoneAlert([q, quake('v', south(120), { kind: 'volcano', level: 'Green' })], conel)?.id).toBe('q')
+      expect(zoneAlert([q, quake('v', south(900), { kind: 'volcano', level: 'Green' })], conel)?.id).toBe('q')
+      expect(zoneAlert([q, quake('v', south(900), { kind: 'volcano', level: 'Orange' })], conel)?.id).toBe('q')
+    })
+    it('wherever ranking puts them, a Green or far row never takes the slot from a live quake', () => {
+      const fresh = new Date().toISOString()
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: fresh })
+      expect(zoneAlert([q, quake('v', south(80), { kind: 'volcano', level: 'Green' })], conel)?.id).toBe('q')
+      expect(zoneAlert([q, quake('v', 0, { kind: 'volcano', level: 'Green', lat: null, lon: null })], conel)?.id).toBe('q')
+      expect(zoneAlert([q, alert({ id: 'r', lat: 6.2015121 + south(400), lon: 125.1878084 })], conel)?.id).toBe('q')
+      const red = quake('red', south(150), { level: 'Magnitude 5.0', issuedAt: fresh }) // inside its 200 km felt radius
+      expect(zoneAlert([red, quake('v', south(100), { kind: 'volcano', level: 'Green' })], conel)?.id).toBe('red')
+    })
+    it('after its first hour a quake holds nothing back: 20 hours old against a Red volcano', () => {
+      const late = new Date(Date.now() - 20 * 3_600_000).toISOString()
+      expect(zoneAlert([quake('q', south(190), { level: 'Magnitude 5.0', issuedAt: late }), quake('v', south(170), { kind: 'volcano', level: 'Red' })], conel)?.id).toBe('v')
+      expect(zoneAlert([quake('q', south(900), { level: 'Magnitude 6.2', issuedAt: late }), quake('v', south(400), { kind: 'volcano', level: 'Red' })], conel)?.id).toBe('v')
+    })
+    it('the hold ends at the hour: 59 minutes holds, 61 does not', () => {
+      const ago = (m: number) => new Date(Date.now() - m * 60_000).toISOString()
+      const v = quake('v', south(400), { kind: 'volcano', level: 'Red' })
+      expect(zoneAlert([quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: ago(59) }), v], conel)?.id).toBe('q')
+      expect(zoneAlert([quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: ago(61) }), v], conel)?.id).toBe('v')
+    })
+    it('an unreadable time counts as recent', () => {
+      expect(zoneAlert([quake('q', south(500), { level: 'Magnitude 4.2', issuedAt: 'not a date' }), quake('v', south(400), { kind: 'volcano', level: 'Red' })], conel)?.id).toBe('q')
+    })
+    it('a recent red-card quake takes the slot from a live compact one, an old one does not', () => {
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() })
+      expect(zoneAlert([q, quake('r', south(900), { level: 'Magnitude 6.2', issuedAt: new Date().toISOString() })], conel)?.id).toBe('r')
+      expect(zoneAlert([q, quake('r', south(900), { level: 'Magnitude 6.2', issuedAt: old })], conel)?.id).toBe('q')
+    })
+    it('a real warning with no point takes the slot; NEAR_KM is the line for one with a point', () => {
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() })
+      expect(zoneAlert([q, alert({ id: 'r', kind: 'rainfall', level: 'Orange', lat: null, lon: null })], conel)?.id).toBe('r')
+      expect(zoneAlert([q, quake('v', south(149), { kind: 'volcano', level: 'Orange' })], conel)?.id).toBe('v')
+      expect(zoneAlert([q, quake('v', south(151), { kind: 'volcano', level: 'Orange' })], conel)?.id).toBe('q')
+    })
+    it('heat never takes the slot from a live quake', () => {
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() })
+      expect(zoneAlert([q, alert({ id: 'h', kind: 'heat', level: 'Caution', lat: 6.2015121, lon: 125.1878084 })], conel)?.id).toBe('q')
+    })
+    it('a close real warning still takes the slot, nearer than the quake or not', () => {
+      const q = quake('q', south(105), { level: 'Magnitude 4.2', issuedAt: new Date().toISOString() })
+      expect(zoneAlert([q, quake('v', south(80), { kind: 'volcano', level: 'Orange' })], conel)?.id).toBe('v')
+    })
+    it('old M5.0 at 205 km with a fresh M5.4 at 215 km: the M5.4', () => {
+      const list = [quake('old', south(205), { level: 'Magnitude 5.0', issuedAt: old }), quake('fresh', south(215), { level: 'Magnitude 5.4', issuedAt: new Date().toISOString() })]
+      expect(zoneAlert(list, conel)?.id).toBe('fresh')
+    })
+    it('only quiet quakes: the nearer one still shows', () => {
+      const list = [quake('far', south(300), { level: 'Magnitude 4.2', issuedAt: old }), quake('near', south(105), { level: 'Magnitude 4.2', issuedAt: old })]
+      expect(zoneAlert(list, conel)?.id).toBe('near')
+    })
+  })
   it('a strong quake keeps the one slot against a nearer quiet row (M4.6 at 272 km vs M6.8 at 300 km)', () => {
     expect(zoneAlert([quake('quiet', 2.45), quake('big', 2.7, { level: 'Magnitude 6.8' })], conel)?.id).toBe('big')
   })
@@ -123,16 +191,17 @@ describe('rain timing', () => {
   it('finds the start, length and peak from the current hour', () => {
     expect(rainOutlook(times, hourly((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)).prob, '2026-10-19T11:20')).toEqual({ now: false, tomorrow: false, startH: 15, endH: 19, hours: 4, peakPct: 100 })
     const c = card(w((h) => (h >= 15 && h < 19 ? (h === 16 ? 100 : 70) : 10)), 11)
-    expect(c.body).toBe('Rain likely from 3 PM for about 4 hours. Chance: 100%.')
+    expect(c.body).toBe('Rain likely from 3 PM for about 4 hours. Next hours: 100%.')
   })
   it('rain now only when the sky shows rain; otherwise it looks from the next hour', () => {
     const f = (h: number) => (h >= 14 && h < 17 ? 60 : 0)
     expect(card(w(f, 63), 14).body).toBe('Rain now, easing around 5 PM.')
-    expect(card(w(f, 3), 14).body).toBe('Rain likely from 3 PM for about 2 hours. Chance: 60%.')
+    expect(card(w(f, 3), 14).body).toBe('Rain likely from 3 PM for about 2 hours. Next hours: 60%.')
   })
   it('says tomorrow, with a matching title', () => {
     const c = card(w((h) => (h >= 30 && h < 33 ? 80 : 0)), 20)
-    expect(c.body).toBe('Rain likely tomorrow from 6 AM for about 3 hours. Chance: 80%.')
+    expect(c.body).toBe('Rain likely tomorrow from 6 AM for about 3 hours. Tomorrow up to 80%.')
+    expect(c.body).not.toContain('Next hours') // tomorrow's peak is not the next hours
   })
   it('is worked out at render time: later in the day the same cache reads differently, and a past window gives no umbrella', () => {
     const x = w((h) => (h >= 15 && h < 17 ? 90 : 0))
@@ -144,7 +213,13 @@ describe('rain timing', () => {
   it('null when no hour reaches 50, undefined without hourly data, old text kept', () => {
     expect(rainOutlook(times, hourly(() => 20).prob, '2026-10-19T08:00')).toBeNull()
     expect(rainOutlook(undefined, undefined, '2026-10-19T08:00')).toBeUndefined()
-    expect(rainLine(wx, at(11))).toBe('Bring an umbrella. Chance of rain: 70%.')
+    expect(rainLine(wx, at(11))).toBe('Bring an umbrella. Today up to 70%.')
+  })
+  it('W4: every percentage in the rain line is labelled daily or hourly, never bare', () => {
+    const hourlyWx = { ...wx, hourly: hourly((h) => (h >= 15 && h < 19 ? 80 : 10)) }
+    const lines = [rainLine(hourlyWx, at(11)), rainLine(wx, at(11)), rainLine({ ...wx, rainPct: 40 }, at(11))]
+    for (const l of lines) for (const m of l.matchAll(/\d+%/g)) expect(l.slice(0, m.index)).toMatch(/(Next hours: |Today up to |Tomorrow up to )$/)
+    expect(lines[0]).toContain('Next hours: 80%')
   })
   it('sky from weather code', () => {
     expect([0, 2, 45, 63, 96, undefined].map((c) => skyOf({ ...wx, code: c }))).toEqual(['clear', 'cloud', 'fog', 'rain', 'storm', undefined])

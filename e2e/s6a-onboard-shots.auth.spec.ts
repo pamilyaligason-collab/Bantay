@@ -18,7 +18,7 @@ const FAMILY = [
   { personId: 'p-joy', displayName: 'Ate Joy', handle: 'joy', provider: 'pin', initials: 'AJ' },
   { personId: 'p-ben', displayName: 'Kuya Ben', handle: 'ben', provider: 'pin', initials: 'KB' }
 ]
-const NAMES = [{ first_name: 'Lloyd', initial: '', handle: 'lloyd' }, { first_name: 'Mama', initial: '', handle: 'mama' }, { first_name: 'Papa', initial: '', handle: 'papa' }, { first_name: 'Ate', initial: 'J', handle: 'joy' }, { first_name: 'Kuya', initial: 'B', handle: 'ben' }]
+const NAMES = [{ first_name: 'Rey', initial: '', handle: 'rey' }, { first_name: 'Mama', initial: '', handle: 'mama' }, { first_name: 'Papa', initial: '', handle: 'papa' }, { first_name: 'Ate', initial: 'J', handle: 'joy' }, { first_name: 'Kuya', initial: 'B', handle: 'ben' }]
 const keys = async (page: Page, digits: string) => { for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click() }
 
 async function mock(page: Page) {

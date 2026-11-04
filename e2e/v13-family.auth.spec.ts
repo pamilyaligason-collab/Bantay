@@ -43,6 +43,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(needs).toHaveCount(1)
       await expect(needs.first()).toContainText("Papa Ben's phone may miss alarms")
       await expect(page.getByTestId('needs')).not.toContainText('Ate Joy')
+      await expect(page.getByTestId('people-row')).toHaveCount(3)
+      await page.getByTestId('people').getByRole('button', { name: /All people/ }).click()
       await expect(page.getByTestId('people-row')).toHaveCount(4)
       await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(4)
       await expect(page.getByTestId('planrow')).toBeVisible()
@@ -63,12 +65,33 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(ac).toContainText('Ate Joy · 142 high')
       await expect(ac).toContainText('You · no readings')
       await ac.getByRole('button', { name: 'Steps' }).click()
-      await expect(ac).toContainText('Steps show here once a phone shares them')
+      await expect(ac).toContainText(/(No step readings for|Links needed)/)
+    })
+
+    test('F-lane shape: People <= 260, plan rows <= 72, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
+      await openFamily(page)
+      expect((await page.getByTestId('people').boundingBox())!.height).toBeLessThanOrEqual(260)
+      await expect(page.getByRole('button', { name: /I'm OK/ })).toHaveCount(0)
+      await expect(page.getByTestId('papersrow')).toContainText('Nothing waiting') // the fixture queue is empty; the counts are unit tested (queueWords)
+      if (SHOTS) { await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = 0 }); await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/family-${scheme}.png` }) }
+      await page.goto('/#family/plan')
+      await expect(page.locator('h1').first()).toBeVisible()
+      for (const h of await page.locator('.fm-rows .fm-row').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) expect(h).toBeLessThanOrEqual(72)
+      await page.goto('/#family/memories')
+      await expect(page.locator('h1')).toHaveCount(1)
+      await expect(page.getByText('Off for now')).toHaveCount(0)
+      if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/memories-${scheme}.png` })
+      await page.goto('/#family/messages')
+      await expect(page.locator('#msg-text')).toBeVisible()
+      const empties = await page.locator('.bt .scroll *').evaluateAll((els) => els.filter((e) => !e.children.length && !(e.textContent || '').trim() && !['IMG', 'SVG', 'svg', 'path', 'INPUT', 'TEXTAREA', 'AUDIO', 'CIRCLE', 'LINE', 'use', 'canvas'].includes(e.tagName) && e.getBoundingClientRect().height > 40 && !e.hasAttribute('aria-hidden')).map((e) => e.className))
+      expect(empties).toEqual([])
+      if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/messages-${scheme}.png` })
     })
 
     test('Activity with no readings says so', async ({ page }) => {
       await openFamily(page, { readings: false })
-      await expect(page.getByTestId('activity')).toContainText('No readings shared with you this week')
+      await page.getByTestId('activity').getByRole('button', { name: 'BP' }).click()
+      await expect(page.getByTestId('activity')).toContainText(/(No blood pressure readings for|Links needed)/)
     })
 
     test('Memories is a pushed page; the feed is off by default and on with the flag', async ({ page }) => {

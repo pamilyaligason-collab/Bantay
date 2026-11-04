@@ -9,10 +9,10 @@
     { "id": "heart", "label": "Heart and blood", "url": "https://medlineplus.gov/heartdiseases.html" },
     { "id": "lungs", "label": "Lungs", "url": "https://medlineplus.gov/lungdiseases.html" },
     { "id": "brain", "label": "Brain and nerves", "url": "https://medlineplus.gov/nervoussystemdiseases.html" },
-    { "id": "digestion", "label": "Digestion", "url": "https://medlineplus.gov/digestivediseases.html" },
+    { "id": "digestion", "label": "Digestion and liver", "url": "https://medlineplus.gov/digestivediseases.html" },
     { "id": "kidneys", "label": "Kidneys and bladder", "url": "https://medlineplus.gov/kidneydiseases.html" },
     { "id": "skin", "label": "Skin", "url": "https://medlineplus.gov/skinconditions.html" },
-    { "id": "hormones", "label": "Hormones", "url": "https://medlineplus.gov/endocrinediseases.html" }
+    { "id": "hormones", "label": "Hormones and sugar", "url": "https://medlineplus.gov/endocrinediseases.html" }
   ],
   "parts": [
     { "id": "skull", "system": "skeleton", "name": "Skull",

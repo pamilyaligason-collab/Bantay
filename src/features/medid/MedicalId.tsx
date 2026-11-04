@@ -1,3 +1,4 @@
+import { LargeTitle } from '../look'
 import { Icon } from '../shell/Icon'
 import { smsNumber } from '../sos/sms'
 import { show } from './card'
@@ -16,10 +17,7 @@ export default function MedicalId() {
   const sub = card.age !== null ? `${card.age} years old` : ''
   return (
     <div className="sh mid">
-      <div className="sh-row">
-        <a className="sh-iconbtn" href={other ? `#family/people/${hashId}` : '#safety'} aria-label={other ? 'Back' : 'Back to Safety'}><Icon name="back" /></a>
-        <div className="sh-grow"><h1 className="sh-h2">Medical ID</h1><div className="sh-sub">Works without internet</div></div>
-      </div>
+      <LargeTitle title="Medical ID" kicker="Works without internet" back={other ? { href: `#family/people/${hashId}`, label: 'Back' } : { href: '#safety', label: 'Safety' }} />
       {!ready ? <div className="mid-card" aria-busy="true">Loading...</div> : (
         <div className="mid-card">
           <div className="mid-head">

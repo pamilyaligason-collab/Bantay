@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { assertTargets } from './v13'
 
 const ALERT = {
   id: 'q1', kind: 'quake', level: 'Magnitude 5.1', title: 'Earthquake', what: 'Magnitude 5.1, 40 km north.', where: 'Off Bohol', when: 'Just now',
@@ -15,14 +16,14 @@ test.beforeEach(async ({ page }) => {
 const lum = (c: string) => { const k = c.startsWith('color(') ? 255 : 1; const [r, g, b] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => Number(v) * k).map((v) => { const s = v! / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
 const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x! + 0.05) / (y! + 0.05) }
 
-test('dark mode: Right now row icons >= 3:1 and the top-bar avatar initial >= 4.5:1', async ({ page }) => {
+test('dark mode: Right now row icons >= 3:1 and the title-row avatar initial >= 4.5:1', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/#safety')
   const ic = page.getByRole('list', { name: 'Right now' }).locator('.rw-ic').first()
   await expect(ic).toBeVisible()
   const t = await ic.evaluate((e) => ({ fg: getComputedStyle(e).color, bg: getComputedStyle(e).backgroundColor }))
   expect(ratio(t.fg, t.bg)).toBeGreaterThanOrEqual(3)
-  const a = await page.locator('.sh-me-btn').evaluate((e) => ({ fg: getComputedStyle(e).color, bg: getComputedStyle(e).backgroundColor }))
+  const a = await page.locator('.ha-me').evaluate((e) => ({ fg: getComputedStyle(e).color, bg: getComputedStyle(e).backgroundColor }))
   expect(ratio(a.fg, a.bg)).toBeGreaterThanOrEqual(4.5)
 })
 
@@ -34,10 +35,10 @@ test('safety home (v13): head with Near me | World, hero first, Right now rows, 
   await expect(show.getByRole('link', { name: 'World' })).toHaveAttribute('href', '#safety/world')
   await expect(page.getByTestId('safety-hero')).toBeVisible()
   const right = page.getByRole('list', { name: 'Right now' })
-  await expect(right.getByRole('link', { name: /^Storm tracker/ })).toContainText('No storms')
+  await expect(right.getByRole('link', { name: /^Storm tracker/ })).toContainText('May be out of date') // no saved check on a fresh browser: never "No storms" (R1)
   const ready = page.getByRole('list', { name: 'Be ready' })
   for (const t of ['Hotlines', 'Safety cards', 'IDs and insurance', 'Past SOS']) await expect(ready.getByRole('link', { name: new RegExp('^' + t) })).toBeVisible()
-  await expect(ready.getByRole('link', { name: /Offline maps/ })).toHaveCount(0) // behind FLAGS.offlineMaps
+  await expect(ready.getByRole('link', { name: /Offline maps/ })).toContainText('Not ready yet') // CS: always listed, honest while no pack exists
   await ready.getByRole('link', { name: /^Hotlines/ }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)
   await expect(page.locator('h1')).toHaveText('Quick dial')
@@ -63,7 +64,7 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(0)
   // source text is behind the small i button, not under every row
   await expect(page.getByText('Source:')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Where National emergency came from' }).click()
+  await page.locator('[data-testid^="dial-"]').filter({ hasText: 'National emergency' }).getByRole('button').first().click()
   await expect(page.getByRole('dialog', { name: 'National emergency' })).toContainText('Source: National emergency number')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -79,6 +80,7 @@ test('warnings page: none now; quick dial: only confirmed numbers, the rest coll
 
 test('adding a pin gives a Go button that survives reload (offline store)', async ({ page }) => {
   await page.goto('/#safety/map')
+  await page.getByText('Add or fix a place').click()
   await page.getByRole('region', { name: 'Evacuation and rescue' }).getByRole('button', { name: 'Not confirmed yet, tap to add' }).first().click()
   await page.getByLabel('Latitude').fill('9.65')
   await page.getByLabel('Longitude').fill('123.88')
@@ -86,6 +88,7 @@ test('adding a pin gives a Go button that survives reload (offline store)', asyn
   const go = page.getByRole('link', { name: /^Go to/ })
   await expect(go).toHaveAttribute('href', 'https://www.google.com/maps/dir/?api=1&destination=9.65,123.88&travelmode=walking')
   await page.reload()
+  await page.getByText('Add or fix a place').click()
   await expect(page.getByRole('link', { name: /^Go to/ })).toHaveCount(1)
 })
 
@@ -132,7 +135,7 @@ test.describe('Near me on the maps switcher', () => {
       expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0)
       await near.click()
       await expect(near).toHaveAttribute('aria-pressed', 'true')
-      await expect(page.getByRole('button', { name: /^Place:/ })).toHaveText('Near you · Conel')
+      await expect(page.getByRole('button', { name: /^Place:/ })).toHaveText('General Santos') // S4: the area the phone is in, not the nearest home zone
       await page.getByText('Ventusky weather map').click()
       await expect(page.locator('iframe[title^="Ventusky"]')).toHaveAttribute('src', /p=6\.11;125\.17;7/)
     })
@@ -257,7 +260,7 @@ test('hazards at my location: layer buttons, earthquake row with what to do, Haz
 
 test('storm tracker, safety cards and past SOS pages open', async ({ page }) => {
   await page.goto('/#safety/storms')
-  await expect(page.getByText(/No storm warnings for the Philippines/)).toBeVisible()
+  await expect(page.getByText(/Storms have not been checked lately/)).toBeVisible() // fresh browser, no saved check (R1)
   await page.goto('/#safety/cards')
   await page.locator('summary', { hasText: /^Earthquake$/ }).click()
   await expect(page.getByText('Do not wait for a message.').first()).toBeVisible()
@@ -275,7 +278,8 @@ test('live weather: layer switch only changes overlay, storm tracker and links',
   await sec.getByRole('group', { name: 'Weather layer' }).getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
   await expect(sec.getByText('Storms near you')).toBeVisible()
-  await expect(sec.getByText(/No storm warnings for the Philippines/)).toBeVisible()
+  await expect(sec.getByText(/Storms have not been checked lately/)).toBeVisible() // no check on this phone yet: no all-clear (the checked case is in livemaps.render.test)
+  await expect(sec.getByText(/No storm warnings for the Philippines/)).toHaveCount(0)
   await expect(sec.locator('iframe[title^="Windy wind map around"]')).toHaveAttribute('src', /zoom=5&overlay=wind.*lat=9\.65&lon=123\.88/)
   await expect(sec.getByRole('link', { name: /PAGASA bulletin/ })).toHaveAttribute('target', '_blank')
   await page.context().setOffline(true)
@@ -302,38 +306,41 @@ test('quick dial at the home zone: Tagbilaran set first, then national, OFW and 
   await expect(local.getByRole('link', { name: /Call Gov\. Celestino Gallares Memorial Hospital/ })).toBeVisible()
   await expect(page.getByText('Davao City Central 911')).toHaveCount(0)
   await expect(page.getByText('General Santos City Police')).toHaveCount(0)
-  // an unverified number is dialable and carries the check mark with an accessible label; a confirmed one does not
+  // an unverified number is dialable and says Number not confirmed under its name; a confirmed one does not
   await expect(local.getByRole('link', { name: /Call BFP Tagbilaran City Fire Station, \(038\) 422-8362/ })).toHaveAttribute('href', 'tel:0384228362')
   const fire = local.getByRole('listitem').filter({ hasText: 'BFP Tagbilaran City Fire Station' })
-  await expect(fire.getByRole('img', { name: 'number not yet confirmed' })).toBeVisible()
+  await expect(fire.getByText('Number not confirmed')).toBeVisible()
   const hosp = local.getByRole('listitem').filter({ hasText: 'Gov. Celestino Gallares' })
-  await expect(hosp.getByRole('img', { name: 'number not yet confirmed' })).toHaveCount(0)
+  await expect(hosp.getByText('Number not confirmed')).toHaveCount(0)
   // an app has no number: it opens its source
   await expect(page.getByRole('link', { name: 'Open NowServing by SeriousMD (app)' })).toHaveAttribute('href', /apps\.apple\.com/)
 })
 
-test('quick dial rows are one horizontal line each at 390px: no vertical text, Call never clipped, 44px targets', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
+// W12 (D-118): grouped rows, name clamped to three lines, number beside it, one 44 px Call control. The tallest row measured at 390 and at 360 is 92 px (3 name lines of 20 + 16 padding + the 16 px note line); the limit is that measured height, not a loose number.
+for (const W of [390, 360]) test(`quick dial rows at ${W}px: at most 92 px tall, name clamped to three lines, Call 44 px and inside the row`, async ({ page }) => {
+  await page.setViewportSize({ width: W, height: 844 })
   await page.goto('/#safety/dial')
-  const rows = page.locator('.sf-dialrow')
+  const rows = page.locator('.sf-kind .rw')
   await expect(rows.first()).toBeVisible()
   expect(await rows.count()).toBeGreaterThan(10)
+  await expect(page.locator('.sf-kind-h').first()).toHaveText('Emergency')
   for (const r of await rows.all()) {
     const m = await r.evaluate((el) => {
       const rr = el.getBoundingClientRect()
-      const t = el.querySelector('.sf-dt b')!.getBoundingClientRect()
-      const act = el.querySelector('.sf-callbtn, .sf-addbtn')!.getBoundingClientRect()
-      const lh = parseFloat(getComputedStyle(el.querySelector('.sf-dt b')!).lineHeight)
-      return { right: rr.right, name: t.width, lines: Math.round(t.height / lh), actRight: act.right, actH: act.height, actW: act.width }
+      const t = el.querySelector('.rw-title') as HTMLElement
+      const act = el.querySelector('.sf-callbtn')!.getBoundingClientRect()
+      return { h: rr.height, right: rr.right, lines: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)), actRight: act.right, actH: act.height, actW: act.width, check: /check/i.test(el.textContent ?? '') && !/not confirmed/i.test(el.textContent ?? '') }
     })
-    expect(m.right).toBeLessThanOrEqual(390)
-    expect(m.actRight).toBeLessThanOrEqual(390)
+    expect(m.h, JSON.stringify(m)).toBeLessThanOrEqual(92)
+    expect(m.right).toBeLessThanOrEqual(W)
+    expect(m.actRight).toBeLessThanOrEqual(m.right)
     expect(m.actH).toBeGreaterThanOrEqual(44)
     expect(m.actW).toBeGreaterThanOrEqual(44)
-    expect(m.name).toBeGreaterThanOrEqual(90) // a name column this narrow would stack letters
-    expect(m.lines).toBeLessThanOrEqual(4)
+    expect(m.lines).toBeLessThanOrEqual(3)
+    expect(m.check).toBe(false) // no bare "check" word beside a number
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+  await assertTargets(page)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(W)
 })
 
 test('quick dial in Davao by GPS: only the Davao set, then national', async ({ page, context }) => {
@@ -393,7 +400,7 @@ test('footer has an in-app Sources link, not a repo path; the Hazards title wrap
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/#safety')
   await expect(page.getByText('docs/SOURCES.md')).toHaveCount(0)
-  await page.locator('.sf-foot').getByRole('link', { name: 'Sources', exact: true }).click()
+  await page.getByRole('link', { name: 'Sources', exact: true }).click() // CS: one Sources link, the Right now header
   await expect(page).toHaveURL(/#safety\/sources$/)
   await expect(page.locator('h1')).toHaveText('Sources')
   await expect(page.getByText('HazardHunterPH').first()).toBeVisible()

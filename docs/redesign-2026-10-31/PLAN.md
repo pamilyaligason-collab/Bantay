@@ -41,10 +41,10 @@ Gate 0: tsc 0, vitest green, Playwright shell + a11y green, 390x844 light/dark s
 | D Discover | Discover | Watch hero, Learn tiles, Listen (TTS), Play, Good news |
 | S Safety | Safety, Warnings, StormTracker, Hazards, RescueMap, FirstAid, FirstAidCPR, OfflineMaps (UI), World + AlertSettings (UI) | Near me / World switch, calibrated warnings, live map cards, first-aid grid and CPR player |
 | C Calm | Mindful, JackSheet chat entry | Breathing orb hero, mood check, Listen and watch carousel (NEW items behind flags), crisis card |
-Gate 1 per lane: tsc 0, vitest green, lane Playwright specs (v13 budgets), shots vs board light/dark at 390 and 360/195 narrow, Opus review pass; merge to integration branch; full suite on integration; Lloyd OK before merge to main.
+Gate 1 per lane: tsc 0, vitest green, lane Playwright specs (v13 budgets), shots vs board light/dark at 390 and 360/195 narrow, Opus review pass; merge to integration branch; full suite on integration; the owner OK before merge to main.
 
 ### Phase 2 - Data systems (parallel lanes, can start with Phase 1)
-| Lane | Scope | Needs Lloyd OK |
+| Lane | Scope | Needs the owner OK |
 |---|---|---|
 | M Maps | Self-hosted Protomaps PMTiles (Bohol first, then PH), MapLibre or protomaps-leaflet, offline download manager (own province first, rest after 24 h on Wi-Fi + charging), Windy live layer card | hosting cost, R2/storage |
 | L Local data | Integrate the `local-safety-db` session output: region packs by PSGC province, auto-switch on GPS province change, nearest centres, hotlines; replaces `src/data/safety/*.json` | migration apply |
@@ -60,7 +60,7 @@ Gate 1 per lane: tsc 0, vitest green, lane Playwright specs (v13 budgets), shots
 - 3.4 Release: web via Cloudflare Pages (main), APK 2.8 only for native plugin changes; vault handoff + mockup canvas update.
 
 ## 3. Task list (Tasks 0/34)
-1. Lloyd approves the mockup canvas (28 boards) and this plan
+1. The owner approves the mockup canvas (28 boards) and this plan
 2. Write Phase 0 detailed plan (`docs/plans/2026-11-01-v13-foundation.md`)
 3. 0.1 tokens v13
 4. 0.2 shared components
@@ -76,22 +76,22 @@ Gate 1 per lane: tsc 0, vitest green, lane Playwright specs (v13 budgets), shots
 14. Lane S Safety
 15. Lane C Calm
 16. Phase 1 integration: full vitest + Playwright, Opus release review
-17. Lloyd OK, merge to main (web live)
+17. The owner OK, merge to main (web live)
 18. Lane M maps: Protomaps extract + hosting decision
 19. Lane M: offline download manager
-20. Lane L: review local-safety-db output, apply migration (Lloyd OK)
+20. Lane L: review local-safety-db output, apply migration (the owner OK)
 21. Lane L: region packs in app, nearest centres
 22. Lane A: PHIVOLCS + EONET ingest
 23. Lane A: tiered alert rules + digest
 24. Lane A: FCM push + APK 2.8
 25. Lane G: World panels + GDELT digest
-26. Lane P: family feed migration (Lloyd OK) + UI wiring
+26. Lane P: family feed migration (the owner OK) + UI wiring
 27. Lane Q: air quality + nowcast
 28. Phase 2 integration + Opus review
 29. 3.1 anatomy renders
 30. 3.2 first-aid animations or licence
 31. 3.3 licences confirmed
-32. Release APK 2.8 (Lloyd OK)
+32. Release APK 2.8 (the owner OK)
 33. Update mockup canvas to match live
 34. Vault handoff, retro
 

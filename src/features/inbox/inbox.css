@@ -1,9 +1,17 @@
 .bt .in-read { min-height: 48px; padding: 0 14px; border: 0; background: none; color: var(--link); font: inherit; font-weight: 600; font-size: 14px; }
 .in-row.unread b { font-weight: 700; }
+/* an alert title wraps to two lines before it is ever cut (the plan: no "Someone is not feeling w...") */
+[data-testid="inbox-row"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; text-overflow: clip; }
 .in-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); flex: none; }
 .in-h { margin: 6px 4px 6px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .sh-list > .in-item { flex-direction: column; align-items: stretch; gap: 8px; }
 .in-info { display: flex; gap: 12px; align-items: flex-start; }
+.in-hrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.in-hrow .in-read { padding: 0 4px; }
+.in-info1 { margin: 0; color: var(--muted); font-size: 14px; } .in-info1 b { font-weight: 600; }
+.in-sheet-sub { margin: 0 4px 12px; }
+.in-actions.in-sheet-actions { padding-left: 0; flex-direction: column; } /* board: the sheet's actions are full-width 48 px buttons, one per line */
+[data-testid="inbox-new"] .rw-title { font-weight: 700; } /* board: an unread title is bold */
 .in-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 52px; }
 .in-actions .in-act { width: auto; min-height: 48px; padding: 0 14px; display: inline-flex; align-items: center; text-decoration: none; }
 .in-confirm { flex-basis: 100%; display: grid; gap: 8px; padding: 10px 0 0; }

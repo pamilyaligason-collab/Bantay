@@ -106,8 +106,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText(/Hold for help can (call for you|no longer call for you)/)).toHaveCount(1) // one row or the other, never both
     await page.goto('/#me/family')
     await expect(page.getByRole('link', { name: /Lola/ })).toHaveAttribute('href', '#family/people/p-lola')
+    await page.goto('/#me')
+    await expect(page.getByText('Family admin tools')).toBeVisible() // M1: first row of Settings, no longer under About
     await page.goto('/#me/about')
-    await expect(page.getByText('Family admin tools')).toBeVisible()
     await page.getByRole('button', { name: 'Check for updates' }).click()
     await expect(page.getByRole('dialog', { name: 'Update Bantay to 2.1.0' })).toBeVisible()
     await expect(page.getByText('You have 2.0.0 · 14 MB · Wi-Fi recommended')).toBeVisible()
@@ -121,8 +122,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#me')
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
-    await page.goto('/#me/about')
+    await expect(page.locator('.st-account b')).toHaveText('Mama') // the member has loaded
     await expect(page.getByText('Family admin tools')).toHaveCount(0)
+    await page.goto('/#me/about')
     await expect(page.getByRole('button', { name: 'Check for updates' })).toHaveCount(0)
     await page.getByText(/^Bantay 2\.0\.0$/).scrollIntoViewIfNeeded()
     await expect(page.getByText(/^Bantay 2\.0\.0$/)).toBeVisible()

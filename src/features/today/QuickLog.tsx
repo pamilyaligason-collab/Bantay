@@ -1,30 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { liveMedicines } from '../health/meds'
-import { checkIn, FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
+import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
-import { useStorm } from './useStorm'
 import BpCheckButton from '../health/bpcheck/BpCheckButton'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs' // S16-L1: acting person + View only (C-9)
 import { logActivity, logReading } from '../log/store'
 import QuickWalk from '../sensors/QuickWalk'
 import MovePanel from '../exercise/MovePanel'
+import { MOVE_LOCK } from '../exercise/recommend'
 import PlateSheet from '../nutrition/PlateSheet'
-import SaltLine from '../nutrition/SaltSummary'
 import WaterSheet from '../nutrition/WaterSheet'
-import { Icon, type IconName, type IconTone } from '../shell/Icon'
+import { Icon, type IconName } from '../shell/Icon'
 
-type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more' | 'pain' | 'sleep' | 'temp'
-const PILLS: { id: Kind; label: string; icon: IconName; tone: IconTone | undefined; aria: string }[] = [
-  { id: 'bp', label: 'BP', icon: 'gauge', tone: 'vitals', aria: 'Log blood pressure' },
-  { id: 'sugar', label: 'Sugar', icon: 'drop', tone: 'vitals', aria: 'Log blood sugar' },
-  { id: 'weight', label: 'Weight', icon: 'scale', tone: 'vitals', aria: 'Log weight' },
-  { id: 'mood', label: 'How are you?', icon: 'smile', tone: undefined, aria: 'Log how you feel' },
-  { id: 'water', label: 'Water', icon: 'glass', tone: undefined, aria: 'Log water you drank' },
-  { id: 'more', label: 'More', icon: 'plus', tone: undefined, aria: 'More things to log' }
-]
-/** Behind More (frame today-log, 3 x 3): Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood, Water. One meaning per glyph (D-103 rule 5). */
+export type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more' | 'pain' | 'sleep' | 'temp'
+/** Behind "Log something else" (frame today-log): the readings that lost their tile (BP, Sugar, Weight), then Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood, Water. One meaning per glyph (D-103 rule 5). */
 const MORE: { id: Kind; label: string; icon: IconName }[] = [
+  { id: 'bp', label: 'Blood pressure', icon: 'gauge' }, { id: 'sugar', label: 'Sugar', icon: 'drop' }, { id: 'weight', label: 'Weight', icon: 'scale' },
   { id: 'dose', label: 'Dose taken', icon: 'pill' }, { id: 'meal', label: 'Food', icon: 'meal' }, { id: 'walk', label: 'Walk', icon: 'walk' },
   { id: 'move', label: 'Move', icon: 'move' }, { id: 'pain', label: 'Pain', icon: 'warn' }, { id: 'sleep', label: 'Sleep', icon: 'moon' },
   { id: 'temp', label: 'Temperature', icon: 'therm' }, { id: 'mood', label: 'Mood', icon: 'smile' }, { id: 'water', label: 'Water', icon: 'glass' }
@@ -71,10 +63,9 @@ function Sheet({ title, onClose, children, focusFirst = true }: { title: string;
   )
 }
 
-/** Quick log: six big tiles in a 3 x 2 grid (BP, Sugar, Weight, How are you?, Water, More), icon above the label. Each opens a small sheet and ends with a toast.
- *  More holds Dose taken, Food, Walk and Move. In a storm the mood tile reads "Is everyone safe?". */
-export default function QuickLog({ notify }: { notify: (msg: string) => void }) {
-  const [open, setOpen] = useState<Kind | null>(null)
+/** The log sheets, no grid (v13 T3): My day opens How are you? (the mood faces: Unwell reaches the family) or "Log something else" (More). Each ends with a toast and calls `onClose`. */
+function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: string) => void; onClose: () => void }) {
+  const [open, setOpen] = useState<Kind | null>(start)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const allMeds = useMyMedications()
@@ -83,15 +74,13 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
-  const storm = useStorm()
   const self = useActingPersonId() // the viewed person while an admin is acting, else me
   const personId = self ?? undefined
   const can = useActingCan() // null when not acting
   const lockLog = !!can && !can.log
-  const lockMood = !!can && !can.mood
   const writer = useHasWriterCarer(self)
 
-  const close = () => { setOpen(null); setErr(''); setA(''); setB('') }
+  const close = () => { setOpen(null); setErr(''); setA(''); setB(''); onClose() }
   const run = async (p: Promise<LogResult>, done: string) => {
     if (busy) return
     setBusy(true)
@@ -105,14 +94,6 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     const r = await logFeeling(f, personId)
     setBusy(false)
     if (r === 'told' || r === 'nobody' || r === 'untold' || r === 'refused') { close(); notify(feelingToast(r)) } else setErr(FAIL_TEXT[r])
-  }
-  /** D-100: the small "I'm OK" beside How are you? is one tap, a check-in with no mood. */
-  const imOk = async () => {
-    if (busy) return
-    setBusy(true)
-    const r = await checkIn(personId)
-    setBusy(false)
-    notify(r === 'ok' ? (can ? 'Saved for them. Their family can see they are OK.' : "Saved. Your family can see you are OK.") : FAIL_TEXT[r])
   }
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -142,20 +123,6 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
 
   return (
     <>
-      <div className="td-quick" role="group" aria-label="Quick log">
-        {PILLS.map((p) => p.id === 'mood' ? (
-          <div key={p.id} className="td-q td-q-mood">
-            <button type="button" className="td-qm press" aria-label={lockMood ? `${p.aria}, view only` : p.aria} disabled={lockMood} onClick={() => setOpen(p.id)}>{storm ? 'Is everyone safe?' : p.label}</button>
-            <button type="button" className="td-ok press" disabled={busy || lockMood} onClick={() => void imOk()}><Icon name={lockMood ? 'lock' : 'check'} size={16} />{lockMood ? 'View only' : "I'm OK"}</button>
-          </div>
-        ) : (
-          <button key={p.id} type="button" className="td-q press" aria-label={lockLog ? `${p.aria}, view only` : p.aria} disabled={lockLog} onClick={() => setOpen(p.id)}>
-            <Icon name={p.icon} tone={p.tone} boxed size={20} /><span>{p.label}</span>
-          </button>
-        ))}
-      </div>
-      {(lockLog || lockMood) && can?.reason && <p className="sub td-lock-why"><Icon name="lock" size={16} />View only. {can.reason}</p>}
-      <SaltLine />
       {(open === 'bp' || open === 'sugar' || open === 'weight') && (
         <Sheet title={open === 'bp' ? 'Blood pressure' : open === 'sugar' ? 'Blood sugar' : 'Weight'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>
@@ -181,12 +148,14 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
       )}
       {open === 'walk' && (
         <Sheet title="Walk" onClose={close} focusFirst={false}>
-          <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />
+          {can
+            ? <p className="sub" role="status">Walk logs are yours only. Exit to log.</p> /* QuickWalk logs to the signed-in person, same lock as Move */
+            : <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />}
         </Sheet>
       )}
       {open === 'move' && (
         <Sheet title="Move" onClose={close} focusFirst={false}>
-          <MovePanel notify={(m) => { close(); notify(m) }} />
+          <MovePanel notify={(m) => { close(); notify(m) }} lockLog={can ? MOVE_LOCK : undefined} hideRing={!!can} />
         </Sheet>
       )}
       {open === 'meal' && (
@@ -252,3 +221,6 @@ export default function QuickLog({ notify }: { notify: (msg: string) => void }) 
     </>
   )
 }
+
+export const MoodSheet = ({ onClose, notify }: { onClose: () => void; notify: (msg: string) => void }) => <LogSheets start="mood" onClose={onClose} notify={notify} />
+export const MoreSheet = ({ onClose, notify }: { onClose: () => void; notify: (msg: string) => void }) => <LogSheets start="more" onClose={onClose} notify={notify} />

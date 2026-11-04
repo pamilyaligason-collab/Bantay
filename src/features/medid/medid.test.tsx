@@ -16,10 +16,10 @@ describe('buildMedicalId', () => {
     const c = buildMedicalId({
       name: ' Maria ', now: NOW,
       profile: { birthdate: '1958-10-20', bloodType: 'O+', allergies: ['Penicillin'], conditions: ['Diabetes', ' '], medicines: ['Losartan 50 mg'] },
-      contacts: [{ name: 'Lloyd', phone: '0917 000 0000' }]
+      contacts: [{ name: 'Rey', phone: '0917 000 0000' }]
     })
     expect(c).toMatchObject({ name: 'Maria', age: 67, bloodType: 'O+', allergies: ['Penicillin'], conditions: ['Diabetes'], medicines: ['Losartan 50 mg'], missing: [] })
-    expect(c.calls).toEqual([{ name: 'Lloyd', phone: '0917 000 0000' }])
+    expect(c.calls).toEqual([{ name: 'Rey', phone: '0917 000 0000' }])
   })
   it('keeps missing fields null or empty, never 0 or invented', () => {
     const c = buildMedicalId({ name: '', now: NOW, profile: null, contacts: [] })

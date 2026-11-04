@@ -22,6 +22,10 @@ export const getHome = async (): Promise<Home> => {
 }
 export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 
+/** X7: a real position. 0,0 is what a broken provider returns; it is never a place we are in (unknown is not a position). */
+export const validFix = (p: { lat: number; lon: number }) =>
+  Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180 && !(p.lat === 0 && p.lon === 0)
+
 const gpsOpts = (ask: boolean) => (ask ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { maximumAge: 600_000, timeout: 15_000 })
 const web = (ask: boolean) =>
   new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, gpsOpts(ask)))
@@ -40,7 +44,7 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
   // D-105: the last real fix beats the saved home zone; the home zone is only the first-run fallback.
   const fallback = async (): Promise<Loc> => {
     const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number } | undefined
-    return v && Number.isFinite(v.lat) && Number.isFinite(v.lon) ? { lat: v.lat, lon: v.lon, at: v.at, source: 'last' } : dampas
+    return v && validFix(v) ? { lat: v.lat, lon: v.lon, at: v.at, source: 'last' } : dampas
   }
   try {
     if (!('geolocation' in navigator)) return await fallback()
@@ -54,8 +58,9 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
     if (st === 'denied' || (!allowed && !ask)) return await fallback()
     const p = await gps(ask, os !== null)
     const fix = { lat: p.coords.latitude, lon: p.coords.longitude }
+    if (!validFix(fix)) return await fallback() // X7: 0,0 (a phone that answers with nothing) or off the globe is no fix
     void db.kv.put({ key: LAST_KEY, value: { ...fix, at: Date.now() } }).catch(() => {})
-    return { ...fix, source: 'gps' }
+    return { ...fix, at: Date.now(), source: 'gps' }
   } catch {
     return await fallback()
   } finally {
@@ -117,5 +122,5 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
-  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'last' ? l.at : undefined }
+  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, picked: saved !== null }
 }

@@ -3,13 +3,13 @@ import { givenName, properName, shortMedName } from './medName'
 
 describe('names (S6, S9; ML-35)', () => {
   it('properName: all-lower or all-upper words become proper case, mixed case stays', () => {
-    expect(properName('loyd sevilla')).toBe('Loyd Sevilla')
-    expect(properName('SEVILLA, loyd')).toBe('Sevilla, Loyd')
+    expect(properName('rey villar')).toBe('Rey Villar')
+    expect(properName('VILLAR, rey')).toBe('Villar, Rey')
     expect(properName('Ma. McDonald')).toBe('Ma. McDonald')
   })
   it('givenName: given first, SURNAME-comma-given, a title first, a suffix after a comma', () => {
-    expect(givenName('loyd sevilla')).toBe('Loyd')
-    expect(givenName('SEVILLA, loyd')).toBe('Loyd')
+    expect(givenName('rey villar')).toBe('Rey')
+    expect(givenName('VILLAR, rey')).toBe('Rey')
     expect(givenName('Dr. Ben Cruz')).toBe('Ben')
     expect(givenName('Ben Cruz, Jr.')).toBe('Ben')
     expect(givenName('Ben Cruz, MD')).toBe('Ben')
@@ -22,9 +22,9 @@ describe('names (S6, S9; ML-35)', () => {
 // Expected strings are computed by hand from the rule in medName.ts (first 1-2 words before a bracket or digit, plus the form word), not copied from the function output.
 describe('shortMedName', () => {
   const cases: [string, string][] = [
-    ['Sea Water ( HUMER 050 HYPERTONIC NASAL SPRAY (CHILD) )', 'Sea water nasal spray'],
-    ['acetylcisteine (FLUIMUCIL 600MG)', 'Acetylcisteine'],
-    ['cefixime (TERGECEF 200)', 'Cefixime'],
+    ['Sea Water ( BRANDX 050 HYPERTONIC NASAL SPRAY (CHILD) )', 'Sea water nasal spray'],
+    ['ibuprofen (BRANDY 400MG)', 'Ibuprofen'],
+    ['metformin (BRANDZ 500)', 'Metformin'],
     ['Amlodipine (NORVASC) 5MG', 'Amlodipine'],
     ['Amlodipine (BESYLATE) 5mg', 'Amlodipine'],
     ['Clopidogrel (BISULFATE) 75mg', 'Clopidogrel'],

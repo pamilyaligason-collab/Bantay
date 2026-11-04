@@ -1,10 +1,11 @@
+import { properName } from './medName'
 import { useMemo, useState } from 'react'
 import '../family/family.css'
 import '../setup/setup.css'
 import Sheet from '../family/Sheet'
 import { addTask, allTasks } from '../family/tasks'
 import type { Medication } from '../log/store'
-import { PersonChips } from '../records/PersonChips'
+import { WhoLine } from './WhoLine'
 import { SubHeader } from '../shell/SubHeader'
 import { setStock } from './medActions'
 import { asNeededNames, dateWords, perDayOf, refillLine, refillTask, stockRows, uncounted, type StockRow } from './stock'
@@ -13,7 +14,6 @@ import { useMedications } from './useMedications'
 import './health.css'
 import './m7a.css'
 
-const NO_DRAFTS: Record<string, number> = {}
 
 /** Set or reset a medicine's count: how many are left right now (and how many a day when that is not known). */
 function StockSheet({ med, onClose }: { med: Medication; onClose: () => void }) {
@@ -49,13 +49,13 @@ function StockSheet({ med, onClose }: { med: Medication; onClose: () => void }) 
 
 /** #health/refill: days of medicine left, the refill date, a Plan task on tap, and a way to set the count. */
 export default function Refill() {
-  const { people, ownId, personId, setPersonId, canEdit } = useHealthPerson()
+  const { people, personId, canEdit } = useHealthPerson()
   const meds = useMedications(personId)
   const now = useMemo(() => new Date(), [])
   const rows = stockRows(meds, personId, now)
   const todo = uncounted(meds, personId)
   const asNeeded = asNeededNames(meds, personId)
-  const name = people.find((p) => p.id === personId)?.name ?? ''
+  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
   const [edit, setEdit] = useState<Medication | null>(null)
   const [added, setAdded] = useState<string[]>([])
   const [note, setNote] = useState('')
@@ -72,7 +72,7 @@ export default function Refill() {
   return (
     <>
       <SubHeader title="Refill and stock" backHref="#health" backLabel="Back to Health" />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <WhoLine />
       {name && <p className="sub" style={{ margin: '4px 4px 0' }}>Counts for <b style={{ color: 'var(--ink)' }}>{name}</b></p>}
 
       {soon && (

@@ -1,5 +1,5 @@
 # Family Bantay - go-live for session 5 (weather timing, header inset, Safety hub, rescue map, storm card, Plan,
-# body explorer, records 0013). Lloyd runs it from this worktree, dry run first:
+# body explorer, records 0013). The owner runs it from this worktree, dry run first:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s5.ps1 -DryRun
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s5.ps1
 # Order: 0013 before the web push (the records import reads person_identifiers / people.aliases). Stops at the first failure.

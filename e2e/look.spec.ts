@@ -14,11 +14,10 @@ test('v2 look: cream ground, frosted tab bar (D-71), system font stack', async (
   expect(await page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded').length })).toBe(0)
 })
 
-test('shell frame: top bar turns to glass only after content scrolls under it, sub-page header is one row', async ({ page }) => {
-  await page.goto('/#health') // v13: the Today root has no top bar
-  const top = page.locator('.topbar')
-  await expect(top).toHaveAttribute('data-scrolled', 'false')
-  await expect(top).toHaveCSS('backdrop-filter', 'none')
+test('shell frame: no top bar anywhere (S5), sub-page header is one row', async ({ page }) => {
+  await page.goto('/#health') // v13 gaps S5: the old top bar is deleted; the title row carries the bell and avatar
+  await expect(page.locator('h1.lt-title').first()).toBeVisible()
+  await expect(page.locator('.topbar')).toHaveCount(0)
   await page.goto('/#safety/hazards')
   const h = page.locator('.lt')
   await expect(h).toBeVisible()

@@ -1,0 +1,571 @@
+{
+  "note": "Per-system care lists for the Body wiki. Wording is our own and was reviewed line by line against MedlinePlus pages (National Library of Medicine); local items (TB two-week cough, floodwater within 24 to 48 hours, animal bites) follow Philippine DOH advice as reported and still need a DOH page cited by a person. 911 is the Philippine national emergency number. Lists only say when to get help: no doses, no home treatment, never wait and see.",
+  "checked": "Most lines follow the sources below. A clinician has not signed them off.",
+  "systems": {
+    "heart": {
+      "illnesses": [
+        "High blood pressure",
+        "Heart attack",
+        "Heart failure",
+        "Stroke",
+        "Rheumatic heart disease"
+      ],
+      "emergency": [
+        "Someone collapses and does not respond, or is not breathing or is only gasping",
+        "Chest pain, pressure, squeezing or tightness, even if it comes and goes or feels like heartburn",
+        "Pain or discomfort spreading to the arm, shoulder, back, neck, jaw or upper belly",
+        "Sudden shortness of breath, or a sudden cold sweat, nausea or faint feeling with no clear cause",
+        "Face drooping, arm or leg weakness, or slurred speech",
+        "Sudden confusion, trouble speaking or understanding, trouble seeing or walking, or a sudden severe headache",
+        "Passing out",
+        "Very high blood pressure with chest pain, breathlessness, weakness or trouble speaking",
+        "During dengue, or just after the fever ends: severe belly pain, vomiting 3 or more times in a day, bleeding from the nose or gums, blood in vomit or stool, or feeling tired, restless or irritable"
+      ],
+      "doctor": [
+        "Blood pressure above 180 on top or above 120 on the bottom, even with no symptoms: get care right away",
+        "Swollen feet or ankles, or quick weight gain",
+        "Out of breath on short walks or when lying flat",
+        "A racing, pounding or skipping heartbeat that keeps coming back",
+        "Blood pressure that stays above your target on several days",
+        "Dizziness when you stand up"
+      ],
+      "prevention": [
+        "Check your blood pressure often",
+        "Eat less salt, fried food and sweet drinks",
+        "Do not smoke, and walk 30 minutes most days",
+        "Take blood pressure medicine the way your doctor says"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Heart Attack",
+          "url": "https://medlineplus.gov/heartattack.html"
+        },
+        {
+          "name": "MedlinePlus: Stroke",
+          "url": "https://medlineplus.gov/stroke.html"
+        },
+        {
+          "name": "MedlinePlus: High Blood Pressure",
+          "url": "https://medlineplus.gov/highbloodpressure.html"
+        },
+        {
+          "name": "MedlinePlus: Dengue",
+          "url": "https://medlineplus.gov/dengue.html"
+        },
+        {
+          "name": "MedlinePlus: Heart Failure",
+          "url": "https://medlineplus.gov/heartfailure.html"
+        },
+        {
+          "name": "MedlinePlus: Cardiac arrest",
+          "url": "https://medlineplus.gov/ency/article/000013.htm"
+        }
+      ]
+    },
+    "lungs": {
+      "illnesses": [
+        "Tuberculosis (TB)",
+        "Pneumonia",
+        "Asthma",
+        "COPD",
+        "COVID-19 and flu"
+      ],
+      "emergency": [
+        "Trouble breathing that starts suddenly or is severe, or cannot speak a full sentence",
+        "Someone stops breathing",
+        "Blue or grey lips or face",
+        "The skin between the ribs or at the neck pulling in with each breath",
+        "Choking and cannot cough, speak or breathe",
+        "An asthma attack that does not ease with your reliever inhaler",
+        "Coughing up more than streaks of blood",
+        "Coughing up any blood with fever, chest pain, dizziness or trouble breathing",
+        "Chest pain with shortness of breath",
+        "Trouble breathing with sudden confusion or great sleepiness"
+      ],
+      "doctor": [
+        "A cough that lasts more than two weeks (it could be TB)",
+        "Blood in what you cough up: see a doctor right away",
+        "Night sweats and weight loss that you cannot explain",
+        "Fever with a cough, with or without mucus",
+        "Wheezing or breathlessness more often than usual"
+      ],
+      "prevention": [
+        "Do not smoke, and avoid smoky kitchens",
+        "Get the flu and pneumonia vaccines",
+        "Cover your cough and finish TB treatment"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Asthma",
+          "url": "https://medlineplus.gov/asthma.html"
+        },
+        {
+          "name": "MedlinePlus: Pneumonia",
+          "url": "https://medlineplus.gov/pneumonia.html"
+        },
+        {
+          "name": "MedlinePlus: Tuberculosis",
+          "url": "https://medlineplus.gov/tuberculosis.html"
+        },
+        {
+          "name": "MedlinePlus: Trouble breathing",
+          "url": "https://medlineplus.gov/ency/article/003075.htm"
+        },
+        {
+          "name": "MedlinePlus: Coughing up blood",
+          "url": "https://medlineplus.gov/ency/article/003073.htm"
+        }
+      ],
+      "reported": [
+        "A cough that lasts more than two weeks (it could be TB)"
+      ]
+    },
+    "brain": {
+      "illnesses": [
+        "Stroke",
+        "Migraine",
+        "Dementia",
+        "Epilepsy",
+        "Meningitis"
+      ],
+      "emergency": [
+        "Face drooping, arm or leg weakness, or slurred speech",
+        "Sudden confusion, or trouble speaking or understanding",
+        "Sudden numbness on one side of the body",
+        "Sudden trouble seeing, walking, or keeping your balance",
+        "A sudden severe headache, or the worst headache of your life",
+        "A seizure that lasts more than 2 minutes, a first seizure, seizures one after another, or a seizure that is different from the person's usual ones",
+        "A seizure in water, or in someone who is pregnant, injured or has diabetes, or a seizure with trouble breathing or waking",
+        "A sudden high fever with a severe headache or a stiff neck",
+        "Head injury with passing out even briefly, vomiting more than once, confusion, great sleepiness, a seizure, a bad headache, unequal pupils, slurred speech, a weak or numb arm or leg, or heavy bleeding",
+        "Cannot be woken, or passing out"
+      ],
+      "doctor": [
+        "Headaches that are new or getting worse",
+        "Memory loss that gets in the way of daily life",
+        "Numb or tingling hands or feet that do not go away",
+        "Dizzy spells that keep coming back",
+        "Trouble sleeping for weeks"
+      ],
+      "prevention": [
+        "Control blood pressure and sugar",
+        "Sleep 7 to 8 hours and stay social",
+        "Wear a helmet, and do not drink and drive"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Stroke",
+          "url": "https://medlineplus.gov/stroke.html"
+        },
+        {
+          "name": "MedlinePlus: Seizures",
+          "url": "https://medlineplus.gov/seizures.html"
+        },
+        {
+          "name": "MedlinePlus: Meningitis",
+          "url": "https://medlineplus.gov/meningitis.html"
+        },
+        {
+          "name": "MedlinePlus: Head Injuries",
+          "url": "https://medlineplus.gov/headinjuries.html"
+        },
+        {
+          "name": "MedlinePlus: Seizures",
+          "url": "https://medlineplus.gov/ency/article/003200.htm"
+        },
+        {
+          "name": "MedlinePlus: Head injury",
+          "url": "https://medlineplus.gov/ency/article/000028.htm"
+        }
+      ]
+    },
+    "digestion": {
+      "illnesses": [
+        "Fatty liver",
+        "Hepatitis (liver swelling)",
+        "Gallstones",
+        "Stomach ulcer and acid reflux",
+        "Diarrhea and typhoid from unsafe food or water"
+      ],
+      "emergency": [
+        "You vomit blood",
+        "Stools are black or bloody",
+        "Vomit that looks like coffee grounds",
+        "Sudden, sharp or severe belly pain, or a belly that is hard or very sore to touch",
+        "Severe belly pain with a high fever",
+        "Cannot pass stool or gas, especially with vomiting",
+        "Belly pain with chest, neck or shoulder pain, or trouble breathing",
+        "Pain between the shoulder blades with nausea",
+        "Belly pain after an injury, or if you could be pregnant",
+        "Yellow skin or eyes with confusion or being hard to wake",
+        "Vomiting or diarrhea that will not stop, with a very dry mouth, dizziness or hardly any urine",
+        "During dengue, or just after the fever ends: severe belly pain, vomiting 3 or more times in a day, bleeding from the nose or gums, blood in vomit or stool, or feeling tired, restless or irritable",
+        "Belly pain while you are being treated for cancer"
+      ],
+      "doctor": [
+        "Yellow skin or eyes",
+        "Belly pain that does not go away",
+        "Dark urine or pale stools",
+        "Diarrhea that lasts more than a few days",
+        "Fever with belly pain (it could be typhoid)",
+        "Cannot keep down any food or liquid",
+        "Trouble swallowing, or weight loss you cannot explain"
+      ],
+      "prevention": [
+        "Limit alcohol",
+        "Keep a healthy weight and move most days",
+        "Ask about the hepatitis B vaccine",
+        "Take medicines only as your doctor says"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Gastrointestinal Bleeding",
+          "url": "https://medlineplus.gov/gastrointestinalbleeding.html"
+        },
+        {
+          "name": "MedlinePlus: Abdominal Pain",
+          "url": "https://medlineplus.gov/abdominalpain.html"
+        },
+        {
+          "name": "MedlinePlus: Liver Diseases",
+          "url": "https://medlineplus.gov/liverdiseases.html"
+        },
+        {
+          "name": "MedlinePlus: Jaundice",
+          "url": "https://medlineplus.gov/jaundice.html"
+        },
+        {
+          "name": "MedlinePlus: Abdominal pain",
+          "url": "https://medlineplus.gov/ency/article/003120.htm"
+        },
+        {
+          "name": "MedlinePlus: Dengue",
+          "url": "https://medlineplus.gov/dengue.html"
+        }
+      ]
+    },
+    "kidneys": {
+      "illnesses": [
+        "Chronic kidney disease",
+        "Kidney stones",
+        "Kidney infection",
+        "Bladder infection (UTI)",
+        "Leptospirosis"
+      ],
+      "emergency": [
+        "You cannot pass any urine",
+        "Severe pain in the side or back that will not ease, especially with vomiting",
+        "Fever with shaking chills and back or side pain",
+        "Swollen body with shortness of breath or chest pain",
+        "Confusion or great sleepiness with very little urine",
+        "Fever after wading in floodwater, with yellow skin, very little urine, bleeding or trouble breathing (severe leptospirosis)"
+      ],
+      "doctor": [
+        "Swollen feet or face",
+        "Much less urine, or foamy or bloody urine",
+        "Burning when you pass urine, or going very often",
+        "Waded in floodwater, even if you feel fine: go to a health center within 24 to 48 hours",
+        "Fever after floodwater with calf pain or red eyes: see a doctor right away",
+        "Pain in the side or back with a fever: see a doctor right away"
+      ],
+      "prevention": [
+        "Keep blood pressure and sugar in range",
+        "Drink water through the day, unless your doctor limits your fluids",
+        "Ask your doctor before using NSAID pain medicine or herbal products"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Kidney Diseases",
+          "url": "https://medlineplus.gov/kidneydiseases.html"
+        },
+        {
+          "name": "MedlinePlus: Kidney Stones",
+          "url": "https://medlineplus.gov/kidneystones.html"
+        },
+        {
+          "name": "MedlinePlus: Urinary Tract Infections",
+          "url": "https://medlineplus.gov/urinarytractinfections.html"
+        },
+        {
+          "name": "MedlinePlus: Leptospirosis",
+          "url": "https://medlineplus.gov/ency/article/001376.htm"
+        },
+        {
+          "name": "MedlinePlus: Back pain",
+          "url": "https://medlineplus.gov/ency/article/007425.htm"
+        }
+      ],
+      "reported": [
+        "Fever after wading in floodwater, with yellow skin, very little urine, bleeding or trouble breathing (severe leptospirosis)",
+        "Waded in floodwater, even if you feel fine: go to a health center within 24 to 48 hours",
+        "Fever after floodwater with calf pain or red eyes: see a doctor right away"
+      ]
+    },
+    "skeleton": {
+      "illnesses": [
+        "Broken bones from falls",
+        "Osteoporosis (thin, weak bones)",
+        "Arthritis",
+        "Gout",
+        "Low back pain"
+      ],
+      "emergency": [
+        "A bone sticking out of the skin, or a limb that looks bent or out of shape",
+        "Heavy bleeding",
+        "A fall or crash with neck or back pain, or numbness or weakness in the arms or legs (do not move the person)",
+        "Back pain with weak legs, numb groin or buttocks, or trouble holding urine or stool",
+        "Head injury with passing out even briefly, vomiting, confusion, great sleepiness, a seizure or a bad headache",
+        "Cannot stand or walk after a fall, or a possible broken hip, pelvis or thigh",
+        "A hand or foot below an injury that is pale, cold or blue",
+        "Chest pain, coughing blood, trouble breathing or fainting with a swollen leg (blood clot)"
+      ],
+      "doctor": [
+        "Pain, swelling or bruising after a fall (it could be broken): get care right away",
+        "A joint that is red, hot and very painful: see a doctor right away",
+        "Back pain that wakes you at night, or comes after a hard fall, or comes with fever or a history of cancer: see a doctor right away",
+        "Back pain that lasts more than 4 weeks",
+        "One leg swollen, red and sore: see a doctor right away (it could be a blood clot)",
+        "A bone that breaks from a small knock"
+      ],
+      "prevention": [
+        "Walk and do weight-bearing exercise most days",
+        "Eat foods with calcium and get some morning sun",
+        "Make floors and stairs safe from falls",
+        "Ask your doctor about a bone check after 50"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Fractures",
+          "url": "https://medlineplus.gov/fractures.html"
+        },
+        {
+          "name": "MedlinePlus: Osteoporosis",
+          "url": "https://medlineplus.gov/osteoporosis.html"
+        },
+        {
+          "name": "MedlinePlus: Back Injuries",
+          "url": "https://medlineplus.gov/backinjuries.html"
+        },
+        {
+          "name": "MedlinePlus: Broken bone",
+          "url": "https://medlineplus.gov/ency/article/000001.htm"
+        },
+        {
+          "name": "MedlinePlus: Back pain",
+          "url": "https://medlineplus.gov/ency/article/007425.htm"
+        },
+        {
+          "name": "MedlinePlus: Deep vein thrombosis",
+          "url": "https://medlineplus.gov/ency/article/000156.htm"
+        }
+      ]
+    },
+    "muscles": {
+      "illnesses": [
+        "Muscle strain",
+        "Cramps",
+        "Muscle loss with age",
+        "Hernia (a bulge where the wall is weak)",
+        "Muscle pain from some cholesterol medicine"
+      ],
+      "emergency": [
+        "Chest pressure or pain, with or without a cold sweat, or pain spreading to the arm or jaw",
+        "Sudden weakness in the face, an arm or a leg on one side",
+        "A hernia bulge that is painful and will not go back, or turns red, purple or dark, or comes with vomiting, fever, or no gas or stool",
+        "Severe muscle pain with dark, red or cola-colored urine",
+        "A swollen, red, warm leg with sudden shortness of breath, chest pain, coughing blood or fainting",
+        "After an injury: a very tight, swollen arm or leg, or severe pain that pain medicine does not ease",
+        "Jaw stiffness or muscle spasms after a wound"
+      ],
+      "doctor": [
+        "One calf or thigh swollen, red and warm: see a doctor right away (it could be a blood clot)",
+        "Muscle pain or weakness after starting a new medicine",
+        "A bulge in the belly or groin",
+        "Weakness that is getting worse over weeks",
+        "A muscle that stays swollen or bruised after an injury"
+      ],
+      "prevention": [
+        "Walk a little every day",
+        "Eat enough protein such as fish, egg and beans",
+        "Warm up before heavy work, and do not lift heavy loads alone",
+        "Drink enough water, unless your doctor limits your fluids"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Muscle Disorders",
+          "url": "https://medlineplus.gov/muscledisorders.html"
+        },
+        {
+          "name": "MedlinePlus: Hernia",
+          "url": "https://medlineplus.gov/hernia.html"
+        },
+        {
+          "name": "MedlinePlus: Heart Attack",
+          "url": "https://medlineplus.gov/heartattack.html"
+        },
+        {
+          "name": "MedlinePlus: Hernia",
+          "url": "https://medlineplus.gov/ency/article/000960.htm"
+        },
+        {
+          "name": "MedlinePlus: Rhabdomyolysis",
+          "url": "https://medlineplus.gov/ency/article/000473.htm"
+        },
+        {
+          "name": "MedlinePlus: Deep vein thrombosis",
+          "url": "https://medlineplus.gov/ency/article/000156.htm"
+        },
+        {
+          "name": "MedlinePlus: Compartment syndrome",
+          "url": "https://medlineplus.gov/ency/article/001224.htm"
+        },
+        {
+          "name": "MedlinePlus: Tetanus",
+          "url": "https://medlineplus.gov/ency/article/000615.htm"
+        }
+      ]
+    },
+    "hormones": {
+      "illnesses": [
+        "Diabetes",
+        "Overactive thyroid",
+        "Underactive thyroid",
+        "Goiter (swollen neck)",
+        "Pancreatitis"
+      ],
+      "emergency": [
+        "Passing out, a seizure, or being very confused or hard to wake, especially with diabetes",
+        "Low sugar signs that do not get better after something sweet",
+        "With diabetes: fruity breath, fast deep or hard breathing, vomiting, or being less alert",
+        "Severe pain in the upper belly, often going to the back, or with vomiting",
+        "With an overactive thyroid: a racing heart with fever, confusion, agitation or shaking"
+      ],
+      "doctor": [
+        "Very thirsty, urinating often, or blurry vision",
+        "Cuts or sores that heal slowly, or tingling feet",
+        "Sugar readings that are often above your target",
+        "Shaky, sweaty spells that keep coming back (low sugar)",
+        "A lump or swelling at the front of the neck",
+        "Racing heart and weight loss, or always cold, tired and gaining weight"
+      ],
+      "prevention": [
+        "Keep a healthy weight and move daily",
+        "Eat less sugar and smaller rice portions",
+        "Use iodized salt",
+        "Never stop steroid medicine suddenly"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Diabetes",
+          "url": "https://medlineplus.gov/diabetes.html"
+        },
+        {
+          "name": "MedlinePlus: Hypoglycemia",
+          "url": "https://medlineplus.gov/hypoglycemia.html"
+        },
+        {
+          "name": "MedlinePlus: Thyroid Diseases",
+          "url": "https://medlineplus.gov/thyroiddiseases.html"
+        },
+        {
+          "name": "MedlinePlus: Pancreatitis",
+          "url": "https://medlineplus.gov/pancreatitis.html"
+        },
+        {
+          "name": "MedlinePlus: Diabetic ketoacidosis",
+          "url": "https://medlineplus.gov/ency/article/000320.htm"
+        },
+        {
+          "name": "MedlinePlus: Low blood sugar",
+          "url": "https://medlineplus.gov/ency/article/000386.htm"
+        },
+        {
+          "name": "MedlinePlus: Thyroid storm",
+          "url": "https://medlineplus.gov/ency/article/000400.htm"
+        }
+      ]
+    },
+    "skin": {
+      "illnesses": [
+        "Fungal infections such as ringworm",
+        "Scabies and lice",
+        "Eczema",
+        "Boils and skin infections",
+        "Skin cancer"
+      ],
+      "emergency": [
+        "Swelling of the face, eyes, lips or tongue, trouble breathing or swallowing, a hoarse voice, or hives with dizziness or fainting",
+        "A burn the size of your palm or larger, a deep burn, a blistered burn on the face, hands, feet or groin, or a burn from chemicals or electricity",
+        "Breathed in smoke from a fire",
+        "Red, painful skin that spreads quickly",
+        "Purple or dark red spots that do not fade when pressed, with fever",
+        "Painful blisters or peeling skin over the body after starting a new medicine",
+        "Snake bite",
+        "Spreading redness or red streaks with a high fever, drowsiness or looking very sick",
+        "A burn and you are not sure how bad it is, or a burn with pale, clammy skin or fainting",
+        "Very hot after sun or hard work, with confusion, odd behavior, slurred speech, a seizure or passing out (heat stroke)",
+        "An animal bite that is deep or large, shows muscle or bone, is on the head, face or neck, or bleeds heavily"
+      ],
+      "doctor": [
+        "A mole that changes shape, color or size",
+        "A wound that does not heal in weeks",
+        "A boil that is growing, very painful or leaking pus",
+        "A rash that spreads, or itching that lasts for weeks",
+        "A dark streak under a nail",
+        "Red, warm, swollen skin: see a doctor right away",
+        "Dog or cat bite or scratch: go to an animal bite center right away, or an emergency room if it is closed"
+      ],
+      "prevention": [
+        "Bathe and dry well, especially in the folds",
+        "Use sunscreen and a hat in strong sun",
+        "Do not share towels, and clean small cuts"
+      ],
+      "sources": [
+        {
+          "name": "MedlinePlus: Burns",
+          "url": "https://medlineplus.gov/burns.html"
+        },
+        {
+          "name": "MedlinePlus: Skin Conditions",
+          "url": "https://medlineplus.gov/skinconditions.html"
+        },
+        {
+          "name": "MedlinePlus: Skin Cancer",
+          "url": "https://medlineplus.gov/skincancer.html"
+        },
+        {
+          "name": "MedlinePlus: Allergy",
+          "url": "https://medlineplus.gov/allergy.html"
+        },
+        {
+          "name": "MedlinePlus: Burns",
+          "url": "https://medlineplus.gov/ency/article/000030.htm"
+        },
+        {
+          "name": "MedlinePlus: Anaphylaxis",
+          "url": "https://medlineplus.gov/ency/article/000844.htm"
+        },
+        {
+          "name": "MedlinePlus: Cellulitis",
+          "url": "https://medlineplus.gov/ency/article/000855.htm"
+        },
+        {
+          "name": "MedlinePlus: Heat emergencies",
+          "url": "https://medlineplus.gov/ency/article/000056.htm"
+        },
+        {
+          "name": "MedlinePlus: Animal bites, self-care",
+          "url": "https://medlineplus.gov/ency/patientinstructions/000734.htm"
+        },
+        {
+          "name": "MedlinePlus: Rabies",
+          "url": "https://medlineplus.gov/ency/article/001334.htm"
+        }
+      ],
+      "reported": [
+        "Dog or cat bite or scratch: go to an animal bite center right away, or an emergency room if it is closed"
+      ]
+    }
+  },
+  "reportedNote": "Lines marked As reported come from news reports of Philippine DOH advice or from general medical knowledge. We have not checked them against a DOH page, so they are not DOH pages."
+}

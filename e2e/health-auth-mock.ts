@@ -8,7 +8,7 @@ const nowSec = (until?: string) => Math.floor(Math.max(Date.now(), until ? Date.
 const jwt = (until?: string) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: nowSec(until) + 3600 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
-const PEOPLE = [{ id: 'me', display_name: 'Lloyd' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
+const PEOPLE = [{ id: 'me', display_name: 'Rey' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
 
 export async function mock(page: Page, until?: string) {
   await page.addInitScript(([token, u, exp]) => {

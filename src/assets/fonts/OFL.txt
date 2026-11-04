@@ -1,0 +1,4 @@
+inter-200-num.woff2 is a subset (digits, degree sign, dashes, slash, percent) of Inter ExtraLight (weight 200).
+Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter).
+Licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org/open-font-license-official-text/
+The font is bundled and used unmodified except for subsetting; it is not sold on its own.

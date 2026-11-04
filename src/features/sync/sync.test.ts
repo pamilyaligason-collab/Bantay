@@ -1,10 +1,10 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, drain, enqueue } from '../../db'
-import { ldb } from '../log/store'
+import { ldb, logActivity } from '../log/store'
 import { hdb } from '../records/store'
 import { vdb } from '../health/visitsStore'
-import { backoffMinutes, DEAD_KEY, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
+import { backoffMinutes, DEAD_KEY, getSyncState, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 import { track } from '../admin/events'
@@ -66,6 +66,349 @@ describe('mapping and allowlist', () => {
   })
 })
 
+describe('sensor steps hours across two phones', () => {
+  const hour = (steps: number, over: Record<string, unknown> = {}) => ({ personId: 'p1', kind: 'steps', minutes: 60, steps, startedAt: '2026-10-01T06:00:00.000Z', source: 'health-connect' as const, ...over })
+  /** The activity table as PostgREST treats it: unique client_id, on_conflict ignore answers [] with return=representation, PATCH by client_id. */
+  function fakeServer() {
+    const server: Record<string, unknown>[] = []
+    mockFetch(async (c) => {
+      if (!c.url.includes('/activity')) return c.method === 'GET' ? json([]) : new Response(null, { status: 201 })
+      const answer = (rows: unknown[], status: number) => (c.headers.Prefer?.includes('return=representation') ? json(rows, status) : new Response(null, { status })) // return=minimal has no body at all
+      if (c.method === 'POST') {
+        const b = JSON.parse(c.body!)
+        if (server.some((s) => s.client_id === b.client_id)) return answer([], 201)
+        server.push({ ...b, created_at: '2026-10-01T07:00:00+00:00', started_at: b.started_at.replace('.000Z', '+00:00') })
+        return answer([b], 201)
+      }
+      const cid = /client_id=eq\.([^&]+)/.exec(c.url)?.[1]
+      const hit = server.filter((s) => !cid || s.client_id === cid)
+      if (c.method === 'PATCH') { Object.assign(hit[0], JSON.parse(c.body!)); return answer(hit, 200) }
+      return json(hit)
+    })
+    return server
+  }
+  const otherPhone = async () => { await Promise.all([db.outbox.clear(), ldb.activity.clear(), db.kv.delete('sync.cursor.activity')]) }
+  const run = async () => { startSync(cfg())(); await syncNow() } // joins the run startSync began; a forced join would earn a second try
+  const stepsOf = async () => (await ldb.activity.toArray()).map((a) => a.steps)
+
+  it('both phones send one client_id for one hour, uuid-shaped, and the server keeps one row', async () => {
+    const server = fakeServer()
+    await logActivity(hour(4000))
+    await run()
+    await otherPhone()
+    await logActivity(hour(3000))
+    const before = posts().length
+    await run()
+    expect(server).toHaveLength(1)
+    const sent = posts().map((c) => JSON.parse(c.body!).client_id)
+    expect(sent.length).toBeGreaterThan(before)
+    expect(new Set(sent).size).toBe(1)
+    expect(sent[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+  })
+  it('an hour insert asks for the row back, because [] is how it learns another phone got there first; a manual row does not', async () => {
+    fakeServer()
+    await logActivity(hour(4000))
+    await logActivity(hour(5, { source: 'manual' }))
+    await run()
+    const [sensor, manual] = posts().filter((c) => c.url.includes('/activity'))
+    expect(sensor.headers.Prefer).toContain('return=representation')
+    expect(manual.headers.Prefer).toContain('return=minimal')
+  })
+  it('a failed read before an update (503) sends no PATCH: the row waits, its try is not counted, and the next sync sends it', async () => {
+    const id = await ldb.activity.add({ ...hour(100), clientId: 'cid-a' } as never)
+    await enqueue('activity', 'update', { id, steps: 100 })
+    mockFetch((c) => (c.method === 'GET' && c.url.includes('select=steps') ? new Response(null, { status: 503 }) : c.method === 'PATCH' ? json([{ id: 's1' }]) : json([])))
+    await run()
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
+    expect((await db.outbox.toArray()).map((r) => r.tries)).toEqual([0])
+    expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 1 })
+    expect(getSyncState().offline).toBe(false) // a server error, not a lost network
+    mockFetch((c) => (c.method === 'PATCH' ? json([{ id: 's1' }]) : json([])))
+    await syncNow(true) // past the backoff
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('a lasting 403 on that read takes the dead-letter path through the PATCH: no backoff, the outbox moves on', async () => {
+    const id = await ldb.activity.add({ ...hour(100), clientId: 'cid-a' } as never)
+    await enqueue('activity', 'update', { id, steps: 100 })
+    mockFetch((c) => (c.url.includes('select=steps') || c.method === 'PATCH' ? json({ code: '42501' }, 403) : json([])))
+    await run()
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(1)
+    expect(((await db.kv.get(DEAD_KEY))?.value as DeadLetter[]).map((d) => [d.table, d.code])).toEqual([['activity', '42501']])
+    expect(await db.outbox.count()).toBe(0)
+    expect(await db.kv.get('sync.backoff')).toBeUndefined()
+  })
+  it('a 429 or a 408 on that read is transient, like a 503: no PATCH', async () => {
+    for (const status of [429, 408]) {
+      await db.kv.delete('sync.backoff')
+      const id = await ldb.activity.add({ ...hour(100), clientId: `cid-${status}` } as never)
+      await db.outbox.clear()
+      await enqueue('activity', 'update', { id, steps: 100 })
+      mockFetch((c) => (c.url.includes('select=steps') ? new Response(null, { status }) : json([{ id: 's1' }])))
+      await run()
+      expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
+      expect(await db.outbox.count()).toBe(1)
+    }
+  })
+  it('a 401 on that read still ends in the PATCH\'s own answer, which pauses sync', async () => {
+    const id = await ldb.activity.add({ ...hour(100), clientId: 'cid-a' } as never)
+    await enqueue('activity', 'update', { id, steps: 100 })
+    mockFetch(() => json({ code: 'PGRST303' }, 401))
+    await run()
+    expect(calls.map((c) => c.method).slice(0, 2)).toEqual(['GET', 'PATCH'])
+    expect(getSyncState().paused).toBe(true)
+    expect(await db.outbox.count()).toBe(1)
+  })
+  it('the client_id depends on person, source and hour; the +00:00 form of an instant gives the same one', async () => {
+    const server = fakeServer()
+    for (const a of [hour(1), hour(1, { personId: 'p2' }), hour(1, { source: 'healthkit' }), hour(1, { startedAt: '2026-10-01T07:00:00.000Z' }), hour(1, { startedAt: '2026-10-01T06:00:00+00:00' })]) await logActivity(a as never)
+    await run()
+    expect(new Set(posts().map((c) => JSON.parse(c.body!).client_id)).size).toBe(4)
+    expect(server).toHaveLength(4)
+  })
+  it('every other row keeps a client_id of its own: old-shape steps, off-hour steps, manual steps', async () => {
+    fakeServer()
+    const old = hour(1, { minutes: 9 })
+    const offHour = hour(1, { startedAt: '2026-10-01T06:17:00.000Z' })
+    const manual = hour(1, { source: 'manual' })
+    for (const a of [old, old, offHour, offHour, manual, manual]) await enqueue('activity', 'insert', a)
+    await run()
+    expect(new Set(posts().map((c) => JSON.parse(c.body!).client_id)).size).toBe(6)
+  })
+  it('after its insert did nothing, the phone with the larger total raises the server row, and the row is pulled once', async () => {
+    const server = fakeServer()
+    await logActivity(hour(100))
+    await run()
+    await otherPhone()
+    await logActivity(hour(4000))
+    await run() // POST ignored; stamped; the larger total goes up as an update in the same sync
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(1)
+    expect(server).toHaveLength(1)
+    expect(server[0].steps).toBe(4000)
+    expect(await stepsOf()).toEqual([4000]) // the pull saw its own client_id: no second local row
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('a phone holding a smaller total never lowers the server row, also after its own total rose', async () => {
+    const server = fakeServer()
+    await logActivity(hour(4000))
+    await run()
+    await otherPhone()
+    const id = await logActivity(hour(100))
+    await run()
+    await run()
+    expect(server[0].steps).toBe(4000)
+    await ldb.activity.update(id, { steps: 200 })
+    await enqueue('activity', 'update', { id, ...hour(200) })
+    await run()
+    expect(server[0].steps).toBe(4000)
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
+    expect(calls.some((c) => c.url.includes('200'))).toBe(false) // values never in URLs
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('a fresh phone pulls the other phone\'s row as one local row under the same client_id', async () => {
+    const server = fakeServer()
+    await logActivity(hour(4000))
+    await run()
+    const cid = server[0].client_id
+    await otherPhone()
+    await run()
+    const local = await ldb.activity.toArray()
+    expect(local.map(clientIdOf)).toEqual([cid])
+    expect(local[0].startedAt).toBe('2026-10-01T06:00:00+00:00')
+  })
+  it('the hour stored by a sensor read while the pull is on the wire: one local row, stamped when its insert goes up', async () => {
+    const server = fakeServer()
+    await logActivity(hour(4000))
+    await run()
+    await otherPhone()
+    const inner = fetch
+    let once = true
+    vi.stubGlobal('fetch', async (u: string, init?: RequestInit) => {
+      const res = await inner(u, init)
+      if (once && u.includes('/activity?select=*')) { once = false; await logActivity(hour(4000)) }
+      return res
+    })
+    await run()
+    expect(await stepsOf()).toEqual([4000])
+    await run()
+    expect(await stepsOf()).toEqual([4000])
+    expect(clientIdOf((await ldb.activity.toArray())[0])).toBe(server[0].client_id)
+    expect(server).toHaveLength(1)
+  })
+  it('an unsent hour (its insert dead-lettered) is stamped by the pull with the shared client_id', async () => {
+    const server = fakeServer()
+    await logActivity(hour(4000))
+    await run()
+    await otherPhone()
+    await ldb.activity.add(hour(4000))
+    await run()
+    const [only] = await ldb.activity.toArray()
+    expect(await ldb.activity.count()).toBe(1)
+    expect(clientIdOf(only)).toBe(server[0].client_id)
+  })
+  it('a queued update whose row is gone no longer blocks the outbox', async () => {
+    fakeServer()
+    expect(await ldb.activity.get(424242)).toBeUndefined()
+    expect(await ldb.activity.bulkGet([424242])).toEqual([undefined])
+    await enqueue('activity', 'update', { id: 424242, ...hour(5) })
+    await enqueue('readings', 'insert', reading)
+    await run()
+    expect(posts().filter((c) => c.url.includes('/readings'))).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+  })
+})
+
+describe('a long queue does not hold back an SOS', () => {
+  const H = 3_600_000
+  const T = Date.parse('2026-10-01T06:00:00.000Z')
+  const hourAt = (i: number) => ({ personId: 'p1', kind: 'steps', minutes: 60, steps: 10 + i, startedAt: new Date(T + i * H).toISOString(), source: 'health-connect' as const })
+  const sos = { id: 's1', personId: 'p1', at: '2026-10-01T06:00:00.000Z', lat: null, lon: null, gps: null, callTo: 'family', smsOpened: false }
+  const ok = (c: Call) => (c.method === 'GET' ? json([]) : c.method === 'PATCH' ? json([{ id: 'x' }]) : json([{ id: 'x' }], 201))
+  const fill = async (n: number) => { for (let i = 0; i < n; i++) await logActivity(hourAt(i)) }
+  const go = async () => { startSync(cfg())(); await syncNow() } // stopped at once: no timer, no nudge can help
+  const written = () => calls.filter((c) => c.method !== 'GET')
+
+  it('200 hour rows and an SOS queued during the first send: the SOS is the first row of the next batch, alerts are read before it, all are sent in one sync', async () => {
+    await fill(200)
+    let queued = false
+    mockFetch(async (c) => {
+      if (c.method === 'POST' && !queued) { queued = true; await enqueue('sos_events', 'insert', sos) }
+      return ok(c)
+    })
+    await go()
+    const sent = written()
+    expect(sent.findIndex((c) => c.url.includes('/sos_events'))).toBe(50)
+    expect(calls.findIndex((c) => c.url.includes('/safety_alerts'))).toBeLessThan(calls.indexOf(sent[50]))
+    expect(sent).toHaveLength(201)
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('between batches only alerts are read: 200 rows are 4 batches, 3 alert reads, then one full pull', async () => {
+    await fill(200)
+    mockFetch(ok)
+    await go()
+    expect(posts()).toHaveLength(200)
+    expect(calls.filter((c) => c.url.includes('/readings?'))).toHaveLength(1)
+    expect(calls.filter((c) => c.url.includes('/safety_alerts') && !c.url.includes('select=source,fetched_at'))).toHaveLength(4) // 3 between batches, 1 in the full pull (the checked-stamp read is separate)
+    expect(calls.findIndex((c) => c.url.includes('/readings?'))).toBeGreaterThan(calls.lastIndexOf(posts()[199]))
+    expect((await db.kv.get(LAST_PULL_KEY))?.value).toBeTruthy()
+  })
+  it('one failing pull table does not throttle the outbox: all 200 rows go in one sync, then the pull fails once', async () => {
+    await fill(200)
+    mockFetch((c) => (c.url.includes('/consults?') ? new Response(null, { status: 503 }) : ok(c)))
+    await go()
+    expect(posts()).toHaveLength(200)
+    expect(await db.outbox.count()).toBe(0)
+    expect(calls.filter((c) => c.url.includes('/consults?'))).toHaveLength(1)
+    expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 1 })
+    expect(await db.kv.get(LAST_PULL_KEY)).toBeUndefined() // nothing fresh came down
+  })
+  it('an SOS queued during the pull of the last batch still goes in the same sync', async () => {
+    await fill(3)
+    let queued = false
+    mockFetch(async (c) => {
+      if (c.url.includes('/safety_alerts') && !queued) { queued = true; await enqueue('sos_events', 'insert', sos) }
+      return ok(c)
+    })
+    await go()
+    expect(written().map((c) => c.url.includes('/sos_events'))).toEqual([false, false, false, true])
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('safety rows go first, an SOS before its own update; other tables keep id order, also across a batch edge', async () => {
+    await fill(60)
+    const a = (await ldb.activity.toArray())[54]
+    await ldb.activity.update(a.id!, { clientId: 'cid-a' } as never)
+    await enqueue('activity', 'update', { id: a.id, steps: 999 })
+    await enqueue('sos_events', 'insert', sos)
+    await enqueue('sos_events_update', 'update', { id: 's1', cancelledAt: '2026-10-01T06:01:00.000Z' })
+    await enqueue('sos_acks', 'insert', { eventId: 'e1', seenAt: '2026-10-01T06:01:00.000Z' })
+    mockFetch(ok)
+    await go()
+    const sent = written()
+    expect(sent.slice(0, 3).map((c) => [c.method, c.url.split('/rest/v1/')[1].split('?')[0]])).toEqual([['POST', 'sos_events'], ['PATCH', 'sos_events'], ['POST', 'sos_acks']])
+    const started = sent.slice(3).filter((c) => c.method === 'POST').map((c) => JSON.parse(c.body!).started_at as string)
+    expect(started).toEqual(Array.from({ length: 60 }, (_, i) => hourAt(i).startedAt))
+    expect(sent[sent.length - 1].method).toBe('PATCH') // the update was queued after the 60 inserts
+    expect(JSON.parse(sent[sent.length - 1].body!).steps).toBe(999)
+  })
+  it('a failing row still stops the sync: nothing after it, no next batch, the rest stay queued', async () => {
+    await fill(60)
+    let n = 0
+    mockFetch((c) => (c.method === 'POST' && ++n === 10 ? new Response(null, { status: 503 }) : ok(c)))
+    await go()
+    expect(posts()).toHaveLength(10)
+    expect(await db.outbox.count()).toBe(51)
+    expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 1 })
+  })
+  it('an SOS beside an activity row that always answers 503: the SOS is sent, the row stays', async () => {
+    await fill(1)
+    await enqueue('sos_events', 'insert', sos)
+    mockFetch((c) => (c.url.includes('/activity') && c.method === 'POST' ? new Response(null, { status: 503 }) : ok(c)))
+    await go()
+    expect(written().map((c) => c.url.split('/rest/v1/')[1].split('?')[0])).toEqual(['sos_events', 'activity'])
+    expect((await db.outbox.toArray()).map((r) => r.table)).toEqual(['activity'])
+  })
+  it('a forced sync that joins a failing unforced run keeps its force: the SOS goes without waiting out the backoff', async () => {
+    await fill(1)
+    let release = () => {}
+    const held = new Promise<void>((r) => { release = r })
+    let first = true
+    mockFetch(async (c) => {
+      if (first && c.method === 'POST') { first = false; await held; throw new TypeError('offline') }
+      return ok(c)
+    })
+    startSync(cfg())()
+    await vi.waitFor(() => expect(posts()).toHaveLength(1))
+    await enqueue('sos_events', 'insert', sos)
+    const joined = syncNow(true)
+    release()
+    await joined
+    expect(written().filter((c) => c.url.includes('/sos_events'))).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+    expect(await db.kv.get('sync.backoff')).toBeUndefined()
+  })
+  it('a forced sync that joins a run stopping at the backoff also goes', async () => {
+    await db.kv.put({ key: 'sync.backoff', value: { fails: 6, nextAt: Date.now() + 30 * 60_000 } })
+    await enqueue('sos_events', 'insert', sos)
+    mockFetch(ok)
+    startSync(cfg())()
+    await syncNow(true)
+    expect(written().filter((c) => c.url.includes('/sos_events'))).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('a joined force buys one more run, not a retry loop: the network stays down, two tries, then the backoff holds', async () => {
+    await enqueue('sos_events', 'insert', sos)
+    mockFetch(() => { throw new TypeError('offline') })
+    startSync(cfg())()
+    await syncNow(true)
+    expect(posts()).toHaveLength(2)
+    expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 2 })
+    await syncNow()
+    expect(posts()).toHaveLength(2)
+  })
+  it('a joined force with nothing queued adds no second pull', async () => {
+    mockFetch(ok)
+    startSync(cfg())()
+    await syncNow(true)
+    expect(calls.filter((c) => c.url.includes('/readings?'))).toHaveLength(1)
+  })
+  it('does not spin when nothing can be sent: 5 missing tables and a row behind them stop at the cap of 40 runs', async () => {
+    const missing = ['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'phone_health']
+    for (const t of missing) await enqueue(t, 'insert', { personId: 'p1' })
+    await enqueue('readings', 'insert', reading)
+    mockFetch((c) => (calls.length < 3000 && missing.some((t) => c.url.includes(`/${t}?on_conflict`)) ? json({ code: 'PGRST205' }, 404) : ok(c))) // heals at 3000 calls so an unbounded loop ends and fails here
+    await go()
+    expect(posts()).toHaveLength(200) // 5 passes, 1 row each, 40 runs
+    expect(await db.outbox.count()).toBe(6)
+  })
+  it('rows left waiting for a table the server lacks do not make it run again and again', async () => {
+    await enqueue('family_messages', 'insert', { kind: 'text', body: 'x' })
+    mockFetch((c) => (c.url.includes('/family_messages') ? json({ code: 'PGRST205' }, 404) : ok(c)))
+    await go()
+    expect(posts()).toHaveLength(1)
+    expect(await db.outbox.count()).toBe(1)
+  })
+})
+
 describe('backoff schedule', () => {
   it('is 1, 2, 4, 8, 16 then capped at 30 minutes', () => {
     expect([0, 1, 2, 3, 4, 5, 6, 20].map(backoffMinutes)).toEqual([0, 1, 2, 4, 8, 16, 30, 30])
@@ -98,6 +441,22 @@ describe('push', () => {
     expect(clientIdOf(await hdb.readings.get(id))).toBe(JSON.parse(p.body!).client_id)
   })
 
+  it('an activity update PATCHes only steps by the row client_id, and keeps the local client_id', async () => {
+    mockFetch((c) => (c.method === 'PATCH' ? json([{ id: 's1' }]) : new Response(null, { status: 201 })))
+    const a = { personId: 'p1', kind: 'steps', minutes: 60, steps: 500, startedAt: '2026-10-01T06:00:00.000Z', source: 'health-connect' as const }
+    const id = await ldb.activity.add(a)
+    await enqueue('activity', 'insert', { ...a, id })
+    await ldb.activity.update(id, { steps: 800 })
+    await enqueue('activity', 'update', { id, ...a, steps: 800 })
+    startSync(cfg())()
+    await syncNow()
+    const [p] = calls.filter((c) => c.method === 'PATCH')
+    const cid = clientIdOf(await ldb.activity.get(id))
+    expect(p.url).toBe(`${URL}/rest/v1/activity?client_id=eq.${cid}`)
+    expect(JSON.parse(p.body!)).toEqual({ steps: 800 })
+    expect(cid).toMatch(/^[0-9a-f-]{36}$/)
+    expect(await db.outbox.count()).toBe(0)
+  })
   it('records the time of the last successful sync (the offline bar shows it), and not after a failed one', async () => {
     mockFetch((c) => (c.method === 'GET' ? json([]) : new Response(null, { status: 201 })))
     startSync(cfg())()

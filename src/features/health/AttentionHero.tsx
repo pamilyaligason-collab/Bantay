@@ -5,7 +5,6 @@ import { LabBar, VerdictChip } from './LabsList'
 import { labDate, labNum, rangeSource } from './labsLogic'
 import { metricLabel } from './model'
 import type { Range } from './ranges'
-import { isVital } from './vitals'
 import './health.css'
 
 const lock = 'You can see this person but not log for them.'
@@ -17,8 +16,8 @@ export function AttentionHero({ attention, family, canLog, canEdit, lockReason, 
     const scan: CardAction = canEdit ? { label: 'Scan', href: '#scan' } : { label: 'Scan', disabled: true }
     return (
       <div data-hero className="ah" data-testid="bodyhero">
-        <HeroCard hue="none" icon="gauge" title="No readings yet" body={<p className="ah-line">Add one or scan a lab paper.</p>} action={add}>
-          <CardActionButton action={scan} secondary />
+        <HeroCard hue="none" icon="gauge" title="No readings yet" body={<p className="ah-line">Add one or scan a lab paper.</p>}>
+          <div className="ah-acts"><CardActionButton action={add} /><CardActionButton action={scan} secondary /></div>
         </HeroCard>
       </div>
     )
@@ -26,25 +25,19 @@ export function AttentionHero({ attention, family, canLog, canEdit, lockReason, 
   const { reading: r, row, pair } = attention
   const src = rangeSource(r, family)
   const date = labDate(r.takenAt, true)
-  const hue = row.pos === 'above' || row.pos === 'below' ? 'amber' : row.pos === 'within' ? 'green' : 'none'
+  const hue = 'none' // board: a white card; the verdict chip and the bar carry the state, not a tinted card
   return (
     <div data-hero className="ah" data-testid="bodyhero">
-      <HeroCard
-        hue={hue}
-        icon={isVital(r.test) ? 'gauge' : 'flask'}
-        title={metricLabel(r.test)}
-        body={
-          <>
-            <VerdictChip row={row} />
-            <p className="ah-val">{pair ? `${pair.top}/${pair.bottom}` : labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</p>
-            <LabBar row={row} />
-            <p className="sub ah-foot">{[src?.text ?? 'No range printed on the paper', date].filter(Boolean).join(' · ')}</p>
-          </>
-        }
-        action={{ label: 'What it means', href: `#health/metric/${r.test}` }}
-      >
-        <CardActionButton action={{ label: 'Ask at next visit', href: '#health/visits' }} secondary />
-      </HeroCard>
+      <section className="card hc ah-card" data-hue={hue} aria-label={metricLabel(r.test)}>
+        <span className="hc-kicker">{metricLabel(r.test)}</span>
+        <div className="ah-top">
+          <p className="ah-val">{pair ? `${pair.top}/${pair.bottom}` : labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</p>
+          <VerdictChip row={row} />
+        </div>
+        <LabBar row={row} />
+        <p className="sub ah-foot">{[src?.text ?? 'No range printed on the paper', r.test === 'heart_rate' ? 'A pulse reading, not judged as resting' : '', attention.old ? `Old result, ${date}` : date].filter(Boolean).join(' · ')}</p>
+        <div className="ah-acts"><CardActionButton action={{ label: 'What it means', href: `#health/metric/${r.test}` }} secondary /><CardActionButton action={{ label: 'Ask at next visit', href: '#health/visits' }} /></div>
+      </section>
     </div>
   )
 }

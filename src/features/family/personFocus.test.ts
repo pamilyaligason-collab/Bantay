@@ -8,9 +8,14 @@ const now = new Date('2026-10-27T10:20:00+08:00')
 const joy = { id: 'joy', name: 'Ate Joy', isMe: false, phone: '0917 111 2222' }
 const dose = (time: string, slot: string, word: DoseLine['word'] = 'Missed'): DoseLine => ({ key: `m|${slot}`, name: 'Nasal spray', time, word, state: 'missed' })
 const base: FocusData = { unwell: false, missed: [], due: [], later: 0, asks: [], checkIn: undefined, canMark: true, now }
-const ask = (days: number): { person: FamilyPerson; med: Medication; days: number } => ({ person: joy as FamilyPerson, med: { name: 'Cefixime' } as Medication, days })
+const ask = (days: number): { person: FamilyPerson; med: Medication; days: number } => ({ person: joy as FamilyPerson, med: { name: 'Ibuprofen' } as Medication, days })
 
 describe('personFocus', () => {
+  it('doses but no take rows and no read right say No data, never Missed (ML-05)', () => {
+    const f = personFocus(joy, { ...base, canMark: false, noTakes: true, missed: [dose('8:00 AM', '08:00')] })
+    expect(f).toMatchObject({ kind: 'nodata', tint: 'none', line: 'No data' })
+    expect(JSON.stringify(f)).not.toContain('Missed')
+  })
   it('unwell beats everything and calls when there is a phone', () => {
     const f = personFocus(joy, { ...base, unwell: true, missed: [dose('8:00 AM', '08:00')] })
     expect(f).toMatchObject({ kind: 'unwell', tint: 'red', line: 'Not feeling well', action: { kind: 'call' } })
@@ -32,8 +37,8 @@ describe('personFocus', () => {
   it('questions waiting: amber, Answer, count and age', () => {
     const f = personFocus(joy, { ...base, asks: [ask(11), ask(3), ask(2), ask(2), ask(1)] })
     expect(f).toMatchObject({ kind: 'questions', tint: 'amber', line: '5 questions waiting', action: { kind: 'answer' } })
-    expect(f.body).toBe('"Still taking Cefixime?" and 4 more, asked 11 days ago.')
-    expect(personFocus(joy, { ...base, asks: [ask(1)] }).body).toBe('"Still taking Cefixime?" asked yesterday.')
+    expect(f.body).toBe('"Still taking Ibuprofen?" and 4 more, asked 11 days ago.')
+    expect(personFocus(joy, { ...base, asks: [ask(1)] }).body).toBe('"Still taking Ibuprofen?" asked yesterday.')
   })
   it('a dose due now counts the medicines at that time', () => {
     const f = personFocus(joy, { ...base, due: [dose('10:00 AM', '10:00'), dose('10:00 AM', '10:00')] })

@@ -1,6 +1,6 @@
 # Session 13 plan: feel and Discover (Today, Health, Discover, Family)
 
-Lloyd, 2026-10-28: "review and apply this skill apple-design + emilkowalski to this app. research and enrich discover tab - as its barren
+The owner, 2026-10-28: "review and apply this skill apple-design + emilkowalski to this app. research and enrich discover tab - as its barren
 at the moment. today, health, discover and family needs improvement." Then: "continue until completed."
 
 Base: main fd3fb30 + orchestrator commit (Skeleton, EmptyState, .press). Contract: `docs/session-13/contracts.md`.
@@ -27,7 +27,7 @@ Research: tab inventory + Discover content research (session 13 transcript; summ
    and never gives a dose or a diagnosis. Anything not verified is left out, not marked UNVERIFIED in the UI.
 5. Local day is Manila (ML-38): any "today's pick" or season uses the device local date through one helper and tests use a fixed
    clock at 23:30 and 00:30.
-6. Merge, deploy and APK release stay with Lloyd.
+6. Merge, deploy and APK release stay with the owner.
 
 ## 2. What we found
 
@@ -51,7 +51,7 @@ Research: tab inventory + Discover content research (session 13 transcript; summ
 |---|---|---|
 | **T Today** | src/screens/Today.tsx, src/features/today/** | Skeleton while kv loads; dose card done-morph (check + "Taken h:mm", then opacity+height collapse 240 ms; cross-fade under reduced motion); `.press` on QuickLog tiles, MyWeek, PlanToday rows, NearbyList; weather headline legibility (solid scrim/vibrancy behind text, AA contrast on every sky state); MyWeek/PlanToday empty states only where the person expects them (first week); "More" group heading. |
 | **H Health** | src/screens/Health.tsx, src/features/health/{Kpis,BodyMap,LatestList,LabsList,HealthLinks}.tsx, health.css | Summary-then-Browse layout (Apple Health): KPIs and the latest readings first, then one "Browse" grid of tiles (Body, Medicines, Readings, Labs, Move, Food, Papers, Visits, Library) replacing the three loose links + HealthLinks list; Skeleton until ready; EmptyState for no vitals / no labs / no readings with "Add a reading"; `.press` on tiles and rows; KPI count-up once per open (countTo), none under reduced motion. Routes unchanged. |
-| **D Discover** | src/screens/Discover.tsx, src/features/discover/**, src/data/discover/** (new), discover CSS moved out of shell.css into src/features/discover/discover.css | (1) "Today's pick" card above the sub-nav: one item per local day (recipe, trivia, PH fact or video), deterministic by date. (2) Season card from src/data/discover/seasons.json (date windows; each with 2-3 do-now lines and a link to an in-app screen). (3) Learn: shelves "Recipes", "Health reads" (opens #health/library), "Your benefits" (PhilHealth Konsulta, senior 20% + VAT exemption; each sourced, link-out), medicine guide still behind learn.medcards. (4) Listen (register): read-aloud of recipes (and medicine cards when the flag is on) via articleText + TTS plugin, Web Speech fallback on web; play/stop, one at a time, stops on leaving. (5) Watch (register): shelves from videos.json grouped by topic, each opens YouTube outside the app (never embedded); one quiet line "Live TV is coming" (waits on Lloyd's list). (6) Sub-nav pill slides between subs (transform only). (7) `.press` on every tile. |
+| **D Discover** | src/screens/Discover.tsx, src/features/discover/**, src/data/discover/** (new), discover CSS moved out of shell.css into src/features/discover/discover.css | (1) "Today's pick" card above the sub-nav: one item per local day (recipe, trivia, PH fact or video), deterministic by date. (2) Season card from src/data/discover/seasons.json (date windows; each with 2-3 do-now lines and a link to an in-app screen). (3) Learn: shelves "Recipes", "Health reads" (opens #health/library), "Your benefits" (PhilHealth Konsulta, senior 20% + VAT exemption; each sourced, link-out), medicine guide still behind learn.medcards. (4) Listen (register): read-aloud of recipes (and medicine cards when the flag is on) via articleText + TTS plugin, Web Speech fallback on web; play/stop, one at a time, stops on leaving. (5) Watch (register): shelves from videos.json grouped by topic, each opens YouTube outside the app (never embedded); one quiet line "Live TV is coming" (waits on the owner's list). (6) Sub-nav pill slides between subs (transform only). (7) `.press` on every tile. |
 | **F Family** | src/screens/Family.tsx, src/features/family/** (except IncomingSos.tsx), family css | Status ring on each avatar (green OK today, amber needs a look, grey none) with the existing legend; "I'm OK" done-morph ("You're OK · 4:12 AM"); Skeleton for the roster before first load; Learn together card made compact (title + poster/first line, not a big empty block); Sheet drag-to-dismiss with 1:1 tracking, rubber-band, velocity projection (pure helper + tests); `.press` on bubbles, plan rows; Plan empty states via EmptyState. |
 
 Not in this release: Safety tab, Ask/Jack FAB coachmark position, live TV list, medicine cards switch-on.

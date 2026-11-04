@@ -52,6 +52,12 @@ export function hazardStatus(v: HazardView | null): string {
   return v.cards.some((c) => c.tone === 'none') ? 'Some levels not confirmed' : 'No high risks found'
 }
 
+/** The hazard row's line: the reading here; or, when only the home zone has one, both places named so nobody reads the home reading as "here". `value` is the one-line status (hazardStatus). */
+export function hazardSub(here: Reading | null, home: { zone: string; reading: Reading } | null): string {
+  if (here?.value) return here.value
+  return home?.reading.value ? `Not checked here · ${home.zone}: ${home.reading.value}` : 'Not checked for this place yet'
+}
+
 const TONE_WORD: Record<Tone, string> = { good: 'Lower risk', warn: 'Take care', none: 'Not confirmed yet' }
 /** One label per card: a single reading is its own headline ("Safe"); several readings get one overall word and the readings list below it. */
 export const hazardLabel = (c: Pick<HazardCard, 'readings' | 'tone'>): string =>

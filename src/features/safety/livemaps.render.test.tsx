@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from './alerts'
 import LiveMaps from './LiveMaps'
 
-const rows = vi.hoisted(() => ({ list: [] as unknown[] }))
-vi.mock('./store', () => ({ useKv: () => rows.list }))
+const rows = vi.hoisted(() => ({ list: [] as unknown[], checked: new Date().toISOString() as string | null }))
+vi.mock('./store', () => ({ useKv: (k: string, fb: unknown) => (k === 'safety.alerts' ? rows.list : k === 'alerts:checkedAt' ? rows.checked : fb) }))
 afterEach(cleanup)
 
 describe('LiveMaps storm list', () => {
@@ -20,5 +20,18 @@ describe('LiveMaps storm list', () => {
     render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
     expect(screen.getByRole('status').textContent).toBe('No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.')
     expect(screen.getByText('PAGASA bulletin').closest('a')?.getAttribute('href')).toContain('pagasa.dost.gov.ph/tropical-cyclone')
+  })
+  it('R4 offline for 2 days: the not-checked sentence, no all-clear', () => {
+    rows.list = []; rows.checked = new Date(Date.now() - 2 * 86_400_000).toISOString()
+    render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
+    expect(screen.getByRole('status').textContent).toContain('have not been checked lately')
+    expect(screen.queryByText(/No storm warnings/)).toBeNull()
+    rows.checked = new Date().toISOString()
+  })
+  it('R4 a live signal GDACS has not listed: no all-clear', () => {
+    rows.list = [{ id: 'pagasa-tcws-1-1', kind: 'tcws', level: 'Signal No. 1', issuedAt: new Date().toISOString(), title: 'Wind Signal No. 1' } as Alert]
+    render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
+    expect(screen.getByRole('status').textContent).toContain('wind signal')
+    expect(screen.queryByText(/No storm warnings/)).toBeNull()
   })
 })

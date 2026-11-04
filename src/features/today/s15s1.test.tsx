@@ -65,7 +65,7 @@ describe('DS-1: told-today follows the Manila day (23:30 and 00:30)', () => {
 
 describe('DS-8: the In 10 min toast follows the alarm health', () => {
   const now = new Date(2026, 9, 19, 9)
-  const late: DuePerson = { personId: 'me', name: 'Lloyd', isMe: true, at: 540, rel: 540, status: 'missed', slots: [{ name: 'Losartan', slot: '09:00', at: 540, medicationId: 'm1', key: 'm1', personId: 'me', dose: '1 tablet' }] }
+  const late: DuePerson = { personId: 'me', name: 'Rey', isMe: true, at: 540, rel: 540, status: 'missed', slots: [{ name: 'Losartan', slot: '09:00', at: 540, medicationId: 'm1', key: 'm1', personId: 'me', dose: '1 tablet' }] }
   /** Taps Snooze until the toast reads `want` (useKvValue reads Dexie live, so the first tap may still see no health row); a wrong toast never appears, so the wait times out and fails. */
   const toast = async (native: boolean, ok: boolean | undefined, want: string) => {
     h.native = native

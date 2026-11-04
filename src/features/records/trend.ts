@@ -5,8 +5,24 @@ import type { Reading } from '../health/ranges'
 /** Single-series trend (oldest first). Colours come from the CSS tokens via chartColors. */
 export function trendData(readings: Reading[]): uPlot.AlignedData {
   const s = [...readings].sort((a, b) => a.takenAt.localeCompare(b.takenAt))
-  return [s.map((r) => Date.parse(r.takenAt) / 1000), s.map((r) => r.value)]
+  return bucketWeeks([s.map((r) => Date.parse(r.takenAt) / 1000), s.map((r) => r.value)] as [number[], number[]])
 }
+
+export const MAX_POINTS = 12
+const WEEK = 7 * 86_400
+/** More than 12 points are averaged into whole-week buckets (the step grows by whole weeks until at most 12 remain), so 83 raw results read as a line, not a smear. */
+export function bucketWeeks([xs, ys]: [number[], number[]]): [number[], number[]] {
+  if (xs.length <= MAX_POINTS) return [xs, ys]
+  const step = WEEK * (Math.floor((xs[xs.length - 1]! - xs[0]!) / WEEK / MAX_POINTS) + 1)
+  const groups = new Map<number, number[]>()
+  xs.forEach((x, i) => { const k = Math.floor((x - xs[0]!) / step); groups.set(k, [...(groups.get(k) ?? []), i]) })
+  const idx = [...groups.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])
+  const mean = (a: number[]) => a.reduce((t, n) => t + n, 0) / a.length
+  return [idx.map((g) => Math.round(mean(g.map((i) => xs[i]!)))), idx.map((g) => Math.round(mean(g.map((i) => ys[i]!)) * 10) / 10)]
+}
+
+/** Axis dates in the family's own locale, e.g. "16 Oct". */
+export const dateLabel = (t: number) => new Date(t * 1000).toLocaleDateString('en-PH', { day: 'numeric', month: 'short' })
 
 const DAY = 86_400
 /** x range from the data itself, padded a little (at least 3 days), so one 2026 point never draws a 2027-2029 axis. */
@@ -30,7 +46,7 @@ export function trendChart(el: HTMLElement, readings: Reading[], width: number, 
       legend: { show: false },
       cursor: { show: false },
       scales: { x: { time: true, auto: false, min: x0, max: x1 } }, // fixed: uPlot's own pad for one point spans years
-      axes: [axis, axis],
+      axes: [{ ...axis, values: (_u, ticks) => ticks.map(dateLabel) }, axis],
       series: [{}, { stroke: line, width: 2, points: { show: true, size: 8, fill: line, stroke: c.cell, width: 2 } }]
     },
     data,

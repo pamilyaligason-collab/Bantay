@@ -14,7 +14,7 @@ Read-only. Nothing was written to the repo or the database.
 - Impact: an insider can take over another member's account. That gives them the member's private records, which defeats D-82/D-84 ("records private until the member shares"). The victim gets a `pin_changed` alert and loses their sessions, but only after the takeover.
 - Fix: in `approve_pin_reset`, refuse approval unless the request was started from a device that is not the approver's. Simplest working version: store the starter's `auth.uid()` (or an "anonymous" marker) on the request and refuse when `approved_by` = starter. Stronger version: only the victim's existing carers or an admin may approve, or have the approver confirm the victim's identity out of band. As a minimum, never return `code` to an authenticated caller who is not the handle owner.
 - Files: `supabase/functions/_shared/login.ts`, `supabase/functions/pin-login/index.ts`, a new migration redefining `approve_pin_reset` (+ `pin_reset_requests.started_by` column), tests in `_shared/login.test.ts` and `supabase/tests/pin_reset_erasure_rehearsal.sql`.
-- Needs a migration and a deploy (pin-login): yes, so Lloyd's approval is required. If the design accepts "every family member is trusted", record that as an accepted risk in 02-DECISIONS instead. No decision currently covers it.
+- Needs a migration and a deploy (pin-login): yes, so the owner's approval is required. If the design accepts "every family member is trusted", record that as an accepted risk in 02-DECISIONS instead. No decision currently covers it.
 
 ### SEC-2 (minor, latent): a person's creator keeps read access to the `people` row after the member claims it and removes them
 - Evidence: the live `people_read` policy is `auth_user_id = auth.uid() OR ((created_by = auth.uid() OR is_carer_of(id)) AND archived_at IS NULL)`. The `created_by` clause does not depend on the share list. `people` holds phone, address, birthdate, blood_type, allergies, conditions and medicines.
@@ -42,7 +42,7 @@ Read-only. Nothing was written to the repo or the database.
 ### SEC-6 (minor/info): `FAMILY_INVITE_TOKEN` secret may still be set, but no deployed code reads it
 - Evidence: `git grep` shows no `Deno.env.get('FAMILY_INVITE_TOKEN')` in any function. The deployed `family-names` v14 source (fetched live) uses only per-member `invite_tokens` through `join_claim_peek`. The only references are docs/scripts (`docs/AUTH.md:130`, `scripts/golive-s12.ps1:83` "secrets unset FAMILY_INVITE_TOKEN"). I could not check whether the secret is still set, because the MCP cannot list function secrets.
 - Risk while set: none at runtime. If someone rolls `family-names` back to a pre-session-12 tag (`docs/session-12/PLAN.md:254`), the old family-wide link works again. Anyone holding it could then read the full PIN member name and handle list, and the static link never expires.
-- Fix: `npx -y supabase@2.122.0 secrets unset FAMILY_INVITE_TOKEN`. That is a config change on the live project and needs Lloyd's OK.
+- Fix: `npx -y supabase@2.122.0 secrets unset FAMILY_INVITE_TOKEN`. That is a config change on the live project and needs the owner's OK.
 
 ### Advisor notes that are not findings
 - `rls_auto_enable()` is executable by anon/authenticated (advisor WARN). It returns `event_trigger`, so PostgREST cannot call it ("trigger functions can only be called as triggers"). Not exploitable. Optional cleanup: revoke execute.

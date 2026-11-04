@@ -25,19 +25,19 @@ describe('faceName', () => {
     expect(faceName('Ate Joy')).toBe('Ate Joy')
     expect(faceName('kuya Ben Reyes')).toBe('kuya Ben')
     expect(faceName('Ate')).toBe('Ate')
-    expect(faceName('Lloyd Roc')).toBe('Lloyd')
+    expect(faceName('Rey Villar')).toBe('Rey')
   })
 })
 
 describe('FacesRow while acting', () => {
   it('lists only the viewed person\'s visible ids, says so once, and turns I\'m OK into View only', async () => {
-    await hdb.people.bulkPut([{ id: 'p1', name: 'Lloyd Roc' }, { id: 'p2', name: 'Kuya Ben' }])
+    await hdb.people.bulkPut([{ id: 'p1', name: 'Rey Villar' }, { id: 'p2', name: 'Kuya Ben' }])
     acting.ids = new Set(['p2'])
     render(<FacesRow />)
     const list = await screen.findByRole('list', { name: 'Family roll call' })
     await waitFor(() => expect(list.querySelectorAll('li').length).toBe(1))
     expect(list.textContent).toContain('Kuya')
-    expect(list.textContent).not.toContain('Lloyd')
+    expect(list.textContent).not.toContain('Rey')
     expect(screen.getByText('Showing only who Mama can see.')).toBeTruthy()
     expect((screen.getByRole('button', { name: /I'm OK/ }) as HTMLButtonElement).disabled).toBe(true)
   })

@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const kv: Record<string, unknown> = {}
 vi.mock('../shell/useKv', () => ({ useKv: (key: string, init: unknown) => [key in kv ? kv[key] : init, vi.fn(), true] }))
-vi.mock('../today/BreathSheet', () => ({ default: () => <div role="dialog">sheet</div> }))
+const sheet = vi.hoisted(() => ({ props: null as null | { initial?: { pattern: string; minutes: number } } }))
+vi.mock('../today/BreathSheet', () => ({ default: (p: { initial?: { pattern: string; minutes: number } }) => { sheet.props = p; return <div role="dialog">sheet</div> } }))
 afterEach(() => { cleanup(); for (const k of Object.keys(kv)) delete kv[k] })
 
 import { CALM_JACK_EVENT } from './CalmJack'
@@ -21,8 +22,20 @@ describe('hero', () => {
   })
   it('Start opens the breath sheet', () => {
     render(<CalmScreen />)
+    expect(screen.getByTestId('calm-safety').textContent).toMatch(/Chest pain is an emergency/) // the sheet no longer shows it: Start goes straight to the run
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
     expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(sheet.props?.initial).toEqual({ pattern: 'relax', minutes: 3 })
+  })
+  it('the pattern and length rows pick what Start opens: Calm box + 5 min -> the sheet gets calm and 5', () => {
+    render(<CalmScreen />)
+    const hero = screen.getByTestId('calm-hero')
+    expect(within(within(hero).getByRole('group', { name: 'Kind of breathing' })).getAllByRole('button').map((b) => b.textContent)).toEqual(['Relax · in 4, out 6', 'Calm box · 4-4-4-4', 'Sleep 4-7-8 · coming']) // Sleep (4-7-8) is a disabled, dashed "coming" pill: not offered, per the clinician gate
+    fireEvent.click(within(hero).getByRole('button', { name: /Calm box/ }))
+    fireEvent.click(within(hero).getByRole('button', { name: '5 min' }))
+    expect(hero.textContent).toMatch(/Box: 4-4-4-4/)
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    expect(sheet.props?.initial).toEqual({ pattern: 'calm', minutes: 5 })
   })
   it('Gentle buzz is a switch on selfcare.buzz, on by default', () => {
     render(<CalmScreen />)

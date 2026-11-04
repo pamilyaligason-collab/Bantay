@@ -11,13 +11,13 @@ beforeEach(() => { logFeeling.mockReset().mockResolvedValue('told'); writer.v = 
 afterEach(cleanup)
 
 import { feelingToast, moodLine } from '../today/actions'
-import MoodCheck from './MoodCheck'
+import MoodCheck, { moodPromise } from './MoodCheck'
 
 describe('MoodCheck', () => {
-  it('four faces in the app order', () => {
+  it('four faces in the app order, with the board words', () => {
     render(<MoodCheck />)
     const g = screen.getByRole('group', { name: 'How are you?' })
-    expect(within(g).getAllByRole('button').map((b) => b.textContent)).toEqual(['Great', 'OK', 'Not great', 'Unwell'])
+    expect(within(g).getAllByRole('button').map((b) => b.textContent)).toEqual(['Good', 'Okay', 'Low', 'Unwell'])
   })
   it('a face logs the feeling and says so', async () => {
     render(<MoodCheck />)
@@ -25,17 +25,23 @@ describe('MoodCheck', () => {
     expect(logFeeling).toHaveBeenCalledWith('unwell', 'me')
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe(feelingToast('told')))
   })
-  it('only promises the family alert when a writer carer exists (the repo moodLine rule)', () => {
+  it('the promise line: linked -> "Unwell tells your family", not linked -> the see-and-call line', () => {
+    expect(moodPromise(true)).toBe('Unwell tells your family')
+    expect(moodPromise(false)).toBe('Only family linked to you can see this. If you feel unwell, call your family.')
     writer.v = true
     render(<MoodCheck />)
-    expect(screen.getByText(moodLine(true))).toBeTruthy()
+    expect(screen.getByText('Unwell tells your family')).toBeTruthy()
     cleanup(); writer.v = undefined; render(<MoodCheck />)
-    expect(screen.getByText(moodLine(undefined))).toBeTruthy()
+    expect(screen.getByText(/If you feel unwell, call your family\./)).toBeTruthy()
     expect(screen.queryByText(/tells your family/)).toBeNull()
+  })
+  it('four faces are labelled buttons', () => {
+    render(<MoodCheck />)
+    expect(document.querySelectorAll('.cm-face[aria-label]')).toHaveLength(4)
   })
   it('never says the family will see it when no writer carer exists, and shows one line after the tap', async () => {
     render(<MoodCheck />)
-    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe(moodLine(undefined)))
     expect(screen.getByTestId('calm-mood').textContent).not.toMatch(/will see it/)
     expect(screen.getAllByText(moodLine(undefined))).toHaveLength(1)
@@ -43,13 +49,13 @@ describe('MoodCheck', () => {
   it('with a writer carer the told toast stands', async () => {
     writer.v = true
     render(<MoodCheck />)
-    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe(feelingToast('told')))
   })
   it('viewing as someone writes for the viewed person', async () => {
     acting.id = 'rel-1'
     render(<MoodCheck />)
-    fireEvent.click(screen.getByRole('button', { name: 'Great' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }))
     expect(logFeeling).toHaveBeenCalledWith('great', 'rel-1')
     await waitFor(() => expect(screen.getByRole('status')).toBeTruthy())
   })

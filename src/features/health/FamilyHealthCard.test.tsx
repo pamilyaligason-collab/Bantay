@@ -25,6 +25,12 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('FamilyHealthCard', () => {
+  it('S8: a lower-case name is written with capitals', () => {
+    state.people = [person('p1', 'Maria Sample', true), person('p2', 'ana reyes')]
+    render(<FamilyHealthCard ids={['p1', 'p2']} />)
+    expect(screen.getByTestId('family-health').textContent).toContain('Ana Reyes')
+    expect(screen.getByTestId('family-health').textContent).not.toContain('ana reyes')
+  })
   it('header counts check-ins; doors to messages and the feed', async () => {
     render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
     const c = screen.getByTestId('family-health')

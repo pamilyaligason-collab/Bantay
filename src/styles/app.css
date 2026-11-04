@@ -43,6 +43,7 @@ h1, .h-display { font-family: var(--f-ui); font-weight: 700; letter-spacing: -.0
 .sec { font-size: 14px; color: var(--ink2); margin: 0 16px 6px; }
 .hd { font-size: 22px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -0.01em; }
 .btn, .btn2 { min-height: 44px; border: 0; border-radius: 999px; font-size: 15px; font-weight: 600; width: auto; padding: 0 18px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
+a.btn, a.btn2, a.pill { text-decoration: none; } /* S6: a link styled as a button keeps no browser underline */
 .btn.block, .btn2.block { width: 100%; }
 .btn { background: var(--btn); color: #fff; }
 .btn2 { background: var(--green-tint); color: var(--green); }

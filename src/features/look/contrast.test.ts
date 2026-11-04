@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import app from '../../styles/app.css?raw'
 import glass from '../../styles/glass.css?raw'
+import numfont from '../../styles/numfont.css?raw'
 import tokens from '../../styles/tokens.css?raw'
 import { DARK_SEL, MEDIA_SEL, over, pair, parse, ratio, tokensOf, varsOf } from './contrastMath'
 
@@ -40,6 +41,12 @@ describe('dark blocks and fonts', () => {
     expect(app).not.toMatch(/@font-face|fonts\.googleapis/)
     expect(app).toMatch(/--f-ui: -apple-system, "SF Pro Text", "Inter", system-ui/)
     expect(app).not.toMatch(/--f-display/)
+  })
+  it('the only font file is the 200-weight digits (D-115 A2), and it is local', () => {
+    expect(numfont.match(/@font-face/g)).toHaveLength(1)
+    expect(numfont).toMatch(/font-weight: 200/)
+    expect(numfont).toMatch(/url\(\.\.\/assets\/fonts\/inter-200-num\.woff2\)/)
+    expect(numfont).not.toMatch(/https?:/)
   })
   it('--warn-bg keeps its exact color-mix text (viewas test reads it)', () => expect(tokens.match(/--warn-bg: color-mix\(in srgb, var\(--amber\) 22%, var\(--card\)\);/g)!.length).toBeGreaterThanOrEqual(2))
 })

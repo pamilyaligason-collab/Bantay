@@ -1,6 +1,6 @@
 import { dayKeys, BAND, type Metric, type Series } from './weekSeries'
 
-const W = 330, H = 170, X0 = 34, X1 = 322, Y0 = 14, Y1 = 148
+const W = 330, H = 170, X0 = 34, X1 = 262, /* X1 stops short of the right edge so the last day label never sits under the Jack button (right 18 px, 62 px wide) */ Y0 = 14, Y1 = 148
 const COLORS = ['var(--c1)', 'var(--c2)', 'var(--green)', 'var(--tint-purple-ink)']
 const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 

@@ -1,18 +1,10 @@
 import { liveQuery } from 'dexie'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useActivity } from '../health/useActivity'
-import { useMedications } from '../health/useMedications'
+import { useEffect, useState } from 'react'
 import type { Reading } from '../health/ranges'
 import { bpDoctorOf, type BpArg } from '../health/verdict'
 import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
-import { useActingPersonId } from '../viewas/viewAs'
-import { computeMyWeek, DAYS, nextReadingDue, sparkPoints, type Tile } from './myWeekLogic'
-import { useSeenDaily } from './seen'
-import { dayKey } from '../discover/play/score'
-import { EmptyState } from '../look'
-import { useKv } from '../shell/useKv'
-import { inFirstWeek } from './doneMorph'
+import { DAYS } from './myWeekLogic'
 
 const NO_READINGS: Reading[] = []
 const NO_TAKES: MedTaken[] = []
@@ -31,64 +23,4 @@ export function useWeekData(personId: string) {
     return () => { a.unsubscribe(); b.unsubscribe(); c.unsubscribe() }
   }, [personId])
   return { readings, takes, doctor }
-}
-
-/** A tiny 7-day line. Decorative: the tile's text says the same thing. */
-export function Spark({ values }: { values: (number | null)[] }) {
-  const W = 72
-  const H = 28
-  const pts = sparkPoints(values, W, H)
-  if (!pts) return <span className="td-spark" aria-hidden="true" />
-  return (
-    <svg className="td-spark" width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
-      <polyline points={pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')} />
-      <circle cx={pts[pts.length - 1]!.x} cy={pts[pts.length - 1]!.y} r="2.5" />
-    </svg>
-  )
-}
-
-function TileView({ t }: { t: Tile }) {
-  return (
-    <a className="td-tile press" href={t.href}>
-      <span className="td-tile-l">{t.label}</span>
-      <span className="td-tile-v"><b>{t.value}</b>{t.unit && <span>{t.unit}</span>}</span>
-      <span className="td-tile-s">{t.sub}</span>
-      <span className="td-tile-f">
-        {t.state && t.state.kind !== 'none' ? <span className={`td-chip ${t.state.kind}`}>{t.state.word}</span> : <span />}
-        <Spark values={t.spark} />
-      </span>
-    </a>
-  )
-}
-
-/** Today's "My week": the signed-in person's last 7 days as tiles. No data for a tile: it is not drawn. No data at all: the card is not drawn. */
-export default function MyWeek() {
-  const personId = useActingPersonId() ?? ''
-  const { readings, takes, doctor } = useWeekData(personId)
-  const activity = useActivity(personId, DAYS + 1)
-  const meds = useMedications(personId)
-  const tiles = useMemo(() => computeMyWeek({ personId, readings, activity, meds, takes, now: new Date(), doctor }), [personId, readings, activity, meds, takes, doctor])
-  const due = useMemo(() => nextReadingDue({ personId, readings, meds, now: new Date() }), [personId, readings, meds])
-  const ref = useRef<HTMLElement>(null)
-  useSeenDaily(ref, 'card_seen_my_week', tiles.length > 0 || !!due)
-  // First week only: say what this card will show. After that, no data means no card (calm null).
-  const [since, setSince, sinceLoaded] = useKv<string>('today.myweek.since', '')
-  const empty = !tiles.length && !due
-  useEffect(() => { if (sinceLoaded && !since) setSince(dayKey()) }, [sinceLoaded, since, setSince])
-  if (empty) {
-    if (!sinceLoaded || !inFirstWeek(since || dayKey(), new Date())) return null
-    return (
-      <section aria-labelledby="t-myweek">
-        <h2 id="t-myweek" className="td-sech">My week</h2>
-        <EmptyState icon="heart" title="Your week will show here" body="Add a reading, a walk or a dose. Your last 7 days show up here." action={{ label: 'Open Health', onClick: () => { location.hash = '#health' } }} />
-      </section>
-    )
-  }
-  return (
-    <section ref={ref} aria-labelledby="t-myweek">
-      <h2 id="t-myweek" className="td-sech">My week</h2>
-      {tiles.length > 0 && <div className="td-tiles">{tiles.map((t) => <TileView key={t.code} t={t} />)}</div>}
-      {due && <p className="td-due"><a href="#health">{due}</a></p>}
-    </section>
-  )
 }

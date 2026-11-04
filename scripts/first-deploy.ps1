@@ -1,4 +1,4 @@
-# Family Bantay - first deploy (Lloyd runs this once, interactively). Windows PowerShell 5.1.
+# Family Bantay - first deploy (the owner runs this once, interactively). Windows PowerShell 5.1.
 # Run from the repo folder:  powershell -ExecutionPolicy Bypass -File scripts\first-deploy.ps1
 # Stops at the first failure. Secrets are generated here and never printed; nothing secret is written to the repo.
 # Decisions: D-15 (history already rewritten), D-16..D-23. Notes: README.md, docs/AUTH.md, docs/ASSISTANT.md.

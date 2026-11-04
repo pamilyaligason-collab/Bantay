@@ -17,7 +17,7 @@ const h = vi.hoisted(() => {
 })
 vi.mock('../auth/client', () => ({ supabase: h.sb }))
 const who = vi.hoisted(() => ({ member: { userId: 'u1', personId: 'p2' as string | null, role: 'admin', handle: null } }))
-vi.mock('../auth/session', () => ({ getMember: async () => who.member }))
+vi.mock('../auth/session', () => ({ getAccessToken: async () => null, getMember: async () => who.member }))
 
 const tracked = vi.hoisted(() => ({ calls: [] as string[][] }))
 vi.mock('../admin/events', async (orig) => ({ ...(await orig<typeof import('../admin/events')>()), track: async (k: string, n: string) => { tracked.calls.push([k, n]); return true } }))
@@ -54,7 +54,7 @@ beforeEach(async () => {
   tracked.calls.length = 0
   resetPersonChoice()
   await Promise.all([db.kv.clear(), hdb.readings.clear(), hdb.people.clear(), hdb.consults.clear()])
-  await hdb.people.bulkPut([{ id: 'p1', name: 'Lola Santos' }, { id: 'p2', name: 'Lloyd Roc' }])
+  await hdb.people.bulkPut([{ id: 'p1', name: 'Tita Santos' }, { id: 'p2', name: 'Rey Villar' }])
   tables = {
     records_queue: [{ person_id: 'p1', kind: 'lab_results', drafts: 4 }],
     documents: [doc('d1', 'p1'), doc('d2', 'p1'), doc('d3', 'p1', 'confirmed')],
@@ -71,24 +71,24 @@ describe('person picker', () => {
     const me = await screen.findByRole('button', { name: 'Me' })
     expect(me.getAttribute('aria-pressed')).toBe('true')
     const chips = within(screen.getByRole('group', { name: 'Whose records' })).getAllByRole('button')
-    expect(chips.map((b) => b.textContent)).toEqual(['Me', 'Lola4'])
-    expect(screen.getByRole('button', { name: 'Lola, 4 to check' })).toBeTruthy()
+    expect(chips.map((b) => b.textContent)).toEqual(['Me', 'Tita4'])
+    expect(screen.getByRole('button', { name: 'Tita, 4 to check' })).toBeTruthy()
     expect(screen.queryByText(/To check \(/)).toBeNull() // me has nothing waiting
   })
 
-  it('picking Lola shows her to-check row; the Health root still opens on Me (v13 0.4), sub-screens follow the choice', async () => {
+  it('picking Tita shows her to-check row; the Health root still opens on Me (v13 0.4), sub-screens follow the choice', async () => {
     render(<Records />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Lola, 4 to check' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Tita, 4 to check' }))
     expect(await screen.findByRole('button', { name: /To check \(4\)/ })).toBeTruthy()
     cleanup()
     render(<Health />)
-    await waitFor(() => expect(document.querySelector('.ps-pill')?.textContent).toBe('Me')) // the Lola sub-screen case is below (confirm -> readings)
+    await waitFor(() => expect(document.querySelector('.ps-pill')?.textContent).toMatch(/Me$/)) // the Tita sub-screen case is below (confirm -> readings)
   })
 
   it('a member with no person of their own falls back to the first person', async () => {
     who.member = { userId: 'u9', personId: null, role: 'member', handle: null }
     render(<Records />)
-    expect((await screen.findByRole('button', { name: 'Lloyd' })).getAttribute('aria-pressed')).toBe('true') // sorted by name: Lloyd before Lola
+    expect((await screen.findByRole('button', { name: 'Rey' })).getAttribute('aria-pressed')).toBe('true') // sorted by name: Rey before Tita
   })
 })
 
@@ -98,12 +98,12 @@ describe('confirm -> readings', () => {
     tables.readings = [srv]
     expect((await confirmRows('lab_results', ['l1'])).ok).toBe(true)
     expect((await hdb.readings.toArray()).map((r) => [r.personId, r.value])).toEqual([['p1', 95]])
-    // Lloyd (me) sees nothing
+    // Rey (me) sees nothing
     render(<Records />)
     await screen.findByText('No records yet')
     cleanup()
     render(<Records />)
-    fireEvent.click(await screen.findByRole('button', { name: /Lola/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Tita/ }))
     expect(await screen.findByText(/95 mg\/dL/)).toBeTruthy()
     cleanup()
     location.hash = '#health/labs' // S14: the labs list is its own screen; the overview keeps one row
@@ -116,7 +116,7 @@ describe('confirm -> readings', () => {
 
 describe('check flow', () => {
   it('Confirm all N from this paper sends every non-unclear row in one call, the progress line counts papers, and one records_confirmed is sent', async () => {
-    const people = [{ id: 'p1', name: 'Lola Santos' }]
+    const people = [{ id: 'p1', name: 'Tita Santos' }]
     const done = vi.fn()
     render(<ConfirmFlow people={people} personId="p1" checkedDocs={1} onClose={() => {}} onChanged={done} />)
     expect(await screen.findByText('1 of 3 papers checked')).toBeTruthy() // 1 confirmed + d1 + d2 drafts
@@ -135,9 +135,9 @@ describe('check flow', () => {
   it('the sheet lists only the picked person', async () => {
     tables.documents = [doc('d1', 'p1'), doc('d9', 'p2')]
     tables.lab_results = [lab('l1', 'd1', 'p1'), lab('l9', 'd9', 'p2')]
-    render(<ConfirmFlow people={[{ id: 'p1', name: 'Lola' }, { id: 'p2', name: 'Lloyd' }]} personId="p2" onClose={() => {}} onChanged={() => {}} />)
-    expect(await screen.findByText(/Lloyd · Test Clinic/)).toBeTruthy()
-    expect(screen.queryByText(/Lola · Test Clinic/)).toBeNull()
+    render(<ConfirmFlow people={[{ id: 'p1', name: 'Tita' }, { id: 'p2', name: 'Rey' }]} personId="p2" onClose={() => {}} onChanged={() => {}} />)
+    expect(await screen.findByText(/Rey · Test Clinic/)).toBeTruthy()
+    expect(screen.queryByText(/Tita · Test Clinic/)).toBeNull()
   })
 })
 

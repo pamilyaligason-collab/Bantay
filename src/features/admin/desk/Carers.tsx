@@ -4,7 +4,7 @@ import { why } from '../shared'
 import type { DeskPerson } from './people'
 import { Tag } from './ui'
 
-/** The admin only ever adds read-only links (Lloyd 2026-10-21): can_write is false here, whoever is picked, and never for the admin themself. */
+/** The admin only ever adds read-only links (the owner 2026-10-21): can_write is false here, whoever is picked, and never for the admin themself. */
 export async function addReadOnly(carerId: string, personId: string, me: string | null): Promise<Res<string>> {
   if (!carerId || carerId === me) return { ok: false, error: 'bad_input' }
   return linkCarer(carerId, personId, false)

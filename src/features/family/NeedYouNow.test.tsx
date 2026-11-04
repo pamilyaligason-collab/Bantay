@@ -17,7 +17,7 @@ vi.mock('./CarerCards', () => ({
   )
 }))
 vi.mock('./roster', () => ({
-  useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Lloyd Roc', isMe: true }, { id: 'p2', name: 'Ate Joy Cruz', isMe: false }], selfId: 'p1' })
+  useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Rey Villar', isMe: true }, { id: 'p2', name: 'Ate Joy Cruz', isMe: false }], selfId: 'p1' })
 }))
 import { messagePrefill } from './Messages'
 import NeedYouNow from './NeedYouNow'

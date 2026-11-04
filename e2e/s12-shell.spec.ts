@@ -58,7 +58,7 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   await expect(page).toHaveURL(/#discover\/learn$/)
   await expect(page.getByTestId('learn-home')).toBeVisible()
   await expect(page.locator('.sh-jackfab')).toBeVisible() // a sub-tab root is still a tab page
-  await expect(page.locator('.sh-top')).toHaveCount(1) // and keeps the top bar (App.tsx), with its own Back to Discover under it
+  await expect(page.locator('.sh-top')).toHaveCount(0) // the top bar is gone (S5); the screen draws its own Back to Discover
   await expect(page.getByRole('link', { name: 'Back to Discover' })).toBeVisible()
 })
 

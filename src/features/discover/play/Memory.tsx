@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { loadFamily } from '../../auth/family'
 import { getMember } from '../../auth/session'
+import { LargeTitle } from '../../look'
 import { Icon } from '../../shell/Icon'
-import { firstName } from '../../shell/TopBar'
+import { firstName } from '../../shell/names'
 import { flip, hintPair, newMemory, notePlayed, pairsFound, PAIRS, praise, settle, solved } from './score'
 import './play.css'
 
@@ -26,10 +27,7 @@ export default function Memory({ onBack, seed = Date.now() }: { onBack: () => vo
   const again = () => { counted.current = false; setHint(null); setRound((r) => r + 1); setS(newMemory(seed + round + 1)) }
   return (
     <div className="fp" data-testid="memory">
-      <div className="fp-head">
-        <button type="button" className="sh-iconbtn" aria-label="Back to Play" onClick={onBack}><Icon name="back" /></button>
-        <div><h2>Memory match</h2><span className="fp-note">{PAIRS} pairs, no timer</span></div>
-      </div>
+      <LargeTitle title="Memory match" back={{ href: '#discover/play', label: 'Play' }} />
       <div className="fp-row fp-between"><span className="fp-chip" role="status">Pairs found: {pairsFound(s)} of {PAIRS}</span></div>
       <div className="fp-mem" role="group" aria-label="Cards">
         {s.cards.map((c, i) => {

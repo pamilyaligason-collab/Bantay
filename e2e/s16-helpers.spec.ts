@@ -39,11 +39,11 @@ test('assertHero fails with two [data-hero] or none, passes with one', async ({ 
   await load(page, CLEAN); await assertHero(page)
 })
 
-test('assertJackClear passes on #today and fails when a control sits under the Jack button', async ({ page }) => {
+test('assertJackClear fails a control under the Jack button, at the end and (new) at rest', async ({ page }) => {
   await skipOnboarding(page)
   await page.goto('/#today')
   await expect(page.locator('.sh-jackfab')).toBeVisible()
-  await assertJackClear(page)
+  await assertJackClear(page, { at: 'end' })
   await page.evaluate(() => {
     const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
     const b = document.createElement('button')
@@ -51,5 +51,23 @@ test('assertJackClear passes on #today and fails when a control sits under the J
     b.style.cssText = `position:fixed;left:${f.left}px;top:${f.top}px;width:${f.width}px;height:${f.height}px;z-index:1`
     document.body.append(b)
   })
-  await expect(assertJackClear(page)).rejects.toThrow(/Jack button/)
+  await expect(assertJackClear(page, { at: 'end' })).rejects.toThrow(/at end:.*Jack button/s)
+  await expect(assertJackClear(page, { at: 'rest' })).rejects.toThrow(/at rest:.*Jack button/s)
+  await expect(assertJackClear(page)).rejects.toThrow(/at rest:/) // default is both, rest first
+})
+
+test('assertJackClear at rest catches a button that only sits under Jack at scroll 0', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  await expect(page.locator('.sh-jackfab')).toBeVisible()
+  await page.evaluate(() => {
+    const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+    const sc = document.querySelector('.bt .scroll') as HTMLElement
+    const b = document.createElement('button')
+    b.textContent = 'rest-trap'
+    b.style.cssText = `position:absolute;left:${f.left}px;top:${f.top + sc.scrollTop}px;width:${f.width}px;height:${f.height}px`
+    sc.append(b) // scrolls away with the page: under Jack at rest only
+  })
+  await expect(assertJackClear(page, { at: 'rest' })).rejects.toThrow(/at rest:.*rest-trap/s)
+  await assertJackClear(page, { at: 'end' })
 })

@@ -7,6 +7,7 @@ import { familyFeedOn } from './flags'
 import { listMessages, type Msg } from './messagesApi'
 import { messagesPreview } from './messagesPreview'
 import { dayRows, groupPlan, progressOf } from './planList'
+import { queueWords } from './queueWords'
 import { useFamilyPeople } from './roster'
 import { usePlan } from './usePlan'
 import './v13-family.css'
@@ -20,7 +21,7 @@ const planSub = (rows: ReturnType<typeof dayRows>) => {
 
 /** Together (board): Plan and calendar, Messages, Papers, Memories as one grouped list, each with a live word. */
 export function TogetherList() {
-  const { people } = useFamilyPeople()
+  const { people, selfId } = useFamilyPeople()
   const { tasks, events, notes } = usePlan()
   const queue = useQueue()
   const [msgs, setMsgs] = useState<Msg[]>([])
@@ -31,14 +32,17 @@ export function TogetherList() {
     return () => { live = false }
   }, [])
   const now = new Date()
-  const plan = planSub(dayRows(groupPlan(tasks, events, notes, now), dayKey(now), now))
+  const todayRows = dayRows(groupPlan(tasks, events, notes, now), dayKey(now), now)
+  const plan = planSub(todayRows)
+  const prog = progressOf(todayRows)
+  const planOpen = prog.total > 0 ? prog.total - prog.done : todayRows.length
   const m = messagesPreview(msgs, people, seenLoaded ? seen : new Date().toISOString())
   return (
     <Section title="Together" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="together">
       <GroupedList icons label="Together" testId="together-list">
-        <Row icon="calendar" tint="green" title="Plan and calendar" sub={plan} href="#family/plan" testId="planrow" />
+        <Row icon="calendar" tint="green" title="Plan and calendar" sub={plan} value={planOpen > 0 ? String(planOpen) : undefined} href="#family/plan" testId="planrow" />
         <Row icon="msg" tint="blue" title="Messages" sub={m.sub} badge={m.unread} href="#family/messages" testId="msgs" />
-        <Row icon="file" tint="purple" title="Papers" sub={queue.count > 0 ? `${queue.count} to confirm` : 'Nothing waiting'} href="#family/papers" testId="papersrow" />
+        <Row icon="file" tint="purple" title="Papers" sub={queueWords(queue, selfId ?? undefined)} href="#family/papers" testId="papersrow" />
         <Row icon="photo" tint="amber" title="Memories" sub="Family photos, kept private" href="#family/memories" testId="memoriesrow" />
       </GroupedList>
     </Section>

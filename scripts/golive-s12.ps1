@@ -1,4 +1,4 @@
-# Family Bantay - session 12 Phase 3 batch 1 'apply' (D-80..D-88). Lloyd runs it from this worktree BEFORE merging the PR:
+# Family Bantay - session 12 Phase 3 batch 1 'apply' (D-80..D-88). The owner runs it from this worktree BEFORE merging the PR:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s12.ps1          (add -DryRun to print the steps only)
 # Never paste these lines into a shell: pasted, a failed step does not stop the next one. Run the file; it refuses any other branch.
 # Order (release review): checks -> tag pre-s12 -> 0037..0042 (each recorded) -> verify -> deploy 5 functions -> archive the shared admin person row -> post-checks.

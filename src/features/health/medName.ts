@@ -50,5 +50,5 @@ export function givenName(full: string): string {
   return properName(clean(w))
 }
 
-/** Display casing for a person's name: a word that is all lower or all upper case ("loyd", "SEVILLA") becomes "Loyd"; mixed case ("McDonald") is left alone. */
+/** Display casing for a person's name: a word that is all lower or all upper case ("rey", "VILLAR") becomes "Rey"; mixed case ("McDonald") is left alone. */
 export const properName = (n: string): string => n.replace(/\p{L}[\p{L}'’-]*/gu, (w) => (w === w.toLowerCase() || w === w.toUpperCase() ? w[0]!.toUpperCase() + w.slice(1).toLowerCase() : w))

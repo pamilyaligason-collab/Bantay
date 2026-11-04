@@ -1,6 +1,6 @@
 # Session 9 plan: UI polish, food log, Jack at near-zero cost
 
-Status: DRAFT, waiting for Lloyd's approval. Nothing is built yet.
+Status: DRAFT, waiting for the owner's approval. Nothing is built yet.
 
 Sources (all 2026-10-22, read-only lanes):
 - docs/ui-audit/APP-AUDIT.md (phone app, 218 shots, axe 0 violations)
@@ -39,7 +39,7 @@ Screenshots stay out of git (59 MB); they live in the worktree folders named abo
 - APP-E Tagalog labels across the app (after APP-B and APP-D).
 - On-device OCR (ML Kit, free) only if scan cost passes ~$2/month.
 
-## Lloyd's part (Phase 0, about 30 min, no code)
+## The owner's part (Phase 0, about 30 min, no code)
 1. Create three OpenRouter keys (chat, scan, laptop), each with a spend limit; turn on ZDR-only.
 2. Let me run 20 old papers through Haiku 5.5 vs Gemini; if Haiku reads them as well, it becomes the main model (3-5x cheaper).
 
@@ -48,11 +48,11 @@ Screenshots stay out of git (59 MB); they live in the worktree folders named abo
 - After: ~$0.20/month realistic, ~$2.20 worst case (estimates until JACK-A logs real numbers).
 
 ## Gates
-- Every migration: rehearsal on WSL Postgres, then Lloyd says "apply".
-- Every wave: tsc, vitest, e2e, review pass, then a PR; Lloyd says "merge".
+- Every migration: rehearsal on WSL Postgres, then the owner says "apply".
+- Every wave: tsc, vitest, e2e, review pass, then a PR; the owner says "merge".
 - Privacy notice gains one line: the assistant processes data abroad (RA 10173).
 
-## Revision 1 (Lloyd 2026-10-22): "proceed and carry out all recommended improvements", plus new asks
+## Revision 1 (the owner 2026-10-22): "proceed and carry out all recommended improvements", plus new asks
 
 Approved: all waves above. This chat is the orchestrator. New asks folded in:
 

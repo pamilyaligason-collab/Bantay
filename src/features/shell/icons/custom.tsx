@@ -31,3 +31,7 @@ export const IconTyphoon = make([
   'M14.5 12c0-5 2-8 5.5-9',
   'M9.5 12c0 5-2 8-5.5 9'
 ])
+// The three tab glyphs drawn on board Main's tab bar: a compass for Discover, a heart with its pulse for Health, a plain shield for Safety.
+export const IconTabCompass = make(['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'm15.5 8.5-2 5-5 2 2-5z'])
+export const IconTabHeart = make(['M12 20s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6.5-8 11-8 11z', 'M7 12h3l1.5-2.5 2 4L15 12h2'])
+export const IconTabShield = make(['M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z'])

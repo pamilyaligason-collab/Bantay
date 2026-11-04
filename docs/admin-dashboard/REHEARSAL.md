@@ -15,7 +15,7 @@ Counts only. Synthetic rows; nothing from the live project.
 Live run (orchestrator): apply 0021 inside `begin;`, run the section of the script between `=== checks ===` and `rollback;`, then roll back.
 Skipped locally: migrations 0004-0007, 0009, 0011, 0012, 0014-0020 (none touch the audited tables' audited columns beyond those in 0008/0013).
 
-## Live check (2026-10-21, Lloyd ran `supabase/tests/admin_audit_live_check.sql` from the linked checkout; one transaction, aborted by design)
+## Live check (2026-10-21, the owner ran `supabase/tests/admin_audit_live_check.sql` from the linked checkout; one transaction, aborted by design)
 | Check | Result |
 |---|---|
 | Audit triggers created | 12 |

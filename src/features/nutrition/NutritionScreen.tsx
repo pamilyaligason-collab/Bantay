@@ -1,8 +1,9 @@
+import { properName } from '../health/medName'
 import { useMemo, useState } from 'react'
 import { MetricChart } from '../health/MetricChart'
 import { GUIDE, toCanonicalReading } from '../health/ranges'
 import { useHealthPerson } from '../health/useHealthPerson'
-import { PersonChips } from '../records/PersonChips'
+import { WhoLine } from '../health/WhoLine'
 import { Icon } from '../shell/Icon'
 import { LargeTitle } from '../look'
 import { FAIL_TEXT } from '../today/actions'
@@ -16,12 +17,11 @@ import PlateSheet from './PlateSheet'
 import WaterPanel from './WaterPanel'
 import './nutrition.css'
 
-const NO_DRAFTS: Record<string, number> = {}
 const DAY = 86_400_000
 
 /** Health > Food and nutrients (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
 export default function NutritionScreen() {
-  const { ready, people, ownId, personId, setPersonId, readings, canMark } = useHealthPerson()
+  const { ready, people, personId, readings, canMark } = useHealthPerson()
   const now = useMemo(() => new Date(), [])
   const food = useFood(personId, 8)
   const water = useWater(personId, 2)
@@ -39,7 +39,7 @@ export default function NutritionScreen() {
       .sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt))
       .map((r) => ({ takenAt: r.takenAt, value: r.value }))
   }, [readings, personId, now])
-  const name = people.find((p) => p.id === personId)?.name ?? ''
+  const name = properName(people.find((p) => p.id === personId)?.name ?? '')
 
   const setLimit = async (mg: number) => {
     setMsg('')
@@ -54,7 +54,7 @@ export default function NutritionScreen() {
   return (
     <>
       <LargeTitle back={{ href: '#health/move', label: 'Move and food' }} title="Food and nutrients" />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
+      <WhoLine />
       {name && <p className="who-chip"><span className="hv-sr">Showing </span><span aria-hidden="true">{name.trim().charAt(0).toUpperCase()}</span>{name}</p>}
       {ready && personId && (
         <div className="nu" style={{ marginTop: 12 }}>

@@ -11,7 +11,7 @@ import { useSelf } from '../sos/useSelf'
 import { useFamilyPeople } from '../family/roster'
 import { useAlertRows } from '../notify/useAlerts'
 import { markAllSeen, markSeen } from '../notify/store'
-import { buildInbox, countUnread } from './build'
+import { buildInbox, countUnread, type InboxItem } from './build'
 
 const NO_ALERTS: Alert[] = []
 const NO_NAMES: string[] = []
@@ -67,6 +67,8 @@ export function useInbox(isAdmin: boolean) {
   const markAllRead = () => { void putKv(SEEN_KEY, items.filter((i) => i.kind !== 'family').map((i) => i.id)).catch(() => undefined); void markAllSeen().catch(() => undefined) }
   /** Opening a family row marks it seen (local first, then the server's seen_at). */
   const openRow = (rowId: string) => void markSeen(rowId).catch(() => undefined)
-  return { items, unread, seen, markAllRead, openRow }
+  /** Mark one row read: a family row by its server seen_at, any other by adding its id to the kv list. */
+  const markOne = (i: InboxItem) => { if (i.row) return openRow(i.row.id); void putKv(SEEN_KEY, [...(Array.isArray(seen) ? seen : []), i.id]).catch(() => undefined) }
+  return { items, unread, seen, markAllRead, openRow, markOne }
 }
 export type Inbox = ReturnType<typeof useInbox>

@@ -6,12 +6,13 @@ import places from '../../data/safety/places.json'
 import { HOME_ZONES } from '../location/geo'
 import type { useLocation, usePlaceFrom } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
-import { LargeTitle } from '../look'
+import { GroupedList, LargeTitle, Row } from '../look'
 import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { getMember, onAuthChange } from '../auth/session'
-import { ABROAD_SOURCE, CHECK_LABEL, coversHere, isLink, needsCheck, planDial, splitDial } from './dial'
+import { ABROAD_SOURCE, coversHere, isLink, needsCheck, planDial, splitDial } from './dial'
 import { dialNumber, type Entry, firstNumber, OVERRIDES_KEY, type Overrides, telHref, withFamilyAdded } from './entries'
+import { ExtRow } from './ExtRow'
 import EntryList, { EditForm } from './EntryList'
 import type { Alert } from './alerts'
 import LiveMapToggle from '../weather/LiveMapToggle'
@@ -88,22 +89,19 @@ function SourceInfo({ e }: { e: Entry }) {
   )
 }
 
+/** Quick dial groups: what the person is calling for, not who runs the line. */
+export const DIAL_KINDS = ['Emergency', 'Health', 'Local'] as const
+const KIND_OF: Record<string, (typeof DIAL_KINDS)[number]> = { Emergency: 'Emergency', Rescue: 'Emergency', Police: 'Emergency', Fire: 'Emergency', Hospital: 'Health', Health: 'Health', 'Mental health': 'Health', Teleconsult: 'Health', Disaster: 'Emergency', OFW: 'Emergency', Embassy: 'Emergency' }
+export const dialKind = (group: string) => KIND_OF[group] ?? 'Local'
+
+/** The name and number are one tap target that opens the source note; Call is the only control (W12). */
 function DialRow({ e, onInfo, abroad }: { e: Entry; onInfo: (e: Entry) => void; abroad: boolean }) {
   const link = isLink(e)
+  const unsure = !link && needsCheck(e)
   return (
-    <li className="sf-dialrow">
-      <span className="sf-dt">
-        <b>{e.name}</b>
-        <span className="sub">
-          {e.group}{e.phone ? ` · ${dialNumber(e.phone, abroad)}` : ''}
-          {!link && needsCheck(e) && <span className="sf-chk" role="img" aria-label={CHECK_LABEL} title={CHECK_LABEL}>check</span>}
-        </span>
-      </span>
-      <button type="button" className="sf-i" aria-label={`Where ${e.name} came from`} onClick={() => onInfo(e)}>i</button>
-      {link
-        ? <a className="sf-callbtn" href={e.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${e.name}`}>Open</a>
-        : <a className="sf-callbtn" href={telHref(e.phone!, abroad)} aria-label={`Call ${e.name}, ${dialNumber(e.phone!, abroad)}`}>Call</a>}
-    </li>
+    <Row testId={`dial-${e.id}`} title={e.name} sub={unsure ? 'Number not confirmed' : undefined} value={e.phone && !link ? dialNumber(e.phone, abroad) : undefined} onClick={() => onInfo(e)} control={link
+      ? <a className="sf-callbtn" href={e.sourceUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${e.name}`}>Open</a>
+      : <a className="sf-callbtn" href={telHref(e.phone!, abroad)} aria-label={`Call ${e.name}, ${dialNumber(e.phone!, abroad)}`}>Call</a>} />
   )
 }
 
@@ -133,8 +131,16 @@ function QuickDial({ place }: { place: Place }) {
           <section key={set.id} aria-label={set.header}>
             <h2 className="sec">{set.header}</h2>
             {!items.length && !links.length && !missing.length && <p className="sub" style={{ margin: '0 4px' }}>{admin ? <>No local numbers yet. <a href="#admin">Add them</a></> : 'No local numbers yet. Ask an admin to add them.'}</p>}
+            {DIAL_KINDS.map((k) => {
+              const rows = [...items, ...links].filter((e) => dialKind(e.group) === k)
+              return rows.length ? (
+                <div key={k} className="sf-kind">
+                  <h3 className="sf-kind-h">{k}</h3>
+                  <GroupedList label={`${set.header}: ${k}`}>{rows.map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} abroad={plan.abroad} />)}</GroupedList>
+                </div>
+              ) : null
+            })}
             <ul className="sf-dial-list">
-              {[...items, ...links].map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} abroad={plan.abroad} />)}
               {missing.map((e) => (
                 <li key={e.id} className="sf-dialrow sf-dialrow-add">
                   <span className="sf-dt"><b>{e.name}</b><span className="sub">Not confirmed yet</span></span>
@@ -174,12 +180,11 @@ function Sources() {
   return (
     <div className="sf">
       <p className="sub" style={{ margin: '0 4px' }}>Bantay is not an earthquake or tsunami siren. Cards are written in plain words from these sources. Posters are drawn for Bantay.</p>
-      <ul className="sf-src-list">
-        {SOURCES.map(([name, what, url]) => (
-          <li key={name} className="grp row"><span className="grow"><b>{name}</b><span className="sub">{what}. <a href={url} target="_blank" rel="noopener noreferrer">Open</a></span></span></li>
-        ))}
-      </ul>
-      <p className="sub" style={{ margin: '0 4px' }}>Phone numbers: tap the i button next to a number on <a href="#safety/dial">Quick dial</a> to see where it came from and when it was read. A number marked check is not yet confirmed.</p>
+      <GroupedList icons label="Sources">
+        {SOURCES.map(([name, what, url]) => <ExtRow key={name} title={name} sub={what} url={url} />)}
+      </GroupedList>
+      <p className="sub" style={{ margin: '0 4px' }}>A number marked not confirmed has no source we could check yet. Tap a number on Quick dial to see where it came from and when it was read.</p>
+      <GroupedList icons label="Quick dial"><Row icon="phone" tint="red" title="Quick dial" href="#safety/dial" /></GroupedList>
     </div>
   )
 }
@@ -212,7 +217,7 @@ function Body({ sub, l, place }: { sub: Exclude<Sub, 'firstaid' | 'world' | 'off
       return (
         <>
           <RescueMap lat={place.weather.lat} lon={place.weather.lon} zoneName={HOME_ZONES.find((z) => z.id === place.zone)?.name} />
-          <section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo zone={place.zone} /></section>
+          <details className="card rm-edit"><summary>Add or fix a place</summary><section aria-labelledby="s-evac"><h2 id="s-evac" className="hd">Evacuation and rescue</h2><EntryList seed={places as Entry[]} geo zone={place.zone} /></section></details>
         </>
       )
     }

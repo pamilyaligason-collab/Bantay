@@ -39,8 +39,7 @@ describe('LabsList (mockup v8 health-labs)', () => {
     expect(within(by('hba1c')).getByTestId('lab-range').textContent).toBe('Lab range 4 to 5.6')
     expect(within(by('ldl')).getByTestId('lab-range').textContent).toMatch(/^General guide \(.+, \d{4}\): /)
     expect(within(by('mystery')).getByTestId('lab-range').textContent).toBe('No range printed on the paper')
-    expect(within(by('hba1c')).getByText('Ask about it')).toBeTruthy()
-    expect(within(by('creatinine')).queryByText('Ask about it')).toBeNull()
+    expect(within(by('hba1c').parentElement as HTMLElement).getByText('Ask at next visit')).toBeTruthy() // the card's action row
   })
   it('the source card names the lab and date and is the link to Papers; out of range tests come first', () => {
     const { container } = render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
@@ -63,23 +62,40 @@ describe('LabsList (mockup v8 health-labs)', () => {
   })
   it('chips filter to the ones to ask about and the ones in range', () => {
     const { container } = render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
-    fireEvent.click(screen.getByRole('button', { name: 'To ask about 2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'To ask about' }))
     expect(Array.from(container.querySelectorAll('a.lr-card')).map((c) => c.getAttribute('data-test'))).toEqual(['hba1c', 'ldl'])
-    fireEvent.click(screen.getByRole('button', { name: 'In range 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'In range' }))
     expect(Array.from(container.querySelectorAll('a.lr-card')).map((c) => c.getAttribute('data-test'))).toEqual(['creatinine'])
   })
   it('summary hero counts To ask about / In range / No range', () => {
     render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
     const sum = screen.getByTestId('lab-summary')
     expect(sum.hasAttribute('data-hero')).toBe(true)
-    expect(sum.textContent).toBe('2To ask about1In range1No range')
+    expect(sum.textContent).toBe('2To ask about0Low1Normal')
   })
-  it('each card says it in plain words; Ask at next visit is a link outside the card, only for out-of-range', () => {
+  it('Low counts only results under the range, the no-range count is said in words, and the board order holds (hero, filter, Results, cards, Source, Questions)', () => {
+    const rs = [rd('hemoglobin', 11, { labLow: 12, labHigh: 17 }), rd('ldl', 162), rd('mystery', 5)]
+    const { container } = render(<LabsList readings={rs} thresholds={[]} ready sources={paper} personId="p1" canMark />)
+    expect(screen.getByTestId('lab-summary').textContent).toBe('2To ask about1Low0Normal')
+    expect(screen.getByTestId('lab-count-note').textContent).toBe('Counts include real results only. 1 with no range on the paper.')
+    const order = ['lab-summary', 'lab-count-note', 'lab-source', 'lab-questions'].map((id) => container.querySelector(`[data-testid="${id}"]`) as HTMLElement)
+    expect(order[0]!.compareDocumentPosition(order[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(order[1]!.compareDocumentPosition(container.querySelector('a.lr-card')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(Array.from(container.querySelectorAll('a.lr-card')).at(-1)!.compareDocumentPosition(order[2]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy() // the source row sits below the cards
+    expect(order[2]!.compareDocumentPosition(order[3]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(order[3]!).getAllByRole('button', { name: /^Add to visit questions/ }).length).toBe(3)
+  })
+  it('view only (no canMark): the suggested questions show but nobody can add to that person\'s list', () => {
+    render(<LabsList readings={[rd('ldl', 162)]} thresholds={[]} ready sources={paper} personId="p1" />)
+    expect(screen.getByTestId('lab-questions')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Add to visit questions/ })).toBeNull()
+  })
+  it('each card says it in plain words; Ask is a link outside the card', () => {
     const { container } = render(<LabsList readings={readings} thresholds={[]} ready sources={paper} />)
     const hb = container.querySelector('[data-test="hba1c"]') as HTMLElement
     expect(within(hb).getByText(/^6\.8 is about \d times the top of normal\.$|^6\.8 is a little over the top of normal\.$/)).toBeTruthy()
     const ask = screen.getAllByRole('link', { name: 'Ask at next visit' })
-    expect(ask).toHaveLength(2)
+    expect(ask).toHaveLength(4) // one per card
     expect(ask[0]!.getAttribute('href')).toBe('#health/visits')
     expect(ask.every((a) => !a.closest('a.lr-card'))).toBe(true)
     expect(ask[0]!.closest('.lr-wrap')).toBeTruthy()
@@ -125,5 +141,14 @@ describe('LabsRow', () => {
   it('says no papers yet without lab results', () => {
     render(<LabsRow readings={[]} />)
     expect(screen.getByTestId('labs-row').textContent).toBe('Lab resultsNo papers yet')
+  })
+})
+
+describe('LabsList cards', () => {
+  it('one action row per card with What it means and Ask', () => {
+    render(<LabsList readings={[rd('ldl', 162), rd('creatinine', 0.9, { labLow: 0.6, labHigh: 1.3 })]} thresholds={[]} ready sources={none} />)
+    const rows = screen.getAllByTestId('lab-actions')
+    expect(rows).toHaveLength(2)
+    for (const r of rows) expect(Array.from(r.querySelectorAll('a')).map((a) => a.textContent)).toEqual(['What it means', 'Ask at next visit'])
   })
 })

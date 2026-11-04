@@ -1,4 +1,4 @@
--- Schedule for the alerts-ingest Edge Function (D-25): every 10 minutes. WRITTEN ONLY: Lloyd applies it (see docs/ALERTS.md).
+-- Schedule for the alerts-ingest Edge Function (D-25): every 10 minutes. WRITTEN ONLY: the owner applies it (see docs/ALERTS.md).
 -- The secret never appears in this file. Before running it, store the same value you set as the ALERTS_CRON_SECRET function secret:
 --   select vault.create_secret('<paste the secret here, in the SQL editor only>', 'alerts_cron_secret');
 -- (to rotate: select vault.update_secret(id, '<new>') for that row, and set the function secret to match).

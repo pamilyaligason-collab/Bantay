@@ -46,7 +46,7 @@ export function bpPairLevel(top?: number | null, bottom?: number | null, doctor?
 }
 const WORDS: Record<VerdictKind, Record<Exclude<Position, 'none'>, Verdict>> = {
   bp: { above: { word: 'High', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } },
-  vital: { above: { word: 'A bit high', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } },
+  vital: { above: { word: 'High', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } },
   lab: { above: { word: 'High', icon: 'up' }, below: { word: 'Low', icon: 'down' }, within: { word: 'In range', icon: 'check' } }
 }
 

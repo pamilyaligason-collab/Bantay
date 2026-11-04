@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { loadFamily } from '../auth/family'
 import { getMember } from '../auth/session'
 import { JackSheet } from '../shell/JackSheet'
-import { firstName } from '../shell/TopBar'
+import { firstName } from '../shell/names'
 import SosScreen from '../sos/SosScreen'
 
 /** Dispatched by the Calm header's Ask Jack. */

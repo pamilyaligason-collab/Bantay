@@ -85,7 +85,7 @@ async function open(page: Page, scheme: 'light' | 'dark', meds: Meds, rpc: strin
   await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' }) // the sky and reveals loop or fade, so a shot would differ per run
   await page.clock.setFixedTime(NOW)
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' }).or(page.getByRole('button', { name: 'Exit simple mode' }))).toBeVisible() // the app has created its databases
+  await expect(page.getByTestId('myday').or(page.getByRole('button', { name: 'Exit simple mode' }))).toBeVisible() // the app has created its databases
   const sched = { v: 1, times: [SLOT] }
   const rows: Row[] = []
   if (meds !== 'none') rows.push({ id: 1, clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', dose: '50 mg', schedule: sched, medStatus: 'active' })
@@ -94,7 +94,7 @@ async function open(page: Page, scheme: 'light' | 'dark', meds: Meds, rpc: strin
   await seed(page, 'bantay-log', 'medications', rows)
   await extra(page)
   await page.reload() // raw IndexedDB writes do not notify live queries
-  await expect(simple ? page.getByRole('button', { name: 'Exit simple mode' }) : page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(simple ? page.getByRole('button', { name: 'Exit simple mode' }) : page.getByTestId('myday')).toBeVisible()
 }
 const noSideways = async (page: Page) => expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 
@@ -102,7 +102,7 @@ test('Unwell offline is told once when the phone is back online (exactly 1 raise
   const rpc: string[] = []
   await open(page, 'light', 'none', rpc)
   await context.setOffline(true)
-  await page.getByRole('button', { name: 'Log how you feel' }).click()
+  await page.getByRole('button', { name: 'How are you? Pick a face' }).click()
   await page.getByRole('button', { name: 'Unwell' }).click()
   await expect(page.getByText('We will tell them when you are online')).toBeVisible()
   expect(rpc.filter((r) => r === 'raise_mood_alert')).toHaveLength(0)
@@ -110,7 +110,7 @@ test('Unwell offline is told once when the phone is back online (exactly 1 raise
   await expect.poll(() => rpc.filter((r) => r === 'raise_mood_alert').length).toBe(1)
   await expect(page.getByText('Your family has been told you are unwell.')).toBeVisible()
   await page.reload() // Today mount: nothing left to send
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
   await page.waitForLoadState('networkidle') // the Today mount retry has run
   expect(rpc.filter((r) => r === 'raise_mood_alert')).toHaveLength(1)
 })

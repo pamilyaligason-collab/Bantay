@@ -121,3 +121,12 @@ describe('v13 routes', () => {
     expect(hasOwnHeader('#safety/warnings')).toBe(true)
   })
 })
+import hotlinesData from '../../data/safety/hotlines.json'
+import { dialKind, DIAL_KINDS } from './SafetyPages'
+describe('dial kinds', () => {
+  it('every group in hotlines.json lands in a known kind; disaster, OFW and embassy lines are Emergency', () => {
+    for (const g of new Set((hotlinesData as { group: string }[]).map((e) => e.group))) expect(DIAL_KINDS).toContain(dialKind(g))
+    for (const g of ['Disaster', 'OFW', 'Embassy']) expect(dialKind(g)).toBe('Emergency')
+    expect(dialKind('Power and water')).toBe('Local')
+  })
+})

@@ -1,6 +1,6 @@
 # Admin dashboard plan (2026-10-21)
 
-Status: **APPROVED 2026-10-21** (Lloyd: carers read-only, history field names only, IDs masked + logged Show, all F1-F8 in one wave). 0021 applied live 2026-10-21 by Lloyd (recorded in schema_migrations; 12 audit triggers), admin-members redeployed (E1). Web merge to main waits for Lloyd's "merge".
+Status: **APPROVED 2026-10-21** (the owner: carers read-only, history field names only, IDs masked + logged Show, all F1-F8 in one wave). 0021 applied live 2026-10-21 by the owner (recorded in schema_migrations; 12 audit triggers), admin-members redeployed (E1). Web merge to main waits for the owner's "merge".
 Counts only; no names or health values in this file (public repo).
 
 ## 1. Where it lives
@@ -16,7 +16,7 @@ Inside the existing React app at `#admin/*`, the same sign-in, RLS and bantay.pa
 - Existing phone Admin page (members, PIN requests, usage, safety data, broadcast, import counts, system) stays as the Overview.
 
 ## 3. Functions (wave 1)
-| # | Page | What Lloyd can do | Data path |
+| # | Page | What the owner can do | Data path |
 |---|---|---|---|
 | F1 | Members | Table: name, handle, role, sign-in (PIN / Google / no phone), locked until + wrong tries, disabled, last sign-in, last seen, events 30 d. Actions: add member, add dependent, reset PIN, unlock, role, disable, invite. | `admin-members list` (+ `lockedUntil`, `fails`: small Edge change), `admin_usage_summary` |
 | F2 | Person profile | Edit birthdate, sex, blood type, address, phone, aliases, allergies, conditions, photo. Carers panel: who cares for this person, writer or read-only, add/remove. | `people` update (column grants exist for all these), `carers` |
@@ -36,10 +36,10 @@ Not in wave 1 (say if wanted): deleting a person or an account, merging two peop
 - Patterns from the mockup: pills (44 px min), chips, `tag ok/warn` for status, the existing confirm dialog for every destructive action, toast with Undo after confirm/reject (undo = set the previous status back).
 - Icons through the existing `<Icon>` (Tabler). Masked ID numbers in tabular numerals.
 
-## 5. Server changes (each: migration + `.down.sql` + begin/rollback rehearsal on live; apply only on Lloyd's "apply")
+## 5. Server changes (each: migration + `.down.sql` + begin/rollback rehearsal on live; apply only on the owner's "apply")
 - **M1 `0021_admin_audit.sql`:** table `audit_log(id bigint identity, at, actor uuid, tbl text, row_id uuid, person_id uuid, action text, fields text[])`. RLS on; select `is_admin()` only; no client insert/update/delete. AFTER insert/update trigger (SECURITY DEFINER, `search_path=''`) on `people`, `carers`, `person_identifiers`, `insurance_policies`, `documents`, `lab_results`, `prescription_items`, `medications`, `vaccinations`, `imaging_reports`, `conditions`, `allergies`. Stores **column names only, never values** (no health values, no ID numbers copied). Also `people_admin_read` (select on `people` using `is_admin()`): today `people_read` has no admin clause, so the admin cannot list dependents or other members' profile rows. Profile edits go straight to `people` under the existing grants so the audit row carries the admin as actor (the Edge Function's service-role writes would log no actor). RPC `admin_reveal_identifier(p_id uuid) returns text`: checks `is_admin()`, writes an action `reveal` row, returns the number. Down drops the triggers, RPC and table.
 - **M2 dropped** (Q1: keep admin carer links read-only).
-- **E1 `admin-members` list:** add `lockedUntil` and `fails` from `pin_attempts` (service role, already inside the function). Deploy is a gate (Lloyd).
+- **E1 `admin-members` list:** add `lockedUntil` and `fails` from `pin_attempts` (service role, already inside the function). Deploy is a gate (the owner).
 - Found while reading: the client calls `admin_assistant_usage` but no migration defines it. Not part of this work; listed as a follow-up.
 
 ## 6. Lanes (Sonnet 5.5 builds, own worktree each, commits; no two lanes touch the same file)
@@ -60,13 +60,13 @@ Order: L0 first (about 20 min), then LA-LD in parallel. Session-7 files are not 
 - Gates: `tsc` 0, full vitest, full Playwright, build. Then on live data after deploy: the queue count, the 7 duplicate pairs and the failed-scan count match a SQL count.
 - Screenshots stay local (git-ignored); none committed.
 
-## 8. Questions for Lloyd (answered 2026-10-21: 1 read-only, 2 field names only, 3 masked + logged Show, 4 all in one wave)
+## 8. Questions for the owner (answered 2026-10-21: 1 read-only, 2 field names only, 3 masked + logged Show, 4 all in one wave)
 1. Writer carer links: may the admin create links that can **edit** someone's records (needs M2), or keep admin links read-only as now?
 2. History: store changed **field names only** (recommended, no health values copied), or old and new values too?
 3. ID numbers: masked with a logged 30-second "Show" (recommended), or always masked in the dashboard?
 4. Scope: all of F1-F8 in one wave of 4 lanes (recommended, about 2-3 h), or Members + Profiles + Confirm queue first?
 
-## 9. Web UI redesign (2026-10-21, Lloyd: "make the admin dashboard a web UI and not a mobile app")
+## 9. Web UI redesign (2026-10-21, the owner: "make the admin dashboard a web UI and not a mobile app")
 Answers: v6 green in a web-admin layout (reference: classic admin template); own page `/admin`; desktop first, phone usable; Dashboard home with KPI tiles, charts, work panels and recent history; plus a proper Members area to see, update and edit each member.
 Mockup: `docs/admin-dashboard/mockup-web.html` (made-up numbers, no real names).
 

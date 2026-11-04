@@ -5,10 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({ markDue: vi.fn(async () => true), snooze: vi.fn(async () => 'snoozed') }))
 vi.mock('./useDueMeds', () => ({ markDue: h.markDue, markTaken: vi.fn(async () => 1) }))
 vi.mock('../health/reminderActions', async (orig) => ({ ...(await orig<typeof import('../health/reminderActions')>()), handleReminderAction: h.snooze }))
-vi.mock('./MyWeek', () => ({ default: () => <div data-testid="myweek" /> }))
 import NextUp, { SNOOZE_MIN } from './NextUp'
 import { SNOOZE_MIN as NATIVE_SNOOZE_MIN } from '../health/reminderActions'
-import SeeWeek from './SeeWeek'
 import { isNight } from './SimpleToday'
 import { isSnoozed } from './snoozeCard'
 import { pickNext, type DuePerson } from './nextPick'
@@ -16,7 +14,7 @@ import { pickNext, type DuePerson } from './nextPick'
 beforeEach(() => localStorage.clear())
 afterEach(() => { cleanup(); h.markDue.mockClear(); h.snooze.mockClear() })
 const now = new Date(2026, 9, 19, 9)
-const person = (status: 'missed' | 'upcoming'): DuePerson => ({ personId: 'me', name: 'Lloyd', isMe: true, at: 540, rel: 540, status, slots: [{ name: 'Losartan 50 mg', slot: '09:00', at: 540, medicationId: 'm1', key: 'm1', personId: 'me', dose: '1 tablet' }] })
+const person = (status: 'missed' | 'upcoming'): DuePerson => ({ personId: 'me', name: 'Rey', isMe: true, at: 540, rel: 540, status, slots: [{ name: 'Losartan 50 mg', slot: '09:00', at: 540, medicationId: 'm1', key: 'm1', personId: 'me', dose: '1 tablet' }] })
 const run = (status: 'missed' | 'upcoming') => render(<NextUp item={pickNext({ due: [person(status)], plan: null, storm: null }, now)} review={0} notify={() => undefined} />)
 
 describe('Today v7: In 10 min on the late dose card', () => {
@@ -45,17 +43,6 @@ describe('Today v7: In 10 min on the late dose card', () => {
 })
 
 it('the card snooze and the lock-screen snooze are the same minutes', () => expect(SNOOZE_MIN).toBe(NATIVE_SNOOZE_MIN))
-
-describe('See the week', () => {
-  it('My week is not drawn until the link is opened, and closes again', () => {
-    render(<SeeWeek />)
-    expect(screen.queryByTestId('myweek')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /See the week/ }))
-    expect(screen.getByTestId('myweek')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: /Hide the week/ }))
-    expect(screen.queryByTestId('myweek')).toBeNull()
-  })
-})
 
 describe('Simple mode night', () => {
   it('night is 9 PM to before 5 AM', () => {

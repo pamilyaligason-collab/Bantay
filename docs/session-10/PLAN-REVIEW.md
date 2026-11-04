@@ -19,7 +19,7 @@
 | 4 | Review silences a medicine | S4 | Covered. The deep review's SQL proof ("no scheduled med with zero pending reminders") is not in the acceptance criteria. Add it to S4. |
 | 5 | Usage near zero | Task 26 | Covered. S8 System should also show the weekly KPIs the deep review names: active members, home readings per week, on-time doses. |
 | 6 | Storm push | S5 | Covered. Dedupe is impossible in the current schema (H8). PAGASA scraping is a licence risk (M8). |
-| 7 | Consent / privacy | S6a / S6b | Partly covered. There is no stored consent, no breach plan, the processor list is incomplete, there is no Lloyd review of the notice, and Drive copies are ignored on erase (M7). |
+| 7 | Consent / privacy | S6a / S6b | Partly covered. There is no stored consent, no breach plan, the processor list is incomplete, there is no the owner review of the notice, and Drive copies are ignored on erase (M7). |
 | 8 | Jack gate | F5 (server) + S10 (client) | Covered. The live flip test is too thin (M5). |
 | 9 | Monitoring | S8 | Covered. S8 should add a Semaphore balance check (H4). |
 | 10 | Guided BP | S9 | Partly covered. The "Above target" copy has no owner (H6). Clinical copy and clinician sign-off are missing in Phase 2 (H6, H7). |
@@ -59,7 +59,7 @@ Three of them do need work:
   - `capacitor.config.ts` reads `CAP_SERVER_URL`, defaulting to production.
   - Build the test APK against the Cloudflare Pages branch preview URL.
   - Make `_shared/http.ts` accept a comma list in `ALLOWED_ORIGIN`. Today it allows a single origin (`origin === allowed`). Owner: S1b.
-  - Lloyd adds the preview origin to `ALLOWED_ORIGIN` and to the Supabase Auth redirect URLs for the test window, then removes it.
+  - The owner adds the preview origin to `ALLOWED_ORIGIN` and to the Supabase Auth redirect URLs for the test window, then removes it.
 
 **C2. Section 3.5 deploy order ignores old shells loading the new web.**
 "Database, functions, web, then APK" means every 2.2 APK runs the new bundle before it has the push plugin or the patched alarms.
@@ -72,11 +72,11 @@ Web push sends `{t}` and the service worker renders it. Android only shows a bac
 - **Also:** the template list is missing `system` (S8) and an id for the Q4 "Unwell" carer alert.
 
 **C4. The APK built in CI would silently lack FCM.**
-The plan says Lloyd builds with the offline keystore. In fact `.github/workflows/release-apk.yml` builds and signs the APK (`ANDROID_KEYSTORE_BASE64`). Meanwhile `android/app/build.gradle:67-72` only logs at info level when `google-services.json` is missing ("Push Notifications won't work").
+The plan says the owner builds with the offline keystore. In fact `.github/workflows/release-apk.yml` builds and signs the APK (`ANDROID_KEYSTORE_BASE64`). Meanwhile `android/app/build.gradle:67-72` only logs at info level when `google-services.json` is missing ("Push Notifications won't work").
 - **Change:** S1a owns `release-apk.yml` for this phase.
   - Add a step that writes the secret `GOOGLE_SERVICES_JSON_BASE64` to `android/app/google-services.json`.
   - Make release builds fail when the file is missing.
-  - Lloyd adds the GitHub secret. List it under section 3.4 Secrets.
+  - The owner adds the GitHub secret. List it under section 3.4 Secrets.
   - Fix the "offline keystore" wording in Task 15 and section 3.4.
 
 **C5. Section 3.1 PIN reset and section 3.2 S6b open an account-takeover path.**
@@ -135,7 +135,7 @@ This is `lock-alarm` and `lock-missed` in the mockup. CANON says the alarm fires
 - **Change:**
   - S3 schedules the +10 and +20 repeats with "I took it", "In 10 min" and "Skip today" actions, and cancels them when the dose is logged.
   - S1b makes the dose-watch window configurable (default 30 minutes to match CANON).
-  - Add an open question for Lloyd (30-minute window vs alert fatigue), or change the mockup copy.
+  - Add an open question for the owner (30-minute window vs alert fatigue), or change the mockup copy.
 
 **H3. The SOS offline path and device test 4 are wrong.**
 Device test 4 expects that with mobile data off, both contacts get the SMS through Semaphore. That cannot happen, because Semaphore needs the server call. The deep review's fix is native `SEND_SMS`, which a sideloaded APK may hold.
@@ -160,7 +160,7 @@ V1's "NEW critical" ranks two cheap steps first: (1) an in-app notice now, (2) a
 **H6. The single BP table has no owner.**
 "Above target" appears nowhere in `src` (grep: 0 hits). `vitals.ts:77` still says "130/80 or more is high".
 - **Change:** S9 owns `verdict.ts`, `readingPreview.ts` and the vitals copy for the CANON table, with hand-computed tests.
-- **Change:** add "clinician signs the S9 thresholds and copy" as a Phase 2 Lloyd gate at Tasks 16-17. Section 4.4 currently has clinician review only in Phase 3.
+- **Change:** add "clinician signs the S9 thresholds and copy" as a Phase 2 the owner gate at Tasks 16-17. Section 4.4 currently has clinician review only in Phase 3.
 
 **H7. The section 3.1 and S9 clinical copy for dangerous readings is too blunt.**
 The plan shows a red "get help now" sheet with Call 911 for every reading of 180/120 or more.
@@ -244,7 +244,7 @@ D-65 returns active members' names with no token. That is how existing members s
 - **Stored consent:** "Agreed when you joined, <date>" needs a stored `people.consent_at` and `consent_version`, with a backfill rule for existing members. A dependent's consent is given by the carer.
 - **Breach plan:** a one-page breach plan (NPC Circular 16-03, 72 hours) has no task.
 - **Erase:** it must state what happens to Drive copies (D-46 puts files in the family Drive) and why `audit_log` is kept.
-- **Lloyd gate:** Lloyd reviews `privacypolicy.html` before it drops "Draft".
+- **The owner gate:** The owner reviews `privacypolicy.html` before it drops "Draft".
 - **Sentry:** also drop console and XHR breadcrumbs, scrub `event.request.data`, and never enable Replay.
 
 **M8. S5 risks scraping PAGASA.**
@@ -252,14 +252,14 @@ R-discover says "No API or licence found; do not scrape". D-36's "CAP feed, CC B
 - **Change:** S5 ingests PAGASA only if R1 finds a published machine feed with terms. Otherwise it uses GDACS TC and Open-Meteo, with PAGASA as a link-out. In that case the `lock-storm` copy "Sent by itself from PAGASA" must change.
 
 **M9. No phase has a rollback (sections 2.4, 3.5, 4.4).**
-Add a rollback block to each Lloyd gate:
+Add a rollback block to each the owner gate:
 - **Web:** Cloudflare Pages "rollback to previous deployment". This also rolls back every APK, through `server.url`.
 - **Functions:** redeploy from the previous tag (tag main before each merge).
 - **Database:** the changes are additive, so leave the tables. Use `drop trigger` (0035) and `cron.unschedule` for jobs.
 - **Jack:** flip the env back to n8n.
 - **APK:** it cannot downgrade (versionCode), so plan a 2.3.1 revert build.
 
-**M10. Section 3.5's Lloyd apply list is incomplete.**
+**M10. Section 3.5's the owner apply list is incomplete.**
 Add:
 - the cron files (`ops/sql/alerts_cron.sql`, `erasure_cron.sql`, any `dose_watch_cron.sql` change);
 - the GitHub secret (C4);

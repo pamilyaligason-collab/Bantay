@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react'
 import type { LatLon } from '../location/geo'
 import type { Pin } from './logic'
 
-const ICON: Record<Pin['kind'], string> = { evac: 'E', health: '+', police: 'P', fire: 'F' }
 const dot = (cls: string, text = '') => L.divIcon({ className: '', html: `<span class="rm-pin ${cls}">${text}</span>`, iconSize: [36, 36], iconAnchor: [18, 18] })
 
 /** Leaflet map in its own chunk (dynamic import from RescueMap). Re-centre is a button in the parent via the `focus` counter. */
@@ -27,9 +26,9 @@ export default function MapView({ me, pins, onPick, focus }: { me: LatLon; pins:
     const g = layer.current
     if (!g) return
     g.clearLayers()
-    for (const p of pins) {
-      L.marker([p.lat, p.lon], { icon: dot(p.kind, ICON[p.kind]), title: p.name, alt: p.name }).on('click', () => onPick(p)).addTo(g)
-    }
+    pins.forEach((p, i) => {
+      L.marker([p.lat, p.lon], { icon: dot(p.kind, String(i + 1)), title: p.name, alt: p.name }).on('click', () => onPick(p)).addTo(g)
+    })
   }, [pins, onPick, me.lat, me.lon])
 
   useEffect(() => {

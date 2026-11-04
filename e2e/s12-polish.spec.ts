@@ -62,10 +62,10 @@ async function open(page: Page, hash: string) {
   await skipOnboarding(page)
   await page.goto('/#health')
   await expect(page.getByRole('heading', { name: 'Health', level: 1 })).toBeVisible()
-  await seed(page, 'bantay-health', 'people', [{ id: 'p1', name: 'loyd sevilla' }, { id: 'p2', name: 'Papa Ben' }, { id: 'p3', name: 'Lola Remy' }])
+  await seed(page, 'bantay-health', 'people', [{ id: 'p1', name: 'rey villar' }, { id: 'p2', name: 'Papa Ben' }, { id: 'p3', name: 'Lola Remy' }])
   await seed(page, 'bantay-health', 'readings', TESTS.map((test, i) => ({ personId: 'p1', takenAt: ago(60 + i), test, value: 226.74 - i * 7.11, unit: 'mg/dL' })))
   await page.goto('/#today') // Today opens the log database
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
   await seed(page, 'bantay-log', 'activity', [
     { personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: ago(0), source: 'manual' },
     { personId: 'p2', kind: 'check-in', minutes: null, steps: null, startedAt: ago(3), source: 'manual' }
@@ -144,7 +144,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test(`S7: the Lab results screen shows one decimal, never the raw stored value (${scheme})`, async ({ page }) => {
       await open(page, 'health/labs')
-      await page.getByRole('group', { name: 'Whose records' }).getByRole('button', { name: 'loyd' }).click() // the readings belong to this person
+      await expect(page.getByTestId('who-line')).toBeVisible() // H6: the person is chosen on the Health root, sub-screens show no chips; the readings belong to the first person (p1)
       const labs = page.getByTestId('labs-list')
       await expect(labs).toBeVisible()
       await expect(labs).not.toContainText('226.74')

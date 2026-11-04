@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, lastThree, moveWords, plainWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
+import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, overBy, lastThree, moveWords, plainWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
 import type { Reading } from './ranges'
 
 const r = (test: string, value: number, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: '2026-10-01T08:00:00Z', test, value, unit: 'mg/dL', ...extra })
@@ -160,9 +160,24 @@ describe('labRow glucose in mmol/L (1.H14)', () => {
   })
 })
 
+describe('overBy (H1)', () => {
+  it('two-sided range: the fraction outside, as a share of the range width', () => {
+    expect(overBy(labRow(r('alt', 90, { labLow: 10, labHigh: 50 })))).toBe(1) // (90-50)/(50-10)
+    expect(overBy(labRow(r('alt', 5, { labLow: 10, labHigh: 50 })))).toBeCloseTo(0.125) // (10-5)/40
+    expect(overBy(labRow(r('heart_rate', 102, { unit: 'bpm' })))).toBeCloseTo(0.05) // (102-100)/(100-60)
+  })
+  it('one-sided range: over the known edge, as a share of that edge', () => {
+    expect(overBy(labRow(r('ldl', 195, { labHigh: 130 })))).toBeCloseTo(0.5) // 65/130
+  })
+  it('in range and no range are null, never 0', () => {
+    expect(overBy(labRow(r('alt', 30, { labLow: 10, labHigh: 50 })))).toBeNull()
+    expect(overBy(labRow(r('mystery', 30)))).toBeNull()
+  })
+})
+
 describe('plainWords', () => {
   it('says how far a value sits from the usual range, in a sentence', () => {
-    expect(plainWords(115, { low: null, high: 55 })).toBe('115 is about 2 times the top of normal.')
+    expect(plainWords(108, { low: null, high: 55 })).toBe('108 is about 2 times the top of normal.')
     expect(plainWords(92, { low: 70, high: 100 })).toBe('92 is inside the normal range.')
     expect(plainWords(3.1, { low: 3.5, high: null })).toBe('3.1 is a little under the bottom of normal.')
     expect(plainWords(60, { low: null, high: 55 })).toBe('60 is a little over the top of normal.')

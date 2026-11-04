@@ -1,13 +1,13 @@
 # Session 6 handoff: purpose (research, plan and mockups first)
 
-No app code changes in this phase. Plan before code; Lloyd approves Parts 1-4 first.
+No app code changes in this phase. Plan before code; the owner approves Parts 1-4 first.
 Public repo: no real names, health values, screenshots or keys here. Members below are anonymised.
 
 ## Access for the next session
 - Supabase: project `wuakimpssycbtnmoexuc`; the connector reaches it (fixed 2026-10-20).
 - GitHub: Claude app installed on the repo (fixed 2026-10-20).
 - Google Drive works: folder "2026.10.19 screenshots" (22 phone shots) is readable.
-- Not reachable from the cloud: the vault, the laptop, and the two other projects' repos (ask Lloyd for the weather screen files or a screenshot).
+- Not reachable from the cloud: the vault, the laptop, and the two other projects' repos (ask the owner for the weather screen files or a screenshot).
 
 ## Part 1 evidence so far (last 30 days, as of 2026-10-20)
 | User | Role | Active days | Screen opens | Top screen |
@@ -37,7 +37,7 @@ Usage tracking started 2026-10-17, so the "30 days" window is really 4 days.
 - Totals: 10 profiles, 5 sign-ins, 5 push subscriptions, 593 lab results, 192 documents, 0 appointments.
 
 ## Next
-1. Decide with Lloyd: turning imported prescriptions into scheduled medicines is the first habit fix.
+1. Decide with the owner: turning imported prescriptions into scheduled medicines is the first habit fix.
 2. Read the 22 screenshots plus src/ screens; list what each does now.
 3. Primary-source licence/API table (PAGASA, PANaHON, NOAH, HazardHunterPH, Worldview, MedlinePlus Connect, openFDA/DailyMed, DOH/WHO, YouTube, Overpass).
 4. Then Parts 2-4 per the session brief.

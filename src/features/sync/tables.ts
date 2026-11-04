@@ -19,6 +19,10 @@ export interface TableSpec {
   serverId?: boolean
   /** Send as PATCH of an existing row: REST table name, and the payload field that names the row (matched to column id). */
   patch?: { table: string; idField: string }
+  /** An 'update' op on a row already sent: PATCH these payload fields by client_id (only columns the server lets a writer change). */
+  update?: { fields: string[] }
+  /** Someone's safety waits on this row: it goes ahead of every other table. */
+  urgent?: boolean
 }
 
 export const TABLES: Record<string, TableSpec> = {
@@ -33,7 +37,8 @@ export const TABLES: Record<string, TableSpec> = {
   meds_taken: { fields: ['personId', 'name', 'takenAt', 'medicationId', 'slot', 'skipped'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, pullOnly: ['markedBy', 'markedByName'] }, // 0039: the server stamps who marked it
   activity: {
     fields: ['personId', 'kind', 'minutes', 'steps', 'startedAt', 'source'],
-    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true,
+    update: { fields: ['steps'] } // only a sensor hour takes this path, always 60 minutes. 0003 grants update on kind, minutes, steps, started_at, source only: never person_id, so an upsert cannot do this
   },
   // Food, water and salt goals (0024). Entries are full-row upserts on client_id with a soft delete, like the plan rows. The goal is one row per person.
   food_entries: {
@@ -73,14 +78,14 @@ export const TABLES: Record<string, TableSpec> = {
   // SOS (0031): the id is client-made (no client_id); sendRow stamps sentAt on every send so the server can mark a late row. user_id comes from auth.uid().
   sos_events: {
     fields: ['id', 'personId', 'at', 'sentAt', 'lat', 'lon', 'gps', 'callTo', 'smsOpened'],
-    onConflict: 'id', resolution: 'ignore-duplicates', noClientId: true
+    onConflict: 'id', resolution: 'ignore-duplicates', noClientId: true, urgent: true
   },
   // The only later edits an SOS row takes (column grant): PATCH by id.
   sos_events_update: {
     fields: ['smsOpened', 'callTo', 'cancelledAt'],
-    onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'sos_events', idField: 'id' }
+    onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'sos_events', idField: 'id' }, urgent: true
   },
-  sos_acks: { fields: ['eventId', 'seenAt'], onConflict: 'event_id,user_id', resolution: 'ignore-duplicates', noClientId: true },
+  sos_acks: { fields: ['eventId', 'seenAt'], onConflict: 'event_id,user_id', resolution: 'ignore-duplicates', noClientId: true, urgent: true },
   // An admin edit of a hotline or place replaces the earlier edit of the same one.
   safety_overrides: { fields: ['kind', 'key', 'data', 'removed'], onConflict: 'kind,key', resolution: 'merge-duplicates', noClientId: true }
 }

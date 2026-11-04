@@ -1,7 +1,7 @@
 # Sign-in setup (lane A1)
 
 Two ways in: Google (invited emails only) and handle + 6-digit PIN (made by an admin). No values are stored in this repo.
-Everything below is done by Lloyd in the Supabase and Google consoles. About 25 minutes.
+Everything below is done by the owner in the Supabase and Google consoles. About 25 minutes.
 Official safety alerts ingestion (cron + Edge Function) is applied separately: see `docs/ALERTS.md`.
 
 ## 1. Apply the SQL
@@ -97,7 +97,7 @@ How it behaves:
 - Family > This phone: Turn on fingerprint or face sign-in, Not you? Switch person (signs out, keeps the picker), Forget this phone (clears the picker list and passkey flags, signs out). Only a local flag `bantay.passkey.<personId>` is stored, never key material.
 - Google errors that come back in the URL (`?error=` or `#error=`) are shown on the sign-in screen and removed from the address bar. "Signups not allowed" or a hook refusal reads "This Google account is not invited yet. Ask your family admin."
 
-### Passkeys (beta) dashboard step, Lloyd does this once
+### Passkeys (beta) dashboard step, the owner does this once
 1. Supabase, Authentication, Passkeys (beta): enable it.
 2. Relying party ID: `bantay.pages.dev`. Allowed origin: `https://bantay.pages.dev`.
 3. Nothing to change in the app: supabase-js 2.118 has passkeys on by default (the old `experimental.passkey` flag is ignored, so it is not set).

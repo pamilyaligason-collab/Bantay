@@ -1,0 +1,66 @@
+/* Lane CH compliance: Health sub-screens to their boards. */
+/* Visits */
+.vs-actrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; width: 100%; }
+.vs-hero [data-testid=no-visit] > .grow > b, .vs-nextrow .grow > b { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.vs-bring .vs-sub { display: block; font-size: 13px; line-height: 18px; margin-top: 0; }
+a.btn.vs-prep { display: flex; box-sizing: border-box; width: 100%; min-height: 56px; height: auto; font-size: 17px; margin: 0 0 12px; white-space: normal; text-align: center; }
+.vs-sumcard { display: flex; align-items: center; gap: 14px; padding: 14px; }
+.vs-sumcard .grow { display: block; min-width: 0; }
+.vs-sumcard .grow > * { display: block; }
+.vs-page { flex: none; width: 96px; height: 124px; box-sizing: border-box; padding: 8px; border-radius: 8px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 4px 10px rgba(40, 30, 10, 0.12); }
+.vs-page i { display: block; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--line); width: 85%; }
+.vs-page i:first-child { height: 7px; margin-top: 0; width: 60%; background: var(--tint-purple-ink, #6D4BC2); }
+.vs-page i:nth-child(4) { height: 16px; width: 100%; background: var(--warn-bg); }
+
+/* Labs list to its board (Labs.dc.html): result card with a subtitle, the three-colour bar with a "You" bubble, zone words, then the tick numbers, a trend box and two actions. */
+.lb-count { margin: 6px 4px 0; }
+.lb-results { margin: 24px 0 10px; }
+.lb-results .hd { margin: 0; }
+.lr-box { background: var(--card); border-radius: 20px; padding: 18px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(40, 30, 10, 0.06); }
+.lr-box .lr-card { padding: 0; margin: 0; background: none; box-shadow: none; border-radius: 0; }
+.lr-box .lr-nm { display: block; min-width: 0; }
+.lr-box .lr-name { display: block; font-size: 20px; line-height: 24px; }
+.lr-box .lr-sub { display: block; font-size: 13px; line-height: 18px; color: var(--ink2); }
+.lr-box .lr-verdict { margin-top: 0; }
+.lr-box .lr-val { font-size: 44px; line-height: 48px; margin-top: 12px; }
+.lr-box .lr-track { height: 14px; margin: 44px 6px 58px; background: linear-gradient(90deg, color-mix(in srgb, var(--tint-amber-ink) 30%, var(--card)) 0 var(--f), color-mix(in srgb, var(--tint-green-ink) 42%, var(--card)) var(--f) var(--t), color-mix(in srgb, var(--tint-red-ink) 32%, var(--card)) var(--t) 100%); }
+.lr-box .lr-band { display: none; }
+.lr-box .lr-you { top: 7px; width: 24px; height: 24px; margin: -12px 0 0 -12px; border: 0; box-shadow: 0 0 0 4px var(--card), 0 2px 6px rgba(40, 30, 10, 0.3); }
+.lr-box .lr-prev { top: 7px; }
+.lr-box .lr-you b { bottom: 30px; padding: 4px 10px; border-radius: 10px; background: var(--ok); color: var(--card); font-size: 14px; line-height: 18px; }
+.lr-box .lr-you.above b, .lr-box .lr-you.below b { background: var(--warn); }
+.lr-box .lr-you.none b { background: var(--ink2); }
+.lr-box .lr-zones { margin: -44px 6px 26px; font-size: 13px; font-weight: 700; }
+.lr-box .lr-zones i { background: none; padding: 0; text-align: left; color: var(--tint-amber-ink); }
+.lr-box .lr-zones i.n { background: none; color: var(--tint-green-ink); font-weight: 700; }
+.lr-box .lr-zones i:last-child:not(.n) { color: var(--tint-red-ink); text-align: right; }
+.lr-box .lr-tick { top: 48px; }
+[data-testid=lab-questions] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; }
+.lr-box .lr-over { margin: -6px 0 -4px; }
+.lr-box .lr-say { margin: 12px 0 0; font-size: 16px; line-height: 22px; font-weight: 500; }
+.lr-box .lr-rng { margin-top: 2px; font-size: 13px; line-height: 18px; }
+.lr-box .hv-before { display: block; margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: var(--bg, var(--card2)); font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink2); }
+.lr-box .lr-acts { margin-top: 14px; }
+.lr-box .lr-acts .btn, .lr-box .lr-acts .btn2 { min-height: 44px; padding-inline: 10px; font-size: 15px; }
+.lb-add { width: auto; min-width: 72px; min-height: 44px; margin-right: 12px; flex: none; }
+.lb-added { margin-right: 16px; font-weight: 600; color: var(--ink2); }
+.lb-open { color: var(--act); font-weight: 600; font-size: 15px; white-space: nowrap; }
+.lb-lnk { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; font-weight: 600; color: var(--green); }
+
+/* Move and food: the Food block (board MoveFood.dc.html) */
+.mf { margin-top: 8px; }
+.mf-log { display: flex; width: 100%; min-height: 52px; font-size: 17px; box-sizing: border-box; gap: 8px; margin-bottom: 12px; }
+.mf-card { background: var(--card); border-radius: 20px; padding: 16px; margin-top: 12px; box-shadow: 0 1px 2px rgba(40, 30, 10, 0.06); display: grid; gap: 10px; }
+.mf-h { margin: 0; font-size: 15px; font-weight: 600; }
+.mf-bars { position: relative; display: flex; align-items: flex-end; gap: 8px; height: 106px; }
+.mf-bars > span { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; }
+.mf-bars > span > i { display: block; width: 100%; border-radius: 6px; background: color-mix(in srgb, var(--tint-teal-ink) 45%, var(--card)); }
+.mf-bars > span > i.over { background: var(--warn); }
+.mf-bars b { font-size: 13px; line-height: 16px; color: var(--ink2); font-weight: 600; }
+.mf-limit { position: absolute; left: 0; right: 0; border-top: 1.5px dashed var(--warn); }
+.mf-bars > span > i.none { background: none; box-shadow: inset 0 0 0 1.5px var(--line); }
+.mf-bars > span > i.nonum { background: repeating-linear-gradient(135deg, var(--line) 0 3px, transparent 3px 6px); }
+.mf-bars > span > i.part { border-top: 3px dashed var(--card); }
+.lb-added { margin-right: 12px; font-weight: 600; opacity: 1; color: var(--ink2); }
+:root[data-narrow] .vs-page { display: none; } /* a drawing only: at 195 px it squeezes the words out of the card */
+:root[data-narrow] .vs-hero [data-testid=no-visit] > .grow > b, :root[data-narrow] .vs-nextrow .grow > b { font-size: 17px; }

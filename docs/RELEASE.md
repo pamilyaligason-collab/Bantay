@@ -4,7 +4,7 @@ APKs and `latest.json` live on GitHub Releases of `pamilyaligason-collab/Bantay`
 
 ## One-time: signing key
 
-Lloyd's step, never done by an agent. The key and its passwords never enter the repo, chat or vault.
+The owner's step, never done by an agent. The key and its passwords never enter the repo, chat or vault.
 
 1. `keytool -genkeypair -v -keystore D:\Claude\Bantay-keys\bantay-release.jks -alias bantay -keyalg RSA -keysize 4096 -validity 10000`
 2. Write `android/keystore.properties` (git-ignored) with `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
@@ -18,7 +18,7 @@ refuses to publish if it is not signed with the family key (`ANDROID_CERT_SHA256
 three files, and commits `public/latest.json` to main (Pages then serves `/get`). Phones on the APK see the update in
 the app. A failed run publishes nothing; fix and run it again.
 
-One-time setup, in repo Settings > Secrets and variables > Actions (Lloyd's step; the key never leaves GitHub secrets):
+One-time setup, in repo Settings > Secrets and variables > Actions (the owner's step; the key never leaves GitHub secrets):
 - secret `ANDROID_KEYSTORE_BASE64`: the `.jks` as base64; secret `ANDROID_KEYSTORE_PASSWORD`: its password (store and key are the same, PKCS12).
 - variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (public build values) and `ANDROID_CERT_SHA256`
   (`bd95d4fd50fabcbf17d3d0979e8fb46e47a3daf46ccaf080ae754fa9f66cc218`, the certificate of the v2.1.0 APK).

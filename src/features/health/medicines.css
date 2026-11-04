@@ -1,12 +1,12 @@
 /* Medicines screen, review line, edit sheet, undo toast (lane M2). App tokens only. */
 .md-addrow { display: flex; justify-content: flex-end; margin: 4px 0 0; }
-.md-add { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--btn); color: var(--btn-fg); font: inherit; font-size: 16px; font-weight: 700; }
+.md-add { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; min-width: 44px; padding: 0 4px; border: 0; background: none; color: var(--green); font: inherit; font-size: 17px; font-weight: 600; cursor: pointer; }
 .md-sech { display: flex; align-items: baseline; justify-content: space-between; margin-top: 16px; }
 .md-sech .hd { margin-bottom: 8px; }
-.md-dose { align-items: center; flex-wrap: wrap; }
-.md-tm { flex: none; width: 70px; font-weight: 700; font-size: 15px; }
+.md-dose { align-items: center; flex-wrap: nowrap; gap: 10px; }
+.md-tm { font-weight: 700; font-size: 14px; color: var(--ink2); }
 .md-main { display: flex; flex-direction: column; min-width: 0; flex: 1 1 120px; overflow-wrap: anywhere; }
-.md-rowacts { display: flex; gap: 8px; flex-basis: 100%; margin-left: 82px; }
+.md-rowacts { display: flex; gap: 8px; flex: none; }
 .md-pill { min-height: 48px; min-width: 56px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--fill, var(--card2)); color: var(--act); font: inherit; font-size: 16px; font-weight: 700; cursor: pointer; }
 .md-pill.md-pri { background: var(--btn); color: var(--btn-fg); }
 .md-pill:disabled { opacity: 0.5; }
@@ -20,7 +20,7 @@ div.md-medrow { cursor: default; }
 .md-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .md-review { display: flex; flex-direction: column; gap: 8px; margin: 0 12px 12px; padding: 10px 12px; border-radius: 12px; background: var(--warn-bg); color: var(--ink); font-size: 15px; }
 .md-rv { display: flex; flex-wrap: wrap; gap: 8px; }
-.md-check { display: grid; gap: 2px; margin: 8px 0 4px; text-decoration: none; color: var(--ink); background: var(--warn-bg); }
+.card.md-check { display: grid; gap: 2px; margin: 8px 0 4px; text-decoration: none; color: var(--ink); background: var(--warn-bg); }
 .md-form { padding-bottom: 4px; }
 .md-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .md-two > div { display: grid; gap: 6px; min-width: 0; }
@@ -55,7 +55,11 @@ div.md-medrow { cursor: default; }
 .md-plink { color: var(--ink); text-decoration: none; min-height: 48px; justify-content: center; }
 a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .md-weekline { margin: 12px 4px 0; }
-.md-prog { display: inline-flex; align-items: center; gap: 8px; }
+.md-prog { display: inline-flex; align-items: center; gap: 10px; }
+.md-ringbox { position: relative; display: inline-flex; width: 64px; height: 64px; }
+.md-ringn { position: absolute; inset: 0; display: grid; place-items: center; font-size: 16px; color: var(--ink); }
+.wl + .md > .md-addrow { margin-top: -34px; }
+.wl + .md > .md-addrow .md-add { position: relative; top: -22px; } /* measured: the collapsed margin left the 44 px box centre 22 px under the Me line centre */ /* board: Add is a text link in the header row, its 44 px box centred on the 16 px Me line (4 px wl margin + this = -30) */
 .md-rtrack { fill: none; stroke: var(--line); stroke-width: 6; }
 .md-rarc { fill: none; stroke: var(--ok); stroke-width: 6; stroke-linecap: round; }
 .md-detail { display: flex; flex-direction: column; gap: 12px; }
@@ -65,7 +69,7 @@ a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify
 .md-dl:first-child { border-top: 0; padding-top: 0; }
 .md-dl span { color: var(--muted); }
 .md-dl b { text-align: right; overflow-wrap: anywhere; }
-.md-paused { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn); }
+.card.md-paused { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--warn-bg); box-shadow: inset 0 0 0 1px var(--warn); }
 .md-paused .grow { display: flex; flex-direction: column; flex: 1 1 160px; }
 .md-detail .md-sech { margin-top: 4px; }
 .md-rem { display: grid; gap: 14px; }
@@ -86,3 +90,6 @@ a.md-pill, .md-pill.md-link { display: inline-flex; align-items: center; justify
 .md-legend, .md-miss { margin: 8px 0 0; }
 @media (prefers-reduced-motion: reduce) { .md-strip i { transition: none; } }
 .md-tag svg { vertical-align: -2px; margin-right: 4px; }
+
+.md-empty-acts { display: grid; gap: 8px; width: 100%; }
+.md-empty-acts .btn, .md-empty-acts .btn2 { min-height: 44px; min-width: 140px; }

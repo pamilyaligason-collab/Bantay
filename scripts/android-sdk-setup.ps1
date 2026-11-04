@@ -1,5 +1,5 @@
 # Family Bantay - one-time Android SDK setup for the APK build (docs/NATIVE.md). Windows PowerShell 5.1.
-# Lloyd reads and accepts Google's Android SDK licences (type y), then the SDK parts install. Stops at the first failure.
+# The owner reads and accepts Google's Android SDK licences (type y), then the SDK parts install. Stops at the first failure.
 $ErrorActionPreference = 'Stop'
 $env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot'
 $env:ANDROID_HOME = 'D:\Android\Sdk'   # outside AppData: the Claude desktop app's writes under AppData are redirected

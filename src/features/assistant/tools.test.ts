@@ -160,18 +160,18 @@ describe('sourceLink', () => {
 })
 
 describe('personFor first names, nicknames and aliases', () => {
-  const fam = [{ id: 'a', name: 'Rosalino Roc', aliases: ['Papang'] }, { id: 'b', name: 'Maria Roc', aliases: ['Ma'] }, { id: 'c', name: 'Rosa Cruz' }]
+  const fam = [{ id: 'a', name: 'Ramon Villar', aliases: ['Papang'] }, { id: 'b', name: 'Maria Villar', aliases: ['Ma'] }, { id: 'c', name: 'Rosa Cruz' }]
   it('matches case-insensitively by first name, alias and nickname', () => {
-    expect(personFor('rosalino', fam)?.id).toBe('a')
+    expect(personFor('ramon', fam)?.id).toBe('a')
     expect(personFor('PAPANG', fam)?.id).toBe('a')
     expect(personFor('Ma', fam)?.id).toBe('b')
-    expect(personFor('Lino', fam)).toBeUndefined() // nickname-style hit is a suggestion only
-    expect(personMatches('Lino', fam).map((p) => p.id)).toEqual(['a'])
-    expect(personFor('Rosalino Roc', fam)?.id).toBe('a')
+    expect(personFor('Mon', fam)).toBeUndefined() // nickname-style hit is a suggestion only
+    expect(personMatches('Mon', fam).map((p) => p.id)).toEqual(['a'])
+    expect(personFor('Ramon Villar', fam)?.id).toBe('a')
   })
   it('is undefined when unclear, with all candidates listed', () => {
-    expect(personFor('Roc', fam)).toBeUndefined()
-    expect(personMatches('Roc', fam).map((p) => p.id)).toEqual(['a', 'b'])
+    expect(personFor('Villar', fam)).toBeUndefined()
+    expect(personMatches('Villar', fam).map((p) => p.id)).toEqual(['a', 'b'])
     expect(personFor('', fam)).toBeUndefined()
     expect(personFor('Zed', fam)).toBeUndefined()
   })

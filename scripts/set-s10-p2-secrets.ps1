@@ -1,4 +1,4 @@
-# Family Bantay - session 10 Phase 2 secrets. Lloyd runs it once from this worktree, BEFORE scripts\golive-s10-p2.ps1:
+# Family Bantay - session 10 Phase 2 secrets. The owner runs it once from this worktree, BEFORE scripts\golive-s10-p2.ps1:
 #   powershell -ExecutionPolicy Bypass -File scripts\set-s10-p2-secrets.ps1
 # Makes ERASE_CRON_SECRET (48 chars) and FAMILY_INVITE_TOKEN (32 chars) from the OS random generator, sets them as function secrets,
 # stores the erase secret in Vault as erase_cron_secret (the erasure cron reads it there), and writes the invite link to a file

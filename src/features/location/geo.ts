@@ -4,7 +4,7 @@ export interface LatLon {
 }
 export interface Loc extends LatLon {
   source: 'gps' | 'last' | 'home'
-  /** when the fix was taken (source 'last') */
+  /** when the fix was taken (sources 'gps' and 'last') */
   at?: number
 }
 

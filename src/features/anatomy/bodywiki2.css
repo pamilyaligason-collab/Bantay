@@ -1,0 +1,6 @@
+.an-srcs { list-style: none; margin: 0; padding: 0; }
+.an-srcs a { display: flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 600; color: var(--link); }
+
+/* Call 911 under the emergency list: solid red, 48 px, white on --danger-bg: 5.1:1 light #C8372D, 6.6:1 dark #B3261E */
+.an-info a.btn.an-call { display: flex; gap: 8px; width: 100%; min-height: 48px; margin: 10px 0 4px; background: var(--danger-bg); color: #fff; font-size: 17px; font-weight: 700; text-decoration: none; box-sizing: border-box; }
+.an-rep { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--card2); color: var(--ink2); font-size: 12px; font-style: normal; font-weight: 700; white-space: nowrap; }

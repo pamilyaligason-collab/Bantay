@@ -1,21 +1,38 @@
 import { useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useDialog } from '../docs/useDialog'
-import { latestByTest } from '../health/ranges'
+import { pickAttention } from '../health/attention'
+import { metricLabel } from '../health/model'
+import { latestByTest, type Range, type Reading } from '../health/ranges'
 import { useHealthData } from '../records/useHealthData'
 import { useMedications } from '../health/useMedications'
 import { articleHref } from '../health/library/medline'
 import { DRUG_NUDGE_NOTE, medicinesActingHere, SYSTEM_INFO, yourNumbers } from './systemInfo'
 import content from './content.json'
 import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
-import { systemCounts, systemStatus, type SystemCount } from './status'
-import { Carousel, GroupedList, LargeTitle, Row } from '../look'
+import { systemCounts, systemOf, systemStatus, type SystemCount } from './status'
+import { Carousel, GroupedList, LargeTitle, Row, Section } from '../look'
+import { Call911, useAbroad } from '../safety/Call911'
+import { Icon } from '../shell/Icon'
+import careJson from './systemCare.json'
 import './anatomy.css'
+import './bodywiki.css'
+import './bodywiki2.css'
 
 export interface Part { id: string; system: string; name: string; what: string; illnesses: string[]; warnings: string[]; prevention: string[] }
 const PARTS = content.parts as Part[]
 const SYSTEMS = content.systems
+const SYSTEM_CARE = careJson as { checked: string; reportedNote: string; systems: Record<string, SystemCare> }
+export interface SystemCare { illnesses: string[]; emergency: string[]; doctor: string[]; prevention: string[]; reported?: string[]; sources: { name: string; url: string }[] }
 const NONE: SystemCount = { total: 0, flagged: 0, ok: 0 }
+
+/** The call-out on the figure: the result the Health hero leads with, when it is out of range and belongs to a body system. Same pick, same label. */
+export function calloutOf(readings: Reading[], familyOf: (r: Reading) => Range | undefined): { sys: string; text: string } | null {
+  const a = pickAttention(latestByTest(readings), familyOf, new Date())
+  const sys = a ? systemOf(a.reading.test) : null
+  if (!a || !sys || (a.row.pos !== 'above' && a.row.pos !== 'below')) return null
+  return { sys, text: `${metricLabel(a.reading.test)} ${a.row.pos === 'above' ? 'high' : 'low'}` }
+}
 
 
 function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
@@ -51,12 +68,14 @@ function PartSheet({ part, onClose }: { part: Part; onClose: () => void }) {
 
 /** #health/body: a layered 2D body. Pick a system, tap a part (on the body or in the list) for a plain-English sheet. */
 export default function ExploreScreen() {
+  const abroad = useAbroad()
   const [sysId, setSysId] = useState(SYSTEMS[0]!.id)
   const [open, setOpen] = useState<Part | null>(null)
   const { readings, thresholds, personId } = useHealthData()
   const counts = systemCounts(latestByTest(readings), (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`))
   const meds = useMedications(personId)
   const info = SYSTEM_INFO[sysId]
+  const care = SYSTEM_CARE.systems[sysId]
   const nums = yourNumbers(sysId, latestByTest(readings))
   const acting = medicinesActingHere(meds, sysId)
   const parts = PARTS.filter((p) => p.system === sysId)
@@ -65,47 +84,15 @@ export default function ExploreScreen() {
   const here = counts[sysId] ?? NONE
   const status = systemStatus(here)
   const [fx, fy] = FOCUS[sysId]!
+  const call = calloutOf(readings, (r) => thresholds.find((t) => t.key === `${personId}:${r.test}`))
 
   return (
     <>
-      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Body wiki" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Body wiki" actions={<span className="an-src-tag">MEDLINEPLUS</span>} />
       <p className="sub an-hint">Tap a spot to learn how that part works.</p>
-      <Carousel label="Body systems" testId="body-systems">
-        {SYSTEMS.map((s) => {
-          const c = counts[s.id] ?? NONE
-          const n = c.flagged || c.total
-          return (
-            <button key={s.id} type="button" className="an-chip" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
-              {s.label}
-              {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
-            </button>
-          )
-        })}
-      </Carousel>
-      <div className="an-top">
-        <h2 className="an-sys">{label}</h2>
-        {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
-      </div>
-      {info && (
-        <section className="card an-info" aria-label={`About ${label}`} data-testid="system-info">
-          <p className="an-what">{info.what[0]}<br />{info.what[1]}</p>
-          {(nums || info.metric) && (
-            <p className="an-line"><b>Your numbers</b>{' '}
-              {nums ? <a href={`#health/metric/${nums.code}`}>{nums.text}</a> : info.metric ? <a href={`#health/metric/${info.metric}`}>Open the chart</a> : null}
-            </p>
-          )}
-          {acting.length > 0 && (
-            <div className="an-line" data-testid="acting-here">
-              <b>Medicines that act here</b>
-              <ul>{acting.map((a) => <li key={a.name}>{a.name}: {a.effect}</li>)}</ul>
-              <small className="an-note">{DRUG_NUDGE_NOTE}</small>
-            </div>
-          )}
-          <p className="an-line"><a href={articleHref(info.learnKind, info.learn)}>Learn more: {info.learn}</a></p>
-        </section>
-      )}
-      <div className="an-main">
+      <div className="an-main" data-hero>
         <div className="an-stage" data-sys={sysId}>
+          {call && <button type="button" className="an-callout" data-testid="an-callout" onClick={() => setSysId(call.sys)}>{call.text}</button>}
           <div className="an-fig" style={{ '--vw': vw, '--vh': vh, aspectRatio: `${vw} / ${vh}` } as CSSProperties}>
           <svg className={vh < 300 ? 'an-svg an-crop' : 'an-svg'} viewBox={`${vx} ${vy} ${vw} ${vh}`} role="group" aria-label={`${label}, tap a dot`}>
             <use href={`${SPRITE}#body`} className={OWN_BODY.has(sysId) ? 'an-shell an-off' : 'an-shell'} />
@@ -132,15 +119,72 @@ export default function ExploreScreen() {
             />
           )))}
           </div>
+          {status && <span className="an-pill" data-tone={status.tone} data-testid="sys-status">{status.text}</span>}
         </div>
       </div>
-      <h2 className="an-h2">Parts you can open</h2>
-      <GroupedList label="Parts you can open">
-        {parts.map((p) => <Row key={p.id} title={p.name} onClick={() => setOpen(p)} />)}
-      </GroupedList>
-      <p className="an-note">{content.credits}</p>
-      <p className="an-note">{content.art}</p>
-      <p className="an-note">{content.disclaimer}</p>
+      <Section title="Body systems" meta={String(SYSTEMS.length)}>
+        <Carousel label="Body systems" testId="body-systems">
+          {SYSTEMS.map((s) => {
+            const c = counts[s.id] ?? NONE
+            const n = c.flagged || c.total
+            return (
+              <button key={s.id} type="button" className="an-chip" aria-pressed={s.id === sysId} aria-label={s.label} onClick={() => setSysId(s.id)}>
+                {s.label}
+                {n > 0 && <span className="an-badge" data-n={n} data-tone={c.flagged ? 'warn' : 'none'} aria-hidden="true" />}
+              </button>
+            )
+          })}
+        </Carousel>
+      </Section>
+      {info && (
+        <section className="card an-info" aria-label={`About ${label}`} data-testid="system-info" data-sys={sysId}>
+          <div className="an-info-h"><span className="an-ic" aria-hidden="true" /><h2 className="an-sys">{label}</h2></div>
+          <h3 className="an-lbl">What it does</h3>
+          <p className="an-what">{info.what[0]} {info.what[1]}</p>
+          <h3 className="an-lbl">Your numbers</h3>
+          {nums ? (
+            <a className="an-nums" href={`#health/metric/${nums.code}`} data-tone={here.flagged ? 'warn' : 'none'}>{nums.text}<Icon name="chev" size={16} /></a>
+          ) : info.metric ? (
+            <a className="an-nums" href={`#health/metric/${info.metric}`}>Open the chart<Icon name="chev" size={16} /></a>
+          ) : <p className="an-none">No results for this part yet.</p>}
+          <h3 className="an-lbl">Medicines that act here</h3>
+          {acting.length > 0 ? (
+            <div data-testid="acting-here">
+              <ul className="an-bl">{acting.map((a) => <li key={a.name}><i />{a.name}: {a.effect}</li>)}</ul>
+              <small className="an-note">{DRUG_NUDGE_NOTE}</small>
+            </div>
+          ) : <p className="an-none">None of yours</p>}
+          {care && (
+            <div data-testid="system-care">
+              <h3 className="an-lbl">Common illnesses</h3>
+              <ul className="an-bl" data-kind="ill">{care.illnesses.map((t) => <li key={t}><i />{t}</li>)}</ul>
+              <h3 className="an-lbl an-red" data-testid="care-911">{abroad ? 'Get emergency help if:' : 'Get emergency help (911) if:'}</h3>
+              <ul className="an-bl" data-kind="911">{care.emergency.map((t) => <li key={t}><i />{t}{care.reported?.includes(t) && <em className="an-rep">As reported</em>}</li>)}</ul>
+              <Call911 className="btn an-call" testId="care-call-911" />
+              <h3 className="an-lbl an-amber" data-testid="care-doctor">Call a doctor if</h3>
+              <ul className="an-bl" data-kind="doctor">{care.doctor.map((t) => <li key={t}><i />{t}{care.reported?.includes(t) && <em className="an-rep">As reported</em>}</li>)}</ul>
+              <h3 className="an-lbl">Prevention</h3>
+              <ul className="an-bl" data-kind="prevent">{care.prevention.map((t) => <li key={t}><i />{t}{care.reported?.includes(t) && <em className="an-rep">As reported</em>}</li>)}</ul>
+              <p className="an-note">Sources. {SYSTEM_CARE.checked} Not a diagnosis.</p>
+              {care.reported && care.reported.length > 0 && <p className="an-note" data-testid="care-reported">{SYSTEM_CARE.reportedNote}</p>}
+              <ul className="an-srcs" data-testid="care-sources">
+                {care.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.name}</a></li>)}
+              </ul>
+            </div>
+          )}
+          <p className="an-line"><a href={articleHref(info.learnKind, info.learn)}>Learn more: {info.learn}</a></p>
+        </section>
+      )}
+      <Section title="Parts" meta={`${parts.length} of ${PARTS.length}`}>
+        <GroupedList label="Parts you can open">
+          {parts.map((p) => <Row key={p.id} title={p.name} onClick={() => setOpen(p)} />)}
+        </GroupedList>
+      </Section>
+      <footer className="an-foot">
+        <p className="an-note">{content.credits}</p>
+        <p className="an-note">{content.art}</p>
+        <p className="an-note">{content.disclaimer}</p>
+      </footer>
       {open && <PartSheet part={open} onClose={() => setOpen(null)} />}
     </>
   )

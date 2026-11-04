@@ -7,7 +7,7 @@ import type { FamilyPerson } from './roster'
 
 const person = (id: string, name: string) => ({ id, name, isMe: false, phone: null, photoPath: null, thumb: null, birthdate: null }) as FamilyPerson
 const joy = person('joy', 'Ate Joy')
-const ask = { person: joy, med: { name: 'Cefixime' } as Medication, days: 11 }
+const ask = { person: joy, med: { name: 'Ibuprofen' } as Medication, days: 11 }
 const item = (kind: string, extra: Partial<PersonFocus> = {}): PersonFocus => ({ person: joy, focus: { kind } as PersonFocus['focus'], missedDoses: [], asks: [], alertIds: [], ...extra })
 const phone = (id: string, personId: string): AlertRow => ({ id, personId, kind: 'phone_health', template: 'phone_health', ref: null, createdAt: '', seenAt: null } as unknown as AlertRow)
 

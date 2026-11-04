@@ -46,7 +46,7 @@ test('Play hub: the games, the legal line, and a played game shows in Played tod
   }
   await expect(page.getByText('Pairs found: 6 of 6')).toBeVisible()
   await expect(page.getByText(/found them all|sharp eye|Every pair is found/)).toBeVisible()
-  await page.getByRole('button', { name: 'Back to Play' }).click()
+  await page.getByRole('link', { name: 'Back to Play' }).click()
   await expect(page.getByText('Played today: 1 game')).toBeVisible()
 })
 

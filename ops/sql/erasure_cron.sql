@@ -1,4 +1,4 @@
--- Schedule for the erase Edge Function (session 10 phase 2, lane S6b): daily 03:10 Manila (19:10 UTC). WRITTEN ONLY: Lloyd applies it AFTER migration 0034.
+-- Schedule for the erase Edge Function (session 10 phase 2, lane S6b): daily 03:10 Manila (19:10 UTC). WRITTEN ONLY: the owner applies it AFTER migration 0034.
 -- Deploy with --no-verify-jwt; the secret is the gate. Function secret: ERASE_CRON_SECRET (32+ chars). Redeploy `erase` whenever the secret changes (ML-29).
 -- Store the same secret in vault first (SQL editor only):  select vault.create_secret('<secret>', 'erase_cron_secret');
 create extension if not exists pg_cron;

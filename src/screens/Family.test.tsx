@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const acting = vi.hoisted(() => ({ on: false }))
 vi.mock('../features/auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+vi.mock('../features/sync/SyncStatus', () => ({ SyncStatus: () => null })) // HeadActions shows it; it needs the sync module
 vi.mock('../features/viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActing: () => ({ acting: acting.on, personId: acting.on ? 'p9' : null, name: 'Mama' }) }))
 vi.mock('../features/family/Memories', () => ({ default: () => <div data-testid="memories-body" /> }))
 import type { FamilyPerson } from '../features/family/roster'
@@ -60,13 +61,13 @@ describe('messagesPreview', () => {
 })
 
 describe('Family root', () => {
-  it('shows View only instead of the I am OK button, and no Needs you now, while acting as someone', async () => {
+  it('has no I am OK button at all (F4: it lives in My day on Today), and no Needs you now, while acting as someone', async () => {
     acting.on = true
     location.hash = '#family'
     render(<Family />)
     await screen.findByTestId('msgs')
     expect(screen.queryByTestId('needs')).toBeNull()
-    expect(screen.getByRole('button', { name: "I'm OK, view only" })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /I'm OK/ })).toBeNull()
   })
 
   it('Together lists Plan, Messages, Papers and Memories, each a link to its own page', async () => {

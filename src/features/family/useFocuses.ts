@@ -4,7 +4,7 @@ import { ldb, type MedTaken, type Medication } from '../log/store'
 import { hdb } from '../records/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { useActing, useViewedVisibleIds } from '../viewas/viewAs'
-import { reviewAsks, useCarerIds, type ReviewAsk } from './CarerCards'
+import { reviewAsks, showsAsCard, useCarerIds, type ReviewAsk } from './CarerCards'
 import { todayView } from './MemberPage'
 import { personFocus, sortByFocus, type Focus } from './personFocus'
 import { checkInLabel, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
@@ -39,13 +39,17 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
     const unwell = new Set(alerts.filter((a) => a.kind === 'mood_unwell' && a.seenAt == null && a.personId).map((a) => a.personId))
     const items = people.map((person): PersonFocus => {
       const tv = todayView({ ...d, takes: d.takes.filter((t) => t.personId === person.id), personId: person.id, now }) // a name-only take of one person must not clear another person's dose
+      const mine = d.takes.filter((t) => t.personId === person.id)
+      // A server dose_missed alert for today is addressed to carers only (carer_alerts), so holding one proves the right to read this person's takes: never hide a missed dose behind "No data" then, even for a read-only carer with no take rows yet.
+      const hasMissedAlert = alerts.some((a) => a.kind === 'dose_missed' && a.personId === person.id && showsAsCard(a.ref, now))
+      const noTakes = !person.isMe && mine.length === 0 && !writable.includes(person.id) && !hasMissedAlert
       const missed = tv.doses.filter((x) => x.word === 'Missed')
       const asks = !acting && writable.includes(person.id) ? reviewAsks(d.meds, [person], now) : [] // answering needs write access, never for yourself
       const focus = personFocus(person, {
         unwell: unwell.has(person.id), missed, due: tv.doses.filter((x) => x.word === 'Due now'), later: tv.doses.filter((x) => x.word === 'Later').length,
-        asks, checkIn: last[person.id], canMark: !acting && writable.includes(person.id), now
+        asks, checkIn: last[person.id], canMark: !acting && writable.includes(person.id), noTakes, now
       })
-      const missedDoses = missed.flatMap((m) => {
+      const missedDoses = noTakes ? [] : missed.flatMap((m) => {
         const [k, slot] = m.key.split('|')
         const med = d.meds.find((x) => x.personId === person.id && (x.serverId ?? x.clientId ?? String(x.id ?? x.name)) === k)
         return med && slot ? [{ med, slot, time: m.time }] : []

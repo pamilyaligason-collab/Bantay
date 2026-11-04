@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
@@ -30,13 +30,13 @@ describe('Visits (v13)', () => {
     render(<Visits />)
     const card = await screen.findByTestId('no-visit')
     expect(card.textContent).toContain('No visit booked')
-    expect(card.querySelector('a.btn')!.getAttribute('href')).toBe('#family/plan')
-    expect(card.textContent).toContain('Plan a visit')
-    expect(card.querySelector('.vs-chip')).toBeNull()
+    expect(screen.getByTestId('vs-hero').querySelector('a.btn')!.getAttribute('href')).toBe('#family/plan')
+    expect(screen.getByTestId('vs-hero').textContent).toContain('Plan a visit')
+    expect(screen.getByTestId('vs-hero').querySelector('.vs-chip')).toBeNull()
     await db.kv.put({ key: 'visits.questions.p1', value: ['Why is my sugar up?', 'Dose?'] })
     cleanup()
     render(<Visits />)
-    await waitFor(() => expect(screen.getByTestId('no-visit').textContent).toContain('2 questions ready'))
+    await waitFor(() => expect(screen.getByTestId('vs-hero').textContent).toContain('2 questions ready'))
   })
 
   it('empty lists say so; nothing is invented', async () => {
@@ -44,7 +44,17 @@ describe('Visits (v13)', () => {
     await screen.findByTestId('no-visit')
     expect(screen.getByText('Nothing booked')).toBeTruthy()
     expect(screen.getByText('No past visits yet')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Prepare visit summary' }).getAttribute('href')).toBe('#health/summary')
+    expect(screen.getByTestId('vs-summary').querySelector('a')!.getAttribute('href')).toBe('#health/summary')
     expect(screen.getByLabelText('A question for the doctor')).toBeTruthy()
+  })
+
+  it('3 questions: the hero says so; marking one Asked moves it to Asked before', async () => {
+    await db.kv.put({ key: 'visits.questions.p1', value: ['A?', 'B?', 'C?'] })
+    render(<Visits />)
+    await waitFor(() => expect(screen.getByTestId('vs-hero').textContent).toContain('3 questions ready'))
+    fireEvent.click(screen.getByRole('button', { name: 'Asked: B?' }))
+    await waitFor(() => expect(screen.getByTestId('vs-hero').textContent).toContain('2 questions ready'))
+    expect(screen.getByTestId('vs-asked').textContent).toContain('B?')
+    expect(within(screen.getByTestId('vs-bring')).getAllByRole('checkbox').every((c) => c.getAttribute('aria-checked') === 'false')).toBe(true)
   })
 })

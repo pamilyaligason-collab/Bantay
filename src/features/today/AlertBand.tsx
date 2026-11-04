@@ -16,7 +16,7 @@ export default function AlertBand() {
   const ref = place ? alertRef(place) : null
   const a = zoneAlert(alerts, ref)
   if (!a) return null
-  const who = affectsUs(a, ref)
+  const who = affectsUs(a, ref, now) // no place: a band labelled Warning always takes the soft line for a quiet quake
   const f = freshness(newestChecked(alerts), now)
   return (
     <section className="td-alertband" role="region" aria-label="Active warning">

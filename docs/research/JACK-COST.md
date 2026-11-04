@@ -6,7 +6,7 @@ Prices are per 1M tokens, taken from OpenRouter's live catalog (`/api/v1/models`
 
 ## Verdict (read this first)
 
-1. **Lloyd's belief is wrong on both counts. Image processing does not dominate.**
+1. **The owner's belief is wrong on both counts. Image processing does not dominate.**
    - **Inside one scan:** the image is about 10% of the cost. About 90% is the JSON the model writes back, billed at the output price (thinking tokens are billed as output too). A Gemini 3 image costs a flat 1,120 input tokens, about $0.00034 per page. The output for a lab page is about $0.0035.
    - **Across the app:** at family volume, Talk to Jack (chat) costs more per month than scanning.
 2. **The whole thing costs about $1 a month today [E].** Near the daily caps the worst case is about $12. Nothing logs tokens or cost anywhere, so these numbers are estimates until Phase 0 measures them.
@@ -17,7 +17,7 @@ Prices are per 1M tokens, taken from OpenRouter's live catalog (`/api/v1/models`
 4. **On-device OCR (ML Kit text recognition) is free and works, but saves almost nothing by itself.**
    - **Why:** OCR text for a lab page is about as many input tokens as the image, and output tokens are the cost.
    - **When it pays:** only when paired with a text-only model such as `deepseek/deepseek-v4-flash` (ZDR at about $0.09 / $0.18). That saves about $0.30 a month at most.
-   - **Recommendation:** park it. Build it only if Lloyd wants offline capture or an instant on-device preview, not to save money.
+   - **Recommendation:** park it. Build it only if the owner wants offline capture or an instant on-device preview, not to save money.
 5. **"Zero" with health data is not available on hosted free tiers.**
    - The Gemini API free tier trains on inputs and says not to send personal data.
    - OpenRouter `:free` models are refused in code for that reason.
@@ -167,7 +167,7 @@ The criteria for health data: no training on our data, a GPL-3.0-compatible lice
 
 ## 4. Phased plan
 
-### Phase 0: measure and switch (Lloyd, about 30 min, no repo code)
+### Phase 0: measure and switch (the owner, about 30 min, no repo code)
 
 1. Create three OpenRouter keys (chat, scan, laptop), each with a monthly limit. The Activity page then splits spend by surface, with no code.
 2. Turn on the account-wide ZDR-only setting, if it is not already on.
@@ -188,7 +188,7 @@ Lane order:
 - D waits for B to be deployed.
 - After merging, read the rendered Ask replies on live data (standing rule from session 68).
 
-### Phase 2 (only if Phase 0 shows scans above about $2 a month, or Lloyd wants offline OCR)
+### Phase 2 (only if Phase 0 shows scans above about $2 a month, or the owner wants offline OCR)
 
 | Lane | Files | Notes |
 |---|---|---|

@@ -25,7 +25,7 @@ vi.mock('./roster', async (orig) => ({
   useFamilyPeople: () => ({
     selfId: 'p1',
     people: [
-      { id: 'p1', name: 'Lloyd Roc', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true },
+      { id: 'p1', name: 'Rey Villar', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true },
       { id: 'p2', name: 'Papa', photoPath: null, thumb: null, phone: '+639171234567', birthdate: null, isMe: false },
       { id: 'p3', name: 'Mama', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false }
     ]
@@ -196,8 +196,8 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     const saved = (await ldb.medications.toArray())[0]!
     expect(saved).toMatchObject({ name: 'Metformin' })
     expect(saved.medStatus ?? 'active').toBe('active')
-    expect(saved.schedule).toMatchObject({ times: ['13:00'], answered_by: 'Lloyd' })
-    expect(onNote).toHaveBeenCalledWith('Metformin checked. Saved as answered by Lloyd.')
+    expect(saved.schedule).toMatchObject({ times: ['13:00'], answered_by: 'Rey' })
+    expect(onNote).toHaveBeenCalledWith('Metformin checked. Saved as answered by Rey.')
     const sent = (await db.outbox.toArray()).filter((o) => o.table === 'medications')
     expect(sent).toHaveLength(1)
   })
@@ -217,7 +217,7 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('radio', { name: /Papa stopped it/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Send answer' }))
     await waitFor(async () => expect((await ldb.medications.toArray())[0]!.medStatus).toBe('stopped'))
-    expect((await ldb.medications.toArray())[0]!.schedule).toMatchObject({ answered_by: 'Lloyd' })
+    expect((await ldb.medications.toArray())[0]!.schedule).toMatchObject({ answered_by: 'Rey' })
   })
   it('a medicine asked today is not an ask yet, and a person this user cannot write for is not offered', async () => {
     const today = new Date().toLocaleDateString('en-CA')

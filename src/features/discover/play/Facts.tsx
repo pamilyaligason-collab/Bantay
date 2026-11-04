@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { LargeTitle } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { loadOnThisDay, phFactOf, WIKI_CREDIT, WIKI_LICENCE_URL, type OtdEvent } from '../facts/onThisDay'
 import { dayKey } from './score'
 import './play.css'
 
 /** Fun facts today: three "On this day" cards (Wikipedia, credit and link on every card) and one Philippine fact from the bundled list, which works offline. */
-export default function Facts({ onBack, now }: { onBack: () => void; now?: Date }) {
+export default function Facts({ now }: { onBack?: () => void; now?: Date }) {
   const today = useMemo(() => now ?? new Date(), [now])
   const [otd, setOtd] = useState<{ items: OtdEvent[]; stale: boolean } | null | undefined>(undefined)
   const [i, setI] = useState(0)
@@ -13,10 +14,7 @@ export default function Facts({ onBack, now }: { onBack: () => void; now?: Date 
   const e = otd?.items[i]
   return (
     <div className="fp" data-testid="facts">
-      <div className="fp-head">
-        <button type="button" className="sh-iconbtn" aria-label="Back to Play" onClick={onBack}><Icon name="back" /></button>
-        <div><h2>Fun facts</h2><span className="fp-note">Discover, Play</span></div>
-      </div>
+      <LargeTitle title="Fun facts" back={{ href: '#discover/play', label: 'Play' }} />
       <section className="sh-card fp-fact" aria-label="On this day">
         <span className="sh-sub">On this day · {today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</span>
         {otd === undefined ? <span className="fp-note" role="status">Loading</span>

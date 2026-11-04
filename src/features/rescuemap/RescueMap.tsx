@@ -26,14 +26,16 @@ function useOnline() {
 
 function Badge({ s }: { s: Spot }) {
   const ok = s.status === 'CONFIRMED'
-  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? 'Confirmed' : 'Not confirmed'}</span>
+  const when = ok && s.date && !Number.isNaN(Date.parse(s.date)) ? ` ${new Date(s.date).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : ''
+  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? `Confirmed${when}` : 'Not confirmed'}</span>
 }
 
-function Actions({ s, pin }: { s: Spot; pin?: Pin }) {
-  if (!pin && !s.phone) return null
+function Actions({ s, pin, details }: { s: Spot; pin?: Pin; details?: () => void }) {
+  if (!pin && !s.phone && !details) return null
   return (
     <div className="rm-act">
-      {pin && <a className="btn" href={googleGo(pin.lat, pin.lon)} target="_blank" rel="noopener noreferrer">Directions</a>}
+      {pin && <a className="btn2" href={googleGo(pin.lat, pin.lon)} target="_blank" rel="noopener noreferrer">Directions</a>}
+      {details && <button type="button" className="btn2" onClick={details}>Details</button>}
       {s.phone && <a className="btn2" href={telHref(s.phone)} aria-label={`Call ${s.phone}`}>Call</a>}
     </div>
   )
@@ -46,7 +48,8 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE)
   const online = useOnline()
   const [kinds, setKinds] = useState<Set<Kind>>(ALL)
-  const [pick, setPick] = useState<Pin | null>(null)
+  const [pick, setPick] = useState<Spot | null>(null)
+  const pinPick = pick && 'km' in pick ? (pick as Pin) : undefined
   const [focus, setFocus] = useState(0)
 
   const live = valid(props.lat) && valid(props.lon)
@@ -59,16 +62,10 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
   const onPick = useCallback((p: Pin) => setPick(p), [])
   const toggle = (k: Kind) => setKinds((cur) => { const n = new Set(cur); if (!n.delete(k)) n.add(k); return n })
   const showMap = online && me !== null
+  const evacOnly = kinds.size === 1 && kinds.has('evac') // the board's heading names evacuation centres; with other kinds on, the list is wider than that
 
   return (
     <section className="rm" aria-label="Help near you">
-      {props.zoneName && <p className="rm-zone">{props.zoneName}</p>}
-      <div className="rm-chips" role="group" aria-label="Show">
-        {KINDS.map((k) => (
-          <button key={k.id} type="button" className="rm-chip" aria-pressed={kinds.has(k.id)} onClick={() => toggle(k.id)}>{kinds.has(k.id) && <Icon name="check" size={18} />}{k.label}</button>
-        ))}
-      </div>
-
       <div className="card mapc rm-mapc">
         {showMap ? (
           <div className="rm-mapwrap">
@@ -86,35 +83,45 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
         <p className="mapc-credit">© OpenStreetMap contributors</p>
       </div>
 
-      <Section title="Nearest help" meta="From your location">
-        {pins.length > 0 && (
-          <ul className="rm-list" aria-label="Places on the map">
-            {pins.map((p, i) => (
-              <li key={p.id} className="rm-li">
-                <button type="button" className="rm-item" onClick={() => setPick(p)}>
-                  <span className="rm-n" aria-hidden="true">{i + 1}</span>
-                  <span className="grow"><b>{p.name}</b><span className="sub">{kmLabel(p.km)}</span><Badge s={p} /><span className="sub">{sourceLine(p)}</span></span>
-                </button>
-                <Actions s={p} pin={p} />
-              </li>
-            ))}
-          </ul>
-        )}
-        {unpinned.length > 0 && (
-          <ul className="rm-list" aria-label="Places without a map pin">
-            {unpinned.map((s) => (
-              <li key={s.id} className="rm-li">
-                <div className="rm-item rm-static">
-                  <span className="grow"><b>{s.name}</b><span className="sub">{s.note ?? 'Ask the barangay hall.'}</span><Badge s={s} /><span className="sub">{sourceLine(s)}</span></span>
-                </div>
-                <Actions s={s} />
-              </li>
-            ))}
-          </ul>
-        )}
-        {pins.length === 0 && unpinned.length === 0 && <p className="rm-note">Nothing to show. Turn a filter on.</p>}
-      </Section>
+      <div className="rm-sheet">
+        <span className="rm-grab" aria-hidden="true" />
+        {props.zoneName && <p className="rm-zone">{props.zoneName}</p>}
+        <div className="rm-chips" role="group" aria-label="Show">
+          {KINDS.map((k) => (
+            <button key={k.id} type="button" className="rm-chip" aria-pressed={kinds.has(k.id)} onClick={() => toggle(k.id)}>{kinds.has(k.id) && <Icon name="check" size={18} />}{k.label}</button>
+          ))}
+        </div>
 
+        <Section title={evacOnly ? 'Nearest evacuation centres' : 'Nearest help'} meta="From your location">
+          <p className="rm-note rm-leave">Leave early when your barangay or LGU orders evacuation. Bring your go-bag and medicines.</p>
+          {pins.length > 0 && (
+            <ul className="rm-list" aria-label="Places on the map">
+              {pins.map((p, i) => (
+                <li key={p.id} className="rm-li">
+                  <button type="button" className="rm-item" onClick={() => setPick(p)}>
+                    <span className="rm-n" aria-hidden="true">{i + 1}</span>
+                    <span className="grow"><b>{p.name}</b><span className="sub">{kmLabel(p.km)}</span><Badge s={p} /><span className="sub">{sourceLine(p)}</span></span>
+                  </button>
+                  <Actions s={p} pin={p} details={() => setPick(p)} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {unpinned.length > 0 && (
+            <ul className="rm-list" aria-label="Places without a map pin">
+              {unpinned.map((s) => (
+                <li key={s.id} className="rm-li">
+                  <div className="rm-item rm-static">
+                    <span className="grow"><b>{s.name}</b><span className="sub">{s.note ?? 'Ask the barangay hall.'}</span><Badge s={s} /><span className="sub">{sourceLine(s)}</span></span>
+                  </div>
+                  <Actions s={s} details={() => setPick(s)} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {pins.length === 0 && unpinned.length === 0 && <p className="rm-note">Nothing to show. Turn a filter on.</p>}
+        </Section>
+      </div>
       <details className="card rm-safe">
         <summary>Likely safe places</summary>
         <p>Not official: schools, covered courts, barangay hall. Ask your barangay which centre is official.</p>
@@ -125,10 +132,10 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
       {pick && (
         <Sheet title={pick.name} onClose={() => setPick(null)}>
           <Badge s={pick} />
-          <p className="sub">{kmLabel(pick.km)}</p>
+          {pinPick && <p className="sub">{kmLabel(pinPick.km)}</p>}
           {pick.note && <p className="sub">{pick.note}</p>}
           <p className="sub">{sourceLine(pick)}</p>
-          <Actions s={pick} pin={pick} />
+          <Actions s={pick} pin={pinPick} />
         </Sheet>
       )}
     </section>

@@ -53,9 +53,9 @@ describe('request builder', () => {
   })
   it('refuses to run without key or flag', () => {
     const env = { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'm' }
-    expect(() => assertAllowed(['x'], env)).toThrow(/i-am-lloyd/)
-    expect(() => assertAllowed(['--i-am-lloyd'], { OPENROUTER_MODEL: 'm' })).toThrow(/OPENROUTER_API_KEY/)
-    expect(() => assertAllowed(['--i-am-lloyd'], env)).not.toThrow()
+    expect(() => assertAllowed(['x'], env)).toThrow(/i-am-owner/)
+    expect(() => assertAllowed(['--i-am-owner'], { OPENROUTER_MODEL: 'm' })).toThrow(/OPENROUTER_API_KEY/)
+    expect(() => assertAllowed(['--i-am-owner'], env)).not.toThrow()
   })
 })
 

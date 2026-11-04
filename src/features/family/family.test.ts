@@ -188,7 +188,7 @@ describe('nudge', () => {
 })
 
 describe('roll call', () => {
-  const me: FamilyPerson = { id: 'p1', name: 'Lloyd', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true }
+  const me: FamilyPerson = { id: 'p1', name: 'Rey', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: true }
   const kuya: FamilyPerson = { ...me, id: 'p2', name: 'Kuya Ben', isMe: false }
   const now = new Date(2026, 9, 20, 10, 0)
 

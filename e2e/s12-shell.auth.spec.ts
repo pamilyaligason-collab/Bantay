@@ -78,7 +78,7 @@ async function open(page: Page, scheme: 'light' | 'dark', w: number, hash: strin
   await mock(page)
   await page.emulateMedia({ colorScheme: scheme })
   await page.goto('/#today')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible() // the app has created its databases
+  await expect(page.getByTestId('myday')).toBeVisible() // the app has created its databases
   await seed(page, 'bantay-log', 'medications', MEDS)
   await extra(page)
   await page.goto('/#' + hash)

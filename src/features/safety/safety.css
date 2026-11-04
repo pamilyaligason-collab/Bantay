@@ -39,7 +39,8 @@
 .pw-btns .btn2[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); }
 .sf-pair { display: flex; gap: 10px; }
 .sf-pair > a { flex: 1 1 0; min-width: 0; min-height: 52px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-decoration: none; text-align: center; }
-.sf-pair > a.btn { min-height: 64px; font-size: 19px; }
+.sf-pair > a.sf-emerg { background: var(--danger-bg); color: #fff !important; }
+.sf-pair > a.sf-emerg:not(:has(svg)) { white-space: normal; line-height: 1.15; } /* the abroad label is long: wrap, never clip */
 .zp { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
 button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px; border-radius: 22px; font-weight: 600; }
 
@@ -51,7 +52,7 @@ button.sf-chip { border: 0; color: var(--ink); min-height: 48px; padding: 0 14px
 .sf-hdr .zp .sf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; border-radius: 22px; padding: 0 14px; }
 .sf-hdr .zp .sf-chip::before { content: ""; width: 16px; height: 16px; flex: none; background: currentColor; -webkit-mask: var(--pin) center/contain no-repeat; mask: var(--pin) center/contain no-repeat; }
 a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
-.sf-pair > a.btn2.sf-ico { min-height: 64px; font-size: 19px; padding: 0 8px; white-space: nowrap; } /* S16-L0: "Medical ID" wrapped in the 160 px cell at 360 */
+.sf-pair > a.btn2.sf-ico { min-height: 52px; font-size: 17px; padding: 0 8px; white-space: nowrap; } /* S16-L0: "Medical ID" wrapped in the 160 px cell at 360 */
 
 /* sub-pages */
 .hdr.sf-subhdr { flex-wrap: nowrap; justify-content: flex-start; }
@@ -140,18 +141,27 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 
 /* v13 Safety home (S2): hero, First aid carousel, Go-bag card. Colours from tokens only. */
 .sf-hero { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: var(--r-card); }
-.sf-hero-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; min-width: 0; }
-.sf-hero-row > .sos-wrap { flex: none; }
-:root[data-narrow] .sf-hero-row > .sos-wrap { flex: 1 1 100%; min-width: 0; } /* S10: flex:none let the SOS sentence set a 651 px box at 195 px */
-.sf-hero-t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+/* W3: the board hero is the disc beside the words, then one row of two buttons (about 215 px). The SOS control is lane G's file, so its parts are placed from here. */
+.sf-hero-row { display: grid; grid-template-columns: 120px minmax(0, 1fr); column-gap: 16px; align-items: center; min-width: 0; }
+.sf-hero-row .sos-wrap { display: contents; }
+.sf-hero-row .sos-btn { grid-column: 1; grid-row: 1 / span 2; width: 120px; height: 120px; box-shadow: 0 0 0 8px var(--red-soft); }
+.sf-hero-row .sos-btn span { font-size: 30px; letter-spacing: .04em; }
+.sf-hero-row .sos-btn small { font-size: 13px; }
+.sf-hero-row .sos-sub { display: none; }
+.sf-hero-row .sos-alt { grid-column: 2; grid-row: 2; justify-self: start; padding: 0; text-align: left; min-height: 44px; }
+.sf-hero-row .sos-resume, .sf-hero-row .sos-hint, .sf-hero-row .sos-confirm { grid-column: 1 / -1; grid-row: auto; }
+.sf-hero-t { grid-column: 2; grid-row: 1; align-self: end; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .sf-hero-t b { font-size: 20px; font-weight: 700; color: var(--ink); }
-.sf-hero-t .sub { font-size: 14px; color: var(--muted); }
-.sf-fa { flex: none; width: 150px; min-height: 140px; box-sizing: border-box; padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); scroll-snap-align: start; }
+.sf-hero-t .sub { font-size: 14px; line-height: 19px; color: var(--muted); }
+:root[data-narrow] .sf-hero-row { grid-template-columns: minmax(0, 1fr); row-gap: 8px; justify-items: center; }
+:root[data-narrow] .sf-hero-row .sos-btn, :root[data-narrow] .sf-hero-t, :root[data-narrow] .sf-hero-row .sos-alt { grid-column: 1; grid-row: auto; }
+:root[data-narrow] .sf-hero-t { align-self: auto; text-align: center; }
+.card.sf-fa { flex: none; width: 150px; min-height: 140px; box-sizing: border-box; padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); scroll-snap-align: start; }
 .sf-fa b { font-size: 17px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
 .sf-fa .sub { font-size: 13px; color: var(--muted); }
 .sf-fa:focus-visible, .sf-bag:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .sf-911 { margin: 10px 4px 0; font-size: 14px; color: var(--muted); }
-.sf-bag { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; min-height: 44px; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--r-card); text-decoration: none; color: var(--ink); }
+.card.sf-bag { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; min-height: 44px; padding: 14px 16px; margin-bottom: 12px; border-radius: var(--r-card); text-decoration: none; color: var(--ink); }
 .sf-bag-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sf-bag-t b { font-size: 17px; font-weight: 600; }
 .sf-bag-a { font-size: 15px; font-weight: 600; color: var(--focus); }
@@ -169,3 +179,42 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 :root[data-narrow] .hz-map { padding: 0 10px; font-size: 14px; white-space: nowrap; }
 
 .rw-lead:empty { display: none; } /* Row draws an empty 32 px lead box when it has no icon */
+
+/* W12: Quick dial groups. The Call pill sits beside the row's own tap target. */
+.sf-kind { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.sf-kind-h { margin: 0 4px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.sf-kind .rw { display: flex; align-items: center; }
+.sf-kind .rw-main { flex: 1 1 0; min-width: 0; }
+.sf-kind .rw-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: normal; overflow: hidden; text-overflow: clip; line-height: 20px; font-size: 16px; }
+.sf-kind .rw-main { padding: 8px 0; }
+.sf-kind .rw-sub { -webkit-line-clamp: 1; line-height: 16px; }
+.sf-kind .rw-value { font-size: 14px; }
+.sf-kind .sf-callbtn { margin-right: 12px; flex: none; min-height: 44px; }
+
+/* VR / D-110: Jack stays; no Right now link sits under him at rest. Each row's link stops short of the Jack column (right 18 px + 62 px disc), so the card keeps its width and the right 68 px of a row is plain card. Not at 195 px, where that would leave no room for words. */
+@media (min-width: 300px) {
+  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw { padding-right: 68px; }
+  /* the inset takes 54 px from the words: titles wrap instead of cutting, and a long badge wraps to two lines */
+  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: break-word; }
+  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-txt { min-width: 92px; }
+  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-sub { -webkit-line-clamp: 3; overflow-wrap: break-word; } /* the words wrap onto more lines before they are cut */
+  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-badge { white-space: normal; max-width: 88px; text-align: center; line-height: 16px; }
+}
+
+/* A last-known place keeps "last known" readable: it wraps to a second line before it ever cuts the words */
+.lt-actions .zp .sf-chip, .lt-below .zp .sf-chip, .lt-actions [data-testid="place-last"], .lt-below [data-testid="place-last"] { height: auto; min-height: 48px; padding-top: 4px; padding-bottom: 4px; }
+.lt-actions .zp .zp-t, .lt-below .zp .zp-t, .lt-actions [data-testid="place-last"] .zp-t, .lt-below [data-testid="place-last"] .zp-t { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.2; text-align: left; }
+
+/* CS: first aid tiles take the board's per-topic tint (red, amber, purple), 132 square */
+.card.sf-fa { width: 132px; min-height: 132px; }
+.sf-fa[data-tint] { background: var(--tint-fill); }
+.sf-fa[data-tint] .sub, .sf-fa[data-tint] svg { color: var(--tint-ink); }
+.sf-fa[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
+.sf-fa[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
+.sf-fa[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.sf-fa b { margin-top: auto; }
+/* CL r4: at 195 px the name, the i and Add did not fit one row (Add ran past the card): the name takes a line, then i and Add share the next one */
+:root[data-narrow] .sf-dialrow-add { grid-template-columns: auto minmax(0, 1fr); row-gap: 6px; }
+:root[data-narrow] .sf-dialrow-add .sf-dt { grid-column: 1 / -1; }
+:root[data-narrow] .sf-dialrow-add .sf-i { grid-column: 1; }
+:root[data-narrow] .sf-dialrow-add .sf-addbtn { grid-column: 2; min-width: 0; width: 100%; }

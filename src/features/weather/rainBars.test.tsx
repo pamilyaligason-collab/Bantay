@@ -1,11 +1,12 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
 import { openMeteoFixture } from './fixture'
 import { parseForecast, readCached, savedLine } from './forecast'
 import { rainBars, rainLevel, rainMode } from './rainBars'
 import RainMap from './RainMap'
+import StormTrack from './StormTrack'
 import { db } from '../../db'
 
 afterEach(cleanup)
@@ -33,20 +34,17 @@ describe('rain fallback branch (R3: RainViewer coverage of the Philippines not c
 })
 
 describe('RainMap', () => {
-  it('draws bars and the PAGASA radar link, and switches chips', () => {
-    render(<RainMap fc={fc()} point={P} placeName="General Santos" alerts={[]} />)
+  it('draws bars on one baseline and the PAGASA radar link, with no layer tabs', () => {
+    render(<RainMap fc={fc()} placeName="General Santos" />)
     expect(screen.getByRole('list', { name: 'Chance of rain, next 12 hours' }).children).toHaveLength(12)
     expect(screen.getByRole('link', { name: /Radar images from PAGASA/ }).getAttribute('href')).toMatch(/pagasa\.dost\.gov\.ph/)
     expect(document.querySelector('iframe, img[src*="rainviewer"]')).toBeNull() // nothing loads from a map provider
-    fireEvent.click(screen.getByRole('button', { name: 'Wind' }))
-    expect(screen.getByRole('status').textContent).toMatch(/Wind now 9 km\/h, gusts to 18 km\/h/)
-    fireEvent.click(screen.getByRole('button', { name: 'Storm track' }))
-    expect(screen.getByText(/No storm warnings for the Philippines from GDACS/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Wind|Storm track/ })).toBeNull() // no layer tabs: the board has one rain card
+    expect(screen.queryByText(/Storms have not been checked/)).toBeNull() // the storm block only shows while a storm is listed
   })
   it('storm track lists a GDACS storm and never says no storms while one is listed', () => {
     const a = { id: 'gdacs-TC-1001', kind: 'gdacs', title: 'Tropical Storm PEPITO', where: 'Pepito', issuedAt: '2026-10-25T00:00:00Z', lat: 9.7, lon: 128.5 } as unknown as Alert
-    render(<RainMap fc={fc()} point={P} placeName="General Santos" alerts={[a]} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Storm track' }))
+    render(<StormTrack alerts={[a]} point={P} placeName="General Santos" />)
     expect(screen.queryByText(/No storm warnings/)).toBeNull()
     expect(screen.getAllByText(/Pepito/).length).toBeGreaterThan(0)
   })

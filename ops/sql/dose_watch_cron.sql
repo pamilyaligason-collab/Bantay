@@ -1,4 +1,4 @@
--- Schedule for the dose-watch Edge Function (lane M7b): every 15 minutes. WRITTEN ONLY: Lloyd applies it.
+-- Schedule for the dose-watch Edge Function (lane M7b): every 15 minutes. WRITTEN ONLY: the owner applies it.
 -- Deploy with --no-verify-jwt; the secret is the gate. Set the function secrets: DOSE_WATCH_CRON_SECRET (32+ chars),
 -- VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (same values as broadcast).
 -- Store the same secret in vault first (SQL editor only):  select vault.create_secret('<secret>', 'dose_watch_cron_secret');

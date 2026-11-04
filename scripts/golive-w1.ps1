@@ -1,4 +1,4 @@
-# Family Bantay - go-live for waves 1+2 (members + data, Today). Lloyd runs it from this worktree:
+# Family Bantay - go-live for waves 1+2 (members + data, Today). The owner runs it from this worktree:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-w1.ps1
 # Order matters (Fable review): 0010 -> 0011 -> admin-members -> push web. Stops at the first failure.
 param([switch]$DryRun)

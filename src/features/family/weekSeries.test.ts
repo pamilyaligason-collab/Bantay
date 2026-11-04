@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { Activity, MedTaken, Medication } from '../log/store'
-import { bpSeries, dayKeys, doseSeries, legendWord, stepSeries } from './weekSeries'
+import { bpSeries, dayKeys, doseSeries, emptyWords, firstWithData, legendWord, stepSeries } from './weekSeries'
 
 const now = new Date(2026, 9, 27, 10, 20)
 const at = (day: string, hm = '08:00') => `${day}T${hm}:00`
@@ -41,4 +41,12 @@ describe('weekSeries', () => {
     expect(legendWord('steps', s(3120))).toBe('3,120')
     expect(legendWord('meds', s(80))).toBe('80%')
   })
+})
+
+describe('F5 empty words and default tab', () => {
+  const ser = (empty: boolean) => [{ personId: 'a', points: [], latest: empty ? null : 1, empty }]
+  it('opens on the first metric with data', () => expect(firstWithData({ bp: ser(true), steps: ser(false), meds: ser(false) })).toBe('steps'))
+  it('falls back to bp when nothing has data', () => expect(firstWithData({ bp: ser(true), steps: ser(true), meds: ser(true) })).toBe('bp'))
+  it('names who has no readings', () => expect(emptyWords('bp', ['You', 'Ben'], [])).toBe('No blood pressure readings for You and Ben in 7 days.'))
+  it('asks for a link when only you are shown', () => expect(emptyWords('steps', ['You'], ['Ben', 'Joy'])).toBe('Links needed: ask Ben and Joy to share.'))
 })

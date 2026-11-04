@@ -1,28 +1,22 @@
 import { useMemo } from 'react'
 import { LargeTitle } from '../look/LargeTitle'
-import { PersonChips } from '../records/PersonChips'
 import { useConfirmedDocs } from '../records/useRecordsServer'
 import { LabsList } from './LabsList'
 import { sourceIndex } from './labsLogic'
-import { givenName } from './medName'
+import { WhoLine } from './WhoLine'
 import { useHealthPerson } from './useHealthPerson'
 import './health.css'
 
-const NO_DRAFTS: Record<string, number> = {}
-
 /** Lab results on their own screen (#health/labs, mockup v8 health-labs). Same person scoping as the Health overview: only the chosen person's records (D-82, D-84). */
 export default function LabsScreen() {
-  const { ready, people, ownId, personId, setPersonId, readings, thresholds } = useHealthPerson()
+  const { ready, personId, readings, thresholds, canMark } = useHealthPerson()
   const docs = useConfirmedDocs(personId)
   const sources = useMemo(() => sourceIndex(docs), [docs])
-  const name = people.find((p) => p.id === personId)?.name
   return (
     <>
-      <p className="eyebrow lb-eyebrow">from the lab's own paper</p>
-      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Labs" actions={<a className="btn" href="#family/papers">Papers</a>} />
-      <PersonChips people={people} ownId={ownId} personId={personId} drafts={NO_DRAFTS} onPick={setPersonId} />
-      {name && ready && <p className="eyebrow lb-eyebrow">{givenName(name)}</p>}
-      <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Labs" tone="red" actions={<a className="hv-tl" href="#family/papers">Papers</a>} />
+      <WhoLine />
+      <LabsList readings={readings} thresholds={thresholds} ready={ready} sources={sources} personId={personId} canMark={canMark} />
     </>
   )
 }

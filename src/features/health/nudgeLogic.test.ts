@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeNudge } from './nudgeLogic'
+import { cadenceWord, computeNudge } from './nudgeLogic'
 
 const now = new Date(2026, 9, 22, 10, 0)
 const at = (back: number, h = 8) => new Date(2026, 9, 22 - back, h).toISOString()
@@ -47,6 +47,12 @@ describe('computeNudge', () => {
     expect(n.goals.some((g) => g.id === 'sugar')).toBe(true)
     expect(n.goals.find((g) => g.id === 'move')!.count).toBe('20/150')
   })
+  it('hourly steps rows carry 60 minutes but are not minutes of moving: the Move goal stays open', () => {
+    const activity = [0, 1, 2].map((h) => ({ personId: 'p', kind: 'steps', minutes: 60, steps: 10, startedAt: at(0, 6 + h), source: 'health-connect' as const }))
+    const move = computeNudge({ ...base, activity }).goals.find((g) => g.id === 'move')!
+    expect(move.count).toBe('0/150')
+    expect(move.met).toBe(false)
+  })
   it('all met: BP 3 days, meals 4 days and 150 minutes of moving, no next step', () => {
     const food = [0, 1, 2, 3].map((b) => ({ personId: 'p', eatenAt: at(b), meal: 'lunch' as const, name: 'Rice', clientId: `f${b}`, foodKey: null, portion: 1, servingLabel: null, kcal: null, sodiumMg: null, potassiumMg: null, proteinG: null }))
     const activity = [{ personId: 'p', kind: 'walk', minutes: 100, steps: null, startedAt: at(0), source: 'manual' as const }, { personId: 'p', kind: 'walk', minutes: 50, steps: null, startedAt: at(1), source: 'manual' as const }]
@@ -61,5 +67,12 @@ describe('computeNudge', () => {
     const take = { personId: 'p', name: 'Losartan', takenAt: at(0, 8) }
     const g = computeNudge({ ...base, meds: [med], takes: [take] }).goals.find((x) => x.id === 'meds')
     expect(g?.count).toBe('1/3')
+  })
+})
+
+describe('cadenceWord', () => {
+  it('one string per goal, the same for Today and For you', () => {
+    expect(cadenceWord({ id: 'bp' })).toBe('Weekly BP')
+    expect(cadenceWord({ id: 'meds' })).toBe('Daily medicines')
   })
 })

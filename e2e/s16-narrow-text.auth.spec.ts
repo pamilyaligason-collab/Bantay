@@ -45,7 +45,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test.setTimeout(180_000)
     await page.clock.setFixedTime(NOW)
     await skipOnboarding(page)
-    await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Lloyd' }])))
+    await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])))
     await mock(page)
     // rain from 10 AM to 5 PM: the "Rain likely" action pill of refs/1.png
     await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: NOW, temp: 25, humidity: 80, feels: 31, code: 2, hourlyProb: (h) => (h >= 10 && h <= 17 ? 80 : 10) }) }))

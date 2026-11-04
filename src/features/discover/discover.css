@@ -47,18 +47,22 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-jackrow .sub { margin: 0; }
 
 /* Season row: a tinted card with a decorative layer behind the Row (rain streaks, candle glow). */
-.dc-season-row { position: relative; overflow: hidden; padding: 0 16px; isolation: isolate; }
+.card.dc-season-row { position: relative; overflow: hidden; padding: 0 16px; isolation: isolate; background: var(--tint-amber); }
+.dc-season-row .rw-sub { -webkit-line-clamp: 2; }
+.dc-season-row .rw-lead { background: rgb(255 255 255 / .55); color: var(--tint-amber-ink); border-radius: 12px; }
+:root[data-theme="dark"] .dc-season-row .rw-lead { background: rgb(255 255 255 / .12); }
+.dc-season-row .rw-title { white-space: normal; color: var(--tint-amber-ink); }
+.dc-season-row .rw-sub { color: var(--tint-amber-ink); }
 .dc-season-row .rw { position: relative; z-index: 1; }
-.dc-season-row .rw-sub { -webkit-line-clamp: 1; }
 .dc-sea-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .dc-sea-bg[data-s="typhoon"] { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 14%, transparent)); }
 .dc-sea-bg .wxs-rain i { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 42%, transparent)); }
 .dc-sea-bg[data-s="undas"] { background: radial-gradient(ellipse 70% 120% at 92% 110%, rgb(240 181 76 / .55), transparent 70%); animation: dc-flicker 3.2s ease-in-out infinite alternate; }
 @keyframes dc-flicker { from { opacity: .75; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .dc-sea-bg { animation: none !important; } }
-.dc-season-row .rw-lead, .dc-prows .rw-lead { background: rgb(255 255 255 / .55); color: var(--h-ic); }
-:root[data-theme="dark"] .dc-season-row .rw-lead, :root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-season-row .rw-lead, :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }
+.dc-prows .rw-lead { background: rgb(255 255 255 / .55); color: var(--h-ic); }
+:root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }
 
 /* Watch: poster row scrolls inside itself, then the player and one row per topic. */
 .dc-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
@@ -82,3 +86,80 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-thumb { display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--tint-fill, var(--card2)); margin-top: 8px; }
 .dc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dc-pick { display: contents; }
+
+/* v13 gaps lane D: the video hero is a full-width 16:9 poster with a 56 px play disc and the title under it. */
+.card.dc-herocard { display: block; padding: 0; overflow: hidden; border-radius: 24px; text-decoration: none; color: var(--ink); }
+.dc-poster-box { position: relative; display: flex; align-items: center; justify-content: center; height: 190px; background: var(--tint-red); }
+.dc-poster-box .dc-thumb { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
+.dc-hchip { position: absolute; left: 14px; top: 14px; z-index: 1; padding: 4px 10px; border-radius: 12px; background: var(--card); color: var(--tint-red-ink); font-size: 13px; font-weight: 700; letter-spacing: .02em; width: max-content; max-width: calc(100% - 28px); height: fit-content; line-height: 18px; }
+.dc-hero-play { position: relative; z-index: 1; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-red-ink); box-shadow: 0 4px 14px rgb(120 40 30 / .2); }
+.dc-hero-body { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; }
+.dc-hero-k { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
+.dc-hero-t { font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -.01em; }
+.dc-hero-s { font-size: 13px; color: var(--muted); margin-top: 2px; }
+/* the two more videos: a 96 px picture, a 15/600 title in the one ink colour, two lines at most */
+.card.dc-vc { display: flex; flex-direction: column; padding: 0; overflow: hidden; text-decoration: none; color: var(--ink); }
+.dc-vc-pic { position: relative; display: flex; align-items: center; justify-content: center; height: 96px; flex: none; background: var(--tint-fill, var(--card2)); }
+.dc-vc[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
+.dc-vc[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.dc-vc-pic .dc-thumb { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
+.dc-vc-play { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-ink); }
+.dc-vc-body { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-width: 0; }
+.dc-vc-k { font-size: 13px; font-weight: 600; color: var(--tint-ink); text-transform: uppercase; letter-spacing: .02em; }
+.dc-vc-t { font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* Play tiles: small drawn glyphs (CSS only) */
+.dc-glyph { display: block; margin-top: 8px; }
+.dc-glyph-mem { display: grid; grid-template-columns: repeat(3, 14px); gap: 4px; }
+.dc-glyph-mem i { height: 14px; border-radius: 3px; background: var(--card); }
+.dc-glyph-mem i:nth-child(odd) { background: var(--tint-ink); }
+.dc-glyph-word { font-size: 22px; font-weight: 800; letter-spacing: .1em; color: var(--tint-ink); }
+/* Did you know: Jack, the kicker and one fact */
+.card.dc-fact { display: flex; align-items: center; gap: 12px; padding: 14px; text-decoration: none; color: var(--ink); }
+.dc-fact-k { display: block; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--tint-green-ink); }
+.dc-fact-t { display: block; font-size: 15px; line-height: 21px; }
+.rw > button.dc-play { width: 44px; height: 44px; }
+/* v13 visual VD: solid Play buttons per board, Listen titles wrap instead of cutting */
+.rw > button.dc-play.sh-iconbtn { background: color-mix(in srgb, var(--green2) 16%, var(--card)); color: var(--green2); border: 0; }
+.rw > button.dc-play.sh-iconbtn[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
+[data-testid="dc-listen"] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; }
+.dc-sh h2, .dc-season .sh-h2 { font-family: inherit; } /* the shell's .sh-h2 is serif; Discover uses the app font */
+/* first screen: hero, two videos and the season card must end above the Jack button (y 690 at 844 tall), so the page gap is pulled in and the hero picture shrinks on short screens (see .dc-top below); the video pictures are 72 px to make room for two-line season advice and three-line titles */
+.bt [data-testid="dc-videos"], .bt [data-testid="season-row"] { margin-top: -14px; }
+.bt [data-testid="season-row"] { margin-top: -18px; }
+.dc-vc-pic { height: 72px; }
+.dc-vc-play { width: 36px; height: 36px; }
+.dc-season-row .rw-main { min-height: 40px; }
+.dc-vc-body { padding: 8px 12px; }
+.dc-hero-body { padding: 10px 16px; }
+.dc-hero-s { margin-top: 0; }
+/* the Learn heading link would sit under Jack at rest: the heading starts below the Jack box (y 752) */
+.bt section.sec[data-testid="dc-learn"] { margin-top: 46px; }
+
+/* board: the play triangles are solid (Icon has no filled twin for play on purpose, so the shape is filled here) */
+.dc-hero-play .sh-ic, .dc-vc-play .sh-ic, .rw > button.dc-play:not([aria-pressed="true"]) .sh-ic { fill: currentColor; }
+
+/* compliance CD: header search button (the bell's twin), Learn as three full-width tinted cards per the board */
+.dc-search { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; text-decoration: none; background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.dc-lcards { display: flex; flex-direction: column; gap: 12px; }
+.card.dc-lcard { padding: 0 16px; background: var(--tint-fill); }
+.dc-lcard[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
+.dc-lcard[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
+.dc-lcard[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.dc-lcard .rw-title { color: var(--tint-ink); font-size: 20px; line-height: 26px; }
+.dc-lcard .rw-sub { color: var(--tint-ink); white-space: normal; }
+.dc-lcard .rw-lead { background: rgb(255 255 255 / .6); color: var(--tint-ink); }
+:root[data-theme="dark"] .dc-lcard .rw-lead { background: rgb(255 255 255 / .12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-lcard .rw-lead { background: rgb(255 255 255 / .12); } }
+/* compliance CD: Play tiles are tinted per the board, glyph on top and the name at the foot (no kicker or action row) */
+[data-testid="dc-play"] .card.pt { background: var(--tint-fill); }
+[data-testid="dc-play"] .pt-v { margin-top: auto; }
+[data-testid="dc-play"] .pt-s { color: var(--tint-ink); }
+
+/* Two limits on the hero, video cards and season row (the .dc-top block, which starts at y 122 under the large title). 1) Its bottom must end above the Jack button's top edge (viewport height - 154), so the full-width season link is never under Jack: the hero poster is the one flexible part, 190 px down to 72 px as the viewport gets shorter (it stays 190 on a tall screen, see the two rules below). 2) Learn's right-hand link must start below Jack's bottom edge (vh - 92): the min-height floor. Neither pulls the cards apart, so hero, videos and season row stay 8 and 4 px apart. */
+.dc-top { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 283px); } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px. min-height: Learn's link clears Jack at rest on any phone height, whatever titles or season the day brings. */
+.dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 653px - var(--sat) - var(--sab)), 190px); } /* 390 px wide: natural bottom 685 with the 190 px poster, so P <= vh - 653 (190 at 844 tall) */
+@media (max-width: 389px) { .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 684px - var(--sat) - var(--sab)), 190px); } } /* 360 px wide: the season row wraps to 2 lines and the block ends 28 px lower (713), so P <= vh - 684 */
+
+/* short screens: the poster is under 136 px, so the centred 56 px disc would share rows with the Watch chip; park it at the right edge */
+@media (max-height: 819px) { .dc-top .dc-hero-play { margin-left: auto; margin-right: 14px; } }
+:root[data-narrow] .dc-top .dc-hero-play { display: none; } /* 195 px: the chip wraps to 3 lines and fills the poster; the disc is decoration (aria-hidden) on a card that is one link */

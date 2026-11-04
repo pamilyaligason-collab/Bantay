@@ -114,7 +114,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
       {view.kind === 'loading' && <p className="sub" role="status">Loading</p>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <p role="status" data-testid="msg-state"><b>{WORDS[view.kind]}</b></p>}
       {view.kind === 'ready' && view.msgs.length === 0 && queued.length === 0 && <EmptyState jack="family-hug" title="No messages yet" body="Say hello to your family." />}
-      {(view.kind === 'ready' || queued.length > 0) && (
+      {((view.kind === 'ready' && view.msgs.length > 0) || queued.length > 0) && ( // no list at all when empty: it drew an empty grey strip
         <ul className="msg-list" aria-label="Messages" data-testid="msg-list">
           {[...(view.kind === 'ready' ? view.msgs : []), ...queued].map((m) => (
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>

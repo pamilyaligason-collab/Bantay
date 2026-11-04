@@ -5,13 +5,13 @@ import { Icon, type IconName } from './Icon'
 import { TABS, type Tab } from './routes'
 import './shell.css'
 
-// Discover uses `search` until a book glyph is added to Icon.tsx (Icon.tsx is not an F1 file; see the lane report).
+// Glyphs follow board Main: house, heart with a pulse, compass, people, plain shield (the last three are drawn in icons/custom.tsx).
 const ITEMS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'today', label: 'Today', icon: 'home' },
-  { id: 'health', label: 'Health', icon: 'heart' },
-  { id: 'discover', label: 'Discover', icon: 'search' },
+  { id: 'health', label: 'Health', icon: 'tabHeart' },
+  { id: 'discover', label: 'Discover', icon: 'tabCompass' },
   { id: 'family', label: 'Family', icon: 'users' },
-  { id: 'safety', label: 'Safety', icon: 'shield' }
+  { id: 'safety', label: 'Safety', icon: 'tabShield' }
 ]
 
 /** Five equal slots, mockup round 2: Today, Health, Discover, Family, Safety. Ask is the floating Jack button (JackFab), not a tab. */
@@ -20,7 +20,7 @@ export function TabBar({ active }: { active: Tab | null }) {
   const at = active ? TABS.indexOf(active) : -1
   const pill = { '--slot': Math.max(at, 0), '--pill': at < 0 ? 0 : 1 } as CSSProperties
   return (
-    <nav aria-label="Main" className="tabbar sh sh-tabs" data-testid="tabbar" style={pill}>
+    <nav aria-label="Main" className="tabbar sh sh-tabs" data-testid="tabbar" data-active={active ?? 'none'} style={pill}>
       {ITEMS.map((t) => {
         const alerts = t.id === 'family' && unseen > 0 ? `${unseen} new alert${unseen === 1 ? '' : 's'}` : ''
         return (

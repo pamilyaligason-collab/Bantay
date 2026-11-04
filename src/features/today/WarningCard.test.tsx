@@ -122,7 +122,7 @@ describe('WarningCard', () => {
     await db.kv.put({ key: ALERTS_KEY, value: [storm] })
     await db.kv.put({ key: ACK_KEY, value: { [storm.id]: ackStamp(storm) } })
     h.rows = [{ personId: 'me', status: 'ok' }]
-    h.people = [{ id: 'me', name: 'Lloyd' }]
+    h.people = [{ id: 'me', name: 'Rey' }]
     const { container } = render(<WarningCard />)
     await waitFor(() => expect(h.fetch).toHaveBeenCalled()) // the alerts, the ack and the roll call have been read: only then is "nothing" a real answer
     await act(async () => { await Promise.resolve() }) // let the answered rows land in the component
@@ -133,11 +133,11 @@ describe('WarningCard', () => {
   it('who answered: OK, Needs help (never "Waiting") and Waiting are three separate groups', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [storm] })
     h.rows = [{ personId: 'me', status: 'ok' }, { personId: 'ma', status: 'need_help' }]
-    h.people = [{ id: 'me', name: 'Lloyd' }, { id: 'ma', name: 'Ma Cruz' }, { id: 'pa', name: 'Pa Cruz' }]
+    h.people = [{ id: 'me', name: 'Rey' }, { id: 'ma', name: 'Ma Cruz' }, { id: 'pa', name: 'Pa Cruz' }]
     render(<WarningCard />)
-    await screen.findByText(/^OK: Lloyd/)
+    await screen.findByText(/^OK: Rey/)
     const line = document.querySelector('.sf-tally')!
-    expect(line.textContent).toBe('OK: Lloyd · Needs help: Ma · Waiting: Pa')
+    expect(line.textContent).toBe('OK: Rey · Needs help: Ma · Waiting: Pa')
     expect(line.querySelector('.sf-warn')!.textContent).toBe('Needs help: Ma')
   })
 

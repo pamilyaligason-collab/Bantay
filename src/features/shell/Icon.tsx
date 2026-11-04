@@ -13,7 +13,7 @@ import {
   IconSendFilled, IconKeyFilled, IconLungsFilled, IconTrashFilled, IconFileTextFilled, IconPhotoFilled
 } from '@tabler/icons-react'
 import type { ComponentType } from 'react'
-import { IconKidney, IconStomach, IconQuake, IconTyphoon, type CustomIconProps } from './icons/custom'
+import { IconKidney, IconStomach, IconQuake, IconTyphoon, IconTabCompass, IconTabHeart, IconTabShield, type CustomIconProps } from './icons/custom'
 
 // One icon family for the whole app: Tabler Icons (MIT, docs/ASSETS.md). Screens use <Icon name>, never Tabler directly,
 // so the family can change in one place; colour is currentColor. D-103: sizes 16 (inline meta, ticks), 20 (row leading, chips, buttons), 24 (tiles, card titles, tab bar, default), 32 (alerts, SOS);
@@ -29,7 +29,8 @@ const ICONS = {
   out: IconExternalLink, off: IconWifiOff, clock: IconClock, fp: IconFingerprint, send: IconSend, mic: IconMicrophone, plus: IconPlus,
   close: IconX, trash: IconTrash, key: IconKey, sos: IconSos, aid: IconFirstAidKit, bag: IconBackpack, lungs: IconLungs, brain: IconBrain,
   eye: IconEye, search: IconSearch, menu: IconMenu2, moon: IconMoon, screen: IconDeviceDesktop, tooth: IconDental, play: IconPlayerPlay, pause: IconPlayerPause, move: IconStretching, meal: IconToolsKitchen2, salt: IconSalt, glass: IconGlassFull, kidney: IconKidney, stomach: IconStomach, quake: IconQuake, typhoon: IconTyphoon,
-  flame: IconFlame, bone: IconBone, paw: IconPaw, bug: IconBug, candy: IconCandy, vaccine: IconVaccine, sick: IconMoodSick, fall: IconFall, cpr: IconHeartHandshake, lock: IconLock, language: IconLanguage
+  flame: IconFlame, bone: IconBone, paw: IconPaw, bug: IconBug, candy: IconCandy, vaccine: IconVaccine, sick: IconMoodSick, fall: IconFall, cpr: IconHeartHandshake, lock: IconLock, language: IconLanguage,
+  tabCompass: IconTabCompass, tabHeart: IconTabHeart, tabShield: IconTabShield // the tab bar's own glyphs (board Main)
 } satisfies Record<string, ComponentType<CustomIconProps>>
 export type IconName = keyof typeof ICONS
 

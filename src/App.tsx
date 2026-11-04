@@ -8,6 +8,7 @@ import Safety from './screens/Safety'
 import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
+import { startSensorSync } from './features/sensors/health'
 import { watchAlertsForSession } from './features/notify/alertsLive'
 import { watchDoseReminders } from './features/health/reminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
@@ -16,7 +17,7 @@ import { DocsScreen } from './features/docs/DocsScreen'
 import WeatherScreen from './features/weather/WeatherScreen'
 import PrivacyScreen from './features/privacy/PrivacyScreen'
 import { getMember, onAuthChange } from './features/auth/session'
-import { canonicalHash, hasOwnHeader, parseHash, TABS, type Tab } from './features/shell/routes'
+import { canonicalHash, parseHash, TABS, type Tab } from './features/shell/routes'
 import { useForgetPersonOutsideHealth } from './features/records/useHealthData'
 import { Inbox } from './features/inbox/Inbox'
 import { useInbox } from './features/inbox/useInbox'
@@ -24,11 +25,9 @@ import { TabBar } from './features/shell/TabBar'
 import { ScreenBoundary } from './features/shell/ScreenBoundary'
 import { JackFab } from './features/shell/JackFab'
 import CalmJack from './features/calm/CalmJack'
-import { isDiscoverSubRoot } from './features/discover'
 import ApprovePinSheet from './features/setup/ApprovePinSheet'
 import { useSavedTheme } from './features/shell/theme'
 import { useSavedTextSize } from './features/shell/textSize'
-import { TopBar } from './features/shell/TopBar'
 import { UnreadContext } from './features/today/unread'
 import { OfflineBar } from './features/sync/OfflineBar'
 import ViewAsBanner from './features/viewas/ViewAsBanner' // S16-L0
@@ -95,6 +94,7 @@ export default function App() {
   // S16-L0: #family/papers is the Records screen
   useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' || view === 'calm' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
+  useEffect(() => startSensorSync(), []) // reads the phone's health store on open and on return; no-op on the web
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
@@ -118,7 +118,6 @@ export default function App() {
   return (
     <div className="bt">
       <Sky state="clear" />
-      {isTabView && !(tab === 'today' && view === null) && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && <TopBar unread={inbox.unread} />}
       <OfflineBar />
       {/* S16-L0 */}
       <ViewAsBanner />

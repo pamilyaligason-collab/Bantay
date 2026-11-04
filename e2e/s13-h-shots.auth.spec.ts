@@ -26,7 +26,7 @@ const seed = (page: Page, mode: 'full' | 'empty' | 'labs' | 'log') =>
       r('bp_systolic', 124, 'mmHg', 0.05), r('bp_diastolic', 79, 'mmHg', 0.05), r('bp_systolic', 136, 'mmHg', 5), r('bp_diastolic', 88, 'mmHg', 5),
       r('fasting_glucose', 104, 'mg/dL', 2), r('weight', 61.5, 'kg', 3), r('heart_rate', 70, 'bpm', 0.1), r('ldl', 162, 'mg/dL', 30)
     ]
-    await put('bantay-health', { people: [{ id: 'me', name: 'Lloyd' }], readings })
+    await put('bantay-health', { people: [{ id: 'me', name: 'Rey' }], readings })
   }, [NOW.getTime(), mode] as const)
 
 async function open(page: Page, mode: 'full' | 'empty' | 'labs') {
@@ -60,14 +60,14 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'overview-browse', scheme, '[data-testid="browse"]')
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight))
     await shot(page, 'overview-end', scheme)
-    // Pinned: 2 columns at 360 px, every tile 48 px or taller
+    // Pinned (H7): a swipe row at 360 px (one Carousel, tiles side by side), every tile 48 px or taller
     await page.setViewportSize({ width: 360, height: 780 })
-    const boxes = await page.locator('.pt-grid > *').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), w: Math.round(b.width), h: Math.round(b.height) } }))
+    const boxes = await page.locator('[data-testid="pinned"] > *').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) } }))
     expect(boxes.length).toBeGreaterThanOrEqual(3)
     expect(boxes.every((b) => b.h >= 48)).toBe(true)
-    expect(new Set(boxes.map((b) => b.x)).size).toBe(2)
+    expect(new Set(boxes.map((b) => b.y)).size).toBe(1) // one row, not stacked
     await page.getByTestId('browse-readings').getByRole('link').click()
-    await expect(page.getByRole('heading', { name: '7-day averages' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Averages' })).toBeVisible()
     await expect(page.getByTestId('kpis')).toBeVisible()
   })
 

@@ -4,7 +4,7 @@
 .fp-row { display: flex; align-items: center; gap: 12px; }
 .fp-between { justify-content: space-between; }
 .fp-head { display: flex; align-items: center; gap: 12px; }
-.fp-head h2 { margin: 0; font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 22px; letter-spacing: -.01em; }
+.fp-head h2 { margin: 0; font-weight: 600; font-size: 22px; letter-spacing: -.01em; }
 .fp-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 14px; font-weight: 600; }
 .fp-chip.is-done { background: var(--soft); color: var(--muted); text-decoration: line-through; }
 .fp-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -14,6 +14,7 @@
 .fp-tile.is-wide .fp-grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .fp-ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--soft); color: var(--green2); flex: none; }
 .fp-tile:focus-visible, .fp-card:focus-visible, .fp-cell:focus-visible, .fp-ans:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.fp-cell:focus-visible { outline-offset: -3px; } /* inside the cell: the grid scrolls, so an outer outline would be clipped */
 .fp-note { font-size: 13px; color: var(--muted); }
 .fp-src { display: flex; gap: 8px; font-size: 13px; color: var(--muted); }
 
@@ -36,16 +37,19 @@
 }
 
 /* word search: 8 by 8 */
-.fp-ws { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
-.fp-cell { aspect-ratio: 1 / 1; min-height: 36px; padding: 0; border: 0; border-radius: 8px; background: var(--card); color: var(--ink); box-shadow: var(--shadow); font: inherit; font-weight: 700; font-size: 18px; }
-.fp-cell.is-found { background: var(--amber); color: #2A1C00; }
-.fp-cell.is-start { background: var(--soft); box-shadow: inset 0 0 0 3px var(--green2); }
-.fp-cell.is-hint { box-shadow: 0 0 0 3px var(--amber); }
+/* eight 44 px columns need 352 px: the grid is 352 px wide, centred on the page and allowed to reach 4 px from the screen edge (a 360 px phone has only 322 px inside the page padding); narrower than 352 it scrolls sideways inside itself, never shrinking a cell under 44 px */
+.fp-ws { display: grid; grid-template-columns: repeat(8, 44px); justify-content: start; width: min(352px, calc(100vw - 8px)); margin-inline: calc(50% - min(176px, calc(50vw - 4px))); overflow-x: auto; overscroll-behavior-x: contain; }
+/* a 44 px hit area around a 36 px letter square */
+.fp-cell { width: 100%; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; font-size: 18px; }
+.fp-cell > span { display: grid; place-items: center; width: min(36px, calc(100% - 6px)); aspect-ratio: 1; margin: auto; border-radius: 8px; background: var(--card); box-shadow: var(--shadow); }
+.fp-cell.is-found > span { background: var(--amber); color: #2A1C00; }
+.fp-cell.is-start > span { background: var(--soft); box-shadow: inset 0 0 0 3px var(--green2); }
+.fp-cell.is-hint > span { box-shadow: 0 0 0 3px var(--amber); }
 .fp-words { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* trivia */
 .fp-q { display: grid; gap: 6px; padding: 18px; }
-.fp-q h3 { margin: 0; font-family: var(--f-display, Georgia, serif); font-weight: 600; font-size: 23px; line-height: 1.2; }
+.fp-q h3 { margin: 0; font-weight: 600; font-size: 23px; line-height: 1.2; }
 .fp-answers { display: grid; gap: 10px; }
 .fp-ans { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; border: 0; border-radius: 18px; background: var(--card); color: var(--ink); box-shadow: var(--shadow); text-align: left; font: inherit; font-size: 17px; font-weight: 600; }
 .fp-ans b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--card2); flex: none; font-size: 15px; }
@@ -66,5 +70,6 @@
 .fp-meta .fp-open { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; color: var(--link); font-weight: 600; }
 .fp-fact { display: grid; gap: 8px; padding: 16px; }
 .fp-fact b { font-size: 17px; line-height: 1.3; }
-.fp-fact a { color: var(--link); font-weight: 600; }
+.fp-fact a { color: var(--link); font-weight: 600; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; }
 .fp-fact.is-soft { background: var(--soft); }
+.fp-tile.is-wide { min-height: 64px; padding-block: 10px; } /* the last Play tile must end above the Jack box at rest */

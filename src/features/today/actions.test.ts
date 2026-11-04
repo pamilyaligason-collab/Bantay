@@ -104,9 +104,9 @@ describe('queued Unwell never leaves the account that queued it (shared phone)',
 })
 
 describe('toasts name the actor (m2-6)', () => {
-  it('Saved for Mama / Family told. Sent as Lloyd.', () => {
-    expect(feelingToast('told', { name: 'Mama', actor: 'Lloyd' })).toBe('Saved for Mama.')
-    expect(feelingToast('told', { name: 'Mama', actor: 'Lloyd', unwell: true })).toBe('Family told. Sent as Lloyd.')
+  it('Saved for Mama / Family told. Sent as Rey.', () => {
+    expect(feelingToast('told', { name: 'Mama', actor: 'Rey' })).toBe('Saved for Mama.')
+    expect(feelingToast('told', { name: 'Mama', actor: 'Rey', unwell: true })).toBe('Family told. Sent as Rey.')
     expect(feelingToast('told')).toBe('Saved. Your family will see it in Bantay.')
   })
 })

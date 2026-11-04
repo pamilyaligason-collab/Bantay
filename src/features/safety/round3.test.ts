@@ -69,19 +69,19 @@ describe('hazard single label', () => {
 
 describe('rainLine', () => {
   it('falls back to the day chance with no hourly data, and never prints NaN', () => {
-    expect(rainLine({ temp: 28, rainPct: 86, words: 'cloudy', at: '' })).toBe('Bring an umbrella. Chance of rain: 86%.')
+    expect(rainLine({ temp: 28, rainPct: 86, words: 'cloudy', at: '' })).toBe('Bring an umbrella. Today up to 86%.')
     expect(rainLine({ temp: 28, rainPct: null, words: 'cloudy', at: '' })).toBe('No rain chance number yet.')
     expect(rainLine(null)).toBe('Rain, wind and clouds')
   })
   it('never raining in the window: the day chance, not "no more rain"', () => {
     const wx = { temp: 30, rainPct: 40, words: 'sunny', at: '', hourly: { time: ['2026-10-19T16:00', '2026-10-19T17:00', '2026-10-19T18:00'], prob: [10, 10, 10] } }
-    expect(rainLine(wx, new Date('2026-10-19T08:00:00Z'))).toBe('Chance of rain today: 40%.')
+    expect(rainLine(wx, new Date('2026-10-19T08:00:00Z'))).toBe('Today up to 40%.')
   })
   it('rain gone from the window: "no more rain" only if the sky showed rain; rounds the percent', () => {
     const hourly = { time: ['2026-10-19T16:00', '2026-10-19T17:00'], prob: [10, 10] }
     const now = new Date('2026-10-19T08:00:00Z')
     const dry = { temp: 30, rainPct: 70.4, words: 'cloudy', at: '', hourly }
-    expect(rainLine(dry, now)).toBe('Chance of rain today: 70%.')
+    expect(rainLine(dry, now)).toBe('Today up to 70%.')
     const wet = { temp: 26, rainPct: 70, words: 'rain showers', code: 61, at: '', hourly }
     expect(rainLine(wet, now)).toBe('No more rain expected for now.')
   })

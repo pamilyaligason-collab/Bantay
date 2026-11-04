@@ -6,7 +6,7 @@ As of 2026-10-20.
 One private Artifact, 390px phone, light and dark: https://claude.ai/artifact/Anc9M12iGsoJ8ry1uC6x8f (version 8,
 2026-10-20). Base: the Family Bantay v2 mockup (all 34 v2 screens kept), with the session 6 changes layered on: 53
 screens. The original v2 mockup is unchanged. All names and numbers are sample data.
-- Replaced: Today (Lloyd's order), Health (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal),
+- Replaced: Today (the owner's order), Health (KPIs latest, body map 7-day average, Vitals Latest/Average/Normal),
   Safety (place toggle, local and national).
 - Added: Medicines, edit, undo, Weather, Quick dial, Explore your body, Health library, article, Videos, Refill,
   Doctor visits, add reading, lock-screen reminder, Warnings, Storm tracker, setup medicines step, Offline, Simple

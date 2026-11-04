@@ -24,6 +24,7 @@ export default function PlayScreen() {
     void Promise.all([playedToday(), gamesToday()]).then(([n, games]) => { if (live) setToday({ n, games }) })
     return () => { live = false }
   }, [page])
+  const go = (p: Page) => { location.hash = 'discover/play/' + p } // Memory and Word search draw their own title with a Back link, so the hash is the source of truth for them
   const back = () => { setPage('hub'); if (location.hash !== '#discover/play') location.hash = 'discover/play' }
   if (page === 'memory') return <Memory onBack={back} />
   if (page === 'wordsearch') return <WordSearch onBack={back} />
@@ -40,8 +41,8 @@ export default function PlayScreen() {
         </div>
       </section>
       <div className="fp-tiles">
-        <button type="button" className="fp-tile press" onClick={() => setPage('memory')}><span className="fp-ico"><Icon name="smile" /></span><b>Memory match</b><span className="sh-sub">Find the pairs</span></button>
-        <button type="button" className="fp-tile press" onClick={() => setPage('wordsearch')}><span className="fp-ico"><Icon name="search" /></span><b>Word search</b><span className="sh-sub">English and Tagalog</span></button>
+        <button type="button" className="fp-tile press" onClick={() => go('memory')}><span className="fp-ico"><Icon name="smile" /></span><b>Memory match</b><span className="sh-sub">Find the pairs</span></button>
+        <button type="button" className="fp-tile press" onClick={() => go('wordsearch')}><span className="fp-ico"><Icon name="search" /></span><b>Word search</b><span className="sh-sub">English and Tagalog</span></button>
         <button type="button" className="fp-tile is-wide press" onClick={() => setPage('trivia')}><span className="fp-ico"><Icon name="bolt" /></span><span className="fp-grow"><b>Alam mo ba?</b><span className="sh-sub">One fun question a day</span></span><Icon name="chev" /></button>
         <button type="button" className="fp-tile is-wide press" onClick={() => setPage('facts')}><span className="fp-ico"><Icon name="sun" /></span><span className="fp-grow"><b>Fun facts today</b><span className="sh-sub">On this day and a Philippine fact</span></span><Icon name="chev" /></button>
       </div>

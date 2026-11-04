@@ -10,12 +10,15 @@ export const CONDS: readonly Cond[] = ['clear', 'partly', 'overcast', 'fog', 'dr
 
 /** Sky gradient top and bottom per time of day. The scrim over the scene is SCRIM, so white text stays AA (see scene.test.ts). */
 export const SKY: Record<Tod, readonly [string, string]> = {
-  night: ['#0B1636', '#25396F'],
+  night: ['#1C2F57', '#46608A'], // board Main
   dawn: ['#4B4F96', '#F2A57A'],
   day: ['#2F7CCB', '#86C3F2'],
   dusk: ['#3C3A7C', '#F0895C']
 }
-export const SCRIM = 0.58 // black-blue veil, alpha, drawn between the picture and the text
+export const SCRIM = 0.64 // black-blue veil, alpha, drawn between the picture and the text
+export const SCRIM_LITE = 0.2 // Today's night hero (T6): the sky reads as the board's #1C2F57 to #46608A; scene.test.ts gates white text AA at this alpha
+/** The veil for a scene. Today (`lite`) gets the lighter one only on a night with a moon (clear, partly, none): storms, flashes, haze and the daytime skies keep SCRIM, and so does the Weather page. */
+export const scrimFor = (tod: Tod, lite: boolean, moon: boolean): number => (lite && tod === 'night' && moon ? SCRIM_LITE : SCRIM)
 
 /** Which layers a state draws (WeatherScene renders from this, scene.test.ts gates the same list). */
 export interface Layers { stars: boolean; sun: boolean; moon: boolean; clouds: 0 | 2 | 4; haze: boolean; fog: boolean; rain: number; flash: boolean; heat: boolean; shimmer: boolean }

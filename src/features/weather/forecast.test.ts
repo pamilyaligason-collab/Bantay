@@ -91,6 +91,24 @@ describe('cache and offline', () => {
   })
 })
 
+describe('a hung connection', () => {
+  // a fetch that never answers and only ends when its abort signal fires, like a real stalled connection
+  const hung = ((_u: string, init?: RequestInit) => new Promise<Response>((_, no) => init?.signal?.addEventListener('abort', () => no(init.signal!.reason)))) as unknown as typeof fetch
+  it('is cut off by the timeout: with no saved forecast the call fails', async () => {
+    await expect(getForecast(P, hung, { now: NOW.getTime(), timeoutMs: 20 })).rejects.toBeTruthy()
+  })
+  it('is cut off by the timeout: with a saved forecast it answers from the cache, marked as such', async () => {
+    await getForecast(P, ok(fixture({ now: NOW })), { now: NOW.getTime() })
+    const r = await getForecast(P, hung, { now: NOW.getTime() + 11 * 60_000, timeoutMs: 20 })
+    expect(r.fromCache).toBe(true)
+  })
+  it('sends a timeout signal with the default wait', async () => {
+    const f = vi.fn(async (_u: string, _i?: RequestInit) => new Response(JSON.stringify(fixture({ now: NOW })), { status: 200 }))
+    await getForecast(P, f as unknown as typeof fetch, { now: NOW.getTime() })
+    expect(f.mock.calls[0]![1]!.signal).toBeInstanceOf(AbortSignal)
+  })
+})
+
 describe('time zone', () => {
   it('place-local clock comes from the forecast offset, so a member abroad sees the place time', () => {
     const fc = parseForecast(fixture({ now: NOW, offsetS: -5 * 3600, tz: 'America/Chicago' }), NOW.toISOString())!

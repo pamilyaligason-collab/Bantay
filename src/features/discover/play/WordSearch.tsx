@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { LargeTitle } from '../../look'
 import { Icon } from '../../shell/Icon'
 import en from '../../../data/play/words-en.json'
 import fil from '../../../data/play/words-fil.json'
@@ -32,21 +33,18 @@ export default function WordSearch({ onBack, seed = Date.now() }: { onBack: () =
   }
   return (
     <div className="fp" data-testid="wordsearch">
-      <div className="fp-head">
-        <button type="button" className="sh-iconbtn" aria-label="Back to Play" onClick={onBack}><Icon name="back" /></button>
-        <div><h2>Word search</h2><span className="fp-note">English and Tagalog</span></div>
-      </div>
+      <LargeTitle title="Word search" back={{ href: '#discover/play', label: 'Play' }} />
       <div className="sh-seg" role="group" aria-label="Word language">
         <button type="button" aria-pressed={lang === 'fil'} onClick={() => lang !== 'fil' && fresh('fil', round)}>Tagalog</button>
         <button type="button" aria-pressed={lang === 'en'} onClick={() => lang !== 'en' && fresh('en', round)}>English</button>
       </div>
-      <div className="fp-ws" role="group" aria-label="Letters">
+      <div className="fp-ws" role="group" aria-label="Letters" data-no-swipe>
         {puzzle.grid.map((row, y) => row.map((ch, x) => {
           const k = `${y},${x}`
           const isStart = !!start && start[0] === y && start[1] === x
           return (
             <button key={k} type="button" className={`fp-cell${foundCells.has(k) ? ' is-found' : ''}${isStart ? ' is-start' : ''}${hint && hint[0] === y && hint[1] === x ? ' is-hint' : ''}`}
-              aria-label={`${ch}, row ${y + 1}, column ${x + 1}`} onClick={() => tap(y, x)}>{ch}</button>
+              aria-label={`${ch}, row ${y + 1}, column ${x + 1}`} onClick={() => tap(y, x)}><span>{ch}</span></button>
           )
         }))}
       </div>

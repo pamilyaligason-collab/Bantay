@@ -87,13 +87,6 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect.poll(() => sent.map((r) => r.body), { timeout: 15_000 }).toContain('All good')
     })
 
-    test("after I'm OK the card says so", async ({ page }) => {
-      await page.goto('/#family')
-      await page.getByRole('button', { name: "I'm OK", exact: true }).click()
-      await expect(page.getByText(/You're OK · /)).toBeVisible()
-      await shot(page, 'im-ok', scheme)
-    })
-
     // House convention for 200% text: a 195 px wide viewport (e2e/health-labs.spec.ts), because the app's CSS uses px font sizes.
     test('200% text zoom (195 px wide): no sideways scroll on Home, Messages and Plan', async ({ page }) => {
       await page.setViewportSize({ width: 195, height: 844 })
@@ -108,10 +101,15 @@ for (const scheme of ['light', 'dark'] as const) {
     test('200% text zoom (195 px wide): the done check-in card does not overflow', async ({ page }) => {
       await page.setViewportSize({ width: 195, height: 844 })
       await page.goto('/#family')
-      await page.getByRole('button', { name: "I'm OK", exact: true }).click()
-      await expect(page.getByText(/You're OK · /)).toBeVisible()
+      await expect(page.getByTestId('person-card').first()).toBeVisible() // Family has drawn, so the count below can fail
+      await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // F4: the action moved to My day on Today
+      await page.goto('/')
+      const row = page.getByTestId('myday-checkin')
+      await row.getByRole('button', { name: "I'm OK", exact: true }).click()
+      await expect(row.getByText('Checked in')).toBeVisible()
       await settle(page)
-      expect(await page.getByTestId('person-card').first().evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+      expect(await row.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true) // the done state of the check-in row
+      expect(await page.getByTestId('myday').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
     })
   })

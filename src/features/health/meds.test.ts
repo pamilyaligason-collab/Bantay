@@ -175,10 +175,10 @@ describe('pickSlot and remindable', () => {
   it('answeredBy names who answered the review, for 7 days only, and never from a bad or future stamp', () => {
     const now = new Date('2026-10-26T10:00:00Z')
     const s = (by: unknown, at: unknown) => ({ schedule: { v: 1, times: ['08:00'], answered_by: by, answered_at: at } })
-    expect(answeredBy(s('Lloyd', '2026-10-25T10:00:00Z'), now)).toBe('Lloyd')
-    expect(answeredBy(s('Lloyd', '2026-10-19T09:59:00Z'), now)).toBeNull() // over 7 days
-    expect(answeredBy(s('Lloyd', 'soon'), now)).toBeNull()
-    expect(answeredBy(s('Lloyd', '2026-10-27T10:00:00Z'), now)).toBeNull() // a clock in the future
+    expect(answeredBy(s('Rey', '2026-10-25T10:00:00Z'), now)).toBe('Rey')
+    expect(answeredBy(s('Rey', '2026-10-19T09:59:00Z'), now)).toBeNull() // over 7 days
+    expect(answeredBy(s('Rey', 'soon'), now)).toBeNull()
+    expect(answeredBy(s('Rey', '2026-10-27T10:00:00Z'), now)).toBeNull() // a clock in the future
     expect(answeredBy(s('  ', '2026-10-25T10:00:00Z'), now)).toBeNull()
     expect(answeredBy(s(7, '2026-10-25T10:00:00Z'), now)).toBeNull()
     expect(answeredBy({ schedule: ['08:00'] }, now)).toBeNull()

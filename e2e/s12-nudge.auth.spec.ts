@@ -54,11 +54,11 @@ async function start(page: Page, scheme: 'light' | 'dark') {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.clock.setFixedTime(NOW)
   await skipOnboarding(page)
-  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Lloyd' }, { personId: 'ma', displayName: 'Ma' }])))
+  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }, { personId: 'ma', displayName: 'Ma' }])))
   await mock(page)
   await page.emulateMedia({ colorScheme: scheme })
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible() // the app has created its databases
+  await expect(page.getByTestId('myday')).toBeVisible() // the app has created its databases
 }
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -70,7 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
       if (req.method() === 'POST') posts.push(JSON.parse(req.postData() ?? '{}') as Row)
       await route.fulfill({ status: req.method() === 'POST' ? 201 : 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: '[]' })
     })
-    await seed(page, 'bantay-health', 'people', [{ id: 'me', name: 'Lloyd' }, { id: 'ma', name: 'Ma' }])
+    await seed(page, 'bantay-health', 'people', [{ id: 'me', name: 'Rey' }, { id: 'ma', name: 'Ma' }])
     await seed(page, 'bantay-health', 'readings', readings())
     await seed(page, 'bantay-log', 'medications', [{ clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-10-01', medStatus: 'active', status: 'confirmed' }])
     await seed(page, 'bantay-log', 'meds', [14, 15, 16, 18, 20].map((d) => ({ personId: 'me', name: 'Losartan', takenAt: at(d, 8, 10), medicationId: 's1', slot: '08:00' }))) // missed Sat 17 and Sun 19 -> 5 of 7
@@ -122,7 +122,7 @@ for (const scheme of ['light', 'dark'] as const) {
       if (req.method() === 'POST') posts.push(JSON.parse(req.postData() ?? '{}') as Row)
       await route.fulfill({ status: req.method() === 'POST' ? 201 : 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: '[]' })
     })
-    await seed(page, 'bantay-health', 'people', [{ id: 'me', name: 'Lloyd' }, { id: 'ma', name: 'Ma' }])
+    await seed(page, 'bantay-health', 'people', [{ id: 'me', name: 'Rey' }, { id: 'ma', name: 'Ma' }])
     await seed(page, 'bantay-log', 'medications', [{ clientId: 'c1', serverId: 's1', personId: 'me', name: 'Losartan', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-10-01', medStatus: 'active', status: 'confirmed' }])
     await page.goto('/#health/nudge')
     await page.reload()

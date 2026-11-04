@@ -1,4 +1,4 @@
-# Family Bantay - go live for P1/P2. Lloyd runs this once from the repo root. Windows PowerShell 5.1.
+# Family Bantay - go live for P1/P2. The owner runs this once from the repo root. Windows PowerShell 5.1.
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-p1p2.ps1            (real run)
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-p1p2.ps1 -DryRun    (prints every native/network command, runs none)
 # Stops at the first failure. No secrets in this file; the CLI uses your existing login and linked project.

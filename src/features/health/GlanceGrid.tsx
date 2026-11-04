@@ -6,7 +6,7 @@ import { lastDays } from '../today/myWeekLogic'
 import { labDate, groupLabs, labRow } from './labsLogic'
 import { dayOf, matchDoses, slotsFor } from './meds'
 import { localDay, readingPosition } from './model'
-import { computeNudge, type Goal } from './nudgeLogic'
+import { cadenceWord, computeNudge, type Goal } from './nudgeLogic'
 import { latestByTest, type Range, type Reading } from './ranges'
 import { isVital } from './vitals'
 import { useMedicationRows } from './useMedicationRows'
@@ -69,7 +69,7 @@ export function useNudge(personId: string, readings: Reading[]) {
     const since = new Date(Date.now() - SINCE_DAYS * 86_400_000).toISOString()
     const sub = liveQuery(async () => ({
       takes: await ldb.meds.where('personId').equals(personId).filter((m) => m.takenAt >= since).toArray(),
-      activity: await ldb.activity.where('personId').equals(personId).filter((a) => a.startedAt >= since).toArray(),
+      activity: await ldb.activity.where('personId').equals(personId).filter((a) => Date.parse(a.startedAt) >= Date.parse(since)).toArray(), // by instant: pulled rows say +00:00
       food: await ldb.food.where('personId').equals(personId).filter((f) => f.eatenAt >= since).toArray(),
       water: await ldb.water.where('personId').equals(personId).filter((w) => w.drunkAt >= since).toArray()
     })).subscribe({ next: setRows, error: () => undefined })
@@ -83,7 +83,7 @@ export function nudgeTitle(next: Goal | null, allMet: boolean, bpToday: boolean)
   if (allMet) return 'Great week'
   if (!next) return 'Nice. Everything for this week is done.'
   if (next.id !== 'bp') return next.step
-  return bpToday ? `BP logged today · ${next.say}` : 'Morning BP not logged'
+  return bpToday ? `${cadenceWord(next)} logged today · ${next.say}` : `${cadenceWord(next)} · ${next.say}`
 }
 
 const RING_HUE: Record<string, Goal['id']> = { BP: 'bp', Meals: 'meals', Move: 'move' }

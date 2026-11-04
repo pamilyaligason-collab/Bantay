@@ -58,10 +58,10 @@ describe('StormCard', () => {
   it('the faces are the mood log; copy says the family can see it in Bantay, never "told" or "notified"', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [row()] })
     render(<StormCard now={NOW} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Great' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Good' }))
     await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Saved. Your family can see it in Bantay.'))
     expect(log.mood).toHaveBeenLastCalledWith('great')
-    fireEvent.click(screen.getByRole('button', { name: 'Not great' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Low' }))
     await waitFor(() => expect(log.mood).toHaveBeenLastCalledWith('notgreat'))
     expect(document.body.textContent).not.toMatch(/will be (told|notified)|lock screen/i)
   })

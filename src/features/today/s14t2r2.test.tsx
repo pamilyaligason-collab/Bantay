@@ -84,7 +84,7 @@ describe('Simple mode night: one Jack per screen, and only when nothing needs ac
     expect(jacks(container)[0]).toMatch(/ready-for-rain/)
   })
   it('night with a dose due or late: no sleepy Jack', async () => {
-    m.due = [dose('me', 'Lloyd', 1410, 1410)]
+    m.due = [dose('me', 'Rey', 1410, 1410)]
     m.tick = new Date(2026, 9, 28, 23, 40)
     const { container } = simple()
     await screen.findByRole('button', { name: /I took it/ })
@@ -129,7 +129,7 @@ describe('Native snooze carries the dose day, not the tap day', () => {
   })
   it('In 10 min at 00:10 on a dose from 23:30 yesterday sends day 2026-10-28', async () => {
     vi.setSystemTime(new Date(2026, 9, 29, 0, 10))
-    const item = pickNext({ due: [dose('me', 'Lloyd', 1410, -30)], plan: null, storm: null }, new Date(2026, 9, 29, 0, 10))
+    const item = pickNext({ due: [dose('me', 'Rey', 1410, -30)], plan: null, storm: null }, new Date(2026, 9, 29, 0, 10))
     render(<NextUp item={item} review={0} notify={() => undefined} />)
     fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     await waitFor(() => expect(m.snooze).toHaveBeenCalledTimes(1))
@@ -140,7 +140,7 @@ describe('Native snooze carries the dose day, not the tap day', () => {
 
 describe('A snoozed late card hides only itself', () => {
   it('another person is picked next while the first is snoozed', () => {
-    const a = dose('me', 'Lloyd', 540)
+    const a = dose('me', 'Rey', 540)
     const b = dose('ana', 'Ana', 600)
     m.due = [a, b]
     m.review = 1
@@ -156,7 +156,7 @@ describe('A snoozed late card hides only itself', () => {
     expect(result.current.review).toBe(1)
   })
   it('the only dose snoozed: nothing is next (the weather card expands with the medicines to check row), then it returns', () => {
-    const a = dose('me', 'Lloyd', 540)
+    const a = dose('me', 'Rey', 540)
     m.due = [a]
     m.review = 2
     m.tick = new Date(2026, 9, 28, 10, 0)

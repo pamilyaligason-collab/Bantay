@@ -10,9 +10,9 @@ export function useAbroad(): boolean {
 }
 
 /** The red emergency-number button used on the first-aid pages. */
-export function Call911({ className = 'btn fa-call' }: { className?: string }) {
+export function Call911({ className = 'btn fa-call', testId }: { className?: string; testId?: string }) {
   const abroad = useAbroad()
   return abroad
-    ? <a href={ABROAD_SOURCE.url} target="_blank" rel="noopener noreferrer" className={className}><Icon name="phone" size={22} />Local emergency number</a>
-    : <a href="tel:911" className={className}><Icon name="phone" size={22} />Call 911</a>
+    ? <a href={ABROAD_SOURCE.url} target="_blank" rel="noopener noreferrer" className={className} data-testid={testId}><Icon name="phone" size={22} />Local emergency number</a>
+    : <a href="tel:911" className={className} data-testid={testId}><Icon name="phone" size={22} />Call 911</a>
 }

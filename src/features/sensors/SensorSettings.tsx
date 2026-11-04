@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { track } from '../admin/events'
 import { useKv } from '../safety/store'
 import { capgoBridge, isNative } from './bridge'
-import { disableType, enableTypes, reconcileGranted, type EnableResult, type HealthBridge, type HealthDiag, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
+import { currentPersonId, disableType, enableTypes, reconcileGranted, type EnableResult, type HealthBridge, type HealthDiag, SENSORS, type SensorType, STATE_KEY, syncAll } from './health'
 
-const NO_STATE = { enabled: [] as SensorType[] }
+const NO_STATE: { enabled: SensorType[]; owner?: string } = { enabled: [] }
 const MSG: Record<Exclude<EnableResult, 'on'>, string> = {
   denied: 'Not turned on. You said no, or your phone is blocking it. Open Health Connect, tap App permissions, tap Bantay, and allow it.',
   unavailable: 'Health Connect is not on this phone yet. Install “Health Connect by Android” from the Play Store, then try again.'
@@ -19,10 +19,13 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
   const [result, setResult] = useState('')
   const [diag, setDiag] = useState<{ d: HealthDiag | null; error: string } | null>(null)
   const [fix, setFix] = useState<{ kind: 'settings' | 'install'; text: string; error?: string } | null>(null)
+  const [me, setMe] = useState<string | null>(null)
+  const [askedTakeover, setAskedTakeover] = useState(false)
 
   useEffect(() => { // the OS may already allow what the app does not list yet
     if (!native) return
     const b = bridge ?? capgoBridge()
+    void currentPersonId().then(setMe, () => undefined)
     void reconcileGranted(b).then((added) => { if (added.length) void syncAll(b) }, () => undefined)
   }, [native, bridge])
 
@@ -40,8 +43,16 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
     if (r === 'on') return setFix(null)
     setFix({ kind: r === 'unavailable' ? 'install' : 'settings', text: MSG[r], error })
   }
+  // A stray tap by someone else would save this phone's health data under their name for good: ask once first.
+  const mustConfirm = () => {
+    if (!me || !st.owner || st.owner === me || askedTakeover) return false
+    setAskedTakeover(true)
+    return true
+  }
+  const TAKEOVER = "This phone's health data will be saved under your name. Tap again to confirm."
   const turnOnAll = async () => {
     if (busy) return
+    if (mustConfirm()) return setResult(TAKEOVER)
     setBusy('all')
     setFix(null)
     setResult('')
@@ -74,6 +85,9 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
 
   const toggle = async (type: SensorType, on: boolean) => {
     if (busy) return
+    if (!on && mustConfirm()) return setNote((n) => ({ ...n, [type]: TAKEOVER }))
+    // Who is signed in is not known yet (offline): this could be someone else turning off the owner's sensor.
+    if (on && st.owner && !me) return setNote((n) => ({ ...n, [type]: 'Could not check who is signed in. Try again when you are online.' }))
     setBusy(type)
     setNote((n) => ({ ...n, [type]: '' }))
     try {
@@ -134,7 +148,8 @@ export default function SensorSettings({ bridge, native = isNative() }: { bridge
       </div>
       <div className="grp">
         {SENSORS.map(({ type, label, why }) => {
-          const on = st.enabled.includes(type)
+          // Nothing reads for someone who is not the owner, so on would be untrue: off, and one tap takes over.
+          const on = st.enabled.includes(type) && (!me || !st.owner || st.owner === me)
           return (
             <div className="row" key={type}>
               <span className="grow">

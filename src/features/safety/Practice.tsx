@@ -1,4 +1,6 @@
 import practice from '../../data/safety/practice.json'
+import { GroupedList } from '../look'
+import { ExtRow } from './ExtRow'
 import { NOT_A_SIREN } from './alerts'
 import './safety.css'
 
@@ -38,13 +40,8 @@ export function PracticeCard({ card }: { card: Card }) {
         </div>
       ))}
       <Poster card={card} />
-      <p className="sub" style={{ fontSize: 13 }}>
-        Written in our own words from{' '}
-        {card.sources.map(([n, u], i) => (
-          <span key={u}>{i ? ', ' : ''}<a href={u} target="_blank" rel="noopener noreferrer">{n}</a></span>
-        ))}
-        . Posters are drawn for Bantay.
-      </p>
+      <p className="sub" style={{ fontSize: 13 }}>Written in our own words from these sources. Posters are drawn for Bantay.</p>
+      <GroupedList label="Sources">{card.sources.map(([n, u]) => <ExtRow key={u} title={n} url={u} />)}</GroupedList>
     </details>
   )
 }

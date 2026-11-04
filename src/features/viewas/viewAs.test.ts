@@ -21,7 +21,7 @@ beforeEach(async () => {
   exitActing()
   h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null }
   h.log.mockReset(); h.log.mockResolvedValue(true); h.carers.mockReset(); h.carers.mockResolvedValue(link(true)); h.calls = []
-  await hdb.people.clear(); await hdb.people.put({ id: 'p-mama', name: 'Mama Roco' })
+  await hdb.people.clear(); await hdb.people.put({ id: 'p-mama', name: 'Mama Villar' })
 })
 afterEach(() => { exitActing() })
 

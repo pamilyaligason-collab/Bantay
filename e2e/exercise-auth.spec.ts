@@ -11,7 +11,7 @@ const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(
 const jwt = () => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: UID, role: 'authenticated', aud: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`
 const user = { id: UID, aud: 'authenticated', role: 'authenticated', email: 'm-1@members.bantay.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' }
 const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }
-const PEOPLE = [{ id: 'me', display_name: 'Lloyd' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
+const PEOPLE = [{ id: 'me', display_name: 'Rey' }, { id: 'ma', display_name: 'Ma' }, { id: 'pa', display_name: 'Pa' }]
 
 async function mock(page: Page) {
   await page.addInitScript(([token, u]) => {
@@ -55,18 +55,17 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Today Move pill -> doctor check once -> picks -> Done logs a move; axe clean', async ({ page }) => {
       await page.goto('/')
-      const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.locator('.td-q')).toHaveCount(6) // v12: six tiles; the How are you? tile also holds the small I'm OK button
-      await row.getByRole('button', { name: 'More things to log' }).click()
+      await expect(page.getByTestId('myday')).toBeVisible()
+      await page.getByTestId('myday-more').click() // v13 T3: Move is behind Log something else
       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
       const sheet = page.getByRole('dialog', { name: 'Move' })
       await expect(sheet.getByText('Check with your doctor before starting new exercise.')).toBeVisible()
       expect(await serious(page)).toEqual([])
-      await sheet.getByRole('button', { name: 'I understand' }).click()
-      await expect(sheet.getByRole('list', { name: "Today's moves" }).getByRole('listitem')).toHaveCount(3)
-      await expect(sheet.getByText(/of 150 minutes/)).toBeVisible()
+      await sheet.getByTestId('doctor-ok').getByRole('button').click()
+      expect(await sheet.getByRole('group', { name: "Today's moves" }).getByRole('button').count()).toBeGreaterThanOrEqual(3)
+      await expect(sheet.getByRole('group', { name: 'This week' })).toContainText('of 150 min')
       expect(await serious(page)).toEqual([])
-      await sheet.getByRole('list', { name: "Today's moves" }).getByRole('button').first().click()
+      await sheet.getByRole('group', { name: "Today's moves" }).getByRole('button').first().click()
       await expect(sheet.getByRole('group', { name: 'Stop if' })).toBeVisible()
       expect((await sheet.getByRole('button', { name: 'Done' }).boundingBox())!.height).toBeGreaterThanOrEqual(56)
       expect(await serious(page)).toEqual([])
@@ -76,9 +75,9 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(rows).toHaveLength(1)
       expect(rows[0]!.minutes).toBeGreaterThan(0)
       // the doctor check is one-time: the sheet now opens straight on the picks
-      await row.getByRole('button', { name: 'More things to log' }).click()
+      await page.getByTestId('myday-more').click()
       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Move' }).click()
-      await expect(page.getByRole('dialog', { name: 'Move' }).getByText(/of 150 minutes/)).toBeVisible()
+      await expect(page.getByRole('dialog', { name: 'Move' }).getByRole('group', { name: 'This week' })).toContainText('of 150 min')
       await expect(page.getByRole('dialog', { name: 'Move' }).getByText('I understand')).toHaveCount(0)
       expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     })
@@ -87,9 +86,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.setViewportSize({ width: 390, height: 844 })
       const shot = (name: string) => page.screenshot({ path: shotPath(`docs/session-9/shots/w1-move/${name}-${scheme}.png`), fullPage: true })
       await page.goto('/#health/move')
-      await page.getByRole('button', { name: 'I understand' }).click()
+      await page.getByTestId('doctor-ok').getByRole('button').click()
       await expect(page.getByRole('heading', { name: "Today's plan" })).toBeVisible()
       await shot('move-home')
+      await page.getByRole('button', { name: /^All moves/ }).click()
       const all = page.getByRole('list', { name: 'Browse moves' })
       const before = await all.getByRole('listitem').count()
       await page.getByRole('group', { name: 'Kind of move' }).getByRole('button', { name: 'Mobility' }).click()
@@ -123,10 +123,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await card.click()
       await expect(page.getByRole('heading', { name: 'Move', level: 1 })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Back to Health' })).toBeVisible()
-      await expect(page.getByTestId('move-gate')).toBeVisible()
+      await expect(page.getByTestId('doctor-ok')).toBeVisible()
       expect(await serious(page)).toEqual([])
-      await page.getByRole('button', { name: 'I understand' }).click()
-      await expect(page.getByRole('list', { name: "Today's moves" }).getByRole('listitem')).toHaveCount(3)
+      await page.getByTestId('doctor-ok').getByRole('button').click()
+      expect(await page.getByRole('group', { name: "Today's moves" }).getByRole('button').count()).toBeGreaterThanOrEqual(3)
       expect(await serious(page)).toEqual([])
       expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     })

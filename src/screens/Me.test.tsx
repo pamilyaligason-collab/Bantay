@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 const call = vi.hoisted(() => ({ perm: vi.fn(), ask: vi.fn() }))
 vi.mock('../features/sos/call', () => ({ callPermission: call.perm, requestCallPermission: call.ask }))
+const role = vi.hoisted(() => ({ v: 'member' }))
+vi.mock('../features/auth/session', async (orig) => ({ ...(await orig<typeof import('../features/auth/session')>()), getMember: async () => (role.v === 'out' ? null : { userId: 'u0', personId: 'pX', role: role.v }) }))
 import Me from './Me'
 
 const FAMILY = ['Mama', 'Papa', 'Ate Joy', 'Lolo'].map((displayName, i) => ({ personId: `p${i}`, displayName, handle: null, provider: 'pin' }))
@@ -35,10 +37,10 @@ describe('Settings overview (#me)', () => {
       ['Privacy', '#privacy'], ['Sign-in', '#me/signin'], ['About', '#me/about']
     ])
   })
-  it('the Display row says the three current values on one line', async () => {
+  it('the Display row says the text size and theme on one line', async () => {
     await db.kv.put({ key: 'look.textsize', value: 'large' }); await db.kv.put({ key: 'look.theme', value: 'dark' })
     at('#me')
-    expect(await screen.findByText('Text Large · Theme Dark · English')).toBeTruthy()
+    expect(await screen.findByText('Large text · Dark')).toBeTruthy()
   })
   it('no share.* key is written and no local sharing switch is drawn (D-80)', async () => {
     at('#me')
@@ -179,6 +181,50 @@ describe('Alerts and reminders (#me/alerts)', () => {
   })
 })
 
+describe('Family admin tools row (M1)', () => {
+  afterEach(() => { role.v = 'member' })
+  it('admin: the first NavRow of the list on the overview, and not on About', async () => {
+    role.v = 'admin'
+    const { container } = at('#me')
+    await waitFor(() => expect(rowsOf(container)[0]).toBe('Family admin tools'))
+    expect(container.querySelector('.st-list .st-row')?.getAttribute('href')).toBe('#admin')
+    cleanup(); at('#me/about'); await screen.findByRole('heading', { name: 'About' })
+    expect(screen.queryByRole('link', { name: /Family admin tools/ })).toBeNull()
+  })
+  it('non-admin: no row', async () => {
+    const { container } = at('#me')
+    await screen.findByRole('switch', { name: 'Simple mode' })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(rowsOf(container)).not.toContain('Family admin tools')
+  })
+})
+
+describe('Settings board states (lane CB)', () => {
+  afterEach(() => { role.v = 'member' })
+  it('signed out: "Not signed in", no Family and sharing or Sign-in row, and no Sign in button when this copy has no sign-in', async () => {
+    role.v = 'out'
+    const { container } = at('#me')
+    expect(await screen.findByText('Not signed in')).toBeTruthy()
+    await waitFor(() => expect(rowsOf(container)).not.toContain('Family and sharing'))
+    expect(rowsOf(container)).toEqual(['Alerts and reminders', 'Display', 'Phone', 'Privacy', 'About'])
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull() // supabase is null in unit tests: sign-in is not set up
+    expect(screen.getByText('Sign-in is not set up on this copy')).toBeTruthy()
+  })
+  it('every row on the overview wears its own tint chip (the board)', async () => {
+    const { container } = at('#me')
+    await screen.findByRole('switch', { name: 'Simple mode' })
+    const tints = Array.from(container.querySelectorAll('.st-list .rw-ic')).map((e) => e.getAttribute('data-tint'))
+    expect(tints).toEqual(['red', 'blue', 'amber', 'teal', 'purple', 'green', 'none'])
+  })
+  it('Alerts and reminders: World alerts are dim "Later" rows with no control, so nothing pretends to work', async () => {
+    at('#me/alerts')
+    const later = await screen.findByTestId('world-alerts-later')
+    expect(later.querySelectorAll('[aria-disabled="true"]').length).toBe(4)
+    expect(later.querySelectorAll('[role="switch"], button, a').length).toBe(0)
+    for (const t of ['Hazards near family', 'Philippines-wide warnings', 'Daily digest time', 'SMS fallback']) expect(later.textContent).toContain(t)
+  })
+})
+
 describe('About, Sign-in, Phone', () => {
   it('About hides the update check from non-admins', async () => {
     at('#me/about')
@@ -199,6 +245,6 @@ describe('About, Sign-in, Phone', () => {
     const { container } = at('#me/phone/phones')
     await screen.findByRole('heading', { name: 'Family phones' })
     expect(screen.getByRole('link', { name: 'Back to Phone' }).getAttribute('href')).toBe('#me/phone')
-    expect(container.querySelectorAll('.st-group .hdr').length).toBe(1)
+    expect(container.querySelectorAll('.st-group header.lt').length).toBe(1)
   })
 })

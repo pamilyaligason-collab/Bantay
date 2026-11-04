@@ -26,7 +26,7 @@ describe('Discover overview (#discover)', () => {
   })
   it('the season is one row that opens #discover/season; rain streaks in the rainy season, a candle glow at Undas, nothing outside a season', () => {
     const { container } = render(<SeasonRow now={day(7, 20)} />) // rainy and typhoon season
-    expect(screen.getByTestId('season-row').getAttribute('data-hue')).toBe('blue')
+    expect(screen.getByTestId('season-row').querySelector('.rw-ic')!.getAttribute('data-tint')).toBe('amber')
     expect(container.querySelectorAll('.wxs-rain i').length).toBe(6)
     expect(screen.getByRole('link').getAttribute('href')).toBe('#discover/season')
     cleanup()

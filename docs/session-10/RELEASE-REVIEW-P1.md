@@ -122,7 +122,7 @@ Also confirm 0021, 0023 and 0024 are recorded in `schema_migrations`. 0026 needs
 
 ---
 
-## 0026 columns Lloyd verifies after apply (checked against `0026_nutrition_v2.sql` and `src/features/sync/tables.ts`)
+## 0026 columns the owner verifies after apply (checked against `0026_nutrition_v2.sql` and `src/features/sync/tables.ts`)
 
 `public.food_entries`: 10 columns, all `numeric`, nullable, each checked `>= 0`:
 `carbs_g`, `fat_g`, `sat_fat_g`, `fiber_g`, `sugars_g`, `calcium_mg`, `iron_mg`, `magnesium_mg`, `vitd_ug`, `b12_ug`

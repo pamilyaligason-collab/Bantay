@@ -1,4 +1,4 @@
-# Family Bantay - session 10 Phase 1 'apply' (wave 2 + fix round). Lloyd runs it from this worktree BEFORE merging the PR:
+# Family Bantay - session 10 Phase 1 'apply' (wave 2 + fix round). The owner runs it from this worktree BEFORE merging the PR:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s10-p1.ps1
 # Order (PLAN 2.4): preflight -> 0025 -> 0026 -> 0027 -> 0029 (each recorded) -> verify -> deploy records-extract, ask. Stops at the first failure.
 # The wave 1 outbox sends the 0026 columns, so this must run before the merge. Ask stays on n8n until VITE_ASSISTANT_PROVIDER=edge is set.

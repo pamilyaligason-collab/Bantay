@@ -5,9 +5,9 @@ import { joinNames, nextDoses, pickNext, whenLine } from './nextPick'
 
 const at = (h: number, m = 0) => new Date(2026, 9, 19, h, m)
 const med = (o: Partial<Medication> & { personId: string; name: string; times: string[] }): Medication => ({ serverId: `${o.personId}-${o.name}`, medStatus: 'active', schedule: { v: 1, times: o.times }, ...o })
-const me = { personId: 'me', name: 'Lloyd', isMe: true }
+const me = { personId: 'me', name: 'Rey', isMe: true }
 const ma = { personId: 'ma', name: 'Ma', isMe: false }
-const meds = [med({ personId: 'me', name: 'Losartan', times: ['08:00'] }), med({ personId: 'ma', name: 'Aspirin', times: ['10:00'] }), med({ personId: 'ma', name: 'Hydroxurea', times: ['10:00'] })]
+const meds = [med({ personId: 'me', name: 'Losartan', times: ['08:00'] }), med({ personId: 'ma', name: 'Aspirin', times: ['10:00'] }), med({ personId: 'ma', name: 'Metformin', times: ['10:00'] })]
 const plan: HeroCard = { key: 'plan:1', kind: 'plan', kicker: 'Plan · today', title: 'Next: Pay bills', body: 'Due today', actions: [] }
 const none = { due: [], plan: null, storm: null }
 
@@ -28,7 +28,7 @@ describe('nextDoses', () => {
   it('covers the people I care for, groups medicines at one time, earliest first', () => {
     const d = nextDoses([me, ma], meds, [], at(9, 30))
     expect(d.map((x) => x.personId)).toEqual(['me', 'ma'])
-    expect(d[1]!.slots.map((s) => s.name).sort()).toEqual(['Aspirin', 'Hydroxurea'])
+    expect(d[1]!.slots.map((s) => s.name).sort()).toEqual(['Aspirin', 'Metformin'])
   })
   it('paused medicines and people not passed in give nothing', () => {
     expect(nextDoses([me], [med({ personId: 'me', name: 'X', times: ['08:00'], medStatus: 'paused' })], [], at(8))).toEqual([])
@@ -65,7 +65,7 @@ describe('pickNext', () => {
     expect(pickNext({ ...none, weather: { temp: 40, rainPct: 99 } } as never).kind).toBe('calm')
   })
   it('names who and what for a family member, just the medicine for me', () => {
-    expect(pickNext({ ...none, due }, at(9, 30)).title).toBe('Ma: Aspirin and Hydroxurea')
+    expect(pickNext({ ...none, due }, at(9, 30)).title).toBe('Ma: Aspirin and Metformin')
     expect(pickNext({ ...none, due: nextDoses([me], meds, [], at(8)) }, at(8)).title).toBe('Losartan')
   })
   it('the card kicker says Next up (the heading is visually hidden), the calm pick is only a signal', () => {

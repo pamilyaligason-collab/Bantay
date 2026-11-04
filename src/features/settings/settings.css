@@ -1,15 +1,34 @@
-/* Settings (S16 L5): overview rows 72 / 56 / 64 px, group pages, choice sheet, lock mark. Shared .sh-* classes live in shell.css. */
+/* Settings (S16 L5, board 2026-11-03): account 72 px, rows 56 px, group pages, choice sheet, lock mark. Shared .sh-* classes live in shell.css. */
 .st-account { min-height: 72px; padding: 0 16px; }
 .st-account .sh-av { width: 48px; height: 48px; font-size: 18px; }
-.st-account .sh-grow b { overflow-wrap: anywhere; } /* a name is never cut with an ellipsis */
+.st-account .sh-grow b, .st-simple .sh-grow b { font-size: 17px; font-weight: 500; line-height: 22px; overflow-wrap: anywhere; } /* board .t: 17/500; a name is never cut with an ellipsis */
+.st-account .sh-sub, .st-simple .sh-sub { font-size: 13px; line-height: 18px; }
+.st-account .sh-edit { font-size: 17px; }
 .st-simple { min-height: 56px; padding: 0 16px; display: flex; align-items: center; gap: 12px; }
-.st-list { padding-top: 8px; padding-bottom: 8px; }
-.st-list > .st-row, .st-list > .rw { box-sizing: border-box; min-height: 64px; padding-top: 8px; padding-bottom: 8px; } /* border-box: the row is 64 px in all, not 64 + padding (measured 80, page 908 over 850) */
-.st-list > .rw .rw-main { min-height: 48px; padding: 0; } /* the View as row (look/Row) takes the same 64 px as the group rows; the button keeps the 48 px target */
+/* the Settings board: one inset grouped list (16 px radius), 56 px rows, 32 px tint chip, 17/500 title, hairline from 58 px */
+.sh-card.st-list { padding: 0; border-radius: var(--r-group); overflow: hidden; }
+.sh-card.st-list > * { padding: 0 14px; border-top: 0; position: relative; }
+.sh-card.st-list > * + *::before { content: ""; position: absolute; top: 0; left: 58px; right: 0; border-top: .5px solid var(--hair); }
+.sh-card.st-list > * { box-sizing: border-box; min-height: 56px; padding-top: 10px; padding-bottom: 10px; }
+.sh-card.st-list > * b { font-size: 17px; font-weight: 500; line-height: 22px; }
+.sh-card.st-list > .rw { padding-top: 0; padding-bottom: 0; }
+.sh-card.st-list > .rw .rw-main { padding: 10px 0; }
+.sh-card.st-list > .rw .rw-main > .sh-ic:last-child { color: var(--muted); } /* the View as chevron is muted like the NavRow ones */
 .st-row { display: flex; align-items: center; gap: 12px; }
-.st-row .sh-sub { margin-top: 1px; }
+.st-row b { font-size: 17px; font-weight: 500; line-height: 22px; display: block; }
+.st-row .sh-sub { margin-top: 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; } /* M1: one line, no wrapping sub */
+.st-group .st-row .sh-sub { -webkit-line-clamp: 4; } /* a group page has room: the Quiet hours safety line is never cut at "SOS and storm..." */
+.st-later b { color: var(--muted); }
+:root[data-narrow] .st-later > :first-child { display: none; } /* at 195 px the icon chip squeezes a long title to three lines */
+.st-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--card2); color: var(--muted); font-size: 12px; font-weight: 700; vertical-align: 1px; }
+.st-later-card { padding: 14px 16px; font-size: 14px; line-height: 20px; color: var(--muted); }
+.st-h { display: flex; align-items: baseline; justify-content: space-between; margin: 12px 2px -4px; }
+.st-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.st-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; background: var(--card2); color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+.st-signin { flex: none; }
 .st-lock { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); flex: none; }
 .st-row[aria-disabled="true"] { color: var(--muted); }
+.st-row[aria-disabled="true"] b { color: var(--muted); }
 .st-radios { display: grid; }
 .st-rad { display: flex; align-items: center; gap: 12px; min-height: 52px; background: none; border: 0; border-top: 1px solid var(--line); font: inherit; font-size: 16px; color: var(--ink); text-align: left; padding: 0 4px; }
 .st-rad:first-child { border-top: 0; }
@@ -19,3 +38,7 @@
 .st-rad[aria-checked="true"] { font-weight: 700; }
 .bt .st-group .fm-back { display: none; } /* the group header is the one Back (to the Phone group) */
 .st-edit-off { background: none; box-shadow: none; }
+/* CL: at 195 px the switch left a 60 px text column ("summary" ran over the line under it); the switch drops to its own line and long words break */
+:root[data-narrow] .st-row { flex-wrap: wrap; }
+:root[data-narrow] .st-row > .sh-grow { flex: 1 1 100px; min-width: 0; }
+:root[data-narrow] .st-row b { overflow-wrap: anywhere; }

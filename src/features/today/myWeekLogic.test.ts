@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
-import { computeMyWeek, lastDays, nextReadingDue, sparkPoints } from './myWeekLogic'
+import { computeMyWeek, lastDays, sparkPoints } from './myWeekLogic'
 
 const now = new Date(2026, 9, 20, 15, 0)
 const day = (back: number, h = 9) => new Date(2026, 9, 20 - back, h).toISOString()
@@ -31,9 +31,16 @@ describe('computeMyWeek', () => {
     expect(find(computeMyWeek({ ...base, readings: [rd('weight', 62, 5), rd('weight', 61.4, 0)] }), 'weight')).toMatchObject({ value: '-0.6', unit: 'kg this week' })
     expect(find(computeMyWeek({ ...base, readings: [rd('weight', 62, 2)] }), 'weight')).toMatchObject({ value: '62', sub: 'latest reading' })
   })
-  it('steps a day against the 6000 goal; zero-step rows do not count', () => {
-    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 4000, startedAt: day(1) }, { kind: 'steps', steps: 8000, startedAt: day(2) }, { kind: 'steps', steps: 0, startedAt: day(3) }, { kind: 'walk', steps: null, startedAt: day(3) }] })
+  it('steps a day against the 6000 goal; a walk row or a row with no count is not a step day', () => {
+    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 4000, startedAt: day(1) }, { kind: 'steps', steps: 8000, startedAt: day(2) }, { kind: 'steps', steps: null, startedAt: day(3) }, { kind: 'walk', steps: 500, startedAt: day(3) }] })
     expect(find(t, 'steps')).toMatchObject({ value: '6,000', sub: 'goal 6,000, reached' })
+  })
+  it('a 0 steps row is a real day, as on Move and the 7-day average: 3000, 3000, 0 averages 2,000 and the spark keeps the 0', () => {
+    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 3000, startedAt: day(2) }, { kind: 'steps', steps: 3000, startedAt: day(1) }, { kind: 'steps', steps: 0, startedAt: day(0) }] })
+    expect(find(t, 'steps')).toMatchObject({ value: '2,000', sub: 'goal 6,000', spark: [null, null, null, null, 3000, 3000, 0] })
+  })
+  it('a negative or missing count is rejected, so no tile from it alone', () => {
+    expect(find(computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: -5, startedAt: day(1) }, { kind: 'steps', steps: null, startedAt: day(1) }] }), 'steps')).toBeUndefined()
   })
   it('BP chip judges the worse of top and bottom: 110/95 is not "within range"', () => {
     const t = computeMyWeek({ ...base, readings: [rd('bp_systolic', 110, 1), rd('bp_diastolic', 95, 1)] })
@@ -55,19 +62,6 @@ describe('computeMyWeek', () => {
     const t = computeMyWeek({ ...base, readings: [rd('heart_rate', 80, 1), rd('heart_rate', 64, 1), rd('heart_rate', 70, 2)] })
     expect(find(t, 'doses')).toBeUndefined()
     expect(find(t, 'heart_rate')).toMatchObject({ value: '67', unit: 'bpm' })
-  })
-})
-
-describe('nextReadingDue (H6)', () => {
-  const med = (name: string): Medication => ({ personId: 'me', name, schedule: { v: 1, times: ['08:00'] }, medStatus: 'active' })
-  it('names the reading missing for a BP or sugar medicine', () => {
-    expect(nextReadingDue({ personId: 'me', readings: [], meds: [med('Losartan 50 mg')], now })).toBe('Next reading due: blood pressure')
-    expect(nextReadingDue({ personId: 'me', readings: [], meds: [med('Losartan'), med('Metformin')], now })).toBe('Next reading due: blood pressure and blood sugar')
-  })
-  it("nothing when a reading is in, there is no such medicine, or it is another person's", () => {
-    expect(nextReadingDue({ personId: 'me', readings: [rd('bp_systolic', 120, 2)], meds: [med('Losartan')], now })).toBeNull()
-    expect(nextReadingDue({ personId: 'me', readings: [], meds: [med('Vitamin C')], now })).toBeNull()
-    expect(nextReadingDue({ personId: 'ma', readings: [], meds: [med('Losartan')], now })).toBeNull()
   })
 })
 

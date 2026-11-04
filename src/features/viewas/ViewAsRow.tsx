@@ -36,7 +36,7 @@ export default function ViewAsRow(): ReactElement | null {
   }
   return (
     <>
-      <Row icon="eye" title="View as" sub={acting ? `Acting as ${name}` : 'See and log for a family member'} onClick={() => setOpen(true)} testId="viewas-row" />
+      <Row icon="eye" tint="purple" chev title="View as" sub={acting ? `Acting as ${name}` : 'See and log for a family member'} onClick={() => setOpen(true)} testId="viewas-row" />
       {open && createPortal(
         <div className="va-sheet-wrap" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="va-sheet" role="dialog" aria-modal="true" aria-label="View as" onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}>

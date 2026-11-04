@@ -13,7 +13,14 @@
 .lt-kicker { font-size: 13px; line-height: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .lt-back { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 8px 0 0; color: var(--green); font-size: 17px; font-weight: 500; text-decoration: none; }
 .lt-title { margin: 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.lt-actions { display: flex; gap: 10px; align-items: center; }
+.lt-actions { display: flex; gap: 10px; align-items: center; min-width: 0; }
+/* a long place chip shares the title line (the title is short), so the kicker and the bell keep their row and the chip can wrap */
+.lt-trow { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.lt-trow .lt-title { flex: none; }
+.lt-below { display: flex; justify-content: flex-end; flex: 1 1 0; min-width: 0; }
+:root[data-narrow] .lt-trow { flex-wrap: wrap; }
+:root[data-narrow] .lt-below { flex-basis: 100%; justify-content: flex-start; }
+.lt-below .zp { min-width: 0; max-width: 100%; }
 
 /* Section */
 section.sec { display: flex; flex-direction: column; gap: 10px; margin: 0; font-size: inherit; color: var(--ink); }
@@ -31,10 +38,11 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .pt-a { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; color: var(--green); min-height: 24px; }
 .pt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 :root[data-narrow] .pt-grid { grid-template-columns: minmax(0, 1fr); }
-.carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-padding-inline: 16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .carousel > * { flex: none; scroll-snap-align: start; }
 .carousel::-webkit-scrollbar { display: none; }
-:root[data-narrow] .carousel { padding: 0 12px; margin: 0 -12px; }
+/* T12: without scroll-padding the snap (align start) scrolls the box by its own padding, so the first tile sat at x 0 */
+:root[data-narrow] .carousel { padding: 0 12px; margin: 0 -12px; scroll-padding-inline: 12px; }
 
 /* Segmented */
 .segd { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--card2); border-radius: 12px; padding: 3px; gap: 2px; }
@@ -50,6 +58,7 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .mapc img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mapc-credit { padding: 8px 14px; font-size: 13px; color: var(--muted); }
 .mapc-re { position: absolute; right: 10px; bottom: 46px; width: 44px; height: 44px; border-radius: 50%; background: var(--card); box-shadow: var(--shadow-float); border: 0; color: var(--green); display: grid; place-items: center; }
+.mapc-ov { position: absolute; top: 10px; right: 10px; z-index: 2; }
 
 /* Sheet: glass fill and blur come from glass.css (.lk-sheet in its lists). Keyframes are duplicated from shell.css so look/ does not depend on shell/. */
 @keyframes lk-sheet-in { from { transform: translateY(100%); } }
@@ -67,3 +76,9 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .lk-sheet-wrap[data-closing="true"] { animation: lk-fade-out var(--dur-base) var(--ease-out) forwards; pointer-events: none; }
 .lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: lk-sheet-out var(--dur-base) var(--ease-sheet) forwards; }
 @media (prefers-reduced-motion: reduce) { .lk-sheet-wrap, .lk-sheet, .lk-sheet-wrap[data-closing="true"], .lk-sheet-wrap[data-closing="true"] > .lk-sheet { animation: none; } }
+
+/* A pushed page may tint its Back link to its section (board Labs red, Visits purple, Move teal). Tokens are tuned per theme, so contrast holds in both. */
+.lt-back[data-tone="red"] { color: var(--tint-red-ink); }
+.lt-back[data-tone="purple"] { color: var(--tint-purple-ink); }
+.lt-back[data-tone="teal"] { color: var(--tint-teal-ink); }
+.lt:has(.lt-back[data-tone="red"]) .hv-tl { color: var(--tint-red-ink); }

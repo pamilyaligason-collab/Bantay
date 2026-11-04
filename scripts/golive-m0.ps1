@@ -1,6 +1,6 @@
 # Family Bantay - session 6 lane M0: medications become the live schedule (migration 0014). Database only:
 # no web push, and the current app does not read public.medications yet, so nobody sees a change until lane M1/M2 ship.
-# Lloyd runs it from the repo root, dry run first:
+# The owner runs it from the repo root, dry run first:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-m0.ps1 -DryRun
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-m0.ps1
 # Rehearsed on a throwaway Postgres: supabase\tests\medications_rehearsal.sql (61 checks). Undo: 0014_medications_live.down.sql.

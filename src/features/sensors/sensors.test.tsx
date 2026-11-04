@@ -8,7 +8,6 @@ import { hdb } from '../records/store'
 import { disableType, enableType, getState, reconcileGranted, type HealthBridge, normalise, type RawSample, type SensorType, syncAll } from './health'
 import QuickWalk from './QuickWalk'
 import SensorSettings from './SensorSettings'
-import { summarise } from './MovementCard'
 import { check, KEEP } from '../../../scripts/check-manifest.mjs'
 import pluginManifest from '../../../node_modules/@capgo/capacitor-health/android/src/main/AndroidManifest.xml?raw'
 import appManifest from '../../../android/app/src/main/AndroidManifest.xml?raw'
@@ -80,7 +79,7 @@ describe('permissions', () => {
     const b = fake({ request: vi.fn(async () => false), granted: async () => false, read })
     expect(await enableType('steps', b)).toBe('denied')
     expect((await getState()).enabled).toEqual([])
-    await syncAll(b, 'p')
+    await syncAll(b)
     expect(read).not.toHaveBeenCalled()
     expect(await ldb.activity.count()).toBe(0)
   })
@@ -95,8 +94,8 @@ describe('permissions', () => {
   it('access revoked in the OS switches the type off on the next sync', async () => {
     const b = fake({ data: { steps: [S()] } })
     await enableType('steps', b)
-    await syncAll(b, 'p')
-    const res = await syncAll(fake({ granted: async () => false, data: { steps: [S({ startDate: '2026-10-02T06:00:00.000Z', endDate: '2026-10-02T06:10:00.000Z' })] } }), 'p')
+    await syncAll(b)
+    const res = await syncAll(fake({ granted: async () => false, data: { steps: [S({ startDate: '2026-10-02T06:00:00.000Z', endDate: '2026-10-02T06:10:00.000Z' })] } }))
     expect(res.byType.steps).toBe('revoked')
     expect((await getState()).enabled).toEqual([])
     expect(await ldb.activity.count()).toBe(1)
@@ -105,7 +104,7 @@ describe('permissions', () => {
     const b = fake({ data: { steps: [S()] } })
     await enableType('steps', b)
     await disableType('steps')
-    expect((await syncAll(b, 'p')).added).toBe(0)
+    expect((await syncAll(b)).added).toBe(0)
   })
 })
 
@@ -115,9 +114,9 @@ describe('sync', () => {
     const b = fake({ data })
     await enableType('steps', b)
     await enableType('bloodPressure', b)
-    const first = await syncAll(b, 'p')
-    const second = await syncAll(b, 'p')
-    await syncAll(b, 'p')
+    const first = await syncAll(b)
+    const second = await syncAll(b)
+    await syncAll(b)
     expect(first.added).toBe(4)
     expect(second.added).toBe(0)
     expect(await ldb.activity.count()).toBe(2)
@@ -129,21 +128,21 @@ describe('sync', () => {
     vi.mocked(track).mockClear()
     const b = fake({ data: { bloodPressure: [S({ systolic: 120, diastolic: 80 })] } })
     await enableType('bloodPressure', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     expect(await hdb.readings.count()).toBeGreaterThan(0)
     expect(track).not.toHaveBeenCalledWith('action', 'reading_added')
   })
   it('iOS rows are tagged healthkit', async () => {
     const b = fake({ platform: 'ios', data: { steps: [S()] } })
     await enableType('steps', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     expect((await ldb.activity.toArray())[0]?.source).toBe('healthkit')
   })
   it('concurrent calls share one run', async () => {
     const read = vi.fn(async () => [S()])
     const b = fake({ read })
     await enableType('steps', b)
-    const [a, c] = await Promise.all([syncAll(b, 'p'), syncAll(b, 'p')])
+    const [a, c] = await Promise.all([syncAll(b), syncAll(b)])
     expect(a).toBe(c)
     expect(read).toHaveBeenCalledTimes(1)
     expect(await ldb.activity.count()).toBe(1)
@@ -152,7 +151,7 @@ describe('sync', () => {
     const b = fake({ read: async (t) => { if (t === 'steps') throw new Error('boom'); return [S({ value: 0, systolic: 118, diastolic: 76 })] } })
     await enableType('steps', b)
     await enableType('bloodPressure', b)
-    const r = await syncAll(b, 'p')
+    const r = await syncAll(b)
     expect(r.byType).toEqual({ steps: 'error', bloodPressure: 'ok' })
     expect(await hdb.readings.count()).toBe(2)
   })
@@ -179,7 +178,7 @@ describe('no notification path', () => {
     const b = fake({ data: { steps: [S()], heartRate: [S({ value: 80 })] } })
     await enableType('steps', b)
     await enableType('heartRate', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     render(<QuickWalk native={false} />)
     fireEvent.click(screen.getByRole('button', { name: '10 min' }))
     await waitFor(() => expect(ldb.activity.count()).resolves.toBe(2))
@@ -260,7 +259,7 @@ describe('off list', () => {
     const b = fake({ data: { steps: [S()] } })
     await enableType('steps', b)
     const revoked = fake({ granted: async () => false })
-    expect((await syncAll(revoked, 'p')).byType.steps).toBe('revoked')
+    expect((await syncAll(revoked)).byType.steps).toBe('revoked')
     expect((await getState()).enabled).toEqual([])
     expect(await reconcileGranted(fake())).toContain('steps')
   })
@@ -319,18 +318,126 @@ describe('SensorSettings', () => {
   })
 })
 
-describe('summarise', () => {
-  it('adds today only, and picks the latest sleep', () => {
-    const base = { personId: 'p', steps: null, source: 'manual' as const }
-    const rows = [
-      { ...base, kind: 'walk', minutes: 20, startedAt: '2026-10-02T01:00:00.000Z' },
-      { ...base, kind: 'walk', minutes: 99, startedAt: '2026-10-01T01:00:00.000Z' },
-      { ...base, kind: 'steps', minutes: 5, steps: 1000, startedAt: '2026-10-02T02:00:00.000Z' },
-      { ...base, kind: 'sleep', minutes: 400, startedAt: '2026-10-01T15:00:00.000Z' },
-      { ...base, kind: 'sleep', minutes: 20, startedAt: '2026-10-01T20:00:00.000Z' },
-      { ...base, kind: 'sleep', minutes: 999, startedAt: '2026-09-29T20:00:00.000Z' }
-    ]
-    expect(summarise(rows, '2026-10-01T16:00:00.000Z', Date.parse('2026-10-02T03:00:00.000Z'))).toEqual({ walk: 25, steps: 1000, sleep: 420 })
+describe('whose phone', () => {
+  const stepsHour = { startDate: '2026-10-01T06:00:00.000Z', endDate: '2026-10-01T07:00:00.000Z', value: 1234 }
+  const phone = () => fake({ readSteps: vi.fn(async () => [stepsHour]), granted: vi.fn(async () => true) })
+  const stepRows = async () => (await ldb.activity.toArray()).filter((a) => a.kind === 'steps').map((a) => a.personId)
+  const saved = (value: unknown) => db.kv.put({ key: 'sensors.state', value })
+
+  it('the person who enables is the owner; anyone else signed in reads nothing and stores nothing, also no rebuild', async () => {
+    const b = phone()
+    await enableType('steps', b)
+    expect((await getState()).owner).toBe('me-p')
+    me.personId = 'other-p'
+    await ldb.activity.add({ personId: 'other-p', kind: 'steps', minutes: 5, steps: 50, startedAt: '2026-09-30T06:17:00.000Z', source: 'health-connect' }) // hidden row that would ask for a rebuild
+    const r = await syncAll(b)
+    expect(r).toEqual({ added: 0, byType: {} })
+    expect(b.readSteps).not.toHaveBeenCalled()
+    expect(b.granted).not.toHaveBeenCalled()
+    expect(await db.outbox.count()).toBe(0)
+    expect(await db.kv.get('sensors.stepsRebuilt.other-p')).toBeUndefined()
+    me.personId = 'me-p'
+    await syncAll(b)
+    expect(await stepRows()).toContain('me-p')
+  })
+  it('enabled state saved before owners existed: the first signed-in person becomes the owner, the next one is skipped', async () => {
+    await saved({ enabled: ['steps'], cursor: {} })
+    me.personId = null
+    await syncAll(phone())
+    expect((await getState()).owner).toBeUndefined() // signed out adopts nobody
+    me.personId = 'me-p'
+    await syncAll(phone())
+    expect((await getState()).owner).toBe('me-p')
+    expect(await stepRows()).toEqual(['me-p'])
+    me.personId = 'other-p'
+    const b = phone()
+    await syncAll(b)
+    expect(b.readSteps).not.toHaveBeenCalled()
+    expect(await stepRows()).toEqual(['me-p'])
+  })
+  it('enabling while signed in as someone else takes ownership, and only their rows follow', async () => {
+    await saved({ enabled: ['sleep'], cursor: {}, owner: 'other-p' })
+    expect(await enableType('steps', phone())).toBe('on')
+    expect((await getState()).owner).toBe('me-p')
+    await syncAll(phone())
+    expect(await stepRows()).toEqual(['me-p'])
+  })
+  it('signed in as a non-owner, the switches show off and nothing is read before the tap', async () => {
+    await saved({ enabled: ['steps', 'sleep'], cursor: { steps: '2026-10-01T00:00:00.000Z' }, off: [], owner: 'other-p' })
+    const read = vi.fn(async () => [])
+    const b = fake({ read, readSteps: vi.fn(async () => [stepsHour]) })
+    render(<SensorSettings native bridge={b} />)
+    await waitFor(async () => expect((await getState()).enabled).toHaveLength(4)) // the quiet reconcile on open has run, and its syncAll
+    await waitFor(() => expect(screen.getAllByRole('switch').map((s) => s.getAttribute('aria-checked'))).toEqual(['false', 'false', 'false', 'false']))
+    await syncAll(b)
+    expect(b.request).not.toHaveBeenCalled()
+    expect(b.readSteps).not.toHaveBeenCalled()
+    expect(read).not.toHaveBeenCalled()
+    expect((await getState()).owner).toBe('other-p')
+  })
+  it('the owner still sees their switches on, and signed out shows the saved state', async () => {
+    await saved({ enabled: ['steps'], cursor: {}, owner: 'me-p' })
+    render(<SensorSettings native bridge={fake({ granted: async () => false })} />)
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('true'))
+    cleanup()
+    me.personId = null
+    render(<SensorSettings native bridge={fake({ granted: async () => false })} />)
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('true'))
+  })
+  it('a non-owner tap only asks first: nothing changes or is read until the second tap', async () => {
+    await saved({ enabled: ['steps'], cursor: {}, off: [], owner: 'other-p' })
+    const b = fake({ readSteps: vi.fn(async () => [stepsHour]), read: vi.fn(async () => []) })
+    render(<SensorSettings native bridge={b} />)
+    await waitFor(async () => expect((await getState()).enabled).toHaveLength(4)) // the quiet reconcile on open has run
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('false'))
+    fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
+    expect(await screen.findByText(/saved under your name/)).toBeTruthy()
+    expect(b.request).not.toHaveBeenCalled()
+    expect(b.readSteps).not.toHaveBeenCalled()
+    expect((await getState()).owner).toBe('other-p')
+  })
+  it('person lookup not answered: a tap cannot turn off the owner\'s sensor', async () => {
+    await saved({ enabled: ['steps'], cursor: {}, off: [], owner: 'other-p' })
+    me.personId = null
+    render(<SensorSettings native bridge={fake()} />)
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('true'))
+    fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
+    expect(await screen.findByText(/Could not check who is signed in/)).toBeTruthy()
+    expect((await getState()).enabled).toContain('steps')
+  })
+  it('a second tap takes over that type only: fresh cursor, the old owner\'s other types stay off, also after reconcile', async () => {
+    const DAY = 86_400_000
+    const old = new Date(Date.now() - 20 * DAY).toISOString()
+    await saved({ enabled: ['steps', 'sleep'], cursor: { steps: old, sleep: old }, resume: { steps: old }, off: [], owner: 'other-p' })
+    const seen: string[] = []
+    const b = fake({ readSteps: vi.fn(async (since: string) => { seen.push(since); return [stepsHour] }), read: vi.fn(async () => []) })
+    render(<SensorSettings native bridge={b} />)
+    await waitFor(async () => expect((await getState()).enabled).toHaveLength(4)) // the quiet reconcile on open has run
+    expect(b.readSteps).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('false'))
+    fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
+    await screen.findByText(/saved under your name/)
+    fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('true'))
+    expect(b.request.mock.calls).toEqual([['steps']])
+    const st = await getState()
+    expect(st.owner).toBe('me-p')
+    expect(st.enabled).toEqual(['steps'])
+    expect(st.cursor.sleep).toBeUndefined()
+    expect(st.resume?.steps).toBeUndefined()
+    await waitFor(() => expect(seen).toHaveLength(1))
+    expect(Math.abs(Date.parse(seen[0]) - (Date.now() - 7 * DAY))).toBeLessThan(2 * 3_600_000) // a first read's 7 days (from the hour), not the old owner's point 20 days back
+    expect(b.read).not.toHaveBeenCalled() // sleep is the old owner's: no read until its own tap
+    expect(await reconcileGranted(b)).toEqual([])
+    expect(screen.getByRole('switch', { name: 'Sleep' }).getAttribute('aria-checked')).toBe('false')
+  })
+  it('turning a sensor off keeps the owner, whether the member or the OS did it', async () => {
+    await saved({ enabled: ['steps', 'sleep'], cursor: {}, owner: 'other-p' })
+    await disableType('steps')
+    expect((await getState()).owner).toBe('other-p')
+    me.personId = 'other-p'
+    await syncAll(fake({ granted: async () => false }))
+    expect((await getState()).owner).toBe('other-p')
   })
 })
 
@@ -340,29 +447,29 @@ describe('late data, seeding, toggle-off', () => {
     let data: RawSample[] = [S({ startDate: '2026-10-05T06:00:00.000Z', endDate: '2026-10-05T06:10:00.000Z' })]
     const b = fake({ read: async (_t, since) => { seen.push(since); return data } })
     await enableType('steps', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     data = [S({ startDate: '2026-10-05T01:00:00.000Z', endDate: '2026-10-05T01:10:00.000Z', value: 70 }), ...data]
-    const r = await syncAll(b, 'p')
+    const r = await syncAll(b)
     expect(r.added).toBe(1)
     expect(await ldb.activity.count()).toBe(2)
-    expect(seen[1]).toBe('2026-10-03T06:10:00.000Z')
+    expect(seen[1]).toBe('2026-10-03T06:00:00.000Z') // cursor - 48 h, floored to the hour for steps
   })
   it('heart rate thinning holds across syncs', async () => {
     const at = (m: number) => S({ startDate: new Date(Date.UTC(2026, 9, 1, 6, m)).toISOString(), endDate: new Date(Date.UTC(2026, 9, 1, 6, m + 1)).toISOString(), value: 70 })
     let data = [at(0)]
     const b = fake({ read: async () => data })
     await enableType('heartRate', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     data = [at(0), at(20), at(25)] // 25 is inside the 15 min after 20; 20 is fine
-    await syncAll(b, 'p')
+    await syncAll(b)
     data = [at(0), at(20), at(25), at(30)] // 30 is within 15 min of stored 20
-    await syncAll(b, 'p')
+    await syncAll(b)
     expect((await hdb.readings.toArray()).map((r) => r.takenAt.slice(11, 16)).sort()).toEqual(['06:00', '06:20'])
   })
   it('a type switched off during a sync does not get its cursor back', async () => {
     const b = fake({ read: async () => { await disableType('steps'); return [S()] } })
     await enableType('steps', b)
-    await syncAll(b, 'p')
+    await syncAll(b)
     const st = await getState()
     expect(st.enabled).toEqual([])
     expect(st.cursor.steps).toBeUndefined()

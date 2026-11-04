@@ -24,7 +24,7 @@ export function weekAverages(readings: Reading[], now: Date): Reading[] {
   for (const raw of readings) {
     const r = toCanonicalReading(raw) // glucose in mmol/L becomes mg/dL; a unit that cannot be compared is left out, never mixed in
     const t = Date.parse(raw.takenAt)
-    if (!r || !isNum(r.value) || !Number.isFinite(t) || now.getTime() - t > 7 * DAY || t > now.getTime() + DAY) continue
+    if (!r || !isNum(r.value) || r.value <= 0 || !Number.isFinite(t) || now.getTime() - t > 7 * DAY || t > now.getTime() + DAY) continue
     const k = `${r.test}|${(r.unit ?? '').toLowerCase()}`
     by.set(k, [...(by.get(k) ?? []), r])
   }
@@ -41,50 +41,61 @@ export function weekAverages(readings: Reading[], now: Date): Reading[] {
   }).sort((a, b) => a.test.localeCompare(b.test))
 }
 
+/** A body map node from an average over the last 7 days. `when` names the days used: "7-day average" only when 7 days had data, else "Average of 2 days". Mood is not an average: it stays the latest, `when` is its today/date note. `sub` is the verdict text, '' when there is none; `note` is what older callers show (the verdict, else `when`). */
+export interface AverageNode extends NodeView { when: string; sub: string }
+const AVG = '7-day average'
+/** The label that states the days an average really used. */
+export const avgLabel = (days: number) => (days >= 7 ? AVG : `Average of ${days} ${days === 1 ? 'day' : 'days'}`)
+
 /** Body map nodes from 7-day averages (BP, sugar, pulse, weight, steps a day, sleep a night); mood stays the latest. */
-export function averageNodes(readings: Reading[], acts: Activity[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): NodeView[] {
+export function averageNodes(readings: Reading[], acts: Activity[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): AverageNode[] {
   const avgs = weekAverages(readings, now)
   const week = acts.filter((a) => a.startedAt && now.getTime() - Date.parse(a.startedAt) <= 7 * DAY)
   const base = bodyNodes(avgs, acts, now, familyOf)
-  const perDay = (kind: string, f: 'minutes' | 'steps') => {
+  /** Per local day totals of the newest 7 days that have data (a window of 7 x 24 h can touch 8 calendar days). */
+  const dayTotals = (kind: string, f: 'minutes' | 'steps') => {
     const days = new Map<string, number>()
-    for (const a of week) if (a.kind === kind && isNum(a[f])) days.set(localDay(a.startedAt), (days.get(localDay(a.startedAt)) ?? 0) + (a[f] as number))
-    return days.size ? avg([...days.values()]) : null
+    // a 0 steps day is true data and stays in the average; a 0 minute sleep is no reading
+    for (const a of week) if (a.kind === kind && isNum(a[f]) && (f === 'steps' ? (a[f] as number) >= 0 : (a[f] as number) > 0)) days.set(localDay(a.startedAt), (days.get(localDay(a.startedAt)) ?? 0) + (a[f] as number))
+    return [...days.entries()].sort((x, y) => y[0].localeCompare(x[0])).slice(0, 7).map(([, v]) => v)
   }
-  const NOTE = '7-day avg'
-  return base.map((n): NodeView => {
-    if (n.id === 'sleep') { const m = perDay('sleep', 'minutes'); return m == null ? { ...n, value: '--', note: 'No data yet', empty: true } : { ...n, value: hoursMinutes(m), note: NOTE, empty: false } }
-    if (n.id === 'steps') { const s = perDay('steps', 'steps'); return s == null ? { ...n, value: '--', note: 'No data yet', empty: true } : { ...n, value: Math.round(s).toLocaleString('en-PH'), note: NOTE, empty: false } }
-    if (n.id === 'mood') return n.empty ? n : { ...n, note: n.note }
+  // The word of the newest reading in the week, so an average never reads as the verdict on the latest number.
+  const inWeek = readings.filter((r) => { const t = Date.parse(r.takenAt); return r.value > 0 && Number.isFinite(t) && now.getTime() - t <= 7 * DAY && t <= now.getTime() + DAY })
+  const newestOf = (...tests: string[]) => inWeek.filter((r) => tests.includes(r.test)).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0]
+  const latestWord = (id: string): string | undefined => {
+    if (id === 'bp') {
+      const sys = newestOf('bp_systolic'); const dia = newestOf('bp_diastolic')
+      return sys ? verdictFor('bp', positionOf(sys, familyOf(sys)), { top: sys.value, bottom: dia?.value, doctor: { top: familyOf(sys), bottom: dia ? familyOf(dia) : null } })?.word : undefined
+    }
+    const r = id === 'pulse' ? newestOf('heart_rate') : id === 'sugar' ? newestOf('fasting_glucose', 'glucose') : undefined
+    return r ? verdictFor('vital', positionOf(r, familyOf(r)))?.word : undefined
+  }
+  // only the confusing case is spelled out: an average in range beside a latest number that is not
+  const withLatest = (id: string, word: string) => { const l = latestWord(id); return word === 'In range' && l && l !== 'In range' ? `Average in range · latest ${l}` : word }
+  /** Days with at least one reading of these tests in the window. */
+  const readingsLabel = (...tests: string[]) => avgLabel(new Set(inWeek.filter((r) => tests.includes(r.test)).map((r) => localDay(r.takenAt))).size || 7)
+  const mk = (n: NodeView, when: string, sub = ''): AverageNode => ({ ...n, when, sub, note: sub || (n.empty ? n.note : when) })
+  return base.map((n): AverageNode => {
+    if (n.id === 'sleep') { const d = dayTotals('sleep', 'minutes'); return d.length ? mk({ ...n, value: hoursMinutes(avg(d)), empty: false }, avgLabel(d.length)) : mk({ ...n, value: '--', note: 'No data yet', empty: true }, AVG) }
+    if (n.id === 'steps') { const d = dayTotals('steps', 'steps'); return d.length ? mk({ ...n, value: Math.round(avg(d)).toLocaleString('en-PH'), empty: false }, avgLabel(d.length)) : mk({ ...n, value: '--', note: 'No data yet', empty: true }, AVG) }
+    if (n.id === 'mood') return { ...n, when: n.note, sub: '' } // not an average: the latest, with its today or date note
     if (n.id === 'pulse') {
       const hr = avgs.find((r) => r.test === 'heart_rate')
-      if (!hr) return { ...n, value: '--', note: 'No data yet', empty: true }
+      if (!hr) return mk({ ...n, value: '--', note: 'No data yet', empty: true }, AVG)
       const st = positionOf(hr, familyOf(hr))
-      return { ...n, value: formatNumber(Math.round(hr.value)), state: st, note: verdictFor('vital', st)?.word ?? NOTE, empty: false }
+      return mk({ ...n, value: formatNumber(Math.round(hr.value)), state: st, empty: false }, readingsLabel('heart_rate'), withLatest('pulse', verdictFor('vital', st)?.word ?? ''))
     }
-    if (n.empty && (n.id === 'bp' || n.id === 'sugar' || n.id === 'weight')) return { ...n, note: 'No data yet' }
-    const note = n.state !== 'none' && n.note ? n.note : NOTE
-    return { ...n, note }
+    if (n.empty && (n.id === 'bp' || n.id === 'sugar' || n.id === 'weight')) return mk({ ...n, note: 'No data yet' }, AVG)
+    return mk(n, readingsLabel(...(n.id === 'bp' ? ['bp_systolic', 'bp_diastolic'] : n.id === 'sugar' ? ['fasting_glucose', 'glucose'] : ['weight'])), n.state !== 'none' ? withLatest(n.id, n.note) : '')
   }).map((n) => (n.id === 'bp' && !n.empty ? { ...n, value: n.value.split('/').map((x) => (/^\d+$/.test(x) ? x : formatNumber(Math.round(Number(x))))).join('/') } : n))
 }
 
 
-// ---- Normal -----------------------------------------------------------------------------------------------
-export interface NormalInfo { code: string; label: string; range: string; line: string; low: number | null; high: number | null; unit: string }
-const G = GUIDE
-/** The standard ranges shown by the "Normal" toggle, one plain line each. Every number is read from the guide (guide-ranges.json), so the colour on a reading and this text always agree. General information, not a target. */
-export const NORMAL: NormalInfo[] = [
-  { code: 'bp_systolic', label: 'Blood pressure', range: `Under ${G.bp_systolic!.high! + 1}/${G.bp_diastolic!.high! + 1}`, unit: 'mmHg', low: null, high: G.bp_systolic!.high, line: `Normal is under ${G.bp_systolic!.high! + 1} over ${G.bp_diastolic!.high! + 1}. ${G.bp_systolic!.high! + 1} to 129 on top with the bottom under ${G.bp_diastolic!.high! + 1} is a little raised. 130 to 134 on top, or 80 to 84 on the bottom, is above target. 135/85 or more is high. Under 90 or 60 is low.` },
-  { code: 'fasting_glucose', label: 'Fasting sugar', range: G.fasting_glucose!.text, unit: 'mg/dL', low: G.fasting_glucose!.low, high: G.fasting_glucose!.high, line: `Measured after 8 hours without food. ${G.fasting_glucose!.high! + 1} and over is a bit high and under ${G.fasting_glucose!.low} is low; ask your doctor.` },
-  { code: 'heart_rate', label: 'Resting pulse', range: `${G.heart_rate!.text} bpm`, unit: 'bpm', low: G.heart_rate!.low, high: G.heart_rate!.high, line: 'Beats a minute after resting 5 minutes. Fitter people can be lower. Tell your doctor about dizziness or chest pain.' },
-  { code: 'weight', label: 'Weight', range: 'Depends on your height', unit: 'kg', low: null, high: null, line: 'No single normal number. Watch the weeks, not one day, and ask your doctor what is right for you.' }
-]
-
 // ---- Labs: plain-language flags ---------------------------------------------------------------------------
 /** One line for a lab result outside (or inside) its range. Never a diagnosis. */
 export function labFlagLine(pos: Position, name: string): string {
-  return pos === 'above' ? `${name} is a bit high. Ask your doctor at the next visit.`
-    : pos === 'below' ? `${name} is a bit low. Ask your doctor at the next visit.`
+  return pos === 'above' ? `${name} is high. Ask your doctor at the next visit.`
+    : pos === 'below' ? `${name} is low. Ask your doctor at the next visit.`
     : pos === 'within' ? `${name} is in the usual range.`
     : `${name} has no range to compare with yet.`
 }

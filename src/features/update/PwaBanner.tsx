@@ -72,7 +72,7 @@ export function PwaBanner() {
         <b style={{ fontSize: 17 }}>Bantay is now an app</b>
         <div style={{ opacity: 0.85, fontSize: 13 }}>Faster, works offline, real reminders and Open Settings shortcuts.</div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <a href={GET_URL} style={{ ...pill, display: 'inline-flex', alignItems: 'center', background: 'var(--on-green, #F6F1E7)', color: '#1F3D2B', textDecoration: 'none' }}>
+          <a href={GET_URL} style={{ ...pill, display: 'inline-flex', alignItems: 'center', background: 'var(--on-green, #F6F1E7)', color: 'var(--green, #1F3D2B)', textDecoration: 'none' }}>
             Get the app
           </a>
           <button type="button" style={{ ...pill, background: 'rgba(255,255,255,.12)', color: 'inherit' }} onClick={() => void db.kv.put({ key: LATER_KEY, value: Date.now() })}>

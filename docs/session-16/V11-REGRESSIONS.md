@@ -4,7 +4,7 @@ Read-only review. Inputs: `docs/session-16/mockup-v11.html` at commit 0eea90a (g
 
 Line numbers for the mockup are from commit 0eea90a. The working copy of `mockup-v11.html` was being edited during this review, so its lines have moved.
 
-**Answer to Lloyd: yes, it is a reversion.** The v11 Today weather hero is a pale tinted strip: `.y-sky` is a 38% blue tint over the card colour (mockup:1402), the temperature is 32 px (mockup:1357), and the card is capped at 300 px (mockup:1339). It has no scene, no hourly strip and no Jack. Live 2.6.1 has all of these (`today-light.png`, `WeatherCard.tsx:77-96`, `scene.css:12-44`), and so did the approved v9 `today-full` (its `l2-scene` / `l2-sun` / `l2-heat` layers and Jack art). RESEARCH-GRAPHICS.md:9 says **"Keep SVG WeatherScene"**, but PLAN rev 5 dropped it. PLAN.md:137 sizes the card at "~168 px", and lane L9 (PLAN.md:416, 474) builds a new `look/Sky.tsx` gradient. A `look/Sky.tsx` already exists and is used by SignIn, so the new one duplicates it and leaves the richer `weather/WeatherScene.tsx` unused.
+**Answer to the owner: yes, it is a reversion.** The v11 Today weather hero is a pale tinted strip: `.y-sky` is a 38% blue tint over the card colour (mockup:1402), the temperature is 32 px (mockup:1357), and the card is capped at 300 px (mockup:1339). It has no scene, no hourly strip and no Jack. Live 2.6.1 has all of these (`today-light.png`, `WeatherCard.tsx:77-96`, `scene.css:12-44`), and so did the approved v9 `today-full` (its `l2-scene` / `l2-sun` / `l2-heat` layers and Jack art). RESEARCH-GRAPHICS.md:9 says **"Keep SVG WeatherScene"**, but PLAN rev 5 dropped it. PLAN.md:137 sizes the card at "~168 px", and lane L9 (PLAN.md:416, 474) builds a new `look/Sky.tsx` gradient. A `look/Sky.tsx` already exists and is used by SignIn, so the new one duplicates it and leaves the richer `weather/WeatherScene.tsx` unused.
 
 **Root cause.** DESIGN-AUDIT measured an older weather card ("56 px 31°, two pills stacked, full-width Open weather button", DESIGN-AUDIT.md:56), not the live dark scene. Several audit rules then flattened everything into one card grammar:
 - the ≤ 280 px hero cap;
@@ -88,7 +88,7 @@ Severity per item: B = blocker, M = major, m = minor. "Keep" = a v11 win that v1
 3. v12: 3 tiles Relax / Sleep / Calm with their real tags and a one-line source; the selected tile gets a slow 6 s gradient drift in green (static under reduced motion).
 
 **breathe-run**
-1. Keep: the layered orb (4 rings + core, "HOLD 3", 02:51) is a real upgrade over live and matches Lloyd's ref "breathing orb".
+1. Keep: the layered orb (4 rings + core, "HOLD 3", 02:51) is a real upgrade over live and matches the owner's ref "breathing orb".
 2. v12 upgrade: a full-sheet backdrop radial gradient in green that brightens and dims with the orb phase (±6% lightness); for the Sleep pattern after sunset use the night SKY pair from `scene.ts`; the rings get soft blur edges (CSS `filter: blur(2px)` on the outer two only).
 
 **breathe-run-reduced**
@@ -101,7 +101,7 @@ Severity per item: B = blocker, M = major, m = minor. "Keep" = a v11 win that v1
 ### Health
 
 **health-AB (comparison sheet)**
-1. Keep as the picker. Redraw both sides with R6 and R7 fixed so Lloyd compares rich versions.
+1. Keep as the picker. Redraw both sides with R6 and R7 fixed so the owner compares rich versions.
 
 **health-A (stacked heroes)**
 1. M: the outline body (R6). M: no headline, rings or streak (R7).
@@ -402,7 +402,7 @@ Section B items that were open:
 |---|---|---|---|---|---|
 | N1 | The new Weather screen frame drops three live controls. (1) The place switcher "Use my location / Home 1 / Home 2", which is the N-2 location fix. (2) The PAGASA heat-index band strip. (3) The Rain next 6 h, Wind, Humidity and UV tiles | Major | today-weather | `shots/live/weather-dark.png`; `weather/WeatherScreen.tsx:12, 41, 55-87`. "Use my location" appears only in onboard-4; "Humidity" appears 0 times | Put the place switcher above the hero, the 4-band heat strip under it, and a 2×2 tile grid before the rain map. That adds about 260 px; the budget is 1700 |
 | N2 | Family Messages is drawn as a list of per-person threads (Ate Joy / Papa / Lola + New message). Live has one shared family chat | Major (wrong model) | family-messages, family-thread | `family/Messages.tsx:17, 102` ("One shared thread for everyone", migration 0027); v9 family-msgs "6 people, one shared chat" | Draw the single shared chat with mixed senders as the Messages screen |
-| N3 | Health and Family heights break PLAN rev 5. The mock notes say the budgets were "raised", but PLAN.md:23 says Health A ≤ 1300, B ≤ 1050, Family ≤ 1450 "unchanged", and the acceptance lines (PLAN.md:211, 242) gate on those numbers | Major (contract) | health-A 1424, health-B 1194, health-acting 1262, family-s16 1609, family-s16-empty-needs 1495, family-acting 1549 | Measured `scrollHeight`; PLAN.md:23, 211 | Either get Lloyd's OK and update PLAN.md:23 and the acceptance lines, or trim. For Family, put Messages and Plan into one 2-up row (about −80 px). For Health B, drop the Progress tile ring, which repeats the BP ring (about −50 px) |
+| N3 | Health and Family heights break PLAN rev 5. The mock notes say the budgets were "raised", but PLAN.md:23 says Health A ≤ 1300, B ≤ 1050, Family ≤ 1450 "unchanged", and the acceptance lines (PLAN.md:211, 242) gate on those numbers | Major (contract) | health-A 1424, health-B 1194, health-acting 1262, family-s16 1609, family-s16-empty-needs 1495, family-acting 1549 | Measured `scrollHeight`; PLAN.md:23, 211 | Either get the owner's OK and update PLAN.md:23 and the acceptance lines, or trim. For Family, put Messages and Plan into one 2-up row (about −80 px). For Health B, drop the Progress tile ring, which repeats the BP ring (about −50 px) |
 | N4 | The W-22 nudge copy "Morning BP not logged" is gone from Health A / B / acting. "This week · Log" does not say what to log | Minor | health-A, -B, -acting | v11 → v12 text diff | Sub line: "Morning BP not logged · Family streak 12 days" |
 | N5 | The calm hero lost the "Drink water" advice under Extreme caution | Minor | today-s16, -alertsoff, viewas-bar | v11 → v12 text diff | Add "· Drink water" to the feels line at ≥ Extreme caution |
 
@@ -454,7 +454,7 @@ Section B items that were open:
 | N5 | closed | today-s16 action box: "Bring an umbrella · drink water" |
 | R14 gaps | closed | today-more (Near you, This week, Update ready, Add to home screen, Finish setup) and update-sheet (version, size, what changed, Install / Later) |
 | medid clip, greeting cut | closed | DOM checks above |
-| R15 Scene hero | open **by design** | PLAN rev 7 Q5 → D-101 is Lloyd's call |
+| R15 Scene hero | open **by design** | PLAN rev 7 Q5 → D-101 is the owner's call |
 
 ### Open items
 
@@ -468,7 +468,7 @@ Section B items that were open:
      | health-acting | 1306 | ≤ 1350 |
      | today-weather | 1717 | ≤ 1750 |
    - PLAN.md rev 7 (lines 9, 36, 163, 194, 208, 217) still proposes Health A ≤ 1450, B ≤ 1200 and Weather ≤ 1700, quoting the old measures 1424 / 1194.
-   - If Lloyd approves Q6 as PLAN states it, the lane height gates fail against the approved design.
+   - If the owner approves Q6 as PLAN states it, the lane height gates fail against the approved design.
    - Fix: set PLAN Q6 to 1500 / 1250 / 1350 (acting) / 1750 and update the quoted measures. Family 1650 / 1500 / 1550 already agree.
 2. **Minor, new: "Seen by Ate Joy, Papa" in family-thread.** Live has no read receipts (`family/Messages.tsx` has no seen or read field). The frame implies a feature that does not exist. Drop the line, or log it as a new feature.
 3. **Minor, new: the Weather screen dropped the live "Season and sun" card** (sunrise and sunset, "Monthly outlook: see PAGASA", "Typhoon season: June to November"; `weather/WeatherScreen.tsx:194-198`). The earlier v12 "Outlook" line was removed too. Fix: one 64 px row "Sunrise 5:42 · Sunset 5:31 · Typhoon season Jun–Nov" above Official sources (about +64 px, so 1781 against the proposed 1750: also raise that number, or fold the row into the hero).

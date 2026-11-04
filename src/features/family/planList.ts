@@ -1,3 +1,4 @@
+import { shortMedName } from '../health/medName'
 import { dayKey, eventDay, weekOf } from './events'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 
@@ -91,3 +92,10 @@ export function dayLabel(day: string, now: Date): string {
 export const midSentence = (label: string): string => (label === 'Today' || label === 'Tomorrow' ? label.toLowerCase() : label)
 /** The day a new item opens on: the viewed day, but never a day already past. */
 export const addDay = (view: string, today: string): string => (view < today ? today : view)
+
+const MED_LABEL = /\b\d+\s?(mg|mcg|g|ml|iu)\b|\b(tabs?|tablets?|caps?|capsules?)\b/i
+/** A shouted import label ("AMLODIPINE BESYLATE 5MG TAB") reads as its first word in proper case ("Amlodipine"); anything a person typed stays as typed. */
+export function planTitle(title: string): string {
+  if (/\p{Ll}/u.test(title) || !MED_LABEL.test(title)) return title
+  return shortMedName(title)
+}

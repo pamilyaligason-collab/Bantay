@@ -33,6 +33,12 @@ export interface Nudge { streak: number | null; loggedToday: boolean; goals: Goa
 /** Public basis for the targets (all app-set habit goals, none a diagnostic rule):
  *  BP and sugar: 3 days a week is a starter habit; AHA "Monitoring Your Blood Pressure at Home" asks for daily readings only in the week before a visit.
  *  Move: 150 minutes a week, WHO Guidelines on physical activity and sedentary behaviour (2020), adults and older adults. */
+/** The one word for how often a goal repeats, for the For you card; Today's row (lane T) should call it too. BP is a weekly habit (3 days a week), so it is never called "Morning BP". */
+export type NudgePlan = Pick<Goal, 'id'>
+export function cadenceWord(plan: NudgePlan): string {
+  return plan.id === 'bp' ? 'Weekly BP' : plan.id === 'sugar' ? 'Weekly sugar' : plan.id === 'move' ? 'Weekly move' : plan.id === 'meals' ? 'Weekly meals' : 'Daily medicines'
+}
+
 export const BP_DAYS = 3
 export const SUGAR_DAYS = 3
 export const MEAL_DAYS = 4
@@ -73,7 +79,7 @@ export function computeNudge(i: { personId: string; readings: Reading[]; takes: 
   if (doses.want > 0) goals.push(goal({ id: 'meds', label: 'Medicines', n: doses.done, target: doses.want, unitWord: 'doses', cta: { label: 'Open medicines', href: '#health/meds' }, step: "Mark today's medicines - 30 seconds" }))
   const mealDays = new Set(i.food.filter((f) => f.personId === i.personId && valid(f.eatenAt) && days.includes(dayOf(f.eatenAt))).map((f) => dayOf(f.eatenAt))).size
   goals.push(goal({ id: 'meals', label: 'Meals', n: mealDays, target: MEAL_DAYS, unitWord: 'days', cta: { label: 'Log a meal', href: '#health/nutrition' }, step: 'Log what you ate - 1 minute' }))
-  const mins = i.activity.filter((a) => a.personId === i.personId && valid(a.startedAt) && days.includes(dayOf(a.startedAt)) && typeof a.minutes === 'number' && Number.isFinite(a.minutes) && a.minutes > 0).reduce((s, a) => s + (a.minutes ?? 0), 0)
+  const mins = i.activity.filter((a) => a.personId === i.personId && a.kind !== 'steps' && valid(a.startedAt) && days.includes(dayOf(a.startedAt)) && typeof a.minutes === 'number' && Number.isFinite(a.minutes) && a.minutes > 0).reduce((s, a) => s + (a.minutes ?? 0), 0)
   goals.push(goal({ id: 'move', label: 'Move', n: Math.round(mins), target: MOVE_MINUTES, unitWord: 'minutes', cta: { label: 'Pick a gentle move', href: '#health/move' }, step: 'Move gently for 10 minutes' }))
 
   // the next step is the first goal still open; medicines come right after BP so the day's doses are not forgotten

@@ -7,7 +7,9 @@ const plug = vi.hoisted(() => ({
   isAvailable: vi.fn(async () => ({ available: true, platform: 'android' as const })),
   requestAuthorization: vi.fn(async (_o: { read: string[] }) => ({ readAuthorized: [] as string[], readDenied: [] as string[] })),
   checkAuthorization: vi.fn(async (_o: { read: string[] }) => ({ readAuthorized: [] as string[], readDenied: [] as string[] })),
-  openHealthConnectSettings: vi.fn(async () => {})
+  openHealthConnectSettings: vi.fn(async () => {}),
+  queryAggregated: vi.fn(async (_o: Record<string, unknown>) => ({ samples: [] as unknown[] })),
+  readSamples: vi.fn(async (_o: { startDate: string; limit: number }) => ({ samples: [] as { startDate: string; endDate: string; value: number }[] }))
 }))
 // Like the real Capacitor proxy, Health answers every property, `then` included, and that `then` never settles (N-1 root cause).
 vi.mock('@capgo/capacitor-health', () => ({ Health: new Proxy(plug, { get: (t, k) => (k === 'then' ? () => undefined : (t as Record<string | symbol, unknown>)[k]) }) }))
@@ -71,6 +73,110 @@ describe('capgoBridge', () => {
       expect(await p).toMatchObject({ result: 'unavailable', error: expect.stringContaining('did not answer') })
     } finally { vi.useRealTimers() }
   })
+})
+
+describe('steps and paging', () => {
+  const M = 60_000
+  const T = Date.parse('2026-10-01T06:00:00.000Z')
+  const sample = (i: number) => ({ startDate: new Date(T + i * M).toISOString(), endDate: new Date(T + i * M + 30_000).toISOString(), value: 60 + (i % 40) })
+  const server = (all: ReturnType<typeof sample>[]) => async (o: { startDate: string; limit: number }) => ({ samples: all.filter((s) => s.startDate >= o.startDate).slice(0, o.limit) })
+
+  it('readSteps cuts hourly buckets from the hour start, not from the cursor', async () => {
+    await capgoBridge().readSteps!('2026-10-01T06:20:13.000Z')
+    expect(plug.queryAggregated.mock.calls[0][0]).toMatchObject({ dataType: 'steps', bucket: 'hour', aggregation: 'sum', startDate: '2026-10-01T06:00:00.000Z' })
+  })
+  it('readSteps says null only when the method is not there; a timeout or any other error is thrown', async () => {
+    plug.queryAggregated.mockRejectedValueOnce(Object.assign(new Error('"queryAggregated" is not implemented on android'), { code: 'UNIMPLEMENTED' }))
+    expect(await capgoBridge().readSteps!('2026-10-01T06:00:00.000Z')).toBeNull()
+    plug.queryAggregated.mockRejectedValueOnce(Object.assign(new Error('rate limited'), { code: 'RATE_LIMIT' }))
+    await expect(capgoBridge().readSteps!('2026-10-01T06:00:00.000Z')).rejects.toThrow('rate limited')
+    vi.useFakeTimers()
+    try {
+      plug.queryAggregated.mockReturnValueOnce(new Promise(() => {}) as never)
+      const p = capgoBridge().readSteps!('2026-10-01T06:00:00.000Z')
+      const caught = p.then(() => new Error('resolved'), (e: Error) => e)
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect((await caught).message).toContain('did not answer')
+    } finally { vi.useRealTimers() }
+  })
+  it('read pages past the 1,000 row cap and returns each row once', async () => {
+    const all = Array.from({ length: 2500 }, (_, i) => sample(i))
+    plug.readSamples.mockImplementation(server(all))
+    const got = await capgoBridge().read('heartRate', all[0].startDate)
+    expect(got.length).toBe(2500)
+    expect(got[2499].startDate).toBe(all[2499].startDate)
+  })
+  it('a sync over a capped heart-rate window stores the NEWEST reading and moves the cursor to it', async () => {
+    const all = Array.from({ length: 2500 }, (_, i) => sample(i))
+    plug.readSamples.mockImplementation(server(all))
+    plug.checkAuthorization.mockResolvedValue({ readAuthorized: ['heartRate'], readDenied: [] })
+    const { syncAll, getState, STATE_KEY } = await import('./health')
+    const { hdb } = await import('../records/store')
+    await hdb.readings.clear()
+    await db.kv.put({ key: STATE_KEY, value: { enabled: ['heartRate'], cursor: { heartRate: new Date(T + 24 * 3_600_000).toISOString() } } })
+    const res = await syncAll(capgoBridge())
+    expect(res.byType.heartRate).toBe('ok')
+    // heart rate keeps the first reading of each 15 minutes: the newest bucket starts at minute 2490
+    expect((await hdb.readings.toArray()).map((r) => r.takenAt).sort().pop()).toBe(all[2490].startDate)
+    expect((await getState()).cursor.heartRate).toBe(all[2499].endDate)
+  })
+  it('the page limit stops a window that never ends, and the cursor stays inside what was read', async () => {
+    plug.readSamples.mockImplementation(async (o) => ({ samples: Array.from({ length: o.limit }, (_, i) => sample(Math.floor((Date.parse(o.startDate) - T) / M) + i)) }))
+    const got = await capgoBridge().read('heartRate', new Date(T).toISOString())
+    expect(plug.readSamples.mock.calls.length).toBeLessThanOrEqual(20)
+    expect(got.length).toBeGreaterThan(1000)
+    expect(got.length).toBeLessThanOrEqual(20 * 1000)
+    // and a sync over it moves the cursor only as far as the last row read, never to now
+    plug.readSamples.mockClear()
+    plug.checkAuthorization.mockResolvedValue({ readAuthorized: ['heartRate'], readDenied: [] })
+    const { syncAll, getState, STATE_KEY } = await import('./health')
+    const start = new Date(T + 48 * 3_600_000).toISOString()
+    await db.kv.put({ key: STATE_KEY, value: { enabled: ['heartRate'], cursor: { heartRate: start } } })
+    await syncAll(capgoBridge())
+    const last = (await getState()).cursor.heartRate!
+    expect(Date.parse(last)).toBeGreaterThan(Date.parse(start))
+    expect(Date.parse(last)).toBe(T + 19_980 * M + 30_000) // 20 pages of 1,000 rows, each starting on the last row of the one before
+  })
+  it('a page that never answers throws instead of hanging, so the type retries with its cursor kept', async () => {
+    const start = new Date(T + 48 * 3_600_000).toISOString()
+    const { syncAll, getState, STATE_KEY } = await import('./health')
+    plug.checkAuthorization.mockResolvedValue({ readAuthorized: ['sleep'], readDenied: [] })
+    await db.kv.put({ key: STATE_KEY, value: { enabled: ['sleep'], cursor: { sleep: start }, owner: 'p' } }) // an owner already set: no database write before the read, which fake timers would hold up
+    plug.readSamples.mockReturnValue(new Promise(() => {}) as never)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const p = syncAll(capgoBridge())
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect((await p).byType.sleep).toBe('error')
+    } finally { vi.useRealTimers() }
+    expect((await getState()).cursor.sleep).toBe(start)
+    plug.readSamples.mockReset()
+  })
+  it('more rows in the window than 20 pages hold: the second sync continues past them, newer rows arrive', async () => {
+    const S5 = 5000 // a watch writing every 5 s
+    const dense = Array.from({ length: 30_000 }, (_, i) => ({ startDate: new Date(T + i * S5).toISOString(), endDate: new Date(T + i * S5 + 1000).toISOString(), value: 60 + (i % 40) }))
+    plug.readSamples.mockImplementation(server(dense))
+    plug.checkAuthorization.mockResolvedValue({ readAuthorized: ['heartRate'], readDenied: [] })
+    const { syncAll, getState, STATE_KEY } = await import('./health')
+    const { hdb } = await import('../records/store')
+    await hdb.readings.clear()
+    const cursor = new Date(T + 48 * 3_600_000).toISOString() // window start = T, and the cursor is past everything 20 pages reach
+    await db.kv.put({ key: STATE_KEY, value: { enabled: ['heartRate'], cursor: { heartRate: cursor } } })
+    const newest = async () => (await hdb.readings.toArray()).map((r) => r.takenAt).sort().pop()!
+    await syncAll(capgoBridge())
+    const first = await newest()
+    expect(Date.parse(first)).toBeLessThan(T + 20_000 * S5)
+    expect((await getState()).cursor.heartRate).toBe(cursor)
+    plug.readSamples.mockClear()
+    await syncAll(capgoBridge())
+    expect(plug.readSamples.mock.calls[0][0].startDate).toBe(dense[19_980].startDate) // continues from the last start read, no re-read of those pages
+    expect(Date.parse(await newest())).toBeGreaterThan(T + 29_000 * S5)
+    expect((await getState()).cursor.heartRate).toBe(cursor) // the rows still end before the old cursor, so it stays
+    plug.readSamples.mockClear()
+    await syncAll(capgoBridge())
+    expect(plug.readSamples.mock.calls[0][0].startDate).toBe(new Date(T).toISOString()) // read through: back to the cursor window
+    plug.readSamples.mockReset()
+  }, 30_000)
 })
 
 describe('SensorSettings result line and check row', () => {

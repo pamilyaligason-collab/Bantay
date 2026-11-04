@@ -53,7 +53,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.locator('h1')).toHaveText('Family')
       const today = new Date()
       const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString() }
-      await seed(page, 'bantay-health', 'people', [{ id: 'p1', name: 'Lloyd Roc' }, { id: 'p2', name: 'Papa Ben' }, { id: 'p3', name: 'Lola Remy' }])
+      await seed(page, 'bantay-health', 'people', [{ id: 'p1', name: 'Rey Villar' }, { id: 'p2', name: 'Papa Ben' }, { id: 'p3', name: 'Lola Remy' }])
       await seed(page, 'bantay-log', 'activity', [{ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' }, { personId: 'p2', kind: 'check-in', minutes: null, steps: null, startedAt: at(6, 55), source: 'manual' }])
       await seed(page, 'bantay', 'profiles', [{ id: 'p2', photoPath: null, phone: '+63 917 123 4567', birthdate: `${today.getFullYear() - 72}-03-05`, bloodType: null, allergies: [], conditions: [], medicines: [], updatedAt: null }])
       await page.reload()

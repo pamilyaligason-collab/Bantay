@@ -1,4 +1,4 @@
--- Schedule for the records-extract Edge Function sweep (lane L6): every 10 minutes. WRITTEN ONLY: Lloyd applies it.
+-- Schedule for the records-extract Edge Function sweep (lane L6): every 10 minutes. WRITTEN ONLY: the owner applies it.
 -- The sweep reads phone scans the app uploaded but never announced (no signal after the upload), up to 3 per run.
 -- Deploy with --no-verify-jwt; the secret is the gate. Set the function secrets: RECORDS_EXTRACT_CRON_SECRET (32+ chars),
 -- OPENROUTER_API_KEY, ALLOWED_ORIGIN (see supabase/functions/records-extract/README.md).

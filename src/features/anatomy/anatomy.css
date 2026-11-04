@@ -61,7 +61,7 @@
 .an-chip:focus-visible, .an-x:focus-visible, .an-src a:focus-visible, .an-hit:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 
 /* Explore: status line, left rail of round system buttons with count badges, glow on the chosen system. */
-.an-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 12px 4px 10px; }
+.an-top { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 12px 4px 10px; }
 .an-sys { margin: 0; font-size: 22px; line-height: 1.15; }
 .an-pill { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 999px; background: var(--card2); color: var(--ink); font-size: 15px; font-weight: 700; }
 .an-pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -98,3 +98,8 @@
 @keyframes an-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) { .an-layer, .an-layer[data-on="true"], .an-shell, .an-hit::after, .an-chip { transition: none; } .an-glow, .hv-glow { animation: none !important; } .an-hit:hover::after, .an-hit:active::after { transform: none; } }
+
+/* H17 */
+.an-stage { position: relative; }
+.an-callout { position: absolute; top: 8px; left: 8px; z-index: 2; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--warn-bg); color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; }
+.an-foot { margin-top: 12px; padding-bottom: 24px; }

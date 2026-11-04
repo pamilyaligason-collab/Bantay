@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { HOME_ZONES, type LatLon } from '../location/geo'
+import { type LatLon } from '../location/geo'
+import { alertRef } from '../location/place'
 import { GroupedList, Row, Section, Segmented } from '../look'
-import { Icon } from '../shell/Icon'
+import { ExtRow } from './ExtRow'
 import { ALL_IDS } from '../gobag/items'
 import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { dialCount } from './SafetyHub'
 import { OVERRIDES_KEY, type Overrides } from './entries'
-import { ALERTS_KEY, freshness, freshText, newestChecked, type Alert } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, LAST_SEEN_KEY, NO_STALE, STALE_KEY, feedStale, freshness, freshText, shownCheck, type Alert, type StaleSources } from './alerts'
 import LazyMap from './LazyMap'
 import { cyclones, stormLine, stormName, since, windySrc, WINDY_LAYERS, type WindyLayer } from './LiveMaps'
 import { NONE_A, type Place, useOnline } from './SafetyPages'
@@ -15,6 +16,7 @@ import { liveSignals } from './stormMode'
 import { PAR, pauseOnData, type Conn } from './stormPar'
 import { stormCentre, zoomEarthUrl } from './stormView'
 import { putKv, useKv } from './store'
+import { placeName } from './warningsLogic'
 import './livemaps.css'
 import './safety.css'
 import './storm.css'
@@ -29,17 +31,9 @@ const stormLinks = (loc: LatLon) => [
   ['Zoom Earth', zoomEarthUrl(loc)]
 ]
 
-/** An outside link drawn like a Row (Row has no target option). */
-function ExtRow({ title, url }: { title: string; url: string }) {
-  return (
-    <div className="rw" role="listitem">
-      <a className="rw-main press" href={url} target="_blank" rel="noopener noreferrer">
-        <span className="rw-lead rw-ic" data-tint="blue"><Icon name="out" size={20} /></span>
-        <span className="rw-txt"><b className="rw-title">{title}</b><span className="rw-sub">Opens in a new tab.</span></span>
-      </a>
-    </div>
-  )
-}
+/** The newest cyclone row we hold, listed or not: the "Last storm" line when none is listed now. */
+export const lastStorm = (all: Alert[]): Alert | null =>
+  all.filter((a) => a.kind === 'gdacs' && a.id.startsWith('gdacs-TC-')).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))[0] ?? null
 
 export default function StormTracker({ place }: { place: Place }) {
   const online = useOnline()
@@ -48,40 +42,51 @@ export default function StormTracker({ place }: { place: Place }) {
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const packed = readState(useKv<unknown>(BAG_KEY, BAG_EMPTY)).done.length
   const storms = cyclones(all)
-  const zone = HOME_ZONES.find((z) => z.id === place.zone)
-  const name = (zone?.name ?? 'your place').split(',')[0]!
+  const seen = useKv<Alert[]>(LAST_SEEN_KEY, NONE_A)
+  const saved = useKv<unknown>(CHECKED_KEY, null)
+  const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const checked = !feedStale(all, saved, down) // no storm is only said after a fresh check
+  const name = placeName(place) // the line is measured from alertRef, the place this names (home for a phone abroad, never its foreign position)
+  const signals = liveSignals(all)
   const view = stormCentre(place.weather)
-  const line = stormLine(storms, place.weather, name)
+  const line = stormLine(storms, alertRef(place), name, checked, signals.length)
   const [layer, setLayer] = useState<WindyLayer>('wind')
   const [loaded, setLoaded] = useState(false)
   const paused = pauseOnData((navigator as Navigator & { connection?: Conn }).connection, pref)
   const showFrame = online && (!paused || loaded)
+  const last = storms.length ? null : lastStorm([...all, ...seen])
   const pinned = storms.filter((s): s is Alert & { lat: number; lon: number } => s.lat != null && s.lon != null)
   return (
     <div className="st">
       <section className="card st-hero" data-testid="storm-hero" aria-label="Storm status">
         <div role="status">
-          <div className="st-head"><span className="st-dot" data-on={storms.length ? 'watch' : 'calm'} aria-hidden="true" /><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : 'No storms now'}</h2></div>
+          <div className="st-head"><span className="st-dot" data-on={storms.length || signals.length || !checked ? 'watch' : 'calm'} aria-hidden="true" /><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : signals.length ? `${signals[0]!.level} in force` : checked ? 'No storm near the Philippines now' : 'Storms not checked lately'}</h2></div>
           <p className={`st-line sf-storm-line ${line.tone}`}>{line.text}</p>
         </div>
+        <LazyMap height={240} center={[place.weather.lat, place.weather.lon]} zoom={5} depKey={`par|${place.weather.lat}|${place.weather.lon}|${pinned.map((s) => s.id).join(',')}`}
+          label="Map of the Philippine Area of Responsibility" testId="st-map" recentre recentreLabel="Centre map on my location"
+          overlay={<Segmented label="Weather layer" value={layer} onChange={setLayer} options={LAYERS.map(([label, id]) => ({ id, label }))} />}
+          setup={(L, m) => {
+            const ring = L.polygon(PAR.map((p) => [p[0], p[1]] as [number, number]), { className: 'lm-par', interactive: false }).addTo(m)
+            L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-me', interactive: false }).addTo(m)
+            for (const s of pinned) L.circleMarker([s.lat, s.lon], { radius: 9, className: 'lm-storm', interactive: false }).addTo(m)
+            m.fitBounds(ring.getBounds(), { padding: [8, 8] })
+            const par = new (L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'st-par'); d.textContent = 'PAR (Philippine Area of Responsibility), approx.'; return d } }))({ position: 'bottomleft' })
+            par.addTo(m) // the board puts the PAR label on the map
+          }} />
       </section>
-      <LazyMap height={220} center={[place.weather.lat, place.weather.lon]} zoom={5} depKey={`par|${place.weather.lat}|${place.weather.lon}|${pinned.map((s) => s.id).join(',')}`}
-        label="Map of the Philippine Area of Responsibility" testId="storm-map" recentre recentreLabel="Centre map on my location"
-        setup={(L, m) => {
-          const ring = L.polygon(PAR.map((p) => [p[0], p[1]] as [number, number]), { className: 'lm-par', interactive: false }).addTo(m)
-          L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-me', interactive: false }).addTo(m)
-          for (const s of pinned) L.circleMarker([s.lat, s.lon], { radius: 9, className: 'lm-storm', interactive: false }).addTo(m)
-          m.fitBounds(ring.getBounds(), { padding: [8, 8] })
-        }} />
-      <p className="st-note">PAR (Philippine Area of Responsibility), approx.</p>
       {storms.length > 0 && (
         <GroupedList icons label="Storms listed">
           {storms.map((a) => <Row key={a.id} icon="typhoon" tint="red" title={stormName(a)} sub={`${a.level ? `${a.level} alert` : 'Level unknown'} · since ${since(a.issuedAt)}`} />)}
         </GroupedList>
       )}
-      {liveSignals(all).length > 0 && <StormBlock />}
+      {last && (
+        <GroupedList icons label="Last storm">
+          <Row testId="st-last" icon="typhoon" tint="blue" title="Last storm" sub={`${stormName(last)} · started ${since(last.issuedAt)}`} />
+        </GroupedList>
+      )}
+      {signals.length > 0 && <StormBlock />}
       <section className="card st-windy" aria-label="Live weather layer">
-        <Segmented label="Weather layer" value={layer} onChange={setLayer} options={LAYERS.map(([label, id]) => ({ id, label }))} />
         <div className="lm-box">
           {!online ? <p className="sf-empty lm-off" role="status">Maps need internet</p>
             : showFrame ? <iframe className="sf-frame" title={`Windy ${layer} map around your place`} src={windySrc(layer, view.lat, view.lon, view.zoom)} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
@@ -105,7 +110,7 @@ export default function StormTracker({ place }: { place: Place }) {
           {stormLinks(place.weather).map(([title, url]) => <ExtRow key={url} title={title} url={url} />)}
         </GroupedList>
       </Section>
-      <p className="st-note">GDACS, PAGASA · {freshText(freshness(newestChecked(all))).toLowerCase()} · Bantay is not a siren</p>
+      <p className="st-note">GDACS, PAGASA · {freshText(freshness(shownCheck(all, saved, down))).toLowerCase()} · Bantay is not a siren</p>
     </div>
   )
 }

@@ -5,14 +5,6 @@
   :root[data-narrow] :is(.hub, .rp-grid, .kp-grid, .ar-three, .md-two, .md-acts, .md-acts[data-two], .nd-rings, .nu-tiles, .lk-two, .rx-form, .sf-tiles, .sf-faces, .sc-big3, .td-quick, .td-two, .td-tiles, .wx-tiles, .wx-seg, .lr-grid2, .fp-tiles, .fm-two, .fm-actions, .dc-tiles, .fm2-two, .fm2-strip) { grid-template-columns: minmax(0, 1fr); }
   :root[data-narrow] .wx-scale { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   :root[data-narrow] .wx-scale span, :root[data-narrow] .hub-txt b, :root[data-narrow] .wx-seg button { overflow-wrap: break-word; }
-  /* top bar: avatar and icons on one row, the greeting under them with the full width */
-  :root[data-narrow] .sh-top { flex-wrap: wrap; row-gap: 4px; }
-  :root[data-narrow] .sh-top-text { order: 2; flex: 1 1 100%; }
-  :root[data-narrow] .sh-top .sh-me-btn { margin-right: auto; }
-  :root[data-narrow] .sh-top > :not(.sh-me-btn):not(.sh-top-text) { order: 1; }
-  /* sub-page headers: back button (and chip) on a row, the title under it with the full width */
-  :root[data-narrow] .hdr.sh-subhdr { flex-wrap: wrap; row-gap: 4px; }
-  :root[data-narrow] .hdr.sh-subhdr h1 { flex: 1 1 100%; order: 2; hyphens: manual; }
   :root[data-narrow] .hdr.sf-hdr { flex-wrap: wrap; }
   :root[data-narrow] .hdr.sf-hdr h1 { flex: 1 1 100%; order: 2; }
   :root[data-narrow] .sf-subhdr .zp { max-width: 100%; align-items: flex-start; }
@@ -43,6 +35,8 @@
   :root[data-narrow] .fm2-id-name { overflow-wrap: anywhere; }
 
   /* v13 */
+  :root[data-narrow] :is(.lt-actions, .lt-actions-set) { flex-wrap: wrap; justify-content: flex-end; min-width: 0; max-width: 100%; }
+  :root[data-narrow] .lt-row { flex-wrap: wrap; } /* the title row: Back or kicker, then the actions under it when they do not fit */
   :root[data-narrow] .lt-title { font-size: 28px; line-height: 34px; }
   /* v13 rows and cards: the control, value and chevron drop under the text instead of squeezing it to a letter per line, or pushing past the edge */
   :root[data-narrow] :is(.td-todo, .rw-main) { flex-wrap: wrap; }

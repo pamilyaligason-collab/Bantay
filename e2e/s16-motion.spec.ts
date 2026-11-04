@@ -22,7 +22,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(scene).toHaveAttribute('data-cond', 'rain')
     await expect(page.locator('canvas')).toHaveCount(0)
     await assertTargets(page); await assertTextContrast(page)
-    await assertJackClear(page)
+    await assertJackClear(page, { at: 'end' }) // at rest: lane T (v13-foundation JACK_REST_KNOWN)
     if (process.env.S16_SHOTS) await page.screenshot({ path: `docs/session-16/shots/L9/today-${scheme}.png` })
   })
 }

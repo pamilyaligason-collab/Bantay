@@ -15,7 +15,7 @@ Counts only; no names or health values in this file (public repo).
 | already loaded 10-19 | 13 | 13 | 13 | 13 | 18/18 | 13/13 confirmed | right person |
 | already loaded 10-19 | 27 | 27 | 27 | 27 | 46/46 | 27/27 confirmed | right person |
 
-- Not done (blocked: deleting files needs Lloyd): the 2 loose root copies (same sha256 as the copies in the person folders) and one 0 KB copy. Harmless to the import (duplicates by hash, zero-byte skipped).
+- Not done (blocked: deleting files needs the owner): the 2 loose root copies (same sha256 as the copies in the person folders) and one 0 KB copy. Harmless to the import (duplicates by hash, zero-byte skipped).
 
 ### A-fix: duplicate documents (0019_records_dedupe.sql + .down.sql, written, rehearsed, NOT applied)
 The 10-18 Drive-id run and the 10-19 local-path run stored 59 identical files twice (118 documents). v2 after the Opus review (GO_WITH_CHANGES): groups by (sha256, person); a copy is rejected only when nothing is lost (no row a person confirmed, no prescription line the keeper reads differently in drug/frequency/dose/strength/duration, no more rows of a kind than the keeper; a keeper is never rejected); ID numbers and policies are re-pointed, never rejected; every change is logged to `records_dedupe_log` (admin-only read) and `0019_records_dedupe.down.sql` restores it. Known limit: conditions/allergies/profile text are keyed by person and text, not by file (already one row each), untouched.
@@ -55,7 +55,7 @@ Offline note: rejected documents stay in a phone's cached docs list until its ne
 
 ### B4 Scanner
 - ML Kit Document Scanner via `@capacitor-mlkit/document-scanner` 8.2.1 (Apache-2.0, Capacitor >=8, Android only): edge detection, crop, perspective, filters, multi-page, on-device, no camera permission, ~300 KB. Needs an APK release. Web/old APK fallback: the existing camera/file inputs.
-- Gap found: phone uploads are never extracted (extraction is the offline import script, Drive files only). Decision for Lloyd: (a) extend extract.mjs/load.mjs to read storage uploads with ingest_status 'new' (same OpenRouter ZDR route, run by Lloyd), or (b) a server function on upload (new privacy surface).
+- Gap found: phone uploads are never extracted (extraction is the offline import script, Drive files only). Decision for the owner: (a) extend extract.mjs/load.mjs to read storage uploads with ingest_status 'new' (same OpenRouter ZDR route, run by the owner), or (b) a server function on upload (new privacy surface).
 - Gate the native call on `Capacitor.isPluginAvailable('DocumentScanner')` so older APKs fall back to the camera/file inputs.
 - Scans go in as documents status 'draft' (cards stay 'confirmed'); one PDF per scan avoids the front/back-only `side` constraint.
 
@@ -85,19 +85,19 @@ Rules: Sonnet 5.5 builds each lane in its own worktree and commits; Opus 5.5 rev
 |---|---|---|---|
 | L1 Shell + tokens | S1-S8, T9 (Simple mode hides top bar + tab bar), O5 | styles/app.css, shell/shell.css, shell/glass.css, App.tsx, shell/TopBar.tsx, shell/SubHeader.tsx, tokens.css (or a D-note for the 3 tokens), get/ page | tab label 11/600/muted measured in Playwright; Ask bubble 62 px; 0 targets < 44 px in the shell; SubHeader API ready (owner lanes adopt it in wave 2) |
 | L2 Today | B1/T1, T2, T3, T4, T5, T7, T8, Simple-mode content | features/today/*, screens/Today.tsx (placeName keeps its signature: safety/LiveMaps uses it; QuickLog reuses health/AddReadingSheet with its props frozen) | vitest: calm -> no card, expanded weather, place = nearest zone; Playwright Today empty + with dose; axe 0 on Today and Simple |
-| L3 Location fix | B2 | location/useLocation.ts, location/ZonePicker.tsx, location/resolveLocation.test.ts, sos/locate.ts (set flag), safety/MapsPanel.tsx (one line: error code) | the failing test passes, 3 guards + 3 extra tests pass; on Lloyd's phone in General Santos: Conel / "near you" |
+| L3 Location fix | B2 | location/useLocation.ts, location/ZonePicker.tsx, location/resolveLocation.test.ts, sos/locate.ts (set flag), safety/MapsPanel.tsx (one line: error code) | the failing test passes, 3 guards + 3 extra tests pass; on the owner's phone in General Santos: Conel / "near you" |
 | L4 Health | H1-H5 | screens/Health.tsx, health/MetricScreen.tsx, health/Medicines.tsx (not AddReadingSheet.tsx) | signed-in fixture: links reachable; Medicines empty state with Add; no "Family > Records" left (grep = 0) |
 | L5 Safety + Weather + IDs | X1-X8, T11 | screens/Safety.tsx, safety/SafetyPages.tsx, safety/*.css (not MapsPanel.tsx), weather/weather.css, weather/WeatherScreen.tsx, medid/*, docs/DocsScreen.tsx (empty state only), gobag/* | 0 targets < 44 px on Safety, Cards, Sources, Medical ID; axe 0 |
 | L6a Family, Me, Onboarding, Sign in | F1-F4, H6 (.fm-chk), T13, O1-O4 | family/People.tsx, family/Plan.tsx, family/plan.css, FmAvatar.tsx, screens/Me.tsx, setup/*, screens/SignIn.tsx | axe 0 incl. `region`; wizard progress bar; Sign in: PIN/member path primary |
 | Wave 2: L7 Icons (Lucide) + glyphs + SubHeader adoption | B3, S10, S6 | shell/Icon.tsx, the 5 local maps, text glyphs › ↗ ← in every screen, SubHeader in owner screens, package.json, docs/ASSETS.md | bundle diff < +15 KB gz; every icon 22 px / stroke 1.8; visual check vs mockup |
-| Wave 2: L8 Scanner | B4 | src/native/scanner.ts (new), docs/api.ts (draft flag), DocsScreen/UploadSheet, extraction per Lloyd's choice, privacy text | vitest pagesToUploads (pages, 15 MB cap, cancel); Playwright web fallback; device test on the next APK (GitHub Actions "Release Android app") |
+| Wave 2: L8 Scanner | B4 | src/native/scanner.ts (new), docs/api.ts (draft flag), DocsScreen/UploadSheet, extraction per the owner's choice, privacy text | vitest pagesToUploads (pages, 15 MB cap, cancel); Playwright web fallback; device test on the next APK (GitHub Actions "Release Android app") |
 | Gate (orchestrator) | A-fix | supabase/migrations/0019_records_dedupe.sql | apply only on "apply"; re-run the counts above |
 
-Deferred unless Lloyd asks: Ask as a full tab screen (A1, planned P6), Family messages (F5), carer page, admin/auth screens audit (needs an admin fixture).
+Deferred unless the owner asks: Ask as a full tab screen (A1, planned P6), Family messages (F5), carer page, admin/auth screens audit (needs an admin fixture).
 
 After merge: `design-taste-frontend` and `impeccable` passes over the built screens; then 390 px light + dark shots on live data vs the mockup.
 
-## Decisions for Lloyd
+## Decisions for the owner
 1. Apply 0019 (reject 56 duplicate copies)?
 2. Phone scans: (a) offline import script reads storage uploads, or (b) a server function on upload?
 3. Icons: Lucide (+ Healthicons for anatomy)?

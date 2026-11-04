@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ALERTS_KEY, type Alert } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, outdatedLine, shownCheck, type Alert, type StaleSources } from '../safety/alerts'
 import { alertRef } from '../location/place'
 import { FLAGS } from '../safety/flags'
 import LazyMap from '../safety/LazyMap'
@@ -10,6 +10,7 @@ import { useLocation, usePlaceFrom } from '../location/useLocation'
 import { GroupedList, Row, Section, Segmented } from '../look'
 import { readPrefs, ALERT_KEY } from './prefs'
 import { pinsOf, worldRows, type PinKind, type WorldRow } from './rows'
+import '../safety/safety.css'
 import './world.css'
 
 const NONE: Alert[] = []
@@ -38,6 +39,10 @@ function WorldOwn() {
 
 function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: ReturnType<typeof usePlaceFrom> }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
+  const saved = useKv<unknown>(CHECKED_KEY, null)
+  const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const stale = feedStale(alerts, saved, down) // the same test as Safety: no "none" wording without a fresh check
+  const NOT_SAID = 'Not checked lately, so Bantay cannot say there is none.'
   const prefs = readPrefs(useKv<unknown>(ALERT_KEY, undefined))
   const [filter, setFilter] = useState<Filter>('all')
   const here = place ? alertRef(place) : null
@@ -48,6 +53,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   return (
     <>
       <SafetyHead view="world" actions={<ZonePicker loc={l} />} />
+      {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(alerts, saved, down))}</p>}
       <LazyMap height={260} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}
         setup={(L, map) => {
           for (const p of pins) L.circleMarker([p.lat, p.lon], { radius: 8, className: `wm wm-${p.kind}` }).bindTooltip(p.title).addTo(map)
@@ -58,14 +64,14 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
         {LEGEND.filter(([k]) => kinds.has(k)).map(([k, t]) => <li key={k}><span className={`wd-dot wd-${k}`} aria-hidden="true" />{t}</li>)}
       </ul>
       <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
-      {show('near') && <Section title="Near your family" meta="Instant alerts"><Rows label="Near your family" rows={rows.nearFamily} empty="No active hazards at Dampas or Conel" /></Section>}
+      {show('near') && <Section title="Near your family" meta="Instant alerts"><Rows label="Near your family" rows={rows.nearFamily} empty={stale ? NOT_SAID : 'No active hazards at Dampas or Conel'} /></Section>}
       {show('ph') && (
         <Section title="Philippines" meta="Official">
-          <Rows label="Philippines" rows={rows.philippines} empty="No official warnings right now" />
+          <Rows label="Philippines" rows={rows.philippines} empty={stale ? NOT_SAID : 'No official warnings right now'} />
           {FLAGS.phivolcs && <GroupedList label="Volcanoes"><Row icon="warn" tint="amber" title="Volcano alert levels" href="#safety/warnings" /></GroupedList>}
         </Section>
       )}
-      {show('world') && <Section title="World" meta="GDACS"><Rows label="World" rows={rows.world} empty="No big events listed by GDACS" /></Section>}
+      {show('world') && <Section title="World" meta="GDACS"><Rows label="World" rows={rows.world} empty={stale ? NOT_SAID : 'No big events listed by GDACS'} /></Section>}
       {FLAGS.worldFeeds && (
         <>
           <Section title="Forecasts to watch"><p className="wd-empty">No forecasts listed yet.</p></Section>

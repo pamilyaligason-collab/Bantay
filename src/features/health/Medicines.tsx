@@ -1,12 +1,12 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { shortMedName } from './medName'
+import { properName, shortMedName } from './medName'
 import { ldb, logDose, type MedTaken, type Medication } from '../log/store'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { MedReview, toCheck } from './MedReview'
 import { clock12, setMedStatus } from './medActions'
 import { useSelf } from '../sos/useSelf'
-import { EmptyState } from '../look/EmptyState'
+import { JackArt } from '../look/JackArt'
 import { lastDays } from '../today/myWeekLogic'
 import { stockInfo, weekCounter } from './medDetailLogic'
 import { stockRows } from './stock'
@@ -63,7 +63,7 @@ export function useToday(personId: string) {
  *  `canMark`: this person, or a writer carer (the server takes a dose from them). `canEdit`: also an admin (records_editor). */
 export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }: { personId: string; mine?: boolean; canMark?: boolean; canEdit?: boolean }) {
   const { meds, takes, week, doses } = useToday(personId)
-  const self = useSelf() // a carer answering for someone else is recorded by name ("Answered by Lloyd")
+  const self = useSelf() // a carer answering for someone else is recorded by name ("Answered by Rey")
   const queued = useQueuedDoseIds()
   const [sheet, setSheet] = useState<{ med?: Medication } | null>(null)
   const [note, setNote] = useState<MedNote | null>(null)
@@ -93,25 +93,30 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
 
   return (
     <section aria-label="Medicines" className="md">
-      {canEdit && (
+      {canEdit && !empty && (
         <div className="md-addrow">
           <button type="button" className="md-add" onClick={() => open()}><Icon name="plus" size={20} />Add</button>
         </div>
       )}
       {empty && (
-        <EmptyState jack="medicine" title="No medicines yet" body={canEdit ? 'Add your medicines, get reminders. Family gets told if a dose is missed after 30 minutes.' : 'Nothing has been added for them yet.'} action={canEdit ? { label: 'Add by hand', onClick: () => open() } : undefined} />
+        <div className="card empty-state" data-testid="meds-empty">
+          <JackArt name="head" size={96} decorative />
+          <h2 className="hd">No medicines yet</h2>
+          <p className="sub">{canEdit ? 'Add your medicines, get reminders. Family gets told if a dose is missed after 30 minutes.' : 'Nothing has been added for them yet.'}</p>
+          {canEdit && <div className="md-empty-acts"><a className="btn" href="#scan">Scan a prescription</a><button type="button" className="btn2" onClick={() => open()}>Add by hand</button></div>}
+        </div>
       )}
 
       {doses.length > 0 && (
         <>
-          <div className="md-sech"><h2 className="hd">Today</h2><span className="sub md-prog"><svg className="md-ring" width="36" height="36" viewBox="0 0 52 52" aria-hidden="true" focusable="false"><circle cx="26" cy="26" r="20" className="md-rtrack" /><circle cx="26" cy="26" r="20" className="md-rarc" strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - done / doses.length)} transform="rotate(-90 26 26)" /></svg>{done} of {doses.length} done</span></div>
+          <div className="md-sech"><h2 className="hd">Today</h2><span className="sub md-prog"><span className="md-ringbox" aria-hidden="true"><svg className="md-ring" width="64" height="64" viewBox="0 0 52 52" focusable="false"><circle cx="26" cy="26" r="20" className="md-rtrack" /><circle cx="26" cy="26" r="20" className="md-rarc" strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - done / doses.length)} transform="rotate(-90 26 26)" /></svg><b className="md-ringn">{done}/{doses.length}</b></span>{done} of {doses.length} done</span></div>
           <div className="grp" data-testid="meds-today">
             {doses.map((d) => {
               const t = settledBy(d, takes)
               return (
                 <div className="row md-dose" key={`${d.key}:${d.slot}`} data-med={d.name} data-state={d.state}>
-                  <span className="md-tm">{clock12(d.slot)}</span>
                   <span className="grow md-main">
+                    <span className="md-tm">{clock12(d.slot)}</span>
                     <strong>{label({ name: shortMedName(d.name), strength: meds?.find((m) => (m.serverId ?? m.clientId ?? String(m.id)) === d.key)?.strength })}</strong>
                     <span className="sub">{d.state === 'taken' ? (t ? takenText(t) : 'Taken') : d.state === 'skipped' ? 'Skipped' : 'Not yet'}</span>
                   </span>
@@ -158,7 +163,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
                     {stock.chip && <span className={`md-tag${stock.low ? ' warn' : ''}`} data-testid="med-days">{stock.low && <Icon name="warn" size={14} />}{stock.chip}</span>}
                     <Icon name="chev" size={20} />
                   </a>
-                  {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} by={mine ? undefined : self.name} />}
+                  {canEdit && s.review && <MedReview med={m} onChange={() => open(m)} onNote={say} by={mine ? undefined : properName(self.name)} />}
                 </div>
               )
             })}
@@ -169,7 +174,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
       {paused.length > 0 && (
         <>
           <div className="md-sech"><h2 className="hd">Paused</h2><span className="sub">{paused.length}</span></div>
-          <div className="grp" data-testid="meds-paused">
+          <div className="grp" id="meds-paused" data-testid="meds-paused">
             {paused.map((m) => (
               <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
                 <a className="grow md-main md-plink" href={`#health/med/${idOf(m)}`}><strong>{label(m)}</strong><span className="sub">Paused, no reminders</span></a>
@@ -183,7 +188,7 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
       {past.length > 0 && (
         <>
           <div className="md-sech"><h2 className="hd">Past</h2><span className="sub">{past.length}</span></div>
-          <div className="grp" data-testid="meds-past">
+          <div className="grp" id="meds-past" data-testid="meds-past">
             {past.map((m) => (
               <div className="row" key={m.clientId ?? m.id} data-med={m.name}>
                 <a className="grow md-main md-plink" href={`#health/med/${idOf(m)}`}><strong>{label(m)}</strong><span className="sub">{m.stoppedOn ? `Stopped ${new Date(`${m.stoppedOn}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'Stopped'}</span></a>
@@ -209,10 +214,14 @@ export function Medicines({ personId, mine, canMark = mine, canEdit = canMark }:
 export function YourLists({ personId }: { personId: string }) {
   const meds = useMedicationRows(personId)
   const low = stockRows(meds ?? [], personId, new Date())[0]
+  const count = (st: string) => (meds ?? []).filter((m) => m.medStatus === st).length
+  const jump = (id: string) => () => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+  const lists = ([['paused', 'Paused', 'Reminders switched off', 'pause', 'amber'], ['stopped', 'Past', 'Finished courses', 'clock', 'none']] as const).map(([st, title, sub, icon, tint]) => ({ st, title, sub, icon, tint, n: count(st) }))
   const value = !low ? 'Nothing to refill' : low.days <= 0 ? 'Runs out today' : `${low.days} ${low.days === 1 ? 'day' : 'days'} left`
   return (
     <Section title="Your lists">
       <GroupedList icons>
+        {lists.map((l) => <Row key={l.st} icon={l.icon} tint={l.tint} title={l.title} sub={l.sub} value={l.n ? String(l.n) : 'None'} chev={l.n > 0} onClick={l.n ? jump(`meds-${l.st === 'stopped' ? 'past' : 'paused'}`) : undefined} testId={`meds-list-${l.st}`} />)}
         <Row icon="clock" tint="amber" title="Refill" sub="Days left per medicine" value={value} href="#health/refill" testId="refills-door" />
       </GroupedList>
     </Section>

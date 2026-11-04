@@ -20,48 +20,30 @@ async function seed(page: Page, dbName: string, store: string, rows: Row[], mode
   }, [dbName, store, rows, mode] as const)
 }
 
-const FAMILY = [{ personId: 'me', displayName: 'Lloyd' }, { personId: 'ma', displayName: 'Ma' }, { personId: 'pa', displayName: 'Pa' }]
+const FAMILY = [{ personId: 'me', displayName: 'Rey' }, { personId: 'ma', displayName: 'Ma' }, { personId: 'pa', displayName: 'Pa' }]
 
 // The check-in confirmation and my own Mark taken need a signed-in identity; the no-auth e2e build has none, so they are covered by unit tests (today.test.tsx, selfId.test.ts).
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.addInitScript((f) => localStorage.setItem('bantay.family', JSON.stringify(f)), FAMILY)
   await page.goto('/')
-  await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+  await expect(page.getByTestId('myday')).toBeVisible()
 })
 
-test('Today follows Lloyd\'s order: weather (Next up only when something is next), quick log (3 x 2), plan, then More; no news, video or full family list', async ({ page }) => {
+test('Today follows the board: hero, My day, Calm, Your numbers, then More; no quick-log grid, no salt line, no Your week, no news, video or family list', async ({ page }) => {
   const heading = (name: string) => page.getByRole('heading', { name })
   await expect(heading('Next up')).toHaveCount(0) // calm: no empty card
   await expect(heading("Today's plan")).toHaveCount(0) // S5: nothing planned, no card and no filler
-  await expect(page.getByRole('link', { name: /Your week/ })).toBeVisible()
-  for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family']) await expect(heading(gone)).toHaveCount(0)
-  const row = page.getByRole('group', { name: 'Quick log' })
-  await expect(row.getByRole('button')).toHaveCount(7) // six tiles plus the small I'm OK
-  await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined)))) // the reveal motion is done: measure settled boxes
-  // All six boxes are read in one page call (a late layout shift cannot land between two reads) and polled until Today has stopped moving.
-  const near = (xs: number[]) => Math.max(...xs) - Math.min(...xs) < 3 // tolerate sub-pixel / settling shifts
-  const measure = () => page.getByRole('group', { name: 'Quick log' }).evaluate((el) => [...el.querySelectorAll('.td-q')].map((b) => { const r = b.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } }))
-  await expect.poll(async () => { const b = await measure(); return b.length === 6 && near(b.slice(0, 3).map((q) => q.y)) && near(b.slice(3).map((q) => q.y)) }).toBe(true) // two rows of three
-  const boxes = await measure()
-  for (const box of boxes) {
-    expect(box.height).toBeGreaterThanOrEqual(72)
-    expect(box.width).toBeGreaterThanOrEqual(48)
-  }
-  for (const r of [0, 3]) expect(near(boxes.slice(r, r + 3).map((b) => b.y))).toBe(true) // two rows of three
-  for (const c of [0, 1, 2]) expect(near([boxes[c]!.x, boxes[c + 3]!.x])).toBe(true) // columns line up
-  expect(boxes[3]!.y - boxes[0]!.y).toBeGreaterThan(60)
-  expect(near(boxes.map((b) => b.width))).toBe(true) // equal tiles
-  const y = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!.y
-  const quick = await y(row)
-  const week = await y(page.getByRole('link', { name: /Your week/ }))
-  expect(quick).toBeLessThan(week)
+  for (const gone of ['Video of the day', 'Your day', 'Top news', 'News', 'Family', 'Your week']) await expect(heading(gone)).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Your week/ })).toHaveCount(0)
+  await expect(page.locator('.td-quick, [data-testid="salt-line"]')).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Quick log' })).toHaveCount(0)
+  await expect(page.getByTestId('myday-more')).toBeVisible()
   expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
 })
 
 test('How are you? signed out says to sign in and does not claim the family will see it', async ({ page }) => {
-  await expect(page.getByRole('group', { name: 'Quick log' }).getByRole('button', { name: "I'm OK" })).toHaveCount(1) // D-100: the small I'm OK beside How are you? (v13 MyDay has its own I'm OK row too)
-  await page.getByRole('button', { name: 'Log how you feel' }).click()
+  await page.getByRole('button', { name: 'How are you? Pick a face' }).click()
   await page.getByRole('button', { name: 'Unwell' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Sign in first' })).toBeVisible()
   await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toHaveCount(0)
@@ -69,10 +51,10 @@ test('How are you? signed out says to sign in and does not claim the family will
 
 test('Nothing next: no Next up card and no All clear card, and the quick-log Dose and Mood buttons open their sheets', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Next up|All clear/ })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Log how you feel' }).click()
+  await page.getByRole('button', { name: 'How are you? Pick a face' }).click()
   await expect(page.getByRole('dialog', { name: 'How are you feeling?' })).toBeVisible()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'More things to log' }).click()
+  await page.getByTestId('myday-more').click()
   await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Dose taken' }).click()
   await expect(page.getByRole('dialog', { name: 'Which medicine did you take?' })).toBeVisible()
 })

@@ -35,11 +35,11 @@ describe('one verdict table', () => {
     expect(computeMyWeek({ personId: 'p1', readings: rs, activity: [], meds: [], takes: [], now: NOW }).find((t) => t.code === 'bp_systolic')!.state!.word).toBe('High')
     expect(previewReading(entrySpec('bp_systolic')!, { top: '148', bottom: '92' })).toMatchObject({ word: 'High' })
   })
-  it('sugar 112 says A bit high on every surface', () => {
+  it('sugar 112 says High on every surface (S7: one word)', () => {
     const rs = [R('fasting_glucose', 112, 'mg/dL')]
-    expect(computeKpis({ personId: 'p1', readings: rs, activity: [], meds: [], takes: [], now: NOW })[0]!.state!.word).toBe('A bit high')
-    expect(bodyNodes(rs, [], NOW).find((n) => n.id === 'sugar')!.note).toBe('A bit high')
-    expect(vitalCards(rs, NOW)[0]!.word).toBe('A bit high')
+    expect(computeKpis({ personId: 'p1', readings: rs, activity: [], meds: [], takes: [], now: NOW })[0]!.state!.word).toBe('High')
+    expect(bodyNodes(rs, [], NOW).find((n) => n.id === 'sugar')!.note).toBe('High')
+    expect(vitalCards(rs, NOW)[0]!.word).toBe('High')
   })
   it('120 to 129 over under 80 is A little raised everywhere', () => {
     const rs = bp(125, 76)
@@ -75,5 +75,17 @@ describe('the one blood pressure table (hand-computed)', () => {
     expect(vitalCards(rs(134, 84), NOW).find((v) => v.key === 'bp')!.word).toBe('Above target')
     expect(bodyNodes(rs(88, 58), [], NOW).find((n) => n.id === 'bp')!.note).toBe('Low')
     expect(computeKpis({ personId: 'p1', readings: rs(88, 58), activity: [], meds: [], takes: [], now: NOW })[0]!.state).toMatchObject({ word: 'Low', kind: 'low' })
+  })
+})
+
+describe('S7 one word for one number', () => {
+  it('a vital above its range is High, like a lab and the Health hero', () => {
+    expect(verdictFor('vital', 'above')?.word).toBe('High')
+    expect(verdictFor('lab', 'above')?.word).toBe('High')
+  })
+  it('no source file says "a bit high" or "a bit low" in any case (verdict word or help line)', () => {
+    const files = import.meta.glob('/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    const hits = Object.entries(files).filter(([f, text]) => !/\.test\.tsx?$/.test(f) && /a bit (high|low)/i.test(text)).map(([f]) => f)
+    expect(hits).toEqual([])
   })
 })

@@ -1,4 +1,4 @@
-# Family Bantay - session 10 Phase 2 'apply' (safety wave, PR #13). Lloyd runs it from this worktree BEFORE merging the PR:
+# Family Bantay - session 10 Phase 2 'apply' (safety wave, PR #13). The owner runs it from this worktree BEFORE merging the PR:
 #   powershell -ExecutionPolicy Bypass -File scripts\golive-s10-p2.ps1          (add -DryRun to print the steps only)
 # Order (release review): checks -> 0030 -> deploy dose-watch -> 0031..0036 (each recorded) -> verify -> deploy the other functions -> erasure cron -> post-checks.
 # dose-watch goes right after 0030 so the 0031/0035 trigger flushes reach the new name-free function. Stops at the first failure.

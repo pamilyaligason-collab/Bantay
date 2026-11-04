@@ -3,21 +3,22 @@ import places from '../../data/safety/places.json'
 import { ALL_IDS } from '../gobag/items'
 import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { alertRef } from '../location/place'
+import type { PlaceLike } from '../location/placeWords'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, CHECKED_KEY, type Alert, affectsUs, freshness, freshText, lastCheck, outdatedLine, quakeFeltKm, quakeMag, rankAlerts, urgentFirst, type LatLon } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
-import { hazardsFor, hazardStatus } from './hazardCards'
+import { hazardsFor, hazardStatus, hazardSub } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
 import { FLAGS } from './flags'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
 import { Carousel, GroupedList, Row, Section, type Tint } from '../look'
-import { pickLocalSet } from '../location/geo'
+import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { type useLocation } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
 import SosButton from '../sos/SosButton'
@@ -27,7 +28,7 @@ import { StormCard } from './StormCard'
 import { SafetyHead } from './SafetyHead'
 import { TOPICS } from './FirstAid'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
-import { type PhoneCheck, phoneAlertCount } from './stormMode'
+import { liveSignals, type PhoneCheck, phoneAlertCount } from './stormMode'
 import { useKv } from './store'
 import { ddb } from '../docs/store'
 import { useEffect, useState } from 'react'
@@ -72,12 +73,13 @@ const ALERT_ICON: Partial<Record<Alert['kind'], IconName>> = { quake: 'quake', t
 const signalOf = (level: string | null) => Number(/(\d)/.exec(level ?? '')?.[1] ?? 0)
 
 /** The "Right now" list: up to three ranked alerts, then weather, storms, hazards, rescue map. No "none" row: an empty list is the empty state. */
-export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx | null | undefined; storms: Alert[]; hazard: string; pins: number; stale?: boolean }): HomeRow[] {
+export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; place?: PlaceLike | null; wx: Wx | null | undefined; storms: Alert[]; hazard: string; pins: number; stale?: boolean }): HomeRow[] {
+  const place = allQuiet(p.alerts, p.here) ? p.place : undefined // the same flag the cards use, so Far away never sits beside a worse row
   const alerts = urgentFirst(rankAlerts(p.alerts, p.here), p.here).slice(0, 3).map((a): HomeRow => {
-    const f = affectsUs(a, p.here)
+    const f = affectsUs(a, p.here, undefined, place)
     const red = (a.kind === 'tcws' && signalOf(a.level) >= 3) || a.kind === 'tsunami'
     // shortcut: "felt" wording only for quakes; other kinds say Near you / Far away
-    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : (quakeMag(a) ?? 0) >= 6 ? 'May be felt' : 'Far away') : 'Near you'
+    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : f.steps ? 'May be felt' : 'Far away') : 'Near you' // the same steps flag Warnings shows, so the two screens agree
     return {
       href: '#safety/warnings', icon: ALERT_ICON[a.kind] ?? 'warn', tint: red ? 'red' : 'amber', title: a.title,
       sub: [a.where, f.km === null ? null : `${f.km} km`, a.source].filter(Boolean).join(' · '), badge
@@ -85,26 +87,29 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; wx: Wx |
   })
   const n = p.storms.length
   const active = p.alerts.length
+  const signal = liveSignals(p.alerts)[0]
   return [
     // always first, so Warnings is reachable with zero alerts
-    { href: '#safety/warnings', icon: 'warn', tint: active ? 'amber' : 'green', title: 'Warnings', value: p.stale ? undefined : active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined },
+    // the board's first row is the top alert itself (it opens Warnings); the Warnings row stays when there is no alert row, more alerts than rows, or the feed is stale
+    ...(alerts.length && !p.stale && active <= alerts.length ? [] : [{ href: '#safety/warnings', icon: 'warn' as IconName, tint: (active || p.stale ? 'amber' : 'green') as Tint, title: 'Warnings', value: p.stale ? undefined : active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined }]),
     ...alerts,
-    { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? `${Math.round(p.wx.rainPct)}%` : undefined },
-    { href: '#safety/storms', icon: 'typhoon', tint: n ? 'amber' : 'blue', title: 'Storm tracker', value: n ? `${stormName(p.storms[0]!)}${n > 1 ? ` and ${n - 1} more` : ''}` : 'No storms' },
+    { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? `Today up to ${Math.round(p.wx.rainPct)}%` : undefined },
+    { href: '#safety/storms', icon: 'typhoon', tint: n || signal ? 'amber' : 'blue', title: 'Storm tracker', value: n ? `${stormName(p.storms[0]!)}${n > 1 ? ` and ${n - 1} more` : ''}` : signal ? signal.level! : p.stale ? undefined : 'No storms', badge: !n && !signal && p.stale ? 'May be out of date' : undefined },
     { href: '#safety/hazards', icon: 'flood', tint: 'amber', title: 'Hazards at my location', sub: p.hazard },
     { href: '#safety/map', icon: 'pin', tint: 'green', title: 'Rescue map', value: p.pins ? plural(p.pins, 'place') : 'Shelters, help' }
   ]
 }
 
-/** The "Be ready" list under the go-bag card. Offline maps shows only behind its flag, Phone alerts only while a phone setting needs fixing. */
+/** The "Be ready" list under the go-bag card. Offline maps is always listed (honest while no pack exists), Phone alerts only while a phone setting needs fixing. */
 export function readyRows(p: { dial: number; cards: number; ids: number | null; offline: boolean; sosLast: string | null; phoneFix: number }): HomeRow[] {
   const rows: HomeRow[] = [
     { href: '#safety/dial', icon: 'phone', tint: 'red', title: 'Hotlines', value: p.dial ? plural(p.dial, 'number') : 'No numbers yet' },
     { href: '#safety/cards', icon: 'file', tint: 'teal', title: 'Safety cards', value: plural(p.cards, 'guide') },
     { href: '#docs', icon: 'fp', tint: 'purple', title: 'IDs and insurance', sub: idsLine(p.ids) },
+    // no map pack exists yet, so the board's "Bohol ready" would be fake: say so honestly
+    { href: '#safety/offline', icon: 'map', tint: 'teal', title: 'Offline maps', value: p.offline ? undefined : 'Not ready yet' },
     { href: '#safety/sos', icon: 'sos', tint: 'red', title: 'Past SOS', value: p.sosLast ?? 'None sent' }
   ]
-  if (p.offline) rows.push({ href: '#safety/offline', icon: 'map', tint: 'blue', title: 'Offline maps' })
   if (p.phoneFix > 0) rows.push({ href: '#safety/phonewarn', icon: 'bell', tint: 'amber', title: 'Phone alerts', value: p.phoneFix === 1 ? '1 needs fixing' : `${p.phoneFix} need fixing` })
   return rows
 }
@@ -114,13 +119,21 @@ export const kickerOf = (checkedAt: string | null | undefined, now: Date | numbe
 
 const asRow = (r: HomeRow) => <Row key={r.title} href={r.href} icon={r.icon} tint={r.tint} title={r.title} sub={r.sub} value={r.value} badge={r.badge} badgeTint={r.tint} />
 
+/** The Hazards row line (W4): the reading for where you are, else the home zone's with both places named. */
+const hazardLine = (place: Place) => {
+  const home = hazardsFor(place.zone)
+  const word = (v: ReturnType<typeof hazardsFor>) => ({ label: 'status', value: v ? hazardStatus(v) : null })
+  return hazardSub(coversHere(place) ? word(home) : null, home ? { zone: (HOME_ZONES.find((z) => z.id === place.zone)?.name ?? place.zone).split(',')[0]!, reading: word(home) } : null)
+}
+
 function RightNow({ place }: { place: Place }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const savedCheck = useKv<unknown>(CHECKED_KEY, null)
+  const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const wx = useWeather(place.weather)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
-  const rows = rightNowRows({ alerts, here: alertRef(place), wx, storms: cyclones(alerts), hazard: hazardStatus(coversHere(place) ? hazardsFor(place.zone) : null), pins, stale: freshness(lastCheck(alerts, savedCheck)).tone !== 'ok' })
+  const rows = rightNowRows({ alerts, here: alertRef(place), place, wx, storms: cyclones(alerts), hazard: hazardLine(place), pins, stale: feedStale(alerts, savedCheck, down) })
   return (
     <Section title="Right now" link={{ href: '#safety/sources', label: 'Sources' }}>
       <GroupedList icons label="Right now" testId="right-now">{rows.map(asRow)}</GroupedList>
@@ -151,7 +164,8 @@ function BeReady({ place }: { place: Place }) {
   )
 }
 
-const FA_QUICK: [string, IconName, string | null][] = [['stroke', 'brain', 'BE FAST'], ['cpr', 'cpr', 'Hands only'], ['choking', 'lungs', null], ['dengue-warning-signs', 'therm', 'Warning signs']]
+// id, icon, short title, sub (null = the topic's Filipino word), tint as on the board
+const FA_QUICK: [string, IconName, string, string | null, 'red' | 'amber' | 'purple'][] = [['stroke', 'brain', 'Stroke', 'BE FAST', 'red'], ['cpr', 'cpr', 'CPR', 'Hands only', 'red'], ['choking', 'lungs', 'Choking', null, 'amber'], ['dengue-warning-signs', 'therm', 'Dengue', 'Warning signs', 'purple']]
 
 /** The Safety home (Near me): head, SOS hero, Right now, First aid, Be ready. D-33: one place for the whole screen. */
 export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Place | null }) {
@@ -159,39 +173,40 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const now = useNow()
   const savedCheck = useKv<unknown>(CHECKED_KEY, null)
-  const checked = lastCheck(alerts, savedCheck)
+  const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const checked = shownCheck(alerts, savedCheck, down)
   // 911 only works in the Philippines and the US (Texas). Elsewhere abroad point at the official list instead.
   const abroad = !!place && pickLocalSet(place.weather).where === 'abroad'
   if (sos) return <SosScreen onClose={() => setSos(false)} />
   const chip = <ZonePicker loc={l} />
-  const stale = freshness(checked, now).tone !== 'ok'
+  const stale = feedStale(alerts, savedCheck, down, now)
   return (
     <>
-      <SafetyHead view="near" kicker={kickerOf(checked, now)} actions={place?.source === 'last' ? <span data-testid="place-last">{chip}</span> : chip} />
+      <SafetyHead view="near" kicker={kickerOf(checked, now)} actions={chip} />
       {stale && <p className="sf-note" role="status">{outdatedLine(checked)}</p>}
       <StormCard />
       <section className="card sf-hero" data-hero data-testid="safety-hero" aria-label="Emergency">
         <div className="sf-hero-row">
           <SosButton onSend={() => setSos(true)} />
-          <div className="sf-hero-t"><b>Emergency</b></div>
+          <div className="sf-hero-t"><b>Emergency</b><span className="sub">Calls your first family contact and texts your place.</span></div>
         </div>
         <div className="sf-pair">
           {abroad
-            ? <a href={ABROAD_SOURCE.url} target="_blank" rel="noopener noreferrer" className="btn" style={{ background: 'var(--danger-bg)' }}>Local emergency number</a>
-            : <a href="tel:911" className="btn" style={{ background: 'var(--danger-bg)' }}>Call 911</a>}
+            ? <a href={ABROAD_SOURCE.url} target="_blank" rel="noopener noreferrer" className="btn2 sf-ico sf-emerg">Local emergency number</a>
+            : <a href="tel:911" className="btn2 sf-ico sf-emerg"><Icon name="phone" size={20} />Call 911</a>}
           <a href="#medid" className="btn2 sf-ico"><Icon name="cross" size={20} />Medical ID</a>
         </div>
       </section>
       {place && <RightNow place={place} />}
       <Section title="First aid" link={{ href: '#safety/firstaid', label: `All ${TOPICS.length}` }}>
         <Carousel label="First aid">
-          {FA_QUICK.map(([id, icon, sub]) => {
+          {FA_QUICK.map(([id, icon, name, sub, tint]) => {
             const t = TOPICS.find((x) => x.id === id)
             if (!t) return null
             return (
-              <a key={id} className="card sf-fa" href={`#safety/firstaid/${id}`}>
+              <a key={id} className="card sf-fa" data-tint={tint} href={`#safety/firstaid/${id}`}>
                 <Icon name={icon} size={28} />
-                <b>{t.title}</b>
+                <b>{name}</b>
                 <span className="sub" lang={sub ? undefined : 'fil'}>{sub ?? t.tl}</span>
               </a>
             )
@@ -200,7 +215,7 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
         <p className="sub sf-911">{abroad ? 'Call the local emergency number first' : 'Call 911 first'} if someone cannot breathe, speak or wake up.</p>
       </Section>
       {place && <BeReady place={place} />}
-      <p className="sub sf-foot">Bantay is not an earthquake or tsunami siren. From PAGASA, {FLAGS.phivolcs ? 'PHIVOLCS, ' : ''}USGS, GDACS, DOH and Red Cross. <a href="#safety/sources">Sources</a></p>
+      <p className="sub sf-foot">Bantay is not an earthquake or tsunami siren. From PAGASA, {FLAGS.phivolcs ? 'PHIVOLCS, ' : ''}USGS, GDACS, DOH and Red Cross.</p>
     </>
   )
 }

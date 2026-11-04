@@ -75,7 +75,7 @@ export function sourceLink(source: Source, term: string, kiwix = (import.meta.en
 
 export interface People { id: string; name: string; aliases?: string[] }
 const lc = (s: string) => s.trim().toLowerCase()
-/** Everyone the text could mean, most exact tier first: id, full name or alias, a first/middle name or alias word, then a nickname that starts or ends a name word (Lino for Rosalino). */
+/** Everyone the text could mean, most exact tier first: id, full name or alias, a first/middle name or alias word, then a nickname that starts or ends a name word (Mon for Ramon). */
 export function personMatches(name: string, people: People[], maxTier = 2): People[] {
   const q = lc(name)
   if (!q) return []

@@ -13,10 +13,13 @@
 .pc-body { margin: 0; font-size: 15px; line-height: 20px; color: var(--ink); overflow-wrap: anywhere; }
 .pc-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
 .pc .pc-btn, .rw .pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
-.pc .pc-primary { flex: 1; background: var(--green); color: var(--on-green); }
+.pc .pc-primary { flex: 1; background: var(--btn); color: var(--btn-fg); } /* the app's one primary button (.btn): mid green with white text in dark too; --green is the light accent there */
 .pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
-.ac { padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+[data-testid="activity"] { min-height: 420px; min-height: max(420px, min(calc(100dvh - 380px), 640px)); } /* CL: Jack sits 92 px above the bottom, so the row under Activity must start at viewport height - 140. The card starts at 243 px when signed out (the Today row is short), so it needs viewport height - 383 (461 at 844; 336 only when signed in with nothing to do, where it starts at 389); 380 leaves 3 px. Floor 420 (the chart fills 425 by itself). Cap 640 so a tall desktop window leaves no big blank. The space sits under the card, not inside it */
+[data-testid="activity"] .card.ac { justify-content: flex-start; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
+[data-testid="activity"] .ac > p { margin: 0; }
+[data-testid="activity"] .ac [data-testid="ac-empty"] { margin: auto 0; text-align: center; }
 .ac-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .ac-h b { font-size: 15px; font-weight: 600; }
 .wk { display: block; }
@@ -44,3 +47,6 @@
 .fp-chip[data-tint="green"] { background: var(--tint-green); color: var(--tint-green-ink); }
 .fp-chip[data-tint="blue"] { background: var(--tint-blue); color: var(--tint-blue-ink); }
 .fp-img { width: 100%; border-radius: 12px; display: block; }
+
+/* F7: long imported names stop at two lines so a row stays short */
+.fm-item .grow b, [data-testid="need-row"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; }

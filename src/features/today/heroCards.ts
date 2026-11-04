@@ -1,6 +1,6 @@
 import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
-import { affectsUs, distanceKm, rankAlerts, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
+import { affectsUs, distanceKm, NEAR_KM, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { quakeRow } from './alertRow'
 import { actionLine, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
@@ -15,7 +15,7 @@ export interface RainOutlook { now: boolean; tomorrow: boolean; startH: number; 
 export interface Wx {
   temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null
   /** Place-local "YYYY-MM-DDTHH:MM" times (the clock of the place the forecast is for, with utcOffset). */
-  hourly?: { time: string[]; prob: (number | null)[]; code?: (number | null)[] }
+  hourly?: { time: string[]; prob: (number | null)[]; code?: (number | null)[]; temp?: (number | null)[] }
   high?: number | null; low?: number | null // today's range
   utcOffset?: number // seconds; absent in old caches and fixtures = Manila
   tz?: string // IANA zone the forecast service reported
@@ -110,21 +110,24 @@ export function rainOutlook(times: unknown[] | undefined, probs: unknown[] | und
 }
 
 export function rainWords(r: RainOutlook): string {
-  if (r.now) return r.endH < 0 ? `Rain now, likely to last. Chance: ${r.peakPct}%.` : `Rain now, easing around ${hour12(r.endH)}.`
-  return `Rain likely ${r.tomorrow ? 'tomorrow ' : ''}from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. Chance: ${r.peakPct}%.`
+  if (r.now) return r.endH < 0 ? `Rain now, likely to last. Next hours: ${r.peakPct}%.` : `Rain now, easing around ${hour12(r.endH)}.`
+  return `Rain likely ${r.tomorrow ? 'tomorrow ' : ''}from ${hour12(r.startH)} for about ${r.hours} ${r.hours === 1 ? 'hour' : 'hours'}. ${r.tomorrow ? 'Tomorrow up to' : 'Next hours:'} ${r.peakPct}%.`
 }
 
 /** Official warnings only (PAGASA, PHIVOLCS tier), for where the member is. Area-wide alerts and every ingested quake count (D-88: the ingest already limits quakes by size and distance);
  *  other hazards count inside ALERT_RADIUS_KM. Ranked by "affects us" first, then tier and distance; the first row is the one Today shows. */
-export function zoneAlert(alerts: Alert[], ref: LatLon | null): Alert | null {
+export function zoneAlert(alerts: Alert[], ref: LatLon | null, hold = true): Alert | null {
   const refs: LatLon[] = ref ? [ref] : [...HOME_ZONES]
   const near = (a: Alert) => a.kind === 'quake' || a.lat == null || a.lon == null || refs.some((r) => distanceKm(r, { lat: a.lat!, lon: a.lon! }) <= ALERT_RADIUS_KM)
   const hits = rankAlerts(alerts.filter((a) => tierOf(a.kind) <= 1 && near(a)), ref)
   const base = [...hits.filter((a) => affectsUs(a, ref).affects), ...hits.filter((a) => !affectsUs(a, ref).affects)]
-  const first = base[0]
   const full = (a: Alert) => quakeRow(a, affectsUs(a, ref), 0) === null // needs the red card
-  // The slot holds one hazard: a quiet quake row must not hide a quake that needs the full card (ranking never looks at magnitude). Other hazards keep their rank.
-  return base.find((a) => urgent(a, ref)) ?? (first && !full(first) ? base.find((a) => a.kind === 'quake' && full(a)) : undefined) ?? first ?? null
+  // A fresh quake may have been felt, so among other hazards only a real warning close by outranks it: never a Green level, never heat (a day-long city reading), never one far away (D-114).
+  const closeReal = (a: Alert) => { const who = affectsUs(a, ref); return who.affects && a.kind !== 'heat' && !/green/i.test(a.level ?? '') && (who.km == null || who.km <= NEAR_KM) }
+  const recent = (a: Alert) => !(Date.parse(a.issuedAt) < Date.now() - RECENT_MS) // an unreadable time counts as recent, as in quakeQuiet
+  const liveQuake = hold ? base.find((a) => a.kind === 'quake' && recent(a)) : undefined // first hour only (D-114); hold = false is plain ranking, for Weather, whose row is not Simple Today's one slot
+  // The slot holds one hazard, and it is all Simple Today shows. A quake in its first hour holds it against everything but an urgent row, a recent quake that needs the red card (ranking never looks at magnitude) or a close real warning, wherever ranking put them. After that hour ranking decides again. Weather passes hold = false: Warnings and Weather keep their own order. A quiet quake leads only when nothing else is listed, as on Warnings.
+  return base.find((a) => urgent(a, ref)) ?? (liveQuake && (base.find((a) => (a.kind === 'quake' ? full(a) && recent(a) : closeReal(a))) ?? liveQuake)) ?? base.find((a) => !quakeQuiet(a, affectsUs(a, ref).km)) ?? base[0] ?? null
 }
 
 /** Manila wall clock as Open-Meteo prints it: "YYYY-MM-DDTHH:MM". */
@@ -144,8 +147,8 @@ export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined
   if (rain) return rainWords(rain)
   if (w.rainPct == null) return 'No rain chance number yet.'
   const pct = Math.round(w.rainPct)
-  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : `Chance of rain today: ${pct}%.`
-  return rainy ? `Bring an umbrella. Chance of rain: ${pct}%.` : `Chance of rain today: ${pct}%.`
+  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : `Today up to ${pct}%.`
+  return rainy ? `Bring an umbrella. Today up to ${pct}%.` : `Today up to ${pct}%.`
 }
 
 /** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */

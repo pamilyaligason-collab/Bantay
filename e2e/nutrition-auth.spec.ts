@@ -64,28 +64,22 @@ for (const scheme of ['light', 'dark'] as const) {
       await mock(page)
     })
 
-    test('Quick log is 3 x 2; Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean', async ({ page }) => {
+    test('Log a meal -> pick, step the portion, see salt live -> save -> Meals today updates; salty extras; water; axe clean', async ({ page }) => {
       test.setTimeout(120_000) // long flow with five axe runs; 30 s is not enough on a busy PC
       await page.goto('/')
-      const row = page.getByRole('group', { name: 'Quick log' })
-      await expect(row.locator('.td-q')).toHaveCount(6) // v12: six tiles in a 3 x 2 grid; the How are you? tile also holds the small I'm OK button
-      await expect(row.getByRole('button', { name: "I'm OK" })).toBeVisible()
-      for (const b of await row.locator('.td-q').all()) {
-        const box = (await b.boundingBox())!
-        expect(box.height).toBeGreaterThanOrEqual(72)
-        expect(box.width).toBeGreaterThanOrEqual(44)
-      }
+      await expect(page.getByTestId('myday')).toBeVisible()
+      await expect(page.getByTestId('myday').getByRole('button', { name: "I'm OK" })).toBeVisible()
+      const more = page.getByTestId('myday-more') // v13 T3: no quick-log grid; Log something else opens the More sheet
+      expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(44)
       // salt is part of the meals now: there is no separate "Salt today" card
       await expect(page.getByRole('heading', { name: 'Salt today' })).toHaveCount(0)
-      // S14: the Meals card moved to Health > Food; Today keeps one salt line
+      // v13 T3: the Meals card is on Health > Food and Today has no salt line any more
       await expect(page.getByRole('heading', { name: 'Meals today' })).toHaveCount(0)
-      const salt = page.getByTestId('salt-line')
-      await expect(salt).toHaveText(/Salt: nothing logged yet today/)
-      expect((await salt.boundingBox())!.height).toBeGreaterThanOrEqual(48)
+      await expect(page.getByTestId('salt-line')).toHaveCount(0)
       await shot(page, 'today-meals-empty', scheme)
       expect(await serious(page)).toEqual([])
 
-      await row.getByRole('button', { name: 'More things to log' }).click()
+      await more.click()
       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Food' }).click()
       const sheet = page.getByRole('dialog', { name: 'Meal' })
       // the meal comes from the clock; one chip changes it
@@ -117,13 +111,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await save.click()
       await expect(page.getByRole('status').filter({ hasText: 'Saved 2 foods for lunch' })).toBeVisible()
 
-      // the line updates: chicken adobo (1204 mg) + 1.5 cups rice (3 mg) = 1207 mg of the 2000 mg limit
-      await expect(salt).toContainText('Salt 1,207 of 2,000 mg today')
-      await shot(page, 'today-salt-line', scheme)
+      // chicken adobo (1204 mg) + 1.5 cups rice (3 mg) = 1207 mg; the day total is checked on Health > Food below
       expect(await serious(page)).toEqual([])
 
       // salty extras go on the plate with the meal: toyo (879 mg) + patis (1413 mg) goes over the limit
-      await row.getByRole('button', { name: 'More things to log' }).click()
+      await more.click()
       await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Food' }).click()
       const again = page.getByRole('dialog', { name: 'Meal' })
       for (const extra of ['Toyo', 'Patis']) await again.getByRole('group', { name: 'Salty extras on this meal' }).getByRole('button', { name: new RegExp(`^Add ${extra} to`) }).click()
@@ -131,11 +123,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(again.locator('.nu-band')).toHaveText('Over') // 1207 + 2292 = 3499 of 2000
       await again.getByRole('button', { name: 'Save meal' }).click()
       await expect(page.getByRole('dialog', { name: 'Meal' })).toHaveCount(0)
-      await expect(salt).toContainText('Salt 3,499 of 2,000 mg today')
       expect(await serious(page)).toEqual([])
 
-      // water: the Water pill opens the counter (250 ml a tap, Undo)
-      await row.getByRole('button', { name: 'Log water you drank' }).click()
+      // water: Water in the More sheet opens the counter (250 ml a tap, Undo)
+      await more.click()
+      await page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Water' }).click()
       const wsheet = page.getByRole('dialog', { name: 'Water' })
       await wsheet.getByRole('button', { name: /Add a glass of water/ }).click()
       await wsheet.getByRole('button', { name: /Add a glass of water/ }).click()
@@ -148,8 +140,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('dialog', { name: 'Water' })).toHaveCount(0)
       expect(await noSideways(page)).toBe(true)
 
-      // the Meals card now lives in Health > Food: the salt line opens it
-      await salt.click()
+      // the Meals card lives in Health > Food (lane H is rebuilding it)
+      await page.evaluate(() => { location.hash = '#health/nutrition' })
       await expect(page).toHaveURL(/#health\/nutrition$/)
       const card = page.locator('section[aria-labelledby="nu-salt"]')
       await expect(card.getByTestId('salt-mg')).toContainText('3,499 mg')
@@ -164,7 +156,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Health > Food and nutrients: the card, the limit (2000 or 1500), the week next to blood pressure; axe clean', async ({ page }) => {
       await page.goto('/')
-      await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+      await expect(page.getByTestId('myday')).toBeVisible()
       const at = (d: number, h: number) => new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - d, h).toISOString()
       await seed(page, 'bantay-log', 'food', [
         { clientId: 'f1', personId: 'me', eatenAt: at(0, 12), meal: 'lunch', foodKey: 'chicken_adobo', name: 'Chicken adobo', portion: 1, servingLabel: '1 serving', kcal: 207, sodiumMg: 1204, potassiumMg: 352, proteinG: 23.6 },
@@ -212,7 +204,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Health > Food and nutrients: targets by age and sex, food vs supplement segments, unknown stays unknown; axe clean', async ({ page }) => {
       await page.goto('/')
-      await expect(page.getByRole('group', { name: 'Quick log' })).toBeVisible()
+      await expect(page.getByTestId('myday')).toBeVisible()
       const at = (d: number, h: number) => new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - d, h).toISOString()
       await seed(page, 'bantay-log', 'food', [
         { clientId: 'n1', personId: 'me', eatenAt: at(0, 8), meal: 'breakfast', foodKey: 'pandesal', name: 'Pandesal', portion: 1, servingLabel: '1 piece', kcal: 93, sodiumMg: 172, potassiumMg: 44, proteinG: 3.1, carbsG: 18, fiberG: 0.8, calciumMg: 24, vitdUg: null }
