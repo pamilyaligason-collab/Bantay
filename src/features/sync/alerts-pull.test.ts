@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
+import { EONET_KEY } from '../safety/alerts'
+import { FLAGS } from '../safety/flags'
 import { resetSyncForTests, startSync, syncNow } from './sync'
 
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
@@ -84,5 +86,41 @@ describe('alerts pull', () => {
     startSync(cfg)()
     await syncNow()
     expect(((await db.kv.get(ALERTS))?.value as { id: string }[]).map((a) => a.id)).toEqual(['usgs-x1'])
+  })
+})
+
+// Phase 2 lane A: EONET rows are awareness only. They never enter the official list, never move the check time or the stale list, and are stored apart only with FLAGS.eonet on.
+describe('alerts pull: EONET', () => {
+  const eonetRow = { ...row, id: 'eonet-EONET_1', kind: 'eonet', level: '50 kts', title: 'Test Storm', source: 'EONET', stale: false }
+  const stamps = (u: string) => u.includes('select=source,fetched_at')
+  it('flag off (the default): asks the server to leave EONET out, keeps any that arrive out of the official list, and writes no EONET key', async () => {
+    mockFetch((u) => (stamps(u) ? json([]) : isAlerts(u) ? json([row, eonetRow]) : json([])))
+    startSync(cfg)()
+    await syncNow()
+    expect(decodeURIComponent(urls.find((u) => isAlerts(u) && !stamps(u))!)).toContain('&kind=neq.eonet')
+    expect(((await db.kv.get(ALERTS))?.value as { id: string }[]).map((a) => a.id)).toEqual(['usgs-x1'])
+    expect(await db.kv.get(EONET_KEY)).toBeUndefined()
+  })
+  it('flag on: EONET rows are stored in their own key and the official list stays official', async () => {
+    FLAGS.eonet = true
+    try {
+      mockFetch((u) => (stamps(u) ? json([]) : isAlerts(u) ? json([row, eonetRow]) : json([])))
+      startSync(cfg)()
+      await syncNow()
+      expect(decodeURIComponent(urls.find((u) => isAlerts(u) && !stamps(u))!)).not.toContain('eonet')
+      expect(((await db.kv.get(ALERTS))?.value as { id: string }[]).map((a) => a.id)).toEqual(['usgs-x1'])
+      expect(((await db.kv.get(EONET_KEY))?.value as { id: string; kind: string }[]).map((a) => [a.id, a.kind])).toEqual([['eonet-EONET_1', 'eonet']])
+    } finally { FLAGS.eonet = false }
+  })
+  it('the stamp read leaves EONET out, so a failing EONET source cannot mark the official feeds stale (either flag state)', async () => {
+    for (const on of [false, true]) {
+      FLAGS.eonet = on
+      try {
+        mockFetch(() => json([]))
+        startSync(cfg)()
+        await syncNow()
+        expect(decodeURIComponent(urls.find(stamps)!)).toContain('&source=neq.EONET')
+      } finally { FLAGS.eonet = false }
+    }
   })
 })

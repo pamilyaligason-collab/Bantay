@@ -12,7 +12,7 @@ import { dryRunCounts, localPathId, needsDownload, toEntry } from '../../../scri
 
 const PA = '11111111-1111-4111-8111-111111111111'
 const PB = '22222222-2222-4222-8222-222222222222'
-const MAP = { 'Test Parent': PA, 'Test Parent Sr': PA, 'Test Almendras': PA, 'Test Mandras': PA, 'Test Relative': PB }
+const MAP = { 'Test Parent': PA, 'Test Parent Sr': PA, 'Test Almendras': PA, 'Test Salcedo': PA, 'Test Relative': PB }
 
 describe('lane classification', () => {
   const lane = (...s: string[]) => classifyPath(s).lane
@@ -68,7 +68,7 @@ describe('alias config and person matching', () => {
   })
   it('both spellings of a folder name resolve to the same person, numbering stripped', () => {
     expect(matchPerson(m, { segments: ['- Medical', 'Test Almendras'], printed: null })).toEqual({ id: PA, strength: 'folder' })
-    expect(matchPerson(m, { segments: ['- IDs', '3. Test Mandras'], printed: null })).toEqual({ id: PA, strength: 'folder' })
+    expect(matchPerson(m, { segments: ['- IDs', '3. Test Salcedo'], printed: null })).toEqual({ id: PA, strength: 'folder' })
   })
   it('printed names: exact, reordered, with extra words; initials never count', () => {
     expect(matchPerson(m, { segments: ['Test Parent'], printed: 'PARENT, TEST' })).toEqual({ id: PA, strength: 'both' })
@@ -86,11 +86,11 @@ describe('alias config and person matching', () => {
     expect(matchPerson(m, { segments: ['Test Parent and Test Relative Documents'], printed: null })).toEqual({ id: null, strength: 'none' }) // shared folder
   })
   it('builds the people-map from database people; ambiguous and missing are counted', () => {
-    const cfg = parseAliasConfig({ people: [{ name: 'Test Parent', aliases: ['Test Mandras'] }, { name: 'Test Relative' }, { name: 'Test Gone' }, { name: 'Twin One', aliases: ['Twin'] }] })
-    const db = [{ id: PA.toUpperCase(), display_name: 'test mandras' }, { id: PB, display_name: 'Test Relative' }, { id: '33333333-3333-4333-8333-333333333333', display_name: 'Twin' }, { id: '44444444-4444-4444-8444-444444444444', display_name: 'Twin One' }]
+    const cfg = parseAliasConfig({ people: [{ name: 'Test Parent', aliases: ['Test Salcedo'] }, { name: 'Test Relative' }, { name: 'Test Gone' }, { name: 'Twin One', aliases: ['Twin'] }] })
+    const db = [{ id: PA.toUpperCase(), display_name: 'test salcedo' }, { id: PB, display_name: 'Test Relative' }, { id: '33333333-3333-4333-8333-333333333333', display_name: 'Twin' }, { id: '44444444-4444-4444-8444-444444444444', display_name: 'Twin One' }]
     const r = buildPeopleMap(cfg, db)
     expect(r.map['Test Parent']).toBe(PA)
-    expect(r.map['Test Mandras']).toBe(PA)
+    expect(r.map['Test Salcedo']).toBe(PA)
     expect(r.map['Test Relative']).toBe(PB)
     expect(r.missing).toEqual(['Test Gone'])
     expect(r.ambiguous).toBe(1)
@@ -99,7 +99,7 @@ describe('alias config and person matching', () => {
     expect(extractPeopleRows({ rows: [{ id: 'a', display_name: 'X' }], other: { deep: [[{ id: 'b', display_name: 'Y' }]] } })).toHaveLength(2)
   })
   it('dependents sql adds only dependents, names only, safe to re-run', () => {
-    const sql = dependentsSql(parseAliasConfig({ people: [{ name: "Test O'Parent", aliases: ['Test Mandras'], dependent: true }, { name: 'Test Member' }] }))
+    const sql = dependentsSql(parseAliasConfig({ people: [{ name: "Test O'Parent", aliases: ['Test Salcedo'], dependent: true }, { name: 'Test Member' }] }))
     expect(sql).toContain("'Test O''Parent'")
     expect(sql).not.toContain('Test Member')
     expect(sql).toMatch(/insert into public\.people \(display_name, created_by\)/)
@@ -177,7 +177,7 @@ describe('auto-confirm in the load sql', () => {
       mk('other', 'Root/Medical/Test Parent/e.pdf', 'health'),
       mk('vis', 'Root/Visa/f.pdf', 'document_only'),
       mk('idc', 'Root/IDs/1. Test Parent/g.jpg', 'identity'),
-      mk('idc2', 'Root/IDs/Test Mandras/h.jpg', 'identity'),
+      mk('idc2', 'Root/IDs/Test Salcedo/h.jpg', 'identity'),
       mk('ins', 'Root/Insurance/Test Parent/i.pdf', 'insurance'),
       mk('rx1', 'Root/Medical/Test Parent/j.pdf', 'health'),
       mk('rx2', 'Root/Medical/Test Parent/k.pdf', 'health'),

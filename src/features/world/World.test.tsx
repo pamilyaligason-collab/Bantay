@@ -2,10 +2,13 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
-import { ALERTS_KEY, CHECKED_KEY, type Alert } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, type Alert } from '../safety/alerts'
 import { ALERT_KEY } from './prefs'
+import { PANEL_KEY } from './panels'
 
-const flags = vi.hoisted(() => ({ worldFeeds: false, phivolcs: false }))
+const flags = vi.hoisted(() => ({ worldFeeds: false, phivolcs: false, eonet: false, digest: false }))
+const feed = vi.hoisted(() => ({ v: { state: 'off', news: [], digest: null } as import('./useWorldNews').WorldNews }))
+vi.mock('./useWorldNews', async (orig) => ({ ...(await orig<typeof import('./useWorldNews')>()), useWorldNews: () => feed.v }))
 vi.mock('../safety/flags', () => ({ FLAGS: flags }))
 vi.mock('../location/useLocation', () => ({
   useLocation: () => ({}),
@@ -16,8 +19,10 @@ import World from './World'
 
 const quake: Alert = { id: 'q1', kind: 'quake', level: 'M5.1', title: 'M5.1 quake near Bohol', what: '', where: '', when: '', doNow: '', source: 'USGS', sourceUrl: null, issuedAt: new Date().toISOString(), lat: 9.7, lon: 123.9, bulletin: '' }
 
-beforeEach(async () => { await db.kv.clear(); flags.worldFeeds = false; flags.phivolcs = false })
-afterEach(cleanup)
+beforeEach(async () => { await db.kv.clear(); Object.assign(flags, { worldFeeds: false, phivolcs: false, eonet: false, digest: false }); feed.v = { state: 'off', news: [], digest: null } })
+afterEach(() => { cleanup(); vi.useRealTimers() })
+const eonet = { ...quake, id: 'eonet-1', kind: 'eonet', level: null, title: 'Volcano eruption, Example Island', what: 'Open event', source: 'NASA EONET', issuedAt: '2026-11-05T00:00:00Z', lat: 40, lon: 10 } as unknown as Alert
+const volc = { ...quake, id: 'v1', kind: 'volcano', level: 'Level 2', title: 'Example volcano level 2', source: 'PHIVOLCS', issuedAt: '2026-11-05T00:00:00Z' } as Alert
 
 describe('World', () => {
   it('with no alerts and a fresh check the three lists show their empty lines', async () => {
@@ -38,7 +43,7 @@ describe('World', () => {
   })
   it('hides the feed sections and the volcano row while their flags are off', () => {
     render(<World />)
-    for (const t of ['Forecasts to watch', 'Macro and news', 'Your panels']) expect(screen.queryByRole('heading', { name: t })).toBeNull()
+    for (const t of ['Forecasts to watch', 'Macro and news', 'Volcanoes', 'Your panels']) expect(screen.queryByRole('heading', { name: t })).toBeNull()
     expect(screen.queryByText('Volcano alert levels')).toBeNull()
   })
   it('shows the feed sections as empty states when the flag is on', () => {
@@ -61,5 +66,101 @@ describe('World', () => {
     render(<World />)
     await waitFor(() => expect(screen.getByText('Daily digest (coming) · 06:30')).toBeTruthy())
     expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('#safety/alerts')
+  })
+  it('flags off: an EONET row in the table is not listed, pinned or counted', async () => {
+    await db.kv.put({ key: EONET_KEY, value: [eonet] })
+    await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
+    render(<World />)
+    expect(await screen.findByText('No big events listed by GDACS')).toBeTruthy()
+    expect(screen.queryByText(eonet.title)).toBeNull()
+  })
+  it('flags off: an EONET row inside the official list is hidden as well (lane A + G together)', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [eonet] })
+    await db.kv.put({ key: EONET_KEY, value: [eonet] })
+    await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
+    render(<World />)
+    expect(await screen.findByText('No big events listed by GDACS')).toBeTruthy()
+    expect(screen.queryByText(eonet.title)).toBeNull()
+  })
+  it('FLAGS.eonet on: the EONET row lists under World and under Forecasts and Volcanoes', async () => {
+    flags.eonet = true; flags.worldFeeds = true
+    await db.kv.put({ key: EONET_KEY, value: [eonet] })
+    await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
+    render(<World />)
+    expect((await screen.findAllByText(eonet.title)).length).toBe(3) // World list, Forecasts, Volcano bulletins
+    expect(screen.getByRole('list', { name: 'Forecasts to watch' }).textContent).toContain('NASA EONET')
+    expect(screen.getByRole('list', { name: 'Volcano bulletins' }).textContent).toContain(eonet.title)
+  })
+  it('worldFeeds on and no data: honest lines, no invented rows', async () => {
+    flags.worldFeeds = true
+    await db.kv.put({ key: CHECKED_KEY, value: new Date().toISOString() })
+    render(<World />)
+    expect(await screen.findByText('No forecasts listed yet.')).toBeTruthy()
+    expect(screen.getByText('No headlines yet.')).toBeTruthy()
+    expect(screen.getByText('No volcano bulletins listed right now.')).toBeTruthy()
+  })
+  it('a failed headline read says so', () => {
+    flags.worldFeeds = true; feed.v = { state: 'error', news: [], digest: null }
+    render(<World />)
+    expect(screen.getByText('Could not load headlines. Try again later.')).toBeTruthy()
+  })
+  it('headlines are plain text links that open out with noopener noreferrer', () => {
+    flags.worldFeeds = true
+    feed.v = { state: 'ok', digest: null, news: [{ id: 'n1', title: '<b>Fuel prices</b> change', url: 'https://news.example/a', source: 'news.example', seenAt: '2026-11-05T00:00:00Z' }] }
+    render(<World />)
+    const a = screen.getByText('<b>Fuel prices</b> change').closest('a')!
+    expect(a.getAttribute('href')).toBe('https://news.example/a')
+    expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(a.getAttribute('target')).toBe('_blank')
+    expect(a.querySelectorAll('b').length).toBe(1) // only the row title: the markup in the headline stayed text
+  })
+  it('a volcano alert fills the Volcanoes panel', async () => {
+    flags.worldFeeds = true
+    await db.kv.put({ key: ALERTS_KEY, value: [volc] })
+    render(<World />)
+    expect(await screen.findByRole('list', { name: 'Volcano bulletins' })).toBeTruthy()
+  })
+  it('Manage panels turns a panel off and keeps the choice', async () => {
+    flags.worldFeeds = true
+    render(<World />)
+    expect(screen.getByRole('heading', { name: 'Macro and news' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Manage panels' }))
+    const sw = screen.getByRole('switch', { name: 'Macro and news' })
+    expect(sw.getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(sw)
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Macro and news' })).toBeNull())
+    expect((await db.kv.get(PANEL_KEY))?.value).toEqual({ forecasts: true, macro: false, volcanoes: true })
+    expect(screen.getByRole('heading', { name: 'Forecasts to watch' })).toBeTruthy()
+  })
+  describe('digest card (clock pinned)', () => {
+    const digest = { day: '2026-11-05', total: 2, summary: 'Two warnings, none urgent.', sources: 'PAGASA, USGS', top: [{ id: 'a', title: 'Example warning', kind: 'tcws', level: null, source: 'PAGASA' }] }
+    const at = (iso: string) => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(Date.parse(iso)) }
+    it('shows the digest from the chosen time on, on the same Manila day', () => {
+      flags.digest = true; feed.v = { state: 'ok', news: [], digest }; at('2026-11-05T00:30:00Z') // 08:30 in Manila
+      render(<World />)
+      expect(screen.getByText('Two warnings, none urgent.')).toBeTruthy()
+      expect(screen.getByText(/Example warning · PAGASA/)).toBeTruthy()
+      expect(screen.queryByText(/coming/)).toBeNull()
+    })
+    it('before the chosen time it keeps the coming line', () => {
+      flags.digest = true; feed.v = { state: 'ok', news: [], digest }; at('2026-11-04T22:30:00Z') // 06:30 on the 5th
+      render(<World />)
+      expect(screen.getByText('Daily digest (coming) · 07:00')).toBeTruthy()
+    })
+    it('after midnight in Manila, yesterday digest is not shown as today', () => {
+      flags.digest = true; feed.v = { state: 'ok', news: [], digest }; at('2026-11-05T16:30:00Z') // 00:30 on the 6th
+      render(<World />)
+      expect(screen.getByText('Daily digest (coming) · 07:00')).toBeTruthy()
+    })
+    it('an empty day says so plainly', () => {
+      flags.digest = true; feed.v = { state: 'ok', news: [], digest: { ...digest, total: 0, top: [], summary: 'No warnings in the last 24 h' } }; at('2026-11-05T00:30:00Z')
+      render(<World />)
+      expect(screen.getByText('No warnings in the last 24 h')).toBeTruthy()
+    })
+    it('flag off ignores a digest', () => {
+      feed.v = { state: 'ok', news: [], digest }; at('2026-11-05T00:30:00Z')
+      render(<World />)
+      expect(screen.getByText('Daily digest (coming) · 07:00')).toBeTruthy()
+    })
   })
 })

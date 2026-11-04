@@ -6,7 +6,8 @@ describe('alert prefs', () => {
     expect(ALERT_DEFAULTS).toEqual({ nearFamily: true, phWide: true, worldDigest: true, macro: false, digestTime: '07:00', quiet: true, push: true, sms: false })
   })
   it('defines urgent in plain words', () => {
-    for (const w of ['tsunami warning', 'wind signal 3', 'M6', 'red', 'volcano level 3']) expect(URGENT_TEXT).toContain(w)
+    for (const w of ['tsunami warning', 'wind signal', 'M6', 'red flood']) expect(URGENT_TEXT).toContain(w)
+    expect(URGENT_TEXT).not.toMatch(/volcano/i) // volcano notices fire only once PHIVOLCS is wired
   })
   it('readPrefs fills gaps and ignores bad values', () => {
     expect(readPrefs(undefined)).toEqual(ALERT_DEFAULTS)

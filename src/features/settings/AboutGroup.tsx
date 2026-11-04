@@ -1,4 +1,6 @@
 import { supabase } from '../auth/client'
+import { FLAGS } from '../safety/flags'
+import PacksSettings from '../safety/PacksSettings'
 import { UpdateRow, VersionRow } from '../update/UpdateRow'
 import Group from './Group'
 import { useAccount } from './useAccount'
@@ -12,6 +14,7 @@ export default function AboutGroup() {
       <div className="sh-card sh-list st-list">
         {admin ? <UpdateRow /> : <VersionRow />}
       </div>
+      {FLAGS.localPacks && <PacksSettings />}
       {who && supabase && <p className="sh-sub sh-note">Signed in as {who}</p>}
     </Group>
   )

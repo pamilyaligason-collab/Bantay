@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { ALERT_RADIUS_KM } from '../today/heroCards'
-import { affectsUs, quakeFeltKm, quakeMag, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_FULL, SOURCES_LINE, tierOf } from './alerts'
+import { affectsUs, quakeFeltKm, quakeMag, type Alert, diffBulletin, distanceKm, freshness, freshText, hazardOf, HOME, newestChecked, outdatedLine, placeLabel, plainWhat, rankAlerts, SOURCES_FULL, SOURCES_LINE, splitEonet, tierOf } from './alerts'
 
 const a = (id: string, kind: Alert['kind'], over: Partial<Alert> = {}): Alert => ({
   id, kind, level: null, title: id, what: '', where: '', when: '', doNow: '', source: '', sourceUrl: null,
@@ -242,5 +243,29 @@ describe('plain words and copy', () => {
     expect(placeLabel({ source: 'gps', zone: 'dampas', weather: { lat: 6.11, lon: 125.17 } })).toBe('General Santos')
     expect(placeLabel({ source: 'zone', zone: 'dampas', picked: false })).toBe('Dampas · your home area')
     expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
+  })
+})
+
+describe('eonet kind (Phase 2 lane A)', () => {
+  it('ranks last, below GDACS context, and never takes a hazard word', () => {
+    expect(tierOf('eonet')).toBe(5)
+    expect(tierOf('eonet')).toBeGreaterThan(tierOf('gdacs'))
+    expect(rankAlerts([a('e', 'eonet'), a('g', 'gdacs'), a('t', 'tcws')], null).map((x) => x.id)).toEqual(['t', 'g', 'e'])
+    expect(hazardOf('eonet')).toBeNull()
+  })
+  it('splitEonet separates awareness rows from the official list and keeps order', () => {
+    const list = [a('q', 'quake'), a('e1', 'eonet'), a('t', 'tcws'), a('e2', 'eonet')]
+    const { official, eonet } = splitEonet(list)
+    expect(official.map((x) => x.id)).toEqual(['q', 't'])
+    expect(eonet.map((x) => x.id)).toEqual(['e1', 'e2'])
+    expect(splitEonet([])).toEqual({ official: [], eonet: [] })
+  })
+  it('every kind the ingest can write is in the AlertKind union, eonet included (ML-28)', () => {
+    const src = (f: string) => readFileSync(new URL(f, import.meta.url), 'utf8')
+    const kinds = (s: string) => s.match(/'(\w+)'/g)!.map((x) => x.slice(1, -1)).sort()
+    const app = kinds(/export type AlertKind = ([^\n]+)/.exec(src('./alerts.ts'))![1])
+    const ingest = kinds(/kind: ([^\n]+)\n  level/.exec(src('../../../supabase/functions/alerts-ingest/parse.ts'))![1])
+    expect(ingest).toContain('eonet')
+    for (const k of ingest) expect(app, k).toContain(k) // the app also knows kinds only an admin or a later source writes (heat, local, utility, thunderstorm)
   })
 })

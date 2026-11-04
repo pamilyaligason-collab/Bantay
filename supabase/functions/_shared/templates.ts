@@ -11,6 +11,11 @@ export const TEMPLATES = {
   storm_warning: { cls: 'safety', title: 'Storm warning near you', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
   flood_watch: { cls: 'safety', title: 'Flooding possible near you', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
   heat_alert: { cls: 'safety', title: 'Dangerous heat today', body: 'Open Bantay for ways to stay safe.', tab: 'safety', tone: 'urgent' },
+  // Phase 2 lane A (D-107): the other urgent cases of URGENT_TEXT. Neutral, no place, no value (B-7).
+  tsunami_warning: { cls: 'safety', title: 'A world alert feed reports a coastal hazard', body: 'This is not an official warning. Open Bantay to see more.', tab: 'safety', tone: 'urgent' },
+  quake_strong: { cls: 'safety', title: 'Strong ground shaking was reported', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
+  flood_red: { cls: 'safety', title: 'A serious flood warning was issued', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
+  volcano_raised: { cls: 'safety', title: 'A volcano alert level was raised', body: 'Open Bantay to see what to do.', tab: 'safety', tone: 'urgent' },
   family_sos: { cls: 'safety', title: 'Someone in your family needs help', body: 'Open Bantay now.', tab: 'family', tone: 'urgent' },
   dose_due: { cls: 'health', title: 'Medicine time', body: 'Open Bantay to log it.', tab: 'health', tone: 'normal' },
   dose_missed: { cls: 'health', title: 'A medicine was missed', body: 'Open Bantay to catch up.', tab: 'health', tone: 'urgent' },
@@ -47,7 +52,7 @@ export const NOTIFY_KINDS = ['dose_missed', 'review_open', 'phone_health', 'read
 export type NotifyKind = (typeof NOTIFY_KINDS)[number]
 /** Template id to the alert kind of its carer_alerts row. dose_due and bp_check are local reminders, never rows. */
 export const ALERT_KIND = {
-  storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
+  storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', tsunami_warning: 'hazard', quake_strong: 'hazard', flood_red: 'hazard', volcano_raised: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
   dose_missed: 'dose_missed', review_open: 'review_open', phone_health: 'phone_health', reading_high: 'reading_high', mood_unwell: 'mood_unwell',
   digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system',
   share_offer: 'share', share_on: 'share', share_admin: 'share', share_off: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'

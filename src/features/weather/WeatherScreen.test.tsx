@@ -21,7 +21,7 @@ beforeEach(async () => {
   }))
   location.hash = '#weather'
 })
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('WeatherScreen', () => {
   it('v13: Large Title with Back to Today, hero first, then action line, 4 tiles, the strip, 5 of the 10 days (all on a tap), the live map prompt, then sources and the footer', async () => {
@@ -200,6 +200,7 @@ describe('WeatherScreen', () => {
   })
 
   it('offline: the cached forecast shows with "as of HH:MM"', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 10, 5, 12, 0, 0) }) // noon local: an hour ago is still today, so this passes at any real hour
     const first = render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     first.unmount()

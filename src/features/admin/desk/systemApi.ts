@@ -20,7 +20,9 @@ export const ALERTS_FEED_STALE_MIN = 60
 export const JOBS = [
   { job: 'dose-watch', label: 'Missed-dose watch', every: 'Every 15 min', staleMin: 30 },
   { job: 'alerts-ingest', label: 'Official alerts feed', every: 'Every 10 min', staleMin: ALERTS_FEED_STALE_MIN },
-  { job: 'records-extract', label: 'Records reader', every: 'Every 10 min', staleMin: 30 }
+  { job: 'alerts-digest', label: 'Daily safety digest', every: 'Daily 06:45', staleMin: 26 * 60 }, // written once a day: red after a missed day plus two hours
+  { job: 'records-extract', label: 'Records reader', every: 'Every 10 min', staleMin: 30 },
+  { job: 'world-news', label: 'World news feed', every: 'Every 6 hours', staleMin: 8 * 60 } // red after a missed run plus two hours
 ] as const
 export const JOB_STALE_MIN = 30
 

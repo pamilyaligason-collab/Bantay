@@ -19,6 +19,9 @@ export const HOME_ZONES = [
   { id: 'conel', name: 'Conel, General Santos City', lat: 6.2015121, lon: 125.1878084 }
 ] as const
 
+/** Home zone to pack unit (PSGC code): Bohol and the city of General Santos. Home packs are bundled and pinned. */
+export const HOME_UNIT: Record<string, string> = { dampas: '0701200000', conel: '1230800000' }
+
 /** The home zone nearest to p. */
 export const nearestZone = (p: LatLon) => HOME_ZONES.reduce((a, b) => (distanceKm(p, b) < distanceKm(p, a) ? b : a))
 

@@ -1,0 +1,33 @@
+# Weekly local safety data refresh (docs/local-data/APP-INTEGRATION.md, section 4). Does nothing until the repo has the two Supabase secrets.
+name: local-data-refresh
+on:
+  schedule:
+    - cron: '0 18 * * 0' # Monday 02:00 Asia/Manila
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash # explicit bash = -eo pipefail, so a failing command before | tee fails the step
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node scripts/local-data/refresh.mjs validate
+      - name: Skip without secrets
+        id: gate
+        run: echo "ready=${{ env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.gate.outputs.ready == 'true'
+        run: |
+          { echo '## Sources'; node scripts/local-data/refresh.mjs check-sources; echo '## Stale rows'; node scripts/local-data/refresh.mjs stale --days 180; } | tee -a "$GITHUB_STEP_SUMMARY"
+      - if: steps.gate.outputs.ready == 'true'
+        run: node scripts/local-data/refresh.mjs packs --upload | tee -a "$GITHUB_STEP_SUMMARY"

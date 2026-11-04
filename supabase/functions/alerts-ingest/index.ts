@@ -24,10 +24,10 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
   const port: Port = {
     async existing(source) {
-      const { data, error } = await sb.from('safety_alerts').select('id,bulletin,previous_bulletin').eq('source', source)
+      const { data, error } = await sb.from('safety_alerts').select('id,bulletin,previous_bulletin,level').eq('source', source)
       if (error) throw new Error('read')
       const m: Existing = new Map()
-      for (const r of data ?? []) m.set(r.id, { bulletin: r.bulletin, previous_bulletin: r.previous_bulletin })
+      for (const r of data ?? []) m.set(r.id, { bulletin: r.bulletin, previous_bulletin: r.previous_bulletin, level: r.level })
       return m
     },
     async upsert(rows) {
@@ -66,6 +66,6 @@ Deno.serve(async (req) => {
   const sources = await runIngest(port, fetchText, Date.now())
   const ok = Object.values(sources).some((r) => r.ok) // every source failed: 502 so pg_net/cron health shows it
   // heartbeat (S8): counts only; a failed PAGASA feed shows as ok=false so the admin System page flags it while GDACS and Open-Meteo carry on
-  await heartbeat(sb, 'alerts-ingest', ok && sources['PAGASA']?.ok !== false, { sources_ok: Object.values(sources).filter((r) => r.ok).length, sources_failed: Object.values(sources).filter((r) => !r.ok).length, rows: Object.values(sources).reduce((n, r) => n + r.rows, 0) })
+  await heartbeat(sb, 'alerts-ingest', ok && sources['PAGASA']?.ok !== false, { pagasa_ok: sources['PAGASA']?.ok === true, usgs_ok: sources['USGS']?.ok === true, gdacs_ok: sources['GDACS']?.ok === true, eonet_ok: sources['EONET']?.ok === true, air_ok: sources['Open-Meteo']?.ok === true, sources_ok: Object.values(sources).filter((r) => r.ok).length, sources_failed: Object.values(sources).filter((r) => !r.ok).length, rows: Object.values(sources).reduce((n, r) => n + r.rows, 0) })
   return reply(ok ? 200 : 502, { ok, sources })
 })

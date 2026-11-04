@@ -1,4 +1,4 @@
-export const DEFAULTS = { worldFeeds: false, offlineMaps: false, firstAidOffline: false, phivolcs: false, smsFallback: false } as const
+export const DEFAULTS = { worldFeeds: false, offlineMaps: false, firstAidOffline: false, phivolcs: false, smsFallback: false, localPacks: false, eonet: false, digest: false } as const
 export type Flags = { -readonly [K in keyof typeof DEFAULTS]: boolean }
 
 /** Unknown keys and non-boolean values are ignored; garbage gives the defaults. */
