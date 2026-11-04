@@ -14,3 +14,11 @@
 .wd-digest b { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }
 .wd-digest a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--green); font-size: 15px; font-weight: 500; text-decoration: none; }
 .wd-foot { color: var(--muted); font-size: 13px; line-height: 18px; margin: 16px 4px 0; overflow-wrap: anywhere; }
+.card.wd-digest .wd-digest-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 200px; }
+.card.wd-digest .wd-digest-body ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 22px; }
+.card.wd-digest .wd-digest-src { color: var(--muted); font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+.btn.wd-manage { width: 100%; min-height: 48px; }
+.wp-sheet { padding: 0 16px 16px; }
+.wp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+.wp-grid .wp-pill { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border-radius: 22px; border: 0; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--bg); color: inherit; }
+.wp-grid .wp-pill[aria-checked="true"] { background: var(--btn); color: var(--on-green, #fff); }

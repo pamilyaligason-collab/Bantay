@@ -1,11 +1,12 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from './alerts'
+import { FLAGS } from './flags'
 import Warnings from './Warnings'
 import { zoneAlert } from '../today/heroCards'
 
-const rows = vi.hoisted(() => ({ list: [] as unknown[], checked: null as unknown, seen: [] as unknown[] }))
-vi.mock('./store', () => ({ useKv: (k: string, fb: unknown) => (k === 'alerts:checkedAt' ? rows.checked : k === 'alerts:lastSeen' ? rows.seen : k === 'safety.alerts' ? rows.list : fb) }))
+const rows = vi.hoisted(() => ({ list: [] as unknown[], checked: null as unknown, seen: [] as unknown[], eonet: [] as unknown[] }))
+vi.mock('./store', () => ({ useKv: (k: string, fb: unknown) => (k === 'alerts:checkedAt' ? rows.checked : k === 'alerts:lastSeen' ? rows.seen : k === 'safety.alerts' ? rows.list : k === 'safety.eonet' ? rows.eonet : fb) }))
 vi.mock('./SafetyBrief', () => ({ default: () => <p>brief</p> }))
 vi.mock('./NewsTop5', () => ({ default: () => <p>news</p> }))
 vi.mock('./PhoneWarnings', () => ({ default: () => <p>phone</p> }))
@@ -176,5 +177,42 @@ describe('Warnings', () => {
     render(<Warnings place={place} />)
     expect(screen.getAllByText('Stale').length).toBe(3)
     rows.checked = null
+  })
+})
+
+describe('EONET rows (Phase 2 lane A)', () => {
+  const storm = {
+    id: 'eonet-EONET_T', kind: 'eonet', level: '65 kts', title: 'Test Storm Alpha', what: '', where: '', when: '', doNow: '', source: 'EONET', sourceUrl: null,
+    issuedAt: new Date(Date.now() - 3 * 3_600_000).toISOString(), lat: 15, lon: 130, bulletin: ''
+  } as Alert
+  afterEach(() => { rows.eonet = []; rows.list = []; FLAGS.eonet = false })
+  it('flag off: stored EONET rows are not shown, and the screen is the one without them', () => {
+    rows.eonet = [storm]
+    render(<Warnings place={place} />)
+    expect(screen.queryByTestId('wn-radar')).toBeNull()
+    expect(screen.queryByText('Test Storm Alpha')).toBeNull()
+  })
+  it('flag on: they appear under their own heading, labelled awareness only, never as the hero', () => {
+    FLAGS.eonet = true
+    rows.eonet = [storm]
+    render(<Warnings place={place} />)
+    const radar = screen.getByTestId('wn-radar')
+    expect(radar.textContent).toContain('Test Storm Alpha')
+    expect(radar.textContent).toContain('EONET · 3 h ago')
+    expect(radar.textContent).toContain('65 kts')
+    expect(radar.textContent).toContain('Not an official warning.')
+    expect(screen.getByTestId('warn-hero').textContent).toMatch(/^No warnings on this phone/) // an EONET row never takes the hero (no checked time in this test, so the stale wording)
+    expect(screen.getByTestId('warn-hero').textContent).not.toContain('Test Storm Alpha')
+  })
+  it('flag on with no EONET rows: no empty section', () => {
+    FLAGS.eonet = true
+    render(<Warnings place={place} />)
+    expect(screen.queryByTestId('wn-radar')).toBeNull()
+  })
+  it('flag on shows at most five', () => {
+    FLAGS.eonet = true
+    rows.eonet = Array.from({ length: 8 }, (_, i) => ({ ...storm, id: `e${i}`, title: `Radar ${i}` }))
+    render(<Warnings place={place} />)
+    expect(screen.getByTestId('wn-radar').querySelectorAll('.rw').length).toBe(5)
   })
 })

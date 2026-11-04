@@ -20,3 +20,13 @@ The owner has an OpenWeather key (`OPEN_WEATHER_API_KEY`, activating within hour
 3. Hourly bias check against the nearest METAR station; store the offset per station and show "checked against Tagbilaran airport" when used.
 4. App: one hook returns {now, next2h (minutely or interpolated, labelled), hourly48, daily10, aqi, sources[]}; credits in the Weather footer (OpenWeather logo + link, MET Norway, Open-Meteo CC BY 4.0).
 5. Before release: confirm OpenWeather card/cap in the dashboard, MET Norway licensing page, Open-Meteo plan if commercial.
+
+## Status (Phase 2, 2026-11-05)
+Built and tested, flag off. Migration `0047_weather_cells` (+ `.down.sql`) is written and **not applied**. The Weather screen reads the blend only when `bantay.flag.wx.blend` is `1` on the device; `WEATHER_BLEND_ON` stays `false`.
+To take it live (owner): set the `OPEN_WEATHER_API_KEY` secret, apply 0047, deploy `weather-blend`, then turn the flag on per device. Tests for the function run under vitest (`npx vitest run supabase/functions/weather-blend`), not `deno test`.
+
+**Owner steps, in this order.**
+1. In the OpenWeather dashboard, set a daily call cap on the One Call plan (at or below the 1,000 free calls a day) BEFORE the key goes into the function. With the cap set, a cache fault costs at most one day of free calls, never a bill.
+2. Apply 0047 (it grants `service_role` explicitly), then set `OPEN_WEATHER_API_KEY` and deploy `weather-blend`.
+3. Smoke test once from a signed-in session: the first call for a cell returns `cached:false`, a second call for the same cell returns `cached:true`. If the second one is not cached, stop and read the function log: the function logs `weather_cells read failed` or `weather_cells write failed` with the error code only (never a position or the key). On a read failure it skips the paid source on purpose.
+4. Only then turn the flag on per device.

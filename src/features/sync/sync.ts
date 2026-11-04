@@ -4,7 +4,8 @@ import { track } from '../admin/events'
 import { supabase } from '../auth/client'
 import { getAccessToken, onAuthChange } from '../auth/session'
 import { drainQueue } from '../docs/api'
-import { ALERTS_KEY, CHECKED_KEY, LAST_SEEN_KEY, STALE_KEY, type Alert, type StaleSources } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, LAST_SEEN_KEY, splitEonet, STALE_KEY, type Alert, type StaleSources } from '../safety/alerts'
+import { FLAGS } from '../safety/flags'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fdb } from '../family/store'
 import { hourClientId, isSensorHour, ldb } from '../log/store'
@@ -333,14 +334,15 @@ async function pullAlerts(url: string, key: string, token: string) {
   const now = encodeURIComponent(new Date().toISOString())
   let rows: Record<string, unknown>[]
   try {
-    rows = await getJson(`${url}/rest/v1/safety_alerts?select=*&or=(expires_at.is.null,expires_at.gt.${now})`, key, token)
+    rows = await getJson(`${url}/rest/v1/safety_alerts?select=*&or=(expires_at.is.null,expires_at.gt.${now})${FLAGS.eonet ? '' : '&kind=neq.eonet'}`, key, token)
   } catch (e) {
     if (e instanceof SyncError && (e.kind === 'net' || e.kind === 'auth')) throw e
     return
   }
   if (!Array.isArray(rows)) return
-  const list = rows.map(toAlert).filter((a): a is Alert => a !== null)
+  const { official: list, eonet } = splitEonet(rows.map(toAlert).filter((a): a is Alert => a !== null))
   await db.kv.put({ key: ALERTS_KEY, value: list })
+  if (FLAGS.eonet) await db.kv.put({ key: EONET_KEY, value: eonet }) // awareness rows live apart from the official list
   // Last event / Last storm: pullAlerts keeps only unexpired rows, so keep the newest quake and newest cyclone separately.
   const prev = ((await db.kv.get(LAST_SEEN_KEY))?.value as Alert[] | undefined) ?? []
   const newest = (pick: (a: Alert) => boolean) => [...list, ...prev].filter(pick).sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))[0]
@@ -349,7 +351,7 @@ async function pullAlerts(url: string, key: string, token: string) {
   // The check time is when the ingest last wrote any row (the air row is rewritten every run), not when this phone asked: a stopped ingest must read as old.
   // A failed or empty read leaves the stored stamp as it was. The same read covers expired rows, so a failed source's stale flag reaches the phone on a quiet day (a good run clears it on all that source's rows).
   try {
-    const stamps = await getJson(`${url}/rest/v1/safety_alerts?select=source,fetched_at,stale&order=fetched_at.desc`, key, token)
+    const stamps = await getJson(`${url}/rest/v1/safety_alerts?select=source,fetched_at,stale&order=fetched_at.desc&source=neq.EONET`, key, token) // EONET is awareness only: its freshness never marks the official feeds stale or moves the check time
     if (!Array.isArray(stamps)) return
     const at = iso(stamps[0]?.fetched_at)
     if (at) await db.kv.put({ key: CHECKED_KEY, value: at })

@@ -2,7 +2,7 @@ import { HOME_ZONES } from '../location/geo'
 import { placeWords, type PlaceLike } from '../location/placeWords'
 
 export interface LatLon { lat: number; lon: number }
-export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air'
+export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air' | 'eonet'
 
 export interface Alert {
   id: string
@@ -39,7 +39,7 @@ export const NOT_A_SIREN =
 
 // Lower tier shows first: PAGASA warnings, then PHIVOLCS (quake, tsunami, volcano), utilities and air quality, city/province, GDACS context.
 // air is tier 2, not 0: it is a model estimate (Open-Meteo), not an official warning, so it must never outrank PAGASA or PHIVOLCS.
-const TIER: Record<AlertKind, number> = { tcws: 0, rainfall: 0, thunderstorm: 0, heat: 0, quake: 1, tsunami: 1, volcano: 1, utility: 2, air: 2, local: 3, gdacs: 4 }
+const TIER: Record<AlertKind, number> = { tcws: 0, rainfall: 0, thunderstorm: 0, heat: 0, quake: 1, tsunami: 1, volcano: 1, utility: 2, air: 2, local: 3, gdacs: 4, eonet: 5 }
 export const tierOf = (k: AlertKind) => TIER[k]
 
 export function distanceKm(a: LatLon, b: LatLon): number {
@@ -132,6 +132,11 @@ export function freshText(f: Fresh): string {
   const d = Math.floor(m / (24 * 60))
   return `Checked ${d} ${d === 1 ? 'day' : 'days'} ago`
 }
+
+/** Dexie kv key: NASA EONET awareness rows. Written by the pull only while FLAGS.eonet is on, and never mixed into ALERTS_KEY, so the warning counts, Today and the Safety hub stay official-only. */
+export const EONET_KEY = 'safety.eonet'
+/** The pulled list split in two: official rows, and EONET rows (awareness only, tier 2 in the server's words: never a notification). */
+export const splitEonet = (list: Alert[]): { official: Alert[]; eonet: Alert[] } => ({ official: list.filter((a) => a.kind !== 'eonet'), eonet: list.filter((a) => a.kind === 'eonet') })
 
 /** The amber line (canvas board 4b). Shown when the last check is over an hour old, even if no row is marked stale. */
 export function outdatedLine(checkedAt: string | null | undefined): string {

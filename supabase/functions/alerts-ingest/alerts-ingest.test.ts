@@ -159,7 +159,7 @@ function fakePort(initial: Record<string, { bulletin: string; previous_bulletin:
   }
   return { port, log }
 }
-const bodies: Record<string, string> = { USGS: fx('usgs.json'), GDACS: fx('gdacs.xml'), PAGASA: fx('pagasa-feed.xml'), 'Open-Meteo': fx('air.json') }
+const bodies: Record<string, string> = { USGS: fx('usgs.json'), GDACS: fx('gdacs.xml'), PAGASA: fx('pagasa-feed.xml'), EONET: fx('eonet.json'), 'Open-Meteo': fx('air.json') }
 const fetchFor = (fail: string[]) => async (url: string) => {
   const s = SOURCES.find((x) => x.urls.includes(url))!
   if (fail.includes(s.source)) throw new Error('HTTP503')
@@ -170,10 +170,10 @@ describe('runIngest', () => {
   it('upserts every source and clears stale', async () => {
     const { port, log } = fakePort()
     const res = await runIngest(port, fetchFor([]), NOW)
-    expect(res).toEqual({ USGS: { ok: true, rows: 3 }, GDACS: { ok: true, rows: 3 }, PAGASA: { ok: true, rows: 0 }, 'Open-Meteo': { ok: true, rows: 2 } }) // PAGASA: the saved feed is 9 days newer than NOW, so no CAP file is in the window
+    expect(res).toEqual({ USGS: { ok: true, rows: 3 }, GDACS: { ok: true, rows: 3 }, PAGASA: { ok: true, rows: 0 }, EONET: { ok: true, rows: 0 }, 'Open-Meteo': { ok: true, rows: 2 } }) // PAGASA: the saved feed is 9 days newer than NOW, so no CAP file is in the window
     expect(log.upserts).toHaveLength(8)
     expect(log.upserts.every((r) => r.stale === false && r.fetched_at === '2026-10-17T12:26:40.000Z')).toBe(true)
-    expect(log.stale).toEqual([['USGS', false], ['GDACS', false], ['PAGASA', false], ['Open-Meteo', false]])
+    expect(log.stale).toEqual([['USGS', false], ['GDACS', false], ['PAGASA', false], ['Open-Meteo', false], ['EONET', false]])
   })
   it('duplicate ids from one feed yield one upserted row (last wins)', async () => {
     const { port, log } = fakePort()
@@ -203,7 +203,7 @@ describe('runIngest', () => {
   it('a failing stale-flag write does not throw out of the run', async () => {
     const { port } = fakePort()
     port.setStale = async () => { throw new Error('write') }
-    await expect(runIngest(port, fetchFor(['USGS', 'GDACS', 'PAGASA', 'Open-Meteo']), NOW)).resolves.toMatchObject({ USGS: { ok: false } })
+    await expect(runIngest(port, fetchFor(['USGS', 'GDACS', 'PAGASA', 'EONET', 'Open-Meteo']), NOW)).resolves.toMatchObject({ USGS: { ok: false } })
   })
   it('keeps the old bulletin as previous_bulletin when the text changed, and leaves it when not', async () => {
     const { port, log } = fakePort({

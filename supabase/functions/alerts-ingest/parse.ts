@@ -4,7 +4,7 @@
 
 export interface AlertRow {
   id: string
-  kind: 'quake' | 'tsunami' | 'volcano' | 'gdacs' | 'air' | 'tcws' | 'rainfall'
+  kind: 'quake' | 'tsunami' | 'volcano' | 'gdacs' | 'air' | 'tcws' | 'rainfall' | 'eonet'
   level: string | null
   title: string
   what: string

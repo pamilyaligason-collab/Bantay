@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { type HazardState, useHazards } from './useHazards'
 import places from '../../data/safety/places.json'
 import { HOME_ZONES } from '../location/geo'
 import { GroupedList, Row, Section, Segmented, type Tint } from '../look'
@@ -34,8 +35,22 @@ const cardRow = (c: HazardCard) => (
   <Row key={c.id} icon={ICON[c.id]} tint={c.tone === 'warn' ? 'red' : c.tone === 'good' ? 'green' : 'none'} title={c.title} sub={c.id === 'quake' ? c.todo : c.readings[0]?.value ?? 'Not confirmed yet'} badge={hazardLabel(c)} badgeTint={BADGE[c.tone]} />
 )
 
+const mb = (n: number) => `${Math.max(1, Math.round(n / 1_000_000))} MB`
+/** Flag localPacks: where the NOAH reading comes from, or how to get it onto the phone. Nothing when the flag is off. */
+function HazardFile({ hzs }: { hzs: HazardState }) {
+  if (hzs.status === 'off' || hzs.status === 'checking') return null
+  if (hzs.status === 'ready') return <p className="hz-foot" data-testid="noah-credit">Hazard data: UP NOAH Center (Project NOAH), ODbL 1.0</p>
+  return (
+    <div className="card hz-help" data-testid="noah-missing">
+      <div className="rw-txt"><b className="hz-name">Hazard map not on this phone yet</b><span className="rw-sub">Flood, landslide and storm surge levels need a map file. It downloads on Wi-Fi.</span></div>
+      {hzs.size !== null && <button type="button" className="btn2 hz-map" disabled={hzs.busy} onClick={hzs.download}>{hzs.busy ? 'Downloading' : `Download hazard map (${mb(hzs.size)})`}</button>}
+    </div>
+  )
+}
+
 export default function HazardPage({ place }: { place: Place }) {
   const [layer, setLayer] = useState<LayerId>('flood')
+  const hzs = useHazards(place)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const v = coversHere(place) ? hazardsFor(place.zone) : null
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
@@ -50,10 +65,17 @@ export default function HazardPage({ place }: { place: Place }) {
   if (!v) return (
     <div className="hz">
       <p className="sf-empty" role="status">No hazard readings for {place.source === 'zone' ? 'this zone' : 'where you are'} yet. Check HazardHunterPH or NOAH for your street.</p>
+      {hzs.status !== 'off' && (
+        <>
+          <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
+          <p className="hz-cap" data-testid="layer-caption"><span>{layerState(layer, null, hzs.levels).text}</span></p>
+          <HazardFile hzs={hzs} />
+        </>
+      )}
       {sources}
     </div>
   )
-  const ls = layerState(layer, v)
+  const ls = layerState(layer, v, hzs.levels)
   const quake = v.cards.find((c) => c.id === 'quake')!
   const help = spotsFor(place.zone, overrides, places as Entry[]).find((s) => s.kind === 'health')
   const status = hazardStatus(v)
@@ -73,6 +95,7 @@ export default function HazardPage({ place }: { place: Place }) {
       <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}`} label="Map of your place" testId="hazards-map"
         setup={(L, m) => { L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-zone', interactive: false }).addTo(m) }} />
       <p className="hz-cap" data-testid="layer-caption"><span>{ls.text}</span>{ls.reading !== null && <b className="rw-badge" data-tint={BADGE[ls.tone]}>{ls.reading}</b>}</p>
+      <HazardFile hzs={hzs} />
       <Section title="Ground and shaking">
         <GroupedList icons label="Ground and shaking">
           {cardRow(quake)}

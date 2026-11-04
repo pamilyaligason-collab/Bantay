@@ -30,16 +30,35 @@ export interface ProfileRow extends ProfileFields {
   pending?: (keyof ProfileFields)[]
 }
 
+/** A region pack on the phone (APP-INTEGRATION section 3.1). `hazards` is the unit's NOAH file, kept only after a Wi-Fi or tapped download. */
+export interface PackRow {
+  code: string
+  version: number
+  checksum: string
+  name: string
+  neighbours: string[]
+  places: unknown[]
+  fetchedAt: number
+  usedAt: number
+  pinned: boolean
+  /** The unit whose row holds the NOAH file for this unit (General Santos reads South Cotabato's). */
+  hazardsFrom?: string
+  hazards?: { checksum: string; bounds?: Record<string, number[]>; blob: Blob }
+}
+
 class BantayDB extends Dexie {
   outbox!: Table<OutboxRow, number>
   kv!: Table<KvRow, string>
   profiles!: Table<ProfileRow, string>
+  packs!: Table<PackRow, string>
   constructor() {
     super('bantay')
     // payload is stored but not indexed (objects are not valid index keys).
     this.version(1).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key' })
     // v2 only adds a table: existing outbox and kv rows are untouched.
     this.version(2).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id' })
+    // v3 only adds the region-pack table.
+    this.version(3).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id', packs: 'code' })
   }
 }
 

@@ -39,6 +39,7 @@ Run `ops/sql/alerts_cron.sql` (pg_cron plus pg_net, every 10 minutes). It stops 
 | USGS all-day quakes | `quake` (tier 1) | M3.5+ within 150 km of either home zone, M4.5+ within 500 km, M6.0+ within 1,500 km, M7.0+ within 3,000 km (D-88) | 24 h from the quake |
 | GDACS RSS | `gdacs` (tropical cyclone, flood), `volcano` (tier 1), `tsunami` (tier 1) | Current events in the Philippines or within 1,000 km of either home zone (D-88). Global context, not a PAGASA or PHIVOLCS warning | 48 h (72 h volcano, 12 h tsunami) from GDACS's last change |
 | Open-Meteo air quality | `air` (tier 2) | US AQI 101 and above, on an 11 km model grid. Model estimate, never shown above an official warning | 3 h |
+| NASA EONET (Phase 2) | `eonet` (tier 2, never notifies) | Open events whose newest position is in lat -5..30, lon 100..155; no sea ice, snow, water colour or man-made events. Awareness only | 72 h from the newest position |
 
 If a source fails (timeout, error, a page that is not the expected feed), its old rows stay and are marked `stale`. The card then says
 "Last checked <time>; source unreachable." Nothing is deleted on failure. Expired rows are hidden by the app and can be cleaned later.
@@ -74,6 +75,37 @@ next dose-watch run (15 minutes). Redeploy `alerts-ingest` after setting it. `al
 
 Safety screens: storm mode (`StormCard`, on the Safety tab and mounted on Today by S7), Warnings (source line "From PAGASA public alerts ..., GDACS and Open-Meteo, checked
 every 10 minutes ..."), the hub's Phone alerts tile (count from the phone check, only while something needs fixing) and the Phone warnings guide.
+
+## Phase 2: tiers, EONET, daily digest (D-107, D-108; written 2026-11-05, nothing applied or deployed)
+
+**Tier 1 = a family notification (`hazard` row plus the push flush).** Tier 2 = a row in the app, no notification. `ingest.ts tier1()` decides, for every source (it used to look at PAGASA only):
+
+| Case (`URGENT_TEXT`) | Row it reads | Template | Ref (a raise notifies again; a rerun writes 0) |
+| --- | --- | --- | --- |
+| Wind signal, every signal 1 to 5 (the owner kept today's behaviour: a warning that pushed must not stop pushing) | `tcws`, level "Signal No. N" | `storm_warning` | `<id>:s<N>` |
+| Tsunami report from GDACS: Orange, Red or no level (Green stays in the app; GDACS can be up to 1,000 km away and is not an official issuer) | `tsunami` (GDACS TS) | `tsunami_warning` | `<id>:<level>` |
+| Quake M6.0 or more inside lat 4..21.5, lon 116..127 | `quake`, level "Magnitude N" | `quake_strong` | `<id>:m<floor(N)>` |
+| Rainfall level red | `rainfall`, level Red, Severe or Extreme (PAGASA's feed words its level as the CAP severity; no feed row says "Red" today, so only Severe and Extreme can fire until one does) | `flood_red` | `<id>:<level>` |
+| Volcano at alert level 3 or more | `volcano`, level "Alert Level N" (written only by the PHIVOLCS parser; a GDACS colour is not a PHIVOLCS level and never fires) | `volcano_raised` | `<id>:l<N>` |
+
+An expired row, or a row whose level cannot be read, never notifies. Air, GDACS storms, heat, utilities, local notices and EONET are tier 2. The templates carry neutral fixed wording, no place and no value (B-7);
+the words "earthquake" and "tsunami" stay out of them (B-1, `templates.test.ts`). The four new cases push only a row issued within the last 2 hours (wind signals keep no age limit), so a first run or an outage never announces yesterday's quake. A new level is a new ref: a change of level (up or down, except to Green) notifies once more.
+
+**EONET.** `https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=3`, shape saved in `fixtures/eonet.json` (real response, fetched read-only 2026-11-04). Kind `eonet`, id `eonet-<event id>`, expires 72 h after the newest
+position, never notifies. The app stores these rows under its own kv key `safety.eonet`, only while `FLAGS.eonet` is on, so the official list, its counts, Today and the Safety hub never see them. Warnings shows up to five under "On the radar" with the line
+"Not an official warning". The freshness read (`select=source,fetched_at,stale`) skips EONET, so a failing EONET source cannot mark the official feeds stale. Polygon geometry is in the EONET docs but not in the saved sample: read as the mean of the first ring, unverified.
+
+**Daily digest.** `alerts-digest` (no new secret: it checks `ALERTS_CRON_SECRET`) writes one `safety_digests` row per Manila day at 06:45 (`ops/sql/alerts_digest_cron.sql`, 22:45 UTC). `body` = `{ day, counts (every kind), top (5 by tier then newest: id, title, kind, level, source), sources, summary }`.
+It counts rows issued in the last 24 h or still in force, not "lifted" or "ended" rows and not an air reading under the threshold. An empty day says "No warnings in the last 24 h."; if the newest `alerts-ingest` run is over 3 h old, missing, or had a PAGASA, USGS or GDACS failure (booleans `pagasa_ok`, `usgs_ok`, `gdacs_ok` in its heartbeat), it says the feeds were not checked, never "no warnings", and the sources line says no check could be confirmed. EONET and Open-Meteo failures do not count. EONET rows are counted per kind but are not "warnings" in the summary. Rows older than 30 days are deleted from `safety_digests` only; alert rows are never deleted.
+
+**PHIVOLCS: parser present, not ingested.** `phivolcs.ts` has `parsePhivolcsQuakes(html)` (latest-earthquakes table) and `parseVolcanoBulletin(html)` (one English bulletin with "ALERT LEVEL N"), tested against pages saved on 2026-11-04 (no bot check). They are not in `SOURCES`; a test keeps it so.
+The reversal of "skipped on purpose" above waits for the owner. Wiring needs: add the quake page as a source, fetch the bulletin list then each English bulletin as a second round (`more`), and a decision on how often to read a government site by hand-made HTML.
+
+**Release order matters: ship the app first.** The new app drops EONET rows from the official list; the old app has no such filter, so an EONET row would show as an official warning (and crash the Warnings heading) on any phone still on the old bundle. The order is the one in PHASE2.md section 7: squash the app side first and confirm the new bundle is live, apply 0047, 0048 and 0049, then deploy `dose-watch` BEFORE `alerts-ingest` (an old dose-watch marks rows with the new template ids as pushed and sends nothing), then `alerts-ingest`, `alerts-digest`, `weather-blend` and `world-news`. Before the first ingest run, check `safety_alerts` for live M6+ quake, tsunami and Severe or Extreme flood rows: the first run announces only rows younger than 2 hours, but look anyway.
+
+**Known limits.** EONET runs last, and no flush starts after 130 s of run time (a flush can wait 15 s and the platform stops the run at 150 s; the rows are written and the 15-minute dose-watch run offers them), so wind and other urgent pushes flush at any earlier time. A flood ref carries the advisory day, so a second Severe advisory on a later Manila day notifies. A tsunami or volcano level that RISES pushes even when the event began long ago (the 2-hour limit applies only to a first sighting or an unchanged level); the notice is sent before the new level is stored, so a failed notice makes the source fail (stale) and the next run retries, and a repeated ref is dropped by the database. A tsunami or volcano drop writes nothing new. A quake revised down inside 2 hours (M7.0 to 6.9) still creates a new ref and pushes once more. The volcano ref `<id>:l<N>` is fixed per volcano and level: fix it before wiring PHIVOLCS. The same quake read from USGS and PHIVOLCS has two ids and would push twice: dedupe at wiring time. The digest names a feed failure from the newest `alerts-ingest` job_runs row: a PAGASA, USGS or GDACS failure means "not checked". EONET and Open-Meteo successes are recorded (`eonet_ok`, `air_ok`) and only a source that passed appears in the "Checked:" line; GDACS rows (the ingest keeps only events naming the Philippines or within 1000 km of a zone) and a GDACS tsunami or volcano at Green are reported as "GDACS events in or near the Philippines (not an official warning)", never as warnings and never under a flat "No warnings" line.
+
+**Owner steps to take it live:** apply `0048_alert_tiers.sql` (widens the kind check, adds `safety_digests`; `.down.sql` reverses it), redeploy `dose-watch` FIRST (it bundles `_shared/templates.ts`; the new template ids must be known before any row uses them), then deploy `alerts-ingest` and `alerts-digest` (`--no-verify-jwt`), run `ops/sql/alerts_digest_cron.sql`, then flip `FLAGS.eonet` per device.
 
 ## Freshness and honest copy (session 12, lane D)
 

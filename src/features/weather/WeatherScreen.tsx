@@ -21,9 +21,11 @@ import { alertRef, placeTimezone } from '../location/place'
 import { actionLines, RAIN_WATCH_HOURS } from './actionLine'
 import StormTrack from './StormTrack'
 import { cyclones } from '../safety/LiveMaps'
-import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, useForecast, type Day, type Forecast, type Kind } from './forecast'
+import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, type Day, type Forecast, type Kind } from './forecast'
 import { heatIndexC } from './heatIndex'
 import { wxFlag } from './flags'
+import { AroundYou, Credits, Next2h, OtherNotices } from './BlendCards'
+import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
 import { condOf, feelsLike, isHot, SCRIM, SKY, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import LiveMapToggle from './LiveMapToggle'
@@ -104,7 +106,8 @@ export default function WeatherScreen() {
   const [locOff, setLocOff] = useState(false)
   // the zone chip (ZonePicker) owns the home pick; a position wins, unless the place fell back to a home zone (a fix abroad): the forecast follows the label
   const point: LatLon | null = follow === undefined && hasFix ? null : (place?.source !== 'zone' ? fix : null) ?? place?.weather ?? null
-  const { fc, offline, loading } = useForecast(point)
+  const bl = useBlendedWeather(point, { on: wxFlag('blend') }) // flag off: the direct forecast, exactly as before
+  const { fc, offline, loading } = bl
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const online = useOnlineNow()
   const warnAt = place ? alertRef(place) : point // the sentences below name this place: home for a phone abroad, never its foreign position
@@ -147,7 +150,7 @@ export default function WeatherScreen() {
     <div className="wx" data-testid="wx-root" data-contrast-bg={hex(lit)}>
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} /> : (
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} /> : (
         <>
           {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
           {warnAt && cyclones(alerts).length > 0 && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
@@ -168,8 +171,8 @@ export default function WeatherScreen() {
         </div>
         <div className="card wx-made">
           <h3>How this is made</h3>
-          <p className="wx-sub">Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.</p>
-          <p className="wx-sub">Your rounded location is sent only to the weather service.</p>
+          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.</p>}
+          <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services." : 'Your rounded location is sent only to the weather service.'}</p>
         </div>
       </Section>
     </div>
@@ -190,7 +193,7 @@ function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWar
   )
 }
 
-function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean }) {
+function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -253,6 +256,7 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
       <WarnRow warn={warn} unchecked={unchecked} name={name} />
 
       {storms && <StormCard alerts={alerts} point={stormFrom} place={stormPlace} />}
+      {bl.blended && <OtherNotices alerts={bl.alerts} now={now} />}
 
       <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'} data-testid="wx-advice">
         {main ? (
@@ -265,8 +269,7 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
         ) : <b className={`wx-act-t${advice === CALM_LINE ? ' calm' : ''}`}>{advice}</b>}
       </section>
 
-      {/* plug: useBlendedWeather (branch claude/weather-blend-89aa47) fills next2h here; until it merges the flag stays off */}
-      {wxFlag('blend') && <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>}
+      {wxFlag('blend') && (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>)}
 
       {wet ? <>{rainCard}{stripCard}</> : <>{stripCard}{rainCard}</>}
 
@@ -285,6 +288,8 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
         </ul>
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </Section>}
+
+      {bl.blended && !offline && <AroundYou air={bl.aqi} />}
 
       <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>

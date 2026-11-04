@@ -117,8 +117,8 @@ describe('AdminScreen', () => {
     render(<AdminScreen />)
     const q = within(await screen.findByRole('form', { name: 'Add a member' }, { timeout: 5000 }))
     expect(q.queryByLabelText('Handle')).toBeNull()
-    fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Macleo Fé' } })
-    expect(q.getByText('macleofe')).toBeTruthy()
+    fireEvent.change(q.getByLabelText('Name'), { target: { value: 'Maria Fé' } })
+    expect(q.getByText('mariafe')).toBeTruthy()
     fireEvent.change(q.getByLabelText('Name'), { target: { value: 'LOLA' } })
     expect(q.getByText('lola2')).toBeTruthy() // Lola already has "lola"
   })

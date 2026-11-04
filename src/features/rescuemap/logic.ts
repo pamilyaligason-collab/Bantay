@@ -12,7 +12,9 @@ export const KINDS: { id: Kind; label: string }[] = [
 ]
 
 /** Which chip an entry belongs to; null = not a rescue point (power, water, general hotlines). */
-export function kindOf(e: Pick<Entry, 'group' | 'name'>): Kind | null {
+const PACK_KIND: Record<string, Kind> = { evac: 'evac', hospital: 'health', rhu: 'health', bhs: 'health', clinic: 'health', police: 'police', fire: 'fire' }
+export function kindOf(e: Pick<Entry, 'group' | 'name'> & { packKind?: string }): Kind | null {
+  if (e.packKind) return PACK_KIND[e.packKind] ?? null // a pack row says its kind; the name guesses below are for the old files
   if (/fire|bfp/i.test(e.name)) return 'fire'
   if (/police|pnp/i.test(e.name)) return 'police'
   if (/^evacuation/i.test(e.group)) return 'evac'
@@ -52,4 +54,7 @@ export const kmLabel = (km: number | null) => (km === null || !Number.isFinite(k
 export const driveUrl = (lat: number, lon: number) => `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`
 
 /** Where a place's details come from, and when a barangay last confirmed them. */
-export const sourceLine = (s: Pick<Spot, 'source' | 'status' | 'date'>) => `Source: ${s.source}. Last confirmed: ${s.status === 'CONFIRMED' && s.date ? s.date : 'not yet'}`
+export const sourceLine = (s: Pick<Spot, 'source' | 'status' | 'date'> & Partial<Pick<Spot, 'packKind' | 'sourceDated' | 'stale'>>) =>
+  s.packKind
+    ? `Source: ${s.source}. Checked ${s.date}.${s.sourceDated ? ` Source dated ${s.sourceDated}.` : ''}${s.stale ? ' May be out of date.' : ''}`
+    : `Source: ${s.source}. Last confirmed: ${s.status === 'CONFIRMED' && s.date ? s.date : 'not yet'}`

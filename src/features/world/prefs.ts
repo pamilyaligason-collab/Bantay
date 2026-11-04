@@ -2,7 +2,7 @@ export const ALERT_KEY = 'safety.alertPrefs'
 export const ALERT_DEFAULTS = { nearFamily: true, phWide: true, worldDigest: true, macro: false, digestTime: '07:00', quiet: true, push: true, sms: false }
 export type AlertPrefs = typeof ALERT_DEFAULTS
 
-export const URGENT_TEXT = 'Urgent means: a tsunami warning, wind signal 3 or higher, an earthquake of M6 or more near you, a red flood or rainfall level, or volcano level 3 or higher.'
+export const URGENT_TEXT = 'Urgent means: a tsunami warning, a wind signal, an earthquake of M6 or more in the Philippines, or a red flood or rainfall level.'
 
 /** Unknown keys and values of the wrong type are ignored; anything unreadable gives the defaults. */
 export function readPrefs(raw: unknown): AlertPrefs {

@@ -80,3 +80,18 @@
 
 /* the status line wraps before it reaches the sun disc at the top right (360 wide) */
 .wx-stamp { max-width: 11em; text-wrap: balance; }
+
+/* X3 blend (behind the flag): Next 2 hours, Around you, other notices */
+.wx-n2h, .wx-air, .wx-other { padding: 16px; display: grid; gap: 10px; }
+.wx-n2h-t { font-size: 17px; line-height: 22px; font-weight: 600; }
+.wx-n2h p, .wx-other p { margin: 0; }
+.wx-n2h-bars { list-style: none; margin: 0; padding: 0; display: flex; gap: 3px; align-items: flex-end; min-height: 124px; }
+.wx-n2h-bars li { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
+.wx-n2h-bars .wx-rp, .wx-n2h-bars .wx-sub { font-size: 12px; }
+.wx-n2h-bars i { display: block; width: 100%; max-width: 30px; border-radius: 8px 8px 4px 4px; background: linear-gradient(180deg, #BFE3FF, #5FA8E8); }
+.wx-air { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wx-air div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wx-air b { font-size: 22px; font-weight: 700; }
+.wx-air .eyebrow { color: var(--muted); }
+.wx-other p { display: flex; justify-content: space-between; gap: 8px; }
+.wx-made a { color: inherit; text-decoration: underline; }

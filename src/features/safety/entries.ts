@@ -14,6 +14,11 @@ export interface Entry {
   source: string
   sourceUrl: string | null
   date: string
+  /** Region-pack rows only: the pack kind, a number that cannot be dialled as printed (shown to copy), the source's own date, and the stale rule. */
+  packKind?: string
+  copy?: string
+  sourceDated?: string
+  stale?: boolean
 }
 export type Overrides = Record<string, Partial<Entry>>
 
@@ -86,4 +91,34 @@ export function parseEdit(f: { lat?: string; lon?: string; phone?: string }, geo
   const phone = f.phone?.trim() ?? ''
   if (!/^[0-9+()\s-]{3,20}$/.test(phone)) return { ok: false, error: 'Enter a phone number using digits, spaces, + ( ) or -.' }
   return { ok: true, patch: { phone, ...stamp } }
+}
+
+/* ---- Region packs (APP-INTEGRATION section 3.5). Pack rows become today's Entry shape, so spotsFor, splitSpots and forZone keep working. ---- */
+export interface PackPlace {
+  id: string; psgc: string; kind: string; name: string; address: string | null; phones: string[]; lat: number | null; lon: number | null
+  capacity: number | null; status: 'confirmed' | 'not_confirmed'; source: string; url: string | null; licence: string; dated: string | null; verified: string; confidence: string
+}
+const GROUP: Record<string, string> = {
+  evac: 'Evacuation centres', hospital: 'Health and hospitals', rhu: 'Health and hospitals', bhs: 'Health and hospitals', clinic: 'Health and hospitals', police: 'Police', fire: 'Fire'
+}
+export const packGroup = (kind: string) => GROUP[kind] ?? 'Rescue'
+/** Same test as scripts/local-data/lib.mjs: +63 or 0 and 9-10 digits, or a 3-5 digit short code. Anything else shows as text to copy, with no call button. */
+export const dialable = (p: string) => /^(\+63|0)\d{9,10}$|^\d{3,5}$/.test(p.replace(/[\s().-]/g, ''))
+const DAY = 86_400_000
+/** "May be out of date": checked more than 365 days ago, or the source itself dated more than 2 years ago. */
+export const packStale = (verified: string, dated: string | null, now: number) =>
+  now - Date.parse(verified) > 365 * DAY || (dated !== null && now - Date.parse(dated) > 730 * DAY)
+
+export function entriesFromPack(places: PackPlace[], now = Date.now()): Entry[] {
+  return places.map((p) => {
+    const first = p.phones[0] ?? null
+    const ok = first !== null && dialable(first)
+    return {
+      id: p.id, group: packGroup(p.kind), name: p.name, ...(p.address ? { note: p.address } : {}),
+      phone: ok ? first : null, ...(first && !ok ? { copy: first } : {}),
+      lat: p.lat, lon: p.lon, status: p.status === 'confirmed' ? 'CONFIRMED' : 'UNVERIFIED',
+      source: p.source, sourceUrl: p.url, date: p.verified,
+      packKind: p.kind, ...(p.dated ? { sourceDated: p.dated } : {}), stale: packStale(p.verified, p.dated, now)
+    }
+  })
 }

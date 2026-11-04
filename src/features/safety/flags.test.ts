@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULTS, FLAGS, readFlags } from './flags'
 
 describe('safety flags', () => {
-  it('has exactly the five keys, all off', () => {
-    expect(Object.keys(FLAGS).sort()).toEqual(['firstAidOffline', 'offlineMaps', 'phivolcs', 'smsFallback', 'worldFeeds'])
+  it('has exactly the eight keys, all off', () => {
+    expect(Object.keys(FLAGS).sort()).toEqual(['digest', 'eonet', 'firstAidOffline', 'localPacks', 'offlineMaps', 'phivolcs', 'smsFallback', 'worldFeeds'])
     expect(Object.values(DEFAULTS).every((v) => v === false)).toBe(true)
   })
   it('reads an override and ignores garbage', () => {

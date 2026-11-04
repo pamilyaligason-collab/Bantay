@@ -3,7 +3,7 @@ import { alertRef } from '../location/place'
 import { pickLocalSet } from '../location/geo'
 import { GroupedList, Row, Section } from '../look'
 import { Icon } from '../shell/Icon'
-import { ALERTS_KEY, LAST_SEEN_KEY, NOT_A_SIREN, NO_STALE, CHECKED_KEY, STALE_KEY, affectsUs, distanceKm, feedStale, lastCheck, outdatedLine, quakeMag, quakeQuiet, rankAlerts, shownCheck, urgentFirst, type Alert, type StaleSources } from './alerts'
+import { ALERTS_KEY, EONET_KEY, LAST_SEEN_KEY, NOT_A_SIREN, NO_STALE, CHECKED_KEY, STALE_KEY, affectsUs, distanceKm, feedStale, lastCheck, outdatedLine, quakeMag, quakeQuiet, rankAlerts, shownCheck, urgentFirst, type Alert, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
 import { FLAGS } from './flags'
 import LazyMap from './LazyMap'
@@ -22,7 +22,7 @@ const newsZone = (place: Place) => { const p = pickLocalSet(place.weather); retu
 
 const KIND: Record<Alert['kind'], string> = {
   tcws: 'Typhoon signal', rainfall: 'Rainfall', thunderstorm: 'Thunderstorm', heat: 'Heat', quake: 'Earthquake', tsunami: 'Tsunami',
-  utility: 'Utility', local: 'Local notice', gdacs: 'World event', volcano: 'Volcano', air: 'Air quality'
+  utility: 'Utility', local: 'Local notice', gdacs: 'World event', volcano: 'Volcano', air: 'Air quality', eonet: 'On the radar'
 }
 /** The newest row by issue date, whether or not it has expired (the "Last event" line: an old quake is still the last one). */
 export function lastEvent(all: Alert[]): Alert | null {
@@ -67,6 +67,8 @@ export default function Warnings({ place }: { place: Place }) {
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const shown = shownCheck(all, saved, down)
   const stale = feedStale(all, saved, down, now)
+  const eonet = useKv<Alert[]>(EONET_KEY, NONE_A)
+  const radar = FLAGS.eonet ? eonet : NONE_A // flag off: the section does not exist (the pull does not even store these rows)
   return (
     <div className="wn">
       {stale && <p className="sf-note" role="status">{outdatedLine(shown)}</p>}
@@ -111,6 +113,14 @@ export default function Warnings({ place }: { place: Place }) {
       </GroupedList>
       <a className="wn-cards" href="#safety/cards">Safety cards</a>
       {top && <Section title="Official warnings now"><SafetyBrief loc={here} /></Section>}
+      {radar.length > 0 && (
+        <div data-testid="wn-radar"><Section title="On the radar">
+          <GroupedList icons label="On the radar">
+            {[...radar].sort((x, y) => y.issuedAt.localeCompare(x.issuedAt)).slice(0, 5).map((a) => <Row key={a.id} icon="warn" tint="none" title={a.title} sub={`${a.source} · ${agoText(a.issuedAt, now)}`} badge={a.level ?? undefined} />)}
+          </GroupedList>
+          <p className="sf-note">Seen from satellites and agency reports. Not an official warning.</p>
+        </Section></div>
+      )}
       <div data-testid="wn-sources"><Section title="Sources and freshness">
         <GroupedList icons label="Sources">
           {sourceRows(all, now, FLAGS.phivolcs, lastCheck(all, saved), down).map((s) => (

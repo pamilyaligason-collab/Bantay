@@ -62,7 +62,7 @@ describe('Phase 2 alert templates (D-78)', () => {
   it('every template has a tone, and the urgent set is the one in the contract', () => {
     for (const id of ALL) expect(['urgent', 'normal'], id).toContain(TEMPLATES[id].tone)
     const urgent = ALL.filter((i) => TEMPLATES[i].tone === 'urgent').sort()
-    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'reading_high', 'rollcall_help', 'storm_warning', 'system'])
+    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_red', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'quake_strong', 'reading_high', 'rollcall_help', 'storm_warning', 'system', 'tsunami_warning', 'volcano_raised'])
     expect(TEMPLATES.sos_late.tone).toBe('normal')
   })
   it('the contract titles are exact', () => {
@@ -93,6 +93,17 @@ describe('Phase 2 alert templates (D-78)', () => {
   it('keeps the broadcast list to the four original safety ids, all cls safety', () => {
     expect([...SAFETY_IDS].sort()).toEqual(['family_sos', 'flood_watch', 'heat_alert', 'storm_warning'])
     for (const id of SAFETY_IDS) expect(TEMPLATES[id].cls).toBe('safety')
+  })
+  it('the four tier-1 hazard templates of lane A are urgent safety rows, calm and fixed, never in the admin broadcast list', () => {
+    const ids = ['tsunami_warning', 'quake_strong', 'flood_red', 'volcano_raised'] as const
+    expect(ids.map((i) => TEMPLATES[i].title)).toEqual(['A world alert feed reports a coastal hazard', 'Strong ground shaking was reported', 'A serious flood warning was issued', 'A volcano alert level was raised'])
+    for (const i of ids) {
+      expect(TEMPLATES[i]).toMatchObject({ cls: 'safety', tab: 'safety', tone: 'urgent' })
+      expect(TEMPLATES[i].body).toMatch(/^(Open Bantay to see what to do.|This is not an official warning. Open Bantay to see more.)$/)
+      expect(ALERT_KIND[i]).toBe('hazard')
+      expect(SAFETY_IDS).not.toContain(i)
+      expect(TEMPLATES[i].title + TEMPLATES[i].body).not.toMatch(/!|\d|<name>|panic|danger|deadly/i)
+    }
   })
   it('ALERT_KIND maps only to kinds in the 0030 CHECK, and the CHECK lists exactly NOTIFY_KINDS (ML-28)', () => {
     // The newest migration that restates the carer_alerts kind CHECK wins (0030, then 0037 in Phase 3).

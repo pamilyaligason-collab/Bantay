@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { nearestZone } from '../location/geo'
-import { googleGo, OVERRIDES_KEY, telHref, type Overrides } from '../safety/entries'
+import { type Entry, googleGo, OVERRIDES_KEY, telHref, type Overrides } from '../safety/entries'
 import { putKv, useKv } from '../safety/store'
 import { KINDS, kmLabel, sourceLine, spotsFor, splitSpots, type Kind, type Pin, type Spot } from './logic'
 import './rescuemap.css'
@@ -25,24 +25,25 @@ function useOnline() {
 }
 
 function Badge({ s }: { s: Spot }) {
-  const ok = s.status === 'CONFIRMED'
+  const ok = s.status === 'CONFIRMED' && !s.stale // a pack row checked long ago, or from an old source, says so instead of "Confirmed"
   const when = ok && s.date && !Number.isNaN(Date.parse(s.date)) ? ` ${new Date(s.date).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', timeZone: 'UTC' })}` : ''
-  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? `Confirmed${when}` : 'Not confirmed'}</span>
+  return <span className={`rm-badge ${ok ? 'ok' : 'un'}`}>{ok ? `Confirmed${when}` : s.stale ? 'May be out of date' : 'Not confirmed'}</span>
 }
 
 function Actions({ s, pin, details }: { s: Spot; pin?: Pin; details?: () => void }) {
-  if (!pin && !s.phone && !details) return null
+  if (!pin && !s.phone && !s.copy && !details) return null
   return (
     <div className="rm-act">
       {pin && <a className="btn2" href={googleGo(pin.lat, pin.lon)} target="_blank" rel="noopener noreferrer">Directions</a>}
       {details && <button type="button" className="btn2" onClick={details}>Details</button>}
       {s.phone && <a className="btn2" href={telHref(s.phone)} aria-label={`Call ${s.phone}`}>Call</a>}
+      {!s.phone && s.copy && <><span className="sub">{s.copy}</span><button type="button" className="btn2" aria-label={`Copy ${s.copy}`} onClick={() => void navigator.clipboard?.writeText(s.copy!)}>Copy</button></>}
     </div>
   )
 }
 
 /** Map of the nearest help. Position comes from the caller; the last one seen is kept so the list still works with no signal. */
-export function RescueMap(props: { lat: number; lon: number; zoneName?: string }) {
+export function RescueMap(props: { lat: number; lon: number; zoneName?: string; seed?: Entry[] }) {
   const abroad = useAbroad()
   const cached = useKv<{ lat: number; lon: number } | null>(LAST_KEY, null)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE)
@@ -57,7 +58,7 @@ export function RescueMap(props: { lat: number; lon: number; zoneName?: string }
   const me = live ? { lat: props.lat, lon: props.lon } : cached && valid(cached.lat) && valid(cached.lon) ? cached : null
 
   const zone = me ? nearestZone(me).id : 'dampas'
-  const spots = useMemo(() => spotsFor(zone, overrides), [zone, overrides])
+  const spots = useMemo(() => spotsFor(zone, overrides, props.seed), [zone, overrides, props.seed])
   const { pins, unpinned } = useMemo(() => splitSpots(spots, kinds, me), [spots, kinds, me?.lat, me?.lon]) // eslint-disable-line react-hooks/exhaustive-deps
   const onPick = useCallback((p: Pin) => setPick(p), [])
   const toggle = (k: Kind) => setKinds((cur) => { const n = new Set(cur); if (!n.delete(k)) n.add(k); return n })

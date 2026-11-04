@@ -27,3 +27,10 @@ tsconfig.tsbuildinfo
 
 # Firebase config for FCM (the owner keeps it on the PC; CI writes it from GOOGLE_SERVICES_JSON_BASE64)
 android/app/google-services.json
+
+# NOAH raw downloads (large; manifest is committed instead)
+/data/noah/raw/
+/data/noah/extract/
+/data/noah/packs/
+/data/noah/*.log
+/data/noah/packs-*/
