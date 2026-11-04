@@ -17,6 +17,8 @@ describe('rightNowRows', () => {
     const badges = (alerts: Alert[]) => Object.fromEntries(rightNowRows({ ...base, here: live.weather, place: live, alerts }).filter((r) => alerts.some((a) => a.title === r.title)).map((r) => [r.title, r.badge]))
     expect(badges([q('old', 205, 'M5.0', 300), q('fresh', 215, 'M5.4', 3)])).toEqual({ old: 'May be felt', fresh: 'May be felt' })
     expect(badges([q('old', 272, 'M4.6', 300), q('volcano', 120, 'Orange', 30, { kind: 'volcano' })])).toEqual({ old: 'May be felt', volcano: 'Near you' })
+    expect(badges([q('wide', 400, 'Orange', 30, { kind: 'volcano' })])).toEqual({ wide: 'In your region' })
+    expect(badges([q('nopoint', 0, 'Orange', 30, { kind: 'volcano', lat: null, lon: null })])).toEqual({ nopoint: 'Your area' })
     expect(badges([q('old', 205, 'M5.0', 300)])).toEqual({ old: 'Far away' })
   })
   it('with no alerts the first row is Warnings (None now), then weather, storms, hazards, rescue map', () => {

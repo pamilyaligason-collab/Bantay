@@ -117,6 +117,12 @@ export function newestChecked(alerts: Alert[]): string | null {
   return best
 }
 
+/** The check time to print for one warning: its own, else the newest in the list. A row the feed stopped refreshing must read old on every screen. */
+export const checkedOf = (a: Pick<Alert, 'checkedAt'>, alerts: Alert[]): string | null => a.checkedAt || newestChecked(alerts)
+
+/** " (N km away)" for a line that does not already say the distance, else "". */
+export const kmTail = (who: Pick<Affects, 'km' | 'line'>, suffix = ' km away'): string => who.km == null || who.line.includes(`${who.km} km`) ? '' : ` (${who.km}${suffix})`
+
 export function freshText(f: Fresh): string {
   const m = f.ageMin
   if (m === null) return 'Never checked'

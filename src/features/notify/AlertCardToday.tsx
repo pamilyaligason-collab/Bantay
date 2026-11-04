@@ -3,7 +3,8 @@ import { useFamilyPeople } from '../family/roster'
 import { shortName } from '../inbox/build'
 import { Icon } from '../shell/Icon'
 import { markSeen, type AlertRow } from './store'
-import { renderTemplate, TEMPLATES, type NotifyKind, type TemplateId } from './templates'
+import { inAppText } from './inApp'
+import { TEMPLATES, type NotifyKind, type TemplateId } from './templates'
 import { useAlertRows } from './useAlerts'
 import './notify.css'
 
@@ -27,12 +28,11 @@ export function AlertCardToday() {
   if (!row) return null
   const who = people.find((p) => p.id === row.personId)
   const name = shortName(who?.name)
-  const t = renderTemplate(row.template, { name })
-  const tab = Object.hasOwn(TEMPLATES, row.template) ? TEMPLATES[row.template as TemplateId].tab : 'today'
+  const t = inAppText(row, { name })
   const seen = () => void markSeen(row.id).catch(() => undefined)
   return (
     <section className="card al-row" aria-label="Family alert" data-kind={row.kind} data-testid="family-notice">
-      <a className="al-main press" href={`#${tab}`} onClick={seen}>
+      <a className="al-main press" href={t.href} onClick={seen}>
         <span className="al-av">{who ? <FmAvatar name={who.name} photoPath={who.photoPath} thumb={who.thumb} size={40} /> : <Icon name="users" size={20} />}</span>
         <span className="al-txt"><b>{t.title}</b><span className="al-sub">{t.body}</span></span>
         <Icon name="chev" size={20} />

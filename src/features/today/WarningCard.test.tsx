@@ -58,6 +58,19 @@ describe('WarningCard', () => {
     expect(screen.queryByRole('button', { name: /Hide this warning/ })).toBeNull()
   })
 
+  it('the card reads its own row\'s check time, not the newest of any row; a far line prints its distance once', async () => {
+    const old = new Date(Date.now() - 21 * 3_600_000).toISOString()
+    const stale = { ...storm, id: 'rain-old', kind: 'rainfall' as const, level: 'Orange', title: 'Orange rainfall warning', lat: 6.1 - 3.6, lon: 125.2, checkedAt: old } // about 400 km away
+    const other = { ...quake, id: 'air-fresh', kind: 'air' as const, lat: 6.1, lon: 125.2, checkedAt: new Date().toISOString() } // another row, checked now, not a hazard for the slot
+    await db.kv.put({ key: ALERTS_KEY, value: [stale, other] })
+    render(<WarningCard />)
+    const card = await screen.findByRole('region', { name: 'Active warning' })
+    expect(card.textContent).toContain('Checked 21 h ago')
+    expect(card.textContent).not.toContain('Checked just now')
+    expect(card.textContent).toMatch(/About \d+ km away\. Follow the steps below\./)
+    expect(card.textContent).not.toMatch(/km away\. Follow the steps below\.\s*\(\d+ km away\)/)
+  })
+
   it('an acked nearer quake does not blank the slot: the stronger one further away still shows', async () => {
     const near = { ...quake, id: 'qn' }
     const big = { ...quake, id: 'qb', level: 'Magnitude 6.8', what: 'Magnitude 6.8.', where: 'Far sea', lat: 9.0, lon: 125.2 }

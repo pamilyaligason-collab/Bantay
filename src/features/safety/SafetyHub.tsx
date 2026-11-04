@@ -78,8 +78,9 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; place?: 
   const alerts = urgentFirst(rankAlerts(p.alerts, p.here), p.here).slice(0, 3).map((a): HomeRow => {
     const f = affectsUs(a, p.here, undefined, place)
     const red = (a.kind === 'tcws' && signalOf(a.level) >= 3) || a.kind === 'tsunami'
-    // shortcut: "felt" wording only for quakes; other kinds say Near you / Far away
-    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : f.steps ? 'May be felt' : 'Far away') : 'Near you' // the same steps flag Warnings shows, so the two screens agree
+    // shortcut: "felt" wording only for quakes; other kinds name the distance band the line already uses (Near you / Near home / Your area / In your region)
+    const band = f.line.startsWith('Near you') ? 'Near you' : f.line.startsWith('Near home') ? 'Near home' : f.line.startsWith('Covers your area') ? 'Your area' : 'In your region'
+    const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : f.steps ? 'May be felt' : 'Far away') : band // the same steps flag Warnings shows, so the two screens agree
     return {
       href: '#safety/warnings', icon: ALERT_ICON[a.kind] ?? 'warn', tint: red ? 'red' : 'amber', title: a.title,
       sub: [a.where, f.km === null ? null : `${f.km} km`, a.source].filter(Boolean).join(' · '), badge

@@ -1,6 +1,6 @@
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, freshText, newestChecked, outdatedLine, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, freshness, checkedOf, freshText, kmTail, outdatedLine, plainWhat } from '../safety/alerts'
 import { useNow } from '../safety/AlertCard'
 import { useKv } from '../safety/store'
 import { zoneAlert } from './heroCards'
@@ -17,16 +17,17 @@ export default function AlertBand() {
   const a = zoneAlert(alerts, ref)
   if (!a) return null
   const who = affectsUs(a, ref, now) // no place: a band labelled Warning always takes the soft line for a quiet quake
-  const f = freshness(newestChecked(alerts), now)
+  const at = checkedOf(a, alerts)
+  const f = freshness(at, now)
   return (
     <section className="td-alertband" role="region" aria-label="Active warning">
       <div className="td-k">{who.affects ? 'Warning' : 'Nearby report'} · {a.where} · {a.source}</div>
       <h2>{a.title}</h2>
       {a.kind === 'gdacs' && plainWhat(a) && <p>{plainWhat(a)}</p>}
-      <p><b>{who.line}</b>{who.km != null && ` (${who.km} km away)`}</p>
+      <p><b>{who.line}</b>{kmTail(who)}</p>
       {who.steps && <p>{a.doNow}</p>}
       <p>{freshText(f)}</p>
-      {f.tone !== 'ok' && <p role="status">{outdatedLine(newestChecked(alerts))}</p>}
+      {f.tone !== 'ok' && <p role="status">{outdatedLine(at)}</p>}
       <div className="td-act"><a className="td-pill light" href="#safety/warnings">{who.affects ? 'What to do' : 'See details'}</a></div>
     </section>
   )

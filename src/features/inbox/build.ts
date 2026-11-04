@@ -4,6 +4,7 @@ import { dayOf, matchDoses, slotsFor } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
 import type { AlertKind } from '../safety/alerts'
 import type { AlertRow } from '../notify/store'
+import { inAppText } from '../notify/inApp'
 import { renderTemplate, TEMPLATES, type NotifyKind, type TemplateId } from '../notify/templates'
 
 export type InboxKind = 'alert' | 'dose' | 'pin' | 'records' | 'update' | 'family'
@@ -43,11 +44,11 @@ export function familyItems(rows: AlertRow[], nameOf: (personId: string | null) 
     const id = r.template as TemplateId
     const known = Object.hasOwn(TEMPLATES, id)
     const who = shortName(nameOf(r.personId))
-    const text = renderTemplate(r.template, { name: who })
+    const text = { ...renderTemplate(r.template, { name: who }), ...inAppText(r, { name: who }) }
     const named = known && (TEMPLATES[id].title + TEMPLATES[id].body).includes('<name>')
     return {
       id: `ca:${r.id}`, kind: 'family' as const, title: text.title, sub: [KIND_LABEL[r.kind], !named && who ? who : null, manilaClock(at)].filter(Boolean).join(' · '),
-      href: `#${known ? TEMPLATES[id].tab : 'today'}`, at, row: r, seen: r.seenAt != null, tone: text.tone
+      href: text.href, at, row: r, seen: r.seenAt != null, tone: text.tone
     }
   })
 }
