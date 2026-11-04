@@ -60,3 +60,18 @@ describe('AlertCardToday', () => {
     expect(screen.getAllByRole('region', { name: 'Family alert' }).length).toBe(1)
   })
 })
+
+describe('AlertCardToday system row', () => {
+  it('names the job and links to System health instead of the push line', () => {
+    h.rows = [row('sys', { kind: 'system', template: 'system', personId: null, ref: 'alerts-ingest:81234' })]
+    render(<AlertCardToday />)
+    expect(screen.getByText('The alerts-ingest job failed')).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/Open Bantay|needs your attention/)
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/admin#/system')
+  })
+  it('a row with no ref says so plainly', () => {
+    h.rows = [row('sys', { kind: 'system', template: 'system', personId: null, ref: null })]
+    render(<AlertCardToday />)
+    expect(screen.getByText('No job name was saved. Open System health to see which one.')).toBeTruthy()
+  })
+})

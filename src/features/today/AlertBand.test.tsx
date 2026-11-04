@@ -46,7 +46,7 @@ describe('AlertBand: does it affect us, and how fresh', () => {
   it('an M3.6 quake 140 km away shows on Today with its distance line', async () => {
     await show([quake({ level: 'Magnitude 3.6', title: 'Magnitude 3.6 earthquake', lat: 6.2015121 + 1.2591 })])
     expect(await screen.findByText('About 140 km away. You may feel it. If you feel shaking, follow the steps below.')).toBeTruthy()
-    expect(screen.getByText(/\(140 km away\)/)).toBeTruthy()
+    expect(screen.queryByText(/\(140 km away\)/)).toBeNull() // the line already says it
   })
   it.each([
     ['location off', null],

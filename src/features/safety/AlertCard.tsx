@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { ALERTS_KEY, type Alert, affectsUs, diffBulletin, freshness, freshText, hazardOf, HOME, newestChecked, NOT_A_SIREN, outdatedLine, plainWhat } from './alerts'
+import { ALERTS_KEY, type Alert, affectsUs, diffBulletin, freshness, freshText, hazardOf, HOME, kmTail, newestChecked, NOT_A_SIREN, outdatedLine, plainWhat } from './alerts'
 import Lazy from './Lazy'
 import { Frame, ventuskyUrl } from './MapsPanel'
 import { CARDS, Poster } from './Practice'
@@ -63,7 +63,7 @@ export default function AlertCard({ alert: a, quietOk = true }: { alert: Alert; 
         {a.level && <span className="sf-chip warn">! {a.level}</span>}
         <span className="sf-chip">{a.source === 'PAGASA' ? PAGASA_CREDIT : a.source}</span>
       </div>
-      <p className="sub" style={{ margin: 0 }}>{freshText(fresh)} · {who.line}{who.km != null && ` (${who.km} km)`}</p>
+      <p className="sub" style={{ margin: 0 }}>{freshText(fresh)} · {who.line}{kmTail(who, ' km')}</p>
       {a.stale ? <p className="sf-note" role="status">{staleText(a.checkedAt)}</p>
         : fresh.tone !== 'ok' && <p className="sf-note" role="status">{outdatedLine(a.checkedAt)}</p>}
       <div className="grp">

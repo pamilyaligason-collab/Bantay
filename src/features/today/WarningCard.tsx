@@ -3,7 +3,7 @@ import { track } from '../admin/events'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { AlertCard } from '../look'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, freshText, newestChecked, outdatedLine, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, checkedOf, freshness, freshText, kmTail, newestChecked, outdatedLine, plainWhat } from '../safety/alerts'
 import { useNow } from '../safety/AlertCard'
 import { StormBlock } from '../safety/StormCard'
 import { liveSignals, signalOf, stormTitle } from '../safety/stormMode'
@@ -45,7 +45,8 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
     void track('action', 'warn_ack') // C-4 usage kind (name only); dropped until admin/events.ts lists it (needs)
     notify?.(HIDDEN_TOAST)
   }, [acks, alerts, notify])
-  const f = freshness(newestChecked(alerts), clock)
+  const at = hazard ? checkedOf(hazard, alerts) : newestChecked(alerts) // the hazard's own check: a row the feed stopped refreshing must read old here as in Warnings
+  const f = freshness(at, clock)
   const red = !!hazard && !isAcked(acks, hazard) && !quakeRow(hazard, affectsUs(hazard, ref), clock) && (hazard.kind === 'quake' || hazard.kind === 'tcws')
   const nofab = red || (!!storm && !isAcked(acks, storm)) // the cards that carry data-nofab hide Jack
 
@@ -59,7 +60,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
         if (row) return (
           <section role="region" aria-label="Nearby report" data-testid="warning-card" className="card td-arow" data-tint="amber">
             <span className="td-arow-ic"><Icon name="quake" size={18} /></span>
-            <span className="td-grow"><b>{row.title}</b><span>{row.sub}</span>{f.tone !== 'ok' && <span role="status">{outdatedLine(newestChecked(alerts))}</span>}</span> {/* a stale feed must still say so on a compact row, as the red card does */}
+            <span className="td-grow"><b>{row.title}</b><span>{row.sub}</span>{f.tone !== 'ok' && <span role="status">{outdatedLine(at)}</span>}</span> {/* a stale feed must still say so on a compact row, as the red card does */}
             <a className="btn2 td-arow-go" href="#safety/warnings">Details</a>
           </section>
         )
@@ -76,10 +77,10 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
                 <>
                   <p className="td-wc-k">{who.affects ? 'Warning' : 'Nearby report'} · {hazard.where} · {hazard.source}</p>
                   {hazard.kind === 'gdacs' && plainWhat(hazard) && <p>{plainWhat(hazard)}</p>}
-                  <p><b>{who.line}</b>{who.km != null && ` (${who.km} km away)`}</p>
+                  <p><b>{who.line}</b>{kmTail(who)}</p>
                   {who.steps && <p>{hazard.doNow}</p>}
                   <p className="td-wc-meta">{freshText(f)}{f.tone === 'ok' ? ' · Hide: still in Safety.' : ''}</p>
-                  {f.tone !== 'ok' && <p className="td-wc-meta" role="status">{outdatedLine(newestChecked(alerts))}</p>}
+                  {f.tone !== 'ok' && <p className="td-wc-meta" role="status">{outdatedLine(at)}</p>}
                 </>
               )}
             />
