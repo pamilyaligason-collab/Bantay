@@ -24,26 +24,26 @@ async function discover(page: Page, w: number, h: number) {
 }
 
 for (const [w, h] of [[450, 997], [390, 997], [360, 997], [390, 844]] as const) {
-  test(`discover ${w}x${h}: video pictures fill their boxes, no empty band under the season card, Learn link clear of Jack`, async ({ page }) => {
+  test(`discover ${w}x${h}: video pictures fill their boxes, no empty band under the season card (D-124), Learn link clear of Jack`, async ({ page }) => {
     await discover(page, w, h)
     await shot(page, `discover-${w}x${h}`)
     const m = await page.evaluate(() => {
       const box = (e: Element) => e.getBoundingClientRect()
       const fill = Array.from(document.querySelectorAll('.dc-herocard .dc-still, .dc-vc .dc-still')).map((e) => { const a = box(e); const p = box(e.parentElement!); return { w: a.width, h: a.height, pw: p.width, ph: p.height } })
       const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-      const head = document.querySelector('[data-testid="dc-learn"] h2')!.getBoundingClientRect()
+      const head = document.querySelector('[data-testid="dc-prep-row"]')!.getBoundingClientRect() // D-124: the Be prepared row follows the season card at once
       const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
       const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
       return { fill, gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
     })
-    expect(m.fill).toHaveLength(3) // the hero and both small cards
+    expect(m.fill).toHaveLength(6) // the hero, both small cards and the three Be prepared cards
     for (const f of m.fill) { expect(f.w, 'picture width').toBeGreaterThanOrEqual(f.pw - 1); expect(f.h, 'picture height').toBeGreaterThanOrEqual(f.ph - 1) }
-    if (h >= 920) expect(m.gap, 'gap between the season card and Learn').toBeLessThanOrEqual(80)
+    expect(m.gap, 'gap between the season card and the next section').toBeLessThan(40)
     expect(m.overlap, 'Learn link under Jack at rest').toBe(false)
   })
 }
 
-// The floor that lifts Learn's link below Jack is dropped at 920 px tall (375 px wide and up) or 980 px (narrower): both sides of each line must be clear of Jack, and above it there is no band.
+// D-124: the floor that lifted Learn's link below Jack is gone; at every height around the old thresholds the link stays clear of Jack and no band opens under the season card.
 for (const day of ['2026-10-31', '2026-11-10', '2026-12-10']) {
   test(`${day}: Learn link clear of Jack on both sides of the floor thresholds, no band above them`, async ({ page }) => {
     test.setTimeout(120_000)
@@ -58,19 +58,19 @@ for (const day of ['2026-10-31', '2026-11-10', '2026-12-10']) {
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-          const head = document.querySelector('[data-testid="dc-learn"] h2')!.getBoundingClientRect()
+          const head = document.querySelector('[data-testid="dc-prep-row"]')!.getBoundingClientRect()
           const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
           const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
           return { gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
         })
         expect(m.overlap, `${w}x${h}: Learn link under Jack`).toBe(false)
-        if (h >= th) expect(m.gap, `${w}x${h}: band under the season card`).toBeLessThanOrEqual(60)
+        expect(m.gap, `${w}x${h}: band under the season card (th ${th})`).toBeLessThan(40)
       }
     }
   })
 }
 
-test('family: an empty Activity card hugs its one line; with BP data it keeps its floor', async ({ page }) => {
+test('family: an empty Activity card hugs its one line (no floor)', async ({ page }) => {
   await page.setViewportSize({ width: 450, height: 997 })
   await skipOnboarding(page)
   await mockFamily(page)
@@ -82,18 +82,20 @@ test('family: an empty Activity card hugs its one line; with BP data it keeps it
   await shot(page, 'family-activity-empty-450x997')
   const empty = (await sec.boundingBox())!.height
   expect(empty, 'empty Activity section height').toBeLessThan(260)
-  expect(await sec.evaluate((e) => getComputedStyle(e).minHeight)).toBe('0px')
+  expect(await sec.evaluate((e) => getComputedStyle(e).minHeight)).toMatch(/^(0px|auto)$/)
 })
 
-test('family: with BP data the Activity section keeps its floor (tabs do not jump)', async ({ page }) => {
+test('family: with BP data an empty tab keeps the chart space inside the card, no floor on the section (tabs jump by the legend lines only)', async ({ page }) => {
   await page.setViewportSize({ width: 450, height: 997 })
   await openFamily(page, { person: 'Ate Joy' }) // her readings draw the chart (D-109: Family opens on Me)
   const sec = page.getByTestId('activity')
   await expect(sec.locator('svg.wk').first()).toBeVisible()
   const bp = (await sec.boundingBox())!.height
+  expect(await sec.evaluate((e) => getComputedStyle(e).minHeight), 'no floor on the section').toMatch(/^(0px|auto)$/)
   await sec.getByRole('button', { name: 'Steps' }).click()
   await expect(page.getByTestId('ac-empty')).toBeVisible()
-  expect(Math.abs((await sec.boundingBox())!.height - bp), 'switching to an empty tab').toBeLessThanOrEqual(2)
+  expect(Math.abs((await sec.boundingBox())!.height - bp), 'switching to an empty tab: only the chart height is kept, the legend and note lines go (measured 90 px)').toBeLessThanOrEqual(95)
+  expect((await sec.locator('.card.ac').boundingBox())!.height, 'the empty tab still holds the 170 px chart space').toBeGreaterThan(240)
 })
 
 test('jack: scrolled down he peeks at the right edge, a real 48 px target (elementFromPoint), returns at the top and on keyboard focus', async ({ page }) => {

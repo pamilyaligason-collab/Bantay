@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { hdb } from '../records/store'
+import { SOS_STARTED_EVENT } from '../sos/active'
 
 const m = vi.hoisted(() => ({ ask: vi.fn(), call: vi.fn(async () => ({ placed: false, via: 'tel' as const })) }))
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
@@ -48,7 +49,11 @@ describe('Jack local emergency gate', () => {
   })
   it('"Tell my family (SOS)" opens the SOS flow', async () => {
     await type('he is unconscious')
+    const started = vi.fn()
+    window.addEventListener(SOS_STARTED_EVENT, started)
     fireEvent.click(await screen.findByRole('button', { name: 'Tell my family (SOS)' }))
+    window.removeEventListener(SOS_STARTED_EVENT, started)
+    expect(started).toHaveBeenCalledTimes(1) // this path has no hush of its own: startSos stops the Calm radio
     expect(await screen.findByRole('dialog', { name: 'SOS screen' })).toBeTruthy()
   })
   it('a server emergency reply is the same card, and that exchange is not sent back to the model', async () => {

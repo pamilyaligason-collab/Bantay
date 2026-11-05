@@ -19,7 +19,7 @@ function useSosScreenUp(): boolean {
   return up
 }
 
-/** "Acting as Mama · Exit" bar under the offline bar (C-9, D-99): amber, on every screen, with the one reason line when a control is locked.
+/** "Viewing as Mama · Back to me" bar under the offline bar (C-9, D-99): amber, on every screen, with the one reason line when a control is locked.
  *  On the SOS screen a copy is drawn above it saying the SOS is the admin's own (W-47); SOS itself always acts as the signed-in person. */
 export default function ViewAsBanner(): ReactElement | null {
   const { acting, personId, name } = useActing()
@@ -37,15 +37,17 @@ export default function ViewAsBanner(): ReactElement | null {
   }, [personId])
 
   if (!acting) return null
+  const back = () => { exitActing(); const h = location.hash.split('?')[0]!; if (h.endsWith(`/member/${personId}`) || h === `#sharing/${personId}`) location.hash = '#today' } // a page of that person (member page, their sharing list) has nothing to show without them
+  const line = can?.log ? `You can log for ${name}. Entries show you logged them.` : `Look only. ${can?.reason ?? ''}`.trim()
   const bar = (cls: string, note: string | null) => (
     <div className={cls} role="status" data-testid="viewas-bar">
-      <div className="va-row"><b>Acting as {name}</b><button type="button" className="va-exit" onClick={exitActing}>Exit</button></div>
+      <div className="va-row"><b>Viewing as {name}</b><button type="button" className="va-exit" onClick={back}>Back to me</button></div>
       {note && <p className="va-note">{note}</p>}
     </div>
   )
   return (
     <>
-      {bar('va-bar', can?.reason ?? null)}
+      {bar('va-bar', line)}
       {sos && createPortal(bar('va-bar va-sos', `This SOS is from ${actor}, not ${name}.`), document.body)}
     </>
   )

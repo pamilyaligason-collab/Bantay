@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { EmptyState, GroupedList, JackArt, LargeTitle, PreviewTile, Row, Section } from '../look'
+import { Carousel, EmptyState, GroupedList, JackArt, LargeTitle, PreviewTile, Row, Section } from '../look'
 import { HeadActions } from '../shell/HeadActions'
 import type { RefreshDetail } from '../look/refresh'
 import { Icon } from '../shell/Icon'
@@ -15,7 +15,7 @@ import { WATCH_PICK } from './watch/Screen'
 import { canSpeak } from './listen/speech'
 import { useReadAloud } from './listen/useReadAloud'
 import { playable, type Video } from '../health/library/videosLogic'
-import { DISCOVER_VIDEOS, READY_TOPICS, countLine } from './learn/ready'
+import { DISCOVER_VIDEOS, READY_TOPICS, READY_VIDEOS, countLine } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 
@@ -95,6 +95,9 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
   const vids = DISCOVER_VIDEOS.filter(playable)
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const { hero, more } = featured<Video>(now, vids)
+  const prepTopic = READY_TOPICS.find((t) => t.id === 'prepping')?.video
+  const shown = new Set([hero?.id, ...more.map((v) => v.id)])
+  const prep = READY_VIDEOS.filter((v) => v.topic === prepTopic && playable(v)).sort((a, b) => Number(shown.has(a.id)) - Number(shown.has(b.id))).slice(0, 3) // up to three checked prepping videos, ones not already above first
   return (
     <>
       <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" actions={<HeadActions><a className="sh-iconbtn dc-search" href="#discover/learn/library" aria-label="Search health topics" data-testid="dc-search"><Icon name="search" size={22} /></a></HeadActions>} />
@@ -133,6 +136,20 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
       )}
       <SeasonRow now={now} />
       </div>
+      {prep.length > 0 && (
+        <Section title="Be prepared" link={{ href: '#discover/learn/prepping', label: 'See all' }} testId="dc-prep-row">
+          <Carousel label="Be prepared videos">
+            {prep.map((v) => (
+              <Pick key={v.id} id={v.id}>
+                <a className="card dc-vc dc-prep" href="#discover/watch" data-tint="teal">
+                  <span className="dc-vc-pic"><Thumb id={v.id} /><span className="dc-vc-play" aria-hidden="true"><Icon name="play" size={18} /></span></span>
+                  <span className="dc-vc-body"><span className="dc-vc-t">{v.title}</span></span>
+                </a>
+              </Pick>
+            ))}
+          </Carousel>
+        </Section>
+      )}
       <Section title="Learn" link={{ href: '#discover/learn', label: 'All topics' }} testId="dc-learn">
         <div className="dc-lcards">
           {medcards && <LearnCard tint="green" icon="pill" title="Medicines" sub="What each medicine is for" href="#discover/learn/meds" testId="dc-learn-meds" />}

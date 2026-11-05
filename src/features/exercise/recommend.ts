@@ -28,7 +28,7 @@ export const GATE_KEY = 'exercise.gateOk'
 export const DOCTOR_OK_KEY = 'exercise.doctorOk'
 export const GATE_TEXT = 'Check with your doctor before starting new exercise.'
 /** Move logs are yours only (M2-2): while acting as someone the Done button is off and says why. Gating only; the log itself still writes through exercise/actions.ts for the signed-in person. */
-export const MOVE_LOCK = 'Move logs are yours only. Exit to log.'
+export const MOVE_LOCK = 'Move logs are yours only. Tap Back to me to log.'
 
 export type Condition = 'hypertension' | 'arthritis' | 'diabetes' | 'heart' | 'osteoporosis' | 'asthma'
 const WORDS: Record<Condition, RegExp> = {

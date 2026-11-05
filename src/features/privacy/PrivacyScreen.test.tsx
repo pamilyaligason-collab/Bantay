@@ -43,13 +43,20 @@ describe('Privacy screen', () => {
     expect(t).toMatch(/scan from now on/)
     expect(t).not.toMatch(/Nothing is sent/)
   })
-  it('lists exactly the processors of this build and none of Firebase, Sentry or an SMS gateway', async () => {
+  it('lists exactly the processors of this build and none of Sentry or an SMS gateway', async () => {
     render(<PrivacyScreen />)
-    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and RainViewer', 'OpenRouter', 'Google Drive', 'Cloudflare Pages'])
+    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'Wikipedia', 'YouTube', 'Radio Paradise and Radio Swiss Classic', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA Panahon', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
     const text = (await screen.findByText('Where your data goes')).parentElement!.textContent!
     expect(text).toMatch(/about 1 km/)
     expect(text).toMatch(/zero data retention/)
-    expect(text).not.toMatch(/Firebase|Sentry|SMS/i)
+    expect(text).toContain('YouTube: picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap')
+    expect(text).toContain('Radio Paradise and Radio Swiss Classic: only when you tap Play on a radio card; the station sees your internet address')
+    expect(text).toContain('Wikipedia: the "On this day" facts in Discover; it receives today\'s date only, never your name or place')
+    expect(text).toContain('Ventusky gets the map centre rounded to about 1 km, the other two get no place from the app')
+    expect(text).toContain('what you ask Jack goes through a relay on the family owner\'s own server first')
+    expect(text).toContain('a photo you scan goes from a function on the family\'s own Supabase project straight to OpenRouter, with no relay') // photos skip the relay (records-extract)
+    expect(text).toContain('Other official sites open in your browser only when you tap their link.')
+    expect(text).not.toMatch(/Sentry|SMS/i)
   })
   it('the AI switch starts on and is stored in kv privacy.ai', async () => {
     render(<PrivacyScreen />)

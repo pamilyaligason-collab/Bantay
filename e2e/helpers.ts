@@ -3,6 +3,9 @@ import { expect, type Page } from '@playwright/test'
 /** Call before page.goto('/'). The OnboardingGate reads this localStorage flag (or kv onboarded). */
 export const skipOnboarding = (page: Page) => page.addInitScript(() => localStorage.setItem('bantay.onboarded', '1'))
 
+/** The Weather screen opens a live Windy map by default (D-125): answer the embed so a test never reaches the internet. Call before page.goto. */
+export const stubWindy = (page: Page) => page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' }))
+
 /** Jack is the floating button: one tap opens the Jack sheet, Chat in it opens the assistant. */
 export const openChat = async (page: Page) => {
   await page.getByTestId('jack').click()

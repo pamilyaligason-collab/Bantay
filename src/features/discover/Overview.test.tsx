@@ -49,9 +49,9 @@ describe('Overview head, hero, video cards, season', () => {
     expect(Array.from(cards).map((c) => c.querySelector('.dc-vc-t')!.textContent)).toEqual(more.map((m) => m.title))
     expect(Array.from(cards).map((c) => c.getAttribute('href'))).toEqual(['#discover/watch', '#discover/watch'])
     const imgs = Array.from(container.querySelectorAll('.dc-still img'))
-    expect(imgs.length).toBe(3)
+    expect(imgs.length).toBe(6) // hero, two small cards, three Be prepared cards
     const ids = [hero!, ...more].map((v) => v.id)
-    imgs.forEach((img, i) => {
+    imgs.slice(0, 3).forEach((img, i) => {
       expect(img.getAttribute('src')).toBe(`https://i.ytimg.com/vi/${ids[i]}/mqdefault.jpg`)
       expect(img.getAttribute('alt')).toBe('')
       expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
@@ -71,7 +71,7 @@ describe('Overview head, hero, video cards, season', () => {
     expect(sessionStorage.getItem('dc.watch')).toBe(hero!.id)
     fireEvent.click(screen.getByTestId('dc-videos').querySelectorAll('a.dc-vc')[1]!)
     expect(sessionStorage.getItem('dc.watch')).toBe(more[1]!.id)
-    expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(3)
+    expect(container.querySelectorAll('a[href="#discover/watch"]').length).toBe(6) // hero, two small cards, three Be prepared cards
   })
   it('a new-tab click (ctrl, meta or shift) does not hand the video over', () => {
     render(<Overview now={now} />)
@@ -125,9 +125,9 @@ describe('Learn and Listen', () => {
     expect(listenRows().length).toBe(0)
     expect(within(screen.getByTestId('dc-listen')).getByText('Reading aloud is not on this phone yet.')).toBeTruthy()
   })
-  it('sections come in order: videos, season, learn, listen, ready at home, play', () => {
+  it('sections come in order: videos, season, be prepared, learn, listen, ready at home, play', () => {
     render(<Overview now={now} />)
-    const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-learn', 'dc-listen', 'dc-ready', 'dc-play']
+    const ids = ['dc-hero', 'dc-videos', 'season-row', 'dc-prep-row', 'dc-learn', 'dc-listen', 'dc-ready', 'dc-play']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })

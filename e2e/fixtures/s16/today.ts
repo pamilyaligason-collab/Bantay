@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../../../src/features/weather/fixture'
 import { mock } from '../../health-auth-mock'
-import { skipOnboarding } from '../../helpers'
+import { skipOnboarding, stubWindy } from '../../helpers'
 
 // S16 L1 fixtures (contracts C-11): calm, alertsOff, quake, storm, offline. Auth project (PostgREST mocked, invented data).
 // Clock frozen at Tue 2026-10-20 10:00 Manila (the Losartan dose is due 09:45 so Next up shows when `dose` is set).
@@ -38,13 +38,14 @@ export const STORM = { id: 'pagasa-tcws-rosal-champi-dampas', kind: 'tcws', leve
 
 /** The app's own alerts pull (sync.ts pullAlerts) REPLACES kv safety.alerts with whatever the server returns, so a raw IndexedDB seed is overwritten a moment after load (the run-1 race).
  *  The variant's alert is therefore served as a safety_alerts row: the pull and the render agree whatever order they finish in (ML-25, ML-16: the live path). */
-const row = (a: typeof QUAKE | typeof STORM) => ({ id: a.id, kind: a.kind, level: a.level, title: a.title, what: a.what, where_text: a.where, when_text: a.when, do_now: a.doNow, source: a.source, source_url: a.sourceUrl, issued_at: a.issuedAt, lat: a.lat, lon: a.lon, bulletin: a.bulletin, fetched_at: a.checkedAt, stale: false })
+export const row = (a: typeof QUAKE | typeof STORM) => ({ id: a.id, kind: a.kind, level: a.level, title: a.title, what: a.what, where_text: a.where, when_text: a.when, do_now: a.doNow, source: a.source, source_url: a.sourceUrl, issued_at: a.issuedAt, lat: a.lat, lon: a.lon, bulletin: a.bulletin, fetched_at: a.checkedAt, stale: false })
 
 /** Opens #today as Rey (an invented first name) (signed in, mocked) with the variant's data. `dose` seeds a late Losartan so Next up shows. */
 export async function startToday(page: Page, variant: Variant = 'calm', opts: { dose?: boolean; scheme?: 'light' | 'dark'; notice?: boolean | 'sos'; alertsOff?: boolean; alert?: typeof QUAKE } = {}) {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.clock.setFixedTime(NOW)
   await skipOnboarding(page)
+  await stubWindy(page) // the Weather screen's live map (r11-card-order and s16-today open #weather)
   await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])))
   await mock(page)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: NOW, temp: 31, humidity: 60, feels: 33, code: variant === 'storm' ? 95 : 2, hourlyProb: (h) => (h >= 14 && h <= 17 ? 80 : 10) }) }))

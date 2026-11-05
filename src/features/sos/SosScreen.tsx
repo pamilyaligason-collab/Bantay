@@ -36,7 +36,7 @@ function waitForeground(): { back: Promise<void>; stop: () => void } {
     const onVis = () => { if (document.visibilityState === 'hidden') away = true; else if (away) finish() }
     document.addEventListener('visibilitychange', onVis)
     const sub = Promise.resolve(App.addListener('appStateChange', ({ isActive }) => { if (!isActive) away = true; else if (away) finish() })).catch(() => undefined)
-    stop = () => { if (off) return; off = true; document.removeEventListener('visibilitychange', onVis); void sub.then((h) => h?.remove()) }
+    stop = () => { if (off) return; off = true; document.removeEventListener('visibilitychange', onVis); void sub.then((h) => h?.remove()).catch(() => undefined) }
   })
   return { back, stop }
 }

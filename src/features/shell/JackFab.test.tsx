@@ -12,6 +12,8 @@ vi.mock('../sos/SosScreen', async () => {
 
 vi.mock('./JackSheet', () => ({ JackSheet: ({ onClose }: { onClose: () => void }) => <div role="dialog" aria-label="Jack"><button onClick={onClose}>x</button></div> }))
 // fake-indexeddb schedules its work with setTimeout, so faking the clock would stall Dexie. The kv is a plain in-memory map here, always loaded.
+const viewing = vi.hoisted(() => ({ on: false }))
+vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: viewing.on, personId: null, name: '' }) }))
 const store = vi.hoisted(() => new Map<string, unknown>())
 vi.mock('./useKv', () => ({
   useKv: <T,>(key: string, init: T): [T, (v: T) => void, boolean] => {
@@ -20,7 +22,7 @@ vi.mock('./useKv', () => ({
   }
 }))
 
-beforeEach(() => { store.clear(); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }) })
+beforeEach(() => { viewing.on = false; store.clear(); vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }) })
 afterEach(() => { cleanup(); vi.clearAllTimers(); vi.useRealTimers() })
 
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms) })
@@ -132,6 +134,14 @@ describe('JackFab coach mark', () => {
     tick(1)
     expect(store.get('askHintSeen')).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+  it('viewing as someone: no hint (it would sit on the locked Log) and it is not counted as seen', () => {
+    viewing.on = true
+    render(<JackFab tab="today" hash="#today" />)
+    expect(fab()).not.toBeNull()
+    expect(screen.queryByRole('status')).toBeNull()
+    tick(8000)
+    expect(store.get('askHintSeen')).toBeUndefined()
   })
   it('not on other tabs', () => {
     render(<JackFab tab="health" hash="#health" />)

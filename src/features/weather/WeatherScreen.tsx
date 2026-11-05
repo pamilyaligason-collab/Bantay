@@ -6,6 +6,7 @@ import { useLocation, usePlaceFrom, ZONE_KEY } from '../location/useLocation'
 import { track } from '../admin/events'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
+import { useOnline } from '../safety/LiveMaps'
 import { EmptyState } from '../look/EmptyState'
 import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
@@ -20,7 +21,6 @@ import { tempTint } from './tempTint'
 import { alertRef, placeTimezone } from '../location/place'
 import { actionLines, RAIN_WATCH_HOURS } from './actionLine'
 import StormTrack from './StormTrack'
-import { cyclones } from '../safety/LiveMaps'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, type Day, type Forecast, type Kind } from './forecast'
 import { heatIndexC } from './heatIndex'
 import { wxFlag } from './flags'
@@ -28,7 +28,8 @@ import { AroundYou, Credits, Next2h, OtherNotices } from './BlendCards'
 import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
 import { condOf, feelsLike, isHot, SCRIM, SKY, todOf } from './scene'
 import WeatherScene from './WeatherScene'
-import LiveMapToggle from './LiveMapToggle'
+import { LiveMapCard, StormLineCard, StormsNear, useWxPause } from './WxLive'
+import { hasAdvisory } from './advisory'
 import RainMap from './RainMap'
 import { weatherWarning } from './warning'
 import { useNow } from '../safety/AlertCard'
@@ -55,16 +56,6 @@ const dayLabel = (date: string, i: number) => (i === 0 ? 'Today' : new Date(`${d
 
 const humidWord = (h: number) => (h < 40 ? 'Dry' : h < 60 ? 'Comfortable' : h < 75 ? 'Sticky' : 'Very humid')
 const uvWord = (u: number) => (u < 3 ? 'Low' : u < 6 ? 'Moderate' : u < 8 ? 'High' : u < 11 ? 'Very high: shade 10 AM-3 PM' : 'Extreme: shade 10 AM-3 PM')
-
-function useOnlineNow() {
-  const [on, setOn] = useState(() => navigator.onLine !== false)
-  useEffect(() => {
-    const f = () => setOn(navigator.onLine !== false)
-    addEventListener('online', f); addEventListener('offline', f)
-    return () => { removeEventListener('online', f); removeEventListener('offline', f) }
-  }, [])
-  return on
-}
 
 /** Re-renders once a minute and on return to the app, so the time of day and "rain next 12 h" never go stale on an open screen. */
 function useMinuteTick() {
@@ -100,7 +91,7 @@ export default function WeatherScreen() {
     const sub = liveQuery(() => db.kv.get(ZONE_KEY)).subscribe({ next: () => { if (first) first = false; else void putKv(FOLLOW_KEY, 'zone') }, error: () => {} })
     return () => sub.unsubscribe()
   }, [])
-  // the map follows the person, the forecast may follow a chosen home; an old fix abroad is not the person, so there both follow the zone (below)
+  // the forecast and the map share one point: the person's fix, or the picked zone. A zone picked by hand, or an old fix abroad, wins over the fix (below)
   const fix: LatLon | null = follow !== undefined && !zoneWins && (l.source === 'gps' || l.source === 'last') ? { lat: l.lat, lon: l.lon } : null
   const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
   const [locOff, setLocOff] = useState(false)
@@ -109,7 +100,8 @@ export default function WeatherScreen() {
   const bl = useBlendedWeather(point, { on: wxFlag('blend') }) // flag off: the direct forecast, exactly as before
   const { fc, offline, loading } = bl
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
-  const online = useOnlineNow()
+  const online = useOnline()
+  const pause = useWxPause()
   const warnAt = place ? alertRef(place) : point // the sentences below name this place: home for a phone abroad, never its foreign position
   const now = useNow() // a quake ages out of D-114 terms and a warning of its window while the screen stays open
   const warn = useMemo(() => (warnAt ? weatherWarning(alerts, warnAt, false) : null), [alerts, warnAt, now])
@@ -150,17 +142,19 @@ export default function WeatherScreen() {
     <div className="wx" data-testid="wx-root" data-contrast-bg={hex(lit)}>
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} /> : (
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
         <>
           {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
-          {warnAt && cyclones(alerts).length > 0 && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
+          {warnAt && hasAdvisory(alerts) && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
           <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
+          {/* shortcut: a failed forecast that later succeeds swaps this tree for Body, so the map card mounts again and asks Windy a second time; lift the map above the branch if that ever matters */}
+          {point && !loading && <LiveMapCard point={point} pause={pause} />}
         </>
       )}
-      {fix ? <LiveMapToggle loc={place?.source === 'zone' ? place.weather : fix} /> : l.source === 'pending' ? null : (
+      {point || l.source === 'pending' || follow === undefined ? null : ( // the empty card stays only when no point exists at all (D-125)
         <section aria-label="Live weather map" className="card wx-map wx-map-empty">
-          <p>{hasFix ? 'The map follows your phone, not the home area you picked.' : 'Your position is not known yet, so the map has nothing to centre on.'}</p>
-          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : hasFix ? 'Use my location' : 'Find me'}</button>
+          <p>Your position is not known yet, so the map has nothing to centre on.</p>
+          <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Find me'}</button>
         </section>
       )}
       <Section title="Official" testId="wx-official">
@@ -172,7 +166,7 @@ export default function WeatherScreen() {
         <div className="card wx-made">
           <h3>How this is made</h3>
           {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.</p>}
-          <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services." : 'Your rounded location is sent only to the weather service.'}</p>
+          <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
         </div>
       </Section>
     </div>
@@ -193,7 +187,7 @@ function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWar
   )
 }
 
-function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState }) {
+function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -227,7 +221,7 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
 
   // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads and Rain next 12 h takes the Sunrise tile. Dry: the 48-hour strip leads and Sunrise stays.
   const wet = raining || lines.some((x) => x.id === 'rain')
-  const storms = cyclones(alerts).length > 0
+  const storms = hasAdvisory(alerts, now)
   const rainCard = <RainMap key="rain" fc={fc} placeName={name} daily={daily} nextRain={rainNext} />
   const stripCard = strip.length > 0 && (
     <Section key="48" title="Next 48 hours" meta="every 3 h · rain chance" testId="wx-48">
@@ -255,7 +249,7 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
 
       <WarnRow warn={warn} unchecked={unchecked} name={name} />
 
-      {storms && <StormCard alerts={alerts} point={stormFrom} place={stormPlace} />}
+      {storms && <StormsNear alerts={alerts} point={stormFrom} place={stormPlace} pause={pause} />}
       {bl.blended && <OtherNotices alerts={bl.alerts} now={now} />}
 
       <section aria-label="What to do" className={`wx-action${main ? ' on' : ''}`} data-id={main?.id ?? 'none'} data-testid="wx-advice">
@@ -271,7 +265,11 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
 
       {wxFlag('blend') && (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>)}
 
+      <LiveMapCard point={point} pause={pause} />
+
       {wet ? <>{rainCard}{stripCard}</> : <>{stripCard}{rainCard}</>}
+
+      {!storms && <StormLineCard alerts={alerts} point={stormFrom} place={stormPlace} />}
 
       {days.length > 0 && <Section title="10 days" meta="rain chance" testId="wx-10">
         <ul className="card wx-days">

@@ -34,6 +34,15 @@ describe('CalmJack', () => {
     act(() => { location.hash = '#today'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
     expect(screen.getByTestId('sos-full')).toBeTruthy()
   })
+  it('the sheet stays open at #calm/listen (the same page) and closes on leaving it', () => {
+    location.hash = '#calm'
+    render(<CalmJack />)
+    open()
+    act(() => { location.hash = '#calm/listen'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
+    expect(screen.getByTestId('jack-sheet')).toBeTruthy()
+    act(() => { location.hash = '#today'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
+    expect(screen.queryByTestId('jack-sheet')).toBeNull()
+  })
   it('the sheet closes when the user leaves #calm', () => {
     location.hash = '#calm'
     render(<CalmJack />)

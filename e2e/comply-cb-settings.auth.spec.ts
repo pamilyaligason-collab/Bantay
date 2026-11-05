@@ -74,7 +74,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await setScheme(page, scheme)
     await page.getByTestId('viewas-row').click()
     await page.getByRole('dialog').getByRole('button', { name: /Mama/ }).first().click()
-    await expect(page.getByText(/Acting as Mama/).first()).toBeVisible()
+    await expect(page.getByText(/Viewing as Mama/).first()).toBeVisible()
     await page.goto('/#me')
     await expect(page.getByRole('button', { name: 'Edit name and photo, view only' })).toBeVisible()
     const locked = await page.locator('[data-testid="settings-list"] [aria-disabled="true"] b').allTextContents()

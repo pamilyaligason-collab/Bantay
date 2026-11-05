@@ -52,14 +52,36 @@
 .cm-net { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
 .cm-call { flex-direction: column; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
-.cm-media { position: relative; flex: none; width: 240px; min-height: 150px; display: grid; align-content: start; gap: 4px; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; }
-.cm-media b { font-size: 17px; }
-.cm-media { padding: 0 0 14px; overflow: hidden; }
+/* the board's row: 240 px cards with an 84 px icon head; never wider than a narrow screen */
+.cm-media { position: relative; flex: none; width: min(240px, calc(100vw - 48px)); display: flex; flex-direction: column; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; padding: 0 0 14px; overflow: hidden; }
+.cm-media b { font-size: 17px; line-height: 22px; font-weight: 600; margin-top: 2px; }
+.cm-media .cm-sub { font-size: 13px; line-height: 18px; margin-top: 4px; }
 .cm-media > :not(.cm-media-ic) { margin-inline: 14px; }
-.cm-media-ic { width: 100%; height: 64px; border-radius: 0; display: grid; place-items: center; background: rgb(185 228 218 / .16); color: var(--calm-mint); margin-bottom: 8px; }
-.cm-k { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cm-media-ic { flex: none; width: 100%; height: 84px; display: grid; place-items: center; background: #2C5560; color: #D3F2EA; margin-bottom: 12px; }
+.cm-media-ic > * { grid-area: 1 / 1; }
+.cm-k { font-size: 13px; line-height: 18px; font-weight: 600; color: #D3F2EA; }
+.cm-media .cm-sub { margin-bottom: 10px; }
+/* Play and the station's site share one line, so no radio state makes the row taller */
+.cm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin-top: auto; }
+.cm-play { flex: 1 1 88px; min-width: 0; }
+.cm-out { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); font-size: 15px; font-weight: 600; white-space: nowrap; }
+/* equaliser bars while a station plays, from the board; with reduced motion the glyph stays and the word Playing says it */
+.cm-eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 20px; }
+.cm-eq i { width: 4px; height: 20px; border-radius: 2px; background: var(--calm-mint); animation: cm-eq 1s ease-in-out infinite; }
+.cm-eq i:nth-child(2) { animation-delay: -.4s; } .cm-eq i:nth-child(3) { animation-delay: -.7s; } .cm-eq i:nth-child(4) { animation-delay: -.2s; }
+@keyframes cm-eq { 50% { height: 4px; } }
+.cm-media-ic:has(.cm-eq) > svg { display: none; }
+@media (prefers-reduced-motion: reduce) { .cm-eq { display: none; } .cm-media-ic:has(.cm-eq) > svg { display: block; } }
 .cm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.cm-video { padding: 0; overflow: hidden; }
+.cm-video { position: relative; padding: 0; overflow: hidden; flex: none; width: min(240px, calc(100vw - 48px)); box-sizing: border-box; scroll-snap-align: start; }
+.cm-video .lv-poster, .cm-video .lv-frame { border-radius: 0; }
+.cm-video .lv-yt { padding-inline: 14px; }
+/* a 240 px poster is 135 px tall: the 64 px play disc and a two-line caption overlap, so a smaller disc sits above a solid caption band that also covers words burned into a poster */
+.cm-video .lv-play { justify-content: flex-start; padding-top: 12px; }
+.cm-video .lv-btn { width: 44px; height: 44px; }
+.cm-video .lv-play b { font-size: 15px; line-height: 18px; }
+.cm-video .lv-play[data-thumb='on'] .lv-cap { padding: 8px 12px; background: rgb(0 0 0 / .72); }
+.cm-chan { display: block; padding: 0 14px 12px; }
 .bt:has(.cm-root) .tabbar.sh-tabs { background: var(--card); } /* the glass bar was see-through over the teal page: labels fell under 4.5:1 in light */
 
 /* compliance CD: the board's dashed "coming" pill, and the done-today pill */

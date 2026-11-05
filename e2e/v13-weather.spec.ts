@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 
 test('X6: board order, hero first, one [data-hero]', async ({ page }) => {
   await assertHero(page)
-  await assertOrder(page, ['wx-hero', 'wx-warn', 'wx-advice', 'wx-48', 'wx-rain', 'wx-10', 'wx-details', 'wx-official']) // dry at 00:30 (rain only after 8 PM): the strip leads; with rain likely or falling the rain card leads (adapt.test.tsx)
+  await assertOrder(page, ['wx-hero', 'wx-warn', 'wx-advice', 'wx-live-map', 'wx-48', 'wx-rain', 'wx-storms-none', 'wx-10', 'wx-details', 'wx-official']) // dry at 00:30 (rain only after 8 PM): the strip leads; with rain likely or falling the rain card leads (adapt.test.tsx)
 })
 
 test('X1: the whole screen is the sky; no band behind the cards; temperature centred and large', async ({ page }) => {
@@ -42,7 +42,7 @@ test('rain chart: one baseline, every column the same three rows; no Rain/Wind/S
   expect(m).toHaveLength(12)
   for (const k of ['track', 'fig', 'hour', 'h'] as const) expect(Math.max(...m.map((x) => x[k])) - Math.min(...m.map((x) => x[k]))).toBeLessThan(1)
   await expect(page.getByRole('radio', { name: /Storm track|Wind/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /Storm track|^Wind$/ })).toHaveCount(0)
+  await expect(page.getByTestId('wx-rain').getByRole('button', { name: /Storm track|^Wind$/ })).toHaveCount(0)
   await expect(page.getByText('Season and sun')).toHaveCount(0)
 })
 
@@ -104,12 +104,12 @@ test('contrast, light and dark', async ({ page }) => {
 
 test('map: no fix shows the prompt, a last fix centres the map', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Open live map' })).toHaveCount(0)
-  await expect(page.getByText(/nothing to centre on/)).toBeVisible()
+  await expect(page.getByTestId('wx-live-map')).toBeVisible() // D-125: open by default, on the home zone when there is no fix
+  await expect(page.getByText(/nothing to centre on/)).toHaveCount(0)
   await seedLast(page)
   await page.reload()
   await expect(page.getByTestId('place-last')).toBeVisible()
-  await page.getByRole('button', { name: 'Open live map' }).click()
-  const frame = page.locator('iframe').first()
+  const frame = page.getByTestId('wx-live-map').locator('iframe')
   await expect(frame).toHaveAttribute('src', /lat=10\.32/)
   await expect(frame).not.toHaveAttribute('src', /9\.65/)
 })
@@ -133,7 +133,6 @@ test('shots', async ({ page }) => {
   await shotsLightDark(page, 'weather')
   await seedLast(page)
   await page.reload()
-  await page.getByRole('button', { name: 'Open live map' }).click()
   await expect(page.locator('iframe').first()).toBeVisible()
   await shotsLightDark(page, 'weather-map')
 })

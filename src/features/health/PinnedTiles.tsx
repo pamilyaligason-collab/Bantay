@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
-import { Carousel, PreviewTile, Section, Sheet, type Tint } from '../look'
+import { PreviewTile, Section, Sheet, type Tint } from '../look'
+import { bpDue, metricDue, pickMover, useNudgeMover } from '../nudge/nudgeDue'
+import type { IconName } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
+import { useStorm } from '../today/useStorm'
+import { useWarnings } from '../today/WarningCard'
 import { useDoseLine } from './GlanceGrid'
 import { toCanonicalReading, type Reading } from './ranges'
 import { latestSteps } from './stepsDay'
@@ -30,13 +34,17 @@ const PINS: { code: PinCode; label: string }[] = [
   { code: 'bp_systolic', label: 'Blood pressure' }, { code: 'fasting_glucose', label: 'Fasting sugar' }, { code: 'heart_rate', label: 'Pulse' }, { code: 'weight', label: 'Weight' },
   { code: 'steps', label: 'Steps' }, { code: 'meds', label: 'Medicines' }, { code: 'visits', label: 'Next visit' }
 ]
-const METRIC: Partial<Record<PinCode, { kicker: string; unit: string; tint: Tint }>> = {
-  fasting_glucose: { kicker: 'Fasting sugar', unit: 'mg/dL', tint: 'amber' }, heart_rate: { kicker: 'Pulse', unit: 'bpm', tint: 'red' }, weight: { kicker: 'Weight', unit: 'kg', tint: 'teal' }
+const METRIC: Partial<Record<PinCode, { kicker: string; unit: string; tint: Tint; icon: IconName }>> = {
+  fasting_glucose: { kicker: 'Fasting sugar', unit: 'mg/dL', tint: 'amber', icon: 'drop' }, heart_rate: { kicker: 'Pulse', unit: 'bpm', tint: 'red', icon: 'heart' }, weight: { kicker: 'Weight', unit: 'kg', tint: 'teal', icon: 'scale' }
 }
-const cleanPins = (v: unknown): PinCode[] => (Array.isArray(v) ? PINS.map((p) => p.code).filter((c) => v.includes(c)) : DEFAULT_PINS)
+export const MAX_PINS = 4
+/** The stored list in its stored order, known codes only, no repeats; more than MAX_PINS in kv (an older save) shows the first four and is left as it is until the next change. */
+/** Which pinned metric moves first when several are due. */
+const NUDGE_ORDER: PinCode[] = ['bp_systolic', 'fasting_glucose', 'heart_rate', 'weight']
+const cleanPins = (v: unknown): PinCode[] => (Array.isArray(v) ? [...new Set(v.filter((c): c is PinCode => PINS.some((p) => p.code === c)))].slice(0, MAX_PINS) : DEFAULT_PINS)
 
 /** Pinned: live tiles chosen with Edit (kv health.pins, default BP, Medicines, Steps, Next visit). Real data only; an empty tile says so and offers its first step. */
-export function PinnedTiles({ personId, readings }: { personId: string; readings: Reading[] }) {
+export function PinnedTiles({ personId, readings, canLog = true }: { personId: string; readings: Reading[]; canLog?: boolean }) {
   const doses = useDoseLine(personId)
   const acts = useActivity(personId)
   const visit = nextVisitLine(useVisits(personId))
@@ -47,8 +55,15 @@ export function PinnedTiles({ personId, readings }: { personId: string; readings
   const bp = useMemo(() => bpThisWeek(readings), [readings])
   const steps = useMemo(() => latestSteps(acts), [acts])
   const none = doses === 'No medicines yet'
+  // D-125: a Due pill (and the one mover) only where this person can log and no warning or storm shows (as My day); steps, medicines and visits never nudge
+  const now = new Date()
+  const warn = useWarnings()
+  const storm = useStorm()
+  const calm = canLog && !warn.onScreen && !storm
+  const dueOf = (code: PinCode) => calm && (code === 'bp_systolic' ? bpDue(readings, now) : code === 'fasting_glucose' || code === 'heart_rate' || code === 'weight' ? metricDue(readings, code, now) : false)
+  const mover = useNudgeMover('health', loaded ? pickMover(NUDGE_ORDER.filter((c) => pins.includes(c)).map((c) => ({ key: c, due: dueOf(c) })), false) : null) // fixed priority, not the order the pins were saved in
   const tile = (code: PinCode) => {
-    if (code === 'bp_systolic') return <PreviewTile key={code} testId="glance-progress" tint="blue" kicker="Blood pressure" value={bp ?? '--/--'} valueSize="md" sub={bp ? 'This week' : 'None this week'} action={bp ? 'Open' : 'Log now'} href="#health/metric/bp_systolic" />
+    if (code === 'bp_systolic') return <PreviewTile key={code} testId="glance-progress" tint="blue" kicker="Blood pressure" value={bp ?? '--/--'} valueSize="md" sub={bp ? 'This week' : 'None this week'} action={bp ? 'Open' : 'Log now'} href="#health/metric/bp_systolic" due={dueOf(code)} move={mover === code} icon="gauge" />
     if (code === 'meds') return <PreviewTile key={code} testId="glance-meds" tint="green" kicker="Medicines" value={none ? 'None added' : doses ?? ' '} valueSize="md" sub={none ? 'Add yours to get reminders' : undefined} action={none ? 'Add or scan' : 'Open'} href="#health/meds" />
     if (code === 'steps') {
       return steps
@@ -58,15 +73,21 @@ export function PinnedTiles({ personId, readings }: { personId: string; readings
     if (code === 'visits') return <PreviewTile key={code} testId="glance-visit" tint="purple" kicker="Next visit" value={visit ? visit.text.replace(/^Next visit: /, '') : 'Not booked'} valueSize="md" sub={visit?.sub ?? (asks ? `${asks} question${asks === 1 ? '' : 's'} ready to ask` : undefined)} action="Open" href="#health/visits" />
     const m = METRIC[code]!
     const r = readings.filter((x) => x.test === code).map(toCanonicalReading).filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))[0] // glucose in mmol/L becomes mg/dL; a unit that cannot be compared is left out
-    return <PreviewTile key={code} testId={`glance-${code}`} tint={m.tint} kicker={m.kicker} value={r ? `${formatNumber(r.value)} ${r.unit || m.unit}` : '--'} valueSize="md" sub={r ? 'Latest' : 'None yet'} action={r ? 'Open' : 'Log now'} href={`#health/metric/${code}`} />
+    return <PreviewTile key={code} testId={`glance-${code}`} tint={m.tint} kicker={m.kicker} value={r ? `${formatNumber(r.value)} ${r.unit || m.unit}` : '--'} valueSize="md" sub={r ? 'Latest' : 'None yet'} action={r ? 'Open' : 'Log now'} href={`#health/metric/${code}`} due={dueOf(code)} move={mover === code} icon={m.icon} />
   }
-  const toggle = (c: PinCode) => setRaw(pins.includes(c) ? pins.filter((x) => x !== c) : cleanPins([...pins, c]))
+  const [full, setFull] = useState(false)
+  const toggle = (c: PinCode) => {
+    if (pins.includes(c)) { setFull(false); setRaw(pins.filter((x) => x !== c)); return }
+    if (pins.length >= MAX_PINS) { setFull(true); return }
+    setRaw(cleanPins([...pins, c]))
+  }
   return (
     <Section title="Pinned" testId="glance" link={{ onClick: () => setEditing(true), label: 'Edit' }}>
-      <Carousel label="Pinned" testId="pinned">{loaded ? pins.map(tile) : []}</Carousel>
+      <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? pins.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
       {pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>}
       {editing && (
-        <Sheet title="Pinned" onClose={() => setEditing(false)}>
+        <Sheet title="Pinned" onClose={() => { setEditing(false); setFull(false) }}>
+          <p className="sub" data-testid="pin-limit" role={full ? 'alert' : undefined}>{full ? `Four is the most. Untick one to make room for another.` : `Pick up to four. ${pins.length} of ${MAX_PINS} picked.`}</p>
           <ul className="grp pn-list">
             {PINS.map((p) => (
               <li key={p.code} className="row">

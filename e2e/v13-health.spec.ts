@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
-import { empty, full } from './fixtures/s16/health'
+import { empty, full, seed } from './fixtures/s16/health'
 import { assertHero, assertJackClear, assertNarrow, assertNoSideways, assertNoWrappedButtons, assertOrder, assertTargets, assertTextContrast, FIXED_CLOCKS, fullPageShot, setScheme, shotsLightDark } from './v13'
 
 // v13 lane H: the Health overview (hero, Pinned, Family health, Browse, For you), the view-only member page and the six sub-screens.
@@ -286,14 +286,67 @@ test('H17: the Body wiki figure is on the first screen; Jack stays clear', async
   await assertJackClear(page)
 })
 
+// D-128 allowance (the only one on Health): at scroll 0 Jack may sit over part of a right-hand Pinned tile, a large whole-card link, while more than half of it stays free. By position, because Edit can put any tile in that corner.
+// Nothing else on the page may be under him at rest, and nothing at all at the end of the scroll (he peeks aside there).
+// Measured covered share of the tile under him (rectangles, scroll 0, the test below prints these), tall 740 / 800 / 844 / 900 / 1000: 360 wide 13, 15, 16, 14, 0 %; 390 wide 12, 14, 15, 13, 0 %; 450 wide 10, 12, 13, 11, 0 %.
+// At 740 he is over the upper right tile, otherwise the lower right; the numbers are the same whichever tile Edit puts there. A booked visit with a long name makes the tile taller: 5 to 9 %.
+const JACK_ALLOW = '[data-testid="pinned"] .pn-cell:nth-child(even)'
 test('Jack stays clear of controls on the Health root and its sub-screens', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  await assertJackClear(page)
+  await assertJackClear(page, { at: 'rest', allow: JACK_ALLOW })
+  await assertJackClear(page, { at: 'end' })
   for (const h of ['#health/readings', '#health/labs', '#health/meds', '#health/visits', '#health/move']) {
     await at(page, h, /./)
     await assertJackClear(page)
   }
 })
+
+// Default pins, then Edit puts other tiles in the corner, then a booked visit with a long doctor's name makes the tiles taller.
+const pinChanges: { name: string; corner: string; flip: string[]; visit?: boolean }[] = [
+  { name: 'default', corner: 'glance-visit', flip: [] },
+  { name: 'Pulse in the corner', corner: 'glance-heart_rate', flip: ['Next visit', 'Pulse'] },
+  { name: 'Weight in the corner', corner: 'glance-weight', flip: ['Medicines', 'Weight'] },
+  { name: 'three pins', corner: 'glance-meds', flip: ['Blood pressure'] },
+  { name: 'booked visit', corner: 'glance-visit', flip: [], visit: true }
+]
+for (const set of pinChanges) {
+  test(`Jack over a right-hand Pinned tile at rest (${set.name}): more than half of it stays free, 360 to 450 wide, 740 to 1000 tall`, async ({ page }) => {
+    test.setTimeout(180_000)
+    await full(page, FIXED_CLOCKS[1])
+    if (set.visit) {
+      await seed(page, 'bantay-visits', { appointments: [{ clientId: 'a1', personId: 'me', startsAt: new Date(Date.parse(FIXED_CLOCKS[1]) + 3 * 86_400_000).toISOString(), purpose: 'Follow-up on the kidney and cholesterol results', provider: 'Dr. Alexandria Montgomery-Villanueva', facility: 'Sample Heart and Kidney Clinic', apptStatus: 'planned' }] })
+      await page.reload()
+      await expect(page.getByTestId('glance-visit')).toContainText('Follow-up on the kidney') // D-128 (11): the doctor line is not on the board
+    }
+    if (set.flip.length) {
+      await page.getByRole('button', { name: 'Edit' }).click()
+      for (const name of set.flip) await page.getByRole('checkbox', { name }).click()
+      await page.getByRole('button', { name: 'Close' }).click()
+      await expect(page.getByTestId(set.corner)).toBeVisible()
+    }
+    const rows: string[] = []
+    for (const w of [360, 390, 412, 450]) {
+      for (const h of [740, 800, 844, 900, 1000]) {
+        await page.setViewportSize({ width: w, height: h })
+        const m = await page.evaluate(async () => {
+          const el = document.querySelector('.bt .scroll') as HTMLElement
+          for (let i = 0; i < 3; i++) { el.scrollTop = 0; await new Promise((r) => requestAnimationFrame(() => r(null))) }
+          const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+          return Array.from(document.querySelectorAll('[data-testid="pinned"] .pn-cell')).map((c) => {
+            const t = c.getBoundingClientRect()
+            const ix = Math.max(0, Math.min(f.right, t.right) - Math.max(f.left, t.left))
+            const iy = Math.max(0, Math.min(f.bottom, t.bottom) - Math.max(f.top, t.top))
+            return { tile: c.querySelector('a')!.getAttribute('data-testid')!, covered: (ix * iy) / (t.width * t.height) }
+          }).filter((t) => t.covered > 0)
+        })
+        rows.push(`${w}x${h} ${m.map((t) => `${t.tile} ${(t.covered * 100).toFixed(0)}%`).join(', ') || 'clear'}`)
+        for (const t of m) expect(1 - t.covered, `free share of ${t.tile} at ${w}x${h} (a rectangle test, so the round button covers less than this)`).toBeGreaterThan(0.5)
+        await assertJackClear(page, { at: 'rest', allow: JACK_ALLOW })
+      }
+    }
+    console.log(`JACK ${set.name}: ${rows.join(' | ')}`)
+  })
+}
 
 test('S8: no lower-case full names in visible text on the Health screens', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])

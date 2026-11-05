@@ -41,7 +41,7 @@ export default function MoodCheck() {
         <div role="group" aria-label="How are you?" className="cm-faces">
           {FEELINGS.map(([f]) => <button type="button" className="cm-face" key={f} aria-label={WORD[f]} disabled={busy || lockMood} onClick={() => void answer(f)}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d={FACE[f]} /></svg>{WORD[f]}</button>)}
         </div>
-        {lockMood && can?.reason && <p className="cm-sub">View only. {can.reason}</p>}
+        {lockMood && can?.reason && <p className="cm-sub">Look only. {can.reason}</p>}
         {said && <p role="status" className="cm-sub">{said}</p>}
         {!said && <p className="cm-sub">{moodPromise(writer === true)}</p>}
       </div>

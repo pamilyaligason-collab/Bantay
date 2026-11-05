@@ -24,7 +24,7 @@ export function PhoneCheckCard({ result, onLater, onFixed }: { result: ProbeResu
   useEffect(() => { // coming back from the Android screen: check again
     let off: (() => void) | undefined
     let gone = false
-    try { void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) void recheck() })).then((h) => { if (gone) void h.remove(); else off = () => void h.remove() }).catch(() => undefined) } catch { /* no app plugin */ }
+    try { void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) void recheck() })).then((h) => { if (gone) void Promise.resolve(h.remove()).catch(() => undefined); else off = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined) } catch { /* no app plugin */ }
     return () => { gone = true; off?.() }
   }, [recheck])
   if (!top) return null

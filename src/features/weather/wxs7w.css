@@ -11,3 +11,37 @@
 .wx-bars li span[data-show="0"] { visibility: hidden; }
 .wx-storm { display: grid; gap: 10px; }
 .wx-rain .pill, .wx-storm .pill { box-sizing: border-box; max-width: 100%; white-space: normal; text-align: center; }
+
+/* S21 round 2: map height 300 (board S21Weather; the storm map 240 per S21WeatherStorm), status dot, the pause row with no box round it. */
+.wx-map .lm-box, .wx-map .lm-off { min-height: 300px; }
+.wx-map .sf-frame { height: 300px; }
+.wx-storm .lm-box, .wx-storm .lm-off { min-height: 240px; }
+.wx-storm .sf-frame { height: 240px; }
+/* Layer chips as the board draws them (S21Weather .mchip): white with dark ink, navy when on. Over the sky glass the old translucent fill read 3.8:1. */
+.wx-map .sf-chips .pill { background: #fff; color: #1C1B19; }
+.wx-map .sf-chips .pill[aria-pressed="true"] { background: #0A1A40; color: #fff; }
+/* The storm rows sit on the card's own glass: a second glass box inside it lightened the sky behind white text (4.3:1). */
+.wx-storm .grp { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; margin: 0; padding: 0; list-style: none; }
+.wx-storm .grp .row { padding-left: 0; padding-right: 0; }
+/* The sky is dark in both themes, so the dot has its own colours: --green and --amber are tuned for the light and dark pages and fall under 3:1 somewhere on this sky (the last test in wxDot.test.ts). WX_DOT in wxDot.test.ts holds these two values and measures them (3:1 or better on every sky stop). */
+.wx-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; background: #6EE7A8; }
+.wx-dot[data-tone="watch"] { background: #FFD58A; }
+.wx-h:has(.wx-dot) { display: flex; align-items: center; gap: 8px; }
+.wx-credit { display: flex; align-items: center; gap: 8px; }
+.wx-calmline { display: flex; align-items: center; gap: 10px; margin: 0; }
+.wx-pause { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.wx-pause-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wx-pause-t b { font-size: 15px; font-weight: 600; }
+.wx-pause-t .sub { margin: 0; }
+.wx-pause .st-sw { margin-right: 0; }
+
+/* S21 round 3: the map sits edge to edge in its card as on the board; the text round it keeps the card's 16 px. */
+.card.wx-bleed { padding: 0; overflow: hidden; gap: 0; }
+.wx-bleed .lm-box, .wx-bleed .sf-frame { border-radius: 0; }
+.wx-bleed .wx-storm { gap: 0; }
+.wx-pad { padding: 10px 16px; display: grid; gap: 8px; }
+.wx-pad .wx-note { margin: 0; }
+.wx-credit { margin: 0; }
+.wx-go { display: flex; align-items: center; justify-content: space-between; min-height: 44px; font-size: 15px; font-weight: 600; color: #fff; text-decoration: none; }
+.wx-checked { margin: -4px 0 0 20px; }
+.sf-chips.wx-pad { display: flex; }

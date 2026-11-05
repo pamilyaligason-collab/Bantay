@@ -10,6 +10,7 @@ import { JackSheet } from './JackSheet'
 import { firstName as firstOf } from './names'
 import { hasOwnHeader, type Tab } from './routes'
 import { useKv } from './useKv'
+import { useActing } from '../viewas/viewAs'
 import './shell.css'
 
 type Box = { left: number; right: number; top: number; bottom: number }
@@ -37,6 +38,7 @@ function coversText(hint: Box): boolean {
  *  While shown it marks `.bt[data-jack]` so the page content keeps clear of it (shell.css). */
 export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const [sheet, setSheet] = useState(false)
+  const { acting } = useActing()
   const [seen, setSeen, loaded] = useKv('askHintSeen', false)
   const [simple, , simpleLoaded] = useKv('mode.simple', false) // Simple mode has no Jack button, so its hint must not count as seen
   const [sos, setSos] = useState(false) // the full SOS screen, opened by a 3 s hold in the sheet
@@ -66,7 +68,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     el.addEventListener('scroll', on, { passive: true })
     return () => el.removeEventListener('scroll', on)
   }, [visible, hash])
-  const hint = visible && loaded && !seen && !sheet && tab === 'today'
+  const hint = visible && loaded && !seen && !sheet && tab === 'today' && !acting // viewing as someone: the hint would sit on the locked Log (D-128)
   const hintRef = useRef<HTMLParagraphElement>(null)
   const [fits, setFits] = useState(false) // the hint is measured before it shows; it stays hidden while it would cover text
 

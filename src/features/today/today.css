@@ -575,6 +575,7 @@
 /* review fixes: the plus keeps only its 32 px tile, a disabled plus looks disabled, inline text inside a button */
 .td-todo-plus.td-todo-ic { background: none; }
 .td-todo-plus:disabled { opacity: .5; }
+.td-todo-go:disabled { opacity: .55; } /* a locked Log or I'm OK (view only) must not look tappable */
 .td-blk { display: block; }
 /* T17: Log something else stays in the left part of the row while Jack and his tip sit bottom right; every My day row is the same height */
 .bt[data-jack] .td-day .td-todo-more { width: fit-content; max-width: max(calc(100% - 170px), 152px); padding-right: 0; } /* 152 px: icon, gap and the longest word ("something") at 320 px */

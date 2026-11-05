@@ -1,5 +1,6 @@
 import { QueueStrategy, TextToSpeech } from '@capacitor-community/text-to-speech'
 import { hasPlugin } from '../../../native/shell'
+import { SOS_STARTED_EVENT } from '../../sos/active'
 
 const RATE = 0.9 // a little slower than normal speech, easier to follow
 
@@ -31,3 +32,6 @@ export async function stopSpeaking(): Promise<void> {
   if (hasPlugin('TextToSpeech')) { try { await TextToSpeech.stop() } catch { /* already quiet */ } return }
   webSynth()?.cancel()
 }
+
+// Read-aloud must not talk over an SOS (this module is loaded whenever anything can be read aloud)
+if (typeof window !== 'undefined') window.addEventListener(SOS_STARTED_EVENT, () => void stopSpeaking())

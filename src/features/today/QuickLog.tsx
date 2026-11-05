@@ -149,7 +149,7 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
       {open === 'walk' && (
         <Sheet title="Walk" onClose={close} focusFirst={false}>
           {can
-            ? <p className="sub" role="status">Walk logs are yours only. Exit to log.</p> /* QuickWalk logs to the signed-in person, same lock as Move */
+            ? <p className="sub" role="status">Walk logs are yours only. Tap Back to me to log.</p> /* QuickWalk logs to the signed-in person, same lock as Move */
             : <QuickWalk embedded onSaved={(m) => { close(); notify(`Saved: walked about ${m} minutes`) }} />}
         </Sheet>
       )}

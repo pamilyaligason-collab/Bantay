@@ -8,7 +8,7 @@ import { goalOf } from './logic'
 import { supplementItems, type SuppItem } from './supplements'
 
 const NO_FOOD: FoodEntry[] = []
-const NO_WATER: WaterEntry[] = []
+export const NO_WATER: WaterEntry[] = [] // useWater's state before its first query answers (every answer is a new array)
 
 /** One person's meals from the last `days` days, live. */
 export function useFood(personId: string, days = 8): FoodEntry[] {

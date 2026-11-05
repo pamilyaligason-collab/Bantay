@@ -76,7 +76,7 @@ async function startPush(isStopped: () => boolean, onStop: (fn: () => void) => v
       P.addListener('pushNotificationReceived', () => { void pollAlerts() }), // in the foreground Android shows nothing itself: refresh the bell now
       P.addListener('pushNotificationActionPerformed', (a) => { try { location.hash = alertHash(String(a.notification?.data?.t), tabFor(a.notification?.data?.t)) } catch { /* no window */ } void pollAlerts() })
     ])
-    onStop(() => handles.forEach((h) => void h.remove().catch(() => undefined)))
+    onStop(() => handles.forEach((h) => void Promise.resolve(h.remove()).catch(() => undefined)))
     if (isStopped()) return
     if (!(await ensurePermission(P))) return
     await P.register()

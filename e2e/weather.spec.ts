@@ -12,6 +12,7 @@ async function mockForecast(page: Page, seen: string[] = []) {
 }
 
 test.use({ viewport: { width: 390, height: 844 } })
+test.beforeEach(async ({ page }) => { await page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' })) }) // the live map is on by default: tests stay offline
 
 test('weather: hero first, place toggle, forecast sections', async ({ page }) => {
   const seen: string[] = []
@@ -32,7 +33,7 @@ test('weather: hero first, place toggle, forecast sections', async ({ page }) =>
   await page.getByRole('button', { name: 'Show all 10 days' }).click()
   await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(10)
   await expect(page.getByRole('link', { name: /^PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
-  await expect(page.getByText('Your rounded location is sent only to the weather service.')).toBeVisible()
+  await expect(page.getByText('Your rounded location is sent only to the weather and map services.')).toBeVisible()
   expect(seen[0]).toContain('timezone=auto')
   expect(seen[0]).toContain('forecast_days=10')
   expect(seen[0]).toContain('latitude=9.65')
@@ -45,17 +46,21 @@ test('weather: hero first, place toggle, forecast sections', async ({ page }) =>
   expect(seen.some((u) => u.includes('latitude=6.2&'))).toBe(true)
 })
 
-test('weather: the live map stays closed behind "Open live map"', async ({ page }) => {
+test('weather: the live map loads by default, one frame, layers do not stack (D-125)', async ({ page }) => {
   await skipOnboarding(page)
+  await page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' })) // tests stay offline
   await mockForecast(page)
   await page.goto('/#weather')
   await expect(page.locator('.wx-temp')).toBeVisible()
   await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } }])
   await page.reload()
   await expect(page.locator('.wx-temp')).toBeVisible()
-  await expect(page.locator('iframe')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Open live map' }).click()
-  await expect(page.getByRole('group', { name: 'Weather layer' })).toBeVisible()
+  const card = page.getByTestId('wx-live-map')
+  await expect(card.getByRole('group', { name: 'Weather layer' })).toBeVisible()
+  await expect(page.locator('iframe')).toHaveCount(1)
+  await card.getByRole('button', { name: 'Temp' }).click()
+  await expect(page.locator('iframe')).toHaveCount(1)
+  await expect(page.locator('iframe')).toHaveAttribute('src', /overlay=temp/)
 })
 
 test('safety Right now weather row opens #weather; the old page keeps maps behind Open live map', async ({ page }) => {
@@ -97,15 +102,15 @@ test('weather offline: the cached forecast shows "as of"', async ({ page, contex
   await expect(page.getByText(/as of \d{1,2}:\d\d [AP]M/)).toBeVisible()
 })
 
-test('weather: the live map and Zoom Earth follow my last fix (Conel here), not 12N 128E', async ({ page }) => {
+test('weather: the live map follows my last fix (Conel here), not 12N 128E', async ({ page }) => {
   await skipOnboarding(page)
+  await page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' }))
   await mockForecast(page)
   await page.goto('/#weather')
   await expect(page.locator('.wx-temp')).toBeVisible()
   await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { lat: 6.2, lon: 125.19, at: Date.now() } }])
   await page.reload()
-  await page.getByRole('button', { name: 'Open live map' }).click()
-  await expect(page.getByRole('link', { name: /Zoom Earth/ })).toHaveAttribute('href', /#view=6\.20,125\.19,5z/)
+  await expect(page.getByTestId('wx-live-map').locator('iframe')).toHaveAttribute('src', /lat=6\.20&lon=125\.19/)
 })
 
 test('today weather card: from=action only when an action line shows, and it is the Weather screen line', async ({ page }) => {
@@ -126,7 +131,7 @@ test('weather: rain card shows hourly bars + PAGASA radar link, no layer tabs, n
   await expect(card.getByRole('list', { name: 'Chance of rain, next 12 hours' }).getByRole('listitem')).toHaveCount(12)
   await expect(card.getByRole('link', { name: /Radar images from PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
   await expect(card.getByRole('button')).toHaveCount(0) // no Rain/Wind/Storm tabs; a storm block shows only while one is listed
-  await expect(page.locator('iframe')).toHaveCount(0)
+  await expect(page.getByTestId('wx-rain').locator('iframe, img')).toHaveCount(0)
 })
 
 test('today weather card: a calm day opens plain #weather', async ({ page }) => {

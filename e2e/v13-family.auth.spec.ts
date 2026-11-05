@@ -46,7 +46,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('needs')).not.toContainText('Nasal')
       await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
       await expect(page.getByTestId('people-row')).toHaveCount(3)
-      await page.getByTestId('people').getByRole('button', { name: /All people/ }).click()
+      await page.getByTestId('people').getByRole('button', { name: /See all/ }).click()
       await expect(page.getByTestId('people-row')).toHaveCount(4)
       await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(4)
       await expect(page.getByTestId('planrow')).toBeVisible()
@@ -82,9 +82,9 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(ac).toContainText(/No step readings for/)
     })
 
-    test('F-lane shape: People <= 260, plan rows <= 72, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
+    test('F-lane shape: People <= 296, plan rows <= 72, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
       await openFamily(page)
-      expect((await page.getByTestId('people').boundingBox())!.height).toBeLessThanOrEqual(260)
+      expect((await page.getByTestId('people').boundingBox())!.height).toBeLessThanOrEqual(296) // measured 286 at 390 x 844 (title, 3 rows, the 48 px foot row); a fourth row adds about 66, so the fold still fails here if it stops folding. Was 260 before the foot row.
       await expect(page.getByRole('button', { name: /I'm OK/ })).toHaveCount(0)
       await expect(page.getByTestId('papersrow')).toContainText('Nothing waiting') // the fixture queue is empty; the counts are unit tested (queueWords)
       if (SHOTS) { await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = 0 }); await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/family-${scheme}.png` }) }

@@ -1,9 +1,12 @@
-/* View as (S16 L6): the "Acting as" bar and the picker. Tokens only, so light and dark both follow (ML-39). */
-.va-bar { flex: none; margin: 10px 16px 0; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--warn-bg); color: var(--ink); border: 1px solid var(--amber); position: relative; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
-.va-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
-.va-row b { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
-.va-exit { flex: none; min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; white-space: nowrap; }
-.va-note { margin: 0; padding-right: 6px; font-size: 13px; line-height: 1.35; color: var(--ink); }
+/* View as (S16 L6): the "Viewing as" bar and the picker. Own tokens per theme, each pair checked in viewas.contrast.test.ts (ML-39). Light = boards S21ViewAsToday / S21ViewAsMember. */
+:root { --va-bar: #F3D9A6; --va-ink: #3F2603; --va-btn: #3F2603; --va-btn-ink: #FFFFFF; --va-m-bar: #FDF1DC; --va-m-ink: #5C3204; --va-m-btn: #FFFFFF; --va-m-btn-ink: #7A4508; --va-m-edge: #7A4508; }
+:root[data-theme="dark"] { --va-bar: #4A3510; --va-ink: #FBE7B8; --va-btn: #FBE7B8; --va-btn-ink: #3F2603; --va-m-bar: #3A2E18; --va-m-ink: #F5D9A0; --va-m-btn: #F2F0EB; --va-m-btn-ink: #5C3204; --va-m-edge: #F2F0EB; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --va-bar: #4A3510; --va-ink: #FBE7B8; --va-btn: #FBE7B8; --va-btn-ink: #3F2603; --va-m-bar: #3A2E18; --va-m-ink: #F5D9A0; --va-m-btn: #F2F0EB; --va-m-btn-ink: #5C3204; --va-m-edge: #F2F0EB; } }
+.va-bar { flex: none; margin: 10px 16px 0; padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--va-bar); color: var(--va-ink); position: relative; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
+.va-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 40px; }
+.va-row b { flex: 1 1 120px; min-width: 0; font-size: 15px; font-weight: 700; line-height: 1.25; overflow-wrap: break-word; } /* wraps the button under the title at 195 px; never breaks the title letter by letter */
+.va-exit { flex: none; margin-left: auto; min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--va-btn); color: var(--va-btn-ink); font: inherit; font-size: 15px; font-weight: 700; white-space: nowrap; }
+.va-note { margin: 0; padding-right: 6px; font-size: 13px; line-height: 1.35; color: var(--va-ink); }
 .va-sos { position: fixed; top: env(safe-area-inset-top, 0); left: 0; right: 0; z-index: 2147483000; margin: 0; border-radius: 0 0 14px 14px; }
 .va-sheet-wrap { position: fixed; inset: 0; z-index: 40; background: rgba(10, 15, 10, .4); display: flex; align-items: flex-end; justify-content: center; }
 .va-sheet { background: var(--card); color: var(--ink); width: 100%; max-width: 520px; box-sizing: border-box; border-radius: 28px 28px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 12px; max-height: 85dvh; overflow-y: auto; }
@@ -11,3 +14,15 @@
 .va-sheet p { margin: 0; font-size: 15px; line-height: 1.4; color: var(--muted); }
 .va-pick { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 17px; font-weight: 600; text-align: left; width: 100%; box-sizing: border-box; }
 .va-pick[disabled] { opacity: .55; }
+/* D-125: View as from the switcher sheet and the member page. */
+.va-open { flex: none; display: inline-flex; align-items: center; gap: 5px; min-height: 44px; min-width: 44px; margin-left: 8px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--tint-purple); color: var(--tint-purple-ink); font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.va-open[disabled] { opacity: .55; }
+.mh-bar.mh-stack { flex-direction: column; align-items: stretch; gap: 8px; background: var(--va-m-bar); color: var(--va-m-ink); } /* text above, buttons below (board S21ViewAsMember): one word per line at 390 was the old row */
+.mh-stack .grow { flex: none; }
+.mh-acts { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.mh-acts > .btn, .mh-acts > a.btn { flex: 1 1 auto; justify-content: center; text-align: center; padding-top: 6px; padding-bottom: 6px; }
+.mh-acts > .mh-back { background: var(--va-m-btn); color: var(--va-m-btn-ink); border: 1.5px solid var(--va-m-edge); }
+/* Viewing: the bar takes the scroller's top, so Discover's season card and Family's Activity switch land beside Jack at rest. They stop short of his column (right 14 + 62 px), as Safety's Right now rows do. */
+.bt:has(.va-bar)[data-jack] [data-testid="season-row"] { margin-right: 76px; }
+.bt:has(.va-bar)[data-jack] [data-testid="activity"] .ac .segd { margin-right: 62px; }
+.bt:has(.va-bar)[data-jack] section.sec > .sec-h { justify-content: flex-start; gap: 16px; } /* a section link follows its title, as Discover, Family and Health do (D-128); Safety's Sources and All 17 land beside Jack while viewing */

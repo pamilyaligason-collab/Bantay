@@ -17,7 +17,7 @@ export default function CalmJack() {
   const [name, setName] = useState('')
   useEffect(() => {
     const on = () => setJack(true)
-    const leave = () => { if (location.hash !== '#calm') setJack(false) }
+    const leave = () => { if (!/^#calm(\/|$)/.test(location.hash)) setJack(false) }
     window.addEventListener(CALM_JACK_EVENT, on)
     window.addEventListener('hashchange', leave)
     return () => { window.removeEventListener(CALM_JACK_EVENT, on); window.removeEventListener('hashchange', leave) }

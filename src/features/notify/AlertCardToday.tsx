@@ -2,6 +2,7 @@ import FmAvatar from '../family/FmAvatar'
 import { useFamilyPeople } from '../family/roster'
 import { shortName } from '../inbox/build'
 import { Icon } from '../shell/Icon'
+import { useActing } from '../viewas/viewAs'
 import { markSeen, type AlertRow } from './store'
 import { inAppText } from './inApp'
 import { TEMPLATES, type NotifyKind, type TemplateId } from './templates'
@@ -24,8 +25,10 @@ export function pickAlert(rows: AlertRow[]): AlertRow | null {
 export function AlertCardToday() {
   const rows = useAlertRows()
   const { people } = useFamilyPeople()
+  const { acting } = useActing()
   const row = pickAlert(rows)
-  if (!row) return null
+  // the admin's own family alert is not the viewed person's; sos and rollcall are safety and stay
+  if (!row || (acting && row.kind !== 'sos' && row.kind !== 'rollcall')) return null
   const who = people.find((p) => p.id === row.personId)
   const name = shortName(who?.name)
   const t = inAppText(row, { name })

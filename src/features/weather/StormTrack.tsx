@@ -4,6 +4,7 @@ import { useKv } from '../safety/store'
 import { cyclones, since, stormLine, stormName } from '../safety/LiveMaps'
 import { liveSignals } from '../safety/stormMode'
 import { Icon } from '../shell/Icon'
+import { GoRow } from './WxLive'
 
 const BULLETIN = 'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bulletin'
 
@@ -22,7 +23,7 @@ export default function StormTrack({ alerts, point, placeName }: { alerts: Alert
           ))}
         </ul>
       )}
-      <p className="wx-sub">From GDACS and Open-Meteo, checked every 10 minutes; PAGASA bulletin: open.</p>
+      <GoRow href="#safety/storms">Storm tracker</GoRow>
       <a className="pill primary block" href={BULLETIN} target="_blank" rel="noopener noreferrer">PAGASA bulletin <Icon name="out" size={18} /></a>
     </div>
   )

@@ -2,6 +2,8 @@ import { db } from '../../db'
 
 export const SOS_ACTIVE_KEY = 'sos.active'
 export const SOS_CONTACTS_KEY = 'sos.contacts'
+/** Fired once by startSos, the one place every SOS path goes through: the radio, a video and read-aloud stop (useRadio, LiteVideo, discover/listen/speech). A voice note the person started in Messages is a plain audio control and is not stopped. An event, so sos never imports them. */
+export const SOS_STARTED_EVENT = 'sos:started'
 /** The SOS in progress. `recorded` = the row is in the outbox; `at` = end of the hold (ISO, phone clock). Kept so a WebView killed during a long call resumes on the status screen. */
 export interface SosActive { id: string; step: 'recorded' | 'calling' | 'texting' | 'status'; at: string; contactIndex: 0 | 1 }
 
@@ -14,8 +16,10 @@ let fresh: { id: string; at: string } | null = null
 
 /** The hold finished: keep it in memory at once (the screen mounts in the same tick); the screen saves it to kv once it is recorded. */
 export function startSos(now = Date.now()): { id: string; at: string } {
-  fresh = { id: crypto.randomUUID(), at: new Date(now).toISOString() }
-  return fresh
+  const started = { id: crypto.randomUUID(), at: new Date(now).toISOString() }
+  fresh = started
+  window.dispatchEvent(new Event(SOS_STARTED_EVENT))
+  return started
 }
 /** SosScreen takes the just-started SOS exactly once; null when it was mounted to resume. */
 export function takeFresh(): { id: string; at: string } | null {

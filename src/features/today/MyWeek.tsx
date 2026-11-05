@@ -6,7 +6,7 @@ import { ldb, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
 import { DAYS } from './myWeekLogic'
 
-const NO_READINGS: Reading[] = []
+const NO_READINGS: Reading[] = [] // the state before the first query answers; every answer is a new array
 const NO_TAKES: MedTaken[] = []
 
 /** This person's readings and dose takes from the last 7 days (plus a day of slack for time zones), live. */
@@ -22,5 +22,5 @@ export function useWeekData(personId: string) {
     const c = liveQuery(() => hdb.thresholds.toArray()).subscribe({ next: (ts) => setDoctor(bpDoctorOf(ts, personId)), error: () => undefined }) // the doctor's BP targets, so the chip matches Health
     return () => { a.unsubscribe(); b.unsubscribe(); c.unsubscribe() }
   }, [personId])
-  return { readings, takes, doctor }
+  return { readings, takes, doctor, loaded: readings !== NO_READINGS }
 }

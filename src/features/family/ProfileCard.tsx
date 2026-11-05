@@ -15,7 +15,7 @@ export function idLine(c: Pick<MedicalId, 'name' | 'age' | 'bloodType'>, fallbac
 const initial = (n: string) => (n.trim().charAt(0) || '?').toUpperCase()
 
 /** The Family tab's hero (D-97, P-2): the person's Medical ID as a dense card that grows to fit every field. Same reads as `medid/MedicalId.tsx`: name, age, blood type, allergies, conditions, medicines, call.
- *  While acting as someone (L6) it shows that member's card and the edit pencil is off ("Exit to edit"). */
+ *  While acting as someone (L6) it shows that member's card and the edit pencil is off ("Tap Back to me to edit"). */
 export default function ProfileCard() {
   const personId = useActingPersonId()
   const { acting, name: actingName } = useActing()
@@ -31,7 +31,7 @@ export default function ProfileCard() {
       <div className="fm2-id-top">
         <span className="fm2-av56" aria-hidden="true">{photo ? <img src={photo} alt="" /> : initial(card.name || actingName)}</span>
         <b className="fm2-id-name">{idLine(card, actingName || 'Me')}</b>
-        <button type="button" className="fm2-edit" aria-label="Edit name and photo" disabled={acting} title={acting ? 'Exit to edit' : undefined} onClick={() => { location.hash = 'me' }}><Icon name="photo" size={24} /></button>
+        <button type="button" className="fm2-edit" aria-label="Edit name and photo" disabled={acting} title={acting ? 'Tap Back to me to edit' : undefined} onClick={() => { location.hash = 'me' }}><Icon name="photo" size={24} /></button>
       </div>
       {(card.bloodType === null || card.allergies.length > 0 || card.missing.includes('allergies')) && (
         <div className="fm2-chips">
@@ -62,7 +62,7 @@ export default function ProfileCard() {
       <a className="btn fm2-doc" href={medid}><Icon name="cross" size={20} />Show to a doctor</a>
       <div className="fm2-two">
         {acting
-          ? <button type="button" className="btn2" disabled aria-label="Scan, view only" title="Exit to scan"><Icon name="lock" size={20} />View only</button>
+          ? <button type="button" className="btn2" disabled aria-label="Scan, view only" title="Tap Back to me to scan"><Icon name="lock" size={20} />View only</button>
           : <a className="btn2" href="#scan"><Icon name="camera" size={20} />Scan</a>}
         <a className="btn2" href="#family/papers"><Icon name="file" size={20} />Papers{papers > 0 && <span className="fm2-badge" aria-label={`${papers} to check`}>{papers}</span>}</a>
       </div>

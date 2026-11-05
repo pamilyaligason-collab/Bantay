@@ -24,8 +24,8 @@ test('an admin with no carer link gets the one reason sentence on the bar, and t
   await expect(sheet.getByRole('button', { name: 'Rey' })).toHaveCount(0) // you cannot act as yourself
   await sheet.getByRole('button', { name: 'Mama' }).click()
   const bar = page.getByTestId('viewas-bar').first()
-  await expect(bar).toContainText('Acting as Mama')
-  await expect(bar).toContainText('You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.')
+  await expect(bar).toContainText('Viewing as Mama')
+  await expect(bar).toContainText('Look only. You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.')
   expect(seen.audits).toEqual([{ p_person: 'p-mama' }])
 })
 
@@ -33,7 +33,7 @@ test('the acting id is memory only: a reload returns to yourself and nothing is 
   await mockActing(page, adminWriter)
   await openPicker(page)
   await page.getByRole('dialog', { name: 'View as' }).getByRole('button', { name: 'Mama' }).click()
-  await expect(page.getByTestId('viewas-bar').first()).toContainText('Acting as Mama')
+  await expect(page.getByTestId('viewas-bar').first()).toContainText('Viewing as Mama')
   const stored = await page.evaluate(async () => {
     const ls = Object.entries(localStorage).filter(([k, v]) => /acting|viewas/i.test(k) || /acting/i.test(String(v))).map(([k]) => k)
     const dbs = await indexedDB.databases()
@@ -44,7 +44,7 @@ test('the acting id is memory only: a reload returns to yourself and nothing is 
   await expect(page.getByTestId('viewas-bar')).toHaveCount(0)
 })
 
-test('Exit on the bar ends it, and the bar has no horizontal overflow at 360', async ({ page }) => {
+test('Back to me on the bar ends it, and the bar has no horizontal overflow at 360', async ({ page }) => {
   await mockActing(page, adminNoLink)
   await page.setViewportSize({ width: 360, height: 800 })
   await openPicker(page)
@@ -52,7 +52,7 @@ test('Exit on the bar ends it, and the bar has no horizontal overflow at 360', a
   const bar = page.getByTestId('viewas-bar').first()
   const box = await bar.boundingBox()
   expect(box!.x + box!.width).toBeLessThanOrEqual(360)
-  await bar.getByRole('button', { name: 'Exit' }).click()
+  await bar.getByRole('button', { name: 'Back to me' }).click()
   await expect(page.getByTestId('viewas-bar')).toHaveCount(0)
 })
 

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { mock } from './health-auth-mock'
-import { skipOnboarding } from './helpers'
+import { skipOnboarding, stubWindy } from './helpers'
 
 // Session 16 G-1 / N-4: at 200% text (195 px) no text on any screen may break one or two letters per line, light and dark.
 // Session 15 checked only the first screen; the rain pill inside the weather card was missed. Clock frozen (ML-38).
@@ -45,6 +45,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test.setTimeout(180_000)
     await page.clock.setFixedTime(NOW)
     await skipOnboarding(page)
+    await stubWindy(page)
     await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])))
     await mock(page)
     // rain from 10 AM to 5 PM: the "Rain likely" action pill of refs/1.png

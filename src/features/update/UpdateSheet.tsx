@@ -29,6 +29,7 @@ type Api = Pick<AppUpdaterPlugin, 'info' | 'openInstallPermission'> & JobApi
 
 export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Latest; api?: Api; onClose?: () => void }) {
   const [canInstall, setCanInstall] = useState<boolean | null>(null)
+  const [permFail, setPermFail] = useState(false) // Open Settings could not open
   const [have, setHave] = useState('') // the installed shell's versionName, for "You have 2.0.0"
   const [wifiOnly, setWifiOnly] = useKv<boolean>('update.wifiOnly', true)
   const job = useJob()
@@ -43,11 +44,11 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
     const onVis = () => { if (document.visibilityState === 'visible') recheck() }
     document.addEventListener('visibilitychange', onVis)
     window.addEventListener('focus', recheck)
-    const resume = App.addListener('resume', recheck)
+    const resume = Promise.resolve(App.addListener('resume', recheck)).catch(() => undefined)
     return () => {
       alive.current = false
       document.removeEventListener('visibilitychange', onVis); window.removeEventListener('focus', recheck)
-      void Promise.resolve(resume).then((h) => h.remove(), () => undefined)
+      void Promise.resolve(resume).then((h) => h?.remove()).catch(() => undefined)
     }
   }, [recheck])
 
@@ -78,8 +79,9 @@ export function UpdateSheet({ latest, api = AppUpdater, onClose }: { latest: Lat
                 <ol className="sh-sub" style={{ margin: '4px 0 0', paddingLeft: 22 }}><li>Turn on Allow.</li><li>Go back.</li><li>Tap Install update.</li></ol>
                 <div className="sh-row up-between">
                   <span className="sh-grow">Allow Bantay to install updates</span>
-                  <button type="button" className="sh-pill sh-ghost sh-small up-card" onClick={() => void api.openInstallPermission()}>Open Settings</button>
+                  <button type="button" className="sh-pill sh-ghost sh-small up-card" onClick={() => { setPermFail(false); Promise.resolve().then(() => api.openInstallPermission()).catch(() => { if (alive.current) setPermFail(true) }) }}>Open Settings</button>
                 </div>
+                {permFail && <div className="sh-sub" role="status">Settings did not open. Open Android Settings, find Bantay, and turn on Allow.</div>}
               </div>
             )}
             {waiting && <p className="sh-sub up-c up-m0" role="status">Waiting for Wi-Fi. The update starts when you connect, or turn off Wi-Fi only below.</p>}

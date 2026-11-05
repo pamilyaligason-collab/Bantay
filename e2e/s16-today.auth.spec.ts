@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
-import { assertHero, assertJackClear, assertNoWrappedButtons, assertTargets, assertTextContrast, setScheme } from './v13'
-import { startToday, type Variant } from './fixtures/s16/today'
+import { assertHero, assertJackClear, assertJackHit, assertNoWrappedButtons, assertTargets, assertTextContrast, setScheme } from './v13'
+import { QUAKE, startToday, type Variant } from './fixtures/s16/today'
 
 declare const process: { env: Record<string, string | undefined> }
 
@@ -137,5 +137,17 @@ for (const scheme of ['light', 'dark'] as const) {
     await assertJackClear(page, { at: 'end' }) // at rest: lane T (v13-foundation JACK_REST_KNOWN)
     await page.locator('main.scroll').evaluate((el) => { el.scrollTop = 0 })
     await shot(page, 'l1', `weather-${scheme}`)
+  })
+}
+
+// Round 2 final review: a warning on Today that leaves Jack on screen (a small far quake is a compact row; the red card and the storm card hide him). No allowance: nothing may touch him at rest.
+const FAR_QUAKE = { ...QUAKE, id: 'q2', level: 'Magnitude 4.2', what: 'Magnitude 4.2, far north.', where: 'Off Sample Province', doNow: 'Nothing to do.', lat: 18.5, lon: 121.0 }
+for (const [w, h] of [[360, 800], [390, 844]] as const) {
+  test(`Today with a far quake warning (${w}x${h}): no control under Jack at rest`, async ({ page }) => {
+    await startToday(page, 'calm', { alert: FAR_QUAKE })
+    await page.setViewportSize({ width: w, height: h })
+    await expect(page.getByTestId('warning-card')).toBeVisible()
+    await expect(page.locator('.sh-jackfab')).toBeVisible() // Jack is on screen, so the check below is not vacuous
+    await assertJackHit(page, [], `today warning ${w}x${h}`)
   })
 }

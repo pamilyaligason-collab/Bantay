@@ -17,7 +17,7 @@ export const PENDING_GRACE = 2000
 let job: Job = { phase: 'idle', done: 0, total: 0 }
 let path: string | null = null // verified APK of cur.latest
 let cur: { latest: Latest; api: JobApi } | null = null
-let handles: Array<Promise<{ remove: () => void | Promise<void> }> | undefined> = []
+let handles: Array<Promise<{ remove: () => void | Promise<void> } | undefined>> = []
 let stopWatch: (() => void) | null = null
 const subs = new Set<() => void>()
 const set = (p: Partial<Job>) => {
@@ -28,7 +28,7 @@ const set = (p: Partial<Job>) => {
 }
 export const getJob = () => job
 export const useJob = (): Job => useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f) } }, () => job)
-const unlisten = () => { handles.forEach((h) => void h?.then((x) => x.remove(), () => undefined)); handles = [] }
+const unlisten = () => { handles.forEach((h) => void h.then((x) => x?.remove()).catch(() => undefined)); handles = [] }
 export function resetJob() { unlisten(); path = null; cur = null; set({ phase: 'idle', done: 0, total: 0 }) }
 const codeOf = (e: unknown) => { const x = e as { code?: unknown; message?: unknown } | null; return String(x?.code ?? x?.message ?? '') }
 
@@ -54,7 +54,7 @@ function watchPending() {
   const back = () => { if (document.visibilityState !== 'visible') return; clearTimeout(t); t = setTimeout(() => void check(), PENDING_GRACE) }
   document.addEventListener('visibilitychange', back)
   const resume = Promise.resolve(App.addListener('resume', back)).catch(() => undefined)
-  return () => { clearTimeout(t); document.removeEventListener('visibilitychange', back); void resume.then((h) => h?.remove(), () => undefined) }
+  return () => { clearTimeout(t); document.removeEventListener('visibilitychange', back); void resume.then((h) => h?.remove()).catch(() => undefined) }
 }
 
 async function install(api: JobApi) {
@@ -91,6 +91,7 @@ export async function runJob(latest: Latest, api: JobApi) {
   if (cur && cur.latest.versionCode !== latest.versionCode) path = null
   cur = { latest, api }
   unlisten()
+  // each listener promise gets its catch at once: a rejection before unlisten() runs would otherwise be unhandled
   handles = [
     api.addListener?.('progress', (p) => { if (job.phase === 'downloading') set({ done: p.done, total: p.total }) }),
     api.addListener?.('installResult', (r) => {
@@ -98,7 +99,7 @@ export async function runJob(latest: Latest, api: JobApi) {
       if (r.status === 'success') set({ phase: 'success' })
       else set({ phase: { error: 'install' } }) // failure or cancel: file stays for a retry
     })
-  ] as typeof handles
+  ].filter(Boolean).map((h) => Promise.resolve(h).catch(() => undefined)) as typeof handles
   if (path) { set({ phase: 'pending' }); await install(api); return }
   set({ phase: 'downloading', done: 0, total: latest.size })
   try {

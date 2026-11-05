@@ -10,12 +10,19 @@ import { ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } fr
 import '../shell/shell.css'
 import './privacy.css'
 
-// Where the data goes (contract D-78 copy rule): exactly what this build uses. No Firebase, Sentry or SMS gateway is named or used.
+// Where the data goes (contract D-78 copy rule): exactly what this build uses. No Sentry or SMS gateway. Firebase Cloud Messaging is used in the Android app only: the release build adds the owner's git-ignored google-services.json (APK 2.7.0 was built with it), so push registers once notifications are allowed (notify/fcm.ts). Web and a build without that file send none.
 export const PROCESSORS: { name: string; what: string }[] = [
   { name: 'Supabase', what: 'your records and family messages' },
-  { name: 'Open-Meteo and RainViewer', what: 'weather and rain maps; your place rounded to about 1 km' },
-  { name: 'OpenRouter', what: 'the AI models behind Jack and photo reading, only when you use them (zero data retention)' },
+  { name: 'Open-Meteo and Windy', what: 'weather forecast and live map; your place rounded to about 1 km' },
+  { name: 'Wikipedia', what: 'the "On this day" facts in Discover; it receives today\'s date only, never your name or place' },
+  { name: 'YouTube', what: 'picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap' },
+  { name: 'Radio Paradise and Radio Swiss Classic', what: 'only when you tap Play on a radio card; the station sees your internet address' },
+  { name: 'OpenStreetMap', what: 'street map pictures on the Safety maps; it sees your internet address and the area shown' },
+  { name: 'Ventusky, HazardHunterPH and PAGASA Panahon', what: 'the map panels in Safety, only after you open a panel; Ventusky gets the map centre rounded to about 1 km, the other two get no place from the app; each sees your internet address and anything you type in its panel' },
+  { name: 'MedlinePlus', what: 'plain health reads; it receives the condition, medicine or search words you open, never your name' },
+  { name: 'OpenRouter', what: 'the AI models behind Jack and photo reading, only when you use them (zero data retention); what you ask Jack goes through a relay on the family owner\'s own server first; a photo you scan goes from a function on the family\'s own Supabase project straight to OpenRouter, with no relay' },
   { name: 'Google Drive', what: 'copies of papers, in the folder the family owns' },
+  { name: 'Firebase Cloud Messaging (Google)', what: 'only in the Android app, when you allow notifications; it carries a short alert in set words, no names or readings, and Google sees your phone\'s push address' },
   { name: 'Cloudflare Pages', what: 'hosting for the app' }
 ]
 
@@ -126,6 +133,7 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
       <div className="sh-card pv-where">
         <b>Where your data goes</b>
         <ul>{PROCESSORS.map((p) => <li key={p.name}><b>{p.name}</b>: {p.what}</li>)}</ul>
+        <p className="sh-sub">Other official sites open in your browser only when you tap their link.</p>
         <a className="pv-link" href="/privacypolicy.html" target="_blank" rel="noopener">Full privacy notice</a>
       </div>
     </div>

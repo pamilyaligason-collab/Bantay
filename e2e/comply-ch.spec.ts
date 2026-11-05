@@ -7,7 +7,7 @@ import { FIXED_CLOCKS, setScheme } from './v13'
 declare const process: { env: Record<string, string | undefined> }
 
 // Lane CH (compliance): Health and sub-screens against their boards. Invented data only. The file name keeps it in the chromium project,
-// Pinned as a 2 x 2 grid was measured here (injected CSS): the second-row right tile sat under Jack at 390 (y 662-812) and the first-row right tile at 360 (y 497-678), so Pinned stays a sideways row.
+// Pinned was a sideways row because a 2 x 2 grid put a tile under Jack; S21 (the owner's phone feedback) chose the 2 x 2 grid anyway.
 // but the signed-in mock needs the Supabase-env build (served on PW_PORT + 500).
 test.use({ baseURL: `http://localhost:${Number(process.env.PW_PORT ?? 4317) + 500}`, serviceWorkers: 'block' })
 

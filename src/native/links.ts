@@ -21,6 +21,8 @@ if (Capacitor.isNativePlatform()) {
     const href = a?.getAttribute('href')
     if (!a || !href || !isExternal(href, location.origin)) return
     e.preventDefault()
-    void Browser.open({ url: new URL(href, location.origin).href })
+    const url = new URL(href, location.origin).href
+    // an older shell may lack the Browser plugin: open the link the way the web does instead of leaving a rejected promise
+    void Promise.resolve(Browser.open({ url })).catch(() => { window.open(url, '_blank', 'noopener') })
   }, true)
 }

@@ -59,8 +59,8 @@ describe('MoveScreen (move logs are yours only, M2-2)', () => {
   it('acting: the panel is told to lock its log button with the plain reason', () => {
     acting = true
     render(<MoveScreen />)
-    expect(screen.getByTestId('panel').textContent).toBe('Move logs are yours only. Exit to log.')
-    expect(MOVE_LOCK).toBe('Move logs are yours only. Exit to log.')
+    expect(screen.getByTestId('panel').textContent).toBe('Move logs are yours only. Tap Back to me to log.')
+    expect(MOVE_LOCK).toBe('Move logs are yours only. Tap Back to me to log.')
   })
   it('Steps reads your own steps, not the shared person choice (1.H15)', () => {
     acting = false

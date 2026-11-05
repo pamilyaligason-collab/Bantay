@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { Row, LargeTitle, Section, Skeleton, GroupedList } from '../look'
 import { HeadActions } from '../shell/HeadActions'
 import { PersonSwitcher } from './PersonSwitcher'
-import { useActingPersonId } from '../viewas/viewAs'
+import { useActingPersonId, useViewAs } from '../viewas/viewAs'
+import '../viewas/viewas.css'
 import { clock12 } from './medActions'
 import { givenName, shortMedName } from './medName'
 import { labsLine } from './GlanceGrid'
@@ -15,17 +16,20 @@ export function MemberHealth({ id }: { id: string }) {
   const { ready, people, ownId, acting, personId, setPersonId, readings, thresholds, canMark, lockReason } = useHealthPerson()
   const actingId = useActingPersonId()
   const meId = (acting ? actingId : ownId) ?? ''
+  const va = useViewAs()
   const person = people.find((p) => p.id === id)
   useEffect(() => { if (person) setPersonId(id) }, [person, id, setPersonId])
   const name = person ? givenName(person.name) : ''
-  const back = <a className="btn" href="#health" onClick={() => meId && setPersonId(meId)}>Back to me</a>
+  // While viewing as someone, the bar's Back to me ends that; this link only leaves the page, so it says so.
+  const back = <a className="btn mh-back" href="#health" onClick={() => meId && setPersonId(meId)}>{acting ? 'Back to Health' : 'Back to me'}</a>
   if (!ready) return <><LargeTitle kicker="Summary" title="Health" /><Skeleton lines={3} /></>
   if (!person) return <><LargeTitle kicker="Summary" title="Health" /><p className="mh-none">You cannot see this person</p>{back}</>
   const here = personId === id // the data below is the member's only once the choice has moved
   return (
     <>
       <LargeTitle kicker="Summary" title="Health" actions={<HeadActions><PersonSwitcher people={people} meId={meId} personId={personId} setPersonId={setPersonId} /></HeadActions>} />
-      <div className="mh-bar" data-testid="member-bar"><span className="grow">Viewing {name} · {canMark ? 'you can log for them' : 'view only'}</span>{back}</div>
+      <div className="mh-bar mh-stack" data-testid="member-bar"><span className="grow">Viewing {name} · {canMark ? 'you can log for them' : 'view only'}</span><span className="mh-acts">{va.can && <button type="button" className="btn" data-testid="member-open-app" disabled={!!va.busy} onClick={() => void va.go(id)}>Open the app as {name}</button>}{back}</span></div>
+      {va.err && <p role="alert" className="sub mh-foot">{va.err}</p>}
       {here && <MemberBody personId={id} name={name} readings={readings} thresholds={thresholds} />}
       {here && !canMark && <p className="sub mh-foot" data-testid="member-footer">{lockReason ?? `${name} has not shared logging with you, so you can look but not add. Ask them in Family to share.`}</p>}
     </>

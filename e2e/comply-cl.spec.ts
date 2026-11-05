@@ -7,7 +7,7 @@ import { startToday, seed as seedToday } from './fixtures/s16/today'
 import { admin } from './fixtures/s16/settings'
 import { openFamily } from './fixtures/v13/family'
 import { emptyNeeds } from './fixtures/s16/family'
-import { assertJackClear, assertNoSideways, assertTextContrast, FIXED_CLOCKS, setScheme } from './v13'
+import { assertJackClear, assertNoSideways, assertTextContrast, FIXED_CLOCKS, outsideWarning, setScheme } from './v13'
 import { shotPath } from './shotPath'
 
 declare const process: { env: Record<string, string | undefined> }
@@ -34,7 +34,7 @@ async function stable(page: Page) {
 /** The whole scroller in one shot at the current width. */
 async function shoot(page: Page, name: string, fixed = false) {
   await stable(page)
-  if (fixed) { // the Activity min-height follows the viewport: shoot at the real 844 phone, never a stretched one
+  if (fixed) { // Family shots are taken at the real 844 phone, never a stretched page: the first screen is what the owner sees (D-124: no Activity floor any more)
     await page.evaluate(() => { const s = document.querySelector('.bt .scroll') as HTMLElement | null; if (s) s.scrollTop = 0 })
     await page.screenshot({ path: `${SHOTS}/${name}.png`, animations: 'disabled' })
     return
@@ -251,60 +251,38 @@ test.describe('signed in', () => {
         if (readings) await expect(page.getByTestId('week-chart')).toBeVisible()
         else await expect(page.getByTestId('ac-empty')).toBeVisible({ timeout: 15_000 })
         await stable(page)
-        // the smallest min-height at which no control sits under Jack at rest (searched in the page, 4 px steps)
-        const r = await page.evaluate(async () => {
-          const sc = document.querySelector('.bt .scroll') as HTMLElement
+        // D-124: no floor under Activity, with or without data; the section hugs its content and the next section follows at once
+        const r = await page.evaluate(() => {
           const act = document.querySelector('[data-testid="activity"]') as HTMLElement
-          const fab = document.querySelector('.sh-jackfab') as HTMLElement
-          const st = document.createElement('style'); document.head.append(st)
-          const raf = () => new Promise((res) => requestAnimationFrame(() => res(null)))
-          const under = () => {
-            sc.scrollTop = 0
-            const f = fab.getBoundingClientRect()
-            return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]')).filter((n) => n !== fab && !fab.contains(n)).filter((n) => { const b = n.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(n).visibility !== 'hidden' && b.left < f.right && b.right > f.left && b.top < f.bottom && b.bottom > f.top })
-          }
-          const cur = parseFloat(getComputedStyle(act).minHeight) || 0
-          st.textContent = '[data-testid="activity"]{min-height:0!important}'; await raf(); await raf()
-          const natural = act.getBoundingClientRect().height
-          const top = act.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop
-          let need = -1
-          for (let x = 0; x <= 600; x += 4) { st.textContent = `[data-testid="activity"]{min-height:${x}px!important}`; await raf(); if (!under().length) { need = x; break } }
-          st.remove(); await raf()
-          const f = fab.getBoundingClientRect()
-          return { cur, natural: Math.round(natural), top: Math.round(top), need, jack: [Math.round(f.top), Math.round(f.bottom)], clearNow: under().map((n) => n.textContent) }
+          const next = act.nextElementSibling as HTMLElement
+          return { cur: parseFloat(getComputedStyle(act).minHeight) || 0, height: Math.round(act.getBoundingClientRect().height), gap: Math.round(next.getBoundingClientRect().top - act.getBoundingClientRect().bottom) }
         })
         console.log('CL-FAMILY', name, w, JSON.stringify(r))
-        if (readings === null) {
-          // D-122: an empty Activity card hugs its one line instead of keeping a floor that left a big hole. A People row (.rw-main) may then sit under Jack at scroll 0, depending on the height (under him at 450x950, 925, 900 and 844, clear at about 997); every other control must still clear him, checked below. Jack slides to the edge once the page is scrolled.
-          expect(r.cur, 'empty Activity has no floor').toBe(0)
-          expect(r.natural, 'empty Activity hugs its line').toBeLessThan(260)
-        } else {
-          expect(r.clearNow, 'controls under Jack at rest with the shipped CSS').toEqual([])
-          expect(r.cur, 'the shipped min-height is enough').toBeGreaterThanOrEqual(r.need)
-          expect(r.cur - Math.max(r.need, r.natural), 'blank space under the card beyond what Jack needs').toBeLessThanOrEqual(140) // signed-out needs viewport - 383, signed-in calm 336: the 125 px difference sits under the card
-        }
+        expect(r.cur, 'Activity has no floor').toBe(0)
+        expect(r.gap, 'gap between Activity and the next section').toBeLessThan(40)
+        if (readings === null) expect(r.height, 'empty Activity hugs its line').toBeLessThan(260)
         for (const s of SCHEMES) {
           await setScheme(page, s)
           await shoot(page, `family-${name}-${s}-${w}`, true)
         }
         await assertNoSideways(page)
-        await assertJackClear(page, { at: 'rest', allow: readings === null ? '.rw-main' : undefined }) // calm: only People rows may be under him (D-122)
+        await assertJackClear(page, { at: 'rest', allow: outsideWarning('.rw-main') }) // D-124: with the floor gone, only Needs/People rows (full-width links, tappable from the left) may be under him; every other control must clear
       })
     }
   }
 
-  test('Family calm on tall phones (430x932, 448x998): the empty Activity card hugs its line (no hole), no control but a People row under Jack (D-122)', async ({ page }) => {
+  test('Family calm on tall phones (430x932, 448x998): the empty Activity card hugs its line (no hole), no control but a People row under Jack (D-122, D-124)', async ({ page }) => {
     await skipOnboarding(page)
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.setViewportSize({ width: 430, height: 932 })
     await emptyNeeds(page)
     await expect(page.getByTestId('ac-empty')).toBeVisible({ timeout: 15_000 })
     expect((await page.getByTestId('activity').boundingBox())!.height).toBeLessThan(260)
-    await assertJackClear(page, { at: 'rest', allow: '.rw-main' })
+    await assertJackClear(page, { at: 'rest', allow: outsideWarning('.rw-main') })
     await page.setViewportSize({ width: 448, height: 998 })
     await stable(page)
     expect((await page.getByTestId('activity').boundingBox())!.height).toBeLessThan(260)
-    await assertJackClear(page, { at: 'rest', allow: '.rw-main' })
+    await assertJackClear(page, { at: 'rest', allow: outsideWarning('.rw-main') })
   })
 
   for (const w of WIDTHS) {
