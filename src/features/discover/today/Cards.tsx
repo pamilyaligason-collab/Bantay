@@ -1,18 +1,13 @@
-import type { ReactNode } from 'react'
 import { Row } from '../../look'
 import type { IconName } from '../../shell/Icon'
 import { seasonFor, type Season } from './season'
-import '../../weather/scene.css' // wxs-rain streaks, reused by the rainy-season row
 import '../discover.css'
 
 const SEASON_ICON: Record<string, IconName> = { undas: 'flame', newyear: 'flame', christmas: 'meal', heat: 'sun', typhoon: 'rain' }
-const STREAKS = [8, 24, 41, 58, 74, 90]
 
-/** Decorative layer behind the season row: rainy season = 6 slow rain streaks, Undas = a candle glow. Both stop under reduced motion (scene.css and discover.css). */
+/** Decorative layer behind the season row: rainy season = a soft blue wash, Undas = a candle glow (flickers; stops under reduced motion). The old rain streaks fell 210 px inside a 72 px card and read as one lone glitch, so they are gone. */
 function SeasonBg({ id }: { id: string }) {
-  let inner: ReactNode = null
-  if (id === 'typhoon') inner = <div className="wxs-rain">{STREAKS.map((x, i) => <i key={x} style={{ left: `${x}%`, animationDelay: `${-i * 0.7}s`, animationDuration: '2.4s' }} />)}</div>
-  return <div className="dc-sea-bg" data-s={id} aria-hidden="true">{inner}</div>
+  return <div className="dc-sea-bg" data-s={id} aria-hidden="true" />
 }
 
 /** What matters this time of year, as one row that opens the season page (#discover/season). Nothing renders outside a season. */

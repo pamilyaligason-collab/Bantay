@@ -1,4 +1,4 @@
-import { quakeFeltKm, quakeMag, type Affects, type Alert } from '../safety/alerts'
+import { placeOnly, quakeFeltKm, quakeMag, type Affects, type Alert } from '../safety/alerts'
 
 export const agoShort = (at: number, now: number) => {
   const m = Math.max(0, Math.round((now - at) / 60_000))
@@ -12,5 +12,5 @@ export function quakeRow(a: Alert, who: Affects, now: number): { title: string; 
   if (a.kind !== 'quake' || who.km == null || who.km <= quakeFeltKm(a)) return null
   const mag = quakeMag(a)
   if (mag !== null && mag >= STRONG_MAG) return null // a strong quake keeps the full card (steps, and the tsunami line from 6.5)
-  return { title: `Earthquake${mag !== null ? ` M${mag}` : ''} near ${a.where}`, sub: `${who.km} km away · you may not feel it · ${agoShort(Date.parse(a.issuedAt), now)}` }
+  return { title: `Earthquake${mag !== null ? ` M${mag}` : ''} near ${placeOnly(a.where)}`, sub: `${who.km} km away · you may not feel it · ${agoShort(Date.parse(a.issuedAt), now)}` }
 }

@@ -65,7 +65,7 @@ describe('AlertCardToday system row', () => {
   it('names the job and links to System health instead of the push line', () => {
     h.rows = [row('sys', { kind: 'system', template: 'system', personId: null, ref: 'alerts-ingest:81234' })]
     render(<AlertCardToday />)
-    expect(screen.getByText('The alerts-ingest job failed')).toBeTruthy()
+    expect(screen.getByText('Official alerts feed had a failed run')).toBeTruthy()
     expect(document.body.textContent).not.toMatch(/Open Bantay|needs your attention/)
     expect(screen.getByRole('link').getAttribute('href')).toBe('/admin#/system')
   })

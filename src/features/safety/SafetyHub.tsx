@@ -8,7 +8,7 @@ import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
 import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
 import { useWeather } from '../today/weather'
-import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, placeOnly, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
 import { coversHere, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
@@ -83,7 +83,7 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; place?: 
     const badge = !f.affects ? 'Far away' : a.kind === 'quake' ? (f.km === null || f.km <= quakeFeltKm(a) ? 'You may feel it' : f.steps ? 'May be felt' : 'Far away') : band // the same steps flag Warnings shows, so the two screens agree
     return {
       href: '#safety/warnings', icon: ALERT_ICON[a.kind] ?? 'warn', tint: red ? 'red' : 'amber', title: a.title,
-      sub: [a.where, f.km === null ? null : `${f.km} km`, a.source].filter(Boolean).join(' · '), badge
+      sub: [placeOnly(a.where), f.km === null ? null : `${f.km} km`, a.source].filter(Boolean).join(' · '), badge
     }
   })
   const n = p.storms.length

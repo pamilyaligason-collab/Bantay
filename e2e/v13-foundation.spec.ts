@@ -62,6 +62,8 @@ test('the tab bar is 64 px tall and every tab is a 44 px target', async ({ page 
 const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 
 // S3 / S11: no control under Jack at scroll 0. Roots and sub-screens that still fail name the lane that fixes them; the fixme goes when that lane lands.
+// D-122: with no Activity data the card hugs its line, so a People row (`.rw-main`) may sit under Jack at scroll 0 depending on the viewport height (rows are under him at 450x950, 925, 900 and 844, clear at about 997). Every other control must still clear him.
+const FAMILY_ROWS = '.rw-main'
 const JACK_REST_KNOWN: Record<string, string> = {
 }
 for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discover/play', '#discover/news', '#medid', '#safety/sources']) {
@@ -69,7 +71,7 @@ for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discove
     test.fixme(!!JACK_REST_KNOWN[route], JACK_REST_KNOWN[route])
     await page.goto(`/${route}`)
     await expect(page.locator('h1').first()).toBeVisible()
-    await assertJackClear(page, { at: 'rest' })
+    await assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
   })
 }
 // 360 px, one test per root: a root named in JACK_REST_KNOWN is a fixme naming its lane, every other root is really asserted (390 is the route tests above).
@@ -79,7 +81,7 @@ for (const r of ROOTS) {
     await page.setViewportSize({ width: 360, height: 844 })
     await page.goto(`/#${r}`)
     await expect(page.locator('h1').first()).toBeVisible()
-    await assertJackClear(page, { at: 'rest' })
+    await assertJackClear(page, { at: 'rest', allow: r === 'family' ? FAMILY_ROWS : undefined })
   })
 }
 

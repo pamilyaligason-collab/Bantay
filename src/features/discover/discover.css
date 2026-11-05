@@ -56,7 +56,6 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-season-row .rw { position: relative; z-index: 1; }
 .dc-sea-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .dc-sea-bg[data-s="typhoon"] { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 14%, transparent)); }
-.dc-sea-bg .wxs-rain i { background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--hue-blue-ic) 42%, transparent)); }
 .dc-sea-bg[data-s="undas"] { background: radial-gradient(ellipse 70% 120% at 92% 110%, rgb(240 181 76 / .55), transparent 70%); animation: dc-flicker 3.2s ease-in-out infinite alternate; }
 @keyframes dc-flicker { from { opacity: .75; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .dc-sea-bg { animation: none !important; } }
@@ -83,14 +82,14 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-prows > .rw + .rw { border-top: 1px solid var(--line); }
 
 /* v13 overview: a 16:9 still picture inside a PreviewTile. */
-.dc-thumb { display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--tint-fill, var(--card2)); margin-top: 8px; }
-.dc-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dc-still { display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--tint-fill, var(--card2)); margin-top: 8px; }
+.dc-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dc-pick { display: contents; }
 
 /* v13 gaps lane D: the video hero is a full-width 16:9 poster with a 56 px play disc and the title under it. */
 .card.dc-herocard { display: block; padding: 0; overflow: hidden; border-radius: 24px; text-decoration: none; color: var(--ink); }
 .dc-poster-box { position: relative; display: flex; align-items: center; justify-content: center; height: 190px; background: var(--tint-red); }
-.dc-poster-box .dc-thumb { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
+.dc-poster-box .dc-still { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
 .dc-hchip { position: absolute; left: 14px; top: 14px; z-index: 1; padding: 4px 10px; border-radius: 12px; background: var(--card); color: var(--tint-red-ink); font-size: 13px; font-weight: 700; letter-spacing: .02em; width: max-content; max-width: calc(100% - 28px); height: fit-content; line-height: 18px; }
 .dc-hero-play { position: relative; z-index: 1; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-red-ink); box-shadow: 0 4px 14px rgb(120 40 30 / .2); }
 .dc-hero-body { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; }
@@ -102,7 +101,7 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-vc-pic { position: relative; display: flex; align-items: center; justify-content: center; height: 96px; flex: none; background: var(--tint-fill, var(--card2)); }
 .dc-vc[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
 .dc-vc[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
-.dc-vc-pic .dc-thumb { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
+.dc-vc-pic .dc-still { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
 .dc-vc-play { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-ink); }
 .dc-vc-body { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-width: 0; }
 .dc-vc-k { font-size: 13px; font-weight: 600; color: var(--tint-ink); text-transform: uppercase; letter-spacing: .02em; }
@@ -156,7 +155,7 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 [data-testid="dc-play"] .pt-s { color: var(--tint-ink); }
 
 /* Two limits on the hero, video cards and season row (the .dc-top block, which starts at y 122 under the large title). 1) Its bottom must end above the Jack button's top edge (viewport height - 154), so the full-width season link is never under Jack: the hero poster is the one flexible part, 190 px down to 72 px as the viewport gets shorter (it stays 190 on a tall screen, see the two rules below). 2) Learn's right-hand link must start below Jack's bottom edge (vh - 92): the min-height floor. Neither pulls the cards apart, so hero, videos and season row stay 8 and 4 px apart. */
-.dc-top { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 283px); } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px. min-height: Learn's link clears Jack at rest on any phone height, whatever titles or season the day brings. */
+.dc-top { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 283px); } @media (min-height: 980px), (min-height: 920px) and (min-width: 375px) { .dc-top { min-height: 0; } .bt section.sec[data-testid="dc-learn"] { margin-top: 0; } } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px. min-height: Learn's link clears Jack at rest on any phone height, whatever titles or season the day brings. The Learn link sits above Jack by itself from 920 px tall at 375 px wide and up, and from 980 px at narrower widths (probed on the three season looks: Undas wraps at 360 and needs 975; 375 to 450 need 915; 5 px margin kept), so the floor is dropped and no empty band opens under the season card. */
 .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 653px - var(--sat) - var(--sab)), 190px); } /* 390 px wide: natural bottom 685 with the 190 px poster, so P <= vh - 653 (190 at 844 tall) */
 @media (max-width: 389px) { .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 684px - var(--sat) - var(--sab)), 190px); } } /* 360 px wide: the season row wraps to 2 lines and the block ends 28 px lower (713), so P <= vh - 684 */
 

@@ -83,7 +83,7 @@ for (const width of [360, 390]) {
         })
         const bottom = Math.max(...kids.map((e) => e.getBoundingClientRect().bottom))
         const hit = (sel: string) => Array.from(document.querySelectorAll(sel)).map((e) => { const r = e.getBoundingClientRect(); return !!fab && r.width > 0 && r.left < fab.right && r.right > fab.left && r.top < fab.bottom && r.bottom > fab.top })
-        return { fab: fab && { top: fab.top, bottom: fab.bottom, right: fab.right }, barTop: bar.top, bottom, sos: hit('.sos-simple-btn'), taken: hit('.td-taken'), vw: window.innerWidth }
+        return { fab: fab && { top: fab.top, bottom: fab.bottom, right: fab.right }, barTop: bar.top, bottom, sos: hit('.sos-simple-btn'), taken: hit('.td-taken'), vw: window.innerWidth, peek: !!document.querySelector('.sh-jackfab')?.hasAttribute('data-peek') }
       })
 
     for (const tab of ['today', 'health', 'discover', 'discover/play', 'family', 'safety']) {
@@ -96,7 +96,7 @@ for (const width of [360, 390]) {
         expect(m.fab, 'Jack button rendered').toBeTruthy()
         expect(m.fab!.bottom, `Jack bottom ${m.fab!.bottom} vs tab bar top ${m.barTop}`).toBeLessThanOrEqual(m.barTop)
         expect(m.bottom, `${tab}: content bottom ${m.bottom} vs Jack top ${m.fab!.top}`).toBeLessThanOrEqual(m.fab!.top)
-        expect(m.fab!.right).toBeLessThanOrEqual(m.vw)
+        expect(m.fab!.right, m.peek ? 'peeked Jack overruns the edge by 28 px' : 'Jack inside the viewport').toBeLessThanOrEqual(m.peek ? m.vw + 28 : m.vw) // scrolled pages slide him to the edge (JackFab data-peek)
         expect(m.sos.every((x) => !x), 'Jack over the SOS hold').toBe(true) // the SOS hold arrives with lane K; an empty list passes until then
         expect(m.taken.every((x) => !x), 'Jack over the Taken pill').toBe(true) // the Taken pill needs seeded doses: e2e/s12-shell.auth.spec.ts
       })

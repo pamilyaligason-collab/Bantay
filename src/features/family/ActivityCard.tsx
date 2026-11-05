@@ -59,11 +59,12 @@ export function ActivityCard() {
   const metric = picked ?? (by ? firstWithData(by) : 'bp')
   const series = by ? by[metric] : []
   const allEmpty = series.every((s) => s.empty)
+  const noData = !!by && Object.values(by).every((ss) => ss.every((x) => x.empty)) // nothing in any tab: the card hugs its one line (no 420 px floor), see v13-family.css
   const unlinked = all.filter((p) => !p.isMe && !people.some((x) => x.id === p.id)).map((p) => faceName(p.name))
   const nameOf = (id: string) => { const p = people.find((x) => x.id === id); return p?.isMe ? 'You' : faceName(p?.name ?? 'Someone') }
   return (
     <Section title="Activity" meta="This week" testId="activity">
-      <div className="card ac">
+      <div className="card ac" data-hug={noData || undefined}>
         <Segmented label="Show" value={metric} onChange={setPicked} options={[{ id: 'bp', label: 'BP' }, { id: 'steps', label: 'Steps' }, { id: 'meds', label: 'Medicines' }]} />
         {!d ? <p className="sub" aria-busy="true">Loading…</p> : allEmpty ? (
           <p className="sub" data-testid="ac-empty">{emptyWords(metric, people.map((p) => nameOf(p.id)), unlinked)}</p>

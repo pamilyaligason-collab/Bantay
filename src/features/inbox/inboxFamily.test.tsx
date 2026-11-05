@@ -28,8 +28,8 @@ describe('family alert rows in the alert list (D-78)', () => {
   })
   it('an admin system row names the job and opens System health; with no ref it says so', () => {
     const [j, n] = familyItems([row('s1', { kind: 'system', template: 'system', personId: null, ref: 'dose-watch:81234', createdAt: '2026-10-26T01:00:00Z' }), row('s2', { kind: 'system', template: 'system', personId: null, ref: null, createdAt: '2026-10-26T00:00:00Z' })], names, NOW)
-    expect(j).toMatchObject({ title: 'The dose-watch job failed', href: '/admin#/system' })
-    expect(n).toMatchObject({ title: 'A Bantay job failed', href: '/admin#/system' })
+    expect(j).toMatchObject({ title: 'Missed-dose watch had a failed run', href: '/admin#/system' })
+    expect(n).toMatchObject({ title: 'A Bantay job had a failed run', href: '/admin#/system' })
   })
   it('a row with an unknown template still shows, as the neutral line', () => {
     const [i] = familyItems([row('z', { template: 'from_the_future' as never })], names, NOW)

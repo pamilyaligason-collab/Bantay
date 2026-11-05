@@ -14,23 +14,26 @@ export async function settled(page: Page): Promise<void> {
 }
 
 /** No control (button, a, input, [role=button]) sits under the Jack button: at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Failures are prefixed "at rest:" / "at end:". */
-export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both' } = {}): Promise<void> {
+/** `allow`: a selector whose controls may sit under Jack (D-122: only the Family People rows `.rw-main`, when an empty Activity card hugs its line). When Jack is peeked (scrolled pages) his real hit strip is measured: 48 px wide from the screen edge, 88 px tall. */
+export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both'; allow?: string } = {}): Promise<void> {
   await settled(page)
   const at = opts.at ?? 'both'
   for (const when of at === 'both' ? (['rest', 'end'] as const) : [at]) {
-    const hits = await page.evaluate(async (when) => {
+    const hits = await page.evaluate(async ([when, allow]) => {
       const fab = document.querySelector('.sh-jackfab')
       const el = document.querySelector('.bt .scroll') as HTMLElement
       if (!fab) return [] as string[] // frames without the button (warning, storm, SOS ...) have nothing to clear
       const put = () => { el.scrollTop = when === 'rest' ? 0 : el.scrollHeight }
       put()
       for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); put() } // late content (cards that load after first paint) moves the end
-      const f = fab.getBoundingClientRect()
+      const fr = fab.getBoundingClientRect()
+      const cy = (fr.top + fr.bottom) / 2
+      const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
       return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
-        .filter((n) => n !== fab && !fab.contains(n))
+        .filter((n) => n !== fab && !fab.contains(n) && !(allow && n.closest(allow)))
         .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
         .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
-    }, when)
+    }, [when, opts.allow ?? ''] as const)
     expect(hits, `at ${when}: controls under the Jack button`).toEqual([])
   }
 }
