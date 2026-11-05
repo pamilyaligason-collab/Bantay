@@ -24,10 +24,11 @@ describe('Discover overview (#discover)', () => {
     expect(screen.queryByTestId('pick')).toBeNull()
     expect(screen.queryByRole('group', { name: 'Discover sections' })).toBeNull()
   })
-  it('the season is one row that opens #discover/season; rain streaks in the rainy season, a candle glow at Undas, nothing outside a season', () => {
+  it('the season is one row that opens #discover/season; a blue wash in the rainy season (no streaks), a candle glow at Undas, nothing outside a season', () => {
     const { container } = render(<SeasonRow now={day(7, 20)} />) // rainy and typhoon season
     expect(screen.getByTestId('season-row').querySelector('.rw-ic')!.getAttribute('data-tint')).toBe('amber')
-    expect(container.querySelectorAll('.wxs-rain i').length).toBe(6)
+    expect(container.querySelector('.dc-sea-bg')!.getAttribute('data-s')).toBe('typhoon') // the blue wash layer that replaced the streaks
+    expect(container.querySelectorAll('.wxs-rain i').length).toBe(0)
     expect(screen.getByRole('link').getAttribute('href')).toBe('#discover/season')
     cleanup()
     const undas = render(<SeasonRow now={day(10, 28)} />)

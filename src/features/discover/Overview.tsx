@@ -24,7 +24,7 @@ function Thumb({ id }: { id: string }) {
   const [off, setOff] = useState(false)
   if (off) return null
   return (
-    <span className="dc-thumb">
+    <span className="dc-still">
       <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />
     </span>
   )

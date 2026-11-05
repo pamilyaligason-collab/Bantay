@@ -15,6 +15,9 @@ import './shell.css'
 type Box = { left: number; right: number; top: number; bottom: number }
 const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
 
+/** Only keyboard focus brings him back: a press focuses the button too, and moving him then would take him from under the finger. */
+const keyboardFocus = (el: HTMLElement) => { try { return el.matches(':focus-visible') } catch { return true } } // no :focus-visible support: treat as keyboard
+
 /** True when the coach mark would sit on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
 function coversText(hint: Box): boolean {
   const root = document.querySelector('.bt .scroll')
@@ -53,6 +56,16 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     return () => mo.disconnect()
   }, [hash])
   const visible = tab !== null && !nofab && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
+  const [peek, setPeek] = useState(false) // scrolled down: Jack slides mostly off the right edge so he stops covering rows; back at the top, on focus or on tap he returns
+  useEffect(() => {
+    if (!visible) return
+    const el = document.querySelector('.bt .scroll')
+    if (!el) return
+    const on = () => setPeek((was) => el.scrollTop > (was ? 8 : 48)) // two thresholds so he does not flutter near the line
+    on()
+    el.addEventListener('scroll', on, { passive: true })
+    return () => el.removeEventListener('scroll', on)
+  }, [visible, hash])
   const hint = visible && loaded && !seen && !sheet && tab === 'today'
   const hintRef = useRef<HTMLParagraphElement>(null)
   const [fits, setFits] = useState(false) // the hint is measured before it shows; it stays hidden while it would cover text
@@ -100,8 +113,8 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   return (
     <>
       <button
-        type="button" className="sh-jackfab" data-testid="jack" aria-label="Jack: help, scan, chat" aria-haspopup="dialog"
-        onClick={() => { setSheet(true); if (!seen) setSeen(true) }}
+        type="button" className="sh-jackfab" data-testid="jack" aria-label="Jack: help, scan, chat" aria-haspopup="dialog" data-peek={peek || undefined}
+        onFocus={(e) => { if (keyboardFocus(e.currentTarget)) setPeek(false) }} onClick={() => { setPeek(false); setSheet(true); if (!seen) setSeen(true) }}
       >
         <JackArt name="head" size={56} decorative />
       </button>

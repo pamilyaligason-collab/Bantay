@@ -120,6 +120,9 @@ export function newestChecked(alerts: Alert[]): string | null {
 /** The check time to print for one warning: its own, else the newest in the list. A row the feed stopped refreshing must read old on every screen. */
 export const checkedOf = (a: Pick<Alert, 'checkedAt'>, alerts: Alert[]): string | null => a.checkedAt || newestChecked(alerts)
 
+/** The place of a USGS-style "where" without its epicentre distance: "207 km ESE of Sarangani, Philippines" reads "Sarangani, Philippines". The distance from home is the one that matters and is shown beside it. Other wording is returned as it came. */
+export const placeOnly = (where: string): string => where.replace(/^\s*\d+(?:\.\d+)?\s*km\s+(?:[NSEW]{1,3}|[NS]\s*\d+°\s*[EW])\s+of\s+/i, '')
+
 /** " (N km away)" for a line that does not already say the distance, else "". */
 export const kmTail = (who: Pick<Affects, 'km' | 'line'>, suffix = ' km away'): string => who.km == null || who.line.includes(`${who.km} km`) ? '' : ` (${who.km}${suffix})`
 

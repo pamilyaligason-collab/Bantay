@@ -24,5 +24,5 @@ describe('season row icon', () => {
 })
 
 describe('thumbnail', () => {
-  it('fills with the tile tint, else --card2', () => expect(css).toMatch(/\.dc-thumb\s*\{[^}]*background:\s*var\(--tint-fill, var\(--card2\)\)/))
+  it('fills with the tile tint, else --card2', () => expect(css).toMatch(/\.dc-still\s*\{[^}]*background:\s*var\(--tint-fill, var\(--card2\)\)/))
 })

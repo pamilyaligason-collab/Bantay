@@ -48,7 +48,7 @@ describe('Overview head, hero, video cards, season', () => {
     const cards = screen.getByTestId('dc-videos').querySelectorAll('a.dc-vc')
     expect(Array.from(cards).map((c) => c.querySelector('.dc-vc-t')!.textContent)).toEqual(more.map((m) => m.title))
     expect(Array.from(cards).map((c) => c.getAttribute('href'))).toEqual(['#discover/watch', '#discover/watch'])
-    const imgs = Array.from(container.querySelectorAll('.dc-thumb img'))
+    const imgs = Array.from(container.querySelectorAll('.dc-still img'))
     expect(imgs.length).toBe(3)
     const ids = [hero!, ...more].map((v) => v.id)
     imgs.forEach((img, i) => {

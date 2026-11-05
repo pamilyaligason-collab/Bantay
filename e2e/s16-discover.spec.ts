@@ -35,16 +35,13 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('rainy season row: six slow streaks that stop under reduced motion', async ({ page }) => {
+    test('rainy season row: a soft wash, no lone rain streaks', async ({ page }) => {
       await page.clock.setFixedTime(RAIN)
       await page.emulateMedia({ reducedMotion: 'no-preference' })
       await page.goto('/#discover')
       await setScheme(page, scheme)
-      await expect(page.locator('[data-testid="season-row"] .wxs-rain i')).toHaveCount(6)
-      expect(await page.locator('[data-testid="season-row"] .wxs-rain i').first().evaluate((el) => getComputedStyle(el).animationName)).toBe('wxs-fall')
+      await expect(page.locator('[data-testid="season-row"] .wxs-rain')).toHaveCount(0)
       await shot(page, 'discover-rain', scheme)
-      await page.emulateMedia({ reducedMotion: 'reduce' })
-      expect(await page.locator('[data-testid="season-row"] .wxs-rain').evaluate((el) => getComputedStyle(el).display)).toBe('none')
     })
 
     test('learn: 2x2 tiles + Your benefits, Library at #discover/learn/library', async ({ page }) => {

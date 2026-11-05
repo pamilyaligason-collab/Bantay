@@ -1,6 +1,6 @@
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, checkedOf, freshText, kmTail, outdatedLine, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, freshness, checkedOf, freshText, kmTail, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
 import { useNow } from '../safety/AlertCard'
 import { useKv } from '../safety/store'
 import { zoneAlert } from './heroCards'
@@ -21,7 +21,7 @@ export default function AlertBand() {
   const f = freshness(at, now)
   return (
     <section className="td-alertband" role="region" aria-label="Active warning">
-      <div className="td-k">{who.affects ? 'Warning' : 'Nearby report'} · {a.where} · {a.source}</div>
+      <div className="td-k">{who.affects ? 'Warning' : 'Nearby report'} · {placeOnly(a.where)} · {a.source}</div>
       <h2>{a.title}</h2>
       {a.kind === 'gdacs' && plainWhat(a) && <p>{plainWhat(a)}</p>}
       <p><b>{who.line}</b>{kmTail(who)}</p>

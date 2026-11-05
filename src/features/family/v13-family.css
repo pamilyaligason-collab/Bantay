@@ -17,6 +17,7 @@
 .pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
 [data-testid="activity"] { min-height: 420px; min-height: max(420px, min(calc(100dvh - 380px), 640px)); } /* CL: Jack sits 92 px above the bottom, so the row under Activity must start at viewport height - 140. The card starts at 243 px when signed out (the Today row is short), so it needs viewport height - 383 (461 at 844; 336 only when signed in with nothing to do, where it starts at 389); 380 leaves 3 px. Floor 420 (the chart fills 425 by itself). Cap 640 so a tall desktop window leaves no big blank. The space sits under the card, not inside it */
+[data-testid="activity"]:has([data-hug]) { min-height: 0; } /* phone fix: with no data in any tab the section hugs its one line; with data in any tab the floor stays so switching tabs does not jump */
 [data-testid="activity"] .card.ac { justify-content: flex-start; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
 [data-testid="activity"] .ac > p { margin: 0; }
 [data-testid="activity"] .ac [data-testid="ac-empty"] { margin: auto 0; text-align: center; }

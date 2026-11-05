@@ -241,7 +241,7 @@ test.describe('signed in', () => {
 
   for (const w of WIDTHS) {
     for (const [name, readings] of [['chart', true], ['calm', null]] as const) {
-      test(`Family ${name} ${w}: Activity card height, next row clear of Jack`, async ({ page }) => {
+      test(`Family ${name} ${w}: Activity card height, no control but a People row under Jack`, async ({ page }) => {
         await page.setViewportSize({ width: w, height: 844 })
         await skipOnboarding(page)
         await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -274,29 +274,37 @@ test.describe('signed in', () => {
           return { cur, natural: Math.round(natural), top: Math.round(top), need, jack: [Math.round(f.top), Math.round(f.bottom)], clearNow: under().map((n) => n.textContent) }
         })
         console.log('CL-FAMILY', name, w, JSON.stringify(r))
-        expect(r.clearNow, 'controls under Jack at rest with the shipped CSS').toEqual([])
-        expect(r.cur, 'the shipped min-height is enough').toBeGreaterThanOrEqual(r.need)
-        expect(r.cur - Math.max(r.need, r.natural), 'blank space under the card beyond what Jack needs').toBeLessThanOrEqual(140) // signed-out needs viewport - 383, signed-in calm 336: the 125 px difference sits under the card
+        if (readings === null) {
+          // D-122: an empty Activity card hugs its one line instead of keeping a floor that left a big hole. A People row (.rw-main) may then sit under Jack at scroll 0, depending on the height (under him at 450x950, 925, 900 and 844, clear at about 997); every other control must still clear him, checked below. Jack slides to the edge once the page is scrolled.
+          expect(r.cur, 'empty Activity has no floor').toBe(0)
+          expect(r.natural, 'empty Activity hugs its line').toBeLessThan(260)
+        } else {
+          expect(r.clearNow, 'controls under Jack at rest with the shipped CSS').toEqual([])
+          expect(r.cur, 'the shipped min-height is enough').toBeGreaterThanOrEqual(r.need)
+          expect(r.cur - Math.max(r.need, r.natural), 'blank space under the card beyond what Jack needs').toBeLessThanOrEqual(140) // signed-out needs viewport - 383, signed-in calm 336: the 125 px difference sits under the card
+        }
         for (const s of SCHEMES) {
           await setScheme(page, s)
           await shoot(page, `family-${name}-${s}-${w}`, true)
         }
         await assertNoSideways(page)
-        await assertJackClear(page, { at: 'rest' })
+        await assertJackClear(page, { at: 'rest', allow: readings === null ? '.rw-main' : undefined }) // calm: only People rows may be under him (D-122)
       })
     }
   }
 
-  test('Family calm on tall phones (430x932, 448x998): the next row stays out from under Jack at rest', async ({ page }) => {
+  test('Family calm on tall phones (430x932, 448x998): the empty Activity card hugs its line (no hole), no control but a People row under Jack (D-122)', async ({ page }) => {
     await skipOnboarding(page)
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.setViewportSize({ width: 430, height: 932 })
     await emptyNeeds(page)
     await expect(page.getByTestId('ac-empty')).toBeVisible({ timeout: 15_000 })
-    await assertJackClear(page, { at: 'rest' })
+    expect((await page.getByTestId('activity').boundingBox())!.height).toBeLessThan(260)
+    await assertJackClear(page, { at: 'rest', allow: '.rw-main' })
     await page.setViewportSize({ width: 448, height: 998 })
     await stable(page)
-    await assertJackClear(page, { at: 'rest' })
+    expect((await page.getByTestId('activity').boundingBox())!.height).toBeLessThan(260)
+    await assertJackClear(page, { at: 'rest', allow: '.rw-main' })
   })
 
   for (const w of WIDTHS) {

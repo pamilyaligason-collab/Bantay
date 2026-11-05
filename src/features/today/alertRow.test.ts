@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Alert } from '../safety/alerts'
+import { placeOnly, type Alert } from '../safety/alerts'
 import { agoShort, quakeRow } from './alertRow'
 const now = Date.parse('2026-10-31T20:00:00+08:00')
 const q = (level: string, extra: Partial<Alert> = {}) => ({ id: 'q', kind: 'quake', level, title: 'Earthquake', what: '', where: 'Tago', doNow: '', source: 'USGS', issuedAt: new Date(now - 11 * 3600_000).toISOString(), ...extra }) as Alert
@@ -7,6 +7,13 @@ const who = (km: number | null) => ({ affects: true, km, line: '', steps: true }
 describe('quakeRow', () => {
   it('M4.6 at 272 km is too far to feel', () => {
     expect(quakeRow(q('Magnitude 4.6'), who(272), now)).toEqual({ title: 'Earthquake M4.6 near Tago', sub: '272 km away · you may not feel it · 11 h ago' })
+  })
+  it('drops the USGS epicentre distance from the place and keeps the home distance', () => {
+    expect(quakeRow(q('Magnitude 5.0', { where: '207 km ESE of Sarangani, Philippines' }), who(287), now)).toEqual({ title: 'Earthquake M5 near Sarangani, Philippines', sub: '287 km away · you may not feel it · 11 h ago' })
+    expect(placeOnly('Off Bohol')).toBe('Off Bohol')
+    expect(placeOnly('12.5 km NNW of Tago')).toBe('Tago')
+    expect(placeOnly('013 km N 49° W of Sarangani Island (Municipality Of Sarangani) (Davao Occidental)')).toBe('Sarangani Island (Municipality Of Sarangani) (Davao Occidental)') // PHIVOLCS form
+    expect(placeOnly('Typhoon Rosal, 40 km of nowhere')).toBe('Typhoon Rosal, 40 km of nowhere') // not an epicentre prefix: unchanged
   })
   it('M6.0 at 272 km is inside its radius: red card', () => expect(quakeRow(q('Magnitude 6.0'), who(272), now)).toBeNull())
   it('a quake of M6.0 or more never becomes the quiet row', () => { expect(quakeRow(q('Magnitude 6.8'), who(450), now)).toBeNull(); expect(quakeRow(q('Magnitude 6.0'), who(900), now)).toBeNull() })

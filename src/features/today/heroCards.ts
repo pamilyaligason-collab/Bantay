@@ -1,6 +1,6 @@
 import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
-import { affectsUs, distanceKm, NEAR_KM, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
+import { affectsUs, distanceKm, NEAR_KM, placeOnly, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { quakeRow } from './alertRow'
 import { actionLine, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
@@ -163,7 +163,7 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
   const out: HeroCard[] = []
   const a = zoneAlert(i.alerts, i.ref)
   if (a) out.push({
-    key: `alert:${a.id}`, kind: 'alert', kicker: `Alert · ${a.where} · ${a.source}`, title: a.title, body: a.doNow,
+    key: `alert:${a.id}`, kind: 'alert', kicker: `Alert · ${placeOnly(a.where)} · ${a.source}`, title: a.title, body: a.doNow,
     actions: [{ id: 'safety', label: 'What to do' }, { id: 'ok', label: "I'm OK" }]
   })
   const d = i.doses[0]

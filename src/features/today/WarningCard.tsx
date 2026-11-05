@@ -3,7 +3,7 @@ import { track } from '../admin/events'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { AlertCard } from '../look'
-import { ALERTS_KEY, type Alert, affectsUs, checkedOf, freshness, freshText, kmTail, newestChecked, outdatedLine, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, checkedOf, freshness, freshText, kmTail, newestChecked, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
 import { useNow } from '../safety/AlertCard'
 import { StormBlock } from '../safety/StormCard'
 import { liveSignals, signalOf, stormTitle } from '../safety/stormMode'
@@ -75,7 +75,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
               action={{ label: who.affects ? 'What to do' : 'See details', href: '#safety/warnings' }}
               body={(
                 <>
-                  <p className="td-wc-k">{who.affects ? 'Warning' : 'Nearby report'} · {hazard.where} · {hazard.source}</p>
+                  <p className="td-wc-k">{who.affects ? 'Warning' : 'Nearby report'} · {placeOnly(hazard.where)} · {hazard.source}</p>
                   {hazard.kind === 'gdacs' && plainWhat(hazard) && <p>{plainWhat(hazard)}</p>}
                   <p><b>{who.line}</b>{kmTail(who)}</p>
                   {who.steps && <p>{hazard.doNow}</p>}
