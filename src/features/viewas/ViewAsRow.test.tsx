@@ -52,7 +52,7 @@ describe('ViewAsRow in isolation', () => {
     expect(h.log).toHaveBeenCalledWith('p-mama')
     const bar = await screen.findByTestId('viewas-bar')
     expect(bar.textContent).toContain('Acting as Mama')
-    expect(bar.textContent).toContain('You can see Mama but not log for her. Ask her (or an admin) to make you a carer with edit access.') // C-9 copy, no carer link
+    expect(bar.textContent).toContain('You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.') // C-9 copy, no carer link
     fireEvent.click(within(bar).getByRole('button', { name: 'Exit' }))
     expect(getActingPersonId()).toBeNull()
     expect(screen.queryByTestId('viewas-bar')).toBeNull()

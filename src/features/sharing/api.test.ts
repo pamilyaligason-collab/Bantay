@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const h = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), member: vi.fn(), on: true }))
-vi.mock('../auth/client', () => ({ get supabase() { return h.on ? { rpc: h.rpc, from: h.from } : null } }))
-vi.mock('../auth/session', () => ({ getMember: h.member }))
-import { acceptShare, answerShare, failureOf, myViewers, pendingOffers, setShare, SHARE_COPY, shareCandidates, shareCopy } from './api'
+const h = vi.hoisted(() => ({ rpc: vi.fn(), on: true }))
+vi.mock('../auth/client', () => ({ get supabase() { return h.on ? { rpc: h.rpc } : null } }))
+import { countViewers, failureOf, personViewers, setShare, SHARE_COPY, shareCandidatesFor, shareCopy, shareCounts } from './api'
 
 const P = 'person-1'
 const C = 'carer-1'
-beforeEach(() => { h.on = true; h.rpc.mockReset(); h.from.mockReset(); h.member.mockReset().mockResolvedValue({ userId: 'me' }) })
+beforeEach(() => { h.on = true; h.rpc.mockReset() })
 
 describe('failureOf: RPC errors map to three plain copy strings', () => {
   it('42501 and 22023 are refused, 53400 is the hourly limit, anything else is offline', () => {
@@ -29,8 +28,8 @@ describe('failureOf: RPC errors map to three plain copy strings', () => {
 
 describe('setShare', () => {
   it('calls share_set with the contract argument names and returns the server word', async () => {
-    h.rpc.mockResolvedValue({ data: 'pending', error: null })
-    expect(await setShare(P, C, true)).toBe('pending')
+    h.rpc.mockResolvedValue({ data: 'added', error: null })
+    expect(await setShare(P, C, true)).toBe('added')
     expect(h.rpc).toHaveBeenCalledWith('share_set', { p_person: P, p_carer: C, p_can_write: false, p_on: true })
     h.rpc.mockResolvedValue({ data: 'removed', error: null })
     expect(await setShare(P, C, false)).toBe('removed')
@@ -55,55 +54,67 @@ describe('setShare', () => {
   })
 })
 
-describe('acceptShare', () => {
-  it('true only when the server answered an offer', async () => {
-    h.rpc.mockResolvedValue({ data: true, error: null })
-    expect(await acceptShare(P, true)).toBe(true)
-    expect(h.rpc).toHaveBeenCalledWith('share_accept', { p_person: P, p_accept: true })
-    h.rpc.mockResolvedValue({ data: false, error: null })
-    expect(await acceptShare(P, false)).toBe(false)
-    h.rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'x' } })
-    expect(await acceptShare(P, true)).toBe(false)
-  })
-  it('answerShare tells no offer, a refusal, the limit and no signal apart', async () => {
-    h.rpc.mockResolvedValue({ data: true, error: null })
-    expect(await answerShare(P, true)).toBe('ok')
-    h.rpc.mockResolvedValue({ data: false, error: null })
-    expect(await answerShare(P, true)).toBe('none')
-    h.rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'x' } })
-    expect(await answerShare(P, true)).toBe('limit')
-    h.rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'x' } })
-    expect(await answerShare(P, true)).toBe('refused')
-    h.rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch' } })
-    expect(await answerShare(P, true)).toBe('offline')
+describe('setShare words', () => {
+  it('a stale server that still says pending reads as unchanged, never as a state the screens no longer draw', async () => {
+    h.rpc.mockResolvedValue({ data: 'pending', error: null })
+    expect(await setShare(P, C, true)).toBe('unchanged')
   })
 })
 
-describe('myViewers, shareCandidates and pendingOffers keep unknown apart from none (ML-05)', () => {
-  it('myViewers maps rows to the Viewer shape; null on error', async () => {
+describe('personViewers, shareCandidatesFor and shareCounts keep unknown apart from none (ML-05)', () => {
+  it('personViewers asks person_viewers for that person and maps rows; null on error', async () => {
     h.rpc.mockResolvedValue({ data: [{ carer_user_id: 'u1', display_name: 'Ate Joy', can_write: false, pending: false, added_by_admin: true, added_at: '2026-10-25T01:00:00Z' }], error: null })
-    expect(await myViewers()).toEqual([{ carerUserId: 'u1', displayName: 'Ate Joy', canWrite: false, pending: false, addedByAdmin: true, addedAt: '2026-10-25T01:00:00Z' }])
+    expect(await personViewers(P)).toEqual([{ carerUserId: 'u1', displayName: 'Ate Joy', canWrite: false, addedByAdmin: true, addedAt: '2026-10-25T01:00:00Z' }])
+    expect(h.rpc).toHaveBeenCalledWith('person_viewers', { p_person: P })
     h.rpc.mockResolvedValue({ data: [], error: null })
-    expect(await myViewers()).toEqual([])
+    expect(await personViewers(P)).toEqual([])
     h.rpc.mockResolvedValue({ data: null, error: { message: 'down' } })
-    expect(await myViewers()).toBeNull()
+    expect(await personViewers(P)).toBeNull()
+    h.rpc.mockRejectedValue(new Error('boom'))
+    expect(await personViewers(P)).toBeNull()
     h.on = false
-    expect(await myViewers()).toBeNull()
+    expect(await personViewers(P)).toBeNull()
   })
-  it('shareCandidates maps rows; null on error', async () => {
+  it('shareCandidatesFor asks share_candidates for that person and maps rows; null on error', async () => {
     h.rpc.mockResolvedValue({ data: [{ carer_user_id: 'u2', person_id: 'p2', display_name: 'Rhea' }], error: null })
-    expect(await shareCandidates()).toEqual([{ carerUserId: 'u2', personId: 'p2', displayName: 'Rhea' }])
+    expect(await shareCandidatesFor(P)).toEqual([{ carerUserId: 'u2', personId: 'p2', displayName: 'Rhea' }])
+    expect(h.rpc).toHaveBeenCalledWith('share_candidates', { p_person: P })
     h.rpc.mockResolvedValue({ data: null, error: { message: 'down' } })
-    expect(await shareCandidates()).toBeNull()
+    expect(await shareCandidatesFor(P)).toBeNull()
   })
-  it('pendingOffers reads only my own offers (carer_id = me), newest first', async () => {
-    const order = vi.fn().mockResolvedValue({ data: [{ person_id: 'p1', can_write: true, added_at: '2026-10-25T01:00:00Z' }], error: null })
-    const eq = vi.fn().mockReturnValue({ order })
-    h.from.mockReturnValue({ select: () => ({ eq }) })
-    expect(await pendingOffers()).toEqual([{ personId: 'p1', canWrite: true, addedAt: '2026-10-25T01:00:00Z' }])
-    expect(h.from).toHaveBeenCalledWith('share_offers')
-    expect(eq).toHaveBeenCalledWith('carer_id', 'me')
-    h.member.mockResolvedValue(null)
-    expect(await pendingOffers()).toBeNull()
+  it("a server refusal (42501, 22023) is 'refused', not null; any other error stays null", async () => {
+    for (const code of ['42501', '22023']) {
+      h.rpc.mockResolvedValue({ data: null, error: { code, message: 'no' } })
+      expect(await personViewers(P)).toBe('refused')
+      expect(await shareCandidatesFor(P)).toBe('refused')
+    }
+    h.rpc.mockResolvedValue({ data: null, error: { code: '53400', message: 'slow' } })
+    expect(await personViewers(P)).toBeNull()
+    expect(await shareCandidatesFor(P)).toBeNull()
+  })
+  it("countViewers leaves out the owner's own rows, so a person whose only link is the owner reads as none (live-shaped: the owner is the writer carer of several no-login people)", () => {
+    const OWNER = 'u-rey'
+    const rows = [
+      { person_id: 'lola', carer_user_id: OWNER, can_write: true }, { person_id: 'lolo', carer_user_id: OWNER, can_write: true }, { person_id: 'baby', carer_user_id: OWNER, can_write: true },
+      { person_id: 'baby', carer_user_id: 'u-joy', can_write: false },
+      { person_id: 'ma', carer_user_id: OWNER }, { person_id: 'ma', carer_user_id: 'u-joy' }, { person_id: 'ma', carer_user_id: 'u-ben' },
+      { person_id: 'tita', carer_user_id: 'u-joy', pending: true }
+    ]
+    expect(countViewers(rows, OWNER)).toEqual(new Map([['baby', 1], ['ma', 2]]))
+    expect(countViewers(rows, OWNER).get('lola') ?? 0).toBe(0) // rendered as "Only you"
+    expect(countViewers(rows, null).get('lola')).toBe(1) // owner unknown: nothing is dropped
+  })
+  it('shareCounts passes the owner id through to the selector', async () => {
+    h.rpc.mockResolvedValue({ data: [{ person_id: 'a', carer_user_id: 'o' }, { person_id: 'a', carer_user_id: 'x' }], error: null })
+    expect(await shareCounts('o')).toEqual(new Map([['a', 1]]))
+  })
+  it('shareCounts counts links per person from admin_share_grid, a leftover pending offer is not a link; null on error', async () => {
+    h.rpc.mockResolvedValue({ data: [{ person_id: 'a' }, { person_id: 'a', pending: false }, { person_id: 'b' }, { person_id: 'c', pending: true }], error: null })
+    expect(await shareCounts()).toEqual(new Map([['a', 2], ['b', 1]]))
+    expect(h.rpc).toHaveBeenCalledWith('admin_share_grid')
+    h.rpc.mockResolvedValue({ data: [], error: null })
+    expect((await shareCounts())!.size).toBe(0)
+    h.rpc.mockResolvedValue({ data: null, error: { message: 'down' } })
+    expect(await shareCounts()).toBeNull()
   })
 })

@@ -24,7 +24,8 @@ vi.mock('./roster', async (orig) => ({
       { id: 'p2', name: 'Papa Villar', photoPath: null, thumb: null, phone: '+63 917 123 4567', birthdate: null, isMe: false },
       { id: 'p3', name: 'Mama Villar', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false },
       { id: 'p4', name: 'Ate Villar', photoPath: null, thumb: null, phone: '09175550000', birthdate: null, isMe: false },
-      { id: 'p5', name: 'Kuya Villar', photoPath: null, thumb: null, phone: '09175551111', birthdate: null, isMe: false }
+      { id: 'p5', name: 'Kuya Villar', photoPath: null, thumb: null, phone: '09175551111', birthdate: null, isMe: false },
+      { id: 'p6', name: 'Shared Villar', photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false } // the shared family account (kind set in the store below)
     ]
   })
 }))
@@ -32,6 +33,7 @@ import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { STORM_TASKS, stormTaskId } from '../safety/rollcall'
 import { StormCard } from '../safety/StormCard'
+import { hdb } from '../records/store'
 import { fdb } from './store'
 import { StormRollCall } from './StormRollCall'
 
@@ -45,7 +47,7 @@ const REF = 'pagasa-tcws-rosal-champi-dampas'
 /** What the pull brings once the server has made the storm's 4 tasks. */
 const serverTasks = () => fdb.tasks.bulkAdd(STORM_TASKS.map((title, i) => ({ clientId: stormTaskId(REF, i), title, due: null, assigneePersonId: null, done: false })))
 
-beforeEach(async () => { h.rows = []; h.rpc.mockReset(); h.writes.mockReset(); await Promise.all([db.kv.clear(), db.outbox.clear(), fdb.tasks.clear()]) })
+beforeEach(async () => { h.rows = []; h.rpc.mockReset(); h.writes.mockReset(); await hdb.people.clear(); await hdb.people.put({ id: 'p6', name: 'Shared Villar', kind: 'shared' }); await Promise.all([db.kv.clear(), db.outbox.clear(), fdb.tasks.clear()]) })
 afterEach(() => cleanup())
 
 describe('StormRollCall', () => {
@@ -76,6 +78,7 @@ describe('StormRollCall', () => {
     expect(within(rowOf('Papa')).queryByRole('link')).toBeNull() // safe: no Call
     expect(within(rowOf('You')).queryByRole('link')).toBeNull()
     expect(within(rowOf('Mama')).queryByRole('link')).toBeNull() // needs help but no number saved
+    expect(within(list).queryByText('Shared')).toBeNull() // the shared family account is not a person who has not answered (5 people, not 6)
   })
   it('the shared checklist shows the 4 server-made tasks, this phone makes none, and a tap ticks the family task', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [sig()] })

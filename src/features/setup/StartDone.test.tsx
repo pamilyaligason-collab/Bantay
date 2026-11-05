@@ -111,7 +111,7 @@ describe('onboarding screens 3 to 5 (StartDone)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Dampas, Tagbilaran' }))
     expect(await screen.findByText('Tap below. Your phone rings in 5 seconds.')).toBeTruthy()
     expect(dots(5)).toBeTruthy()
-    expect(screen.getByText('Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing.')).toBeTruthy()
+    expect(screen.getByText('The family owner can always see your records. Anyone else needs your OK or the owner\'s. You are told, and you can stop them.')).toBeTruthy()
     expect(h.track).toHaveBeenCalledWith('action', 'onboard_skip_reminders')
     expect(await kv('setup.notifDenials')).toBeUndefined()
     expect(await kv('onboarded')).toBeUndefined() // the host never writes it: Onboarding does

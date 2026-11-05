@@ -156,7 +156,29 @@ test('S10: the Progress year arrows are 44 px', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await at(page, '#health/nudge', /progress/i)
   await expect(page.getByRole('button', { name: 'Previous year' })).toBeVisible()
+  await expect(page.locator('.nu-cellbtn').first()).toBeEnabled() // today's open dose cells turn into buttons once the account is known: measure only after, so the check never races them
   await assertTargets(page)
+})
+
+test('S10: Pillbox dose buttons are 44 px wide at 360, 390 and 450, and each point of one is its own tap', async ({ page }) => {
+  await full(page, FIXED_CLOCKS[1])
+  await at(page, '#health/nudge', /progress/i)
+  const btns = page.locator('.nu-cellbtn')
+  await expect(btns.first()).toBeEnabled()
+  for (const w of [360, 390, 450]) {
+    await page.setViewportSize({ width: w, height: 844 })
+    for (let i = 0; i < await btns.count(); i++) {
+      const r = await btns.nth(i).evaluate((el) => {
+        el.scrollIntoView({ block: 'center' }) // elementFromPoint sees only what is in the viewport
+        const b = el.getBoundingClientRect()
+        const pts = [[b.left + 2, b.top + b.height / 2], [b.right - 2, b.top + b.height / 2], [b.left + b.width / 2, b.top + 2], [b.left + b.width / 2, b.bottom - 2]]
+        return { w: b.width, h: b.height, own: pts.every(([x, y]) => document.elementFromPoint(x!, y!)?.closest('.nu-cellbtn') === el) }
+      })
+      expect(r.w, `${w}px: button width`).toBeGreaterThanOrEqual(43.5)
+      expect(r.h, `${w}px: button height`).toBeGreaterThanOrEqual(43.5)
+      expect(r.own, `${w}px: edge points hit the button itself`).toBe(true)
+    }
+  }
 })
 
 test('H6: no chips on the sub-screens, the page says whose it is', async ({ page }) => {

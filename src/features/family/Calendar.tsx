@@ -9,7 +9,7 @@ import { KIND, kindsOn, monthCells, monthName, rowsOn, weekSun, type CalSource }
 import { dayKey } from './events'
 import { addDay, dayLabel, emptyHint } from './planList'
 import { ItemSheet, NoteSheet } from './PlanSheets'
-import { useFamilyPeople } from './roster'
+import { useLinkedPeople } from './useFamilyScope'
 import { usePlan } from './usePlan'
 import './family.css'
 
@@ -31,7 +31,7 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
  *  Readable members only (D-82): while acting as someone, only who they may see. */
 export default function Calendar() {
   const { tasks, events, notes } = usePlan()
-  const { people } = useFamilyPeople()
+  const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
   const visible = useViewedVisibleIds()
   const { acting } = useActing()
   const can = useActingCan()
@@ -45,7 +45,7 @@ export default function Calendar() {
   const [sel, setSel] = useState(today)
   const [month, setMonth] = useState(false)
   const [open, setOpen] = useState<'item' | 'note' | null>(null)
-  const ok = (id: string | null) => !visible || !id || visible.has(id)
+  const ok = (id: string | null) => !id || ids.includes(id) // a row tied to someone outside you and your links is hidden; family-wide rows (no person) stay
   const src: CalSource = useMemo(() => ({
     events: events.filter((e) => ok(e.personId)),
     tasks: tasks.filter((t) => ok(t.assigneePersonId)),

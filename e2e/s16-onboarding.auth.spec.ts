@@ -69,7 +69,7 @@ test.describe('reminders allowed', () => {
     await expect(page.getByRole('heading', { name: "Let's test it." })).toBeVisible()
     await page.getByRole('button', { name: 'Send a test reminder' }).click()
     await expect(page.getByRole('heading', { name: "It works. You're set, Mama." })).toBeVisible({ timeout: 12_000 })
-    await expect(page.getByText(/Change this in Settings > Family and sharing\./)).toBeVisible()
+    await expect(page.getByText('The family owner can always see your records. Anyone else needs your OK or the owner\'s. You are told, and you can stop them.')).toBeVisible()
     await expect(page.locator('img.jack')).toHaveCount(0) // success is the check alone (D-103)
     await page.getByRole('button', { name: 'Open Today' }).click()
     await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting

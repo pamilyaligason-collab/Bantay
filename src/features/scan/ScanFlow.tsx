@@ -317,7 +317,7 @@ export default function ScanFlow({ client = supabase }: { client?: SupabaseClien
             <label className="dc-field">Date on the paper (optional)
               <input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
             </label>
-            <p className="sub">{pages.length === 1 ? '1 page' : `${pages.length} pages`} will be saved on this phone and sent when you have signal. Only you, the admins and the people who keep your records can see it.</p>
+            <p className="sub">{pages.length === 1 ? '1 page' : `${pages.length} pages`} will be saved on this phone and sent when you have signal. Only you, the family owner and the people who keep your records can see it.</p>
             <div className="sc-tools">
               <button type="button" className="dc-btn" disabled={busy} onClick={() => setStage('pages')}>Back</button>
               <button type="button" className="dc-btn dc-primary" disabled={busy || !who} onClick={() => void save()}>Save</button>

@@ -1,23 +1,22 @@
-import { shortMedName } from '../health/medName'
 import { shortName } from '../inbox/build'
 import type { AlertRow } from '../notify/store'
 import type { ReviewAsk } from './CarerCards'
 import type { FamilyPerson } from './roster'
 import type { PersonFocus } from './useFocuses'
 
-export interface NeedRow { id: string; person: FamilyPerson | undefined; title: string; sub: string; action: { kind: 'answer'; ask: ReviewAsk } | { kind: 'phone'; alertId: string } | { kind: 'open'; href: string } }
+export interface NeedRow { id: string; person: FamilyPerson | undefined; title: string; sub: string; action: { kind: 'answer'; ask: ReviewAsk } | { kind: 'phone'; alertId: string } | { kind: 'select'; personId: string } }
 
-/** What still needs you that the Today cards do not already say. A person's card shows their ONE top item (unwell, missed dose, questions), so the list holds only the rest:
- *  questions for someone whose card shows something more urgent, missed doses behind "not feeling well", and every "phone may miss alarms" (a card never carries those). Same person + same kind never appears in both. */
-export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people: FamilyPerson[]): NeedRow[] {
+/** What still needs you on the Family root (D-109). Other people's cards are not on the page, so a writer carer keeps the glance here: "Ma: missed a medicine", with no medicine name and no number, and Open puts that person on show.
+ *  The caller passes only you and the people you are a writer carer of (Family's Root filters before it gets here). Also: unanswered "Still taking it?" questions (no medicine name either) unless that person's card is on show and already says so, and every "phone may miss alarms" (a card never carries those). */
+export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people: FamilyPerson[], shownId?: string): NeedRow[] {
   const out: NeedRow[] = []
   for (const it of items) {
     const name = shortName(it.person.name) ?? 'Someone'
-    if (it.asks.length && it.focus.kind !== 'questions') {
+    if (it.asks.length && !(it.person.id === shownId && it.focus.kind === 'questions')) {
       const a = it.asks[0]!
-      out.push({ id: `q|${it.person.id}`, person: it.person, title: `${name}: ${it.asks.length} ${it.asks.length === 1 ? 'question' : 'questions'}`, sub: `Still taking ${shortMedName(a.med.name)}? · ${a.days === 1 ? 'yesterday' : `${a.days} days`}`, action: { kind: 'answer', ask: a } })
+      out.push({ id: `q|${it.person.id}`, person: it.person, title: `${name}: ${it.asks.length} ${it.asks.length === 1 ? 'question' : 'questions'}`, sub: `Asked ${a.days === 1 ? 'yesterday' : `${a.days} days ago`}`, action: { kind: 'answer', ask: a } })
     }
-    if (it.missedDoses.length && it.focus.kind !== 'missed') out.push({ id: `d|${it.person.id}`, person: it.person, title: `${name}: missed ${it.missedDoses.length === 1 ? 'a medicine' : `${it.missedDoses.length} doses`}`, sub: 'Open to mark it', action: { kind: 'open', href: `#family/people/${it.person.id}` } })
+    if (it.missedDoses.length && !it.person.isMe) out.push({ id: `d|${it.person.id}`, person: it.person, title: `${name}: missed a medicine`, sub: 'Open to see which one', action: { kind: 'select', personId: it.person.id } })
   }
   const seen = new Set<string>()
   for (const r of phoneAlerts) {

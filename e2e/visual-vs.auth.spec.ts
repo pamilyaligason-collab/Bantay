@@ -36,7 +36,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test(`Family ${scheme}: Mark taken is the primary button, chart labels are clear of Jack`, async ({ page }) => {
       await skipOnboarding(page)
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
-      await openFamily(page)
+      await openFamily(page, { person: 'Ate Joy' }) // Mark taken is on the card of someone you care for (D-109: Family opens on Me)
       await setScheme(page, scheme)
       const mark = page.locator('.pc-primary').first()
       await expect(mark).toBeVisible()

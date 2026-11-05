@@ -61,9 +61,8 @@ export function legendWord(metric: Metric, s: Series, doctor?: BpArg['doctor']):
 
 export const METRIC_WORD: Record<Metric, string> = { bp: 'blood pressure', steps: 'step', meds: 'medicine' }
 const join = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
-/** Why a chart is empty, in one honest sentence: the people not linked yet are named first (nothing can show for them), else who has no readings (F5). */
-export function emptyWords(metric: Metric, names: string[], unlinked: string[]): string {
-  if (unlinked.length && names.length <= 1) return `Links needed: ask ${join(unlinked)} to share.`
+/** Why a chart is empty, in one honest sentence: who has no readings (F5). */
+export function emptyWords(metric: Metric, names: string[]): string {
   const who = names.map((n, i) => (i === 0 ? n : n === 'You' ? 'you' : n))
   return who.length ? `No ${METRIC_WORD[metric]} readings for ${join(who)} in 7 days.` : `No ${METRIC_WORD[metric]} readings in 7 days.`
 }

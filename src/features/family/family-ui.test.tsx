@@ -15,8 +15,6 @@ vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 import Plan from './Plan'
 import Family, { parseFamily } from '../../screens/Family'
-import { chartPeople } from './ActivityCard'
-import type { FamilyPerson } from './roster'
 import MemberPage from './MemberPage'
 import Messages from './Messages'
 import { fdb } from './store'
@@ -152,15 +150,15 @@ describe('Plan', () => {
 describe('Faces row', () => {
   const at = (h: number, m: number) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString() }
 
-  it('draws a status ring and a corner glyph per face, with a legend, and the latest I\'m OK', async () => {
+  it('opens on Me: one card with the latest I\'m OK, no other person and no "N of M checked in" (D-109)', async () => {
     await ldb.activity.add({ personId: 'p1', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' })
     location.hash = '#family'
     render(<Family />)
-    const roll = await screen.findByRole('group', { name: 'Family roll call' })
-    await waitFor(() => expect(within(roll).getByRole('article', { name: /^Rey Villar \(you\)\. OK 7:40/ })).toBeTruthy())
-    expect(within(roll).getByRole('article', { name: /^Kuya Ben\. No check-in today/ })).toBeTruthy()
-    expect(within(roll).getAllByTestId('person-card').map((e) => e.getAttribute('data-kind')).sort()).toEqual(['nocheck', 'ok'])
-    expect(within(roll).getByText('No check-in yet')).toBeTruthy()
+    const today = await screen.findByRole('group', { name: 'Family roll call' })
+    await waitFor(() => expect(within(today).getByRole('article', { name: /^Rey Villar \(you\)\. OK 7:40/ })).toBeTruthy())
+    expect(within(today).getAllByTestId('person-card')).toHaveLength(1)
+    expect(screen.queryByRole('article', { name: /Kuya Ben/ })).toBeNull() // his card is one pick away in the pill, not on the page
+    expect(screen.queryByText(/checked in$/)).toBeNull()
     expect(screen.queryByText('Phone health data')).toBeNull()
   })
 
@@ -171,7 +169,7 @@ describe('Faces row', () => {
     expect(screen.queryByRole('button', { name: /I'm OK/ })).toBeNull()
   })
 
-  it('the roster is busy until the first read, then the faces', async () => {
+  it('the roster is busy until the first read, then the card', async () => {
     location.hash = '#family'
     const { container } = render(<Family />)
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
@@ -206,9 +204,11 @@ describe('Faces row', () => {
     expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy()
   })
 
-  it('a person with no check-in and no phone gets a Message button that opens the one chat with @name ready', async () => {
+  it('pick Kuya in the pill: his card (no check-in, no phone) gets a Message button that opens the one chat with @name ready', async () => {
     location.hash = '#family'
     const { unmount } = render(<Family />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Who to show: Me' }))
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Who to show' })).getByText('Kuya Ben'))
     const card = await screen.findByRole('article', { name: /^Kuya Ben\. No check-in today/ })
     fireEvent.click(within(card).getByRole('button', { name: 'Message' }))
     unmount()
@@ -246,17 +246,5 @@ describe('Member page', () => {
     expect(await screen.findByText(/could not find this person/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: /Back to People/ }))
     expect(location.hash).toBe('#family')
-  })
-})
-
-describe('chartPeople (who the Activity chart may name)', () => {
-  const p = (id: string, isMe = false) => ({ id, name: id, isMe }) as FamilyPerson
-  const all = [p('me', true), p('ma'), p('pa')]
-  it('you and the people you care for, not everyone an admin can read', () => {
-    expect(chartPeople(all, null, ['ma']).map((x) => x.id)).toEqual(['me', 'ma'])
-    expect(chartPeople(all, null, []).map((x) => x.id)).toEqual(['me'])
-  })
-  it('while viewing as someone, the people they can see', () => {
-    expect(chartPeople(all, new Set(['pa']), ['ma']).map((x) => x.id)).toEqual(['pa'])
   })
 })

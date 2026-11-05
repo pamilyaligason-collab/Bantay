@@ -31,7 +31,7 @@ describe('Privacy screen', () => {
   })
   it('"Who can see my records" opens the server list (#sharing) with the one privacy line, and names nobody', async () => {
     render(<PrivacyScreen />)
-    expect(await screen.findByText('Only you, the family admins, and the people you share with.')).toBeTruthy()
+    expect(await screen.findByText('Only you, the family owner, and the people you or the family owner share with.')).toBeTruthy()
     expect(screen.getByRole('link', { name: /Who can see my records/ }).getAttribute('href')).toBe('#sharing')
     expect(document.body.textContent).not.toMatch(/Admins can see everything/)
   })

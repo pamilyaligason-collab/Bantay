@@ -4,11 +4,14 @@ import { supabase } from '../auth/client'
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 const OFFLINE = 'Could not reach the server. Try again when you have signal.'
 
+/** request_erasure refuses the family owner with 42501 'hand over ownership first' (0046): say so, it is not a network problem. */
+const OWNER = 'As the family owner you cannot delete your account until you hand over ownership.'
+
 async function call<T>(fn: 'export_my_data' | 'request_erasure' | 'cancel_erasure'): Promise<Result<T>> {
   if (!supabase) return { ok: false, error: OFFLINE }
   try {
     const { data, error } = await supabase.rpc(fn)
-    return error ? { ok: false, error: OFFLINE } : { ok: true, value: data as T }
+    return error ? { ok: false, error: fn === 'request_erasure' && /hand over ownership/i.test(error.message ?? '') ? OWNER : OFFLINE } : { ok: true, value: data as T }
   } catch { return { ok: false, error: OFFLINE } }
 }
 

@@ -2,9 +2,12 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const person = (id: string, name: string, isMe = false) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe })
-const state = { people: [person('p1', 'Maria Sample', true), person('p2', 'Ma Sample'), person('p3', 'Pa Sample')], last: null as Record<string, string> | null }
+const state = { people: [person('p1', 'Maria Sample', true), person('p2', 'Ma Sample'), person('p3', 'Pa Sample')], last: null as Record<string, string> | null, writable: ['p2', 'p3'] as string[] }
+vi.mock('../auth/client', () => ({ supabase: {} })) // signed in
+vi.mock('../family/CarerCards', () => ({ useCarerIds: () => state.writable }))
 vi.mock('../family/roster', async (orig) => ({ ...(await orig<object>()), useFamilyPeople: () => ({ people: state.people, selfId: 'p1' }), useCheckInsLoaded: () => state.last }))
-vi.mock('../family/reportData', () => ({ useFlagLines: () => ({ p2: '2 to check' }) }))
+vi.mock('../family/useFamilyScope', async (orig) => ({ ...(await orig<object>()), useLinkedPeople: () => state.people })) // you and your links; Health passes the ids it may show
+vi.mock('../family/reportData', () => ({ useFlagLines: () => ({ p2: '2 to check', p3: '1 to check' }) }))
 const act = { acting: false }
 vi.mock('../viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActing: () => ({ acting: act.acting, personId: null, name: '' }) }))
 const photos = vi.fn()
@@ -19,6 +22,7 @@ beforeEach(() => {
   state.people = [person('p1', 'Maria Sample', true), person('p2', 'Ma Sample'), person('p3', 'Pa Sample')]
   act.acting = false
   state.last = { p1: now, p2: now }
+  state.writable = ['p2', 'p3']
   photos.mockResolvedValue({ ok: true, data: [{ id: 'a' }, { id: 'b' }] })
   msgs.mockResolvedValue({ ok: true, data: [{ createdAt: now }, { createdAt: now }, { createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString() }] })
 })
@@ -47,6 +51,14 @@ describe('FamilyHealthCard', () => {
     await waitFor(() => expect(c.textContent).toContain('Recent photos'))
     await waitFor(() => expect(c.textContent).toContain('2 messages today'))
     expect(c.querySelector('input, textarea, button')).toBeNull() // read-only
+  })
+  it('a read-only link gets no flag line; a writer link does (D-109)', () => {
+    state.writable = ['p2'] // Pa Sample is read-only
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
+    const c = screen.getByTestId('family-health')
+    expect(c.textContent).toContain('2 to check')
+    expect(c.textContent).not.toContain('Pa Sample')
+    expect(c.textContent).not.toContain('1 to check')
   })
   it('offline: only the check-in line and Share yours, nothing invented', async () => {
     photos.mockResolvedValue({ ok: false, error: 'unavailable' })

@@ -142,7 +142,7 @@ export default function MemberPage({ id }: { id: string }) {
       <a className="btn fm-report" href={`#family/people/${p.id}/report`}><Icon name="file" size={22} />Full report</a>
       <div className="card fm-share">
         <b>What stays private</b>
-        <p className="sub">Health readings and records are private. Only {first}, the family admins, and the people {first} shares with can see them.</p>
+        <p className="sub">Health readings and records are private. Only {first}, the family owner, and the people {first} shares with can see them.</p>
       </div>
       {talk && <Messages who={p} people={people} nudge={(() => { const n = nudgeFor(p, c.ok); return n ? { text: n.text, href: n.href } : null })()} onClose={() => setTalk(false)} onOpenPage={() => setTalk(false)} />}
     </>

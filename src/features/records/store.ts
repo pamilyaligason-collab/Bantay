@@ -4,6 +4,8 @@ import type { Range, Reading } from '../health/ranges'
 export interface Person {
   id: string
   name: string
+  /** 'shared' = the shared family account (people.kind, 0046). Pull only; absent for everyone else. */
+  kind?: string | null
 }
 export interface Consult {
   id?: number

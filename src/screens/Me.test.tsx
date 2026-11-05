@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
 const call = vi.hoisted(() => ({ perm: vi.fn(), ask: vi.fn() }))
 vi.mock('../features/sos/call', () => ({ callPermission: call.perm, requestCallPermission: call.ask }))
-const role = vi.hoisted(() => ({ v: 'member' }))
-vi.mock('../features/auth/session', async (orig) => ({ ...(await orig<typeof import('../features/auth/session')>()), getMember: async () => (role.v === 'out' ? null : { userId: 'u0', personId: 'pX', role: role.v }) }))
+const role = vi.hoisted(() => ({ v: 'member', owner: false }))
+vi.mock('../features/auth/session', async (orig) => ({ ...(await orig<typeof import('../features/auth/session')>()), getMember: async () => (role.v === 'out' ? null : { userId: 'u0', personId: 'pX', role: role.v, isOwner: role.owner }) }))
 import Me from './Me'
 
 const FAMILY = ['Mama', 'Papa', 'Ate Joy', 'Lolo'].map((displayName, i) => ({ personId: `p${i}`, displayName, handle: null, provider: 'pin' }))
@@ -73,6 +73,16 @@ describe('Family and sharing (#me/family)', () => {
     expect((await screen.findByRole('link', { name: /Who can see my records/ })).getAttribute('href')).toBe('#sharing')
     expect(screen.getByRole('link', { name: /Medical ID/ }).getAttribute('href')).toBe('#medid')
     expect(document.body.textContent).not.toMatch(/Admins can see everything/)
+  })
+  it('only the family owner gets the "Who sees whom" row, and it opens the owner list at #sharing/all (D-109)', async () => {
+    role.owner = false
+    at('#me/family')
+    await screen.findByRole('link', { name: /Who can see my records/ })
+    expect(screen.queryByRole('link', { name: /Who sees whom/ })).toBeNull()
+    cleanup(); role.owner = true
+    at('#me/family')
+    expect((await screen.findByRole('link', { name: /Who sees whom/ })).getAttribute('href')).toBe('#sharing/all')
+    role.owner = false
   })
   it('SOS contacts: two slots only, family pick fills name, phone is stored', async () => {
     at('#me/family')

@@ -17,7 +17,7 @@ export function ConsentNotice() {
   if (!shown) return null
   return (
     <p className="pv-notice" role="status">
-      Bantay now keeps a note of when you agreed to share your health records with your family. <a href="#privacy">See Privacy</a>
+      Bantay now keeps a note of when you agreed to the Bantay privacy notice. <a href="#privacy">See Privacy</a>
     </p>
   )
 }

@@ -27,7 +27,7 @@ describe('MoodCheck', () => {
   })
   it('the promise line: linked -> "Unwell tells your family", not linked -> the see-and-call line', () => {
     expect(moodPromise(true)).toBe('Unwell tells your family')
-    expect(moodPromise(false)).toBe('Only family linked to you can see this. If you feel unwell, call your family.')
+    expect(moodPromise(false)).toBe('Only the family owner and family linked to you can see this. If you feel unwell, call your family.')
     writer.v = true
     render(<MoodCheck />)
     expect(screen.getByText('Unwell tells your family')).toBeTruthy()

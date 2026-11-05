@@ -6,7 +6,7 @@ import { lastCheckInWords } from './FacesRow'
 import { checkInLabel, dial, type FamilyPerson } from './roster'
 import type { DoseLine } from './MemberPage'
 
-export type FocusKind = 'unwell' | 'missed' | 'questions' | 'due' | 'nocheck' | 'nodata' | 'ok'
+export type FocusKind = 'unwell' | 'missed' | 'questions' | 'due' | 'nocheck' | 'ok'
 export interface Focus {
   kind: FocusKind
   tint: Tint
@@ -22,8 +22,6 @@ export interface FocusData {
   asks: ReviewAsk[]
   checkIn: string | undefined
   canMark: boolean
-  /** No take rows for this person and no right to read them: the phone cannot tell taken from missed (ML-05). */
-  noTakes?: boolean
   now: Date
 }
 
@@ -37,7 +35,6 @@ export function personFocus(p: Pick<FamilyPerson, 'id' | 'name' | 'isMe' | 'phon
     const num = dial(p.phone)
     return { kind: 'unwell', tint: 'red', line: 'Not feeling well', body: 'They chose Not feeling well in How are you?', action: p.isMe ? open : num ? { label: 'Call', kind: 'call' } : { label: 'Message', kind: 'message' } }
   }
-  if (d.missed.length && d.noTakes) return { kind: 'nodata', tint: 'none', line: 'No data', body: 'Medicine marks are not shared with you yet.', action: p.isMe ? open : { label: 'Message', kind: 'message' } }
   if (d.missed.length) {
     const first = d.missed[0]!
     const ago = slotAgo(dayOf(d.now), slotOf(first), d.now)

@@ -87,7 +87,7 @@ test('family: an empty Activity card hugs its one line; with BP data it keeps it
 
 test('family: with BP data the Activity section keeps its floor (tabs do not jump)', async ({ page }) => {
   await page.setViewportSize({ width: 450, height: 997 })
-  await openFamily(page)
+  await openFamily(page, { person: 'Ate Joy' }) // her readings draw the chart (D-109: Family opens on Me)
   const sec = page.getByTestId('activity')
   await expect(sec.locator('svg.wk').first()).toBeVisible()
   const bp = (await sec.boundingBox())!.height

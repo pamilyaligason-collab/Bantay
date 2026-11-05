@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { supabase } from '../../auth/client'
-import { adminMembers, listCarers, rpc, uploadAvatar, type Member, type UsageRow } from '../api'
+import { ADMIN_WARNING, adminMembers, listCarers, rpc, uploadAvatar, type Member, type UsageRow } from '../api'
 import Avatar from '../Avatar'
 import { toAvatarJpeg } from '../photo'
 import { pinError } from '../pin'
@@ -412,8 +412,8 @@ function Account({ l, me, reload, ask, toast }: { l: Line; me: string | null; re
         <div className="mb-acts">
           {pinUser && <button className="dk-b" onClick={() => setPinOpen((o) => !o)} aria-expanded={pinOpen}>Reset PIN</button>}
           {pinUser && st.locked && <button className="dk-b" onClick={() => act(`Unlock ${m.displayName} so they can try their PIN again?`, { action: 'unlock', userId: m.userId }, `${m.displayName} unlocked.`)}>Unlock</button>}
-          {!self && m.role === 'member' && !pinUser && <button className="dk-b" onClick={() => act(`Make ${m.displayName} an admin?`, { action: 'set_role', userId: m.userId, role: 'admin' }, `${m.displayName} is now an admin.`, { action: 'set_role', userId: m.userId, role: 'member' })}>Make admin</button>}
-          {!self && m.role === 'admin' && <button className="dk-b" onClick={() => act(`Make ${m.displayName} a member?`, { action: 'set_role', userId: m.userId, role: 'member' }, `${m.displayName} is now a member.`, { action: 'set_role', userId: m.userId, role: 'admin' })}>Make member</button>}
+          {!self && m.role === 'member' && !pinUser && <button className="dk-b" onClick={() => act(`Make ${m.displayName} an admin? ${ADMIN_WARNING}`, { action: 'set_role', userId: m.userId, role: 'admin' }, `${m.displayName} is now an admin.`, { action: 'set_role', userId: m.userId, role: 'member' })}>Make admin</button>}
+          {!self && m.role === 'admin' && <button className="dk-b" onClick={() => act(`Make ${m.displayName} a member?`, { action: 'set_role', userId: m.userId, role: 'member' }, `${m.displayName} is now a member.`)} /* no Undo: making an admin must always show the warning first */>Make member</button>}
         </div>
         {pinOpen && <ResetPin m={m} ask={ask} done={reload} close={() => setPinOpen(false)} />}
         {self && <p className="dk-sub">This is your own account, so you cannot change your role or disable it here.</p>}

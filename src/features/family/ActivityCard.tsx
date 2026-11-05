@@ -1,14 +1,11 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
-import { supabase } from '../auth/client'
 import type { Reading } from '../health/ranges'
 import { ldb, type Activity, type MedTaken, type Medication } from '../log/store'
 import { Section, Segmented } from '../look'
 import { hdb } from '../records/store'
-import { useViewedVisibleIds } from '../viewas/viewAs'
 import { faceName } from './FacesRow'
-import { carerUserId, loadCarerOf, type CarerClient } from './reportData'
-import { useFamilyPeople, type FamilyPerson } from './roster'
+import type { FamilyPerson } from './roster'
 import { seriesColor, WeekChart } from './WeekChart'
 import { bpDoctorOf } from '../health/verdict'
 import { bpSeries, doseSeries, emptyWords, firstWithData, legendWord, stepSeries, type Metric } from './weekSeries'
@@ -22,22 +19,8 @@ const TITLES: Record<Metric, { t: string; u: string; label: string }> = {
   meds: { t: 'Medicines taken', u: '% taken', label: 'Medicines taken over 7 days' }
 }
 
-/** Who the chart may name (the owner 2026-11-01): you and the people you care for, never everyone an admin role can read. While viewing as someone, the people they can see. */
-export function chartPeople(all: FamilyPerson[], visible: Set<string> | null | undefined, carerOf: string[]): FamilyPerson[] {
-  return all.filter((p) => (visible ? visible.has(p.id) : p.isMe || carerOf.includes(p.id)))
-}
-
-/** Activity (board): BP | Steps | Medicines for the people this phone can see, last 7 days, from the readings, steps and doses already on this phone. Nothing is invented: no data = an empty state. */
-export function ActivityCard() {
-  const { people: all } = useFamilyPeople()
-  const visible = useViewedVisibleIds()
-  const [carerOf, setCarerOf] = useState<string[]>([]) // only you until the links are read, so nobody else flashes up
-  useEffect(() => {
-    let live = true
-    void carerUserId().then((u) => (u ? loadCarerOf(supabase as CarerClient | null, u) : [])).then((ids) => { if (live) setCarerOf(ids) })
-    return () => { live = false }
-  }, [])
-  const people = chartPeople(all, visible, carerOf)
+/** Activity (board): BP | Steps | Medicines for the person on show (D-109: Me by default, one person at a time), last 7 days, from the readings, steps and doses already on this phone. Nothing is invented: no data = an empty state. */
+export function ActivityCard({ people }: { people: FamilyPerson[] }) {
   const key = people.map((p) => p.id).join(',')
   const [d, setD] = useState<D | null>(null)
   const [picked, setPicked] = useState<Metric | null>(null) // null = the first tab that has data
@@ -60,14 +43,13 @@ export function ActivityCard() {
   const series = by ? by[metric] : []
   const allEmpty = series.every((s) => s.empty)
   const noData = !!by && Object.values(by).every((ss) => ss.every((x) => x.empty)) // nothing in any tab: the card hugs its one line (no 420 px floor), see v13-family.css
-  const unlinked = all.filter((p) => !p.isMe && !people.some((x) => x.id === p.id)).map((p) => faceName(p.name))
   const nameOf = (id: string) => { const p = people.find((x) => x.id === id); return p?.isMe ? 'You' : faceName(p?.name ?? 'Someone') }
   return (
     <Section title="Activity" meta="This week" testId="activity">
       <div className="card ac" data-hug={noData || undefined}>
         <Segmented label="Show" value={metric} onChange={setPicked} options={[{ id: 'bp', label: 'BP' }, { id: 'steps', label: 'Steps' }, { id: 'meds', label: 'Medicines' }]} />
         {!d ? <p className="sub" aria-busy="true">Loading…</p> : allEmpty ? (
-          <p className="sub" data-testid="ac-empty">{emptyWords(metric, people.map((p) => nameOf(p.id)), unlinked)}</p>
+          <p className="sub" data-testid="ac-empty">{emptyWords(metric, people.map((p) => nameOf(p.id)))}</p>
         ) : (
           <>
             <div className="ac-h"><b>{TITLES[metric].t}</b><span className="sub">{TITLES[metric].u}</span></div>

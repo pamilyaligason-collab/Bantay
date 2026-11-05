@@ -37,7 +37,7 @@ export const TABLES: Record<string, TableSpec> = {
   meds_taken: { fields: ['personId', 'name', 'takenAt', 'medicationId', 'slot', 'skipped'], onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, pullOnly: ['markedBy', 'markedByName'] }, // 0039: the server stamps who marked it
   activity: {
     fields: ['personId', 'kind', 'minutes', 'steps', 'startedAt', 'source'],
-    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true,
+    onConflict: 'client_id', resolution: 'ignore-duplicates', pull: true, cursor: 'updated_at', // 0046 stamps updated_at, so a late total reaches other phones (merge takes only a rising sensor hour)
     update: { fields: ['steps'] } // only a sensor hour takes this path, always 60 minutes. 0003 grants update on kind, minutes, steps, started_at, source only: never person_id, so an upsert cannot do this
   },
   // Food, water and salt goals (0024). Entries are full-row upserts on client_id with a soft delete, like the plan rows. The goal is one row per person.

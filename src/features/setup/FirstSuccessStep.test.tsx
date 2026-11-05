@@ -7,7 +7,7 @@ vi.mock('../admin/events', () => ({ track: h.track }))
 vi.mock('./steps', () => ({ notifyState: async () => ({ display: h.display, exact: true, battery: true }) }))
 import FirstSuccessStep from './FirstSuccessStep'
 
-const CONSENT = 'Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing.'
+const CONSENT = 'The family owner can always see your records. Anyone else needs your OK or the owner\'s. You are told, and you can stop them.'
 const tick = async (ms: number) => { for (let t = 0; t < Math.max(ms, 1); t += 1000) await act(async () => { await vi.advanceTimersByTimeAsync(Math.min(1000, ms)) }) } // one second per render: each tick sets the next
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }); h.alarm.mockReset(); h.track.mockClear(); h.display = true })

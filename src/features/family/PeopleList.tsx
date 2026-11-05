@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { GroupedList, Row, Section } from '../look'
 import FmAvatar from './FmAvatar'
 import { faceName, faceStatus, lastCheckInWords } from './FacesRow'
-import { useFlagLines } from './reportData'
+import { useWriterFlags } from './useFamilyScope'
 import { checkInLabel, useCheckInsLoaded, type FamilyPerson } from './roster'
 import './v13-family.css'
 
 const SHOWN = 3 // the board shows three, then "All people" (F3 layout)
 
-/** People (board): one row per person with their last check-in and one status word (colour is the Row tint on the avatar ring; the word is always there). There is no place sharing yet, so no map. */
+/** People (board): you and the people you are linked to, each with their last check-in and one status word (colour is the Row tint on the avatar ring; the word is always there). The flag word (a high reading, a missed medicine) shows only for you and for people you are a writer carer of (D-109); a read-only link gets the check-in alone. There is no place sharing yet, so no map. */
 export function PeopleList({ people }: { people: FamilyPerson[] }) {
   const loaded = useCheckInsLoaded()
-  const flags = useFlagLines(people)
+  const flags = useWriterFlags(people)
   const [all, setAll] = useState(false)
   if (!loaded || people.length === 0) return null
   const ordered = [...people].sort((a, b) => Number(checkInLabel(loaded[a.id]).ok && !flags[a.id]) - Number(checkInLabel(loaded[b.id]).ok && !flags[b.id])) // anyone flagged or not checked in leads, so the fold never hides them

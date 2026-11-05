@@ -31,6 +31,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k.startsWith('discover/')) return { tab: 'discover', view: k.split('/')[1] || null } // #discover/learn|listen|play|watch|news
   if (k.startsWith('health/')) return { tab: 'health', view: null } // #health/metric/<code>
   if (k.startsWith('admin/')) return { tab: null, view: 'admin' } // #admin/<page>/<id>: the wide admin dashboard
+  if (k.startsWith('sharing/')) return { tab: null, view: 'sharing' } // #sharing/all (owner list), #sharing/<personId>: SharingScreen reads the rest itself
   if (VIEWS.has(k)) return { tab: null, view: k }
   return { tab: (TABS as string[]).includes(k) ? (k as Tab) : 'today', view: null }
 }

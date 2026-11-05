@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
-// S12 lane A SHARE (runs in the "auth" project: build WITH test Supabase env). Signed in as Mama (own person 'me').
+// S12 lane A SHARE (updated for D-109: links apply at once, person_viewers, no pending state) (runs in the "auth" project: build WITH test Supabase env). Signed in as Mama (own person 'me').
 // PostgREST is mocked, stateful for the share list; every name is invented. Needs F1's App hook (view `sharing` renders SharingScreen).
 // Shots (390x844, light and dark) are written only when S12_SHOTS is set, so a plain gate run writes nothing (ML-32): docs/session-12/shots/A.
 const API = 'https://bantay-test.supabase.test'
@@ -34,15 +34,15 @@ async function mock(page: Page, calls: Call[], viewers: Viewer[], candidates: { 
       const fn = t.slice(4)
       const body = (req.postDataJSON() ?? {}) as Record<string, unknown>
       calls.push({ fn, body })
-      if (fn === 'my_viewers') return reply(viewers)
+      if (fn === 'person_viewers') return reply(viewers)
       if (fn === 'share_candidates') return reply(candidates)
       if (fn === 'share_set') {
         const id = String(body.p_carer)
         const at = viewers.findIndex((v) => v.carer_user_id === id)
         if (body.p_on) {
           const c = candidates.find((x) => x.carer_user_id === id)
-          if (c && at < 0) viewers.push({ carer_user_id: id, display_name: c.display_name, can_write: false, pending: true, added_by_admin: false, added_at: '2026-10-26T02:00:00Z' })
-          return reply('pending')
+          if (c && at < 0) viewers.push({ carer_user_id: id, display_name: c.display_name, can_write: false, pending: false, added_by_admin: false, added_at: '2026-10-26T02:00:00Z' })
+          return reply('added')
         }
         if (at >= 0) viewers.splice(at, 1)
         return reply('removed')
@@ -76,32 +76,34 @@ async function open(page: Page, scheme: 'light' | 'dark', calls: Call[], viewers
 }
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`share with Rhea, see "Waiting for Rhea to accept", cancel it, stop Ate Joy ${scheme}`, async ({ page }) => {
+  test(`share with Rhea (works at once), stop Rhea, stop Ate Joy ${scheme}`, async ({ page }) => {
     const calls: Call[] = []
     await open(page, scheme, calls)
-    await expect(page.getByText('Only you, the family admins, and the people you share with can see your records.')).toBeVisible()
+    await expect(page.getByText('Only you, the family owner, and the people you or the family owner share with can see your records.')).toBeVisible()
     await expect(page.getByText('Ate Joy', { exact: true })).toBeVisible()
     await expect(page.getByText(/Kuya Ben/).first()).toBeVisible()
-    await expect(page.getByText(/added by an admin/)).toBeVisible()
+    await expect(page.getByText(/added by the family owner/)).toBeVisible()
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/sharing-list-${scheme}.png` })
 
     await page.getByRole('button', { name: /Share with someone/ }).click()
     const sheet = page.getByRole('dialog', { name: 'Share with someone' })
     await expect(sheet.getByRole('button', { name: 'Rhea' })).toBeVisible()
-    await expect(sheet.getByRole('checkbox')).toBeDisabled()
-    await expect(sheet.getByText('Only an admin can turn this on.')).toBeVisible()
+    await expect(sheet.getByRole('checkbox')).toHaveCount(0) // D-109: no carer box for anyone
+    await expect(sheet.getByText('Only the family owner can turn this on.')).toHaveCount(0)
     await sheet.getByRole('button', { name: 'Rhea' }).click()
     await page.waitForTimeout(350) // sheet slide-in
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/share-sheet-${scheme}.png` })
-    await sheet.getByRole('button', { name: 'Send to Rhea' }).click()
-    await expect(page.getByText('Waiting for Rhea to accept')).toBeVisible()
+    await sheet.getByRole('button', { name: 'Allow Rhea' }).click()
+    await expect(page.getByText('Rhea', { exact: true })).toBeVisible()
+    await expect(page.getByText(/Waiting for/)).toHaveCount(0)
     expect(calls.find((c) => c.fn === 'share_set')?.body).toEqual({ p_person: 'me', p_carer: 'u-rhea', p_can_write: false, p_on: true })
     await expect(page.getByRole('dialog')).toHaveCount(0)
-    if (SHOTS) await page.screenshot({ path: `${SHOTS}/sharing-pending-${scheme}.png` })
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/sharing-added-${scheme}.png` })
 
-    await page.getByRole('button', { name: 'Cancel the offer to Rhea' }).click()
-    await expect(page.getByText('Waiting for Rhea to accept')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Stop sharing with Rhea' }).click()
+    await page.getByRole('button', { name: 'Stop sharing', exact: true }).click()
+    await expect(page.getByText('Rhea', { exact: true })).toHaveCount(0)
     expect(calls.filter((c) => c.fn === 'share_set').at(-1)?.body).toEqual({ p_person: 'me', p_carer: 'u-rhea', p_can_write: false, p_on: false })
 
     await page.getByRole('button', { name: 'Stop sharing with Ate Joy' }).click()
@@ -133,7 +135,7 @@ test('a load that fails says so and never claims nobody has access', async ({ pa
   await skipOnboarding(page)
   await page.setViewportSize({ width: 390, height: 844 })
   await mock(page, [], seed(), people())
-  await page.route(`${API}/rest/v1/rpc/my_viewers`, (route) => route.fulfill({ status: 500, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ message: 'down' }) }))
+  await page.route(`${API}/rest/v1/rpc/person_viewers`, (route) => route.fulfill({ status: 500, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ message: 'down' }) }))
   await page.goto('/#sharing')
   await expect(page.getByRole('alert').filter({ hasText: 'No signal' })).toBeVisible()
   await expect(page.getByText('You have not shared with anyone yet.')).toHaveCount(0)

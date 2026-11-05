@@ -4,6 +4,7 @@ import { EMPTY as BAG_EMPTY, KEY as BAG_KEY, readState } from '../gobag/state'
 import { FAIL_TEXT, feelingToast, type Feeling, logFeeling } from '../today/actions'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs' // S16-L1
 import { useFamilyPeople } from '../family/roster'
+import { usePeople } from '../records/useRecordsServer'
 import { givenName } from '../health/medName'
 import { Icon } from '../shell/Icon'
 import { ALERTS_KEY, type Alert } from './alerts'
@@ -101,7 +102,10 @@ export function StormBlock({ now, compact = false }: { now?: number; compact?: b
   const selfId = useActingPersonId()
   const can = useActingCan() // null when not acting; while acting, the roll call needs the rollcall right (C-9)
   const locked = !!can && !can.rollcall
-  const { people } = useFamilyPeople()
+  const { people: everyone } = useFamilyPeople()
+  const stored = usePeople()
+  // The shared family account is a login, not a person who can answer (same rule as StormRollCall).
+  const people = useMemo(() => { const shared = new Set(stored.filter((p) => p.kind === 'shared').map((p) => p.id)); return everyone.filter((p) => !shared.has(p.id)) }, [everyone, stored])
   const [said, setSaid] = useState<string | null>(null)
   const [rows, setRows] = useState<Awaited<ReturnType<typeof fetchRollcall>>>(null)
   const signals = liveSignals(alerts, now)

@@ -5,8 +5,8 @@ import { scheduleTestAlarm } from '../phonecheck/probe'
 import { Icon } from '../shell/Icon'
 import { notifyState } from './steps'
 
-/** The D-86 behaviour in one sentence (A-15, M2-4): private until shared and accepted, admins can read. Shown on onboarding screen 5 and in the Wizard's Sharing step. */
-export const CONSENT_LINE = 'Your records stay private until you or a family admin share them and the person accepts. Family admins can see them. Change this in Settings > Family and sharing.'
+/** The D-86 behaviour in one sentence (A-15, M2-4): private until shared, the family owner can read. Shown on onboarding screen 5 and in the Wizard's Sharing step. */
+export const CONSENT_LINE = 'The family owner can always see your records. Anyone else needs your OK or the owner\'s. You are told, and you can stop them.'
 
 const SECONDS = 5
 

@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { givenName } from '../health/medName'
+import { usePeople } from '../records/useRecordsServer'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import { ensureStormTasks, fetchRollcall, STORM_TASKS, stormTaskId, tally, type RollRow } from '../safety/rollcall'
 import { liveSignals, stormKey, stormRef } from '../safety/stormMode'
@@ -24,7 +25,10 @@ export function StormRollCall({ now }: { now?: number }) {
   const top = signals[0]
   const ref = top ? stormRef(top) : null
   const refsKey = top ? signals.filter((a) => stormKey(a) === stormKey(top)).map(stormRef).join('|') : ''
-  const { people } = useFamilyPeople()
+  const { people: everyone } = useFamilyPeople()
+  const stored = usePeople()
+  // The shared family account is a login, not a person who can answer: it is neither listed nor counted as silent.
+  const people = useMemo(() => { const shared = new Set(stored.filter((p) => p.kind === 'shared').map((p) => p.id)); return everyone.filter((p) => !shared.has(p.id)) }, [everyone, stored])
   const [rows, setRows] = useState<RollRow[] | null>(null)
   const [tasks, setTasks] = useState<FamilyTask[]>([])
 

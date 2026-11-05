@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { AcceptCard } from '../features/sharing/AcceptCard'
+import { useEffect, useMemo } from 'react'
 import { ActivityCard } from '../features/family/ActivityCard'
 import FamilyFeed from '../features/family/FamilyFeed'
 import Calendar from '../features/family/Calendar'
@@ -14,11 +13,13 @@ import Papers from '../features/family/Papers'
 import { PeopleList } from '../features/family/PeopleList'
 import Plan from '../features/family/Plan'
 import Report from '../features/family/Report'
-import { useFamilyPeople } from '../features/family/roster'
+import { useCarerIds } from '../features/family/CarerCards'
 import { StormRollCall } from '../features/family/StormRollCall'
 import { SEEN, TogetherList } from '../features/family/TogetherList'
 import { TodayCarousel } from '../features/family/TodayCarousel'
-import { useFocuses, useVisiblePeople } from '../features/family/useFocuses'
+import { useFamilyScope, useLinkedPeople } from '../features/family/useFamilyScope'
+import { useFocuses } from '../features/family/useFocuses'
+import { PersonSwitcher, type SwitcherGroup } from '../features/health/PersonSwitcher'
 import { LargeTitle } from '../features/look'
 import { HeadActions } from '../features/shell/HeadActions'
 import { Icon } from '../features/shell/Icon'
@@ -43,22 +44,39 @@ export function parseFamily(h: string): { seg: FamilySeg; member: string | null 
 /** #family/people/<id>/report is that member's health report. */
 export const isReport = (h: string) => /^#?family\/people\/[^/]+\/report$/.test(h)
 
-/** The Family root (v13): large title with Add, Today carousel, Activity, Needs you now, People, Together. Everything is read from this phone; nothing is invented. */
+/** The sheet's blocks (board "Who to show"): Me, then who you care for (writer links), then everyone else. The owner's rest are theirs alone, so the label says so; for anyone else the rest are people a read-only link shows them. */
+function groupsOf(options: { id: string; isMe: boolean }[], writable: string[], isOwner: boolean): SwitcherGroup[] {
+  const care = options.filter((p) => !p.isMe && writable.includes(p.id))
+  const rest = options.filter((p) => !p.isMe && !writable.includes(p.id))
+  const out: SwitcherGroup[] = [{ rows: options.filter((p) => p.isMe).map((p) => ({ id: p.id })) }]
+  if (care.length) out.push({ label: 'You care for', rows: care.map((p) => ({ id: p.id, sub: 'You are their carer' })) })
+  if (rest.length) out.push({ label: isOwner ? 'Everyone else (only your account sees these)' : 'Everyone else', rows: rest.map((p) => ({ id: p.id, sub: 'View only' })) })
+  return out
+}
+
+/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then Today, Activity, Needs you now, People, Together. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
 function Root() {
-  const { people: all } = useFamilyPeople()
-  const people = useVisiblePeople()
-  const fx = useFocuses(people)
-  const me = all.find((p) => p.isMe)
+  const { shown, options, select, isOwner } = useFamilyScope()
+  const writable = useCarerIds()
+  const { acting } = useActing()
+  const linked = useLinkedPeople()
+  const watch = useMemo(() => options.filter((p) => p.id === shown.id || (!acting && writable.includes(p.id))), [options, shown.id, acting, writable]) // the person on show, plus the people you care for so their missed doses stay in Needs you now
+  const fx = useFocuses(watch)
+  const onShow = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.id === shown.id) }), [fx, shown.id])
+  const needs = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.isMe || writable.includes(i.person.id)) }), [fx, writable]) // a view-only person on show must not raise "missed a medicine"
+  const pick = (id: string) => { select(id); document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) }
+  const me = options.find((p) => p.isMe)
+  const groups = useMemo(() => groupsOf(options, writable, isOwner), [options, writable, isOwner])
+  const pill = <PersonSwitcher people={options} meId={me?.id ?? ''} personId={shown.id} setPersonId={() => undefined} onPick={pick} title="Who to show" groups={acting ? undefined : groups} foot={acting ? undefined : 'Family opens on Me every time.'} />
   return (
     <>
-      <LargeTitle kicker={people.length ? `${people.length} ${people.length === 1 ? 'PERSON' : 'PEOPLE'}` : ' '} title="Family" actions={<HeadActions><a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
-      <AcceptCard />
+      <LargeTitle kicker=" " title="Family" actions={<HeadActions>{pill}<a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
-      <TodayCarousel people={people} fx={fx} />
-      <ActivityCard />
-      <NeedsList fx={fx} people={people} selfName={me?.name ?? ''} />
-      <PeopleList people={people} />
+      <TodayCarousel people={shown.id ? [shown] : []} fx={onShow} />
+      <ActivityCard people={shown.id ? [shown] : []} />
+      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} shownId={shown.id} onSelect={pick} />
+      <PeopleList people={linked} />
       <TogetherList />
     </>
   )

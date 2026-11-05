@@ -47,6 +47,5 @@ describe('F5 empty words and default tab', () => {
   const ser = (empty: boolean) => [{ personId: 'a', points: [], latest: empty ? null : 1, empty }]
   it('opens on the first metric with data', () => expect(firstWithData({ bp: ser(true), steps: ser(false), meds: ser(false) })).toBe('steps'))
   it('falls back to bp when nothing has data', () => expect(firstWithData({ bp: ser(true), steps: ser(true), meds: ser(true) })).toBe('bp'))
-  it('names who has no readings', () => expect(emptyWords('bp', ['You', 'Ben'], [])).toBe('No blood pressure readings for You and Ben in 7 days.'))
-  it('asks for a link when only you are shown', () => expect(emptyWords('steps', ['You'], ['Ben', 'Joy'])).toBe('Links needed: ask Ben and Joy to share.'))
+  it('names who has no readings', () => expect(emptyWords('bp', ['You', 'Ben'])).toBe('No blood pressure readings for You and Ben in 7 days.'))
 })

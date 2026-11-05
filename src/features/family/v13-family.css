@@ -1,5 +1,6 @@
 /* Family tab (v13 lane F). Tokens only; the board's 250 px cards shrink on a 195 px screen. */
 .td-h { display: flex; align-items: center; min-height: 44px; outline: none; }
+.pc-one .pc { width: 100%; }
 .pc { width: min(250px, calc(100vw - 48px)); min-height: 196px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; }
 .pc[data-tint="red"] { background: var(--tint-red); }
 .pc[data-tint="amber"] { background: var(--tint-amber); }

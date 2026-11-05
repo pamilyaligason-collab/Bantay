@@ -7,7 +7,7 @@ import { SAFETY_IDS, type TemplateId } from '../notify/templates'
 import { type Entry, OVERRIDES_KEY, type Overrides, parseEdit } from '../safety/entries'
 import { putKv } from '../safety/store'
 import { Icon } from '../shell/Icon'
-import { adminMembers, connected, type Carer, type ImportRow, linkCarer, listCarers, listPinRequests, markRequestDone, type Member, newsLastAt, type PinRequest, rpc, type Res, unlinkCarer, type UsageRow } from './api'
+import { adminMembers, connected, type ImportRow, listPinRequests, markRequestDone, type Member, newsLastAt, type PinRequest, rpc, type Res, type UsageRow } from './api'
 import { BROADCAST_IDS, BROADCAST_REACH, sendBroadcast, templateLabel } from './broadcast'
 import { pinError } from './pin'
 import Avatar from './Avatar'
@@ -154,31 +154,13 @@ function Invite({ ask }: { ask: Ask }) {
   )
 }
 
-function CarerLinks({ members, ask }: { members: Member[]; ask: Ask }) {
-  const [links, reload] = useLoad<Carer[]>(listCarers)
-  const [f, setF] = useState({ carer: '', person: '' })
-  const people = members.filter((m) => m.personId)
-  const name = (id: string, byPerson: boolean) => members.find((m) => (byPerson ? m.personId : m.userId) === id)?.displayName ?? 'Someone'
+/** Links are set in one place, the desk grid (D-109); the old carer form here made a third. */
+function SharingLink() {
   return (
-    <div>
-      <div className="ad-pad">
-        <strong>Carer links</strong>
-        <span className="sub">A carer can see another person's health records, read only.</span>
-        <Field label="Carer"><select className="ad-in" value={f.carer} onChange={(e) => setF({ ...f, carer: e.target.value })}><option value="">Choose</option>{members.map((m) => <option key={m.userId} value={m.userId}>{m.displayName}</option>)}</select></Field>
-        <Field label="Can view records of"><select className="ad-in" value={f.person} onChange={(e) => setF({ ...f, person: e.target.value })}><option value="">Choose</option>{people.map((m) => <option key={m.personId!} value={m.personId!}>{m.displayName}</option>)}</select></Field>
-        <button className="ad-b go" disabled={!f.carer || !f.person} onClick={() => ask(`Let ${name(f.carer, false)} view the records of ${name(f.person, true)}?`, async () => {
-          const r = await linkCarer(f.carer, f.person, false); if (!r.ok) throw new Error(why(r.error)); await reload()
-        })}>Allow viewing</button>
-      </div>
-      {links.state === 'ok' && links.data.map((l) => (
-        <div className="ad-row" key={l.carer_id + l.person_id}>
-          <span className="ad-grow">{name(l.carer_id, false)} can view {name(l.person_id, true)} <span className="ad-tag">{l.can_write ? 'can edit' : 'view only'}</span></span>
-          <button className="ad-b bad" aria-label={`Remove link ${name(l.carer_id, false)} to ${name(l.person_id, true)}`} onClick={() => ask(`Remove ${name(l.carer_id, false)} as carer of ${name(l.person_id, true)}?`, async () => {
-            const r = await unlinkCarer(l.carer_id, l.person_id); if (!r.ok) throw new Error(why(r.error)); await reload()
-          })}>Remove</button>
-        </div>
-      ))}
-      {links.state === 'err' && <Msg s={links} />}
+    <div className="ad-pad">
+      <strong>Who sees whom</strong>
+      <span className="sub">Allow or stop who can see a person's records on the web admin page. Only the family owner can change it.</span>
+      <a className="ad-b go" href="/admin#/sharing">Open Who sees whom</a>
     </div>
   )
 }
@@ -192,7 +174,7 @@ function Members({ s, reload, ask, open }: { s: Loaded<Member[]>; reload: () => 
           {s.data.map((m) => <MemberRow key={m.userId} m={m} open={() => open(m.userId)} />)}
           <AddMember ask={ask} done={reload} taken={new Set(s.data.flatMap((m) => (m.handle ? [m.handle] : [])))} />
           <Invite ask={ask} />
-          <CarerLinks members={s.data} ask={ask} />
+          <SharingLink />
         </>
       )}
     </Section>

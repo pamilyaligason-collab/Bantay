@@ -33,7 +33,7 @@ export function visibleTo(userId: string, people: ViewPerson[], carers: Pick<Car
   return { shown, hidden }
 }
 
-export const RELATION_TEXT: Record<Relation, string> = { self: 'You', writer: 'Carer, can edit', carer: 'Carer, read only', creator: 'Added by them, no records access', admin: 'Admin, sees everyone' }
+export const RELATION_TEXT: Record<Relation, string> = { self: 'You', writer: 'Carer, can edit', carer: 'Carer, read only', creator: 'Added by them, no records access', admin: 'Family owner, sees everyone' }
 
 export type PvMed = { name: string; dose: string | null; strength: string | null; schedule: string[]; as_needed: boolean }
 /** logged_by exists only after migration 0044; absent or null means unknown (never read as "self"). */

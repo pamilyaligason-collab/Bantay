@@ -72,14 +72,14 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
         <span className="pv-tick"><Icon name="check" size={18} /></span>
         <div className="sh-grow">
           <b>{agreed === undefined ? 'Agreement' : when ? `Agreed when you joined, ${when}` : 'Agreement not recorded yet'}</b>
-          <div className="sh-sub">{when ? 'You agreed to share your health records with your family.' : 'It is recorded the next time Bantay can reach the server.'}</div>
+          <div className="sh-sub">{when ? 'You agreed to the Bantay privacy notice.' : 'It is recorded the next time Bantay can reach the server.'}</div>
         </div>
       </div>
 
       <div className="sh-card sh-list">
         <a className="sh-navrow" href="#sharing">
           <Icon name="users" boxed size={20} />
-          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Only you, the family admins, and the people you share with.</span></span>
+          <span className="sh-grow"><b>Who can see my records</b><span className="sh-sub sh-blk">Only you, the family owner, and the people you or the family owner share with.</span></span>
           <Icon name="chev" />
         </a>
         <div>

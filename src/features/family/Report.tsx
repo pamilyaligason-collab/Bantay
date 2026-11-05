@@ -98,7 +98,7 @@ export default function Report({ id }: { id: string }) {
     return (
       <>
         <SubHeader title="Report" backHref={back} backLabel="Back to member" />
-        <div className="card" data-testid="rp-denied" role="alert"><b>You do not have access to this report</b><p className="sub">Only {first}, the family admins, and the people {first} shares with can open it.</p></div>
+        <div className="card" data-testid="rp-denied" role="alert"><b>You do not have access to this report</b><p className="sub">Only {first}, the family owner, and the people {first} shares with can open it.</p></div>
       </>
     )
   }
@@ -111,7 +111,7 @@ export default function Report({ id }: { id: string }) {
       <div className="rp-actions no-print">
         <button type="button" className="btn" onClick={() => window.print()}><Icon name="dl" size={22} />Print or save as PDF for the doctor</button>
       </div>
-      <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the family admins, and the people {first} shares with can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
+      <p className="sub rp-privacy"><Icon name="lock" size={18} /> Private. Only {first}, the family owner, and the people {first} shares with can see this report. Printing it makes a copy outside Bantay, so keep it safe.</p>
     </div>
   )
 }

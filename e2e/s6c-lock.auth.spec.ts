@@ -139,7 +139,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/#privacy')
     await expect(page.getByText('Agreed when you joined, 26 Oct')).toBeVisible()
     await expect(page.getByRole('switch', { name: 'Use AI for Jack and photos' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByText('Only you, the family admins, and the people you share with.')).toBeVisible() // lane A's sharing copy (D-80): who can see my records
+    await expect(page.getByText('Only you, the family owner, and the people you or the family owner share with.')).toBeVisible() // lane A's sharing copy (D-80): who can see my records
     await expect(page.getByText('Where your data goes')).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/start-privacy-${scheme}.png` })
     await page.getByText('Where your data goes').scrollIntoViewIfNeeded()
