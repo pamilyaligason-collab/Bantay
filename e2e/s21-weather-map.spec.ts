@@ -45,6 +45,13 @@ test('D-128: forecast failed with a point still shows the map', async ({ page })
   await expect(page.getByTestId('wx-live-map').locator('iframe')).toHaveCount(1)
 })
 
+test('map cards carry no backdrop-filter, which leaves a cross-origin frame blank in Chromium', async ({ page }) => {
+  await open(page)
+  const card = page.getByTestId('wx-live-map')
+  await expect(card.locator('iframe')).toHaveCount(1)
+  expect(await card.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none')
+})
+
 for (const [name, path] of [['Weather', '/#weather'], ['Storm tracker', '/#safety/storms']] as const) {
   test(`Pause on mobile data switch has width and a visible track in both states (${name})`, async ({ page }) => {
     await open(page)

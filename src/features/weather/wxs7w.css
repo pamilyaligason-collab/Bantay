@@ -37,6 +37,7 @@
 
 /* S21 round 3: the map sits edge to edge in its card as on the board; the text round it keeps the card's 16 px. */
 .card.wx-bleed { padding: 0; overflow: hidden; gap: 0; }
+.wx .card.wx-bleed { -webkit-backdrop-filter: none; backdrop-filter: none; } /* Chromium paints a cross-origin iframe blank inside a backdrop-filter box: the Windy map showed as an empty grey card on live (11-06) */
 .wx-bleed .lm-box, .wx-bleed .sf-frame { border-radius: 0; }
 .wx-bleed .wx-storm { gap: 0; }
 .wx-pad { padding: 10px 16px; display: grid; gap: 8px; }
