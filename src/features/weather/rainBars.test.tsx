@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Alert } from '../safety/alerts'
 import { openMeteoFixture } from './fixture'
 import { parseForecast, readCached, savedLine } from './forecast'
@@ -9,7 +9,7 @@ import RainMap from './RainMap'
 import StormTrack from './StormTrack'
 import { db } from '../../db'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); vi.useRealTimers() })
 const NOW = new Date('2026-10-27T01:15:00Z') // 9:15 AM in Manila
 const fc = () => parseForecast(openMeteoFixture({ now: NOW }), NOW.toISOString())!
 const P = { lat: 6.11, lon: 125.17 }
@@ -35,6 +35,7 @@ describe('rain fallback branch (R3: RainViewer coverage of the Philippines not c
 
 describe('RainMap', () => {
   it('draws bars on one baseline and the PAGASA radar link, with no layer tabs', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: NOW }) // RainMap reads the clock; on a real clock this fixed-date forecast has run out, so the count changed with the time of day
     render(<RainMap fc={fc()} placeName="General Santos" />)
     expect(screen.getByRole('list', { name: 'Chance of rain, next 12 hours' }).children).toHaveLength(12)
     expect(screen.getByRole('link', { name: /Radar images from PAGASA/ }).getAttribute('href')).toMatch(/pagasa\.dost\.gov\.ph/)
