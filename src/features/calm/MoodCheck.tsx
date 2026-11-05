@@ -15,7 +15,7 @@ const FACE: Record<Feeling, string> = {
 /** The board's words (Mindful): Good, Okay, Low, Unwell. */
 const WORD: Record<Feeling, string> = { great: 'Good', ok: 'Okay', notgreat: 'Low', unwell: 'Unwell' }
 
-export const moodPromise = (linked: boolean) => (linked ? 'Unwell tells your family' : 'Only family linked to you can see this. If you feel unwell, call your family.')
+export const moodPromise = (linked: boolean) => (linked ? 'Unwell tells your family' : 'Only the family owner and family linked to you can see this. If you feel unwell, call your family.')
 
 /** The How-are-you faces (today/actions), as four 76 px tiles with the board's faces.
  *  Same rules as today/QuickLog: writes for the viewed person while an admin is acting, locked in View only, one write at a time. */

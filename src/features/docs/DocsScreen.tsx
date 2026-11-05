@@ -134,7 +134,7 @@ function UploadSheet(p: { owner: string; people: PersonRow[]; forId: string; kin
               <input value={title} maxLength={40} autoComplete="off" onChange={(e) => setTitle(e.target.value)} />
             </label>
             {actions}
-            <p className="sub dc-note">Saved to family Drive when online. Only you, admins and record keepers see it.</p>
+            <p className="sub dc-note">Saved to family Drive when online. Only you, the family owner and record keepers see it.</p>
             {err && <p className="dc-err" role="alert">{err}</p>}
             <button className="btn2" onClick={p.onClose}>Cancel</button>
           </>
@@ -237,7 +237,7 @@ export function DocsScreen({ client = supabase }: { client?: SupabaseClient | nu
   return (
     <>
       <SubHeader title="IDs and insurance" backHref="#safety" backLabel="Back to Safety" className="sf-hdr sf-subhdr" />
-      <p className="sub dc-note">Seen only by you, the admins and whoever keeps your records · saved for offline</p>
+      <p className="sub dc-note">Seen only by you, the family owner and whoever keeps your records · saved for offline</p>
       <div className="seg" role="group" aria-label="Kind">
         <button aria-pressed={kind === 'id_card'} onClick={() => choose('id_card')}>My IDs</button>
         <button aria-pressed={kind === 'insurance_card'} onClick={() => choose('insurance_card')}>Insurance</button>

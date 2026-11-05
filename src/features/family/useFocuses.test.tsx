@@ -16,21 +16,14 @@ const day = new Date(2026, 9, 27, 14, 0)
 describe('useFocuses', () => {
   beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'], now: day }); await Promise.all([ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear()]) })
   afterEach(() => { vi.useRealTimers(); al.rows = [] })
-  it('F1 guard: no take rows and no write link says No data, but a dose_missed alert for today (carers only) proves the read right and it says Missed', async () => {
+  it('D-109: no take rows and no write link still reads Missed, read-only; there is no No data state', async () => {
     await ldb.medications.add({ personId: 'mama', name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, serverId: 'm1' } as never)
-    const run = async () => {
-      const { result } = renderHook(() => useFocuses([person('mama', 'Mama')]))
-      await waitFor(() => expect(result.current.loaded).toBe(true))
-      return result.current.items[0]!
-    }
-    const none = await run()
-    expect(none.focus.kind).toBe('nodata')
-    expect(none.missedDoses).toHaveLength(0)
-    al.rows = [{ id: 'a1', personId: 'mama', kind: 'dose_missed', template: 'dose_missed', ref: 'mama:2026-10-27:08:00', createdAt: '2026-10-27T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-03T00:00:00Z' }]
-    const hit = await run()
-    expect(hit.focus.kind).toBe('missed')
-    expect(hit.missedDoses).toHaveLength(1)
-    expect(hit.focus.action?.kind).toBe('open') // read-only: no Mark taken
+    const { result } = renderHook(() => useFocuses([person('mama', 'Mama')]))
+    await waitFor(() => expect(result.current.loaded).toBe(true))
+    const it = result.current.items[0]!
+    expect(it.focus.kind).toBe('missed')
+    expect(it.missedDoses).toHaveLength(1)
+    expect(it.focus.action?.kind).toBe('open') // read-only: no Mark taken
   })
   it("Lola's losartan take does not clear Lolo's missed losartan", async () => {
     const med = (personId: string, serverId: string) => ({ personId, name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, serverId }) as never

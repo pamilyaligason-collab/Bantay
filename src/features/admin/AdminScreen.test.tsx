@@ -78,6 +78,9 @@ describe('AdminScreen', () => {
     expect(await screen.findByText('Active in the last 7 days')).toBeTruthy()
     expect(await screen.findByText(/14 readings · 3 visits/)).toBeTruthy()
     expect(screen.queryByText(/Assistant messages/)).toBeNull() // no RPC, hidden
+    expect(screen.getByRole('link', { name: 'Open Who sees whom' }).getAttribute('href')).toBe('/admin#/sharing')
+    expect(screen.queryByText('Carer links')).toBeNull() // links are set in one place, the desk grid (D-109)
+    expect(screen.queryByRole('button', { name: 'Allow viewing' })).toBeNull()
   })
   it('shows a clear Not connected yet state with no client', async () => {
     connected = false
@@ -101,6 +104,20 @@ describe('AdminScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull()
     }
     expect(actions()).not.toContain('create')
+  })
+  it('Make admin warns, and changes the role only after Confirm (one tap and Cancel change nothing)', async () => {
+    render(<AdminScreen />)
+    await openLola()
+    fireEvent.click(await screen.findByRole('button', { name: 'Change role of Lola' }))
+    const dlg = await screen.findByRole('alertdialog')
+    expect(dlg.textContent).toContain("Make Lola an admin? An admin can read most of the family's records without a link.")
+    expect(actions()).not.toContain('set_role') // one tap is not enough
+    fireEvent.click(within(dlg).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(actions()).not.toContain('set_role') // cancel changes nothing
+    fireEvent.click(await screen.findByRole('button', { name: 'Change role of Lola' }))
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => expect(h.invoke).toHaveBeenCalledWith('admin-members', { body: { action: 'set_role', role: 'admin', userId: 'u2' } }))
   })
   it('adds a member only after confirmation', async () => {
     render(<AdminScreen />)
@@ -261,8 +278,8 @@ describe('linkCarer and unlinkCarer (0037: share_set, no REST writes)', () => {
   })
   it('linkCarer: returns the server word and maps a refusal to bad_input', async () => {
     const { linkCarer } = await import('./api')
-    h.rpc.mockImplementation(async () => ({ data: 'pending', error: null }))
-    expect(await linkCarer('c', 'p', false)).toEqual({ ok: true, data: 'pending' })
+    h.rpc.mockImplementation(async () => ({ data: 'added', error: null }))
+    expect(await linkCarer('c', 'p', false)).toEqual({ ok: true, data: 'added' })
     expect(h.rpc).toHaveBeenLastCalledWith('share_set', { p_person: 'p', p_carer: 'c', p_can_write: false, p_on: true })
     h.rpc.mockImplementation(async () => ({ data: null, error: { code: '22023', message: 'bad target' } }))
     expect(await linkCarer('c', 'p', false)).toEqual({ ok: false, error: 'bad_input' })

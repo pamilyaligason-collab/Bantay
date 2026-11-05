@@ -105,7 +105,7 @@ describe('useActingCan (computed once at enter, from carers)', () => {
     for (const c of [link(false), { ok: true, data: [] }]) {
       exitActing(); h.carers.mockResolvedValue(c)
       await enterActing('p-mama')
-      expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: 'You can see Mama but not log for her. Ask her (or an admin) to make you a carer with edit access.' })
+      expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: 'You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.' })
     }
   })
   it('a failed carers read: every flag false with the could-not-check reason', async () => {

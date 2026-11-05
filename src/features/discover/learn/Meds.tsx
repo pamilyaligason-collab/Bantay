@@ -3,21 +3,24 @@ import { useEffect, useMemo, useState } from 'react'
 import { ldb, type Medication } from '../../log/store'
 import { Icon } from '../../shell/Icon'
 import { SubHeader } from '../../shell/SubHeader'
+import { useActingPersonId } from '../../viewas/viewAs'
 import { MEDCARDS, type CardKind } from './data'
 import { pickMeds } from './pick'
 
 const KINDS: { id: CardKind; label: string }[] = [{ id: 'medicine', label: 'Medicines' }, { id: 'supplement', label: 'Supplements' }, { id: 'herbal', label: 'Herbal' }]
 const NONE: Medication[] = []
 
-/** #discover/learn/meds: "Mama's medicines" (cards that match live medicine rows), then every card with a search box and kind filters. */
+/** #discover/learn/meds: "Medicines on your list" (cards that match your own live medicine rows), then every card with a search box and kind filters. */
 export default function Meds() {
   const [meds, setMeds] = useState(NONE)
   const [q, setQ] = useState('')
   const [kinds, setKinds] = useState<CardKind[]>([])
+  const self = useActingPersonId() // the person you are viewing as, else you
   useEffect(() => {
-    const s = liveQuery(() => ldb.medications.toArray()).subscribe({ next: setMeds, error: () => undefined })
+    if (!self) { setMeds(NONE); return } // who you are is not known yet: list nothing rather than everyone's medicines
+    const s = liveQuery(() => ldb.medications.where('personId').equals(self).toArray()).subscribe({ next: setMeds, error: () => undefined }) // one person's list only (D-109)
     return () => s.unsubscribe()
-  }, [])
+  }, [self])
   const mine = useMemo(() => pickMeds(meds), [meds])
   const list = MEDCARDS.filter((c) => (!kinds.length || kinds.includes(c.kind)) && (c.name + ' ' + c.forWhat + ' ' + c.match.join(' ')).toLowerCase().includes(q.trim().toLowerCase()))
   const toggle = (k: CardKind) => setKinds((a) => (a.includes(k) ? a.filter((x) => x !== k) : [...a, k]))
@@ -27,7 +30,7 @@ export default function Meds() {
       <label className="lr-search"><Icon name="search" size={20} /><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search any medicine or supplement" aria-label="Search medicines" /></label>
       {mine.length > 0 && !q && (
         <>
-          <b className="lr-lead">Medicines on your family's lists</b>
+          <b className="lr-lead">Medicines on your list</b>
           <div className="card lr-list" data-testid="mine">
             {mine.map(({ med, card }) => card
               ? <a key={card.id} className="lr-line press" href={'#discover/learn/med/' + card.id}><span className="lr-grow"><b>{med.name}{med.strength ? ' ' + med.strength : ''}</b><span className="sub">{card.forWhat}</span></span><Icon name="chev" /></a>

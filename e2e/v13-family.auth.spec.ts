@@ -24,25 +24,27 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
     })
 
-    test('root: title, add, Today carousel, Activity, Needs, People, Together', async ({ page }) => {
+    test('root (D-109): opens on Me; title, pill, add, one Today card, Activity, Needs, People, Together', async ({ page }) => {
       await openFamily(page)
       await expect(page.locator('h1')).toHaveText('Family')
-      await expect(page.locator('.lt-kicker')).toHaveText('4 PEOPLE')
+      await expect(page.locator('.lt-kicker')).not.toContainText('PEOPLE') // no head count: it counted people you may not see
       const add = page.getByRole('link', { name: 'Add a family member' })
       const box = (await add.boundingBox())!
       expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44)
       await expect(add).toHaveAttribute('href', '#me/family')
+      await expect(page.getByRole('button', { name: 'Who to show: Me' })).toBeVisible()
       const cards = page.getByTestId('person-card')
-      await expect(cards).toHaveCount(4)
-      await expect(cards.first()).toContainText('Ate Joy')
-      await expect(cards.first()).toContainText('Missed a medicine')
-      for (const c of await cards.all()) expect((await c.boundingBox())!.height).toBeGreaterThanOrEqual(196)
-      expect(await short(page, '.pc a, .pc button')).toEqual([])
-      // Needs holds Papa's phone only; Ate Joy is already a card, so she is not repeated in the list
+      await expect(cards).toHaveCount(1)
+      await expect(cards.first()).toContainText('You')
+      await expect(page.getByTestId('facesrow')).not.toContainText('checked in') // no "N of M checked in"
+      expect((await cards.first().boundingBox())!.height).toBeGreaterThanOrEqual(196)
+      expect(await short(page, '.pc a, .pc button, .ps-pill')).toEqual([])
+      // Needs holds Ate Joy's missed dose as one line (no medicine, no number) and Papa's phone
       const needs = page.getByTestId('need-row')
-      await expect(needs).toHaveCount(1)
-      await expect(needs.first()).toContainText("Papa Ben's phone may miss alarms")
-      await expect(page.getByTestId('needs')).not.toContainText('Ate Joy')
+      await expect(needs).toHaveCount(2)
+      await expect(needs.first()).toContainText('Ate Joy: missed a medicine')
+      await expect(page.getByTestId('needs')).not.toContainText('Nasal')
+      await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
       await expect(page.getByTestId('people-row')).toHaveCount(3)
       await page.getByTestId('people').getByRole('button', { name: /All people/ }).click()
       await expect(page.getByTestId('people-row')).toHaveCount(4)
@@ -58,14 +60,26 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('Activity: BP chart with a legend, other segments', async ({ page }) => {
+    test('Open on a missed-dose line puts that person on show; the pill and Activity follow, the hash stays', async ({ page }) => {
       await openFamily(page)
+      await page.getByTestId('need-row').first().getByRole('button', { name: /^Open/ }).click()
+      await expect(page.getByTestId('person-card').first()).toHaveAttribute('aria-label', /^Ate Joy\. Missed a medicine/)
+      await expect(page.getByRole('button', { name: 'Who to show: Ate' })).toBeVisible()
+      await expect(page.getByTestId('activity')).toContainText('Ate Joy · 142 high')
+      await expect(page.getByTestId('activity')).not.toContainText('You')
+      await expect(page).toHaveURL(/#family$/)
+      await page.goto('/#health') // leaving Family forgets the pick
+      await page.goto('/#family')
+      await expect(page.getByRole('button', { name: 'Who to show: Me' })).toBeVisible()
+    })
+
+    test('Activity: BP chart with a legend for the person on show, other segments', async ({ page }) => {
+      await openFamily(page, { person: 'Ate Joy' })
       const ac = page.getByTestId('activity')
       await expect(ac.getByTestId('week-chart')).toHaveAttribute('aria-label', /Blood pressure over 7 days/)
       await expect(ac).toContainText('Ate Joy · 142 high')
-      await expect(ac).toContainText('You · no readings')
       await ac.getByRole('button', { name: 'Steps' }).click()
-      await expect(ac).toContainText(/(No step readings for|Links needed)/)
+      await expect(ac).toContainText(/No step readings for/)
     })
 
     test('F-lane shape: People <= 260, plan rows <= 72, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
@@ -91,7 +105,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Activity with no readings says so', async ({ page }) => {
       await openFamily(page, { readings: false })
       await page.getByTestId('activity').getByRole('button', { name: 'BP' }).click()
-      await expect(page.getByTestId('activity')).toContainText(/(No blood pressure readings for|Links needed)/)
+      await expect(page.getByTestId('activity')).toContainText(/No blood pressure readings for/)
     })
 
     test('Memories is a pushed page; the feed is off by default and on with the flag', async ({ page }) => {

@@ -234,7 +234,3 @@ export async function selfIdOrCached(): Promise<string | null> {
   if (user !== m.userId) return null
   return ((await db.kv.get(SELF_ID).catch(() => undefined))?.value as string | undefined) ?? null
 }
-
-export const selfIdNow = async (): Promise<string | null> => {
-  try { return (await getMember())?.personId ?? null } catch { return null }
-}

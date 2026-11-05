@@ -1,6 +1,9 @@
 import 'fake-indexeddb/auto'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+const who = vi.hoisted(() => ({ acting: null as string | null }))
+vi.mock('../../setup/useProfile', async (orig) => ({ ...(await orig<object>()), useSelfPersonId: () => 'p1' })) // you are p1 (invented)
+vi.mock('../../viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActingPersonId: () => who.acting ?? 'p1' })) // viewing as someone swaps p1 for them
 import { db } from '../../../db'
 import { ldb } from '../../log/store'
 import Cook, { clock } from './Cook'
@@ -11,7 +14,7 @@ import Recipe from './Recipe'
 import Recipes from './Recipes'
 import Screen from './Screen'
 
-beforeEach(async () => { location.hash = '#discover/learn'; await Promise.all([db.kv.clear(), ldb.medications.clear()]) })
+beforeEach(async () => { who.acting = null; location.hash = '#discover/learn'; await Promise.all([db.kv.clear(), ldb.medications.clear()]) })
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('content', () => {
@@ -114,8 +117,9 @@ describe('Learn screen and the learn.medcards flag', () => {
 })
 
 describe('medicine list', () => {
-  it("Mama's medicines lists the live rows that have a card, and says so when one has none", async () => {
+  it("Medicines on your list: your own live rows that have a card, and says so when one has none; never another person's medicine (D-109)", async () => {
     await ldb.medications.bulkAdd([
+      { personId: 'p9', name: 'Metformin', medStatus: 'active' }, // someone else's list on this phone
       { personId: 'p1', name: 'Losartan 50mg tab', strength: '50 mg', medStatus: 'active' },
       { personId: 'p1', name: 'Zorbex', medStatus: 'active' },
       { personId: 'p1', name: 'Amlodipine', medStatus: 'stopped' }
@@ -125,6 +129,19 @@ describe('medicine list', () => {
     await waitFor(() => expect(within(mine).getByText('No card yet. Ask your pharmacist.')).toBeTruthy())
     expect(within(mine).getByRole('link').getAttribute('href')).toBe('#discover/learn/med/losartan')
     expect(within(mine).queryByText(/Amlodipine/)).toBeNull()
+    expect(within(mine).queryByText(/Metformin/)).toBeNull()
+    expect(screen.getByText('Medicines on your list')).toBeTruthy()
+  })
+  it('viewing as someone lists that person\'s medicines, not yours (D-109)', async () => {
+    who.acting = 'p9'
+    await ldb.medications.bulkAdd([
+      { personId: 'p9', name: 'Metformin', medStatus: 'active' },
+      { personId: 'p1', name: 'Losartan 50mg tab', strength: '50 mg', medStatus: 'active' }
+    ])
+    render(<Meds />)
+    const mine = await screen.findByTestId('mine')
+    expect(within(mine).getByRole('link').getAttribute('href')).toBe('#discover/learn/med/metformin')
+    expect(within(mine).queryByText(/Losartan/)).toBeNull()
   })
   it('search and kind chips narrow the full list', () => {
     render(<Meds />)

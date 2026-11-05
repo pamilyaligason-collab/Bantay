@@ -4,7 +4,7 @@ import ChipField from '../setup/ChipField'
 import { ALLERGIES, BLOOD_TYPES, CONDITIONS } from '../setup/lists'
 import MedicineEditor from '../setup/MedicineEditor'
 import '../setup/setup.css'
-import { adminMembers, type Member, updatePerson, uploadAvatar } from './api'
+import { ADMIN_WARNING, adminMembers, type Member, updatePerson, uploadAvatar } from './api'
 import Avatar from './Avatar'
 import { toAvatarJpeg } from './photo'
 import { pinError } from './pin'
@@ -101,7 +101,7 @@ export default function MemberPage({ m, ask, reload, back }: { m: Member; ask: A
         <div className="ad-row"><span className="ad-grow">Last sign-in</span><span className="sub">{when(m.lastSignInAt)}</span></div>
         <div className="ad-row">
           <span className="ad-grow">Role: {m.role === 'admin' ? 'Admin' : 'Member'}</span>
-          <button className="ad-b" onClick={() => act(`Make ${m.displayName} ${m.role === 'admin' ? 'a member' : 'an admin'}?`, { action: 'set_role', role: m.role === 'admin' ? 'member' : 'admin' })} aria-label={`Change role of ${m.displayName}`}>
+          <button className="ad-b" onClick={() => act(`Make ${m.displayName} ${m.role === 'admin' ? 'a member?' : `an admin? ${ADMIN_WARNING}`}`, { action: 'set_role', role: m.role === 'admin' ? 'member' : 'admin' })} aria-label={`Change role of ${m.displayName}`}>
             {m.role === 'admin' ? 'Make member' : 'Make admin'}
           </button>
         </div>

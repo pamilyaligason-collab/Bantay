@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { pickPerson } from './fixtures/v13/family'
 
 // S4 REVIEW + FAMILY-CARER (runs in the "auth" project: build WITH test Supabase env). Signed in as Rey, a writer carer of Papa and Mama.
 // PostgREST is mocked; every name and value is invented. Shots (390x844, light and dark): family-home, family-answer, family-phones, health-meds,
@@ -94,18 +95,22 @@ for (const scheme of ['light', 'dark'] as const) {
     const posts: Post[] = []
     await open(page, scheme, false, posts)
     await expect(page.getByText('Needs you now')).toBeVisible()
-    // v13 lane F: each person's top item is their card; Needs holds only what the cards do not say (Papa's phone)
+    // D-109: Family opens on Me. A writer carer keeps one line per missed dose in Needs (no medicine name, no number); Open puts that person on show.
     const roll = page.getByRole('group', { name: 'Family roll call' })
-    const mama = roll.getByRole('article', { name: /^Mama\. Missed a medicine/ })
-    await expect(mama).toBeVisible()
-    await expect(mama.getByText(/Losartan 50 mg was due 9:00 AM|Losartan was due 9:00 AM/)).toBeVisible()
-    const papa = page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' }) // Papa's card says the missed dose, so his question goes to the Needs list
+    await expect(roll.getByTestId('person-card')).toHaveCount(1)
+    const line = page.getByTestId('need-row').filter({ hasText: 'Mama: missed a medicine' })
+    await expect(line).toBeVisible()
+    await expect(page.getByTestId('needs')).not.toContainText('Losartan')
+    const papa = page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' }) // Papa's card is not on show, so his question is in the Needs list
     await expect(papa).toBeVisible()
     await expect(page.getByText("Papa's phone may miss alarms")).toBeVisible()
     await expect(page.getByRole('alert', { name: /needs help/ })).toHaveCount(0) // no SOS in this scenario
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= document.scrollingElement!.clientWidth)).toBe(true)
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-home-${scheme}.png` })
 
+    await line.getByRole('button', { name: 'Open Mama' }).click() // her card replaces yours
+    const mama = roll.getByRole('article', { name: /^Mama\. Missed a medicine/ })
+    await expect(mama.getByText(/Losartan 50 mg was due 9:00 AM|Losartan was due 9:00 AM/)).toBeVisible()
     await papa.getByRole('button', { name: 'Answer for Papa' }).click()
     const sheet = page.getByRole('dialog', { name: 'Answer for Papa' })
     await expect(sheet.getByText('Still taking Metformin 500 mg?')).toBeVisible()
@@ -127,6 +132,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, scheme, false)
     await seed(page, 'bantay-log', 'medications', [med('los2', 'ma', 'Vitamin D', '1000 IU', ['10:00'])]) // a second missed slot: a mark-all bug would write two
     await page.reload()
+    await pickPerson(page, 'Mama')
     const mama = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed 2 medicines/ })
     await mama.getByRole('button', { name: 'Mark taken for Mama' }).click()
     await mama.getByRole('button', { name: 'Yes, I saw' }).click()
@@ -145,6 +151,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const carers = page.waitForResponse(/rest\/v1\/carers/) // asserting an absence right after a reload passes before the cards render: wait for the answer, then the card
     await page.reload()
     await carers
+    await pickPerson(page, 'Mama')
     const card = page.getByRole('group', { name: 'Family roll call' }).getByRole('article', { name: /^Mama\. Missed a medicine/ })
     await expect(card).toBeVisible()
     await expect(page.getByRole('button', { name: /^Mark taken for/ })).toHaveCount(0)

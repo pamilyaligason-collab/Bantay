@@ -246,7 +246,7 @@ test.describe('signed in', () => {
         await skipOnboarding(page)
         await page.emulateMedia({ reducedMotion: 'reduce' })
         if (readings === null) await emptyNeeds(page) // nothing needs the carer: the Today row is shortest, so Activity starts highest
-        else await openFamily(page, { readings })
+        else await openFamily(page, { readings, person: 'Ate Joy' })
         await expect(page.getByTestId('activity')).toBeVisible()
         if (readings) await expect(page.getByTestId('week-chart')).toBeVisible()
         else await expect(page.getByTestId('ac-empty')).toBeVisible({ timeout: 15_000 })

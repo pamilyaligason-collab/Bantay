@@ -74,7 +74,7 @@ test('open #docs, upload front then back, view full screen, then use it with the
   const s = await mock(page)
   await page.goto('/docs-harness.html#docs')
   await expect(page.getByRole('heading', { level: 1, name: 'IDs and insurance' })).toBeVisible()
-  await expect(page.getByText('Seen only by you, the admins and whoever keeps your records · saved for offline')).toBeVisible()
+  await expect(page.getByText('Seen only by you, the family owner and whoever keeps your records · saved for offline')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Upload PhilSys National ID' })).toBeVisible()
   expect(await serious(page)).toEqual([])
 

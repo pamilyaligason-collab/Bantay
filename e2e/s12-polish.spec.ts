@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { skipOnboarding } from './helpers'
+import { pickPerson } from './fixtures/v13/family'
 
 // Session 12 lane J (polish S2, S3, S5, S6, S7, S9). Made-up data, frozen clock, no network. PW_PORT=5607 for this lane.
 // Shots (390x844, light and dark) go to docs/session-12/shots/J/ and are compared by eye with the mockup screens today-full, health-home, health-labs, family-home.
@@ -156,15 +157,20 @@ for (const scheme of ['light', 'dark'] as const) {
       // v13: cards carry the words; the Open link is the way to the person's page, Message is the way to Messages (ML-13).
       const roll = page.getByRole('group', { name: 'Family roll call' })
       await expect(roll).toBeVisible()
+      await pickPerson(page, 'Papa Ben') // D-109: one card at a time
       await expect(roll).toContainText('Last OK 3 days ago')
-      await expect(roll).toContainText('No check-in yet')
       await expect(roll).not.toContainText('💤')
+      await pickPerson(page, 'Lola Remy')
+      await expect(roll).toContainText('No check-in yet')
+      await pickPerson(page, 'Papa Ben')
       await roll.getByRole('article', { name: /^Papa Ben\./ }).getByRole('button', { name: 'Message' }).click()
       await expect(page).toHaveURL(/#family\/messages$/)
       await page.goto('/#family')
+      await pickPerson(page, 'Papa Ben')
       await roll.getByRole('link', { name: 'Open Papa' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')
+      await pickPerson(page, 'Papa Ben')
       await expect(roll).toContainText('Last OK 3 days ago') // the roll call is back (it reloads after the page change) before the shot
       await expect(roll.getByRole('article', { name: /^Papa Ben\./ })).toBeVisible()
       await shot(page, `family-${scheme}`)

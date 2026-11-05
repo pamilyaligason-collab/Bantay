@@ -2,7 +2,7 @@
 import { supabase } from './client'
 import { clearDocsCache } from '../docs/api'
 
-export interface Member { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null }
+export interface Member { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null; isOwner: boolean }
 
 export async function getAccessToken(): Promise<string | null> {
   if (!supabase) return null
@@ -16,15 +16,17 @@ export async function getMember(): Promise<Member | null> {
   const { data } = await supabase.auth.getSession()
   const uid = data.session?.user.id
   if (!uid) return null
-  const [role, person] = await Promise.all([
+  const [role, person, owner] = await Promise.all([
     supabase.from('app_roles').select('role, handle').eq('user_id', uid).maybeSingle(),
-    supabase.from('people').select('id').eq('auth_user_id', uid).maybeSingle()
+    supabase.from('people').select('id').eq('auth_user_id', uid).maybeSingle(),
+    supabase.from('app_roles').select('is_owner').eq('user_id', uid).maybeSingle() // its own query: before 0046 this one errors, and an admin must stay an admin
   ])
   return {
     userId: uid,
     personId: person.data?.id ?? null,
     role: role.data?.role === 'admin' ? 'admin' : 'member', // no row yet (first sign-in) means member
-    handle: role.data?.handle ?? null
+    handle: role.data?.handle ?? null,
+    isOwner: !owner.error && owner.data?.is_owner === true // any error = not owner (fails closed)
   }
 }
 

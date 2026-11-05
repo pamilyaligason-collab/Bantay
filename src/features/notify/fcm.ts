@@ -4,6 +4,7 @@ import { db } from '../../db'
 import { shellVersionNow } from '../phonecheck/appInfo'
 import { pollAlerts } from './alertsLive'
 import { TEMPLATES } from './templates'
+import { alertHash } from '../sharing/alertHash'
 
 // FCM push for the Android app (session 12, lane E, D-85). The server (dose-watch, broadcast) sends a template-only message to the tokens stored here.
 // Nothing in this file may crash an old shell (no push plugin), a build without google-services.json, or the web: every native call is inside try/catch
@@ -73,7 +74,7 @@ async function startPush(isStopped: () => boolean, onStop: (fn: () => void) => v
       P.addListener('registration', (t) => { void claimToken(t.value) }),
       P.addListener('registrationError', () => { void putKv(KEY_PUSH_STATUS, 'failed') }), // no google-services.json or Google Play services missing: alerts still reach the bell by polling
       P.addListener('pushNotificationReceived', () => { void pollAlerts() }), // in the foreground Android shows nothing itself: refresh the bell now
-      P.addListener('pushNotificationActionPerformed', (a) => { try { location.hash = `#${tabFor(a.notification?.data?.t)}` } catch { /* no window */ } void pollAlerts() })
+      P.addListener('pushNotificationActionPerformed', (a) => { try { location.hash = alertHash(String(a.notification?.data?.t), tabFor(a.notification?.data?.t)) } catch { /* no window */ } void pollAlerts() })
     ])
     onStop(() => handles.forEach((h) => void h.remove().catch(() => undefined)))
     if (isStopped()) return

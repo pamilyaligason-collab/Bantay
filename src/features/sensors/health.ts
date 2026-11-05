@@ -315,7 +315,6 @@ async function run(bridge: HealthBridge): Promise<SyncResult> {
       for (const a of activities) {
         const had = byKey.get(activityKey(a))
         if (!had) { byKey.set(activityKey(a), { ...a, id: await logActivity(a) }); result.added++ }
-        // shortcut: a revised hour is PATCHed to the server, but pulled rows get no later PATCH (no updated-at cursor), so a carer keeps the first value they pulled; upgrade with a server updated_at column and a pull cursor (needs a migration).
         // Only ever up: an hour can be read partly, or be lower on this phone than on the person's other phone. So an hour deleted in Health Connect keeps its old total.
         else if (a.kind === 'steps' && (a.steps ?? 0) > (had.steps ?? 0)) await updateActivityTotals(had.id!, a) // a watch can deliver an hour late
       }

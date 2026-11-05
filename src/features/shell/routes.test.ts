@@ -45,6 +45,12 @@ describe('parseHash', () => {
   })
   it('unknown hash falls back to today', () => expect(parseHash('#nope')).toEqual({ tab: 'today', view: null }))
 })
+describe('sharing routes (D-109)', () => {
+  it('#sharing, #sharing/all and #sharing/<personId> are all the sharing view with their own header', () => {
+    for (const h of ['#sharing', '#sharing/all', '#sharing/p1']) { expect(parseHash(h)).toEqual({ tab: null, view: 'sharing' }); expect(hasOwnHeader(h)).toBe(true) }
+  })
+})
+
 describe('hasOwnHeader', () => {
   it('is true for sub-pages that draw Back + title', () => expect(['#weather', '#weather?from=action', '#health/metric/bp', '#health/refill', '#safety/map', '#gobag', '#medid', '#docs', '#family/people/p1', '#family/papers', '#me/alerts'].every(hasOwnHeader)).toBe(true))
   it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/people', '#family/messages', '#safety', '#me'].some(hasOwnHeader)).toBe(false))

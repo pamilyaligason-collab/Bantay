@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { loadFamily } from '../auth/family'
 import { normalizeContacts, type SosContact } from '../sos/contacts'
 import SosContactsPicker from '../sos/SosContactsPicker'
+import { useWritableIds } from '../health/useCanMark'
 import { useKv } from '../shell/useKv'
 import { useActing } from '../viewas/viewAs'
 import Group, { NavRow } from './Group'
@@ -33,13 +34,15 @@ export default function FamilyGroup() {
   const [sosRaw, setSosRaw] = useKv<unknown>('sos.contacts', [])
   const [sosOpen, setSosOpen] = useState(false)
   const names = sosNames(sosRaw)
+  const writable = useWritableIds(member?.userId) // a link can be read-only since D-109: only a writer link makes you their carer
   return (
     <Group title="Family and sharing" testId="settings-family">
       <div className="sh-card sh-list st-list">
         {carerOf.filter((id) => id !== member?.personId).map((id) => (
-          <NavRow key={id} icon="users" title={roster.find((x) => x.id === id)?.name ?? 'Family member'} sub="You are their carer. Open their page." href={`#family/people/${id}`} />
+          <NavRow key={id} icon="users" title={roster.find((x) => x.id === id)?.name ?? 'Family member'} sub={writable.includes(id) ? 'You are their carer. Open their page.' : 'You can see their records. Open their page.'} href={`#family/people/${id}`} />
         ))}
         <NavRow icon="lock" title="Who can see my records" sub="Pick who sees your records" href="#sharing" locked={acting} />
+        {member?.isOwner && <NavRow icon="users" title="Who sees whom" sub="You can see everyone. Pick who else can." href="#sharing/all" locked={acting} testId="settings-owner-list" />}
         <NavRow icon="phone" title="Who gets your SOS text" sub={names || 'Nobody picked yet'} onClick={() => setSosOpen(true)} popup locked={acting} />
         <NavRow icon="cross" title="Medical ID" sub="Blood type, allergies, medicines, who to call" href="#medid" />
       </div>

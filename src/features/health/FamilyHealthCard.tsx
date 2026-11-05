@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import FmAvatar from '../family/FmAvatar'
 import { listPhotos } from '../family/memoriesApi'
 import { listMessages } from '../family/messagesApi'
-import { useFlagLines } from '../family/reportData'
-import { rollCall, useCheckInsLoaded, useFamilyPeople } from '../family/roster'
+import { rollCall, useCheckInsLoaded } from '../family/roster'
+import { useLinkedPeople, useWriterFlags } from '../family/useFamilyScope'
 import { useActing } from '../viewas/viewAs'
 import { properName } from './medName'
 import { GroupedList, Row, Section } from '../look'
@@ -14,12 +14,12 @@ const DAY = 86_400_000
 /** Family health (read-only): who checked in, a neutral flag line per person, and online counts for Memories and messages. Writes live in Family.
  *  shortcut: flag lines, not numbers, for other people (reportData keeps numbers behind useReportAccess); upgrade when lane F's feed defines shared readings. */
 export function FamilyHealthCard({ ids }: { ids: string[] }) {
-  const { people: all } = useFamilyPeople()
+  const linked = useLinkedPeople()
   const { acting } = useActing()
   const key = ids.join()
-  const people = useMemo(() => all.filter((p) => key.split(',').includes(p.id)), [all, key]) // only who the viewer (or the person being acted as) can see
+  const people = useMemo(() => linked.filter((p) => key.split(',').includes(p.id)), [linked, key]) // only you and the people you are linked to (D-109), and of those who the viewer (or the person being acted as) can see
   const last = useCheckInsLoaded()
-  const flags = useFlagLines(people)
+  const flags = useWriterFlags(people) // flag lines only for you and the people you are a writer carer of (D-109)
   const [photos, setPhotos] = useState<number | null>(null) // null: offline or not set up, so no row
   const [msgs, setMsgs] = useState<number | null>(null)
   useEffect(() => {

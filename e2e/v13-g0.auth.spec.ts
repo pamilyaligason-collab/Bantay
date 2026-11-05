@@ -12,14 +12,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
     })
 
-    test('carousel gutter: the first person card sits at x 16', async ({ page }) => {
+    test('gutter: the person card on Today sits at x 16 (D-109: one full-width card, no carousel)', async ({ page }) => {
       await openFamily(page)
       await setScheme(page, scheme)
       await settled(page)
-      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
-      expect((await lefts()).length, 'Family has a carousel').toBeGreaterThan(0)
-      await expect.poll(async () => (await lefts()).every((l) => Math.abs(l.left - 16) <= 1), { message: 'first card left edge settles on 16' }).toBe(true)
-      expect((await lefts()).map((l) => l.scroll)).toEqual((await lefts()).map(() => 0))
+      const left = () => page.evaluate(() => document.querySelector<HTMLElement>('.pc-one .pc')!.getBoundingClientRect().left)
+      await expect.poll(async () => Math.abs((await left()) - 16) <= 1, { message: 'card left edge settles on 16' }).toBe(true)
     })
 
     test('title row: no top bar, title top <= 70, bell and avatar 44 px, at 390 and 360', async ({ page }) => {

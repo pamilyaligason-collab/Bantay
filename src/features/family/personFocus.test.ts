@@ -11,10 +11,10 @@ const base: FocusData = { unwell: false, missed: [], due: [], later: 0, asks: []
 const ask = (days: number): { person: FamilyPerson; med: Medication; days: number } => ({ person: joy as FamilyPerson, med: { name: 'Ibuprofen' } as Medication, days })
 
 describe('personFocus', () => {
-  it('doses but no take rows and no read right say No data, never Missed (ML-05)', () => {
-    const f = personFocus(joy, { ...base, canMark: false, noTakes: true, missed: [dose('8:00 AM', '08:00')] })
-    expect(f).toMatchObject({ kind: 'nodata', tint: 'none', line: 'No data' })
-    expect(JSON.stringify(f)).not.toContain('Missed')
+  it('a missed dose for someone you cannot mark for is still Missed, read-only: there is no No data state (D-109)', () => {
+    const f = personFocus(joy, { ...base, canMark: false, missed: [dose('8:00 AM', '08:00')] })
+    expect(f).toMatchObject({ kind: 'missed', tint: 'red', line: 'Missed a medicine', action: { kind: 'open' } })
+    expect(JSON.stringify(f)).not.toContain('No data')
   })
   it('unwell beats everything and calls when there is a phone', () => {
     const f = personFocus(joy, { ...base, unwell: true, missed: [dose('8:00 AM', '08:00')] })

@@ -59,7 +59,7 @@ test.describe('onboarding screens 3 to 5 after joining', () => {
     await expect(page.getByLabel(/latitude|longitude/i)).toHaveCount(0)
     await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.locator('h1')).toHaveText("Let's test it.")
-    await expect(page.getByText(/Family admins can see them. Change this in Settings > Family and sharing./)).toBeVisible()
+    await expect(page.getByText(/Anyone else needs your OK or the owner's\. You are told, and you can stop them\./)).toBeVisible()
     await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.getByTestId('today-head')).toBeVisible() // v13: the Today h1 is now the greeting
     expect(await kv(page, 'onboarded')).toBe(true)

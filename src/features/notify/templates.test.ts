@@ -90,6 +90,20 @@ describe('Phase 2 alert templates (D-78)', () => {
     expect(renderTemplate('nope').title).toBe('Bantay')
     for (const id of ALL) expect(TEMPLATES[id].title + TEMPLATES[id].body, id).not.toMatch(/lock screen|will be (told|notified)/i)
   })
+  it('D-109 share_given, share_added and share_added_carer exist under kind share, and no push carries a name', () => {
+    for (const id of ['share_given', 'share_added', 'share_added_carer'] as const) {
+      expect(ALERT_KIND[id]).toBe('share')
+      expect(TEMPLATES[id].title + TEMPLATES[id].body, id).not.toContain('<name>')
+    }
+    expect(buildNotification({ t: 'share_given' })!.title).toBe("You can now see a family member's records")
+    expect(renderTemplate('share_given', { name: 'Joy' }).title).toBe("You can now see a family member's records")
+    expect(TEMPLATES.share_added.title).toBe('Someone new can see your records')
+    expect(buildNotification({ t: 'share_added' })!.data.tab).toBe('sharing')
+    const c = buildNotification({ t: 'share_added_carer' })!
+    expect(c.title).toBe('Someone new can see the records of a person you care for')
+    expect(c.body).toBe('Open Bantay to see who, or to stop it.')
+    expect(c.data.tab).toBe('today')
+  })
   it('keeps the broadcast list to the four original safety ids, all cls safety', () => {
     expect([...SAFETY_IDS].sort()).toEqual(['family_sos', 'flood_watch', 'heat_alert', 'storm_warning'])
     for (const id of SAFETY_IDS) expect(TEMPLATES[id].cls).toBe('safety')

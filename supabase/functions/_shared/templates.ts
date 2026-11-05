@@ -3,7 +3,7 @@
 // Dependency-free on purpose: the service worker bundles this file, and supabase/functions/_shared/templates.ts is a byte-identical
 // copy for the Edge Functions (templates.test.ts keeps the two equal).
 export type Cls = 'safety' | 'health' | 'carer' // carer: a family member's alert (missed dose, SOS, reading...), own rules in push.ts
-export type Tab = 'today' | 'health' | 'records' | 'family' | 'safety'
+export type Tab = 'today' | 'health' | 'records' | 'family' | 'safety' | 'sharing'
 export type Tone = 'urgent' | 'normal'
 type Tpl = { cls: Cls; title: string; body: string; tab: Tab; tone: Tone }
 
@@ -36,6 +36,10 @@ export const TEMPLATES = {
   share_on: { cls: 'carer', title: '<name> can now see your records', body: 'Open Bantay to see who can see them.', tab: 'today', tone: 'normal' },
   share_admin: { cls: 'carer', title: 'A family admin offered to share your records with someone', body: 'Open Bantay to see who, or to stop it.', tab: 'today', tone: 'normal' },
   share_off: { cls: 'carer', title: 'A family member stopped sharing records with you', body: 'Open Bantay to see.', tab: 'family', tone: 'normal' },
+  // D-109 (0046): a link starts at once. share_given goes to the viewer, share_added to the person, share_added_carer to the writer carers of a no-login person; no name in the push (B-7).
+  share_given: { cls: 'carer', title: "You can now see a family member's records", body: 'Open Bantay to see them.', tab: 'family', tone: 'normal' },
+  share_added: { cls: 'carer', title: 'Someone new can see your records', body: 'Open Bantay to see who, or to stop it.', tab: 'sharing', tone: 'normal' },
+  share_added_carer: { cls: 'carer', title: 'Someone new can see the records of a person you care for', body: 'Open Bantay to see who, or to stop it.', tab: 'today', tone: 'normal' },
   rollcall_help: { cls: 'safety', title: 'Someone in your family needs help in the storm', body: 'Open Bantay now.', tab: 'family', tone: 'urgent' },
   rollcall_ask: { cls: 'safety', title: 'Is everyone safe?', body: 'Open Bantay to tell your family you are safe.', tab: 'today', tone: 'normal' },
   kudos: { cls: 'carer', title: 'Someone sent you a heart', body: 'Open Bantay to see it.', tab: 'health', tone: 'normal' }
@@ -55,7 +59,7 @@ export const ALERT_KIND = {
   storm_warning: 'hazard', flood_watch: 'hazard', heat_alert: 'hazard', tsunami_warning: 'hazard', quake_strong: 'hazard', flood_red: 'hazard', volcano_raised: 'hazard', family_sos: 'sos', sos_late: 'sos', sos_cancel: 'sos_cancel',
   dose_missed: 'dose_missed', review_open: 'review_open', phone_health: 'phone_health', reading_high: 'reading_high', mood_unwell: 'mood_unwell',
   digest: 'digest', pin_approve: 'pin_approve', pin_changed: 'pin_changed', system: 'system',
-  share_offer: 'share', share_on: 'share', share_admin: 'share', share_off: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'
+  share_offer: 'share', share_on: 'share', share_admin: 'share', share_off: 'share', share_given: 'share', share_added: 'share', share_added_carer: 'share', rollcall_help: 'rollcall', rollcall_ask: 'rollcall', kudos: 'kudos'
 } as const satisfies Partial<Record<TemplateId, NotifyKind>>
 
 /** Title and body with `<name>` filled (or "Someone" / "someone" when the name is unknown) and the SOS time ("at HH:MM") filled or dropped. Never throws on an unknown id. */

@@ -3,6 +3,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
+const person = (id: string, name: string, isMe = false) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe })
+vi.mock('./useFamilyScope', () => ({ useLinkedPeople: () => [person('p1', 'Rey Villar', true), person('p2', 'Ma Villar')] })) // you and one link (invented); p3 is neither
 import Calendar from './Calendar'
 import { fdb } from './store'
 
@@ -26,5 +28,29 @@ describe.each([
     await waitFor(() => expect(list.textContent).toContain('Buy rice'))
     expect(list.textContent).toContain(taskSub)
     expect(list.textContent?.includes('Overdue')).toBe(num === '28')
+  })
+})
+
+// D-109: a row tied to a person outside you and your links is hidden; a family-wide row (no person) stays.
+describe('Calendar rows by person', () => {
+  it('hides an event and a task for someone you are not linked to; keeps yours, a link\'s and the family\'s', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    const at = (h: number) => new Date(2026, 9, 27, h, 0).toISOString()
+    await fdb.events.bulkPut([
+      { clientId: 'e1', title: 'Own checkup', startsAt: at(9), endsAt: null, allDay: false, personId: 'p1' },
+      { clientId: 'e2', title: 'Ma dentist', startsAt: at(11), endsAt: null, allDay: false, personId: 'p2' },
+      { clientId: 'e3', title: 'Tita clinic', startsAt: at(12), endsAt: null, allDay: false, personId: 'p3' },
+      { clientId: 'e4', title: 'Family lunch', startsAt: at(13), endsAt: null, allDay: false, personId: null }
+    ])
+    await fdb.tasks.bulkPut([
+      { clientId: 't1', title: 'Fetch Ma', due: '2026-10-27', assigneePersonId: 'p2', done: false },
+      { clientId: 't2', title: 'Pay for Tita', due: '2026-10-27', assigneePersonId: 'p3', done: false }
+    ])
+    render(<Calendar />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Family lunch'))
+    for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma']) expect(list.textContent).toContain(t)
+    for (const t of ['Tita clinic', 'Pay for Tita']) expect(list.textContent).not.toContain(t)
   })
 })

@@ -60,7 +60,7 @@ function useUserId(): string | undefined {
   const [id, setId] = useState<string>()
   useEffect(() => {
     let live = true
-    void supabase?.auth.getSession().then(({ data }) => { if (live) setId(data.session?.user.id) }).catch(() => undefined)
+    void supabase?.auth?.getSession().then(({ data }) => { if (live) setId(data.session?.user.id) }).catch(() => undefined)
     return () => { live = false }
   }, [])
   return id

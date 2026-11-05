@@ -12,8 +12,8 @@ import type { FamilyPerson } from './roster'
 import type { useFocuses } from './useFocuses'
 import './v13-family.css'
 
-/** Needs you now (board): a grouped list of what the Today cards do not already say. Hidden while acting (the old rule) and when empty. */
-export function NeedsList({ fx, people, selfName }: { fx: ReturnType<typeof useFocuses>; people: FamilyPerson[]; selfName: string }) {
+/** Needs you now (board): a grouped list of what the Today card on show does not already say, and a writer carer's "missed a medicine" for anyone they look after. Open puts that person on show. Hidden while acting (the old rule) and when empty. */
+export function NeedsList({ fx, people, selfName, shownId, onSelect }: { fx: ReturnType<typeof useFocuses>; people: FamilyPerson[]; selfName: string; shownId?: string; onSelect: (personId: string) => void }) {
   const { acting } = useActing()
   const phones = useAlertRows().filter((r) => r.kind === 'phone_health' && r.seenAt == null && r.personId)
   const [answering, setAnswering] = useState<{ name: string; med: Medication } | null>(null)
@@ -21,10 +21,10 @@ export function NeedsList({ fx, people, selfName }: { fx: ReturnType<typeof useF
   const control = (a: NeedRow['action']) =>
     a.kind === 'answer' ? <button type="button" className="pc-btn rw-ctl" onClick={() => setAnswering({ name: shortName(a.ask.person.name) ?? 'them', med: a.ask.med })} aria-label={`Answer for ${shortName(a.ask.person.name) ?? 'them'}`}>Answer</button>
     : a.kind === 'phone' ? <a className="pc-btn rw-ctl" href="#me/phone/phones" onClick={() => { void markSeen(a.alertId).catch(() => undefined) }} aria-label="Fix phone">Fix phone</a>
-    : <a className="pc-btn rw-ctl" href={a.href}>Open</a>
+    : <button type="button" className="pc-btn rw-ctl" onClick={() => onSelect(a.personId)} aria-label={`Open ${shortName(people.find((p) => p.id === a.personId)?.name) ?? 'them'}`}>Open</button>
   useEffect(() => { if (!note) return; const t = setTimeout(() => setNote(''), 4000); return () => clearTimeout(t) }, [note])
   if (acting || !fx.loaded) return null
-  const rows = needsRows(fx.items, phones, people)
+  const rows = needsRows(fx.items, phones, people, shownId)
   if (!rows.length) return null
   return (
     <Section title="Needs you now" meta={rows.length === 1 ? '1 thing' : `${rows.length} things`} testId="needs">

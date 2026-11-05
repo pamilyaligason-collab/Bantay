@@ -26,6 +26,14 @@ describe('family alert rows in the alert list (D-78)', () => {
     expect(items[2]).toMatchObject({ title: 'A medicine was missed', sub: 'Missed dose · Mama Rosa · 8:00 AM', href: '#health' })
     expect(items[0]!.title).toBe('The SOS was cancelled')
   })
+  it('a share_added row opens the sharing list that shows who (D-109), whatever tab its template names', () => {
+    const [i] = familyItems([row('s', { kind: 'share', template: 'share_added' as never })], names, NOW)
+    expect(i!.href).toBe('#sharing')
+  })
+  it("a share_added_carer row opens that person's list, not mine", () => {
+    const [i] = familyItems([row('c', { kind: 'share', template: 'share_added_carer' as never, personId: 'p1' })], names, NOW)
+    expect(i!.href).toBe('#sharing/p1')
+  })
   it('an admin system row names the job and opens System health; with no ref it says so', () => {
     const [j, n] = familyItems([row('s1', { kind: 'system', template: 'system', personId: null, ref: 'dose-watch:81234', createdAt: '2026-10-26T01:00:00Z' }), row('s2', { kind: 'system', template: 'system', personId: null, ref: null, createdAt: '2026-10-26T00:00:00Z' })], names, NOW)
     expect(j).toMatchObject({ title: 'Missed-dose watch had a failed run', href: '/admin#/system' })

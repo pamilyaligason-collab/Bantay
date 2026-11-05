@@ -2,7 +2,7 @@ import type { Table } from 'dexie'
 import { db, drain, enqueue, type OutboxRow } from '../../db'
 import { track } from '../admin/events'
 import { supabase } from '../auth/client'
-import { getAccessToken, onAuthChange } from '../auth/session'
+import { getAccessToken, getMember, onAuthChange, type Member } from '../auth/session'
 import { drainQueue } from '../docs/api'
 import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, LAST_SEEN_KEY, splitEonet, STALE_KEY, type Alert, type StaleSources } from '../safety/alerts'
 import { FLAGS } from '../safety/flags'
@@ -11,7 +11,7 @@ import { fdb } from '../family/store'
 import { hourClientId, isSensorHour, ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { vdb } from '../health/visitsStore'
-import { applyPulledProfiles, PROFILE_COLS, selfIdNow, syncOwnProfile } from './profile'
+import { applyPulledProfiles, PROFILE_COLS, syncOwnProfile } from './profile'
 import { fromRow, isSyncable, naturalKey, PULL_TABLES, TABLES, toRow, toSnake } from './tables'
 
 // Outbox -> Supabase REST, then the member's own rows back down. Health values only ever travel in POST bodies,
@@ -195,7 +195,13 @@ async function merge(table: string, rows: Record<string, unknown>[], seen: { ids
         seen.byCid.delete(cid); seen.ids.delete(cid)
         continue
       }
-      if (mine) { if (mine.id != null) await lt.put({ ...local, id: mine.id }); else Object.assign(mine, local); continue } // put, not update: a field nulled on the server must clear here
+      if (table === 'activity') {
+        // Only a sensor hour whose total rose is taken (a late watch total, or the owner's other phone). A lower total, a hidden old-shape row and every other field stay as they are.
+        if (mine && isSensorHour(local as never) && ((local.steps as number | null | undefined) ?? -1) > ((mine.steps as number | null | undefined) ?? -1)) {
+          if (mine.id != null) await lt.update(mine.id, { steps: local.steps } as never); else mine.steps = local.steps
+        }
+        if (mine) continue
+      } else if (mine) { if (mine.id != null) await lt.put({ ...local, id: mine.id }); else Object.assign(mine, local); continue } // put, not update: a field nulled on the server must clear here
     }
     if (seen.ids.has(cid)) continue
     const twin = seen.keys.get(naturalKey[table](local))
@@ -216,8 +222,35 @@ async function merge(table: string, rows: Record<string, unknown>[], seen: { ids
   await lt.bulkAdd(late ? fresh.filter((r) => !late.has(naturalKey[table](r))) : fresh)
 }
 
+/** Stored in place of a cursor that must re-read from the start. The medications cursor doubles as the "medicines pulled once" marker (MEDS_CURSOR, read by reminders), so it is never deleted: a reset with an empty read would re-arm the old text alarms for good. */
+const RESTART = '1970-01-01T00:00:00.000Z'
+const clearCursors = async () => {
+  const held = new Set((await db.kv.bulkGet(PULL_TABLES.map(cursorKey))).filter(Boolean).map((r) => r!.key))
+  await db.kv.bulkDelete(PULL_TABLES.map(cursorKey).filter((k) => k !== cursorKey('medications')))
+  if (held.has(cursorKey('medications'))) await db.kv.put({ key: cursorKey('medications'), value: RESTART })
+}
+/** One re-read of every pull table on the owner's phone from the start (D-109): the owner's old doses and check-ins were out of reach before 0046. Set after the pull succeeds, so a failed one tries again. A failed pull repeating the reset is accepted: it only costs one more full read. */
+export const CURSOR_RESET_KEY = 'sync.d109CursorReset'
+
 async function pull(token: string) {
   const { url, key } = env()
+  // Only the owner's phone needs the reset, and only once 0046 and the owner line are live: a late one must not spend it on a pull that reads nothing new. Unknown = not the owner.
+  const m = await getMember().catch(() => null)
+  const reset = !(await db.kv.get(CURSOR_RESET_KEY))?.value && m?.isOwner === true
+  if (reset) await clearCursors()
+  const hadCursors = (await db.kv.bulkGet(PULL_TABLES.map(cursorKey))).some((r) => r && r.value !== RESTART) // a pull from the start already reads a new person's rows
+  await pullTables(url!, key!, token)
+  // A person who appeared since the last sync has rows older than the cursors. pullPeople cleared the cursors before it stored the person (so a kill cannot lose the re-read); read the tables once more from the start. Once, not a loop: the person is stored now, so the next sync finds nobody new.
+  const added = await pullPeople(url!, key!, token, hadCursors, m)
+  if (added.length && hadCursors) await pullTables(url!, key!, token)
+  await syncOwnProfile()
+  await pullSafety(url!, key!, token)
+  await pullAlerts(url!, key!, token)
+  await pullGoals(url!, key!, token)
+  if (reset) await db.kv.put({ key: CURSOR_RESET_KEY, value: true })
+}
+
+async function pullTables(url: string, key: string, token: string) {
   for (const table of PULL_TABLES) {
     const lt = localTable(table) as unknown as Table<Local, number>
     const all = await lt.toArray()
@@ -227,7 +260,8 @@ async function pull(token: string) {
       byCid: new Map(all.filter((r) => r.clientId).map((r) => [r.clientId!, r] as const))
     }
     let col: string = TABLES[table].cursor ?? 'created_at'
-    let cursor = (await db.kv.get(cursorKey(table)))?.value as string | undefined
+    const stored = (await db.kv.get(cursorKey(table)))?.value as string | undefined
+    let cursor = stored === RESTART ? undefined : stored
     let from = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : undefined
     for (let page = 0; page < 20; page++) {
       const page_ = (c: string) => getJson(`${url}/rest/v1/${table}?select=*&order=${c}.asc&limit=${PAGE}` + (from ? `&${c}=gte.${encodeURIComponent(from)}` : ''), key!, token)
@@ -252,11 +286,6 @@ async function pull(token: string) {
       from = last
     }
   }
-  await pullPeople(url!, key!, token)
-  await syncOwnProfile()
-  await pullSafety(url!, key!, token)
-  await pullAlerts(url!, key!, token)
-  await pullGoals(url!, key!, token)
 }
 
 async function getJson(u: string, key: string, token: string): Promise<Record<string, unknown>[]> {
@@ -269,25 +298,44 @@ async function getJson(u: string, key: string, token: string): Promise<Record<st
   return (await res.json()) as Record<string, unknown>[]
 }
 
-// People: RLS limits this to the member and linked persons, so local Person.id == server people.id.
+// People: RLS limits this to the member and linked persons (an admin's policy reads everyone), so local Person.id == server people.id.
 // Anything that creates a local person must use getMember().personId.
-async function pullPeople(url: string, key: string, token: string) {
+// Archived people are never pulled, but my own row always is (found by my user id, so it still comes when the person id is unknown). Returns the ids this phone had not seen before.
+async function pullPeople(url: string, key: string, token: string, hadCursors: boolean, m: Member | null): Promise<string[]> {
+  const uid = m?.userId && /^[0-9a-f-]{36}$/i.test(m.userId) ? m.userId : null
+  const live = uid ? `&or=(archived_at.is.null,auth_user_id.eq.${uid})` : '&archived_at=is.null'
+  const read = (cols: string) => getJson(`${url}/rest/v1/people?select=${cols}${live}`, key, token)
   let rows: Record<string, unknown>[]
   try {
-    rows = await getJson(`${url}/rest/v1/people?select=id,display_name,${PROFILE_COLS}`, key, token)
+    rows = await read(`id,display_name,kind,auth_user_id,${PROFILE_COLS}`)
   } catch (e) {
-    // 42703 = the profile columns do not exist yet (migration 0010 not applied): names only
+    // 42703 = people.kind does not exist yet (0046 not applied): without it, then names only (0010 not applied)
     if (!(e instanceof SyncError) || e.code !== '42703') throw e
-    rows = await getJson(`${url}/rest/v1/people?select=id,display_name`, key, token)
+    try {
+      rows = await read(`id,display_name,auth_user_id,${PROFILE_COLS}`)
+    } catch (e2) {
+      if (!(e2 instanceof SyncError) || e2.code !== '42703') throw e2
+      rows = await read('id,display_name,auth_user_id')
+    }
   }
-  if (!rows.length) return
-  await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string })))
-  const selfId = await selfIdNow()
+  // My own row, wherever the id came from: the member's person, else the row that carries my user id (an archived own row).
+  const selfId = m?.personId ?? (uid ? ((rows.find((r) => r.auth_user_id === uid)?.id as string | undefined) ?? null) : null)
+  // An empty answer is a real answer (every link removed), but without my own id there is no row to keep: unknown, so no purge (ML-05).
+  if (!rows.length && !selfId) return []
+  const known = new Set(await hdb.people.toCollection().primaryKeys())
+  // My own id counts as new when other people were already known and I was not (a member attached to an existing person); never on a first-ever read.
+  const added = rows.map((r) => r.id as string).filter((id) => !known.has(id) && (id !== selfId || known.size > 0))
+  // Cleared before the person is stored: if the app dies between the two, the next sync still reads everything from the start.
+  if (added.length && hadCursors) await clearCursors()
+  await hdb.people.bulkPut(rows.map((r) => ({ id: r.id as string, name: r.display_name as string, ...(typeof r.kind === 'string' ? { kind: r.kind } : {}) })))
   await applyPulledProfiles(rows, selfId)
+  // Without my user id I cannot tell my own archived row from a removed one: skip the purge (ML-05).
+  if (!uid) return added
   // The server no longer sends archived (or unlinked) people: forget them here too. Only after a full successful pull, never my own row.
   const keep = new Set([...rows.map((r) => r.id as string), ...(selfId ? [selfId] : [])])
   const gone = (await hdb.people.toCollection().primaryKeys()).filter((id) => !keep.has(id))
   if (gone.length) {
+    // shortcut: an archived person's table rows (readings, doses...) can still reach an owner's phone through the table pulls, though nobody lists them; no sweep. Upgrade if archived people's records must vanish from an owner's phone.
     // After "Stop sharing" nothing of theirs may stay on this phone: records, medicines, doses, food, water, goals, visits too (ML-07).
     const mine = (t: Table<{ personId: string }, number>) => t.where('personId').anyOf(gone).delete()
     await Promise.all([
@@ -298,6 +346,7 @@ async function pullPeople(url: string, key: string, token: string) {
       mine(vdb.appointments as never), mine(vdb.followUps as never)
     ])
   }
+  return added
 }
 
 // Admin safety edits go into the same kv map the safety screens read: { [id]: patch }. A removed edit drops the key.

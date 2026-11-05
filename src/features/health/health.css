@@ -213,6 +213,9 @@
 .ah-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
 .ah .cd-act { width: 100%; min-width: 0; min-height: 44px; margin: 0; padding-inline: 8px; }
 .ps-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
+.ps-pill[data-other] { background: var(--btn); color: var(--btn-fg); } /* Family: someone other than Me is on show */
+.ps-lab { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ps-foot { margin: 14px 0 0; }
 
 /* v13 for you */
 .fy-stack { display: grid; gap: 12px; }

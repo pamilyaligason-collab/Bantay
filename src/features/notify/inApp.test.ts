@@ -15,3 +15,14 @@ describe('inAppText system row', () => {
     expect(inAppText({ template: 'system', ref: 'new-job:1' }).title).toBe('new-job had a failed run')
   })
 })
+
+describe('inAppText link', () => {
+  it("opens my sharing list for share_added and that person's list for share_added_carer (D-109)", () => {
+    expect(inAppText({ template: 'share_added', ref: null }).href).toBe('#sharing')
+    expect(inAppText({ template: 'share_added_carer', ref: null, personId: 'p1' }).href).toBe('#sharing/p1')
+  })
+  it('share_added_carer with no person falls back to its tab, and system goes to System health', () => {
+    expect(inAppText({ template: 'share_added_carer', ref: null }).href).toMatch(/^#(?!sharing)/)
+    expect(inAppText({ template: 'system', ref: 'dose-watch:1', personId: 'p1' }).href).toBe('/admin#/system')
+  })
+})

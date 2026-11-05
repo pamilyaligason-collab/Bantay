@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
+import { pickPerson } from './fixtures/v13/family'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 const SHOTS = process.env.SHOT_DIR // set to save 390x844 shots for the screenshot gate
@@ -114,13 +115,16 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('People: status bubbles, messages, member page, and the phone health switches moved to Me', async ({ page }) => {
       await page.goto('/#family')
-      const cards = page.getByRole('group', { name: 'Family roll call' }) // v13: person cards replaced the bubbles
+      const cards = page.getByRole('group', { name: 'Family roll call' }) // v13: person cards replaced the bubbles; D-109: one at a time, picked in the pill
+      await pickPerson(page, 'Papa Ben')
       await expect(cards.getByRole('article', { name: /^Papa Ben\. OK / })).toBeVisible() // a known card first: the status lines wait for the check-ins to load
+      await pickPerson(page, 'Lola Remy')
       await expect(cards.getByRole('article', { name: /^Lola Remy\. No check-in today/ })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Phone health data' })).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/app-people-${scheme}.png` })
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
+      await pickPerson(page, 'Papa Ben')
       await cards.getByRole('link', { name: 'Open Papa' }).click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')

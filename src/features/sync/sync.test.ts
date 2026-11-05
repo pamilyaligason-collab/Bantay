@@ -11,7 +11,7 @@ import { track } from '../admin/events'
 
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 const who = vi.hoisted(() => ({ id: null as string | null }))
-vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => (who.id ? { personId: who.id } : null) }))
+vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => (who.id ? { userId: '44444444-4444-4444-8444-444444444444', personId: who.id } : null) }))
 
 const URL = 'https://x.supabase.test'
 const cfg = (token: string | null = 'tok1') => ({ url: URL, key: 'pk', getToken: async () => token })

@@ -1,7 +1,6 @@
-/* Sharing (session 12, lane A): Who can see my records, the Share sheet, the accept card. Tokens come from the app palette; light and dark both follow it. */
+/* Sharing (session 12, lane A): Who can see my records, the Share sheet. D-109: no pending or accept state. Tokens come from the app palette; light and dark both follow it. */
 .sg-intro { display: flex; gap: 12px; align-items: center; background: var(--soft); box-shadow: none; }
 .sg-intro .sh-ic { color: var(--green); flex: none; }
-.sg-wait { color: var(--amber-ink); }
 .sg-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .sg-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .sg-chip { min-height: 48px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; font-weight: 600; }
@@ -12,8 +11,6 @@
 .sg-check input { width: 24px; height: 24px; flex: none; accent-color: var(--green); margin-top: 2px; }
 .sg-check[aria-disabled="true"] { color: var(--muted); }
 .sg-info { display: flex; gap: 10px; align-items: flex-start; background: var(--soft); border-radius: 14px; padding: 12px 14px; font-size: 14px; }
-.sg-accept { display: grid; gap: 10px; }
-.sg-offer { display: grid; gap: 8px; outline: 2px solid var(--green2); }
 /* Admin desk grid (desk/Sharing.tsx) */
 .sg-grid { border-collapse: collapse; width: 100%; }
 .sg-grid th, .sg-grid td { padding: 6px; text-align: center; }
@@ -21,7 +18,6 @@
 .sg-grid td:first-child, .sg-grid th:first-child { text-align: left; }
 .sg-cell { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .sg-cell[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); }
-.sg-cell[data-pending="true"] { border-style: dashed; color: var(--amber-ink); }
 .sg-cell[data-self="true"] { background: var(--card2); border-color: var(--card2); }
 .sg-cell:disabled { opacity: .6; }
 .sg-scroll { overflow-x: auto; }

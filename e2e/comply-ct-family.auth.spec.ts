@@ -23,7 +23,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.setViewportSize({ width: w, height: 844 })
       await skipOnboarding(page)
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
-      await openFamily(page)
+      await openFamily(page, { person: 'Ate Joy' }) // her readings draw the chart (D-109: Family opens on Me)
       await setScheme(page, scheme)
       const chart = page.getByTestId('week-chart')
       await expect(chart).toBeVisible()
