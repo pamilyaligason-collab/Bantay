@@ -34,6 +34,12 @@ describe('UpdateSheet', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open Settings' }))
     expect(api.openInstallPermission).toHaveBeenCalled()
   })
+  it('says so on that step when Settings cannot be opened', async () => {
+    const api = mk({ openInstallPermission: vi.fn().mockRejectedValue(new Error('no activity')) }, false)
+    render(<UpdateSheet latest={latest} api={api} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Open Settings' }))
+    expect(await screen.findByText('Settings did not open. Open Android Settings, find Bantay, and turn on Allow.')).toBeTruthy()
+  })
   it('shows the damaged-download message on checksum failure', async () => {
     const api = mk({ download: vi.fn().mockRejectedValue(new Error('checksum')) })
     render(<UpdateSheet latest={latest} api={api} />)

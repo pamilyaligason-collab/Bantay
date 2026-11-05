@@ -3,18 +3,18 @@ import { useEffect, useState } from 'react'
 import { ldb } from '../log/store'
 import type { Activity } from './model'
 
-const NONE: Activity[] = []
+export const NO_ACTIVITY: Activity[] = [] // useActivity's state before its first query answers (every answer is a new array)
 export type TakenToday = { name: string; takenAt: string }
 const NO_TAKEN: TakenToday[] = []
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
 
 /** One person's activity rows (steps, sleep, mood) from the last `days` days, live. */
 export function useActivity(personId: string, days = 120): Activity[] {
-  const [rows, setRows] = useState<Activity[]>(NONE)
+  const [rows, setRows] = useState<Activity[]>(NO_ACTIVITY)
   useEffect(() => {
-    if (!personId) return setRows(NONE)
+    if (!personId) return setRows(NO_ACTIVITY)
     const since = new Date(Date.now() - days * 86_400_000).toISOString()
-    const sub = liveQuery(() => ldb.activity.where('personId').equals(personId).filter((a) => a.startedAt >= since).toArray()).subscribe({ next: setRows, error: () => setRows(NONE) })
+    const sub = liveQuery(() => ldb.activity.where('personId').equals(personId).filter((a) => a.startedAt >= since).toArray()).subscribe({ next: setRows, error: () => setRows(NO_ACTIVITY) })
     return () => sub.unsubscribe()
   }, [personId, days])
   return rows

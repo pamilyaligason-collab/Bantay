@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { VIDEO_ID } from '../health/library/videosLogic'
+import { SOS_STARTED_EVENT } from '../sos/active'
+import { announceMedia, onOtherMedia } from './mediaStart'
 import { useOnline } from './useOnline'
 import './media.css'
 
@@ -11,7 +13,14 @@ export function LiteVideo({ id, title, start, minutes }: { id: string; title: st
   const [playing, setPlaying] = useState(false)
   const [noThumb, setNoThumb] = useState(false)
   const frame = useRef<HTMLIFrameElement>(null)
+  const me = useRef({}) // this player's token for mediaStart
   const online = useOnline()
+  useEffect(() => { // a video must not sound over an SOS: back to the poster unloads the player
+    const stop = () => setPlaying(false)
+    window.addEventListener(SOS_STARTED_EVENT, stop)
+    const off = onOtherMedia(me.current, stop) // another video or the radio started
+    return () => { window.removeEventListener(SOS_STARTED_EVENT, stop); off() }
+  }, [])
   if (!VIDEO_ID.test(id)) return null
   const t = typeof start === 'number' && Number.isFinite(start) && start > 0 ? Math.floor(start) : null
   const len = typeof minutes === 'number' && Number.isFinite(minutes) && minutes > 0 ? minutes : null
@@ -24,7 +33,7 @@ export function LiteVideo({ id, title, start, minutes }: { id: string; title: st
       ) : playing ? (
         <iframe ref={frame} className="lv-frame" src={src} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       ) : (
-        <button type="button" className="lv-poster lv-play" data-thumb={noThumb ? 'off' : 'on'} onClick={() => { setPlaying(true); setTimeout(() => frame.current?.focus(), 0) }} aria-label={`Play ${title}${len ? `, ${len} minutes` : ''}`}>
+        <button type="button" className="lv-poster lv-play" data-thumb={noThumb ? 'off' : 'on'} onClick={() => { announceMedia(me.current); setPlaying(true); setTimeout(() => frame.current?.focus(), 0) }} aria-label={`Play ${title}${len ? `, ${len} minutes` : ''}`}>
           {!noThumb && <img className="lv-img" src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setNoThumb(true)} />}
           <span className="lv-btn" aria-hidden="true"><Icon name="play" size={32} active /></span>
           <span className="lv-cap" data-contrast-bg={noThumb ? undefined : "#555555"}><b>{title}</b>{len && <span className="lv-len">{len} min</span>}</span>

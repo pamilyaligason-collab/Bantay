@@ -4,18 +4,23 @@ import { assertHero, assertJackClear, assertNarrow, assertNoSideways, assertNoWr
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
-// v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, flagged Listen and watch, crisis card from hotlines.json.
-test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', timezoneId: 'Asia/Manila' })
+// v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
+// The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
+const CRISIS_TOP_MAX = { 390: 1470, 450: 1448 } as const
+const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
 
-const flagOn = async (page: Page) => {
-  await page.evaluate(() => new Promise<void>((res, rej) => {
-    const o = indexedDB.open('bantay')
-    o.onerror = () => rej(o.error)
-    o.onsuccess = () => { const tx = o.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put({ key: 'flag.calm.radio', value: true }); tx.oncomplete = () => { o.result.close(); res() }; tx.onerror = () => rej(tx.error) }
-  }))
-  await page.reload()
-  await expect(page.getByTestId('calm-media')).toBeVisible()
+// Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
+function silentWav(): Buffer {
+  const n = 8000 * 60
+  const b = Buffer.alloc(44 + n, 128)
+  b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVEfmt ', 8); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22)
+  b.writeUInt32LE(8000, 24); b.writeUInt32LE(8000, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40)
+  return b
 }
+const STREAM = /^https:\/\/(stream(-uk1)?\.radioparadise\.com|stream\.srg-ssr\.ch)\//
+const row = (page: Page, id: 'rpmellow' | 'rsclassic') => page.getByTestId(`calm-radio-${id}`)
+
+test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', timezoneId: 'Asia/Manila' })
 
 test.beforeEach(async ({ page }) => {
   if (!test.info().title.startsWith('reduced motion')) await page.clock.setFixedTime(FIXED_CLOCKS[1]) // the reduced-motion check needs a live clock: a fixed one would hide any motion
@@ -27,11 +32,10 @@ test.beforeEach(async ({ page }) => {
 
 test('route: own header, hero first, sections in order', async ({ page }) => {
   await assertHero(page)
-  await assertOrder(page, ['calm-hero', 'calm-mood', 'calm-crisis'])
+  await assertOrder(page, ['calm-hero', 'calm-mood', 'calm-media', 'calm-crisis'])
   await expect(page.getByRole('link', { name: 'Back to Today' })).toHaveAttribute('href', '#today')
   await expect(page.locator('.sh-top')).toHaveCount(0)
   await expect(page.locator('.sh-jackfab')).toHaveCount(0)
-  await expect(page.getByTestId('calm-media')).toHaveCount(0) // flag off
 })
 
 test('Ask Jack opens the Jack sheet and closing it returns focus to the button', async ({ page }) => {
@@ -124,16 +128,200 @@ test('Start opens the breath sheet', async ({ page }) => {
   await expect(page.getByRole('dialog', { name: 'Take a breath' })).toBeVisible()
 })
 
-test('flag on: three outside links and the video poster, no iframe before the tap', async ({ page }) => {
-  await flagOn(page)
+test('one row: radio cards, the podcast link and the video posters; no stream or iframe before the tap', async ({ page }) => {
   await assertOrder(page, ['calm-hero', 'calm-mood', 'calm-media', 'calm-crisis'])
-  for (const href of ['https://somafm.com/groovesalad/', 'https://somafm.com/dronezone/', 'https://www.tarabrach.com/podcasts/']) {
-    const a = page.locator(`[data-testid="calm-media"] a[href="${href}"]`)
-    await expect(a).toHaveAttribute('target', '_blank')
-    await expect(a).toHaveAttribute('rel', /noopener/)
-  }
+  const a = page.locator('[data-testid="calm-media"] a[href="https://www.tarabrach.com/podcast/"]')
+  await expect(a).toHaveAttribute('target', '_blank')
+  await expect(a).toHaveAttribute('rel', /noopener/)
   await expect(page.getByRole('button', { name: /Play Steps for Stress/ })).toBeVisible()
   await expect(page.locator('[data-testid="calm-media"] iframe')).toHaveCount(0)
+  await expect(page.getByTestId('calm-audio')).toHaveCount(1)
+  await expect(page.getByTestId('calm-audio')).not.toHaveAttribute('src', /./)
+  await expect(page.locator('[data-testid="calm-media"] .carousel')).toHaveCount(1)
+})
+
+for (const [w, h] of [[390, 844], [450, 949]] as const) {
+  test(`${w}: board layout: 240 px link cards, 84 px head, one row, and the crisis card no further than that row plus the note`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTo(0, 0))
+    const m = await page.evaluate(() => {
+      const box = (s: string) => document.querySelector(s)!.getBoundingClientRect()
+      const cards = [...document.querySelectorAll('[data-testid="calm-row"] > *')].map((c) => c.getBoundingClientRect())
+      return { scroll: document.querySelector('.bt .scroll')!.scrollTop, widths: cards.map((c) => Math.round(c.width)), tops: new Set(cards.map((c) => Math.round(c.top))).size, head: box('[data-testid="calm-radio-rpmellow"] .cm-media-ic').height, rowH: box('[data-testid="calm-row"]').height, gap: box('[data-testid="calm-crisis"]').top - box('[data-testid="calm-row"]').bottom, noteH: box('[data-testid="calm-row"] + p').height, crisisTop: box('[data-testid="calm-crisis"]').top }
+    })
+    console.log(`crisis at scroll 0, ${w} px: ${JSON.stringify(m)}`)
+    expect(m.scroll).toBe(0)
+    expect(m.widths).toEqual(Array(8).fill(240))
+    expect(m.tops).toBe(1)
+    expect(m.head).toBe(84)
+    expect(m.rowH).toBeLessThanOrEqual(ROW_MAX)
+    expect(m.gap).toBeLessThanOrEqual(m.noteH + 32) // only the note and two page gaps between the row and the crisis card
+    expect(m.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
+  })
+}
+
+for (const [w, h] of [[390, 844], [450, 949]] as const) {
+  const place = (page: Page) => page.evaluate(() => {
+    const s = document.querySelector('.bt .scroll')!; s.scrollTo(0, 0)
+    const box = (q: string) => document.querySelector(q)!.getBoundingClientRect()
+    return { rowH: box('[data-testid="calm-row"]').height, crisisTop: box('[data-testid="calm-crisis"]').top, heroTop: box('[data-testid="calm-hero"]').top }
+  })
+  test(`${w}: a radio error and the offline line leave the row and the crisis card where the bounds say`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await page.route(STREAM, (r) => r.fulfill({ status: 403, body: '' }))
+    const rest = await place(page)
+    await row(page, 'rsclassic').getByRole('button', { name: /^Play/ }).click()
+    await expect(row(page, 'rsclassic')).toHaveAttribute('data-state', 'error')
+    const err = await place(page)
+    console.log(`error ${w}: ${JSON.stringify({ rest, err })}`)
+    expect(err.rowH).toBe(rest.rowH) // the failed card fits its reserved height, so no card grows
+    expect(err.crisisTop).toBe(rest.crisisTop)
+    expect(err.rowH).toBeLessThanOrEqual(ROW_MAX)
+    expect(err.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
+    await page.context().setOffline(true)
+    await expect(page.getByTestId('calm-media')).toContainText('You are offline.')
+    const off = await place(page)
+    console.log(`offline ${w}: ${JSON.stringify(off)}`)
+    await page.context().setOffline(false)
+    expect(off.rowH).toBeLessThanOrEqual(ROW_MAX)
+    // the whole page moves for the app's own offline strip (OfflineBar, 70 px measured); Calm itself adds nothing above the crisis card
+    const strip = off.heroTop - rest.heroTop
+    expect(strip).toBeGreaterThan(0)
+    expect(strip).toBeLessThanOrEqual(72)
+    expect(off.crisisTop - strip).toBeLessThanOrEqual(rest.crisisTop)
+    expect(off.crisisTop - strip).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
+  })
+}
+
+test('radio: an SOS from the Jack sheet stops it, with the real hold', async ({ page }) => {
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  await row(page, 'rpmellow').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await page.getByRole('button', { name: 'Ask Jack' }).click()
+  await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+  await expect(page.getByTestId('sos-full')).toBeVisible({ timeout: 8000 })
+  await expect(page.getByTestId('calm-audio')).not.toHaveAttribute('src', /./)
+  expect(await page.getByTestId('calm-audio').evaluate((a: HTMLAudioElement) => a.paused)).toBe(true)
+})
+
+test('radio: nothing is requested before a tap; Play shows Loading, then Playing with bars; Stop ends it', async ({ page }) => {
+  const asked: string[] = []
+  let hold = true
+  await page.route(STREAM, async (r) => {
+    asked.push(r.request().url())
+    while (hold) await new Promise((res) => setTimeout(res, 20))
+    await r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() })
+  })
+  await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
+  expect(asked).toEqual([])
+  const g = row(page, 'rpmellow')
+  await g.getByRole('button', { name: 'Play Radio Paradise Mellow' }).click()
+  await expect(g).toHaveAttribute('data-state', 'loading')
+  await expect(g).toContainText('Loading')
+  await expect(g.locator('.cm-eq')).toHaveCount(0)
+  hold = false
+  await expect(g).toHaveAttribute('data-state', 'playing')
+  await expect(g).toContainText('Playing')
+  await expect(g.locator('.cm-eq i')).toHaveCount(4)
+  expect(asked[0]).toBe('https://stream.radioparadise.com/mellow-128')
+  await g.getByRole('button', { name: 'Stop Radio Paradise Mellow' }).click()
+  await expect(g).toHaveAttribute('data-state', 'idle')
+  await expect(g.getByRole('button', { name: 'Play Radio Paradise Mellow' })).toBeVisible()
+  await expect(page.getByTestId('calm-audio')).not.toHaveAttribute('src', /./)
+  expect(await page.getByTestId('calm-audio').evaluate((a: HTMLAudioElement) => a.paused)).toBe(true)
+})
+
+test('radio: starting one stops the other, through the one audio element', async ({ page }) => {
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  await row(page, 'rpmellow').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await row(page, 'rsclassic').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rsclassic')).toHaveAttribute('data-state', 'playing')
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'idle')
+  await expect(page.locator('audio')).toHaveCount(1)
+  await expect(page.getByTestId('calm-audio')).toHaveAttribute('src', 'https://stream.srg-ssr.ch/srgssr/rsc_de/mp3/128')
+})
+
+test('radio: stops on leaving Calm and keeps going at #calm/listen', async ({ page }) => {
+  await page.addInitScript(() => {
+    const seen: HTMLMediaElement[] = []; (window as unknown as { __seen: HTMLMediaElement[] }).__seen = seen
+    const play = HTMLMediaElement.prototype.play
+    HTMLMediaElement.prototype.play = function () { seen.push(this); return play.call(this) }
+  })
+  await page.reload()
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  await row(page, 'rpmellow').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await page.evaluate(() => { location.hash = '#calm/listen' })
+  await expect(page).toHaveURL(/#calm\/listen$/)
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await page.evaluate(() => { location.hash = '#today' })
+  await expect(page.getByTestId('calm-audio')).toHaveCount(0)
+  const s = await page.evaluate(() => (window as unknown as { __seen: HTMLMediaElement[] }).__seen.map((a) => ({ paused: a.paused, src: a.hasAttribute('src') })))
+  expect(s.length).toBeGreaterThan(0)
+  for (const a of s) expect(a).toEqual({ paused: true, src: false })
+})
+
+test('radio: a failed address tries the second, then one plain line, and the card keeps its station site', async ({ page }) => {
+  const asked: string[] = []
+  await page.route(STREAM, (r) => { asked.push(r.request().url()); return r.fulfill({ status: 403, body: '' }) })
+  const d = row(page, 'rsclassic')
+  await d.getByRole('button', { name: /^Play/ }).click()
+  await expect(d).toHaveAttribute('data-state', 'error')
+  await expect(d).toContainText('The radio did not start.')
+  await expect(d.getByRole('link', { name: /Station site/ })).toHaveAttribute('href', 'https://www.radioswissclassic.ch/')
+  expect([...new Set(asked)]).toEqual(['https://stream.srg-ssr.ch/srgssr/rsc_de/mp3/128', 'https://stream.srg-ssr.ch/m/rsc_de/mp3_128'])
+  await page.unroute(STREAM)
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  await d.getByRole('button', { name: /^Play/ }).click() // Play tries again
+  await expect(d).toHaveAttribute('data-state', 'playing')
+  await expect(d).not.toContainText('did not start')
+})
+
+test('radio: the second address plays when the first fails', async ({ page }) => {
+  await page.route(STREAM, (r) => !r.request().url().includes('stream-uk1') ? r.abort() : r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  await row(page, 'rpmellow').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await expect(page.getByTestId('calm-audio')).toHaveAttribute('src', 'https://stream-uk1.radioparadise.com/mellow-128')
+})
+
+test('reduced motion: no equaliser bars while the radio plays', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
+  const g = row(page, 'rpmellow')
+  await g.getByRole('button', { name: /^Play/ }).click()
+  await expect(g).toHaveAttribute('data-state', 'playing')
+  await expect(g.locator('.cm-eq')).toBeHidden()
+  await expect(g.locator('.cm-media-ic svg')).toBeVisible()
+  await expect(g).toContainText('Playing')
+})
+
+test('Today radio row lands on Listen and watch, not the page top', async ({ page }) => {
+  await page.goto('/#today')
+  await page.getByRole('link', { name: /Relaxing radio/ }).click()
+  await expect(page.getByTestId('calm-media')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => { const r = document.querySelector('[data-testid="calm-media"]')!.getBoundingClientRect(); return r.top < window.innerHeight / 2 && r.bottom > 0 })).toBe(true)
+  expect(await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTop)).toBeGreaterThan(0)
+})
+
+test('nothing from YouTube or a station loads before a tap; only the video posters (i.ytimg.com)', async ({ page }) => {
+  const hosts: string[] = []
+  page.on('request', (r) => hosts.push(new URL(r.url()).hostname))
+  await page.reload()
+  await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Play (?!Radio)/ })).toHaveCount(4)
+  await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
+  await page.waitForLoadState('networkidle')
+  const POSTER_HOST = 'i.ytimg.com' // the one allowed outside host: still pictures, no cookies
+  expect(hosts.filter((h) => /youtube-nocookie\.com$|youtube\.com$|radioparadise\.com$|srg-ssr\.ch$|radioswissclassic\.ch$|somafm\.com$|tarabrach\.com$/.test(h))).toEqual([])
+  expect(hosts.filter((h) => /(^|\.)(ytimg|ggpht|googlevideo)\./.test(h) && h !== POSTER_HOST)).toEqual([])
+})
+
+test('crisis: the Source link keeps one line at its 44 px height', async ({ page }) => {
+  const src = page.getByTestId('calm-crisis').locator('a.cm-src')
+  const h = await src.evaluate((a) => ({ link: a.getBoundingClientRect().height, line: a.parentElement!.getBoundingClientRect().height, display: getComputedStyle(a).display }))
+  expect(h.display).toBe('inline-flex')
+  expect(Math.round(h.link)).toBe(44) // its base: min-height 44, one line of text (it became block and 64 px when a media rule leaked onto it)
+  expect(h.line).toBeLessThanOrEqual(48)
 })
 
 test('crisis: Call 1553 is a tel link and no number is unconfirmed', async ({ page }) => {
@@ -148,8 +336,6 @@ for (const [w, h] of [[390, 844], [360, 740]] as const) {
     test(`${w}x${h} ${scheme}: targets, no sideways, no wrapped buttons, contrast`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h })
       await setScheme(page, scheme)
-      await flagOn(page)
-      await setScheme(page, scheme)
       await assertTargets(page)
       await assertNoSideways(page)
       await assertNoWrappedButtons(page)
@@ -160,7 +346,6 @@ for (const [w, h] of [[390, 844], [360, 740]] as const) {
 }
 
 test('195 px: nothing sideways, 44 px targets, no wrapped buttons, the orb fits the screen', async ({ page }) => {
-  await flagOn(page)
   await assertNarrow(page)
   await expect(page.getByTestId('calm-hero')).toBeVisible() // assertNarrow reloads; wait for the page before measuring
   const m = await page.evaluate(() => { const o = document.querySelector('[data-testid="calm-hero"] .bo')!.getBoundingClientRect(), h = document.querySelector('[data-testid="calm-hero"]')!.getBoundingClientRect(); return { w: o.width, h: o.height, right: o.right, heroRight: h.right, vw: window.innerWidth } })
@@ -187,9 +372,13 @@ test('reduced motion: the orb holds still', async ({ page }) => {
 test('shots (V13_SHOTS)', async ({ page }) => {
   test.skip(!process.env.V13_SHOTS, 'set V13_SHOTS=<dir> to write shots')
   await shotsLightDark(page, 'calm')
-  await flagOn(page)
   await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
   await shotsLightDark(page, 'calm-media')
+  await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() })) // a stub: the shot proves the card states, the live stream has its own headed check
+  await row(page, 'rpmellow').getByRole('button', { name: /^Play/ }).click()
+  await expect(row(page, 'rpmellow')).toHaveAttribute('data-state', 'playing')
+  await shotsLightDark(page, 'calm-radio-playing')
+  await row(page, 'rpmellow').getByRole('button', { name: /^Stop/ }).click()
   await page.evaluate(() => { const s = document.querySelector('.bt .scroll')!; s.scrollTo(0, s.scrollHeight) }) // the whole card, clear of the tab bar
   await shotsLightDark(page, 'calm-crisis')
   await page.getByRole('button', { name: 'Start' }).click()

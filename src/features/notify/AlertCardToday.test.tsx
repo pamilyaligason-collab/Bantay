@@ -2,13 +2,14 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AlertRow } from './store'
 
-const h = vi.hoisted(() => ({ rows: [] as unknown[], markSeen: vi.fn((_id: string) => Promise.resolve()) }))
+const h = vi.hoisted(() => ({ acting: false, rows: [] as unknown[], markSeen: vi.fn((_id: string) => Promise.resolve()) }))
+vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: h.acting, personId: h.acting ? 'p1' : null, name: '' }) }))
 vi.mock('./useAlerts', () => ({ useAlertRows: () => h.rows }))
 vi.mock('./store', () => ({ markSeen: (id: string) => h.markSeen(id) }))
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Mama Rosa' }], selfId: null }) }))
 import { AlertCardToday, pickAlert } from './AlertCardToday'
 
-afterEach(() => { cleanup(); h.rows = []; h.markSeen.mockClear() })
+afterEach(() => { cleanup(); h.acting = false; h.rows = []; h.markSeen.mockClear() })
 const row = (id: string, o: Partial<AlertRow>): AlertRow => ({ id, personId: 'p1', kind: 'dose_missed', template: 'dose_missed', ref: null, createdAt: '2026-10-26T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-02T00:00:00Z', ...o })
 
 describe('pickAlert: SOS > reading > hazard, newest first within a kind; a missed dose is a My day row, never this card', () => {
@@ -58,6 +59,32 @@ describe('AlertCardToday', () => {
     const { container } = render(<AlertCardToday />)
     expect(container.querySelectorAll('img.jack, .jack').length).toBe(0)
     expect(screen.getAllByRole('region', { name: 'Family alert' }).length).toBe(1)
+  })
+})
+
+describe('AlertCardToday while an admin views as someone', () => {
+  it("the admin's own family alert is not the viewed person's: nothing for a reading or a hazard", () => {
+    h.acting = true
+    for (const r of [row('v1', { kind: 'reading_high', template: 'reading_high' }), row('v2', { kind: 'hazard', template: 'storm_warning' })]) {
+      h.rows = [r]
+      const { container, unmount } = render(<AlertCardToday />)
+      expect(container.firstChild, r.kind).toBeNull()
+      unmount()
+    }
+  })
+  it('an SOS or a storm call for help is safety: it still shows while viewing', () => {
+    h.acting = true
+    for (const [kind, template] of [['sos', 'family_sos'], ['rollcall', 'rollcall_help']] as const) {
+      h.rows = [row(`v-${kind}`, { kind, template })]
+      const { unmount } = render(<AlertCardToday />)
+      expect(screen.getByRole('region', { name: 'Family alert' }).getAttribute('data-kind'), kind).toBe(kind)
+      unmount()
+    }
+  })
+  it('not viewing, the same hazard row shows', () => {
+    h.rows = [row('v3', { kind: 'hazard', template: 'storm_warning' })]
+    render(<AlertCardToday />)
+    expect(screen.getByRole('region', { name: 'Family alert' })).toBeTruthy()
   })
 })
 

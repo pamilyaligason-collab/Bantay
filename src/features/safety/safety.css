@@ -156,7 +156,7 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 :root[data-narrow] .sf-hero-row { grid-template-columns: minmax(0, 1fr); row-gap: 8px; justify-items: center; }
 :root[data-narrow] .sf-hero-row .sos-btn, :root[data-narrow] .sf-hero-t, :root[data-narrow] .sf-hero-row .sos-alt { grid-column: 1; grid-row: auto; }
 :root[data-narrow] .sf-hero-t { align-self: auto; text-align: center; }
-.card.sf-fa { flex: none; width: 150px; min-height: 140px; box-sizing: border-box; padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); scroll-snap-align: start; }
+.card.sf-fa { box-sizing: border-box; padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--ink); }
 .sf-fa b { font-size: 17px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
 .sf-fa .sub { font-size: 13px; color: var(--muted); }
 .sf-fa:focus-visible, .sf-bag:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -205,8 +205,8 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .lt-actions .zp .sf-chip, .lt-below .zp .sf-chip, .lt-actions [data-testid="place-last"], .lt-below [data-testid="place-last"] { height: auto; min-height: 48px; padding-top: 4px; padding-bottom: 4px; }
 .lt-actions .zp .zp-t, .lt-below .zp .zp-t, .lt-actions [data-testid="place-last"] .zp-t, .lt-below [data-testid="place-last"] .zp-t { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.2; text-align: left; }
 
-/* CS: first aid tiles take the board's per-topic tint (red, amber, purple), 132 square */
-.card.sf-fa { width: 132px; min-height: 132px; }
+/* CS: first aid tiles take the board's per-topic tint (red, amber, purple); the grid sets their width */
+.card.sf-fa { min-height: 132px; }
 .sf-fa[data-tint] { background: var(--tint-fill); }
 .sf-fa[data-tint] .sub, .sf-fa[data-tint] svg { color: var(--tint-ink); }
 .sf-fa[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
@@ -218,3 +218,10 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 :root[data-narrow] .sf-dialrow-add .sf-dt { grid-column: 1 / -1; }
 :root[data-narrow] .sf-dialrow-add .sf-i { grid-column: 1; }
 :root[data-narrow] .sf-dialrow-add .sf-addbtn { grid-column: 2; min-width: 0; width: 100%; }
+
+/* Safety home First aid: two columns, 3 rows, then Show more */
+.sf-fagrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sf-fagrid li { display: flex; min-width: 0; }
+.sf-fagrid .card.sf-fa { flex: 1 1 auto; }
+.sf-more { display: block; width: 100%; min-height: 44px; margin-top: 12px; border: 0; border-radius: var(--r-card); background: var(--fill); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; }
+.sf-more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

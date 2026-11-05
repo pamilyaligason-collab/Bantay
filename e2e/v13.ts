@@ -13,6 +13,10 @@ export async function settled(page: Page): Promise<void> {
   await page.evaluate(() => document.fonts.ready)
 }
 
+/** Warning and SOS content (Today's warning cards and `.td-alertband`, the family notice, the storm roll call `.fm-storm`, the Safety `storm-block`, any sos screen or row): a Jack allowance never covers it. `outsideWarning('.rw-main')` is that selector with warning and SOS content left out. */
+export const WARN_SOS = '[data-testid^="warning"], [data-testid^="warn-"], [data-testid*="sos"], [data-testid="family-notice"], .td-alertband, .fm-storm, [data-testid="storm-block"], [data-nofab]'
+export const outsideWarning = (sel: string) => `${sel}:not(:is(${WARN_SOS}) *)`
+
 /** No control (button, a, input, [role=button]) sits under the Jack button: at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Failures are prefixed "at rest:" / "at end:". */
 /** `allow`: a selector whose controls may sit under Jack (D-122: only the Family People rows `.rw-main`, when an empty Activity card hugs its line). When Jack is peeked (scrolled pages) his real hit strip is measured: 48 px wide from the screen edge, 88 px tall. */
 export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both'; allow?: string } = {}): Promise<void> {
@@ -36,6 +40,41 @@ export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 
     }, [when, opts.allow ?? ''] as const)
     expect(hits, `at ${when}: controls under the Jack button`).toEqual([])
   }
+}
+
+/** D-128 hit test: a control that touches the Jack button fails unless it is a named whole-card link with more than half of it still tappable (hit-tested on a 12 x 12 grid over its on-screen part, so clipping and the real top element count). Section links and small controls (Open Papa, See all) have no allowance. `scroll: 'top'` (default) measures at scroll 0, 'keep' measures where the page is now (a peeked Jack: his 48 x 88 hit strip). The log line carries each measured share. */
+export type JackAllow = { name: string; sel: string }
+// The named allowances (D-128) are whole-card links only. 'Learn card' (min 90% tappable) and 'Together row' (min 84%) were added by ruling in D-128.
+// Measured tappable share in gaps-s21 (S21-JACK lines, 4 widths x 5 heights, 3 dates, 143 tests green): Be prepared card 0.75 to 0.99 (43 hits), Learn card 0.90 to 0.97 (9 hits), People row 0.85 to 0.99 (22 hits), Together row 0.84 to 0.99 (11 hits), Needs row never touched Jack (0 hits).
+export const DISCOVER_ALLOW: JackAllow[] = [{ name: 'Be prepared card', sel: '[data-testid="dc-prep-row"] a.dc-prep' }, { name: 'Learn card', sel: '.dc-lcard a.rw-main' }]
+export const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main' }] // a Needs row's Answer / Open / Fix phone control is a small control: no allowance
+export async function assertJackHit(page: Page, allow: JackAllow[], tag: string, scroll: 'top' | 'keep' = 'top'): Promise<void> {
+  const hits = await page.evaluate(([allow, scroll]) => {
+    const sc = document.querySelector('.bt .scroll') as HTMLElement
+    if (scroll === 'top') sc.scrollTop = 0
+    const fab = document.querySelector('.sh-jackfab')
+    if (!fab) return []
+    const fr = fab.getBoundingClientRect()
+    const cy = (fr.top + fr.bottom) / 2
+    const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+    const box = sc.getBoundingClientRect()
+    const barTop = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? innerHeight // content under the tab bar is the bar's business, not Jack's
+    const out: { label: string; allowed: string | null; tappable: number }[] = []
+    for (const n of Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))) {
+      if (n === fab || fab.contains(n)) continue
+      const r = n.getBoundingClientRect()
+      const l = Math.max(r.left, box.left, 0), t = Math.max(r.top, box.top, 0), rt = Math.min(r.right, box.right, innerWidth), b = Math.min(r.bottom, box.bottom, barTop)
+      if (rt - l < 1 || b - t < 1 || getComputedStyle(n).visibility === 'hidden') continue
+      if (!(l < f.right && rt > f.left && t < f.bottom && b > f.top)) continue
+      let ok = 0, all = 0
+      for (let i = 0; i < 12; i++) for (let j = 0; j < 12; j++) { all++; const e = document.elementFromPoint(l + ((i + 0.5) * (rt - l)) / 12, t + ((j + 0.5) * (b - t)) / 12); if (e && n.contains(e)) ok++ }
+      if (ok === all) continue // the box touches Jack's but nothing of it is covered (Jack's round, or the control sits above him)
+      out.push({ label: (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40), allowed: allow.find((a) => n.matches(a.sel))?.name ?? null, tappable: ok / all })
+    }
+    return out
+  }, [allow, scroll] as const)
+  for (const h of hits) console.log('S21-JACK', tag, h.allowed ?? 'NONE', h.label, h.tappable.toFixed(2))
+  expect(hits.filter((h) => !h.allowed || h.tappable <= 0.5).map((h) => `${h.label} (${h.allowed ?? 'no allowance'}, ${Math.round(h.tappable * 100)}% tappable)`), `controls under Jack ${tag}`).toEqual([])
 }
 
 /** Exactly one `[data-hero]` in `.bt .scroll`, and its top is within 320 px of the scroll top. */

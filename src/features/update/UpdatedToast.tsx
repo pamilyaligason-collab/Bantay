@@ -32,7 +32,7 @@ export function UpdatedToast() {
     document.addEventListener('visibilitychange', check)
     let off: (() => void) | undefined
     let gone = false
-    void import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', (s) => { if (s.isActive) check() })).then((h) => { if (gone) void h.remove(); else off = () => void h.remove() }).catch(() => undefined) // not native: nothing to listen to
+    void import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', (s) => { if (s.isActive) check() })).then((h) => { if (gone) void Promise.resolve(h.remove()).catch(() => undefined); else off = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined) // not native: nothing to listen to
     let pending = false
     const reload = () => { flag('1'); location.reload() }
     const tryNow = () => { if (pending && canReloadNow(state())) { pending = false; reload() } }

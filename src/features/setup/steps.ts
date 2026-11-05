@@ -54,9 +54,9 @@ export const notifyDone = (n: NotifyState) => n.display && n.exact && n.battery
 export function onResume(fn: () => void): () => void {
   if (Capacitor.isNativePlatform()) {
     // native: appStateChange only (visibilitychange fires too, which would run fn twice)
-    let handle: Promise<{ remove(): Promise<void> }> | undefined
-    try { handle = App.addListener('appStateChange', (s) => { if (s.isActive) fn() }) } catch { /* no app plugin */ }
-    return () => { void handle?.then((h) => h.remove()).catch(() => undefined) }
+    let handle: Promise<{ remove(): Promise<void> } | undefined> | undefined
+    try { handle = Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) fn() })).catch(() => undefined) } catch { /* no app plugin */ }
+    return () => { void handle?.then((h) => h?.remove()).catch(() => undefined) }
   }
   const on = () => { if (document.visibilityState === 'visible') fn() }
   document.addEventListener('visibilitychange', on)

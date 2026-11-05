@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// ViewAsRow is mounted by L5 (Settings); this proves the component in isolation: admin-only, the picker, the audit row, the bar, Exit (D-99).
+// ViewAsRow is mounted by L5 (Settings); this proves the component in isolation: admin-only, the picker, the audit row, the bar, Back to me (D-99).
 const h = vi.hoisted(() => ({
   member: { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null } as { userId: string; personId: string; role: string; handle: null } | null,
   log: vi.fn(), carers: vi.fn(), people: [] as { id: string; name: string; isMe: boolean }[]
@@ -38,7 +38,7 @@ describe('ViewAsRow in isolation', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByTestId('viewas-row')).toBeNull()
   })
-  it('admin: row opens the picker with everyone known except the admin and anyone with no people row; picking writes one audit row and shows the bar; Exit clears it', async () => {
+  it('admin: row opens the picker with everyone known except the admin and anyone with no people row; picking writes one audit row and shows the bar; Back to me clears it', async () => {
     both()
     fireEvent.click(within(await screen.findByTestId('viewas-row')).getByRole('button'))
     const sheet = await screen.findByRole('dialog', { name: 'View as' })
@@ -51,9 +51,9 @@ describe('ViewAsRow in isolation', () => {
     expect(h.log).toHaveBeenCalledTimes(1)
     expect(h.log).toHaveBeenCalledWith('p-mama')
     const bar = await screen.findByTestId('viewas-bar')
-    expect(bar.textContent).toContain('Acting as Mama')
-    expect(bar.textContent).toContain('You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.') // C-9 copy, no carer link
-    fireEvent.click(within(bar).getByRole('button', { name: 'Exit' }))
+    expect(bar.textContent).toContain('Viewing as Mama')
+    expect(bar.textContent).toContain('Look only. You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.')
+    fireEvent.click(within(bar).getByRole('button', { name: 'Back to me' }))
     expect(getActingPersonId()).toBeNull()
     expect(screen.queryByTestId('viewas-bar')).toBeNull()
   })

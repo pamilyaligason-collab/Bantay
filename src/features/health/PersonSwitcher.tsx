@@ -6,6 +6,8 @@ import { GroupedList, Row, Sheet, leaveSheet } from '../look'
 import { firstName } from '../records/ConfirmSheet'
 import type { Person } from '../records/store'
 import { properName } from './medName'
+import { useViewAs } from '../viewas/viewAs'
+import '../viewas/viewas.css'
 import './health.css'
 
 /** Fields a person row may carry. `kind` ('shared' = the shared family account) is filled by the people pull from migration 0046 and stays null before it is applied; archived people are already left out of the pull (D-109), so `archivedAt` is a second guard. */
@@ -22,6 +24,7 @@ export interface SwitcherGroup { label?: string; rows: { id: string; sub?: strin
 export function PersonSwitcher({ people: all, meId, personId, setPersonId, onPick, title = 'Whose health', groups, foot }: { people: SwitcherPerson[]; meId: string; personId: string; setPersonId: (id: string) => void; onPick?: (id: string) => void; title?: string; groups?: SwitcherGroup[]; foot?: string }) {
   const [open, setOpen] = useState(false)
   const { people: known } = useFamilyPeople()
+  const va = useViewAs()
   const people = switcherPeople(all, personId)
   if (people.length < 2) return null
   const nameOf = (p: Person) => (p.id === meId ? 'Me' : firstName(properName(p.name)))
@@ -43,11 +46,13 @@ export function PersonSwitcher({ people: all, meId, personId, setPersonId, onPic
             <div key={g.label ?? i}>
               {g.label && <p className="ps-lab">{g.label}</p>}
               <GroupedList label={g.label ?? title}>
-                {g.rows.map((r) => { const p = people.find((x) => x.id === r.id); return p ? <Row key={p.id} avatar={face(p, 32)} title={nameOf(p) === 'Me' ? 'Me' : properName(p.name)} sub={p.id === personId ? 'Showing now' : r.sub} onClick={() => pick(p.id)} /> : null })}
+                {g.rows.map((r) => { const p = people.find((x) => x.id === r.id); return p ? <Row key={p.id} avatar={face(p, 32)} title={nameOf(p) === 'Me' ? 'Me' : properName(p.name)} sub={p.id === personId ? 'Showing now' : r.sub} onClick={() => pick(p.id)} control={va.can && p.id !== meId ? <button type="button" className="va-open press" data-testid={`viewas-open-${p.id}`} aria-label={`View the whole app as ${nameOf(p)}`} disabled={!!va.busy} onClick={() => void va.go(p.id, () => setOpen(false))}><Icon name="eye" size={14} />View as</button> : undefined} /> : null })}
               </GroupedList>
             </div>
           ))}
           {foot && <p className="sub ps-foot">{foot}</p>}
+          {va.can && <p className="sub ps-foot">View as opens every tab the way they see it, needs internet, and is recorded in the family history.</p>}
+          {va.err && <p role="alert" className="sub ps-foot">{va.err}</p>}
         </Sheet>
       )}
     </>

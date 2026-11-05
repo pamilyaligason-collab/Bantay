@@ -58,7 +58,7 @@ describe('MovePanel without the doctor OK (H15)', () => {
   })
   it('another person page never shows the viewer rest advice, notes, gate or age-filtered moves, and nothing logs', () => {
     data.gateOk = false; data.conditions = ['hypertension', 'heart']; data.latestBp = { sys: 190, dia: 110 }; data.age = 90
-    render(<MovePanel hideRing lockLog="Move logs are yours only. Exit to log." />)
+    render(<MovePanel hideRing lockLog="Move logs are yours only. Tap Back to me to log." />)
     expect(screen.queryByText(/Rest today/)).toBeNull()
     expect(screen.queryByText(/My doctor said OK/)).toBeNull()
     expect(screen.queryByText(/Only walking and seated moves/)).toBeNull()
@@ -67,7 +67,7 @@ describe('MovePanel without the doctor OK (H15)', () => {
     const cards = within(screen.getByRole('list', { name: 'Browse moves' })).getAllByRole('button')
     expect(cards.every((b) => b.getAttribute('aria-disabled') !== 'true')).toBe(true) // not locked on the viewer's gate
     fireEvent.click(cards[0]!)
-    expect(screen.getByText('Move logs are yours only. Exit to log.')).toBeTruthy()
+    expect(screen.getByText('Move logs are yours only. Tap Back to me to log.')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Done' }) as HTMLButtonElement).disabled).toBe(true)
     data.conditions = []; data.latestBp = null; data.age = 70
   })

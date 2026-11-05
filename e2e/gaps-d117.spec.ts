@@ -49,7 +49,7 @@ for (const w of [195, 360, 390]) {
       await assertNoSideways(page)
       await assertTargets(page, { tabFloor: w === 195 ? 23.5 : undefined })
       await assertNoWrappedButtons(page)
-      await assertJackClear(page, { at: 'end' }) // the top of the page has full-width season and video cards beside Jack that stay tappable (the Learn link, which would not, is measured below); the end of the page must clear it
+      await assertJackClear(page, { at: 'end' }) // the top of the page has full-width season and video cards beside Jack that stay tappable (the Learn link, now on the left beside its title, is measured below); the end of the page must clear it
       const box = await page.getByTestId('dc-ready').evaluate((e) => { const r = e.getBoundingClientRect(), s = document.querySelector('.bt .scroll')!.getBoundingClientRect(); return { l: r.left - s.left, r: s.right - r.right } })
       expect(box.l).toBeGreaterThanOrEqual(0)
       expect(box.r).toBeGreaterThanOrEqual(0)
@@ -76,7 +76,7 @@ test('the card opens each Learn topic with its checked videos and reads; the her
   await shot(page, 'learn-home-390', 'learn-home')
 })
 
-// Learn's "All topics" link must start below Jack and the full-width season row must end above it, at rest, on every rotation day, short titles and tall ones alike (the .dc-top floor is the viewport height minus 283 px; the hero poster shrinks on short screens).
+// Learn's "All topics" link must not sit under Jack and the full-width season row must end above him, at rest, on every rotation day, short titles and tall ones alike (D-124: no floor any more; the link follows its title on the left, so it is out of Jack's column at any height, and the hero poster shrinks on short screens).
 for (const day of ['2026-10-31', '2026-11-01', '2026-11-04', '2026-11-06', '2026-11-08', '2026-11-10', '2026-11-18', '2026-12-02', '2026-12-10', '2026-12-25', '2026-12-28', '2027-02-10', '2027-03-15', '2027-04-15', '2027-07-04', '2027-07-15']) {
   for (const [w, h] of [[390, 844], [360, 844], [360, 800], [412, 915], [360, 740], [390, 720]] as const) {
     test(`${day} at ${w}x${h}: Learn link and season row clear of Jack at rest`, async ({ page }) => {
@@ -84,7 +84,7 @@ for (const day of ['2026-10-31', '2026-11-01', '2026-11-04', '2026-11-06', '2026
       await page.setViewportSize({ width: w, height: h })
       await page.reload()
       await expect(page.getByTestId('dc-learn')).toBeVisible()
-      // The small right-hand link is the hazard: a full-width card beside Jack stays tappable, a link under it does not. So measure this link, not every control.
+      // A small link is the hazard: a full-width card beside Jack stays tappable, a link under him does not. The link now sits left, beside its title (D-124), so measure this link, not every control.
       const m = await page.evaluate(() => {
         ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
         const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
@@ -93,7 +93,7 @@ for (const day of ['2026-10-31', '2026-11-01', '2026-11-04', '2026-11-06', '2026
         return { overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top, top: link.top, fabBottom: fab.bottom, seaBottom: sea?.bottom ?? null, fabTop: fab.top }
       })
       expect(m.overlap, `link top ${m.top}, Jack bottom ${m.fabBottom}`).toBe(false)
-      // below 756 px tall at 360 wide (721 at 390) even the 72 px poster cannot lift the season row clear of Jack (known, accepted in round 12: only the right 62 px of a link that opens the same page): the Learn link is still checked there
+      // below 756 px tall at 360 wide (721 at 390) even the 72 px poster cannot lift the season row clear of Jack (known, accepted in round 12: only the right 62 px of a full-width link that opens the same page, D-128); the Learn link is still checked there
       if (m.seaBottom !== null && h >= 800) expect(m.seaBottom, `season row bottom ${m.seaBottom}, Jack top ${m.fabTop}`).toBeLessThanOrEqual(m.fabTop) // full width, so it must end above Jack
     })
   }

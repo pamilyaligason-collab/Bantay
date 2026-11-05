@@ -237,7 +237,7 @@ export function watchDoseReminders(): () => void {
   let gone = false
   const front = () => { void run().then(() => reportPhoneHealth()); void syncBpReminders() } // on every open and return to the app: re-plan, re-arm what is missing, report; the BP reply reminder (nudge/bpReminder.ts) is re-armed too and does nothing until the person turns it on
   try {
-    void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) front() })).then((h) => { if (gone) void h.remove(); else off = () => void h.remove() }).catch(() => undefined)
+    void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) front() })).then((h) => { if (gone) void Promise.resolve(h.remove()).catch(() => undefined); else off = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined)
   } catch { /* no app plugin: the live query still keeps the plan current */ }
   front()
   return () => { gone = true; clearTimeout(timer); sub.unsubscribe(); off?.() }

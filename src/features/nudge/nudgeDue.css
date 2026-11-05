@@ -1,0 +1,29 @@
+/* D-125 nudges. The Due pill is real text and always still. The one item that may move gets data-nudge="move" for about 1.2 s (twice round, then it stops: no loop). */
+.nd-due { display: inline-block; padding: 1px 7px; margin-left: 6px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 700; line-height: 16px; vertical-align: 1px; white-space: nowrap; }
+.rw-title.nd-has { white-space: normal; overflow: visible; } /* the pill wraps with the title instead of being cut by the ellipsis */
+.pt-k.nd-k { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+.pt-k.nd-k .nd-due { margin-left: auto; }
+
+/* Today row: the icon tile gets the ring and the icon leans; the Log / I'm OK button glows softly */
+.td-todo[data-nudge="move"] .td-todo-ic { position: relative; }
+.td-todo[data-nudge="move"] .td-todo-ic::after { content: ""; position: absolute; inset: -2px; border-radius: 11px; pointer-events: none; animation: nd-ping .6s ease-out 2; }
+.td-todo[data-nudge="move"] .td-todo-plus::after { inset: 4px; }
+.td-todo[data-nudge="move"] .td-todo-ic > svg { transform-origin: 50% 90%; animation: nd-lean 1.2s ease-in-out 1; }
+.td-todo[data-nudge="move"] .td-todo-go:not(:disabled) { animation: nd-glow 1.2s ease-out 1; }
+
+/* Health tile: the ring is the tile's edge, the kicker icon leans */
+.pt[data-nudge="move"] { position: relative; }
+.pt[data-nudge="move"]::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-card); pointer-events: none; --nd-spread: 9px; animation: nd-ping .6s ease-out 2; }
+.pt[data-nudge="move"] .nd-ic { transform-origin: 50% 90%; animation: nd-lean 1.2s ease-in-out 1; }
+.pt[data-nudge="move"] .pt-a { border-radius: 8px; animation: nd-glow 1.2s ease-out 1; } /* the action label glows as on the Today row's button */
+.nd-ic { display: inline-flex; flex: none; }
+.pn-cell { container-type: inline-size; } /* the Pinned cell: below 190 px the kicker icon goes, so the pill stays on the kicker line (390 px phone: tile 173 px) */
+@container (max-width: 189px) { .nd-ic { display: none; } }
+
+@keyframes nd-ping { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 55%, transparent); } to { box-shadow: 0 0 0 var(--nd-spread, 11px) color-mix(in srgb, var(--amber) 0%, transparent); } }
+@keyframes nd-lean { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(-9deg); } 30% { transform: rotate(7deg); } 45% { transform: rotate(-4deg); } 60% { transform: rotate(2deg); } 75% { transform: rotate(0); } }
+@keyframes nd-glow { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 35% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .td-todo[data-nudge="move"] .td-todo-ic::after, .td-todo[data-nudge="move"] .td-todo-ic > svg, .td-todo[data-nudge="move"] .td-todo-go:not(:disabled), .pt[data-nudge="move"]::after, .pt[data-nudge="move"] .nd-ic, .pt[data-nudge="move"] .pt-a { animation: none; }
+}

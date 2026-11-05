@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { resolvePlace } from '../location/place'
@@ -31,7 +31,7 @@ describe('Weather with only an old fix abroad', () => {
   })
   it('the live map centres on the same home zone, never the old foreign point', async () => {
     render(<WeatherScreen />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Open live map' }))
-    expect(screen.getByTestId('map-at').textContent).toMatch(/^9\.6/)
+    const card = await screen.findByTestId('wx-live-map')
+    expect(card.querySelector('iframe')!.getAttribute('src')).toMatch(/lat=9\.6/) // the live map is open by default, on the home zone
   })
 })

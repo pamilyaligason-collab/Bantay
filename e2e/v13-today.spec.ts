@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { skipOnboarding, stubWindy } from './helpers'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { assertNoSideways, assertOrder, assertTargets, assertTextContrast, FIXED_CLOCKS, setScheme } from './v13'
 
@@ -8,6 +8,7 @@ test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block', timez
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(FIXED_CLOCKS[1])
   await skipOnboarding(page)
+  await stubWindy(page)
   const now = new Date(FIXED_CLOCKS[1])
   await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now, temp: 26, humidity: 70, feels: 27, code: 2, hourlyProb: () => 10 }) }))
   await page.goto('/#today')
@@ -44,11 +45,11 @@ test('My day: ring, the three rows and the breath row', async ({ page }) => {
   await expect(day.getByTestId('selfcare')).toBeVisible()
 })
 
-test('Your numbers: empty tiles are honest, and the radio row is off by default', async ({ page }) => {
+test('Your numbers: empty tiles are honest, and the radio row opens Calm', async ({ page }) => {
   const nums = page.getByTestId('numbers')
   await expect(nums.getByText('--/--')).toBeVisible()
   await expect(nums.getByText('Log now').first()).toBeVisible()
-  await expect(page.getByText('Relaxing radio')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Relaxing radio/ })).toHaveAttribute('href', '#calm/listen')
   await expect(page.getByRole('link', { name: 'Open Calm' })).toHaveAttribute('href', '#calm') // the only way into the Calm page
 })
 

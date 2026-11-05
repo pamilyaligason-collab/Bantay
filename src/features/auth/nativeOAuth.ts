@@ -30,8 +30,8 @@ export async function handleAuthCallback(url: string): Promise<string | null> {
 }
 
 if (Capacitor.isNativePlatform() && supabase) {
-  void App.addListener('appUrlOpen', async ({ url }) => {
+  void Promise.resolve(App.addListener('appUrlOpen', async ({ url }) => {
     const e = await handleAuthCallback(url)
     if (e) subs.forEach((cb) => cb(e))
-  })
+  })).catch(() => undefined) // no app plugin in this shell: the sign-in return cannot be heard, the rest of the app still runs
 }

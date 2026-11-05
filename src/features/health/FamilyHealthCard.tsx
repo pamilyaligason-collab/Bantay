@@ -32,7 +32,7 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
   const rc = last ? rollCall(people, last) : null
   const flagged = people.filter((p) => flags[p.id])
   return (
-    <Section title="Family health" testId="family-health">
+    <Section title="Family health" link={{ href: '#family', label: 'All updates' }} testId="family-health">
       <div className="card fh">
         <div className="fh-top">
           <span className="fh-av">{people.slice(0, 3).map((p) => <FmAvatar key={p.id} name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />)}</span>
@@ -40,7 +40,6 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
         </div>
         <div className="fh-acts">
           {acting ? <span className="sub fh-share">View only</span> : <a className="btn2 fh-share" href="#family/messages">Share yours</a>}
-          <a className="btn2 fh-share" href="#family">All updates</a>
         </div>
         {(flagged.length > 0 || photos != null || msgs != null) && (
           <GroupedList icons>

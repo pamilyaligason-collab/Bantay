@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { skipOnboarding, stubWindy } from './helpers'
 import { seed } from './fixtures/s16/today'
 import { openMeteoFixture } from '../src/features/weather/fixture'
-import { assertHero, assertJackClear, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, setScheme, settled, shotsLightDark } from './v13'
+import { assertHero, assertJackClear, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, outsideWarning, setScheme, settled, shotsLightDark } from './v13'
 
 // v13 Phase 0 foundation: the shell and the four tab roots Phase 0 touched, light and dark at 390x844, then the 195 px narrow check.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(FIXED_CLOCKS[1])
   await skipOnboarding(page)
+  await stubWindy(page)
   const now = new Date(FIXED_CLOCKS[1])
   await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now, temp: 28, humidity: 55, feels: 30, code: 63, hourlyProb: () => 10 }) }))
 })
@@ -63,7 +64,7 @@ const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 
 // S3 / S11: no control under Jack at scroll 0. Roots and sub-screens that still fail name the lane that fixes them; the fixme goes when that lane lands.
 // D-122: with no Activity data the card hugs its line, so a People row (`.rw-main`) may sit under Jack at scroll 0 depending on the viewport height (rows are under him at 450x950, 925, 900 and 844, clear at about 997). Every other control must still clear him.
-const FAMILY_ROWS = '.rw-main'
+const FAMILY_ROWS = outsideWarning('.rw-main') // never a row inside a warning or SOS card
 const JACK_REST_KNOWN: Record<string, string> = {
 }
 for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discover/play', '#discover/news', '#medid', '#safety/sources']) {
@@ -119,11 +120,17 @@ for (const route of ['#safety/firstaid/cpr', '#health/metric/bp_systolic', ...RO
   })
 }
 
+// outsideWarning drops a row inside a warning or SOS block and keeps a plain one (the selectors are the app's real ones).
+test('outsideWarning excludes a warning row and keeps a plain row', async ({ page }) => {
+  await page.setContent('<div class="td-alertband"><a class="rw-main" id="w1">w</a></div><div data-testid="warning-card"><a class="rw-main" id="w2">w</a></div><section class="fm-storm"><a class="rw-main" id="w3">w</a></section><div data-testid="storm-block"><a class="rw-main" id="w4">w</a></div><a class="rw-main" id="plain">p</a>')
+  expect(await page.locator(outsideWarning('.rw-main')).evaluateAll((els) => els.map((e) => e.id))).toEqual(['plain'])
+})
+
 // T12: the first tile of a carousel sits on the 16 px page gutter (12 px at 195).
 for (const [width, gutter, scheme] of [[390, 16, 'light'], [390, 16, 'dark'], [360, 16, 'light'], [195, 12, 'light']] as const) {
   test(`carousel gutter at ${width} px ${scheme}: first tile at x ${gutter}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
-    for (const route of ['#today', '#safety']) { // #family is in v13-g0.auth.spec.ts (needs sign-in)
+    for (const route of ['#today']) { // #family is in v13-g0.auth.spec.ts (needs sign-in)
       await page.goto(`/${route}`)
       await expect(page.locator('h1').first()).toBeVisible()
       await setScheme(page, scheme)

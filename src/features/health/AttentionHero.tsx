@@ -34,7 +34,7 @@ export function AttentionHero({ attention, family, canLog, canEdit, lockReason, 
           <p className="ah-val">{pair ? `${pair.top}/${pair.bottom}` : labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</p>
           <VerdictChip row={row} />
         </div>
-        <LabBar row={row} />
+        <LabBar row={row} compact />
         <p className="sub ah-foot">{[src?.text ?? 'No range printed on the paper', r.test === 'heart_rate' ? 'A pulse reading, not judged as resting' : '', attention.old ? `Old result, ${date}` : date].filter(Boolean).join(' · ')}</p>
         <div className="ah-acts"><CardActionButton action={{ label: 'What it means', href: `#health/metric/${r.test}` }} secondary /><CardActionButton action={{ label: 'Ask at next visit', href: '#health/visits' }} /></div>
       </section>

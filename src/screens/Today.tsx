@@ -16,6 +16,7 @@ import { dateKicker, greeting } from '../features/today/greeting'
 import { HeadActions } from '../features/shell/HeadActions'
 import { getMember } from '../features/auth/session'
 import { loadFamily } from '../features/auth/family'
+import { useActing } from '../features/viewas/viewAs'
 import '../features/today/today.css'
 
 /** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), My day (How are you? opens the mood faces, Log something else opens More, breathing, the plan, a missed medicine of someone else), Calm, Your numbers, then More (alerts setup, banners, notices).
@@ -47,6 +48,7 @@ export default function Today() {
   }, [notify])
   const warn = useWarnings()
   const [name, setName] = useState('')
+  const viewing = useActing() // an admin viewing as someone: the greeting names that person; the avatar stays the admin's own (it opens the admin's settings)
   useEffect(() => {
     let live = true
     void getMember().then((m) => { const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''; if (live && n) setName(n) })
@@ -59,7 +61,7 @@ export default function Today() {
   if (simple) return <>{h1}<SimpleToday onExit={() => setSimple(false)} notify={notify} />{toast && <div className="toast" role="status">{toast}</div>}</>
   return (
     <div ref={root} className="td-root">
-      <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), name)} actions={<HeadActions />} />
+      <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), viewing.acting ? viewing.name : name)} actions={<HeadActions />} />
       <AlarmFixedToast />
       <IncomingSos placement="today" />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />

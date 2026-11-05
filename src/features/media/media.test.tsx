@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AnimatedDemo } from './AnimatedDemo'
 import { LiteVideo } from './LiteVideo'
@@ -10,6 +10,14 @@ afterEach(() => { HTMLMediaElement.prototype.play = realPlay; HTMLMediaElement.p
 const setOnline = (v: boolean) => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(v)
 
 describe('LiteVideo', () => {
+  it('an SOS unloads a playing video', () => {
+    setOnline(true)
+    const { container } = render(<LiteVideo id="M4ACYp75mjU" title="Hands-only CPR" />)
+    fireEvent.click(screen.getByRole('button', { name: /Play/ }))
+    expect(container.querySelector('iframe')).not.toBeNull()
+    act(() => { window.dispatchEvent(new Event('sos:started')) })
+    expect(container.querySelector('iframe')).toBeNull()
+  })
   it('before the tap: no iframe, only the still picture (ytimg), title, length and a link to YouTube', () => {
     setOnline(true)
     const { container } = render(<LiteVideo id="M4ACYp75mjU" title="Hands-only CPR" minutes={5} />)

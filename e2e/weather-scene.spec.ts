@@ -18,6 +18,7 @@ async function openAt(page: Page, at: string, code: number, path: string, o: { t
 }
 
 test.use({ viewport: { width: 390, height: 844 } })
+test.beforeEach(async ({ page }) => { await page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' })) }) // the live map is on by default: tests stay offline
 
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(`${scheme}`, () => {

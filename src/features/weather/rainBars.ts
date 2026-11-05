@@ -1,7 +1,7 @@
 import { hoursFrom, type Forecast } from './forecast'
 
-/** R3 (RainViewer free API docs, read 2026-10-27): past frames only, zoom <= 7, coverage shown by a mask; the docs do not confirm the Philippines.
- *  Until someone checks the coverage tiles over Mindanao and Bohol and flips this, the rain card is the Open-Meteo hourly bars plus a PAGASA radar link (M1). No tiles are requested. */
+/** R3 (RainViewer free API docs, read 2026-10-27): past frames only, zoom <= 7, coverage shown by a mask. Coverage tiles checked 2026-11-05: Tagbilaran, Cebu, Davao and Manila covered; General Santos and Tacloban not.
+ *  Patchy coverage, so RainViewer stays off: the rain card is the Open-Meteo hourly bars plus a PAGASA radar link (M1), and the live map is Windy (D-125). No tiles are requested. */
 export const RAINVIEWER_PH_CONFIRMED = false
 export type RainMode = 'bars' | 'radar'
 export const rainMode = (confirmed = RAINVIEWER_PH_CONFIRMED): RainMode => (confirmed ? 'radar' : 'bars')

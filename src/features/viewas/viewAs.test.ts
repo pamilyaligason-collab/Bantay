@@ -3,13 +3,13 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
-  member: { userId: 'u-admin', personId: 'p-admin', role: 'admin' as 'admin' | 'member', handle: null as string | null } as { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null } | null,
-  log: vi.fn(), carers: vi.fn(), calls: [] as string[]
+  member: { userId: 'u-admin', personId: 'p-admin', role: 'admin' as 'admin' | 'member', handle: null as string | null, isOwner: false } as { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null; isOwner: boolean } | null,
+  log: vi.fn(), carers: vi.fn(), roster: vi.fn(), calls: [] as string[]
 }))
 vi.mock('../auth/session', () => ({ getMember: async () => h.member, onAuthChange: () => () => undefined }))
 vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.member?.personId ?? null }))
 vi.mock('../admin/events', () => ({ track: async (k: string, n: string) => { h.calls.push(`${k}:${n}`); return true } }))
-vi.mock('../admin/desk/viewAsData', () => ({ logViewAs: (...a: unknown[]) => h.log(...a), loadRoster: async () => null, visibleTo: () => ({ shown: [], hidden: [] }) }))
+vi.mock('../admin/desk/viewAsData', () => ({ logViewAs: (...a: unknown[]) => h.log(...a), loadRoster: () => h.roster(), visibleTo: () => ({ shown: [], hidden: [] }) }))
 vi.mock('../admin/api', () => ({ listCarers: () => h.carers() }))
 import { hdb } from '../records/store'
 import { enterActing, exitActing, useActing, useActingCan, useActingPersonId, useViewedVisibleIds } from './viewAs'
@@ -19,7 +19,7 @@ const link = (can_write: boolean) => ({ ok: true, data: [{ carer_id: 'u-admin', 
 
 beforeEach(async () => {
   exitActing()
-  h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null }
+  h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null, isOwner: false }; h.roster.mockReset(); h.roster.mockResolvedValue(null)
   h.log.mockReset(); h.log.mockResolvedValue(true); h.carers.mockReset(); h.carers.mockResolvedValue(link(true)); h.calls = []
   await hdb.people.clear(); await hdb.people.put({ id: 'p-mama', name: 'Mama Villar' })
 })
@@ -32,7 +32,7 @@ describe('enterActing', () => {
     expect(getActingPersonId()).toBeNull()
   })
   it('a member (not admin) cannot enter and no audit row is written', async () => {
-    h.member = { userId: 'u-m', personId: 'p-m', role: 'member', handle: null }
+    h.member = { userId: 'u-m', personId: 'p-m', role: 'member', handle: null, isOwner: false }
     expect(await enterActing('p-mama')).toBe(false)
     expect(h.log).not.toHaveBeenCalled()
     expect(getActingPersonId()).toBeNull()
@@ -80,7 +80,7 @@ describe('enterActing', () => {
     expect(result.current.a.acting).toBe(false)
     expect(h.calls).toContain('action:acting_exit')
   })
-  it('an Exit that happens while the audit RPC is pending cancels the enter', async () => {
+  it('a Back to me that happens while the audit RPC is pending cancels the enter', async () => {
     let done!: (v: boolean) => void
     h.log.mockReturnValue(new Promise<boolean>((r) => { done = r }))
     const p = enterActing('p-mama')
@@ -111,7 +111,39 @@ describe('useActingCan (computed once at enter, from carers)', () => {
   it('a failed carers read: every flag false with the could-not-check reason', async () => {
     h.carers.mockResolvedValue({ ok: false })
     await enterActing('p-mama')
-    expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: false, rollcall: false, mood: false, reason: 'Could not check your access. Exit and try again online.' })
+    expect(renderHook(() => useActingCan()).result.current).toEqual({ log: false, edit: false, rollcall: false, mood: false, reason: 'Could not check your access. Tap Back to me and try again online.' })
+  })
+})
+
+describe('the reason line is true per D-120 (flags never widen)', () => {
+  const NOT_OWNER = 'You can see Mama but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.'
+  const as = async (isOwner: boolean, authUser: string | null | 'no-row', carers: unknown = { ok: true, data: [] }) => {
+    exitActing()
+    h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null, isOwner }
+    h.carers.mockResolvedValue(carers)
+    h.roster.mockResolvedValue(authUser === 'no-row' ? { people: [], carers: [] } : { people: [{ id: 'p-mama', display_name: 'Mama Villar', auth_user_id: authUser }], carers: [] })
+    await enterActing('p-mama')
+    return renderHook(() => useActingCan()).result.current
+  }
+  it('owner, no-login person, no writer link: needs a carer with edit access (no promise the owner can be one, 0046); flags are the same as for any admin', async () => {
+    expect(await as(true, null)).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: "You can see Mama's records. Logging for Mama needs a carer with edit access." })
+  })
+  it('owner, person with their own login: only they can log', async () => {
+    expect(await as(true, 'u-mama')).toEqual({ log: false, edit: true, rollcall: false, mood: false, reason: 'Mama has their own login, so only Mama can log.' })
+  })
+  it('non-owner admin keeps the old sentence, whatever the roster says', async () => {
+    expect((await as(false, null))?.reason).toBe(NOT_OWNER)
+    expect((await as(false, 'u-mama'))?.reason).toBe(NOT_OWNER)
+  })
+  it('owner with the person missing from the roster, or the roster unreadable: a line that is true either way, never the non-owner sentence', async () => {
+    const OWNER_UNKNOWN = "You can see Mama's records but not log for Mama."
+    expect((await as(true, 'no-row'))?.reason).toBe(OWNER_UNKNOWN)
+    exitActing(); h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null, isOwner: true }; h.roster.mockRejectedValue(new Error('x')); h.carers.mockResolvedValue({ ok: true, data: [] })
+    await enterActing('p-mama')
+    expect(renderHook(() => useActingCan()).result.current?.reason).toBe(OWNER_UNKNOWN)
+  })
+  it('an owner with a writer link can log and has no reason (log stays writer only)', async () => {
+    expect(await as(true, null, link(true))).toEqual({ log: true, edit: true, rollcall: true, mood: true, reason: null })
   })
 })
 

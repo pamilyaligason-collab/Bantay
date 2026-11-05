@@ -9,6 +9,7 @@ vi.mock('../../../native/shell', () => ({ hasPlugin: () => native.on }))
 vi.mock('@capacitor-community/text-to-speech', () => ({ TextToSpeech: tts, QueueStrategy: { Flush: 0, Add: 1 } }))
 
 import Listen from './Screen'
+import { SOS_STARTED_EVENT } from '../../sos/active'
 import { canSpeak, speak, stopSpeaking } from './speech'
 
 class Utter { text: string; rate = 1; lang = ''; onend: (() => void) | null = null; onerror: (() => void) | null = null; constructor(t: string) { this.text = t } }
@@ -45,6 +46,14 @@ describe('speech', () => {
     await stopSpeaking()
     expect(synth.cancel).toHaveBeenCalled()
     expect(tts.speak).not.toHaveBeenCalled()
+  })
+  it('an SOS starting stops the voice (web and native)', async () => {
+    withWeb()
+    window.dispatchEvent(new Event(SOS_STARTED_EVENT))
+    expect(synth.cancel).toHaveBeenCalled()
+    native.on = true
+    window.dispatchEvent(new Event(SOS_STARTED_EVENT))
+    await vi.waitFor(() => expect(tts.stop).toHaveBeenCalledTimes(1))
   })
   it('neither: speak and stop do nothing and do not throw', async () => {
     noWeb()

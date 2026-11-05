@@ -4,15 +4,16 @@ import { Section } from '../look'
 import { Ring } from '../look/Ring'
 import { useKv } from '../shell/useKv'
 import { useFamilyPeople } from '../family/roster'
+import { bpDue, checkInDue, pickMover, useNudgeMover, waterDue } from '../nudge/nudgeDue'
 import { shortName } from '../inbox/build'
 import { markSeen } from '../notify/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { useSelfPerson } from '../setup/useProfile'
-import { useActingCan, useActingPersonId } from '../viewas/viewAs'
-import { useActivity } from '../health/useActivity'
+import { useActing, useActingCan, useActingPersonId } from '../viewas/viewAs'
+import { NO_ACTIVITY, useActivity } from '../health/useActivity'
 import { logWater } from '../nutrition/actions'
 import { ML_PER_TAP, onDay } from '../nutrition/logic'
-import { useGoal, useWater } from '../nutrition/hooks'
+import { NO_WATER, useGoal, useWater } from '../nutrition/hooks'
 import { checkIn, FAIL_TEXT } from './actions'
 import { bpRow, checkInRow, countLeft, waterRow } from './dayRows'
 import { missedDoses } from './missed'
@@ -26,9 +27,10 @@ import type { SelfCareEntry } from './breathLogic'
 import type { NextItem } from './nextPick'
 import { useNext } from './useNext'
 import { useStorm } from './useStorm'
+import { useWarnings } from './WarningCard'
 
-/** "<Name> needs you" while someone else has a missed dose; else "All yours today". */
-export const needsLine = (names: string[]): string => (names.length === 0 ? 'All yours today' : names.length === 1 ? `${names[0]} needs you` : `${names[0]} and ${names.length - 1} more need you`)
+/** "<Name> needs you" while someone else has a missed dose; else "All yours today", or "<Viewed>'s day" while an admin views as that person. */
+export const needsLine = (names: string[], viewed = ''): string => (names.length === 0 ? (viewed ? `${viewed}'s day` : 'All yours today') : names.length === 1 ? `${names[0]} needs you` : `${names[0]} and ${names.length - 1} more need you`)
 
 /** Board "My day": a ring with the count, then the to-do rows. Doses, breath and the plan reuse the existing cards, flattened inside this one. */
 export default function MyDay({ notify }: { notify: (msg: string) => void }) {
@@ -40,25 +42,38 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const personId = self ?? ''
   const { ready } = useSelfPerson()
   const can = useActingCan()
+  const viewing = useActing()
   const lockLog = !!can && !can.log
   const lockMood = !!can && !can.mood
   const [busy, setBusy] = useState(false)
   const [sheet, setSheet] = useState<'mood' | 'more' | null>(null)
   const now = new Date()
   const today = now.toDateString() // the memo below must refresh when the day changes (phone left on Today overnight)
-  const { readings } = useWeekData(personId)
+  const { readings, loaded: readingsIn } = useWeekData(personId)
   const water = useWater(personId, 2)
   const goal = useGoal(personId)
   const activity = useActivity(personId, 2)
   const [breaths] = useKv<SelfCareEntry[]>('selfcare.log', [])
   const { people } = useFamilyPeople()
-  const missed = missedDoses(useAlertRows()).map((m) => ({ ...m, name: shortName(people.find((p) => p.id === m.personId)?.name) ?? 'Someone' }))
+  const alertRows = useAlertRows()
+  const missed = (viewing.acting ? [] : missedDoses(alertRows)).map((m) => ({ ...m, name: shortName(people.find((p) => p.id === m.personId)?.name) ?? 'Someone' }))
   const rows = useMemo(() => {
     const ci = checkInRow(activity, now, !!self || !ready), bp = bpRow(readings, now), wa = waterRow(water, goal.waterMl, now)
-    const breathed = breaths.some((b) => new Date(b.at).toDateString() === now.toDateString())
+    // selfcare.log is not by person: while viewing, the admin's own breaths are not the viewed person's
+    const breathed = !viewing.acting && breaths.some((b) => new Date(b.at).toDateString() === now.toDateString())
     return { ci, bp, wa, list: [ci, bp, wa, { done: breathed }, ...(item.kind === 'dose' ? [{ done: false }] : []), ...missed.map(() => ({ done: false }))] }
-  }, [activity, readings, water, goal.waterMl, breaths, item.kind, self, ready, today, missed.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activity, readings, water, goal.waterMl, breaths, viewing.acting, item.kind, self, ready, today, missed.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const c = countLeft(rows.list)
+  // D-125: Due pills and the one mover stay off while a warning or storm shows, on a view-only row, and before the person is known
+  const warn = useWarnings()
+  const calmDay = !warn.onScreen && !storm && !!self
+  // unknown is not due (ML-05): a row waits for its own rows to arrive, or the empty first paint would read as "nothing logged"
+  const due = {
+    bp: calmDay && readingsIn && !lockLog && bpDue(readings, now),
+    checkin: calmDay && activity !== NO_ACTIVITY && !lockMood && checkInDue(activity, now),
+    water: calmDay && water !== NO_WATER && !lockLog && waterDue(water, goal.waterMl, now),
+  }
+  const mover = useNudgeMover('today', pickMover([{ key: 'bp', due: due.bp }, { key: 'checkin', due: due.checkin }, { key: 'water', due: due.water }], false))
   const run = async (p: Promise<'ok' | keyof typeof FAIL_TEXT>, done: string) => {
     if (busy) return
     setBusy(true)
@@ -75,7 +90,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
           <span data-testid="myday-ring"><Ring value={c.total ? (c.total - c.left) / c.total : 0} size={64} stroke={9} label={`${c.total - c.left} of ${c.total} done`} /></span>
           <div className="td-day-tx">
             <div className="td-day-t">{c.title}</div>
-            <div className="td-day-s">{needsLine(missed.map((m) => m.name))}</div>
+            <div className="td-day-s">{needsLine(missed.map((m) => m.name), viewing.acting ? viewing.name : '')}</div>
           </div>
         </div>
         {!calm && <NextUp key={`${item.key}|${(item.who?.slots ?? []).map((x) => x.key).sort().join(',')}`} item={item} review={0} notify={notify} hold={setHeld} />}
@@ -85,7 +100,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
             <a className="btn2 td-todo-go" href={`#family/people/${m.personId}`} aria-label={`Open ${m.name}`} onClick={() => void Promise.all(m.alertIds.map((id) => markSeen(id))).catch(() => undefined)}>Open</a>
           </Todo>
         ))}
-        <Todo icon="smile" tint="green" title={storm ? 'Is everyone safe?' : rows.ci.title} sub={rows.ci.sub} testId="myday-checkin" onMain={lockMood ? undefined : () => setSheet('mood')} mainLabel="How are you? Pick a face">
+        <Todo icon="smile" tint="green" title={storm ? 'Is everyone safe?' : rows.ci.title} sub={rows.ci.sub} testId="myday-checkin" onMain={lockMood ? undefined : () => setSheet('mood')} mainLabel="How are you? Pick a face" due={due.checkin} move={mover === 'checkin'}>
           {rows.ci.done ? (
             <b className="td-todo-done"><Icon name="check" size={20} />Checked in</b>
           ) : (
@@ -93,8 +108,10 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
               onClick={() => void run(checkIn(self ?? undefined), can ? 'Saved for them. Their family can see they are OK.' : 'Saved. Your family can see you are OK.')}>I'm OK</button>
           )}
         </Todo>
-        <Todo icon="gauge" tint="blue" title={rows.bp.title} sub={rows.bp.sub} testId="myday-bp"><a className="btn2 td-todo-go" href={rows.bp.href}>Log</a></Todo>
-        <Todo icon="glass" tint="teal" title={rows.wa.title} sub={rows.wa.sub} testId="myday-water"
+        <Todo icon="gauge" tint="blue" title={rows.bp.title} sub={rows.bp.sub} testId="myday-bp" due={due.bp} move={mover === 'bp'}>
+          {lockLog ? <button type="button" className="btn2 td-todo-go" disabled aria-label="Log blood pressure, view only">Log</button> : <a className="btn2 td-todo-go" href={rows.bp.href}>Log</a>}
+        </Todo>
+        <Todo icon="glass" tint="teal" title={rows.wa.title} sub={rows.wa.sub} testId="myday-water" due={due.water} move={mover === 'water'}
           lead={(
             <button type="button" className="td-todo-ic td-todo-plus" data-tint="teal" disabled={busy || lockLog} aria-label={lockLog ? 'Add a glass of water, view only' : 'Add a glass of water'}
               onClick={() => void run(logWater(ML_PER_TAP, new Date(), self ?? undefined), 'Saved a glass of water')}><Icon name="plus" size={22} /></button>
@@ -110,7 +127,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
             <Icon name="chev" size={20} />
           </button>
         </div>
-        {(lockLog || lockMood) && can?.reason && <p className="sub td-lock-why"><Icon name="lock" size={16} />View only. {can.reason}</p>}
+        {(lockLog || lockMood) && can?.reason && <p className="sub td-lock-why"><Icon name="lock" size={16} />Look only. {can.reason}</p>}
       </div>
       {sheet === 'mood' && <MoodSheet onClose={() => setSheet(null)} notify={notify} />}
       {sheet === 'more' && <MoreSheet onClose={() => setSheet(null)} notify={notify} />}

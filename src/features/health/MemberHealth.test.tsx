@@ -9,15 +9,17 @@ const st = {
   readings: [{ personId: 'ma', test: 'bp_systolic', value: 130, unit: 'mmHg', takenAt: new Date().toISOString() }] as object[],
   thresholds: [] as object[]
 }
-vi.mock('./useHealthPerson', () => ({ useHealthPerson: () => ({ ...st, ownId: 'me', setPersonId, acting: false }) }))
-vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => null }))
+const hp = { acting: false }
+vi.mock('./useHealthPerson', () => ({ useHealthPerson: () => ({ ...st, ownId: 'me', setPersonId, acting: hp.acting }) }))
+const va = { can: false, busy: null as string | null, err: '', go: vi.fn() }
+vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => null, useViewAs: () => va }))
 const names = ['Aspirin', 'Bisoprolol', 'Metformin', 'Simvastatin']
 const today = { meds: [], takes: [], week: [], day: '2026-11-01', doses: names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) as object[] }
 vi.mock('./Medicines', () => ({ useToday: () => today }))
 
 import { MemberHealth } from './MemberHealth'
 
-beforeEach(() => { setPersonId.mockClear(); st.ready = true; st.canMark = false; st.lockReason = null; today.doses = names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) })
+beforeEach(() => { hp.acting = false; va.can = false; va.err = ''; va.go.mockClear(); setPersonId.mockClear(); st.ready = true; st.canMark = false; st.lockReason = null; today.doses = names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) })
 afterEach(cleanup)
 
 describe('MemberHealth (view only)', () => {
@@ -59,6 +61,26 @@ describe('MemberHealth (view only)', () => {
     expect(setPersonId).toHaveBeenCalledWith('ma')
     fireEvent.click(screen.getByRole('link', { name: 'Back to me' }))
     expect(setPersonId).toHaveBeenLastCalledWith('me')
+  })
+  it('an admin gets Open the app as <name> next to Back to me and it calls the same switch; a non-admin has no such button', () => {
+    const { rerender } = render(<MemberHealth id="ma" />)
+    expect(screen.queryByTestId('member-open-app')).toBeNull()
+    va.can = true
+    rerender(<MemberHealth id="ma" />)
+    const btn = within(screen.getByTestId('member-bar')).getByTestId('member-open-app')
+    expect(btn.textContent).toBe('Open the app as Ma')
+    expect(within(screen.getByTestId('member-bar')).getByRole('link', { name: 'Back to me' })).toBeTruthy()
+    fireEvent.click(btn)
+    expect(va.go).toHaveBeenCalledWith('ma')
+    va.err = 'Could not switch. Check your internet and try again.'
+    rerender(<MemberHealth id="ma" />)
+    expect(screen.getByRole('alert').textContent).toBe('Could not switch. Check your internet and try again.')
+  })
+  it('while viewing as someone the page link reads Back to Health, so the bar keeps the only Back to me', () => {
+    hp.acting = true
+    render(<MemberHealth id="ma" />)
+    expect(screen.queryByRole('link', { name: 'Back to me' })).toBeNull()
+    expect(within(screen.getByTestId('member-bar')).getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
   })
   it('an id you cannot see says so and offers Back to me', () => {
     render(<MemberHealth id="zz" />)

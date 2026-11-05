@@ -10,8 +10,8 @@ import { EmptyState } from '../look/EmptyState'
 import { Segmented } from '../look/Segmented'
 import { GroupedList, Row, Section } from '../look'
 
-/** The number line of one lab: the usual range as a band, "You" on the latest value and, with the Previous switch on, a hollow mark for the one before (D-38). */
-export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null }) {
+/** The number line of one lab: three zones, "You" on the latest value and, with the Previous switch on, a hollow mark for the one before (D-38). `compact` (the Health lead card): a bare "You" under the mark and no tick numbers, because the value is in the big number above and the range in the line below. */
+export function LabBar({ row, prevAt, compact }: { row: LabRow; prevAt?: number | null; compact?: boolean }) {
   const { range, pos, rv } = row
   const b = range && rv ? labBand(rv.value, range) : null
   if (!b || !range || !rv) return null
@@ -27,19 +27,18 @@ export function LabBar({ row, prevAt }: { row: LabRow; prevAt?: number | null })
   const { low, high } = range
   const same = rv.unit === row.reading.unit // converted: the range numbers are in another unit than the shown value, so print none
   const normal = !same ? '' : low != null && high != null ? `${labNum(low)}-${labNum(high)}` : high != null ? `up to ${labNum(high)}` : `${labNum(low)} or more`
-  const roomy = b.band.to - b.band.from >= 40 // a narrow zone says only "Normal" (the ticks above give the numbers), so the word is never clipped
+  const roomy = b.band.to - b.band.from >= 40 // a narrow zone says only "Normal" (the tick numbers, or on the compact bar the range line below, give the numbers), so the word is never clipped
   // The printed share is the distance from the edge it crossed, as a share of that edge (overBy is range-width based and only ranks).
   const edge = pos === 'above' ? range.high : pos === 'below' ? range.low : null
   const share = edge != null && edge > 0 && overBy(row) ? Math.round((Math.abs(rv.value - edge) / edge) * 100) : 0
   const over = share ? `${pos === 'above' ? '+' : ''}${share}% ${pos === 'above' ? 'over' : 'under'}` : null // rounds to 0: no line, the verdict says enough
   return (
     <>
-    <span className="lr-track" aria-hidden="true" style={{ '--f': `${b.band.from}%`, '--t': `${b.band.to}%` } as React.CSSProperties}>
-      <i className="lr-band" style={{ left: `${b.band.from}%`, width: `${b.band.to - b.band.from}%` }} />
+    <span className="lr-track" aria-hidden="true" style={{ '--f': `${b.band.from}%`, '--t': `${b.band.to}%`, '--gf': b.band.from > 0 ? '1px' : '0px', '--gt': b.band.to < 100 ? '1px' : '0px' } as React.CSSProperties}>
       {prev != null && <i className="lr-prev" data-testid="lr-prev" style={{ left: `${prev}%` }} />}
-      <i className={`lr-you ${pos}`} style={{ left: `${you}%` }}><b>You {labNum(rv.value)}</b></i>
-      {same && b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
-      {same && b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
+      <i className={`lr-you ${pos}`} style={{ left: `${you}%`, '--y': you } as React.CSSProperties}><b>{compact ? 'You' : `You ${labNum(rv.value)}`}</b></i>
+      {!compact && same && b.lowAt != null && range.low != null && <em className="lr-tick" style={{ left: `${b.lowAt}%` }}>{labNum(range.low)}</em>}
+      {!compact && same && b.highAt != null && range.high != null && <em className="lr-tick" style={{ left: `${b.highAt}%` }}>{labNum(range.high)}</em>}
     </span>
     <span className="lr-zones" aria-hidden="true">
       {low != null && <i style={{ width: `${b.band.from}%` }}>Low</i>}

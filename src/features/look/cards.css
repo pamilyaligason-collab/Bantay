@@ -75,3 +75,5 @@
 .ac-head { display: flex; align-items: center; gap: 12px; }
 .ac-ic { flex: none; display: inline-flex; color: var(--ac); }
 .ac-title { flex: 1; min-width: 0; }
+/* A switch is 52 px wide in a Row: the generic `width: auto` above gave it width 0 (Weather and Storm tracker "Pause on mobile data"). */
+.rw > .st-sw { width: 52px; }

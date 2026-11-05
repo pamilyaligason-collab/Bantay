@@ -32,7 +32,7 @@ describe('log sheets (MoodSheet, MoreSheet)', () => {
     h.can = { log: true, edit: true, rollcall: true, mood: true, reason: null }
     more()
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
-    expect(screen.getByTestId('move').getAttribute('data-lock')).toBe('Move logs are yours only. Exit to log.')
+    expect(screen.getByTestId('move').getAttribute('data-lock')).toBe('Move logs are yours only. Tap Back to me to log.')
     expect(screen.getByTestId('move').getAttribute('data-other')).toBe('true')
   })
   it('acting with log rights, More > Walk is locked: it logs to the signed-in person, so the walk logger is not offered', () => {
@@ -40,7 +40,7 @@ describe('log sheets (MoodSheet, MoreSheet)', () => {
     more()
     fireEvent.click(screen.getByRole('button', { name: 'Walk' }))
     expect(screen.queryByTestId('walk')).toBeNull()
-    expect(screen.getByRole('status').textContent).toBe('Walk logs are yours only. Exit to log.')
+    expect(screen.getByRole('status').textContent).toBe('Walk logs are yours only. Tap Back to me to log.')
   })
   it('your own More > Walk has the walk logger and no lock', () => {
     more()

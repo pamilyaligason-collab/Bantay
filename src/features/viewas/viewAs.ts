@@ -1,20 +1,29 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { track } from '../admin/events'
 import { getMember } from '../auth/session'
+import { leaveSheet } from '../look/Sheet'
 import { selfIdOrCached } from '../sync/profile'
 import { useSelfPersonId } from '../setup/useProfile'
 import { actingEpoch, getActingPersonId, getActingState, setActing, subscribeActing, type ActingCan, type ActingState } from './store'
 
-// S16 C-9 / PLAN 1.6 (D-99). The admin looks at AND acts for one member; the id lives in memory only.
+// S16 C-9 / PLAN 1.6 (D-99). The admin views AND acts for one member; the id lives in memory only.
 // Every write still carries the admin as actor; RLS (not this file) decides what is allowed. These flags only mirror it so the UI can say so.
 
-export const NO_ACCESS = 'Could not check your access. Exit and try again online.'
-export const reasonFor = (name: string) => `You can see ${name} but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.`
+export const NO_ACCESS = 'Could not check your access. Tap Back to me and try again online.'
+/** Who the admin is and who the viewed person is, as far as this phone knows. `hasLogin` null = unknown. */
+export type ReasonCtx = { owner?: boolean; hasLogin?: boolean | null }
+/** Why logging is locked (D-120, D-125, D-128). share_set (0046) never makes the owner a carer, so the owner's lines never promise it; they only say what is true.
+ *  A person with a login logs for themself only. For a person with no login a carer with edit access is needed. Unknown fails closed to a line that is true either way. */
+export const reasonFor = (name: string, ctx: ReasonCtx = {}) =>
+  ctx.owner && ctx.hasLogin === false ? `You can see ${name}'s records. Logging for ${name} needs a carer with edit access.`
+  : ctx.owner && ctx.hasLogin === true ? `${name} has their own login, so only ${name} can log.`
+  : ctx.owner ? `You can see ${name}'s records but not log for ${name}.`
+  : `You can see ${name} but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.`
 
 /** What the admin may do for the member: log = self or a can_write carer link (meds_taken/readings/activity RLS 0003:88, 0001:115; app admin alone does not count);
  *  edit = log or admin (records_editor, nutrition); rollcall = family member and log (0041:71, an admin is always an app_roles member); mood = log. */
-export function canFor(isAdmin: boolean, writer: boolean, name: string): ActingCan {
-  return { log: writer, edit: writer || isAdmin, rollcall: writer && isAdmin, mood: writer, reason: writer ? null : reasonFor(name) }
+export function canFor(isAdmin: boolean, writer: boolean, name: string, ctx?: ReasonCtx): ActingCan {
+  return { log: writer, edit: writer || isAdmin, rollcall: writer && isAdmin, mood: writer, reason: writer ? null : reasonFor(name, ctx) }
 }
 const NONE: ActingCan = { log: false, edit: false, rollcall: false, mood: false, reason: NO_ACCESS }
 
@@ -52,9 +61,16 @@ export async function enterActing(personId: string): Promise<boolean> {
     try {
       const { listCarers } = await import('../admin/api')
       const r = await listCarers()
-      if (r.ok) can = canFor(true, r.data.some((c) => c.carer_id === m.userId && c.person_id === personId && c.can_write), name)
+      if (r.ok) {
+        const writer = r.data.some((c) => c.carer_id === m.userId && c.person_id === personId && c.can_write)
+        let hasLogin: boolean | null = null // the reason line only; the flags above never depend on it
+        if (!writer && m.isOwner === true) {
+          try { const { loadRoster } = await import('../admin/desk/viewAsData'); const row = (await loadRoster())?.people.find((p) => p.id === personId); if (row) hasLogin = !!row.auth_user_id } catch { /* unknown */ }
+        }
+        can = canFor(true, writer, name, { owner: m.isOwner === true, hasLogin })
+      }
     } catch { /* NONE: every flag false with the reason */ }
-    if (actingEpoch() !== started) return false // Exit or sign-out happened while we were waiting
+    if (actingEpoch() !== started) return false // Back to me or sign-out happened while we were waiting
     setActing({ personId, name, can })
     void import('../records/useHealthData').then((h) => h.resetPersonChoice()).catch(() => undefined) // the Health picker starts on the acting person
     void track('action', 'acting_enter') // fixed name only, no person id (C-4 events)
@@ -122,4 +138,33 @@ export function useActorName(): string {
     return () => { live = false }
   }, [own])
   return n
+}
+
+/** The one Could-not-switch line for every View as button. */
+export const SWITCH_FAILED = 'Could not switch. Check your internet and try again.'
+
+/** For the View as buttons in the switcher and on the member page: `can` is an admin who is not already viewing as someone.
+ *  `go` runs enterActing (audit row first), then opens Today as that person; on false it stays and sets `err`. A second tap while one is running is ignored. */
+export function useViewAs(): { can: boolean; busy: string | null; err: string; go: (id: string, done?: () => void) => Promise<void> } {
+  const [admin, setAdmin] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [err, setErr] = useState('')
+  const running = useRef(false)
+  const { acting } = useActing()
+  useEffect(() => {
+    let live = true
+    void getMember().then((m) => { if (live) setAdmin(m?.role === 'admin') }, () => undefined)
+    return () => { live = false }
+  }, [])
+  const go = async (id: string, done?: () => void) => {
+    if (running.current) return
+    running.current = true
+    setBusy(id); setErr('')
+    const ok = await enterActing(id).catch(() => false)
+    running.current = false
+    setBusy(null)
+    if (ok) leaveSheet(() => { done?.(); location.hash = '#today' }) // pop the open sheet's history entry first: one Back from Today, no dead entry
+    else setErr(SWITCH_FAILED)
+  }
+  return { can: admin && !acting, busy, err, go }
 }

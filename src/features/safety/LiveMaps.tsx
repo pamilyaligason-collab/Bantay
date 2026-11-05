@@ -8,8 +8,9 @@ import './livemaps.css'
 export const WINDY_LAYERS = [['Rain', 'rain'], ['Wind', 'wind'], ['Temp', 'temp'], ['Clouds', 'clouds']] as const
 export type WindyLayer = (typeof WINDY_LAYERS)[number][1]
 
-export const windySrc = (layer: WindyLayer, lat: number, lon: number, zoom = 8) =>
-  `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=${zoom}&overlay=${layer}&product=ecmwf&level=surface&lat=${r2(lat)}&lon=${r2(lon)}&detailLat=${r2(lat)}&detailLon=${r2(lon)}&marker=true`
+/** `mark` is where the pin goes when the view is centred elsewhere (the storm map frames the place and the storm together). */
+export const windySrc = (layer: WindyLayer, lat: number, lon: number, zoom = 8, mark: LatLon = { lat, lon }) =>
+  `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km/h&zoom=${zoom}&overlay=${layer}&product=ecmwf&level=surface&lat=${r2(lat)}&lon=${r2(lon)}&detailLat=${r2(mark.lat)}&detailLon=${r2(mark.lon)}&marker=true`
 
 /** Active tropical cyclones from the GDACS rows the ingest keeps in safety.alerts (id gdacs-TC-<eventid>). Newest start first. Stale rows (source unreachable) are hidden. */
 export function cyclones(alerts: Alert[]): Alert[] {
@@ -58,7 +59,7 @@ const links = (loc: LatLon) => [
   ['World Monitor', 'https://www.worldmonitor.app/dashboard']
 ]
 
-function useOnline() {
+export function useOnline() {
   const [on, setOn] = useState(() => navigator.onLine !== false)
   useEffect(() => {
     const f = () => setOn(navigator.onLine !== false)
@@ -69,7 +70,7 @@ function useOnline() {
 }
 
 /** Mounts children only once the box is near the screen, so a map never loads (or uses data) unseen. */
-function NearView({ children }: { children: ReactNode }) {
+export function NearView({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const [seen, setSeen] = useState(typeof IntersectionObserver === 'undefined')
   useEffect(() => {
@@ -81,12 +82,14 @@ function NearView({ children }: { children: ReactNode }) {
   return <div ref={ref} className="lm-box">{seen ? children : null}</div>
 }
 
-function WindyMap({ title, src, online }: { title: string; src: string; online: boolean }) {
+export type FramePause = { paused: boolean; load: () => void }
+/** The one Windy frame: offline note, or (when `pause` holds it) a Load button, else the lazy iframe. */
+export function WindyMap({ title, src, online, pause }: { title: string; src: string; online: boolean; pause?: FramePause }) {
   return (
     <NearView>
-      {online
-        ? <iframe className="sf-frame" title={title} src={src} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
-        : <p className="sf-empty lm-off" role="status">Maps need internet</p>}
+      {!online ? <p className="sf-empty lm-off" role="status">Maps need internet</p>
+        : pause?.paused ? <div className="st-paused"><p className="sub">Paused to save mobile data.</p><button type="button" className="btn2" onClick={pause.load}>Load live layer</button></div>
+          : <iframe className="sf-frame" title={title} src={src} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />}
     </NearView>
   )
 }

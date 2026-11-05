@@ -1,28 +1,47 @@
 import { Carousel } from '../look/Carousel'
 import { Section } from '../look/Section'
-import { playable, VIDEOS } from '../health/library/videosLogic'
 import { LiteVideo } from '../media/LiteVideo'
+import { useOnline } from '../media/useOnline'
 import { Icon } from '../shell/Icon'
-import { useKv } from '../shell/useKv'
-import { CALM_VIDEO_ID, MEDIA } from './media'
+import { CALM_VIDEOS, MEDIA, RADIO } from './media'
+import { useRadio } from './useRadio'
 
-/** Listen and watch: three outside links and one checked video. Absent unless kv flag.calm.radio is on (default off). */
+/** Listen and watch, one swipe row as on the board: radio that plays here, the podcast link, and checked videos that play after a tap (LiteVideo). Nothing loads before a tap except the video posters (i.ytimg.com). The audio stops with this section (useRadio). */
 export default function MediaLinks() {
-  const [on] = useKv<boolean>('flag.calm.radio', false)
-  if (!on) return null
-  const v = VIDEOS.find((x) => x.id === CALM_VIDEO_ID && playable(x))
+  const online = useOnline()
+  const radio = useRadio()
   return (
-    <Section title="Listen and watch" meta="Opens the official site" testId="calm-media">
-      <Carousel label="Listen and watch">
+    <Section title="Listen and watch" testId="calm-media">
+      <audio ref={radio.audio} preload="none" data-testid="calm-audio" {...radio.events} />
+      <Carousel label="Listen and watch" testId="calm-row">
+        {RADIO.map((s) => {
+          const state = radio.now?.id === s.id ? radio.now.state : null
+          const active = state === 'loading' || state === 'playing'
+          return (
+            <div key={s.id} className="card cm-media" data-testid={`calm-radio-${s.id}`} data-state={state ?? 'idle'}>
+              <span className="cm-media-ic"><Icon name="radio" size={34} />{state === 'playing' && <span className="cm-eq" aria-hidden="true"><i /><i /><i /><i /></span>}</span>
+              <span className="cm-k">Radio</span><b>{s.title}</b>
+              <span className="cm-sub" aria-live="polite">{state === 'loading' ? 'Loading' : state === 'playing' ? 'Playing' : state === 'error' ? 'The radio did not start.' : s.sub}</span>
+              <div className="cm-acts">
+                <button type="button" className="btn cm-play" disabled={!online && !active} aria-busy={state === 'loading'} aria-label={`${active ? 'Stop' : 'Play'} ${s.title}`} onClick={() => radio.toggle(s)}>{active ? 'Stop' : 'Play'}</button>
+                <a className="cm-out" href={s.site} target="_blank" rel="noopener noreferrer">Station site<span className="cm-sr"> of {s.title} (opens outside)</span></a>
+              </div>
+            </div>
+          )
+        })}
         {MEDIA.map((m) => (
           <a key={m.href} className="card press cm-media" href={m.href} target="_blank" rel="noopener noreferrer">
-            <span className="cm-media-ic"><Icon name={m.icon} size={22} /></span>
+            <span className="cm-media-ic"><Icon name={m.icon} size={34} /></span>
             <span className="cm-k">{m.kind}</span><b>{m.title}</b><span className="cm-sub">{m.sub}</span>
             <span className="cm-sr"> (opens outside)</span>
           </a>
         ))}
+        {CALM_VIDEOS.map((v) => (
+          <div key={v.id} className="card cm-video"><LiteVideo id={v.id} title={v.title} />
+            <span className="cm-sub cm-chan">Channel: {v.channel}</span></div>
+        ))}
       </Carousel>
-      {v && <div className="card cm-video"><LiteVideo id={v.id} title={v.title} minutes={v.minutes} /></div>}
+      <p className="cm-sub" role="status">{online ? 'Radio plays here after a tap. Videos use YouTube privacy mode. Links open their sites.' : 'You are offline. These open when you are back online.'}</p>
     </Section>
   )
 }

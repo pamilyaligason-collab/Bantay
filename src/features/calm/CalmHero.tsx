@@ -4,11 +4,13 @@ import { BreathOrb } from '../look/BreathOrb'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import BreathSheet from '../today/BreathSheet'
+import { useActing } from '../viewas/viewAs'
 import { cycleSecs, MINUTES, momentAt, SAFETY, SHOWN_PATTERNS, type Pattern, type SelfCareEntry } from '../today/breathLogic'
 
 /** The buzz switch and the "done today" line. useKv reads once on mount and instances do not share state, so Hero remounts this (key) when the sheet closes. */
 function HeroState() {
-  const [log] = useKv<SelfCareEntry[]>('selfcare.log', [])
+  const [stored] = useKv<SelfCareEntry[]>('selfcare.log', [])
+  const log = useActing().acting ? [] : stored // not by person: while viewing, the admin's breaths are not the viewed person's
   const [buzz, setBuzz] = useKv<boolean>('selfcare.buzz', true) // the key BreathSheet reads
   const done = log.some((e) => new Date(e.at).toDateString() === new Date().toDateString())
   return (

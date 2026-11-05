@@ -33,10 +33,10 @@ test('D1: hero poster is the scroller width minus 32, at least 190 tall, play di
   expect(Math.min(m.dw, m.dh), 'play disc').toBeGreaterThanOrEqual(56)
 })
 
-// D2: the two more videos have a 15 px title in one colour, three lines at most.
+// D2: the two more videos (and the Be prepared cards) have a 15 px title in one colour, three lines at most.
 test('D2: video card titles are 15 px, one colour, three lines at most', async ({ page }) => {
   const t = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t')).map((e) => ({ fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)) })))
-  expect(t.length).toBe(2)
+  expect(t.length).toBe(5) // the two more videos and the three Be prepared cards
   t.forEach((x) => { expect(x.fs).toBe('15px'); expect(x.lines).toBeLessThanOrEqual(3) })
   expect(new Set(t.map((x) => x.c)).size, 'one title colour').toBe(1)
 })

@@ -17,7 +17,7 @@ import { cyclones, stormName } from './LiveMaps'
 import { FLAGS } from './flags'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
-import { Carousel, GroupedList, Row, Section, type Tint } from '../look'
+import { GroupedList, Row, Section, type Tint } from '../look'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { type useLocation } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
@@ -26,12 +26,12 @@ import SosScreen from '../sos/SosScreen'
 import { ABROAD_SOURCE } from './dial'
 import { StormCard } from './StormCard'
 import { SafetyHead } from './SafetyHead'
-import { TOPICS } from './FirstAid'
+import { ICON, TOPICS } from './FirstAid'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import { liveSignals, type PhoneCheck, phoneAlertCount } from './stormMode'
 import { useKv } from './store'
 import { ddb } from '../docs/store'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './safety.css'
 
 type Place = NonNullable<ReturnType<typeof usePlaceFrom>>
@@ -168,6 +168,40 @@ function BeReady({ place }: { place: Place }) {
 // id, icon, short title, sub (null = the topic's Filipino word), tint as on the board
 const FA_QUICK: [string, IconName, string, string | null, 'red' | 'amber' | 'purple'][] = [['stroke', 'brain', 'Stroke', 'BE FAST', 'red'], ['cpr', 'cpr', 'CPR', 'Hands only', 'red'], ['choking', 'lungs', 'Choking', null, 'amber'], ['dengue-warning-signs', 'therm', 'Dengue', 'Warning signs', 'purple']]
 
+/** First aid on the Safety home: 3 rows of 2 cards (the 4 quick ones, Stroke first by D-128, then the next topics), the rest behind Show more. */
+const FA_ROWS = 3
+export function FirstAidGrid() {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const quick = FA_QUICK.map(([id, icon, name, sub, tint]) => ({ id, icon, name, sub, tint, tl: TOPICS.find((x) => x.id === id)?.tl })).filter((c) => c.tl)
+  const rest = TOPICS.filter((t) => !FA_QUICK.some((q) => q[0] === t.id)).map((t) => ({ id: t.id, icon: (ICON[t.id] ?? 'aid') as IconName, name: t.title, sub: null, tint: t.urgency === 'high' ? 'red' as const : 'purple' as const, tl: t.tl }))
+  const all = [...quick, ...rest]
+  const shown = open ? all : all.slice(0, FA_ROWS * 2)
+  const toggle = () => {
+    if (open) { // Show less: bring the section top back if collapsing left it above the screen
+      const sec = box.current?.closest('section')
+      requestAnimationFrame(() => { if (sec && sec.getBoundingClientRect().top < 0) sec.scrollIntoView({ block: 'start' }) })
+    }
+    setOpen(!open)
+  }
+  return (
+    <div ref={box}>
+      <ul className="sf-fagrid" aria-label="First aid">
+        {shown.map((c) => (
+          <li key={c.id}>
+            <a className="card sf-fa" data-tint={c.tint} href={`#safety/firstaid/${c.id}`}>
+              <Icon name={c.icon} size={28} />
+              <b>{c.name}</b>
+              {!c.name.toLowerCase().includes((c.sub ?? c.tl ?? '').toLowerCase()) && <span className="sub" lang={c.sub ? undefined : 'fil'}>{c.sub ?? c.tl}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {all.length > shown.length || open ? <button type="button" className="sf-more" aria-expanded={open} onClick={toggle}>{open ? 'Show less' : 'Show more'}</button> : null}
+    </div>
+  )
+}
+
 /** The Safety home (Near me): head, SOS hero, Right now, First aid, Be ready. D-33: one place for the whole screen. */
 export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocation>; place: Place | null }) {
   const [sos, setSos] = useState(false)
@@ -200,19 +234,7 @@ export default function SafetyHome({ l, place }: { l: ReturnType<typeof useLocat
       </section>
       {place && <RightNow place={place} />}
       <Section title="First aid" link={{ href: '#safety/firstaid', label: `All ${TOPICS.length}` }}>
-        <Carousel label="First aid">
-          {FA_QUICK.map(([id, icon, name, sub, tint]) => {
-            const t = TOPICS.find((x) => x.id === id)
-            if (!t) return null
-            return (
-              <a key={id} className="card sf-fa" data-tint={tint} href={`#safety/firstaid/${id}`}>
-                <Icon name={icon} size={28} />
-                <b>{name}</b>
-                <span className="sub" lang={sub ? undefined : 'fil'}>{sub ?? t.tl}</span>
-              </a>
-            )
-          })}
-        </Carousel>
+        <FirstAidGrid />
         <p className="sub sf-911">{abroad ? 'Call the local emergency number first' : 'Call 911 first'} if someone cannot breathe, speak or wake up.</p>
       </Section>
       {place && <BeReady place={place} />}

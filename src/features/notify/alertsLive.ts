@@ -77,7 +77,7 @@ export function startAlertsLive(userId: string): () => void {
   void pollAlerts()
   if (Capacitor.isNativePlatform()) {
     // native: appStateChange only (visibilitychange fires too, which would poll twice)
-    void import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', (s) => setActive(s.isActive))).then((h) => { if (stopped) void h.remove(); else removeApp = () => void h.remove() }).catch(() => undefined)
+    void import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', (s) => setActive(s.isActive))).then((h) => { if (stopped) void Promise.resolve(h.remove()).catch(() => undefined); else removeApp = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined)
   } else if (typeof document !== 'undefined') {
     const on = () => setActive(document.visibilityState === 'visible')
     document.addEventListener('visibilitychange', on)

@@ -34,13 +34,19 @@ a{color:var(--accent)}
 <p>Only you, the family owner, and the people you or the family owner share with can see your records. Nothing is shared by default. In Me, Privacy, Who can see my records, you pick a family member and they can see your records at once. They are told, and you can stop it at any time. The list is kept on the server, so it is the same on every phone. The family owner can see everyone&#39;s records, to help. Only the owner and you can set who sees your records, and you will be told. For a family member who has no sign-in, the owner and their carers set it. A log records who changed what. Nobody outside your family circle can see your records. They are not sold and not used for ads.</p>
 
 <h2>Where it goes</h2>
-<p>Your numbers are saved on your phone first, then sent to these services so the family owner and the people you or the family owner share with can see them. No other service is used in this version.</p>
+<p>Your numbers are saved on your phone first, then sent to these services so the family owner and the people you or the family owner share with can see them. The app sends data only to the services below. Other official sites open in your browser only when you tap their link.</p>
 <ul>
 <li><strong>Supabase</strong>: the family database, with your records and messages.</li>
-<li><strong>Open-Meteo and RainViewer</strong>: weather and rain maps. They receive your place rounded to about 1 km, never your name.</li>
+<li><strong>Open-Meteo and Windy</strong>: weather forecast and live map. They receive your place rounded to about 1 km, never your name.</li>
 <li><strong>Wikipedia</strong>: the "On this day" facts in Discover. It receives today's date only, never your name or place.</li>
-<li><strong>OpenRouter</strong>: the AI models behind Jack and photo reading, only when you use them, and only the text or photo you share. Zero data retention is switched on. The servers are outside the Philippines. When you turn AI off in Me, Privacy, Jack and photo reading stop sending anything, and papers you scan from then on are kept but not read by the AI. Papers you scanned earlier that were not read yet may still be.</li>
+<li><strong>YouTube</strong>: picture previews load when a video card shows, so YouTube sees your internet address. The video loads only when you tap.</li>
+<li><strong>Radio Paradise and Radio Swiss Classic</strong>: only when you tap Play on a radio card. The station sees your internet address.</li>
+<li><strong>OpenStreetMap</strong>: street map pictures on the Safety maps. It sees your internet address and the area shown.</li>
+<li><strong>Ventusky, HazardHunterPH and PAGASA Panahon</strong>: the map panels in Safety, only after you open a panel. Ventusky gets the map centre rounded to about 1 km. The other two get no place from the app. Each sees your internet address and anything you type in its panel.</li>
+<li><strong>MedlinePlus</strong>: the plain health reads in Discover and Health. It receives the condition, medicine or search words you open, never your name.</li>
+<li><strong>OpenRouter</strong>: the AI models behind Jack and photo reading, only when you use them, and only the text or photo you share. What you ask Jack is sent through a relay on the family owner&#39;s own server first; a photo you scan goes from a function on the family&#39;s own Supabase project straight to OpenRouter, with no relay. Zero data retention is switched on. The servers are outside the Philippines. When you turn AI off in Me, Privacy, Jack and photo reading stop sending anything, and papers you scan from then on are kept but not read by the AI. Papers you scanned earlier that were not read yet may still be.</li>
 <li><strong>Google Drive</strong>: copies of papers, in the folder the family owns.</li>
+<li><strong>Firebase Cloud Messaging (Google)</strong>: only in the Android app, when you allow notifications. It carries a short alert in set words, with no names or readings, and Google sees your phone&#39;s push address.</li>
 <li><strong>Cloudflare Pages</strong>: hosts the app.</li>
 </ul>
 

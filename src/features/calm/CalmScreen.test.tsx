@@ -76,18 +76,55 @@ describe('arrival', () => {
 })
 
 describe('Listen and watch and crisis', () => {
-  it('Listen and watch is absent with the flag off', () => {
-    render(<CalmScreen />)
-    expect(screen.queryByTestId('calm-media')).toBeNull()
-  })
-  it('shows three outside links and the checked video with flag.calm.radio on', () => {
-    kv['flag.calm.radio'] = true
+  it('one row: two radio cards, the podcast link and four checked videos, no flag needed, and loads nothing before a tap', () => {
     render(<CalmScreen />)
     const media = screen.getByTestId('calm-media')
-    const links = within(within(media).getByRole('group', { name: 'Listen and watch' })).getAllByRole('link')
-    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://somafm.com/groovesalad/', 'https://somafm.com/dronezone/', 'https://www.tarabrach.com/podcasts/'])
-    for (const a of links) { expect(a.getAttribute('target')).toBe('_blank'); expect(a.getAttribute('rel')).toBe('noopener noreferrer') }
+    const row = screen.getByTestId('calm-row')
+    expect(row.classList.contains('carousel')).toBe(true)
+    expect(media.querySelectorAll('.carousel')).toHaveLength(1)
+    expect(row.children).toHaveLength(8)
+    expect(within(row).getAllByRole('button', { name: /^Play Radio/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Play Radio Paradise Mellow', 'Play Radio Swiss Classic'])
+    expect(within(row).getByRole('link', { name: /SomaFM/ }).getAttribute('href')).toBe('https://somafm.com/') // refuses the app's host, so a plain link
+    const links = within(row).getAllByRole('link', { name: /Tara Brach/ })
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://www.tarabrach.com/podcast/'])
+    expect(links[0]!.getAttribute('target')).toBe('_blank')
+    expect(links[0]!.getAttribute('rel')).toBe('noopener noreferrer')
+    expect(within(row).getAllByRole('button', { name: /^Play (?!Radio)/ })).toHaveLength(4)
     expect(within(media).getByRole('button', { name: /Play Steps for Stress/ })).toBeTruthy()
+    expect(media.textContent).toMatch(/Channel: NHS inform/)
+    expect(media.querySelector('iframe, video')).toBeNull() // nothing embeds before a tap
+    expect(media.querySelectorAll('audio')).toHaveLength(1)
+    expect(media.querySelector('audio')!.hasAttribute('src')).toBe(false) // and nothing streams
+    expect(media.textContent).toMatch(/Radio plays here after a tap\. Videos use YouTube privacy mode\. Links open their sites\./)
+  })
+  it('Relaxing radio lands on Listen and watch: #calm/listen scrolls the section into view', () => {
+    const into = vi.fn(); Element.prototype.scrollIntoView = into as never
+    location.hash = '#calm/listen'
+    render(<CalmScreen />)
+    expect(into).toHaveBeenCalledTimes(1)
+    expect((into.mock.contexts[0] as HTMLElement).getAttribute('data-testid')).toBe('calm-media')
+    location.hash = ''
+  })
+  it('a tap loads the privacy-mode player for that video only', () => {
+    render(<CalmScreen />)
+    fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
+    const frames = screen.getByTestId('calm-media').querySelectorAll('iframe')
+    expect(frames).toHaveLength(1)
+    expect(frames[0]!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/gzUSh6eEtKE\?/)
+  })
+  it('offline: one plain line, links stay', () => {
+    const on = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    render(<CalmScreen />)
+    expect(screen.getByText(/You are offline/)).toBeTruthy()
+    expect(within(screen.getByTestId('calm-media')).getByRole('link', { name: /Tara Brach/ })).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Play Radio Paradise Mellow' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByTestId('calm-row').nextElementSibling!.textContent).toMatch(/^You are offline/) // takes the note's place, so the crisis card does not move down
+    on.mockRestore()
+  })
+  it('the crisis card keeps its own Source link class (the media rows never use it)', () => {
+    render(<CalmScreen />)
+    expect(screen.getByTestId('calm-crisis').querySelector('a.cm-src')).not.toBeNull()
+    expect(screen.getByTestId('calm-media').querySelector('.cm-src')).toBeNull()
   })
   it('the crisis card calls 1553 first and names its source', () => {
     render(<CalmScreen />)

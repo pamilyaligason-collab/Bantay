@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { skipOnboarding, stubWindy } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
   // S16: Plan is a sub-screen of Family (Back + title header), reached from the Plan row on the Family root
@@ -61,6 +61,7 @@ test('component button rules beat the .bt reset: tab labels are 12px/600', async
 
 test('sub-pages show only their own header; tab roots draw bell and avatar in the title row (no top bar)', async ({ page }) => {
   await skipOnboarding(page)
+  await stubWindy(page)
   await page.goto('/#weather')
   await expect(page.locator('a[aria-label="Back to Today"]')).toBeVisible()
   await expect(page.locator('.topbar')).toHaveCount(0)

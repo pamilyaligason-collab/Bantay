@@ -92,7 +92,7 @@ export default function StormTracker({ place }: { place: Place }) {
             : showFrame ? <iframe className="sf-frame" title={`Windy ${layer} map around your place`} src={windySrc(layer, view.lat, view.lon, view.zoom)} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
             : <div className="st-paused"><p className="sub">Paused to save mobile data.</p><button type="button" className="btn2" onClick={() => setLoaded(true)}>Load live layer</button></div>}
         </div>
-        <p className="st-note">Live · Windy</p>
+        <p className="st-note">Map by Windy</p>
         <GroupedList label="Windy options">
           <Row title="Pause on mobile data" sub="Phones that cannot report their connection always load it." control={
             <button type="button" role="switch" aria-checked={pref} aria-label="Pause on mobile data" className="st-sw" onClick={() => void putKv(PAUSE_KEY, !pref)}><span /></button>

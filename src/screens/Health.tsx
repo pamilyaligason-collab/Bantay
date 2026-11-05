@@ -89,7 +89,7 @@ function Overview() {
           <AttentionHero attention={attention} family={attention ? familyOf(attention.reading) : undefined} canLog={canLog} canEdit={canEdit} lockReason={lockReason} onAdd={() => setAdding('bp')} />
         </Section>
       )}
-      {ready && personId && <PinnedTiles personId={personId} readings={readings} />}
+      {ready && personId && <PinnedTiles personId={personId} readings={readings} canLog={canLog} />}
       {ready && personId && <FamilyHealthCard ids={people.map((p) => p.id)} />}
       {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}

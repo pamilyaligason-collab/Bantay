@@ -131,8 +131,10 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-vc-body { padding: 8px 12px; }
 .dc-hero-body { padding: 10px 16px; }
 .dc-hero-s { margin-top: 0; }
-/* the Learn heading link would sit under Jack at rest: the heading starts below the Jack box (y 752) */
-.bt section.sec[data-testid="dc-learn"] { margin-top: 46px; }
+/* D-124: no reserved heights. A section link would sit under Jack (right column) at rest, so on Discover the link follows its title on the left instead of the far right. */
+.bt section.sec[data-testid^="dc-"] > .sec-h { justify-content: flex-start; gap: 16px; }
+/* Be prepared: a row of small video cards (the .dc-vc card, narrower) */
+.card.dc-prep { flex: none; width: max(140px, calc(50% - 6px)); scroll-snap-align: start; } /* Pick is display: contents, so the card is the carousel item itself. Two cards fill the row (the carousel gap is 12 px), so the third starts at the screen edge, right of Jack (D-128: a card under him keeps most of its face tappable); on a very narrow screen they stay 140 px and scroll */
 
 /* board: the play triangles are solid (Icon has no filled twin for play on purpose, so the shape is filled here) */
 .dc-hero-play .sh-ic, .dc-vc-play .sh-ic, .rw > button.dc-play:not([aria-pressed="true"]) .sh-ic { fill: currentColor; }
@@ -154,8 +156,8 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 [data-testid="dc-play"] .pt-v { margin-top: auto; }
 [data-testid="dc-play"] .pt-s { color: var(--tint-ink); }
 
-/* Two limits on the hero, video cards and season row (the .dc-top block, which starts at y 122 under the large title). 1) Its bottom must end above the Jack button's top edge (viewport height - 154), so the full-width season link is never under Jack: the hero poster is the one flexible part, 190 px down to 72 px as the viewport gets shorter (it stays 190 on a tall screen, see the two rules below). 2) Learn's right-hand link must start below Jack's bottom edge (vh - 92): the min-height floor. Neither pulls the cards apart, so hero, videos and season row stay 8 and 4 px apart. */
-.dc-top { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 283px); } @media (min-height: 980px), (min-height: 920px) and (min-width: 375px) { .dc-top { min-height: 0; } .bt section.sec[data-testid="dc-learn"] { margin-top: 0; } } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px. min-height: Learn's link clears Jack at rest on any phone height, whatever titles or season the day brings. The Learn link sits above Jack by itself from 920 px tall at 375 px wide and up, and from 980 px at narrower widths (probed on the three season looks: Undas wraps at 360 and needs 975; 375 to 450 need 915; 5 px margin kept), so the floor is dropped and no empty band opens under the season card. */
+/* The hero, video cards and season row (the .dc-top block, under the large title) must end above the Jack button's top edge (viewport height - 154), so the full-width season link is never under Jack: the hero poster is the one flexible part, 190 px down to 72 px as the viewport gets shorter. Nothing is reserved under the block any more (D-124): the next section follows at once and its link sits left of Jack's column. Neither pulls the cards apart, so hero, videos and season row stay 8 and 4 px apart. */
+.dc-top { display: flex; flex-direction: column; gap: 22px; } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px */
 .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 653px - var(--sat) - var(--sab)), 190px); } /* 390 px wide: natural bottom 685 with the 190 px poster, so P <= vh - 653 (190 at 844 tall) */
 @media (max-width: 389px) { .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 684px - var(--sat) - var(--sab)), 190px); } } /* 360 px wide: the season row wraps to 2 lines and the block ends 28 px lower (713), so P <= vh - 684 */
 

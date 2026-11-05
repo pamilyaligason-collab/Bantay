@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { skipOnboarding } from './helpers'
+import { skipOnboarding, stubWindy } from './helpers'
 import { openMeteoFixture } from '../src/features/weather/fixture'
 import { assertJackClear, assertNoSideways, FIXED_CLOCKS, setScheme } from './v13'
 import { shotPath } from './shotPath'
@@ -70,6 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const day = '2026-10-31T10:00:00+08:00' // the lightest sky of the day
     await page.clock.setFixedTime(day)
     await skipOnboarding(page)
+    await stubWindy(page)
     await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now: new Date(day), temp: 31, humidity: 60, feels: 33, code: 2, hourlyProb: () => 10 }) }))
     await page.goto('/#today')
     await expect(page.getByTestId('weather-hero').locator('.td-wxh-t')).toBeVisible()

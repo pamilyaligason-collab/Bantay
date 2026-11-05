@@ -49,7 +49,6 @@ for (const w of [390, 360]) {
       await page.clock.setFixedTime(FIXED_CLOCKS[1])
       await skipOnboarding(page)
       await page.goto('/#calm')
-      await flagOn(page, 'flag.calm.radio')
       await expect(page.getByTestId('calm-media')).toBeVisible()
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await setScheme(page, scheme)

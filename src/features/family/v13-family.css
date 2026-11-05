@@ -17,11 +17,10 @@
 .pc .pc-primary { flex: 1; background: var(--btn); color: var(--btn-fg); } /* the app's one primary button (.btn): mid green with white text in dark too; --green is the light accent there */
 .pc-confirm { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .btn-round { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card, none); }
-[data-testid="activity"] { min-height: 420px; min-height: max(420px, min(calc(100dvh - 380px), 640px)); } /* CL: Jack sits 92 px above the bottom, so the row under Activity must start at viewport height - 140. The card starts at 243 px when signed out (the Today row is short), so it needs viewport height - 383 (461 at 844; 336 only when signed in with nothing to do, where it starts at 389); 380 leaves 3 px. Floor 420 (the chart fills 425 by itself). Cap 640 so a tall desktop window leaves no big blank. The space sits under the card, not inside it */
-[data-testid="activity"]:has([data-hug]) { min-height: 0; } /* phone fix: with no data in any tab the section hugs its one line; with data in any tab the floor stays so switching tabs does not jump */
 [data-testid="activity"] .card.ac { justify-content: flex-start; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 10px; }
 [data-testid="activity"] .ac > p { margin: 0; }
 [data-testid="activity"] .ac [data-testid="ac-empty"] { margin: auto 0; text-align: center; }
+[data-testid="activity"] .card.ac:not([data-hug]) [data-testid="ac-empty"] { min-height: 170px; display: flex; align-items: center; justify-content: center; } /* D-124: when another tab has data, an empty tab keeps only the chart's own height (the 170 px svg in WeekChart), inside the card; nothing is reserved under it */
 .ac-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .ac-h b { font-size: 15px; font-weight: 600; }
 .wk { display: block; }
@@ -36,6 +35,12 @@
 .wk-leg li[data-empty="true"] i { border-top-style: dotted; }
 .pc-foot { margin: 0; padding: 0 4px; }
 .rw-ctl { flex: none; margin-right: 8px; }
+/* D-128 (as on Discover): a section link on the far right would sit in Jack's column when its heading lands beside him at rest, so Together's link follows its title on the left. People has no header link now (its fold control is the foot row below). */
+.bt section.sec[data-testid="together"] > .sec-h { justify-content: flex-start; gap: 16px; }
+/* D-128: with no reserved height a Needs row can land beside Jack at rest, and its small Answer / Open / Fix phone control must never sit in his column (right 80 px). The control takes its own line under the text, indented past the 36 px avatar (as narrow.css already does at 195 px). */
+[data-testid="need-row"] { flex-wrap: wrap; row-gap: 0; padding-bottom: 10px; }
+[data-testid="need-row"] > .rw-main { flex: 1 1 100%; }
+[data-testid="need-row"] > .rw-ctl { margin: 0 0 0 48px; }
 .fp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .fp { padding: 15px; display: flex; flex-direction: column; gap: 8px; }
 .fp-h { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -52,3 +57,7 @@
 
 /* F7: long imported names stop at two lines so a row stays short */
 .fm-item .grow b, [data-testid="need-row"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; }
+
+/* People fold control: a row at the foot of the list, not in the title bar where Jack's column is (D-128). It stops 72 px short of the right edge, so at rest it never touches Jack's column (his left edge is 80 px in, measured at 390 and 450 wide); a small control has no allowance under him. */
+.pl-more { display: block; width: calc(100% - 72px); min-height: 44px; margin-top: 4px; padding: 0 16px; box-sizing: border-box; font: inherit; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-align: left; }
+:root[data-narrow] .pl-more { width: 100%; padding: 0 6px; } /* 195 px wide: no room to stop short, and the text must not wrap */
