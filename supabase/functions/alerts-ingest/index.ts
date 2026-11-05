@@ -24,10 +24,10 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
   const port: Port = {
     async existing(source) {
-      const { data, error } = await sb.from('safety_alerts').select('id,bulletin,previous_bulletin,level').eq('source', source)
+      const { data, error } = await sb.from('safety_alerts').select('id,bulletin,previous_bulletin,level,fetched_at,expires_at,stale').eq('source', source)
       if (error) throw new Error('read')
       const m: Existing = new Map()
-      for (const r of data ?? []) m.set(r.id, { bulletin: r.bulletin, previous_bulletin: r.previous_bulletin, level: r.level })
+      for (const r of data ?? []) m.set(r.id, { bulletin: r.bulletin, previous_bulletin: r.previous_bulletin, level: r.level, fetched_at: r.fetched_at, expires_at: r.expires_at, stale: r.stale })
       return m
     },
     async upsert(rows) {
@@ -37,6 +37,11 @@ Deno.serve(async (req) => {
     },
     async setStale(source, stale) {
       const { error } = await sb.from('safety_alerts').update({ stale }).eq('source', source)
+      if (error) throw new Error('write')
+    },
+    async end(ids, endedAt) {
+      if (!ids.length) return
+      const { error } = await sb.from('safety_alerts').update({ expires_at: endedAt }).in('id', ids)
       if (error) throw new Error('write')
     },
     async members() {

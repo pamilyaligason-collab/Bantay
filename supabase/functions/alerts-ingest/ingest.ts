@@ -1,16 +1,17 @@
 // alerts-ingest core (D-25): fetch each source, parse, upsert. A failed source keeps its previous rows and marks them stale; nothing is deleted.
 // S5 (D-78): PAGASA public alert feed (wind signals = tier 1, flood advisories = tier 2) and an in-app hazard row per member for each live tier-1 row.
-import { type AlertRow, parseAir, parseGdacs, parseUsgs, ZONES } from './parse.ts'
+import { type AlertRow, gdacsCurrentIds, parseAir, parseGdacs, parseUsgs, ZONES } from './parse.ts'
 import { capUrls, FEED_URL, parseFeed, parsePagasa, signalOf } from './pagasa.ts'
 import { EONET_URL, parseEonet } from './eonet.ts'
 
 // Sources verified WORKS in research (2026-10-17, PAGASA feed 2026-10-26, EONET 2026-11-04). PHIVOLCS quake and volcano pages and PAGASA bulletin PDFs are
 // HTML or PDF scrape only: skipped on purpose (see docs/ALERTS.md). phivolcs.ts has parsers for them that are NOT listed here; wiring them is a change to this list, made only when the owner says so. GDACS and Open-Meteo keep running when the PAGASA feed fails.
 // One source can have several urls (air quality: one call per zone, D-27). Payloads reach parse in url order; any failed fetch fails the source. All-or-nothing staleness (one zone failing marks both stale) is conservative by design.
+// `endsDropped` (D-121): returns the ids the RAW feed still lists (before any zone or age filter, so a filtered row keeps its TTL); a row it does not list is ended once the read worked. Only for a feed that lists every live row; never a rolling time window (USGS all_day: a quake leaves it by getting older), never PAGASA (it writes its own lifted/ended rows), never Open-Meteo (always lists both zones) or EONET (awareness only, already limited by its own TTL).
 // `more` names a second round of urls from the first payloads (PAGASA: the index lists the CAP files); their texts are appended to the payloads.
-export const SOURCES: { source: string; urls: string[]; json: boolean; more?: (texts: string[], now: number) => string[]; parse: (p: unknown[], now: number) => AlertRow[] | null }[] = [
+export const SOURCES: { source: string; urls: string[]; json: boolean; more?: (texts: string[], now: number) => string[]; parse: (p: unknown[], now: number) => AlertRow[] | null; endsDropped?: (payloads: unknown[]) => Set<string> }[] = [
   { source: 'USGS', urls: ['https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson'], json: true, parse: ([p], now) => parseUsgs(p, now) },
-  { source: 'GDACS', urls: ['https://www.gdacs.org/xml/rss.xml'], json: false, parse: ([p], now) => parseGdacs(p, now) },
+  { source: 'GDACS', urls: ['https://www.gdacs.org/xml/rss.xml'], json: false, endsDropped: ([p]) => gdacsCurrentIds(p), parse: ([p], now) => parseGdacs(p, now) },
   { source: 'PAGASA', urls: [FEED_URL], json: false, more: ([index], now) => capUrls(parseFeed(index) ?? [], now), parse: parsePagasa },
   { source: 'Open-Meteo', urls: ZONES.map((z) => `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${z.lat}&longitude=${z.lon}&current=pm2_5,us_aqi`),
     json: true,
@@ -21,11 +22,15 @@ export const SOURCES: { source: string; urls: string[]; json: boolean; more?: (t
   },
   { source: 'EONET', urls: [EONET_URL], json: true, parse: ([p], now) => parseEonet(p, now) } // last on purpose: awareness only (tier 2, never notifies), so a slow EONET cannot eat the official feeds' run time
 ]
+/** D-121: a dropped row is ended only when its own fetched_at is older than this, so one or two missed reads (runs are minutes apart) do not end a real warning. */
+export const DROP_GRACE_MS = 2 * 3_600_000
 /** A new-tier notice (tsunami, quake, flood, volcano) is pushed only while its row is this young: a first run or an outage must not announce yesterday's quake. Wind signals keep their old rule (no age limit). */
 export const NEW_TIER_MAX_AGE_MS = 2 * 3_600_000
 /** After this much run time no flush is started (it can wait 15 s and the platform stops the run at 150 s, ML-24); the rows are already written and the 15-minute dose-watch run offers them. Wind and other urgent pushes flush at any earlier time. */
 export const FLUSH_BUDGET_MS = 130_000
 /** Past this much run time Open-Meteo air and EONET (awareness only) are not fetched, so the official rows and the heartbeat always land inside the 150 s limit. */
+/** First-round fetches retry only while the run is younger than this: a retry on every slow source could push the run past 130 s (flush budget) and the 150 s platform limit. CAP files always retry. */
+export const RETRY_FIRST_ROUND_MS = 30_000
 export const SKIP_AFTER_MS = 100_000
 const SKIPPABLE = ['Open-Meteo', 'EONET']
 
@@ -36,12 +41,14 @@ const levelRank = (kind: string, level: string | null | undefined): number => {
   return -1
 }
 
-export type Existing = Map<string, { bulletin: string; previous_bulletin: string | null; level?: string | null }>
+export type Existing = Map<string, { bulletin: string; previous_bulletin: string | null; level?: string | null; fetched_at?: string | null; expires_at?: string | null; stale?: boolean }>
 export type UpsertRow = AlertRow & { previous_bulletin: string | null; fetched_at: string; stale: false }
 export interface Port {
   existing(source: string): Promise<Existing>
   upsert(rows: UpsertRow[]): Promise<void>
   setStale(source: string, stale: boolean): Promise<void>
+  /** D-121: set expires_at = endedAt on these ids (never a delete, no push). Optional so older fakes still type. */
+  end?(ids: string[], endedAt: string): Promise<void>
   /** Person ids of members with a login (the family watches both home zones, D-27). */
   members(): Promise<string[]>
   /** notify_family(person, 'hazard', template, ref, 'self') with the service role: rows inserted (0 for a repeated ref). */
@@ -117,7 +124,7 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
   const result: Result = {}
   const started = clock()
   const mayFlush = () => clock() - started <= FLUSH_BUDGET_MS
-  const retry = async (u: string) => fetchText(u).catch(() => fetchText(u)) // a missed CAP file could read as "signal lifted": one retry, then fail the source
+  const retry = async (u: string) => fetchText(u).catch(() => fetchText(u)) // a missed CAP file could read as "signal lifted": one retry, then fail the source. The first-round urls retry too while the run is young (GDACS failed ~13 of 30 live runs)
   for (const s of SOURCES) {
     // Fetches have no deadline of their own, so a slow run could be killed at 150 s before the heartbeat is written. The two awareness-only sources are skipped (recorded as not ok, marked stale) past this point.
     if (SKIPPABLE.includes(s.source) && clock() - started > SKIP_AFTER_MS) {
@@ -126,9 +133,10 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
       continue
     }
     try {
-      let texts = await Promise.all(s.urls.map(fetchText))
+      let texts = await Promise.all(s.urls.map((u) => (clock() - started < RETRY_FIRST_ROUND_MS ? retry(u) : fetchText(u))))
       if (s.more) texts = [...texts, ...(await Promise.all(s.more(texts, now).map(retry)))]
-      const parsed = s.parse(texts.map((t) => (s.json ? JSON.parse(t) : t)), now)
+      const payloads = texts.map((t) => (s.json ? JSON.parse(t) : t))
+      const parsed = s.parse(payloads, now)
       if (parsed === null) throw new Error('unexpected payload')
       const rows = [...new Map(parsed.map((r) => [r.id, r])).values()] // one row per id (last wins): a duplicate id would make Postgres reject the whole batch
       const old = await port.existing(s.source)
@@ -143,6 +151,12 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
         const previous_bulletin = o && o.bulletin !== r.bulletin ? o.bulletin : o?.previous_bulletin ?? null
         return { ...r, previous_bulletin, fetched_at: stamp, stale: false as const }
       }))
+      const listed = s.endsDropped?.(payloads)
+      // Ends nothing when the raw feed is empty (a hiccup), or when an old row of this source is still marked stale (the previous read failed: after an outage every row is past the grace, and one partial response must not end them all). `old` is read before setStale below.
+      if (listed && listed.size > 0 && ![...old.values()].some((o) => o.stale)) {
+        const gone = [...old].filter(([id, o]) => !listed.has(id) && Date.parse(o.expires_at ?? '') > now && now - Date.parse(o.fetched_at ?? '') > DROP_GRACE_MS).map(([id]) => id) // unreadable time: left alone
+        await port.end?.(gone, stamp).catch(() => undefined) // a failed end is retried next run; it must not fail the read
+      }
       await port.setStale(s.source, false)
       result[s.source] = { ok: true, rows: rows.length }
       await notifyTier1(port, rows, now, mayFlush, old) // every source: tier1() picks only the five urgent cases

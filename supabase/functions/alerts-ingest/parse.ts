@@ -123,6 +123,18 @@ const GDACS_DO_NOW: Record<string, string> = {
 const GDACS_KIND: Record<string, AlertRow['kind']> = { TC: 'gdacs', FL: 'gdacs', VO: 'volcano', TS: 'tsunami' }
 const GDACS_TTL_H: Record<string, number> = { TC: 48, FL: 48, VO: 72, TS: 12 }
 
+/** D-121: ids of every item the raw GDACS feed marks current, before any zone or expiry filter (null-safe: a bad payload gives an empty set). */
+export function gdacsCurrentIds(xml: unknown): Set<string> {
+  const ids = new Set<string>()
+  if (typeof xml !== 'string' || !xml.includes('<rss')) return ids
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    const type = tag(m[1], 'gdacs:eventtype')
+    const eventId = tag(m[1], 'gdacs:eventid')
+    if (type && eventId && tag(m[1], 'gdacs:iscurrent') === 'true') ids.add(`gdacs-${type}-${eventId}`)
+  }
+  return ids
+}
+
 /** GDACS global feed, filtered to the Philippines (country text) or within GDACS_MAX_KM of any zone. Earthquakes are skipped here (USGS covers them);
  *  drought and wildfire are skipped (no action for a family in our zones). Only events GDACS still marks current. */
 export function parseGdacs(xml: unknown, now: number): AlertRow[] | null {
