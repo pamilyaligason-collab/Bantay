@@ -239,6 +239,8 @@ insert into public.carers (carer_id, person_id, can_write) values ('00000000-000
 \ir ../migrations/0046_who_sees_whom.sql
 select pg_temp.ok((select count(*) from pg_policies where tablename = 'carers' and cmd in ('INSERT', 'UPDATE', 'DELETE')) = 0, 'idempotent: second run leaves no carers write policy');
 select pg_temp.ok((select count(*) from public.carers where carer_id = '00000000-0000-0000-0000-0000000000a1') = 1 and (select count(*) from public.app_roles where is_owner) = 1, 'idempotent: the creator link and the owner survived');
+-- 0050's feed_shares policy uses is_owner(), so 0050 goes down first
+\ir ../migrations/0050_family_feed.down.sql
 \ir ../migrations/0046_who_sees_whom.down.sql
 select pg_temp.ok((select pg_get_functiondef(to_regprocedure('public.share_set(uuid,uuid,boolean,boolean)'))) like '%share_offers%' and to_regprocedure('public.is_owner()') is null, '0046 down: share_set is the 0037 offer model again');
 \ir ../migrations/0037_sharing.sql

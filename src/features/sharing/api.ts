@@ -33,7 +33,17 @@ export async function setShare(personId: string, carerUserId: string, on: boolea
   } catch { return 'offline' }
 }
 
-type ViewerRow = { carer_user_id: string; display_name: string; can_write: boolean; added_by_admin: boolean; added_at: string | null }
+export type FeedCategory = 'bp' | 'lab' | 'photo' | 'status'
+/** Family feed switch (0050 feed_share_set, D-127/D-134). Direct call, no outbox: 'ok' only when the server said so; offline never counts as ok. */
+export async function feedShareSet(personId: string, category: FeedCategory, on: boolean): Promise<'ok' | 'offline' | 'refused' | 'limit'> {
+  if (!supabase) return 'offline'
+  try {
+    const { error } = await supabase.rpc('feed_share_set', { p_person: personId, p_category: category, p_on: on })
+    return error ? failureOf(error) : 'ok'
+  } catch { return 'offline' }
+}
+
+type ViewerRow ={ carer_user_id: string; display_name: string; can_write: boolean; added_by_admin: boolean; added_at: string | null }
 /** Who can see this person's records (0046 person_viewers: the person on themself, the family owner, or a writer carer of a person with no login). null when unknown (ML-05); 'refused' when the server said no (42501, 22023). */
 export async function personViewers(personId: string): Promise<Viewer[] | null | 'refused'> {
   if (!supabase) return null

@@ -1,4 +1,4 @@
--- Chain rehearsal: 0001 -> 0002 -> 0003 -> 0004 -> 0005 ... -> 0049 in order (0028 never existed) on a THROWAWAY Postgres, with the REAL is_admin() from 0002
+-- Chain rehearsal: 0001 -> 0002 -> 0003 -> 0004 -> 0005 ... -> 0050 in order (0028 never existed) on a THROWAWAY Postgres, with the REAL is_admin() from 0002
 -- (lane rehearsals each stub it). Never the live project.
 -- Run from WSL in supabase/tests: createdb bantay_chain; psql -X -v ON_ERROR_STOP=1 -d bantay_chain -f chain_rehearsal.sql
 \set ON_ERROR_STOP on
@@ -128,4 +128,5 @@ grant select, insert, update, delete on storage.objects to authenticated;
 \ir ../migrations/0047_weather_cells.sql
 \ir ../migrations/0048_alert_tiers.sql
 \ir ../migrations/0049_world_news.sql
+\ir ../migrations/0050_family_feed.sql
 \echo REHEARSAL DONE

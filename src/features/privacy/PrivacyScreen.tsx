@@ -5,6 +5,7 @@ import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
 import { consentDate, ensureConsent } from './consent'
 import { ConsentNotice } from './ConsentNotice'
+import { FeedSharesCard } from './feedShares'
 import { AI_KEY } from './ai'
 import { ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } from './data'
 import '../shell/shell.css'
@@ -119,6 +120,8 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
           </button>
         )}
       </div>
+
+      {!acting && <FeedSharesCard selfId={personId} />} {/* shows only with the feed flag on; no writes while acting */}
 
       {confirm && !pending && (
         <div className="sh-card pv-confirm" role="alertdialog" aria-label="Delete my data">

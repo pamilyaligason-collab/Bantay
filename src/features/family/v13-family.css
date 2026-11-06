@@ -43,11 +43,12 @@
 [data-testid="need-row"] > .rw-ctl { margin: 0 0 0 48px; }
 .fp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .fp { padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+.fp-list > li.fp { align-items: stretch; text-align: start; min-height: 0; padding: 15px; gap: 8px; } /* beats family.css .fp-list > li (centred 64 px rows) */
 .fp-h { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .fp-who { display: flex; flex-direction: column; min-width: 0; }
 .fp-who b { font-size: 17px; font-weight: 600; }
 .fp-t { margin: 0; font-size: 15px; color: var(--ink); }
-.fp-b { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fp-b { margin: 0; font-size: 17px; font-weight: 600; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px; }
 .fp-chip { font-size: 13px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--card2); color: var(--ink); }
 .fp-chip[data-tint="red"] { background: var(--tint-red); color: var(--tint-red-ink); }
 .fp-chip[data-tint="amber"] { background: var(--tint-amber); color: var(--tint-amber-ink); }

@@ -28,7 +28,7 @@ function mockFetch(handler: (c: Call) => Response | Promise<Response>) {
   })
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
-const posts = () => calls.filter((c) => c.method === 'POST')
+const posts = () => calls.filter((c) => c.method === 'POST' && !c.url.includes('/rpc/')) // the feed list (D-134) is an rpc POST, not a row send
 const clientIdOf = (r: unknown) => (r as { clientId?: string } | undefined)?.clientId
 
 beforeEach(async () => {
@@ -266,7 +266,7 @@ describe('a long queue does not hold back an SOS', () => {
   const ok = (c: Call) => (c.method === 'GET' ? json([]) : c.method === 'PATCH' ? json([{ id: 'x' }]) : json([{ id: 'x' }], 201))
   const fill = async (n: number) => { for (let i = 0; i < n; i++) await logActivity(hourAt(i)) }
   const go = async () => { startSync(cfg())(); await syncNow() } // stopped at once: no timer, no nudge can help
-  const written = () => calls.filter((c) => c.method !== 'GET')
+  const written = () => calls.filter((c) => c.method !== 'GET' && !c.url.includes('/rpc/'))
 
   it('200 hour rows and an SOS queued during the first send: the SOS is the first row of the next batch, alerts are read before it, all are sent in one sync', async () => {
     await fill(200)

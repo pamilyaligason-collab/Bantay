@@ -48,11 +48,26 @@ export interface PackRow {
   basemap?: { checksum: string; bounds: [number, number, number, number]; blob: Blob; savedAt: string }
 }
 
+/** One family feed post as `family_feed` returned it (migration 0050). The table is replaced whole on each pull; the phone never writes it. */
+export interface FeedRow {
+  /** kind + '|' + rowId */
+  id: string
+  kind: 'bp' | 'lab' | 'photo' | 'status'
+  personId: string
+  at: string
+  titleKey: string
+  valueText: string | null
+  chip: string | null
+  photoPath: string | null
+  rowId: string
+}
+
 class BantayDB extends Dexie {
   outbox!: Table<OutboxRow, number>
   kv!: Table<KvRow, string>
   profiles!: Table<ProfileRow, string>
   packs!: Table<PackRow, string>
+  feed!: Table<FeedRow, string>
   constructor() {
     super('bantay')
     // payload is stored but not indexed (objects are not valid index keys).
@@ -61,10 +76,15 @@ class BantayDB extends Dexie {
     this.version(2).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id' })
     // v3 only adds the region-pack table.
     this.version(3).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id', packs: 'code' })
+    // v4 adds the family feed (D-134): replaced whole on each pull, not an outbox table.
+    this.version(4).stores({ outbox: '++id, table, op, createdAt, tries', kv: 'key', profiles: 'id', packs: 'code', feed: 'id, at, personId' })
   }
 }
 
 export const db = new BantayDB()
+
+/** Other people's shared values live here: sign-out and Forget this phone empty it so the next person on the phone cannot read them. */
+export const clearFeed = () => db.feed.clear()
 
 export const enqueue = (table: string, op: string, payload: unknown) =>
   db.outbox.add({ table, op, payload, createdAt: Date.now(), tries: 0 })

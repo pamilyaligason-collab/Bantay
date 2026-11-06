@@ -1,4 +1,4 @@
--- Rehearsal for 0046_who_sees_whom.sql (D-109) on a THROWAWAY Postgres (never the live project): the REAL chain 0001..0049 (chain_rehearsal.sql loads 0045 to 0049 after 0044), then asserts.
+-- Rehearsal for 0046_who_sees_whom.sql (D-109) on a THROWAWAY Postgres (never the live project): the REAL chain 0001..0050 (chain_rehearsal.sql loads 0045 to 0050 after 0044), then asserts.
 -- Covers plan section 7 items 1 to 14 and the section 11 tests. Item 15 (part 2, other admins narrowed) is NOT built: the owner chose option A.
 -- Run (WSL Postgres 18, from supabase/tests):
 --   sudo -n -u postgres dropdb --if-exists s_d109; sudo -n -u postgres createdb s_d109
@@ -373,6 +373,8 @@ select pg_temp.ok((select count(*) from public.app_roles where is_owner) = 1 and
 select pg_temp.ok((select count(*) from pg_trigger where tgname = 'app_roles_owner_guard') = 1 and (select count(*) from pg_trigger where tgname = 'activity_updated_at') = 1, '10: second run: one of each trigger');
 select pg_temp.ok(pg_temp.msg($$update public.app_roles set disabled = true where user_id = '00000000-0000-0000-0000-0000000000a0'$$) like '%family owner%', '10: second run: the guard still holds');
 select pg_temp.ok((select count(*) from public.carers) = 7, '10: second run: links untouched (e: creator, Joy, Rhea, Lola; B: Joy, Rhea; the archived person''s creator link)');
+-- 0050's feed_shares policy uses is_owner(), so 0050 goes down first
+\ir ../migrations/0050_family_feed.down.sql
 \ir ../migrations/0046_who_sees_whom.down.sql
 select pg_temp.ok(to_regprocedure('public.is_owner()') is null and to_regprocedure('public.person_viewers(uuid)') is null and to_regprocedure('public.share_candidates(uuid)') is null, 'down: the new functions are gone');
 select pg_temp.ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and ((table_name = 'app_roles' and column_name = 'is_owner') or (table_name = 'people' and column_name = 'kind') or (table_name = 'activity' and column_name = 'updated_at'))), 'down: the three columns are gone');
@@ -380,6 +382,8 @@ select pg_temp.ok((select pg_get_functiondef(to_regprocedure('public.share_set(u
 select pg_temp.ok((select count(*) from pg_policies where policyname in ('meds_taken_owner_read', 'activity_owner_read', 'consults_owner_read')) = 0 and (select count(*) from pg_trigger where tgname in ('app_roles_owner_guard', 'activity_updated_at')) = 0, 'down: policies and triggers are gone');
 select pg_temp.ok((select count(*) from public.carers) = 7, 'down: links made stay in carers');
 select pg_temp.ok((select pg_get_functiondef(to_regprocedure('public.request_erasure()'))) not like '%is_owner%', 'down: request_erasure is the 0034 body');
+-- 0050's feed_shares policy uses is_owner(), so 0050 goes down first
+\ir ../migrations/0050_family_feed.down.sql
 \ir ../migrations/0046_who_sees_whom.down.sql
 \ir ../migrations/0046_who_sees_whom.sql
 select pg_temp.ok(to_regprocedure('public.is_owner()') is not null and (select count(*) from public.activity where updated_at is null) = 0 and (select count(*) from public.activity) = 4, 'down twice then up: back to the new model, every activity row has updated_at (the backfill)');
@@ -434,6 +438,8 @@ reset role;
 select pg_temp.ok((select count(*) from public.carers where carer_id = pg_temp.u('o')) = 0, '13: and no owner link was made');
 
 -- ===== activity.updated_at on a table of more than 1000 rows: the page cursor moves on and reaches a later row =====
+-- 0050's feed_shares policy uses is_owner(), so 0050 goes down first
+\ir ../migrations/0050_family_feed.down.sql
 \ir ../migrations/0046_who_sees_whom.down.sql
 insert into public.activity (person_id, kind, steps, started_at, source, created_at)
   select pg_temp.p('b'), 'd109page', g, now(), 'manual', now() - (g || ' seconds')::interval from generate_series(1, 1200) g;

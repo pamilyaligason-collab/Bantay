@@ -54,6 +54,11 @@ describe('session', () => {
     await signOut()
     expect(state.rows.out).toBe(true)
   })
+  it('signOut empties the family feed table so the next person on a shared phone cannot read other members\' values', async () => {
+    await db.feed.put({ id: 'bp|1', kind: 'bp', personId: 'p2', at: '2026-11-05T00:00:00.000Z', titleKey: '', valueText: '148/90 mmHg', chip: null, photoPath: null, rowId: '1' })
+    await signOut()
+    expect(await db.feed.count()).toBe(0)
+  })
   it('signOut wipes the Ask history so the next person on a shared phone cannot read it', async () => {
     await db.kv.put({ key: 'assistant.history', value: [{ role: 'user', content: 'my blood pressure' }] })
     await signOut()

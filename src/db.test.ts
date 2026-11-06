@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { db, drain, enqueue } from './db'
+import { clearFeed, db, drain, enqueue } from './db'
 
 beforeEach(async () => {
   await db.outbox.clear()
@@ -46,5 +46,14 @@ describe('outbox', () => {
   it('kv table round-trips', async () => {
     await db.kv.put({ key: 'theme', value: 'dark' })
     expect((await db.kv.get('theme'))?.value).toBe('dark')
+  })
+})
+
+describe('feed', () => {
+  it('clearFeed empties the table that holds other members\' shared values', async () => {
+    await db.feed.put({ id: 'bp|1', kind: 'bp', personId: 'p2', at: '2026-11-05T00:00:00.000Z', titleKey: '', valueText: '148/90 mmHg', chip: null, photoPath: null, rowId: '1' })
+    expect(await db.feed.count()).toBe(1)
+    await clearFeed()
+    expect(await db.feed.count()).toBe(0)
   })
 })
