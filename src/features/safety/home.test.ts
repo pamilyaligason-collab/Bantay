@@ -129,6 +129,16 @@ describe('readyRows', () => {
   })
 })
 
+describe('readyRows Offline maps value', () => {
+  const b = { dial: 3, cards: 7, ids: 1, sosLast: null, phoneFix: 0 }
+  const val = (offline: boolean, mapState?: 'Ready' | 'Not downloaded') => readyRows({ ...b, offline, mapState }).find((x) => x.title === 'Offline maps')!.value
+  it('flag off: Not ready yet; flag on: Ready or Not downloaded', () => {
+    expect(val(false, 'Ready')).toBe('Not ready yet')
+    expect(val(true, 'Ready')).toBe('Ready')
+    expect(val(true, 'Not downloaded')).toBe('Not downloaded')
+  })
+})
+
 describe('kickerOf', () => {
   it('says the freshness line (CSS upper-cases it)', () => {
     const now = Date.parse('2026-11-01T08:06:00Z')

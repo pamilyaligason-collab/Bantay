@@ -6,7 +6,13 @@ import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, type Alert } from '../safety/alerts
 import { ALERT_KEY } from './prefs'
 import { PANEL_KEY } from './panels'
 
-const flags = vi.hoisted(() => ({ worldFeeds: false, phivolcs: false, eonet: false, digest: false }))
+const flags = vi.hoisted(() => ({ worldFeeds: false, phivolcs: false, eonet: false, digest: false, offlineMaps: false }))
+const seen = vi.hoisted(() => ({ map: null as null | { center: [number, number]; zoom: number; setup?: (L: never, m: never) => void } }))
+const proto = vi.hoisted(() => ({ opts: null as null | Record<string, unknown> }))
+// LazyMap stays real; the wrapper only keeps the props World hands it (jsdom never builds the Leaflet map, so the pins are drawn by calling setup with a fake Leaflet).
+vi.mock('../safety/LazyMap', async (orig) => { const real = await orig<typeof import('../safety/LazyMap')>(); return { default: (p: Parameters<typeof real.default>[0]) => { seen.map = p; return <real.default {...p} /> } } })
+vi.mock('protomaps-leaflet', () => ({ leafletLayer: (o: Record<string, unknown>) => { proto.opts = o; return {} } }))
+vi.mock('pmtiles', () => ({ PMTiles: class {} }))
 const feed = vi.hoisted(() => ({ v: { state: 'off', news: [], digest: null } as import('./useWorldNews').WorldNews }))
 vi.mock('./useWorldNews', async (orig) => ({ ...(await orig<typeof import('./useWorldNews')>()), useWorldNews: () => feed.v }))
 vi.mock('../safety/flags', () => ({ FLAGS: flags }))
@@ -16,10 +22,11 @@ vi.mock('../location/useLocation', () => ({
 }))
 vi.mock('../location/ZonePicker', () => ({ default: () => <span>chip</span> }))
 import World from './World'
+import { basemapLayer, pickBasemap, type BasemapEntry } from '../safety/basemap'
 
 const quake: Alert = { id: 'q1', kind: 'quake', level: 'M5.1', title: 'M5.1 quake near Bohol', what: '', where: '', when: '', doNow: '', source: 'USGS', sourceUrl: null, issuedAt: new Date().toISOString(), lat: 9.7, lon: 123.9, bulletin: '' }
 
-beforeEach(async () => { await db.kv.clear(); Object.assign(flags, { worldFeeds: false, phivolcs: false, eonet: false, digest: false }); feed.v = { state: 'off', news: [], digest: null } })
+beforeEach(async () => { await db.kv.clear(); Object.assign(flags, { worldFeeds: false, phivolcs: false, eonet: false, digest: false, offlineMaps: false }); feed.v = { state: 'off', news: [], digest: null } })
 afterEach(() => { cleanup(); vi.useRealTimers() })
 const eonet = { ...quake, id: 'eonet-1', kind: 'eonet', level: null, title: 'Volcano eruption, Example Island', what: 'Open event', source: 'NASA EONET', issuedAt: '2026-11-05T00:00:00Z', lat: 40, lon: 10 } as unknown as Alert
 const volc = { ...quake, id: 'v1', kind: 'volcano', level: 'Level 2', title: 'Example volcano level 2', source: 'PHIVOLCS', issuedAt: '2026-11-05T00:00:00Z' } as Alert
@@ -32,6 +39,44 @@ describe('World', () => {
     expect(screen.getByText('No official warnings right now')).toBeTruthy()
     expect(screen.getByText('No big events listed by GDACS')).toBeTruthy()
     expect(screen.queryByText(/may be out of date/i)).toBeNull()
+  })
+  it('the map card runs edge to edge at 300 px and the key lists the pin colours', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [quake] })
+    render(<World />)
+    const card = await screen.findByTestId('world-map')
+    expect(card.parentElement!.parentElement!.className).toBe('wd-bleed') // LazyMap region inside the bleed wrapper (negative gutter in world.css)
+    expect(card.style.getPropertyValue('--h')).toBe('300px')
+    expect(screen.getByText('You').parentElement!.querySelector('.wd-dot.lm-you')).toBeTruthy()
+    await waitFor(() => expect(document.querySelector('.wd-dot.wd-quake')).toBeTruthy()) // the key dot
+  })
+  it('pins keep their wm-<kind> classes on the map itself', async () => {
+    await db.kv.put({ key: ALERTS_KEY, value: [quake, volc] })
+    render(<World />)
+    await waitFor(() => expect(document.querySelectorAll('.wd-dot.wd-quake, .wd-dot.wd-volcano').length).toBe(2)) // the pins are in by now
+    const drawn: { at: number[]; o: { className: string } }[] = []
+    const L = { circleMarker: (at: number[], o: { className: string }) => { const m = { bindTooltip: () => m, addTo: () => m }; drawn.push({ at, o }); return m } }
+    seen.map!.setup!(L as never, {} as never)
+    expect(drawn.map((d) => d.o.className).sort()).toEqual(['lm-me', 'wm wm-quake', 'wm wm-volcano']) // the blue dot for the family place, then one coloured pin per alert
+    expect(drawn.find((d) => d.o.className === 'wm wm-quake')!.at).toEqual([9.7, 123.9])
+  })
+  it('flag on: at the start view of the card (zoom 4 over the Philippines) the world overview streams, and its labels are English', async () => {
+    flags.offlineMaps = true
+    render(<World />)
+    await screen.findByTestId('world-map')
+    const { center: [lat, lon], zoom } = seen.map!
+    expect(zoom).toBe(4) // inside the world file's zoom 0-6, so the overview, not the area files and not OSM pictures
+    const WORLD: BasemapEntry = { code: 'world', version: 1, checksum: 'w1', size: 10, path: 'world/basemap-w1.pmtiles', bounds: [60, -15, 160, 55], minzoom: 0, maxzoom: 6 }
+    const choice = pickBasemap({ lat, lon, zoom }, { online: true, entries: [WORLD], stored: [] })
+    expect(choice).toEqual({ kind: 'stream', entry: WORLD })
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://files.test')
+    const on: Record<string, () => void> = {}
+    const added: unknown[] = []
+    const group = { on: (e: string, f: () => void) => { on[e] = f }, addLayer: (l: unknown) => { added.push(l) } }
+    basemapLayer({ layerGroup: () => group, tileLayer: () => ({ osm: true }) } as never, choice)
+    on.add!()
+    await waitFor(() => expect(proto.opts).not.toBeNull())
+    expect(proto.opts).toMatchObject({ lang: 'en', url: 'https://files.test/storage/v1/object/public/region-packs/world/basemap-w1.pmtiles' })
+    vi.unstubAllEnvs()
   })
   it('R1 stopped ingest (checked 10 days ago): no "none" lines, the outdated note shows', async () => {
     await db.kv.put({ key: CHECKED_KEY, value: new Date(Date.now() - 10 * 86_400_000).toISOString() })

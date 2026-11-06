@@ -44,6 +44,8 @@ export interface PackRow {
   /** The unit whose row holds the NOAH file for this unit (General Santos reads South Cotabato's). */
   hazardsFrom?: string
   hazards?: { checksum: string; bounds?: Record<string, number[]>; blob: Blob }
+  /** The unit's PMTiles street map (D-131), stored whole so it draws offline. `bounds` = west, south, east, north. */
+  basemap?: { checksum: string; bounds: [number, number, number, number]; blob: Blob; savedAt: string }
 }
 
 class BantayDB extends Dexie {

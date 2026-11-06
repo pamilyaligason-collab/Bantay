@@ -1,8 +1,12 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import 'fake-indexeddb/auto'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { db } from '../../db'
 import { layerState } from './hazardsLayers'
 import type { HazardState } from './useHazards'
 
+const F = vi.hoisted(() => ({ localPacks: false, offlineMaps: false }))
+vi.mock('./flags', () => ({ FLAGS: F }))
 vi.mock('./store', () => ({ useKv: (_k: string, fb: unknown) => fb }))
 let hz: HazardState = { status: 'off', levels: null, size: null, busy: false, download: () => {} }
 vi.mock('./useHazards', () => ({ useHazards: () => hz }))
@@ -58,5 +62,57 @@ describe('HazardsPage with the hazard file', () => {
     expect(screen.getByTestId('layer-caption').textContent).toBe('Not checked for this place yet.')
     expect(screen.getByTestId('noah-missing')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Download hazard map/ })).toBeNull()
+  })
+})
+
+describe('HazardsPage rings and the map layer (flag localPacks)', () => {
+  const seed = () => db.packs.put({ code: '0701200000', version: 1, checksum: 'x', name: 'Bohol', neighbours: [], places: [], fetchedAt: 1, usedAt: 1, pinned: true, hazards: { checksum: 'h', bounds: { flood: [123.7, 9.5, 124.7, 10.2], landslide: [123.7, 9.5, 124.7, 10.2], surge: [123.7, 9.5, 124.7, 10.2] }, blob: new Blob(['x']) } } as never)
+  afterEach(async () => { F.localPacks = false; await db.packs.clear() })
+  const ring = (id: string) => screen.getByTestId(`hz-ring-${id}`)
+
+  it('flag off: no rings, no legend, today\'s page', async () => {
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    expect(screen.queryByTestId('hz-rings')).toBeNull()
+    expect(screen.queryByTestId('hz-legend')).toBeNull()
+  })
+  it('six rings by state: earthquake filled, NOAH levels filled or empty or dashed, tsunami and liquefaction dashed', async () => {
+    F.localPacks = true
+    hz = { ...hz, status: 'ready', levels: { flood: 2, landslide: null, surge: 0 } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    expect(within(screen.getByTestId('hz-rings')).getAllByRole('img').map((i) => i.getAttribute('aria-label'))).toEqual([
+      'Earthquake: VIII', 'Flood: Medium', 'Landslide: from HazardHunterPH', "Storm surge: no mapped hazard in NOAH's maps (100-year scenario). Not a promise of safety.", 'Tsunami: from HazardHunterPH', 'Liquefaction: from HazardHunterPH'
+    ])
+    expect(['quake', 'flood', 'landslide', 'surge', 'tsunami', 'liquefaction'].map((id) => ring(id).getAttribute('data-state'))).toEqual(['filled', 'filled', 'dashed', 'none', 'dashed', 'dashed'])
+    expect(ring('flood').getAttribute('data-level')).toBe('2')
+    expect(ring('flood').textContent).toContain('Medium')
+    expect(ring('surge').textContent).not.toMatch(/none|safe/i)
+    expect(screen.getByTestId('hz-rings').parentElement!.textContent).toContain('Dashed rings are from HazardHunterPH.')
+  })
+  it('the layer overlay (its legend) shows only with a stored hazard file, only for a layer with a level here, and follows the switch', async () => {
+    F.localPacks = true
+    hz = { ...hz, status: 'ready', levels: { flood: 2, landslide: null, surge: 1 } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    await new Promise((r) => setTimeout(r, 60))
+    expect(screen.queryByTestId('hz-legend')).toBeNull() // levels, but no file stored
+    cleanup()
+    await seed()
+    render(<Page place={dampas} />)
+    await waitFor(() => expect(screen.getByTestId('hz-legend').textContent).toBe('Flood levelLowMediumHigh'))
+    fireEvent.click(screen.getByRole('button', { name: 'Landslide' }))
+    await waitFor(() => expect(screen.queryByTestId('hz-legend')).toBeNull()) // no landslide level for this place: today's caption only
+    expect(screen.getByTestId('layer-caption').textContent).toContain('Landslide reading from HazardHunterPH: Low. The map shows your place only')
+    fireEvent.click(screen.getByRole('button', { name: 'Storm surge' }))
+    await waitFor(() => expect(screen.getByTestId('hz-legend').textContent).toContain('Storm surge level'))
+    expect(screen.getAllByRole('region', { name: 'Map of your place' }).length).toBe(1)
+  })
+  it('hazard levels and their wording are untouched: the caption is still layerState\'s', async () => {
+    F.localPacks = true
+    hz = { ...hz, status: 'ready', levels: { flood: 3, landslide: 0, surge: 0 } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    expect(screen.getByTestId('layer-caption').textContent).toContain('Flood level from NOAH: High (about 10 m accuracy).')
   })
 })

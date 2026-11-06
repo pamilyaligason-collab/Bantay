@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import 'fake-indexeddb/auto'
+import { renderHook, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { db } from '../../db'
 import { hazardsFor } from './hazardCards'
-import { layerState, NOAH_URL, readDate } from './hazardsLayers'
+import { hazardOverlay, hazardPaintRules, LEVEL_INK, layerState, noneRingText, NOAH_URL, readDate, ringsFor, useHazardBlob } from './hazardsLayers'
 
 const dampas = hazardsFor('dampas')
 
@@ -24,5 +27,105 @@ describe('constants and dates', () => {
   it('readDate', () => {
     expect(readDate('HazardHunterPH, Dampas pin 9.6, 123.8, read 2026-10-17')).toBe('17 Oct 2026')
     expect(readDate('no date')).toBeNull()
+  })
+})
+
+describe('ringsFor', () => {
+  const by = (rs: ReturnType<typeof ringsFor>) => Object.fromEntries(rs.map((r) => [r.id, r]))
+  it('six rings in the board order; earthquake filled from the HazardHunterPH intensity, Dampas VIII is 8 tenths and red', () => {
+    const rs = ringsFor(dampas, null)
+    expect(rs.map((r) => r.label)).toEqual(['Earthquake', 'Flood', 'Landslide', 'Storm surge', 'Tsunami', 'Liquefaction'])
+    expect(by(rs).quake).toMatchObject({ state: 'filled', word: 'VIII', level: 3, fill: 0.8 })
+  })
+  it('no levels on the phone: the three NOAH rings, tsunami and liquefaction are all dashed', () => {
+    const r = by(ringsFor(dampas, null))
+    for (const id of ['flood', 'landslide', 'surge', 'tsunami', 'liquefaction']) expect(r[id]).toMatchObject({ state: 'dashed', word: '--', fill: 0 })
+    expect(by(ringsFor(dampas, { flood: null, landslide: null, surge: null })).flood!.state).toBe('dashed')
+  })
+  it('NOAH levels: 1 Low a third green, 2 Medium two thirds amber, 3 High full red, 0 None empty and solid', () => {
+    const r = by(ringsFor(dampas, { flood: 1, landslide: 2, surge: 3 }))
+    expect(r.flood).toMatchObject({ state: 'filled', word: 'Low', level: 1 })
+    expect(r.flood!.fill).toBeCloseTo(1 / 3)
+    expect(r.landslide).toMatchObject({ word: 'Medium', level: 2 })
+    expect(r.landslide!.fill).toBeCloseTo(2 / 3)
+    expect(r.surge).toMatchObject({ word: 'High', level: 3, fill: 1 })
+    expect(by(ringsFor(dampas, { flood: 0, landslide: null, surge: null })).flood).toMatchObject({ state: 'none', word: 'No hazard mapped', level: 0, fill: 0 })
+  })
+  it('tsunami and liquefaction stay dashed even with every NOAH level in; no readings at all gives a dashed earthquake', () => {
+    const r = by(ringsFor(dampas, { flood: 3, landslide: 3, surge: 3 }))
+    expect(r.tsunami!.state).toBe('dashed')
+    expect(r.liquefaction!.state).toBe('dashed')
+    expect(by(ringsFor(null, null)).quake).toMatchObject({ state: 'dashed', word: '--' })
+  })
+})
+
+describe('useHazardBlob', () => {
+  const row = (code: string, bounds?: Record<string, number[]>) => ({ code, version: 1, checksum: 'x', name: code, neighbours: [], places: [], fetchedAt: 1, usedAt: 1, pinned: true, ...(bounds ? { hazards: { checksum: 'h', bounds, blob: new Blob(['x']) } } : {}) })
+  const later = () => new Promise((r) => setTimeout(r, 60))
+  it("gives the stored file only when on, inside that layer's bounds; a layer the file does not list gets none", async () => {
+    await db.packs.clear()
+    await db.packs.put(row('A', { flood: [123.7, 9.5, 124.7, 10.2] }) as never)
+    const off = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', false, 'A'))
+    const on = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', true, 'A'))
+    const outside = renderHook(() => useHazardBlob(14.5, 121, 'flood', true, 'A'))
+    const unlisted = renderHook(() => useHazardBlob(9.64, 123.87, 'surge', true, 'A'))
+    await waitFor(() => expect(on.result.current).not.toBeNull())
+    await later()
+    expect(off.result.current).toBeNull()
+    expect(outside.result.current).toBeNull()
+    expect(unlisted.result.current).toBeNull()
+  })
+  it('a pack row with no hazard file gives none', async () => {
+    await db.packs.clear()
+    await db.packs.put(row('B') as never)
+    const none = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', true, 'B'))
+    await later()
+    expect(none.result.current).toBeNull()
+  })
+  it("reads the unit's own file, not the first stored file whose box overlaps", async () => {
+    await db.packs.clear()
+    const withBlob = (code: string, text: string, extra = {}) => ({ ...row(code, { flood: [123.7, 9.5, 124.7, 10.2] }), hazards: { checksum: 'h', bounds: { flood: [123.7, 9.5, 124.7, 10.2] }, blob: { tag: text } }, ...extra })
+    await db.packs.put(withBlob('A', 'first') as never)
+    await db.packs.put(withBlob('B', 'second') as never)
+    await db.packs.put({ ...row('C'), hazardsFrom: 'B' } as never)
+    const b = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', true, 'B'))
+    const c = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', true, 'C'))
+    const none = renderHook(() => useHazardBlob(9.64, 123.87, 'flood', true, null))
+    await waitFor(() => expect(b.result.current).not.toBeNull())
+    await waitFor(() => expect(c.result.current).not.toBeNull())
+    expect(b.result.current).toEqual({ tag: 'second' }) // not 'first'
+    expect(c.result.current).toEqual({ tag: 'second' }) // linked row follows hazardsFrom
+    expect(none.result.current).toBeNull()
+  })
+})
+
+describe('hazard overlay', () => {
+  it('each level paints its own token colour and matches only its own level', () => {
+    const ink = { [LEVEL_INK[1]]: '#111', [LEVEL_INK[2]]: '#222', [LEVEL_INK[3]]: '#333' }
+    class Sym { constructor(public o: { fill: string; opacity: number }) {} }
+    const rules = hazardPaintRules(Sym, (t) => ink[t as keyof typeof ink] ?? '', 'flood')
+    expect(rules.map((r) => (r.symbolizer as Sym).o.fill)).toEqual(['#111', '#222', '#333'])
+    for (const [i, r] of rules.entries()) {
+      expect([1, 2, 3, 0].map((lv) => r.filter(10, { props: { level: lv } }))).toEqual([1, 2, 3, 0].map((lv) => lv === i + 1))
+      expect(r.dataLayer).toBe('flood')
+    }
+  })
+  it('a failing overlay keeps the page usable and reports once per session', async () => {
+    const reportError = vi.fn().mockResolvedValue(true)
+    vi.doMock('../monitor/errors', () => ({ reportError }))
+    const handlers: Record<string, () => void> = {}
+    const group = { on: (e: string, f: () => void) => { handlers[e] = f }, addLayer: vi.fn(), removeLayer: vi.fn() }
+    const L = { layerGroup: () => group } as never
+    hazardOverlay(L, new Blob(['too short']), 'flood')
+    handlers.add!(); handlers.add!()
+    await waitFor(() => expect(reportError).toHaveBeenCalledTimes(1))
+    await new Promise((r) => setTimeout(r, 100))
+    expect(reportError).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('level 0 ring wording', () => {
+  it('says no mapped hazard and no promise of safety, never "None" or "safe"', () => {
+    expect(noneRingText('Flood')).toBe("Flood: no mapped hazard in NOAH's maps (100-year scenario). Not a promise of safety.")
   })
 })

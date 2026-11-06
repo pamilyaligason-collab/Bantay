@@ -1,0 +1,8 @@
+{
+  "basemaps": {
+    "0701200000": { "version": 1, "sha256": "2b49f016548f44ed917213c9145650fc83207d978c5297940c08e2e8067d8e46", "size": 11416670, "path": "0701200000/basemap-2b49f016548f44ed917213c9145650fc83207d978c5297940c08e2e8067d8e46.pmtiles", "bounds": [123.7, 9.5, 124.7, 10.2], "minzoom": 0, "maxzoom": 15 },
+    "1206300000": { "version": 1, "sha256": "73a97538de0af3a87e7da9860a5c69d3df383157788e347f05bb9f4ad6ad3de0", "size": 19447477, "path": "1206300000/basemap-73a97538de0af3a87e7da9860a5c69d3df383157788e347f05bb9f4ad6ad3de0.pmtiles", "bounds": [124.6, 5.9, 125.4, 6.6], "minzoom": 0, "maxzoom": 15 },
+    "1230800000": { "pack": "1206300000" }
+  },
+  "world": { "version": 1, "sha256": "6e904ac9639965dd65ee8b457b062153d01e160f6ab9be9af3a496af02776eab", "size": 8843473, "path": "world/basemap-6e904ac9639965dd65ee8b457b062153d01e160f6ab9be9af3a496af02776eab.pmtiles", "bounds": [60, -15, 160, 55], "minzoom": 0, "maxzoom": 6 }
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { type HazardState, useHazards } from './useHazards'
+import { useUnit } from './usePacks'
 import places from '../../data/safety/places.json'
 import { HOME_ZONES } from '../location/geo'
 import { GroupedList, Row, Section, Segmented, type Tint } from '../look'
@@ -8,7 +9,8 @@ import { spotsFor } from '../rescuemap/logic'
 import { coversHere } from './dial'
 import { type Entry, OVERRIDES_KEY, type Overrides } from './entries'
 import { hazardLabel, hazardsFor, hazardStatus, type HazardCard, type Tone } from './hazardCards'
-import { LAYERS, layerState, NOAH_URL, readDate, type LayerId } from './hazardsLayers'
+import { FLAGS } from './flags'
+import { hazardOverlay, LAYERS, layerState, NOAH_URL, noneRingText, readDate, ringsFor, useHazardBlob, type LayerId, type RingData } from './hazardsLayers'
 import LazyMap from './LazyMap'
 import type { Place } from './SafetyPages'
 import { useKv } from './store'
@@ -35,6 +37,21 @@ const cardRow = (c: HazardCard) => (
   <Row key={c.id} icon={ICON[c.id]} tint={c.tone === 'warn' ? 'red' : c.tone === 'good' ? 'green' : 'none'} title={c.title} sub={c.id === 'quake' ? c.todo : c.readings[0]?.value ?? 'Not confirmed yet'} badge={hazardLabel(c)} badgeTint={BADGE[c.tone]} />
 )
 
+/** One ring: filled to the level, empty when NOAH maps nothing, dashed when there is no reading on this phone. The text is inside the ring and in its name (ML-40). */
+function HzRing({ r }: { r: RingData }) {
+  const len = 2 * Math.PI * 26
+  return (
+    <div className="hz-ring" data-testid={`hz-ring-${r.id}`} data-state={r.state} data-level={r.level}>
+      <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={r.state === 'none' ? noneRingText(r.label) : `${r.label}: ${r.state === 'dashed' ? 'from HazardHunterPH' : r.word}`}>
+        <circle className="hz-rg-track" cx="32" cy="32" r="26" fill="none" strokeWidth="7" />
+        {r.state === 'filled' && <circle className="hz-rg-val" cx="32" cy="32" r="26" fill="none" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${len * r.fill} ${len}`} transform="rotate(-90 32 32)" />}
+        <text className="hz-rg-t" x="32" y="36" textAnchor="middle">{r.word}</text>
+      </svg>
+      <span className="hz-ring-l">{r.label}</span>
+    </div>
+  )
+}
+
 const mb = (n: number) => `${Math.max(1, Math.round(n / 1_000_000))} MB`
 /** Flag localPacks: where the NOAH reading comes from, or how to get it onto the phone. Nothing when the flag is off. */
 function HazardFile({ hzs }: { hzs: HazardState }) {
@@ -51,6 +68,9 @@ function HazardFile({ hzs }: { hzs: HazardState }) {
 export default function HazardPage({ place }: { place: Place }) {
   const [layer, setLayer] = useState<LayerId>('flood')
   const hzs = useHazards(place)
+  // The NOAH layer over the map: only where a hazard file is on the phone and has a level for this place (null = not checked here).
+  const unit = useUnit(place)
+  const blob = useHazardBlob(place.weather.lat, place.weather.lon, layer, FLAGS.localPacks && hzs.status === 'ready' && hzs.levels?.[layer] != null, unit)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const v = coversHere(place) ? hazardsFor(place.zone) : null
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
@@ -89,11 +109,18 @@ export default function HazardPage({ place }: { place: Place }) {
             <div className="rw-txt"><b className="hz-name">{zone.name}</b><span className="rw-sub">Home zone · {zone.name.split(', ')[1] ?? 'Philippines'}</span></div>
           </div>
           <p className="hz-status" data-tone={bad ? 'warn' : 'good'}>{status}.</p>
+          {FLAGS.localPacks && (
+            <>
+              <div className="hz-rings" data-testid="hz-rings">{ringsFor(v, hzs.levels).map((r) => <HzRing key={r.id} r={r} />)}</div>
+              <p className="hz-ringnote">Dashed rings are from HazardHunterPH.</p>
+            </>
+          )}
         </div>
       </Section>
       <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
-      <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}`} label="Map of your place" testId="hazards-map"
-        setup={(L, m) => { L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-zone', interactive: false }).addTo(m) }} />
+      <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}|${blob ? layer : '-'}|${blob?.size ?? 0}`} label="Map of your place" testId="hazards-map"
+        setup={(L, m) => { if (blob) hazardOverlay(L, blob, layer).addTo(m); L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-zone', interactive: false }).addTo(m) }} />
+      {blob && <p className="hz-legend" data-testid="hz-legend"><b>{ls.label} level</b><i data-level="1">Low</i><i data-level="2">Medium</i><i data-level="3">High</i></p>}
       <p className="hz-cap" data-testid="layer-caption"><span>{ls.text}</span>{ls.reading !== null && <b className="rw-badge" data-tint={BADGE[ls.tone]}>{ls.reading}</b>}</p>
       <HazardFile hzs={hzs} />
       <Section title="Ground and shaking">

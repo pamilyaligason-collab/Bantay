@@ -31,6 +31,8 @@ import { boardTopics, tintOf } from './FirstAidList'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import { liveSignals, type PhoneCheck, phoneAlertCount } from './stormMode'
 import { useKv } from './store'
+import { basemapAt } from './OfflineMaps'
+import { useStoredBasemaps } from './basemap'
 import { ddb } from '../docs/store'
 import { useEffect, useRef, useState } from 'react'
 import './safety.css'
@@ -103,13 +105,13 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; place?: 
 }
 
 /** The "Be ready" list under the go-bag card. Offline maps is always listed (honest while no pack exists), Phone alerts only while a phone setting needs fixing. */
-export function readyRows(p: { dial: number; cards: number; ids: number | null; offline: boolean; sosLast: string | null; phoneFix: number }): HomeRow[] {
+export function readyRows(p: { dial: number; cards: number; ids: number | null; offline: boolean; mapState?: 'Ready' | 'Not downloaded'; sosLast: string | null; phoneFix: number }): HomeRow[] {
   const rows: HomeRow[] = [
     { href: '#safety/dial', icon: 'phone', tint: 'red', title: 'Hotlines', value: p.dial ? plural(p.dial, 'number') : 'No numbers yet' },
     { href: '#safety/cards', icon: 'file', tint: 'teal', title: 'Safety cards', value: plural(p.cards, 'guide') },
     { href: '#docs', icon: 'fp', tint: 'purple', title: 'IDs and insurance', sub: idsLine(p.ids) },
     // no map pack exists yet, so the board's "Bohol ready" would be fake: say so honestly
-    { href: '#safety/offline', icon: 'map', tint: 'teal', title: 'Offline maps', value: p.offline ? undefined : 'Not ready yet' },
+    { href: '#safety/offline', icon: 'map', tint: 'teal', title: 'Offline maps', value: p.offline ? p.mapState : 'Not ready yet' },
     { href: '#safety/sos', icon: 'sos', tint: 'red', title: 'Past SOS', value: p.sosLast ?? 'None sent' }
   ]
   if (p.phoneFix > 0) rows.push({ href: '#safety/phonewarn', icon: 'bell', tint: 'amber', title: 'Phone alerts', value: p.phoneFix === 1 ? '1 needs fixing' : `${p.phoneFix} need fixing` })
@@ -149,6 +151,8 @@ function BeReady({ place }: { place: Place }) {
   const sosRaw = useKv<SosEvent[]>(HISTORY_KEY, NONE_S)
   const phoneFix = phoneAlertCount(useKv<PhoneCheck | null>(KEY_PHONE_CHECK, null))
   const [ids, setIds] = useState<number | null>(null)
+  const storedMaps = useStoredBasemaps()
+  const mapState = FLAGS.offlineMaps ? (basemapAt(storedMaps, place.weather.lat, place.weather.lon) ? 'Ready' : 'Not downloaded') : undefined
   useEffect(() => { let on = true; void savedCards().then((v) => { if (on) setIds(v) }); return () => { on = false } }, [])
   const sos = Array.isArray(sosRaw) ? sosRaw.filter((e) => e && Number.isFinite(e.at)) : []
   const sosLast = sos[0] ? new Date(sos[0].at).toLocaleDateString('en-PH', { day: 'numeric', month: 'short' }) : null
@@ -161,7 +165,7 @@ function BeReady({ place }: { place: Place }) {
         <span className="sf-bag-a">{done === 0 ? 'Start packing' : done < total ? 'Keep packing' : 'Packed'}</span>
         <progress className="sf-bar" max={total} value={done} aria-label={`${done} of ${total} packed`} />
       </a>
-      <GroupedList icons label="Be ready">{readyRows({ dial: dialCount(place, overrides), cards: CARDS.length, ids, offline: FLAGS.offlineMaps, sosLast, phoneFix }).map(asRow)}</GroupedList>
+      <GroupedList icons label="Be ready">{readyRows({ dial: dialCount(place, overrides), cards: CARDS.length, ids, offline: FLAGS.offlineMaps, mapState, sosLast, phoneFix }).map(asRow)}</GroupedList>
     </Section>
   )
 }

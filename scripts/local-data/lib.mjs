@@ -119,3 +119,46 @@ export function hazardsEntry(code, manifest, rows) {
   if (!latest) return undefined
   return { pack, version: latest.version, checksum: latest.checksum, size: latest.size_bytes, path: latest.storage_path, bounds: manifest[pack].bounds }
 }
+
+const mapFile = (m) => ({ version: m.version, checksum: m.sha256, size: m.size, path: m.path, bounds: m.bounds, minzoom: m.minzoom, maxzoom: m.maxzoom })
+
+/** index.json basemap entry for one unit, from the seed manifest (basemaps.json). GenSan is inside South Cotabato's file, so it carries pack: "1206300000" like its
+ *  hazards entry. No region_packs row backs a basemap (its layer check allows only places and hazards, 0045): the build record is the manifest. */
+export function basemapEntry(code, manifest) {
+  const m = manifest.basemaps?.[code]
+  const src = m && manifest.basemaps[m.pack ?? code]
+  if (!src?.sha256) return undefined
+  return { pack: m.pack ?? code, ...mapFile(src) }
+}
+
+/** index.json top-level world overview entry (z0-6), or undefined when the manifest has none. */
+export function worldEntry(manifest) {
+  return manifest.world?.sha256 ? mapFile(manifest.world) : undefined
+}
+
+/** A copy of an index.json with basemap entries and world added. Additive only: every other key, pack and order is kept as read. */
+export function withBasemaps(index, manifest) {
+  const out = { ...index, packs: index.packs.map((p) => { const basemap = basemapEntry(p.code, manifest); return basemap ? { ...p, basemap } : p }) }
+  const world = worldEntry(manifest)
+  if (world) out.world = world
+  return out
+}
+
+/** A copy of the manifest keeping only files that answer at the public URL: a HEAD, else a 0-0 range read, with 200 or 206. A file that does not is skipped with a log line,
+ *  so the weekly index never lists a basemap (or the world overview) that is not uploaded. A pointer (GenSan) follows its target. */
+export async function reachableManifest(manifest, base, fetchFn = fetch, log = console.log) {
+  const ok = async (path) => {
+    const url = `${base}${path}`
+    for (const init of [{ method: 'HEAD' }, { headers: { range: 'bytes=0-0' } }]) {
+      try { const r = await fetchFn(url, init); if (r.status === 200 || r.status === 206) return true } catch { /* try the next probe */ }
+    }
+    return false
+  }
+  const out = { ...manifest, basemaps: { ...manifest.basemaps } }
+  for (const [code, m] of Object.entries(manifest.basemaps ?? {})) {
+    if (m.pack || !m.sha256) continue
+    if (!(await ok(m.path))) { log(`basemap ${code}: ${m.path} not reachable, left out of index.json`); delete out.basemaps[code] }
+  }
+  if (manifest.world?.sha256 && !(await ok(manifest.world.path))) { log(`basemap world: ${manifest.world.path} not reachable, left out of index.json`); delete out.world }
+  return out
+}

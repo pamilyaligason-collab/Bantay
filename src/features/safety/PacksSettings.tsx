@@ -5,7 +5,7 @@ import '../shell/shell.css'
 import { PINNED, syncPacks } from './packs'
 
 const kb = (n: number) => (n < 1_000_000 ? `${Math.max(1, Math.round(n / 1000))} KB` : `${(n / 1_000_000).toFixed(1)} MB`)
-const size = (r: PackRow) => JSON.stringify(r.places).length + (r.hazards?.blob.size ?? 0)
+const size = (r: PackRow) => JSON.stringify(r.places).length + (r.hazards?.blob.size ?? 0) + (r.basemap?.blob.size ?? 0)
 const day = (t: number) => new Date(t).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
 
 /** Settings > About, flag localPacks: "Safety data on this phone", one row per area with a delete button, and a button for nearby areas. */
@@ -31,7 +31,7 @@ export default function PacksSettings() {
       </div>
       {(rows ?? []).map((r) => (
         <div key={r.code} data-testid={`pack-row-${r.code}`}>
-          <div className="sh-grow"><b>{r.name}</b><div className="sh-sub">{kb(size(r))}{r.hazards ? ' · hazard map' : ''}{(PINNED as readonly string[]).includes(r.code) ? ' · home area' : ''}</div></div>
+          <div className="sh-grow"><b>{r.name}</b><div className="sh-sub">{kb(size(r))}{r.hazards ? ' · hazard map' : ''}{r.basemap ? ' · street map' : ''}{(PINNED as readonly string[]).includes(r.code) ? ' · home area' : ''}</div></div>
           <button type="button" className="sh-pill sh-ghost sh-small" aria-label={`Delete ${r.name}`} onClick={() => void db.packs.delete(r.code)}>Delete</button>
         </div>
       ))}

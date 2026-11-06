@@ -57,6 +57,11 @@ describe('Privacy screen', () => {
     expect(text).toContain('a photo you scan goes from a function on the family\'s own Supabase project straight to OpenRouter, with no relay') // photos skip the relay (records-extract)
     expect(text).toContain('Other official sites open in your browser only when you tap their link.')
     expect(text).not.toMatch(/Sentry|SMS/i)
+    // D-131: the map lines match what LazyMap and the Rescue map do (OSM pictures with the flag off; with it on the choice is made once when the map opens, not per pan or zoom)
+    expect(text).toContain('street map pictures on the Safety maps and the Rescue map')
+    expect(text).toContain('used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started')
+    expect(text).not.toContain('cannot be read')
+    expect(text).toContain("the map files the Safety maps and the Rescue map read from the family's own project")
   })
   it('the AI switch starts on and is stored in kv privacy.ai', async () => {
     render(<PrivacyScreen />)

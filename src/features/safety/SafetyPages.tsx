@@ -219,7 +219,8 @@ const SOURCES: [string, string, string][] = [
   ['Windy, Ventusky, PAGASA Panahon', 'Weather and storm maps', 'https://www.windy.com/'],
   ['PAGASA public alerts (CC BY 4.0)', 'Wind signals and flood advisories, read from the PAGASA public alert feed', 'https://publicalert.pagasa.dost.gov.ph/'],
   ['GDACS', 'Storm and quake alerts', 'https://www.gdacs.org/'],
-  ['OpenStreetMap contributors', 'Map data (ODbL)', 'https://www.openstreetmap.org/copyright']
+  ['OpenStreetMap contributors', 'Map data (ODbL)', 'https://www.openstreetmap.org/copyright'],
+  ['Protomaps', 'Map rendering and the area map build', 'https://protomaps.com/']
 ]
 
 /** In-app list of where Safety information comes from. Each phone number also shows its own source behind the i button on Quick dial. */
