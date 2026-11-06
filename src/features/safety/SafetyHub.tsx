@@ -27,6 +27,7 @@ import { ABROAD_SOURCE } from './dial'
 import { StormCard } from './StormCard'
 import { SafetyHead } from './SafetyHead'
 import { ICON, TOPICS } from './FirstAid'
+import { boardTopics, tintOf } from './FirstAidList'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import { liveSignals, type PhoneCheck, phoneAlertCount } from './stormMode'
 import { useKv } from './store'
@@ -174,7 +175,7 @@ export function FirstAidGrid() {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   const quick = FA_QUICK.map(([id, icon, name, sub, tint]) => ({ id, icon, name, sub, tint, tl: TOPICS.find((x) => x.id === id)?.tl })).filter((c) => c.tl)
-  const rest = TOPICS.filter((t) => !FA_QUICK.some((q) => q[0] === t.id)).map((t) => ({ id: t.id, icon: (ICON[t.id] ?? 'aid') as IconName, name: t.title, sub: null, tint: t.urgency === 'high' ? 'red' as const : 'purple' as const, tl: t.tl }))
+  const rest = boardTopics().filter((t) => !FA_QUICK.some((q) => q[0] === t.id)).map((t) => ({ id: t.id, icon: (ICON[t.id] ?? 'aid') as IconName, name: t.title, sub: null, tint: tintOf(t.id) as string | undefined, tl: t.tl })) // the All topics order and tints
   const all = [...quick, ...rest]
   const shown = open ? all : all.slice(0, FA_ROWS * 2)
   const toggle = () => {

@@ -11,7 +11,7 @@ const PREFIX = '#safety/firstaid/'
 const BOARD: [string, string][] = [['stroke', 'red'], ['dengue-warning-signs', 'purple'], ['cpr', 'red'], ['choking', 'amber'], ['bleeding', 'red'], ['heart-attack', 'red'], ['burns', 'amber'], ['heat-stroke', 'amber'], ['seizure', 'purple'], ['fainting', 'blue'], ['fracture', 'blue'], ['drowning', 'blue'], ['snake-bite', 'green'], ['dog-bite-rabies', 'amber'], ['low-sugar', 'teal'], ['allergic-reaction', 'red'], ['falls', 'teal']]
 const rank = (id: string) => { const i = BOARD.findIndex(([b]) => b === id); return i < 0 ? BOARD.length : i }
 export const boardTopics = () => [...TOPICS].sort((a, b) => rank(a.id) - rank(b.id))
-const tintOf = (id: string) => BOARD.find(([b]) => b === id)?.[1]
+export const tintOf =(id: string) => BOARD.find(([b]) => b === id)?.[1]
 
 export default function FirstAidList() {
   const cpr = TOPICS.find((t) => t.id === 'cpr')

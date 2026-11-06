@@ -41,7 +41,7 @@ export default function MediaLinks() {
             <span className="cm-sub cm-chan">Channel: {v.channel}</span></div>
         ))}
       </Carousel>
-      <p className="cm-sub" role="status">{online ? 'Radio plays here after a tap. Videos use YouTube privacy mode. Links open their sites.' : 'You are offline. These open when you are back online.'}</p>
+      <p className="cm-sub" role="status">{online ? 'Radio plays here after a tap. Radio stops when you leave Calm. Videos use YouTube privacy mode. Links open their sites.' : 'You are offline. These open when you are back online.'}</p>
     </Section>
   )
 }

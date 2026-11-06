@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const person = (id: string, name: string) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe: id === 'me' })
@@ -12,14 +12,18 @@ const st = {
 const hp = { acting: false }
 vi.mock('./useHealthPerson', () => ({ useHealthPerson: () => ({ ...st, ownId: 'me', setPersonId, acting: hp.acting }) }))
 const va = { can: false, busy: null as string | null, err: '', go: vi.fn() }
-vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => null, useViewAs: () => va }))
+vi.mock('../viewas/viewAs', async (orig) => ({ ...(await orig<typeof import('../viewas/viewAs')>()), useActingPersonId: () => null, useViewAs: () => va }))
+const mem = { owner: false }
+vi.mock('../auth/session', async (orig) => ({ ...(await orig<typeof import('../auth/session')>()), getMember: async () => ({ userId: 'u1', personId: 'me', role: 'admin', handle: null, isOwner: mem.owner }) }))
+const roster = { login: null as string | null }
+vi.mock('../admin/desk/viewAsData', () => ({ loadRoster: async () => ({ people: [{ id: 'ma', auth_user_id: roster.login }], carers: [] }) }))
 const names = ['Aspirin', 'Bisoprolol', 'Metformin', 'Simvastatin']
 const today = { meds: [], takes: [], week: [], day: '2026-11-01', doses: names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) as object[] }
 vi.mock('./Medicines', () => ({ useToday: () => today }))
 
 import { MemberHealth } from './MemberHealth'
 
-beforeEach(() => { hp.acting = false; va.can = false; va.err = ''; va.go.mockClear(); setPersonId.mockClear(); st.ready = true; st.canMark = false; st.lockReason = null; today.doses = names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) })
+beforeEach(() => { mem.owner = false; roster.login = null; hp.acting = false; va.can = false; va.err = ''; va.go.mockClear(); setPersonId.mockClear(); st.ready = true; st.canMark = false; st.lockReason = null; today.doses = names.map((n, i) => ({ key: `k${i}`, name: n, slot: '08:00', state: 'pending' })) })
 afterEach(cleanup)
 
 describe('MemberHealth (view only)', () => {
@@ -38,7 +42,22 @@ describe('MemberHealth (view only)', () => {
     expect(screen.getByRole('link', { name: /^Questions waiting/ }).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('link', { name: /^Food and salt/ }).getAttribute('href')).toBe('#health/nutrition')
     expect(screen.getByRole('link', { name: /^Progress/ }).getAttribute('href')).toBe('#health/nudge')
-    expect(screen.getByTestId('member-footer').textContent).toBe('Ma has not shared logging with you, so you can look but not add. Ask them in Family to share.')
+    expect(screen.getByTestId('member-footer').textContent).toBe("You can see Ma but not log for them. Only the family owner can make you a carer with edit access, and only for a person with no login.")
+    expect(screen.getByTestId('member-footer').textContent).not.toMatch(/share/i)
+  })
+  it.each([
+    [true, 'u2', "Ma has their own login, so only Ma can log."],
+    [true, null, "You can see Ma's records. Logging for Ma needs a carer with edit access."]
+  ])('owner=%s login=%s gives the true sentence', async (owner, login, text) => {
+    mem.owner = owner; roster.login = login
+    render(<MemberHealth id="ma" />)
+    await waitFor(() => expect(screen.getByTestId('member-footer').textContent).toBe(text))
+  })
+  it('a non-owner admin gets the non-owner sentence even when the person has a login', async () => {
+    mem.owner = false; roster.login = 'u2'
+    render(<MemberHealth id="ma" />)
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.getByTestId('member-footer').textContent).toMatch(/^You can see Ma but not log for them\. Only the family owner/)
   })
   it('shows the lock reason when given, and no footer when you can mark', () => {
     st.lockReason = 'Ask her.'

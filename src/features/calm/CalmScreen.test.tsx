@@ -95,7 +95,7 @@ describe('Listen and watch and crisis', () => {
     expect(media.querySelector('iframe, video')).toBeNull() // nothing embeds before a tap
     expect(media.querySelectorAll('audio')).toHaveLength(1)
     expect(media.querySelector('audio')!.hasAttribute('src')).toBe(false) // and nothing streams
-    expect(media.textContent).toMatch(/Radio plays here after a tap\. Videos use YouTube privacy mode\. Links open their sites\./)
+    expect(media.textContent).toMatch(/Radio plays here after a tap\. Radio stops when you leave Calm\. Videos use YouTube privacy mode\. Links open their sites\./)
   })
   it('Relaxing radio lands on Listen and watch: #calm/listen scrolls the section into view', () => {
     const into = vi.fn(); Element.prototype.scrollIntoView = into as never

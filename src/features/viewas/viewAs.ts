@@ -115,7 +115,7 @@ export function useViewedVisibleIds(): Set<string> | null {
         const me = r?.people.find((p) => p.id === id)
         if (!r || !me?.auth_user_id) return // no login = sees only themselves
         const { shown } = visibleTo(me.auth_user_id, r.people, r.carers, false)
-        if (live) setGot({ id, ids: new Set([id, ...shown.map((v) => v.person.id)]) })
+        if (live) setGot({ id, ids: new Set([id, ...shown.filter((v) => v.records).map((v) => v.person.id)]) }) // a person they only created (records: false) is not one they can read
       } catch { /* closed */ }
     })()
     return () => { live = false }

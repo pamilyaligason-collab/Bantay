@@ -41,10 +41,10 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
         <div className="fh-acts">
           {acting ? <span className="sub fh-share">View only</span> : <a className="btn2 fh-share" href="#family/messages">Share yours</a>}
         </div>
-        {(flagged.length > 0 || photos != null || msgs != null) && (
+        {(flagged.length > 0 || !!photos || !!msgs) && (
           <GroupedList icons>
-            {flagged.map((p) => <Row key={p.id} avatar={<FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />} title={properName(p.name)} sub={flags[p.id]} href="#family" />)}
-            {photos != null && <Row icon="heart" tint="amber" title="Memories" sub="Recent photos" href="#family" />}
+            {flagged.map((p) => <Row key={p.id} avatar={<FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={32} />} title={properName(p.name)} sub={flags[p.id]} href={`#family/people/${p.id}`} />)}
+            {photos != null && photos > 0 && <Row icon="heart" tint="amber" title="Memories" sub="Recent photos" href="#family/memories" />}
             {msgs != null && msgs > 0 && <Row icon="msg" tint="blue" title={`${msgs} ${msgs === 1 ? 'message' : 'messages'} today`} href="#family/messages" />}
           </GroupedList>
         )}
