@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
-import { DEAD_KEY } from './sync'
-import { DeadSheet, SyncStatus, reasonText, statusText } from './SyncStatus'
+import { DEAD_KEY, getSyncState, startSync } from './sync'
+import { DeadSheet, SyncStatus, queuedNote, reasonText, statusText } from './SyncStatus'
 
 const ready = { ready: true, signedIn: true, offline: false }
 const none = { waiting: 0, unknown: 0, dead: 0 }
@@ -17,7 +17,11 @@ describe('statusText', () => {
     expect(statusText({ ...ready, offline: true }, none)).toBe('Offline')
     expect(statusText({ ...ready, offline: true }, { ...none, waiting: 2 })).toBe('Offline, 2 waiting to send')
   })
-  it('stuck rows count as waiting to send, never as an error link', () => expect(statusText(ready, { ...none, dead: 2 })).toBe('2 waiting to send'))
+  it('dead letters are counted apart from queued rows (D-142)', () => {
+    expect(statusText(ready, { ...none, dead: 2 })).toBe('2 could not be sent')
+    expect(statusText(ready, { waiting: 3, unknown: 0, dead: 2 })).toBe('3 waiting to send, 2 could not be sent')
+    expect(statusText({ ...ready, offline: true }, { ...none, dead: 1 })).toBe('Offline, 1 could not be sent')
+  })
 })
 
 describe('DeadSheet', () => {
@@ -51,10 +55,95 @@ describe('DeadSheet', () => {
   })
 })
 
-describe('SyncStatus', () => {
+describe('queued section (D-142)', () => {
+  beforeEach(async () => { await db.kv.clear(); await db.outbox.clear() })
   afterEach(cleanup)
+  it('lists queued rows by table with tries and the last error in plain words', async () => {
+    await db.outbox.bulkAdd([
+      { table: 'readings', op: 'insert', payload: { value: 987654 }, createdAt: 1_700_000_000_000, tries: 3, lastCode: 'HTTP500', lastAt: 1 },
+      { table: 'readings', op: 'insert', payload: {}, createdAt: 1_700_000_000_001, tries: 0 },
+      { table: 'water_entries', op: 'insert', payload: {}, createdAt: 1_700_000_000_002, tries: 1, lastCode: 'net' }
+    ])
+    render(<DeadSheet onClose={() => undefined} />)
+    expect(await screen.findAllByTestId('queued-group')).toHaveLength(2)
+    expect(document.body.textContent).toMatch(/readings \(2\)/)
+    expect(document.body.textContent).toMatch(/water entries \(1\)/)
+    expect(document.body.textContent).toMatch(/Tried 3 times\. The server had a problem/)
+    expect(document.body.textContent).toMatch(/Tried 1 time\. Waiting for a connection/)
+    expect(document.body.textContent).not.toMatch(/987654/)
+  })
+  it('Discard asks first; Keep it leaves the row, Yes deletes only that row', async () => {
+    await db.outbox.bulkAdd([
+      { table: 'readings', op: 'insert', payload: {}, createdAt: 1, tries: 0 },
+      { table: 'consults', op: 'insert', payload: {}, createdAt: 2, tries: 0 }
+    ])
+    render(<DeadSheet onClose={() => undefined} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued readings insert' }))
+    expect(await db.outbox.count()).toBe(2) // nothing deleted by the first press
+    fireEvent.click(await screen.findByRole('button', { name: 'Keep it' }))
+    expect(await db.outbox.count()).toBe(2)
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued readings insert' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, discard' }))
+    await waitFor(async () => expect((await db.outbox.toArray()).map((r) => r.table)).toEqual(['consults']))
+  })
+  it('Discard all older than 30 days asks first and keeps newer dead letters', async () => {
+    const mk = (n: number, at: number) => ({ table: 'readings', op: 'insert', clientId: `c${n}`, code: '23514', at, payload: {} })
+    await db.kv.put({ key: DEAD_KEY, value: [mk(1, Date.now() - 40 * 86_400_000), mk(2, Date.now() - 86_400_000)] })
+    render(<DeadSheet onClose={() => undefined} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard all older than 30 days' }))
+    expect(((await db.kv.get(DEAD_KEY))?.value as unknown[]).length).toBe(2)
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, discard' }))
+    await waitFor(async () => expect(((await db.kv.get(DEAD_KEY))?.value as { clientId: string }[]).map((d) => d.clientId)).toEqual(['c2']))
+  })
+})
+
+describe('SyncStatus', () => {
+  afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+  it('waiting 3, dead 0: the pill is a button and its sheet lists the tables', async () => {
+    vi.stubGlobal('fetch', () => new Promise(() => {})) // no real network: a failed fetch would flip the shared state to offline for the next test
+    await db.kv.clear(); await db.outbox.clear()
+    await db.outbox.bulkAdd(['readings', 'readings', 'consults'].map((table, i) => ({ table, op: 'insert', payload: {}, createdAt: i, tries: 0 })))
+    startSync({ url: 'https://x.supabase.test', key: 'pk', getToken: async () => 'tok' })
+    await waitFor(() => expect(getSyncState().signedIn).toBe(true))
+    render(<SyncStatus />)
+    const pill = await screen.findByRole('button', { name: '3 waiting to send' })
+    fireEvent.click(pill)
+    expect(await screen.findAllByTestId('queued-group')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Send now' })).toBeTruthy()
+  })
   it('keeps an empty live region mounted when there is nothing to say', () => {
     render(<SyncStatus />)
     expect(screen.getByRole('status').textContent).toBe('')
+  })
+})
+
+describe('queued row wording', () => {
+  it('an urgent row with a coded server failure says it will keep trying; an internal wait shows no code', () => {
+    expect(queuedNote({ tries: 0, lastCode: 'PGRST002', table: 'sos_events' })).toBe('The server had a problem. It will keep trying.')
+    expect(queuedNote({ tries: 0, lastCode: 'insert-queued' })).toBe('Waiting for the first part to be sent.')
+    expect(queuedNote({ tries: 0, lastCode: 'PGRST301', table: 'sos_events' })).not.toContain('keep trying') // an expired session needs the person: sign in again
+  })
+  it('a network failure says waiting for a connection, never Tried 0 times', () => {
+    expect(queuedNote({ tries: 0, lastCode: 'net' })).toBe('Waiting for a connection.')
+  })
+  it('a legacy row with tries and no code says only how many times', () => {
+    expect(queuedNote({ tries: 3 })).toBe('Tried 3 times.')
+    expect(queuedNote({ tries: 1 })).toBe('Tried 1 time.')
+    expect(queuedNote({ tries: 0 })).toBe('Not tried yet.')
+  })
+  it('401, PGRST301 and PGRST303 ask to sign in again, 403 stays not allowed', () => {
+    for (const c of ['401', 'auth', 'PGRST301', 'PGRST303', 'HTTP401']) expect(reasonText(c)).toBe('Sign in again to send this.')
+    expect(reasonText('HTTP403')).toMatch(/not allowed/)
+  })
+  it('a code after a failure never says Not tried yet', () => {
+    expect(queuedNote({ tries: 0, lastCode: 'error' })).not.toMatch(/Not tried yet/)
+    expect(reasonText('error')).toMatch(/went wrong/)
+  })
+})
+
+describe('queuedNote for a held SOS row', () => {
+  it('says it will keep trying, not Try again later', () => {
+    expect(queuedNote({ tries: 0, lastCode: 'HTTP503', table: 'sos_events' })).toBe('The server had a problem. It will keep trying.')
+    expect(queuedNote({ tries: 2, lastCode: 'HTTP503', table: 'readings' })).toBe('Tried 2 times. The server had a problem. Try again later. Code HTTP503.')
   })
 })

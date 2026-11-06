@@ -49,6 +49,7 @@
 .mc-line { stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .mc-dot { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
 .mc-dot.last { fill: var(--ink); }
+.mc-spread { fill: var(--ink); opacity: .12; stroke: none; }
 .mc-t { font-size: 14px; fill: var(--ink2); }
 .mc-d { font-size: 14px; fill: var(--ink2); } /* viewBox 320 wide: 14 units is 12.9 px on screen at 360 (12 gave 11 px) */
 .mc-part { margin-top: 8px; }

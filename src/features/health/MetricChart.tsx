@@ -17,6 +17,14 @@ export function chartPoints(pts: Point[], unit: string): Point[] {
   return [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, value]) => ({ takenAt: `${day}T12:00:00.000Z`, value: Math.round(value * 100) / 100 }))
 }
 
+/** Many samples a day (a watch's pulse): one point per local day at the day's average, plus that day's lowest and highest for a faint band. */
+export function dailySpread(pts: Point[]): { avg: Point[]; spread: { takenAt: string; min: number; max: number }[] } {
+  const days = new Map<string, number[]>()
+  for (const p of pts) { const k = localDay(p.takenAt); days.set(k, [...(days.get(k) ?? []), p.value]) }
+  const rows = [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, v]) => ({ takenAt: `${day}T12:00:00.000Z`, avg: Math.round(v.reduce((a, b) => a + b, 0) / v.length), min: Math.min(...v), max: Math.max(...v) }))
+  return { avg: rows.map((r) => ({ takenAt: r.takenAt, value: r.avg })), spread: rows.map((r) => ({ takenAt: r.takenAt, min: r.min, max: r.max })) }
+}
+
 const HOUR_STEPS = [1, 2, 3, 4, 6, 8, 12, 24]
 const MAX_TICKS = 6
 /** Whole-number steps for the axis (1, 2, 5, 10, 20, ...), or hour steps for sleep. Never more than 6 ticks, whatever the data (one value, a narrow span): the smallest step of at least a third of the span that gives 2 to 6 ticks,
@@ -43,7 +51,7 @@ export function tickLabel(v: number, unit: string): string {
   return m === 0 ? `${h} h` : h === 0 ? `${m} min` : `${h} h ${m}`
 }
 
-export interface ChartSpec { pts: Point[]; days: number; now: Date; band?: { low: number | null; high: number | null } | null; label: string; unit: string }
+export interface ChartSpec { pts: Point[]; spread?: { takenAt: string; min: number; max: number }[]; days: number; now: Date; band?: { low: number | null; high: number | null } | null; label: string; unit: string }
 
 /** Pure geometry for the chart so it can be tested: x by time over the window, y over the data and the band. */
 export function chartGeometry({ pts, days, now, band, unit = '' }: Pick<ChartSpec, 'pts' | 'days' | 'now' | 'band'> & { unit?: string }) {
@@ -92,7 +100,9 @@ export function dayLabelXs(x: (iso: string) => number, now: Date, min = 36): num
 /** The reading chart: a line over the last 30 (or 7) days with the normal band shaded green. Plain SVG, no library. */
 export function MetricChart(s: ChartSpec) {
   const pts = chartPoints(s.pts, s.unit)
-  const g = chartGeometry({ ...s, pts })
+  const sp = s.spread ?? []
+  const g = chartGeometry({ ...s, pts: [...pts, ...sp.flatMap((r) => [{ takenAt: r.takenAt, value: r.min }, { takenAt: r.takenAt, value: r.max }])] }) // the axis covers the daily lows and highs too
+  g.points.length = pts.length
   const vals = pts.map((p) => p.value)
   const band = s.band && (s.band.low != null || s.band.high != null) ? `, normal ${s.band.low != null ? formatNumber(s.band.low) : 'up'}${s.band.low != null && s.band.high != null ? ' to ' : ' to '}${s.band.high != null ? formatNumber(s.band.high) : 'and above'}` : ''
   const d = g.points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('')
@@ -105,6 +115,7 @@ export function MetricChart(s: ChartSpec) {
       {s.days === 7
         ? dayLabelXs(g.x, new Date(s.now)).map((x, i) => { const d = new Date(s.now); d.setDate(d.getDate() - (6 - i)); return <text key={i} x={x} y={H - 6} className="mc-d" textAnchor="middle">{d.toLocaleDateString('en-US', { weekday: 'short' })}</text> })
         : <><text x={L} y={H - 6} className="mc-t">{s.days} days ago</text><text x={W - R} y={H - 6} className="mc-t" textAnchor="end">today</text></>}
+      {sp.length > 1 && <path className="mc-spread" d={`${sp.map((r, i) => `${i ? 'L' : 'M'}${g.x(r.takenAt).toFixed(1)} ${g.y(r.max).toFixed(1)}`).join('')}${[...sp].reverse().map((r) => `L${g.x(r.takenAt).toFixed(1)} ${g.y(r.min).toFixed(1)}`).join('')}Z`} />}
       {g.points.length > 1 && <path d={d} className="mc-line" fill="none" />}
       {g.points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={i === g.points.length - 1 ? 4.5 : 3} className={i === g.points.length - 1 ? 'mc-dot last' : 'mc-dot'} />)}
     </svg>

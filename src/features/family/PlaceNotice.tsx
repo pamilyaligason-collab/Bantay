@@ -3,6 +3,7 @@ import { supabase } from '../auth/client'
 import { useSelfPersonId } from '../setup/useProfile'
 import { useKv } from '../shell/useKv'
 import { feedShareSet, shareCopy } from '../sharing/api'
+import { refreshLocation } from '../location/useLocation'
 import { useActing } from '../viewas/viewAs'
 import { familyPlacesOn } from './flags'
 import { PLACE_NOTICE_KEY, placeNoticeKey, setPlaceSharing, syncPlaceSwitch } from './placeApi'
@@ -38,13 +39,14 @@ function Notice({ selfId }: { selfId: string }) {
     if (r === 'ok') { await setPlaceSharing(selfId, false); setSeen(true) }
     else setNote(r === 'offline' ? OFFLINE_NOTE : shareCopy(r))
   }
+  const ok = () => { setSeen(true); void refreshLocation({ force: true }) } // the first pin is written now, not at the next open
   return (
     <section className="card pl-note" data-testid="place-notice" aria-label="Sharing your place">
       <p>{PLACE_NOTICE}</p>
       {note && <p role="status">{note}</p>}
       <div className="pl-note-actions">
         <button type="button" disabled={busy} onClick={() => void turnOff()}>Turn off</button>
-        <button type="button" className="pl-ok" disabled={busy} onClick={() => setSeen(true)}>OK</button>
+        <button type="button" className="pl-ok" disabled={busy} onClick={ok}>OK</button>
       </div>
     </section>
   )

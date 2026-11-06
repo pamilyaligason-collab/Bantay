@@ -1,6 +1,7 @@
 import { Icon } from '../../shell/Icon'
 import { SubHeader } from '../../shell/SubHeader'
 import { DAILY_SODIUM_MG, RECIPE_SOURCES, recipe, sodiumPerServing, stepText } from './data'
+import { RecipePhoto } from './RecipePhoto'
 import { SaltBar } from './Recipes'
 
 /** #discover/learn/recipe/<id>: salt per serving, ingredients with swaps, steps, and the Cook mode button. */
@@ -11,6 +12,7 @@ export default function Recipe({ id }: { id: string }) {
   return (
     <div className="lr" data-testid="recipe">
       <SubHeader title={r.name} backHref="#discover/learn/recipes" backLabel="Back to recipes" />
+      <div className="lr-photo"><RecipePhoto r={r} /></div>
       <div className="lr-head"><span className="eyebrow">Recipe, {r.servings} servings, {r.minutes} min</span><p className="lr-for">{r.blurb}</p></div>
       <a className="sh-pill sh-primary sh-block" href={'#discover/learn/cook/' + r.id}><Icon name="play" size={20} />Cook mode</a>
       <div className="card lr-stack" data-testid="salt">

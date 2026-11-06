@@ -165,6 +165,37 @@ describe('recipes', () => {
     expect(screen.getAllByTestId('recipe-card')).toHaveLength(n)
     expect(n).toBeGreaterThan(3)
   })
+  it('every list row has a photo or the letter tile; a photo row carries its credit and licence', () => {
+    render(<Recipes />)
+    const cards = screen.getAllByTestId('recipe-card')
+    for (const [i, r] of RECIPES.entries()) {
+      const c = cards[i]!
+      if (r.image) { expect(c.querySelector('img')).toBeTruthy(); expect(c.textContent).toContain(`Photo: ${r.image.credit}, ${r.image.licence}`) }
+      else expect(c.querySelector('[data-fallback="true"]')!.textContent).toBe(r.name.charAt(0).toUpperCase())
+      expect(within(c).getByRole('link', { name: r.name }).getAttribute('href')).toBe('#discover/learn/recipe/' + r.id)
+    }
+  })
+  it('the recipe page shows the photo with its credit link; one without a photo shows the letter tile', () => {
+    const withPic = RECIPES.find((r) => r.id === 'ampalaya-itlog')!
+    const { unmount } = render(<Recipe id={withPic.id} />)
+    expect(screen.getByTestId('recipe').querySelector('img')).toBeTruthy()
+    expect(screen.getByText(/Photo: FBenjr123, CC BY-SA 4\.0/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Wikimedia Commons/ }).getAttribute('href')).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/)
+    unmount()
+    const none = RECIPES.find((r) => !r.image)!
+    render(<Recipe id={none.id} />)
+    expect(screen.getByTestId('recipe').querySelector('[data-fallback="true"]')).toBeTruthy()
+  })
+  it('at least 14 of the 20 recipes have a Commons photo, each with a confirmed free licence and a file-page link', () => {
+    const pics = RECIPES.filter((r) => r.image)
+    expect(pics.length).toBeGreaterThanOrEqual(14)
+    for (const r of pics) {
+      expect(r.image!.licence).toMatch(/^(CC0|CC BY(-SA)? \d\.\d|Public domain)/)
+      expect(r.image!.url).toMatch(/^https:\/\/thumb\.wikimedia\.org\//)
+      expect(r.image!.sourceUrl).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/)
+      expect(r.image!.credit.length).toBeGreaterThan(1)
+    }
+  })
   it('the recipe page shows salt against the 1,500 mg day, the usual version, swaps and steps', () => {
     render(<Recipe id="sinigang-isda" />)
     const salt = screen.getByTestId('salt')

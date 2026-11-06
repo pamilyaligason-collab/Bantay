@@ -4,19 +4,20 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
-const h = vi.hoisted(() => ({ self: 'me' as string | null, acting: false, set: vi.fn(), sync: vi.fn(), rpc: vi.fn() }))
+const h = vi.hoisted(() => ({ self: 'me' as string | null, acting: false, set: vi.fn(), sync: vi.fn(), rpc: vi.fn(), refresh: vi.fn() }))
 vi.mock('../auth/client', () => ({ supabase: { rpc: (...a: unknown[]) => h.rpc(...a), auth: { signOut: () => Promise.resolve({}), getSession: () => Promise.resolve({ data: { session: null } }) } } }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => h.self }))
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: h.acting, personId: null, name: '' }) }))
 vi.mock('../sharing/api', async (orig) => ({ ...(await orig<typeof import('../sharing/api')>()), feedShareSet: h.set }))
 vi.mock('./placeApi', async (orig) => ({ ...(await orig<typeof import('./placeApi')>()), syncPlaceSwitch: h.sync }))
+vi.mock('../location/useLocation', async (orig) => ({ ...(await orig<typeof import('../location/useLocation')>()), refreshLocation: h.refresh }))
 import PlaceNotice, { OFFLINE_NOTE, PLACE_NOTICE } from './PlaceNotice'
 import { placeNoticeKey, placeSharingOn, putLivePlace } from './placeApi'
 
 const shown = () => screen.queryByTestId('place-notice')
 beforeEach(async () => {
   await db.kv.clear(); localStorage.setItem('bantay.flag.places', '1')
-  h.self = 'me'; h.acting = false; h.set.mockReset().mockResolvedValue('ok'); h.sync.mockReset().mockResolvedValue(true)
+  h.self = 'me'; h.acting = false; h.set.mockReset().mockResolvedValue('ok'); h.refresh.mockReset(); h.sync.mockReset().mockResolvedValue(true)
 })
 afterEach(() => { cleanup(); localStorage.clear() })
 
@@ -38,6 +39,17 @@ describe('first-open place notice (D-138)', () => {
     await new Promise((r) => setTimeout(r, 30))
     expect(shown()).toBeNull()
     expect(h.set).not.toHaveBeenCalled() // OK changes nothing on the server
+  })
+  it('OK triggers one forced location refresh so the first pin is written at once; Turn off triggers none', async () => {
+    const a = render(<PlaceNotice />)
+    await userEvent.click(await screen.findByRole('button', { name: 'OK' }))
+    expect(h.refresh).toHaveBeenCalledTimes(1)
+    expect(h.refresh).toHaveBeenCalledWith({ force: true })
+    a.unmount(); h.refresh.mockClear(); await db.kv.clear()
+    render(<PlaceNotice />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Turn off' }))
+    await waitFor(() => expect(shown()).toBeNull())
+    expect(h.refresh).not.toHaveBeenCalled()
   })
   it('Turn off switches place off on the server, caches it, and hides the card', async () => {
     render(<PlaceNotice />)

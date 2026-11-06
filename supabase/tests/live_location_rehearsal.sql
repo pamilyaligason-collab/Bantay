@@ -75,6 +75,8 @@ select pg_temp.ok(pg_temp.state($$select public.live_location_put(14.5, 121.0, -
 select pg_temp.ok(pg_temp.put(14.5, 121.0, now(), 150) = 'ok', '2: a battery over 100 is stored as unknown, not refused and not clamped');
 select pg_temp.ok((select f.battery_pct is null from public.family_places() f where f.person_id = pg_temp.p('b')), '2: battery 150 is null');
 select pg_temp.ok(pg_temp.put(14.7, 121.1, now() - interval '1 hour', 40) = 'ok', '2: an older fix is accepted by the call');
+select pg_temp.ok(pg_temp.put(14.5, 121.0, now() - interval '7 days 1 minute') = 'E:22023', '2: a fix older than 7 days is refused');
+select pg_temp.ok(pg_temp.put(14.5, 121.0, now() + interval '5 minutes 30 seconds') = 'E:22023', '2: a fix more than 5 minutes in the future is refused');
 select pg_temp.ok((select f.lat = 14.5 from public.family_places() f where f.person_id = pg_temp.p('b')), '2: but it does not replace the newer point');
 select pg_temp.ok(pg_temp.put(14.9, 121.2, now(), 60) = 'ok', '2: a newer fix is accepted');
 -- a separate statement: family_places() is stable, so inside the statement that writes it would still show the old row

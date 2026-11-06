@@ -41,6 +41,7 @@ describe('Browse', () => {
     expect(screen.getByTestId('browse-meds').querySelectorAll('.hb-pill')).toHaveLength(2)
     await waitFor(() => expect(txt('visits')).toContain('1 question ready to ask'))
     expect(txt('visits')).toContain('Not booked')
+    expect(screen.getByTestId('browse-visits').querySelector('.hb-date')?.hasAttribute('data-empty')).toBe(true) // D-142: the empty value is card-title size, not the 28 px date
     await waitFor(() => expect(txt('move')).toContain('12 min this week'))
     expect(screen.getByTestId('browse-move').querySelector('svg.rg')).toBeTruthy()
   })

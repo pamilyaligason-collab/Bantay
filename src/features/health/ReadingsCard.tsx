@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { Section } from '../look'
-import { MetricChart } from './MetricChart'
+import { dailySpread, MetricChart } from './MetricChart'
 import { bpHeadlineArg } from './MetricScreen'
 import { effectiveRange, inPeriod, shortDate } from './model'
 import { CHIP, GUIDE, latestVsNormal, rangeState, toCanonicalReading, type Range, type Reading } from './ranges'
@@ -27,6 +27,7 @@ export function ReadingsCard({ personId, readings, thresholds, onAdd, canLog = t
   const st = v && latest ? rangeState(v.headline, kindOf(primary), primary === 'bp_systolic' ? bpHeadlineArg(mine, primary, latest, doctor) : undefined) : null
   const now = useMemo(() => { const n = new Date(); return latest && Date.parse(latest.takenAt) > n.getTime() ? new Date(latest.takenAt) : n }, [latest])
   const week = latest ? inPeriod(mine.filter((r) => r.test === primary).sort((a, b) => Date.parse(a.takenAt) - Date.parse(b.takenAt)).map((r) => ({ takenAt: r.takenAt, value: r.value })), 'week', now) : []
+  const daily = primary === 'heart_rate' && week.length ? dailySpread(week) : null // a watch logs many pulses a day: one point a day with its low-high band, not a dot per sample
   const band = (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[primary] ?? null
   const subs: { code: Code; label: string }[] = [{ code: primary === 'heart_rate' ? 'bp_systolic' : 'heart_rate', label: primary === 'heart_rate' ? 'Blood pressure' : 'Pulse' }, { code: 'fasting_glucose', label: 'Blood sugar' }]
   return (
@@ -40,7 +41,7 @@ export function ReadingsCard({ personId, readings, thresholds, onAdd, canLog = t
           </div>
           {st && <span className={`hv-state ${CHIP[st.kind]}`} data-testid="rc-state">{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span>}
         </div>
-        {week.length > 0 && <MetricChart pts={week} days={7} now={now} band={band} label={`${primary === 'heart_rate' ? 'Heart rate' : 'Blood pressure'} this week`} unit={unitOf(latest!, primary)} />}
+        {week.length > 0 && <MetricChart pts={daily ? daily.avg : week} spread={daily?.spread} days={7} now={now} band={band} label={`${primary === 'heart_rate' ? 'Heart rate' : 'Blood pressure'} this week`} unit={unitOf(latest!, primary)} />}
         {latest && week.length === 0 && <p className="sub rc-none">No readings in the last 7 days.</p>}
         <div className="rc-subs">
           {subs.map((s) => {

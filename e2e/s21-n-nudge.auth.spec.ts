@@ -228,7 +228,7 @@ test.describe('Health, Pinned', () => {
     await seed(page, 'bantay-health', { people: [{ id: 'me', name: 'Rey' }], readings: [...bp, { personId: 'me', takenAt: ago(20), test: 'weight', value: 71, unit: 'kg' }] })
     await seed(page, 'bantay', { kv: [{ key: 'health.pins', value: ['bp_systolic', 'weight', 'steps', 'meds'] }] })
     await page.reload() // a new app open
-    await expect(page.getByTestId('glance-progress')).toBeVisible()
+    await expect(page.getByTestId('glance-weight')).toBeVisible()
     await setScheme(page, o.scheme ?? 'light')
     await settled(page)
   }
@@ -273,7 +273,7 @@ test.describe('Health, Pinned', () => {
 
   test('blood pressure logged this week: the due weight moves instead', async ({ page }) => {
     await open(page, 390, { bp: true })
-    await expect(page.getByTestId('glance-progress').locator('.nd-due')).toHaveCount(0)
+    await expect(page.getByTestId('glance-progress')).toHaveCount(0) // D-142: BP is not drawn twice in the Readings card, so a not-due BP pin is hidden
     await expect(movers(page)).toHaveAttribute('data-testid', 'glance-weight')
   })
 

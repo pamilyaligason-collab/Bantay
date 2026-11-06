@@ -1,3 +1,4 @@
+import { kindMarker } from '../world/KindMark'
 import { useState } from 'react'
 import { type HazardState, useHazards } from './useHazards'
 import { useUnit } from './usePacks'
@@ -119,7 +120,7 @@ export default function HazardPage({ place }: { place: Place }) {
       </Section>
       <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
       <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}|${blob ? layer : '-'}|${blob?.size ?? 0}`} label="Map of your place" testId="hazards-map"
-        setup={(L, m) => { if (blob) hazardOverlay(L, blob, layer).addTo(m); L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-zone', interactive: false }).addTo(m) }} />
+        setup={(L, m) => { if (blob) hazardOverlay(L, blob, layer).addTo(m); kindMarker(L, [place.weather.lat, place.weather.lon], 'you', false).addTo(m) }} />
       {blob && <p className="hz-legend" data-testid="hz-legend"><b>{ls.label} level</b><i data-level="1">Low</i><i data-level="2">Medium</i><i data-level="3">High</i></p>}
       <p className="hz-cap" data-testid="layer-caption"><span>{ls.text}</span>{ls.reading !== null && <b className="rw-badge" data-tint={BADGE[ls.tone]}>{ls.reading}</b>}</p>
       <HazardFile hzs={hzs} />

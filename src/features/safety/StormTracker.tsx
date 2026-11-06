@@ -1,3 +1,5 @@
+import { kindMarker } from '../world/KindMark'
+import { Icon } from '../shell/Icon'
 import { useState } from 'react'
 import { type LatLon } from '../location/geo'
 import { alertRef } from '../location/place'
@@ -60,7 +62,7 @@ export default function StormTracker({ place }: { place: Place }) {
     <div className="st">
       <section className="card st-hero" data-testid="storm-hero" aria-label="Storm status">
         <div role="status">
-          <div className="st-head"><span className="st-dot" data-on={storms.length || signals.length || !checked ? 'watch' : 'calm'} aria-hidden="true" /><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : signals.length ? `${signals[0]!.level} in force` : checked ? 'No storm near the Philippines now' : 'Storms not checked lately'}</h2></div>
+          <div className="st-head"><span className="st-dot" data-on={storms.length || signals.length || !checked ? 'watch' : 'calm'} aria-hidden="true"><Icon name={storms.length || signals.length || !checked ? 'typhoon' : 'check'} size={16} /></span><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : signals.length ? `${signals[0]!.level} in force` : checked ? 'No storm near the Philippines now' : 'Storms not checked lately'}</h2></div>
           <p className={`st-line sf-storm-line ${line.tone}`}>{line.text}</p>
         </div>
         <LazyMap height={240} center={[place.weather.lat, place.weather.lon]} zoom={5} depKey={`par|${place.weather.lat}|${place.weather.lon}|${pinned.map((s) => s.id).join(',')}`}
@@ -68,8 +70,8 @@ export default function StormTracker({ place }: { place: Place }) {
           overlay={<Segmented label="Weather layer" value={layer} onChange={setLayer} options={LAYERS.map(([label, id]) => ({ id, label }))} />}
           setup={(L, m) => {
             const ring = L.polygon(PAR.map((p) => [p[0], p[1]] as [number, number]), { className: 'lm-par', interactive: false }).addTo(m)
-            L.circleMarker([place.weather.lat, place.weather.lon], { radius: 8, className: 'lm-me', interactive: false }).addTo(m)
-            for (const s of pinned) L.circleMarker([s.lat, s.lon], { radius: 9, className: 'lm-storm', interactive: false }).addTo(m)
+            kindMarker(L, [place.weather.lat, place.weather.lon], 'you', false).addTo(m)
+            for (const s of pinned) kindMarker(L, [s.lat, s.lon], 'storm', false).addTo(m)
             m.fitBounds(ring.getBounds(), { padding: [8, 8] })
             const par = new (L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'st-par'); d.textContent = 'PAR (Philippine Area of Responsibility), approx.'; return d } }))({ position: 'bottomleft' })
             par.addTo(m) // the board puts the PAR label on the map

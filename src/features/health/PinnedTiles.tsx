@@ -86,7 +86,7 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
     if (pins.length >= MAX_PINS) { setFull(true); return }
     setRaw(cleanPins([...pins, c]))
   }
-  const shown = inline ? pins.filter((c) => !TODAY_COVERS.includes(c)) : pins // inline (in the Readings card): everything but steps and medicines, which the Today row and Browse already show
+  const shown = inline ? pins.filter((c) => !TODAY_COVERS.includes(c) && (c !== 'bp_systolic' || dueOf(c))) : pins // the Readings card already shows blood pressure (headline or sub-tile): its pin returns only when BP is due, for the Due pill and nudge // inline (in the Readings card): everything but steps and medicines, which the Today row and Browse already show
   const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
   const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>
   const sheet = (

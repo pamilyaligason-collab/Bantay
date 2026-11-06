@@ -15,7 +15,7 @@
 .card.nw-lead { display: block; padding: 0; overflow: hidden; border-radius: 22px; text-decoration: none; color: var(--ink); }
 .nw-lead-pic, .nw-thumb, .dc-rphoto { display: flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(150deg, var(--nw-a, #1f3b57), var(--nw-b, #4e7fa8)); color: #fff; }
 .nw-lead-pic { height: 180px; }
-.nw-thumb { width: 84px; height: 84px; flex: none; border-radius: 16px; }
+.nw-thumb { width: 72px; height: 72px; flex: none; border-radius: 16px; }
 .nw-lead-pic img, .nw-thumb img, .dc-rphoto img { width: 100%; height: 100%; object-fit: cover; display: block; }
 [data-hue="0"] { --nw-a: #1f3b57; --nw-b: #3d6a93; }
 [data-hue="1"] { --nw-a: #7a1e31; --nw-b: #a32d46; }
@@ -31,7 +31,11 @@
 .nw-title { font-size: 17px; line-height: 23px; font-weight: 700; overflow-wrap: anywhere; }
 .nw-lead .nw-title { font-size: 20px; line-height: 26px; }
 .nw-meta { font-size: 13px; color: var(--muted); }
-.nw-item { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 0; border-top: .5px solid var(--line); color: var(--ink); text-decoration: none; }
+.nw-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 64px; padding: 12px 0; border-top: .5px solid var(--line); color: var(--ink); text-decoration: none; } /* FX-DISC fix1: text column minmax(0,1fr), picture or Read later in its own fixed column, so a title never runs under it */
+.nw.nw { white-space: normal; } /* styles/narrow.css has a stray unscoped ".nw { white-space: nowrap }" that kept titles on one line and off screen */
+.nw-chip { white-space: nowrap; }
+.nw-item .nw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; }
+.nw-item .nw-src, .nw-item .nw-meta, .nw-lead .nw-src { overflow-wrap: anywhere; }
 .nw-save { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--ink); }
 .nw-save[aria-pressed="true"] { color: var(--green2); }
 .dc-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--link); }
@@ -58,4 +62,5 @@
 .dc-rcard-t::after { content: ""; position: absolute; inset: 0; } /* the whole card is the link; the credit link below sits above it */
 .dc-rcard-s { font-size: 13px; line-height: 18px; color: var(--muted); }
 .dc-credit { position: relative; z-index: 1; font-size: 12px; line-height: 16px; color: var(--muted); }
-.dc-credit a { display: flex; align-items: center; min-height: 44px; color: var(--link); } /* the credit link on its own line, 44 px target */
+.dc-credit a { display: inline-flex; align-items: center; min-height: 44px; color: var(--link); } /* the credit link on its own line, 44 px target */
+.dc-rcard .dc-credit, .lr-dish .dc-credit { order: 9; } /* FX-DISC fix1: the credit is the last line of a card, at its bottom edge, so a tap in the middle opens the recipe */

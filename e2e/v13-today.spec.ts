@@ -53,9 +53,10 @@ test('Your numbers: empty tiles are honest, and the radio row opens Calm', async
   await expect(page.getByRole('link', { name: 'Open Calm' })).toHaveAttribute('href', '#calm') // the only way into the Calm page
 })
 
-test('Calm card opens the breath sheet', async ({ page }) => {
-  await page.getByRole('button', { name: 'Breathe for 1 minute' }).click()
-  await expect(page.getByRole('dialog')).toBeVisible()
+test('Calm card opens the full Calm screen, not the breath sheet (D-142)', async ({ page }) => {
+  await page.getByRole('link', { name: 'Breathe for 1 minute' }).click()
+  await expect(page).toHaveURL(/#calm$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -137,11 +138,11 @@ test('T9 / T10 / T14: the ring is 64 px, the four rows share a text edge and hei
   expect([Math.round(gb.width), Math.round(gb.height)]).toEqual([22, 22])
 })
 
-test('T11: Calm is deep teal with an 84 px orb, and nothing moves under reduced motion', async ({ page }) => {
+test('T11: Calm is navy with an 84 px orb, and nothing moves under reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.reload()
-  const calm = page.getByRole('button', { name: 'Breathe for 1 minute' })
-  await expect(calm).toHaveCSS('background-color', 'rgb(31, 59, 69)')
+  const calm = page.getByRole('link', { name: 'Breathe for 1 minute' })
+  expect(await calm.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain('rgb(14, 27, 58)')
   const orb = await box(calm.locator('.bo-orb').locator('..'))
   expect([Math.round(orb.width), Math.round(orb.height)]).toEqual([84, 84])
   await assertTextContrast(page)

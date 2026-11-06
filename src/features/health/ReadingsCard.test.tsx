@@ -62,3 +62,19 @@ describe('Readings card', () => {
     expect(screen.queryByTestId('glance-steps')).toBeNull() // steps and medicines stay on the Today row and Browse
   })
 })
+
+describe('D-142 Readings card', () => {
+  it('a watch pulse logged many times a day is one point per day with a low-high band, not a dot per sample', () => {
+    const samples = [0, 0.02, 0.04, 0.06, 0.08].map((f, i) => rd('heart_rate', 60 + i * 5, 'bpm', f)).concat([rd('heart_rate', 70, 'bpm', 2), rd('heart_rate', 80, 'bpm', 2.02)])
+    show(samples)
+    const chart = screen.getByTestId('metric-chart')
+    expect(chart.querySelectorAll('circle').length).toBeLessThanOrEqual(2) // two days, not seven samples
+    expect(chart.querySelector('.mc-spread')).not.toBeNull()
+  })
+  it('blood pressure shows once: the sub-tile, and no pinned BP tile unless it is due', async () => {
+    show([rd('heart_rate', 72, 'bpm', 0), rd('bp_systolic', 118, 'mmHg', 0), rd('bp_diastolic', 76, 'mmHg', 0)])
+    expect(screen.getByTestId('rc-sub-bp_systolic')).toBeTruthy()
+    await within(screen.getByTestId('rc-main')).findByTestId('glance-visit')
+    expect(within(screen.getByTestId('rc-main')).queryByTestId('glance-progress')).toBeNull()
+  })
+})

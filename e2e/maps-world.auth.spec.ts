@@ -37,8 +37,8 @@ for (const [scheme, w, flag] of [['light', 390, false], ['dark', 390, false], ['
     expect(Math.round(box!.x)).toBe(0)
     const layer = await page.locator('[data-testid=world-map] .mapc-layer').boundingBox()
     expect(Math.round(layer!.height)).toBe(300)
-    await expect(page.locator('path.wm.wm-quake')).toHaveCount(1) // pins keep their colour classes
-    await expect(page.locator('path.wm.wm-volcano')).toHaveCount(1)
+    await expect(page.locator('.wm-icon .wd-mark.wd-quake svg')).toHaveCount(1) // pins are symbols in tinted circles, not bare dots
+    await expect(page.locator('.wm-icon .wd-mark.wd-volcano svg')).toHaveCount(1)
     await expect(page.getByText('© OpenStreetMap contributors')).toBeVisible()
     await assertNoSideways(page)
     await assertJackHit(page, WORLD_ALLOW, `world ${scheme} ${w}`)
@@ -52,7 +52,7 @@ for (const w of [360, 390, 430, 450]) {
       test(`World ${w}x${h} ${pins ? 'with pins' : 'empty'}: card edge to edge, Filter clear of Jack`, async ({ page }) => {
         await openWorld(page, 'light', w, false, pins, h)
         expect(Math.round((await page.getByTestId('world-map').boundingBox())!.width)).toBe(w)
-        await expect(page.locator('path.wm')).toHaveCount(pins ? 2 : 0)
+        await expect(page.locator('.wm-icon .wd-mark:not(.wd-you) svg')).toHaveCount(pins ? 2 : 0)
         await assertJackHit(page, WORLD_ALLOW, `world ${w}x${h} ${pins ? 'pins' : 'empty'}`)
       })
     }

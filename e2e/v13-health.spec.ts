@@ -200,11 +200,11 @@ test('H7: Pinned has Edit; the sheet changes the tiles', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await page.getByRole('button', { name: 'Edit' }).click()
   await expect(page.getByRole('dialog', { name: 'Pinned' })).toBeVisible()
-  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2) // inline Pinned omits Steps and Medicines (the Today row and Browse show them)
+  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(1) // inline Pinned omits Steps and Medicines (the Today row and Browse show them) and the BP pin (the Readings card shows BP) unless it is due
   await page.getByRole('checkbox', { name: 'Medicines' }).click() // frees a slot, changes nothing inline
   await page.getByRole('checkbox', { name: 'Pulse' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(3)
+  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2)
 })
 
 test('H9: Browse is five cards (four tall in two columns, Body wiki wide), each with a second line', async ({ page }) => {

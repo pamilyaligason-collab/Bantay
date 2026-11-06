@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { forChip } from './View'
-import { hueOf, initialOf, latestFirst, topicOf, topStories, type NewsRow } from './model'
+import { forChip, layout } from './View'
+import { freshLine, hueOf, initialOf, latestFirst, topicOf, topStories, type NewsRow } from './model'
 import { watchPlan } from '../today/watchPlan'
 
 const r = (id: string, min: number, topic?: string | null): NewsRow => ({ id, title: id, url: 'https://news.test/' + id, source: 'PNA', kind: 'article', published_at: new Date(Date.UTC(2026, 9, 28, 12, 0) - min * 60_000).toISOString(), topic })
@@ -71,5 +71,41 @@ describe('watchPlan', () => {
     expect(watchPlan(day, ['p1', 'p2'], ['h1'], ['d1'])).toEqual(watchPlan(day, ['p1', 'p2'], ['h1'], ['d1']))
     expect(watchPlan(day, ['p1'], ['h1'], []).row).toHaveLength(1)
     expect(watchPlan(day, [], [], ['d1'])).toEqual({ hero: null, row: ['d1'] })
+  })
+})
+
+describe('freshLine (band from the newest row, not the save time)', () => {
+  const now = Date.UTC(2026, 9, 28, 12, 0)
+  it('says how old the newest headline is', () => {
+    expect(freshLine([r('a', 25), r('b', 900)], now, false)).toBe('Updated 25 min ago.')
+    expect(freshLine([r('a', 180)], now, false)).toBe('Updated 3 h ago.')
+    expect(freshLine([r('a', 4 * 1440 + 30), r('b', 6 * 1440)], now, false)).toBe('Newest headline 4 days old.')
+    expect(freshLine([r('a', 1440)], now, false)).toBe('Newest headline 1 day old.')
+  })
+  it('offline adds the saved line; no rows or an unreadable date says nothing saved', () => {
+    expect(freshLine([r('a', 5)], now, true)).toBe('Updated 5 min ago. Headlines saved. New ones when there is signal.')
+    expect(freshLine([], now, false)).toMatch(/No headlines saved yet/)
+    expect(freshLine([{ ...r('x', 0), published_at: 'nope' }], now, false)).toMatch(/No headlines saved yet/)
+  })
+})
+
+describe('layout: a story shows once', () => {
+  const rows = [r('p1', 10, 'prepping'), r('h1', 20, 'health'), r('n1', 30, 'national'), r('w1', 40, 'wellbeing'), r('x1', 50), r('x2', 60), r('x3', 70)]
+  it('Top: lead p1, stories h1 n1 w1, Latest is only what is left, newest first', () => {
+    const l = layout(rows, 'top')
+    expect(l.lead!.id).toBe('p1'); expect(ids(l.stories)).toEqual(['h1', 'n1', 'w1']); expect(ids(l.latest)).toEqual(['x1', 'x2', 'x3'])
+  })
+  it('a topic chip: lead, up to three stories, the rest under Latest, no repeats', () => {
+    const t = ['a', 'b', 'c', 'd', 'e', 'f'].map((id, i) => r(id, i * 5, 'health'))
+    const l = layout(t, 'health')
+    expect(l.lead!.id).toBe('a'); expect(ids(l.stories)).toEqual(['b', 'c', 'd']); expect(ids(l.latest)).toEqual(['e', 'f'])
+  })
+  it('the Latest chip is the whole list with no lead card, so every row can be saved', () => {
+    const l = layout(rows, 'latest')
+    expect(l.lead).toBeUndefined(); expect(l.stories).toEqual([]); expect(ids(l.latest)).toEqual(['p1', 'h1', 'n1', 'w1', 'x1', 'x2', 'x3'])
+  })
+  it('two rows: lead and one story, no Latest section', () => {
+    const l = layout([r('a', 5), r('b', 9)], 'top')
+    expect(l.lead!.id).toBe('a'); expect(ids(l.stories)).toEqual(['b']); expect(l.latest).toEqual([])
   })
 })

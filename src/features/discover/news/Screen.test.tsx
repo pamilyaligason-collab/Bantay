@@ -46,6 +46,14 @@ describe('loadFeed', () => {
     await loadFeed('gensan', NOW, feedOf(ROWS), ENV)
     expect((await loadFeed('gensan', NOW + 1000, feedOf([]), {})).items!.map((n) => n.id)).toEqual(['1', '2'])
   })
+  it('drops rows older than 7 days, online and from the saved list', async () => {
+    const old = row('old', { published_at: '2026-10-20T10:00:00Z' }) // 8 days before NOW
+    const r = await loadFeed(null, NOW, feedOf([row('1'), old]), ENV)
+    expect(r.items!.map((n) => n.id)).toEqual(['1'])
+    await db.kv.put({ key: 'discover.news', value: { savedAt: NOW, zone: null, items: [row('1'), old] } })
+    const down = vi.fn(async () => { throw new Error('offline') }) as unknown as typeof fetch
+    expect((await loadFeed(null, NOW, down, ENV)).items!.map((n) => n.id)).toEqual(['1'])
+  })
   it('turns an ALL CAPS headline into a sentence', async () => {
     const r = await loadFeed(null, NOW, feedOf([row('9', { title: 'HEAVY RAIN IN CEBU' })]), ENV)
     expect(r.items![0]!.title).toBe('Heavy rain in Cebu')
@@ -80,7 +88,7 @@ describe('pinning and time', () => {
 })
 
 describe('NewsList screen', () => {
-  const seed = (items: NewsItem[]) => db.kv.put({ key: 'discover.news', value: { savedAt: Date.now(), zone: null, items } })
+  const seed = (items: NewsItem[]) => db.kv.put({ key: 'discover.news', value: { savedAt: Date.now(), zone: null, items: items.map((n) => ({ ...n, published_at: new Date(Date.now() - 3_600_000).toISOString() })) } })
   it('shows official advisories first, then headlines with source and Open, all as outside links, plus the saved-at band', async () => {
     await seed([row('1', { title: 'Fish port steady' }), row('2', { source: 'PAGASA', title: 'Rain advisory' })])
     render(<NewsList zone={null} now={NOW} />)

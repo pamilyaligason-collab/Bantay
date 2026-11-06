@@ -58,3 +58,11 @@
 
 /* D-117 topic page: the player on top, its source line under it */
 .card.ry-video { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+
+/* S22 FX-DISC: recipe photos in the list rows and on the recipe page. The title link covers the card; the credit link is the last line, at the bottom edge, above the cover. */
+.lr-dish { position: relative; overflow: hidden; }
+.lr-dish .dc-rphoto { aspect-ratio: 16 / 9; }
+.lr-dish-t { color: var(--ink); text-decoration: none; font-weight: 700; display: flex; align-items: center; min-height: 44px; }
+.lr-dish-t::after { content: ""; position: absolute; inset: 0; }
+.lr-photo { display: flex; flex-direction: column; gap: 4px; }
+.lr-photo .dc-rphoto { border-radius: 16px; max-height: 240px; width: 100%; }

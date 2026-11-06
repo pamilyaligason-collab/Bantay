@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
 import { HOME_ZONES, type LatLon, type Loc } from './geo'
 import { resolvePlace, type ZoneId } from './place'
-import { shouldRefresh } from './freshness'
+import { shouldRefresh, weatherFixState } from './freshness'
 import { familyPlacesOn } from '../family/flags'
 
 export interface Home {
@@ -56,14 +56,16 @@ export async function resolveLocation(ask: boolean, precise: boolean = ask): Pro
     if (!('geolocation' in navigator)) return await fallback()
     // APK 2.2+: the Geolocation plugin reads Android's own permission (it throws when location is switched off: treat as denied).
     const os = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Geolocation')
-      ? await import('@capacitor/geolocation').then((m) => m.Geolocation.checkPermissions()).then((p) => (p.location.startsWith('prompt') ? 'prompt' : p.location), () => 'denied')
+      ? await import('@capacitor/geolocation').then((m) => m.Geolocation.checkPermissions()).then((p) => (p.location === 'granted' || p.coarseLocation === 'granted' ? 'granted' : p.location.startsWith('prompt') ? 'prompt' : p.location), () => 'denied')
       : null
     const st = os ?? (await navigator.permissions?.query({ name: 'geolocation' }).then((p) => p.state, () => 'prompt'))
     // Older APKs: Android WebView never retains the grant, so permissions.query stays 'prompt' after a yes: trust our own record there.
     const allowed = st === 'granted' || (!os && st === 'prompt' && Capacitor.isNativePlatform() && (await db.kv.get('loc.asked').catch(() => undefined))?.value === true)
     if (st === 'denied' || (!allowed && !ask)) return await fallback()
     // D-138: with the family map on, every open or resume reads a precise fix for the family pin
-    const p = await gps(precise || familyPlacesOn(), os !== null)
+    const wantPrecise = precise || familyPlacesOn()
+    // a precise read that fails (indoors, "Approximate" only) gets one cached/low-accuracy try before the last fix stands in
+    const p = await gps(wantPrecise, os !== null).catch((e) => { if (!wantPrecise) throw e; return gps(false, os !== null) })
     const fix = { lat: p.coords.latitude, lon: p.coords.longitude }
     if (!validFix(fix)) return await fallback() // X7: 0,0 (a phone that answers with nothing) or off the globe is no fix
     const at = isNum(p.timestamp) && p.timestamp > 0 ? Math.min(p.timestamp, Date.now()) : Date.now() // when the phone took the fix, not when we asked
@@ -71,6 +73,7 @@ export async function resolveLocation(ask: boolean, precise: boolean = ask): Pro
     void db.kv.put({ key: LAST_KEY, value: { ...fix, at, ...acc } }).catch(() => {})
     // D-138: the family pin; putLivePlace itself checks the flag, the person's notice answer and their switch
     void import('../family/placeApi').then((m) => m.putLivePlace({ ...fix, at, ...acc })).catch(() => {})
+    lastLoc = { ...fix, at, ...acc, source: 'gps' } // a direct call (setup wizard, Weather ask) also refreshes what newly mounted screens start from
     return { ...fix, at, ...acc, source: 'gps' }
   } catch {
     return await fallback()
@@ -92,6 +95,7 @@ const PENDING: LocState = { source: 'pending', lat: null, lon: null }
 // S22 G: one shared, throttled refresh, so a return to the foreground makes one request however many screens hold a location.
 let lastRun = 0
 let inflight: Promise<Loc> | null = null
+let lastLoc: Loc | null = null // the newest answer, for a screen that mounts inside the throttle window
 const subs = new Set<(l: Loc) => void>()
 /** force skips the 5-minute throttle (Weather's precise read) but still joins a request already running. */
 export function refreshLocation(opts: { precise?: boolean; force?: boolean; now?: number } = {}): Promise<Loc> | null {
@@ -100,19 +104,19 @@ export function refreshLocation(opts: { precise?: boolean; force?: boolean; now?
   if (!opts.force && !shouldRefresh(lastRun, now)) return null
   lastRun = now
   inflight = resolveLocation(false, !!opts.precise)
-    .then((l) => { subs.forEach((f) => f(l)); return l })
+    .then((l) => { lastLoc = l; subs.forEach((f) => f(l)); return l })
     .finally(() => { inflight = null })
   return inflight
 }
-export const resetRefresh = () => { lastRun = 0; inflight = null } // tests
+export const resetRefresh = () => { lastRun = 0; inflight = null; lastLoc = null } // tests
 
 /** Never prompts by itself. Onboarding calls ask() after the why screen. */
 export function useLocation() {
   const [loc, setLoc] = useState<LocState>(PENDING)
   useEffect(() => {
     let live = true
-    lastRun = Date.now() // the first read counts as a refresh
-    resolveLocation(false).then((l) => live && setLoc(l))
+    // every mount shares the one throttled read; inside the window it takes the newest answer
+    void (refreshLocation() ?? (lastLoc ? Promise.resolve(lastLoc) : refreshLocation({ force: true })))?.then((l) => live && setLoc(l))
     const sub = (l: Loc) => { if (live) setLoc(l) }
     subs.add(sub)
     const onVis = () => { if (document.visibilityState === 'visible') void refreshLocation() }
@@ -132,23 +136,31 @@ export function useLocation() {
   const refine = useCallback(() => refreshLocation({ precise: true, force: true }), [])
   const ask = useCallback(async () => {
     const l = await resolveLocation(true)
+    lastLoc = l
     setLoc(l)
     return l
   }, [])
   const forget = useCallback(async () => {
     await db.kv.delete(LAST_KEY)
+    lastLoc = null
     const home = await getHome()
     setLoc((l) => (l.source === 'last' ? { lat: home.lat, lon: home.lon, source: 'home' as const } : l))
   }, [])
   const setHome = useCallback(async (h: Home) => {
     await saveHome(h)
+    lastLoc = null
     setLoc((l) => (l.source === 'home' ? { lat: h.lat, lon: h.lon, source: 'home' as const } : l))
   }, [])
   return { ...loc, ask, refine, setHome, forget }
 }
 
 /** D-33 place: null until the saved zone is read (the saved zone stands in while GPS is pending). `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
-export const usePlace = () => usePlaceFrom(useLocation())
+export const usePlace = (o?: { weather?: boolean }) => {
+  const l = useLocation()
+  // weather: true is the Weather screen's rule (S22 G): a stored fix older than 6 h is no fix, so the saved zone answers. Other readers still show it as last known.
+  const drop = !!o?.weather && (l.source === 'gps' || l.source === 'last') && weatherFixState(l.at, Date.now()) === 'drop'
+  return usePlaceFrom(drop ? { ...l, source: 'home' as const } : l)
+}
 
 /** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
 export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
@@ -165,4 +177,12 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
   return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, accuracy: l.source === 'gps' || l.source === 'last' ? l.accuracy : undefined, picked: saved !== null }
+}
+
+/** Where Weather would look right now, without a hook or a GPS read (the rain reminder runs at app open): a stored fix up to 6 h old, else the saved zone. */
+export async function weatherPoint(now = Date.now()): Promise<LatLon> {
+  const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number } | undefined
+  const lastZone = ((await db.kv.get(ZONE_KEY).catch(() => undefined))?.value as ZoneId | undefined) ?? FIRST_ZONE
+  const gps = v && validFix(v) && weatherFixState(v.at, now) !== 'drop' ? { lat: v.lat, lon: v.lon, stale: true } : null
+  return resolvePlace({ gps, lastZone }).weather
 }

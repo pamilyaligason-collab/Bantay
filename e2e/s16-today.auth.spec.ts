@@ -17,9 +17,9 @@ for (const variant of ['calm', 'alertsOff', 'quake', 'storm'] as Variant[]) {
       await startToday(page, variant, { scheme })
       await setScheme(page, scheme)
       await assertHero(page); await assertTargets(page); await assertTextContrast(page)
-      if (variant === 'calm') { // R11: in the signed-in CSS order .card beats .td-calm; the card must stay deep teal with white words in both themes
+      if (variant === 'calm') { // R11: in the signed-in CSS order .card beats .td-calm; the card must stay navy with white words in both themes
         const calm = page.getByTestId('calm').locator('.td-calm')
-        expect(await calm.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(31, 59, 69)')
+        expect(await calm.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain('rgb(14, 27, 58)')
         expect(await calm.locator('.td-grow > b').evaluate((e) => getComputedStyle(e).color)).toBe('rgb(255, 255, 255)')
       }
       const order = (await ids(page)).filter((i) => ['weather-hero', 'alerts-off', 'warning-card', 'warning-card-storm', 'family-notice', 'selfcare'].includes(i ?? ''))
@@ -81,7 +81,7 @@ test('storm: the roll-call pair, Do now rows and links; closing keeps the roll c
   await expect(page.getByRole('region', { name: 'Storm check-in' }).getByRole('button', { name: "I'm OK" })).toBeVisible()
 })
 
-test('Next up: Take, Snooze and Skip; Log something else opens the log sheet; the breath row opens the sheet and back closes it', async ({ page }) => {
+test('Next up: Take, Snooze and Skip; Log something else opens the log sheet; the breath row opens the full Calm screen', async ({ page }) => {
   await startToday(page, 'calm', { dose: true })
   const card = page.locator('.td-next')
   await expect(card.getByRole('button', { name: 'Take, mark as taken' })).toBeVisible()
@@ -92,9 +92,9 @@ test('Next up: Take, Snooze and Skip; Log something else opens the log sheet; th
   await expect(more).toBeVisible()
   for (const t of ['Blood pressure', 'Sugar', 'Weight', 'Dose taken', 'Food', 'Walk', 'Move', 'Pain', 'Sleep', 'Temperature', 'Mood', 'Water']) await expect(more.getByRole('button', { name: t, exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Start breathing' }).click()
-  await expect(page.getByRole('dialog', { name: 'Take a breath' })).toBeVisible()
-  await page.goBack()
+  await expect(page.getByRole('link', { name: 'Start breathing' })).toHaveAttribute('href', '#calm')
+  await page.getByRole('link', { name: 'Start breathing' }).click()
+  await expect(page).toHaveURL(/#calm$/)
   await expect(page.getByRole('dialog', { name: 'Take a breath' })).toHaveCount(0)
 })
 

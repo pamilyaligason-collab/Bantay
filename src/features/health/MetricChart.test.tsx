@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { axisTicks, chartGeometry, chartPoints, dayLabelXs, MetricChart, tickLabel } from './MetricChart'
+import { axisTicks, chartGeometry, chartPoints, dailySpread, dayLabelXs, MetricChart, tickLabel } from './MetricChart'
 
 afterEach(cleanup)
 const NOW = new Date('2026-11-01T12:00:00Z')
@@ -91,5 +91,13 @@ describe('7-day day labels sit under their day (round 2)', () => {
     const own = (i: number) => { const d = new Date(now); d.setDate(d.getDate() - (6 - i)); d.setHours(12, 0, 0, 0); return gx(d.toISOString()) }
     xs.forEach((x, i) => { expect(own(i) - x).toBeGreaterThanOrEqual(-1e-9); expect(own(i) - x).toBeLessThanOrEqual(12) })
     expect(Math.min(...xs.slice(1).map((x, i) => x - xs[i]!))).toBeGreaterThanOrEqual(36 - 1e-9)
+  })
+})
+
+describe('dailySpread', () => {
+  it('groups samples by local day: average, low and high (hand-computed)', () => {
+    const r = dailySpread([{ takenAt: at('2026-10-30', 8), value: 60 }, { takenAt: at('2026-10-30', 10), value: 80 }, { takenAt: at('2026-10-31', 9), value: 100 }])
+    expect(r.avg.map((p) => p.value)).toEqual([70, 100])
+    expect(r.spread.map((s) => [s.min, s.max])).toEqual([[60, 80], [100, 100]])
   })
 })

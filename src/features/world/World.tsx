@@ -12,6 +12,7 @@ import { useLocation, usePlaceFrom } from '../location/useLocation'
 import { GroupedList, Row, Section, Segmented } from '../look'
 import { readPrefs, ALERT_KEY } from './prefs'
 import { digestHeadline, digestShown, PANEL_KEY, PANEL_LABEL, PANELS, readPanels } from './panels'
+import { KindMark, kindMarker } from './KindMark'
 import { forecastRows, pinsOf, visible, volcanoRows, worldRows, type PinKind, type WorldRow } from './rows'
 import { newsIsOld, useWorldNews } from './useWorldNews'
 import '../safety/safety.css'
@@ -86,12 +87,12 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
       <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
       <div className="wd-bleed"><LazyMap height={300} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}
         setup={(L, map) => {
-          for (const p of pins) L.circleMarker([p.lat, p.lon], { radius: 8, className: `wm wm-${p.kind}` }).bindTooltip(p.title).addTo(map)
-          if (here) L.circleMarker([here.lat, here.lon], { radius: 7, className: 'lm-me' }).addTo(map)
+          for (const p of pins) kindMarker(L, [p.lat, p.lon], p.kind).bindTooltip(p.title).addTo(map)
+          if (here) kindMarker(L, [here.lat, here.lon], 'you', false).addTo(map)
         }} /></div>
       <ul className="wd-legend" aria-label="Map key">
-        <li><span className="wd-dot lm-you" aria-hidden="true" />You</li>
-        {LEGEND.filter(([k]) => kinds.has(k)).map(([k, t]) => <li key={k}><span className={`wd-dot wd-${k}`} aria-hidden="true" />{t}</li>)}
+        <li><KindMark kind="you" size={20} />You</li>
+        {LEGEND.filter(([k]) => kinds.has(k)).map(([k, t]) => <li key={k}><KindMark kind={k} size={20} />{t}</li>)}
       </ul>
       {show('near') && <Section title="Near your family" meta="Instant alerts"><Rows label="Near your family" rows={rows.nearFamily} empty={stale ? NOT_SAID : 'No active hazards at Dampas or Conel'} /></Section>}
       {show('ph') && (
@@ -114,7 +115,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
           <Section title="Your panels"><button type="button" className="btn wd-manage" onClick={() => setManaging(true)}>Manage panels</button></Section>
         </>
       )}
-      <Section title="Daily digest">
+      {FLAGS.digest && <Section title="Daily digest">
         <div className="card wd-digest">
           {FLAGS.digest && digestShown(feed.digest, prefs.digestTime, now) ? (
             <div className="wd-digest-body">
@@ -125,7 +126,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
           ) : <b>Daily digest (coming) · {prefs.digestTime}</b>}
           <a href="#safety/alerts">Settings</a>
         </div>
-      </Section>
+      </Section>}
       <p className="wd-foot">Summaries are short and neutral; tap for the source.</p>
       {managing && (
         <Sheet title="Manage panels" onClose={() => setManaging(false)}>

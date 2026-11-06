@@ -7,6 +7,9 @@ export interface OutboxRow {
   payload: unknown
   createdAt: number
   tries: number
+  /** Short code of the last failed send (HTTP status code, PostgREST code or 'net'), never a message; additive, old rows lack it. */
+  lastCode?: string
+  lastAt?: number
 }
 export interface KvRow {
   key: string

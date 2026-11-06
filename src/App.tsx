@@ -37,6 +37,8 @@ import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { watchPushForSession } from './features/notify/fcm'
 import { UpdatedToast } from './features/update/UpdatedToast'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
+import { useLocation } from './features/location/useLocation'
+import { useAutoBasemap } from './features/safety/autoMaps'
 
 const CalmScreen = lazy(() => import('./features/calm/CalmScreen')) // #calm (lane C)
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
@@ -60,6 +62,8 @@ export default function App() {
   useSavedTheme()
   useSavedTextSize()
   useUpdateCheckOnOpen()
+  const here = useLocation() // reads on open and on resume, so the family pin (D-138) is written whichever tab opens first
+  useAutoBasemap(here.lat, here.lon) // area maps download on Wi-Fi even when the app opens on Family or Today
   useEffect(() => {
     const check = () => void getMember().then((m) => setIsAdmin(m?.role === 'admin'))
     check()

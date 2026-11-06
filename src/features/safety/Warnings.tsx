@@ -1,3 +1,4 @@
+import { kindMarker } from '../world/KindMark'
 import { useState } from 'react'
 import { alertRef } from '../location/place'
 import { pickLocalSet } from '../location/geo'
@@ -78,8 +79,8 @@ export default function Warnings({ place }: { place: Place }) {
             setup={(L, m) => {
               const me: [number, number] = [here.lat, here.lon]
               L.polyline([me, point], { className: 'lm-line', interactive: false }).addTo(m)
-              L.circleMarker(point, { radius: 8, className: 'lm-epi', interactive: false }).addTo(m)
-              L.circleMarker(me, { radius: 8, className: 'lm-me', interactive: false }).addTo(m)
+              kindMarker(L, point, 'quake', false).addTo(m)
+              kindMarker(L, me, 'you', false).addTo(m)
               m.fitBounds(L.latLngBounds([me, point]), { padding: [30, 30], maxZoom: 9 })
             }} />}
           <section className="wn-hero" data-testid="warn-hero" data-tone={red ? 'red' : 'amber'} aria-label="Top warning">
@@ -96,7 +97,7 @@ export default function Warnings({ place }: { place: Place }) {
         <>
           <p className="wn-empty" role="status" data-testid="warn-hero">{stale ? `No warnings on this phone. Last check: ${shown ? agoText(shown, now) : 'never'}.` : 'No active warnings for your area right now. Official bulletins always come first.'}</p>
           <LazyMap height={180} center={[here.lat, here.lon]} zoom={8} depKey={`me|${here.lat}|${here.lon}`} label="Map of your place" testId="wn-map"
-            setup={(L, m) => { L.circleMarker([here.lat, here.lon], { radius: 8, className: 'lm-me', interactive: false }).addTo(m) }} />
+            setup={(L, m) => { kindMarker(L, [here.lat, here.lon], 'you', false).addTo(m) }} />
         </>
       )}
       {(!top || (last && last.id !== top.id)) && (

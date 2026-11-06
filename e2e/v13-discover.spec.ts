@@ -51,7 +51,7 @@ test('D3: the view tabs are 44 px, the guided video poster is large, the read-al
   await page.addInitScript(() => { Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { speak() {}, cancel() {} } }); (window as unknown as Record<string, unknown>).SpeechSynthesisUtterance = function () {} }) // headless Chromium may have no voice
   await page.goto('/#discover/listen')
   await expect(page.getByTestId('listen')).toBeVisible()
-  const b = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('button[aria-label^="Play "]')).map((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height] }))
+  const b = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('button[aria-label^="Play "]')).filter((e) => !e.closest('[data-testid="listen-guided"]')).map((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height] }))
   expect(b.length).toBe(20)
   b.forEach(([w, h]) => { expect(w).toBeGreaterThanOrEqual(44); expect(h).toBeGreaterThanOrEqual(44) })
 })

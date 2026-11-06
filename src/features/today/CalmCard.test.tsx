@@ -1,9 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 const h = vi.hoisted(() => ({ acting: false, log: [] as { at: string }[] }))
 vi.mock('../shell/useKv', () => ({ useKv: () => [h.log, () => undefined, true] }))
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: h.acting, personId: null, name: '' }) }))
-vi.mock('./BreathSheet', () => ({ default: () => null }))
 import CalmCard from './CalmCard'
 
 afterEach(() => { cleanup(); h.acting = false; h.log = [] })
@@ -15,6 +14,17 @@ describe('CalmCard sphere (S22-C)', () => {
     expect(container.querySelector('.bo-glow')).not.toBeNull()
     expect(container.querySelector('.bo-orb i')).toBeNull()
     expect((container.querySelector('.bo') as HTMLElement).style.width).toBe('84px')
+  })
+})
+
+describe('CalmCard opens the full Calm screen (D-142)', () => {
+  it('the card is a navy link to #calm and no sheet opens', () => {
+    render(<CalmCard />)
+    const a = screen.getByRole('link', { name: 'Breathe for 1 minute' })
+    expect(a.getAttribute('href')).toBe('#calm')
+    expect(a.classList.contains('cc-navy')).toBe(true)
+    fireEvent.click(a)
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
 

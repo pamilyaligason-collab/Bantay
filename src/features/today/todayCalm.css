@@ -1,0 +1,6 @@
+/* D-142: the Today Calm card is navy like the Calm page; owned here so today.css stays lane B's. The tokens are calm.css's (scoped to .cm-root there, so restated once here; TodayNews.test checks they match). White text is >= 4.5 on the lightest stop (--calm-mid). */
+.card.td-calm.cc-navy { --calm-deep: #0E1B3A; --calm-mid: #1D3A6E; --calm-mint: #A8C7FF; background-color: var(--calm-deep); background-image: radial-gradient(120% 120% at 20% 30%, var(--calm-mid) 0%, var(--calm-deep) 70%); color: #fff; text-decoration: none; box-sizing: border-box; }
+.card.td-calm.cc-navy b { color: #fff; }
+.card.td-calm.cc-navy .td-grow > span { color: rgb(255 255 255 / .86); }
+.td-calm.cc-navy { --bo-dot: var(--calm-mint); }
+.td-calm.cc-navy .bo-orb i { border-color: #fff; }

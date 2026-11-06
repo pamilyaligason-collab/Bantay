@@ -21,6 +21,7 @@ vi.mock('./NextUp', () => ({ default: () => null, MedsCheck: () => null }))
 vi.mock('./PlanToday', () => ({ default: () => null }))
 vi.mock('./SelfCare', () => ({ default: () => null }))
 vi.mock('../look/celebrate', () => ({ celebrate: (k: string) => m.cel(k) }))
+vi.mock('../nutrition/actions', async (orig) => ({ ...(await orig<typeof import('../nutrition/actions')>()), logWater: () => Promise.resolve('ok') }))
 import { rowLeaveMs, TICK_MS } from './doneMorph'
 import { NUDGE_PLAY_MS, NUDGE_SETTLE_MS, resetNudges } from '../nudge/nudgeDue'
 import MyDay from './MyDay'
@@ -355,7 +356,7 @@ describe('S22 My day rewards', () => {
   it('rows already done on arrival wait in a closed Done today fold with no animation; the button opens it', () => {
     s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6); m.breaths = [{ at: new Date().toISOString() }] // the breath row counts too
     render(<MyDay notify={() => undefined} />)
-    const fold = screen.getByRole('button', { name: /Done today \(2\)/ }) // water stays in the list, so its plus works past the goal
+    const fold = screen.getByRole('button', { name: /Done today \(4\)/ }) // blood pressure, water, check-in and the breath
     expect(fold.getAttribute('aria-expanded')).toBe('false')
     const panel = document.getElementById(fold.getAttribute('aria-controls')!)!
     expect(panel.hidden).toBe(true)
@@ -363,7 +364,7 @@ describe('S22 My day rewards', () => {
     fireEvent.click(fold)
     expect(fold.getAttribute('aria-expanded')).toBe('true')
     expect(panel.hidden).toBe(false)
-    expect(Array.from(panel.querySelectorAll('[data-testid^="myday-"]')).map((e) => e.getAttribute('data-testid'))).toEqual(['myday-bp', 'myday-checkin'])
+    expect(Array.from(panel.querySelectorAll('[data-testid^="myday-"]')).map((e) => e.getAttribute('data-testid'))).toEqual(['myday-bp', 'myday-water', 'myday-checkin'])
     expect(screen.queryByTestId('myday-done-card')).toBeNull() // loaded already done: no card, no confetti
     expect(m.cel).not.toHaveBeenCalled()
     expect(screen.getByTestId('myday-prio-done').textContent).toBe('All done')
@@ -397,6 +398,25 @@ describe('S22 My day rewards', () => {
     m.water = glasses(6)
     rerender(<MyDay notify={() => undefined} />)
     expect(phaseOf('myday-water')).toBe('tick')
+  })
+  it('ML-47: after the glass that reaches the goal, focus never falls to the page and ends on + water; the fold bar and row buttons have distinct names', async () => {
+    vi.useFakeTimers()
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(5)
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Add a glass of water' })) })
+    m.water = glasses(6)
+    rerender(<MyDay notify={() => undefined} />)
+    expect(phaseOf('myday-water')).toBe('tick')
+    const held = () => document.activeElement !== document.body && document.activeElement !== null
+    expect(held()).toBe(true) // the tick swapped the plus away: the fold button already holds focus
+    for (let t = 0; t < TICK_MS + rowLeaveMs(false) + 50; t += 10) {
+      act(() => { vi.advanceTimersByTime(10) })
+      expect(held()).toBe(true)
+    }
+    expect(document.activeElement).toBe(screen.getByTestId('myday-water-add'))
+    fireEvent.click(screen.getByTestId('myday-fold')) // fold open: the row's own plus and the bar's differ by name
+    expect(screen.getAllByRole('button', { name: 'Add a glass of water' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Add another glass of water' })).toHaveLength(1)
   })
   it('each glass moves the ring but the visible count stays whole rows (ML-40)', () => {
     const dash = () => screen.getByTestId('myday-ring').querySelector('.rg-val')!.getAttribute('stroke-dasharray')
@@ -460,13 +480,65 @@ describe('S22 My day rewards', () => {
     render(<MyDay notify={() => undefined} />)
     expect(screen.getByTestId('myday-prio-done').textContent).toBe('Priorities done1 extra left')
   })
-  it('water past the goal keeps its plus in the list, outside the closed fold', () => {
+  it('water past the goal folds with the rest, but its + water button stays on the Done today bar', () => {
     s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(7)
     render(<MyDay notify={() => undefined} />)
-    expect(screen.getByRole('button', { name: /Done today \(2\)/ })).toBeTruthy()
-    const plus = screen.getByRole('button', { name: 'Add a glass of water' })
+    expect(screen.getByRole('button', { name: /Done today \(3\)/ })).toBeTruthy()
+    expect(screen.getByTestId('myday-water').closest('[hidden]')).not.toBeNull()
+    const plus = screen.getByTestId('myday-water-add')
     expect(plus.closest('[hidden]')).toBeNull()
-    expect(screen.getByTestId('myday-water').textContent).toContain('7 of 6 glasses')
+    expect(plus.closest('.td-foldbar')).not.toBeNull()
+    expect(plus.getAttribute('aria-label')).toBe('Add another glass of water')
+    expect(plus.textContent).toBe('+ water')
+  })
+  it('under the goal there is no + water button on the bar', () => {
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(3)
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.queryByTestId('myday-water-add')).toBeNull()
+    expect(screen.getByTestId('myday-water').closest('[hidden]')).toBeNull()
+  })
+  it('a charging low battery in the evening folds into Done today; discharging stays in the list', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 5, 20, 0))
+    const bat = (charging: boolean) => vi.stubGlobal('navigator', Object.assign(Object.create(navigator), { getBattery: () => Promise.resolve({ level: 0.2, charging, addEventListener: () => undefined, removeEventListener: () => undefined }) }))
+    bat(false)
+    const a = render(<MyDay notify={() => undefined} />)
+    await act(async () => { await Promise.resolve() })
+    expect(screen.getByTestId('myday-battery').closest('[hidden]')).toBeNull()
+    a.unmount()
+    bat(true)
+    render(<MyDay notify={() => undefined} />)
+    await act(async () => { await Promise.resolve() })
+    expect(screen.getByTestId('myday-battery').closest('[hidden]')).not.toBeNull()
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+  })
+  it('a breath done earlier today sits in the fold; with none the row stays in the list', () => {
+    m.breaths = [{ at: new Date().toISOString() }]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+  })
+  it('blood pressure finished on its own screen and back (remount): the card and the confetti come once, not again on the next remount', () => {
+    vi.useFakeTimers()
+    m.activity = checkedIn(); m.water = glasses(6); m.breaths = [{ at: new Date().toISOString() }]
+    const a = render(<MyDay notify={() => undefined} />) // blood pressure still open on this visit
+    expect(screen.queryByTestId('myday-done-card')).toBeNull()
+    a.unmount()
+    s.readings = bpToday() // logged on #health/metric/bp_systolic, then back to Today
+    const b = render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-done-card').textContent).toContain('All done for today')
+    expect(m.cel).toHaveBeenCalledTimes(1)
+    b.unmount()
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.queryByTestId('myday-done-card')).toBeNull()
+    expect(m.cel).toHaveBeenCalledTimes(1)
+  })
+  it('the card title is Priorities done while an extra is left, and All done for today only when every row is done', () => {
+    vi.useFakeTimers()
+    m.alerts = [miss()]
+    const r = render(<MyDay notify={() => undefined} />)
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-done-card').querySelector('.td-done-t')!.textContent).toBe('Priorities done')
   })
   it('a row finished from the keyboard: focus moves to the next open row (blood pressure Log), not lost', async () => {
     vi.useFakeTimers()

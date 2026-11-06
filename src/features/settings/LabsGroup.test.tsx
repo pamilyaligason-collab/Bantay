@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULTS, readFlags } from '../safety/flags'
-import LabsGroup, { setFlag } from './LabsGroup'
+import LabsGroup, { setFlag, setKeyedFlag } from './LabsGroup'
 
 const reload = vi.fn()
 beforeEach(() => { localStorage.clear(); reload.mockReset() })
@@ -10,7 +10,7 @@ afterEach(cleanup)
 describe('Labs switches', () => {
   it('one switch per flag in the flags module, showing the defaults', () => {
     render(<LabsGroup />)
-    expect(screen.getAllByRole('switch')).toHaveLength(Object.keys(DEFAULTS).length)
+    expect(screen.getAllByRole('switch')).toHaveLength(Object.keys(DEFAULTS).length + 3)
     expect(screen.getByRole('switch', { name: 'Offline maps' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByRole('switch', { name: 'Local hazard packs' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByText(/The page reloads/)).toBeTruthy()
@@ -34,6 +34,29 @@ describe('Labs switches', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
     const r = vi.fn()
     setFlag('offlineMaps', true, r)
+    expect(r).not.toHaveBeenCalled()
+    vi.restoreAllMocks()
+  })
+  it.each([
+    ['Family map (place sharing)', 'bantay.flag.places'],
+    ['Family feed', 'bantay.flag.feed'],
+    ['Weather blend (beta)', 'bantay.flag.wx.blend']
+  ])('%s: off by default, on writes 1 and reloads, off removes the key and reloads', (name, key) => {
+    render(<LabsGroup reload={reload} />)
+    expect(screen.getByRole('switch', { name }).getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(screen.getByRole('switch', { name }))
+    expect(localStorage.getItem(key)).toBe('1')
+    expect(reload).toHaveBeenCalledTimes(1)
+    cleanup(); render(<LabsGroup reload={reload} />)
+    expect(screen.getByRole('switch', { name }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('switch', { name }))
+    expect(localStorage.getItem(key)).toBeNull()
+    expect(reload).toHaveBeenCalledTimes(2)
+  })
+  it('a keyed flag with storage refused does not reload', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
+    const r = vi.fn()
+    setKeyedFlag('bantay.flag.feed', true, r)
     expect(r).not.toHaveBeenCalled()
     vi.restoreAllMocks()
   })

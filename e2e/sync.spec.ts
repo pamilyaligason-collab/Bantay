@@ -32,7 +32,7 @@ test('signed in: a queued reading is posted once with a client_id, then the badg
   const bodies: Record<string, unknown>[] = []
   await page.route(API + '**', (r) => {
     const req = r.request()
-    if (req.method() === 'POST') { bodies.push(req.postDataJSON()); return r.fulfill({ status: 201 }) }
+    if (req.method() === 'POST') { if (req.url().includes('/rest/v1/readings')) bodies.push(req.postDataJSON()); return r.fulfill({ status: 201 }) } // the family_feed RPC also POSTs: count readings only
     return r.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
   await open(page, 'tok')

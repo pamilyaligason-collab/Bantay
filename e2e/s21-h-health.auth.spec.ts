@@ -157,7 +157,7 @@ const BP_AND_SUGAR: Row[] = [{ test: 'bp_systolic', value: 124, unit: 'mmHg', ag
 // D-135: the inline Pinned row omits Steps and Medicines (the Today row and Browse show them), so the default shows two tiles; Edit pins puts four metric tiles in (Pulse and Fasting sugar for Steps and Medicines), which keeps the two-row grid under test.
 async function fourTiles(page: Page) {
   await page.getByRole('button', { name: 'Edit pins' }).click()
-  for (const name of ['Medicines', 'Steps', 'Pulse', 'Fasting sugar']) await page.getByRole('checkbox', { name }).click()
+  for (const name of ['Medicines', 'Steps', 'Blood pressure', 'Pulse', 'Fasting sugar', 'Weight']) await page.getByRole('checkbox', { name }).click() // D-142: a BP pin is not drawn in the Readings card (its sub-tile shows BP) unless due, so the four tiles are Next visit, Pulse, Fasting sugar and Weight
   await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByRole('dialog', { name: 'Pinned' })).toHaveCount(0) // the sheet's exit animation must end first
   await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(4)

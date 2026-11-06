@@ -59,6 +59,11 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-sea-bg[data-s="undas"] { background: radial-gradient(ellipse 70% 120% at 92% 110%, rgb(240 181 76 / .55), transparent 70%); animation: dc-flicker 3.2s ease-in-out infinite alternate; }
 @keyframes dc-flicker { from { opacity: .75; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .dc-sea-bg { animation: none !important; } }
+/* S22 FX-DISC: the large guided row at the top of Listen. LiteVideo's play disc is 56 px here. */
+.card.dc-bigrow { display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+.dc-bigrow .lv-btn { width: 56px; height: 56px; }
+.dc-bigrow-t { font-size: 22px; line-height: 28px; }
+.dc-bigrow-s { font-size: 16px; color: var(--muted); }
 .dc-prows .rw-lead { background: rgb(255 255 255 / .55); color: var(--h-ic); }
 :root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }

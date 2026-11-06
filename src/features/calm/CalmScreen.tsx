@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { LargeTitle } from '../look/LargeTitle'
 import { CALM_JACK_EVENT } from './CalmJack'
-import CalmHero from './CalmHero'
+import CalmHero, { AfterScare } from './CalmHero'
 import CrisisCard from './CrisisCard'
 import MediaLinks from './MediaLinks'
 import MoodCheck from './MoodCheck'
@@ -20,6 +20,7 @@ export default function CalmScreen() {
       <MoodCheck />
       <MediaLinks />
       <CrisisCard />
+      <AfterScare />
     </div>
   )
 }

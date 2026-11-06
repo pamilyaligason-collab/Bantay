@@ -1,6 +1,7 @@
 import type { Alert as WxAlert, Air, Slot, Source } from '../../../supabase/functions/weather-blend/blend.ts'
 import { EmptyState } from '../look/EmptyState'
 import { Section } from '../look/Section'
+import { RainRemindSwitch } from './Next2hMini'
 
 const clock = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12}:${t.slice(14, 16)}` + (h < 12 ? ' AM' : ' PM') }
 const RAIN = 0.1 // mm per hour: below this it is dry
@@ -36,6 +37,7 @@ export function Next2h({ slots: all, offline, now }: { slots: Slot[]; offline: b
           ))}
         </ul>
         <p className="wx-sub">mm of rain per hour, in 10-minute steps.{est ? ' Estimated from hourly data.' : ''}</p>
+        <RainRemindSwitch />
       </div>
     </Section>
   )

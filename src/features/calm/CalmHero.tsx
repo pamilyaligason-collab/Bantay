@@ -5,6 +5,7 @@ import { DotSphere } from '../look/DotSphere'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import BreathSheet from '../today/BreathSheet'
+import ScareSheet from './ScareSheet'
 import { useActing } from '../viewas/viewAs'
 import { cycleSecs, MINUTES, momentAt, SAFETY, SHOWN_PATTERNS, type Pattern, type SelfCareEntry } from '../today/breathLogic'
 
@@ -77,5 +78,20 @@ export default function CalmHero() {
       ))}
     </section>
     </>
+  )
+}
+
+/** "After a scare" sits after the crisis card (CalmScreen), so the crisis card keeps its place on the page. */
+export function AfterScare() {
+  const [scare, setScare] = useState(false)
+  return (
+    <section className="cm-ex" aria-label="After a scare">
+      <button type="button" className="cm-ex-b press" data-testid="calm-scare-card" aria-haspopup="dialog" onClick={() => setScare(true)}>
+        <span className="cm-ex-s" style={{ color: '#7FE0D0' }} aria-hidden="true"><DotSphere size={64} rings={3} /></span>
+        <span className="cm-ex-m"><b>After a scare</b><span>5 things you see, 4 you hear</span></span>
+        <span className="cm-ex-d">3 min</span>
+      </button>
+      {scare && <ScareSheet onClose={() => setScare(false)} />}
+    </section>
   )
 }

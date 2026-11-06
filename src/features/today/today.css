@@ -521,6 +521,8 @@
 .td-wxs .td-act-box { background: rgb(255 255 255 / .16); color: #fff; border-radius: 999px; padding: 8px 16px; }
 .td-wxs .td-act-box b { text-shadow: 0 1px 6px rgb(0 0 0 / .45); }
 /* T8: no left bar on notice rows: a tint fill instead */
+.card.al-row { flex-wrap: wrap; }
+.al-arch-one { flex-basis: 100%; min-height: 44px; margin: 0 12px 4px 0; }
 .card.al-row { border-inline-start: 0; background: var(--tint-red); }
 .card.td-ao { border-inline-start: 0; }
 .al-txt b { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-overflow: clip; }
@@ -633,6 +635,10 @@
 .td-prio-done { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; }
 .td-prio-done .td-todo-ic { width: 40px; height: 40px; border-radius: 12px; }
 .td-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; border-top: .5px solid var(--hair); background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--green); cursor: pointer; width: 100%; justify-content: flex-start; }
+.td-foldbar { display: flex; align-items: center; gap: 8px; border-top: .5px solid var(--hair); }
+.td-foldbar .td-fold { border-top: 0; flex: 1; min-width: 0; width: auto; }
+.td-fold-add { min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--tint-teal); color: var(--tint-teal-ink); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.td-fold-add:disabled { opacity: .5; cursor: default; }
 .td-fold > svg { transition: transform .2s; transform: rotate(90deg); }
 .td-fold[aria-expanded="true"] > svg { transform: rotate(-90deg); }
 .card.td-done-card { margin-bottom: 12px; padding: 22px 18px; text-align: center; background: var(--btn); color: #fff; animation: td-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
@@ -642,7 +648,7 @@
 .btn.td-done-go { margin-top: 16px; background: #fff; color: #1E6B4E; } /* white pill with dark-green text on the green card, same in dark mode (#1E6B4E on #fff = 6.4:1) */
 @keyframes td-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
 .bt[data-jack] .td-done-card .td-done-go { margin-right: 52px; }
-.bt[data-jack] .td-fold { width: fit-content; max-width: calc(100% - 52px); }
+.bt[data-jack] .td-foldbar { width: fit-content; max-width: calc(100% - 52px); }
 @media (prefers-reduced-motion: reduce) {
   .td-row[data-phase="out"] { grid-template-rows: 1fr; transition: opacity .15s linear; }
   .td-row[data-phase="out"] .td-row-in { transform: none; transition: none; }

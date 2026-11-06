@@ -46,18 +46,22 @@ describe('World', () => {
     const card = await screen.findByTestId('world-map')
     expect(card.parentElement!.parentElement!.className).toBe('wd-bleed') // LazyMap region inside the bleed wrapper (negative gutter in world.css)
     expect(card.style.getPropertyValue('--h')).toBe('300px')
-    expect(screen.getByText('You').parentElement!.querySelector('.wd-dot.lm-you')).toBeTruthy()
-    await waitFor(() => expect(document.querySelector('.wd-dot.wd-quake')).toBeTruthy()) // the key dot
+    expect(screen.getByText('You').parentElement!.querySelector('.wd-mark.wd-you svg')).toBeTruthy() // a symbol, not a bare dot
+    await waitFor(() => expect(document.querySelector('.wd-legend .wd-mark.wd-quake svg')).toBeTruthy()) // the key symbol, with its text label beside it
+    expect(screen.getByText('Quake')).toBeTruthy()
+    expect(document.querySelector('.wd-dot')).toBeNull()
   })
-  it('pins keep their wm-<kind> classes on the map itself', async () => {
+  it('pins are symbols in tinted circles on the map itself', async () => {
     await db.kv.put({ key: ALERTS_KEY, value: [quake, volc] })
     render(<World />)
-    await waitFor(() => expect(document.querySelectorAll('.wd-dot.wd-quake, .wd-dot.wd-volcano').length).toBe(2)) // the pins are in by now
-    const drawn: { at: number[]; o: { className: string } }[] = []
-    const L = { circleMarker: (at: number[], o: { className: string }) => { const m = { bindTooltip: () => m, addTo: () => m }; drawn.push({ at, o }); return m } }
+    await waitFor(() => expect(document.querySelectorAll('.wd-legend .wd-quake, .wd-legend .wd-volcano').length).toBe(2)) // the pins are in by now
+    const drawn: { at: number[]; html: string }[] = []
+    const L = { divIcon: (o: { html: string }) => o, marker: (at: number[], o: { icon: { html: string } }) => { const m = { bindTooltip: () => m, addTo: () => m }; drawn.push({ at, html: o.icon.html }); return m } }
     seen.map!.setup!(L as never, {} as never)
-    expect(drawn.map((d) => d.o.className).sort()).toEqual(['lm-me', 'wm wm-quake', 'wm wm-volcano']) // the blue dot for the family place, then one coloured pin per alert
-    expect(drawn.find((d) => d.o.className === 'wm wm-quake')!.at).toEqual([9.7, 123.9])
+    const kind = (d: { html: string }) => /wd-(?!mark)(\w+)/.exec(d.html)![1]
+    expect(drawn.map(kind).sort()).toEqual(['quake', 'volcano', 'you']) // a symbol for the family place, then one per alert
+    expect(drawn.every((d) => d.html.includes('<svg'))).toBe(true)
+    expect(drawn.find((d) => kind(d) === 'quake')!.at).toEqual([9.7, 123.9])
   })
   it('flag on: at the start view of the card (zoom 4 over the Philippines) the world overview streams, and its labels are English', async () => {
     flags.offlineMaps = true
@@ -106,7 +110,13 @@ describe('World', () => {
     expect(screen.queryByText('M5.1 quake near Bohol')).toBeNull()
     expect(screen.getByText('No big events listed by GDACS')).toBeTruthy()
   })
+  it('flag off: there is no Daily digest card at all', async () => {
+    render(<World />)
+    await screen.findByTestId('world-map')
+    expect(screen.queryByText(/Daily digest/)).toBeNull()
+  })
   it('the digest card shows the saved time and links to the settings', async () => {
+    flags.digest = true
     await db.kv.put({ key: ALERT_KEY, value: { digestTime: '06:30' } })
     render(<World />)
     await waitFor(() => expect(screen.getByText('Daily digest (coming) · 06:30')).toBeTruthy())
@@ -205,7 +215,7 @@ describe('World', () => {
     it('flag off ignores a digest', () => {
       feed.v = { state: 'ok', news: [], digest }; at('2026-11-05T00:30:00Z')
       render(<World />)
-      expect(screen.getByText('Daily digest (coming) · 07:00')).toBeTruthy()
+      expect(screen.queryByText(/Daily digest|Two warnings/)).toBeNull()
     })
   })
 })

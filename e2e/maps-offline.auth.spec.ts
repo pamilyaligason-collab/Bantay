@@ -47,7 +47,8 @@ async function seed(page: Page, maps: string[]) {
         const base = { code, version: 1, checksum: 'c', name, neighbours: [], places: [], fetchedAt: 1, usedAt: Date.now(), pinned: true }
         tx.objectStore('packs').put((withMap as string[]).includes(code) ? { ...base, basemap: { checksum: 'x', bounds, blob: new Blob([raw]), savedAt: '2026-11-06T13:10:00.000Z' } } : base)
       }
-      tx.oncomplete = () => { o.result.close(); done() }
+      // a raw IndexedDB write is invisible to Dexie's shared live queries (the shell already holds one): tell them, as Dexie does for another tab
+      tx.oncomplete = () => { o.result.close(); const bc = new BroadcastChannel('x-storagemutated-1'); bc.postMessage({ all: { d: 1, from: -Infinity, to: [[]] } }); bc.close(); done() }
       tx.onerror = () => fail(new Error('put failed'))
     }
   }), [FILE.toString('base64'), BASEMAP_BOUNDS(P), SOCO_BOX, maps] as const)
