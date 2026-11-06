@@ -22,6 +22,7 @@ export default function Overview() {
   const { acting } = useActing()
   const { member, who, passkey, photo, loaded } = useAccount()
   const out = loaded && !member && !supabase // signed out (the Settings board's signed-out state): no family rows, only a copy with no sign-in configured; a failed session read never looks signed out
+  const noAccount = loaded && !member // signed out on a copy with sign-in set up too: the two rows below need an account
   const [simple, setSimple] = useKv<boolean>('mode.simple', false)
   const [quiet] = useKv<boolean>('quiet.on', true)
   const [theme] = useKv<ThemePref>(THEME_KEY, 'system')
@@ -55,13 +56,13 @@ export default function Overview() {
         {!out && <ViewAsRow />}
         <NavRow icon="bell" tint="red" title="Alerts and reminders" sub={quiet ? 'Quiet hours on · 10 PM to 6 AM' : 'Quiet hours off'} href="#me/alerts" />
         <NavRow icon="screen" tint="blue" title="Display" sub={`${label(TEXT_SIZES, isTextSize(textSize) ? textSize : 'normal')} text · ${label(THEMES, theme)}`} href="#me/display" />
-        {!out && <NavRow icon="users" tint="amber" title="Family and sharing" sub={names ? `SOS text to ${names}` : 'Records, SOS text, Medical ID'} href="#me/family" locked={acting} />}
+        {!noAccount && <NavRow icon="users" tint="amber" title="Family and sharing" sub={names ? `SOS text to ${names}` : 'Records, SOS text, Medical ID'} href="#me/family" locked={acting} />}
         <NavRow icon="phone" tint="teal" title="Phone" sub="Health Connect and setup list" href="#me/phone" />
         <NavRow icon="shield" tint="purple" title="Privacy" sub="Agreement, AI, my data" href="#privacy" locked={acting} />
-        {!out && <NavRow icon="fp" title="Sign-in" sub={`Fingerprint ${passkey ? 'on' : 'off'}`} href="#me/signin" locked={acting} />}
+        {!noAccount && <NavRow icon="fp" title="Sign-in" sub={`Fingerprint ${passkey ? 'on' : 'off'}`} href="#me/signin" locked={acting} />}
         <NavRow icon="info" tint="none" title="About" sub="Version and updates" href="#me/about" />
       </div>
-      {out && <p className="sh-sub sh-note">Family and sign-in rows show after you sign in.</p>}
+      {noAccount && <p className="sh-sub sh-note">Family and sign-in rows show after you sign in.</p>}
 
       {detailsOpen && member?.personId && <DetailsSheet personId={member.personId} name={who} onClose={() => setDetailsOpen(false)} />}
     </div>

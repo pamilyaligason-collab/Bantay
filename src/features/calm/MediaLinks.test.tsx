@@ -7,6 +7,7 @@ import SosButton from '../sos/SosButton'
 import SosHold from '../sos/SosHold'
 import NofabSos from '../today/NofabSos'
 import MediaLinks from './MediaLinks'
+import { RADIO } from './media'
 import { RADIO_STALL_MS } from './useRadio'
 
 const G1 = 'https://stream.radioparadise.com/mellow-128'
@@ -35,6 +36,12 @@ describe('radio', () => {
     expect(audio().hasAttribute('src')).toBe(false)
     expect(audio().getAttribute('preload')).toBe('none')
     expect(card('rpmellow').dataset.state).toBe('idle')
+  })
+  it('every stream address is https (the APK refuses plain http), and one line says the radio stops when you leave', () => {
+    expect(RADIO.length).toBeGreaterThan(0)
+    for (const s of RADIO) { expect(s.streams.length).toBeGreaterThan(0); for (const u of s.streams) expect(u, `${s.id}: ${u}`).toMatch(/^https:\/\//) }
+    render(<MediaLinks />)
+    expect(screen.getByTestId('calm-media').textContent).toContain('Radio stops when you leave Calm.')
   })
   it('each card names its source and links its own site, in every state', () => {
     render(<MediaLinks />)

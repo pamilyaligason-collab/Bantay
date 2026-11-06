@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { getMember } from '../auth/session'
 import { Row, LargeTitle, Section, Skeleton, GroupedList } from '../look'
 import { HeadActions } from '../shell/HeadActions'
 import { PersonSwitcher } from './PersonSwitcher'
-import { useActingPersonId, useViewAs } from '../viewas/viewAs'
+import { reasonFor, useActingPersonId, useViewAs, type ReasonCtx } from '../viewas/viewAs'
 import '../viewas/viewas.css'
 import { clock12 } from './medActions'
 import { givenName, shortMedName } from './medName'
@@ -11,6 +12,25 @@ import { toCheck } from './MedReview'
 import { useToday } from './Medicines'
 import { useHealthPerson } from './useHealthPerson'
 
+/** Whether the viewer is the owner and whether the person has a login, for the true lock sentence (D-109, D-120). Unknown stays unknown; reasonFor fails closed on it. */
+function useReasonCtx(id: string, on: boolean): ReasonCtx {
+  const [ctx, setCtx] = useState<ReasonCtx>({})
+  useEffect(() => {
+    if (!on) return
+    let live = true
+    void (async () => {
+      try {
+        const owner = (await getMember())?.isOwner === true
+        let hasLogin: boolean | null = null
+        if (owner) { const { loadRoster } = await import('../admin/desk/viewAsData'); const row = (await loadRoster())?.people.find((p) => p.id === id); if (row) hasLogin = !!row.auth_user_id }
+        if (live) setCtx({ owner, hasLogin })
+      } catch { /* unknown: the non-owner sentence */ }
+    })()
+    return () => { live = false }
+  }, [id, on])
+  return ctx
+}
+
 /** #health/member/<id>: someone else's health. The page itself has no Take, Skip or Add; the rows open screens where a carer with logging shared can log, so the bar says view only only when they cannot. */
 export function MemberHealth({ id }: { id: string }) {
   const { ready, people, ownId, acting, personId, setPersonId, readings, thresholds, canMark, lockReason } = useHealthPerson()
@@ -18,6 +38,7 @@ export function MemberHealth({ id }: { id: string }) {
   const meId = (acting ? actingId : ownId) ?? ''
   const va = useViewAs()
   const person = people.find((p) => p.id === id)
+  const ctx = useReasonCtx(id, !!person && !acting)
   useEffect(() => { if (person) setPersonId(id) }, [person, id, setPersonId])
   const name = person ? givenName(person.name) : ''
   // While viewing as someone, the bar's Back to me ends that; this link only leaves the page, so it says so.
@@ -31,7 +52,7 @@ export function MemberHealth({ id }: { id: string }) {
       <div className="mh-bar mh-stack" data-testid="member-bar"><span className="grow">Viewing {name} · {canMark ? 'you can log for them' : 'view only'}</span><span className="mh-acts">{va.can && <button type="button" className="btn" data-testid="member-open-app" disabled={!!va.busy} onClick={() => void va.go(id)}>Open the app as {name}</button>}{back}</span></div>
       {va.err && <p role="alert" className="sub mh-foot">{va.err}</p>}
       {here && <MemberBody personId={id} name={name} readings={readings} thresholds={thresholds} />}
-      {here && !canMark && <p className="sub mh-foot" data-testid="member-footer">{lockReason ?? `${name} has not shared logging with you, so you can look but not add. Ask them in Family to share.`}</p>}
+      {here && !canMark && <p className="sub mh-foot" data-testid="member-footer">{lockReason ?? reasonFor(name, ctx)}</p>}
     </>
   )
 }

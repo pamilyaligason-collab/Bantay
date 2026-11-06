@@ -14,6 +14,17 @@ test('first aid tiles share two equal columns and carry distinct per-topic tints
   await expect(page.getByRole('list', { name: 'Be ready' }).getByRole('link', { name: /^Offline maps/ })).toContainText('Not ready yet')
 })
 
+test('Safety home first aid tiles carry the same tints as All topics', async ({ page }) => {
+  await page.goto('/#safety')
+  await page.getByRole('button', { name: 'Show more' }).click()
+  const read = (sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => [e.getAttribute('href'), e.getAttribute('data-tint')]))
+  const home = Object.fromEntries(await read('.sf-fa'))
+  await page.goto('/#safety/firstaid')
+  const list = Object.fromEntries(await read('.fa-tc'))
+  expect(Object.keys(home)).toHaveLength(17)
+  for (const [href, tint] of Object.entries(home)) expect(tint, href!).toBe(list[href!])
+})
+
 test('Call 911 stays solid red with white text', async ({ page }) => {
   await page.goto('/#safety')
   const s = await page.getByRole('link', { name: 'Call 911' }).evaluate((e) => ({ bg: getComputedStyle(e).backgroundColor, fg: getComputedStyle(e).color }))
