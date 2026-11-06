@@ -1,5 +1,5 @@
 import type { Table } from 'dexie'
-import { db, drain, enqueue, type OutboxRow } from '../../db'
+import { db, drain, enqueue, type FeedRow, type OutboxRow } from '../../db'
 import { track } from '../admin/events'
 import { supabase } from '../auth/client'
 import { getAccessToken, getMember, onAuthChange, type Member } from '../auth/session'
@@ -22,8 +22,10 @@ export const PAGE = 1000
 export const OVERLAP_MS = 60 * 60_000 // pull re-reads this much before the cursor, so a row committed late is not missed
 const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 /** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
-const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health'])
+const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health', 'family_feed'])
 const NO_TABLE = /^(PGRST205|42P01)$/
+/** family_feed is a function, so a database without 0050 answers PGRST202 or 42883 (or 404). */
+const NO_FEED = /^(PGRST202|PGRST205|42883|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
 /** Rows sent in one go. A first steps sync queues about 720. A safety row queued meanwhile waits for the rest of the batch and one alerts read, or for the full pull if that batch emptied the queue, then goes first. */
 const BATCH = 50
@@ -247,6 +249,7 @@ async function pull(token: string) {
   await pullSafety(url!, key!, token)
   await pullAlerts(url!, key!, token)
   await pullGoals(url!, key!, token)
+  await pullFeed(url!, key!, token)
   if (reset) await db.kv.put({ key: CURSOR_RESET_KEY, value: true })
 }
 
@@ -431,6 +434,43 @@ async function pullGoals(url: string, key: string, token: string) {
     // potassium_mg and sex come with migration 0026; a project without it just has no such keys (null)
     await ldb.goals.put({ personId: r.person_id, sodiumMg, waterMl, potassiumMg: pt(r.potassium_mg), sex: r.sex === 'female' || r.sex === 'male' ? r.sex : null, ...(iso(r.updated_at) ? { updatedAt: iso(r.updated_at)! } : {}) })
   }
+}
+
+// Family feed (D-134): the server list is the whole truth, so it REPLACES the local table (a stop-share, a deleted reading or a deleted photo leaves every phone at its next pull).
+// Optional like alerts: without migration 0050 the feed is empty and sync reports nothing; only a lost network or a rejected session is rethrown.
+const FEED_KINDS = new Set(['bp', 'lab', 'photo', 'status'])
+const FEED_DAYS = 30
+export function toFeedRow(r: Record<string, unknown>): FeedRow | null {
+  const at = iso(r.at)
+  if (typeof r.kind !== 'string' || !FEED_KINDS.has(r.kind) || typeof r.person_id !== 'string' || typeof r.row_id !== 'string' || !at) return null
+  return { id: `${r.kind}|${r.row_id}`, kind: r.kind as FeedRow['kind'], personId: r.person_id, at, titleKey: str(r.title_key), valueText: typeof r.value_text === 'string' ? r.value_text : null, chip: typeof r.chip === 'string' ? r.chip : null, photoPath: typeof r.photo_path === 'string' ? r.photo_path : null, rowId: r.row_id }
+}
+
+export async function pullFeed(url?: string, key?: string, token?: string | null): Promise<void> {
+  const e = env()
+  const u = url ?? e.url
+  const k = key ?? e.key
+  const t = token ?? (u && k ? await cfg.getToken() : null)
+  if (!u || !k || !t) return
+  let rows: Record<string, unknown>[]
+  try {
+    let res: Response
+    try {
+      res = await fetch(`${u}/rest/v1/rpc/family_feed`, { method: 'POST', headers: { apikey: k, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_since: new Date(Date.now() - FEED_DAYS * 86_400_000).toISOString() }) })
+    } catch { throw new SyncError('net') }
+    if (res.status === 404) rows = []
+    else if (!res.ok) {
+      const code = await errCode(res)
+      if (NO_FEED.test(code)) rows = []
+      else throw new SyncError(res.status === 401 ? 'auth' : 'perm', code)
+    } else rows = (await res.json()) as Record<string, unknown>[]
+  } catch (err) {
+    if (err instanceof SyncError && (err.kind === 'net' || err.kind === 'auth')) throw err
+    return // any other failure leaves the feed as it was
+  }
+  if (!Array.isArray(rows)) return
+  const list = rows.map(toFeedRow).filter((x): x is FeedRow => x !== null)
+  await db.transaction('rw', db.feed, async () => { await db.feed.clear(); await db.feed.bulkPut(list) })
 }
 
 // ---- run

@@ -50,3 +50,10 @@
   .lk-fpwrap i { animation: none; opacity: .25; }
   .lk-scan { animation: none; top: 50%; opacity: .5; }
 }
+
+/* D-127 Share with the family switches */
+.pv-feed { display: grid; gap: 10px; }
+.pv-feed-h { display: grid; gap: 4px; }
+.pv-feed-name { margin: 0 4px; }
+.pv-feed-person { display: grid; gap: 6px; }
+.pv-feed .sh-list > div { min-height: 56px; }

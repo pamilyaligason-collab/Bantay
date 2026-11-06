@@ -116,6 +116,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#family/feed')
       await expect(page).toHaveURL(/#family$/)
       await page.evaluate(() => localStorage.setItem('bantay.flag.feed', '1'))
+      // D-134: the feed shows what the server list holds (Ate Joy switched blood pressure on), not other people's local readings
+      await page.route('**/rpc/family_feed', (r) => r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'content-type': 'application/json' }, body: JSON.stringify([{ kind: 'bp', person_id: 'ma', at: new Date(2026, 9, 27, 7, 0).toISOString(), title_key: 'feed.bp', value_text: '142/88', chip: null, photo_path: null, row_id: 'r1' }]) }))
       await page.goto('/#family/feed')
       await expect(page.locator('h1')).toHaveText('Family feed')
       await expect(page.getByRole('group', { name: 'Show' }).getByRole('button')).toHaveCount(4)

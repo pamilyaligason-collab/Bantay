@@ -84,7 +84,7 @@ describe('medications round trip', () => {
     await enqueue('meds_taken', 'insert', { personId: 'p1', name: 'Drug B', takenAt: '2026-10-05T21:00:00.000Z', medicationId: 'srv-2', slot: '21:00', skipped: false })
     startSync(cfg)()
     await syncNow()
-    const posts = calls.filter((c) => c.method === 'POST')
+    const posts = calls.filter((c) => c.method === 'POST' && !c.url.includes('/rpc/'))
     expect(posts.map((p) => p.url)).toEqual([`${URL}/rest/v1/medications?on_conflict=client_id`, `${URL}/rest/v1/medications?on_conflict=client_id`, `${URL}/rest/v1/meds_taken?on_conflict=client_id`])
     expect(JSON.parse(posts[0]!.body!)).toMatchObject({ id: 'srv-2', client_id: 'cm2', person_id: 'p1', name: 'Drug B', schedule: { v: 1, times: ['21:00'] }, med_status: 'active', status: 'confirmed', deleted_at: null })
     expect(JSON.parse(posts[1]!.body!)).toMatchObject({ client_id: 'cm2', deleted_at: '2026-10-05T00:00:00.000Z' })
