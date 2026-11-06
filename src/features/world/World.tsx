@@ -82,16 +82,17 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
     <>
       <SafetyHead view="world" actions={<ZonePicker loc={l} />} />
       {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(official, saved, down))}</p>}
-      <LazyMap height={260} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}
+      {/* above the map: below it, Jack's corner covered the last segment (D-128 allows whole-card links only) */}
+      <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
+      <div className="wd-bleed"><LazyMap height={300} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}
         setup={(L, map) => {
           for (const p of pins) L.circleMarker([p.lat, p.lon], { radius: 8, className: `wm wm-${p.kind}` }).bindTooltip(p.title).addTo(map)
           if (here) L.circleMarker([here.lat, here.lon], { radius: 7, className: 'lm-me' }).addTo(map)
-        }} />
+        }} /></div>
       <ul className="wd-legend" aria-label="Map key">
         <li><span className="wd-dot lm-you" aria-hidden="true" />You</li>
         {LEGEND.filter(([k]) => kinds.has(k)).map(([k, t]) => <li key={k}><span className={`wd-dot wd-${k}`} aria-hidden="true" />{t}</li>)}
       </ul>
-      <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
       {show('near') && <Section title="Near your family" meta="Instant alerts"><Rows label="Near your family" rows={rows.nearFamily} empty={stale ? NOT_SAID : 'No active hazards at Dampas or Conel'} /></Section>}
       {show('ph') && (
         <Section title="Philippines" meta="Official">

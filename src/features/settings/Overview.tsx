@@ -7,6 +7,7 @@ import { ConsentNotice } from '../privacy/ConsentNotice'
 import DetailsSheet from '../setup/DetailsSheet'
 import ViewAsRow from '../viewas/ViewAsRow'
 import { useActing } from '../viewas/viewAs'
+import LabsGroup from './LabsGroup'
 import { THEMES } from './DisplayGroup'
 import { sosNames } from './FamilyGroup'
 import { supabase } from '../auth/client'
@@ -62,6 +63,7 @@ export default function Overview() {
         {!noAccount && <NavRow icon="fp" title="Sign-in" sub={`Fingerprint ${passkey ? 'on' : 'off'}`} href="#me/signin" locked={acting} />}
         <NavRow icon="info" tint="none" title="About" sub="Version and updates" href="#me/about" />
       </div>
+      {member?.role === 'admin' && <LabsGroup />}
       {noAccount && <p className="sh-sub sh-note">Family and sign-in rows show after you sign in.</p>}
 
       {detailsOpen && member?.personId && <DetailsSheet personId={member.personId} name={who} onClose={() => setDetailsOpen(false)} />}

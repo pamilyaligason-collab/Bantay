@@ -12,12 +12,12 @@ import './privacy.css'
 
 // Where the data goes (contract D-78 copy rule): exactly what this build uses. No Sentry or SMS gateway. Firebase Cloud Messaging is used in the Android app only: the release build adds the owner's git-ignored google-services.json (APK 2.7.0 was built with it), so push registers once notifications are allowed (notify/fcm.ts). Web and a build without that file send none.
 export const PROCESSORS: { name: string; what: string }[] = [
-  { name: 'Supabase', what: 'your records and family messages' },
+  { name: 'Supabase', what: 'your records and family messages, and the map files the Safety maps and the Rescue map read from the family\'s own project (it sees your internet address and which map file)' },
   { name: 'Open-Meteo and Windy', what: 'weather forecast and live map; your place rounded to about 1 km' },
   { name: 'Wikipedia', what: 'the "On this day" facts in Discover; it receives today\'s date only, never your name or place' },
   { name: 'YouTube', what: 'picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap' },
   { name: 'Radio Paradise and Radio Swiss Classic', what: 'only when you tap Play on a radio card; the station sees your internet address' },
-  { name: 'OpenStreetMap', what: 'street map pictures on the Safety maps; it sees your internet address and the area shown' },
+  { name: 'OpenStreetMap', what: 'street map pictures on the Safety maps and the Rescue map. With Labs, Offline maps off (the usual setting) every map uses them. With it on, they are used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started. It sees your internet address and the area shown' },
   { name: 'Ventusky, HazardHunterPH and PAGASA Panahon', what: 'the map panels in Safety, only after you open a panel; Ventusky gets the map centre rounded to about 1 km, the other two get no place from the app; each sees your internet address and anything you type in its panel' },
   { name: 'MedlinePlus', what: 'plain health reads; it receives the condition, medicine or search words you open, never your name' },
   { name: 'OpenRouter', what: 'the AI models behind Jack and photo reading, only when you use them (zero data retention); what you ask Jack goes through a relay on the family owner\'s own server first; a photo you scan goes from a function on the family\'s own Supabase project straight to OpenRouter, with no relay' },

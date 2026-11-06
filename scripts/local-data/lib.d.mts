@@ -17,3 +17,12 @@ export function buildPack(unit: Unit, places: Place[]): { body: string; checksum
 export function staleRows<T extends { last_verified_at?: string | null }>(places: T[], days: number, today: string): T[]
 export function nextVersion(latest: { version: number; checksum: string } | undefined, checksum: string): { version: number; changed: boolean }
 export function hazardsEntry(code: string, manifest: Record<string, { pack?: string; bounds?: Record<string, number[]> }>, rows: { province_code: string; version: number; checksum: string; size_bytes: number; storage_path: string }[]): { pack: string; version: number; checksum: string; size: number; path: string; bounds?: Record<string, number[]> } | undefined
+export interface BasemapFile { version: number; checksum: string; size: number; path: string; bounds: [number, number, number, number]; minzoom: number; maxzoom: number }
+export interface BasemapManifest {
+  basemaps?: Record<string, { pack?: string; version?: number; sha256?: string; size?: number; path?: string; bounds?: number[]; minzoom?: number; maxzoom?: number }>
+  world?: { version: number; sha256: string; size: number; path: string; bounds: number[]; minzoom: number; maxzoom: number }
+}
+export function basemapEntry(code: string, manifest: BasemapManifest): (BasemapFile & { pack: string }) | undefined
+export function worldEntry(manifest: BasemapManifest): BasemapFile | undefined
+export function withBasemaps<T extends { packs: { code: string }[] }>(index: T, manifest: BasemapManifest): T & { world?: BasemapFile }
+export function reachableManifest(manifest: BasemapManifest, base: string, fetchFn?: (url: string, init?: RequestInit) => Promise<{ status: number }>, log?: (line: string) => void): Promise<BasemapManifest>

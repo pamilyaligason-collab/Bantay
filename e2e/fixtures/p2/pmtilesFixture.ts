@@ -68,6 +68,16 @@ export function pmtilesFile(tile: Uint8Array | null, gz: boolean, at = P, bounds
   return Buffer.concat([h, root, meta, leaf, data])
 }
 
+/** A tiny street map for the basemap specs: one z12 tile (zoom 8 to 12 in the header) with a land square over the whole tile and a water square around the point. Invented. */
+export function basemapFile(at = P): Buffer {
+  const t = tileOf(at, 12), px = Math.round(t.px * 4096), py = Math.round(t.py * 4096)
+  const zero = { f: 3, body: f64(0) }
+  const tile = new Uint8Array([...layer('earth', zero, square(0, 0, 4096, 4096)), ...layer('water', zero, square(px - 600, py - 600, px + 600, py + 600))])
+  return pmtilesFile(tile, false, at, undefined, { layers: ['earth', 'water'] })
+}
+/** The box basemapFile() declares, [west, south, east, north]. */
+export const BASEMAP_BOUNDS = (at = P): [number, number, number, number] => [at.lon - 0.4, at.lat - 0.3, at.lon + 0.3, at.lat + 0.3]
+
 /** A tile whose flood feature carries the given level (any number, or a string), for the bad-level tests. */
 export function tileWithLevel(level: number | string, at = P): Uint8Array {
   const t = tileOf(at, 12), px = Math.round(t.px * 4096), py = Math.round(t.py * 4096)

@@ -22,3 +22,7 @@
 .wp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
 .wp-grid .wp-pill { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border-radius: 22px; border: 0; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: var(--bg); color: inherit; }
 .wp-grid .wp-pill[aria-checked="true"] { background: var(--btn); color: var(--on-green, #fff); }
+/* The map card runs edge to edge: it cancels the page gutter and drops the rounded corners (World board). */
+.wd-bleed { margin-inline: -16px; }
+:root[data-narrow] .wd-bleed { margin-inline: -12px; } /* the narrow page gutter is 12 px (narrow.css) */
+.wd-bleed .mapc { border-radius: 0; padding: 0; } /* .card's padding wins in the signed-in build's CSS order */

@@ -2,6 +2,7 @@ import { useMemo, useRef, type ReactNode } from 'react'
 import type { Map as LMap } from 'leaflet'
 import { MapCard } from '../look'
 import { prefersReducedMotion } from '../look/useReducedMotion'
+import { FLAGS } from './flags'
 import './lazymap.css'
 
 type Leaflet = typeof import('leaflet')
@@ -16,13 +17,18 @@ export default function LazyMap(p: { height: number; center: [number, number]; z
     if (/jsdom/i.test(navigator.userAgent)) return () => {}
     let dead = false
     const fail = () => { if (dead) return; const m = document.createElement('p'); m.className = 'lm-fail'; m.setAttribute('role', 'status'); m.textContent = `${navigator.onLine ? 'Map could not load.' : 'Maps need internet.'} The list below still works.`; el.replaceChildren(m) }
-    if (!navigator.onLine) { fail(); return () => { dead = true } }
-    void Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css')]).then(([m]) => {
+    const maps = FLAGS.offlineMaps // off: exactly the OSM-only map below
+    if (!navigator.onLine && !maps) { fail(); return () => { dead = true } }
+    void Promise.all([import('leaflet'), import('leaflet/dist/leaflet.css'), maps ? import('./basemap') : null]).then(async ([m, , bm]) => {
       if (dead) return
       const L = (m.default ?? m) as Leaflet
+      const choice = bm ? await bm.chooseBasemap({ lat: p.center[0], lon: p.center[1], zoom: p.zoom }) : null
+      if (dead) return
+      if (choice?.kind === 'none') return fail()
       const calm = prefersReducedMotion()
       const lm = L.map(el, { center: p.center, zoom: p.zoom, zoomControl: false, attributionControl: false, zoomAnimation: !calm, fadeAnimation: !calm, markerZoomAnimation: !calm })
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(lm)
+      if (bm && choice) bm.basemapLayer(L, choice).addTo(lm)
+      else L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(lm)
       map.current = lm
       p.setup?.(L, lm)
     }).catch(fail)

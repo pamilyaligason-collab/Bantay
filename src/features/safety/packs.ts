@@ -3,12 +3,14 @@
 import { db, type PackRow } from '../../db'
 import { pauseOnData, type Conn } from './stormPar'
 import { type Entry, entriesFromPack, type PackPlace } from './entries'
+import type { BasemapFile } from './basemap'
 
 export interface PackIndexEntry {
   code: string; name: string; version: number; checksum: string; size: number; rows: number; path: string; neighbours: string[]
   hazards?: { pack: string; version: number; checksum: string; size: number; path: string; bounds?: Record<string, number[]> }
+  basemap?: BasemapFile
 }
-export interface PackIndex { format: 1; built: string; packs: PackIndexEntry[] }
+export interface PackIndex { format: 1; built: string; packs: PackIndexEntry[]; world?: BasemapFile }
 export interface PackFile { format: 1; province: string; name: string; neighbours: string[]; places: PackPlace[] }
 
 /** Bohol, South Cotabato and the city of General Santos: always on the phone, never cleaned up. */
@@ -113,6 +115,34 @@ export async function downloadHazards(code: string, d: SyncDeps = {}): Promise<'
     await link()
     return 'done'
   } catch { return 'bad' }
+}
+
+/** A basemap file (11 to 19 MB) downloads on Wi-Fi, or when the member taps. Stored whole in the unit's row after its sha256 matches the index; a mismatch stores nothing. */
+export async function downloadBasemap(code: string, d: SyncDeps = {}): Promise<'done' | 'wait' | 'none' | 'bad' | 'offline'> {
+  const f = d.fetch ?? fetch, store = d.store ?? dexieStore, base = d.base === undefined ? packBase() : d.base
+  if (!(d.wifi ?? strictWifi()) && d.tapped !== true) return 'wait'
+  if (!base) return 'offline'
+  const index = await loadIndex(f, base, d.now ?? Date.now())
+  if (!index) return 'offline'
+  const bm = index.packs.find((p) => p.code === code)?.basemap
+  if (!bm || !(await store.get(code))) return 'none'
+  try {
+    if ((await store.get(code))?.basemap?.checksum === bm.checksum) return 'done'
+    const r = await f(`${base}${bm.path}`)
+    if (!r.ok) return 'bad'
+    const buf = await r.arrayBuffer()
+    if ((await sha256Hex(buf)) !== bm.checksum) return 'bad'
+    const row = await store.get(code)
+    if (!row) return 'none'
+    await store.put({ ...row, basemap: { checksum: bm.checksum, bounds: bm.bounds, blob: new Blob([buf]), savedAt: new Date(d.now ?? Date.now()).toISOString() } })
+    return 'done'
+  } catch { return 'bad' }
+}
+
+/** Take a stored basemap off the phone; the rest of the pack stays. */
+export async function removeBasemap(code: string, store: Store = dexieStore): Promise<void> {
+  const row = await store.get(code)
+  if (row?.basemap) { const { basemap: _gone, ...rest } = row; await store.put(rest) }
 }
 
 const bundled = import.meta.glob('../../data/safety/packs/*/*.json', { import: 'default' }) as Record<string, () => Promise<PackFile>>

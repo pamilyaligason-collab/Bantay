@@ -10,3 +10,24 @@
 .hz-help { padding: 14px; border-radius: var(--r-card); display: flex; flex-direction: column; gap: 10px; }
 .hz-help .hz-name { font-size: 17px; line-height: 22px; font-weight: 600; }
 .hz-foot { margin: 0 4px; font-size: 13px; line-height: 18px; color: var(--muted); }
+
+/* Six rings (flag localPacks) and the NOAH layer legend: tokens only. */
+.hz-rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 6px; }
+:root[data-narrow] .hz-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hz-ring { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; --rg: var(--muted); --rg-bg: var(--hair); }
+.hz-ring[data-level="1"] { --rg: var(--tint-green-ink); --rg-bg: var(--tint-green); }
+.hz-ring[data-level="2"] { --rg: var(--tint-amber-ink); --rg-bg: var(--tint-amber); }
+.hz-ring[data-level="3"] { --rg: var(--tint-red-ink); --rg-bg: var(--tint-red); }
+.hz-ring[data-state="none"] { --rg-bg: var(--hair); --rg: var(--muted); }
+.hz-ring[data-state="none"] .hz-rg-t { font-size: 9px; }
+.hz-rg-track { stroke: var(--rg-bg); }
+.hz-ring[data-state="dashed"] .hz-rg-track { stroke: var(--muted); stroke-dasharray: 4 6; opacity: .5; }
+.hz-rg-val { stroke: var(--rg); }
+.hz-rg-t { fill: var(--rg); font-size: 12px; font-weight: 700; font-family: inherit; }
+.hz-ring-l { margin-top: 4px; font-size: 13px; line-height: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.hz-ringnote { margin: 0; font-size: 13px; line-height: 18px; color: var(--muted); text-align: center; }
+.hz-legend { margin: 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; line-height: 18px; }
+.hz-legend b { flex: 1 1 100%; font-weight: 600; }
+.hz-legend i { font-style: normal; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--tint-green); color: var(--tint-green-ink); }
+.hz-legend i[data-level="2"] { background: var(--tint-amber); color: var(--tint-amber-ink); }
+.hz-legend i[data-level="3"] { background: var(--tint-red); color: var(--tint-red-ink); }

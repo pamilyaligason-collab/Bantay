@@ -2,13 +2,14 @@
 //   node scripts/local-data/refresh.mjs validate                 offline: check every seed CSV (exit 1 on problems)
 //   node scripts/local-data/refresh.mjs import [--apply]          upsert coverage + seed rows into Supabase (dry run without --apply)
 //   node scripts/local-data/refresh.mjs packs [--out dir] [--upload]   build one pack per unit from published rows; --upload writes changed packs + index.json
+//   node scripts/local-data/refresh.mjs basemap-index [--index file]   dry run: print index.json with the basemap entries added (reads the live index.json or --index, writes nothing)
 //   node scripts/local-data/refresh.mjs stale [--days 180]        list rows not checked in N days (exit 0; the workflow posts the list)
 //   node scripts/local-data/refresh.mjs check-sources             GET every distinct source_url once, report the ones that fail (no writes)
 // Network commands need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (service role: never ship it to the app). Province codes come from
 // supabase/seed/local-data/psgc_provinces.csv (PSA PSGC masterlist; see RESEARCH.md). Without it, import and packs stop with a clear message.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildPack, dialable, hazardsEntry, nextVersion, parseCsv, splitPhones, staleRows, toPlace, validateRow } from './lib.mjs'
+import { basemapEntry, buildPack, dialable, hazardsEntry, nextVersion, parseCsv, reachableManifest, splitPhones, staleRows, toPlace, validateRow, withBasemaps, worldEntry } from './lib.mjs'
 
 const SEED = 'supabase/seed/local-data'
 const NON_PLACE = new Set(['psgc_provinces.csv', 'psgc_lgus.csv', 'coverage.csv'])
@@ -101,6 +102,8 @@ async function packs() {
   // hazard files are built by hazards.sh and listed in region_packs; the index keeps pointing at them whenever places change
   const hazardRows = sb ? await all(() => sb.from('region_packs').select('province_code,version,checksum,size_bytes,storage_path').eq('layer', 'hazards').order('province_code').order('version')) : []
   const hazardManifest = JSON.parse(readFileSync(join(SEED, 'hazards.json'), 'utf8'))
+  const publicBase = `${process.env.SUPABASE_URL ?? 'https://wuakimpssycbtnmoexuc.supabase.co'}/storage/v1/object/public/${BUCKET}/`
+  const basemaps = await reachableManifest(basemapManifest(), publicBase)
   const index = []
   for (const unit of units) {
     const pack = buildPack(unit, places)
@@ -114,11 +117,20 @@ async function packs() {
       must(await sb.from('region_packs').insert({ province_code: unit.psgc_code, layer: 'places', version, checksum: pack.checksum, size_bytes: pack.size, row_count: pack.rowCount, storage_path: path }))
     }
     console.log(`${unit.psgc_code} ${unit.name}: v${version} ${changed ? 'NEW' : 'same'} ${pack.rowCount} rows ${pack.size} B`)
-    index.push({ code: unit.psgc_code, name: unit.name, version, checksum: pack.checksum, size: pack.size, rows: pack.rowCount, path, neighbours: unit.neighbours ?? [], hazards: hazardsEntry(unit.psgc_code, hazardManifest, hazardRows) })
+    index.push({ code: unit.psgc_code, name: unit.name, version, checksum: pack.checksum, size: pack.size, rows: pack.rowCount, path, neighbours: unit.neighbours ?? [], hazards: hazardsEntry(unit.psgc_code, hazardManifest, hazardRows), basemap: basemapEntry(unit.psgc_code, basemaps) })
   }
-  const body = JSON.stringify({ format: 1, built: today, packs: index })
+  const body = JSON.stringify({ format: 1, built: today, packs: index, world: worldEntry(basemaps) })
   if (opt('--out')) writeFileSync(join(opt('--out'), 'index.json'), body)
   if (flag('--upload')) must(await sb.storage.from(BUCKET).upload('index.json', body, { contentType: 'application/json', cacheControl: '300', upsert: true }))
+}
+
+const basemapManifest = () => JSON.parse(readFileSync(join(import.meta.dirname, 'basemaps.json'), 'utf8'))
+
+// Read-only: no storage upload and no region_packs row. Basemaps are uploaded by hand and listed only in index.json (region_packs.layer allows places and hazards only, 0045).
+async function basemapIndex() {
+  const base = process.env.SUPABASE_URL ?? 'https://wuakimpssycbtnmoexuc.supabase.co'
+  const live = opt('--index') ? readFileSync(opt('--index'), 'utf8') : await fetch(`${base}/storage/v1/object/public/${BUCKET}/index.json`).then((res) => { if (!res.ok) throw new Error(`index.json: HTTP ${res.status}`); return res.text() })
+  console.log(JSON.stringify(withBasemaps(JSON.parse(live), basemapManifest())))
 }
 
 async function stale() {
@@ -142,6 +154,6 @@ async function checkSources() {
   console.log(`${urls.length - failed} of ${urls.length} sources reachable`)
 }
 
-const run = { validate, import: importSeed, packs, stale, 'check-sources': checkSources }[cmd]
-if (!run) { console.error('usage: refresh.mjs validate | import [--apply] | packs [--out dir] [--upload] [--from-csv] | stale [--days N] | check-sources'); process.exit(2) }
+const run = { validate, import: importSeed, packs, 'basemap-index': basemapIndex, stale, 'check-sources': checkSources }[cmd]
+if (!run) { console.error('usage: refresh.mjs validate | import [--apply] | packs [--out dir] [--upload] [--from-csv] | basemap-index [--index file] | stale [--days N] | check-sources'); process.exit(2) }
 run().catch((e) => { console.error(e.message); process.exit(1) })
