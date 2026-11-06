@@ -17,6 +17,12 @@ describe('Safety home first aid grid', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('false')
     await userEvent.click(btn)
     expect(links()).toHaveLength(17)
+    // hand-written from the board: after the 4 quick cards the rest follow the All topics order, with its tints
+    const ids = links().map((a) => a.getAttribute('href')!.split('/').pop())
+    expect(ids.slice(0, 8)).toEqual(['stroke', 'cpr', 'choking', 'dengue-warning-signs', 'bleeding', 'heart-attack', 'burns', 'heat-stroke'])
+    expect(ids.slice(8)).toEqual(['seizure', 'fainting', 'fracture', 'drowning', 'snake-bite', 'dog-bite-rabies', 'low-sugar', 'allergic-reaction', 'falls'])
+    const tint = (id: string) => links().find((a) => a.getAttribute('href') === `#safety/firstaid/${id}`)!.getAttribute('data-tint')
+    expect([tint('burns'), tint('seizure'), tint('fainting'), tint('snake-bite'), tint('low-sugar'), tint('falls')]).toEqual(['amber', 'purple', 'blue', 'green', 'teal', 'teal'])
     expect(btn.textContent).toBe('Show less')
     expect(btn.getAttribute('aria-expanded')).toBe('true')
     // a title that already says the Filipino name shows once: no sub line under Heat stroke

@@ -6,7 +6,7 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
 // The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
-const CRISIS_TOP_MAX = { 390: 1470, 450: 1448 } as const
+const CRISIS_TOP_MAX = { 390: 1480, 450: 1448 } as const // 390 grew 10 px for the note sentence "Radio stops when you leave Calm." (one more line at that width)
 const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
@@ -265,12 +265,12 @@ test('radio: stops on leaving Calm and keeps going at #calm/listen', async ({ pa
 test('radio: a failed address tries the second, then one plain line, and the card keeps its station site', async ({ page }) => {
   const asked: string[] = []
   await page.route(STREAM, (r) => { asked.push(r.request().url()); return r.fulfill({ status: 403, body: '' }) })
-  const d = row(page, 'rsclassic')
+  const d = row(page, 'rpmellow')
   await d.getByRole('button', { name: /^Play/ }).click()
   await expect(d).toHaveAttribute('data-state', 'error')
   await expect(d).toContainText('The radio did not start.')
-  await expect(d.getByRole('link', { name: /Station site/ })).toHaveAttribute('href', 'https://www.radioswissclassic.ch/')
-  expect([...new Set(asked)]).toEqual(['https://stream.srg-ssr.ch/srgssr/rsc_de/mp3/128', 'https://stream.srg-ssr.ch/m/rsc_de/mp3_128'])
+  await expect(d.getByRole('link', { name: /Station site/ })).toHaveAttribute('href', 'https://radioparadise.com/')
+  expect([...new Set(asked)]).toEqual(['https://stream.radioparadise.com/mellow-128', 'https://stream-uk1.radioparadise.com/mellow-128'])
   await page.unroute(STREAM)
   await page.route(STREAM, (r) => r.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }))
   await d.getByRole('button', { name: /^Play/ }).click() // Play tries again

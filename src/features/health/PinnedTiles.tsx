@@ -51,6 +51,8 @@ export function PinnedTiles({ personId, readings, canLog = true }: { personId: s
   const asks = useQuestionCount(personId)
   const [raw, setRaw, loaded] = useKv<unknown>(PIN_KEY, DEFAULT_PINS)
   const [editing, setEditing] = useState(false)
+  const [sensors] = useKv<{ enabled?: string[]; owner?: string } | null>('sensors.state', null) // sensors/health STATE_KEY, not imported: that file pulls in the native bridge
+  const stepsOn = !!sensors?.enabled?.includes('steps') && (!sensors.owner || sensors.owner === personId) // steps already switched on for this person on this phone
   const pins = cleanPins(raw)
   const bp = useMemo(() => bpThisWeek(readings), [readings])
   const steps = useMemo(() => latestSteps(acts), [acts])
@@ -68,7 +70,9 @@ export function PinnedTiles({ personId, readings, canLog = true }: { personId: s
     if (code === 'steps') {
       return steps
         ? <PreviewTile key={code} testId="glance-steps" tint="teal" kicker="Steps" value={steps.total.toLocaleString('en-US')} sub={steps.today ? 'Today' : `on ${steps.day}`} action="Open" href="#health/metric/steps" />
-        : <PreviewTile key={code} testId="glance-steps" tint="teal" kicker="Steps" value="Not connected" valueSize="md" sub="Reads your phone's step count" action="Connect" href="#me/phone" />
+        : stepsOn
+          ? <PreviewTile key={code} testId="glance-steps" tint="teal" kicker="Steps" value="No steps yet" valueSize="md" sub="Waiting for your phone" action="Open" href="#health/metric/steps" />
+          : <PreviewTile key={code} testId="glance-steps" tint="teal" kicker="Steps" value="Not connected" valueSize="md" sub="Reads your phone's step count" action="Connect" href="#me/phone" />
     }
     if (code === 'visits') return <PreviewTile key={code} testId="glance-visit" tint="purple" kicker="Next visit" value={visit ? visit.text.replace(/^Next visit: /, '') : 'Not booked'} valueSize="md" sub={visit?.sub ?? (asks ? `${asks} question${asks === 1 ? '' : 's'} ready to ask` : undefined)} action="Open" href="#health/visits" />
     const m = METRIC[code]!

@@ -52,6 +52,18 @@ describe('FamilyHealthCard', () => {
     await waitFor(() => expect(c.textContent).toContain('2 messages today'))
     expect(c.querySelector('input, textarea, button')).toBeNull() // read-only
   })
+  it('a flagged row opens that person, Memories opens Memories, and Memories hides at 0 photos', async () => {
+    const { unmount } = render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
+    const c = screen.getByTestId('family-health')
+    expect(within(c).getByRole('link', { name: /Ma Sample/ }).getAttribute('href')).toBe('#family/people/p2')
+    await waitFor(() => expect(within(c).getByRole('link', { name: /Memories/ }).getAttribute('href')).toBe('#family/memories'))
+    unmount()
+    photos.mockResolvedValue({ ok: true, data: [] })
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
+    await waitFor(() => expect(photos).toHaveBeenCalledTimes(2))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.getByTestId('family-health').textContent).not.toContain('Memories')
+  })
   it('a read-only link gets no flag line; a writer link does (D-109)', () => {
     state.writable = ['p2'] // Pa Sample is read-only
     render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)

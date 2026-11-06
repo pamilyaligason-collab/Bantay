@@ -1,15 +1,15 @@
 import 'fake-indexeddb/auto'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
   member: { userId: 'u-admin', personId: 'p-admin', role: 'admin' as 'admin' | 'member', handle: null as string | null, isOwner: false } as { userId: string; personId: string | null; role: 'admin' | 'member'; handle: string | null; isOwner: boolean } | null,
-  log: vi.fn(), carers: vi.fn(), roster: vi.fn(), calls: [] as string[]
+  log: vi.fn(), carers: vi.fn(), roster: vi.fn(), calls: [] as string[], vis: ((): { shown: unknown[]; hidden: unknown[] } => ({ shown: [], hidden: [] })) as (...a: unknown[]) => { shown: unknown[]; hidden: unknown[] }
 }))
 vi.mock('../auth/session', () => ({ getMember: async () => h.member, onAuthChange: () => () => undefined }))
 vi.mock('../sync/profile', () => ({ selfIdOrCached: async () => h.member?.personId ?? null }))
 vi.mock('../admin/events', () => ({ track: async (k: string, n: string) => { h.calls.push(`${k}:${n}`); return true } }))
-vi.mock('../admin/desk/viewAsData', () => ({ logViewAs: (...a: unknown[]) => h.log(...a), loadRoster: () => h.roster(), visibleTo: () => ({ shown: [], hidden: [] }) }))
+vi.mock('../admin/desk/viewAsData', () => ({ logViewAs: (...a: unknown[]) => h.log(...a), loadRoster: () => h.roster(), visibleTo: (...a: unknown[]) => h.vis(...a) }))
 vi.mock('../admin/api', () => ({ listCarers: () => h.carers() }))
 import { hdb } from '../records/store'
 import { enterActing, exitActing, useActing, useActingCan, useActingPersonId, useViewedVisibleIds } from './viewAs'
@@ -20,10 +20,10 @@ const link = (can_write: boolean) => ({ ok: true, data: [{ carer_id: 'u-admin', 
 beforeEach(async () => {
   exitActing()
   h.member = { userId: 'u-admin', personId: 'p-admin', role: 'admin', handle: null, isOwner: false }; h.roster.mockReset(); h.roster.mockResolvedValue(null)
-  h.log.mockReset(); h.log.mockResolvedValue(true); h.carers.mockReset(); h.carers.mockResolvedValue(link(true)); h.calls = []
+  h.vis = () => ({ shown: [], hidden: [] }); h.log.mockReset(); h.log.mockResolvedValue(true); h.carers.mockReset(); h.carers.mockResolvedValue(link(true)); h.calls = []
   await hdb.people.clear(); await hdb.people.put({ id: 'p-mama', name: 'Mama Villar' })
 })
-afterEach(() => { exitActing() })
+afterEach(() => { cleanup(); exitActing() })
 
 describe('enterActing', () => {
   it('a person with no people row on this phone is refused before any audit row is written', async () => {
@@ -153,5 +153,15 @@ describe('useViewedVisibleIds', () => {
     await enterActing('p-mama')
     const { result } = renderHook(() => useViewedVisibleIds())
     expect([...(result.current ?? [])]).toEqual(['p-mama'])
+  })
+  it('lists only people the member can read: one they only created is left out, a carer link stays', async () => {
+    const real = await vi.importActual<typeof import('../admin/desk/viewAsData')>('../admin/desk/viewAsData')
+    h.vis = real.visibleTo as typeof h.vis
+    const P = (id: string, extra: object = {}) => ({ id, display_name: id, auth_user_id: null, created_by: null, archived_at: null, photo_path: null, ...extra })
+    h.roster.mockResolvedValue({ people: [P('p-mama', { auth_user_id: 'u-mama' }), P('p-kid'), P('p-made', { created_by: 'u-mama' })], carers: [{ carer_id: 'u-mama', person_id: 'p-kid', can_write: false }] })
+    await enterActing('p-mama')
+    const { result } = renderHook(() => useViewedVisibleIds())
+    await waitFor(() => expect(result.current?.size).toBe(2), { timeout: 8000 })
+    expect([...(result.current ?? [])].sort()).toEqual(['p-kid', 'p-mama'])
   })
 })
