@@ -108,7 +108,7 @@ function DialRow({ e, onInfo, abroad }: { e: Entry; onInfo: (e: Entry) => void; 
   )
 }
 
-const checkedLine = (e: Entry) => [`Checked ${e.date}`, e.stale ? 'May be out of date' : null, e.status === 'UNVERIFIED' ? 'Number not confirmed' : null].filter(Boolean).join(' · ')
+const checkedLine = (e: Entry) => [`As of ${e.date}`, e.stale ? 'May be out of date' : null, e.status === 'UNVERIFIED' ? 'Number not confirmed' : null].filter(Boolean).join(' · ')
 
 /** Flag localPacks: the numbers from this place's region pack. A number that cannot be dialled as printed shows as text to copy, with no call button. */
 export function PackDial({ place, onInfo }: { place: Place; onInfo: (e: Entry) => void }) {

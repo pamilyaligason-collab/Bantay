@@ -289,6 +289,7 @@ describe('D-125 nudges on My day: the mover, the first paint, midnight', () => {
   })
   it('the check-in is the mover when blood pressure is fine; the move ends and the state clears after 1.2 s, so a re-render cannot replay it', () => {
     vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 10, 5, 9, 0)) // morning: water is due only from 14:00
     s.readings = bpToday()
     const { rerender } = render(<MyDay notify={() => undefined} />)
     act(() => { vi.advanceTimersByTime(NUDGE_SETTLE_MS) })

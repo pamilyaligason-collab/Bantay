@@ -11,7 +11,7 @@ test('first aid tiles share two equal columns and carry distinct per-topic tints
   expect(w[0]!.w).toBeGreaterThanOrEqual(120) // a minimum tile width at 1280 x 720 as well
   expect(new Set(w.map((t) => t.bg)).size).toBeGreaterThanOrEqual(3) // red, amber, purple
   await expect(page.getByRole('link', { name: 'Sources', exact: true })).toHaveCount(1)
-  await expect(page.getByRole('list', { name: 'Be ready' }).getByRole('link', { name: /^Offline maps/ })).toContainText('Not ready yet')
+  await expect(page.getByRole('list', { name: 'Be ready' }).getByRole('link', { name: /^Offline maps/ })).toContainText('Not downloaded')
 })
 
 test('Safety home first aid tiles carry the same tints as All topics', async ({ page }) => {

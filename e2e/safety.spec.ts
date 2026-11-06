@@ -38,7 +38,7 @@ test('safety home (v13): head with Near me | World, hero first, Right now rows, 
   await expect(right.getByRole('link', { name: /^Storm tracker/ })).toContainText('May be out of date') // no saved check on a fresh browser: never "No storms" (R1)
   const ready = page.getByRole('list', { name: 'Be ready' })
   for (const t of ['Hotlines', 'Safety cards', 'IDs and insurance', 'Past SOS']) await expect(ready.getByRole('link', { name: new RegExp('^' + t) })).toBeVisible()
-  await expect(ready.getByRole('link', { name: /Offline maps/ })).toContainText('Not ready yet') // CS: always listed, honest while no pack exists
+  await expect(ready.getByRole('link', { name: /Offline maps/ })).toContainText('Not downloaded') // CS: always listed, honest while no pack exists
   await ready.getByRole('link', { name: /^Hotlines/ }).click()
   await expect(page).toHaveURL(/#safety\/dial$/)
   await expect(page.locator('h1')).toHaveText('Quick dial')

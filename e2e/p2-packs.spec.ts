@@ -8,7 +8,7 @@ import { DAMPAS } from '../src/features/location/geo'
 // "Not checked for this place yet" without a hazard file, and a NOAH level once a (fixture) hazard file is on the phone.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
 
-const flag = (page: Page, on: boolean) => page.addInitScript((v) => { if (v) localStorage.setItem('bantay.flags', JSON.stringify({ localPacks: true })) }, on)
+const flag = (page: Page, on: boolean) => page.addInitScript((v) => { localStorage.setItem('bantay.flags', JSON.stringify({ localPacks: v })) }, on)
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
   await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><body style="margin:0"></body>' }))
@@ -57,7 +57,7 @@ test.describe('flag on', () => {
       const pack = page.getByTestId('pack-dial')
       await expect(pack).toBeVisible()
       await expect(pack.getByRole('link', { name: /^Call / }).first()).toBeVisible()
-      await expect(pack.getByText(/^Checked 20\d\d-\d\d-\d\d/).first()).toBeVisible()
+      await expect(pack.getByText(/^As of 20\d\d-\d\d-\d\d/).first()).toBeVisible()
       await pack.scrollIntoViewIfNeeded()
       await assertTargets(page); await assertNoSideways(page); await assertTextContrast(page)
       if (scheme === 'light') await shotsLightDark(page, 'QuickDial-packs')

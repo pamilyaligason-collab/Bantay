@@ -20,7 +20,7 @@ type Seen = { osm: string[]; ranges: string[] }
 async function open(page: Page, flag: boolean): Promise<Seen> {
   const seen: Seen = { osm: [], ranges: [] }
   await admin(page)
-  await page.addInitScript((on) => { if (on) localStorage.setItem('bantay.flags', JSON.stringify({ offlineMaps: true })) }, flag)
+  await page.addInitScript((on) => { localStorage.setItem('bantay.flags', JSON.stringify({ offlineMaps: on })) }, flag)
   await page.route('https://tile.openstreetmap.org/**', (r) => { seen.osm.push(r.request().url()); return r.fulfill({ status: 204 }) })
   await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><body></body>' }))
   await page.route(`${FILES}**`, (r) => {

@@ -63,12 +63,12 @@ test('Labs: an admin flips Offline maps and the stored flags change; a member se
   await admin(page)
   await page.goto('/#me')
   const sw = page.getByRole('switch', { name: 'Offline maps' })
-  await expect(sw).toHaveAttribute('aria-checked', 'false')
+  await expect(sw).toHaveAttribute('aria-checked', 'true')
   await sw.scrollIntoViewIfNeeded()
   await page.screenshot({ path: `${DIR}/labs-light-390.png`, animations: 'disabled' })
   await Promise.all([page.waitForEvent('load'), sw.click()]) // the page reloads
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('bantay.flags') ?? '{}'))).toMatchObject({ offlineMaps: true })
-  await expect(page.getByRole('switch', { name: 'Offline maps' })).toHaveAttribute('aria-checked', 'true')
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('bantay.flags') ?? '{}'))).toMatchObject({ offlineMaps: false })
+  await expect(page.getByRole('switch', { name: 'Offline maps' })).toHaveAttribute('aria-checked', 'false')
 })
 
 test('Labs: hidden for a member', async ({ page }) => {

@@ -13,7 +13,7 @@
 
 /* Six rings (flag localPacks) and the NOAH layer legend: tokens only. */
 .hz-rings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 6px; }
-:root[data-narrow] .hz-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:root[data-narrow] .hz-rings { grid-template-columns: minmax(0, 1fr); }
 .hz-ring { display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; --rg: var(--muted); --rg-bg: var(--hair); }
 .hz-ring[data-level="1"] { --rg: var(--tint-green-ink); --rg-bg: var(--tint-green); }
 .hz-ring[data-level="2"] { --rg: var(--tint-amber-ink); --rg-bg: var(--tint-amber); }
