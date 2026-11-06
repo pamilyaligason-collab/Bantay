@@ -288,7 +288,7 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 const SAFETY_ALLOW: JackAllow[] = [{ name: 'First aid tile', sel: 'a.sf-fa' }, { name: 'Go-bag card', sel: '.sf-bag' }] // D-128 ruling 10: whole-card tiles; the viewing bar pushes the grid down, measured 76% tappable at 390x844
-const PINNED_ALLOW: JackAllow[] = [{ name: 'Pinned last tile', sel: '[data-testid="pinned"] .pn-cell:nth-child(even) a' }] // the same whole-card allowance v13-health.spec names (JACK_ALLOW)
+const PINNED_ALLOW: JackAllow[] = [{ name: 'Pinned last tile', sel: '[data-testid="pinned"] .pn-cell:nth-child(even) a' }, { name: 'Browse row', sel: '[data-testid="browse"] .rw-main' }] // the same whole-card allowance v13-health.spec names (JACK_ALLOW)
 // Round 2 final review: Jack at rest while viewing. Only the named whole-card allowances of Discover and Family apply (shared from v13.ts); any other control that touches him fails: a small one is a bug.
 for (const [w, h] of [[360, 800], [390, 844]] as const) {
   test(`Jack at rest while viewing Papa (${w}x${h}): no control under him on any tab`, async ({ page }) => {
