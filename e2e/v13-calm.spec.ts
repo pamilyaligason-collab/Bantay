@@ -6,7 +6,7 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
 // The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
-const CRISIS_TOP_MAX = { 390: 1480, 450: 1448 } as const // 390 grew 10 px for the note sentence "Radio stops when you leave Calm." (one more line at that width)
+const CRISIS_TOP_MAX = { 390: 1765, 450: 1725 } as const // D-135: the Exercises section (three cards with their own spheres, about 280 px) now sits above the mood row; measured 1760 at 390 and 1718 at 450 (was 1480 and 1448)
 const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
 
 test('route: own header, hero first, sections in order', async ({ page }) => {
   await assertHero(page)
-  await assertOrder(page, ['calm-hero', 'calm-mood', 'calm-media', 'calm-crisis'])
+  await assertOrder(page, ['calm-hero', 'calm-exercises', 'calm-mood', 'calm-media', 'calm-crisis'])
   await expect(page.getByRole('link', { name: 'Back to Today' })).toHaveAttribute('href', '#today')
   await expect(page.locator('.sh-top')).toHaveCount(0)
   await expect(page.locator('.sh-jackfab')).toHaveCount(0)
@@ -96,8 +96,8 @@ test('a mood face logs and the status line says so', async ({ page }) => {
   await expect(page.getByTestId('calm-mood').getByRole('status')).toHaveText('Sign in first, then try again.') // this spec runs signed out; the write path is in MoodCheck.test
 })
 
-test('C1: the page is the deep teal, the orb is 220 px, text passes on it', async ({ page }) => {
-  await expect(page.getByTestId('calm')).toHaveCSS('background-color', 'rgb(31, 59, 69)')
+test('C1: the page is deep navy (D-135, was teal), the orb is 220 px, text passes on it', async ({ page }) => {
+  await expect(page.getByTestId('calm')).toHaveCSS('background-color', 'rgb(14, 27, 58)')
   await expect(page.getByTestId('calm')).toHaveCSS('color', 'rgb(255, 255, 255)')
   const box = await page.getByTestId('calm-hero').locator('.bo').boundingBox()
   expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([220, 220])

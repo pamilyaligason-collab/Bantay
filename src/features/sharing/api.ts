@@ -33,8 +33,8 @@ export async function setShare(personId: string, carerUserId: string, on: boolea
   } catch { return 'offline' }
 }
 
-export type FeedCategory = 'bp' | 'lab' | 'photo' | 'status'
-/** Family feed switch (0050 feed_share_set, D-127/D-134). Direct call, no outbox: 'ok' only when the server said so; offline never counts as ok. */
+export type FeedCategory = 'bp' | 'lab' | 'photo' | 'status' | 'place'
+/** Family feed switch (0050 feed_share_set, D-127/D-134; 'place' is the D-138 map switch, ON until an explicit off row, 0052). Direct call, no outbox: 'ok' only when the server said so; offline never counts as ok. */
 export async function feedShareSet(personId: string, category: FeedCategory, on: boolean): Promise<'ok' | 'offline' | 'refused' | 'limit'> {
   if (!supabase) return 'offline'
   try {

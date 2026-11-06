@@ -72,7 +72,7 @@ for (const scheme of ['light', 'dark'] as const) {
         const hero = page.getByTestId('weather-hero')
         const m = await page.evaluate(() => {
           const q = (s: string) => document.querySelector(s)!.getBoundingClientRect()
-          const hr = q('[data-testid="weather-hero"]'); const t = q('.td-wxh-t'); const c = q('.td-wxh-c'); const slots = Array.from(document.querySelectorAll('.td-wxh-hrs li')).map((l) => l.getBoundingClientRect())
+          const hr = q('[data-testid="weather-hero"]'); const t = q('.td-wxh-t'); const c = q('.td-wxh-c'); const slots = Array.from(document.querySelectorAll('[data-testid="hourly-strip"] li')).map((l) => l.getBoundingClientRect())
           const ts = getComputedStyle(document.querySelector('.td-wxh-t')!)
           return { hh: hr.height, tRight: t.right, tBottom: t.bottom, cLeft: c.left, cTop: c.top, cRight: c.right, heroRight: hr.right, fs: ts.fontSize, fw: ts.fontWeight, slotH: slots.map((s) => Math.round(s.height)) }
         })

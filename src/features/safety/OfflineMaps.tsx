@@ -3,14 +3,15 @@ import { GroupedList, LargeTitle, Row, Section } from '../look'
 import { usePlace } from '../location/useLocation'
 import { Icon } from '../shell/Icon'
 import { Switch } from '../world/Switch'
+import { OFFLINE_PREFS_KEY } from './autoMaps'
 import { basemapEntries, downloadBasemap, removeBasemap, type StoredBasemap, useStoredBasemaps } from './basemap'
 import { FLAGS } from './flags'
 import { getIndex, type PackIndex, syncPacks } from './packs'
 import { putKv, useKv } from './store'
 import './offline.css'
 
-const KEY = 'safety.offlinePrefs'
-const DEFAULT = { wifiOnly: true }
+const KEY = OFFLINE_PREFS_KEY
+const DEFAULT = { wifiOnly: true, autoDownload: true }
 /** The two basemap zones (D-131). The index names the packs; these are the names members know. */
 const NAMES: Record<string, string> = { '0701200000': 'Bohol', '1206300000': 'South Cotabato and General Santos' }
 
@@ -97,6 +98,7 @@ function Maps() {
         </div>
       )}
       <Section title="Regions">
+        <p className="ofm-foot" data-testid="ofm-used">Used by Hazards, World, Rescue map</p>
         <GroupedList label="Map files" testId="ofm-list">
           {codes.map((c) => {
             const have = stored.find((s) => s.code === c)
@@ -128,6 +130,7 @@ function Maps() {
       <Section title="Settings">
         <GroupedList label="Download settings">
           <Row title="Wi-Fi only" sub="Map downloads wait when the phone says it is on mobile data" control={<Switch on={prefs.wifiOnly} label="Wi-Fi only" onChange={(on) => void putKv(KEY, { ...prefs, wifiOnly: on })} />} />
+          <Row title="Download maps automatically" sub="Your area's map saves itself once on Wi-Fi, never on mobile data" control={<Switch on={prefs.autoDownload} label="Download maps automatically" onChange={(on) => void putKv(KEY, { ...prefs, autoDownload: on })} />} />
         </GroupedList>
         <p className="ofm-foot">Maps © OpenStreetMap contributors, built with Protomaps.</p>
       </Section>

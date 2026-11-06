@@ -126,7 +126,7 @@ for (const scheme of ['light', 'dark'] as const) {
         row('3', 'DOH reminds public to keep medicines dry during rainy days', 'GMA News', 180),
         row('4', 'New bus route links General Santos and Koronadal', 'Inquirer', 300)] } }])
       await page.reload()
-      await expect(page.getByText(/Headlines saved 7:00 AM/)).toBeVisible()
+      await expect(page.getByText(/Headlines saved\. New ones when there is signal\./)).toBeVisible() // D-135: the News band no longer shows the save time
       await shot(page, 'fun-news', scheme)
     })
   })

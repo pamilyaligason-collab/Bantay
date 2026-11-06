@@ -102,6 +102,56 @@ describe('SosHold (Simple mode)', () => {
   })
 })
 
+describe('SosHold short tap (D-137)', () => {
+  const NAME = 'Hold to call and text your family'
+  const press = (ms: number) => {
+    const btn = screen.getByRole('button', { name: NAME })
+    fireEvent.pointerDown(btn)
+    act(() => { vi.advanceTimersByTime(ms) })
+    fireEvent.pointerUp(btn)
+  }
+  it('2999 ms held has not sent', () => {
+    vi.useFakeTimers()
+    const send = vi.fn(), tap = vi.fn()
+    render(<SosHold onSend={send} onTap={tap} />)
+    fireEvent.pointerDown(screen.getByRole('button', { name: NAME }))
+    act(() => { vi.advanceTimersByTime(HOLD_MS - 1) })
+    expect(send).not.toHaveBeenCalled()
+  })
+  it('3000 ms sends once and the later release is not a tap', () => {
+    vi.useFakeTimers()
+    const send = vi.fn(), tap = vi.fn()
+    render(<SosHold onSend={send} onTap={tap} />)
+    press(HOLD_MS)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(tap).not.toHaveBeenCalled()
+  })
+  it('up at 200 ms is a tap and sends nothing', () => {
+    vi.useFakeTimers()
+    const send = vi.fn(), tap = vi.fn()
+    render(<SosHold onSend={send} onTap={tap} />)
+    press(200)
+    act(() => { vi.advanceTimersByTime(HOLD_MS) })
+    expect(tap).toHaveBeenCalledTimes(1)
+    expect(send).not.toHaveBeenCalled()
+  })
+  it('up at 1500 ms is neither', () => {
+    vi.useFakeTimers()
+    const send = vi.fn(), tap = vi.fn()
+    render(<SosHold onSend={send} onTap={tap} />)
+    press(1500)
+    act(() => { vi.advanceTimersByTime(HOLD_MS) })
+    expect(send).not.toHaveBeenCalled()
+    expect(tap).not.toHaveBeenCalled()
+  })
+  it('Reach family is a button for keyboard and screen-reader users', () => {
+    const tap = vi.fn()
+    render(<SosHold onSend={vi.fn()} onTap={tap} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reach family' }))
+    expect(tap).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('Call911', () => {
   it('always asks for the emergency dial screen, never an auto-dial', () => {
     render(<Call911 />)

@@ -3,8 +3,10 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
-import { HealthBrowse, moveLine } from './HealthBrowse'
+import { dosePills, HealthBrowse, labCounts, moveLine } from './HealthBrowse'
 import { labDate } from './labsLogic'
+import { labsLine as glanceLabsLine } from './GlanceGrid'
+import type { DoseState } from './meds'
 import type { Reading } from './ranges'
 import { vdb } from './visitsStore'
 
@@ -15,36 +17,40 @@ beforeEach(async () => { await Promise.all([db.kv.clear(), ldb.medications.clear
 afterEach(cleanup)
 
 describe('Browse', () => {
-  it('six rows in order with their doors; Body wiki has no value', () => {
+  it('five cards in order with their doors; Body wiki is the wide one with no preview', () => {
     show()
-    const ids = ['readings', 'labs', 'meds', 'visits', 'move', 'body']
-    const hrefs = ids.map((k) => screen.getByTestId(`browse-${k}`).querySelector('a')!.getAttribute('href'))
-    expect(hrefs).toEqual(['#health/readings', '#health/labs', '#health/meds', '#health/visits', '#health/move', '#health/body'])
-    expect(screen.getByTestId('browse-body').querySelector('.rw-value')).toBeNull()
-    expect(screen.getByTestId('browse')).toBeTruthy()
+    const ids = ['labs', 'meds', 'visits', 'move', 'body']
+    expect(ids.map((k) => screen.getByTestId(`browse-${k}`).getAttribute('href'))).toEqual(['#health/labs', '#health/meds', '#health/visits', '#health/move', '#health/body'])
+    const cards = Array.from(document.querySelectorAll('.hb'))
+    expect(cards.map((c) => c.getAttribute('data-testid'))).toEqual(ids.map((k) => `browse-${k}`)) // Readings has its own card above, not a door here
+    expect(screen.getByTestId('browse-body').hasAttribute('data-wide')).toBe(true)
+    expect(screen.getByTestId('browse-body').querySelector('svg')).toBeNull()
+    expect(cards.map((c) => (c as HTMLElement).style.getPropertyValue('--i'))).toEqual(['0', '1', '2', '3', '4']) // staggered rise-in
   })
-  it('live values: readings, labs, medicines, visits, move', async () => {
-    const readings: Reading[] = [
-      { personId: 'p1', test: 'bp_systolic', value: 124, unit: 'mmHg', takenAt: day(1) },
-      { personId: 'p1', test: 'bp_diastolic', value: 79, unit: 'mmHg', takenAt: day(1) },
-      { personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2), labLow: 0, labHigh: 130 }
-    ]
+  it('live values and previews: labs bars, dose pills, next visit, move ring', async () => {
+    const readings: Reading[] = [{ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2), labLow: 0, labHigh: 130 }]
     await db.kv.put({ key: 'visits.questions.p1', value: ['q'] })
     await ldb.medications.add({ personId: 'p1', name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } } as never)
     await ldb.activity.add({ personId: 'p1', kind: 'walk', minutes: 12, steps: null, startedAt: new Date().toISOString() } as never)
     show(readings)
-    const val = (k: string) => screen.getByTestId(`browse-${k}`).textContent
-    expect(val('readings')).toContain('124/79')
-    expect(val('labs')).toContain(`1 to ask · ${labDate(day(2), true)}`) // H9: the count and the date, not the count alone
-    await waitFor(() => expect(val('meds')).toContain('2 of 2 left today'))
-    await waitFor(() => expect(screen.getByTestId('browse-visits').textContent).toContain('1 question ready to ask'))
-    await waitFor(() => expect(val('move')).toContain('12 min this week'))
+    const txt = (k: string) => screen.getByTestId(`browse-${k}`).textContent
+    expect(txt('labs')).toContain(`1 to ask · ${labDate(day(2), true)}`) // H9: the count and the date, not the count alone
+    expect(screen.getByTestId('browse-labs').querySelectorAll('.hb-bars rect')).toHaveLength(3)
+    expect(screen.getByTestId('browse-labs').querySelectorAll('.hb-bars rect[data-hot]')).toHaveLength(1) // the one to ask is the strong bar
+    await waitFor(() => expect(txt('meds')).toContain('2 of 2 left today'))
+    expect(screen.getByTestId('browse-meds').querySelectorAll('.hb-pill')).toHaveLength(2)
+    await waitFor(() => expect(txt('visits')).toContain('1 question ready to ask'))
+    expect(txt('visits')).toContain('Not booked')
+    await waitFor(() => expect(txt('move')).toContain('12 min this week'))
+    expect(screen.getByTestId('browse-move').querySelector('svg.rg')).toBeTruthy()
   })
-  it('empty person reads honestly', async () => {
+  it('empty person reads honestly: no bars, no pills, "--" previews', async () => {
     show()
-    expect(screen.getByTestId('browse-readings').textContent).toContain('None this week')
     expect(screen.getByTestId('browse-labs').textContent).toContain('No papers yet')
+    expect(screen.getByTestId('browse-labs').querySelector('.hb-bars')).toBeNull()
     await waitFor(() => expect(screen.getByTestId('browse-meds').textContent).toContain('No medicines yet'))
+    expect(screen.getByTestId('browse-meds').querySelector('.hb-pill')).toBeNull()
+    expect(screen.getByTestId('browse-meds').querySelector('.hb-none')!.textContent).toBe('--')
     expect(screen.getByTestId('browse-move').textContent).toContain('No walks yet')
   })
   it('moveLine counts only the last 7 days of walks', () => {
@@ -52,5 +58,25 @@ describe('Browse', () => {
     expect(moveLine([])).toBe('No walks yet')
     expect(moveLine([a('walk', 20, 1), a('walk', 10, 2), a('walk', 50, 9)])).toBe('30 min this week')
     expect(moveLine([a('walk', 50, 9)])).toBe('No walks yet')
+  })
+})
+
+describe('Browse previews (pure)', () => {
+  const dose = (at: number, state: DoseState['state']) => ({ at, state, name: 'X', key: 'k', medicationId: null, personId: 'p1', slot: 0 }) as unknown as DoseState
+  it('dosePills: Taken, Skipped, or the time still to come; three at most', () => {
+    expect(dosePills([dose(480, 'taken'), dose(720, 'skipped'), dose(1200, 'pending'), dose(1290, 'pending')])).toEqual([
+      { text: 'Taken', done: true }, { text: 'Skipped', done: false }, { text: '8 PM', done: false }
+    ])
+    expect(dosePills([dose(450, 'pending')])).toEqual([{ text: '7:30 AM', done: false }])
+    expect(dosePills([])).toEqual([])
+  })
+  it('labCounts: null with no papers; the same split the Labs line counts', () => {
+    expect(labCounts([], [])).toBeNull()
+    const rs: Reading[] = [
+      { personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2), labLow: 0, labHigh: 130 },
+      { personId: 'p1', test: 'hdl', value: 55, unit: 'mg/dL', takenAt: day(2), labLow: 40, labHigh: 100 }
+    ]
+    expect(labCounts(rs, [])).toEqual({ ask: 1, usual: 1, noRange: 0 })
+    expect(glanceLabsLine(rs, [])).toContain('1 to ask')
   })
 })

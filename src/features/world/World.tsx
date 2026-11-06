@@ -29,7 +29,7 @@ function News({ items, old }: { items: ReturnType<typeof useWorldNews>['news']; 
         <div className="rw" role="listitem" key={n.id}>
           <a className="rw-main press" href={n.url} target="_blank" rel="noopener noreferrer">
             <span className="rw-lead rw-ic" data-tint="blue"><Icon name="out" size={20} /></span>
-            <span className="rw-txt"><b className="rw-title">{n.title}</b><span className="rw-sub">{`${n.source ? `${n.source} · ` : ''}GDELT${old ? ' · over a day old' : ''}`}</span></span>
+            <span className="rw-txt"><b className="rw-title">{n.title}</b><span className="rw-sub">{[n.source, old ? 'over a day old' : ''].filter(Boolean).join(' · ')}</span></span>
           </a>
         </div>
       ))}
@@ -105,7 +105,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
         <>
           {panels.forecasts && <Section title="Forecasts to watch"><Rows label="Forecasts to watch" rows={forecasts} empty={stale ? NOT_SAID : FLAGS.eonet ? 'No forecasts listed right now.' : 'No forecasts listed yet.'} /></Section>}
           {panels.macro && (
-            <Section title="Macro and news" meta="GDELT">
+            <Section title="Macro and news" meta="WHO, CNN, BBC">
               {feed.news.length ? <News items={feed.news} old={newsIsOld(feed.news, now)} />
                 : <p className="wd-empty">{feed.state === 'loading' ? 'Loading headlines.' : feed.state === 'error' ? 'Could not load headlines. Try again later.' : 'No headlines yet.'}</p>}
             </Section>

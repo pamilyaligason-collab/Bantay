@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { JackArt } from '../look'
+import SosFamilySheet from '../sos/SosFamilySheet'
 import SosScreen from '../sos/SosScreen'
 import { OPEN_SOS_EVENT } from '../sos/openSos'
 import { loadFamily } from '../auth/family'
@@ -109,6 +110,8 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
 
   const onClose = useCallback(() => setSheet(false), [])
   const onSos = useCallback(() => { setSheet(false); setSos(true) }, [])
+  const [reach, setReach] = useState(false) // SOS short tap (D-137): the family sheet, opened from the Jack sheet
+  const onReach = useCallback(() => { setSheet(false); setReach(true) }, [])
 
   const sosScreen = sos && createPortal(<div className="sh-sosfull" data-testid="sos-full"><SosScreen onClose={() => setSos(false)} /></div>, document.querySelector('.bt') ?? document.body, 'sos') // outlives the button: a warning or Simple mode hiding Jack must not end a running SOS. The key keeps it one instance across the two returns below; a remount would start a new SOS
   if (!visible) return sosScreen || null
@@ -121,7 +124,8 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
         <JackArt name="head" size={56} decorative />
       </button>
       {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits ? undefined : { visibility: 'hidden' }}>Help, scan or chat</p>}
-      {sheet && <JackSheet onClose={onClose} onSos={onSos} firstName={firstOf(name)} />}
+      {sheet && <JackSheet onClose={onClose} onSos={onSos} onReach={onReach} firstName={firstOf(name)} />}
+      {reach && <SosFamilySheet onClose={() => setReach(false)} />}
       {sosScreen}
     </>
   )

@@ -2,12 +2,12 @@
   "sources": "Original Filipino recipes written by Bantay. The plate idea follows Pinggang Pinoy (FNRI-DOST) and the DASH eating plan (NHLBI). Sodium is a rough estimate worked out by Bantay from typical food values, with USDA FoodData Central as the guide. It is not a lab result and a dietitian has not checked it. Brands differ a lot, so read the label. Each ingredient line carries its sodium in mg for the whole pot.",
   "recipes": [
     {
-      "id": "sinigang-isda", "name": "Sinigang na isda, less patis", "blurb": "Tamarind soup with fish", "tags": ["lowsalt", "diabetes", "fish"], "minutes": 35, "servings": 4, "usualMg": 470,
+      "id": "sinigang-isda", "image": {"url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8e/Fish_sinigang.jpg/500px-Fish_sinigang.jpg", "credit": "Copperhead02", "licence": "CC BY-SA 4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fish_sinigang.jpg"}, "name": "Sinigang na isda, less patis", "blurb": "Tamarind soup with fish", "tags": ["lowsalt", "diabetes", "fish"], "minutes": 35, "servings": 4, "usualMg": 470,
       "ingredients": [["500 g bangus or tilapia", 300, "Fresh, not salted or dried"], ["Sampalok (tamarind), 1 cup juice", 20, "Instead of a ready-made sinigang mix, which is salty"], ["1 labanos (radish)", 40], ["1 cup sitaw (string beans)", 10], ["2 kamatis and 1 onion", 15], ["1 bunch kangkong", 100], ["1 tsp patis, not 3", 470, "Add calamansi to keep the taste"]],
       "steps": ["Boil 6 cups of water with the onion and tomato. Add the tamarind juice.", ["Add the radish and string beans. Cook 8 minutes.", 8], ["Add the fish. Simmer 6 minutes, then add 1 tsp patis.", 6], "Add the kangkong last. Taste before adding more salt."]
     },
     {
-      "id": "monggo", "name": "Ginisang monggo with malunggay", "blurb": "Mung beans with leaves", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 40, "servings": 4,
+      "id": "monggo", "image": {"url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/Ginisang_munggo_with_fried_bangus.jpg/500px-Ginisang_munggo_with_fried_bangus.jpg", "credit": "Pandakekok9", "licence": "CC0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ginisang_munggo_with_fried_bangus.jpg"}, "name": "Ginisang monggo with malunggay", "blurb": "Mung beans with leaves", "tags": ["lowsalt", "diabetes", "soft"], "minutes": 40, "servings": 4,
       "ingredients": [["1 cup monggo (mung beans)", 10], ["2 cups malunggay leaves", 40, "Add at the end so they stay green"], ["100 g lean pork, cut small", 60, "Or skip it and use more beans"], ["Garlic, onion and 1 tomato", 15], ["1 tsp patis", 470, "Do not add more at the table"]],
       "steps": [["Boil the monggo in 4 cups of water until soft, about 25 minutes.", 25], "Fry the garlic, onion, tomato and pork in a little oil until the pork is cooked.", "Add the cooked monggo and its water. Simmer 5 minutes.", "Add 1 tsp patis and the malunggay. Cook 2 minutes and serve."]
     },
@@ -17,12 +17,12 @@
       "steps": ["Fry the garlic, onion and tomato in a little oil.", "Add 1 tsp bagoong and half a cup of water. Bring to a boil.", ["Add the kalabasa and sitaw. Cover and cook 8 minutes. Do not stir much.", 8], "Add the talong, okra and ampalaya. Cook 5 minutes more until just soft."]
     },
     {
-      "id": "tinola", "name": "Tinolang manok, less patis", "blurb": "Chicken ginger soup", "tags": ["lowsalt", "soft"], "minutes": 45, "servings": 4, "usualMg": 450,
+      "id": "tinola", "image": {"url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Chicken_tinola_with_kalamunggay_%28moringa_leaves%29_and_chayote_%28Philippines%29.jpg/500px-Chicken_tinola_with_kalamunggay_%28moringa_leaves%29_and_chayote_%28Philippines%29.jpg", "credit": "Obsidian Soul", "licence": "CC0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chicken_tinola_with_kalamunggay_(moringa_leaves)_and_chayote_(Philippines).jpg"}, "name": "Tinolang manok, less patis", "blurb": "Chicken ginger soup", "tags": ["lowsalt", "soft"], "minutes": 45, "servings": 4, "usualMg": 450,
       "ingredients": [["400 g chicken, skin removed", 300], ["1 small green papaya (sayote also works)", 30], ["1 cup malunggay or sili leaves", 40], ["3 tbsp sliced ginger and 1 onion", 10], ["1 tsp patis", 470]],
       "steps": ["Fry the ginger and onion in a little oil. Add the chicken and fry 3 minutes.", "Add 5 cups of water and the patis. Bring to a boil, then simmer.", ["Simmer 20 minutes. Add the papaya.", 20], ["Cook 8 minutes more until the papaya is soft.", 8], "Add the leaves, turn off the heat and serve."]
     },
     {
-      "id": "adobo-light", "name": "Chicken adobo, low salt", "blurb": "Vinegar and garlic chicken", "tags": ["lowsalt", "diabetes"], "minutes": 45, "servings": 4, "usualMg": 750,
+      "id": "adobo-light", "image": {"url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/Chicken_adobo.jpg/500px-Chicken_adobo.jpg", "credit": "dbgg1979 on Flickr", "licence": "CC BY 2.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chicken_adobo.jpg"}, "name": "Chicken adobo, low salt", "blurb": "Vinegar and garlic chicken", "tags": ["lowsalt", "diabetes"], "minutes": 45, "servings": 4, "usualMg": 750,
       "ingredients": [["500 g chicken, skin removed", 370], ["Quarter cup vinegar", 2], ["1 tbsp low sodium soy sauce", 575, "Half the usual amount"], ["8 cloves garlic, peppercorns, bay leaf", 5]],
       "steps": ["Put the chicken, garlic, pepper, bay leaf, vinegar and soy sauce in a pot. Do not stir yet.", "Add half a cup of water. Bring to a boil.", ["Simmer, covered, for 25 minutes.", 25], ["Uncover and cook 8 more minutes until the sauce is thick.", 8], "Serve with a small scoop of brown rice and a plate of vegetables."]
     },
@@ -47,7 +47,7 @@
       "steps": ["Boil 5 cups of water with the ginger, onion and tomato.", ["Add the fish. Simmer 8 minutes.", 8], "Add the patis. Taste the soup first, it may be enough.", ["Add the pechay and cook 2 minutes.", 2]]
     },
     {
-      "id": "inihaw-bangus", "name": "Inihaw na bangus with tomato", "blurb": "Grilled milkfish with tomato and onion", "tags": ["lowsalt", "fish", "diabetes"], "minutes": 35, "servings": 4,
+      "id": "inihaw-bangus", "image": {"url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Inihaw_na_Bangus_01.jpg/500px-Inihaw_na_Bangus_01.jpg", "credit": "LubGua987", "licence": "CC BY-SA 4.0", "sourceUrl": "https://commons.wikimedia.org/wiki/File:Inihaw_na_Bangus_01.jpg"}, "name": "Inihaw na bangus with tomato", "blurb": "Grilled milkfish with tomato and onion", "tags": ["lowsalt", "fish", "diabetes"], "minutes": 35, "servings": 4,
       "ingredients": [["2 small bangus, cleaned and split", 450], ["3 tomatoes, chopped", 15], ["1 onion, chopped", 5], ["Calamansi juice and ginger", 5], ["Black pepper", 0]],
       "steps": ["Mix the tomato, onion, ginger, calamansi juice and pepper.", "Stuff the mixture inside the fish. Wrap each fish in foil.", ["Grill or bake over medium heat, 12 minutes on each side.", 12], "Open the foil and serve with cucumber slices."]
     },

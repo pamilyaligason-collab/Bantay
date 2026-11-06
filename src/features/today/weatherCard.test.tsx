@@ -94,16 +94,16 @@ describe('Today weather card, expanded', () => {
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
     expect(screen.getByText(/^Dampas · your home area · as of /)).toBeTruthy()
-    expect(screen.getByText('33°')).toBeTruthy()
+    expect(container.querySelector('.td-wxh-t')!.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
     expect(screen.getByText('High 34° · Low 26°')).toBeTruthy() // live parity: today's range stays on the expanded card
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
-    expect(container.querySelectorAll('.td-wxh-hrs li')).toHaveLength(3)
+    expect(container.querySelectorAll('.td-hs li')).toHaveLength(12)
     expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
     expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['#weather', '#weather?from=action']) // Full forecast row, then the cover link
     expect(screen.getByRole('link', { name: /Full forecast/ })).toBeTruthy()
-    expect([...container.querySelectorAll('.td-wxh-hrs li')].every((li) => li.textContent!.includes('27°'))).toBe(true) // every slot shows its temperature
+    expect([...container.querySelectorAll('.td-hs li')].slice(1).every((li) => li.textContent!.includes('27°'))).toBe(true) // every later item shows its temperature; the first is now (33°)
     expect(container.querySelector('.td-act-box svg')).toBeNull() // T7: no icon on the rain pill
     expect(container.querySelector('.td-act-box')).toBeTruthy()
     expect(screen.queryByText(/medicines/)).toBeNull()
@@ -116,8 +116,8 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText('Rain and strong wind.')).toBeTruthy()
     expect(screen.getByText('High 30° · Low 25°')).toBeTruthy() // the range stays under a storm
     expect(screen.queryByText('10%')).toBeNull()
-    const li = [...container.querySelectorAll('.td-wxh-hrs li')]
-    expect(li).toHaveLength(3)
+    const li = [...container.querySelectorAll('.td-hs li')]
+    expect(li).toHaveLength(12)
     expect(li.every((x) => x.textContent!.includes('60%'))).toBe(true)
   })
   it('T5: 55% this evening gives the hero its own rain line', () => {
@@ -128,6 +128,26 @@ describe('Today weather card, expanded', () => {
     m.wx = { ...base, temp: 27, words: 'cloudy', code: 3, hourly: { time: t, prob: t.map((x) => (x.slice(11, 13) === '19' ? 55 : 0)), code: t.map(() => 3) } }
     render(<WeatherCard expanded review={0} />)
     expect(screen.queryByText('Rain 55% this evening')).toBeTruthy()
+    vi.useRealTimers()
+  })
+  const withMm = (mm: (h: string) => number) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-20T08:00:00Z')) // 4 PM at the place
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
+    const t = hours(24).time
+    m.wx = { ...base, temp: 27, words: 'cloudy', code: 3, hourly: { time: t, prob: t.map(() => 80), mm: t.map((x) => mm(x.slice(11, 13))), code: t.map(() => 3) } }
+    return render(<WeatherCard expanded review={0} />)
+  }
+  it('cloudy 80% with 0 mm: no rain tip beside "No rain in the next 2 hours"', () => {
+    const { container } = withMm(() => 0)
+    expect(container.textContent).toContain('No rain in the next 2 hours')
+    expect(container.textContent).not.toMatch(/Rain 80%|then rain|Bring an umbrella|Rain likely/)
+    vi.useRealTimers()
+  })
+  it('rain only from 8 PM (mm > 0): the tip names 8 PM while the next 2 hours stay dry', () => {
+    const { container } = withMm((h) => (h === '20' ? 1.2 : 0))
+    expect(container.textContent).toContain('No rain in the next 2 hours')
+    expect(container.textContent).toMatch(/till 8 PM, then rain/)
     vi.useRealTimers()
   })
   it('a heat danger line is never replaced by a 40% rain mention', () => {
@@ -155,8 +175,8 @@ describe('Today weather card, expanded', () => {
     const h = hours(24)
     m.wx = { ...base, temp: 33, humidity: 68, hourly: { ...h, prob: h.prob.map(() => null) } as never }
     const { container } = render(<WeatherCard expanded />)
-    expect(container.querySelectorAll('.td-wxh-hrs li').length).toBe(3)
-    expect(container.querySelector('.td-wxh-hrs')!.textContent).not.toContain('–')
+    expect(container.querySelectorAll('.td-hs li').length).toBe(12)
+    expect(container.querySelector('.td-hs')!.textContent).not.toContain('–')
   })
   it('"as of" uses the place time zone when abroad, not Manila', () => {
     m.place = { weather: { lat: 32.78, lon: -96.8 }, zone: 'dampas', source: 'gps-abroad' }

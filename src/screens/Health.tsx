@@ -24,7 +24,8 @@ import { PersonSwitcher } from '../features/health/PersonSwitcher'
 import { useActingPersonId } from '../features/viewas/viewAs'
 import { FamilyHealthCard } from '../features/health/FamilyHealthCard'
 import { ForYou } from '../features/health/ForYou'
-import { PinnedTiles } from '../features/health/PinnedTiles'
+import { TodayRow } from '../features/health/TodayRow'
+import { ReadingsCard } from '../features/health/ReadingsCard'
 import { HealthBrowse } from '../features/health/HealthBrowse'
 import { useHealthPerson } from '../features/health/useHealthPerson'
 import { LargeTitle, Section, Skeleton } from '../features/look'
@@ -84,15 +85,16 @@ function Overview() {
         </section>
       )}
       {saved && <p className="sub" role="status" style={{ margin: '0 4px' }}>{saved}</p>}
+      {ready && personId && <TodayRow personId={personId} readings={readings} />}
       {ready && (
         <Section title="Needs attention">
           <AttentionHero attention={attention} family={attention ? familyOf(attention.reading) : undefined} canLog={canLog} canEdit={canEdit} lockReason={lockReason} onAdd={() => setAdding('bp')} />
         </Section>
       )}
-      {ready && personId && <PinnedTiles personId={personId} readings={readings} canLog={canLog} />}
-      {ready && personId && <FamilyHealthCard ids={people.map((p) => p.id)} />}
+      {ready && personId && <ReadingsCard personId={personId} readings={readings} thresholds={thresholds} onAdd={canLog ? () => setAdding('bp') : undefined} canLog={canLog} />}
       {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}
+      {ready && personId && <FamilyHealthCard ids={people.map((p) => p.id)} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)
         return spec ? <AddReadingSheet spec={spec} personId={personId} forName={name} family={spec.kind === 'bp' ? undefined : thresholds.find((t) => t.key === `${personId}:${spec.code}`)} bpDoctor={spec.kind === 'bp' ? bpDoctorOf(thresholds, personId) : undefined} onClose={() => setAdding(null)} onSaved={(m) => { setSaved(m); reload() }} /> : null

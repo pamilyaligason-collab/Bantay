@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding, stubWindy } from './helpers'
 import { seed } from './fixtures/s16/today'
 import { openMeteoFixture } from '../src/features/weather/fixture'
-import { assertHero, assertJackClear, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, outsideWarning, setScheme, settled, shotsLightDark } from './v13'
+import { assertHero, assertJackClear, assertJackHit, type JackAllow, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, outsideWarning, setScheme, settled, shotsLightDark } from './v13'
 
 // v13 Phase 0 foundation: the shell and the four tab roots Phase 0 touched, light and dark at 390x844, then the 195 px narrow check.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
@@ -65,6 +65,9 @@ const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 // S3 / S11: no control under Jack at scroll 0. Roots and sub-screens that still fail name the lane that fixes them; the fixme goes when that lane lands.
 // D-122: with no Activity data the card hugs its line, so a People row (`.rw-main`) may sit under Jack at scroll 0 depending on the viewport height (rows are under him at 450x950, 925, 900 and 844, clear at about 997). Every other control must still clear him.
 const FAMILY_ROWS = outsideWarning('.rw-main') // never a row inside a warning or SOS card
+// D-135 Discover (Today view): the whole-card links (hero card, video cards, Learn cards, recipe card) may lose part of their box to Jack, hit-tested by assertJackHit (more than half stays tappable, measured 4 to 10 %); every small control still has no allowance.
+const DISCOVER_CARDS: JackAllow[] = [{ name: 'Hero card', sel: 'a.dc-herocard' }, { name: 'Video card', sel: 'a.dc-vc' }, { name: 'Learn card', sel: 'a.dc-lc' }, { name: 'Recipe card', sel: 'a.dc-rcard-t' }]
+const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
 const JACK_REST_KNOWN: Record<string, string> = {
 }
 for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discover/play', '#discover/news', '#medid', '#safety/sources']) {
@@ -72,7 +75,7 @@ for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discove
     test.fixme(!!JACK_REST_KNOWN[route], JACK_REST_KNOWN[route])
     await page.goto(`/${route}`)
     await expect(page.locator('h1').first()).toBeVisible()
-    await assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
+    await jackRest(page, route)
   })
 }
 // 360 px, one test per root: a root named in JACK_REST_KNOWN is a fixme naming its lane, every other root is really asserted (390 is the route tests above).
@@ -82,7 +85,7 @@ for (const r of ROOTS) {
     await page.setViewportSize({ width: 360, height: 844 })
     await page.goto(`/#${r}`)
     await expect(page.locator('h1').first()).toBeVisible()
-    await assertJackClear(page, { at: 'rest', allow: r === 'family' ? FAMILY_ROWS : undefined })
+    await jackRest(page, `#${r}`)
   })
 }
 
@@ -126,16 +129,16 @@ test('outsideWarning excludes a warning row and keeps a plain row', async ({ pag
   expect(await page.locator(outsideWarning('.rw-main')).evaluateAll((els) => els.map((e) => e.id))).toEqual(['plain'])
 })
 
-// T12: the first tile of a carousel sits on the 16 px page gutter (12 px at 195).
+// T12: the first tile of a carousel sits on the 16 px page gutter (12 px at 195). D-135: Today's Your numbers is a 2-column grid, not a carousel, so Today is measured on that grid's first tile; the carousel is measured on Move and food.
 for (const [width, gutter, scheme] of [[390, 16, 'light'], [390, 16, 'dark'], [360, 16, 'light'], [195, 12, 'light']] as const) {
   test(`carousel gutter at ${width} px ${scheme}: first tile at x ${gutter}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 })
-    for (const route of ['#today']) { // #family is in v13-g0.auth.spec.ts (needs sign-in)
+    for (const route of ['#today', '#health/move']) { // #family is in v13-g0.auth.spec.ts (needs sign-in)
       await page.goto(`/${route}`)
       await expect(page.locator('h1').first()).toBeVisible()
       await setScheme(page, scheme)
       await settled(page)
-      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
+      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel, [role=group][aria-label="Your numbers"]')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
       expect((await lefts()).length, `${route} has a carousel`).toBeGreaterThan(0)
       // the reveal tween moves a tile by a pixel or two on arrival: wait until the measured edge settles on the gutter
       await expect.poll(async () => (await lefts()).every((l) => Math.abs(l.left - gutter) <= 1), { message: `${route}: first tile left edge settles on ${gutter}` }).toBe(true)

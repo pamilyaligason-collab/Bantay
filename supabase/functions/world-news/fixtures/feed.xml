@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Invented sample feed (example.test), hand-written to cover the parser cases. -->
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+  <title>Sample feed</title>
+  <item>
+    <title><![CDATA[Port closes ahead of storm &amp; surge]]></title>
+    <link>https://news.example.test/a/1</link>
+    <pubDate>Wed, 04 Nov 2026 01:30:00 GMT</pubDate>
+    <media:content url="https://img.example.test/a1.jpg" medium="image" />
+  </item>
+  <item>
+    <title>Clinic hours &#8211; &quot;extended&quot; &lt;b&gt;today&lt;/b&gt;</title>
+    <link>https://news.example.test/a/2</link>
+    <pubDate>Tue, 03 Nov 2026 10:00:00 GMT</pubDate>
+    <media:thumbnail url="https://img.example.test/a2.png" />
+    <source url="https://paper.example.test">Example Paper</source>
+  </item>
+  <item>
+    <title>Enclosure picture</title>
+    <guid>https://news.example.test/a/3</guid>
+    <pubDate>Tue, 03 Nov 2026 09:00:00 GMT</pubDate>
+    <enclosure url="https://img.example.test/a3.jpg" type="image/jpeg" length="1" />
+  </item>
+  <item>
+    <title>Audio only</title>
+    <link>https://news.example.test/a/4</link>
+    <pubDate>Tue, 03 Nov 2026 08:00:00 GMT</pubDate>
+    <enclosure url="https://img.example.test/a4.mp3" type="audio/mpeg" length="1" />
+  </item>
+  <item>
+    <title>Bad scheme</title>
+    <link>javascript:alert(1)</link>
+    <pubDate>Tue, 03 Nov 2026 07:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>No date</title>
+    <link>https://news.example.test/a/6</link>
+  </item>
+  <item>
+    <title></title>
+    <link>https://news.example.test/a/7</link>
+    <pubDate>Tue, 03 Nov 2026 06:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Too old</title>
+    <link>https://news.example.test/a/8</link>
+    <pubDate>Mon, 12 Oct 2026 06:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Port closes ahead of storm again</title>
+    <link>https://news.example.test/a/1</link>
+    <pubDate>Wed, 04 Nov 2026 01:00:00 GMT</pubDate>
+  </item>
+</channel>
+</rss>

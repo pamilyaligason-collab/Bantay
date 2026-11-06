@@ -8,6 +8,7 @@ import { useKv } from '../safety/store'
 import { weatherWarning } from '../weather/warning'
 import Call911 from '../sos/Call911'
 import { normalizeContacts, validPhone } from '../sos/contacts'
+import SosFamilySheet from '../sos/SosFamilySheet'
 import SosHold from '../sos/SosHold'
 import SosScreen from '../sos/SosScreen'
 import { FAIL_TEXT, FEELINGS, feelingToast, logFeeling, moodLine, useHasWriterCarer, type Feeling } from './actions'
@@ -47,6 +48,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE)
   const [busy, setBusy] = useState(false)
   const [sos, setSos] = useState(false)
+  const [reach, setReach] = useState(false) // SOS short tap (D-137)
   const [view, setView] = useState<'home' | 'mood' | 'taken'>('home')
   const [doneNames, setDoneNames] = useState('')
   const [err, setErr] = useState('')
@@ -120,7 +122,8 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
           {action && <p className="td-wxline td-wxline-big">{action}</p>}
         </>
       )}
-      <SosHold onSend={() => setSos(true)} />
+      <SosHold onSend={() => setSos(true)} onTap={() => setReach(true)} />
+      {reach && <SosFamilySheet onClose={() => setReach(false)} />}
       <Call911 />
       <div className="td-big-btns">
         <button type="button" className="td-bigbtn ok" disabled={lockMood} onClick={() => setView('mood')}>{lockMood ? 'View only' : 'How are you?'}</button>

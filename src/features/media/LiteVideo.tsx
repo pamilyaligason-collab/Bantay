@@ -33,10 +33,10 @@ export function LiteVideo({ id, title, start, minutes }: { id: string; title: st
       ) : playing ? (
         <iframe ref={frame} className="lv-frame" src={src} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
       ) : (
-        <button type="button" className="lv-poster lv-play" data-thumb={noThumb ? 'off' : 'on'} onClick={() => { announceMedia(me.current); setPlaying(true); setTimeout(() => frame.current?.focus(), 0) }} aria-label={`Play ${title}${len ? `, ${len} minutes` : ''}`}>
+        <button type="button" className="lv-poster lv-play" data-thumb={noThumb ? 'off' : 'on'} onClick={() => { announceMedia(me.current); setPlaying(true); setTimeout(() => frame.current?.focus(), 0) }} aria-label={`Play ${title}${len ? `, ${len} min` : ''}`}>
           {!noThumb && <img className="lv-img" src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setNoThumb(true)} />}
           <span className="lv-btn" aria-hidden="true"><Icon name="play" size={32} active /></span>
-          <span className="lv-cap" data-contrast-bg={noThumb ? undefined : "#555555"}><b>{title}</b>{len && <span className="lv-len">{len} min</span>}</span>
+          <span className="lv-cap" data-contrast-bg={noThumb ? undefined : "#555555"}><b>{title}</b>{len && <> <span className="lv-len">{len} min</span></>}</span>
         </button>
       )}
       <a className="lv-yt" href={watch} target="_blank" rel="noopener noreferrer"><Icon name="out" size={18} />Open in YouTube<span className="lv-sr"> (opens in new tab)</span></a>

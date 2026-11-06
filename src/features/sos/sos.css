@@ -76,3 +76,24 @@
 .sos-steps li[data-state="wait"]::before { border-color: var(--warn); }
 .sos-nowhere { margin: 0; }
 @media (prefers-reduced-motion: reduce) { .sos-btn.holding .sos-ring { transition: none; } }
+
+/* S22-S: SOS short tap family sheet (D-137) */
+.sosf { display: grid; gap: 4px; }
+.sosf-person { border-top: .5px solid var(--line, rgba(60,55,45,.16)); }
+.sosf-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 6px 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; }
+.sosf-row .grow { display: grid; gap: 2px; flex: 1; }
+.sosf-row .sub { font-size: 14px; }
+.sosf-row:focus-visible, .sosf-act:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sosf-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; padding: 2px 0 12px 60px; }
+.sosf-act { min-height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 14px; border: 0; font: inherit; font-weight: 600; font-size: 15px; text-decoration: none; background: var(--soft); color: var(--ink); }
+.sosf-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 0 12px 60px; }
+.sosf-rec audio { max-width: 100%; }
+.sosf-note { margin: 4px 0; }
+.sos-reach { min-height: 44px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; }
+
+.sos-tap-line { display: block; }
+.sosf-btn { min-height: 44px; }
+.sosf-unsent { margin: 0; width: 100%; font-weight: 600; }
+.sosf-confirm { margin: 8px 0; padding: 12px; border-radius: 14px; background: var(--soft); }
+.sosf-confirm p { margin: 0 0 8px; font-weight: 600; }
+.sosf-confirm div { display: flex; gap: 8px; flex-wrap: wrap; }

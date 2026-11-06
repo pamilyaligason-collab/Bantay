@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react'
 import { HOME_ZONES } from './geo'
-import { placeWords } from './placeWords'
+import { placeLine, placeWords } from './placeWords'
 import { type useLocation, usePlaceFrom } from './useLocation'
 
 const short = (n: string) => n.split(',')[0]!
@@ -13,7 +13,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   const [msg, setMsg] = useState<ReactNode>('')
   if (!place) return null
   const words = placeWords(place)
-  const label = words.title
+  const label = placeLine(words)
   const current = async () => {
     setMsg('')
     const l = await place.ask().catch(() => null)

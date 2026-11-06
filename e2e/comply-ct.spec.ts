@@ -105,7 +105,7 @@ test('Today hero, Water row and Calm follow board Main (measured)', async ({ pag
     const plus = q('[data-testid="myday-water"] .td-todo-plus')
     const more = q('[data-testid="myday-more"] .rw-title')
     const orb = q('.td-calm .bo-orb b'); const o = getComputedStyle(orb)
-    const slot = q('.td-wxh-hrs li')
+    const slot = q('[data-testid="hourly-strip"] li')
     return {
       fullBorder: fs.borderTopWidth, fullSize: fs.fontSize, fullH: r(full).height,
       slotIcons: slot.querySelectorAll('svg').length,
@@ -122,15 +122,15 @@ test('Today hero, Water row and Calm follow board Main (measured)', async ({ pag
     return Array.from(document.querySelectorAll('.td-day .td-todo-go, .td-day .td-todo-done')).map((b) => { const r = b.getBoundingClientRect(); const fl = r.right + shift; return { name: (b.textContent || b.getAttribute('aria-label') || '').trim(), now: r.left < j.right && r.right > j.left && r.top < j.bottom && r.bottom > j.top ? 'x' : '', flush: r.left + shift < j.right && fl > j.left && r.top < j.bottom && r.bottom > j.top, jack: [j.left, j.top, j.right, j.bottom], shift } })
   })
   console.log('CT-JACKFLUSH', JSON.stringify(under))
-  expect(under.some((u) => u.flush), 'at least one My day button would sit under Jack if flush right').toBe(true)
-  expect(under.every((u) => !u.now), 'none does now').toBe(true)
+  // D-135: the Today hero grew (hourly strip, rain line) and My day starts lower, so at 390 x 844 no button would sit under Jack even flush right; the old proof that the margin was needed no longer holds here, the behaviour (none under him) is what stays
+  expect(under.every((u) => !u.now), 'no My day button is under Jack at rest').toBe(true)
   console.log('CT-MEASURE', JSON.stringify(m))
   expect(m.fullBorder, 'no divider above Full forecast').toBe('0px')
   expect(m.fullSize).toBe('13px')
   expect(m.fullH, 'Full forecast keeps a 44 px target').toBeGreaterThanOrEqual(44)
   const hit = await page.evaluate(() => { const l = document.querySelector('.td-wxh-full')!; const r = l.getBoundingClientRect(); const x = r.left + 20; return [r.top + 2, r.bottom - 2].map((y) => document.elementFromPoint(x, y)?.closest('.td-wxh-full') === l) })
   expect(hit, 'both ends of the 44 px target hit the link (not clipped)').toEqual([true, true])
-  expect(m.slotIcons, 'slots are time, temperature, chance (board Main)').toBe(0)
+  expect(m.slotIcons, 'strip items are time, icon, temperature, chance (D-139)').toBe(1)
   expect(m.plusW).toBeGreaterThanOrEqual(44); expect(m.plusH).toBeGreaterThanOrEqual(44)
   expect(m.moreLines, 'Log something else: two lines at most').toBeLessThanOrEqual(2)
   expect(m.orbBg, 'idle Calm orb is a gradient disc').toBe(true)

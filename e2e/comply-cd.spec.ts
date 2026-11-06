@@ -38,7 +38,7 @@ for (const w of [390, 360]) {
       await page.addInitScript(() => { Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { speak() {}, cancel() {} } }); (window as unknown as Record<string, unknown>).SpeechSynthesisUtterance = function () {} })
       await page.goto('/#discover')
       await flagOn(page, 'learn.medcards')
-      await expect(page.getByTestId('dc-news')).toBeVisible()
+      await expect(page.getByTestId('dc-fact')).toBeVisible()
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await setScheme(page, scheme)
       await full(page, `discover-${w}-${scheme}`)
@@ -58,26 +58,27 @@ for (const w of [390, 360]) {
 }
 
 // Measured checks (no env needed).
-test('Discover: search button 44 px, Learn is full-width tinted cards, Play tiles tinted with no kicker', async ({ page }) => {
+test('Discover: search button 44 px, Learn is four tinted cards in two columns (S22, D-135), Play tiles tinted with no kicker', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 })
   await page.clock.setFixedTime(FIXED_CLOCKS[1])
   await skipOnboarding(page)
   await page.route('**/i.ytimg.com/**', (r) => r.fulfill({ status: 404 }))
   await page.goto('/#discover')
   await flagOn(page, 'learn.medcards')
-  await expect(page.getByTestId('dc-news')).toBeVisible()
+  await expect(page.getByTestId('dc-fact')).toBeVisible()
   const m = await page.evaluate(() => {
     const r = (e: Element) => e.getBoundingClientRect()
     const sc = document.querySelector('.bt .scroll') as HTMLElement
     const search = r(document.querySelector('[data-testid="dc-search"]')!)
-    const cards = [...document.querySelectorAll('[data-testid="dc-learn"] .dc-lcard')].map((c) => ({ w: r(c).width, bg: getComputedStyle(c).backgroundColor }))
+    const cards = [...document.querySelectorAll('[data-testid="dc-learn"] .dc-lc')].map((c) => ({ w: r(c).width, left: r(c).left, bg: getComputedStyle(c).backgroundColor }))
     const play = [...document.querySelectorAll('[data-testid="dc-play"] .card.pt')].map((c) => ({ bg: getComputedStyle(c).backgroundColor, k: c.querySelector('.pt-k') !== null, a: c.querySelector('.pt-a') !== null }))
     return { search: [search.width, search.height], sw: sc.clientWidth, cards, play, sideways: sc.scrollWidth - sc.clientWidth }
   })
   expect(Math.min(...m.search)).toBeGreaterThanOrEqual(44)
-  expect(m.cards.length).toBe(3)
-  m.cards.forEach((c) => { expect(Math.abs(c.w - (m.sw - 32))).toBeLessThanOrEqual(2); expect(c.bg).not.toBe('rgba(0, 0, 0, 0)') })
-  expect(new Set(m.cards.map((c) => c.bg)).size, 'three different tints').toBe(3)
+  expect(m.cards.length).toBe(4) // Health topics, Be prepared, Recipes and (flag on) Medicines
+  m.cards.forEach((c) => { expect(Math.abs(c.w - (m.sw - 32 - 12) / 2), 'two equal columns').toBeLessThanOrEqual(2); expect(c.bg).not.toBe('rgba(0, 0, 0, 0)') })
+  expect(new Set(m.cards.map((c) => Math.round(c.left))).size, 'two columns').toBe(2)
+  expect(new Set(m.cards.map((c) => c.bg)).size, 'four different tints').toBe(4)
   m.play.forEach((p) => { expect(p.k || p.a).toBe(false); expect(p.bg).not.toBe('rgba(0, 0, 0, 0)') })
   expect(m.sideways).toBeLessThanOrEqual(0)
 })

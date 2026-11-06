@@ -145,16 +145,20 @@ function groups<T>(rows: T[], key: (r: T) => string, from: string, n: number): T
   return [...m.keys()].sort().slice(0, n).map((k) => m.get(k)!)
 }
 
+/** Linear interpolation over [ms, value] points sorted by time; flat before the first and after the last. */
+export const interp = (pts: readonly (readonly [number, number])[], ms: number): number => {
+  if (ms <= pts[0]![0]) return pts[0]![1]
+  for (let i = 1; i < pts.length; i++) {
+    const [a, ya] = pts[i - 1]!
+    const [b, yb] = pts[i]!
+    if (ms <= b) return ya + ((yb - ya) * (ms - a)) / (b - a)
+  }
+  return pts[pts.length - 1]![1]
+}
+
 const rateAt = (hours: Hour[], ms: number): number | null => {
   const pts = hours.flatMap((h) => (h.rain == null ? [] : [[msOf(h.time) + 1_800_000, h.rain] as const])) // an hour's total sits at its midpoint
-  if (!pts.length) return null
-  if (ms <= pts[0][0]) return pts[0][1]
-  for (let i = 1; i < pts.length; i++) {
-    const [a, ya] = pts[i - 1]
-    const [b, yb] = pts[i]
-    if (ms <= b) return r1(ya + ((yb - ya) * (ms - a)) / (b - a))
-  }
-  return pts[pts.length - 1][1]
+  return pts.length ? r1(interp(pts, ms)) : null
 }
 
 /** Twelve 10-minute slots from now: OpenWeather minutely where it has minutes (60 min), else interpolated from the blended hourly rain. */

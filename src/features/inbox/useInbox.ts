@@ -11,6 +11,7 @@ import { useSelf } from '../sos/useSelf'
 import { useFamilyPeople } from '../family/roster'
 import { useAlertRows } from '../notify/useAlerts'
 import { markAllSeen, markSeen } from '../notify/store'
+import { useArchivedIds } from '../notify/archive'
 import { buildInbox, countUnread, type InboxItem } from './build'
 
 const NO_ALERTS: Alert[] = []
@@ -29,7 +30,9 @@ export function useInbox(isAdmin: boolean) {
   const taken = useMyTakes()
   const self = useSelf()
   const medications = useMedicationRows(self.personId, true) // undefined while loading: the inbox then waits on the old path instead of showing nothing as if there were no medicines
-  const familyAlerts = useAlertRows()
+  const archived = useArchivedIds()
+  const allFamily = useAlertRows()
+  const familyAlerts = useMemo(() => allFamily.filter((r) => !archived.has(r.id)), [allFamily, archived]) // Archive all on Today also clears the inbox (Undo brings them back)
   const { people } = useFamilyPeople()
   const nameOf = useCallback((id: string | null) => (id ? people.find((p) => p.id === id)?.name ?? null : null), [people])
   const [pins, setPins] = useState<{ id: number; handle: string }[]>([])

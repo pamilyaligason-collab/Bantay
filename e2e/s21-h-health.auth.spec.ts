@@ -31,7 +31,7 @@ async function open(page: Page, width: number, rows: Row[], opts: { height?: num
   await page.reload()
   await expect(page.getByTestId('bodyhero')).toBeVisible()
   await expect(page.getByTestId('pinned').locator('.pt').first()).toBeVisible()
-  await expect(page.getByTestId('glance-meds').locator('.pt-v')).toHaveText(/\S/) // blank until the medicines have loaded, and the tile can change height then
+  await expect(page.getByTestId('tk-meds').locator('.tk-s')).toHaveText(/\S/) // blank until the medicines have loaded (Medicines is on the Today row, not in Pinned)
   if (opts.scheme) await setScheme(page, opts.scheme)
   if (opts.hash) { await page.goto(`/${opts.hash}`); if (opts.scheme) await setScheme(page, opts.scheme) }
   await settled(page)
@@ -154,9 +154,19 @@ for (const [scheme, bg, ink] of [['light', 'rgb(251, 231, 228)', 'rgb(180, 35, 2
 // ---- Pinned ----
 const BP_AND_SUGAR: Row[] = [{ test: 'bp_systolic', value: 124, unit: 'mmHg', ago: 0.05 }, { test: 'bp_diastolic', value: 79, unit: 'mmHg', ago: 0.05 }, { test: 'fasting_glucose', value: 104, unit: 'mg/dL', ago: 2 }]
 
+// D-135: the inline Pinned row omits Steps and Medicines (the Today row and Browse show them), so the default shows two tiles; Edit pins puts four metric tiles in (Pulse and Fasting sugar for Steps and Medicines), which keeps the two-row grid under test.
+async function fourTiles(page: Page) {
+  await page.getByRole('button', { name: 'Edit pins' }).click()
+  for (const name of ['Medicines', 'Steps', 'Pulse', 'Fasting sugar']) await page.getByRole('checkbox', { name }).click()
+  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByRole('dialog', { name: 'Pinned' })).toHaveCount(0) // the sheet's exit animation must end first
+  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(4)
+}
+
 for (const width of [195, 360, 390, 450]) {
   test(`Pinned grid at ${width} px: no sideways scroll, equal tile heights per row`, async ({ page }) => {
     await open(page, width, BP_AND_SUGAR)
+    await fourTiles(page)
     const tiles = await page.locator('[data-testid="pinned"] .pt').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), h: Math.round(b.height), r: Math.round(b.right) } }))
     expect(tiles.length).toBe(4)
     for (const t of tiles) expect(t.r).toBeLessThanOrEqual(width)
@@ -194,10 +204,10 @@ test('Pinned at 195 px: a long visit title wraps inside the tile, nothing runs o
 test('Pinned at 195 px: the long dose line stays inside the Medicines tile', async ({ page }) => {
   await open(page, 195, BP_AND_SUGAR, { meds: true })
   // three medicines: 1 + 2 + 1 = 4 doses today, none taken
-  await expect(page.getByTestId('glance-meds').locator('.pt-v')).toHaveText('4 of 4 left today')
+  await expect(page.getByTestId('browse-meds')).toContainText('4 of 4 left today') // Medicines is on Browse; Pinned inline leaves it out
   expect(await outOfTile(page), 'text running out of its tile').toEqual([])
   await assertNoSideways(page)
-  await page.getByTestId('glance-meds').scrollIntoViewIfNeeded()
+  await page.getByTestId('browse-meds').scrollIntoViewIfNeeded()
   await page.screenshot({ path: `${SHOTS}/H/pinned-dose-195.png`, animations: 'disabled' })
 })
 

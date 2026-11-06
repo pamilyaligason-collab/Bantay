@@ -43,11 +43,11 @@ describe('Health overview (v13)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: hero, Pinned, Family health, Browse, For you', async () => {
+  it('order: Today, Needs attention, Readings, Browse, For you, Family health', async () => {
     await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
     render(<Health />)
     await screen.findByTestId('family-health')
-    const els = ['bodyhero', 'glance', 'family-health', 'browse', 'for-you'].map((id) => screen.getByTestId(id))
+    const els = ['today-kpis', 'bodyhero', 'readings-card', 'browse', 'for-you', 'family-health'].map((id) => screen.getByTestId(id))
     els.slice(1).forEach((el, i) => expect(els[i]!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })
 
@@ -62,17 +62,22 @@ describe('Health overview (v13)', () => {
   it('the Labs tile opens the labs screen and the Medicines tile counts today\'s doses', async () => {
     await ldb.medications.bulkAdd([med({ name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } })])
     render(<Health />)
-    const meds = await screen.findByTestId('glance-meds')
+    const meds = await screen.findByTestId('browse-meds')
     expect(meds.getAttribute('href')).toBe('#health/meds')
     await waitFor(() => expect(meds.textContent).toContain('2 of 2 left today'))
+    await waitFor(() => expect(screen.getByTestId('tk-meds').textContent).toContain('0/2'))
+    expect(screen.getByTestId('tk-meds').getAttribute('href')).toBe('#health/meds')
   })
 
-  it('empty person: No readings yet with + Reading and Scan; Pinned shows empty tiles, no nudge', async () => {
+  it('empty person: No readings yet with + Reading and Scan; Today shows -- tiles, no nudge', async () => {
     await hdb.readings.clear()
     render(<Health />)
     const hero = await screen.findByTestId('bodyhero')
     expect(hero.textContent).toContain('No readings yet')
-    expect((await screen.findByTestId('glance-progress')).textContent).toContain('None this week')
+    const bpTile = await screen.findByTestId('tk-bp')
+    expect(bpTile.textContent).toContain('--')
+    expect(bpTile.textContent).toContain('No reading today')
+    expect(screen.getByTestId('rc-value').textContent).toBe('--')
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')
     fireEvent.click(screen.getByRole('button', { name: '+ Reading' }))

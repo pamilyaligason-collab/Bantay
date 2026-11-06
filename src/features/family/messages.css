@@ -48,3 +48,5 @@
 .msg-qr { display: flex; gap: 8px; flex-wrap: wrap; }
 .msg-qr .chip { min-height: var(--tap); padding: 0 18px; font-size: 16px; cursor: pointer; }
 .msg-qr .chip:disabled { opacity: .5; }
+
+.msg-for { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }

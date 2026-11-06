@@ -147,12 +147,13 @@ for (const scheme of ['light', 'dark'] as const) {
 
 test('Overview Browse shows one Labs row that opens the screen', async ({ page }) => {
   await open(page, '#health', 'light')
-  const row = page.getByTestId('browse-labs')
+  const row = page.getByTestId('browse-labs') // D-135: the Browse card is itself the link
   await expect(row).toBeVisible()
+  await expect(row).toHaveAttribute('href', '#health/labs')
   await expect(page.getByTestId('labs-list')).toHaveCount(0)
   await row.scrollIntoViewIfNeeded()
   await shot(page, 'health-overview-labsrow', 'light')
-  await row.getByRole('link').click()
+  await row.click()
   await expect(page).toHaveURL(/#health\/labs$/)
 })
 

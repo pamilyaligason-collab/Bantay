@@ -137,9 +137,9 @@ for (const scheme of ['light', 'dark'] as const) {
     test(`S6, S7: Health with old readings only has one lead card and one Labs row (${scheme})`, async ({ page }) => {
       await open(page, 'health')
       await expect(page.getByTestId('bodyhero')).toBeVisible() // v13: the lead card shows the newest lab result (LDL here) even when old
-      const labs = page.getByTestId('browse-labs') // v13: Browse keeps one Labs row, the list lives on #health/labs
+      const labs = page.getByTestId('browse-labs') // v13: Browse keeps one Labs row, the list lives on #health/labs; D-135: the Browse card is itself the link
       await labs.scrollIntoViewIfNeeded()
-      await expect(labs.getByRole('link')).toHaveAttribute('href', '#health/labs')
+      await expect(labs).toHaveAttribute('href', '#health/labs')
       await shot(page, `health-labs-${scheme}`)
     })
 

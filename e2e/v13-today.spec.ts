@@ -72,12 +72,12 @@ type Box = { x: number; y: number; width: number; height: number }
 const box = async (l: import('@playwright/test').Locator): Promise<Box> => (await l.boundingBox())!
 const FULL_SHOTS = process.env.V13_SHOTS
 
-test('T4: the hero is 260 to 300 px, the temperature 76 px at weight 200, the condition and range to its right', async ({ page }) => {
+test('T4: the hero is 260 to 330 px, the temperature 76 px at weight 200, the condition and range to its right', async ({ page }) => {
   const hero = page.getByTestId('weather-hero')
   await expect(hero.locator('.td-wxh-t')).toBeVisible() // the forecast has landed, not the empty slot
   const h = await box(hero)
   expect(h.height).toBeGreaterThanOrEqual(260)
-  expect(h.height).toBeLessThanOrEqual(300)
+  expect(h.height).toBeLessThanOrEqual(330) // D-139: the hourly strip and the one-line rain estimate sit inside the hero (measured 317 here, was 300 max)
   const t = hero.locator('.td-wxh-t')
   expect(await t.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['76px', '200']) // D-115 A2: the weight-200 digit face is loaded (numfont.css), so 200 really renders
   const [tb, cb, hb] = [await box(t), await box(hero.locator('.td-wxh-c')), await box(hero.locator('.td-wxh-hl'))]
@@ -105,8 +105,8 @@ test('T5 / T7: slots carry a temperature, Full forecast is 44 px, the 55% evenin
   await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now: new Date(FIXED_CLOCKS[1]), temp: 26, humidity: 70, feels: 27, code: 2, hourlyProb: (h) => (h === 19 ? 55 : 5) }) }))
   await page.reload()
   const hero = page.getByTestId('weather-hero')
-  const slots = hero.locator('.td-wxh-hrs li')
-  await expect(slots).toHaveCount(3)
+  const slots = hero.locator('[data-testid="hourly-strip"] li')
+  await expect(slots).toHaveCount(12)
   for (const li of await slots.all()) await expect(li).toContainText('°')
   expect((await box(hero.getByRole('link', { name: /Full forecast/ }))).height).toBeGreaterThanOrEqual(44)
   await expect(hero.getByRole('link', { name: /Full forecast/ })).toHaveAttribute('href', '#weather')

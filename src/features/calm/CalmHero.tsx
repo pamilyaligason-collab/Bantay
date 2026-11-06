@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Segmented, useReducedMotion } from '../look'
 import { BreathOrb } from '../look/BreathOrb'
+import { DotSphere } from '../look/DotSphere'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import BreathSheet from '../today/BreathSheet'
@@ -28,6 +29,9 @@ function HeroState() {
 /** Where the idle orb rests before Start: three quarters of the way through the breath in, so it is near the board's size (about 185 px of 220), not the 121 px bottom of the breath. */
 export const restAt = (p: Pattern) => p.steps[0]!.secs * 0.75
 
+/** Each exercise card's own sphere hue (board S22Calm). */
+const HUE: Record<Pattern['id'], string> = { calm: '#8FB6FF', sleep: '#B49CFF', relax: '#7FE0D0' }
+
 /** The board's pill words: the name and what the breath is. */
 const patternLabel = (p: Pattern) => (p.id === 'calm' ? 'Calm box · 4-4-4-4' : p.id === 'relax' ? 'Relax · in 4, out 6' : p.name)
 
@@ -50,6 +54,7 @@ export default function CalmHero() {
   }, [reduced, open, p])
   useEffect(() => setElapsed(restAt(p)), [p])
   return (
+    <>
     <section className="card cm-hero" data-hero data-testid="calm-hero" aria-labelledby="cm-h">
       <div aria-hidden="true" className="cm-orb"><BreathOrb moment={momentAt(p, 1, elapsed)} reduced={reduced} size={220} /></div>
       <h2 id="cm-h" className="cm-hero-t">Breathe in… out</h2>
@@ -61,5 +66,16 @@ export default function CalmHero() {
       <HeroState key={round} />
       {open && <BreathSheet initial={{ pattern: pid, minutes: Number(mins) }} onClose={() => { setOpen(false); setRound((r) => r + 1); start.current?.focus() }} />}
     </section>
+    <section className="cm-ex" aria-labelledby="cm-ex-h" data-testid="calm-exercises">
+      <h2 id="cm-ex-h" className="cm-ex-t">Exercises</h2>
+      {SHOWN_PATTERNS.map((x) => (
+        <button key={x.id} type="button" className="cm-ex-b press" aria-pressed={pid === x.id} data-pattern={x.id} onClick={() => setPid(x.id)}>
+          <span className="cm-ex-s" style={{ color: HUE[x.id] }} aria-hidden="true"><DotSphere size={64} rings={3} /></span>
+          <span className="cm-ex-m"><b>{x.name}</b><span>{x.tag}</span></span>
+          <span className="cm-ex-d">{mins} min</span>
+        </button>
+      ))}
+    </section>
+    </>
   )
 }

@@ -25,7 +25,7 @@ describe('LiteVideo', () => {
     expect(container.querySelector('img')!.getAttribute('src')).toBe('https://i.ytimg.com/vi/M4ACYp75mjU/hqdefault.jpg')
     expect(container.querySelector('img')!.getAttribute('referrerpolicy')).toBe('no-referrer')
     expect(screen.getByText('5 min')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Play Hands-only CPR, 5 minutes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Play Hands-only CPR, 5 min' })).toBeTruthy()
     expect(screen.getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=M4ACYp75mjU')
   })
   it('a picture that fails to load falls back to the drawn poster; unknown length shows no minutes', () => {

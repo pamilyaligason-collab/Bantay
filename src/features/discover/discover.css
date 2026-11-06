@@ -122,9 +122,7 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .rw > button.dc-play.sh-iconbtn[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 [data-testid="dc-listen"] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; }
 .dc-sh h2, .dc-season .sh-h2 { font-family: inherit; } /* the shell's .sh-h2 is serif; Discover uses the app font */
-/* first screen: hero, two videos and the season card must end above the Jack button (y 690 at 844 tall), so the page gap is pulled in and the hero picture shrinks on short screens (see .dc-top below); the video pictures are 72 px to make room for two-line season advice and three-line titles */
-.bt [data-testid="dc-videos"], .bt [data-testid="season-row"] { margin-top: -14px; }
-.bt [data-testid="season-row"] { margin-top: -18px; }
+/* S22: the first-screen negative margins on the video row and the season row are gone (Top story now leads, the rows keep the panel gap). The video pictures stay 72 px for the season row and three-line titles. */
 .dc-vc-pic { height: 72px; }
 .dc-vc-play { width: 36px; height: 36px; }
 .dc-season-row .rw-main { min-height: 40px; }

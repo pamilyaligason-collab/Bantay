@@ -16,7 +16,7 @@ export function leaveSheet(then: () => void) {
   history.back()
 }
 
-export function Sheet({ title, onClose, children, focusTitle = false, hideTitle = false, closeLabel = 'Close', testId }: { title: string; onClose: () => void; children: ReactNode; focusTitle?: boolean; hideTitle?: boolean; closeLabel?: string; testId?: string }) {
+export function Sheet({ title, onClose, children, focusTitle = false, hideTitle = false, closeLabel = 'Close', testId, guard }: { title: string; onClose: () => void; children: ReactNode; focusTitle?: boolean; hideTitle?: boolean; closeLabel?: string; testId?: string; /** Returns true to keep the sheet open (the caller shows its own confirm line). */ guard?: () => boolean }) {
   const box = useRef<HTMLDivElement>(null)
   const [closing, setClosing] = useState(false)
   const timer = useRef<number>(0)
@@ -24,8 +24,11 @@ export function Sheet({ title, onClose, children, focusTitle = false, hideTitle 
   const still = () => !window.matchMedia || window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
+  const guardRef = useRef(guard)
+  guardRef.current = guard
   const close = (popped = false) => {
     if (closing || timer.current) return
+    if (guardRef.current?.()) { if (popped) history.pushState({ bantaySheet: 1 }, ''); return } // a Back press already popped our entry: put it back
     if (!popped && history.state?.bantaySheet) history.back() // our entry goes with the sheet; the popstate that follows finds it closing
     if (still()) { timer.current = -1; return onCloseRef.current() } // -1 marks closed so a second tap is ignored
     setClosing(true)
@@ -95,6 +98,7 @@ export function Sheet({ title, onClose, children, focusTitle = false, hideTitle 
     if (!d.live) return
     const h = box.current!.offsetHeight, off = dragOffset(e.clientY - d.y0 + d.base, h)
     if (e.type !== 'pointercancel' && shouldDismiss(off, velocityOf([...d.samples, { y: e.clientY, t: performance.now() }]), h)) {
+      if (guardRef.current?.()) { paint(0, true); return }
       if (history.state?.bantaySheet) history.back()
       paint(h, true)
       if (still()) { timer.current = -1; onCloseRef.current() } // reduced motion: a drag down still closes, at once

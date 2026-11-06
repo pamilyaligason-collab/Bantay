@@ -15,7 +15,7 @@ export function toWx(fc: Forecast, offline = false): Wx {
     words: conditionWords(code),
     at: fc.fetchedAt,
     code,
-    hourly: hasT ? { time: fc.hourly.map((h) => h.time), temp: fc.hourly.map((h) => h.temp), prob: fc.hourly.map((h) => h.prob), code: fc.hourly.map((h) => h.code) } : undefined,
+    hourly: hasT ? { time: fc.hourly.map((h) => h.time), temp: fc.hourly.map((h) => h.temp), prob: fc.hourly.map((h) => h.prob), code: fc.hourly.map((h) => h.code), mm: fc.hourly.map((h) => h.mm ?? null) } : undefined,
     high: fc.daily[0]?.max ?? null,
     low: fc.daily[0]?.min ?? null,
     utcOffset: fc.utcOffset,

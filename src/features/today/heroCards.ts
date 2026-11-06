@@ -15,7 +15,7 @@ export interface RainOutlook { now: boolean; tomorrow: boolean; startH: number; 
 export interface Wx {
   temp: number | null; rainPct: number | null; words: string; at: string; code?: number | null
   /** Place-local "YYYY-MM-DDTHH:MM" times (the clock of the place the forecast is for, with utcOffset). */
-  hourly?: { time: string[]; prob: (number | null)[]; code?: (number | null)[]; temp?: (number | null)[] }
+  hourly?: { time: string[]; prob: (number | null)[]; code?: (number | null)[]; temp?: (number | null)[]; mm?: (number | null)[] }
   high?: number | null; low?: number | null // today's range
   utcOffset?: number // seconds; absent in old caches and fixtures = Manila
   tz?: string // IANA zone the forecast service reported

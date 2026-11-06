@@ -3,7 +3,7 @@ import { ActivityCard } from '../features/family/ActivityCard'
 import FamilyFeed from '../features/family/FamilyFeed'
 import Calendar from '../features/family/Calendar'
 import FamilyMessages from '../features/family/FamilyMessages'
-import { familyFeedOn } from '../features/family/flags'
+import { familyFeedOn, familyPlacesOn } from '../features/family/flags'
 import { IncomingSos } from '../features/family/IncomingSos'
 import MemberPage from '../features/family/MemberPage'
 import Memories from '../features/family/Memories'
@@ -11,6 +11,9 @@ import { listMessages } from '../features/family/messagesApi'
 import { NeedsList } from '../features/family/NeedsList'
 import Papers from '../features/family/Papers'
 import { PeopleList } from '../features/family/PeopleList'
+import PlaceNotice from '../features/family/PlaceNotice'
+import { PlaceScreen, WhereCard } from '../features/family/PlaceSection'
+import { usePlaces } from '../features/family/placeApi'
 import Plan from '../features/family/Plan'
 import Report from '../features/family/Report'
 import { useCarerIds } from '../features/family/CarerCards'
@@ -30,7 +33,7 @@ import '../features/family/family.css'
 
 export { messagesPreview } from '../features/family/messagesPreview'
 
-export type FamilySeg = 'home' | 'messages' | 'plan' | 'papers' | 'memories' | 'feed'
+export type FamilySeg = 'home' | 'messages' | 'plan' | 'papers' | 'memories' | 'feed' | 'map'
 
 /** Which part of Family the hash names. #family and #family/people are Home, #family/messages the one shared chat, #family/plan and #plan the Plan, #family/papers the Papers screen
  *  (#records and #health/papers redirect there, routes.ts); #family/people/<id> is one member's page. The hash is the source of truth so deep links and Back work. */
@@ -38,7 +41,7 @@ export function parseFamily(h: string): { seg: FamilySeg; member: string | null 
   const [head, a, b] = h.replace(/^#/, '').split('/')
   if (head === 'family' && a === 'people' && b) return { seg: 'home', member: decodeURIComponent(b) }
   const k = head === 'family' ? a : head
-  return { seg: k === 'plan' ? 'plan' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : 'home', member: null }
+  return { seg: k === 'plan' ? 'plan' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : head === 'family' && k === 'map' ? 'map' : 'home', member: null }
 }
 
 /** #family/people/<id>/report is that member's health report. */
@@ -67,6 +70,7 @@ function Root() {
   const pick = (id: string) => { select(id); document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) }
   const me = options.find((p) => p.isMe)
   const groups = useMemo(() => groupsOf(options, writable, isOwner), [options, writable, isOwner])
+  const places = usePlaces() // null with the places flag off, offline, or before 0052 is applied
   const pill = <PersonSwitcher people={options} meId={me?.id ?? ''} personId={shown.id} setPersonId={() => undefined} onPick={pick} title="Who to show" groups={acting ? undefined : groups} foot={acting ? undefined : 'Family opens on Me every time.'} />
   return (
     <>
@@ -76,7 +80,9 @@ function Root() {
       <TodayCarousel people={shown.id ? [shown] : []} fx={onShow} />
       <ActivityCard people={shown.id ? [shown] : []} />
       <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} shownId={shown.id} onSelect={pick} />
-      <PeopleList people={linked} />
+      <PlaceNotice />
+      <WhereCard places={places} />
+      <PeopleList people={linked} places={places} />
       <TogetherList />
     </>
   )
@@ -93,10 +99,11 @@ export default function Family() {
     mark()
     return mark
   }, [seg, member]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (seg === 'feed' && !familyFeedOn()) location.replace('#family') }, [seg])
+  useEffect(() => { if ((seg === 'feed' && !familyFeedOn()) || (seg === 'map' && !familyPlacesOn())) location.replace('#family') }, [seg])
   if (member) return isReport(location.hash) ? <Report id={member} /> : <MemberPage id={member} />
   if (seg === 'papers') return <Papers />
   if (seg === 'feed') return familyFeedOn() ? <FamilyFeed /> : null
+  if (seg === 'map') return familyPlacesOn() ? (<><SubHeader title="Where everyone is" backHref="#family" backLabel="Back to Family" /><PlaceScreen /></>) : null
   if (seg === 'memories') return (<><LargeTitle back={{ href: '#family', label: 'Family' }} title="Memories" /><Memories /></>)
   if (seg === 'messages') return (<><SubHeader title="Messages" backHref="#family" backLabel="Back to Family" /><FamilyMessages /></>)
   if (seg === 'plan') return (<><SubHeader title="Plan" backHref="#family" backLabel="Back to Family" /><Calendar /><Plan /></>)

@@ -38,13 +38,14 @@ const METRIC: Partial<Record<PinCode, { kicker: string; unit: string; tint: Tint
   fasting_glucose: { kicker: 'Fasting sugar', unit: 'mg/dL', tint: 'amber', icon: 'drop' }, heart_rate: { kicker: 'Pulse', unit: 'bpm', tint: 'red', icon: 'heart' }, weight: { kicker: 'Weight', unit: 'kg', tint: 'teal', icon: 'scale' }
 }
 export const MAX_PINS = 4
+const TODAY_COVERS: PinCode[] = ['steps', 'meds'] // shown by the Today row and Browse; a pin that can nudge (BP, pulse, sugar, weight) always stays, so its Due pill and mover show
 /** The stored list in its stored order, known codes only, no repeats; more than MAX_PINS in kv (an older save) shows the first four and is left as it is until the next change. */
 /** Which pinned metric moves first when several are due. */
 const NUDGE_ORDER: PinCode[] = ['bp_systolic', 'fasting_glucose', 'heart_rate', 'weight']
 const cleanPins = (v: unknown): PinCode[] => (Array.isArray(v) ? [...new Set(v.filter((c): c is PinCode => PINS.some((p) => p.code === c)))].slice(0, MAX_PINS) : DEFAULT_PINS)
 
 /** Pinned: live tiles chosen with Edit (kv health.pins, default BP, Medicines, Steps, Next visit). Real data only; an empty tile says so and offers its first step. */
-export function PinnedTiles({ personId, readings, canLog = true }: { personId: string; readings: Reading[]; canLog?: boolean }) {
+export function PinnedTiles({ personId, readings, canLog = true, inline = false }: { personId: string; readings: Reading[]; canLog?: boolean; inline?: boolean }) {
   const doses = useDoseLine(personId)
   const acts = useActivity(personId)
   const visit = nextVisitLine(useVisits(personId))
@@ -85,10 +86,11 @@ export function PinnedTiles({ personId, readings, canLog = true }: { personId: s
     if (pins.length >= MAX_PINS) { setFull(true); return }
     setRaw(cleanPins([...pins, c]))
   }
-  return (
-    <Section title="Pinned" testId="glance" link={{ onClick: () => setEditing(true), label: 'Edit' }}>
-      <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? pins.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
-      {pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>}
+  const shown = inline ? pins.filter((c) => !TODAY_COVERS.includes(c)) : pins // inline (in the Readings card): everything but steps and medicines, which the Today row and Browse already show
+  const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
+  const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>
+  const sheet = (
+    <>
       {editing && (
         <Sheet title="Pinned" onClose={() => { setEditing(false); setFull(false) }}>
           <p className="sub" data-testid="pin-limit" role={full ? 'alert' : undefined}>{full ? `Four is the most. Untick one to make room for another.` : `Pick up to four. ${pins.length} of ${MAX_PINS} picked.`}</p>
@@ -102,6 +104,21 @@ export function PinnedTiles({ personId, readings, canLog = true }: { personId: s
           </ul>
         </Sheet>
       )}
+    </>
+  )
+  if (inline) return (
+    <div className="rc-pins" data-testid="glance">
+      <div className="rc-pins-h"><span className="sub">Pinned</span><button type="button" className="rc-pins-edit" onClick={() => setEditing(true)}>Edit pins</button></div>
+      {shown.length > 0 && grid}
+      {empty}
+      {sheet}
+    </div>
+  )
+  return (
+    <Section title="Pinned" testId="glance" link={{ onClick: () => setEditing(true), label: 'Edit' }}>
+      {grid}
+      {empty}
+      {sheet}
     </Section>
   )
 }

@@ -17,7 +17,7 @@ a{color:var(--accent)}
 </head>
 <body>
 <h1>Family Bantay privacy</h1>
-<p class="draft"><strong>Draft, not yet approved.</strong> The family admin reviews this page before the word Draft is removed. Last updated 2026-11-05.</p>
+<p class="draft"><strong>Draft, not yet approved.</strong> The family admin reviews this page before the word Draft is removed. Last updated 2026-11-06.</p>
 <p>Family Bantay is a private app for one family. This page says what it keeps, who can see it, where it goes and how you control it.</p>
 
 <h2>What it keeps</h2>
@@ -25,13 +25,13 @@ a{color:var(--accent)}
 <li>Your name, your sign-in and your choices in the app.</li>
 <li>Health records you or your family add: blood pressure, sugar, weight, medicines, doses taken, papers and photos, mood check-ins.</li>
 <li>Steps, sleep, heart rate and blood pressure from your phone, only the kinds you turn on. Bantay only reads them; it never writes to Health Connect or Apple Health.</li>
-<li>Your place, only when you turn on live location. Weather uses your place rounded to about 1 km.</li>
+<li>When the Family map is on in the app, the exact latest place and battery level of people who sign in is shared with their family by default, updated when Bantay opens, and off any time in Me, Privacy. Only the latest point is kept, deleted when turned off or after 7 days without an update.</li>
 <li>Messages to your family, SOS records and alerts.</li>
 <li>When you agreed to this notice.</li>
 </ul>
 
 <h2>Who can see it</h2>
-<p>Only you, the family owner, and the people you or the family owner share with can see your records. Nothing is shared by default. In Me, Privacy, Who can see my records, you pick a family member and they can see your records at once. They are told, and you can stop it at any time. The list is kept on the server, so it is the same on every phone. The family owner can see everyone&#39;s records, to help. Only the owner and you can set who sees your records, and you will be told. For a family member who has no sign-in, the owner and their carers set it. A log records who changed what. Nobody outside your family circle can see your records. They are not sold and not used for ads.</p>
+<p>Only you, the family owner, and the people you or the family owner share with can see your records. Nothing is shared by default, except your latest place and battery on the Family map (listed above). In Me, Privacy, Who can see my records, you pick a family member and they can see your records at once. They are told, and you can stop it at any time. The list is kept on the server, so it is the same on every phone. The family owner can see everyone&#39;s records, to help. Only the owner and you can set who sees your records, and you will be told. For a family member who has no sign-in, the owner and their carers set it. A log records who changed what. Nobody outside your family circle can see your records. They are not sold and not used for ads.</p>
 
 <h2>Where it goes</h2>
 <p>Your numbers are saved on your phone first, then sent to these services so the family owner and the people you or the family owner share with can see them. The app sends data only to the services below. Other official sites open in your browser only when you tap their link.</p>
@@ -39,9 +39,10 @@ a{color:var(--accent)}
 <li><strong>Supabase</strong>: the family database, with your records and messages. It also holds the map files the Safety maps and the Rescue map read from the family&#39;s own project, and sees your internet address and which map file was read.</li>
 <li><strong>Open-Meteo and Windy</strong>: weather forecast and live map. They receive your place rounded to about 1 km, never your name.</li>
 <li><strong>Wikipedia</strong>: the "On this day" facts in Discover. It receives today's date only, never your name or place.</li>
+<li><strong>Wikimedia Commons and news sites</strong>: recipe photos load from Wikimedia Commons, and a news story&#39;s picture loads from the site that published it, when its card shows. Each sees your internet address, never your name.</li>
 <li><strong>YouTube</strong>: picture previews load when a video card shows, so YouTube sees your internet address. The video loads only when you tap.</li>
 <li><strong>Radio Paradise and Radio Swiss Classic</strong>: only when you tap Play on a radio card. The station sees your internet address.</li>
-<li><strong>OpenStreetMap</strong>: street map pictures on the Safety maps and the Rescue map. With Labs, Offline maps off (the usual setting) every map uses them. With it on, they are used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started. It sees your internet address and the area shown.</li>
+<li><strong>OpenStreetMap</strong>: street map pictures on the Safety maps, the Rescue map and the Family map. With Labs, Offline maps off (the usual setting) every map uses them. With it on, they are used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started. It sees your internet address and the area shown.</li>
 <li><strong>Ventusky, HazardHunterPH and PAGASA Panahon</strong>: the map panels in Safety, only after you open a panel. Ventusky gets the map centre rounded to about 1 km. The other two get no place from the app. Each sees your internet address and anything you type in its panel.</li>
 <li><strong>MedlinePlus</strong>: the plain health reads in Discover and Health. It receives the condition, medicine or search words you open, never your name.</li>
 <li><strong>OpenRouter</strong>: the AI models behind Jack and photo reading, only when you use them, and only the text or photo you share. What you ask Jack is sent through a relay on the family owner&#39;s own server first; a photo you scan goes from a function on the family&#39;s own Supabase project straight to OpenRouter, with no relay. Zero data retention is switched on. The servers are outside the Philippines. When you turn AI off in Me, Privacy, Jack and photo reading stop sending anything, and papers you scan from then on are kept but not read by the AI. Papers you scanned earlier that were not read yet may still be.</li>

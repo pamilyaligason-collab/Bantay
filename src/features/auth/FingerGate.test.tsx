@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import css from './lock.css?raw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
@@ -23,7 +24,7 @@ describe('LockScreen', () => {
     const onUnlocked = vi.fn(), onUsePin = vi.fn(), onNotYou = vi.fn()
     render(<LockScreen name="Mama" onUnlocked={onUnlocked} onUsePin={onUsePin} onNotYou={onNotYou} />)
     expect((await screen.findByRole('status')).textContent).toMatch(/did not work/)
-    fireEvent.click(screen.getByRole('button', { name: 'Use PIN' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Use PIN instead' }))
     fireEvent.click(screen.getByRole('button', { name: 'Not Mama?' }))
     expect(onUnlocked).not.toHaveBeenCalled()
     expect(onUsePin).toHaveBeenCalledTimes(1); expect(onNotYou).toHaveBeenCalledTimes(1)
@@ -39,6 +40,46 @@ describe('LockScreen start-finger', () => {
     expect(screen.getByText('Touch the fingerprint sensor')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Call 911' }).getAttribute('href')).toBe('tel:911')
     expect(screen.getByRole('button', { name: 'Not Mama?' })).toBeTruthy()
+  })
+  it('fingerprint button has an accessible name and asks again on tap; Use PIN instead signs out', () => {
+    hang()
+    const onUsePin = vi.fn()
+    render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={onUsePin} onNotYou={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock with fingerprint' }))
+    expect(h.prompt).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Use PIN instead' }))
+    expect(onUsePin).toHaveBeenCalledTimes(1)
+  })
+  it('shows a clock, and no name in the greeting when there is none', () => {
+    hang()
+    render(<LockScreen name="" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(screen.getByLabelText('Time now').textContent).toMatch(/^\d{1,2}:\d{2}$/)
+    expect(screen.getByRole('heading').textContent).toMatch(/^Magandang (umaga|hapon|gabi)$/)
+  })
+  it('reduced motion adds the still class (no fog drift, no halo)', () => {
+    hang()
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    const { container } = render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(container.querySelector('main')?.className).toContain('lk2-still')
+    vi.unstubAllGlobals()
+    cleanup()
+    const r = render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(r.container.querySelector('main')?.className).not.toContain('lk2-still')
+  })
+  it('reduced motion renders no halo at all; normal motion renders it', () => {
+    hang()
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    const still = render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(still.container.querySelector('.lk2-halo')).toBeNull()
+    vi.unstubAllGlobals()
+    cleanup()
+    const live = render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(live.container.querySelector('.lk2-halo')).not.toBeNull()
+  })
+  it('Medical ID is the outlined button', () => {
+    hang()
+    render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(screen.getByRole('button', { name: 'Medical ID' }).className).toContain('lk2-out')
   })
   it('shows the weather glance from the cached forecast, nothing when none is cached or it is old', async () => {
     hang()
@@ -119,5 +160,34 @@ describe('FingerOffer', () => {
     const onDone = vi.fn()
     render(<FingerOffer personId="p1" onDone={onDone} />)
     await waitFor(() => expect(onDone).toHaveBeenCalled())
+  })
+})
+
+describe('lock.css', () => {
+  const lin = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+  const lum = (h: string) => { const [r, g, b] = lin(h); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05) }
+  const mix = (f: string, a: number, b: string) => '#' + [1, 3, 5].map((i) => Math.round(a * parseInt(f.slice(i, i + 2), 16) + (1 - a) * parseInt(b.slice(i, i + 2), 16)).toString(16).padStart(2, '0')).join('')
+  const tok = (block: string, name: string) => new RegExp(`--lk-${name}: (#[0-9A-Fa-f]{6})`).exec(block)![1]
+  const lines = css.split(/\r?\n/)
+  const light = lines[1]
+  const dark = lines.find((l) => l.startsWith(':root[data-theme="dark"] .lk2 {'))!
+  const media = lines.find((l) => l.startsWith('@media (prefers-color-scheme: dark)') && l.includes('--lk-sky-a'))!
+  // hand-computed WCAG ratios: white on sky-a, white on sky-b, white on chip, glass ink over sky-a / sky-b
+  const cases: [string, string, number[]][] = [['light', light, [6.78, 5.07, 12.27, 8.89, 9.65]], ['dark', dark, [14.64, 12.05, 17.51, 13.43, 12.15]]]
+  it.each(cases)('%s: every text pair is at least 4.5:1 (clock and date sit on the top band)', (_n, b, want) => {
+    const a = tok(b, 'sky-a'), s = tok(b, 'sky-b'), chip = tok(b, 'chip'), ink = tok(b, 'glass-ink')
+    const alpha = Number(/--lk-glass: rgba\((\d+), (\d+), (\d+), ([.\d]+)\)/.exec(b)![4])
+    const gl = _n === 'light' ? '#ffffff' : '#142028'
+    const got = [ratio('#ffffff', a), ratio('#ffffff', s), ratio('#ffffff', chip), ratio(ink, mix(gl, alpha, a)), ratio(ink, mix(gl, alpha, s))]
+    got.forEach((g, i) => { expect(g).toBeGreaterThanOrEqual(4.5); expect(Math.abs(g - want[i])).toBeLessThan(0.15) })
+  })
+  it('white on the red Call 911 button passes (hand value 6.57)', () => { expect(ratio('#ffffff', '#B42318')).toBeGreaterThan(6.5) })
+  it('dark tokens are repeated under prefers-color-scheme dark', () => { expect(media).toContain(tok(dark, 'sky-a')); expect(media).toContain(tok(dark, 'chip')) })
+  it('emergency targets keep 60px; the halo and fog are off under reduced motion; dark fingerprint override exists', () => {
+    expect(css).toMatch(/\.lk2-sos \.lk2-lnk \{ min-height: 60px/)
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.lk2-fog \{ animation: none; \} \.lk2-halo \{ display: none; \}/)
+    expect(css).toMatch(/\.lk2-still \.lk2-halo \{ display: none; \}/)
+    expect(css).toMatch(/prefers-color-scheme: dark\) \{ :root:not\(\[data-theme="light"\]\) \.lk2-fp/)
   })
 })

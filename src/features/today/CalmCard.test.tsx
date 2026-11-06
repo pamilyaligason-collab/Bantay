@@ -8,6 +8,16 @@ import CalmCard from './CalmCard'
 
 afterEach(() => { cleanup(); h.acting = false; h.log = [] })
 
+describe('CalmCard sphere (S22-C)', () => {
+  it('the 84 px orb is the dotted sphere on a glow, not rings', () => {
+    const { container } = render(<CalmCard />)
+    expect(container.querySelectorAll('.bo-orb ellipse').length).toBe(7)
+    expect(container.querySelector('.bo-glow')).not.toBeNull()
+    expect(container.querySelector('.bo-orb i')).toBeNull()
+    expect((container.querySelector('.bo') as HTMLElement).style.width).toBe('84px')
+  })
+})
+
 describe('CalmCard done today', () => {
   it('own breath today reads Done today', () => {
     h.log = [{ at: new Date().toISOString() }]

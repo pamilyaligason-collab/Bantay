@@ -1,5 +1,5 @@
 import { HOME_ZONES } from '../location/geo'
-import { placeWords, type PlaceLike } from '../location/placeWords'
+import { placeLine, placeWords, type PlaceLike } from '../location/placeWords'
 
 export interface LatLon { lat: number; lon: number }
 export type AlertKind = 'tcws' | 'rainfall' | 'thunderstorm' | 'heat' | 'quake' | 'tsunami' | 'utility' | 'local' | 'gdacs' | 'volcano' | 'air' | 'eonet'
@@ -150,7 +150,7 @@ export function outdatedLine(checkedAt: string | null | undefined): string {
 }
 
 /** Same string on Today, the Safety header and the alert band (S4): the one wording lives in location/placeWords. */
-export const placeLabel = (place: PlaceLike): string => placeWords(place).title
+export const placeLabel = (place: PlaceLike): string => placeLine(placeWords(place))
 
 // shortcut: flat radii for everything but quakes, and a rough strong-shaking radius by magnitude for quakes; upgrade when the ingest sends a shake model.
 export const LOCAL_KM = 50 // an air reading or utility notice only matters close by

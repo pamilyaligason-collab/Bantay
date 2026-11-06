@@ -31,12 +31,12 @@ for (const [w, h] of [[450, 997], [390, 997], [360, 997], [390, 844]] as const) 
       const box = (e: Element) => e.getBoundingClientRect()
       const fill = Array.from(document.querySelectorAll('.dc-herocard .dc-still, .dc-vc .dc-still')).map((e) => { const a = box(e); const p = box(e.parentElement!); return { w: a.width, h: a.height, pw: p.width, ph: p.height } })
       const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-      const head = document.querySelector('[data-testid="dc-prep-row"]')!.getBoundingClientRect() // D-124: the Be prepared row follows the season card at once
+      const head = document.querySelector('[data-testid="dc-watch"]')!.getBoundingClientRect() // D-124 kept in S22: the Watch section follows the season card at once (Be prepared became a Learn card, D-135)
       const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
       const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
       return { fill, gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
     })
-    expect(m.fill).toHaveLength(6) // the hero, both small cards and the three Be prepared cards
+    expect(m.fill).toHaveLength(4) // the hero, both small main-video cards and the DIY card (the Be prepared cards became the Learn card, D-135)
     for (const f of m.fill) { expect(f.w, 'picture width').toBeGreaterThanOrEqual(f.pw - 1); expect(f.h, 'picture height').toBeGreaterThanOrEqual(f.ph - 1) }
     expect(m.gap, 'gap between the season card and the next section').toBeLessThan(40)
     expect(m.overlap, 'Learn link under Jack at rest').toBe(false)
@@ -58,7 +58,7 @@ for (const day of ['2026-10-31', '2026-11-10', '2026-12-10']) {
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-          const head = document.querySelector('[data-testid="dc-prep-row"]')!.getBoundingClientRect()
+          const head = document.querySelector('[data-testid="dc-watch"]')!.getBoundingClientRect()
           const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
           const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
           return { gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }

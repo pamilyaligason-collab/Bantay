@@ -91,18 +91,24 @@ test('Fun facts: On this day card with the CC BY-SA credit and a Wikipedia link,
   await expect(page.getByRole('region', { name: 'Did you know? Philippines' })).toBeVisible()
 })
 
-test('News: official advisories are pinned first, headlines link out, saved headlines show offline', async ({ page }) => {
+// D-135 (board S22News): News is chips, a lead card, Top stories and Latest, with the official bulletin links in their own section. The old pinned-advisory list is gone from this page, so an advisory is an ordinary headline (topic and source named) and the fixed PAGASA and PHIVOLCS links always show.
+test('News: headlines link out with their source named, official bulletin links always show, saved headlines show offline', async ({ page }) => {
   await page.goto('/#discover/news')
   const items = [
     { id: '1', title: 'GenSan fish port reports steady tuna landings this week', url: 'https://news.example/a', source: 'PNA', kind: 'article', published_at: new Date(Date.now() - 3_600_000).toISOString(), zone: null },
-    { id: '2', title: 'Rain advisory for Soccsksargen', url: 'https://www.pagasa.dost.gov.ph/a', source: 'PAGASA', kind: 'article', published_at: new Date(Date.now() - 7_200_000).toISOString(), zone: null }
+    { id: '2', title: 'Rain advisory for Soccsksargen', url: 'https://www.pagasa.dost.gov.ph/a', source: 'PAGASA', kind: 'article', published_at: new Date(Date.now() - 7_200_000).toISOString(), zone: null, topic: 'prepping' }
   ]
   await seedKv(page, [{ key: 'discover.news', value: { savedAt: Date.now(), zone: null, items } }])
   await page.reload()
-  const links = page.locator('[data-testid="news"] a')
-  await expect(links.first()).toContainText('Rain advisory for Soccsksargen') // pinned before the newer headline
-  await expect(links.nth(1)).toContainText('GenSan fish port')
-  await expect(links.nth(1)).toHaveAttribute('target', '_blank')
-  await expect(page.getByText(/Headlines saved .* New ones when there is signal\./)).toBeVisible()
+  const news = page.locator('[data-testid="news"]')
+  await expect(news.getByTestId('nw-lead')).toContainText('Rain advisory for Soccsksargen') // Top starts with the prepping topic
+  await expect(news.getByTestId('nw-lead')).toContainText('PAGASA')
+  await expect(news.getByTestId('nw-lead')).toHaveAttribute('target', '_blank')
+  const fish = news.getByRole('link', { name: /GenSan fish port/ }).first()
+  await expect(fish).toContainText('PNA')
+  await expect(fish).toHaveAttribute('target', '_blank')
+  await expect(fish).toHaveAttribute('rel', /noopener/)
+  for (const name of ['PAGASA severe weather bulletin', 'PHIVOLCS earthquake and volcano bulletins']) await expect(news.getByRole('link', { name: new RegExp(name) })).toHaveAttribute('href', /^https:\/\//)
+  await expect(page.getByText(/Headlines saved\. New ones when there is signal\./)).toBeVisible()
   expect(await noSideScroll(page)).toBe(true)
 })

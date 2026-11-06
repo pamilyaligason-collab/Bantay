@@ -1,4 +1,4 @@
--- Schedule for the world-news Edge Function (W6): every 6 hours. WRITTEN ONLY: the owner applies it after 0049 and the deploy.
+-- Schedule for the world-news Edge Function (W6, D-135): every 6 hours. It reads public RSS feeds (no GDELT) and needs 0049 and 0051 first. WRITTEN ONLY: the owner applies it after 0049 and the deploy.
 -- The secret never appears in this file. Before running it, store the same value you set as the WORLD_NEWS_CRON_SECRET function secret (32+ characters):
 --   select vault.create_secret('<paste the secret here, in the SQL editor only>', 'world_news_cron_secret');
 -- (to rotate: select vault.update_secret(id, '<new>') for that row, and set the function secret to match).
@@ -32,7 +32,8 @@ select cron.schedule(
   $job$
 );
 
--- Check after the first run (the run takes about 15 seconds: three GDELT calls 5.5 s apart):
+-- Check after the first run (the run takes about 30 seconds: ten RSS feeds 1.5 s apart):
 --   select status, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'world-news') order by start_time desc limit 3;
 --   select id, source_domain, seen_at from public.world_news order by seen_at desc limit 10;
+--   select topic, source, published_at from public.news_items where id like 'rss-%' order by published_at desc limit 10;
 -- Stop it:  select cron.unschedule('world-news');
