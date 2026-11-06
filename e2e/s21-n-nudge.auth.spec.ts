@@ -237,7 +237,7 @@ test.describe('Health, Pinned', () => {
     await open(page, 390)
     await expect(page.getByTestId('glance-progress').locator('.nd-due')).toHaveText('Due')
     await expect(page.getByTestId('glance-weight').locator('.nd-due')).toHaveText('Due') // an earlier weight, none this week
-    await expect(page.getByTestId('glance-steps').locator('.nd-due')).toHaveCount(0)
+    await expect(page.getByTestId('tk-steps').locator('.nd-due')).toHaveCount(0)
     await expect(movers(page)).toHaveCount(1)
     await expect(movers(page)).toHaveAttribute('data-testid', 'glance-progress')
     // at 390 the tile is 173 px wide: the kicker icon is hidden (under 190 px, so the pill keeps the line) and there is no lean to see. The ring on the tile and the glow on its action are the effect.

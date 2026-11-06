@@ -5,19 +5,13 @@ import { Icon } from '../shell/Icon'
 import { useActing } from '../viewas/viewAs'
 import { markSeen, type AlertRow } from './store'
 import { inAppText } from './inApp'
-import { TEMPLATES, type NotifyKind, type TemplateId } from './templates'
+import { PRIORITY, todayRed } from './todayRed'
 import { useAlertRows } from './useAlerts'
 import './notify.css'
 
-/** SOS first, then a storm call for help, then a dangerous reading, a hazard (a missed dose is a My day row, v13 T2); the other urgent kinds after those. */
-const PRIORITY: NotifyKind[] = ['sos', 'rollcall', 'reading_high', 'hazard', 'mood_unwell', 'pin_approve', 'pin_changed', 'system']
-
-const toneOf = (r: AlertRow) => (Object.hasOwn(TEMPLATES, r.template) ? TEMPLATES[r.template as TemplateId].tone : 'normal')
-
 /** The one alert to show first: newest unseen urgent row, by kind priority. null when there is none. */
 export function pickAlert(rows: AlertRow[]): AlertRow | null {
-  const urgent = rows.filter((r) => r.seenAt == null && toneOf(r) === 'urgent' && PRIORITY.includes(r.kind))
-  return urgent.sort((a, b) => PRIORITY.indexOf(a.kind) - PRIORITY.indexOf(b.kind) || Date.parse(b.createdAt) - Date.parse(a.createdAt))[0] ?? null
+  return todayRed(rows).sort((a, b) => PRIORITY.indexOf(a.kind) - PRIORITY.indexOf(b.kind) || Date.parse(b.createdAt) - Date.parse(a.createdAt))[0] ?? null
 }
 
 /** Today's FamilyNotice (S16 L1, F-5 / W-9): a 72 px row with the person's avatar, the fixed title and one sub line. The whole row opens what it is about and marks it seen;

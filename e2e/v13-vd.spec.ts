@@ -11,22 +11,24 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`${scheme}: hero label is a slim pill, season advice is whole on two lines, Play buttons are filled`, async ({ page }) => {
+  test(`${scheme}: hero label is a slim pill, season advice is whole on two lines, Play discs are filled (S22: the read-aloud rows moved to #discover/listen, Today's Listen is a guided video)`, async ({ page }) => {
     await page.goto('/#discover')
-    await expect(page.getByTestId('dc-news')).toBeVisible()
+    await expect(page.getByTestId('dc-fact')).toBeVisible()
     await setScheme(page, scheme)
     const m = await page.evaluate(() => {
       const chip = document.querySelector('.dc-hchip')!.getBoundingClientRect()
       const sub = document.querySelector('[data-testid="season-row"] .rw-sub') as HTMLElement
       const lead = document.querySelector('[data-testid="season-row"] .rw-lead') as HTMLElement
-      const play = document.querySelector('[data-testid="dc-listen"] button.dc-play') as HTMLElement
+      const play = document.querySelector('[data-testid="dc-hero"] .dc-hero-play') as HTMLElement
+      const guided = getComputedStyle(document.querySelector('[data-testid="dc-guided"] button.lv-play') as HTMLElement)
       const titles = Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t'))
-      return { chipH: chip.height, subCut: sub.scrollHeight > sub.clientHeight + 1, lead: getComputedStyle(lead).backgroundColor, play: getComputedStyle(play).backgroundColor, tcut: titles.some((t) => t.scrollHeight > t.clientHeight + 1) }
+      return { chipH: chip.height, subCut: sub.scrollHeight > sub.clientHeight + 1, lead: getComputedStyle(lead).backgroundColor, play: getComputedStyle(play).backgroundColor, guided: guided.backgroundColor !== 'rgba(0, 0, 0, 0)' || guided.backgroundImage !== 'none', tcut: titles.some((t) => t.scrollHeight > t.clientHeight + 1) }
     })
     expect(m.chipH, 'chip height').toBeLessThanOrEqual(34)
     expect(m.subCut, 'season advice cut').toBe(false)
     expect(m.lead, 'icon tile filled').not.toBe('rgba(0, 0, 0, 0)')
-    expect(m.play, 'Play button filled').not.toBe('rgba(0, 0, 0, 0)')
+    expect(m.play, 'hero play disc filled').not.toBe('rgba(0, 0, 0, 0)')
+    expect(m.guided, 'guided video poster filled').toBe(true)
     expect(m.tcut, 'video title cut').toBe(false)
   })
 
@@ -75,7 +77,7 @@ test('Watch heading uses the app font', async ({ page }) => {
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`${scheme} Calm: orb hero near 180, dark ink on the orb, pills, faces, no cream under the tab bar`, async ({ page }) => {
+  test(`${scheme} Calm: orb hero near 180, white label on the navy page, pills, faces, no cream under the tab bar`, async ({ page }) => {
     await page.goto('/#calm')
     await expect(page.getByTestId('calm-hero')).toBeVisible()
     await setScheme(page, scheme)
@@ -88,10 +90,10 @@ for (const scheme of ['light', 'dark'] as const) {
       return { w: bo.width, lab, ph: pill.height, segBg, faces, bt: getComputedStyle(document.querySelector('.bt')!).backgroundColor }
     })
     expect(m.w).toBeGreaterThanOrEqual(180)
-    expect(m.lab).toBe('rgb(18, 48, 56)')
+    expect(m.lab, 'D-135: the idle orb carries no words (label hidden); its colour is white on the navy page').toBe('rgb(255, 255, 255)')
     expect(m.ph).toBeGreaterThanOrEqual(44)
     expect(m.segBg).toBe('rgba(0, 0, 0, 0)')
     expect(m.faces).toBe(4)
-    expect(m.bt).toBe('rgb(31, 59, 69)')
+    expect(m.bt).toBe('rgb(14, 27, 58)') // D-135: deep navy, no cream under the tab bar
   })
 }

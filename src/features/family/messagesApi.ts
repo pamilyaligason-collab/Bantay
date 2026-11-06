@@ -76,7 +76,7 @@ export async function listQueued(sent: ReadonlySet<string>): Promise<Msg[]> {
 }
 
 /** Upload one attachment (already stripped / recorded), then its row. If the row fails the object is removed again. */
-export async function sendAttachment(blob: Blob, a: { kind: 'voice' | 'photo' | 'file' | 'kudos'; aboutPerson?: string; ext: string; mime: string; name?: string | null; durationS?: number | null }): Promise<Res<null>> {
+export async function sendAttachment(blob: Blob, a: { kind: 'voice' | 'photo' | 'file' | 'kudos'; aboutPerson?: string; ext: string; mime: string; name?: string | null; durationS?: number | null; /** voice only: a short tag such as "For Jo", saved on the row and shown above the player in Family messages. */ body?: string }): Promise<Res<null>> {
   if (!supabase) return NO
   try {
     const uid = (await supabase.auth.getSession()).data.session?.user.id
@@ -85,7 +85,7 @@ export async function sendAttachment(blob: Blob, a: { kind: 'voice' | 'photo' | 
     const path = `${uid}/${id}.${a.ext}`
     const up = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: a.mime.split(';')[0], upsert: false })
     if (up.error) return fail(up.error)
-    const row = await supabase.from('family_messages').insert({ client_id: id, kind: a.kind, attachment_path: path, attachment_name: a.kind === 'file' ? shortName(a.name ?? null) : null, duration_s: (a.kind === 'voice' || a.kind === 'kudos') && a.durationS ? Math.min(a.kind === 'kudos' ? KUDOS_VOICE_MAX_S : 60, Math.max(1, Math.round(a.durationS))) : null, ...(a.kind === 'kudos' ? { about_person: a.aboutPerson } : {}) })
+    const row = await supabase.from('family_messages').insert({ client_id: id, kind: a.kind, attachment_path: path, attachment_name: a.kind === 'file' ? shortName(a.name ?? null) : null, duration_s: (a.kind === 'voice' || a.kind === 'kudos') && a.durationS ? Math.min(a.kind === 'kudos' ? KUDOS_VOICE_MAX_S : 60, Math.max(1, Math.round(a.durationS))) : null, ...(a.kind === 'kudos' ? { about_person: a.aboutPerson } : {}), ...(a.kind === 'voice' && a.body ? { body: a.body.slice(0, 80) } : {}) })
     if (row.error) { await supabase.storage.from(BUCKET).remove([path]); return fail(row.error) }
     return { ok: true, data: null }
   } catch (e) { return fail(e as { code?: string }) }

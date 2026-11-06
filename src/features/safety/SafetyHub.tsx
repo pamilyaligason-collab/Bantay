@@ -17,6 +17,7 @@ import { cyclones, stormName } from './LiveMaps'
 import { FLAGS } from './flags'
 import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
+import { useAutoBasemap } from './autoMaps'
 import { GroupedList, Row, Section, type Tint } from '../look'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { type useLocation } from '../location/useLocation'
@@ -109,9 +110,9 @@ export function readyRows(p: { dial: number; cards: number; ids: number | null; 
   const rows: HomeRow[] = [
     { href: '#safety/dial', icon: 'phone', tint: 'red', title: 'Hotlines', value: p.dial ? plural(p.dial, 'number') : 'No numbers yet' },
     { href: '#safety/cards', icon: 'file', tint: 'teal', title: 'Safety cards', value: plural(p.cards, 'guide') },
-    { href: '#docs', icon: 'fp', tint: 'purple', title: 'IDs and insurance', sub: idsLine(p.ids) },
+    { href: '#docs', icon: 'id', tint: 'purple', title: 'IDs and insurance', sub: idsLine(p.ids) },
     // no map pack exists yet, so the board's "Bohol ready" would be fake: say so honestly
-    { href: '#safety/offline', icon: 'map', tint: 'teal', title: 'Offline maps', value: p.offline ? p.mapState : 'Not ready yet' },
+    { href: '#safety/offline', icon: 'dl', tint: 'teal', title: 'Offline maps', value: p.offline ? p.mapState : 'Not ready yet' },
     { href: '#safety/sos', icon: 'sos', tint: 'red', title: 'Past SOS', value: p.sosLast ?? 'None sent' }
   ]
   if (p.phoneFix > 0) rows.push({ href: '#safety/phonewarn', icon: 'bell', tint: 'amber', title: 'Phone alerts', value: p.phoneFix === 1 ? '1 needs fixing' : `${p.phoneFix} need fixing` })
@@ -152,6 +153,7 @@ function BeReady({ place }: { place: Place }) {
   const phoneFix = phoneAlertCount(useKv<PhoneCheck | null>(KEY_PHONE_CHECK, null))
   const [ids, setIds] = useState<number | null>(null)
   const storedMaps = useStoredBasemaps()
+  useAutoBasemap(place.weather.lat, place.weather.lon)
   const mapState = FLAGS.offlineMaps ? (basemapAt(storedMaps, place.weather.lat, place.weather.lon) ? 'Ready' : 'Not downloaded') : undefined
   useEffect(() => { let on = true; void savedCards().then((v) => { if (on) setIds(v) }); return () => { on = false } }, [])
   const sos = Array.isArray(sosRaw) ? sosRaw.filter((e) => e && Number.isFinite(e.at)) : []

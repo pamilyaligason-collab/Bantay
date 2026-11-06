@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AlertsBanner from '../notify/AlertsBanner'
+import ArchiveAll from '../notify/ArchiveAll'
 import { Row } from '../look'
 import { Icon } from '../shell/Icon'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } from '../phonecheck/keys'
@@ -52,6 +53,7 @@ export default function NoticeStack() {
     <div className="td-more-g" role="group" aria-labelledby="t-more">
       <h2 id="t-more" className="td-more-h">More</h2>
       {left.length > 0 && <Row title={`Finish setup · ${left.length} left`} sub={left.map((s) => s.label).join(', ')} href={left[0]!.href} testId="setup-row" />}
+      <ArchiveAll />
       <AlertsBanner />
       <UpdateCard />
       <PwaBanner />

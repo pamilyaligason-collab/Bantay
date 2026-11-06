@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 import { assertTargets, setScheme } from './v13'
 test.use({ viewport: { width: 390, height: 844 } })
@@ -28,7 +28,7 @@ test('the SOS block keeps its height while held', async ({ page }) => {
   await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
   await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
   expect(Math.abs((await hold.boundingBox())!.height - idle), 'height while holding').toBeLessThanOrEqual(1)
-  await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+  await hold.dispatchEvent('pointercancel', { pointerId: 1, isPrimary: true })
 })
 test('Chat opens the assistant; Escape closes the sheet; a 3 s hold opens the SOS screen', async ({ page }) => {
   await page.getByTestId('jack').click(); await page.getByTestId('jack-chat').click()
@@ -37,8 +37,8 @@ test('Chat opens the assistant; Escape closes the sheet; a 3 s hold opens the SO
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
   await page.getByTestId('jack').click()
   const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
-  await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true }); await page.waitForTimeout(3100)
-  await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible()
+  await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+  await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible({ timeout: 8000 }) // the 3 s hold completes on its own timer
   await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
 })
 test('J1: Try saying chips prefill the box, no Upload row, targets >= 44 inside the sheet, a ring shows during a hold', async ({ page }) => {
@@ -49,11 +49,47 @@ test('J1: Try saying chips prefill the box, no Upload row, targets >= 44 inside 
   const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
   await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
   await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
-  await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+  await hold.dispatchEvent('pointercancel', { pointerId: 1, isPrimary: true }) // D-137: a quick pointerup is a tap (family sheet); cancel ends the hold only
   await expect(page.getByTestId('jack-sos-ring')).toHaveCount(0)
   await sheet.getByRole('button', { name: 'Log my BP' }).click()
   await expect(page.getByRole('dialog', { name: /Jack Jack|Ask/ })).toBeVisible()
   await expect(page.getByRole('dialog', { name: /Jack Jack|Ask/ }).locator('input')).toHaveValue('Log my blood pressure')
+})
+// D-137 short tap: made-up family cached on the phone (the Contact family sheet lists everyone but me).
+const FAMILY = [{ personId: 'p-ate-joy', displayName: 'Ate Joy' }, { personId: 'p-papa-ben', displayName: 'Papa Ben' }]
+const familySheet = (page: Page) => page.getByRole('dialog', { name: 'Contact family' })
+test.describe('SOS short tap opens Contact family (D-137)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript((f) => localStorage.setItem('bantay.family', JSON.stringify(f)), FAMILY)
+    await page.reload() // the outer beforeEach already loaded the page; a hash-only goto would not run the init script
+    await page.getByTestId('jack').click()
+    await expect(page.getByRole('dialog', { name: 'Jack' })).toBeVisible()
+  })
+  test('a tap under 400 ms opens the family sheet, it stays open after 1 s, and one Back closes it', async ({ page }) => {
+    const hold = page.getByTestId('jack-sos').locator('.sos-simple-btn')
+    await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+    await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true }) // back to back: well under 400 ms
+    await expect(familySheet(page)).toBeVisible()
+    await expect(familySheet(page).getByText('Ate Joy')).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'SOS' })).toHaveCount(0)
+    await page.waitForTimeout(1000) // a negative check has no state to wait on: a regression closed the sheet through history.back() within this time
+    await expect(familySheet(page)).toBeVisible()
+    await page.goBack()
+    await expect(familySheet(page)).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
+  })
+  test('the Reach family button opens the same sheet', async ({ page }) => {
+    await page.getByRole('button', { name: 'Reach family' }).click()
+    await expect(familySheet(page)).toBeVisible()
+    await expect(familySheet(page).getByText('Papa Ben')).toBeVisible()
+    await page.waitForTimeout(1000)
+    await expect(familySheet(page)).toBeVisible()
+  })
+  test('a 3 s hold still opens the SOS screen and not the family sheet', async ({ page }) => {
+    await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
+    await expect(page.getByRole('dialog', { name: 'SOS' })).toBeVisible({ timeout: 8000 })
+    await expect(familySheet(page)).toHaveCount(0)
+  })
 })
 test('reduced motion: the sheet still opens and closes', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' }); await page.getByTestId('jack').click()
@@ -61,7 +97,7 @@ test('reduced motion: the sheet still opens and closes', async ({ page }) => {
   await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true })
   await expect(page.getByTestId('jack-sos-ring')).toBeVisible()
   expect(await page.getByRole('dialog', { name: 'Jack' }).evaluate((d) => d.getAnimations({ subtree: true }).length)).toBe(0)
-  await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+  await page.getByTestId('jack-sos').locator('.sos-simple-btn').dispatchEvent('pointercancel', { pointerId: 1, isPrimary: true })
   await page.getByTestId('jack-close').click()
   await expect(page.getByRole('dialog', { name: 'Jack' })).toHaveCount(0)
 })
@@ -92,7 +128,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(hold.overlap, `holding ${w}px ${JSON.stringify(hold)}`).toBe(false)
       const c = await page.evaluate(() => ({ fg: getComputedStyle(document.querySelector('[data-testid="jack-sos"] .sos-simple-btn > span')!).color, bg: getComputedStyle(document.querySelector('[data-testid="jack-sos"] .sos-simple-btn')!).backgroundColor }))
       expect(ratio(c.fg, c.bg), `holding ${w}px ${c.fg} on ${c.bg}`).toBeGreaterThanOrEqual(4.5)
-      await btn.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true })
+      await btn.dispatchEvent('pointercancel', { pointerId: 1, isPrimary: true })
       await expect(page.getByTestId('jack-sos').locator('.sos-simple-sub')).toHaveText(/Hold 3 seconds/)
     }
   })

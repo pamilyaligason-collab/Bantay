@@ -1,33 +1,31 @@
-/* v13 lane C: Calm page. The page is the board's deep teal (contract 2: #1F3B45 in light and dark, white text); the tokens below re-theme everything inside it, so the cards keep using tokens. */
+/* v13 lane C: Calm page. The page is deep navy (#0E1B3A in light and dark, white text; its radial gradient lightens to #1D3A6E, which every text colour is checked against); the tokens below re-theme everything inside it, so the cards keep using tokens. */
 .cm-root {
-  --calm-deep: #1F3B45; --calm-mint: #B9E4DA; --calm-on-mint: #123038;
-  --ink: #fff; --muted: #D3E3E0; --ground: var(--calm-deep);
+  --calm-deep: #0E1B3A; --calm-mint: #A8C7FF; --calm-on-mint: #0A1430;
+  --ink: #fff; --muted: #B4C2E2; --ground: var(--calm-deep);
   --card: rgba(255,255,255,.08); --card2: rgba(255,255,255,.12); --fill: rgba(255,255,255,.08); --shadow: none;
-  --link: var(--calm-mint); --act: var(--calm-mint); --soft: rgba(185,228,218,.16); --line: rgba(185,228,218,.3); --green: var(--calm-mint); --green2: var(--calm-mint); --on-green: var(--calm-on-mint); --btn: var(--calm-mint); --green-tint: rgba(185,228,218,.16);
+  --link: var(--calm-mint); --act: var(--calm-mint); --soft: rgba(160,190,255,.16); --line: rgba(160,190,255,.3); --green: var(--calm-mint); --green2: var(--calm-mint); --on-green: var(--calm-on-mint); --btn: var(--calm-mint); --green-tint: rgba(160,190,255,.16);
   --tint-teal: rgba(255,255,255,.08); --tint-teal-ink: var(--calm-mint);
-  background: linear-gradient(180deg, #123038 0, var(--calm-deep) 260px); background-color: var(--calm-deep); color: var(--ink);
+  background: radial-gradient(120% 60% at 50% 18%, #1D3A6E 0%, #0E1B3A 55%, #0A1430 100%); background-color: var(--calm-deep); color: var(--ink);
   margin: calc(-10px - var(--sat)) -16px 0; padding: calc(10px + var(--sat)) 16px 24px; flex: 1 0 auto;
 }
 :root[data-narrow] .cm-root { margin-inline: -12px; padding-inline: 12px; }
 .cm-root .btn { color: var(--on-green); }
 .cm-root .segd > [aria-pressed="true"] { background: var(--calm-mint); color: var(--calm-on-mint); box-shadow: none; }
-.cm-root .cm-hero, .cm-root .card { border: .5px solid rgba(185,228,218,.22); }
+.cm-root .card { border: .5px solid rgba(160,190,255,.22); }
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
-.cm-hero { background: var(--tint-teal); color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
-.cm-hero .bo-orb i { display: none; }
-/* the board's orb: one glowing mint disc; the word and count sit on it in the dark mint ink (it scales 55 to 100 percent, so the disc is 121 to 220 px) */
-.cm-hero .bo-orb b { inset: 0; background: radial-gradient(circle at 35% 30%, #E4F7F1, #A5D8CB 58%, #6DBBAA); box-shadow: 0 0 60px rgb(185 228 218 / .4); }
-.cm-hero .bo-label { color: var(--calm-on-mint); display: none; } /* board: the idle orb is empty before Start; the words belong to the session sheet */
+.cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
+/* the orb is a dotted sphere (S22-C); the word and count sit on a solid ground disc, and are hidden before Start */
+.cm-hero .bo-label { display: none; } /* board: the idle orb is empty before Start; the words belong to the session sheet */
 .cm-hero .bo-word { font-size: 16px; font-weight: 700; }
 .cm-hero .segd { background: none; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.cm-hero .segd > button { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(185,228,218,.4); background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
+.cm-hero .segd > button { flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid rgba(160,190,255,.4); background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
 .cm-hero .segd > button[aria-pressed="true"] { border-color: var(--calm-mint); }
-.bt:has(.cm-root) { background-color: #1F3B45; } /* a short page leaves the shell's cream under the tab bar otherwise */
+.bt:has(.cm-root) { background-color: #0E1B3A; } /* a short page leaves the shell's cream under the tab bar otherwise */
 .cm-orb { display: contents; }
 .cm-hero .bo { max-width: 100%; box-sizing: border-box; } /* the orb is 220 px but never wider than the hero's content box (it was 203 px in a 195 px screen) */
 .cm-hero .cm-orb .bo { width: min(220px, 100%) !important; height: auto !important; aspect-ratio: 1; } /* beats BreathOrb's inline px size */
 .cm-hero .segd { width: 100%; box-sizing: border-box; }
-.bt:has(.cm-root) { --ground: #1F3B45; } /* the shell's bottom fade and status band sit outside .cm-root */ /* the aria-hidden wrapper must not change the hero grid */
+.bt:has(.cm-root) { --ground: #0E1B3A; } /* the shell's bottom fade and status band sit outside .cm-root */ /* the aria-hidden wrapper must not change the hero grid */
 .cm-hero-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-sub { color: var(--muted); font-size: 15px; margin: 0; }
 .cm-start { text-decoration: none; min-height: 56px; font-size: 19px; }
@@ -43,23 +41,25 @@
 .cm-mood { display: grid; gap: 10px; }
 .cm-q { margin: 0; font-size: 17px; font-weight: 600; }
 .cm-faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; }
-.cm-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; min-width: 72px; border: 1px solid rgba(185,228,218,.3); border-radius: 16px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; padding: 0 4px; overflow-wrap: anywhere; }
+.cm-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px; min-width: 72px; border: 1px solid rgba(160,190,255,.3); border-radius: 16px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; padding: 0 4px; overflow-wrap: anywhere; }
 .cm-crisis { display: grid; gap: 8px; }
+.cm-root .cm-crisis { background: #14284F; } /* solid, no translucency: text is checked against this one colour */
 .cm-crisis-t { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; }
 .cm-nums { display: grid; gap: 8px; }
-.cm-call { min-height: 44px; min-width: 0; box-sizing: border-box; padding: 6px 10px; border-radius: 22px; background: var(--green-tint); color: var(--green); font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere; } /* a number may wrap at 195 px; it is not a .btn2 so it is not held to one line */
+.cm-call { min-height: 44px; min-width: 0; box-sizing: border-box; padding: 6px 10px; border-radius: 22px; background: #EAF0FF; color: #0E1B3A; font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; overflow-wrap: anywhere; } /* a number may wrap at 195 px; it is not a .btn2 so it is not held to one line */
 .cm-911 { min-height: 56px; font-size: 19px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
 .cm-net { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
 .cm-call { flex-direction: column; }
+.cm-call .cm-net { color: #2B3A5E; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
 /* the board's row: 240 px cards with an 84 px icon head; never wider than a narrow screen */
 .cm-media { position: relative; flex: none; width: min(240px, calc(100vw - 48px)); display: flex; flex-direction: column; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; padding: 0 0 14px; overflow: hidden; }
 .cm-media b { font-size: 17px; line-height: 22px; font-weight: 600; margin-top: 2px; }
 .cm-media .cm-sub { font-size: 13px; line-height: 18px; margin-top: 4px; }
 .cm-media > :not(.cm-media-ic) { margin-inline: 14px; }
-.cm-media-ic { flex: none; width: 100%; height: 84px; display: grid; place-items: center; background: #2C5560; color: #D3F2EA; margin-bottom: 12px; }
+.cm-media-ic { flex: none; width: 100%; height: 84px; display: grid; place-items: center; background: #1D3A6E; color: #BFD4FF; margin-bottom: 12px; }
 .cm-media-ic > * { grid-area: 1 / 1; }
-.cm-k { font-size: 13px; line-height: 18px; font-weight: 600; color: #D3F2EA; }
+.cm-k { font-size: 13px; line-height: 18px; font-weight: 600; color: #BFD4FF; }
 .cm-media .cm-sub { margin-bottom: 10px; }
 /* Play and the station's site share one line, so no radio state makes the row taller */
 .cm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin-top: auto; }
@@ -82,13 +82,28 @@
 .cm-video .lv-play b { font-size: 15px; line-height: 18px; }
 .cm-video .lv-play[data-thumb='on'] .lv-cap { padding: 8px 12px; background: rgb(0 0 0 / .72); }
 .cm-chan { display: block; padding: 0 14px 12px; }
-.bt:has(.cm-root) .tabbar.sh-tabs { background: var(--card); } /* the glass bar was see-through over the teal page: labels fell under 4.5:1 in light */
+.bt:has(.cm-root) .tabbar.sh-tabs { background: var(--card); } /* the glass bar was see-through over the navy page: labels fell under 4.5:1 in light */
 
 /* compliance CD: the board's dashed "coming" pill, and the done-today pill */
 .cm-hero .segd > .cm-soon { border-style: dashed; color: rgba(255,255,255,.78); opacity: 1; }
 .cm-done { display: inline-flex; align-items: center; gap: 6px; }
-.cm-done[data-done="true"] { min-height: 44px; padding: 0 14px; border-radius: 999px; background: rgb(185 228 218 / .16); color: var(--calm-mint); box-sizing: border-box; }
+.cm-done[data-done="true"] { min-height: 44px; padding: 0 14px; border-radius: 999px; background: rgb(160 190 255 / .16); color: var(--calm-mint); box-sizing: border-box; }
 /* compliance CD: four faces in one row at 360 as on the board: 4 x 72 px + 3 x 6 px gaps need 306 px, so the mood card gives up 6 px of side padding; the grid is still auto-fit, so a narrower screen wraps instead of overflowing */
 :root:not([data-narrow]) .cm-mood { padding-inline: 10px; }
 .cm-faces { gap: 6px; }
 .cm-hero .segd > button { max-width: 100%; height: auto; white-space: normal; padding-block: 6px; }
+
+/* S22-C: Calm in blue (board S22Calm): deep navy page, dotted sphere on a blue glow, blue chips, light Start, exercise cards with their own sphere */
+.cm-root .cm-hero.card { background: none; border: 0; box-shadow: none; }
+.cm-hero { --bo-dot: #BFD4FF; }
+.cm-hero .cm-orb .bo { margin-block: 18px; }
+.cm-hero .segd > button[aria-pressed="true"] { background: #6FA2FF; border-color: #6FA2FF; color: #0A1430; }
+.cm-root .cm-start { background: #EAF0FF; color: #0E1B3A; border-radius: 999px; }
+.cm-ex { display: grid; gap: 10px; }
+.cm-ex-t { margin: 0; font-size: 20px; line-height: 26px; font-weight: 700; }
+.cm-ex-b { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 44px; padding: 14px; box-sizing: border-box; border-radius: 22px; background: rgba(255,255,255,.06); border: 1px solid rgba(160,190,255,.16); color: var(--ink); font: inherit; text-align: left; }
+.cm-ex-b[aria-pressed="true"] { border-color: #6FA2FF; }
+.cm-ex-s { flex: none; width: 64px; height: 64px; }
+.cm-ex-m { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.cm-ex-m b { font-size: 17px; font-weight: 600; }
+.cm-ex-m span, .cm-ex-d { font-size: 13px; line-height: 18px; color: var(--muted); }

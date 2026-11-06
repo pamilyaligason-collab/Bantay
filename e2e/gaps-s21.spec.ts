@@ -7,7 +7,7 @@ import { assertJackHit, assertNoSideways, DISCOVER_ALLOW, FAMILY_ALLOW, setSchem
 
 declare const process: { env: Record<string, string | undefined> }
 
-// S21 lane G (D-124): no reserved heights on Discover or Family; the prepping row sits between the season card and Learn. Shots only with S21_SHOTS=<dir> (invented data).
+// S21 lane G (D-124): no reserved heights on Discover or Family. S22 (D-135) ported the Discover half to the Today view: Top story, season row, Watch (hero and a row of three), Learn; the Be prepared row became a Learn card. Shots only with S21_SHOTS=<dir> (invented data).
 test.use({ serviceWorkers: 'block', timezoneId: 'Asia/Manila' })
 const SHOTS = process.env.S21_SHOTS
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#6b8"/></svg>'
@@ -23,35 +23,35 @@ async function discover(page: Page, w: number, h: number, day: string) {
   await page.clock.setFixedTime(new Date(`${day}T09:00:00+08:00`))
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/#discover')
-  await expect(page.getByTestId('dc-prep-row')).toBeVisible()
+  await expect(page.getByTestId('dc-learn')).toBeVisible()
   await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete))
 }
 
 for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoon months, no season
   for (const w of WIDTHS) {
     for (const h of HEIGHTS) {
-      test(`discover ${day} ${w}x${h}: no band under the season card, Be prepared row in order, link clear of Jack`, async ({ page }) => {
+      test(`discover ${day} ${w}x${h}: no band under the season card, Watch and Learn in order, links clear of Jack`, async ({ page }) => {
         await discover(page, w, h, day)
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const b = (q: string) => document.querySelector(q)!.getBoundingClientRect()
-          const prev = document.querySelector('[data-testid="season-row"]') ?? document.querySelector('[data-testid="dc-videos"]')!
-          const prep = b('[data-testid="dc-prep-row"]')
-          const link = Array.from(document.querySelectorAll('[data-testid="dc-prep-row"] a')).find((n) => n.textContent === 'See all') as HTMLAnchorElement
+          const prev = document.querySelector('[data-testid="season-row"]') ?? document.querySelector('[data-testid="dc-top-story"]')!
+          const watch = b('[data-testid="dc-watch"]')
+          const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics') as HTMLAnchorElement
           const lr = link.getBoundingClientRect()
           const fab = b('.sh-jackfab')
           return {
-            gap: prep.top - prev.getBoundingClientRect().bottom,
-            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-prep-row"] .dc-vc').length, order: prep.top < b('[data-testid="dc-learn"]').top,
-            overlap: lr.left < fab.right && lr.right > fab.left && lr.top < fab.bottom && lr.bottom > fab.top, linkH: lr.height, title: document.querySelector('[data-testid="dc-prep-row"] h2')!.textContent
+            gap: watch.top - prev.getBoundingClientRect().bottom,
+            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-videos"] .dc-vc').length, order: watch.top < b('[data-testid="dc-learn"]').top,
+            overlap: lr.left < fab.right && lr.right > fab.left && lr.top < fab.bottom && lr.bottom > fab.top, linkH: lr.height, title: document.querySelector('[data-testid="dc-learn"] h2')!.textContent
           }
         })
-        expect(m.title).toBe('Be prepared')
-        expect(m.href).toBe('#discover/learn/prepping')
-        expect(m.cards).toBe(3)
+        expect(m.title).toBe('Learn')
+        expect(m.href).toBe('#discover/learn')
+        expect(m.cards).toBe(3) // two more main videos and one DIY video
         expect(m.order).toBe(true)
-        expect(m.gap, 'gap between the season card and the Be prepared section').toBeLessThan(40)
-        expect(m.overlap, 'See all link under Jack at rest').toBe(false)
+        expect(m.gap, 'gap between the season card (or Top story) and the Watch section').toBeLessThan(40)
+        expect(m.overlap, 'All topics link under Jack at rest').toBe(false)
         expect(m.linkH).toBeGreaterThanOrEqual(43.5)
         await assertJackHit(page, DISCOVER_ALLOW, `discover ${day} ${w}x${h}`)
         await assertNoSideways(page)
@@ -61,7 +61,7 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
   }
 }
 
-test('discover: every section link stays left of Jack at rest, and a prepping card opens Watch', async ({ page }) => {
+test('discover: every section link stays left of Jack at rest, and a video card opens Watch', async ({ page }) => {
   await discover(page, 390, 844, '2026-10-31')
   const bad = await page.evaluate(() => {
     ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
@@ -69,7 +69,7 @@ test('discover: every section link stays left of Jack at rest, and a prepping ca
     return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => a.getBoundingClientRect().right > fab.left - 4).map((a) => a.textContent)
   })
   expect(bad, "section links in Jack's column").toEqual([])
-  await page.getByTestId('dc-prep-row').locator('.dc-vc').first().click()
+  await page.getByTestId('dc-videos').locator('.dc-vc').first().click()
   await expect(page).toHaveURL(/#discover\/watch/)
 })
 

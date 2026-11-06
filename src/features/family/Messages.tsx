@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from '../shell/Icon'
 import { EmptyState } from '../look'
 import { listMessages, listQueued, removeMessage, sendAttachment, sendText, type Msg } from './messagesApi'
-import { BODY_MAX, classifyFile, messengerHref, mmss, pickRecorderMime, stamp, VOICE_MAX_S, shortName } from './messagesLogic'
+import { BODY_MAX, classifyFile, messengerHref, mmss, stamp, VOICE_MAX_S, shortName } from './messagesLogic'
 import { stripToJpeg } from './memoriesLogic'
 import type { FamilyPerson } from './roster'
 import { dial } from './roster'
 import Sheet from './Sheet'
+import { useVoiceNote } from './useVoiceNote'
 import './messages.css'
 
 type View = { kind: 'loading' } | { kind: 'ready'; msgs: Msg[] } | { kind: 'not_set_up' } | { kind: 'unavailable' } | { kind: 'offline' } | { kind: 'failed' }
@@ -24,13 +25,11 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
   const [text, setText] = useState(takePrefill)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
-  const [rec, setRec] = useState<{ secs: number } | null>(null)
-  const [voice, setVoice] = useState<{ blob: Blob; secs: number; ext: 'webm' | 'm4a' | 'ogg'; mime: string; url: string } | null>(null)
   const [queued, setQueued] = useState<Msg[]>([])
   const [gone, setGone] = useState<Msg | null>(null)
   const file = useRef<HTMLInputElement>(null)
   const end = useRef<HTMLDivElement>(null)
-  const mr = useRef<{ stop: () => void; cancel: () => void } | null>(null)
+  const { rec, voice, setVoice, startRec, stop, cancel } = useVoiceNote(setNote)
   const count = useRef(0)
 
   const load = useCallback(async () => {
@@ -45,8 +44,6 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
   }, [load])
   useEffect(() => { if (view.kind === 'ready' && view.msgs.length !== count.current) { count.current = view.msgs.length; end.current?.scrollIntoView?.({ block: 'end' }) } }, [view])
   useEffect(() => { messagePrefill.text = '' }, [])
-  useEffect(() => () => { mr.current?.cancel() }, [])
-  useEffect(() => () => { if (voice) URL.revokeObjectURL(voice.url) }, [voice])
 
   const failWord = (e: 'unavailable' | 'not_set_up' | 'offline' | 'failed') => (e === 'offline' ? 'Needs signal. Try again when you are connected.' : e === 'not_set_up' ? WORDS.not_set_up : 'It did not send. Try again.')
   const done = async (p: Promise<{ ok: true; data: null } | { ok: false; error: 'unavailable' | 'not_set_up' | 'offline' | 'failed' }>) => {
@@ -70,31 +67,6 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
     } else await done(sendAttachment(f, { kind: 'file', ext: c.ext, mime: c.mime, name: f.name }))
   }
 
-  const canRecord = typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
-  const startRec = async () => {
-    setNote('')
-    const pick = canRecord ? pickRecorderMime((m) => MediaRecorder.isTypeSupported(m)) : null
-    if (!pick) { setNote('Voice notes do not work on this phone. Type a message, or use Messenger.'); return }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const r = new MediaRecorder(stream, { mimeType: pick.mime })
-      const chunks: Blob[] = []
-      const t0 = Date.now()
-      let cancelled = false
-      const stopTracks = () => stream.getTracks().forEach((t) => t.stop())
-      const tick = setInterval(() => { const s = (Date.now() - t0) / 1000; setRec({ secs: s }); if (s >= VOICE_MAX_S) r.stop() }, 250)
-      r.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
-      r.onstop = () => {
-        clearInterval(tick); stopTracks(); setRec(null); mr.current = null
-        if (cancelled || !chunks.length) return
-        const blob = new Blob(chunks, { type: pick.mime.split(';')[0] })
-        setVoice({ blob, secs: Math.min(VOICE_MAX_S, Math.max(1, (Date.now() - t0) / 1000)), ext: pick.ext, mime: blob.type || pick.mime.split(';')[0], url: URL.createObjectURL(blob) })
-      }
-      mr.current = { stop: () => r.state !== 'inactive' && r.stop(), cancel: () => { cancelled = true; if (r.state !== 'inactive') r.stop(); else stopTracks() } }
-      r.start()
-      setRec({ secs: 0 })
-    } catch { setNote('Bantay cannot use the microphone. Allow it in your phone settings, or type instead.') }
-  }
   const sendVoice = async () => { if (voice && (await done(sendAttachment(voice.blob, { kind: 'voice', ext: voice.ext, mime: voice.mime, durationS: voice.secs })))) setVoice(null) }
 
   const nameOf = (m: Msg) => (m.mine ? 'You' : first(people.find((p) => p.id === m.senderPersonId)?.name ?? 'Family'))
@@ -120,6 +92,7 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
             <li key={m.id} className={`msg ${m.mine ? 'me' : 'them'}`}>
               <span className="msg-by">{nameOf(m)}<time> {stamp(m.createdAt) ?? ''}</time>{m.queued && <b className="msg-q" data-testid="msg-queued"> Queued</b>}</span>
               {m.kind === 'text' && <p>{m.body}</p>}
+              {m.kind === 'voice' && m.body && <span className="msg-for" data-testid="msg-for">{m.body}</span>}
               {m.kind === 'voice' && (m.url ? <audio controls preload="none" src={m.url} aria-label={`Voice note from ${nameOf(m)}, ${m.durationS ? mmss(m.durationS) : ''}`} /> : <p className="sub">Voice note</p>)}
               {m.kind === 'photo' && (m.url ? <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt={`Photo from ${nameOf(m)}`} loading="lazy" /></a> : <p className="sub">Photo</p>)}
               {m.kind === 'file' && (m.url ? <a className="msg-file" href={m.url} target="_blank" rel="noreferrer" download={shortName(m.name)}><Icon name="pdf" size={22} />{shortName(m.name)}</a> : <p className="sub">{shortName(m.name)}</p>)}
@@ -144,8 +117,8 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
 
       {rec && (
         <div className="msg-rec" role="status"><span className="msg-dot" aria-hidden="true" />Recording {mmss(rec.secs)} of {mmss(VOICE_MAX_S)}
-          <button type="button" className="pill" onClick={() => mr.current?.stop()}>Stop</button>
-          <button type="button" className="pill" onClick={() => { mr.current?.cancel() }}>Cancel</button></div>
+          <button type="button" className="pill" onClick={() => stop()}>Stop</button>
+          <button type="button" className="pill" onClick={() => cancel()}>Cancel</button></div>
       )}
       {voice && !rec && (
         <div className="msg-rec">

@@ -9,9 +9,12 @@ import { condOf, feelsLike, isHot, todOf } from '../weather/scene'
 import WeatherScene from '../weather/WeatherScene'
 import { rainOutlook, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
-import { placeNameOf } from './placeName'
+import { placeLineOf, placeNameOf } from './placeName'
 import { heroRainLine } from './heroRain'
 import { stormSlots, type Slot } from './stormView'
+import HourlyStrip, { hourlySlots } from './HourlyStrip'
+import RainMini, { miniSlots } from './RainMini'
+import './weatherHero.css'
 
 import { useWeather } from './weather'
 
@@ -36,6 +39,13 @@ function rainSummary(wx: Wx, now: Date): string | null {
   return `${dry} till ${hour12(out.startH)}, then rain. Bring an umbrella.`
 }
 
+/** With real hourly millimetres, an hour with 0 mm is dry whatever its chance says, so the rain tips and the mini bars agree. Without them the chance stands. */
+function mmGated(wx: Wx): Wx {
+  const h = wx.hourly
+  if (!h?.mm?.some((x) => x != null)) return wx
+  return { ...wx, hourly: { ...h, prob: h.prob.map((p, i) => (h.mm![i] === 0 ? 0 : p)) } }
+}
+
 const deg = (n: number) => `${Math.round(n)}°`
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 
@@ -49,7 +59,7 @@ function slots(wx: Wx, now: Date): Slot[] {
   return [0, 3, 6].map((k) => from + k).filter((i) => i < h.time.length).map((i) => ({ time: hourLabel(h.time[i]!), kind: kindOf(h.code?.[i] ?? null), pct: h.prob[i] ?? null, temp: h.temp?.[i] ?? null }))
 }
 
-const whereOf = (place: Parameters<typeof placeNameOf>[0]) => placeNameOf(place) // S4: one wording, location/placeWords
+const whereOf = (place: Parameters<typeof placeLineOf>[0]) => placeLineOf(place) // S4: one wording, location/placeWords
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
@@ -88,9 +98,10 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
     ) : null
   }
   const now = new Date()
-  const line = storm ? null : weatherActionLine(wx, now, null)
-  const rainHero = !storm && wx.hourly ? heroRainLine(wx.hourly.time.map((time, i) => ({ time, prob: wx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
-  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(wx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
+  const gx = mmGated(wx)
+  const line = storm ? null : weatherActionLine(gx, now, null)
+  const rainHero = !storm && gx.hourly ? heroRainLine(gx.hourly.time.map((time, i) => ({ time, prob: gx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
+  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(gx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
   // Jack only on an everyday rain or heat tip, in the expanded card. Never on a storm, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack`.
   const jack: JackName | null = noJack || storm || !expanded ? null : line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 80 ? 'drink-water' : null
   const href = line ? WEATHER_ACTION_HREF : WEATHER_HREF
@@ -124,7 +135,9 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
           <>
             {!expanded && text && <span className="td-wxh-line">{text}</span>}
             {box}
-            {next.length > 0 && (
+            {expanded && <RainMini slots={miniSlots(wx, now, storm)} />}
+            {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
+            {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
                 {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>

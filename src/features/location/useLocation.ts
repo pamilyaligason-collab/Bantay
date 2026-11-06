@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
 import { HOME_ZONES, type LatLon, type Loc } from './geo'
 import { resolvePlace, type ZoneId } from './place'
+import { shouldRefresh } from './freshness'
+import { familyPlacesOn } from '../family/flags'
 
 export interface Home {
   name: string
@@ -26,25 +28,29 @@ export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
 export const validFix = (p: { lat: number; lon: number }) =>
   Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180 && !(p.lat === 0 && p.lon === 0)
 
-const gpsOpts = (ask: boolean) => (ask ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { maximumAge: 600_000, timeout: 15_000 })
-const web = (ask: boolean) =>
-  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, gpsOpts(ask)))
+const isNum = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
+// precise (an ask, or Weather with an old fix) wants a fresh high-accuracy read; the rest may reuse a 10-minute-old one
+const gpsOpts = (precise: boolean) => (precise ? { enableHighAccuracy: true, maximumAge: 0, timeout: 15_000 } : { enableHighAccuracy: false, maximumAge: 600_000, timeout: 15_000 })
+const web = (precise: boolean) =>
+  new Promise<GeolocationPosition>((ok, no) => navigator.geolocation.getCurrentPosition(ok, no, gpsOpts(precise)))
 /** N-2: on the APK the WebView's own geolocation often times out even with Android's permission granted (the phone then showed Dampas).
  *  The Geolocation plugin asks Android directly; the WebView call stays as the second try. */
-const gps = async (ask: boolean, native: boolean): Promise<{ coords: { latitude: number; longitude: number } }> => {
-  if (native) { try { return await import('@capacitor/geolocation').then((m) => m.Geolocation.getCurrentPosition(gpsOpts(ask))) } catch { /* fall through to the WebView */ } }
-  return web(ask)
+const gps = async (precise: boolean, native: boolean): Promise<{ coords: { latitude: number; longitude: number; accuracy?: number }; timestamp?: number }> => {
+  if (native) { try { return await import('@capacitor/geolocation').then((m) => m.Geolocation.getCurrentPosition(gpsOpts(precise))) } catch { /* fall through to the WebView */ } }
+  return web(precise)
 }
 
 /** ask=true shows the browser prompt (once, from onboarding). ask=false only uses GPS if already granted.
+ *  precise (default: same as ask) reads a fresh high-accuracy fix; it never prompts unless ask is true.
  *  Any failure or denial falls back to the saved home barangay (default Dampas). */
-export async function resolveLocation(ask: boolean): Promise<Loc> {
+export async function resolveLocation(ask: boolean, precise: boolean = ask): Promise<Loc> {
   const home = await getHome()
   const dampas: Loc = { lat: home.lat, lon: home.lon, source: 'home' }
   // D-105: the last real fix beats the saved home zone; the home zone is only the first-run fallback.
   const fallback = async (): Promise<Loc> => {
-    const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number } | undefined
-    return v && validFix(v) ? { lat: v.lat, lon: v.lon, at: v.at, source: 'last' } : dampas
+    // the old stored shape is {lat, lon, at}: accuracy is simply absent there
+    const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number; accuracy?: number } | undefined
+    return v && validFix(v) ? { lat: v.lat, lon: v.lon, at: v.at, ...(isNum(v.accuracy) ? { accuracy: v.accuracy } : {}), source: 'last' } : dampas
   }
   try {
     if (!('geolocation' in navigator)) return await fallback()
@@ -56,11 +62,16 @@ export async function resolveLocation(ask: boolean): Promise<Loc> {
     // Older APKs: Android WebView never retains the grant, so permissions.query stays 'prompt' after a yes: trust our own record there.
     const allowed = st === 'granted' || (!os && st === 'prompt' && Capacitor.isNativePlatform() && (await db.kv.get('loc.asked').catch(() => undefined))?.value === true)
     if (st === 'denied' || (!allowed && !ask)) return await fallback()
-    const p = await gps(ask, os !== null)
+    // D-138: with the family map on, every open or resume reads a precise fix for the family pin
+    const p = await gps(precise || familyPlacesOn(), os !== null)
     const fix = { lat: p.coords.latitude, lon: p.coords.longitude }
     if (!validFix(fix)) return await fallback() // X7: 0,0 (a phone that answers with nothing) or off the globe is no fix
-    void db.kv.put({ key: LAST_KEY, value: { ...fix, at: Date.now() } }).catch(() => {})
-    return { ...fix, at: Date.now(), source: 'gps' }
+    const at = isNum(p.timestamp) && p.timestamp > 0 ? Math.min(p.timestamp, Date.now()) : Date.now() // when the phone took the fix, not when we asked
+    const acc = isNum(p.coords.accuracy) ? { accuracy: p.coords.accuracy } : {}
+    void db.kv.put({ key: LAST_KEY, value: { ...fix, at, ...acc } }).catch(() => {})
+    // D-138: the family pin; putLivePlace itself checks the flag, the person's notice answer and their switch
+    void import('../family/placeApi').then((m) => m.putLivePlace({ ...fix, at, ...acc })).catch(() => {})
+    return { ...fix, at, ...acc, source: 'gps' }
   } catch {
     return await fallback()
   } finally {
@@ -78,16 +89,47 @@ export function useGpsLoc(): LatLon | null {
 export type LocState = Loc | { source: 'pending'; lat: null; lon: null }
 const PENDING: LocState = { source: 'pending', lat: null, lon: null }
 
+// S22 G: one shared, throttled refresh, so a return to the foreground makes one request however many screens hold a location.
+let lastRun = 0
+let inflight: Promise<Loc> | null = null
+const subs = new Set<(l: Loc) => void>()
+/** force skips the 5-minute throttle (Weather's precise read) but still joins a request already running. */
+export function refreshLocation(opts: { precise?: boolean; force?: boolean; now?: number } = {}): Promise<Loc> | null {
+  if (inflight) return inflight
+  const now = opts.now ?? Date.now()
+  if (!opts.force && !shouldRefresh(lastRun, now)) return null
+  lastRun = now
+  inflight = resolveLocation(false, !!opts.precise)
+    .then((l) => { subs.forEach((f) => f(l)); return l })
+    .finally(() => { inflight = null })
+  return inflight
+}
+export const resetRefresh = () => { lastRun = 0; inflight = null } // tests
+
 /** Never prompts by itself. Onboarding calls ask() after the why screen. */
 export function useLocation() {
   const [loc, setLoc] = useState<LocState>(PENDING)
   useEffect(() => {
     let live = true
+    lastRun = Date.now() // the first read counts as a refresh
     resolveLocation(false).then((l) => live && setLoc(l))
+    const sub = (l: Loc) => { if (live) setLoc(l) }
+    subs.add(sub)
+    const onVis = () => { if (document.visibilityState === 'visible') void refreshLocation() }
+    document.addEventListener('visibilitychange', onVis)
+    let handle: { remove: () => unknown } | undefined
+    if (Capacitor.isNativePlatform()) {
+      void import('@capacitor/app').then((m) => m.App.addListener('appStateChange', (s) => { if (s.isActive) void refreshLocation() })).then((h) => { if (live) handle = h; else void h.remove() }).catch(() => {})
+    }
     return () => {
       live = false
+      subs.delete(sub)
+      document.removeEventListener('visibilitychange', onVis)
+      void handle?.remove()
     }
   }, [])
+  /** A fresh high-accuracy read without a prompt (Weather, when the stored fix is old). */
+  const refine = useCallback(() => refreshLocation({ precise: true, force: true }), [])
   const ask = useCallback(async () => {
     const l = await resolveLocation(true)
     setLoc(l)
@@ -102,7 +144,7 @@ export function useLocation() {
     await saveHome(h)
     setLoc((l) => (l.source === 'home' ? { lat: h.lat, lon: h.lon, source: 'home' as const } : l))
   }, [])
-  return { ...loc, ask, setHome, forget }
+  return { ...loc, ask, refine, setHome, forget }
 }
 
 /** D-33 place: null until the saved zone is read (the saved zone stands in while GPS is pending). `pickZone` keeps the member's choice for when they are outside the Philippines or have no position. */
@@ -122,5 +164,5 @@ export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
-  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, picked: saved !== null }
+  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, accuracy: l.source === 'gps' || l.source === 'last' ? l.accuracy : undefined, picked: saved !== null }
 }

@@ -9,8 +9,10 @@ export interface MedCardData {
 }
 export type RecipeTag = 'lowsalt' | 'diabetes' | 'soft' | 'fish'
 export type Step = string | [string, number]
+/** Optional photo from Wikimedia Commons: only files whose licence (CC0, CC BY, CC BY-SA, public domain) was read on the file page. credit is the author as shown there. */
+export interface RecipeImage { url: string; credit: string; licence: string; sourceUrl: string }
 export interface Recipe {
-  id: string; name: string; blurb: string; tags: RecipeTag[]; minutes: number; servings: number; usualMg?: number
+  id: string; image?: RecipeImage; name: string; blurb: string; tags: RecipeTag[]; minutes: number; servings: number; usualMg?: number
   ingredients: [string, number, string?][]; steps: Step[]
 }
 

@@ -8,3 +8,6 @@
 .lm-zone { stroke: var(--card); stroke-width: 3; fill: var(--tint-blue-ink); fill-opacity: 1; }
 
 .lm-fail { display: grid; place-items: center; height: 100%; margin: 0; padding: 16px; text-align: center; color: var(--muted); }
+
+/* Which basemap this map uses (S22-F). Tokens only; sits bottom-left so the credit and Jack stay clear. */
+.lm-src { position: absolute; left: 8px; bottom: 8px; z-index: 1000; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--card); color: var(--muted); border: 1px solid var(--line, var(--card2)); pointer-events: none; }

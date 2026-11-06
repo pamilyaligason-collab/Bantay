@@ -23,7 +23,7 @@ export default function CalmCard() {
   const done = !acting && log.some((e) => new Date(e.at).toDateString() === new Date().toDateString())
   return (
     <Section title="Calm" link={{ href: '#calm', label: 'Open Calm' }} testId="calm">
-      <button type="button" className="card td-calm press" onClick={() => setOpen(true)} aria-label="Breathe for 1 minute">
+      <button type="button" className="card td-calm cc-navy press" onClick={() => setOpen(true)} aria-label="Breathe for 1 minute">
         <BreathOrb moment={momentAt(p, 1, elapsed)} reduced={reduced} size={84} floor={0.78} />
         <span className="td-grow"><b>Breathe for 1 minute</b><span>{p.tag}. {done ? 'Done today.' : 'Not done yet today.'}</span></span>
       </button>

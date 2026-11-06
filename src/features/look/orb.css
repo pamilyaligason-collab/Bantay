@@ -1,10 +1,13 @@
-/* Breathing orb: four rings and a disc scale together; the label stays unscaled on top. Theme tokens only, so light and dark both work. */
+/* Breathing orb (S22-C): a dotted sphere on a soft glow scales together; the label stays unscaled on top. The dot colour is --bo-dot (default: the theme green), so the sheet keeps its theme and Calm sets blue. */
 .bo { position: relative; display: grid; place-items: center; }
-.bo-orb { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; }
-.bo-orb i, .bo-orb b { position: absolute; border-radius: 50%; inset: 0; }
-.bo-orb i { border: 2px solid var(--green2); }
-.bo-orb i:nth-child(1) { opacity: .16; } .bo-orb i:nth-child(2) { inset: 8%; opacity: .26; } .bo-orb i:nth-child(3) { inset: 16%; opacity: .4; } .bo-orb i:nth-child(4) { inset: 24%; opacity: .55; }
-.bo-orb b { inset: 32%; background: color-mix(in srgb, var(--green2) 22%, var(--card)); }
-.bo-label { position: relative; display: grid; justify-items: center; gap: 2px; text-align: center; color: var(--ink); }
+.bo-orb { position: absolute; inset: 0; transform-origin: 50% 50%; will-change: transform; color: var(--bo-dot, var(--green2)); }
+.bo-orb .ds { position: absolute; inset: 0; }
+.bo-orb .bo-glow { position: absolute; inset: -18%; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, currentColor 40%, transparent) 0%, transparent 68%); }
+.bo-label { position: relative; display: grid; align-content: center; justify-items: center; gap: 2px; text-align: center; color: var(--ink); box-sizing: border-box; min-width: 120px; padding: 6px 14px; white-space: nowrap; border-radius: 22px; background: var(--ground); } /* a solid pill sized to its text (longest word 'Hold gently' or 'Breathe out' is about 80 px at 15px/600, plus 28 px padding) so the word and count never sit on dots or wrap */
 .bo-word { font-size: 15px; font-weight: 600; }
 .bo-count { font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+/* the dotted sphere: slow spin; reduced motion keeps it still */
+.ds { display: block; overflow: visible; }
+.ds-spin { animation: ds-spin 40s linear infinite; transform-origin: 0 0; }
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ds-spin { animation: none; } }

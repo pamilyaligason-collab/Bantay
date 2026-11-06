@@ -2,3 +2,10 @@
 .al-card b { color: var(--ink); }
 .al-card .al-open { width: auto; min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; text-decoration: none; flex: none; }
 .sh-tabs .sh-tabbadge { position: absolute; top: 6px; left: calc(50% + 8px); width: 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px var(--card, #fff); }
+
+/* S22-H archive all: colours inherit from the theme, so dark mode follows */
+.al-arch { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 4px 16px; }
+.al-arch .btn2 { min-height: 44px; }
+.al-arch-undo { display: inline-flex; gap: 8px; align-items: center; }
+.al-arch-list { flex-basis: 100%; margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.al-arch-list span { opacity: 0.7; }

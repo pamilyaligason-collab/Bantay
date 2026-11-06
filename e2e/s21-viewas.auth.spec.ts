@@ -288,6 +288,8 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 const SAFETY_ALLOW: JackAllow[] = [{ name: 'First aid tile', sel: 'a.sf-fa' }, { name: 'Go-bag card', sel: '.sf-bag' }] // D-128 ruling 10: whole-card tiles; the viewing bar pushes the grid down, measured 76% tappable at 390x844
+// D-135: the Discover Today view's whole-card links (hero card, video cards, Learn cards, recipe card), measured 94 to 96 % tappable at rest; the old Be prepared and Learn rows in DISCOVER_ALLOW are gone
+const DISCOVER_TODAY_ALLOW: JackAllow[] = [...DISCOVER_ALLOW, { name: 'Hero card', sel: 'a.dc-herocard' }, { name: 'Video card', sel: 'a.dc-vc' }, { name: 'Learn card', sel: 'a.dc-lc' }, { name: 'Recipe card', sel: 'a.dc-rcard-t' }]
 const PINNED_ALLOW: JackAllow[] = [{ name: 'Pinned last tile', sel: '[data-testid="pinned"] .pn-cell:nth-child(even) a' }, { name: 'Browse row', sel: '[data-testid="browse"] .rw-main' }] // the same whole-card allowance v13-health.spec names (JACK_ALLOW)
 // Round 2 final review: Jack at rest while viewing. Only the named whole-card allowances of Discover and Family apply (shared from v13.ts); any other control that touches him fails: a small one is a bug.
 for (const [w, h] of [[360, 800], [390, 844]] as const) {
@@ -302,7 +304,7 @@ for (const [w, h] of [[360, 800], [390, 844]] as const) {
       await expect(page.locator('h1').first()).toBeVisible()
       await settled(page)
       await expect(page.locator('.sh-jackfab')).toBeVisible() // without Jack the hit test would pass on nothing
-      await assertJackHit(page, hash === '#discover' ? DISCOVER_ALLOW : hash === '#family' ? FAMILY_ALLOW : hash === '#health' ? PINNED_ALLOW : hash === '#safety' ? SAFETY_ALLOW : [], `viewas ${hash} ${w}x${h}`)
+      await assertJackHit(page, hash === '#discover' ? DISCOVER_TODAY_ALLOW : hash === '#family' ? FAMILY_ALLOW : hash === '#health' ? PINNED_ALLOW : hash === '#safety' ? SAFETY_ALLOW : [], `viewas ${hash} ${w}x${h}`)
     }
   })
 }

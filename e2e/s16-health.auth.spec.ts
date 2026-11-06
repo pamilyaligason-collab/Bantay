@@ -31,7 +31,6 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
     await empty(page, FIXED_CLOCKS[1])
     await expect(page.getByTestId('bodyhero')).toContainText('No readings yet')
-    await expect(page.getByTestId('glance')).toHaveCount(0)
     await expect(page.getByTestId('nudge')).toHaveCount(0)
     await setScheme(page, scheme)
     await shot(page, 'health-empty', scheme)
@@ -50,7 +49,7 @@ test('the admin lands on Me, even when another person has readings (v13 0.4: no 
 
 test('the seven numbers, Kpis and the Latest list live on Readings; Refills on Medicines; Move links to Food', async ({ page }) => {
   await full(page)
-  await page.getByTestId('browse-readings').click()
+  await page.getByTestId('readings-card').getByRole('link', { name: 'All readings' }).click()
   await expect(page).toHaveURL(/#health\/readings$/)
   for (const id of ['sleep', 'mood', 'bp', 'pulse', 'sugar', 'weight', 'steps']) await expect(page.getByTestId(`node-${id}`)).toBeVisible()
   await expect(page.getByTestId('kpis')).toBeVisible()
@@ -74,9 +73,9 @@ test('labs keep the v9 design: eyebrow, source card link, previous switch, v9 fo
   await expect(page.getByTestId('lab-short')).toHaveText('Average sugar over about 3 months')
 })
 
-test('the nudge row link does not cover the overview: a glance tile still opens its own screen', async ({ page }) => {
+test('the nudge row link does not cover the overview: a Today tile still opens its own screen', async ({ page }) => {
   await full(page)
-  await page.getByTestId('glance-meds').click()
+  await page.getByTestId('tk-meds').click()
   await expect(page).toHaveURL(/#health\/meds/)
 })
 

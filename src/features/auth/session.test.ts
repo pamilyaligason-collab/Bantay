@@ -64,4 +64,10 @@ describe('session', () => {
     await signOut()
     expect(await db.kv.get('assistant.history')).toBeUndefined()
   })
+  it('signOut clears the place sharing keys of every person, so the next person on the phone starts clean (D-138)', async () => {
+    await db.kv.bulkPut([{ key: 'place.notice.seen:p1', value: true }, { key: 'place.sharing:p1', value: false }, { key: 'place.notice.seen:p2', value: true }, { key: 'loc.other', value: 1 }])
+    await signOut()
+    expect((await db.kv.toCollection().primaryKeys()).filter((k) => String(k).startsWith('place.'))).toEqual([])
+    expect(await db.kv.get('loc.other')).toBeDefined()
+  })
 })

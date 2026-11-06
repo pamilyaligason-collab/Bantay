@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { makeLimiter } from './celebrate'
+import { describe, expect, it, vi } from 'vitest'
+import { celebrate, makeLimiter } from './celebrate'
 
 describe('rate limiter', () => {
   it('allows once per gap per kind', () => {
@@ -12,5 +12,12 @@ describe('rate limiter', () => {
     expect(allow('goal')).toBe(false)
     t = 600_000
     expect(allow('goal')).toBe(true)
+  })
+})
+
+describe('celebrate', () => {
+  it('under reduced motion nothing fires', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    try { expect(celebrate('allDone')).toBe(false) } finally { vi.unstubAllGlobals() }
   })
 })

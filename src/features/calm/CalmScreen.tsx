@@ -14,7 +14,7 @@ export default function CalmScreen() {
     else document.querySelector('.bt .scroll')?.scrollTo?.(0, 0)
   }, []) // #today and #calm are both tab index 0, so App does not reset the scroll
   return (
-    <div className="cm cm-root" data-testid="calm" data-contrast-bg="#1F3B45">
+    <div className="cm cm-root" data-testid="calm" data-contrast-bg="#0E1B3A">
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Calm" actions={<button type="button" className="cm-ask" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event(CALM_JACK_EVENT))}>Ask Jack</button>} />
       <CalmHero />
       <MoodCheck />

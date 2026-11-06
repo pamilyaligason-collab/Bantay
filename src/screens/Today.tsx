@@ -11,12 +11,14 @@ import { retryToast, retryUnsentMood } from '../features/today/actions'
 import { LargeTitle, Skeleton, wireMotion } from '../features/look'
 import MyDay from '../features/today/MyDay'
 import CalmCard from '../features/today/CalmCard'
+import BatteryCard from '../features/today/BatteryCard'
 import YourNumbers from '../features/today/YourNumbers'
 import { dateKicker, greeting } from '../features/today/greeting'
 import { HeadActions } from '../features/shell/HeadActions'
 import { getMember } from '../features/auth/session'
 import { loadFamily } from '../features/auth/family'
 import { useActing } from '../features/viewas/viewAs'
+import PlaceNotice from '../features/family/PlaceNotice'
 import '../features/today/today.css'
 
 /** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), My day (How are you? opens the mood faces, Log something else opens More, breathing, the plan, a missed medicine of someone else), Calm, Your numbers, then More (alerts setup, banners, notices).
@@ -64,11 +66,13 @@ export default function Today() {
       <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), viewing.acting ? viewing.name : name)} actions={<HeadActions />} />
       <AlarmFixedToast />
       <IncomingSos placement="today" />
+      <PlaceNotice />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
       <AlertsOffCard />
       <WarningCard notify={notify} />
       <AlertCardToday />
       <MyDay notify={notify} />
+      <BatteryCard />
       <CalmCard />
       <YourNumbers />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}

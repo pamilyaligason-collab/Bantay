@@ -212,7 +212,7 @@
 .ah-val small { font-size: 16px; font-weight: 500; color: var(--muted); }
 .ah .lr-track { align-self: stretch; }
 .ah-foot { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ah-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.ah-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; padding-right: 52px; } /* D-128: a button is never under Jack (right 18 + 62 wide = 80 from the edge, card inner edge is 32 in), so the two actions stack to the left of his column at every phone width */
 .ah .cd-act { width: 100%; min-width: 0; min-height: 44px; margin: 0; padding-inline: 8px; }
 .ps-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
 .ps-pill[data-other] { background: var(--btn); color: var(--btn-fg); } /* Family: someone other than Me is on show */
@@ -222,9 +222,67 @@
 /* v13 for you */
 .fy-stack { display: grid; gap: 12px; }
 .card.fy-video { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--ink); text-decoration: none; overflow: hidden; }
-.fy-video > :not(.fy-poster) { padding: 0 16px; }
-.fy-poster { display: grid; place-items: center; aspect-ratio: 16 / 9; min-height: 180px; margin-bottom: 8px; background: var(--tint-purple); color: var(--tint-purple-ink); }
-.fy-video b { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
+.fy-video > :not(.fy-poster) { padding: 0 12px; }
+.fy-vids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+:root[data-narrow] .fy-vids { grid-template-columns: minmax(0, 1fr); }
+.fy-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 8px; overflow: hidden; background: var(--tint-purple); color: var(--tint-purple-ink); }
+.fy-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.fy-play { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #1C1B19; }
+.fy-poster[data-still="off"] .fy-play { background: none; color: inherit; }
+.fy-len { position: absolute; right: 6px; bottom: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fy-video b { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+
+/* S22-D Today row: six tinted stat tiles */
+.tk-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 88px; padding: 10px 12px; border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; }
+.tk[data-tint="blue"] { --tint-fill: var(--tint-blue); --tint-ink: var(--tint-blue-ink); }
+.tk[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
+.tk[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
+.tk[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
+.tk[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.tk[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
+.tk-l { font-size: 13px; font-weight: 600; }
+.tk-v { font-size: 22px; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tk[data-empty] .tk-v { opacity: .7; }
+.tk-s { font-size: 12px; line-height: 1.25; opacity: .9; }
+:root[data-narrow] .tk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* S22-D Readings card */
+.card.rc { display: grid; gap: 10px; padding: 16px; background: linear-gradient(170deg, var(--card) 0%, var(--tint-red) 100%); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tint-red-ink) 28%, transparent); }
+.rc-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
+:root[data-narrow] .rc-big { font-size: 34px; } /* 200% text: a blood pressure pair (124/79) at 44 px was wider than the card */
+.rc-top > div { display: grid; gap: 2px; }
+.rc-big { font-size: 44px; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.rc-big small { font-size: 17px; font-weight: 500; letter-spacing: 0; }
+.rc .mc { width: 100%; height: auto; }
+.rc-none { margin: 0; }
+.rc-subs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rc-sub { display: grid; gap: 2px; min-height: 44px; padding: 10px; border-radius: 14px; background: var(--card); color: var(--ink); text-decoration: none; }
+.rc-sub b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.rc-add { width: 100%; min-height: 48px; }
+
+/* S22-D Browse: two-column animated cards */
+.hb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.card.hb { --tint-fill: var(--card2); --tint-ink: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px; padding: 14px; box-sizing: border-box; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; animation: hb-rise .6s ease-out both; animation-delay: calc(var(--i, 0) * 80ms); }
+.card.hb[data-wide] { grid-column: span 2; min-height: 96px; }
+@media (max-width: 300px) { .hb-grid { grid-template-columns: minmax(0, 1fr); } .card.hb[data-wide] { grid-column: auto; } } /* 200% text zoom: one column, as the old grid did */
+.card.hb[data-tint="blue"] { --tint-fill: var(--tint-blue); --tint-ink: var(--tint-blue-ink); }
+.card.hb[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
+.card.hb[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
+.card.hb[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.card.hb[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
+.hb-t { display: grid; gap: 2px; }
+.hb-t b { font-size: 17px; }
+.hb-s { font-size: 13px; line-height: 1.3; opacity: .9; }
+.hb-bars rect { fill: var(--tint-ink); opacity: .45; }
+.hb-bars rect[data-hot] { opacity: 1; }
+.hb-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.hb-pill { padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--card); color: var(--tint-ink); }
+.hb-pill[data-done] { background: var(--tint-ink); color: var(--tint-fill); }
+.hb-date, .hb-none { font-size: 28px; line-height: 1.1; font-weight: 700; }
+.hb-none { opacity: .6; }
+@keyframes hb-rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .card.hb { animation: none; } }
 .fy-link { display: flex; flex-direction: column; gap: 4px; justify-content: center; min-height: 88px; padding: 12px 16px; color: var(--ink); text-decoration: none; }
 .fy-link b { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
 
@@ -285,7 +343,7 @@
 .ah .lr-zones i, .ah .lr-zones i.n { background: none; padding: 0; text-align: left; color: var(--ink2); font-weight: 400; } /* the board's plain line, not a tinted strip */
 .ah .lr-zones i:last-child:not(.n) { text-align: right; }
 .ah .lr-over { display: none; }
-:root[data-narrow] .ah-acts { grid-template-columns: minmax(0, 1fr); } /* at 195 px the two labels do not fit side by side and ran into each other */
+:root[data-narrow] .ah-acts { grid-template-columns: minmax(0, 1fr); padding-right: 0; } /* at 195 px the two labels do not fit side by side, and with the Jack padding they would not fit at all; the 195 px Jack checks still pass */
 :root[data-narrow] .ah-foot { display: block; -webkit-line-clamp: unset; } /* the range numbers must not be cut off */
 [data-testid=browse] .rw-sub { -webkit-line-clamp: 1; }
 
@@ -293,7 +351,7 @@
 [data-testid=glance] { margin-bottom: 24px; }
 .hb-intro { margin: 0 4px 8px; }
 /* D-128: the section link follows its title on the left, out of Jack's column (as Discover and Family do). */
-.bt section.sec[data-testid="family-health"] > .sec-h { justify-content: flex-start; gap: 16px; }
+.bt section.sec[data-testid="family-health"] > .sec-h, .bt section.sec[data-testid="readings-card"] > .sec-h { justify-content: flex-start; gap: 16px; } /* S22: the Today row pushed the Readings header under Jack at 844 tall */
 .fh-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 [data-testid=browse] .rw-main { box-sizing: border-box; }
 
@@ -314,3 +372,10 @@
   section.sec[data-testid="family-health"] > .sec-h { flex-wrap: wrap; }
   section.sec[data-testid="family-health"] > .sec-h h2 { flex: 1 0 100%; }
 }
+.rc-pins { display: grid; gap: 6px; }
+.rc-pins-h { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+/* S22: inside the Readings card the tiles lost 32 px of width; let them bleed 6 px into the card padding so the Due pill stays on the kicker line at 390 px (tile 165, not 157) */
+.rc-pins .pn-grid { margin-inline: -6px; gap: 8px; }
+.rc-pins .pn-cell > .pt { padding: 12px; }
+.rc-pins .pt-k.nd-k { gap: 4px; }
+.rc-pins-edit { min-height: 44px; padding: 0 8px; background: none; border: 0; color: var(--accent, inherit); font: inherit; font-weight: 600; }

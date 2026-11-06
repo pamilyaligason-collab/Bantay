@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-const m = vi.hoisted(() => ({ can: null as null | { log: boolean; mood: boolean; reason: string }, activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null, ready: true, alerts: [] as unknown[], storm: null as { title: string; body: string } | null, water: [] as { ml: number; drunkAt: string }[], warn: false, breaths: [] as { at: string }[], seen: vi.fn((_id: string) => Promise.resolve()) }))
+const m = vi.hoisted(() => ({ can: null as null | { log: boolean; mood: boolean; reason: string }, activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null, ready: true, alerts: [] as unknown[], storm: null as { title: string; body: string } | null, water: [] as { ml: number; drunkAt: string }[], warn: false, breaths: [] as { at: string }[], seen: vi.fn((_id: string) => Promise.resolve()), cel: vi.fn((_k: string) => true), goal: 1500, checkIn: vi.fn((_p?: string) => Promise.resolve('ok')) }))
 // s.arrived false = the live queries have not answered yet (the hooks hand back their shared empty first value)
 const s = vi.hoisted(() => ({ empty: [] as never[], readings: [] as { test: string; value: number; takenAt: string }[], arrived: true }))
 vi.mock('../notify/useAlerts', () => ({ useAlertRows: () => m.alerts }))
@@ -13,15 +13,18 @@ vi.mock('../shell/useKv', () => ({ useKv: () => [m.breaths, () => undefined, tru
 vi.mock('./useStorm', () => ({ useStorm: () => m.storm }))
 vi.mock('./MyWeek', () => ({ useWeekData: () => ({ readings: s.readings, loaded: s.arrived }) }))
 vi.mock('../health/useActivity', () => ({ NO_ACTIVITY: s.empty, useActivity: () => (s.arrived ? m.activity : s.empty) }))
-vi.mock('../nutrition/hooks', () => ({ NO_WATER: s.empty, useWater: () => (s.arrived ? m.water : s.empty), useGoal: () => ({ waterMl: 1500 }) }))
+vi.mock('../nutrition/hooks', () => ({ NO_WATER: s.empty, useWater: () => (s.arrived ? m.water : s.empty), useGoal: () => ({ waterMl: m.goal }) }))
 vi.mock('../setup/useProfile', () => ({ useSelfPerson: () => ({ id: m.self, ready: m.ready }) }))
 vi.mock('../viewas/viewAs', () => ({ useActingPersonId: () => m.self, useActingCan: () => m.can, useActing: () => ({ acting: !!m.can, personId: m.can ? m.self : null, name: m.can ? 'Mama' : '' }) }))
+vi.mock('./actions', async (orig) => ({ ...(await orig<typeof import('./actions')>()), checkIn: (p?: string) => m.checkIn(p) }))
 vi.mock('./NextUp', () => ({ default: () => null, MedsCheck: () => null }))
 vi.mock('./PlanToday', () => ({ default: () => null }))
 vi.mock('./SelfCare', () => ({ default: () => null }))
+vi.mock('../look/celebrate', () => ({ celebrate: (k: string) => m.cel(k) }))
+import { rowLeaveMs, TICK_MS } from './doneMorph'
 import { NUDGE_PLAY_MS, NUDGE_SETTLE_MS, resetNudges } from '../nudge/nudgeDue'
 import MyDay from './MyDay'
-afterEach(() => { cleanup(); vi.useRealTimers(); resetNudges(); m.warn = false; m.breaths = []; m.activity = []; m.self = 'me'; m.can = null; m.water = []; m.storm = null; m.alerts = []; m.seen.mockClear(); s.readings = []; s.arrived = true })
+afterEach(() => { cleanup(); vi.useRealTimers(); resetNudges(); m.warn = false; m.breaths = []; m.activity = []; m.self = 'me'; m.can = null; m.water = []; m.storm = null; m.alerts = []; m.seen.mockClear(); m.cel.mockClear(); m.goal = 1500; vi.unstubAllGlobals(); localStorage.clear(); s.readings = []; s.arrived = true })
 const manilaDay = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Manila' }) // a miss from an earlier day is not a row, so the ref must always be today
 const miss = (o: object = {}) => ({ id: 'a1', personId: 'ana', kind: 'dose_missed', template: 'dose_missed', ref: `ana:${manilaDay()}:08:00`, createdAt: '2026-11-02T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-09T00:00:00Z', ...o })
 
@@ -329,5 +332,203 @@ describe('D-125 nudges on My day: the mover, the first paint, midnight', () => {
     render(<MyDay notify={() => undefined} />)
     expect(pills()).not.toContain('myday-checkin')
     expect(pills()).not.toContain('myday-water')
+  })
+})
+
+describe('S22 My day rewards', () => {
+  const GLASS = 250
+  const glasses = (n: number) => Array.from({ length: n }, () => ({ ml: GLASS, drunkAt: new Date().toISOString() })) // goal 1500 ml = 6 glasses
+  const bpToday = () => [{ test: 'bp_systolic', value: 118, takenAt: new Date().toISOString() }]
+  const checkedIn = () => [{ kind: 'check-in', startedAt: new Date().toISOString() }]
+  const order = () => Array.from(screen.getByTestId('myday').querySelectorAll('[data-testid^="myday-"]')).map((e) => e.getAttribute('data-testid'))
+  const phaseOf = (id: string) => screen.getByTestId(id).closest('.td-row')!.getAttribute('data-phase')
+  const reduce = () => vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }))
+
+  it('fixed order: blood pressure, water, How are you, then the missed medicine; badges 1 to 3 on the priorities only', () => {
+    m.alerts = [miss()]
+    render(<MyDay notify={() => undefined} />)
+    expect(order().filter((t) => ['myday-bp', 'myday-water', 'myday-checkin', 'myday-missed-ana'].includes(t!))).toEqual(['myday-bp', 'myday-water', 'myday-checkin', 'myday-missed-ana'])
+    const badges = (id: string) => screen.getByTestId(id).querySelector('.td-pri')?.textContent
+    expect([badges('myday-bp'), badges('myday-water'), badges('myday-checkin'), badges('myday-missed-ana')]).toEqual(['1', '2', '3', undefined])
+    expect(screen.getByTestId('myday-bp').querySelector('.td-pri')!.getAttribute('aria-hidden')).toBe('true') // the name stays the title
+  })
+  it('rows already done on arrival wait in a closed Done today fold with no animation; the button opens it', () => {
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6); m.breaths = [{ at: new Date().toISOString() }] // the breath row counts too
+    render(<MyDay notify={() => undefined} />)
+    const fold = screen.getByRole('button', { name: /Done today \(2\)/ }) // water stays in the list, so its plus works past the goal
+    expect(fold.getAttribute('aria-expanded')).toBe('false')
+    const panel = document.getElementById(fold.getAttribute('aria-controls')!)!
+    expect(panel.hidden).toBe(true)
+    expect(panel.querySelectorAll('.td-row[data-phase]').length).toBe(0)
+    fireEvent.click(fold)
+    expect(fold.getAttribute('aria-expanded')).toBe('true')
+    expect(panel.hidden).toBe(false)
+    expect(Array.from(panel.querySelectorAll('[data-testid^="myday-"]')).map((e) => e.getAttribute('data-testid'))).toEqual(['myday-bp', 'myday-checkin'])
+    expect(screen.queryByTestId('myday-done-card')).toBeNull() // loaded already done: no card, no confetti
+    expect(m.cel).not.toHaveBeenCalled()
+    expect(screen.getByTestId('myday-prio-done').textContent).toBe('All done')
+  })
+  it('a row finished on screen ticks and bursts, slides out, then waits in the fold', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    expect(screen.queryByTestId('myday-fold')).toBeNull()
+    m.activity = checkedIn()
+    rerender(<MyDay notify={() => undefined} />)
+    expect(phaseOf('myday-checkin')).toBe('tick')
+    expect(screen.getByTestId('myday-checkin').querySelectorAll('.td-burst').length).toBe(4)
+    expect(screen.getByTestId('myday-checkin').querySelector('.td-tick')).not.toBeNull()
+    expect(screen.queryByTestId('myday-fold')).toBeNull() // still in the list while it ticks
+    act(() => { vi.advanceTimersByTime(TICK_MS) })
+    expect(phaseOf('myday-checkin')).toBe('out')
+    act(() => { vi.advanceTimersByTime(rowLeaveMs(false)) })
+    expect(screen.getByTestId('myday-checkin').closest('.td-row')!.hasAttribute('data-phase')).toBe(false)
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+    expect(screen.getByTestId('myday-checkin').closest('[hidden]')).not.toBeNull()
+  })
+  it('water is done at the goal, not on each glass: 5 of 6 stays in the list, the 6th ticks it', () => {
+    vi.useFakeTimers()
+    m.water = glasses(4)
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    m.water = glasses(5)
+    rerender(<MyDay notify={() => undefined} />)
+    expect(phaseOf('myday-water')).toBeNull()
+    expect(screen.getByTestId('myday-water').querySelector('.td-tick')).toBeNull()
+    expect(screen.getByTestId('myday-water').textContent).toContain('5 of 6 glasses')
+    m.water = glasses(6)
+    rerender(<MyDay notify={() => undefined} />)
+    expect(phaseOf('myday-water')).toBe('tick')
+  })
+  it('each glass moves the ring but the visible count stays whole rows (ML-40)', () => {
+    const dash = () => screen.getByTestId('myday-ring').querySelector('.rg-val')!.getAttribute('stroke-dasharray')
+    m.water = glasses(0)
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    const before = dash()
+    m.water = glasses(3)
+    rerender(<MyDay notify={() => undefined} />)
+    expect(dash()).not.toBe(before)
+    const len = 46 * Math.PI // size 64, stroke 9: r = 23
+    const [fill, whole] = dash()!.split(' ').map(Number)
+    expect(whole).toBeCloseTo(len, 6)
+    expect(fill).toBeCloseTo(len * (3 / 6 / 4), 6) // goal 1500 ml = 6 glasses: half the water share of 1 of 4 rows
+    m.goal = 2000
+    rerender(<MyDay notify={() => undefined} />)
+    expect(Number(dash()!.split(' ')[0])).toBeCloseTo(len * (3 / 8 / 4), 6) // 3 of 8 glasses: 3/32 of the ring
+    expect(screen.getByTestId('myday').textContent).toContain('0 of 4 done')
+    expect(screen.getByTestId('myday-ring').querySelector('svg')!.getAttribute('aria-label')).toBe('0 of 4 done')
+  })
+  it('all three priorities finished live: the card shows once, one celebrate call, then the next visit gets the one-line row', () => {
+    vi.useFakeTimers()
+    m.breaths = [{ at: new Date().toISOString() }]
+    const first = render(<MyDay notify={() => undefined} />)
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    first.rerender(<MyDay notify={() => undefined} />)
+    const card = screen.getByTestId('myday-done-card')
+    expect(card.textContent).toContain('All done for today')
+    expect(m.cel).toHaveBeenCalledTimes(1)
+    expect(m.cel).toHaveBeenCalledWith('allDone')
+    expect(card.textContent).not.toMatch(/in a row/) // no streak is computed for this, so none is shown
+    expect(screen.queryByTestId('myday-prio-done')).toBeNull()
+    act(() => { vi.advanceTimersByTime(TICK_MS + rowLeaveMs(false)) })
+    first.unmount()
+    render(<MyDay notify={() => undefined} />) // same day, opened again
+    expect(screen.queryByTestId('myday-done-card')).toBeNull()
+    expect(screen.getByTestId('myday-prio-done').textContent).toBe('All done')
+    expect(m.cel).toHaveBeenCalledTimes(1)
+  })
+  it('priorities done with an extra left: the card says so, its button opens the fold, later visits get the Priorities done row', () => {
+    vi.useFakeTimers()
+    m.alerts = [miss()]
+    m.breaths = [{ at: new Date().toISOString() }]
+    const r = render(<MyDay notify={() => undefined} />)
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-done-card').textContent).toContain('1 extra left: Ana missed a medicine at 8:00 AM')
+    act(() => { vi.advanceTimersByTime(TICK_MS + rowLeaveMs(false)) })
+    fireEvent.click(screen.getByRole('button', { name: 'See what you logged' }))
+    expect(screen.getByTestId('myday-fold').getAttribute('aria-expanded')).toBe('true')
+    r.unmount()
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-prio-done').textContent).toBe('Priorities done1 extra left: Ana missed a medicine at 8:00 AM')
+  })
+  it('the extra is named with its own title and time like the board, and left generic when it has no time', () => {
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6); m.breaths = [{ at: new Date().toISOString() }]
+    m.alerts = [miss()]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-prio-done').textContent).toBe('Priorities done1 extra left: Ana missed a medicine at 8:00 AM')
+    cleanup()
+    m.alerts = [miss({ ref: 'ana' })]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-prio-done').textContent).toBe('Priorities done1 extra left')
+  })
+  it('water past the goal keeps its plus in the list, outside the closed fold', () => {
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(7)
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByRole('button', { name: /Done today \(2\)/ })).toBeTruthy()
+    const plus = screen.getByRole('button', { name: 'Add a glass of water' })
+    expect(plus.closest('[hidden]')).toBeNull()
+    expect(screen.getByTestId('myday-water').textContent).toContain('7 of 6 glasses')
+  })
+  it('a row finished from the keyboard: focus moves to the next open row (blood pressure Log), not lost', async () => {
+    vi.useFakeTimers()
+    const r = render(<MyDay notify={() => undefined} />)
+    const btn = screen.getByRole('button', { name: "I'm OK" })
+    btn.focus()
+    await act(async () => { fireEvent.click(btn) })
+    expect(m.checkIn).toHaveBeenCalledTimes(1)
+    m.activity = checkedIn()
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(document.activeElement).toBe(screen.getByTestId('myday-bp').querySelector('a'))
+    expect(screen.getByTestId('myday-said').textContent).toBe('Check-in done')
+  })
+  it('the last open row done: focus lands on the Done today button, and the name is announced', async () => {
+    vi.useFakeTimers()
+    s.readings = bpToday(); m.water = glasses(6)
+    const r = render(<MyDay notify={() => undefined} />)
+    const btn = screen.getByRole('button', { name: "I'm OK" })
+    btn.focus()
+    await act(async () => { fireEvent.click(btn) })
+    m.activity = checkedIn()
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-said').textContent).toBe('Check-in done')
+    act(() => { vi.advanceTimersByTime(TICK_MS + rowLeaveMs(false)) })
+    expect(document.activeElement).toBe(screen.getByTestId('myday-fold'))
+  })
+  it('the card is once per local day: the next morning a new finish shows it again', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 10, 5, 23, 30))
+    const a = render(<MyDay notify={() => undefined} />)
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    a.rerender(<MyDay notify={() => undefined} />)
+    expect(m.cel).toHaveBeenCalledTimes(1)
+    a.unmount()
+    vi.setSystemTime(new Date(2026, 10, 6, 0, 30))
+    s.readings = []; m.activity = []; m.water = []
+    const b = render(<MyDay notify={() => undefined} />)
+    s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    b.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-done-card')).toBeTruthy()
+    expect(m.cel).toHaveBeenCalledTimes(2)
+  })
+  it('before the live queries answer nothing counts as just done (unknown is not done)', () => {
+    vi.useFakeTimers()
+    s.arrived = false
+    const r = render(<MyDay notify={() => undefined} />)
+    s.arrived = true; s.readings = bpToday(); m.activity = checkedIn(); m.water = glasses(6)
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.queryByTestId('myday-done-card')).toBeNull()
+    expect(m.cel).not.toHaveBeenCalled()
+    expect(document.querySelectorAll('.td-row[data-phase]').length).toBe(0)
+  })
+  it('reduced motion: no burst, the row only fades (no slide phase), same end state', () => {
+    vi.useFakeTimers()
+    reduce()
+    const { rerender } = render(<MyDay notify={() => undefined} />)
+    m.activity = checkedIn()
+    rerender(<MyDay notify={() => undefined} />)
+    expect(phaseOf('myday-checkin')).toBe('out')
+    expect(document.querySelectorAll('.td-burst').length).toBe(0)
+    act(() => { vi.advanceTimersByTime(rowLeaveMs(true)) })
+    expect(screen.getByTestId('myday-checkin').closest('.td-row')!.hasAttribute('data-phase')).toBe(false)
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
   })
 })

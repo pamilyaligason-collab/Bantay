@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
 import { empty, full, seed } from './fixtures/s16/health'
-import { assertHero, assertJackClear, assertNarrow, assertNoSideways, assertNoWrappedButtons, assertOrder, assertTargets, assertTextContrast, FIXED_CLOCKS, fullPageShot, setScheme, shotsLightDark } from './v13'
+import { assertHero, assertJackClear, assertJackHit, type JackAllow, assertNarrow, assertNoSideways, assertNoWrappedButtons, assertOrder, assertTargets, assertTextContrast, FIXED_CLOCKS, fullPageShot, setScheme, shotsLightDark } from './v13'
 
 // v13 lane H: the Health overview (hero, Pinned, Family health, Browse, For you), the view-only member page and the six sub-screens.
 // Signed in as the made-up member `me` (health-auth-mock); all data is invented. V13_SHOTS=<dir> also writes the 390x844 light and dark set (docs/redesign-2026-10-31/shots/health).
@@ -21,13 +21,13 @@ const at = async (page: Page, hash: string, h1: string | RegExp) => {
   await expect(page.locator('h1').first()).toHaveText(h1)
 }
 
-test('overview: hero, Pinned, Family health, Browse, For you in that order, one hero near the top', async ({ page }) => {
+test('overview: hero, Readings, Browse, For you, Family health in that order, one hero near the top', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await expect(page.getByTestId('for-you')).toBeVisible()
-  await assertHero(page)
-  await assertOrder(page, ['bodyhero', 'glance', 'browse', 'for-you']) // Family health hides for a one-person roster; it is ordered below when present
-  if (await page.getByTestId('family-health').count()) await assertOrder(page, ['glance', 'family-health', 'browse'])
-  for (const k of ['readings', 'labs', 'meds', 'visits', 'move', 'body']) await expect(page.getByTestId(`browse-${k}`)).toBeVisible()
+  await assertHero(page, 480) // D-135: the Today row (two rows of tiles, about 250 px) sits above the hero
+  await assertOrder(page, ['today-kpis', 'bodyhero', 'readings-card', 'browse', 'for-you']) // D-135: Today, Needs attention, Readings (with its Pinned row), Browse, For you, then Family health
+  if (await page.getByTestId('family-health').count()) await assertOrder(page, ['for-you', 'family-health'])
+  for (const k of ['labs', 'meds', 'visits', 'move', 'body']) await expect(page.getByTestId(`browse-${k}`)).toBeVisible()
   await expect(page.getByTestId('foryou-video')).toHaveAttribute('href', '#discover/watch')
   await expect(page.getByTestId('nudge')).toBeVisible()
 })
@@ -119,19 +119,24 @@ test('reduced motion: the overview draws and nothing keeps animating', async ({ 
 // ---- gaps lane H (2026-11-02): measured boxes, not pixels of page height ----
 const box = async (page: Page, sel: string) => (await page.locator(sel).first().boundingBox())!
 
-test('H4: the hero is compact with two buttons in one row, and Pinned starts high', async ({ page }) => {
+test('H4: the hero is compact with two stacked buttons left of Jack, and Pinned starts high', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   const hero = await box(page, '[data-hero]')
-  expect(hero.height, 'hero height').toBeLessThanOrEqual(260)
+  expect(hero.height, 'hero height').toBeLessThanOrEqual(320) // stacked actions (D-128) add one 44 px row to the old 260
   const btns = page.locator('[data-hero] .cd-act')
   expect(await btns.count()).toBe(2)
   const [a, b] = [(await btns.nth(0).boundingBox())!, (await btns.nth(1).boundingBox())!]
-  expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(2)
+  expect(b.y, 'stacked: the second button is below the first').toBeGreaterThanOrEqual(a.y + a.height) // D-128: one row would put the right button under Jack (two 140 px buttons do not fit left of his column)
   expect(a.height).toBeGreaterThanOrEqual(44)
   expect(a.width).toBeGreaterThanOrEqual(140)
+  const jack = (await page.locator('.sh-jackfab').boundingBox())!
+  expect(Math.max(a.x + a.width, b.x + b.width), 'buttons end left of the Jack column').toBeLessThanOrEqual(jack.x)
   await assertNoWrappedButtons(page)
-  // the board keeps the "Needs attention" heading above the hero, so the tiles start at about 490, not 420
-  expect((await box(page, '[data-testid=pinned]')).y).toBeLessThanOrEqual(500)
+  // D-135 board: Today row, then the hero, then the Readings card, which holds the Pinned row (so Pinned no longer starts high)
+  expect((await box(page, '[data-hero]')).y, 'hero starts under the Today row, on the first screen').toBeLessThanOrEqual(480)
+  const card = await box(page, '[data-testid=readings-card]')
+  expect(card.y, 'Readings follows the hero').toBeGreaterThan(hero.y + hero.height)
+  await expect(page.getByTestId('readings-card').getByTestId('pinned')).toBeVisible()
 })
 
 test('H5: the switcher pill is an avatar pill and the sheet rows are at least 56 tall', async ({ page }) => {
@@ -195,30 +200,36 @@ test('H7: Pinned has Edit; the sheet changes the tiles', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await page.getByRole('button', { name: 'Edit' }).click()
   await expect(page.getByRole('dialog', { name: 'Pinned' })).toBeVisible()
-  await page.getByRole('checkbox', { name: 'Medicines' }).click()
+  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2) // inline Pinned omits Steps and Medicines (the Today row and Browse show them)
+  await page.getByRole('checkbox', { name: 'Medicines' }).click() // frees a slot, changes nothing inline
+  await page.getByRole('checkbox', { name: 'Pulse' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(3)
 })
 
-test('H9: Browse rows are 56 to 64 tall and each has a second line', async ({ page }) => {
-  await full(page, FIXED_CLOCKS[1])
-  const rows = page.getByTestId('browse').locator('.rw')
-  expect(await rows.count()).toBe(6)
-  for (let i = 0; i < 6; i++) {
+test('H9: Browse is five cards (four tall in two columns, Body wiki wide), each with a second line', async ({ page }) => {
+  await full(page, FIXED_CLOCKS[1]) // D-135: the Browse rows became animated cards
+  const rows = page.getByTestId('browse').locator('a.hb')
+  expect(await rows.count()).toBe(5)
+  for (let i = 0; i < 5; i++) {
     const r = rows.nth(i)
-    const h = (await r.boundingBox())!.height
-    expect(h, `browse row ${i}`).toBeGreaterThanOrEqual(56)
-    expect(h, `browse row ${i}`).toBeLessThanOrEqual(64)
-    await expect(r.locator('.rw-sub')).toHaveCount(1)
+    const b = (await r.boundingBox())!
+    const wide = (await r.getAttribute('data-wide')) !== null
+    expect(b.height, `browse card ${i}`).toBeGreaterThanOrEqual(wide ? 80 : 140)
+    expect(b.height, `browse card ${i}`).toBeLessThanOrEqual(wide ? 110 : 170)
+    const visits = (await r.getAttribute('data-testid')) === 'browse-visits' // with no booked visit and no saved questions its second line is the date preview (Not booked) instead
+    await expect(r.locator(visits ? '.hb-date' : '.hb-s')).toHaveCount(1)
   }
 })
 
-test('H10: For you is video, because of you, then the log row; the video card is wide and tall', async ({ page }) => {
+test('H10: For you is two videos side by side, because of you, then the log row; the video cards are tall', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await assertOrder(page, ['foryou-video', 'foryou-because', 'foryou-log'])
   const v = await box(page, '[data-testid=foryou-video]')
+  const v2 = await box(page, '[data-testid=foryou-video-2]')
   const scroller = await box(page, '.bt .scroll')
-  expect(Math.abs(v.width - (scroller.width - 32))).toBeLessThanOrEqual(2)
+  expect(Math.abs(v.y - v2.y), 'one row').toBeLessThanOrEqual(2) // D-135 board: two video cards in a row
+  expect(Math.abs(v.width + v2.width + 10 - (scroller.width - 32)), 'two cards fill the width').toBeLessThanOrEqual(6)
   expect(v.height).toBeGreaterThanOrEqual(180)
 })
 
@@ -291,9 +302,15 @@ test('H17: the Body wiki figure is on the first screen; Jack stays clear', async
 // Measured covered share of the tile under him (rectangles, scroll 0, the test below prints these), tall 740 / 800 / 844 / 900 / 1000: 360 wide 13, 15, 16, 14, 0 %; 390 wide 12, 14, 15, 13, 0 %; 450 wide 10, 12, 13, 11, 0 %.
 // At 740 he is over the upper right tile, otherwise the lower right; the numbers are the same whichever tile Edit puts there. A booked visit with a long name makes the tile taller: 5 to 9 %.
 const JACK_ALLOW = '[data-testid="pinned"] .pn-cell:nth-child(even)'
+// Whole-card links only (D-128): a button, such as the hero action, has no allowance. The Readings link sits left of Jack (health.css).
+const HEALTH_ALLOW: JackAllow[] = [
+  { name: 'Pinned tile', sel: JACK_ALLOW + ' a' }, { name: 'Readings tile', sel: '[data-testid="rc-main"] a.rc-sub' }, { name: 'Today tile', sel: '[data-testid="today-kpis"] a.tk' },
+  { name: 'Browse card', sel: '[data-testid="browse"] a.hb' }, { name: 'For you card', sel: '[data-testid="for-you"] a' }
+]
 test('Jack stays clear of controls on the Health root and its sub-screens', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  await assertJackClear(page, { at: 'rest', allow: JACK_ALLOW })
+  await assertJackHit(page, HEALTH_ALLOW, 'health root')
+  await assertJackClear(page, { at: 'rest', allow: JACK_ALLOW }) // rectangle strength for buttons at rest (D-128)
   await assertJackClear(page, { at: 'end' })
   for (const h of ['#health/readings', '#health/labs', '#health/meds', '#health/visits', '#health/move']) {
     await at(page, h, /./)
@@ -306,7 +323,7 @@ const pinChanges: { name: string; corner: string; flip: string[]; visit?: boolea
   { name: 'default', corner: 'glance-visit', flip: [] },
   { name: 'Pulse in the corner', corner: 'glance-heart_rate', flip: ['Next visit', 'Pulse'] },
   { name: 'Weight in the corner', corner: 'glance-weight', flip: ['Medicines', 'Weight'] },
-  { name: 'three pins', corner: 'glance-meds', flip: ['Blood pressure'] },
+  { name: 'three pins', corner: 'glance-visit', flip: ['Blood pressure'] },
   { name: 'booked visit', corner: 'glance-visit', flip: [], visit: true }
 ]
 for (const set of pinChanges) {
@@ -322,6 +339,7 @@ for (const set of pinChanges) {
       await page.getByRole('button', { name: 'Edit' }).click()
       for (const name of set.flip) await page.getByRole('checkbox', { name }).click()
       await page.getByRole('button', { name: 'Close' }).click()
+      await expect(page.getByRole('dialog', { name: 'Pinned' })).toHaveCount(0) // the sheet's exit animation must end before anything is measured
       await expect(page.getByTestId(set.corner)).toBeVisible()
     }
     const rows: string[] = []
@@ -341,7 +359,7 @@ for (const set of pinChanges) {
         })
         rows.push(`${w}x${h} ${m.map((t) => `${t.tile} ${(t.covered * 100).toFixed(0)}%`).join(', ') || 'clear'}`)
         for (const t of m) expect(1 - t.covered, `free share of ${t.tile} at ${w}x${h} (a rectangle test, so the round button covers less than this)`).toBeGreaterThan(0.5)
-        await assertJackClear(page, { at: 'rest', allow: JACK_ALLOW })
+        await assertJackHit(page, HEALTH_ALLOW, `${set.name} ${w}x${h}`)
       }
     }
     console.log(`JACK ${set.name}: ${rows.join(' | ')}`)

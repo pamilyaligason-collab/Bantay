@@ -1,0 +1,16 @@
+/* D-139: hourly strip and 2-hour rain estimate on the Today weather hero. White ink on the dark sky (#1C2F57 and darker): 4.5:1 or better. */
+.td-hs { list-style: none; margin: 0; padding: 8px 0 4px; display: flex; gap: 4px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; position: relative; z-index: 3; border-top: 1px solid rgb(255 255 255 / .22); color: #fff; }
+.td-hs::-webkit-scrollbar { display: none; }
+.td-hs:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 8px; }
+.td-hs li { flex: none; min-width: 52px; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 14px; }
+.td-hs-t { opacity: .9; font-size: 13px; white-space: nowrap; }
+.td-hs-d { font-weight: 700; }
+.td-hs-p { font-size: 13px; font-weight: 600; color: #BFE3FF; }
+.td-rm, .td-rm-none { margin: 6px 0 0; display: grid; gap: 2px; color: #fff; font-size: 13px; }
+.td-rm-bars { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-end; gap: 4px; }
+.td-rm-bars li { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; }
+.td-rm-bars i { display: block; width: 100%; max-width: 28px; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, #BFE3FF, #5FA8E8); transform-origin: bottom; animation: td-rm-grow .5s ease-out both; }
+.td-rm-v, .td-rm-l { font-size: 12px; line-height: 14px; white-space: nowrap; min-height: 14px; }
+.td-rm-note { font-size: 12px; opacity: .85; }
+@keyframes td-rm-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .td-rm-bars i { animation: none; } }

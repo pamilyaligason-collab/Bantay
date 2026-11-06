@@ -46,7 +46,8 @@ export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 
 export type JackAllow = { name: string; sel: string }
 // The named allowances (D-128) are whole-card links only. 'Learn card' (min 90% tappable) and 'Together row' (min 84%) were added by ruling in D-128.
 // Measured tappable share in gaps-s21 (S21-JACK lines, 4 widths x 5 heights, 3 dates, 143 tests green): Be prepared card 0.75 to 0.99 (43 hits), Learn card 0.90 to 0.97 (9 hits), People row 0.85 to 0.99 (22 hits), Together row 0.84 to 0.99 (11 hits), Needs row never touched Jack (0 hits).
-export const DISCOVER_ALLOW: JackAllow[] = [{ name: 'Be prepared card', sel: '[data-testid="dc-prep-row"] a.dc-prep' }, { name: 'Learn card', sel: '.dc-lcard a.rw-main' }]
+// S22 (D-135): the Discover Today view has no Be prepared row. Measured in gaps-s21 and gaps-d117 (4 widths x 5 heights x 3 dates, 16 dates x 6 sizes, 195 to 450 wide): only the Watch hero card (whole-card link) and a More-videos card touch Jack, with 0.69 to 0.99 of them still tappable (190 hits); Learn, recipe and Top story cards never touched him, so they have no allowance. Section links (All, All topics, See all) and the Today | News | Saved tabs have none either.
+export const DISCOVER_ALLOW: JackAllow[] = [{ name: 'Watch hero card', sel: '[data-testid="dc-hero"] a.dc-herocard' }, { name: 'More-videos card', sel: '[data-testid="dc-videos"] a.dc-vrow' }]
 export const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main' }] // a Needs row's Answer / Open / Fix phone control is a small control: no allowance
 export async function assertJackHit(page: Page, allow: JackAllow[], tag: string, scroll: 'top' | 'keep' = 'top'): Promise<void> {
   const hits = await page.evaluate(([allow, scroll]) => {
@@ -77,8 +78,19 @@ export async function assertJackHit(page: Page, allow: JackAllow[], tag: string,
   expect(hits.filter((h) => !h.allowed || h.tappable <= 0.5).map((h) => `${h.label} (${h.allowed ?? 'no allowance'}, ${Math.round(h.tappable * 100)}% tappable)`), `controls under Jack ${tag}`).toEqual([])
 }
 
+/** assertJackHit at rest (scroll 0) and again at the end of the scroll, where Jack is peeked (his 48 x 88 hit strip). Late content moves the end, so the end is re-applied for three frames. */
+export async function assertJackHitRestAndEnd(page: Page, allow: JackAllow[], tag: string): Promise<void> {
+  await settled(page)
+  await assertJackHit(page, allow, `${tag} at rest`)
+  await page.evaluate(async () => {
+    const el = document.querySelector('.bt .scroll') as HTMLElement
+    for (let i = 0; i < 3; i++) { el.scrollTop = el.scrollHeight; await new Promise((r) => requestAnimationFrame(() => r(null))) }
+  })
+  await assertJackHit(page, allow, `${tag} at end`, 'keep')
+}
+
 /** Exactly one `[data-hero]` in `.bt .scroll`, and its top is within 320 px of the scroll top. */
-export async function assertHero(page: Page): Promise<void> {
+export async function assertHero(page: Page, maxTop = 320): Promise<void> {
   const r = await page.evaluate(() => {
     const sc = document.querySelector('.bt .scroll') as HTMLElement | null
     const heroes = sc ? Array.from(sc.querySelectorAll<HTMLElement>('[data-hero]')) : []
@@ -86,7 +98,7 @@ export async function assertHero(page: Page): Promise<void> {
     return { n: heroes.length, top }
   })
   expect(r.n, 'tab roots carry exactly one [data-hero]').toBe(1)
-  expect(r.top!, 'the hero starts within 320 px of the scroll top').toBeLessThanOrEqual(320)
+  expect(r.top!, `the hero starts within ${maxTop} px of the scroll top`).toBeLessThanOrEqual(maxTop)
 }
 
 /** Each listed data-testid is present and sits lower than the one before it. */

@@ -479,7 +479,6 @@
 .td-calm .td-grow > span { font-size: 15px; }
 .td-calm .bo-label { display: none; }
 .td-calm .bo-orb i { border-color: var(--tint-teal-ink); }
-.td-num { flex: none; width: 168px; }
 
 /* v13 T7: Finish setup row */
 [data-testid="setup-row"] { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); border-radius: var(--r-card); }
@@ -598,7 +597,7 @@
 .td-wxs .td-wxh-sd { grid-area: d; font-size: 15px; font-weight: 600; }
 .td-wxs .td-wxh-sp { grid-area: p; font-size: 13px; font-weight: 400; }
 .td-wxs .td-act-box { border-radius: 14px; padding: 8px 12px; }
-.td-wxs .wxs-cloud { max-width: 56px; margin-top: 6px; } /* plan T6 keeps them small: no cloud crosses the words (e2e T6); the board's 180 px clouds would run through the condition line */
+.td-wxs .wxs-cloud { max-width: 52px; margin-top: 0; } /* S22: the taller hero (D-139 strip and rain line) put the cloud's foot 5 px into the condition line */ /* plan T6 keeps them small: no cloud crosses the words (e2e T6); the board's 180 px clouds would run through the condition line */
 /* My day: a sub line is two lines at most (the blood pressure sub took three at 360) */
 .td-todo .rw-sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
@@ -609,9 +608,46 @@
 /* Full forecast: a plain 13 px line with the chevron, no divider; the 44 px hit area grows upward (the hero clips below) */
 .td-wxh-full { min-height: 0; border-top: 0; margin: -13px 0 0; padding: 17px 0 9px; font-size: 13px; font-weight: 400; color: rgb(213 222 238); }
 .td-wxh-full svg { width: 16px; height: 16px; }
-/* Calm: the idle orb is one glowing teal disc with a soft halo, not rings (board Main .orb) */
-.td-calm .bo-orb i { display: none; }
-.td-calm .bo-orb b { inset: 0; background: radial-gradient(circle at 40% 35%, #B9E4DA, #3E8C7E); box-shadow: 0 0 0 10px rgb(62 140 126 / .12); }
+/* S22-C: Calm card: the 84 px dotted sphere on navy; the label sits on the sphere in white */
+.td-calm .bo-label { color: #fff; }
+.td-calm .bo-glow { inset: -10%; }
 /* Log something else: 15 px (two lines at most beside the coach mark; one line when it fits) */
 .td-todo-more .rw-title { font-size: 15px; }
 [data-testid^="myday-missed-"] .rw-title { white-space: normal; } /* CL: "Ma missed a medicine" is never cut to "Ma missed a me..." beside Open */
+
+/* S22-B: My day rewards (fixed order with number badges, tick and burst, Done today fold, congratulations card) */
+.td-pri { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 16px; background: var(--tint-green); color: var(--tint-green-ink); }
+.td-row { display: grid; grid-template-rows: 1fr; }
+.td-row-in { min-height: 0; }
+.td-row[data-phase="out"] { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .24s ease-in-out .2s, opacity .2s ease-in; }
+.td-row[data-phase="out"] .td-row-in { overflow: hidden; transform: translateX(30px); transition: transform .2s ease-in; }
+.td-todo-ic.td-tick { position: relative; background: var(--btn); color: #fff; } /* white on --btn: 5:1 or better in light and dark */
+.td-tick path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: td-tick .35s ease-out forwards; }
+@keyframes td-tick { to { stroke-dashoffset: 0; } }
+.td-prio-done .td-tick path { animation: none; stroke-dashoffset: 0; }
+.td-burst { position: absolute; left: 13px; top: 13px; width: 6px; height: 6px; border-radius: 50%; opacity: 0; background: var(--green); animation: td-burst .55s ease-out .12s forwards; }
+.td-burst:nth-of-type(2) { background: var(--tint-amber-ink); }
+.td-burst:nth-of-type(3) { background: var(--tint-blue-ink); }
+.td-burst:nth-of-type(4) { background: var(--tint-teal-ink); }
+@keyframes td-burst { 0% { opacity: 0; transform: translate(0, 0) scale(.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1); } }
+.td-prio-done { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; }
+.td-prio-done .td-todo-ic { width: 40px; height: 40px; border-radius: 12px; }
+.td-fold { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; border-top: .5px solid var(--hair); background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--green); cursor: pointer; width: 100%; justify-content: flex-start; }
+.td-fold > svg { transition: transform .2s; transform: rotate(90deg); }
+.td-fold[aria-expanded="true"] > svg { transform: rotate(-90deg); }
+.card.td-done-card { margin-bottom: 12px; padding: 22px 18px; text-align: center; background: var(--btn); color: #fff; animation: td-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
+.td-done-ring { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; border: 10px solid #fff; box-sizing: border-box; } /* the full ring of the board: a white ring round a check */
+.td-done-t { margin-top: 12px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+.td-done-s { margin-top: 4px; font-size: 15px; line-height: 21px; }
+.btn.td-done-go { margin-top: 16px; background: #fff; color: #1E6B4E; } /* white pill with dark-green text on the green card, same in dark mode (#1E6B4E on #fff = 6.4:1) */
+@keyframes td-pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.bt[data-jack] .td-done-card .td-done-go { margin-right: 52px; }
+.bt[data-jack] .td-fold { width: fit-content; max-width: calc(100% - 52px); }
+@media (prefers-reduced-motion: reduce) {
+  .td-row[data-phase="out"] { grid-template-rows: 1fr; transition: opacity .15s linear; }
+  .td-row[data-phase="out"] .td-row-in { transform: none; transition: none; }
+  .td-tick path { animation: none; stroke-dashoffset: 0; }
+  .td-burst { display: none; }
+  .card.td-done-card { animation: none; }
+  .td-fold > svg { transition: none; }
+}

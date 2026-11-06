@@ -11,7 +11,7 @@ vi.mock('../location/ZonePicker', () => ({ default: () => null }))
 vi.mock('../safety/LiveMaps', async (orig) => ({ ...(await orig<typeof import('../safety/LiveMaps')>()), default: ({ loc }: { loc: { lat: number } }) => <p data-testid="map-at">{loc.lat}</p> }))
 // location denied now; the last fix is old and in Texas, so the place falls back to the home zone
 vi.mock('../location/useLocation', () => {
-  const l = { source: 'last', lat: 32.78, lon: -96.8, at: 1, ask: async () => null, forget: async () => {} }
+  const l = { source: 'last', lat: 32.78, lon: -96.8, at: 1, ask: async () => null, refine: async () => null, forget: async () => {} }
   return { ZONE_KEY: 'test.zone', useLocation: () => l, usePlaceFrom: () => ({ ...resolvePlace({ gps: { lat: 32.78, lon: -96.8, stale: true }, lastZone: 'dampas' }), lastZone: 'dampas', settled: true, picked: true }) }
 })
 

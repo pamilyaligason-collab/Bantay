@@ -137,9 +137,9 @@ describe('Videos', () => {
   it('shows the fixed list; nothing loads until a tap, then the no-cookie player', async () => {
     go('#discover/watch')
     render(<Videos />)
-    expect(await screen.findByRole('button', { name: 'Play Hands-only CPR' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^Play Hands-only CPR/ })).toBeTruthy()
     expect(document.querySelector('iframe')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Play Hands-only CPR' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Play Hands-only CPR/ }))
     expect(document.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/M4ACYp75mjU/)
     fireEvent.click(screen.getByRole('button', { name: 'Diabetes' }))
     expect(screen.queryByText(/American Heart Association/)).toBeNull()

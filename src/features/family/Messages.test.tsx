@@ -33,6 +33,13 @@ describe('Messages', () => {
     expect(within(list).getByLabelText(/Voice note from You, 0:12/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
   })
+  it('a voice row with a body shows the For tag above the player; text rows have none', async () => {
+    api.listMessages.mockResolvedValue({ ok: true, data: [{ ...msgs[1]!, body: 'For Ma' }, { ...msgs[0]! }] })
+    show()
+    const list = await screen.findByTestId('msg-list')
+    expect(within(list).getAllByTestId('msg-for')).toHaveLength(1)
+    expect(within(list).getByTestId('msg-for').textContent).toBe('For Ma')
+  })
   it('quick replies send the exact words through sendText, inline or in a sheet', async () => {
     const me = { ...ben, isMe: true }
     render(<Messages inline who={me} people={[me]} nudge={null} onClose={() => undefined} onOpenPage={() => undefined} />)

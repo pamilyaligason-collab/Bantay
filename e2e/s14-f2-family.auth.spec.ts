@@ -106,6 +106,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/')
       const row = page.getByTestId('myday-checkin')
       await row.getByRole('button', { name: "I'm OK", exact: true }).click()
+      await page.getByTestId('myday-fold').click() // D-135: a ticked row leaves My day for the Done today fold
       await expect(row.getByText('Checked in')).toBeVisible()
       await settle(page)
       expect(await row.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true) // the done state of the check-in row

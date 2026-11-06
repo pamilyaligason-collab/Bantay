@@ -1,0 +1,16 @@
+/* Board "Battery card" (S22-BAT). The glyph is CSS shapes, not an icon. */
+.bat-card { display: flex; align-items: center; gap: 16px; padding: 16px; }
+.bat-card[data-low] { background: var(--tint-amber); color: var(--tint-amber-ink); }
+.bat-glyph { flex: none; width: 64px; height: 30px; border: 3px solid currentColor; border-radius: 8px; position: relative; box-sizing: border-box; padding: 3px; color: var(--ok); margin-right: 8px; }
+.bat-card[data-low] .bat-glyph { color: var(--tint-amber-ink); }
+.bat-glyph::after { content: ""; position: absolute; right: -8px; top: 7px; width: 5px; height: 10px; border-radius: 0 3px 3px 0; background: currentColor; }
+.bat-fill { height: 100%; min-width: 2px; max-width: 100%; border-radius: 3px; background: currentColor; }
+.bat-fill[data-charging] { animation: bat-chg 2s ease-in-out infinite; }
+@keyframes bat-chg { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .bat-fill[data-charging] { animation: none; } }
+.bat-tx { flex: 1; min-width: 0; }
+.bat-t { font-size: 20px; font-weight: 700; color: var(--ink); }
+.bat-s, .bat-note { font-size: 13px; line-height: 18px; color: var(--muted, var(--ink)); }
+.bat-note { margin-top: 4px; }
+.bat-card[data-low] .bat-t, .bat-card[data-low] .bat-s, .bat-card[data-low] .bat-note { color: var(--tint-amber-ink); }
+.td-todo-ic[data-tint="amber"] { background: var(--tint-amber); color: var(--tint-amber-ink); }

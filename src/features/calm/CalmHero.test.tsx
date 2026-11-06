@@ -39,6 +39,29 @@ describe('CalmHero with the real useKv', () => {
     const orb = screen.getByTestId('calm-hero').querySelector('.bo')!
     expect(orb.closest('[aria-hidden="true"]')).not.toBeNull()
   })
+  it('S22-C: the hero orb is a dotted sphere (round-capped dots, no rings) and the exercise cards each carry their own', () => {
+    render(<CalmHero />)
+    const hero = screen.getByTestId('calm-hero')
+    expect(hero.querySelectorAll('.bo-orb ellipse[stroke-dasharray^="0 "]').length).toBe(7)
+    expect(hero.querySelector('.bo-orb i')).toBeNull()
+    const cards = screen.getByTestId('calm-exercises').querySelectorAll('button')
+    expect(cards.length).toBe(SHOWN_PATTERNS.length)
+    for (const c of cards) expect(c.querySelector('svg ellipse')).not.toBeNull()
+  })
+  it('S22-C: an exercise card picks that pattern; the cue words are unchanged', () => {
+    render(<CalmHero />)
+    const calm = screen.getByTestId('calm-exercises').querySelector('[data-pattern="calm"]') as HTMLElement
+    fireEvent.click(calm)
+    expect(calm.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: /Calm box/ }).getAttribute('aria-pressed')).toBe('true')
+  })
+  it('S22-C reduced motion: the sphere is static at the rest size and the dotted group only spins by CSS that reduced motion switches off', async () => {
+    const css = (await import('../look/orb.css?raw')).default
+    expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.ds-spin \{ animation: none/)
+    render(<CalmHero />)
+    const m = /scale\(([\d.]+)\)/.exec((screen.getByTestId('calm-hero').querySelector('.bo-orb') as HTMLElement).style.transform)
+    expect(Number(m![1])).toBeGreaterThan(0.8)
+  })
   it('the idle orb rests near 185 px of 220 (scale about 0.84 to 0.91), never at the 121 px bottom of the breath, and shows no words before Start', () => {
     render(<CalmHero />)
     const hero = screen.getByTestId('calm-hero')

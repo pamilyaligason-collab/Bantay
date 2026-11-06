@@ -63,8 +63,8 @@ describe('Ring math', () => {
   })
 })
 
-describe('BreathOrb at fixed moments (reduced: sits at the size for the moment)', () => {
-  it.each([[2, 'in', 'scale(0.775)', '2'], [5, 'hold', 'scale(1)', '3'], [10, 'out', 'scale(0.775)', '2'], [13, 'rest', 'scale(0.55)', '3']])('%is is %s', (t, phase, tf, left) => {
+describe('BreathOrb at fixed moments (reduced: one fixed scale, only the word and count change)', () => {
+  it.each([[2, 'in', 'scale(0.78)', '2'], [5, 'hold', 'scale(0.78)', '3'], [10, 'out', 'scale(0.78)', '2'], [13, 'rest', 'scale(0.78)', '3']])('%is is %s', (t, phase, tf, left) => {
     const m = momentAt(calm, 1, t)
     const { container } = render(<BreathOrb moment={m} reduced />)
     expect(m.phase).toBe(phase)

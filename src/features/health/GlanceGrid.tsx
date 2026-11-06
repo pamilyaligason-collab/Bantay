@@ -4,7 +4,7 @@ import { ldb, type Activity, type FoodEntry, type MedTaken, type WaterEntry } fr
 import { Ring } from '../look/Ring'
 import { lastDays } from '../today/myWeekLogic'
 import { labDate, groupLabs, labRow } from './labsLogic'
-import { dayOf, matchDoses, slotsFor } from './meds'
+import { dayOf, matchDoses, slotsFor, type DoseState } from './meds'
 import { localDay, readingPosition } from './model'
 import { cadenceWord, computeNudge, type Goal } from './nudgeLogic'
 import { latestByTest, type Range, type Reading } from './ranges'
@@ -41,8 +41,8 @@ export function labsLine(readings: Reading[], thresholds: Thresholds): string {
   return `${head} · ${labDate(last.takenAt, true)}`
 }
 
-/** Today's doses done over due, live. Null until the medicines are read; "No medicines yet" when none. */
-export function useDoseLine(personId: string): string | null {
+/** Today's dose slots (taken, skipped, pending) and whether this person has any medicine, live. Null until the medicines are read. */
+export function useTodayDoses(personId: string): { doses: DoseState[]; hasMeds: boolean } | null {
   const meds = useMedicationRows(personId)
   const [takes, setTakes] = useState<MedTaken[]>([])
   useEffect(() => {
@@ -54,10 +54,16 @@ export function useDoseLine(personId: string): string | null {
   return useMemo(() => {
     if (meds === undefined) return null
     const day = dayOf(new Date())
-    const doses = matchDoses(slotsFor(meds, personId, day), takes, day)
-    if (!doses.length) return meds.length ? 'Nothing due today' : 'No medicines yet'
-    return `${doses.filter((d) => d.state === 'pending').length} of ${doses.length} left today`
+    return { doses: matchDoses(slotsFor(meds, personId, day), takes, day), hasMeds: meds.length > 0 }
   }, [meds, takes, personId])
+}
+
+/** Today's doses done over due, live. Null until the medicines are read; "No medicines yet" when none. */
+export function useDoseLine(personId: string): string | null {
+  const t = useTodayDoses(personId)
+  if (!t) return null
+  if (!t.doses.length) return t.hasMeds ? 'Nothing due today' : 'No medicines yet'
+  return `${t.doses.filter((d) => d.state === 'pending').length} of ${t.doses.length} left today`
 }
 
 /** The week's goals and streak (nudgeLogic), live. Same data the old NudgeCard read. */

@@ -60,15 +60,15 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, 'overview-browse', scheme, '[data-testid="browse"]')
     await page.locator('main.scroll').evaluate((el) => el.scrollTo(0, el.scrollHeight))
     await shot(page, 'overview-end', scheme)
-    // Pinned (S21): a 2 x 2 grid at 360 px, every tile 48 px or taller, the tiles of a row as tall as each other
+    // Pinned (S21, D-135): inside the Readings card it omits Steps and Medicines (the Today row and Browse show them), so the default is two tiles (BP, Next visit) in two columns, every tile 48 px or taller, as tall as each other
     await page.setViewportSize({ width: 360, height: 780 })
     const boxes = await page.locator('[data-testid="pinned"] > *').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) } }))
-    expect(boxes.length).toBeGreaterThanOrEqual(3)
+    expect(boxes.length).toBeGreaterThanOrEqual(2)
     expect(boxes.length).toBeLessThanOrEqual(4)
     expect(boxes.every((b) => b.h >= 48)).toBe(true)
     expect(new Set(boxes.map((b) => b.x)).size).toBe(2) // two columns
     expect(boxes[0]!.h).toBe(boxes[1]!.h) // equal heights in a row
-    await page.getByTestId('browse-readings').getByRole('link').click()
+    await page.getByTestId('readings-card').getByRole('link', { name: 'All readings' }).click()
     await expect(page.getByRole('heading', { name: 'Averages' })).toBeVisible()
     await expect(page.getByTestId('kpis')).toBeVisible()
   })

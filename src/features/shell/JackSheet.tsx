@@ -10,7 +10,7 @@ import './shell.css'
 const TRY = [{ label: 'Log my BP', text: 'Log my blood pressure' }, { label: 'What does ALT mean?', text: 'What does ALT mean?' }, { label: 'Did I take my medicine?', text: 'Did I take my medicine today?' }]
 
 /** The Jack sheet (D-105): Help (the same 3 s hold as before), Scan (which also takes a photo from the gallery), Chat and Try saying, from any tab. Scan and Chat pop the sheet's history entry first, then act. */
-export function JackSheet({ onClose, onSos, firstName }: { onClose: () => void; onSos: () => void; firstName: string }) {
+export function JackSheet({ onClose, onSos, onReach, firstName }: { onClose: () => void; onSos: () => void; onReach?: () => void; firstName: string }) {
   const close = () => { if (history.state?.bantaySheet) history.back(); else onClose() } // Back runs the sheet's own animated close
   const leave = (then: () => void) => { leaveSheet(then); onClose() }
   const sos = () => { onSos(); if (history.state?.bantaySheet) history.back() } // the screen opens first (emergency); then the sheet's dead entry goes
@@ -21,7 +21,7 @@ export function JackSheet({ onClose, onSos, firstName }: { onClose: () => void; 
         <div className="grow"><b>Hi {firstName || 'there'}, what do you need?</b><span className="sub">Jack is always here, on every tab.</span></div>
         <button type="button" className="lk-x" data-testid="jack-close" aria-label="Close" onClick={close}><Icon name="close" size={20} /></button>
       </div>
-      <div className="jk-sos" data-testid="jack-sos"><SosHold onSend={sos} ring /></div>
+      <div className="jk-sos" data-testid="jack-sos"><SosHold onSend={sos} onTap={onReach} ring /></div>
       <p className="jk-safety" data-testid="jack-safety">Cannot hold? <a href="#safety" onClick={(e) => { e.preventDefault(); leave(() => { location.hash = '#safety' }) }}>Open Safety</a> for Call 911 and Medical ID.</p>
       <div className="jk-tiles">
         <button type="button" className="jk-tile" data-tint="blue" data-testid="jack-scan" onClick={() => leave(openScan)}>

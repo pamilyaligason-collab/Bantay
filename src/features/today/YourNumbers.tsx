@@ -2,14 +2,14 @@ import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { hdb } from '../records/store'
 import type { Range, Reading } from '../health/ranges'
-import { Carousel, PreviewTile, Section } from '../look'
+import { PreviewTile, Section } from '../look'
 import { useActingPersonId } from '../viewas/viewAs'
 import { numberTiles } from './numbers'
 
 const NONE: Reading[] = []
 const NO_RANGES: (Range & { key: string })[] = []
 
-/** Board "Your numbers": the latest real readings and labs of the person on screen. */
+/** Board "Your numbers": every card at once in a 2-column grid (no swipe row; one column at 195 px). The latest real readings and labs of the person on screen. */
 export default function YourNumbers() {
   const personId = useActingPersonId() ?? ''
   const [readings, setReadings] = useState(NONE)
@@ -27,7 +27,7 @@ export default function YourNumbers() {
   const tiles = useMemo(() => numberTiles(readings, new Date(), (r) => ranges.find((t) => t.key === `${r.personId}:${r.test}`)), [readings, ranges])
   return (
     <Section title="Your numbers" link={{ href: '#health', label: 'Health' }} testId="numbers">
-      <Carousel label="Your numbers">{tiles.map((t) => <div key={t.kicker} className="td-num"><PreviewTile {...t} /></div>)}</Carousel>
+      <div className="pt-grid" role="group" aria-label="Your numbers">{tiles.map((t) => <PreviewTile key={t.kicker} {...t} />)}</div>
     </Section>
   )
 }

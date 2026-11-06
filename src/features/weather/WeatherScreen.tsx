@@ -3,6 +3,7 @@ import type { LatLon } from '../location/geo'
 import { liveQuery } from 'dexie'
 import { db } from '../../db'
 import { useLocation, usePlaceFrom, ZONE_KEY } from '../location/useLocation'
+import { needsPrecise, oldFixNote, weatherFixState } from '../location/freshness'
 import { track } from '../admin/events'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
@@ -15,7 +16,7 @@ import { Row } from '../look/Row'
 import { Section } from '../look/Section'
 import ZonePicker from '../location/ZonePicker'
 import { placeName } from '../safety/warningsLogic'
-import { placeNameOf } from '../today/placeName'
+import { placeLineOf, placeNameOf } from '../today/placeName'
 import { adviceLine, CALM_LINE } from './advice'
 import { tempTint } from './tempTint'
 import { alertRef, placeTimezone } from '../location/place'
@@ -78,8 +79,19 @@ export default function WeatherScreen() {
     const sub = liveQuery(() => db.kv.get(FOLLOW_KEY)).subscribe({ next: (r) => setFollow((r?.value as 'zone' | 'gps' | undefined) ?? null), error: () => setFollow(null) })
     return () => sub.unsubscribe()
   }, [])
-  const hasFix = gpsLoc.source === 'gps' || gpsLoc.source === 'last'
-  const zoneWins = follow === 'zone' && hasFix
+  const rawFix = gpsLoc.source === 'gps' || gpsLoc.source === 'last'
+  // S22 G: a fix older than 6 h is no fix for Weather (the zone answers, as place.ts does for an old fix abroad); other screens still show it as last known
+  const dropped = rawFix && weatherFixState(gpsLoc.at, Date.now()) === 'drop'
+  const hasFix = rawFix && !dropped
+  const zoneWins = (follow === 'zone' && hasFix) || dropped
+  const settled = gpsLoc.source !== 'pending'
+  const refined = useRef(false)
+  useEffect(() => { // a stored fix older than 30 min: one fresh high-accuracy read, no prompt
+    if (refined.current || !settled || !rawFix || !needsPrecise(gpsLoc.at, Date.now())) return
+    refined.current = true
+    void gpsLoc.refine()
+  }, [settled, rawFix, gpsLoc])
+  const oldFix = hasFix && !zoneWins && weatherFixState(gpsLoc.at, Date.now()) === 'old'
   const l = useMemo(() => {
     const ask = async () => { void putKv(FOLLOW_KEY, 'gps'); return gpsLoc.ask() }
     // read as "no fix": the place, the zone chip and the forecast then all follow the picked zone
@@ -141,8 +153,9 @@ export default function WeatherScreen() {
   return (
     <div className="wx" data-testid="wx-root" data-contrast-bg={hex(lit)}>
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
+      {oldFix && gpsLoc.at != null && <p className="wx-note" role="status" data-testid="wx-fix-old">{oldFixNote(gpsLoc.at, Date.now())} <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Update my location'}</button></p>}
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={placeNameOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} line={placeLineOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
         <>
           {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
           {warnAt && hasAdvisory(alerts) && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
@@ -187,7 +200,7 @@ function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWar
   )
 }
 
-function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
+function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; line: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -239,7 +252,7 @@ function Body({ fc, name, unchecked, point, stormFrom, stormPlace, alerts, warn,
     <>
       <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
         <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
-        <div className="wx-k">{name}</div>
+        <div className="wx-k">{line}</div>
         <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>

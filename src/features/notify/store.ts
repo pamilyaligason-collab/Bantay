@@ -87,9 +87,15 @@ export async function markSeen(id: string): Promise<void> {
   try { await supabase?.from('carer_alerts').update({ seen_at: at }).eq('id', id) } catch { /* offline: the poll sends it later */ }
 }
 
-/** "Mark all read": every unseen visible row. */
-export async function markAllSeen(now: Date = new Date()): Promise<void> {
-  for (const r of await visibleAlerts(now)) if (!r.seenAt) await markSeen(r.id)
+/** "Mark all read": every unseen visible row, or only those `only` accepts (Archive all leaves a live SOS unseen). */
+export async function markAllSeen(now: Date = new Date(), only?: (r: AlertRow) => boolean): Promise<void> {
+  for (const r of await visibleAlerts(now)) if (!r.seenAt && (!only || only(r))) await markSeen(r.id)
+}
+
+/** Undo of a seen mark (Archive all > Undo): local first, then the server column; a failed server write is not retried. */
+export async function unmarkSeen(ids: string[]): Promise<void> {
+  await adb.alerts.bulkUpdate(ids.map((key) => ({ key, changes: { seenAt: null } })))
+  try { await supabase?.from('carer_alerts').update({ seen_at: null }).in('id', ids) } catch { /* offline */ }
 }
 
 /** Forget everything (sign-out, or a different person signing in on this phone). */

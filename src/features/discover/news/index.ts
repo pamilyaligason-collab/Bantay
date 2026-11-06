@@ -1,4 +1,4 @@
 import { registerWhenReady } from '../play/register'
-import NewsScreen from './Screen'
+import NewsScreen from './Page'
 
 registerWhenReady('news', NewsScreen)

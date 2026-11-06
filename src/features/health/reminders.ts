@@ -16,6 +16,7 @@ import { clock, medSlots } from './model'
 import { DOSE_ACTION_TYPE, REPEAT_MIN, SNOOZE_BASE, SNOOZE_TOP, handleReminderAction, markablePeople, registerReminderActions } from './reminderActions'
 import { LANG_KEY, loadLang, t, type Lang } from '../../lib/i18n'
 import { syncBpReminders } from '../nudge/bpReminder'
+import { syncBatteryReminder } from '../today/batteryReminder'
 
 /** Local dose alarms for the active, timed medicines of the signed-in person AND the people in kv `remind.for` (person ids, default none). Native only (web: nothing).
  *  A medicine whose "Still taking it?" review is over 3 days old is left out (D5).
@@ -235,7 +236,7 @@ export function watchDoseReminders(): () => void {
   })
   let off: (() => void) | undefined
   let gone = false
-  const front = () => { void run().then(() => reportPhoneHealth()); void syncBpReminders() } // on every open and return to the app: re-plan, re-arm what is missing, report; the BP reply reminder (nudge/bpReminder.ts) is re-armed too and does nothing until the person turns it on
+  const front = () => { void run().then(() => reportPhoneHealth()); void syncBpReminders(); void syncBatteryReminder() } // S22-BAT: the 7 PM low-battery reminder is set or cancelled here too; on every open and return to the app: re-plan, re-arm what is missing, report; the BP reply reminder (nudge/bpReminder.ts) is re-armed too and does nothing until the person turns it on
   try {
     void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) front() })).then((h) => { if (gone) void Promise.resolve(h.remove()).catch(() => undefined); else off = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined)
   } catch { /* no app plugin: the live query still keeps the plan current */ }

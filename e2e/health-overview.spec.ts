@@ -107,10 +107,10 @@ test('a lab result opens as a dated list: no period, time-of-day or monthly aver
 
 test('Browse links to Readings, Labs, Move and Visits', async ({ page }) => {
   await page.goto('/#health')
-  await expect(page.getByTestId('browse-readings').getByRole('link')).toHaveAttribute('href', '#health/readings')
-  await expect(page.getByTestId('browse-move').getByRole('link')).toHaveAttribute('href', '#health/move')
-  await expect(page.getByTestId('browse-visits').getByRole('link')).toHaveAttribute('href', '#health/visits')
-  await expect(page.getByTestId('browse-labs').getByRole('link')).toHaveAttribute('href', '#health/labs')
+  await expect(page.getByTestId('readings-card').getByRole('link', { name: 'All readings' })).toHaveAttribute('href', '#health/readings')
+  await expect(page.getByTestId('browse-move')).toHaveAttribute('href', '#health/move')
+  await expect(page.getByTestId('browse-visits')).toHaveAttribute('href', '#health/visits')
+  await expect(page.getByTestId('browse-labs')).toHaveAttribute('href', '#health/labs')
   await expect(page.getByRole('link', { name: /^(Library|Videos|Papers)/ })).toHaveCount(0)
   await page.goto('/#health/meds')
   await expect(page.getByTestId('refills-door').getByRole('link')).toContainText('Refill')

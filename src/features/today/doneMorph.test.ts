@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { COLLAPSE_MS, FADE_MS, leaveMs, takenLabel } from './doneMorph'
+import { COLLAPSE_MS, FADE_MS, leaveMs, MORPH_MS, ROW_OUT_MS, rowLeaveMs, takenLabel, TICK_MS } from './doneMorph'
 
 afterEach(() => vi.useRealTimers())
 
@@ -19,3 +19,11 @@ describe('leaveMs', () => {
   })
 })
 
+
+describe('S22 row leave', () => {
+  it('tick 600 ms, slide and collapse 440 ms, 150 ms fade under reduced motion', () => {
+    expect([TICK_MS, MORPH_MS, ROW_OUT_MS]).toEqual([600, 600, 440])
+    expect(rowLeaveMs(false)).toBe(440)
+    expect(rowLeaveMs(true)).toBe(150)
+  })
+})

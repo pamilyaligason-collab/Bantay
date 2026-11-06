@@ -5,7 +5,7 @@ import type { LatLon } from '../location/geo'
 // The one forecast for the whole app: one Open-Meteo request per place, cached in kv with the time it was fetched.
 // Today, Safety, the Assistant and the Weather screen all read it through here, so the numbers never disagree.
 
-export interface Hour { time: string; temp: number | null; prob: number | null; code: number | null } // time: place-local "YYYY-MM-DDTHH:00"
+export interface Hour { time: string; temp: number | null; prob: number | null; code: number | null; mm?: number | null } // mm: rain in that hour in millimetres (null in an old cache) // time: place-local "YYYY-MM-DDTHH:00"
 export interface Day { date: string; code: number | null; min: number | null; max: number | null; prob: number | null; uvMax: number | null; sunrise: string | null; sunset: string | null } // sunrise, sunset: place-local "YYYY-MM-DDTHH:MM"
 export interface Forecast {
   fetchedAt: string // ISO, when the request succeeded
@@ -27,7 +27,7 @@ export const forecastUrl = (p: LatLon) =>
   'https://api.open-meteo.com/v1/forecast' +
   `?latitude=${r2(p.lat)}&longitude=${r2(p.lon)}` +
   '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,uv_index' +
-  '&hourly=temperature_2m,precipitation_probability,weather_code' +
+  '&hourly=temperature_2m,precipitation_probability,weather_code,precipitation' +
   '&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max,uv_index_max,sunrise,sunset' +
   `&forecast_days=${FORECAST_DAYS}&timezone=auto`
 
@@ -54,7 +54,7 @@ export function parseForecast(j: unknown, fetchedAt: string): Forecast | null {
     tz: str(o.timezone) || 'Asia/Manila',
     utcOffset: num(o.utc_offset_seconds) ?? 0,
     current: { time: str(cur.time), temp: num(cur.temperature_2m), humidity: num(cur.relative_humidity_2m), feels: num(cur.apparent_temperature), code: num(cur.weather_code), wind: num(cur.wind_speed_10m), gust: num(cur.wind_gusts_10m), uv: num(cur.uv_index) },
-    hourly: ht.map((t, i) => ({ time: t as string, temp: num(arr(h.temperature_2m)[i]), prob: num(arr(h.precipitation_probability)[i]), code: num(arr(h.weather_code)[i]) })),
+    hourly: ht.map((t, i) => ({ time: t as string, temp: num(arr(h.temperature_2m)[i]), prob: num(arr(h.precipitation_probability)[i]), code: num(arr(h.weather_code)[i]), mm: num(arr(h.precipitation)[i]) })),
     daily: Array.from({ length: Math.max(dt.length, arr(d.precipitation_probability_max).length) }, (_, i) => ({ date: str(dt[i]), code: num(arr(d.weather_code)[i]), min: num(arr(d.temperature_2m_min)[i]), max: num(arr(d.temperature_2m_max)[i]), prob: num(arr(d.precipitation_probability_max)[i]), uvMax: num(arr(d.uv_index_max)[i]), sunrise: str(arr(d.sunrise)[i]) || null, sunset: str(arr(d.sunset)[i]) || null }))
   }
 }

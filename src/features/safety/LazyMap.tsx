@@ -8,6 +8,9 @@ import './lazymap.css'
 type Leaflet = typeof import('leaflet')
 export type MapSetup = (L: Leaflet, map: LMap) => void
 
+/** The badge words: a map drawn from a file stored on the phone is "Offline map"; streamed or picture tiles need internet. */
+export const mapSourceLabel = (kind: 'blob' | 'stream' | 'osm' | 'none' | undefined) => (kind === 'blob' ? 'Offline map' : 'Online map')
+
 /** A Leaflet map in a MapCard. Leaflet loads only when the card mounts, never in jsdom (tests assert the placeholder), and tiles come from OSM only.
  *  `depKey` changes when the map must be rebuilt; `setup` draws markers and may call map.fitBounds. Colours come from CSS classes in lazymap.css (tokens only). */
 export default function LazyMap(p: { height: number; center: [number, number]; zoom: number; depKey: string; setup?: MapSetup; label: string; testId?: string; recentre?: boolean; recentreLabel?: string; overlay?: ReactNode }) {
@@ -29,6 +32,7 @@ export default function LazyMap(p: { height: number; center: [number, number]; z
       const lm = L.map(el, { center: p.center, zoom: p.zoom, zoomControl: false, attributionControl: false, zoomAnimation: !calm, fadeAnimation: !calm, markerZoomAnimation: !calm })
       if (bm && choice) bm.basemapLayer(L, choice).addTo(lm)
       else L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(lm)
+      if (maps) { const b = document.createElement('span'); b.className = 'lm-src'; b.textContent = mapSourceLabel(choice?.kind); el.appendChild(b) }
       map.current = lm
       p.setup?.(L, lm)
     }).catch(fail)

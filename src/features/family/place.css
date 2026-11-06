@@ -1,0 +1,17 @@
+/* Family place map (D-136, board S22FamilyMap). Tokens only, so light and dark both follow. */
+.pm-icon { background: none; border: 0; }
+.pm-pin { display: flex; flex-direction: column; align-items: center; }
+.pm-pin b { width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--card); display: flex; align-items: center; justify-content: center; background: var(--btn); color: var(--btn-fg); font-size: 13px; font-weight: 700; box-shadow: 0 3px 10px rgb(0 0 0 / .25); }
+.pm-pin i { width: 3px; height: 10px; background: var(--card); }
+/* older than 6 h: a grey badge with an outline, and the row below says so in words */
+.pm-pin.pm-grey b { background: var(--card2); color: var(--ink); border-color: var(--muted); }
+.pm-pin.pm-grey i { background: var(--muted); }
+.pl-where { margin: 0 0 8px; }
+.pl-where-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pl-link { min-height: 44px; display: inline-flex; align-items: center; color: var(--green); font-weight: 600; text-decoration: none; }
+.pl-foot { margin: 8px 4px 0; font-size: 13px; line-height: 18px; color: var(--muted); }
+.pl-note { margin: 0 0 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.pl-note p { margin: 0; font-size: 15px; line-height: 21px; color: var(--ink); }
+.pl-note-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pl-note-actions button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; font-size: 15px; font-weight: 600; background: var(--soft); color: var(--green); }
+.pl-note-actions .pl-ok { background: var(--btn); color: var(--btn-fg); }

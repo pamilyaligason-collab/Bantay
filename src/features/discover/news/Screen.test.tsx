@@ -118,3 +118,28 @@ describe('useNewsZone', () => {
     expect(seen).toEqual([undefined, null, 'gensan'])
   })
 })
+
+describe('loadFeed before migration 0051 is live', () => {
+  const plain = (id: string) => ({ id, title: `Headline ${id}`, url: `https://news.test/${id}`, source: 'PNA', kind: 'article', published_at: '2026-10-28T09:20:00Z', zone: null })
+  const seq = (...rs: Response[]) => { const f = vi.fn(); rs.forEach((r) => f.mockResolvedValueOnce(r)); return f }
+  const urlOf = (f: ReturnType<typeof vi.fn>, i: number) => f.mock.calls[i]![0] as string
+  it('a 400 on image_url,topic retries without them and the rows still load (no picture, no topic)', async () => {
+    const f = seq(new Response('{}', { status: 400 }), new Response(JSON.stringify([plain('1'), plain('2')]), { status: 200 }))
+    const r = await loadFeed('gensan', NOW, f as unknown as typeof fetch, ENV)
+    expect(urlOf(f, 0)).toContain('image_url,topic'); expect(urlOf(f, 1)).not.toContain('image_url'); expect(urlOf(f, 1)).toContain('zone.eq.gensan')
+    expect(r.items!.map((n) => n.id)).toEqual(['1', '2']); expect(r.offline).toBe(false)
+    expect(r.items!.every((n) => !n.image_url && !n.topic)).toBe(true)
+  })
+  it('400 again then retries without zone too', async () => {
+    const f = seq(new Response('{}', { status: 400 }), new Response('{}', { status: 400 }), new Response(JSON.stringify([plain('1')]), { status: 200 }))
+    const r = await loadFeed('gensan', NOW, f as unknown as typeof fetch, ENV)
+    expect(f).toHaveBeenCalledTimes(3)
+    expect(urlOf(f, 2)).toContain('select=id,title,url,source,kind,published_at&'); expect(urlOf(f, 2)).not.toContain('zone')
+    expect(r.items!.map((n) => n.id)).toEqual(['1']); expect(r.offline).toBe(false)
+  })
+  it('a 500 does not retry and falls to offline', async () => {
+    const f = seq(new Response('{}', { status: 500 }))
+    const r = await loadFeed('gensan', NOW, f as unknown as typeof fetch, ENV)
+    expect(f).toHaveBeenCalledTimes(1); expect(r.offline).toBe(true)
+  })
+})

@@ -1,9 +1,0 @@
-{"articles": [
-  {"url": "https://www.manilatimes.net/2026/11/04/world/americas-emea/iranian-island-in-hormuz-strait-attacked-media/2460664", "url_mobile": "https://www.manilatimes.net/2026/11/04/world/americas-emea/iranian-island-in-hormuz-strait-attacked-media/2460664/amp", "title": "Iranian island in Hormuz strait attacked media", "seendate": "20261104T013000Z", "socialimage": "https://manilatimes.net/manilatimes/uploads/images/2026/11/03/1290032.jpg", "domain": "manilatimes.net", "language": "English", "sourcecountry": "Philippines"},
-  {"url": "https://news.example/a/1", "title": "  Example fuel   price\n outlook  ", "seendate": "20261104T020000Z", "domain": "news.example", "language": "English", "sourcecountry": "Philippines"},
-  {"url": "https://news.example/a/1", "title": "Same link listed twice", "seendate": "20261104T020500Z", "domain": "news.example", "language": "English", "sourcecountry": "Philippines"},
-  {"url": "javascript:alert(1)", "title": "Bad scheme", "seendate": "20261104T020000Z", "domain": "bad.example", "language": "English"},
-  {"url": "https://news.example/a/2", "title": "", "seendate": "20261104T020000Z", "domain": "news.example", "language": "English"},
-  {"url": "https://news.example/a/3", "title": "No date", "domain": "news.example", "language": "English"},
-  {"url": "https://news.example/a/4", "title": "From the future", "seendate": "20261230T000000Z", "domain": "news.example", "language": "English"}
-]}
