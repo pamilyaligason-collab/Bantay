@@ -31,6 +31,14 @@ describe('LockScreen', () => {
   })
 })
 
+describe('LockScreen name (D-142)', () => {
+  it('greets and asks Not with a capitalised first name even when the family list holds it lower-case', () => {
+    render(<LockScreen name="tala" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/, Tala$/)
+    expect(screen.getByRole('button', { name: 'Not Tala?' })).toBeTruthy()
+  })
+})
+
 describe('LockScreen start-finger', () => {
   const hang = () => h.prompt.mockReturnValue(new Promise(() => {}))
   it('greets by name, shows Call 911 as the dial screen, and no PIN or private data', async () => {

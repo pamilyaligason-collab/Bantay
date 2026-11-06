@@ -17,7 +17,7 @@ import { logWater } from '../nutrition/actions'
 import { ML_PER_TAP, onDay } from '../nutrition/logic'
 import { NO_WATER, useGoal, useWater } from '../nutrition/hooks'
 import { checkIn, FAIL_TEXT } from './actions'
-import { batteryRow, bpRow, checkInRow, countLeft, doneCardSeen, extraLine, markDoneCardSeen, PRIORITY, ringValue, waterRow, type PriKey } from './dayRows'
+import { batteryRow, bpRow, checkInRow, countLeft, doneCardSeen, extraLine, markDoneCardSeen, markPrioPending, PRIORITY, prioPendingSeen, ringValue, waterRow, type PriKey } from './dayRows'
 import { clock } from '../health/model'
 import { rowLeaveMs, TICK_MS } from './doneMorph'
 import { missedDoses } from './missed'
@@ -71,7 +71,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const water = useWater(personId, 2)
   const goal = useGoal(personId)
   const activity = useActivity(personId, 2)
-  const [breaths] = useKv<SelfCareEntry[]>('selfcare.log', [])
+  const [breaths, , breathsIn] = useKv<SelfCareEntry[]>('selfcare.log', [])
   const { people } = useFamilyPeople()
   const alertRows = useAlertRows()
   const battery = useBattery()
@@ -81,9 +81,13 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
     const ci = checkInRow(activity, now, !!self || !ready), bp = bpRow(readings, now), wa = waterRow(water, goal.waterMl, now)
     // selfcare.log is not by person: while viewing, the admin's own breaths are not the viewed person's
     const breathed = !viewing.acting && breaths.some((b) => new Date(b.at).toDateString() === now.toDateString())
-    return { ci, bp, wa, bat, list: [ci, bp, wa, { done: breathed }, ...(bat ? [bat] : []), ...(item.kind === 'dose' ? [{ done: false }] : []), ...missed.map(() => ({ done: false }))] }
+    return { ci, bp, wa, bat, breathed, list: [ci, bp, wa, { done: breathed }, ...(bat ? [bat] : []), ...(item.kind === 'dose' ? [{ done: false }] : []), ...missed.map(() => ({ done: false }))] }
   }, [activity, readings, water, goal.waterMl, breaths, battery, viewing.acting, item.kind, self, ready, today, missed.length]) // eslint-disable-line react-hooks/exhaustive-deps
   const c = countLeft(rows.list)
+  // the breath row folds when it was already done on arrival; a breath finished on screen waits for the next visit, so the open sheet and the Start button it returns to never vanish under the person
+  const breathSeed = useRef<{ sig: string; v: boolean } | null>(null)
+  if (breathsIn && breathSeed.current?.sig !== `${personId}|${today}`) breathSeed.current = { sig: `${personId}|${today}`, v: rows.breathed }
+  const breathFold = !!breathSeed.current?.v
   const reduced = useReducedMotion()
   const pdone: Record<PriKey, boolean> = { bp: rows.bp.done, water: rows.wa.done, checkin: rows.ci.done }
   const priDone = PRIORITY.every((k) => pdone[k])
@@ -99,27 +103,35 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
   const dayEl = useRef<HTMLDivElement>(null)
   const loaded = readingsIn && activity !== NO_ACTIVITY && water !== NO_WATER // unknown is not done (ML-05)
   const sig = `${personId}|${today}`
+  useEffect(() => { setCard(false) }, [sig]) // a new day or person starts without the card (declared first: the effect below may then show it)
   useEffect(() => {
     if (!loaded) { was.current = null; return }
     const prev = was.current
     was.current = { sig, done: pdone }
-    if (!prev || prev.sig !== sig) return
+    const showCard = () => {
+      if (priDone && !doneCardSeen(new Date(), personId)) {
+        markDoneCardSeen(new Date(), personId)
+        setCard(true)
+        celebrate('allDone')
+      }
+    }
+    if (!priDone) markPrioPending(new Date(), personId)
+    if (!prev || prev.sig !== sig) { if (priDone && prioPendingSeen(new Date(), personId)) showCard(); return } // finished on another screen (blood pressure) and came back: the remount still owes the card once
     const fresh = PRIORITY.filter((k) => !prev.done[k] && pdone[k])
     if (!fresh.length) return
     const set = (k: PriKey, v: Phase | undefined) => setPhase((p) => { const n = { ...p }; if (v) n[k] = v; else delete n[k]; return n })
     for (const k of fresh) {
-      if (k === 'water') { // water stays in the list (its plus keeps working past the goal): only the tick plays
-        if (!reduced) { set(k, 'tick'); timers.current.push(setTimeout(() => set(k, undefined), TICK_MS)) }
-        continue
-      }
       set(k, reduced ? 'out' : 'tick')
       if (!reduced) timers.current.push(setTimeout(() => set(k, 'out'), TICK_MS))
       timers.current.push(setTimeout(() => set(k, undefined), (reduced ? 0 : TICK_MS) + rowLeaveMs(reduced)))
     }
     setSaid(fresh.map((k) => `${NAMES[k]} done`).join('. '))
     timers.current.push(setTimeout(() => setSaid(''), 4000))
-    if (acted.current === 'water' && fresh.includes('water')) { // the plus is swapped for the tick while it plays: give focus back to it afterwards
-      timers.current.push(setTimeout(() => dayEl.current?.querySelector<HTMLElement>('[data-testid="myday-water"] .td-todo-plus')?.focus(), reduced ? 0 : TICK_MS + 50))
+    if (acted.current === 'water' && fresh.includes('water')) { // the row folds away after the tick: the + water button on the fold bar takes focus, so more glasses stay one tap away
+      // no focus gap while the tick plays (ML-47): the fold button holds it until + water exists; with no fold yet, the next open row does
+      const nextOpen = PRIORITY.find((x) => x !== 'water' && !pdone[x])
+      ;(foldBtn.current ?? (nextOpen ? dayEl.current?.querySelector<HTMLElement>(`[data-testid="myday-${nextOpen}"] :is(button:not(:disabled), a[href])`) : null))?.focus()
+      timers.current.push(setTimeout(() => dayEl.current?.querySelector<HTMLElement>('[data-testid="myday-water-add"]')?.focus(), (reduced ? 0 : TICK_MS) + rowLeaveMs(reduced) + 50))
       acted.current = null
     } else if (acted.current && fresh.includes(acted.current)) { // keyboard and screen-reader users: the control they used is gone, so focus goes to the next open row, else the fold button
       const nextK = PRIORITY.slice(PRIORITY.indexOf(acted.current) + 1).concat(PRIORITY).find((x) => !pdone[x])
@@ -127,19 +139,16 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
       if (el) el.focus(); else foldFocus.current = true
       acted.current = null
     }
-    if (priDone && !doneCardSeen(new Date(), personId)) {
-      markDoneCardSeen(new Date(), personId)
-      setCard(true)
-      celebrate('allDone')
-    }
+    showCard()
   }, [loaded, sig, pdone.bp, pdone.water, pdone.checkin]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
-  const foldN = PRIORITY.filter((k) => k !== 'water' && pdone[k] && !phase[k]).length
+  const foldN = PRIORITY.filter((k) => pdone[k] && !phase[k]).length
   useEffect(() => { if (foldFocus.current && foldBtn.current) { foldBtn.current.focus(); foldFocus.current = false } }, [foldN])
-  useEffect(() => { setCard(false) }, [sig]) // a new day or person starts without the card
   const foldId = useId()
   const foldBtn = useRef<HTMLButtonElement>(null)
-  const folded = PRIORITY.filter((k) => k !== 'water' && pdone[k] && !phase[k])
+  const folded = PRIORITY.filter((k) => pdone[k] && !phase[k])
+  const batFold = !!rows.bat?.done
+  const foldCount = folded.length + (batFold ? 1 : 0) + (breathFold ? 1 : 0)
   const shown = PRIORITY.filter((k) => !folded.includes(k))
   // D-125: Due pills and the one mover stay off while a warning or storm shows, on a view-only row, and before the person is known
   const warn = useWarnings()
@@ -189,6 +198,11 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
       </Todo>
     )
   }
+  const batteryTodo = rows.bat && (
+    <Todo icon="bolt" tint="amber" title={rows.bat.title} sub={rows.bat.sub} testId="myday-battery">
+      {rows.bat.done && <b className="td-todo-done"><Icon name="check" size={20} />Charging</b>}
+    </Todo>
+  )
   const row = (k: PriKey) => <div key={k} className="td-row" data-phase={phase[k]}><div className="td-row-in">{priRow[k]}</div></div>
   const extras = c.left // priorities done: what is left is the other rows
   // like the board: name the first extra that has its own time ("evening medicine at 8 PM"); generic text when there is none
@@ -200,7 +214,7 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
       {card && (
         <div className="card td-done-card" data-testid="myday-done-card">
           <div className="td-done-ring" aria-hidden="true"><Icon name="check" size={48} /></div>
-          <div className="td-done-t">All done for today</div>
+          <div className="td-done-t">{extras ? 'Priorities done' : 'All done for today'}</div>
           <div className="td-done-s">{`Blood pressure, water and check-in.${extras ? ` ${extrasLine}.` : ''}`}</div>
           <button type="button" className="btn td-done-go" onClick={() => { setFoldOpen(true); foldBtn.current?.focus() }}>See what you logged</button>
         </div>
@@ -229,19 +243,21 @@ export default function MyDay({ notify }: { notify: (msg: string) => void }) {
             <a className="btn2 td-todo-go" href={`#family/people/${m.personId}`} aria-label={`Open ${m.name}`} onClick={() => void Promise.all(m.alertIds.map((id) => markSeen(id))).catch(() => undefined)}>Open</a>
           </Todo>
         ))}
-        {rows.bat && (
-          <Todo icon="bolt" tint="amber" title={rows.bat.title} sub={rows.bat.sub} testId="myday-battery">
-            {rows.bat.done && <b className="td-todo-done"><Icon name="check" size={20} />Charging</b>}
-          </Todo>
-        )}
-        <SelfCare />
+        {rows.bat && !batFold && batteryTodo}
+        {!breathFold && <SelfCare />}
         <PlanToday />
-        {folded.length > 0 && (
+        {foldCount > 0 && (
           <>
-            <button ref={foldBtn} type="button" className="td-fold" aria-expanded={foldOpen} aria-controls={foldId} data-testid="myday-fold" onClick={() => setFoldOpen((o) => !o)}>
-              Done today ({folded.length})<Icon name="chev" size={16} />
-            </button>
-            <div id={foldId} hidden={!foldOpen}>{folded.map(row)}</div>
+            <div className="td-foldbar">
+              <button ref={foldBtn} type="button" className="td-fold" aria-expanded={foldOpen} aria-controls={foldId} data-testid="myday-fold" onClick={() => setFoldOpen((o) => !o)}>
+                Done today ({foldCount})<Icon name="chev" size={16} />
+              </button>
+              {pdone.water && !phase.water && (
+                <button type="button" className="td-fold-add" data-testid="myday-water-add" aria-label={lockLog ? 'Add another glass of water, view only' : 'Add another glass of water'} disabled={busy || lockLog}
+                  onClick={() => void run(logWater(ML_PER_TAP, new Date(), self ?? undefined), 'Saved a glass of water', 'water')}><span aria-hidden="true">+ </span>water</button>
+              )}
+            </div>
+            <div id={foldId} hidden={!foldOpen}>{folded.map(row)}{batFold && batteryTodo}{breathFold && <SelfCare />}</div>
           </>
         )}
         <div className="td-more-wrap">

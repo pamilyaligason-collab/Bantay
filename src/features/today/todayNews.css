@@ -1,0 +1,10 @@
+/* D-142: News on Today. Titles clamp to 2 lines and never push the row wider than the phone. */
+.tn { display: grid; gap: 0; min-width: 0; }
+.tn-row { display: flex; align-items: center; gap: 12px; min-height: 56px; min-width: 0; padding: 10px 0; color: var(--ink); text-decoration: none; border-top: .5px solid var(--hair); }
+.tn-row:first-child { border-top: 0; }
+.tn-body { flex: 1 1 0; min-width: 0; display: grid; gap: 2px; }
+.tn-meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; min-width: 0; }
+.tn-title { font-size: 16px; line-height: 21px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.tn-img { flex: none; width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: var(--hair); }
+.tn-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tn-img[data-fallback="true"] { display: none; } /* no picture or a failed load: no tile on Today */

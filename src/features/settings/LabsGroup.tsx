@@ -19,6 +19,19 @@ export function setFlag(k: keyof Flags, on: boolean, reload: () => void = () => 
   reload()
 }
 
+/** Per-phone switches that live in their own localStorage keys (family/flags.ts, weather/flags.ts): '1' is on, no key is off. */
+const KEYED: [key: string, title: string, sub: string][] = [
+  ['bantay.flag.places', 'Family map (place sharing)', 'Your place on the family map'],
+  ['bantay.flag.feed', 'Family feed', 'What each person shares, in Family'],
+  ['bantay.flag.wx.blend', 'Weather blend (beta)', 'Blended forecast, beta']
+]
+const keyedOn = (k: string) => { try { return localStorage.getItem(k) === '1' } catch { return false } }
+/** Writes '1' or removes the key, then reloads (these flags are read at use, but screens already mounted keep the old answer). */
+export function setKeyedFlag(k: string, on: boolean, reload: () => void = () => location.reload()) {
+  try { if (on) localStorage.setItem(k, '1'); else localStorage.removeItem(k) } catch { return }
+  reload()
+}
+
 /** Settings overview, admins only: one switch per flag. Flips this phone only. */
 export default function LabsGroup({ reload }: { reload?: () => void }) {
   const now = readFlags()
@@ -26,6 +39,7 @@ export default function LabsGroup({ reload }: { reload?: () => void }) {
     <>
       <div className="sh-card sh-list st-list" data-testid="settings-labs">
         {(Object.keys(DEFAULTS) as (keyof Flags)[]).map((k) => <SwitchRow key={k} icon="gear" tint="none" title={NAMES[k][0]} sub={NAMES[k][1]} on={now[k]} onChange={(v) => setFlag(k, v, reload)} />)}
+        {KEYED.map(([k, title, sub]) => <SwitchRow key={k} icon="gear" tint="none" title={title} sub={sub} on={keyedOn(k)} onChange={(v) => setKeyedFlag(k, v, reload)} />)}
       </div>
       <p className="sh-sub sh-note">Labs: early features, this phone only. The page reloads when you flip one.</p>
     </>

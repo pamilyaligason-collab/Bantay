@@ -1,0 +1,69 @@
+import { Capacitor } from '@capacitor/core'
+import { LocalNotifications } from '@capacitor/local-notifications'
+import { db } from '../../db'
+import { weatherPoint } from '../location/useLocation'
+import { toWx } from '../today/weather'
+import { miniSlots, MINI_SLOTS, type MiniSlot } from '../today/RainMini'
+import { getForecast } from './forecast'
+
+/** "Remind me before rain" (X3). A switch on the Next 2 hours block (kv `wx.rainRemind`, local only). When it is on, at every app open or return
+ *  the 2-hour estimate is read; if rain starts later than 20 minutes from now, ONE local notification is set for 15 minutes before it, at the fixed id below
+ *  (above the battery reminder at 1.83e9, below the snoozes at 1.9e9). No rain in the window, or the switch off: it is cancelled; rain already falling or starting within 20 minutes leaves an armed reminder as it is.
+ *  A forecast that cannot be read leaves the plan as it was (unknown is not "dry"). The text names no person or place (B-7). Native only; the tests use the plugin mock (ML-19). */
+export const RAIN_KEY = 'wx.rainRemind'
+const ARMED_KEY = 'wx.rainRemindArmed'
+export const RAIN_ID = 1_840_000_000
+export const RAIN_TEXT = { title: 'Rain soon', body: 'Rain may start in about 15 minutes. This is an estimate from the hourly forecast. Open Bantay for the Weather.' }
+export const RAIN_LATER_MIN = 20 // rain this close is "now", no reminder
+export const RAIN_LEAD_MIN = 15
+const SLOT_MIN = 15
+
+/** When to ring, or null. Slot 0 starts now, slot i starts i x 15 minutes later. Rain in slot 0 or 1 (0 or 15 minutes away) is not later than 20 minutes. Pure. */
+export function rainAlarm(slots: MiniSlot[] | null, now: Date): Date | null {
+  if (!slots) return null
+  const i = slots.findIndex((s) => s.wet)
+  if (i < 0 || i * SLOT_MIN <= RAIN_LATER_MIN) return null
+  return new Date(Math.floor(now.getTime() / 60_000) * 60_000 + (i * SLOT_MIN - RAIN_LEAD_MIN) * 60_000)
+}
+
+export type RainSync = 'web' | 'off' | 'unknown' | 'no-permission' | 'scheduled' | 'cancelled' | 'failed'
+let chain: Promise<unknown> = Promise.resolve()
+const kvGet = async (k: string) => (await db.kv.get(k).catch(() => undefined))?.value
+
+/** Apply the plan for these slots (null = the forecast could not be read). */
+export function applyRainReminder(slots: MiniSlot[] | null, now = new Date()): Promise<RainSync> {
+  const next = chain.then(() => once(slots, now))
+  chain = next.catch(() => undefined)
+  return next
+}
+async function once(slots: MiniSlot[] | null, now: Date): Promise<RainSync> {
+  if (!Capacitor.isNativePlatform()) return 'web'
+  try {
+    const on = (await kvGet(RAIN_KEY)) === true
+    const armed = (await kvGet(ARMED_KEY)) === true
+    if (!on) {
+      if (!armed) return 'off'
+      await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] }); await db.kv.put({ key: ARMED_KEY, value: false })
+      return 'off'
+    }
+    if (!slots || slots.length < MINI_SLOTS) return 'unknown'
+    const at = rainAlarm(slots, now)
+    // rain already falling or within 20 minutes leaves an armed reminder alone; only a window with no rain at all cancels it
+    if (!at && slots.some((s) => s.wet)) return armed ? 'scheduled' : 'cancelled'
+    if (armed || at) await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] })
+    if (!at) { await db.kv.put({ key: ARMED_KEY, value: false }); return 'cancelled' }
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') { await db.kv.put({ key: ARMED_KEY, value: false }); return 'no-permission' }
+    await LocalNotifications.schedule({ notifications: [{ id: RAIN_ID, title: RAIN_TEXT.title, body: RAIN_TEXT.body, extra: { kind: 'rain' }, schedule: { at, allowWhileIdle: true } }] })
+    await db.kv.put({ key: ARMED_KEY, value: true })
+    return 'scheduled'
+  } catch { return 'failed' }
+}
+
+/** The app-open / resume entry (health/reminders.ts `front()` calls it next to the battery reminder): switch off or web does nothing, else read the cached-or-fresh forecast for where Weather looks and apply. */
+export async function syncRainReminder(now = new Date()): Promise<RainSync> {
+  if (!Capacitor.isNativePlatform()) return 'web'
+  if ((await kvGet(RAIN_KEY)) !== true && (await kvGet(ARMED_KEY)) !== true) return 'off' // nothing to do and no forecast request for people who never turned it on
+  let slots: MiniSlot[] | null = null
+  try { const r = await getForecast(await weatherPoint(now.getTime())); if (!r.fromCache) slots = miniSlots(toWx(r.fc), now) } catch { /* unreadable, or only an older cache (network failed): not a reason to ring or to cancel */ }
+  return applyRainReminder(slots, now)
+}

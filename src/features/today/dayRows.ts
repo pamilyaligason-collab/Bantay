@@ -55,5 +55,14 @@ export function markDoneCardSeen(now: Date, personId: string): void {
   try { localStorage.setItem(SEEN_KEY, seenVal(now, personId)) } catch { /* private mode: the card may show again on a later transition */ }
 }
 
+const PEND_KEY = 'bantay.myday.pending'
+/** A remount on the same day must tell "finished while away" from "done on arrival": the day a priority was last seen open is remembered on this device (per person). */
+export function prioPendingSeen(now: Date, personId: string): boolean {
+  try { return localStorage.getItem(PEND_KEY) === seenVal(now, personId) } catch { return false }
+}
+export function markPrioPending(now: Date, personId: string): void {
+  try { localStorage.setItem(PEND_KEY, seenVal(now, personId)) } catch { /* private mode: a finish while away shows no card */ }
+}
+
 /** "1 extra left: evening medicine at 8 PM": names the first extra that has a time of its own; generic when none has. */
 export const extraLine = (n: number, named?: { title: string; time: string }) => `${n} extra${n === 1 ? '' : 's'} left${named ? `: ${named.title}${named.time ? ` at ${named.time}` : ''}` : ''}`

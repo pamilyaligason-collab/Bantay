@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { RefreshDetail } from '../../look/refresh'
 import { Icon } from '../../shell/Icon'
 import { LatestRow, LeadCard, StoryRow } from './Cards'
-import { latestFirst, topicOf, topStories, TOPIC_LABEL, type NewsRow, type NewsTopic } from './model'
+import { freshLine, latestFirst, topicOf, topStories, TOPIC_LABEL, type NewsRow, type NewsTopic } from './model'
 import { useSaved } from './saved'
 import { loadFeed, OFFICIAL_LINKS } from './Screen'
 
@@ -29,6 +29,15 @@ export function useFeed(zone: string | null) {
 /** What a chip shows: Top and Latest are the two orderings of everything; a topic chip is that topic, newest first. */
 export const forChip = (rows: NewsRow[], chip: Chip): NewsRow[] => chip === 'top' ? topStories(rows) : chip === 'latest' ? latestFirst(rows) : latestFirst(rows.filter((n) => topicOf(n) === chip))
 
+/** Which story goes where; a story shows once on the screen: Top and topic chips give the lead card, then up to three Top stories, then the rest under Latest. The Latest chip is the plain newest-first list (no lead card, so every row keeps its Read later button). */
+export function layout(rows: NewsRow[], chip: Chip): { lead: NewsRow | undefined; stories: NewsRow[]; latest: NewsRow[] } {
+  const shown = forChip(rows, chip)
+  if (chip === 'latest') return { lead: undefined, stories: [], latest: shown }
+  const lead = shown[0], stories = shown.slice(1, 4)
+  const used = new Set([lead, ...stories].map((n) => n?.id))
+  return { lead, stories, latest: (chip === 'top' ? latestFirst(rows) : shown).filter((n) => !used.has(n.id)) }
+}
+
 /** Discover > News (board S22News): chips, a lead image card, Top stories with the picture on the right, Latest with Read later. */
 export default function NewsView({ zone, now = Date.now() }: { zone: string | null; now?: number }) {
   const feed = useFeed(zone)
@@ -36,10 +45,7 @@ export default function NewsView({ zone, now = Date.now() }: { zone: string | nu
   const saved = useSaved()
   if (feed === undefined) return <p className="fp-note" role="status">Loading headlines</p>
   const rows = feed.items ?? []
-  const shown = forChip(rows, chip)
-  const lead = shown[0]
-  const stories = chip === 'latest' ? [] : shown.slice(1, 4)
-  const latest = chip === 'top' ? latestFirst(rows) : shown.slice(chip === 'latest' ? 0 : 1)
+  const { lead, stories, latest } = layout(rows, chip)
   const label = CHIPS.find((c) => c.id === chip)!.label
   return (
     <div className="nw" data-testid="news">
@@ -48,9 +54,9 @@ export default function NewsView({ zone, now = Date.now() }: { zone: string | nu
       </div>
       <div className="fp-band" role="status">
         <Icon name={feed.offline ? 'off' : 'cloud'} size={18} />
-        <span>{feed.savedAt ? (feed.offline ? 'Headlines saved. New ones when there is signal.' : 'Headlines are up to date.') : 'No headlines saved yet. They load when you have signal.'}</span>
+        <span>{freshLine(rows, now, feed.offline)}</span>
       </div>
-      {!lead && <p className="fp-note">{feed.items === null ? 'The news feed is not connected yet.' : chip === 'top' || chip === 'latest' ? 'No headlines to show yet.' : `No ${label.toLowerCase()} stories yet.`}</p>}
+      {!lead && !latest.length && <p className="fp-note">{feed.items === null ? 'The news feed is not connected yet.' : chip === 'top' || chip === 'latest' ? 'No headlines to show yet.' : `No ${label.toLowerCase()} stories yet.`}</p>}
       {lead && <LeadCard n={lead} now={now} testId="nw-lead" />}
       {stories.length > 0 && <section aria-label="Top stories"><h2 className="nw-h">Top stories</h2>{stories.map((n) => <StoryRow key={n.id} n={n} now={now} />)}</section>}
       {latest.length > 0 && <section aria-label="Latest"><h2 className="nw-h">Latest</h2>{latest.map((n) => <LatestRow key={n.id} n={n} now={now} saved={saved.some((s) => s.id === n.id)} />)}</section>}

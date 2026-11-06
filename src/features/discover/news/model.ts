@@ -25,3 +25,14 @@ export function topStories(rows: NewsRow[]): NewsRow[] {
 export const initialOf = (source: string): string => (/[\p{L}\p{N}]/u.exec(source)?.[0] ?? '?').toUpperCase()
 /** One of six dark tile colours, the same for the same source every time. */
 export const hueOf = (source: string): number => { let h = 0; for (const c of source) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 6 }
+
+/** The freshness band text, from the newest row's age (not from when the list was saved). */
+export function freshLine(rows: NewsRow[], now: number, offline: boolean): string {
+  const newest = latestFirst(rows)[0]
+  const t = newest ? Date.parse(newest.published_at) : NaN
+  if (!Number.isFinite(t)) return 'No headlines saved yet. They load when you have signal.'
+  const min = Math.max(0, Math.floor((now - t) / 60_000))
+  const days = Math.floor(min / 1440)
+  const head = days >= 1 ? `Newest headline ${days} ${days === 1 ? 'day' : 'days'} old.` : min < 1 ? 'Updated just now.' : min < 60 ? `Updated ${min} min ago.` : `Updated ${Math.floor(min / 60)} h ago.`
+  return offline ? `${head} Headlines saved. New ones when there is signal.` : head
+}

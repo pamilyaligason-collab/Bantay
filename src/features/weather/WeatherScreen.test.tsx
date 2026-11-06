@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { resetRefresh } from '../location/useLocation'
 import { ALERTS_KEY, CHECKED_KEY, type Alert } from '../safety/alerts'
 import { parseHash } from '../shell/routes'
 import { openMeteoFixture } from './fixture'
@@ -13,6 +14,7 @@ vi.mock('../admin/events', () => ({ track }))
 
 const calls: string[] = []
 beforeEach(async () => {
+  resetRefresh()
   await db.kv.clear()
   calls.length = 0
   track.mockClear()
@@ -37,7 +39,7 @@ describe('WeatherScreen', () => {
     expect(document.querySelector('.wx')!.getAttribute('data-contrast-bg')).toMatch(/^#[0-9a-f]{6}$/) // the page, not the hero, carries the pinned worst-case sky colour
     await screen.findByRole('region', { name: 'Live weather map' }) // appears once the position is known
     const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent)
-    expect([...regions.slice(0, 3), ...regions.slice(3, 5).sort(), ...regions.slice(5, 9)]).toEqual(['Now', 'What to do', 'Live weather map', 'Next 48 hours', 'Rain chance', 'Storm check', '10 days', 'Details', 'Official']) // rain card and strip swap places with the weather (adapt.test.tsx)
+    expect([...regions.slice(0, 4), ...regions.slice(4, 6).sort(), ...regions.slice(6, 10)]).toEqual(['Now', 'What to do', 'Next 2 hours', 'Live weather map', 'Next 48 hours', 'Rain chance', 'Storm check', '10 days', 'Details', 'Official']) // rain card and strip swap places with the weather (adapt.test.tsx)
     const warnRow = screen.getByRole('link', { name: /Official warnings/ }) // directly under the hero, above What to do
     expect(heroes[0]!.compareDocumentPosition(warnRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(warnRow.compareDocumentPosition(screen.getByRole('region', { name: 'What to do' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -137,7 +139,7 @@ describe('WeatherScreen', () => {
       now.getByText(/^Updated \d{1,2}:\d\d [AP]M$/); now.getByText(/^Feels like \d+°$/); now.getByText(/^H:\d+°\s+L:\d+°$/)
     }, { timeout: 5000 })
     cleanup()
-    await db.kv.clear()
+    await db.kv.clear(); resetRefresh()
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas · your home area')
@@ -146,7 +148,7 @@ describe('WeatherScreen', () => {
   it('blend plug point is absent by default; with bantay.flag.wx.blend an empty state and no numbers', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    expect(screen.queryByRole('heading', { name: 'Next 2 hours' })).toBeNull()
+    expect(screen.getByTestId('wx-next2h-est').querySelector('.empty-state')).toBeNull() // flag off: the 15-minute block from hourly data (X3), not the blend's empty state
     cleanup()
     localStorage.setItem('bantay.flag.wx.blend', '1')
     try {

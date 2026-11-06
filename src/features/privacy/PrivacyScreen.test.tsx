@@ -20,6 +20,20 @@ beforeEach(async () => {
 afterEach(cleanup)
 
 describe('Privacy screen', () => {
+  it('the OpenStreetMap line says offline maps are on by default (D-133)', () => {
+    const w = PROCESSORS.find((p) => p.name === 'OpenStreetMap')!.what
+    expect(w).toContain('Offline maps are on by default')
+    expect(w).not.toContain('the usual setting')
+  })
+  it('the feed paragraph shows only with the feed flag on', async () => {
+    render(<PrivacyScreen />)
+    await screen.findByText('Agreed when you joined, 26 Oct')
+    expect(screen.queryByTestId('feed-privacy')).toBeNull()
+    cleanup(); localStorage.setItem('bantay.flag.feed', '1')
+    render(<PrivacyScreen />)
+    expect(await screen.findByTestId('feed-privacy')).toBeTruthy()
+    localStorage.removeItem('bantay.flag.feed')
+  })
   it('shows the date the member agreed, from people.consent_at', async () => {
     render(<PrivacyScreen />)
     expect(await screen.findByText('Agreed when you joined, 26 Oct')).toBeTruthy()

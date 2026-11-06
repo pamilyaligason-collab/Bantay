@@ -12,7 +12,8 @@ vi.mock('../safety/rollcall', async (orig) => ({ ...(await orig<typeof import('.
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
 import WarningCard from '../today/WarningCard'
-import ArchiveAll, { UNDO_MS } from './ArchiveAll'
+import ArchiveAll, { resetArchiveUndo, UNDO_MS } from './ArchiveAll'
+import { AlertCardToday } from './AlertCardToday'
 import { archivable, ARCHIVE_KEY, useArchivedIds } from './archive'
 import * as store from './store'
 import { adb, type AlertRow } from './store'
@@ -22,7 +23,7 @@ const iso = (ms: number) => new Date(now + ms).toISOString()
 const row = (id: string, o: Partial<AlertRow> = {}): AlertRow => ({ id, personId: null, kind: 'hazard', template: 'storm_warning', ref: null, createdAt: iso(-3 * 86_400_000), pushedAt: null, seenAt: null, expiresAt: iso(86_400_000), ...o })
 
 beforeEach(async () => { await adb.alerts.clear(); await db.kv.clear(); localStorage.clear(); h.acting = false })
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks() })
+afterEach(() => { cleanup(); resetArchiveUndo(); vi.useRealTimers(); vi.restoreAllMocks() })
 
 describe('archivable', () => {
   it('takes exactly the unseen red rows Today shows that are past 24 h: never a live SOS, a fresh row, a seen row or a normal-tone row', () => {
@@ -43,7 +44,7 @@ describe('ArchiveAll', () => {
     await adb.alerts.bulkPut([row('a'), row('b'), row('sos', { kind: 'sos', template: 'family_sos' })])
     const spy = vi.spyOn(store, 'markAllSeen')
     render(<ArchiveAll />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive all (2)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2)' }))
     await screen.findByRole('status')
     expect(spy).toHaveBeenCalledTimes(1)
     expect((await adb.alerts.get('a'))!.seenAt).not.toBeNull()
@@ -60,13 +61,31 @@ describe('ArchiveAll', () => {
     await adb.alerts.bulkPut([row('a'), row('b')])
     vi.useFakeTimers({ shouldAdvanceTime: true })
     render(<ArchiveAll />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive all (2)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2)' }))
     await screen.findByRole('status')
     act(() => { vi.advanceTimersByTime(UNDO_MS + 10) })
     expect(screen.queryByRole('status')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Archived (2)' }))
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+  })
+})
+
+describe('Archive all from the red card on Today', () => {
+  it('shows the one Undo toast in the group, Undo restores, and a failed write says so instead of silence', async () => {
+    await adb.alerts.bulkPut([row('a'), row('b')])
+    render(<><AlertCardToday /><ArchiveAll /></>)
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2) from this card' }))
+    await screen.findByRole('button', { name: 'Undo' })
+    expect(screen.getAllByRole('button', { name: 'Undo' })).toHaveLength(1)
+    expect((await adb.alerts.get('a'))!.seenAt).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
+    await waitFor(async () => expect((await adb.alerts.get('a'))!.seenAt).toBeNull())
+    expect((await adb.alerts.get('b'))!.seenAt).toBeNull()
+    expect(localStorage.getItem(ARCHIVE_KEY)).toBe('[]')
+    vi.spyOn(store, 'markAllSeen').mockRejectedValueOnce(new Error('offline'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2) from this card' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not archive. Try again.')
   })
 })
 
@@ -89,7 +108,7 @@ describe('what survives Archive all', () => {
     await adb.alerts.bulkPut([row('a'), row('b'), row('sos', { kind: 'sos', template: 'family_sos' })])
     render(<><WarningCard /><ArchiveAll /></>)
     await screen.findByRole('region', { name: 'Active warning' })
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive all (2)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2)' }))
     await screen.findByRole('button', { name: 'Undo' }) // the warning card has its own role=status line, so wait on Undo
     expect(screen.getByRole('region', { name: 'Active warning' })).toBeTruthy()
     expect((await db.kv.get(ALERTS_KEY))?.value).toEqual([quake])
@@ -104,7 +123,7 @@ describe('useArchivedIds (the Family inbox hides archived rows)', () => {
     const ids = renderHook(() => useArchivedIds())
     expect([...ids.result.current]).toEqual([])
     render(<ArchiveAll />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Archive all (2)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Archive all past notices (2)' }))
     await waitFor(() => expect([...ids.result.current].sort()).toEqual(['a', 'b']))
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }))
     await waitFor(() => expect([...ids.result.current]).toEqual([]))

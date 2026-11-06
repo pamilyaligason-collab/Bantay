@@ -63,7 +63,7 @@ const whereOf = (place: Parameters<typeof placeLineOf>[0]) => placeLineOf(place)
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
-  const place = usePlace()
+  const place = usePlace({ weather: true })
   const wx = useWeather(place?.weather ?? null)
   if (!wx || wx.temp == null || !place) return null
   const rain = wx.rainPct == null ? null : `Rain chance ${Math.round(wx.rainPct)}%`
@@ -87,7 +87,7 @@ const offlineNote = (wx: Wx) => (wx.offline ? ', may be out of date' : '')
  *  A PAGASA warning never shows here (N-8, it has its own card); `storm` draws the night storm scene with no Jack (R11); `noJack` drops Jack when another is on screen (D-91).
  *  Nothing is drawn until a temperature is known (never a made-up 0). */
 export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false, hero = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean; hero?: boolean }) {
-  const place = usePlace()
+  const place = usePlace({ weather: true })
   const ready = !!place && place.settled !== false // X7: no forecast for the home zone while the first position is still being found
   const wx = useWeather(ready ? place.weather : null)
   if (!wx || wx.temp == null || !place || !ready) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)

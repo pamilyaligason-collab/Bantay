@@ -1,22 +1,29 @@
 import 'fake-indexeddb/auto'
+import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import BreathSheet from './BreathSheet'
 import SelfCare from './SelfCare'
 
 beforeEach(async () => { await db.kv.clear() })
 afterEach(() => { cleanup(); vi.useRealTimers() })
 
-const open = async () => { render(<SelfCare />); fireEvent.click(await screen.findByRole('button', { name: 'Start breathing' })) }
+const Host = () => { const [on, setOn] = useState(true); return on ? <BreathSheet onClose={() => setOn(false)} /> : null }
+const open = async () => { render(<Host />); await screen.findByRole('dialog', { name: 'Take a breath' }) }
 
 describe('SelfCare row and BreathSheet', () => {
-  it('is a 72 px row with the title as a heading; Start opens the sheet and pushes one history entry', async () => {
-    const push = vi.spyOn(history, 'pushState')
+  it('is a row with the title as a heading; Start is a link to the full Calm screen, not a sheet (D-142)', () => {
     render(<SelfCare />)
     expect(screen.getByRole('heading', { name: 'Take a breath' })).toBeTruthy()
-    expect(screen.getByText(/1 minute · in 4, out 6 · last: none yet/)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Start breathing' }))
-    expect(await screen.findByRole('dialog', { name: 'Take a breath' })).toBeTruthy()
+    expect(screen.getByText(/1 minute \u00b7 in 4, out 6 \u00b7 last: none yet/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Start breathing' }).getAttribute('href')).toBe('#calm')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('the sheet pushes one history entry', async () => {
+    const push = vi.spyOn(history, 'pushState')
+    await open()
     expect(push).toHaveBeenCalledWith({ bantayBreathe: true }, '')
     push.mockRestore()
   })

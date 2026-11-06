@@ -20,7 +20,9 @@
 :root[data-theme="dark"] .sync-pill[data-amber="true"] { background: #4A3A12; color: #F6DFA2; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sync-pill[data-amber="true"] { background: #4A3A12; color: #F6DFA2; } }
 button.sync-pill { cursor: pointer; }
-button.sync-pill::before { content: ""; position: absolute; inset: -8px -4px; }
+/* the pill paints 28 px tall inside a transparent border, so the button itself is 44 px; the negative margin keeps the header layout as it was */
+button.sync-pill { min-height: 44px; margin: -8px -4px; padding: 0 8px; border: solid transparent; border-width: 8px 4px; background-clip: padding-box; }
+.sync-pill[data-amber], :root .sync-pill[data-amber] { background-clip: padding-box !important; } /* the amber rules use the background shorthand, which resets background-clip: keep the paint to the 28 px pill inside the 44 px hit area */
 button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
 .sh-iconbtn { width: var(--tap); height: var(--tap); border-radius: 50%; background: var(--card); color: var(--ink); border: 0; display: grid; place-items: center; box-shadow: var(--shadow); position: relative; text-decoration: none; flex: none; transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
 .sh-iconbtn:active { transform: scale(.98); }

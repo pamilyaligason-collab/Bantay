@@ -43,7 +43,7 @@ export function StoryRow({ n, now }: { n: NewsRow; now: number }) {
   return (
     <a className="nw-item" href={n.url} target="_blank" rel="noopener noreferrer" data-testid="nw-story">
       <span className="nw-body"><span className="nw-src">{n.source}</span><b className="nw-title">{n.title}<Out /></b><span className="nw-meta">{meta(n, now)}</span></span>
-      <NewsPic n={n} w={84} h={84} className="nw-thumb" />
+      <NewsPic n={n} w={72} h={72} className="nw-thumb" />
     </a>
   )
 }

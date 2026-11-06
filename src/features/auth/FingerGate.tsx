@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { openFingerprintEnrol, promptFingerprint, unlockMode, type UnlockMode } from './biometric'
 import { setPasskeyFlag } from './family'
 import { Icon } from '../shell/Icon'
+import { firstName } from '../shell/names'
 import { LockMedicalId } from '../medid/LockMedicalId'
 import { useLockGlance } from '../privacy/lockWeather'
 import '../privacy/privacy.css'
@@ -15,6 +16,7 @@ const today = () => new Date().toLocaleDateString('en-GB', { weekday: 'long', da
  *  The session never leaves WebView storage; "Use PIN" signs out so the remembered person types their PIN again.
  *  Before unlocking it shows only weather (cached, no private data), Call 911 (the dial screen) and the lock Medical ID (allergies, conditions, who to call). */
 export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: { name: string; personId?: string; onUnlocked: () => void; onUsePin: () => void; onNotYou: () => void }) {
+  const shown = firstName(name) // the family list may hold 'rey'; same rule as the Today greeting
   const [tried, setTried] = useState(false)
   const [medid, setMedid] = useState(false)
   const glance = useLockGlance()
@@ -43,7 +45,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
       <div className="lk2-time">
         <div className="lk2-date">{today()}</div>
         <p className="lk2-clock" aria-label="Time now">{clock(now)}</p>
-        <h1 className="lk2-hi">Magandang {hello(now.getHours())}{name ? `, ${name}` : ''}</h1>
+        <h1 className="lk2-hi">Magandang {hello(now.getHours())}{shown ? `, ${shown}` : ''}</h1>
       </div>
       {glance && (
         <div className="lk2-wx">
@@ -61,7 +63,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
           {tried ? <span role="status">That did not work. Touch the sensor again, or use your PIN.</span> : <span>to open Bantay</span>}
         </div>
         <button type="button" className="lk2-lnk" onClick={onUsePin}>Use PIN instead</button>
-        <button type="button" className="lk2-lnk" onClick={onNotYou}>{name ? `Not ${name}?` : 'Not you?'}</button>
+        <button type="button" className="lk2-lnk" onClick={onNotYou}>{shown ? `Not ${shown}?` : 'Not you?'}</button>
       </div>
       <div className="lk2-sos">
         <a className="lk2-lnk lk2-red" href="tel:911">Call 911</a>

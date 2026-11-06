@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { ForYou, forYouClips } from './ForYou'
+import { clipReasons, ForYou, forYouClips } from './ForYou'
 import { playable, VIDEOS } from './library/videosLogic'
 import { pickAttention } from './attention'
 import type { Reading } from './ranges'
@@ -57,16 +57,44 @@ describe('For you videos show their still, length and reason', () => {
     expect(card.querySelector('.fy-play')).toBeTruthy()
     expect(card.querySelector('.fy-len')).toBeTruthy()
   })
-  it('a blood sugar lead ties the second clip to Diabetes; otherwise the next on the list; none playable shows none', () => {
+  it('reasons come from loaded data: BP readings and an out-of-range blood sugar lead; no data, no reason', () => {
+    const t = new Date().toISOString()
+    const bp: Reading = { personId: 'p1', test: 'bp_systolic', value: 120, unit: 'mmHg', takenAt: t }
+    expect(clipReasons([bp], null).map((x) => x.text)).toEqual(['Because you log blood pressure'])
+    const sugar: Reading = { personId: 'p1', test: 'fasting_glucose', value: 160, unit: 'mg/dL', takenAt: t, labLow: 70, labHigh: 100 }
+    expect(clipReasons([sugar], pickAttention([sugar], () => undefined, new Date())).map((x) => x.text)).toEqual(['Because of a lab result'])
+    expect(clipReasons([], null)).toEqual([])
+    expect(clipReasons(r, pickAttention(r, () => undefined, new Date()))).toEqual([]) // LDL: no matching clip, no claim
+  })
+  it('clips that fit a reason come first; the rest carry their topic; none playable shows none', () => {
     const list = VIDEOS.filter(playable)
     const now = new Date(2026, 10, 6, 12)
-    const tied = forYouClips(list, 'fasting_glucose', now)
-    expect(tied[1]!.video.topic).toBe('Diabetes')
-    expect(tied[1]!.reason).toMatch(/^Because of your /)
-    const plain = forYouClips(list, 'ldl', now)
-    expect(plain.map((c) => c.reason)).toEqual(["Today's pick", 'Also checked'])
+    const bp = forYouClips(list, [{ text: 'Because you log blood pressure', match: (v) => /blood pressure/i.test(v.title) }], now)
+    expect(bp[0]!.reason).toBe('Because you log blood pressure')
+    expect(bp[0]!.video.title).toMatch(/blood pressure/i)
+    expect(bp).toHaveLength(2)
+    expect(bp[1]!.reason).toBe(bp[1]!.video.topic)
+    const tied = forYouClips(list, [{ text: 'Because of a lab result', match: (v) => v.topic === 'Diabetes' }], now)
+    expect(tied[0]!.video.topic).toBe('Diabetes')
+    const plain = forYouClips(list, [], now)
+    expect(plain.map((c) => c.reason)).toEqual(plain.map((c) => c.video.topic))
     expect(plain[1]!.video).not.toBe(plain[0]!.video)
-    expect(forYouClips([], null)).toEqual([])
-    expect(forYouClips(list.slice(0, 1), null)).toHaveLength(1)
+    expect(forYouClips([], [])).toEqual([])
+    expect(forYouClips(list.slice(0, 1), [])).toHaveLength(1)
+  })
+})
+
+describe('For you hands the video to Watch', () => {
+  it('tapping a card stores its id under dc.watch; a modified click does not; More links to Watch at 44 px', () => {
+    sessionStorage.clear()
+    show(r)
+    const card = screen.getByTestId('foryou-video-2')
+    const id = /\/vi\/([^/]+)\//.exec(card.querySelector('img.fy-img')!.getAttribute('src')!)![1]
+    fireEvent.click(card, { ctrlKey: true })
+    expect(sessionStorage.getItem('dc.watch')).toBeNull()
+    fireEvent.click(card)
+    expect(sessionStorage.getItem('dc.watch')).toBe(id)
+    const more = within(screen.getByTestId('for-you')).getByRole('link', { name: 'More' })
+    expect(more.getAttribute('href')).toBe('#discover/watch')
   })
 })

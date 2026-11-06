@@ -9,7 +9,7 @@ vi.mock('../today/BreathSheet', () => ({ default: ({ onClose }: { onClose: () =>
 beforeEach(async () => { await db.kv.clear() })
 afterEach(cleanup)
 
-import CalmHero, { restAt } from './CalmHero'
+import CalmHero, { AfterScare, restAt } from './CalmHero'
 import { SHOWN_PATTERNS } from '../today/breathLogic'
 
 describe('CalmHero with the real useKv', () => {
@@ -45,7 +45,7 @@ describe('CalmHero with the real useKv', () => {
     expect(hero.querySelectorAll('.bo-orb ellipse[stroke-dasharray^="0 "]').length).toBe(7)
     expect(hero.querySelector('.bo-orb i')).toBeNull()
     const cards = screen.getByTestId('calm-exercises').querySelectorAll('button')
-    expect(cards.length).toBe(SHOWN_PATTERNS.length)
+    expect(cards.length).toBe(SHOWN_PATTERNS.length) // After a scare sits after the crisis card
     for (const c of cards) expect(c.querySelector('svg ellipse')).not.toBeNull()
   })
   it('S22-C: an exercise card picks that pattern; the cue words are unchanged', () => {
@@ -69,5 +69,24 @@ describe('CalmHero with the real useKv', () => {
     expect(Number(m![1])).toBeGreaterThan(0.8)
     expect(Number(m![1])).toBeLessThan(0.95)
     expect(restAt(SHOWN_PATTERNS[0]!)).toBeCloseTo(3, 5) // Relax: 4 s in, 75%
+  })
+})
+
+describe('After a scare', () => {
+  it('the card has its own sphere and opens a sheet that steps 5-4-3-2-1 with Next, then Done', () => {
+    render(<AfterScare />)
+    const card = screen.getByTestId('calm-scare-card')
+    expect(card.textContent).toContain('After a scare')
+    expect(card.textContent).toContain('3 min')
+    expect(card.querySelector('svg ellipse')).not.toBeNull()
+    fireEvent.click(card)
+    const want = ['Name 5 things you can see.', 'Name 4 things you can hear.', 'Name 3 things you can touch.', 'Name 2 things you can smell.', 'Name 1 thing you can taste.']
+    want.forEach((w, i) => {
+      expect(screen.getByTestId('scare-step').textContent).toBe(w)
+      expect(screen.getByTestId('scare-count').textContent).toBe(`Step ${i + 1} of 5`)
+      const btn = screen.getByRole('button', { name: i === 4 ? 'Done' : 'Next' })
+      expect(btn.style.minHeight).toBe('44px')
+      if (i < 4) fireEvent.click(btn)
+    })
   })
 })

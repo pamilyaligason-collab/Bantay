@@ -4,7 +4,7 @@ import { db, drain, enqueue } from '../../db'
 import { ldb, logActivity } from '../log/store'
 import { hdb } from '../records/store'
 import { vdb } from '../health/visitsStore'
-import { backoffMinutes, DEAD_KEY, getSyncState, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
+import { backoffMinutes, DEAD_KEY, MAX_TRIES, getSyncState, LAST_PULL_KEY, resetSyncForTests, syncCounts, startSync, syncNow, type DeadLetter } from './sync'
 import { OVERRIDES_KEY } from '../safety/entries'
 import { fromRow, isSyncable, naturalKey, TABLES, toRow } from './tables'
 import { track } from '../admin/events'
@@ -114,13 +114,13 @@ describe('sensor steps hours across two phones', () => {
     expect(sensor.headers.Prefer).toContain('return=representation')
     expect(manual.headers.Prefer).toContain('return=minimal')
   })
-  it('a failed read before an update (503) sends no PATCH: the row waits, its try is not counted, and the next sync sends it', async () => {
+  it('a failed read before an update (503) sends no PATCH: the row waits, its try is counted (D-142), and the next sync sends it', async () => {
     const id = await ldb.activity.add({ ...hour(100), clientId: 'cid-a' } as never)
     await enqueue('activity', 'update', { id, steps: 100 })
     mockFetch((c) => (c.method === 'GET' && c.url.includes('select=steps') ? new Response(null, { status: 503 }) : c.method === 'PATCH' ? json([{ id: 's1' }]) : json([])))
     await run()
     expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
-    expect((await db.outbox.toArray()).map((r) => r.tries)).toEqual([0])
+    expect((await db.outbox.toArray()).map((r) => r.tries)).toEqual([1])
     expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 1 })
     expect(getSyncState().offline).toBe(false) // a server error, not a lost network
     mockFetch((c) => (c.method === 'PATCH' ? json([{ id: 's1' }]) : json([])))
@@ -496,6 +496,101 @@ describe('push', () => {
     await syncNow(true)
     expect(posts()).toHaveLength(2)
     expect((await db.kv.get('sync.backoff'))?.value).toMatchObject({ fails: 2 })
+  })
+
+  it('a row the server answers 500 for parks as a dead letter after MAX_TRIES, keeps its payload, and the row behind it is sent (D-142)', async () => {
+    mockFetch((c) => (c.method === 'POST' && c.body?.includes('"ldl"') ? new Response(null, { status: 500 }) : new Response(null, { status: 201 })))
+    await enqueue('readings', 'insert', reading)
+    await enqueue('readings', 'insert', { ...reading, test: 'hdl' })
+    startSync(cfg())()
+    const ldl = () => posts().filter((c) => c.body?.includes('"ldl"')).length
+    for (let i = 0; i < 20 && ldl() < MAX_TRIES - 1; i++) await syncNow(true) // startSync already made the first attempt
+    expect(ldl()).toBe(MAX_TRIES - 1)
+    expect((await db.outbox.toArray()).filter((r) => (r.payload as { test: string }).test === 'ldl')).toHaveLength(1) // still queued, not parked yet
+    expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
+    await syncNow(true)
+    expect(ldl()).toBe(MAX_TRIES) // exactly MAX_TRIES counted POSTs before parking
+    const dead = (await db.kv.get(DEAD_KEY))?.value as DeadLetter[]
+    expect(dead.map((d) => [d.table, d.code])).toEqual([['readings', 'HTTP500']])
+    expect((dead[0].payload as { test: string }).test).toBe('ldl')
+    expect(await db.outbox.count()).toBe(0)
+    expect(posts().some((c) => c.body?.includes('"hdl"'))).toBe(true)
+  })
+  it('a failed send saves the last error code on the queued row; a network error keeps the try back', async () => {
+    mockFetch(() => new Response(null, { status: 503 }))
+    await enqueue('readings', 'insert', reading)
+    startSync(cfg())()
+    await syncNow(true)
+    const [after5xx] = await db.outbox.toArray()
+    expect(after5xx).toMatchObject({ lastCode: 'HTTP503' })
+    expect(after5xx.tries).toBeGreaterThan(0)
+    mockFetch(() => { throw new TypeError('offline') })
+    await syncNow(true)
+    expect(await db.outbox.toArray()).toMatchObject([{ tries: after5xx.tries, lastCode: 'net' }])
+  })
+
+  it('an sos_events row answering 503 ten times is never parked, and a later reading is still sent', async () => {
+    mockFetch((c) => (c.url.includes('/sos_events') ? new Response(null, { status: 503 }) : new Response(null, { status: 201 })))
+    await enqueue('sos_events', 'insert', { id: 'e9', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' })
+    await enqueue('readings', 'insert', reading)
+    startSync(cfg())()
+    for (let i = 0; i < 10; i++) await syncNow(true)
+    expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
+    const left = await db.outbox.toArray()
+    expect(left.map((r) => [r.table, r.tries])).toEqual([['sos_events', 0]]) // queued, its try given back
+    expect(posts().some((c) => c.url.includes('/readings'))).toBe(true)
+    expect(posts().filter((c) => c.url.includes('/sos_events'))).toHaveLength(11) // startSync's run plus ten syncNow runs, one POST each: the table is held for the rest of a run
+    expect(posts()).toHaveLength(12) // plus the one reading
+  })
+  const sosRow = { id: 'e9', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' }
+  it('an sos_events_update waits while its insert answers 503, then goes once; no dead letter', async () => {
+    let up = false
+    mockFetch((c) => (c.method === 'PATCH' ? json(up ? [{ id: 'e9' }] : []) : c.url.includes('/sos_events') && !up ? new Response(null, { status: 503 }) : new Response(null, { status: 201 })))
+    await enqueue('sos_events', 'insert', sosRow)
+    await enqueue('sos_events_update', 'update', { id: 'e9', smsOpened: true })
+    await enqueue('sos_events_update', 'update', { id: 'e9', cancelledAt: '2026-10-26T10:01:00.000Z' })
+    startSync(cfg())()
+    for (let i = 0; i < 3; i++) await syncNow(true)
+    expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0) // not sent while the insert fails
+    expect(posts()).toHaveLength(4) // the insert, once per run
+    expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
+    expect(await db.outbox.count()).toBe(3)
+    up = true
+    await syncNow(true)
+    expect(posts()).toHaveLength(5) // the insert goes
+    expect(calls.filter((c) => c.method === 'PATCH').map((c) => JSON.parse(c.body!))).toEqual([{ sms_opened: true }, { cancelled_at: '2026-10-26T10:01:00.000Z' }]) // each update once, in order
+    expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
+    expect(await db.outbox.count()).toBe(0)
+  })
+  it('an update that answers 0 rows while its insert is queued meanwhile is retried, not parked', async () => {
+    let late = true
+    mockFetch(async (c) => {
+      if (c.method === 'PATCH') { if (late) { late = false; await enqueue('sos_events', 'insert', { id: 'e9', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' }) } return json([]) } // the insert is queued while the PATCH is on the wire
+      return new Response(null, { status: 201 })
+    })
+    await enqueue('sos_events_update', 'update', { id: 'e9', cancelledAt: '2026-10-26T10:01:00.000Z' })
+    startSync(cfg())()
+    await syncNow(true)
+    await syncNow(true)
+    // first PATCH answered 0 rows with its insert queued: retried, not parked; the insert went; the retry found no insert left, so its 0 rows are a real refusal
+    expect(calls.filter((c) => c.method !== 'GET').map((c) => c.method + ' ' + c.url.split('/rest/v1/')[1].split('?')[0])).toEqual(['PATCH sos_events', 'POST sos_events', 'PATCH sos_events'])
+    expect(((await db.kv.get(DEAD_KEY))?.value as DeadLetter[]).map((d) => [d.table, d.code])).toEqual([['sos_events_update', '0rows']])
+  })
+  it('sos_acks still go while an sos_events insert answers 503', async () => {
+    mockFetch((c) => (c.url.includes('/sos_events') ? new Response(null, { status: 503 }) : new Response(null, { status: 201 })))
+    await enqueue('sos_events', 'insert', sosRow)
+    await enqueue('sos_acks', 'insert', { eventId: 'e1', seenAt: '2026-10-26T10:02:00.000Z' })
+    startSync(cfg())()
+    await syncNow(true)
+    expect(posts().filter((c) => c.url.includes('/sos_acks'))).toHaveLength(1) // sent in the first run, then gone
+    expect((await db.outbox.toArray()).map((r) => r.table)).toEqual(['sos_events'])
+  })
+  it('a non-SyncError failure stores lastCode "error"', async () => {
+    mockFetch(() => json([]))
+    await enqueue('readings', 'insert', null) // toRow throws a plain TypeError, not a SyncError
+    startSync(cfg())()
+    await syncNow(true)
+    expect((await db.outbox.toArray())[0].lastCode).toBe('error')
   })
 
   it('401 pauses sync until a new token', async () => {

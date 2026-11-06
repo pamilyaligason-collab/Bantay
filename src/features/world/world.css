@@ -1,14 +1,13 @@
-/* World view: marker and legend colours are tokens only. Leaflet sets stroke/fill attributes; these rules out-rank them. */
-.wm { stroke: var(--card); stroke-width: 2; fill-opacity: 1; fill: var(--muted); }
-.wm-flood, .wd-flood { fill: var(--tint-blue-ink); background: var(--tint-blue-ink); }
-.wm-quake, .wd-quake { fill: var(--tint-amber-ink); background: var(--tint-amber-ink); }
-.wm-storm, .wd-storm { fill: var(--tint-red-ink); background: var(--tint-red-ink); }
-.wm-volcano, .wd-volcano { fill: var(--tint-purple-ink); background: var(--tint-purple-ink); }
-.wm-other, .wd-other { fill: var(--muted); background: var(--muted); }
+/* World view: pins and key are a symbol in a tinted circle, tokens only. Colour never stands alone: the key names each symbol. */
+.wd-mark { display: inline-grid; place-items: center; border-radius: 50%; flex: none; box-sizing: border-box; border: 2px solid var(--card); background: var(--bg); color: var(--muted); }
+.wd-mark .sh-ic { display: block; }
+.wd-flood, .wd-you { background: var(--tint-blue); color: var(--tint-blue-ink); }
+.wd-quake { background: var(--tint-amber); color: var(--tint-amber-ink); }
+.wd-storm { background: var(--tint-red); color: var(--tint-red-ink); }
+.wd-volcano { background: var(--tint-purple); color: var(--tint-purple-ink); }
+.wm-icon { background: none; border: 0; }
 .wd-legend { list-style: none; margin: 10px 4px 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .wd-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.wd-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.wd-dot.lm-you { background: var(--tint-blue-ink); }
 .wd-empty { margin: 0 4px; color: var(--muted); font-size: 15px; line-height: 22px; overflow-wrap: anywhere; }
 .wd-digest { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; min-height: 56px; flex-wrap: wrap; }
 .wd-digest b { font-size: 17px; font-weight: 500; overflow-wrap: anywhere; }

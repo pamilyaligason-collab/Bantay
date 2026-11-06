@@ -5,7 +5,7 @@ import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
 import { consentDate, ensureConsent } from './consent'
 import { ConsentNotice } from './ConsentNotice'
-import { familyPlacesOn } from '../family/flags'
+import { familyFeedOn, familyPlacesOn } from '../family/flags'
 import { FeedSharesCard } from './feedShares'
 import { AI_KEY } from './ai'
 import { ERASURE_KEY, cancelErasure, exportMyData, requestErasure, saveJson } from './data'
@@ -16,14 +16,17 @@ import './privacy.css'
 /** D-138 / ML-45: what the live system does with the family place. Shown only while the places flag is on, so the screen never promises more than the build does. */
 export const PLACE_PRIVACY = 'When the Family map is on in the app, the exact latest place and battery level of people who sign in is shared with their family by default, updated when Bantay opens, and off any time in Me, Privacy. Only the latest point is kept, deleted when turned off or after 7 days without an update.'
 
+/** The Family feed (D-127, D-134): shown only while the feed flag is on. Mirrored in public/privacypolicy.html. */
+export const FEED_PRIVACY = 'The Family feed is off by default. For each person, and each kind (blood pressure, lab results, photos, check-ins), the person switches that kind on for themself, and for a family member without a login the family owner may switch it on. Only the kinds switched on are shown to the family in the feed, and each can be switched off any time in Me, Privacy. The family place is separate and is not part of the feed.'
+
 export const PROCESSORS: { name: string; what: string }[] = [
   { name: 'Supabase', what: 'your records and family messages, and the map files the Safety maps and the Rescue map read from the family\'s own project (it sees your internet address and which map file)' },
-  { name: 'Open-Meteo and Windy', what: 'weather forecast and live map; your place rounded to about 1 km' },
+  { name: 'Open-Meteo and Windy', what: 'weather forecast and live map; your place rounded to about 1 km. With Labs, Weather blend on, Bantay\'s own server also asks MET Norway and, when the family has set up a key, OpenWeather for the same rounded place (never your name); they see the server\'s internet address, not yours' },
   { name: 'Wikipedia', what: 'the "On this day" facts in Discover; it receives today\'s date only, never your name or place' },
   { name: 'Wikimedia Commons and news sites', what: 'recipe photos load from Wikimedia Commons, and a news story\'s picture loads from the site that published it, when its card shows; each sees your internet address, never your name' },
   { name: 'YouTube', what: 'picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap' },
   { name: 'Radio Paradise and Radio Swiss Classic', what: 'only when you tap Play on a radio card; the station sees your internet address' },
-  { name: 'OpenStreetMap', what: 'street map pictures on the Safety maps, the Rescue map and the Family map. With Labs, Offline maps off (the usual setting) every map uses them. With it on, they are used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started. It sees your internet address and the area shown' },
+  { name: 'OpenStreetMap', what: 'street map pictures on the Safety maps, the Rescue map and the Family map. Offline maps are on by default: the Safety maps use the area map for Bohol and South Cotabato once it is on the phone, and these pictures are used when a Safety map opens outside Bohol and South Cotabato, opens zoomed out, or before the area map is on the phone; the choice is made when the map opens, so after panning away they stay as they started. With Labs, Offline maps off, every map uses them. It sees your internet address and the area shown' },
   { name: 'Ventusky, HazardHunterPH and PAGASA Panahon', what: 'the map panels in Safety, only after you open a panel; Ventusky gets the map centre rounded to about 1 km, the other two get no place from the app; each sees your internet address and anything you type in its panel' },
   { name: 'MedlinePlus', what: 'plain health reads; it receives the condition, medicine or search words you open, never your name' },
   { name: 'OpenRouter', what: 'the AI models behind Jack and photo reading, only when you use them (zero data retention); what you ask Jack goes through a relay on the family owner\'s own server first; a photo you scan goes from a function on the family\'s own Supabase project straight to OpenRouter, with no relay' },
@@ -127,6 +130,7 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
       </div>
 
       {!acting && <FeedSharesCard selfId={personId} />} {/* shows only with the feed or places flag on; no writes while acting */}
+      {familyFeedOn() && <p className="sh-sub pv-place" data-testid="feed-privacy">{FEED_PRIVACY}</p>}
       {familyPlacesOn() && <p className="sh-sub pv-place" data-testid="place-privacy">{PLACE_PRIVACY}</p>}
 
       {confirm && !pending && (

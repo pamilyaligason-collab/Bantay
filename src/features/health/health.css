@@ -280,6 +280,7 @@
 .hb-pill { padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--card); color: var(--tint-ink); }
 .hb-pill[data-done] { background: var(--tint-ink); color: var(--tint-fill); }
 .hb-date, .hb-none { font-size: 28px; line-height: 1.1; font-weight: 700; }
+.hb-date[data-empty] { font-size: 17px; line-height: 1.2; }
 .hb-none { opacity: .6; }
 @keyframes hb-rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .card.hb { animation: none; } }

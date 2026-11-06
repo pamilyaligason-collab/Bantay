@@ -8,6 +8,8 @@ const tts = vi.hoisted(() => ({ speak: vi.fn(), stop: vi.fn() }))
 vi.mock('../../../native/shell', () => ({ hasPlugin: () => native.on }))
 vi.mock('@capacitor-community/text-to-speech', () => ({ TextToSpeech: tts, QueueStrategy: { Flush: 0, Add: 1 } }))
 
+import css from '../discover.css?raw'
+import { CALM_VIDEOS } from '../../calm/media'
 import Listen from './Screen'
 import { SOS_STARTED_EVENT } from '../../sos/active'
 import { canSpeak, speak, stopSpeaking } from './speech'
@@ -15,7 +17,9 @@ import { canSpeak, speak, stopSpeaking } from './speech'
 class Utter { text: string; rate = 1; lang = ''; onend: (() => void) | null = null; onerror: (() => void) | null = null; constructor(t: string) { this.text = t } }
 const synth = { speak: vi.fn(), cancel: vi.fn() }
 const withWeb = () => { vi.stubGlobal('SpeechSynthesisUtterance', Utter); Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: synth }) }
-const noWeb = () => { vi.stubGlobal('SpeechSynthesisUtterance', undefined); Reflect.deleteProperty(window, 'speechSynthesis') }
+/** The read-aloud rows' play buttons (the guided video's poster is not one). */
+const readBtns = async () => (await screen.findAllByRole('button', { name: /^Play / })).filter((b) => !b.closest('[data-testid="listen-guided"]'))
+const noWeb =() => { vi.stubGlobal('SpeechSynthesisUtterance', undefined); Reflect.deleteProperty(window, 'speechSynthesis') }
 
 beforeEach(async () => { native.on = false; tts.speak.mockReset().mockResolvedValue(undefined); tts.stop.mockReset().mockResolvedValue(undefined); synth.speak.mockReset(); synth.cancel.mockReset(); await db.kv.clear() })
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); Reflect.deleteProperty(window, 'speechSynthesis') })
@@ -68,7 +72,7 @@ describe('Listen screen', () => {
   it('lists the 20 recipes and no medicine card while the flag is off', async () => {
     withWeb()
     render(<Listen />)
-    expect((await screen.findAllByRole('button', { name: /^Play / })).length).toBe(20)
+    expect((await readBtns()).length).toBe(20)
     expect(screen.queryByRole('button', { name: /^Play Losartan/ })).toBeNull()
   })
   it('medicine cards join the list only when learn.medcards is true', async () => {
@@ -80,7 +84,7 @@ describe('Listen screen', () => {
   it('one at a time: starting a second stops the first; Stop ends it; unmount cuts the voice', async () => {
     withWeb()
     const { unmount } = render(<Listen />)
-    const [a, b] = await screen.findAllByRole('button', { name: /^Play / })
+    const [a, b] = await readBtns()
     await act(async () => { fireEvent.click(a!) })
     expect(a!.getAttribute('aria-pressed')).toBe('true')
     await act(async () => { fireEvent.click(b!) })
@@ -98,6 +102,19 @@ describe('Listen screen', () => {
     noWeb()
     render(<Listen />)
     expect(screen.getByText('Reading aloud is not on this phone')).toBeTruthy()
-    expect(screen.queryAllByRole('button').length).toBe(0)
+    const btns = screen.queryAllByRole('button') // only the guided video's poster; no read-aloud buttons
+    expect(btns.length).toBe(1)
+    expect(screen.getByTestId('listen-guided').contains(btns[0]!)).toBe(true)
+  })
+  it('the large guided row (the Calm video Discover Today shows) sits above every read-aloud row, with a 56 px play disc', async () => {
+    withWeb()
+    render(<Listen />)
+    const g = screen.getByTestId('listen-guided')
+    const first = await readBtns()
+    expect(g.textContent).toContain(CALM_VIDEOS[0]!.title)
+    expect(g.querySelector('button')!.getAttribute('aria-label')).toContain(`Play ${CALM_VIDEOS[0]!.title}`)
+    expect(g.compareDocumentPosition(first.find((b) => !g.contains(b))!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByTestId('listen').firstElementChild).toBe(g)
+    expect(css).toMatch(/\.dc-bigrow \.lv-btn \{ width: 56px; height: 56px; \}/)
   })
 })

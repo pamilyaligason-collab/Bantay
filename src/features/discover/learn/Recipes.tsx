@@ -3,6 +3,7 @@ import { JackArt } from '../../look'
 import { Icon } from '../../shell/Icon'
 import { SubHeader } from '../../shell/SubHeader'
 import { DAILY_SODIUM_MG, RECIPES, RECIPE_SOURCES, sodiumPerServing, type RecipeTag } from './data'
+import { RecipePhoto } from './RecipePhoto'
 
 const FILTERS: { id: RecipeTag | 'all'; label: string }[] = [{ id: 'all', label: 'All' }, { id: 'lowsalt', label: 'Low salt' }, { id: 'diabetes', label: 'Diabetes-friendly' }, { id: 'soft', label: 'Soft food' }, { id: 'fish', label: 'Fish' }]
 
@@ -26,11 +27,12 @@ export default function Recipes() {
       {list.map((r) => {
         const mg = sodiumPerServing(r)
         return (
-          <a key={r.id} className="card press lr-stack lr-dish" href={'#discover/learn/recipe/' + r.id} data-testid="recipe-card">
-            <span className="lr-row"><span className="lr-grow"><b>{r.name}</b><span className="sub">{r.blurb}, {r.minutes} min</span></span><Icon name="chev" /></span>
+          <div key={r.id} className="card press lr-stack lr-dish" data-testid="recipe-card">
+            <RecipePhoto r={r} />
+            <span className="lr-row"><span className="lr-grow"><a className="lr-dish-t" href={'#discover/learn/recipe/' + r.id}>{r.name}</a><span className="sub">{r.blurb}, {r.minutes} min</span></span><Icon name="chev" /></span>
             <span className="lr-row"><span className="sub lr-grow">Salt per serving</span><b>{mg} mg sodium</b></span>
             <SaltBar mg={mg} />
-          </a>
+          </div>
         )
       })}
       <p className="lr-src">{RECIPE_SOURCES}</p>

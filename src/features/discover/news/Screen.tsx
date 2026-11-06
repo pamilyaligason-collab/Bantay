@@ -28,7 +28,9 @@ export function capBytes<T extends NewsItem>(rows: T[], max: number = CACHE_MAX_
   return out
 }
 const mine = (n: NewsItem, zone: string | null) => n.zone == null || n.zone === zone
-const tidy = (rows: NewsRow[], zone: string | null) => rows.filter((n) => safeUrl(n.url) && !isNoise(n) && mine(n, zone)).slice(0, SHOWN).map((n) => ({ ...n, title: sentenceCase(n.title) }))
+/** Rows older than a week never show (an unreadable date counts as old). */
+export const fresh = (n: Pick<NewsRow, 'published_at'>, now: number) => now - Date.parse(n.published_at) <= CACHE_DAYS * 86_400_000
+const tidy = (rows: NewsRow[], zone: string | null, now: number) => rows.filter((n) => safeUrl(n.url) && !isNoise(n) && mine(n, zone) && fresh(n, now)).slice(0, SHOWN).map((n) => ({ ...n, title: sentenceCase(n.title) }))
 
 /** Headlines for my zone from the same `news_items` table Safety reads (filled by ops/n8n/news-feed.json). Saved for 7 days, at most 2 MB.
  *  Offline or failing: the saved list (`offline: true`) while it is under 7 days old, else an empty list. `items: null` = not configured and nothing saved. */
@@ -49,12 +51,12 @@ export async function loadFeed(zone: string | null, now: number = Date.now(), f:
     if (!res.ok && res.status >= 400 && res.status < 500) res = await f(q('id,title,url,source,kind,published_at,zone', zoneFilter), h) // image_url and topic not live yet (migration 0051)
     if (!res.ok && res.status >= 400 && res.status < 500) res = await f(q('id,title,url,source,kind,published_at', ''), h) // zone column not live yet
     if (!res.ok) throw new Error(String(res.status))
-    const items = capBytes(tidy((await res.json()) as NewsRow[], zone))
+    const items = capBytes(tidy((await res.json()) as NewsRow[], zone, now))
     await db.kv.put({ key: CACHE, value: { savedAt: now, zone, items } satisfies Saved }).catch(() => undefined)
     return { items, savedAt: now, offline: false }
   } catch {
     const s = await saved()
-    if (s) return { items: s.items.filter((n) => mine(n, zone)), savedAt: s.savedAt, offline: true }
+    if (s) return { items: s.items.filter((n) => mine(n, zone) && fresh(n, now)), savedAt: s.savedAt, offline: true }
     return { items: base ? [] : null, savedAt: null, offline: true }
   }
 }

@@ -254,7 +254,9 @@ describe('News view', () => {
     row('h', { source: 'DOH', topic: 'health', published_at: '2026-10-28T06:00:00Z', image_url: 'https://img.test/h.jpg' }),
     row('p', { source: 'PAGASA', topic: 'prepping', published_at: '2026-10-28T05:00:00Z' }),
     row('n', { source: 'PNA', topic: 'national', published_at: '2026-10-28T08:00:00Z' }),
-    row('u', { source: 'GMA', published_at: '2026-10-28T09:00:00Z' })
+    row('u', { source: 'GMA', published_at: '2026-10-28T09:00:00Z' }),
+    row('e1', { source: 'GMA', published_at: '2026-10-28T04:00:00Z' }),
+    row('e2', { source: 'GMA', published_at: '2026-10-28T03:00:00Z' })
   ]
   it('six chips; Top leads with prepping then health, Latest is newest first, every card names its source', async () => {
     feed(rows)
@@ -268,7 +270,7 @@ describe('News view', () => {
     expect(stories.map((a) => a.querySelector('.nw-title')!.textContent)).toEqual(['Headline h (opens the news site)', 'Headline n (opens the news site)', 'Headline u (opens the news site)'])
     stories.forEach((a) => expect(a.querySelector('.nw-src')!.textContent!.length).toBeGreaterThan(0))
     const latest = Array.from(screen.getByRole('region', { name: 'Latest' }).querySelectorAll('.nw-title')).map((t) => t.textContent!.replace(' (opens the news site)', ''))
-    expect(latest).toEqual(['Headline u', 'Headline n', 'Headline h', 'Headline p'])
+    expect(latest).toEqual(['Headline e1', 'Headline e2']) // the lead and the three Top stories are not shown again
     expect(screen.getByRole('region', { name: 'Official bulletins' })).toBeTruthy()
   })
   it('a topic chip shows only that topic; an empty topic says so; the row without a picture gets the initial tile', async () => {
@@ -290,6 +292,7 @@ describe('News view', () => {
     feed(rows)
     render(<Overview now={now} />)
     fireEvent.click(tab('News'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const b = within(await screen.findByRole('region', { name: 'Latest' })).getAllByRole('button')[0]!
     expect(b.className).toBe('nw-save') // .nw-save is 44 x 44 in today.css
     expect(b.getAttribute('aria-label')).toBe('Read later: Headline u')
@@ -301,6 +304,7 @@ describe('Saved (read later)', () => {
     feed([row('a', { source: 'WHO' }), row('b', { source: 'DOH', published_at: '2026-10-28T08:00:00Z' })])
     render(<Overview now={now} />)
     fireEvent.click(tab('News'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const latest = await screen.findByRole('region', { name: 'Latest' })
     const btn = within(latest).getAllByRole('button')[0]!
     expect(btn.getAttribute('aria-label')).toContain('Read later')
@@ -321,6 +325,7 @@ describe('Saved (read later)', () => {
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
     render(<Overview now={now} />)
     fireEvent.click(tab('News'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const latest = await screen.findByRole('region', { name: 'Latest' })
     expect(() => fireEvent.click(within(latest).getAllByRole('button')[0]!)).not.toThrow()
     fireEvent.click(tab('Saved'))

@@ -2,14 +2,16 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AlertRow } from './store'
 
-const h = vi.hoisted(() => ({ acting: false, rows: [] as unknown[], markSeen: vi.fn((_id: string) => Promise.resolve()) }))
+const h = vi.hoisted(() => ({ warn: false, archive: vi.fn((_s: unknown[]) => Promise.resolve({ ids: [] as string[], unseen: [] as string[] })), acting: false, rows: [] as unknown[], markSeen: vi.fn((_id: string) => Promise.resolve()) }))
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting: h.acting, personId: h.acting ? 'p1' : null, name: '' }) }))
 vi.mock('./useAlerts', () => ({ useAlertRows: () => h.rows }))
 vi.mock('./store', () => ({ markSeen: (id: string) => h.markSeen(id) }))
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Mama Rosa' }], selfId: null }) }))
+vi.mock('../today/WarningCard', () => ({ useWarnings: () => ({ onScreen: h.warn }) }))
+vi.mock('./ArchiveAll', () => ({ archiveWithUndo: (r: unknown[]) => h.archive(r) }))
 import { AlertCardToday, pickAlert } from './AlertCardToday'
 
-afterEach(() => { cleanup(); h.acting = false; h.rows = []; h.markSeen.mockClear() })
+afterEach(() => { cleanup(); h.warn = false; h.archive.mockClear(); localStorage.clear(); h.acting = false; h.rows = []; h.markSeen.mockClear() })
 const row = (id: string, o: Partial<AlertRow>): AlertRow => ({ id, personId: 'p1', kind: 'dose_missed', template: 'dose_missed', ref: null, createdAt: '2026-10-26T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-02T00:00:00Z', ...o })
 
 describe('pickAlert: SOS > reading > hazard, newest first within a kind; a missed dose is a My day row, never this card', () => {
@@ -100,5 +102,31 @@ describe('AlertCardToday system row', () => {
     h.rows = [row('sys', { kind: 'system', template: 'system', personId: null, ref: null })]
     render(<AlertCardToday />)
     expect(screen.getByText('No job name was saved. Open System health to see which one.')).toBeTruthy()
+  })
+})
+
+describe('AlertCardToday Archive all link', () => {
+  const old = (id: string, o: Partial<AlertRow> = {}) => row(id, { kind: 'reading_high', template: 'reading_high', createdAt: new Date(Date.now() - 3 * 86_400_000).toISOString(), expiresAt: new Date(Date.now() + 86_400_000).toISOString(), ...o })
+  it('2 or more archivable notices: a link that runs the shared archive with exactly that set', () => {
+    h.rows = [old('a'), old('b')]
+    render(<AlertCardToday />)
+    const go = screen.getByRole('button', { name: 'Archive all past notices (2) from this card' })
+    fireEvent.click(go)
+    expect(h.archive).toHaveBeenCalledTimes(1)
+    expect((h.archive.mock.calls[0]![0] as AlertRow[]).map((r) => r.id).sort()).toEqual(['a', 'b'])
+  })
+  it('one archivable notice: no link', () => {
+    h.rows = [old('a')]
+    render(<AlertCardToday />)
+    expect(screen.queryByRole('button', { name: /Archive all/ })).toBeNull()
+  })
+  it('a live SOS on the card, or an active warning: never', () => {
+    h.rows = [old('a'), old('b'), row('s', { kind: 'sos', template: 'family_sos' })]
+    const r = render(<AlertCardToday />)
+    expect(screen.queryByRole('button', { name: /Archive all/ })).toBeNull()
+    r.unmount()
+    h.rows = [old('a'), old('b')]; h.warn = true
+    render(<AlertCardToday />)
+    expect(screen.queryByRole('button', { name: /Archive all/ })).toBeNull()
   })
 })

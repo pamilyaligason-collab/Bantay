@@ -83,11 +83,13 @@ test('the season is one row on the overview that opens the season page', async (
 
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
   await page.goto('/#discover/listen')
-  const plays = page.getByRole('button', { name: /^Play / })
+  await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Play / })).toHaveCount(1) // the large guided video sits above the read-aloud rows
+  const rows = page.getByTestId('listen').locator('.dc-item') // read-aloud rows only: the guided row's own Play button is not one of them
+  const plays = rows.getByRole('button', { name: /^Play / })
   await expect(plays).toHaveCount(20)
   await plays.nth(0).click()
   await expect(page.getByRole('button', { name: /^Stop / })).toHaveCount(1)
-  await page.getByRole('button', { name: /^Play / }).nth(0).click()
+  await rows.getByRole('button', { name: /^Play / }).nth(0).click()
   await expect(page.getByRole('button', { name: /^Stop / })).toHaveCount(1)
   expect(await page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBe(2)
   await page.getByRole('group', { name: 'Discover sections' }).getByRole('button', { name: 'Watch' }).click()

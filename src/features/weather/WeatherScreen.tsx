@@ -34,6 +34,9 @@ import { hasAdvisory } from './advisory'
 import RainMap from './RainMap'
 import { weatherWarning } from './warning'
 import { useNow } from '../safety/AlertCard'
+import '../today/weatherHero.css' // the Next 2 hours bars (td-rm) are drawn by Today's RainMini
+import { Next2hMini } from './Next2hMini'
+import { syncRainReminder } from './rainRemind'
 import './weather.css'
 import './wxs7w.css'
 
@@ -127,6 +130,7 @@ export default function WeatherScreen() {
     if (/[?&]from=action(&|$)/.test(location.hash)) void track('action', 'weather_opened_action')
   }, [])
   useEffect(() => { document.querySelector('main.scroll')?.scrollTo?.(0, 0) }, [])
+  useEffect(() => { void syncRainReminder() }, []) // the rain reminder is also re-planned whenever this screen opens
 
   const askLoc = async () => {
     if (finding) return
@@ -276,7 +280,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         ) : <b className={`wx-act-t${advice === CALM_LINE ? ' calm' : ''}`}>{advice}</b>}
       </section>
 
-      {wxFlag('blend') && (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>)}
+      {wxFlag('blend') ? (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>) : <Next2hMini fc={fc} offline={offline} now={now} />}
 
       <LiveMapCard point={point} pause={pause} />
 
