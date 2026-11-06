@@ -8,18 +8,18 @@ beforeEach(() => { localStorage.clear(); reload.mockReset() })
 afterEach(cleanup)
 
 describe('Labs switches', () => {
-  it('one switch per flag in the flags module, all off at first', () => {
+  it('one switch per flag in the flags module, showing the defaults', () => {
     render(<LabsGroup />)
     expect(screen.getAllByRole('switch')).toHaveLength(Object.keys(DEFAULTS).length)
-    expect(screen.getByRole('switch', { name: 'Offline maps' }).getAttribute('aria-checked')).toBe('false')
-    expect(screen.getByRole('switch', { name: 'Local hazard packs' }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByRole('switch', { name: 'Offline maps' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('switch', { name: 'Local hazard packs' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByText(/The page reloads/)).toBeTruthy()
   })
   it('a switch writes the stored flags the flags module reads, keeps the others, and reloads', () => {
     localStorage.setItem('bantay.flags', JSON.stringify({ worldFeeds: true }))
     render(<LabsGroup reload={reload} />)
     fireEvent.click(screen.getByRole('switch', { name: 'Offline maps' }))
-    expect(readFlags()).toEqual({ ...DEFAULTS, worldFeeds: true, offlineMaps: true })
+    expect(readFlags()).toEqual({ ...DEFAULTS, worldFeeds: true, offlineMaps: false })
     expect(reload).toHaveBeenCalledTimes(1)
   })
   it('shows a flag that is already on, and turning it off writes false', () => {
