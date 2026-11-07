@@ -301,6 +301,14 @@ describe('CarerCards (family-home) and Answer for Papa (family-answer)', () => {
     await waitFor(() => expect(screen.queryByText('Papa missed a medicine')).toBeNull())
     await waitFor(() => expect(h.markSeen).toHaveBeenCalledWith('md'))
   })
+  it('D-145: a dose that went quiet (3 alerts of that one dose) is still listed here, once, until it is marked; a second missed dose is listed beside it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    h.rows = [...['q1', 'q2', 'q3'].map((id) => row(id, { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-26:08:00' })), row('o1', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-26:09:00' })]
+    render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)
+    expect(await screen.findByText('Papa missed 2 doses')).toBeTruthy()
+    expect(screen.getByText('2 things')).toBeTruthy() // the badge counts the rendered doses, not the 4 alert rows (ML-34)
+  })
   it('a missed dose from an earlier day is left to the alert list', async () => {
     h.rows = [row('md', { personId: 'p2', kind: 'dose_missed', template: 'dose_missed', ref: 'p2:2026-10-20:09:00' })]
     const { container } = render(<CarerCards onMessage={vi.fn()} onPhones={vi.fn()} onNote={vi.fn()} />)

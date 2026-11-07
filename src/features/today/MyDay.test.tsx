@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-const m = vi.hoisted(() => ({ can: null as null | { log: boolean; mood: boolean; reason: string }, activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null, ready: true, alerts: [] as unknown[], storm: null as { title: string; body: string } | null, water: [] as { ml: number; drunkAt: string }[], warn: false, breaths: [] as { at: string }[], seen: vi.fn((_id: string) => Promise.resolve()), cel: vi.fn((_k: string) => true), goal: 1500, checkIn: vi.fn((_p?: string) => Promise.resolve('ok')) }))
+const m = vi.hoisted(() => ({ can: null as null | { log: boolean; mood: boolean; reason: string }, activity: [] as { kind: string; startedAt: string }[], self: 'me' as string | null, ready: true, alerts: [] as unknown[], storm: null as { title: string; body: string } | null, water: [] as { ml: number; drunkAt: string }[], warn: false, breaths: [] as { at: string }[], seen: vi.fn((_id: string) => Promise.resolve()), cel: vi.fn((_k: string) => true), goal: 1500 as number | null, checkIn: vi.fn((_p?: string) => Promise.resolve('ok')) }))
 // s.arrived false = the live queries have not answered yet (the hooks hand back their shared empty first value)
 const s = vi.hoisted(() => ({ empty: [] as never[], readings: [] as { test: string; value: number; takenAt: string }[], arrived: true }))
 vi.mock('../notify/useAlerts', () => ({ useAlertRows: () => m.alerts }))
@@ -27,7 +27,8 @@ import { NUDGE_PLAY_MS, NUDGE_SETTLE_MS, resetNudges } from '../nudge/nudgeDue'
 import MyDay from './MyDay'
 afterEach(() => { cleanup(); vi.useRealTimers(); resetNudges(); m.warn = false; m.breaths = []; m.activity = []; m.self = 'me'; m.can = null; m.water = []; m.storm = null; m.alerts = []; m.seen.mockClear(); m.cel.mockClear(); m.goal = 1500; vi.unstubAllGlobals(); localStorage.clear(); s.readings = []; s.arrived = true })
 const manilaDay = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Manila' }) // a miss from an earlier day is not a row, so the ref must always be today
-const miss = (o: object = {}) => ({ id: 'a1', personId: 'ana', kind: 'dose_missed', template: 'dose_missed', ref: `ana:${manilaDay()}:08:00`, createdAt: '2026-11-02T01:00:00Z', pushedAt: null, seenAt: null, expiresAt: '2026-11-09T00:00:00Z', ...o })
+const miss = (o: object = {}) => ({ id: 'a1', personId: 'ana', kind: 'dose_missed', template: 'dose_missed', ref: `ana:${manilaDay()}:08:00`, createdAt: new Date().toISOString(), pushedAt: null, seenAt: null, expiresAt: '2026-11-09T00:00:00Z', ...o })
+const spentAt = () => new Date(Date.now() - 35 * 60_000).toISOString() // older than MISSED_QUIET_MS: no more alert will come for that dose
 
 describe('MyDay I am OK row', () => {
   it('shows the button until a check-in is logged today, then a done label', () => {
@@ -125,14 +126,14 @@ describe('MyDay I am OK row', () => {
     expect(screen.getByText('Sign in to let the family know')).toBeTruthy()
   })
 
-  it('a missed dose of someone else is a row with the first name only, counted in the ring, and Open marks it seen', () => {
+  it('a missed dose of someone else is a row with the first name only, counted in the ring, and Open leaves it there (D-145)', () => {
     const base = render(<MyDay notify={() => undefined} />)
     const total = (n: HTMLElement) => /of (\d+) done/.exec(n.querySelector('[role="img"]')!.getAttribute('aria-label')!)![1]
     const before = Number(total(base.container))
     expect(screen.queryByTestId('myday-missed-ana')).toBeNull()
     expect(screen.getByText('All yours today')).toBeTruthy()
     base.unmount()
-    m.alerts = [miss(), miss({ id: 'a0', ref: `ana:${manilaDay()}:07:00`, createdAt: '2026-11-02T00:00:00Z' })]
+    m.alerts = [miss(), miss({ id: 'a0', ref: `ana:${manilaDay()}:07:00`, createdAt: new Date(Date.now() - 60_000).toISOString() })]
     const r = render(<MyDay notify={() => undefined} />)
     const row = screen.getByTestId('myday-missed-ana')
     expect(row.textContent).toContain('Ana missed a medicine')
@@ -143,8 +144,65 @@ describe('MyDay I am OK row', () => {
     const open = screen.getByRole('link', { name: 'Open Ana' })
     expect(open.getAttribute('href')).toBe('#family/people/ana')
     fireEvent.click(open)
-    expect(m.seen).toHaveBeenCalledWith('a1')
-    expect(m.seen).toHaveBeenCalledWith('a0') // every unseen slot of that person, not only the newest
+    expect(m.seen).not.toHaveBeenCalled() // D-145: Open never marks it seen; the row stays until the dose is taken or skipped
+    expect(screen.getByTestId('myday-missed-ana')).toBeTruthy()
+  })
+  it('D-145: a dose whose alerts are spent folds into Done today as "Missed, no more reminders" and no longer counts', () => {
+    m.alerts = [miss({ id: 'q1', createdAt: spentAt() })]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.queryByTestId('myday-missed-ana')).toBeNull()
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+    const q = screen.getByTestId('myday-missed-quiet-ana')
+    expect(q.textContent).toContain('Missed, no more reminders')
+    expect(q.textContent).not.toMatch(/Losartan|Reyes/)
+    expect(screen.getByText('All yours today')).toBeTruthy() // a quiet row is not an open need
+  })
+  it('D-145: 4 different doses missed today are all still open rows (silence is per dose, not per person)', () => {
+    const day = manilaDay()
+    m.alerts = ['06:00', '07:00', '08:00', '09:00'].map((sl) => miss({ id: `d${sl}`, ref: `ana:${day}:${sl}` }))
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-missed-ana')).toBeTruthy()
+    expect(screen.queryByTestId('myday-missed-quiet-ana')).toBeNull()
+    expect(screen.queryByTestId('myday-fold')).toBeNull()
+    expect(screen.getByText('Ana needs you')).toBeTruthy()
+  })
+  it('D-145: one spent dose folds alone; another missed dose of the same person stays an open row', () => {
+    const day = manilaDay()
+    m.alerts = [miss({ id: 'q1', createdAt: spentAt() }), miss({ id: 'o1', ref: `ana:${day}:09:00` })]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-missed-ana').querySelector('.rw-sub')!.textContent).toBe('9:00 AM')
+    expect(screen.getByTestId('myday-missed-quiet-ana')).toBeTruthy()
+    expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+    expect(screen.getByText('Ana needs you')).toBeTruthy()
+  })
+  it('D-145 / ML-47: a row that goes quiet while you watch is announced politely, focus moves to the Done today button, and the announcement clears after 4 s (fake timers throughout)', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-11-05T02:00:00Z')) // 10:00 Manila
+    m.alerts = [miss({ id: 'q1' })]
+    render(<MyDay notify={() => undefined} />)
+    const open = screen.getByRole('link', { name: 'Open Ana' })
+    open.focus()
+    expect(document.activeElement).toBe(open)
+    act(() => { vi.advanceTimersByTime(29 * 60_000) })
+    expect(screen.getByTestId('myday-missed-ana')).toBeTruthy() // 29 min: still a loud row
+    expect(screen.getByTestId('myday-said').textContent).toBe('')
+    act(() => { vi.advanceTimersByTime(60_000) }) // 30 min: its alerts are spent
+    expect(screen.queryByTestId('myday-missed-ana')).toBeNull()
+    const said = screen.getByTestId('myday-said')
+    expect(said.getAttribute('aria-live')).toBe('polite')
+    expect(said.textContent).toBe('Ana: missed a medicine, no more reminders. Moved to Done today.')
+    expect(document.activeElement).toBe(screen.getByTestId('myday-fold'))
+    act(() => { vi.advanceTimersByTime(3999) })
+    expect(said.textContent).not.toBe('') // still there at 3.999 s
+    act(() => { vi.advanceTimersByTime(1) })
+    expect(said.textContent).toBe('')
+    expect(document.activeElement).toBe(screen.getByTestId('myday-fold')) // focus stays on the fold button after the clear
+  })
+  it('a row that arrives already spent is not announced and takes no focus', () => {
+    m.alerts = [miss({ id: 'q1', createdAt: spentAt() })]
+    render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-said').textContent).toBe('')
+    expect(document.activeElement).toBe(document.body)
   })
   it('a missed dose with no slot time says so, and never invents a time', () => {
     m.alerts = [miss({ id: 'a9', ref: null, createdAt: new Date().toISOString() })]
@@ -602,5 +660,37 @@ describe('S22 My day rewards', () => {
     act(() => { vi.advanceTimersByTime(rowLeaveMs(true)) })
     expect(screen.getByTestId('myday-checkin').closest('.td-row')!.hasAttribute('data-phase')).toBe(false)
     expect(screen.getByTestId('myday-fold').textContent).toContain('Done today (1)')
+  })
+})
+
+describe('D-144 a baby under 1 year: no water goal', () => {
+  const bpToday = () => [{ test: 'bp_systolic', value: 118, takenAt: new Date().toISOString() }]
+  const checkedIn = () => [{ kind: 'check-in', startedAt: new Date().toISOString() }]
+  it('no Water row, no Due on it, and the check-in takes badge 2', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 10, 5, 15, 0)) // after 14:00, when water would be due
+    m.goal = null
+    render(<MyDay notify={() => undefined} />)
+    act(() => { vi.advanceTimersByTime(NUDGE_SETTLE_MS) })
+    expect(screen.queryByTestId('myday-water')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add a glass of water' })).toBeNull()
+    expect(Array.from(screen.getByTestId('myday').querySelectorAll('.nd-due')).map((e) => e.closest('[data-testid]')!.getAttribute('data-testid'))).not.toContain('myday-water')
+    expect([screen.getByTestId('myday-bp'), screen.getByTestId('myday-checkin')].map((e) => e.querySelector('.td-pri')?.textContent)).toEqual(['1', '2'])
+  })
+  it('blood pressure and check-in done: the card says so, the ring counts no water, and no + water button on the fold', () => {
+    vi.useFakeTimers()
+    m.goal = null
+    m.breaths = [{ at: new Date().toISOString() }] // the breath row is the third row here
+    const r = render(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-ring').querySelector('svg')!.getAttribute('aria-label')).toBe('1 of 3 done')
+    s.readings = bpToday()
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-ring').querySelector('svg')!.getAttribute('aria-label')).toBe('2 of 3 done') // blood pressure and the breath; no water row to wait for
+    m.activity = checkedIn()
+    r.rerender(<MyDay notify={() => undefined} />)
+    expect(screen.getByTestId('myday-done-card').textContent).toContain('Blood pressure and check-in.')
+    expect(screen.getByTestId('myday-done-card').textContent).not.toMatch(/water/i)
+    act(() => { vi.advanceTimersByTime(TICK_MS + rowLeaveMs(false)) })
+    expect(screen.queryByTestId('myday-water-add')).toBeNull()
   })
 })

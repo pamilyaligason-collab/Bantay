@@ -3,7 +3,9 @@
 export const WATCH_AFTER_MIN = 30 // a slot is "missed" 30 minutes after its time (Q34); the cron passes DOSE_WATCH_AFTER_MIN over it
 export const REVIEW_WATCH_AFTER_DAYS = 1 // a "Still taking it?" left open this many Manila days starts to be watched and raises review_open
 export const DIGEST_HOUR = 20 // Manila hour of the calm family digest (Q15), sent in its first half hour
+export const DOSE_RETRY_MS = 30 * 60_000 // D-145: how long an unproved FCM leg of a missed-dose alert is offered again; the app's MISSED_QUIET_MS is this same constant (src/features/today/missed.ts)
 export const WATCH_MAX_LATE_MIN = 6 * 60 // not before the function existed: never alert for a slot older than 6 h
+// D-145: one dose raises ONE missed-dose alert per carer. dose_watch_sent (claim) and the unique index carer_alerts(kind, ref, carer_user_id) from 0030 enforce it, so no count is needed here.
 
 export interface MedRow {
   id: string

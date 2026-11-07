@@ -115,26 +115,33 @@ describe('reminder actions', () => {
     const ids: number[] = []
     for (const at of [480, 481, 720, 1200]) {
       LN.schedule.mockClear()
-      const e = ev('snooze', at, ['me'], 2)
+      const e = ev('snooze', at, ['me'], null)
       e.notification.id = 1_500_000_000 // the same alarm id: only the slot differs
-      e.notification.extra = { ...e.notification.extra, at }
+      e.notification.extra = { ...e.notification.extra, at, day: '2026-10-20' } // the Today card snooze sends a day and no repeat number
       await handleReminderAction(e, NOW)
       ids.push(LN.schedule.mock.calls[0]![0].notifications[0].id)
     }
     expect(new Set(ids).size).toBe(4)
     for (const id of ids) { expect(id).toBeGreaterThanOrEqual(SNOOZE_BASE); expect(id).toBeLessThan(SNOOZE_TOP) }
   })
-  it('In 10 min on the third alarm (or an old alarm without a repeat number) rings once more in 10 minutes, same text, loud channel, buttons kept', async () => {
-    for (const rep of [2, null]) {
-      LN.schedule.mockClear()
-      expect(await handleReminderAction(ev('snooze', 480, ['me'], rep), NOW)).toBe('snoozed')
-      const n = LN.schedule.mock.calls[0]![0].notifications[0]
-      expect(n.schedule.at.getTime()).toBe(NOW.getTime() + 10 * 60_000)
-      expect(n.schedule.allowWhileIdle).toBe(true)
-      expect(n).toMatchObject({ title: 'Medicine time', body: 'It is 8:00 AM.', actionTypeId: DOSE_ACTION_TYPE, channelId: 'alarms_v1', extra: { kind: 'dose', at: 480 } })
-      expect(n.id).toBeGreaterThanOrEqual(1_900_000_000)
-      expect(n.id).toBeLessThan(2_147_483_647)
-    }
+  it('D-145: In 10 min on the third alarm adds no 4th ring; a dose rings 3 times at most', async () => {
+    expect(await handleReminderAction(ev('snooze', 480, ['me'], 2), NOW)).toBe('snoozed')
+    expect(LN.schedule).not.toHaveBeenCalled()
+    expect(LN.removeDeliveredNotifications).toHaveBeenCalledTimes(1)
+  })
+  it('an old alarm without a repeat number rings once more in 10 minutes (same text, loud channel, buttons kept); that extra ring is never snoozed again', async () => {
+    expect(await handleReminderAction(ev('snooze', 480, ['me'], null), NOW)).toBe('snoozed')
+    const n = LN.schedule.mock.calls[0]![0].notifications[0]
+    expect(n.schedule.at.getTime()).toBe(NOW.getTime() + 10 * 60_000)
+    expect(n.schedule.allowWhileIdle).toBe(true)
+    expect(n).toMatchObject({ title: 'Medicine time', body: 'It is 8:00 AM.', actionTypeId: DOSE_ACTION_TYPE, channelId: 'alarms_v1', extra: { kind: 'dose', at: 480 } })
+    expect(n.id).toBeGreaterThanOrEqual(1_900_000_000)
+    expect(n.id).toBeLessThan(2_147_483_647)
+    LN.schedule.mockClear()
+    const again = ev('snooze', 480, ['me'], null)
+    again.notification.id = n.id // the extra ring itself
+    expect(await handleReminderAction(again, NOW)).toBe('snoozed')
+    expect(LN.schedule).not.toHaveBeenCalled()
   })
   it('Open and a plain tap change nothing; other notifications are ignored', async () => {
     await add({ name: 'Losartan' })

@@ -7,7 +7,7 @@ import { FAIL_TEXT } from '../today/actions'
 import './nutrition.css'
 
 /** Water today against the person's water goal, with a +250 ml button (one glass per tap) and Undo for the latest glass. `canAdd` is false when looking at someone else. */
-export default function WaterPanel({ rows, goalMl, now, canAdd = true, personId }: { rows: WaterEntry[]; goalMl: number; now: Date; canAdd?: boolean; personId?: string }) {
+export default function WaterPanel({ rows, goalMl, now, canAdd = true, personId, source }: { rows: WaterEntry[]; goalMl: number | null; now: Date; canAdd?: boolean; personId?: string; source?: string }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const today = onDay(rows, now)
@@ -20,6 +20,7 @@ export default function WaterPanel({ rows, goalMl, now, canAdd = true, personId 
     setBusy(false)
     if (r !== 'ok') setErr(FAIL_TEXT[r])
   }
+  if (goalMl == null) return null // no water goal for this person (a baby under 1 year)
   return (
     <div className="nu-water" role="group" aria-label="Water today">
       <div className="nu-water-v">
@@ -32,6 +33,8 @@ export default function WaterPanel({ rows, goalMl, now, canAdd = true, personId 
           {today.length > 0 && <button type="button" className="nu-ghost" disabled={busy} onClick={() => void run(undoWater(new Date(), personId))}>Undo</button>}
         </div>
       )}
+      {source === 'limit' && <p className="nu-hint" style={{ flexBasis: '100%', margin: 0 }}>Your doctor&apos;s limit</p>}
+      {canAdd && (source === 'default' || source === 'sex') && <a className="nu-hint" href="#health/metric/weight" style={{ flexBasis: '100%' }}>Add your weight for a goal that fits you</a>}
       {err && <p className="nu-err" role="alert" style={{ flexBasis: '100%' }}>{err}</p>}
     </div>
   )

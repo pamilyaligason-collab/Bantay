@@ -109,13 +109,18 @@ test('the whole stack in order: hero, alerts-off, warning, Next up, missed medic
   await assertJackClear(page, { at: 'end' })
 })
 
-test('a missed dose is a My day row with no medicine name; Open goes to that person and marks it seen', async ({ page }) => {
+test('a missed dose is a My day row with no medicine name; Open goes to that person and leaves it there (D-145)', async ({ page }) => {
   await startToday(page, 'calm', { notice: true })
   const row = page.getByTestId('myday-missed-ma')
   await expect(row).toContainText('missed a medicine')
   await expect(row).not.toContainText('Losartan')
   await expect(page.getByTestId('family-notice')).toHaveCount(0)
   await expect(row.getByRole('link', { name: /^Open/ })).toHaveAttribute('href', '#family/people/ma')
+  await row.getByRole('link', { name: /^Open/ }).click()
+  await expect(page).toHaveURL(/#family\/people\/ma$/)
+  await page.goBack()
+  await expect(page).not.toHaveURL(/#family\/people\/ma/)
+  await expect(page.getByTestId('myday-missed-ma')).toContainText('missed a medicine') // D-145: Open did not mark it seen, the row is still there
 })
 
 // Weather screen (PLAN 1.1 row 12): place switcher, scene hero, heat strip, four tiles with the Sunrise tile.

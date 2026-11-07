@@ -8,7 +8,7 @@ import { dayOf, remindable, reminderId, toClock } from './meds'
 import { BP_TYPE, handleBpAction } from '../nudge/bpReminder'
 
 /** Lock-screen actions on a dose alarm: I took it / In 10 min / Skip today. "I took it" and "Skip today" log the doses due at that time without opening the app and cancel the rest of that slot's repeats;
- *  "In 10 min" keeps the +10 / +20 repeats already planned (they ring within 10 minutes) and, on the third reminder, rings once more in 10 minutes.
+ *  "In 10 min" keeps the +10 / +20 repeats already planned (they ring within 10 minutes) and adds no ring of its own (a dose rings 3 times, D-145); only an old alarm with no repeat number gets one extra ring.
  *  The notification text is set in reminders.ts; this file only adds the buttons and what they do. Native only (the web has no lock screen). */
 export const DOSE_ACTION_TYPE = 'DOSE_REMINDER'
 export const REPEAT_MIN = 10
@@ -93,8 +93,8 @@ export async function handleReminderAction(ev: ReminderEvent, now = new Date()):
   }
   if (ev.actionId === 'snooze') {
     await clear()
-    // repeats +10 / +20 are already planned: only the third reminder (or an old alarm without a repeat number) needs one more ring
-    if (typeof n.extra.rep === 'number' && n.extra.rep < 2) return 'snoozed'
+    // D-145: a dose rings at most 3 times (+0, +10, +20), all planned up front. In 10 min never adds a 4th: only an old alarm without a repeat number gets ONE extra ring, and that extra ring is never snoozed again
+    if (typeof n.extra.rep === 'number' || (n.id ?? 0) >= SNOOZE_BASE) return 'snoozed'
     const when = new Date(now.getTime() + SNOOZE_MIN * 60_000)
     try {
       await LocalNotifications.schedule({

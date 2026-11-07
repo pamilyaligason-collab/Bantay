@@ -11,10 +11,11 @@ export default function WaterSheet() {
   const rows = useWater(personId, 2)
   const goal = useGoal(personId)
   const [now] = useState(() => new Date())
+  if (goal.waterMl == null) return <div className="nu"><p className="nu-line">No water goal for babies under 1 year. Ask their doctor about water.</p></div>
   return (
     <div className="nu">
       <p className="nu-line">One tap is one glass, 250 ml.</p>
-      <WaterPanel rows={rows} goalMl={goal.waterMl} now={now} personId={personId} canAdd={!can || can.log} />
+      <WaterPanel rows={rows} goalMl={goal.waterMl} source={goal.waterSource} now={now} personId={personId} canAdd={!can || can.log} />
       {can && !can.log && can.reason && <p className="nu-sub">{can.reason}</p>}
     </div>
   )

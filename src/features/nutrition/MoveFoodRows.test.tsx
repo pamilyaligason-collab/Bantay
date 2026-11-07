@@ -3,15 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const day = (back: number) => { const d = new Date(); d.setDate(d.getDate() - back); d.setHours(12, 0, 0, 0); return d.toISOString() }
 const entry = (back: number, sodiumMg: number | null) => ({ eatenAt: day(back), sodiumMg, personId: 'p1', name: 'x', key: `${back}${sodiumMg}` })
-const food = vi.hoisted(() => ({ rows: [] as unknown[] }))
-vi.mock('./hooks', () => ({ useFood: () => food.rows, useWater: () => [], useGoal: () => ({ sodiumMg: 2000, waterMl: 1500 }) }))
+const food = vi.hoisted(() => ({ rows: [] as unknown[], waterMl: 1500 as number | null }))
+vi.mock('./hooks', () => ({ useFood: () => food.rows, useWater: () => [], useGoal: () => ({ sodiumMg: 2000, waterMl: food.waterMl }) }))
 vi.mock('./PlateSheet', () => ({ default: () => <p>plate</p> }))
 vi.mock('./WaterPanel', () => ({ default: ({ canAdd }: { canAdd?: boolean }) => <p data-testid="water-stub" data-can-add={String(canAdd)}>water</p> }))
 vi.mock('./SaltSummary', () => ({ SaltSummary: () => <p>salt today</p> }))
 
 import { FoodBlock } from './MoveFoodRows'
 
-afterEach(cleanup)
+afterEach(() => { cleanup(); food.waterMl = 1500 })
 
 describe('FoodBlock (Move and food, board Food block)', () => {
   it('Log a meal and Add water exist only when the viewer may log for this person', () => {
@@ -23,6 +23,14 @@ describe('FoodBlock (Move and food, board Food block)', () => {
     render(<FoodBlock personId="p1" canMark={false} />)
     expect(screen.queryByRole('button', { name: 'Log a meal' })).toBeNull()
     expect(screen.getByTestId('water-stub').getAttribute('data-can-add')).toBe('false')
+  })
+
+  it('no water goal (a baby under 1 year): no Water card at all', () => {
+    food.waterMl = null
+    render(<FoodBlock personId="p1" canMark />)
+    expect(screen.queryByTestId('water-card')).toBeNull()
+    expect(screen.queryByText('Water')).toBeNull()
+    expect(screen.getByTestId('salt-card')).toBeTruthy()
   })
 
   it('Salt, last 7 days keeps three states apart: no meals, meals with no salt number, measured (partial flagged)', () => {

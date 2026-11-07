@@ -60,18 +60,33 @@ describe('carer alerts (dose_watch)', () => {
     await handlePush({ t: 'dose_watch' }, deps, day)
     expect(shown.map((s) => s.tag)).toEqual(['dose_due', 'dose_due', 'dose_watch'])
   })
-  it('have their own cap of 6 a day', async () => {
+  const CARER_IDS = ['reading_high', 'mood_unwell', 'review_open', 'phone_health', 'digest', 'pin_approve', 'system', 'share_offer']
+  it('have their own cap of 6 a day (distinct alerts)', async () => {
     const { deps, shown } = rig()
-    for (let i = 0; i < 8; i++) await handlePush({ t: 'dose_watch' }, deps, day)
+    for (const t of CARER_IDS) await handlePush({ t }, deps, day)
     expect(shown.length).toBe(6)
+  })
+  it('a re-sent push for the same tag does not use the cap again, so retries cannot silence a later different alert', async () => {
+    const { deps, shown } = rig()
+    for (let i = 0; i < 10; i++) await handlePush({ t: 'dose_watch' }, deps, day) // 10 retries of one dose alert: one claim, all shown (the tag replaces)
+    expect(shown.length).toBe(10)
+    for (const t of CARER_IDS.slice(0, 5)) await handlePush({ t }, deps, day) // 1 + 5 = 6 distinct tags: still under the cap
+    expect(shown.length).toBe(15)
+    await handlePush({ t: CARER_IDS[5]! }, deps, day) // the 7th distinct tag is over the cap of 6
+    expect(shown.length).toBe(15)
+    await handlePush({ t: 'dose_watch' }, deps, day) // an already-claimed tag still goes through
+    expect(shown.length).toBe(16)
+    await handlePush({ t: 'dose_watch' }, deps, at('2026-10-18T10:00:00+08:00')) // next Manila day: fresh cap
+    expect((await db.kv.get('nudge.carer'))?.value).toMatchObject({ day: '2026-10-18', count: 1, tags: ['dose_watch'] })
   })
   it('a carer dose_watch uses the carer cap, not the 2 a day health cap, and shows no name', async () => {
     const { deps, shown } = rig()
     const seen: { body: string }[] = []
     const d: PushDeps = { ...deps, show: async (n) => void seen.push({ body: n.body }) }
-    for (let i = 0; i < 8; i++) await handlePush({ t: 'dose_watch' }, d, day)
-    expect(seen.length).toBe(6) // MAX_CARER_PER_DAY, not MAX_NUDGES_PER_DAY
+    await handlePush({ t: 'dose_watch' }, d, day)
     expect(seen[0]!.body).toBe('A medicine was missed by someone you look after.')
+    for (const t of ['reading_high', 'mood_unwell', 'review_open', 'phone_health', 'digest', 'pin_approve', 'system']) await handlePush({ t }, d, day)
+    expect(seen.length).toBe(6) // MAX_CARER_PER_DAY, not MAX_NUDGES_PER_DAY
     expect((await db.kv.get('nudge'))?.value).toBeUndefined() // the health counter is untouched
     expect(shown).toEqual([])
   })

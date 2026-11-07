@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
-import { dayOf, isLive, matchDoses, reviewAgeDays, slotsFor } from '../health/meds'
+import { isLive, manilaDay, matchDoses, reviewAgeDays, slotsFor } from '../health/meds'
 import { clock12 } from '../health/medActions'
 import { shortMedName } from '../health/medName'
 import { useMedications } from '../health/useMedications'
@@ -67,7 +67,7 @@ function useUserId(): string | undefined {
 }
 
 /** A dose row that MissedDoseCard can show: its slot is today (Manila) or has no day. Older ones stay in the alert list. A dose marked on this phone closes its card and marks the row seen, which drops it from the count. */
-export const showsAsCard = (ref: string | null, now: Date = new Date()) => { const { day } = doseRef(ref); return day == null || day === dayOf(now) }
+export const showsAsCard = (ref: string | null, now: Date = new Date()) => { const { day } = doseRef(ref); return day == null || day === manilaDay(now) } // the ref's day is the server's Manila day
 
 const newestPerPerson = (rows: AlertRow[]) => rows.filter((r, i) => !!r.personId && rows.findIndex((x) => x.personId === r.personId) === i)
 
@@ -100,10 +100,10 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
   const [ask, setAsk] = useState<string | null>(null) // row id being confirmed: one tap marks ONE slot only (ML-13)
   const [doneIds, setDoneIds] = useState<string[]>([])
   const now = new Date()
-  const today = dayOf(now)
+  const today = manilaDay(now)
   const lines = rows.map((row) => {
     const { day, slot } = doseRef(row.ref)
-    const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today).filter((d) => d.slot === slot && d.state === 'pending') : null
+    const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today, manilaDay).filter((d) => d.slot === slot && d.state === 'pending') : null
     return { row, day, slot, open, resolved: open != null && meds.length > 0 && open.length === 0 }
   })
   const resolvedKey = lines.filter((l) => l.resolved).map((l) => l.row.id).join(',')
@@ -169,7 +169,7 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
   const [answering, setAnswering] = useState<ReviewAsk | null>(null)
   const self = people.find((p) => p.id === selfId)
   const who = (id: string | null) => people.find((p) => p.id === id)
-  const doses = rows.filter((r) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref))
+  const doses = rows.filter((r, i) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref) && (r.ref == null || rows.findIndex((x) => x.kind === 'dose_missed' && x.personId === r.personId && x.ref === r.ref) === i)) // D-145: one line per dose, however many alerts it raised
   const askGroups = byPerson(asks, (a) => a.person.id)
   const phones = newestPerPerson(rows.filter((r) => r.kind === 'phone_health'))
   const moods = newestPerPerson(rows.filter((r) => r.kind === 'mood_unwell'))

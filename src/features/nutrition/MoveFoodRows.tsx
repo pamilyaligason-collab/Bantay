@@ -54,10 +54,12 @@ export function FoodBlock({ personId, canMark }: { personId: string; canMark: bo
         <SaltSummary entries={onDay(food, now)} goalMg={goal.sodiumMg} headingId="mf-salt" />
       </div>
       <SaltWeek personId={personId} goalMg={goal.sodiumMg} />
-      <div className="mf-card" data-testid="water-card">
-        <h3 className="mf-h">Water</h3>
-        <WaterPanel rows={water} goalMl={goal.waterMl} now={now} canAdd={canMark} personId={personId} />
-      </div>
+      {goal.waterMl != null && ( // no water goal under 1 year: no Water card
+        <div className="mf-card" data-testid="water-card">
+          <h3 className="mf-h">Water</h3>
+          <WaterPanel rows={water} goalMl={goal.waterMl} source={goal.waterSource} now={now} canAdd={canMark} personId={personId} />
+        </div>
+      )}
     </section>
   )
 }

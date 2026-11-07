@@ -113,21 +113,42 @@ describe('Inbox intro card and times (A1)', () => {
 })
 
 describe('buildInbox from medications', () => {
+  const mt = (h: number, m = 0) => new Date(Date.UTC(2026, 9, 19, h - 8, m)) // Manila clock, whatever zone the runner is in (ML-38)
   const med = { personId: 'me', name: 'Drug A', serverId: 'srv-a', medStatus: 'active' as const, schedule: { v: 1, times: ['07:00', '20:00'] } }
   const src = (o: Partial<InboxSources>): InboxSources => ({ ...base, medications: [med], personId: 'me', ...o })
   it('lists a past-due slot, missed once the window passed, and not slots later today', () => {
-    const items = buildInbox(src({ now: at(10) }))
+    const items = buildInbox(src({ now: mt(10) }))
     expect(items.map((i) => i.title)).toEqual(['Drug A was not marked today'])
   })
   it('a take by medication id and slot clears it, a synced skip clears it, a take for another medication does not', () => {
-    const t = at(7, 20).toISOString()
-    expect(buildInbox(src({ now: at(10), taken: [{ name: 'x', takenAt: t, medicationId: 'srv-a', slot: '07:00' }] }))).toEqual([])
-    expect(buildInbox(src({ now: at(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'srv-a', slot: '07:00', skipped: true }] }))).toEqual([])
-    expect(buildInbox(src({ now: at(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'other', slot: '07:00' }] }))).toHaveLength(1)
+    const t = mt(7, 20).toISOString()
+    expect(buildInbox(src({ now: mt(10), taken: [{ name: 'x', takenAt: t, medicationId: 'srv-a', slot: '07:00' }] }))).toEqual([])
+    expect(buildInbox(src({ now: mt(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'srv-a', slot: '07:00', skipped: true }] }))).toEqual([])
+    expect(buildInbox(src({ now: mt(10), taken: [{ name: 'Drug A', takenAt: t, medicationId: 'other', slot: '07:00' }] }))).toHaveLength(1)
   })
   it('paused and as-needed medicines never show, and the old profile text is ignored once medications are given', () => {
-    const items = buildInbox(src({ now: at(21), profile: ['Old 7:00'], medications: [{ ...med, medStatus: 'paused' }, { ...med, name: 'Prn', asNeeded: true }] }))
+    const items = buildInbox(src({ now: mt(21), profile: ['Old 7:00'], medications: [{ ...med, medStatus: 'paused' }, { ...med, name: 'Prn', asNeeded: true }] }))
     expect(items).toEqual([])
+  })
+  describe('the dose day is the Manila day, on a phone in another timezone (ML-38)', () => {
+    // Instants are fixed Manila times; run the file with TZ=America/Los_Angeles and TZ=UTC to prove it on a phone elsewhere (the gate does).
+    const late = { ...med, schedule: { v: 1, times: ['23:00'] } }
+    const early = { ...med, schedule: { v: 1, times: ['00:15'] } }
+    it('23:30 Manila: the 23:00 dose is due and a take at 22:55 Manila clears it, on any phone timezone', () => {
+      expect(buildInbox(src({ now: mt(23, 30), medications: [late] })).map((i) => i.title)).toEqual(['Time for Drug A'])
+      expect(buildInbox(src({ now: mt(23, 30), medications: [late], taken: [{ name: 'Drug A', takenAt: mt(22, 55).toISOString(), medicationId: 'srv-a', slot: '23:00' }] }))).toEqual([])
+    })
+    it('00:30 Manila: it is the new Manila day, so yesterday 23:xx takes do not count and the 00:15 dose is missed-pending', () => {
+      {
+        const yesterday = { name: 'Drug A', takenAt: mt(23, 0).toISOString(), medicationId: 'srv-a', slot: '00:15' } // 23:00 Manila the day before
+        expect(buildInbox(src({ now: mt(24, 30), medications: [early], taken: [yesterday] })).map((i) => i.title)).toEqual(['Time for Drug A'])
+        expect(buildInbox(src({ now: mt(24, 30), medications: [early], taken: [{ ...yesterday, takenAt: mt(24, 20).toISOString() }] }))).toEqual([])
+      }
+    })
+    it('the item id carries the Manila day, so the same missed dose keeps one id across the phone midnight', () => {
+      const id = (n: Date) => buildInbox(src({ now: n, medications: [late] }))[0]?.id
+      expect(id(mt(23, 30))).toBe('dose:2026-10-19:Drug A:1380:due')
+    })
   })
 })
 

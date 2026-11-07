@@ -10,6 +10,12 @@ describe('myDay rows', () => {
   it('water: glasses today over the goal in glasses', () => {
     expect(waterRow([{ ml: 250, drunkAt: now.toISOString() }], 1500, now)).toEqual({ title: 'Water', sub: '1 of 6 glasses', done: false, frac: 1 / 6 })
     expect(waterRow([], 2000, now).sub).toBe('0 of 8 glasses')
+    expect(waterRow([], 1500, now, 'limit').sub).toBe("0 of 6 glasses · Your doctor's limit")
+    expect(waterRow([], 1150, now, 'limit').sub).toBe("0 of 4 glasses · Your doctor's limit") // floor, never past the limit
+    const four = Array.from({ length: 4 }, () => ({ ml: 250, drunkAt: now.toISOString() }))
+    expect(waterRow(four, 1150, now, 'limit').done).toBe(true)
+    expect(waterRow(four, 1150, now, 'weight').done).toBe(false) // without a limit 1150 rounds to 5
+    expect(waterRow([], 1500, now, 'weight').sub).toBe('0 of 6 glasses')
     expect(waterRow([{ ml: 1500, drunkAt: now.toISOString() }], 1500, now).done).toBe(true)
   })
   it('check-in is done only when one is today', () => {
