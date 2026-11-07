@@ -84,6 +84,9 @@ export async function readCached(p: LatLon, now = Date.now()): Promise<Forecast 
 
 export interface Result { fc: Forecast; fromCache: boolean } // fromCache: the network failed, this is the last good forecast ("as of ...")
 const inflight = new Map<string, Promise<Result>>()
+let lastWrite: Promise<unknown> = Promise.resolve()
+/** Resolves once the last forecast cache write has landed (the write is not awaited by callers; tests wait on it before clearing the store). */
+export const forecastWritesSettled = (): Promise<unknown> => lastWrite
 
 /** Fresh cached forecast if under 10 minutes old, else one request (shared by every caller), else the older cache, else throws. */
 export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boolean; now?: number; timeoutMs?: number } = {}): Promise<Result> {
@@ -103,7 +106,7 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
       if (!res.ok) throw new Error(String(res.status))
       const fc = parseForecast(await Promise.race([res.json(), timedOut]), new Date(now).toISOString())
       if (!fc) throw new Error('bad forecast')
-      void db.kv.put({ key, value: fc }).then(() => pruneForecasts()).catch(() => undefined)
+      lastWrite = db.kv.put({ key, value: fc }).then(() => pruneForecasts()).catch(() => undefined)
       return { fc, fromCache: false }
     } catch (e) {
       if (cached) return { fc: cached, fromCache: true }
