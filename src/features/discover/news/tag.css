@@ -1,0 +1,3 @@
+/* NEWS-PH: the category tag on a news card (TYPHOON, OIL AND PRICES, HEALTH ...) and the stale note. Tokens only: 1E6B4E on E3EFE8 is 5.2:1, 4FA37F on 15302A is 4.7:1. */
+.nw-tag { display: inline-block; margin-right: 8px; padding: 1px 8px; border-radius: 999px; background: var(--tint-green); color: var(--tint-green-ink); font-size: 12px; line-height: 18px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; vertical-align: 1px; }
+.nw-stale { margin: 0; }

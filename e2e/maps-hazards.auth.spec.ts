@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 import { admin } from './fixtures/s16/settings'
 import { pmtilesFile, tileBytes } from './fixtures/p2/pmtilesFixture'
 import { assertJackHit, assertNoSideways, setScheme } from './v13'
@@ -120,4 +120,64 @@ for (const [w, h] of [[360, 740], [390, 844], [430, 932]] as const) {
       await assertJackHit(page, [], `hazards end ${w}x${h}`, 'keep')
     })
   }
+}
+
+// Away from the home zones (Metro Manila, picked up by GPS): no stored file, the level is read online and the overlay streams the same file by Range requests.
+const MANILA = { lat: 14.5995, lon: 120.9842 }
+const MBOX = [120.8, 14.4, 121.2, 14.8]
+const MFILE = pmtilesFile(tileBytes(MANILA, 2), false, MANILA, MBOX)
+const FILES = `${API}/storage/v1/object/public/region-packs/`
+const MPATH = '1380600000/hazards-fixture.pmtiles'
+
+/** Opens #safety/hazards as someone in Metro Manila with no stored file; returns the Range requests the public file served. */
+async function openAway(page: Page, context: BrowserContext) {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ latitude: MANILA.lat, longitude: MANILA.lon })
+  const ranges: string[] = []
+  await admin(page)
+  await page.addInitScript(() => localStorage.setItem('bantay.flags', JSON.stringify({ localPacks: true })))
+  await page.route('https://tile.openstreetmap.org/**', (r) => r.fulfill({ status: 204 }))
+  await page.route('https://embed.windy.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><body></body>' }))
+  await page.route(`${FILES}**`, (r) => {
+    const req = r.request(), rel = req.url().replace(FILES, '')
+    const h = { ...cors, 'access-control-expose-headers': 'content-range, content-length' }
+    if (req.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: h })
+    if (rel.startsWith('index.json')) return r.fulfill({ status: 200, headers: { ...h, 'content-type': 'application/json' }, body: JSON.stringify({ format: 1, built: '2026-11-07', packs: [{ code: '1380600000', name: 'Metro Manila', version: 1, checksum: 'x', size: 1, rows: 1, path: '1380600000/p.json', neighbours: [], hazards: { pack: '1380600000', version: 1, checksum: 'hz', size: MFILE.length, path: MPATH, bounds: { flood: MBOX, landslide: MBOX, surge: MBOX } } }] }) })
+    if (rel !== MPATH) return r.fulfill({ status: 404, headers: h })
+    const m = /bytes=(\d+)-(\d+)/.exec(req.headers().range ?? '')
+    if (!m) return r.fulfill({ status: 200, headers: h, body: MFILE })
+    ranges.push(req.headers().range!)
+    const a = Number(m[1]), b = Math.min(Number(m[2]), MFILE.length - 1)
+    return r.fulfill({ status: 206, headers: { ...h, 'content-range': `bytes ${a}-${b}/${MFILE.length}`, 'content-type': 'application/octet-stream' }, body: MFILE.subarray(a, b + 1) })
+  })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/#today')
+  await expect(page.locator('.bt .scroll h1').first()).toBeVisible()
+  await page.evaluate(() => { location.hash = '#safety/hazards' })
+  await expect(page.getByTestId('hazards-zone')).toContainText('Metro Manila', { timeout: 20000 })
+  return ranges
+}
+
+test('away from home (Metro Manila, no stored file): This place card, rings, the empty sentence is gone, and the overlay paints from the public file', async ({ page, context }) => {
+  const ranges = await openAway(page, context)
+  await expect(page.getByText(/No hazard readings for/)).toHaveCount(0)
+  await expect(page.getByTestId('hz-ring-flood')).toHaveAttribute('data-state', 'filled')
+  await expect(page.getByTestId('hz-rings').getByRole('img')).toHaveCount(3)
+  await expect(page.getByTestId('layer-caption')).toContainText('Flood level from NOAH: Medium')
+  await expect(page.getByTestId('hz-legend')).toContainText('Flood level')
+  await expect.poll(() => painted(page), { timeout: 20000 }).toBeGreaterThan(0)
+  expect(ranges.length).toBeGreaterThan(0)
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/haz-away.png` })
+})
+
+for (const [w, h] of [[360, 740], [390, 844], [430, 932]] as const) {
+  test(`away layout: Jack clears every control at ${w}x${h}`, async ({ page, context }) => {
+    await page.setViewportSize({ width: w, height: h })
+    await openAway(page, context)
+    await expect(page.getByTestId('hz-legend')).toBeVisible()
+    await assertJackHit(page, [], `hazards away ${w}x${h}`)
+    await page.evaluate(() => { const sc = document.querySelector('.bt .scroll') as HTMLElement; sc.scrollTop = sc.scrollHeight })
+    await assertJackHit(page, [], `hazards away end ${w}x${h}`, 'keep')
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/haz-away-${w}.png` })
+  })
 }

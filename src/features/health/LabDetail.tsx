@@ -3,8 +3,8 @@ import { db } from '../../db'
 import { formatNumber } from '../../lib/labFormat'
 import { labDate, labInfo, labNum, labRow, labVerdict, lastThree, plainWords, rangeSource, sourceIndex, trendOfLastThree } from './labsLogic'
 import { LabBar, VerdictChip } from './LabsList'
-import { metricLabel } from './model'
 import { articleHref } from './library/medline'
+import { LabExplain } from './library/LabExplain'
 import type { Range, Reading } from './ranges'
 import { dayWords } from './visitsLogic'
 import { useVisits } from './useVisits'
@@ -60,11 +60,13 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
           {paper ? <OriginalLink file={paper.file} /> : <a className="rx-open" href="#family/papers">Open Papers</a>}
         </section>
       )}
-      <section aria-labelledby="ld-what" data-testid="lab-measures">
-        <h2 className="hd" id="ld-what">What it means</h2>
-        <div className="grp"><div className="row"><span className="grow">{info.measures}</span></div>
-          {info.known && <div className="row"><a href={articleHref('s', metricLabel(code))} style={{ color: 'var(--act)', fontWeight: 600 }}>Read more</a></div>}</div>
-      </section>
+      {info.entry ? <LabExplain entry={info.entry} /> : (
+        <section aria-labelledby="ld-what" data-testid="lab-measures">
+          <h2 className="hd" id="ld-what">What it is</h2>
+          <div className="grp"><div className="row"><span className="grow">{info.measures}</span></div></div>
+        </section>
+      )}
+      {info.entry && <div className="grp"><div className="row"><a href={articleHref('t', info.entry.code)} style={{ color: 'var(--act)', fontWeight: 600 }} data-testid="lab-library">Read more in the Health library</a></div></div>}
       {last.length > 0 && (
         <section aria-labelledby="ld-last" data-testid="lab-last3">
           <div className="lb-h"><h2 className="hd" id="ld-last">{last.length === 1 ? 'Last result' : `Last ${last.length} results`}</h2>{trendOfLastThree(last) && <span className="sub">{trendOfLastThree(last)}</span>}</div>

@@ -3,7 +3,10 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { hazardsFor } from './hazardCards'
-import { hazardOverlay, hazardPaintRules, LEVEL_INK, layerState, noneRingText, NOAH_URL, readDate, ringsFor, useHazardBlob } from './hazardsLayers'
+import { hazardOverlay, hazardPaintRules, LEVEL_INK, layerState, levelsStatus, noneRingText, pickHazardSource, NOAH_URL, readDate, ringsFor, useHazardBlob, useHazardUrl } from './hazardsLayers'
+
+const P = vi.hoisted(() => ({ index: null as unknown }))
+vi.mock('./packs', async (orig) => ({ ...(await orig<typeof import('./packs')>()), packFileUrl: (p: string) => `https://h.test/${p}`, getIndex: () => (P.index instanceof Error ? Promise.reject(P.index) : Promise.resolve(P.index)) }))
 
 const dampas = hazardsFor('dampas')
 
@@ -127,5 +130,45 @@ describe('hazard overlay', () => {
 describe('level 0 ring wording', () => {
   it('says no mapped hazard and no promise of safety, never "None" or "safe"', () => {
     expect(noneRingText('Flood')).toBe("Flood: no mapped hazard in NOAH's maps (100-year scenario). Not a promise of safety.")
+  })
+})
+
+describe('overlay source and away status', () => {
+  it('the stored Blob wins over the public URL; the URL is used when no Blob; neither gives null', () => {
+    const b = new Blob(['x'])
+    expect(pickHazardSource(b, 'https://h.test/p.pmtiles')).toBe(b)
+    expect(pickHazardSource(null, 'https://h.test/p.pmtiles')).toBe('https://h.test/p.pmtiles')
+    expect(pickHazardSource(null, null)).toBeNull()
+  })
+  it('levelsStatus: none when nothing is read; top level and its layers; 0 is no promise of safety', () => {
+    expect(levelsStatus({ flood: null, landslide: null, surge: null })).toBeNull()
+    expect(levelsStatus(null)).toBeNull()
+    expect(levelsStatus({ flood: 2, landslide: 2, surge: 1 })).toEqual({ text: 'Highest NOAH level here: Medium (flood and landslide)', tone: 'warn' })
+    expect(levelsStatus({ flood: 1, landslide: null, surge: 0 })).toEqual({ text: 'Highest NOAH level among the layers checked: Low (flood)', tone: 'good' })
+    expect(levelsStatus({ flood: 0, landslide: 0, surge: null })!.text).toContain('not a promise of safety')
+  })
+})
+
+describe('useHazardUrl', () => {
+  const bounds = { flood: [120.8, 14.4, 121.2, 14.8], landslide: null, surge: [120.8, 14.4, 121.2, 14.8] }
+  const hz = { pack: '1380600000', version: 1, checksum: 'c', size: 5, path: '1380600000/hz.pmtiles', bounds }
+  const run = async (index: unknown, on: boolean, unit: string | null, id: 'flood' | 'landslide' = 'flood', lat = 14.6, lon = 121) => {
+    P.index = index
+    const r = renderHook(() => useHazardUrl(lat, lon, id, on, unit))
+    await new Promise((res) => setTimeout(res, 20))
+    return r.result.current
+  }
+  const idx = (h: unknown) => ({ format: 1, built: 'x', packs: [{ code: '1380600000', name: 'Metro Manila', hazards: h }] })
+  it('gives the public file URL when on, the unit has a hazard file and the point is inside the layer bounds', async () => {
+    expect(await run(idx(hz), true, '1380600000')).toMatch(/1380600000\/hz\.pmtiles$/)
+  })
+  it('null when off, no unit, unit not in the index, point outside the bounds, layer without bounds, no hazard entry, or the index fails', async () => {
+    expect(await run(idx(hz), false, '1380600000')).toBeNull()
+    expect(await run(idx(hz), true, null)).toBeNull()
+    expect(await run(idx(hz), true, '9999999999')).toBeNull()
+    expect(await run(idx(hz), true, '1380600000', 'flood', 10, 100)).toBeNull()
+    expect(await run(idx(hz), true, '1380600000', 'landslide')).toBeNull()
+    expect(await run(idx(undefined), true, '1380600000')).toBeNull()
+    expect(await run(new Error('offline'), true, '1380600000')).toBeNull()
   })
 })

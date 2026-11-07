@@ -1,8 +1,9 @@
 import { Icon } from '../../shell/Icon'
 import { useState } from 'react'
 import { ago } from './Screen'
-import { hueOf, initialOf, topicOf, TOPIC_LABEL, type NewsRow } from './model'
+import { categoryTag, hueOf, initialOf, topicOf, TOPIC_LABEL, type NewsRow } from './model'
 import { toggleSaved } from './saved'
+import './tag.css'
 
 const secure = (u: string | null | undefined): u is string => !!u && /^https:\/\//i.test(u)
 
@@ -19,8 +20,13 @@ export function NewsPic({ n, w, h, className }: { n: NewsRow; w: number; h: numb
   )
 }
 
+/** The category tag (TYPHOON, OIL AND PRICES, HEALTH ...), read from the headline and the topic. No tag, no chip. */
+export function Tag({ n }: { n: Pick<NewsRow, 'title' | 'topic'> }) {
+  const c = categoryTag(n)
+  return c ? <span className="nw-tag" data-testid="nw-tag">{c}</span> : null
+}
 const meta = (n: NewsRow, now: number) => {
-  const t = topicOf(n)
+  const t = categoryTag(n) ? null : topicOf(n) // the tag already says the category
   return `${t ? TOPIC_LABEL[t] + ' · ' : ''}${ago(n.published_at, now)}`
 }
 const Out = () => <span className="dc-sr"> (opens the news site)</span>
@@ -31,7 +37,7 @@ export function LeadCard({ n, now, testId }: { n: NewsRow; now: number; testId?:
     <a className="card nw-lead" href={n.url} target="_blank" rel="noopener noreferrer" data-testid={testId}>
       <NewsPic n={n} w={358} h={180} className="nw-lead-pic" />
       <span className="nw-body">
-        <span className="nw-src">{n.source}<span className="nw-dot"> · </span>{meta(n, now)}</span>
+        <span className="nw-src"><Tag n={n} />{n.source}<span className="nw-dot"> · </span>{meta(n, now)}</span>
         <b className="nw-title">{n.title}<Out /></b>
       </span>
     </a>
@@ -42,7 +48,7 @@ export function LeadCard({ n, now, testId }: { n: NewsRow; now: number; testId?:
 export function StoryRow({ n, now }: { n: NewsRow; now: number }) {
   return (
     <a className="nw-item" href={n.url} target="_blank" rel="noopener noreferrer" data-testid="nw-story">
-      <span className="nw-body"><span className="nw-src">{n.source}</span><b className="nw-title">{n.title}<Out /></b><span className="nw-meta">{meta(n, now)}</span></span>
+      <span className="nw-body"><span className="nw-src"><Tag n={n} />{n.source}</span><b className="nw-title">{n.title}<Out /></b><span className="nw-meta">{meta(n, now)}</span></span>
       <NewsPic n={n} w={72} h={72} className="nw-thumb" />
     </a>
   )
@@ -52,7 +58,7 @@ export function StoryRow({ n, now }: { n: NewsRow; now: number }) {
 export function LatestRow({ n, now, saved }: { n: NewsRow; now: number; saved: boolean }) {
   return (
     <div className="nw-item" data-testid="nw-latest">
-      <a className="nw-body" href={n.url} target="_blank" rel="noopener noreferrer"><span className="nw-src">{n.source}</span><b className="nw-title">{n.title}<Out /></b><span className="nw-meta">{meta(n, now)}</span></a>
+      <a className="nw-body" href={n.url} target="_blank" rel="noopener noreferrer"><span className="nw-src"><Tag n={n} />{n.source}</span><b className="nw-title">{n.title}<Out /></b><span className="nw-meta">{meta(n, now)}</span></a>
       <button type="button" className="nw-save" aria-pressed={saved} aria-label={`${saved ? 'Remove from read later' : 'Read later'}: ${n.title}`} onClick={() => toggleSaved(n)}><Icon name={saved ? 'check' : 'plus'} size={20} /></button>
     </div>
   )

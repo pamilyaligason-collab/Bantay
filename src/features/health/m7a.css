@@ -46,10 +46,26 @@
 .mc { display: block; width: 100%; height: auto; }
 .mc-grid { stroke: var(--sep); stroke-width: 0.5; }
 .mc-band { fill: var(--soft); stroke: var(--green2); stroke-width: 0.75; stroke-dasharray: 3 3; }
-.mc-line { stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.mc-dot { fill: var(--card); stroke: var(--ink); stroke-width: 1.5; }
-.mc-dot.last { fill: var(--ink); }
-.mc-spread { fill: var(--ink); opacity: .12; stroke: none; }
+/* S22 charts: --mc is the metric tint (the tint-ink tokens Today uses, both themes). Lines are smooth areas, sleep and steps are rounded bars. Nothing animates, so there is no motion to reduce. */
+.mcw { --mc: var(--tint-green-ink, var(--green2)); min-width: 0; border-radius: 12px; }
+.mcw[data-tint="purple"] { --mc: var(--tint-purple-ink); }
+.mcw[data-tint="amber"] { --mc: var(--tint-amber-ink); }
+.mcw[data-tint="blue"] { --mc: var(--tint-blue-ink); }
+.mcw:focus-visible { outline: 2px solid var(--mc); outline-offset: 2px; }
+.mc-line { stroke: var(--mc); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.mc-s0 { stop-color: var(--mc); stop-opacity: .3; }
+.mc-s1 { stop-color: var(--mc); stop-opacity: .02; }
+.mc-dot { fill: var(--mc); stroke: var(--card); stroke-width: 1; }
+.mc-dot.last { stroke: color-mix(in srgb, var(--mc) 30%, transparent); stroke-width: 6; }
+.mc-dot.sel { stroke: var(--ink); stroke-width: 2; }
+.mc-spread { fill: var(--mc); opacity: .14; stroke: none; }
+.mc-bar { fill: var(--mc); }
+.mc-bar.sel { stroke: var(--ink); stroke-width: 1.5; }
+.mc-goal { stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 4 3; }
+.mc-g { font-size: 12px; fill: var(--ink2); }
+.mc-avg { margin: 0 0 4px; font-size: 14px; color: var(--ink2); }
+.mc-avg strong { color: var(--ink); font-size: 17px; }
+.mc-read { margin: 4px 0 0; min-height: 20px; font-size: 14px; color: var(--ink2); text-align: center; }
 .mc-t { font-size: 14px; fill: var(--ink2); }
 .mc-d { font-size: 14px; fill: var(--ink2); } /* viewBox 320 wide: 14 units is 12.9 px on screen at 360 (12 gave 11 px) */
 .mc-part { margin-top: 8px; }

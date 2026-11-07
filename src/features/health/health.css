@@ -333,6 +333,9 @@
 
 /* H4: compact hero. Kicker, value + verdict on one row, number line, source line (2 lines), two buttons. */
 .ah-card { display: grid; gap: 2px; padding: 10px 16px 12px; }
+.ah-kick { display: flex; align-items: baseline; gap: 8px; min-width: 0; } /* the one-line "what it is" shares the kicker row so the hero keeps its height */
+.ah-kick .hc-kicker { flex: none; }
+.ah-what { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ah-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .ah-top .ah-val { margin: 0; }
 .ah .lr-track { margin: 12px 6px 28px; } /* the mark overhangs 4 px above the bar; the short "You" hangs under it (14 to 30 px below the bar top), the zone strip starts below */

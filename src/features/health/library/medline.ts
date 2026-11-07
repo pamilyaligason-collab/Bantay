@@ -65,10 +65,10 @@ export async function loadTopic(kind: TopicKind, text: string, opts: { fetch?: F
   }
 }
 
-/** An article key in the address: c:<text> condition, m:<text> medicine, s:<text> typed search (condition first, then medicine). */
+/** An article key in the address: t:<lab test code> a lab test from the glossary (no network); c:<text> condition, m:<text> medicine, s:<text> typed search (condition first, then medicine). */
 export function parseKey(raw: string): { kinds: TopicKind[]; text: string } | null {
   const m = /^([cms]):(.+)$/.exec(raw)
   if (!m || !m[2]!.trim()) return null
   return { kinds: m[1] === 'c' ? ['condition'] : m[1] === 'm' ? ['medicine'] : ['condition', 'medicine'], text: m[2]!.trim() }
 }
-export const articleHref = (prefix: 'c' | 'm' | 's', text: string) => `#discover/learn/library/${encodeURIComponent(`${prefix}:${text}`)}`
+export const articleHref = (prefix: 'c' | 'm' | 's' | 't', text: string) => `#discover/learn/library/${encodeURIComponent(`${prefix}:${text}`)}`

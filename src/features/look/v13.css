@@ -36,6 +36,9 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .pt[data-size="md"] .pt-v { font-size: 20px; }
 .pt-s { font-size: 13px; color: var(--muted); line-height: 18px; }
 .pt-a { margin-top: auto; padding-top: 8px; font-size: 15px; font-weight: 600; color: var(--green); min-height: 24px; }
+/* a trend line sits in the label row at the tile's top right, so label, value, sub and action line up with tiles that have none */
+.card.pt:has(> .pt-spark) { position: relative; }
+.pt-spark { position: absolute; top: 14px; right: 14px; color: var(--tint-ink, var(--ink)); opacity: .7; }
 .pt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 :root[data-narrow] .pt-grid { grid-template-columns: minmax(0, 1fr); }
 .carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-padding-inline: 16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }

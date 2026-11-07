@@ -4,6 +4,7 @@ import { providerName } from '../../lib/labFormat'
 import type { DocBundle, SourceFile } from '../records/api'
 import { verdictFor } from './verdict'
 import type { IconName } from '../shell/Icon'
+import { labEntry, type LabEntry } from './labGlossary'
 
 /** Pure logic for the lab results list and detail page (session 8). No React, no storage. Unknown is null, never 0. */
 
@@ -63,19 +64,21 @@ export function labNum(value: number | null | undefined): string {
   return String(Number(Math.abs(value) >= 1 ? value.toFixed(1) : value.toPrecision(2)))
 }
 
+/** Where a value sits outside a range: the one source for plainWords and gapWords. Null inside, without a range, or for a non-number. times is null when the top limit is 0 (no ratio to speak of). */
+function outside(value: number, range: Range | null): { over: boolean; near: boolean; times: number | null } | null {
+  if (!range || !Number.isFinite(value)) return null
+  if (range.high != null && value > range.high) { const t = range.high > 0 ? value / range.high : null; return { over: true, near: t != null && t < 1.5, times: t == null ? null : Math.round(t) } }
+  if (range.low != null && value < range.low) { const t = value > 0 ? range.low / value : null; return { over: false, near: t != null && t < 1.5, times: null } }
+  return null
+}
+
 /** One plain sentence on where a value sits against the usual range. '' without a range (never a guess). `value` is judged against the range; `shown` is the number printed (the reading as the person sees it, which may be in another unit). */
 export function plainWords(value: number, range: Range | null, shown: string = labNum(value)): string {
   if (!range || !Number.isFinite(value)) return ''
-  const n = shown
-  if (range.high != null && value > range.high) {
-    const ratio = range.high > 0 ? value / range.high : Infinity
-    return ratio < 1.5 ? `${n} is a little over the top of normal.` : `${n} is about ${Math.round(ratio)} times the top of normal.`
-  }
-  if (range.low != null && value < range.low) {
-    const ratio = value > 0 ? range.low / value : Infinity
-    return ratio < 1.5 ? `${n} is a little under the bottom of normal.` : `${n} is well under the bottom of normal.`
-  }
-  return range.low == null && range.high == null ? '' : `${n} is inside the normal range.`
+  const o = outside(value, range)
+  if (o?.over) return o.times == null ? `${shown} is over the top of normal.` : o.near ? `${shown} is a little over the top of normal.` : `${shown} is about ${o.times} times the top of normal.`
+  if (o) return `${shown} is ${o.near ? 'a little' : 'well'} under the bottom of normal.`
+  return range.low == null && range.high == null ? '' : `${shown} is inside the normal range.`
 }
 
 const distance = (v: number, r: Range) => (r.low != null && v < r.low ? r.low - v : r.high != null && v > r.high ? v - r.high : 0)
@@ -110,29 +113,25 @@ export function lastThree(readings: Reading[], test: string, family?: Range | nu
   })
 }
 
-// ---- static text: what a test measures and questions to ask. FOR CLINICIAN REVIEW (docs/session-8/CLINICAL-REVIEW.md). ----
-// Plain-language wording follows MedlinePlus lab-test pages (https://medlineplus.gov/lab-tests/); nothing here diagnoses.
+// ---- static text: what a test is and questions to ask. Comes from the one lab glossary (labGlossary.ts, MedlinePlus, FOR CLINICIAN REVIEW); nothing here diagnoses. ----
 export interface LabInfo { measures: string; short: string; questions: string[] }
-const INFO: Record<string, LabInfo> = {
-  ldl: { short: 'Cholesterol that can build up in blood vessels', measures: 'LDL is the cholesterol that can build up in the walls of blood vessels.', questions: ['Is my LDL where you want it for me?', 'Should I change what I eat, or my medicines, because of this?'] },
-  hdl: { short: 'Cholesterol that carries other cholesterol away', measures: 'HDL is the cholesterol that helps carry other cholesterol away from the blood.', questions: ['Is my HDL a concern for me?', 'Would more walking or activity help?'] },
-  total_cholesterol: { short: 'All the cholesterol in your blood', measures: 'Total cholesterol adds up the different kinds of cholesterol in your blood.', questions: ['What should my cholesterol numbers be for me?', 'When should I have this checked again?'] },
-  triglycerides: { short: 'A type of fat in the blood', measures: 'Triglycerides are a type of fat in the blood. Eating before the test can raise them.', questions: ['Was this test taken fasting, and does that matter?', 'What could lower my triglycerides?'] },
-  hba1c: { short: 'Average sugar over about 3 months', measures: 'HbA1c shows your average blood sugar over about the last three months.', questions: ['What HbA1c should I aim for?', 'Do my medicines or meals need to change?'] },
-  fasting_glucose: { short: 'Blood sugar after not eating for hours', measures: 'Fasting glucose is the sugar in your blood after not eating for several hours.', questions: ['Is my fasting sugar where you want it?', 'How often should I check at home?'] },
-  egfr: { short: 'How well the kidneys filter your blood', measures: 'eGFR is an estimate of how well your kidneys are filtering your blood.', questions: ['What does my kidney score mean for me?', 'Are any of my medicines a concern for my kidneys?'] },
-  creatinine: { short: 'A waste product the kidneys remove', measures: 'Creatinine is a waste product that the kidneys remove from the blood.', questions: ['Is my creatinine a concern for my kidneys?', 'Should I drink more water, or take anything differently?'] },
-  hemoglobin: { short: 'Carries oxygen in red blood cells', measures: 'Hemoglobin is the part of red blood cells that carries oxygen around the body.', questions: ['Could my hemoglobin be why I feel tired?', 'Do I need any other test to find the reason?'] },
-  platelets: { short: 'Small cells that help blood clot', measures: 'Platelets are small blood cells that help the blood to clot.', questions: ['Is my platelet count a concern for me?', 'Should I avoid any medicines because of it?'] },
-  wbc: { short: 'Cells that help fight infection', measures: 'White blood cells help the body fight infection.', questions: ['Is my white blood cell count a concern for me?', 'Should this be repeated, and when?'] },
-  uric_acid: { short: 'A waste product that can collect in joints', measures: 'Uric acid is a waste product. Too much can collect in joints.', questions: ['Is my uric acid a concern for my joints or kidneys?', 'Are there foods I should limit?'] }
-}
-const ALIAS: Record<string, string> = { hdlcholesterol: 'hdl', ldlcholesterol: 'ldl', cholesterol: 'total_cholesterol', totalcholesterol: 'total_cholesterol', glucose: 'fasting_glucose', fbs: 'fasting_glucose', hgb: 'hemoglobin', haemoglobin: 'hemoglobin', plt: 'platelets', platelet: 'platelets', whitebloodcell: 'wbc', uricacid: 'uric_acid', crea: 'creatinine' }
 const NEUTRAL: LabInfo = { short: 'A test from your lab results', measures: 'A test from your lab results. Your doctor can explain what it shows for you.', questions: ['What does this result mean for me?', 'Do I need to do anything about it, or repeat the test?'] }
-export function labInfo(test: string): LabInfo & { known: boolean } {
-  const t = test.toLowerCase()
-  const hit = INFO[t] ?? INFO[ALIAS[t.replace(/[^a-z0-9]/g, '')] ?? '']
-  return hit ? { ...hit, known: true } : { ...NEUTRAL, known: false }
+export function labInfo(test: string): LabInfo & { known: boolean; entry: LabEntry | null } {
+  const e = labEntry(test)
+  return e ? { short: e.short, measures: e.what, questions: e.ask, known: true, entry: e } : { ...NEUTRAL, known: false, entry: null }
+}
+
+/** How far outside the range, in the words of plainWords but without the number: "about 2x the top of normal". '' in range or without a range. */
+export function gapWords(row: LabRow): string {
+  const o = row.rv ? outside(row.rv.value, row.range) : null
+  if (!o) return ''
+  if (o.over) return o.times == null ? 'over the top of normal' : o.near ? 'a little over the top of normal' : `about ${o.times}× the top of normal`
+  return o.near ? 'a little under the bottom of normal' : 'well under the bottom of normal'
+}
+/** The one short line under a test on the Health "needs attention" card: what it is, then how far out. "Liver enzyme · about 2x the top of normal". '' for a test the glossary does not know. */
+export function attentionLine(row: LabRow): string {
+  const e = labEntry(row.reading.test)
+  return e ? [e.organ, gapWords(row)].filter(Boolean).join(' · ') : ''
 }
 
 // ---- session 14 lane L: dated history, whose range, previous result, trend (mockup v8 health-labs, health-labdetail; D-9, D-38) ----
